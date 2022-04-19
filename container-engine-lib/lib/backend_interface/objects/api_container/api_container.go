@@ -16,14 +16,14 @@ type APIContainer struct {
 	status container_status.ContainerStatus
 
 	// Private (i.e. internal to enclave) information about the API container
-	privateIpAddr net.IP
-	privateGrpcPort *port_spec.PortSpec
+	privateIpAddr        net.IP
+	privateGrpcPort      *port_spec.PortSpec
 	privateGrpcProxyPort *port_spec.PortSpec
 
 	// Public (i.e. external to Kurtosis) information about the API container
 	// This information will be nil if the API container isn't running
-	publicIpAddr net.IP
-	publicGrpcPort *port_spec.PortSpec
+	publicIpAddr        net.IP
+	publicGrpcPort      *port_spec.PortSpec
 	publicGrpcProxyPort *port_spec.PortSpec
 }
 
@@ -38,14 +38,14 @@ func NewAPIContainer(
 	publicGrpcProxyPort *port_spec.PortSpec,
 ) *APIContainer {
 	return &APIContainer{
-		enclaveId: enclaveId,
-		status: status,
-		privateIpAddr: privateIpAddr,
-		privateGrpcPort: privateGrpcPort,
+		enclaveId:            enclaveId,
+		status:               status,
+		privateIpAddr:        privateIpAddr,
+		privateGrpcPort:      privateGrpcPort,
 		privateGrpcProxyPort: privateGrpcProxyPort,
-		publicIpAddr: publicIpAddr,
-		publicGrpcPort: publicGrpcPort,
-		publicGrpcProxyPort: publicGrpcProxyPort}
+		publicIpAddr:         publicIpAddr,
+		publicGrpcPort:       publicGrpcPort,
+		publicGrpcProxyPort:  publicGrpcProxyPort}
 }
 
 func (apiContainer *APIContainer) GetEnclaveID() enclave.EnclaveID {
@@ -77,5 +77,5 @@ func (apiContainer *APIContainer) GetPublicGRPCPort() *port_spec.PortSpec {
 }
 
 func (apiContainer *APIContainer) GetPublicGRPCProxyPort() *port_spec.PortSpec {
-	return apiContainer.publicGrpcPort
+	return apiContainer.publicGrpcProxyPort
 }

@@ -64,11 +64,11 @@ const (
 	containerNameSearchFilterKey  = "name"
 	containerLabelSearchFilterKey = "label"
 
-	volumeNameSearchFilterKey = "name"
+	volumeNameSearchFilterKey  = "name"
 	volumeLabelSearchFilterKey = "label"
 
-	networkNameSearchFilterKey = "name"
-	networkIdSearchFilterKey = "id"
+	networkNameSearchFilterKey  = "name"
+	networkIdSearchFilterKey    = "id"
 	networkLabelSearchFilterKey = "label"
 	// ---------------- End Filter Search Keys ----------------------
 
@@ -77,13 +77,13 @@ const (
 	// See: https://github.com/moby/moby/issues/42860
 	// To work around this, we retry a few times
 	timeBetweenHostPortBindingChecks = 500 * time.Millisecond
-	maxNumHostPortBindingChecks = 4
+	maxNumHostPortBindingChecks      = 4
 
 	// Not sure why we'd ever want 'force' set to false when removing volumes & containers
-	shouldForceVolumeRemoval         = true
+	shouldForceVolumeRemoval = true
 
 	shouldRemoveAnonymousVolumesWhenRemovingContainers = true
-	shouldRemoveLinksWhenRemovingContainers            = false  // We don't use container links
+	shouldRemoveLinksWhenRemovingContainers            = false // We don't use container links
 	shouldKillContainersWhenRemovingContainers         = true
 
 	shouldFollowContainerLogsWhenGettingFailedContainerLogs = false
@@ -91,26 +91,26 @@ const (
 	shouldAttachStdinWhenCreatingContainerExec                = true
 	shouldAttachStandardStreamsToTtyWhenCreatingContainerExec = true
 	shouldAttachStderrWhenCreatingContainerExec               = true
-	shouldAttachStdoutWhenCreatingContainerExec = true
-	shouldExecuteInDetachModeWhenCreatingContainerExec = false
+	shouldAttachStdoutWhenCreatingContainerExec               = true
+	shouldExecuteInDetachModeWhenCreatingContainerExec        = false
 )
 
 /*
 InteractiveModeTtySize
 The dimensions of the TTY that the container should output to when in interactive mode
- */
+*/
 type InteractiveModeTtySize struct {
 	Height uint
-	Width uint
+	Width  uint
 }
 
 /*
 DockerManager
 A handle to interacting with the Docker environment running a test.
- */
+*/
 type DockerManager struct {
 	// The underlying Docker client that will be used to modify the Docker environment
-	dockerClient        *client.Client
+	dockerClient *client.Client
 }
 
 /*
@@ -122,7 +122,7 @@ Args:
 */
 func NewDockerManager(dockerClient *client.Client) *DockerManager {
 	return &DockerManager{
-		dockerClient:        dockerClient,
+		dockerClient: dockerClient,
 	}
 }
 
@@ -139,8 +139,8 @@ Args:
 
 Returns:
 	id: The Docker-managed ID of the network
- */
-func (manager DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP net.IP, labels map[string]string) (id string, err error)  {
+*/
+func (manager DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP net.IP, labels map[string]string) (id string, err error) {
 	networkIds, err := manager.GetNetworksByName(context, name)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred checking for existence of network with name %v", name)
@@ -151,7 +151,7 @@ func (manager DockerManager) CreateNetwork(context context.Context, name string,
 		return "", stacktrace.NewError("Network with name %v cannot be created because one or more networks with that name already exist", name)
 	}
 	ipamConfig := []network.IPAMConfig{{
-		Subnet: subnetMask,
+		Subnet:  subnetMask,
 		Gateway: gatewayIP.String(),
 	}}
 
@@ -163,7 +163,7 @@ func (manager DockerManager) CreateNetwork(context context.Context, name string,
 		Labels: labels,
 	})
 	if err != nil {
-		return "", stacktrace.Propagate( err, "Failed to create network %s with subnet %s", name, subnetMask)
+		return "", stacktrace.Propagate(err, "Failed to create network %s with subnet %s", name, subnetMask)
 	}
 	return resp.ID, nil
 }
@@ -179,7 +179,7 @@ func (manager DockerManager) ListNetworks(ctx context.Context) ([]types.NetworkR
 /*
 GetNetworksByName
 Returns Network list matching the given name (if any).
- */
+*/
 // TODO Combine with GetNetworksByLabel using a search filter builder
 func (manager DockerManager) GetNetworksByName(ctx context.Context, name string) ([]*docker_manager_types.Network, error) {
 	nameSearchArgs := filters.NewArgs(filters.KeyValuePair{
@@ -202,7 +202,7 @@ func (manager DockerManager) GetNetworksByName(ctx context.Context, name string)
 /*
 GetNetworksByLabels
 Gets networks matching the given labels
- */
+*/
 func (manager DockerManager) GetNetworksByLabels(ctx context.Context, labels map[string]string) ([]*docker_manager_types.Network, error) {
 	labelsSearchArgs := getLabelsFilterArgs(networkLabelSearchFilterKey, labels)
 	dockerNetworks, err := manager.getNetworksByFilterArgs(ctx, labelsSearchArgs)
@@ -230,7 +230,6 @@ func (manager DockerManager) GetContainerIdsConnectedToNetwork(context context.C
 	return result, nil
 }
 
-
 /*
 RemoveNetwork
 Removes the Docker network with the given id
@@ -241,7 +240,7 @@ NOTE: All containers attached to the network must be shut off or disconnected, e
 Args:
 	context: The Context that this request is running in (useful for cancellation)
 	networkId: ID of Docker network to remove
- */
+*/
 func (manager DockerManager) RemoveNetwork(context context.Context, networkId string) error {
 	if err := manager.dockerClient.NetworkRemove(context, networkId); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing the Docker network with ID %v", networkId)
@@ -258,20 +257,20 @@ Args:
 	volumeName: The unique identifier used by Docker to identify this volume (NOTE: at time of writing, Docker doesn't
 		even give volumes IDs - this name is all there is)
 	labels: Labels to attach to the volume object
- */
+*/
 func (manager DockerManager) CreateVolume(context context.Context, volumeName string, labels map[string]string) error {
 	volumeConfig := volume.VolumeCreateBody{
-		Name:       volumeName,
+		Name:   volumeName,
 		Labels: labels,
 	}
 
 	/*
-	We don't use the return value of VolumeCreate because there's not much useful information on there - Docker doesn't
-	use UUIDs to identify volumes - only the name - so there's no UUID to retrieve, and the volume's Mountpoint (what you'd
-	think would be the path of the volume on the local machine) isn't useful either becuase Docker itself runs inside a VM
-	so *this path is only a path inside the Docker VM* (meaning we can't use it to read/write files). AFAICT, the only way
-	to read/write data to a volume is to mount it in a container. ~ ktoday, 2020-07-01
-	 */
+		We don't use the return value of VolumeCreate because there's not much useful information on there - Docker doesn't
+		use UUIDs to identify volumes - only the name - so there's no UUID to retrieve, and the volume's Mountpoint (what you'd
+		think would be the path of the volume on the local machine) isn't useful either becuase Docker itself runs inside a VM
+		so *this path is only a path inside the Docker VM* (meaning we can't use it to read/write files). AFAICT, the only way
+		to read/write data to a volume is to mount it in a container. ~ ktoday, 2020-07-01
+	*/
 	_, err := manager.dockerClient.VolumeCreate(context, volumeConfig)
 	if err != nil {
 		return stacktrace.Propagate(err, "Could not create Docker volume for test controller")
@@ -312,7 +311,7 @@ func (manager *DockerManager) GetVolumesByName(ctx context.Context, volumeName s
 /*
 GetVolumesByLabels
 Gets the volumes matching the given labels
- */
+*/
 func (manager *DockerManager) GetVolumesByLabels(ctx context.Context, labels map[string]string) ([]*types.Volume, error) {
 	labelsFilterArgs := getLabelsFilterArgs(volumeLabelSearchFilterKey, labels)
 	resp, err := manager.dockerClient.VolumeList(ctx, labelsFilterArgs)
@@ -359,7 +358,7 @@ Returns:
 	containerId: The Docker container ID of the newly-created container
 	hostMachinePortBindings: For every port in the args' "usedPorts" object that has publishing turned on, an entry
 		will be generated in this map with the binding on the host machine where the port can be found
- */
+*/
 func (manager DockerManager) CreateAndStartContainer(
 	ctx context.Context,
 	args *CreateAndStartContainerArgs,
@@ -476,10 +475,10 @@ func (manager DockerManager) CreateAndStartContainer(
 
 	if isInteractiveMode {
 		/*
-		Two notes:
-		 1) Container resizing must be done after the container is started
-		 2) This resize is very important - if we don't do it, then the output will look garbled for
-			 lines longer than the user's terminal
+			Two notes:
+			 1) Container resizing must be done after the container is started
+			 2) This resize is very important - if we don't do it, then the output will look garbled for
+				 lines longer than the user's terminal
 		*/
 		resizeOpts := types.ResizeOptions{
 			Height: args.interactiveModeTtySize.Height,
@@ -572,7 +571,7 @@ GetContainerIP
 Gets the container's IP on a given network
 NOTE: Yes, it's a testament to how poorly-designed the Docker API is that we need to use network name here even though
  everywhere else in the Docker API uses network ID
- */
+*/
 func (manager DockerManager) GetContainerIP(ctx context.Context, networkName string, containerId string) (string, error) {
 	resp, err := manager.dockerClient.ContainerInspect(ctx, containerId)
 	if err != nil {
@@ -588,10 +587,10 @@ func (manager DockerManager) GetContainerIP(ctx context.Context, networkName str
 
 func (manager DockerManager) AttachToContainer(ctx context.Context, containerId string) (types.HijackedResponse, error) {
 	attachOpts := types.ContainerAttachOptions{
-		Stream:     true,
-		Stdin:      true,
-		Stdout:     true,
-		Stderr:     true,
+		Stream: true,
+		Stdin:  true,
+		Stdout: true,
+		Stderr: true,
 	}
 	hijackedResponse, err := manager.dockerClient.ContainerAttach(ctx, containerId, attachOpts)
 	if err != nil {
@@ -608,7 +607,7 @@ Args:
 	context: The context that the stopping runs in (useful for cancellation)
 	containerId: ID of Docker container to stop
 	timeout: How long to wait for container stoppage before throwing an error
- */
+*/
 func (manager DockerManager) StopContainer(context context.Context, containerId string, timeout time.Duration) error {
 	err := manager.dockerClient.ContainerStop(context, containerId, &timeout)
 	if err != nil {
@@ -624,7 +623,7 @@ Kills the container with the given ID if it's running, giving it no opportunity 
 Args:
 	context: The context that the kill runs in
 	containerId: ID of Docker container to kill
- */
+*/
 func (manager DockerManager) KillContainer(context context.Context, containerId string) error {
 	err := manager.dockerClient.ContainerKill(context, containerId, dockerKillSignal)
 	if err != nil {
@@ -669,7 +668,7 @@ Args:
 Returns:
 	exitCode: The exit code of the container if it stopped
 	err: The error if an error occurred waiting for exit
- */
+*/
 func (manager DockerManager) WaitForExit(context context.Context, containerId string) (exitCode int64, err error) {
 	statusChannel, errChannel := manager.dockerClient.ContainerWait(context, containerId, container.WaitConditionNotRunning)
 
@@ -691,12 +690,12 @@ Gets the logs for the given container as a io.ReadCloser. The caller is responsi
 
 NOTE: These logs have STDOUT and STDERR multiplexed together, and the 'stdcopy' package needs to be used to
 	demultiplex them per https://github.com/moby/moby/issues/32794
- */
+*/
 func (manager DockerManager) GetContainerLogs(context context.Context, containerId string, shouldFollowLogs bool) (io.ReadCloser, error) {
 	containerLogOpts := types.ContainerLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
-		Follow: shouldFollowLogs,
+		Follow:     shouldFollowLogs,
 	}
 	readCloser, err := manager.dockerClient.ContainerLogs(context, containerId, containerLogOpts)
 	if err != nil {
@@ -708,14 +707,14 @@ func (manager DockerManager) GetContainerLogs(context context.Context, container
 /*
 RunExecCommand
 Executes the given command inside the container with the given ID, blocking until the command completes
- */
+*/
 func (manager DockerManager) RunExecCommand(context context.Context, containerId string, command []string, logOutput io.Writer) (int32, error) {
 	dockerClient := manager.dockerClient
 	execConfig := types.ExecConfig{
 		Cmd:          command,
 		AttachStderr: true,
 		AttachStdout: true,
-		Detach: false,
+		Detach:       false,
 	}
 
 	createResp, err := dockerClient.ContainerExecCreate(context, containerId, execConfig)
@@ -785,7 +784,7 @@ func (manager DockerManager) ConnectContainerToNetwork(ctx context.Context, netw
 		staticIpAddr.String())
 
 	ipamConfig := &network.EndpointIPAMConfig{
-		IPv4Address:  staticIpAddr.String(),
+		IPv4Address: staticIpAddr.String(),
 	}
 
 	config := &network.EndpointSettings{
@@ -869,7 +868,7 @@ func (manager DockerManager) CreateContainerExec(context context.Context, contai
 
 	execID := response.ID
 	if execID == "" {
-		return nil,  stacktrace.NewError("the Exec ID was empty")
+		return nil, stacktrace.NewError("the Exec ID was empty")
 	}
 
 	execStartCheck := types.ExecStartCheck{
@@ -894,7 +893,7 @@ func (manager DockerManager) isImageAvailableLocally(ctx context.Context, imageN
 	images, err := manager.dockerClient.ImageList(
 		ctx,
 		types.ImageListOptions{
-			All: true,
+			All:     true,
 			Filters: filters,
 		})
 	if err != nil {
@@ -903,7 +902,7 @@ func (manager DockerManager) isImageAvailableLocally(ctx context.Context, imageN
 	numMatchingImages := len(images)
 	if numMatchingImages > 1 {
 		return false, stacktrace.NewError(
-			"Searching for Docker images matching image name '%v' returned %v images; " +
+			"Searching for Docker images matching image name '%v' returned %v images; "+
 				"this indicates a bug because the image name being searched should only reference 0 or 1 images. Images matched:\n%+v",
 			imageName,
 			numMatchingImages,
@@ -940,23 +939,23 @@ Args:
 	needsToAccessDockerHostMachine: If true, adds a "host.docker.internal:host-gateway" extra host binding, which is necessary
 		for machines that will need to access the machine hosting Docker itself.
 
- */
+*/
 func (manager *DockerManager) getContainerHostConfig(
-		addedCapabilities map[ContainerCapability]bool,
-		networkMode DockerManagerNetworkMode,
-		bindMounts map[string]string,
-		volumeMounts map[string]string,
-		usedPortsWithPublishSpec map[nat.Port]PortPublishSpec,
-		needsToAccessDockerHostMachine bool) (hostConfig *container.HostConfig, err error) {
+	addedCapabilities map[ContainerCapability]bool,
+	networkMode DockerManagerNetworkMode,
+	bindMounts map[string]string,
+	volumeMounts map[string]string,
+	usedPortsWithPublishSpec map[nat.Port]PortPublishSpec,
+	needsToAccessDockerHostMachine bool) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))
 	for hostFilepath, containerFilepath := range bindMounts {
-		bindsList = append(bindsList, hostFilepath + ":" + containerFilepath)
+		bindsList = append(bindsList, hostFilepath+":"+containerFilepath)
 	}
 	for volumeName, containerFilepath := range volumeMounts {
 		// Yes, it's SUPER confusing that "volumes" need to be put into the "binds" section because there's
 		//  a separate thing called a "bind mount".... blame the Docker API
-		bindsList = append(bindsList, volumeName + ":" + containerFilepath)
+		bindsList = append(bindsList, volumeName+":"+containerFilepath)
 	}
 
 	logrus.Debugf("Binds: %v", bindsList)
@@ -1012,24 +1011,24 @@ func (manager *DockerManager) getContainerHostConfig(
 	//  if the Dockerfile *does* have an EXPOSE directive then _only_ the ports with EXPOSE will be published
 	// See also: https://www.ctl.io/developers/blog/post/docker-networking-rules/
 	containerHostConfigPtr := &container.HostConfig{
-		Binds: bindsList,
-		CapAdd: addedCapabilitiesSlice,
-		NetworkMode: container.NetworkMode(networkMode),
+		Binds:        bindsList,
+		CapAdd:       addedCapabilitiesSlice,
+		NetworkMode:  container.NetworkMode(networkMode),
 		PortBindings: portMap,
-		ExtraHosts: extraHosts,
+		ExtraHosts:   extraHosts,
 	}
 	return containerHostConfigPtr, nil
 }
 
 // Creates a Docker container representing a service that will listen on ports in the network
 func (manager *DockerManager) getContainerCfg(
-			dockerImage string,
-			isInteractiveMode bool,
-			usedPorts nat.PortSet,
-			entrypointArgs []string,
-			cmdArgs []string,
-			envVariables map[string]string,
-			labels map[string]string) (config *container.Config, err error) {
+	dockerImage string,
+	isInteractiveMode bool,
+	usedPorts nat.PortSet,
+	entrypointArgs []string,
+	cmdArgs []string,
+	envVariables map[string]string,
+	labels map[string]string) (config *container.Config, err error) {
 
 	envVariablesSlice := make([]string, 0, len(envVariables))
 	for key, val := range envVariables {
@@ -1037,11 +1036,11 @@ func (manager *DockerManager) getContainerCfg(
 	}
 
 	nodeConfigPtr := &container.Config{
-		AttachStderr: isInteractiveMode,	// Analogous to `-a STDERR` option to `docker run`
-		AttachStdin:  isInteractiveMode,	// Analogous to `-a STDIN` option to `docker run`
-		AttachStdout: isInteractiveMode,	// Analogous to `-a STDOUT` option to `docker run`
-		Tty:          isInteractiveMode,	// Analogous to the `-t` option to `docker run`
-		OpenStdin:    true,	// Analogous to the `-i` option to `docker run`
+		AttachStderr: isInteractiveMode, // Analogous to `-a STDERR` option to `docker run`
+		AttachStdin:  isInteractiveMode, // Analogous to `-a STDIN` option to `docker run`
+		AttachStdout: isInteractiveMode, // Analogous to `-a STDOUT` option to `docker run`
+		Tty:          isInteractiveMode, // Analogous to the `-t` option to `docker run`
+		OpenStdin:    true,              // Analogous to the `-i` option to `docker run`
 		Image:        dockerImage,
 		ExposedPorts: usedPorts,
 		Cmd:          cmdArgs,
@@ -1104,7 +1103,7 @@ func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filt
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the docker containers with filter args '%+v'", filterArgs)
 	}
-	containers, err:= newContainersListFromDockerContainersList(dockerContainers)
+	containers, err := newContainersListFromDockerContainersList(dockerContainers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating new containers list from Docker containers list")
 	}
@@ -1146,7 +1145,7 @@ func newContainerFromDockerContainer(dockerContainer types.Container) (*docker_m
 	return newContainer, nil
 }
 
-func getContainerStatusByDockerContainerState(dockerContainerState string) (docker_manager_types.ContainerStatus, error ){
+func getContainerStatusByDockerContainerState(dockerContainerState string) (docker_manager_types.ContainerStatus, error) {
 	containerStatus, err := docker_manager_types.ContainerStatusString(dockerContainerState)
 	if err != nil {
 		return 0, stacktrace.NewError("No container status matches Docker container state '%v'; this is a bug in Kurtosis", dockerContainerState)
@@ -1157,7 +1156,7 @@ func getContainerStatusByDockerContainerState(dockerContainerState string) (dock
 
 func getContainerNameByDockerContainerNames(dockerContainerNames []string) (string, error) {
 	if len(dockerContainerNames) > 0 {
-		containerName := dockerContainerNames[0] //We do this because Docker Container Names is a []strings and the first value is the "actual" container's name. You can check this here: https://github.com/moby/moby/blob/master/integration-cli/docker_api_containers_test.go#L52
+		containerName := dockerContainerNames[0]               //We do this because Docker Container Names is a []strings and the first value is the "actual" container's name. You can check this here: https://github.com/moby/moby/blob/master/integration-cli/docker_api_containers_test.go#L52
 		containerName = strings.TrimPrefix(containerName, "/") //Docker container's names contains "/" prefix
 		return containerName, nil
 	}
@@ -1171,7 +1170,7 @@ func getHostPortBindingsFromContainerPortsList(dockerContainerPorts []types.Port
 	hostPortBindings := make(map[nat.Port]*nat.PortBinding, len(dockerContainerPorts))
 
 	for _, port := range dockerContainerPorts {
-		publicPortString :=fmt.Sprintf("%v", port.PublicPort)
+		publicPortString := fmt.Sprintf("%v", port.PublicPort)
 		containerPortNumberAndProtocolString := fmt.Sprintf("%v/%v", port.PrivatePort, port.Type)
 		natPort := nat.Port(containerPortNumberAndProtocolString)
 
@@ -1189,7 +1188,7 @@ func getHostPortBindingsFromContainerPortsList(dockerContainerPorts []types.Port
 func getLabelsFilterArgs(searchFilterKey string, labels map[string]string) filters.Args {
 	filtersArgs := []filters.KeyValuePair{}
 	for labelsKey, labelsValue := range labels {
-		labelFilterValue := strings.Join([]string{labelsKey,  labelsValue}, "=")
+		labelFilterValue := strings.Join([]string{labelsKey, labelsValue}, "=")
 		filterArg := filters.Arg(searchFilterKey, labelFilterValue)
 		filtersArgs = append(filtersArgs, filterArg)
 	}
@@ -1263,4 +1262,3 @@ func (manager DockerManager) getFailedContainerLogsOrErrorString(ctx context.Con
 	}
 	return containerLogs
 }
-

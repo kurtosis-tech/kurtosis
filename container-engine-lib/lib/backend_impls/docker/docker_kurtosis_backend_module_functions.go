@@ -21,7 +21,7 @@ import (
 
 const (
 	// The module container uses gRPC so MUST listen on TCP (no other protocols are supported)
-	moduleContainerPortProtocol          = port_spec.PortProtocol_TCP
+	moduleContainerPortProtocol = port_spec.PortProtocol_TCP
 
 	maxWaitForModuleContainerAvailabilityRetries         = 10
 	timeBetweenWaitForModuleContainerAvailabilityRetries = 1 * time.Second
@@ -37,7 +37,7 @@ func (backend *DockerKurtosisBackend) CreateModule(
 	grpcPortNum uint16,
 	enclaveDataDirpathOnHostMachine string,
 	envVars map[string]string,
-)(
+) (
 	newModule *module.Module,
 	resultErr error,
 ) {
@@ -95,7 +95,7 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc port spec to a Docker port")
 	}
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
-		privateGrpcDockerPort:      docker_manager.NewAutomaticPublishingSpec(),
+		privateGrpcDockerPort: docker_manager.NewAutomaticPublishingSpec(),
 	}
 
 	bindMounts := map[string]string{
@@ -120,6 +120,8 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		envVars,
 	).WithBindMounts(
 		bindMounts,
+	).WithStaticIP(
+		ipAddr,
 	).WithUsedPorts(
 		usedPorts,
 	).WithLabels(
@@ -137,7 +139,7 @@ func (backend *DockerKurtosisBackend) CreateModule(
 			// the failure was the original context being cancelled
 			if err := backend.dockerManager.KillContainer(context.Background(), containerId); err != nil {
 				logrus.Errorf(
-					"Launching module container '%v' with container ID '%v' didn't complete successfully so we " +
+					"Launching module container '%v' with container ID '%v' didn't complete successfully so we "+
 						"tried to kill the container we started, but doing so exited with an error:\n%v",
 					moduleContainerAttrs.GetName(),
 					containerId,
@@ -188,11 +190,11 @@ func (backend *DockerKurtosisBackend) GetModules(
 	return matchingModuleContainersByModuleID, nil
 }
 
-func (backend *DockerKurtosisBackend)  GetModuleLogs(
+func (backend *DockerKurtosisBackend) GetModuleLogs(
 	ctx context.Context,
 	filters *module.ModuleFilters,
 	shouldFollowLogs bool,
-)(
+) (
 	map[module.ModuleGUID]io.ReadCloser,
 	map[module.ModuleGUID]error,
 	error,
@@ -260,7 +262,6 @@ func (backend *DockerKurtosisBackend) StopModules(
 
 	return successfulModuleGuids, erroredModuleGuids, nil
 }
-
 
 func (backend *DockerKurtosisBackend) DestroyModules(
 	ctx context.Context,

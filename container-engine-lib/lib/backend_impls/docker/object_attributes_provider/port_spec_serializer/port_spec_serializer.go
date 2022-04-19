@@ -99,6 +99,9 @@ func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*docker_label_val
 
 func DeserializePortSpecs(specsStr string) (map[string]*port_spec.PortSpec, error) {
 	result := map[string]*port_spec.PortSpec{}
+	if specsStr == "" {
+		return result, nil
+	}
 	portIdAndSpecStrs := strings.Split(specsStr, portSpecsSeparator)
 	for _, portIdAndSpecStr := range portIdAndSpecStrs {
 		portIdAndSpecFragments := strings.Split(portIdAndSpecStr, portIdAndInfoSeparator)
