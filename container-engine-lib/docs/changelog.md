@@ -1,4 +1,8 @@
 # TBD
+### Fixes
+* Fixed nil pointer dereference error when calling enclave's methods with nil filters argument
+* Fixed instances of propagating nil errors
+* Fixed ApiContainer GetPublicGRPCProxyPort returning PublicGRPCPort
 
 # 0.14.0
 ### Features
@@ -15,9 +19,6 @@
 
 ### Fixes
 * Fixed nil pointer dereference error when sending nil `filter.IDs` value in `enclave` CRUD methods
-* Fixed nil pointer dereference error when calling enclave's methods with nil filters argument
-* Fixed instances of propagating nil errors
-* Fixed ApiContainer GetPublicGRPCProxyPort returning PublicGRPCPort
 
 # 0.13.0
 ### Breaking Changes
