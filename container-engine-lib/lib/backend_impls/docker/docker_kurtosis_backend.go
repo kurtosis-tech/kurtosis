@@ -360,7 +360,7 @@ func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.C
 	}
 	numMatchingNetworks := len(enclaveNetworksFound)
 	if numMatchingNetworks == 0 {
-		return nil, stacktrace.Propagate(err, "No network was found for enclave with ID '%v'", enclaveId)
+		return nil, stacktrace.NewError("No network was found for enclave with ID '%v'", enclaveId)
 	}
 	if numMatchingNetworks > 1 {
 		return nil, stacktrace.NewError(
