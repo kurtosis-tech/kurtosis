@@ -6,7 +6,7 @@
 package enclave_data_directory
 
 import (
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"path"
 )
@@ -53,17 +53,17 @@ func (dir EnclaveDataDirectory) GetStaticFileCache() (*StaticFileCache, error) {
 }
 
 // Get the unique service directory for a service with the given service GUID
-func (dir EnclaveDataDirectory) GetServiceDirectory(serviceGUID service_network_types.ServiceGUID) (*ServiceDirectory, error) {
+func (dir EnclaveDataDirectory) GetServiceDirectory(serviceGuid service.ServiceGUID) (*ServiceDirectory, error) {
 	allServicesRelativeDirpath := allServicesDirname
 	allServicesAbsoluteDirpath := path.Join(dir.absMountDirpath, allServicesDirname)
 	if err := ensureDirpathExists(allServicesAbsoluteDirpath); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring all services dirpath '%v' exists inside the enclave data dir", allServicesAbsoluteDirpath)
 	}
 
-	absoluteServiceDirpath := path.Join(allServicesAbsoluteDirpath, string(serviceGUID))
+	absoluteServiceDirpath := path.Join(allServicesAbsoluteDirpath, string(serviceGuid))
 	if err := ensureDirpathExists(absoluteServiceDirpath); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring service dirpath '%v' exists inside the enclave data dir", absoluteServiceDirpath)
 	}
-	relativeServiceDirpath := path.Join(allServicesRelativeDirpath, string(serviceGUID))
+	relativeServiceDirpath := path.Join(allServicesRelativeDirpath, string(serviceGuid))
 	return newServiceDirectory(absoluteServiceDirpath, relativeServiceDirpath), nil
 }

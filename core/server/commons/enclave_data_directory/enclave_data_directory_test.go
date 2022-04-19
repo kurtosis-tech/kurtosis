@@ -6,7 +6,7 @@
 package enclave_data_directory
 
 import (
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
@@ -21,7 +21,7 @@ func TestNewServiceDirectory(t *testing.T) {
 
 	enclaveDir := NewEnclaveDataDirectory(enclaveDirpath)
 
-	testServiceGUID := service_network_types.ServiceGUID("test-service")
+	testServiceGUID := service.ServiceGUID("test-service")
 	svcDir, err := enclaveDir.GetServiceDirectory(testServiceGUID)
 	assert.Nil(t, err)
 

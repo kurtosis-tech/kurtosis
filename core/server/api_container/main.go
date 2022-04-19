@@ -8,14 +8,13 @@ package main
 import (
 	"fmt"
 	"github.com/docker/docker/client"
-	kurtosis_backend_lib "github.com/kurtosis-tech/container-engine-lib/lib"
+	kurtosis_backend "github.com/kurtosis-tech/container-engine-lib/lib"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
-	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_launcher"
@@ -89,17 +88,17 @@ func runMain() error {
 		serverArgs.TakenIpAddrs,
 	)
 
-	kurtosisBackend, err := kurtosis_backend_lib.GetLocalDockerKurtosisBackend()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
-	}
-
 	dockerManager, err := createDockerManager()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
 
 	enclaveDataDir := enclave_data_directory.NewEnclaveDataDirectory(serverArgs.EnclaveDataDirpathOnAPIContainer)
+
+	kurtosisBackend, err := kurtosis_backend.GetLocalDockerKurtosisBackend()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
+	}
 
 	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(kurtosisBackend, dockerManager, enclaveDataDir, freeIpAddrTracker, serverArgs)
 	if err != nil {
@@ -181,8 +180,6 @@ func createServiceNetworkAndModuleStore(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the files artifact cache")
 	}
-
-	dockerNetworkId := args.NetworkId
 	isPartitioningEnabled := args.IsPartitioningEnabled
 
 	apiContainerSocketInsideNetwork := fmt.Sprintf(
@@ -200,44 +197,37 @@ func createServiceNetworkAndModuleStore(
 		filesArtifactCache,
 	)
 
-	enclaveContainerLauncher := enclave_container_launcher.NewEnclaveContainerLauncher(
-		dockerManager,
-		enclaveObjAttrsProvider,
+	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
+		kurtosisBackend,
+		filesArtifactExpander,
+		freeIpAddrTracker,
 		args.EnclaveDataDirpathOnHostMachine,
 	)
 
-	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
-		dockerManager,
-		enclaveContainerLauncher,
-		freeIpAddrTracker,
-		filesArtifactExpander,
-	)
-
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
-		dockerManager,
+		kurtosisBackend,
 		enclaveObjAttrsProvider,
 		freeIpAddrTracker,
-		dockerNetworkId)
+		enclaveId)
 
 	serviceNetwork := service_network.NewServiceNetworkImpl(
+		enclaveId,
 		isPartitioningEnabled,
 		freeIpAddrTracker,
-		dockerManager,
-		dockerNetworkId,
+		kurtosisBackend,
 		enclaveDataDir,
 		userServiceLauncher,
 		networkingSidecarManager)
 
 	moduleLauncher := module_launcher.NewModuleLauncher(
-		enclaveIdStr,
-		dockerManager,
+		enclaveId,
+		kurtosisBackend,
 		apiContainerSocketInsideNetwork,
-		enclaveContainerLauncher,
+		args.EnclaveDataDirpathOnHostMachine,
 		freeIpAddrTracker,
-		dockerNetworkId,
 	)
 
-	moduleStore := module_store.NewModuleStore(dockerManager, moduleLauncher)
+	moduleStore := module_store.NewModuleStore(kurtosisBackend, moduleLauncher)
 
 	return serviceNetwork, moduleStore, nil
 }

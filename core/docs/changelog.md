@@ -1,4 +1,45 @@
 # TBD
+### Breaking Changes
+* Replaced  parameter `DockerManager` with `KurtosisBackend` in `StandardNetworkingSidecarManager`
+  * Users have to update the calls to `NewStandardNetworkingSidecarManager` passing now an instance of a `KurtosisBackend` implementation
+* Removed `serviceContainerId` parameter and replaced the type of `serviceGUID` parameter from `service_network_types.ServiceGUID` to `service.ServiceGUID` in `NetworkingSidecarManager.Add` method
+  * Users have to update the calls to `Add` method using the new parameters
+* Changed the `sidecar` parameter type from `NetworkingSidecar` to `NetworkingSidecarWrapper` in `NetworkingSidecarManager.Remove` method
+  * Users have to update the calls to `Remove` method using the new parameter type
+* Renamed `NetworkingSidecar` to `NetworkingSidecarWrapper` this new one contains the `NetworkingSidecar` created trough `KurtosisBackend`
+  * Users have to replace the old object with the new object, this new one adds the `GetGUID` method and remove the `GetContainerID`
+* Renamed `MockNetworkingSidecar` to `MockNetworkingSidecarWrapper`
+  * Users have to replace the old object with the new object
+* Replaced the type of `servicePartitions` parameter from `map[service_network_types.ServiceID]service_network_types.PartitionID` to `map[service.ServiceGUID]service_network_types.PartitionID` in `PartitionTopology` object
+* Replaced the type of `partitionServices` parameter from `map[service_network_types.PartitionID]*service_network_types.ServiceIDSet` to `map[service_network_types.PartitionID]map[service.ServiceGUID]bool` in `PartitionTopology` object
+  * Users should use these new types in the `PartitionTopology` constructor
+* Replaced the type of `newPartitionServices` parameter from `map[service_network_types.PartitionID]*service_network_types.ServiceIDSet` to `map[service_network_types.PartitionID]map[service.ServiceGUID]bool` in `PartitionTopology.Repartition` method
+  * Users have to update the calls to `Repartition` method using the new parameter type
+* Replaced the type of `serviceId` parameter from `service_network_types.ServiceID` to `serviceGuid service.ServiceGUID` in `PartitionTopology.AddService` method
+  * Users have to update the calls to `AddService` method using the new parameter type
+* Replaced the type of `serviceId` parameter from `service_network_types.ServiceID` to `service.ServiceGUID` in `PartitionTopology.RemoveService` method
+  * Users have to update the calls to `RemoveService` method using the new parameter type
+* Replaced the return type parameter from `map[service_network_types.ServiceID]map[service_network_types.ServiceID]float32` to `map[service.ServiceGUID]map[service.ServiceGUID]float32` in `PartitionTopology.GetServicePacketLossConfigurationsByServiceGUID` method
+  * Users have to update the calls to `GetServicePacketLossConfigurationsByServiceGUID` method using the new return type
+* Replaced the type of `networkingSidecars` parameter from `map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar` to `map[service.ServiceGUID]networking_sidecar.NetworkingSidecarWrapper` in the `ServiceNetworkImpl` constructor
+  * Users have to update the calls to `ServiceNetworkImpl` constructor using the new parameter type
+* Replaced the type of `newPartitionServices` parameter from `map[service_network_types.PartitionID]*service_network_types.ServiceIDSet` to `map[service_network_types.PartitionID]map[service.ServiceGUID]bool` in the `ServiceNetworkImpl.Repartition` method
+  * Users have to update the calls to `Repartition` method using the new parameter type
+* Replaced the type of `serviceGUID` parameter from `service_network_types.ServiceGUID` to `service.ServiceGUID` in the `FilesArtifactExpander.ExpandArtifactsIntoVolumes` method
+  * Users have to update the calls to `ExpandArtifactsIntoVolumes` method using the new parameter type
+* Replaced the type of `serviceGUID` parameter from `service_network_types.ServiceGUID` to `service.ServiceGUID` in the `UserServiceLauncher.Launch` method
+  * Users have to update the calls to `Launch` method using the new parameter type
+* Replaced the type of `serviceGUID` parameter from `service_network_types.ServiceGUID` to `service.ServiceGUID` in the `EnclaveDataDirectory.GetServiceDirectory` method
+  * Users have to update the calls to `GetServiceDirectory` method using the new parameter type
+* Removed `service_network_types.ServiceID` and `service_network_types.ServiceGUID`
+  * Users should use the `ServiceID` and `ServiceGUID` objects from `container-engine-lib`
+
+### Changes
+* Replaced  parameter `DockerManager` with `KurtosisBackend` in `standardSidecarExecCmdExecutor`
+* Upgraded to container-engine-lib 0.14.1
+* Updated api_container_launcher to use kurtosis_backend for launching API container instances
+* Update user_service_launcher to use kurtosis_backend for launching services
+* Updated module_store and module_launcher to use kurtosis_backend for module operations
 
 # 1.41.2
 ### Changes

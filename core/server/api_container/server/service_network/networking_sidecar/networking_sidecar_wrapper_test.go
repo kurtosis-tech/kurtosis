@@ -8,6 +8,8 @@ package networking_sidecar
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/stretchr/testify/require"
 	"net"
 	"strings"
@@ -21,7 +23,8 @@ const (
 	packetLossPercentageValueForSoftPartition       float32 = 25
 
 	testServiceGUID                  = "test"
-	testNetworkingSidecarContainerID = "abc123"
+	testEnclaveID              = "kt2022-03-17t16.33.01.495"
+	testContainerStatusRunning = container_status.ContainerStatus_Running
 
 	expectedCommandsForExecutingInitTrafficControl = "tc qdisc add dev eth1 root handle 1: htb && tc class add dev" +
 		" eth1 parent 1: classid 1:1 htb rate 100% && tc class add dev eth1 parent 1: classid 1:2 htb rate 100% &&" +
@@ -101,7 +104,7 @@ var (
 func TestInitializeTrafficControl(t *testing.T) {
 	//Initial state
 	ctx := context.Background()
-	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t)
 	require.Empty(t, sidecar.qdiscInUse)
 
 	err := sidecar.InitializeTrafficControl(ctx)
@@ -116,7 +119,7 @@ func TestInitializeTrafficControl(t *testing.T) {
 func TestInitializeTrafficControl_AlreadyInitialized(t *testing.T) {
 	//Initial state
 	ctx := context.Background()
-	sidecar, _ := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	sidecar, _ := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t)
 	sidecar.qdiscInUse = initialKurtosisQdiscId
 
 	err := sidecar.InitializeTrafficControl(ctx)
@@ -126,7 +129,7 @@ func TestInitializeTrafficControl_AlreadyInitialized(t *testing.T) {
 func TestUpdateTrafficControl_CreateBlockedPartitionAndThenUnblockIt(t *testing.T) {
 	//Initial state
 	ctx := context.Background()
-	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t)
 	require.Empty(t, sidecar.qdiscInUse)
 	sidecar.qdiscInUse = initialKurtosisQdiscId
 
@@ -155,7 +158,7 @@ func TestUpdateTrafficControl_CreateBlockedPartitionAndThenUnblockIt(t *testing.
 func TestUpdateTrafficControl_CreateSoftPartitionAndThenUnblockIt(t *testing.T) {
 	//Initial state
 	ctx := context.Background()
-	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t)
 	require.Empty(t, sidecar.qdiscInUse)
 	sidecar.qdiscInUse = initialKurtosisQdiscId
 
@@ -184,7 +187,7 @@ func TestUpdateTrafficControl_CreateSoftPartitionAndThenUnblockIt(t *testing.T) 
 func TestUpdateTrafficControl_CreateBlockedPartitionAndThenSoftPartition(t *testing.T) {
 	//Initial state
 	ctx := context.Background()
-	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t)
 	require.Empty(t, sidecar.qdiscInUse)
 	sidecar.qdiscInUse = initialKurtosisQdiscId
 
@@ -214,7 +217,7 @@ func TestUpdateTrafficControl_CreateBlockedPartitionAndThenSoftPartition(t *test
 func TestUpdateTrafficControl_UndefinedQdiscInUseError(t *testing.T) {
 	//Initial state
 	ctx := context.Background()
-	sidecar, _ := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	sidecar, _ := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t)
 	require.Empty(t, sidecar.qdiscInUse)
 
 	//Execution
@@ -226,7 +229,7 @@ func TestUpdateTrafficControl_UndefinedQdiscInUseError(t *testing.T) {
 func TestUpdateTrafficControl_UnrecognizedPrimaryQdiscIdError(t *testing.T) {
 	//Initial state
 	ctx := context.Background()
-	sidecar, _ := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	sidecar, _ := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t)
 	require.Empty(t, sidecar.qdiscInUse)
 	sidecar.qdiscInUse = "1:"
 
@@ -299,12 +302,14 @@ func TestNewClassId_QdiscBChildren(t *testing.T) {
 func TestConcurrencySafety(t *testing.T) {
 	//Initial state
 	ctx := context.Background()
-	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t)
 	require.Empty(t, sidecar.qdiscInUse)
 
 	numProcesses := 2
 
-	sidecar.InitializeTrafficControl(ctx)
+	err := sidecar.InitializeTrafficControl(ctx)
+
+	require.NoErrorf(t, err, "An error occurred initiliazing traffic control")
 
 	execCmdExecutor.setBlocked(true)
 
@@ -314,7 +319,8 @@ func TestConcurrencySafety(t *testing.T) {
 		allUserServicePacketLossConfigurations := map[string]float32{}
 		allUserServicePacketLossConfigurations[ip.String()] = packetLossPercentageValueForBlockedPartitions
 		go func() {
-			sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurations)
+			err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurations)
+			require.NoErrorf(t, err, "An error occurred updating traffic control")
 		}()
 		time.Sleep(5 * time.Millisecond)  // Make sure they enter the sidecar in proper order
 	}
@@ -367,16 +373,23 @@ func getAllUserServicePacketLossConfigurationsForUnblockedPartition() map[string
 	return allUserServicePacketLossConfigurations
 }
 
-func createNewStandardNetworkingSidecarAndMockedExecCmdExecutor() (*StandardNetworkingSidecar, *mockSidecarExecCmdExecutor) {
+func createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t *testing.T) (*StandardNetworkingSidecarWrapper, *mockSidecarExecCmdExecutor) {
 	execCmdExecutor := newMockSidecarExecCmdExecutor()
 
-	sidecar := NewStandardNetworkingSidecar(
+	networkingSidecar := networking_sidecar.NewNetworkingSidecar(
 		testServiceGUID,
-		testNetworkingSidecarContainerID,
-		testNetworkinSidecarIP,
-		execCmdExecutor)
+		testEnclaveID,
+		testContainerStatusRunning)
 
-	return sidecar, execCmdExecutor
+	sidecarWrapper, err := NewStandardNetworkingSidecarWrapper(
+		networkingSidecar,
+		execCmdExecutor,
+		testNetworkinSidecarIP,
+	)
+
+	require.NoErrorf(t, err, "An error occurred creating standard networking sidecar wrapper with mocked exec command executor")
+
+	return sidecarWrapper, execCmdExecutor
 }
 
 func mergeCommandsInOneLine(commands []string) string {
