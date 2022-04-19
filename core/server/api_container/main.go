@@ -203,6 +203,7 @@ func createServiceNetworkAndModuleStore(
 		kurtosisBackend,
 		filesArtifactExpander,
 		freeIpAddrTracker,
+		args.EnclaveDataDirpathOnHostMachine,
 	)
 
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(

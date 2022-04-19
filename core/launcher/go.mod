@@ -1,7 +1,9 @@
 module github.com/kurtosis-tech/kurtosis-core/launcher
 
 go 1.15
-
+replace (
+	github.com/kurtosis-tech/container-engine-lib => ../../container-engine-lib
+)
 require (
 	github.com/docker/go-connections v0.4.0
 	github.com/google/martian v2.1.0+incompatible
