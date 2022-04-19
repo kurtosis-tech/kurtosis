@@ -1,4 +1,6 @@
 # TBD
+
+# 1.41.2
 ### Changes
 * Upgraded to container-engine-lib 0.14.0, which implement `files artifact expansion volume` and `files artifact expander` objects
 * Replaced `DockerManager`  with `KurtosisBackend` in `FilesArtifactExpander.NewFilesArtifactExpander`
