@@ -56,7 +56,11 @@ func (executor standardSidecarExecCmdExecutor) exec(ctx context.Context, cmd []s
 		return stacktrace.Propagate(err, "An error occurred running exec command in networking sidecar with GUID '%v'", executor.serviceGUID)
 	}
 	if len(erroredNetworkingSidecars) > 0 {
-		sidecarError := erroredNetworkingSidecars[executor.serviceGUID]
+		sidecarError, sidecarErrorFound := erroredNetworkingSidecars[executor.serviceGUID]
+		if !sidecarErrorFound {
+			return stacktrace.NewError("Unable to find error for networking sidecar with GUID '%v'. This is a bug in kurtosis", executor.serviceGUID)
+		}
+
 		return stacktrace.Propagate(sidecarError, "An error occurred running exec command in networking sidecar with GUID '%v'", executor.serviceGUID)
 	}
 

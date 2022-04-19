@@ -381,15 +381,15 @@ func createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t *testing.T) (*
 		testEnclaveID,
 		testContainerStatusRunning)
 
-	sidecar, err := NewStandardNetworkingSidecarWrapper(
+	sidecarWrapper, err := NewStandardNetworkingSidecarWrapper(
 		networkingSidecar,
 		execCmdExecutor,
 		testNetworkinSidecarIP,
-		)
+	)
 
 	require.NoErrorf(t, err, "An error occurred creating standard networking sidecar wrapper with mocked exec command executor")
 
-	return sidecar, execCmdExecutor
+	return sidecarWrapper, execCmdExecutor
 }
 
 func mergeCommandsInOneLine(commands []string) string {

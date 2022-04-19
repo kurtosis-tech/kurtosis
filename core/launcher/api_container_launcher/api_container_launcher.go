@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -134,24 +133,14 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		imageVersionTag,
 	)
 
-	// Create Enclave API container
-	grpcPort, err := port_spec.NewPortSpec(grpcPortNum, port_spec.PortProtocol_TCP)
-	if err != nil {
-		stacktrace.Propagate(err, "An error occurred creating a port spec for GRPC port '%v'", grpcPortNum)
-	}
-	grpcProxyPort, err := port_spec.NewPortSpec(grpcProxyPortNum, port_spec.PortProtocol_TCP)
-	if err != nil {
-		stacktrace.Propagate(err, "An error occurred creating a port spec for GRPC Proxy port '%v'", grpcProxyPortNum)
-	}
-
 	log.Debugf("Launching Kurtosis API container...")
 	apiContainer, err := launcher.kurtosisBackend.CreateAPIContainer(
 		ctx,
 		containerImageAndTag,
 		enclaveId,
 		apiContainerIpAddr,
-		grpcPort.GetNumber(),
-		grpcProxyPort.GetNumber(),
+		grpcPortNum,
+		grpcProxyPortNum,
 		enclaveDataDirpathOnHostMachine,
 		envVars,
 	)

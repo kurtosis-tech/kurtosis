@@ -202,20 +202,19 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 	logrus.Debugf("Received request to start service with the following args: %+v", args)
 	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
 	privateApiPorts := args.PrivatePorts
-	privateServicePorts := map[string]*port_spec.PortSpec{}
+	privateServicePortSpecs := map[string]*port_spec.PortSpec{}
 	for portId, privateApiPort := range privateApiPorts {
-		privateServicePort, err := transformApiPortToPortSpec(privateApiPort)
+		privateServicePortSpec, err := transformApiPortToPortSpec(privateApiPort)
 		if err != nil {
 			return nil, stacktrace.NewError("An error occurred transforming the API port for private port '%v' into a port spec port", portId)
 		}
-		privateServicePorts[portId] = privateServicePort
+		privateServicePortSpecs[portId] = privateServicePortSpec
 	}
-	maybePublicIpAddr, publicServicePorts, err := service.serviceNetwork.StartService(
+	maybePublicIpAddr, publicServicePortSpecs, err := service.serviceNetwork.StartService(
 		ctx,
 		serviceId,
 		args.DockerImage,
-		// TODO: Update this method
-		privateServicePorts,
+		privateServicePortSpecs,
 		args.EntrypointArgs,
 		args.CmdArgs,
 		args.DockerEnvVars,
@@ -225,7 +224,7 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "An error occurred starting the service in the service network")
 	}
-	publicApiPorts, err := transformPortSpecMapToApiPortsMap(publicServicePorts)
+	publicApiPorts, err := transformPortSpecMapToApiPortsMap(publicServicePortSpecs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public port specs to API ports")
 	}
@@ -236,10 +235,10 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 	response := binding_constructors.NewStartServiceResponse(publicIpAddrStr, publicApiPorts)
 
 	serviceStartLoglineSuffix := ""
-	if len(publicServicePorts) > 0 {
+	if len(publicServicePortSpecs) > 0 {
 		serviceStartLoglineSuffix = fmt.Sprintf(
 			" with the following public ports: %+v",
-			publicServicePorts,
+			publicServicePortSpecs,
 		)
 	}
 	logrus.Infof("Started service '%v'%v", serviceId, serviceStartLoglineSuffix)
@@ -255,7 +254,7 @@ func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *kur
 		return nil, stacktrace.Propagate(err, "An error occurred getting the registration info for service '%v'", serviceIdStr)
 	}
 
-	privateServicePorts, maybePublicIpAddr, publicServicePorts, enclaveDataDirMntDirpath, err := service.serviceNetwork.GetServiceRunInfo(serviceId)
+	privateServicePortSpecs, maybePublicIpAddr, publicServicePortSpecs, enclaveDataDirMntDirpath, err := service.serviceNetwork.GetServiceRunInfo(serviceId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the run info for service '%v'", serviceIdStr)
 	}
@@ -263,11 +262,11 @@ func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *kur
 	if maybePublicIpAddr != nil {
 		publicIpAddrStr = maybePublicIpAddr.String()
 	}
-	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privateServicePorts)
+	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privateServicePortSpecs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's private port spec ports to API ports")
 	}
-	publicApiPorts, err := transformPortSpecMapToApiPortsMap(publicServicePorts)
+	publicApiPorts, err := transformPortSpecMapToApiPortsMap(publicServicePortSpecs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public port spec ports to API ports")
 	}

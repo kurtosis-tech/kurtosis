@@ -81,10 +81,11 @@ func (manager *StandardNetworkingSidecarManager) Add(
 func (manager *StandardNetworkingSidecarManager) Remove(
 	ctx context.Context,
 	networkingSidecarWrapper NetworkingSidecarWrapper) error {
+	networkingSidecarServiceGUID := networkingSidecarWrapper.GetServiceGUID()
 
 	filters := &networking_sidecar.NetworkingSidecarFilters{
 		UserServiceGUIDs: map[service.ServiceGUID]bool{
-			networkingSidecarWrapper.GetServiceGUID(): true,
+			networkingSidecarServiceGUID: true,
 		},
 	}
 
@@ -93,8 +94,11 @@ func (manager *StandardNetworkingSidecarManager) Remove(
 		return stacktrace.Propagate(err, "An error occurred stopping networking sidecars using filter '%+v'", filters)
 	}
 	if len(erroredNetworkingSidecars) > 0 {
-		sidecarError := erroredNetworkingSidecars[networkingSidecarWrapper.GetServiceGUID()]
-		return stacktrace.Propagate(sidecarError, "An error occurred stopping networking sidecar with GUID '%v'", networkingSidecarWrapper.GetServiceGUID())
+		sidecarError, sidecarErrorFound := erroredNetworkingSidecars[networkingSidecarServiceGUID]
+		if !sidecarErrorFound {
+			return stacktrace.NewError("Unable to find error for networking sidecar with GUID '%v'. This is a bug in kurtosis", networkingSidecarServiceGUID)
+		}
+		return stacktrace.Propagate(sidecarError, "An error occurred stopping networking sidecar with GUID '%v'", networkingSidecarServiceGUID)
 	}
 
 	manager.freeIpAddrTracker.ReleaseIpAddr(networkingSidecarWrapper.GetIPAddr())
