@@ -304,6 +304,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 	cmdArgs []string,
 	envVars map[string]string,
 	enclaveDataDirpathOnHostMachine string,
+	enclaveDataDirpathOnContainer string,
 	filesArtifactMountDirpaths map[string]string,
 )(
 	newUserService *service.Service,
@@ -321,6 +322,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 		cmdArgs,
 		envVars,
 		enclaveDataDirpathOnHostMachine,
+		enclaveDataDirpathOnContainer,
 		filesArtifactMountDirpaths,
 		)
 	if err != nil {
@@ -585,7 +587,7 @@ func (backend *MetricsReportingKurtosisBackend) DestroyFilesArtifactExpansionVol
 ) {
 	successfulExpansionVolumeNames, erroredExpansionVolumeNames, err := backend.underlying.DestroyFilesArtifactExpansionVolumes(ctx, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying files artifact expansion volumes using filters '%+v'", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying file artifact expansion volumes using filters '%+v'", filters)
 	}
 
 	return successfulExpansionVolumeNames, erroredExpansionVolumeNames, nil

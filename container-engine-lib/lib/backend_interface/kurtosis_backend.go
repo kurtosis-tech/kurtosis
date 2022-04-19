@@ -48,8 +48,8 @@ type KurtosisBackend interface {
 		filters *engine.EngineFilters,
 	) (
 		successfulEngineIds map[string]bool, // "set" of engine IDs that were successfully stopped
-		erroredEngineIds map[string]error,   // "set" of engine IDs that errored when stopping, with the error
-		resultErr error,                     // Represents an error with the function itself, rather than the engines
+		erroredEngineIds map[string]error, // "set" of engine IDs that errored when stopping, with the error
+		resultErr error, // Represents an error with the function itself, rather than the engines
 	)
 
 	// Destroys the engines matching the given filters, regardless of if they're running or not
@@ -58,8 +58,8 @@ type KurtosisBackend interface {
 		filters *engine.EngineFilters,
 	) (
 		successfulEngineIds map[string]bool, // "set" of engine IDs that were successfully destroyed
-		erroredEngineIds map[string]error,   // "set" of engine IDs that errored when destroying, with the error
-		resultErr error,                     // Represents an error with the function itself, rather than the engines
+		erroredEngineIds map[string]error, // "set" of engine IDs that errored when destroying, with the error
+		resultErr error, // Represents an error with the function itself, rather than the engines
 	)
 
 	// Creates an enclave with the given enclave ID
@@ -149,7 +149,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *api_container.APIContainerFilters,
 	) (
-	// Successful & errored API containers are keyed by their enclave ID
+		// Successful & errored API containers are keyed by their enclave ID
 		successfulApiContainerIds map[enclave.EnclaveID]bool,
 		erroredApiContainerIds map[enclave.EnclaveID]error,
 		resultErr error,
@@ -198,8 +198,8 @@ type KurtosisBackend interface {
 		filters *module.ModuleFilters,
 	) (
 		successfulModuleIds map[module.ModuleGUID]bool, // "set" of module IDs that were successfully stopped
-		erroredModuleIds map[module.ModuleGUID]error,   // "set" of module IDs that errored when being stopped, with the error
-		resultErr error,                                // Represents an error with the function itself, rather than the modules
+		erroredModuleIds map[module.ModuleGUID]error, // "set" of module IDs that errored when being stopped, with the error
+		resultErr error, // Represents an error with the function itself, rather than the modules
 	)
 
 	// Destroys the modules with the given filters, regardless of if they're running or not
@@ -208,8 +208,8 @@ type KurtosisBackend interface {
 		filters *module.ModuleFilters,
 	) (
 		successfulModuleIds map[module.ModuleGUID]bool, // "set" of module IDs that were successfully destroyed
-		erroredModuleIds map[module.ModuleGUID]error,   // "set" of module IDs that errored when destroying, with the error
-		resultErr error,                                // Represents an error with the function itself, rather than the modules
+		erroredModuleIds map[module.ModuleGUID]error, // "set" of module IDs that errored when destroying, with the error
+		resultErr error, // Represents an error with the function itself, rather than the modules
 	)
 
 	// Creates a user service inside an enclave with the given configuration
@@ -225,6 +225,7 @@ type KurtosisBackend interface {
 		cmdArgs []string,
 		envVars map[string]string,
 		enclaveDataDirpathOnHostMachine string,
+		enclaveDataDirpathOnServiceContainer string,
 		filesArtifactMountDirpaths map[string]string,
 	) (
 		newUserService *service.Service,
@@ -296,8 +297,8 @@ type KurtosisBackend interface {
 		filters *service.ServiceFilters,
 	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully stopped
-		erroredUserServiceGuids map[service.ServiceGUID]error,   // "set" of user service GUIDs that errored when stopping, with the error
-		resultErr error,                                         // Represents an error with the function itself, rather than the user services
+		erroredUserServiceGuids map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when stopping, with the error
+		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
 	// Destroy user services using the given filters,
@@ -306,8 +307,8 @@ type KurtosisBackend interface {
 		filters *service.ServiceFilters,
 	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully destroyed
-		erroredUserServiceGuids map[service.ServiceGUID]error,   // "set" of user service GUIDs that errored when destroying, with the error
-		resultErr error,                                         // Represents an error with the function itself, rather than the user services
+		erroredUserServiceGuids map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when destroying, with the error
+		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
 	//Create a user service's  networking sidecar inside enclave

@@ -26,11 +26,6 @@ import (
 	"time"
 )
 
-const (
-	// The path on the user service container where the enclave data dir will be bind-mounted
-	serviceEnclaveDataDirMountpoint = "/kurtosis-enclave-data"
-)
-
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
 var commandToRunWhenCreatingUserServiceShell = []string{
 	"sh",
@@ -50,6 +45,7 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 	cmdArgs []string,
 	envVars map[string]string,
 	enclaveDataDirpathOnHostMachine string,
+	enclaveDataDirpathOnServiceMachine string,
 	filesArtifactMountDirpaths map[string]string,
 ) (
 	newUserService *service.Service,
@@ -84,7 +80,7 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 	}
 
 	bindMounts := map[string]string{
-		enclaveDataDirpathOnHostMachine: serviceEnclaveDataDirMountpoint,
+		enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnServiceMachine,
 	}
 
 	createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
@@ -131,7 +127,7 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 			// the failure was the original context being cancelled
 			if err := backend.dockerManager.KillContainer(context.Background(), containerId); err != nil {
 				logrus.Errorf(
-					"Launching user service container '%v' with container ID '%v' didn't complete successfully so we " +
+					"Launching user service container '%v' with container ID '%v' didn't complete successfully so we "+
 						"tried to kill the container we started, but doing so exited with an error:\n%v",
 					containerName.GetString(),
 					containerId,
@@ -167,7 +163,7 @@ func (backend *DockerKurtosisBackend) GetUserServices(
 	for _, userService := range userServices {
 		successfulUserServices[userService.GetGUID()] = userService
 	}
-	return successfulUserServices,  nil
+	return successfulUserServices, nil
 }
 
 func (backend *DockerKurtosisBackend) GetUserServiceLogs(
@@ -205,11 +201,11 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	userServiceCommands map[service.ServiceGUID][]string,
-)(
+) (
 	map[service.ServiceGUID]*exec_result.ExecResult,
 	map[service.ServiceGUID]error,
 	error,
-){
+) {
 	succesfulUserServiceExecResults := map[service.ServiceGUID]*exec_result.ExecResult{}
 	erroredUserServiceGuids := map[service.ServiceGUID]error{}
 
@@ -233,13 +229,13 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	if len(userServiceCommands) != len(userServices) {
 		return nil, nil, stacktrace.NewError("The amount of user services found '%v' are not equal to the amount of user service to run exec commands '%v'", len(userServices), len(userServiceCommands))
 	}
-	for _, userService := range userServices{
-		if _,found := userServiceCommands[userService.GetGUID()]; !found {
+	for _, userService := range userServices {
+		if _, found := userServiceCommands[userService.GetGUID()]; !found {
 			return nil,
 				nil,
 				stacktrace.NewError(
-					"User service with GUID '%v' was found when getting matching " +
-						"user services with filters '%+v' but it was not declared in the user " +
+					"User service with GUID '%v' was found when getting matching "+
+						"user services with filters '%+v' but it was not declared in the user "+
 						"service exec commands list '%+v'",
 					userService.GetGUID(),
 					filters,
@@ -250,7 +246,7 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 
 	// TODO Parallelize to increase perf
 	for containerId, userService := range userServices {
-		userServiceUnwrappedCommand:= userServiceCommands[userService.GetGUID()]
+		userServiceUnwrappedCommand := userServiceCommands[userService.GetGUID()]
 
 		userServiceShWrappedCmd := wrapShCommand(userServiceUnwrappedCommand)
 
@@ -638,7 +634,7 @@ func getUserServiceObjectFromContainerInfo(
 func getUserServicePrivatePortsFromContainerLabels(containerLabels map[string]string) (map[string]*port_spec.PortSpec, error) {
 	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsLabelKey.GetString()]
 	if !found {
-		return  nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsLabelKey.GetString())
+		return nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsLabelKey.GetString())
 	}
 
 	portSpecs, err := port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
@@ -658,9 +654,9 @@ func getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts 
 	for portId, portSpec := range privatePorts {
 		dockerPort, err := transformPortSpecToDockerPort(portSpec)
 		if err != nil {
-			return nil, nil,  stacktrace.Propagate(err, "An error occurred transforming the '%+v' port spec to a Docker port", portSpec)
+			return nil, nil, stacktrace.Propagate(err, "An error occurred transforming the '%+v' port spec to a Docker port", portSpec)
 		}
-		publishSpecs[dockerPort] =  docker_manager.NewAutomaticPublishingSpec()
+		publishSpecs[dockerPort] = docker_manager.NewAutomaticPublishingSpec()
 
 		if preexistingPortId, found := portIdsForDockerPortObjs[dockerPort]; found {
 			return nil, nil, stacktrace.NewError(
@@ -707,7 +703,7 @@ func condensePublicNetworkInfoFromHostMachineBindings(
 
 		privatePort, found := privatePorts[portId]
 		if !found {
-			return nil,  nil, stacktrace.NewError(
+			return nil, nil, stacktrace.NewError(
 				"The container engine returned a host machine port binding for Docker port spec '%v', but this port spec didn't correspond to any port ID; this is very likely a bug in Kurtosis",
 				dockerPortObj,
 			)
