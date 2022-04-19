@@ -1,9 +1,13 @@
 # TBD
+### Changes
+* Upgraded to container-engine-lib 0.14.0, which implement `files artifact expansion volume` and `files artifact expander` objects
+* Replaced `DockerManager`  with `KurtosisBackend` in `FilesArtifactExpander.NewFilesArtifactExpander`
+* Replaced `service_network_types.ServiceGUID` argument type with `service.ServiceGUID` in `FilesArtifactExpander.ExpandArtifactsIntoVolumes`
+* Replaced `artifactId` argument type `string` with `files_artifact.FilesArtifactID` in `FilesArtifactCache.GetFilesArtifact`
 
 # 1.41.1
 ### Fixes
 * Bump `container-engine-lib` to 0.13.0, to fix port spec string
-
 
 # 1.41.0
 ### Fixes

@@ -7,21 +7,24 @@ package files_artifact_expander
 
 import (
 	"context"
-	"path"
-
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"fmt"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis-core/server/commons/current_time_str_provider"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
+	"path"
+	"strings"
 )
 
 const (
-	// Docker image that will be used to launch the container that will expand the files artifact
-	//  into a Docker volume
-	dockerImage = "alpine:3.12"
-
 	// Dirpath on the artifact expander container where the enclave data dir (which contains the artifacts)
 	//  will be bind-mounted
 	enclaveDataDirMountpointOnExpanderContainer = "/enclave-data"
@@ -29,58 +32,47 @@ const (
 	// Dirpath on the artifact expander container where the destination volume containing expanded files will be mounted
 	destVolMntDirpathOnExpander = "/dest"
 
-	expanderContainerSuccessExitCode = 0
+	guidElementSeparator = "-"
 )
 
 /*
-Class responsible for taking an artifact containing compressed files and uncompressing its contents
-	into a Docker volume that will be mounted on a new service
+Class responsible for taking an artifact containing compressed files and creating a new
+	files artifact expansion volume and a new the files artifact expander for it.
+	The new files artifact expander will be in charge of uncompressing the artifact contents
+	into the new volume, and this volume will be mounted on a new service
 */
 type FilesArtifactExpander struct {
 	// Host machine dirpath so the expander can bind-mount it to the artifact expansion containers
 	enclaveDataDirpathOnHostMachine string
 
-	dockerManager *docker_manager.DockerManager
+	kurtosisBackend backend_interface.KurtosisBackend
 
 	enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider
 
-	testNetworkId string
+	enclaveId enclave.EnclaveID
 
 	freeIpAddrTracker *lib.FreeIpAddrTracker
 
 	filesArtifactCache *enclave_data_directory.FilesArtifactCache
 }
 
-func NewFilesArtifactExpander(enclaveDataDirpathOnHostMachine string, dockerManager *docker_manager.DockerManager, enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider, testNetworkId string, freeIpAddrTracker *lib.FreeIpAddrTracker, filesArtifactCache *enclave_data_directory.FilesArtifactCache) *FilesArtifactExpander {
-	return &FilesArtifactExpander{enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine, dockerManager: dockerManager, enclaveObjAttrsProvider: enclaveObjAttrsProvider, testNetworkId: testNetworkId, freeIpAddrTracker: freeIpAddrTracker, filesArtifactCache: filesArtifactCache}
+func NewFilesArtifactExpander(enclaveDataDirpathOnHostMachine string, kurtosisBackend backend_interface.KurtosisBackend, enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider, enclaveId enclave.EnclaveID, freeIpAddrTracker *lib.FreeIpAddrTracker, filesArtifactCache *enclave_data_directory.FilesArtifactCache) *FilesArtifactExpander {
+	return &FilesArtifactExpander{enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine, kurtosisBackend: kurtosisBackend, enclaveObjAttrsProvider: enclaveObjAttrsProvider, enclaveId: enclaveId, freeIpAddrTracker: freeIpAddrTracker, filesArtifactCache: filesArtifactCache}
 }
 
 func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 	ctx context.Context,
-	serviceGUID service_network_types.ServiceGUID, // Service GUID for whom the artifacts are being expanded into volumes
-	artifactIdsToExpand map[string]bool,
-) (map[string]string, error) {
-	artifactIdsToVolAttrs := map[string]schema.ObjectAttributes{}
-	for artifactId := range artifactIdsToExpand {
-		destVolAttrs, err := expander.enclaveObjAttrsProvider.ForFilesArtifactExpansionVolume(string(serviceGUID), artifactId)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred while getting the attributes for files artifact expansion volume for artifact '%v' for service with GUID '%v'", artifactId, serviceGUID)
-		}
-		artifactIdsToVolAttrs[artifactId] = destVolAttrs
-	}
+	serviceGUID service.ServiceGUID, // Service GUID for whom the artifacts are being expanded into volumes
+	artifactIdsToExpand map[files_artifact.FilesArtifactID]bool,
+) (map[files_artifact.FilesArtifactID]files_artifact_expansion_volume.FilesArtifactExpansionVolumeName, error) {
 
 	// TODO PERF: parallelize this to increase speed
-	artifactIdsToVolNames := map[string]string{}
-	for artifactId, destVolAttrs := range artifactIdsToVolAttrs {
-		artifactFile, err := expander.filesArtifactCache.GetFilesArtifact(artifactId)
+	artifactIdsToVolNames := map[files_artifact.FilesArtifactID]files_artifact_expansion_volume.FilesArtifactExpansionVolumeName{}
+	volumesToDestroyIfSomethingFails := map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool{}
+	for filesArtifactId := range artifactIdsToExpand {
+		artifactFile, err := expander.filesArtifactCache.GetFilesArtifact(filesArtifactId)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting the file for files artifact '%v'", artifactId)
-		}
-
-		volumeName := destVolAttrs.GetName()
-		volumeLabels := destVolAttrs.GetLabels()
-		if err := expander.dockerManager.CreateVolume(ctx, volumeName, volumeLabels); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating the destination volume '%v' with labels '%+v'", volumeName, volumeLabels)
+			return nil, stacktrace.Propagate(err, "An error occurred getting the file for files artifact '%v'", filesArtifactId)
 		}
 
 		artifactRelativeFilepath := artifactFile.GetFilepathRelativeToDataDirRoot()
@@ -89,24 +81,39 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 			artifactRelativeFilepath,
 		)
 
-		containerCmd := getExtractionCommand(artifactFilepathOnExpanderContainer)
-
-		volumeMounts := map[string]string{
-			volumeName: destVolMntDirpathOnExpander,
-		}
-		containerAttrs, err := expander.enclaveObjAttrsProvider.ForFilesArtifactExpanderContainer(string(serviceGUID), artifactId)
+		filesArtifactExpansionVolume, err := expander.kurtosisBackend.CreateFilesArtifactExpansionVolume(
+			ctx,
+			expander.enclaveId,
+			serviceGUID,
+			filesArtifactId)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred while getting the attributes for the files artifact expansion container for artifact '%v' for service with GUID '%v'", artifactId, serviceGUID)
+			return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGUID, filesArtifactId, expander.enclaveId)
 		}
-		containerName := containerAttrs.GetName()
-		containerLabels := containerAttrs.GetLabels()
-		if err := expander.runExpanderContainer(ctx, containerName, containerCmd, volumeMounts, containerLabels); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred running the expander container")
+		volumeName := filesArtifactExpansionVolume.GetName()
+		volumesToDestroyIfSomethingFails[volumeName] = true
+		defer func() {
+			if len(volumesToDestroyIfSomethingFails) > 0 {
+				expander.destroyFilesArtifactExpansionVolumes(ctx, volumesToDestroyIfSomethingFails)
+				//We rewrite this var here to prevent more than one execution becase it is in a loop
+				volumesToDestroyIfSomethingFails = map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool{}
+			}
+		}()
+
+		if err := expander.runFilesArtifactExpander(
+			ctx,
+			filesArtifactId,
+			serviceGUID,
+			volumeName,
+			artifactFilepathOnExpanderContainer,
+		); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred running files artifact expander for user service with GUID '%v' and files artifact ID '%v' and files artifact expansion volume '%v' in enclave with ID '%v'",serviceGUID, filesArtifactId, volumeName, expander.enclaveId)
 		}
 
-		artifactIdsToVolNames[artifactId] = volumeName
+		artifactIdsToVolNames[filesArtifactId] = volumeName
 	}
 
+	//We rewrite this var to avoid destroying them if everything is ok
+	volumesToDestroyIfSomethingFails = map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool{}
 	return artifactIdsToVolNames, nil
 }
 
@@ -115,68 +122,81 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 // ====================================================================================================
 // NOTE: This is a separate function so we can defer the releasing of the IP address and guarantee that it always
 //  goes back into the IP pool
-func (expander *FilesArtifactExpander) runExpanderContainer(
+func (expander *FilesArtifactExpander) runFilesArtifactExpander(
 	ctx context.Context,
-	containerName string,
-	containerCmd []string,
-	volumeMounts map[string]string,
-	labels map[string]string,
+	filesArtifactId files_artifact.FilesArtifactID,
+	serviceGuid service.ServiceGUID,
+	filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
+	artifactFilepathOnExpanderContainer string,
 ) error {
-	// NOTE: This silently (temporarily) uses up one of the user's requested IP addresses with a container
+	// NOTE: This silently (temporarily) uses up one of the user's requested IP addresses with a node
 	//  that's not one of their services! This could get confusing if the user requests exactly a wide enough
 	//  subnet to fit all _their_ services, but we hit the limit because we have these admin containers too
 	//  If this becomes problematic, create a special "admin" network, one per suite execution, for doing thinks like this?
-	containerIp, err := expander.freeIpAddrTracker.GetFreeIpAddr()
+	// TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
+	expanderIpAddr, err := expander.freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting a free IP for the file artifact-expanding container")
+		return stacktrace.Propagate(err, "An error occurred getting a free IP for the files artifact expander")
 	}
-	defer expander.freeIpAddrTracker.ReleaseIpAddr(containerIp)
+	defer expander.freeIpAddrTracker.ReleaseIpAddr(expanderIpAddr)
 
-	bindMounts := map[string]string{
-		expander.enclaveDataDirpathOnHostMachine: enclaveDataDirMountpointOnExpanderContainer,
-	}
+	guid := newFilesArtifactExpanderGUID(filesArtifactId, serviceGuid)
 
-	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
-		dockerImage,
-		containerName,
-		expander.testNetworkId,
-	).WithStaticIP(
-		containerIp,
-	).WithCmdArgs(
-		containerCmd,
-	).WithBindMounts(
-		bindMounts,
-	).WithVolumeMounts(
-		volumeMounts,
-	).WithLabels(
-		labels,
-	).Build()
-	containerId, _, err := expander.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the Docker container to expand the artifact into the volume")
+	if _, err := expander.kurtosisBackend.RunFilesArtifactExpander(
+		ctx,
+		guid,
+		expander.enclaveId,
+		filesArtifactExpansionVolumeName,
+		expander.enclaveDataDirpathOnHostMachine,
+		destVolMntDirpathOnExpander,
+		artifactFilepathOnExpanderContainer,
+		expanderIpAddr,
+	); err != nil {
+		return stacktrace.Propagate(err, "An error occurred running files artifact expander with GUID '%v' for files artifact expansion volume '%v' in enclave with ID '%v'", guid, filesArtifactExpansionVolumeName, expander.enclaveId)
 	}
 
-	exitCode, err := expander.dockerManager.WaitForExit(ctx, containerId)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred waiting for the files artifact-expanding Docker container to exit")
-	}
-	if exitCode != expanderContainerSuccessExitCode {
-		return stacktrace.NewError(
-			"The files artifact-expanding Docker container exited with non-%v exit code: %v",
-			expanderContainerSuccessExitCode,
-			exitCode)
-	}
 	return nil
 }
 
-// Image-specific generator of the command that should be run to extract the artifact at the given filepath
-//  to the destination
-func getExtractionCommand(artifactFilepath string) (dockerRunCmd []string) {
-	return []string{
-		"tar",
-		"-xzvf",
-		artifactFilepath,
-		"-C",
-		destVolMntDirpathOnExpander,
+func (expander *FilesArtifactExpander) destroyFilesArtifactExpansionVolumes(ctx context.Context, volumeNamesSet map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool) {
+	filesArtifactExpansionVolumeFilters := &files_artifact_expansion_volume.FilesArtifactExpansionVolumeFilters{
+		Names: volumeNamesSet,
 	}
+	_, erroredVolumeNames, err := expander.kurtosisBackend.DestroyFilesArtifactExpansionVolumes(
+		ctx,
+		filesArtifactExpansionVolumeFilters)
+	if err != nil || len(erroredVolumeNames) > 0 {
+		var volumeNamesStr string
+		var destroyVolumesErr error
+		if err != nil {
+			destroyVolumesErr = err
+			for volumeName := range volumeNamesSet {
+				volumeNameStr := string(volumeName)
+				volumeNamesStr = strings.Join([]string{volumeNameStr}, ", ")
+			}
+		}
+		if len(erroredVolumeNames) > 0 {
+			volumeErrStrs := []string{}
+			for volumeName, destroyVolErr := range erroredVolumeNames{
+				volumeNameStr := string(volumeName)
+				volumeNamesStr = strings.Join([]string{volumeNameStr}, ", ")
+				volumeErrStr := fmt.Sprintf("An error occurred destroying files artifact expansion volume '%v':\n%v", volumeNameStr, destroyVolErr)
+				volumeErrStrs = append(volumeErrStrs, volumeErrStr)
+			}
+			errorMsg := strings.Join(volumeErrStrs, "\n\n")
+			destroyVolumesErr = stacktrace.NewError(errorMsg)
+		}
+		logrus.Error("Creating files artifact expansion volumes failed, but an error occurred destroying volumes we started:")
+		fmt.Fprintln(logrus.StandardLogger().Out, destroyVolumesErr)
+		logrus.Errorf("ACTION REQUIRED: You'll need to manually kill volumes with name '%v'", volumeNamesStr)
+	}
+}
+
+func newFilesArtifactExpanderGUID(filesArtifactId files_artifact.FilesArtifactID, userServiceGuid service.ServiceGUID) files_artifact_expander.FilesArtifactExpanderGUID {
+	userServiceGuidStr := string(userServiceGuid)
+	filesArtifactIdStr := string(filesArtifactId)
+	suffix := current_time_str_provider.GetCurrentTimeStr()
+	guidStr := strings.Join([]string{userServiceGuidStr, filesArtifactIdStr, suffix}, guidElementSeparator)
+	guid := files_artifact_expander.FilesArtifactExpanderGUID(guidStr)
+	return guid
 }
