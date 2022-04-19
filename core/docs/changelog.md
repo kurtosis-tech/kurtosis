@@ -86,7 +86,6 @@
 ### Features
 * Bumped 'object-attributes-schema' 0.8.0
 
-
 # 1.39.5
 ### Fixes
 * Refactored TS types for gRPC Web implementation
