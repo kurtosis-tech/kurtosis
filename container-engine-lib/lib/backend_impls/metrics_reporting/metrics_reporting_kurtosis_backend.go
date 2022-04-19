@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
@@ -584,8 +585,50 @@ func (backend *MetricsReportingKurtosisBackend) DestroyFilesArtifactExpansionVol
 ) {
 	successfulExpansionVolumeNames, erroredExpansionVolumeNames, err := backend.underlying.DestroyFilesArtifactExpansionVolumes(ctx, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying file artifact expansion volumes using filters '%+v'", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying files artifact expansion volumes using filters '%+v'", filters)
 	}
 
 	return successfulExpansionVolumeNames, erroredExpansionVolumeNames, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) RunFilesArtifactExpander(
+	ctx context.Context,
+	guid files_artifact_expander.FilesArtifactExpanderGUID,
+	enclaveId enclave.EnclaveID,
+	filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
+	enclaveDataDirpathOnHostMachine string,
+	destVolMntDirpathOnExpander string,
+	filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
+	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
+)(*files_artifact_expander.FilesArtifactExpander, error){
+	newFilesArtifactExpander, err := backend.underlying.RunFilesArtifactExpander(
+		ctx,
+		guid,
+		enclaveId,
+		filesArtifactExpansionVolumeName,
+		enclaveDataDirpathOnHostMachine,
+		destVolMntDirpathOnExpander,
+		filesArtifactFilepathRelativeToEnclaveDatadirRoot,
+		ipAddr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expander with GUID '%v' with files artifact expansion volume name '%v' in enclave with ID '%v'", guid, filesArtifactExpansionVolumeName, enclaveId)
+	}
+
+	return newFilesArtifactExpander, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) DestroyFilesArtifactExpanders(
+	ctx context.Context,
+	filters *files_artifact_expander.FilesArtifactExpanderFilters,
+)(
+	map[files_artifact_expander.FilesArtifactExpanderGUID]bool,
+	map[files_artifact_expander.FilesArtifactExpanderGUID]error,
+	error,
+){
+	successfulFilesArtifactExpanderGuids, erroredFilesArtifactExpanderGuids, err := backend.underlying.DestroyFilesArtifactExpanders(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying files artifact expanders using filters '%+v'", filters)
+	}
+
+	return successfulFilesArtifactExpanderGuids, erroredFilesArtifactExpanderGuids, nil
 }

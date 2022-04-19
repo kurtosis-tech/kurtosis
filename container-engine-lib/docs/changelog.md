@@ -1,5 +1,8 @@
 # TBD
 ### Features
+* Added `FilesArtifactExpander` general object
+* Added `KurtosisBackend.RunFilesArtifactExpander` and `KurtosisBackend.DestroyFilesArtifactExpanders`
+* Added `DockerEnclaveObjectAttributesProvider.ForFilesArtifactExpanderContainer`
 * Added `FilesArtifactExpansionVolume` general object
 * Added `KurtosisBackend.CreateFilesArtifactExpansionVolume` and `KurtosisBackend.DestroyFilesArtifactExpansionVolumes`
 * Added `DockerEnclaveObjectAttributesProvider.ForFilesArtifactExpansionVolume`
@@ -12,7 +15,6 @@
 * Fixed nil pointer dereference error when sending nil `filter.IDs` value in `enclave` CRUD methods
 
 # 0.13.0
-
 ### Breaking Changes
 * Reverted the port specification delimeters back to new style
   * From: rpc.8545-TCP_ws.8546-TCP_tcpDiscovery.30303-TCP_udpDiscovery.30303-UDP
@@ -27,8 +29,7 @@
   * To:   rpc.8545-TCP_ws.8546-TCP_tcpDiscovery.30303-TCP_udpDiscovery.30303-UDP
   * Users should upgrade the Kurtosis Client.
   * Users should restart enclaves.
-
-
+  
 # 0.11.3
 ### Features
 * Added `KurtosisBackend.GetModuleLogs`

@@ -11,19 +11,20 @@ const (
 	//
 	//   If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
 	//
-	appIdLabelValueStr = "kurtosis"
+	appIdLabelValueStr               = "kurtosis"
 	engineContainerTypeLabelValueStr = "kurtosis-engine"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	apiContainerContainerTypeLabelValueStr      = "api-container"
-	userServiceContainerTypeLabelValueStr       = "user-service"
-	networkingSidecarContainerTypeLabelValueStr = "networking-sidecar"
-	moduleContainerTypeLabelValueStr = "module"
+	apiContainerContainerTypeLabelValueStr          = "api-container"
+	userServiceContainerTypeLabelValueStr           = "user-service"
+	networkingSidecarContainerTypeLabelValueStr     = "networking-sidecar"
+	moduleContainerTypeLabelValueStr                = "module"
+	filesArtifactExpanderContainerTypeLabelValueStr = "files-artifact-expander"
 
-	trueValueStr = "true"
-
+	trueValueStr  = "true"
 	falseValueStr = "false"
 )
+
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // If these value change, it will lead to the Kurtosis engine losing track of old containers
 //  which will cause a resource leak on the user's system!
@@ -33,6 +34,7 @@ const (
 var AppIDLabelValue = docker_label_value.MustCreateNewDockerLabelValue(appIdLabelValueStr)
 var EngineContainerTypeLabelValue = docker_label_value.MustCreateNewDockerLabelValue(engineContainerTypeLabelValueStr)
 var ModuleContainerTypeLabelValue = docker_label_value.MustCreateNewDockerLabelValue(moduleContainerTypeLabelValueStr)
+
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 var APIContainerContainerTypeLabelValue = docker_label_value.MustCreateNewDockerLabelValue(apiContainerContainerTypeLabelValueStr)
@@ -40,3 +42,4 @@ var UserServiceContainerTypeLabelValue = docker_label_value.MustCreateNewDockerL
 var NetworkingSidecarContainerTypeLabelValue = docker_label_value.MustCreateNewDockerLabelValue(networkingSidecarContainerTypeLabelValueStr)
 var NetworkPartitioningEnabledLabelValue = docker_label_value.MustCreateNewDockerLabelValue(trueValueStr)
 var NetworkPartitioningDisabledLabelValue = docker_label_value.MustCreateNewDockerLabelValue(falseValueStr)
+var FilesArtifactExpanderContainerTypeLabelValue = docker_label_value.MustCreateNewDockerLabelValue(filesArtifactExpanderContainerTypeLabelValueStr)
