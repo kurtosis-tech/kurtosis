@@ -1,4 +1,14 @@
 # TBD
+### Breaking Changes
+* Replaced `DockerManager` argument with `KurtosisBackend` in `FilesArtifactExpander.NewFilesArtifactExpander`
+  * Users must replace this argument when all `NewFilesArtifactExpander` calls
+* Replaced `service_network_types.ServiceGUID` argument type with `service.ServiceGUID` in `FilesArtifactExpander.ExpandArtifactsIntoVolumes`
+  * Users mus use this new type for `ServiceGUID` it has to be imported from the `container-engine-lib` library
+* Replaced `artifactId` argument type `string` with `files_artifact.FilesArtifactID` in `FilesArtifactCache.GetFilesArtifact`
+  * Users mus use this new type for `files_artifact.FilesArtifactID` it has to be imported from the `container-engine-lib` library
+
+### Changes
+* Upgraded to container-engine-lib 0.14.0, which implement `files artifact expansion volume` and `files artifact expander` objects
 
 # 1.41.1
 ### Fixes
