@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"io/ioutil"
 	"net"
 	"os"
@@ -370,20 +369,20 @@ func (manager *EnclaveManager) getEnclaveApiContainerInformation(
 	if err != nil {
 		return 0, nil, nil, stacktrace.Propagate(err, "An error occurred getting the API container status for enclave '%v'", enclaveId)
 	}
-	privateGRPCPortNumber := getPortNumberFromPortSpecSafely(apiContainer.GetPrivateGRPCPort())
-	privateGRPCProxyPortNumber := getPortNumberFromPortSpecSafely(apiContainer.GetPrivateGRPCProxyPort())
 	resultApiContainerInfo := &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
 		IpInsideEnclave:            apiContainer.GetPrivateIPAddress().String(),
-		GrpcPortInsideEnclave:      uint32(privateGRPCPortNumber),
-		GrpcProxyPortInsideEnclave: uint32(privateGRPCProxyPortNumber),
+		GrpcPortInsideEnclave:      uint32(apiContainer.GetPrivateGRPCPort().GetNumber()),
+		GrpcProxyPortInsideEnclave: uint32(apiContainer.GetPrivateGRPCProxyPort().GetNumber()),
 	}
-	publicGRPCPortNumber := getPortNumberFromPortSpecSafely(apiContainer.GetPublicGRPCPort())
-	publicGRPCProxyPortNumber := getPortNumberFromPortSpecSafely(apiContainer.GetPublicGRPCProxyPort())
-	logrus.Debugf("HEY BLAISE: Container for enclave '%v' has status '%v'", apiContainer.GetEnclaveID(), resultApiContainerStatus)
-	resultApiContainerHostMachineInfo := &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
-		IpOnHostMachine:            apiContainer.GetPublicIPAddress().String(),
-		GrpcPortOnHostMachine:      uint32(publicGRPCPortNumber),
-		GrpcProxyPortOnHostMachine: uint32(publicGRPCProxyPortNumber),
+	publicGRPCPort := apiContainer.GetPublicGRPCPort()
+	publicGRPCProxyPort := apiContainer.GetPublicGRPCProxyPort()
+	resultApiContainerHostMachineInfo := &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{}
+	if publicGRPCProxyPort != nil && publicGRPCPort != nil {
+		resultApiContainerHostMachineInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
+			IpOnHostMachine:            apiContainer.GetPublicIPAddress().String(),
+			GrpcPortOnHostMachine:      uint32(publicGRPCPort.GetNumber()),
+			GrpcProxyPortOnHostMachine: uint32(publicGRPCProxyPort.GetNumber()),
+		}
 	}
 
 	return resultApiContainerStatus, resultApiContainerInfo, resultApiContainerHostMachineInfo, nil
@@ -590,17 +589,6 @@ func (manager *EnclaveManager) deleteDanglingDirectories(enclaveIdsToNotDestroy 
 	}
 
 	return nil
-}
-// Returns a filter that includes every possible EnclaveStatus, thus all enclaves
-func getAllEnclavesFilter() *enclave.EnclaveFilters {
-	allEnclaveStatusesMap := map[enclave.EnclaveStatus]bool {}
-	for _, status := range enclave.EnclaveStatusValues() {
-		allEnclaveStatusesMap[status] = true
-	}
-
-	return &enclave.EnclaveFilters {
-		Statuses: allEnclaveStatusesMap,
-	}
 }
 
 func getEnclaveByEnclaveIdFilter(enclaveId enclave.EnclaveID) *enclave.EnclaveFilters {
