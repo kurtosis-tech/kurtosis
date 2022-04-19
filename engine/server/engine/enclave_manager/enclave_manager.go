@@ -374,10 +374,10 @@ func (manager *EnclaveManager) getEnclaveApiContainerInformation(
 		GrpcPortInsideEnclave:      uint32(apiContainer.GetPrivateGRPCPort().GetNumber()),
 		GrpcProxyPortInsideEnclave: uint32(apiContainer.GetPrivateGRPCProxyPort().GetNumber()),
 	}
-	publicGRPCPort := apiContainer.GetPublicGRPCPort()
-	publicGRPCProxyPort := apiContainer.GetPublicGRPCProxyPort()
-	resultApiContainerHostMachineInfo := &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{}
-	if publicGRPCProxyPort != nil && publicGRPCPort != nil {
+	var resultApiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo
+	if resultApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING {
+		publicGRPCPort := apiContainer.GetPublicGRPCPort()
+		publicGRPCProxyPort := apiContainer.GetPublicGRPCProxyPort()
 		resultApiContainerHostMachineInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
 			IpOnHostMachine:            apiContainer.GetPublicIPAddress().String(),
 			GrpcPortOnHostMachine:      uint32(publicGRPCPort.GetNumber()),
@@ -510,7 +510,7 @@ func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll
 func (manager *EnclaveManager) getEnclavesWithoutMutex(
 	ctx context.Context,
 ) (map[enclave.EnclaveID]*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
-	enclaves, err := manager.kurtosisBackend.GetEnclaves(ctx, getEmptyEnclavesFilter())
+	enclaves, err := manager.kurtosisBackend.GetEnclaves(ctx, getAllEnclavesFilter())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error thrown retrieving enclaves")
 	}
@@ -599,7 +599,7 @@ func getEnclaveByEnclaveIdFilter(enclaveId enclave.EnclaveID) *enclave.EnclaveFi
 	}
 }
 
-func getEmptyEnclavesFilter() *enclave.EnclaveFilters {
+func getAllEnclavesFilter() *enclave.EnclaveFilters {
 	return &enclave.EnclaveFilters{
 		IDs: map[enclave.EnclaveID]bool{},
 	}
