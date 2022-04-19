@@ -38,7 +38,7 @@ const (
 /*
 Class responsible for taking an artifact containing compressed files and creating a new
 	files artifact expansion volume and a new the files artifact expander for it.
-	The new files artifact expander will be on charge of uncompressing the artifact contents
+	The new files artifact expander will be in charge of uncompressing the artifact contents
 	into the new volume, and this volume will be mounted on a new service
 */
 type FilesArtifactExpander struct {
@@ -68,6 +68,7 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 
 	// TODO PERF: parallelize this to increase speed
 	artifactIdsToVolNames := map[files_artifact.FilesArtifactID]files_artifact_expansion_volume.FilesArtifactExpansionVolumeName{}
+	volumesToDestroyIfSomethingFails := map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool{}
 	for filesArtifactId := range artifactIdsToExpand {
 		artifactFile, err := expander.filesArtifactCache.GetFilesArtifact(filesArtifactId)
 		if err != nil {
@@ -89,6 +90,14 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 			return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGUID, filesArtifactId, expander.enclaveId)
 		}
 		volumeName := filesArtifactExpansionVolume.GetName()
+		volumesToDestroyIfSomethingFails[volumeName] = true
+		defer func() {
+			if len(volumesToDestroyIfSomethingFails) > 0 {
+				expander.destroyFilesArtifactExpansionVolumes(ctx, volumesToDestroyIfSomethingFails)
+				//We rewrite this var here to prevent more than one execution becase it is in a loop
+				volumesToDestroyIfSomethingFails = map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool{}
+			}
+		}()
 
 		if err := expander.runFilesArtifactExpander(
 			ctx,
@@ -103,6 +112,8 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 		artifactIdsToVolNames[filesArtifactId] = volumeName
 	}
 
+	//We rewrite this var to avoid destroying them if everything is ok
+	volumesToDestroyIfSomethingFails = map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool{}
 	return artifactIdsToVolNames, nil
 }
 
@@ -118,42 +129,20 @@ func (expander *FilesArtifactExpander) runFilesArtifactExpander(
 	filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
 	artifactFilepathOnExpanderContainer string,
 ) error {
-	shouldDestroyVolume := true
-	defer func() {
-		if shouldDestroyVolume {
-			filesArtifactExpansionVolumeFilters := &files_artifact_expansion_volume.FilesArtifactExpansionVolumeFilters{
-				Names: map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool{
-					filesArtifactExpansionVolumeName:true,
-				},
-			}
-			_, erroredVolumeNames, destroyVolumeErr := expander.kurtosisBackend.DestroyFilesArtifactExpansionVolumes(
-				ctx,
-				filesArtifactExpansionVolumeFilters)
-			if destroyVolumeErr != nil || len(erroredVolumeNames) > 0 {
-				if destroyVolumeErr == nil {
-					destroyVolumeErr = erroredVolumeNames[filesArtifactExpansionVolumeName]
-				}
-				logrus.Error("Creating files artifact expansion volume failed, but an error occurred killing volume we started:")
-				fmt.Fprintln(logrus.StandardLogger().Out, destroyVolumeErr)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually kill volume with name '%v'", filesArtifactExpansionVolumeName)
-			}
-		}
-	}()
-
 	// NOTE: This silently (temporarily) uses up one of the user's requested IP addresses with a node
 	//  that's not one of their services! This could get confusing if the user requests exactly a wide enough
 	//  subnet to fit all _their_ services, but we hit the limit because we have these admin containers too
 	//  If this becomes problematic, create a special "admin" network, one per suite execution, for doing thinks like this?
 	// TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
-	expanderIrAddr, err := expander.freeIpAddrTracker.GetFreeIpAddr()
+	expanderIpAddr, err := expander.freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting a free IP for the files artifact expander")
 	}
-	defer expander.freeIpAddrTracker.ReleaseIpAddr(expanderIrAddr)
+	defer expander.freeIpAddrTracker.ReleaseIpAddr(expanderIpAddr)
 
 	guid := newFilesArtifactExpanderGUID(filesArtifactId, serviceGuid)
 
-	expander.kurtosisBackend.RunFilesArtifactExpander(
+	if _, err := expander.kurtosisBackend.RunFilesArtifactExpander(
 		ctx,
 		guid,
 		expander.enclaveId,
@@ -161,11 +150,46 @@ func (expander *FilesArtifactExpander) runFilesArtifactExpander(
 		expander.enclaveDataDirpathOnHostMachine,
 		destVolMntDirpathOnExpander,
 		artifactFilepathOnExpanderContainer,
-		expanderIrAddr,
-	)
+		expanderIpAddr,
+	); err != nil {
+		return stacktrace.Propagate(err, "An error occurred running files artifact expander with GUID '%v' for files artifact expansion volume '%v' in enclave with ID '%v'", guid, filesArtifactExpansionVolumeName, expander.enclaveId)
+	}
 
-	shouldDestroyVolume = false
 	return nil
+}
+
+func (expander *FilesArtifactExpander) destroyFilesArtifactExpansionVolumes(ctx context.Context, volumeNamesSet map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool) {
+	filesArtifactExpansionVolumeFilters := &files_artifact_expansion_volume.FilesArtifactExpansionVolumeFilters{
+		Names: volumeNamesSet,
+	}
+	_, erroredVolumeNames, err := expander.kurtosisBackend.DestroyFilesArtifactExpansionVolumes(
+		ctx,
+		filesArtifactExpansionVolumeFilters)
+	if err != nil || len(erroredVolumeNames) > 0 {
+		var volumeNamesStr string
+		var destroyVolumesErr error
+		if err != nil {
+			destroyVolumesErr = err
+			for volumeName := range volumeNamesSet {
+				volumeNameStr := string(volumeName)
+				volumeNamesStr = strings.Join([]string{volumeNameStr}, ", ")
+			}
+		}
+		if len(erroredVolumeNames) > 0 {
+			volumeErrStrs := []string{}
+			for volumeName, destroyVolErr := range erroredVolumeNames{
+				volumeNameStr := string(volumeName)
+				volumeNamesStr = strings.Join([]string{volumeNameStr}, ", ")
+				volumeErrStr := fmt.Sprintf("An error occurred destroying files artifact expansion volume '%v':\n%v", volumeNameStr, destroyVolErr)
+				volumeErrStrs = append(volumeErrStrs, volumeErrStr)
+			}
+			errorMsg := strings.Join(volumeErrStrs, "\n\n")
+			destroyVolumesErr = stacktrace.NewError(errorMsg)
+		}
+		logrus.Error("Creating files artifact expansion volumes failed, but an error occurred destroying volumes we started:")
+		fmt.Fprintln(logrus.StandardLogger().Out, destroyVolumesErr)
+		logrus.Errorf("ACTION REQUIRED: You'll need to manually kill volumes with name '%v'", volumeNamesStr)
+	}
 }
 
 func newFilesArtifactExpanderGUID(filesArtifactId files_artifact.FilesArtifactID, userServiceGuid service.ServiceGUID) files_artifact_expander.FilesArtifactExpanderGUID {
