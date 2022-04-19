@@ -511,7 +511,7 @@ func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll
 func (manager *EnclaveManager) getEnclavesWithoutMutex(
 	ctx context.Context,
 ) (map[enclave.EnclaveID]*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
-	enclaves, err := manager.kurtosisBackend.GetEnclaves(ctx, nil)
+	enclaves, err := manager.kurtosisBackend.GetEnclaves(ctx, getEmptyEnclavesFilter())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error thrown retrieving enclaves")
 	}
@@ -608,6 +608,12 @@ func getEnclaveByEnclaveIdFilter(enclaveId enclave.EnclaveID) *enclave.EnclaveFi
 		IDs: map[enclave.EnclaveID]bool {
 			enclaveId: true,
 		},
+	}
+}
+
+func getEmptyEnclavesFilter() *enclave.EnclaveFilters {
+	return &enclave.EnclaveFilters{
+		IDs: map[enclave.EnclaveID]bool{},
 	}
 }
 
