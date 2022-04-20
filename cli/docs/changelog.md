@@ -1,7 +1,6 @@
 # TBD
-# Breaking Changes
-* Upgraded `kurtosis engine lib` to 1.14.2
-  * Users should upgrade to `kurtosis-engine-api-lib` 1.14.2
+### Features
+* `enclave inspect` now prints port IDs, in sorted order
 
 ### Changes
 * Upgraded `container engine lib` to 0.14.3
@@ -16,6 +15,11 @@
 
 ### Fixes
 * Fix a bug where Kurtosis would fail to process containers using the old port spec
+* Fixed a bug where `enclave inspect` crashes if a module is stopped
+
+### Breaking Changes
+* Upgraded `kurtosis engine lib` to 1.14.2
+  * Users should upgrade to `kurtosis-engine-api-lib` 1.14.2
 
 # 0.12.2
 ### Fixes
