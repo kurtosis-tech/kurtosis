@@ -1,6 +1,7 @@
 # TBD
 ### Features
 * The `old_enclave_continuity` test now tests having stopped old enclaves around, as well as `service add`
+* Added an extra layer to the Docker exec command test to verify we're not accidentally sh-wrapping the command
 
 # 0.12.2
 ### Fixes
