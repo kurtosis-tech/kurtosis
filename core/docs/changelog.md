@@ -2,6 +2,10 @@
 ### Changes
 * Changes upgraded to container-engine-lib 0.15.0
 
+# 1.42.4
+### Changes
+* Upgraded to container-engine-lib 0.14.5, which removes enclave's volumes when destroying enclaves
+
 # 1.42.3
 ### Fixes
 * Fix a bug where user Docker exec commands were getting wrapped in `sh -c`
