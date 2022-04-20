@@ -10,10 +10,10 @@ replace (
 require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/containerd/containerd v1.5.7 // indirect
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220420190633-c252cf25d5f8
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220420203650-79d3f4a8977a
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e // indirect
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220420191824-f5c4d7663f3d // indirect
-	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220420191806-3f4e85698f7a
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220420205219-c9731c525093 // indirect
+	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220420205203-2d9d12c543b7
 	github.com/kurtosis-tech/kurtosis-engine-server/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
