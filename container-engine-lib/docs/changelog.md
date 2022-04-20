@@ -1,5 +1,9 @@
 # TBD
 
+# 0.14.2
+### Fixes
+* Added a check to prevent generate user service's public IP address and public ports if it does not contain host port bindings
+
 # 0.14.1
 ### Fixes
 * Fixed nil pointer dereference error when calling enclave's methods with nil filters argument
