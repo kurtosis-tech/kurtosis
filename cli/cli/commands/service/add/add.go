@@ -3,7 +3,7 @@ package add
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
@@ -46,7 +46,7 @@ const (
 	portNumberUintParsingBase = 10
 	portNumberUintParsingBits = 16
 
-	dockerManagerCtxKey = "docker-manager"
+	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey  = "engine-client"
 
 	// Magic key that, when found in CMD, ENTRYPOINT, or envvars, will be replaced with the service's IP address
@@ -66,7 +66,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			"the string '%v' in the CMD args will be replaced with the container's IP address inside the enclave)",
 		serviceIpAddrReplaceKeyword,
 	),
-	DockerManagerContextKey: dockerManagerCtxKey,
+	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:  engineClientCtxKey,
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIDArg(
@@ -120,7 +120,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 				"String containing declarations of ports that the container will listen on, in the form "+
 					"\"PORTID1%v1234%vPROTOCOL1%vPORTID2%v5678\" where the PORTID is a user-friendly string for "+
 					"identifying the port, the port number is required, and the PROTOCOL must be either '%v' or '%v' "+
-					 "and defaults to '%v' if omitted",
+					"and defaults to '%v' if omitted",
 				portIdSpecDelimiter,
 				portNumberProtocolDelimiter,
 				portDeclarationsDelimiter,
@@ -137,7 +137,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 
 func run(
 	ctx context.Context,
-	dockerManager *docker_manager.DockerManager,
+	kurtosisBackend backend_interface.KurtosisBackend,
 	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
