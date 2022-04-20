@@ -1,5 +1,9 @@
 # TBD
 
+# 1.14.3
+### Fixes
+* Fixed a bug where Docker exec commands to user services were getting erroneously wrapped in `sh -c`
+
 # 1.14.2
 ### Fixes
 * Use container-engine-lib 0.14.3 and core 1.42.2, which supports the old port specs temporarily
