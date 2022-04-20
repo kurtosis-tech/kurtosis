@@ -1,5 +1,9 @@
 # TBD
 
+# 1.42.2
+### Fixes
+* Use container-engine-lib 0.14.3, which supports the old port specs temporarily
+
 # 1.42.1
 ### Fixes
 * Upgraded to container-engine-lib 0.14.2, which fixes a bug where stopped user services cause an error because they don't have public host port bindings
