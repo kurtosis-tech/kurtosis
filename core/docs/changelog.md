@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fix a bug where user Docker exec commands were getting wrapped in `sh -c`
 
 # 1.42.2
 ### Fixes

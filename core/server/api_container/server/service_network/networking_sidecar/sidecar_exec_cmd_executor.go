@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
+	"strings"
 )
 
 // ==========================================================================================
@@ -39,11 +40,12 @@ func newStandardSidecarExecCmdExecutor(kurtosisBackend backend_interface.Kurtosi
 	return &standardSidecarExecCmdExecutor{kurtosisBackend: kurtosisBackend, serviceGUID: serviceGUID, enclaveId: enclaveId}
 }
 
-func (executor standardSidecarExecCmdExecutor) exec(ctx context.Context, cmd []string) error {
+func (executor standardSidecarExecCmdExecutor) exec(ctx context.Context, notShWrappedCmd []string) error {
 
+	shWrappedCmd := shWrapCommand(notShWrappedCmd)
 	var (
 		networkingSidecarCommands = map[service.ServiceGUID][]string{
-			executor.serviceGUID: cmd,
+			executor.serviceGUID: shWrappedCmd,
 		}
 	)
 
@@ -65,4 +67,14 @@ func (executor standardSidecarExecCmdExecutor) exec(ctx context.Context, cmd []s
 	}
 
 	return nil
+}
+
+// Embeds the given command in a call to sh shell, so that a command with things
+//  like '&&' will get executed as expected
+func shWrapCommand(unwrappedCmd []string) []string {
+	return []string{
+		"sh",
+		"-c",
+		strings.Join(unwrappedCmd, " "),
+	}
 }
