@@ -1,5 +1,9 @@
 # TBD
 
+# 0.14.3
+### Fixes
+* Temporarily support the old port spec (`portId.number-protocol_portId.number-protocol`) so that we're still backwards-compatible
+
 # 0.14.2
 ### Fixes
 * Added a check to prevent generate user service's public IP address and public ports if it does not contain host port bindings
