@@ -209,21 +209,19 @@ func (backend *DockerKurtosisBackend) RunNetworkingSidecarExecCommands(
 
 	// TODO Parallelize to increase perf
 	for containerId, networkingSidecar := range networkingSidecars {
-		networkingSidecarUnwrappedCommand := networkingSidecarsCommands[networkingSidecar.GetServiceGUID()]
-
-		networkingSidecarShWrappedCmd := wrapShCommand(networkingSidecarUnwrappedCommand)
+		networkingSidecarCommand := networkingSidecarsCommands[networkingSidecar.GetServiceGUID()]
 
 		execOutputBuf := &bytes.Buffer{}
 		exitCode, err := backend.dockerManager.RunExecCommand(
 			ctx,
 			containerId,
-			networkingSidecarShWrappedCmd,
+			networkingSidecarCommand,
 			execOutputBuf)
 		if err != nil {
 			wrappedErr := stacktrace.Propagate(
 				err,
 				"An error occurred executing command '%+v' on networking sidecar with user service GUID '%v'",
-				networkingSidecarShWrappedCmd,
+				networkingSidecarCommand,
 				containerId,
 			)
 			erroredUserServiceGuids[networkingSidecar.GetServiceGUID()] = wrappedErr

@@ -1,5 +1,9 @@
 # TBD
 
+# 0.14.4
+### Fixes
+* Fix the exec commands on user services & networking sidecars being wrapped in `sh`, leading to unintended consequences
+
 # 0.14.3
 ### Fixes
 * Temporarily support the old port spec (`portId.number-protocol_portId.number-protocol`) so that we're still backwards-compatible
