@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/blang/semver"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/stretchr/testify/require"
@@ -19,7 +21,7 @@ const (
 	//    server's changelog whenever a breaking Core API version change happens
 	//  * Therefore, this constant must be manually updated to the X.Y version of the Core version you just
 	//    bumped to, which will remind you to update the "Breaking Change" section of the changelog.
-	expectedCoreMajorMinorVersion = "1.41"
+	expectedCoreMajorMinorVersion = "1.42"
 	// !!!!!! BEFORE YOU UPDATE THIS CONSTANT TO FIX THE TEST, ADD A "BREAKING CHANGE" SECTION IN THE CHANGELOG !!!!!!
 )
 
@@ -55,5 +57,19 @@ func TestIsContainerRunningDeterminerCompleteness(t *testing.T) {
 	for _, containerStatus := range types.ContainerStatusValues() {
 		_, found := isContainerRunningDeterminer[containerStatus]
 		require.True(t, found, "No is-container-running determination provided for container status '%v'", containerStatus.String())
+	}
+}
+
+func TestGetEnclaveContainersStatusFromEnclaveStatusCompleteness(t *testing.T) {
+	for _, enclaveStatus := range enclave.EnclaveStatusValues() {
+		_, err := getEnclaveContainersStatusFromEnclaveStatus(enclaveStatus)
+		require.NoError(t, err, "No EnclaveContainersStatus provided for enclave status '%v'", enclaveStatus.String())
+	}
+}
+
+func TestGetApiContainerStatusFromContainerStatusCompleteness(t *testing.T) {
+	for _, containerStatus := range container_status.ContainerStatusValues() {
+		_, err := getApiContainerStatusFromContainerStatus(containerStatus)
+		require.NoError(t, err, "No ApiContainerStatus provided for container status '%v'", containerStatus.String())
 	}
 }

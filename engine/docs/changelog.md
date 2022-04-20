@@ -1,5 +1,16 @@
 # TBD
 
+# 1.14.0
+### Breaking Changes
+* Updated enclave_manager to use kurtosis_backend for enclave operations
+* Updated enclave_manager to use kurtosis_backend for api container operations in an enclave
+* Removed cleanMetadataAcquisitionTestsuites from enclave_manager
+* Removed docker specific code from enclave_manager
+* Removed docker_network_allocator code
+
+### Fixes
+* Updated enclave_manager to handle reporting on stopped containers where the GRPC port_specs are nil
+
 # 1.13.3
 ### Features
 * Updated the destroy-enclave process adding `destroy-files-artifact-expansion-volumes` flow on it
@@ -10,6 +21,7 @@
 * Upgraded to Kurt Core 1.41.2 which uses `files artifact expansion volumes` and `files artifact expander` objects
 
 # 1.13.2
+
 ### Fixes
 * Bumped dependencies for Core 1.41.1 and Container Engine Lib 0.13.0
 
