@@ -1,5 +1,9 @@
 # TBD
 
+# 0.14.5
+### Features
+* Removed enclave's volumes when executing `KurtosisBackend.DestroyEnclaves` in Docker implementation
+
 # 0.14.4
 ### Fixes
 * Fix the exec commands on user services & networking sidecars being wrapped in `sh`, leading to unintended consequences
