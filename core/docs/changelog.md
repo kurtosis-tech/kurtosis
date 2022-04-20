@@ -1,4 +1,6 @@
 # TBD
+
+# 1.42.0
 ### Breaking Changes
 * Replaced  parameter `DockerManager` with `KurtosisBackend` in `StandardNetworkingSidecarManager`
   * Users have to update the calls to `NewStandardNetworkingSidecarManager` passing now an instance of a `KurtosisBackend` implementation
