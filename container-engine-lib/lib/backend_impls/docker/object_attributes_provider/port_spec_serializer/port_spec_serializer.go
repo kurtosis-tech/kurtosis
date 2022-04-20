@@ -126,7 +126,7 @@ func DeserializePortSpecs(specsStr string) (map[string]*port_spec.PortSpec, erro
 
 	return nil, stacktrace.Propagate(
 		err,
-		"Couldn't deserialize old port spec string '%v' using old port spec delimiters",
+		"Failed to deserialize port spec string '%v' after trying both current and old port spec delimiters",
 		specsStr,
 	)
 }
