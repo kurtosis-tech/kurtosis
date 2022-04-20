@@ -41,6 +41,13 @@ func TestValidSerDe(t *testing.T) {
 	}
 }
 
+// TODO REMOVE THIS AFTER JUNE 20, 2022 WHEN NOBODY IS USING OLD PORT SPECS
+func TestDeserializeOldPortSpecs(t *testing.T) {
+	eth2ContainerPortSpecStr := "rpc.8545-TCP_ws.8546-TCP_tcpDiscovery.30303-TCP_udpDiscovery.30303-UDP"
+	_, err := DeserializePortSpecs(eth2ContainerPortSpecStr)
+	require.NoError(t, err, "An unexpected error occurred deserializing the long-but-valid old port spec")
+}
+
 func TestValidLongDeserialization(t *testing.T) {
 	eth2ContainerPortSpecStr := "rpc:8545/TCP,ws:8546/TCP,tcpDiscovery:30303/TCP,udpDiscovery:30303/UDP"
 	_, err := DeserializePortSpecs(eth2ContainerPortSpecStr)
