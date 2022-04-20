@@ -571,25 +571,6 @@ func getUserServiceObjectFromContainerInfo(
 		return nil, stacktrace.Propagate(err, "An error occurred getting port specs from container '%v' with labels '%+v'", containerId, labels)
 	}
 
-	// TODO Replace with the (simpler) way that's currently done when creating API container/engine container
-	_, portIdsForDockerPortObjs, err := getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting used ports from private ports spec '%+v'", privatePorts)
-	}
-
-	var maybePublicIpAddr net.IP = nil
-	publicPorts := map[string]*port_spec.PortSpec{}
-	if len(privatePorts) > 0 && len(allHostMachinePortBindings) > 0 {
-		maybePublicIpAddr, publicPorts, err = condensePublicNetworkInfoFromHostMachineBindings(
-			allHostMachinePortBindings,
-			privatePorts,
-			portIdsForDockerPortObjs,
-		)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred extracting public IP addr & ports from the host machine ports returned by the container engine")
-		}
-	}
-
 	isContainerRunning, found := isContainerRunningDeterminer[containerStatus]
 	if !found {
 		// This should never happen because we enforce completeness in a unit test
@@ -600,6 +581,25 @@ func getUserServiceObjectFromContainerInfo(
 		status = container_status.ContainerStatus_Running
 	} else {
 		status = container_status.ContainerStatus_Stopped
+	}
+
+	// TODO Replace with the (simpler) way that's currently done when creating API container/engine container
+	_, portIdsForDockerPortObjs, err := getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting used ports from private ports spec '%+v'", privatePorts)
+	}
+
+	var maybePublicIpAddr net.IP = nil
+	publicPorts := map[string]*port_spec.PortSpec{}
+	if status == container_status.ContainerStatus_Running && len(privatePorts) > 0 {
+		maybePublicIpAddr, publicPorts, err = condensePublicNetworkInfoFromHostMachineBindings(
+			allHostMachinePortBindings,
+			privatePorts,
+			portIdsForDockerPortObjs,
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred extracting public IP addr & ports from the host machine ports returned by the container engine")
+		}
 	}
 
 	var privateIpAddr net.IP
