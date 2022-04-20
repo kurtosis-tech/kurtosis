@@ -1,9 +1,12 @@
 # TBD
+### Breaking Changes
 * Updated enclave_manager to use kurtosis_backend for enclave operations
 * Updated enclave_manager to use kurtosis_backend for api container operations in an enclave
 * Removed cleanMetadataAcquisitionTestsuites from enclave_manager
 * Removed docker specific code from enclave_manager
 * Removed docker_network_allocator code
+
+### Fixes
 * Updated enclave_manager to handle reporting on stopped containers where the GRPC port_specs are nil
 
 # 1.13.3

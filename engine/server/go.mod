@@ -12,6 +12,7 @@ require (
 	github.com/containerd/containerd v1.5.7 // indirect
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220419211638-d3249230e17c
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e // indirect
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220420010340-d72e00de945c // indirect
 	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220420010252-938dc5bbf68c
 	github.com/kurtosis-tech/kurtosis-engine-server/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0
