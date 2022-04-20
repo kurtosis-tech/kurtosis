@@ -70,6 +70,7 @@ func TestExecCommand(t *testing.T) {
 	shouldFailExitCode, _, err := runExecCmd(testServiceContext, execCommandThatShouldFail)
 	require.NoError(t, err, "An error occurred running exec command '%+v'", execCommandThatShouldFail)
 	require.NotEqual(t, successExitCode, shouldFailExitCode, "Exec command '%+v' should fail, but got successful exit code %v", execCommandThatShouldFail, successExitCode)
+	logrus.Infof("Exec command returning an error exited with error")
 
 	logrus.Infof("Running exec command '%+v' that should return log output...", execCommandThatShouldHaveLogOutput)
 	shouldHaveLogOutputExitCode, logOutput, err := runExecCmd(testServiceContext, execCommandThatShouldHaveLogOutput)
