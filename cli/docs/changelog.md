@@ -15,6 +15,14 @@
   * `service logs` command
   * `service shell` command
 
+# 0.12.2
+
+### Fixes
+* Bumping dependencies on:
+    * Engine Server 1.13.2
+    * Container Engine Lib 0.13.0
+    * Core 1.41.1
+
 # 0.12.1
 # Breaking Changes
 * Bumped Dependencies for Kurtosis Core which is now version 1.41.0.
