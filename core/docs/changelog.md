@@ -1,4 +1,6 @@
 # TBD
+### Removals
+* Removed last references of `DockerManager` in the codebase in favor of `KurtosisBackend`
 
 # 1.42.5
 ### Changes
