@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/gammazero/workerpool"
+	docker_types "github.com/docker/docker/api/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
@@ -30,7 +31,7 @@ const (
 	shouldFetchStoppedContainersWhenDumpingEnclave = true
 	numContainersToDumpAtOnce                      = 20
 
-	// Permisssions for the files & directories we create as a result of the dump
+	// Permissions for the files & directories we create as a result of the dump
 	createdDirPerms  = 0755
 	createdFilePerms = 0644
 
@@ -317,7 +318,7 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	resultErroredEnclaveIds map[enclave.EnclaveID]error,
 	resultErr error,
 ) {
-	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
+
 	erroredEnclaveIds := map[enclave.EnclaveID]error{}
 	// Stop containers
 	resultSuccessfulEnclaveIds, resultErroredEnclaveIds, err := backend.StopEnclaves(ctx, filters)
@@ -330,6 +331,7 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	}
 
 	// Remove containers
+	successfulDeletedContainerEnclaveIds := map[enclave.EnclaveID]bool{}
 	for enclaveId := range resultSuccessfulEnclaveIds {
 		containers, err := backend.getEnclaveContainers(ctx, enclaveId)
 		if err != nil {
@@ -337,8 +339,8 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 			continue
 		}
 
+		removeContainerErrorStrs := []string{}
 		for _, container := range containers {
-			removeContainerErrorStrs := []string{}
 			if err := backend.dockerManager.RemoveContainer(ctx, container.GetId()); err != nil {
 				wrappedErrStr := fmt.Sprintf(
 					"An error occurred removing container with ID '%v':\n%v",
@@ -348,33 +350,71 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 				removeContainerErrorStrs = append(removeContainerErrorStrs, wrappedErrStr)
 				continue
 			}
-			if len(removeContainerErrorStrs) > 0 {
-				errorStr := strings.Join(removeContainerErrorStrs, "\n\n")
-				erroredEnclaveIds[enclaveId] = stacktrace.NewError(
-					"An error occurred removing one or more containers in enclave '%v':\n%v",
-					enclaveId,
-					errorStr,
-				)
-			}
+		}
+		if len(removeContainerErrorStrs) > 0 {
+			errorStr := strings.Join(removeContainerErrorStrs, "\n\n")
+			erroredEnclaveIds[enclaveId] = stacktrace.NewError(
+				"An error occurred removing one or more containers in enclave '%v':\n%v",
+				enclaveId,
+				errorStr,
+			)
 		}
 
-		successfulEnclaveIds[enclaveId] = true
+		successfulDeletedContainerEnclaveIds[enclaveId] = true
+	}
+
+	//Remove volumes
+	successfulDeletedVolumesEnclaveIds := map[enclave.EnclaveID]bool{}
+	for enclaveId := range successfulDeletedContainerEnclaveIds {
+		volumes, err := backend.getEnclaveVolumes(ctx, enclaveId)
+		if err != nil {
+			erroredEnclaveIds[enclaveId] = stacktrace.Propagate(err, "An error occurred getting enclave volumes for enclave with ID '%v'", enclaveId)
+			continue
+		}
+
+		removeVolumeErrorStrs := []string{}
+		for _, volume := range volumes {
+			volumeName := volume.Name
+			if err := backend.dockerManager.RemoveVolume(ctx, volumeName); err != nil {
+				wrappedErrStr := fmt.Sprintf(
+					"An error occurred removing volume '%v':\n%v",
+					volumeName,
+					err.Error(),
+				)
+				removeVolumeErrorStrs = append(removeVolumeErrorStrs, wrappedErrStr)
+				continue
+			}
+		}
+		if len(removeVolumeErrorStrs) > 0 {
+			errorStr := strings.Join(removeVolumeErrorStrs, "\n\n")
+			erroredEnclaveIds[enclaveId] = stacktrace.NewError(
+				"An error occurred removing one or more volumes in enclave '%v':\n%v",
+				enclaveId,
+				errorStr,
+			)
+		}
+
+		successfulDeletedVolumesEnclaveIds[enclaveId] = true
 	}
 
 	// Remove the networks
-	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, successfulEnclaveIds)
+	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, successfulDeletedVolumesEnclaveIds)
 	if err != nil {
-		return successfulEnclaveIds, erroredEnclaveIds, stacktrace.Propagate(err, "An error occurred getting enclave networks by enclave IDs '%+v'", successfulEnclaveIds)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave networks by enclave IDs '%+v'", successfulDeletedVolumesEnclaveIds)
 	}
 
+	successfulDeletedNetworksEnclaveIds := map[enclave.EnclaveID]bool{}
 	for _, network := range networks {
+		networkName := network.GetName()
+		enclaveId := enclave.EnclaveID(networkName)
 		if err := backend.dockerManager.RemoveNetwork(ctx, network.GetId()); err != nil {
-			networkName := network.GetName()
-			enclaveId := enclave.EnclaveID(networkName)
-			delete(successfulEnclaveIds, enclaveId)
 			erroredEnclaveIds[enclaveId] = stacktrace.Propagate(err, "An error occurred removing the network for enclave '%v'", enclaveId)
+			continue
 		}
+		successfulDeletedNetworksEnclaveIds[enclaveId] = true
 	}
+
+	successfulEnclaveIds := successfulDeletedNetworksEnclaveIds
 
 	return successfulEnclaveIds, erroredEnclaveIds, nil
 }
@@ -445,7 +485,11 @@ func (backend *DockerKurtosisBackend) getEnclaveContainers(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 ) ([]*types.Container, error) {
+
+	containers := []*types.Container{}
+
 	searchLabels := map[string]string{
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
 		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
 	}
 	containers, err := backend.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchStoppedContainersWhenGettingEnclaveStatus)
@@ -453,6 +497,26 @@ func (backend *DockerKurtosisBackend) getEnclaveContainers(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the containers for enclave '%v' by labels '%+v'", enclaveId, searchLabels)
 	}
 	return containers, nil
+}
+
+func (backend *DockerKurtosisBackend) getEnclaveVolumes(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+)([]*docker_types.Volume, error) {
+
+	volumes := []*docker_types.Volume{}
+
+	searchLabels := map[string]string{
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
+	}
+
+	volumes, err := backend.dockerManager.GetVolumesByLabels(ctx, searchLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the volumes for enclave '%v' by labels '%+v'", enclaveId, searchLabels)
+	}
+
+	return volumes, nil
 }
 
 func isEnclaveStatusInEnclaveFilters(enclaveStatus enclave.EnclaveStatus, filters *enclave.EnclaveFilters) bool {

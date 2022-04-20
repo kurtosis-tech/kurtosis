@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Removed enclave's volumes when executing `KurtosisBackend.DestroyEnclaves` in Docker implementation
 
 # 0.14.4
 ### Fixes
