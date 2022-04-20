@@ -579,7 +579,7 @@ func getUserServiceObjectFromContainerInfo(
 
 	var maybePublicIpAddr net.IP = nil
 	publicPorts := map[string]*port_spec.PortSpec{}
-	if len(privatePorts) > 0 {
+	if len(privatePorts) > 0 && len(allHostMachinePortBindings) > 0 {
 		maybePublicIpAddr, publicPorts, err = condensePublicNetworkInfoFromHostMachineBindings(
 			allHostMachinePortBindings,
 			privatePorts,
