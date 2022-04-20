@@ -8,7 +8,8 @@ package networking_sidecar
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -51,17 +52,17 @@ const (
 	undefinedQdiscId                          = ""
 	initialKurtosisQdiscId                    = qdiscAID
 
-	rootFilterID                   filterID = filterID(rootQdiscID) + "0"
-	rootClassAClassID              classID  = classID(rootQdiscID) + "1"
-	rootClassBClassID              classID  = classID(rootQdiscID) + "2"
-	fullRateValue                           = "100%"
-	maxFilterPriority                       = "1"
-	percentageSign                          = "%"
-	firstClassIdDecimalMinorNumber          = 1
+	rootFilterID                   = filterID(rootQdiscID) + "0"
+	rootClassAClassID              = classID(rootQdiscID) + "1"
+	rootClassBClassID              = classID(rootQdiscID) + "2"
+	fullRateValue                  = "100%"
+	maxFilterPriority              = "1"
+	percentageSign                 = "%"
+	firstClassIdDecimalMinorNumber = 1
 
 	concatenateCommandsOperator = "&&"
 
-	firstCommandIndex                                     = 0
+	firstCommandIndex = 0
 
 	unblockedPartitionConnectionPacketLossPercentageValue float32 = 0
 )
@@ -70,9 +71,9 @@ const (
 //                                        Interface
 // ==========================================================================================
 // Extracted as interface for testing
-type NetworkingSidecar interface {
+type NetworkingSidecarWrapper interface {
+	GetServiceGUID() service.ServiceGUID
 	GetIPAddr() net.IP
-	GetContainerID() string
 	InitializeTrafficControl(ctx context.Context) error
 	UpdateTrafficControl(ctx context.Context, allPacketLossPercentageForIpAddresses map[string]float32) error
 }
@@ -85,47 +86,53 @@ type classID string
 type filterID string
 
 // Provides a handle into manipulating the network state of a service container indirectly, via the sidecar
-type StandardNetworkingSidecar struct {
+type StandardNetworkingSidecarWrapper struct {
 	mutex *sync.Mutex
 
-	// GUID of the service this sidecar container is attached to
-	serviceGUID service_network_types.ServiceGUID
+	networkingSidecar *networking_sidecar.NetworkingSidecar
 
+	sidecarIpAddr net.IP
 	// Tracks which of the main qdiscs (qdiscA and qdiscB) is the primary qdisc, so we know
 	//  which qdisc is in the background that we can flush and rebuild
 	//  when we're changing them
 	qdiscInUse qdiscID
 
-	containerId string
-
-	ipAddr net.IP
-
 	execCmdExecutor sidecarExecCmdExecutor
 }
 
-func NewStandardNetworkingSidecar(serviceGUID service_network_types.ServiceGUID, containerId string, ipAddr net.IP, execCmdExecutor sidecarExecCmdExecutor) *StandardNetworkingSidecar {
-	return &StandardNetworkingSidecar{
-		mutex:           &sync.Mutex{},
-		serviceGUID:     serviceGUID,
-		containerId:     containerId,
-		ipAddr:          ipAddr,
-		execCmdExecutor: execCmdExecutor,
-		qdiscInUse:      undefinedQdiscId,
+func NewStandardNetworkingSidecarWrapper(
+	networkingSidecar *networking_sidecar.NetworkingSidecar,
+	execCmdExecutor sidecarExecCmdExecutor,
+	sidecarIpAddr net.IP,
+)(
+	*StandardNetworkingSidecarWrapper,
+	error,
+){
+	if networkingSidecar == nil {
+		return nil, stacktrace.NewError("The networking sidecar parameter must not be nil")
 	}
+
+	return &StandardNetworkingSidecarWrapper{
+		mutex:             &sync.Mutex{},
+		networkingSidecar: networkingSidecar,
+		qdiscInUse: undefinedQdiscId,
+		execCmdExecutor: execCmdExecutor,
+		sidecarIpAddr: sidecarIpAddr,
+	}, nil
 }
 
-func (sidecar *StandardNetworkingSidecar) GetIPAddr() net.IP {
-	return sidecar.ipAddr
+func (sidecarWrapper *StandardNetworkingSidecarWrapper) GetServiceGUID() service.ServiceGUID {
+	return sidecarWrapper.networkingSidecar.GetServiceGUID()
 }
 
-func (sidecar *StandardNetworkingSidecar) GetContainerID() string {
-	return sidecar.containerId
+func (sidecarWrapper *StandardNetworkingSidecarWrapper) GetIPAddr() net.IP {
+	return sidecarWrapper.sidecarIpAddr
 }
 
-func (sidecar *StandardNetworkingSidecar) InitializeTrafficControl(ctx context.Context) error {
-	sidecar.mutex.Lock()
-	defer sidecar.mutex.Unlock()
-	if sidecar.qdiscInUse != undefinedQdiscId {
+func (sidecarWrapper *StandardNetworkingSidecarWrapper) InitializeTrafficControl(ctx context.Context) error {
+	sidecarWrapper.mutex.Lock()
+	defer sidecarWrapper.mutex.Unlock()
+	if sidecarWrapper.qdiscInUse != undefinedQdiscId {
 		return nil
 	}
 
@@ -133,20 +140,20 @@ func (sidecar *StandardNetworkingSidecar) InitializeTrafficControl(ctx context.C
 
 	cmdDescription := "tc init"
 
-	if err := sidecar.executeCmdInSidecar(ctx, initCmd, cmdDescription); err != nil {
-		return stacktrace.Propagate(err, "An error occurred executing cmd '%v' inside the sidecar container", initCmd)
+	if err := sidecarWrapper.executeCmdInSidecar(ctx, initCmd, cmdDescription); err != nil {
+		return stacktrace.Propagate(err, "An error occurred executing cmd '%v' in networking sidecar with GUID '%v'", initCmd, sidecarWrapper.GetServiceGUID())
 	}
 
-	sidecar.qdiscInUse = initialKurtosisQdiscId
+	sidecarWrapper.qdiscInUse = initialKurtosisQdiscId
 
 	return nil
 }
 
-func (sidecar *StandardNetworkingSidecar) UpdateTrafficControl(ctx context.Context, allPacketLossPercentageForIpAddresses map[string]float32) error {
-	sidecar.mutex.Lock()
-	defer sidecar.mutex.Unlock()
+func (sidecarWrapper *StandardNetworkingSidecarWrapper) UpdateTrafficControl(ctx context.Context, allPacketLossPercentageForIpAddresses map[string]float32) error {
+	sidecarWrapper.mutex.Lock()
+	defer sidecarWrapper.mutex.Unlock()
 
-	if sidecar.qdiscInUse == undefinedQdiscId {
+	if sidecarWrapper.qdiscInUse == undefinedQdiscId {
 		return stacktrace.NewError("Cannot update tc qdiscs because they haven't yet been initialized")
 	}
 
@@ -158,7 +165,7 @@ func (sidecar *StandardNetworkingSidecar) UpdateTrafficControl(ctx context.Conte
 	}
 
 	if isAnyPartitionBlocked && len(allPacketLossPercentageForIpAddresses) > 0 {
-		primaryQdisc := sidecar.qdiscInUse
+		primaryQdisc := sidecarWrapper.qdiscInUse
 		var backgroundQdisc qdiscID
 		var backgroundQdiscClass classID
 		if primaryQdisc == qdiscAID {
@@ -181,11 +188,11 @@ func (sidecar *StandardNetworkingSidecar) UpdateTrafficControl(ctx context.Conte
 
 		cmdDescription := "tc update"
 
-		if err := sidecar.executeCmdInSidecar(ctx, updateTcCmd, cmdDescription); err != nil {
-			return stacktrace.Propagate(err, "An error occurred executing cmd '%v' inside the sidecar container", updateTcCmd)
+		if err := sidecarWrapper.executeCmdInSidecar(ctx, updateTcCmd, cmdDescription); err != nil {
+			return stacktrace.Propagate(err, "An error occurred executing cmd '%v' inside the sidecar container", cmdDescription)
 		}
 
-		sidecar.qdiscInUse = backgroundQdisc
+		sidecarWrapper.qdiscInUse = backgroundQdisc
 	} else if !isAnyPartitionBlocked {
 		//if isAnyPartitionBlocked == false means the tc qdisc config has to be re-initialized (e.g.: when an unblocked partition is configured).
 		//This is going to be done deleting and recreating qdiscA and qdiscB
@@ -193,11 +200,11 @@ func (sidecar *StandardNetworkingSidecar) UpdateTrafficControl(ctx context.Conte
 
 		cmdDescription := "tc re init qdisc A and qdisc B cmd"
 
-		if err := sidecar.executeCmdInSidecar(ctx, reInitQdiscAAndQdiscBCmd, cmdDescription); err != nil {
-			return stacktrace.Propagate(err, "An error occurred executing cmd '%v' inside the sidecar container", reInitQdiscAAndQdiscBCmd)
+		if err := sidecarWrapper.executeCmdInSidecar(ctx, reInitQdiscAAndQdiscBCmd, cmdDescription); err != nil {
+			return stacktrace.Propagate(err, "An error occurred executing cmd '%v' inside the sidecar container", cmdDescription)
 		}
 
-		sidecar.qdiscInUse = initialKurtosisQdiscId
+		sidecarWrapper.qdiscInUse = initialKurtosisQdiscId
 	}
 
 	return nil
@@ -479,21 +486,22 @@ func mergeCommandListInOneLineCommand(commandList [][]string) []string {
 	return resultCmd
 }
 
-func (sidecar *StandardNetworkingSidecar) executeCmdInSidecar(ctx context.Context, cmd []string, cmdDescription string) error {
+func (sidecarWrapper *StandardNetworkingSidecarWrapper) executeCmdInSidecar(ctx context.Context, cmd []string, cmdDescription string) error {
+
 	logrus.Infof(
-		"Running %v command '%v' in sidecar container '%v' attached to service with GUID '%v'...",
+		"Running %v command '%+v' in networking sidecar with service GUID '%v'...",
 		cmdDescription,
 		cmd,
-		sidecar.containerId,
-		sidecar.serviceGUID)
-	if err := sidecar.execCmdExecutor.exec(ctx, cmd); err != nil {
+		sidecarWrapper.networkingSidecar.GetServiceGUID())
+
+	if err := sidecarWrapper.execCmdExecutor.exec(ctx, cmd); err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred running %v command '%v'",
-			cmdDescription,
-			cmd)
+			"An error occurred running %v command",
+			cmdDescription)
 	}
-	logrus.Infof("Successfully executed %v command against service with GUID '%v'", cmdDescription, sidecar.serviceGUID)
+
+	logrus.Infof("Successfully executed %v command against networking sidecar with GUID '%v'", cmdDescription, sidecarWrapper.GetServiceGUID())
 
 	return nil
 }

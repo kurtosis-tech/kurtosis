@@ -37,6 +37,3 @@ func (m *mockSidecarExecCmdExecutor) exec(ctx context.Context, unwrappedCmd []st
 	m.commands = append(m.commands, unwrappedCmd)
 	return nil
 }
-
-
-

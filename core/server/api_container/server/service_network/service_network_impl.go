@@ -6,11 +6,13 @@
 package service_network
 
 import (
-	"bytes"
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
-	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
@@ -26,14 +28,13 @@ import (
 )
 
 const (
-	defaultPartitionId                                    service_network_types.PartitionID = "default"
-	startingDefaultConnectionPacketLossValue                                                = 0
-	unblockedPartitionConnectionPacketLossPercentageValue float32                           = 0
+	defaultPartitionId                       service_network_types.PartitionID = "default"
+	startingDefaultConnectionPacketLossValue                                   = 0
 )
 
 // Information that gets created with a service's registration
 type serviceRegistrationInfo struct {
-	serviceGUID      service_network_types.ServiceGUID
+	serviceGUID      service.ServiceGUID
 	privateIpAddr    net.IP
 	serviceDirectory *enclave_data_directory.ServiceDirectory
 }
@@ -41,16 +42,16 @@ type serviceRegistrationInfo struct {
 // Information that gets created when a container is started for a service
 type serviceRunInfo struct {
 	// Service's container ID
-	containerId string
+	serviceGUID service.ServiceGUID
 
 	// Where the enclave data dir is bind-mounted on the service
 	enclaveDataDirMntDirpath string
 
 	// NOTE: When we want to make restart-able enclaves, we'll need to read these values from the container every time
 	//  we need them (rather than storing them in-memory on the API container, which means the API container can't be restarted)
-	privatePorts      map[string]*enclave_container_launcher.EnclaveContainerPort
-	maybePublicIpAddr net.IP // Can be nil if the service doesn't declare any private ports
-	publicPorts       map[string]*enclave_container_launcher.EnclaveContainerPort // Will be empty if the service doesn't declare any private ports
+	privatePorts      map[string]*port_spec.PortSpec
+	maybePublicIpAddr net.IP                         // Can be nil if the service doesn't declare any private ports
+	publicPorts       map[string]*port_spec.PortSpec // Will be empty if the service doesn't declare any private ports
 }
 
 /*
@@ -58,6 +59,8 @@ This is the in-memory representation of the service network that the API contain
 	any changes to the test network, this struct must be used.
 */
 type ServiceNetworkImpl struct {
+	enclaveId enclave.EnclaveID
+
 	// When the network is destroyed, all requests will fail
 	// This ensures that when the initializer tells the API container to destroy everything, the still-running
 	//  testsuite can't create more work
@@ -70,9 +73,7 @@ type ServiceNetworkImpl struct {
 
 	freeIpAddrTracker *lib.FreeIpAddrTracker
 
-	dockerManager *docker_manager.DockerManager
-
-	dockerNetworkId string
+	kurtosisBackend backend_interface.KurtosisBackend
 
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory
 
@@ -82,29 +83,29 @@ type ServiceNetworkImpl struct {
 
 	// These are separate maps, rather than being bundled into a single containerInfo-valued map, because
 	//  they're registered at different times (rather than in one atomic operation)
-	serviceRegistrationInfo map[service_network_types.ServiceID]serviceRegistrationInfo
-	serviceRunInfo          map[service_network_types.ServiceID]serviceRunInfo
+	serviceRegistrationInfo map[service.ServiceID]serviceRegistrationInfo
+	serviceRunInfo          map[service.ServiceID]serviceRunInfo
 
-	networkingSidecars map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar
+	networkingSidecars map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper
 
 	networkingSidecarManager networking_sidecar.NetworkingSidecarManager
 }
 
 func NewServiceNetworkImpl(
+	enclaveId enclave.EnclaveID,
 	isPartitioningEnabled bool,
 	freeIpAddrTracker *lib.FreeIpAddrTracker,
-	dockerManager *docker_manager.DockerManager,
-	dockerNetworkId string,
+	kurtosisBackend backend_interface.KurtosisBackend,
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 	userServiceLauncher *user_service_launcher.UserServiceLauncher,
 	networkingSidecarManager networking_sidecar.NetworkingSidecarManager) *ServiceNetworkImpl {
 	defaultPartitionConnection := partition_topology.PartitionConnection{PacketLossPercentage: startingDefaultConnectionPacketLossValue}
 	return &ServiceNetworkImpl{
+		enclaveId:             enclaveId,
 		isDestroyed:           false,
 		isPartitioningEnabled: isPartitioningEnabled,
 		freeIpAddrTracker:     freeIpAddrTracker,
-		dockerManager:         dockerManager,
-		dockerNetworkId:       dockerNetworkId,
+		kurtosisBackend:       kurtosisBackend,
 		enclaveDataDir:        enclaveDataDir,
 		userServiceLauncher:   userServiceLauncher,
 		mutex:                 &sync.Mutex{},
@@ -112,9 +113,9 @@ func NewServiceNetworkImpl(
 			defaultPartitionId,
 			defaultPartitionConnection,
 		),
-		serviceRegistrationInfo:  map[service_network_types.ServiceID]serviceRegistrationInfo{},
-		serviceRunInfo:           map[service_network_types.ServiceID]serviceRunInfo{},
-		networkingSidecars:       map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar{},
+		serviceRegistrationInfo:  map[service.ServiceID]serviceRegistrationInfo{},
+		serviceRunInfo:           map[service.ServiceID]serviceRunInfo{},
+		networkingSidecars:       map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper{},
 		networkingSidecarManager: networkingSidecarManager,
 	}
 }
@@ -123,10 +124,10 @@ func NewServiceNetworkImpl(
 Completely repartitions the network, throwing away the old topology
 */
 func (network *ServiceNetworkImpl) Repartition(
-		ctx context.Context,
-		newPartitionServices map[service_network_types.PartitionID]*service_network_types.ServiceIDSet,
-		newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection,
-		newDefaultConnection partition_topology.PartitionConnection) error {
+	ctx context.Context,
+	newPartitionServices map[service_network_types.PartitionID]map[service.ServiceID]bool,
+	newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection,
+	newDefaultConnection partition_topology.PartitionConnection) error {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
@@ -148,7 +149,7 @@ func (network *ServiceNetworkImpl) Repartition(
 	}
 
 	if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
-		return stacktrace.Propagate(err, "An error occurred updating the qdisc configuration to match the target service packet loss configurations after repartitioning")
+		return stacktrace.Propagate(err, "An error occurred updating the traffic control configuration to match the target service packet loss configurations after repartitioning")
 	}
 	return nil
 }
@@ -156,8 +157,9 @@ func (network *ServiceNetworkImpl) Repartition(
 // Registers a service for use with the network (creating the IPs and so forth), but doesn't start it
 // If the partition ID is empty, registers the service with the default partition
 func (network ServiceNetworkImpl) RegisterService(
-		serviceId service_network_types.ServiceID,
-		partitionId service_network_types.PartitionID) (net.IP, string, error) {
+	serviceId service.ServiceID,
+	partitionId service_network_types.PartitionID,
+) (net.IP, string, error) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
@@ -196,20 +198,19 @@ func (network ServiceNetworkImpl) RegisterService(
 	}()
 	logrus.Debugf("Giving service '%v' IP '%v'", serviceId, ip.String())
 
-	serviceGUID := newServiceGUID(serviceId)
-
-	serviceDirectory, err := network.enclaveDataDir.GetServiceDirectory(serviceGUID)
+	serviceGuid := newServiceGUID(serviceId)
+	serviceDirectory, err := network.enclaveDataDir.GetServiceDirectory(serviceGuid)
 	if err != nil {
-		return nil, "", stacktrace.Propagate(err, "An error occurred creating a new service directory for service with GUID '%v'", serviceGUID)
+		return nil, "", stacktrace.Propagate(err, "An error occurred creating a new service directory for service with GUID '%v'", serviceGuid)
 	}
 
-	serviceRegistrationInfo := serviceRegistrationInfo{
-		serviceGUID:      serviceGUID,
+	newServiceRegistrationInfo := serviceRegistrationInfo{
+		serviceGUID:      serviceGuid,
 		privateIpAddr:    ip,
 		serviceDirectory: serviceDirectory,
 	}
 
-	network.serviceRegistrationInfo[serviceId] = serviceRegistrationInfo
+	network.serviceRegistrationInfo[serviceId] = newServiceRegistrationInfo
 	shouldUndoRegistrationInfoAdd := true
 	defer func() {
 		// If an error occurs, the service ID won't be used so we need to delete it from the map
@@ -223,7 +224,8 @@ func (network ServiceNetworkImpl) RegisterService(
 			err,
 			"An error occurred adding service with ID '%v' to partition '%v' in the topology",
 			serviceId,
-			partitionId)
+			partitionId,
+		)
 	}
 
 	shouldFreeIpAddr = false
@@ -241,17 +243,17 @@ Returns:
 */
 func (network *ServiceNetworkImpl) StartService(
 	ctx context.Context,
-	serviceId service_network_types.ServiceID,
+	serviceId service.ServiceID,
 	imageName string,
-	privatePorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+	privatePorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
 	cmdArgs []string,
 	dockerEnvVars map[string]string,
 	enclaveDataDirMntDirpath string,
-	filesArtifactMountDirpaths map[string]string,
+	filesArtifactMountDirpaths map[files_artifact.FilesArtifactID]string,
 ) (
 	resultMaybePublicIpAddr net.IP, // Will be nil if the service doesn't declare any private ports
-	resultPublicPorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+	resultPublicPorts map[string]*port_spec.PortSpec,
 	resultErr error,
 ) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
@@ -285,27 +287,27 @@ func (network *ServiceNetworkImpl) StartService(
 				" to know what packet loss updates to apply on the new node")
 		}
 
-		servicesPacketLossConfigurationsWithoutNewNode := map[service_network_types.ServiceID]map[service_network_types.ServiceID]float32{}
-		for serviceInTopologyId, otherServicesPacketLossConfigs := range servicePacketLossConfigurationsByServiceID {
-			if serviceId == serviceInTopologyId {
+		servicesPacketLossConfigurationsWithoutNewNode := map[service.ServiceID]map[service.ServiceID]float32{}
+		for serviceIdInTopology, otherServicesPacketLossConfigs := range servicePacketLossConfigurationsByServiceID {
+			if serviceId == serviceIdInTopology {
 				continue
 			}
-			servicesPacketLossConfigurationsWithoutNewNode[serviceInTopologyId] = otherServicesPacketLossConfigs
+			servicesPacketLossConfigurationsWithoutNewNode[serviceIdInTopology] = otherServicesPacketLossConfigs
 		}
 
 		if err := updateTrafficControlConfiguration(ctx, servicesPacketLossConfigurationsWithoutNewNode, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred updating the qdisc configuration of all the other services "+
+			return nil, nil, stacktrace.Propagate(err, "An error occurred updating the traffic control configuration of all the other services "+
 				"before adding the node, meaning that the node wouldn't actually start in a partition")
 		}
 	}
 
-	serviceContainerId, maybeServicePublicIpAddr, servicePublicPorts, err := network.userServiceLauncher.Launch(
+	userService, err := network.userServiceLauncher.Launch(
 		ctx,
 		serviceGuid,
-		string(serviceId),
+		serviceId,
+		network.enclaveId,
 		serviceIpAddr,
 		imageName,
-		network.dockerNetworkId,
 		privatePorts,
 		entrypointArgs,
 		cmdArgs,
@@ -315,10 +317,16 @@ func (network *ServiceNetworkImpl) StartService(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating the user service container")
+			"An error occurred creating the user service")
 	}
+
+	// TODO Restart-able enclaves: Don't store any service information in memory; instead, get it all from the KurtosisBackend when required
+	serviceGUID := userService.GetGUID()
+	maybeServicePublicIpAddr := userService.GetMaybePublicIP()
+	servicePublicPorts := userService.GetPublicPorts()
+
 	runInfo := serviceRunInfo{
-		containerId:              serviceContainerId,
+		serviceGUID:              serviceGUID,
 		enclaveDataDirMntDirpath: enclaveDataDirMntDirpath,
 		privatePorts:             privatePorts,
 		maybePublicIpAddr:        maybeServicePublicIpAddr,
@@ -327,14 +335,14 @@ func (network *ServiceNetworkImpl) StartService(
 	network.serviceRunInfo[serviceId] = runInfo
 
 	if network.isPartitioningEnabled {
-		sidecar, err := network.networkingSidecarManager.Add(ctx, registrationInfo.serviceGUID, serviceContainerId)
+		sidecar, err := network.networkingSidecarManager.Add(ctx, serviceGuid)
 		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred creating the networking sidecar container")
+			return nil, nil, stacktrace.Propagate(err, "An error occurred adding the networking sidecar")
 		}
 		network.networkingSidecars[serviceId] = sidecar
 
 		if err := sidecar.InitializeTrafficControl(ctx); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred initializing the newly-created sidecar container traffic control qdisc configuration")
+			return nil, nil, stacktrace.Propagate(err, "An error occurred initializing the newly-created networking-sidecar-traffic-control-qdisc-configuration")
 		}
 
 		// TODO Getting packet loss configuration by service ID is an expensive call and, as of 2021-11-23, we do it twice - the solution is to make
@@ -345,11 +353,11 @@ func (network *ServiceNetworkImpl) StartService(
 				" to know what packet loss updates to apply on the new node")
 		}
 		newNodeServicePacketLossConfiguration := servicePacketLossConfigurationsByServiceID[serviceId]
-		updatesToApply := map[service_network_types.ServiceID]map[service_network_types.ServiceID]float32{
+		updatesToApply := map[service.ServiceID]map[service.ServiceID]float32{
 			serviceId: newNodeServicePacketLossConfiguration,
 		}
 		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the qdisc configuration on the new node to partition it "+
+			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration on the new node to partition it "+
 				"off from other nodes")
 		}
 	}
@@ -358,9 +366,10 @@ func (network *ServiceNetworkImpl) StartService(
 }
 
 func (network *ServiceNetworkImpl) RemoveService(
-		ctx context.Context,
-		serviceId service_network_types.ServiceID,
-		containerStopTimeout time.Duration) error {
+	ctx context.Context,
+	serviceId service.ServiceID,
+	containerStopTimeout time.Duration,
+) error {
 	// TODO switch to a wrapper function
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
@@ -375,9 +384,10 @@ func (network *ServiceNetworkImpl) RemoveService(
 }
 
 func (network *ServiceNetworkImpl) ExecCommand(
-		ctx context.Context,
-		serviceId service_network_types.ServiceID,
-		command []string) (int32, string, error) {
+	ctx context.Context,
+	serviceId service.ServiceID,
+	command []string,
+) (int32, string, error) {
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
 	// asynchronous
 	network.mutex.Lock()
@@ -397,20 +407,53 @@ func (network *ServiceNetworkImpl) ExecCommand(
 	// NOTE: This is a SYNCHRONOUS command, meaning that the entire network will be blocked until the command finishes
 	// In the future, this will likely be insufficient
 
-	execOutputBuf := &bytes.Buffer{}
-	exitCode, err := network.dockerManager.RunExecCommand(ctx, runInfo.containerId, command, execOutputBuf)
+	serviceGuid := runInfo.serviceGUID
+	userServiceCommand := map[service.ServiceGUID][]string{
+		serviceGuid: command,
+	}
+
+	successfulExecCommands, failedExecCommands, err := network.kurtosisBackend.RunUserServiceExecCommands(
+		ctx,
+		network.enclaveId,
+		userServiceCommand)
 	if err != nil {
 		return 0, "", stacktrace.Propagate(
 			err,
-			"An error occurred running exec command '%v' against service '%v'",
+			"An error occurred calling kurtosis backend to exec command '%v' against service '%v'",
 			command,
 			serviceId)
 	}
+	if len(failedExecCommands) > 0 {
+		serviceExecErrs := []string{}
+		for serviceGUID, err := range failedExecCommands {
+			wrappedErr := stacktrace.Propagate(
+				err,
+				"An error occurred attempting to run a command in a service with GUID `%v'",
+				serviceGUID,
+			)
+			serviceExecErrs = append(serviceExecErrs, wrappedErr.Error())
+		}
+		return 0, "", stacktrace.NewError(
+			"One or more errors occurred attempting to exec command(s) in the service(s): \n%v",
+			strings.Join(
+				serviceExecErrs,
+				"\n\n",
+			),
+		)
+	}
 
-	return exitCode, execOutputBuf.String(), nil
+	execResult, isFound := successfulExecCommands[serviceGuid]
+	if !isFound {
+		return 0, "", stacktrace.NewError(
+			"Unable to find result from running exec command '%v' against service '%v'",
+			command,
+			serviceGuid)
+	}
+
+	return execResult.GetExitCode(), execResult.GetOutput(), nil
 }
 
-func (network *ServiceNetworkImpl) GetServiceRegistrationInfo(serviceId service_network_types.ServiceID) (
+func (network *ServiceNetworkImpl) GetServiceRegistrationInfo(serviceId service.ServiceID) (
 	privateIpAddr net.IP,
 	relativeServiceDirpath string,
 	resultErr error,
@@ -429,10 +472,11 @@ func (network *ServiceNetworkImpl) GetServiceRegistrationInfo(serviceId service_
 	return registrationInfo.privateIpAddr, registrationInfo.serviceDirectory.GetDirpathRelativeToDataDirRoot(), nil
 }
 
-func (network *ServiceNetworkImpl) GetServiceRunInfo(serviceId service_network_types.ServiceID) (
-	privatePorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+
+func (network *ServiceNetworkImpl) GetServiceRunInfo(serviceId service.ServiceID) (
+	privatePorts map[string]*port_spec.PortSpec,
 	publicIpAddr net.IP,
-	publicPorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+	publicPorts map[string]*port_spec.PortSpec,
 	enclaveDataDirMntDirpath string,
 	resultErr error,
 ) {
@@ -449,13 +493,13 @@ func (network *ServiceNetworkImpl) GetServiceRunInfo(serviceId service_network_t
 	return runInfo.privatePorts, runInfo.maybePublicIpAddr, runInfo.publicPorts, runInfo.enclaveDataDirMntDirpath, nil
 }
 
-func (network *ServiceNetworkImpl) GetServiceIDs() map[service_network_types.ServiceID]bool {
+func (network *ServiceNetworkImpl) GetServiceIDs() map[service.ServiceID]bool {
 
-	serviceIDs := make(map[service_network_types.ServiceID]bool, len(network.serviceRunInfo))
+	serviceIDs := make(map[service.ServiceID]bool, len(network.serviceRunInfo))
 
-	for key, _ := range network.serviceRunInfo {
-		if _, ok := serviceIDs[key]; !ok {
-			serviceIDs[key] = true
+	for serviceId := range network.serviceRunInfo {
+		if _, ok := serviceIDs[serviceId]; !ok {
+			serviceIDs[serviceId] = true
 		}
 	}
 	return serviceIDs
@@ -465,9 +509,10 @@ func (network *ServiceNetworkImpl) GetServiceIDs() map[service_network_types.Ser
 // 									   Private helper methods
 // ====================================================================================================
 func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
-		ctx context.Context,
-		serviceId service_network_types.ServiceID,
-		containerStopTimeout time.Duration) error {
+	ctx context.Context,
+	serviceId service.ServiceID,
+	containerStopTimeout time.Duration) error {
+
 	registrationInfo, foundRegistrationInfo := network.serviceRegistrationInfo[serviceId]
 	if !foundRegistrationInfo {
 		return stacktrace.NewError("No registration info found for service '%v'", serviceId)
@@ -478,21 +523,36 @@ func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
 	// TODO PERF: Parallelize the shutdown of the service container and the sidecar container
 	runInfo, foundRunInfo := network.serviceRunInfo[serviceId]
 	if foundRunInfo {
-		serviceContainerId := runInfo.containerId
+		serviceGUID := runInfo.serviceGUID
 		// Make a best-effort attempt to stop the service container
-		logrus.Debugf("Stopping container ID '%v' for service ID '%v'...", serviceContainerId, serviceId)
-		if err := network.dockerManager.StopContainer(ctx, serviceContainerId, containerStopTimeout); err != nil {
-			return stacktrace.Propagate(err, "An error occurred stopping the container with ID %v", serviceContainerId)
+		logrus.Debugf("Stopping service with GUID '%v' for service ID '%v'...", serviceGUID, serviceId)
+		_, failedToStopServiceErrs, err := network.kurtosisBackend.StopUserServices(
+			ctx,
+			getServiceByServiceGUIDFilter(serviceGUID),
+		)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred calling the backend to stop service with GUID '%v'", serviceGUID)
+		}
+		if len(failedToStopServiceErrs) > 0 {
+			serviceStopErrs := []string{}
+			for serviceGUID, err := range failedToStopServiceErrs {
+				wrappedErr := stacktrace.Propagate(
+					err,
+					"An error occurred stopping service with GUID `%v'",
+					serviceGUID,
+				)
+				serviceStopErrs = append(serviceStopErrs, wrappedErr.Error())
+			}
+			return stacktrace.NewError(
+				"One or more errors occurred stopping the service(s): \n%v",
+				strings.Join(
+					serviceStopErrs,
+					"\n\n",
+				),
+			)
 		}
 		delete(network.serviceRunInfo, serviceId)
-		logrus.Debugf("Successfully stopped container ID '%v'", serviceContainerId)
-		logrus.Debugf("Disconnecting container ID '%v' from network ID '%v'...", serviceContainerId, network.dockerNetworkId)
-		//Disconnect the container from the network in order to free the network container's alias if a new service with same alias
-		//is loaded in the network
-		if err := network.dockerManager.DisconnectContainerFromNetwork(ctx, serviceContainerId, network.dockerNetworkId); err != nil {
-			return stacktrace.Propagate(err, "An error occurred disconnecting the container with ID %v from network with ID %v", serviceContainerId, network.dockerNetworkId)
-		}
-		logrus.Debugf("Successfully disconnected container ID '%v'", serviceContainerId)
+		logrus.Debugf("Successfully stopped service GUID '%v'", serviceGUID)
 	}
 	network.freeIpAddrTracker.ReleaseIpAddr(registrationInfo.privateIpAddr)
 
@@ -519,10 +579,12 @@ Updates the traffic control configuration of the services with the given IDs to 
 NOTE: This is not thread-safe, so it must be within a function that locks mutex!
 */
 func updateTrafficControlConfiguration(
-		ctx context.Context,
-		targetServicePacketLossConfigs map[service_network_types.ServiceID]map[service_network_types.ServiceID]float32,
-		serviceRegistrationInfo map[service_network_types.ServiceID]serviceRegistrationInfo,
-		networkingSidecars map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar) error {
+	ctx context.Context,
+	targetServicePacketLossConfigs map[service.ServiceID]map[service.ServiceID]float32,
+	serviceRegistrationInfo map[service.ServiceID]serviceRegistrationInfo,
+	networkingSidecars map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper,
+) error {
+
 	// TODO PERF: Run the container updates in parallel, with the container being modified being the most important
 
 	for serviceId, allOtherServicesPacketLossConfigurations := range targetServicePacketLossConfigs {
@@ -532,7 +594,7 @@ func updateTrafficControlConfiguration(
 			infoForService, found := serviceRegistrationInfo[otherServiceId]
 			if !found {
 				return stacktrace.NewError(
-					"Service with ID '%v' needs to add packet loos configuration for service with ID '%v', but the latter "+
+					"Service with ID '%v' needs to add packet loss configuration for service with ID '%v', but the latter "+
 						"doesn't have service registration info (i.e. an IP) associated with it",
 					serviceId,
 					otherServiceId)
@@ -558,7 +620,15 @@ func updateTrafficControlConfiguration(
 	return nil
 }
 
-func newServiceGUID(serviceID service_network_types.ServiceID) service_network_types.ServiceGUID {
+func newServiceGUID(serviceID service.ServiceID) service.ServiceGUID {
 	suffix := current_time_str_provider.GetCurrentTimeStr()
-	return service_network_types.ServiceGUID(string(serviceID) + "-" + suffix)
+	return service.ServiceGUID(string(serviceID) + "-" + suffix)
+}
+
+func getServiceByServiceGUIDFilter(serviceGUID service.ServiceGUID) *service.ServiceFilters {
+	return &service.ServiceFilters{
+		GUIDs: map[service.ServiceGUID]bool{
+			serviceGUID: true,
+		},
+	}
 }
