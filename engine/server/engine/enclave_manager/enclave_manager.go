@@ -362,7 +362,7 @@ func (manager *EnclaveManager) getEnclaveApiContainerInformation(
 			nil, nil, nil
 	}
 	if numOfFoundApiContainers > 1 {
-		return 0, nil, nil, stacktrace.NewError("Expected to be able to find only one api container associated with enclave '%v', instead found '%v'",
+		return 0, nil, nil, stacktrace.NewError("Expected to be able to find only one API container associated with enclave '%v', instead found '%v'",
 			enclaveId, numOfFoundApiContainers)
 	}
 	apiContainer := getFirstApiContainerFromMap(enclaveApiContainers)
@@ -564,15 +564,6 @@ func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, e
 		)
 	}
 
-	// Next, remove the enclave data dir (if it exists)
-	_, enclaveDataDirpathOnEngineContainer := manager.getEnclaveDataDirpath(enclaveId)
-	if _, statErr := os.Stat(enclaveDataDirpathOnEngineContainer); !os.IsNotExist(statErr) {
-		if removeErr := os.RemoveAll(enclaveDataDirpathOnEngineContainer); removeErr != nil {
-			return stacktrace.Propagate(removeErr, "An error occurred removing enclave data dir '%v' on engine container", enclaveDataDirpathOnEngineContainer)
-		}
-	}
-
-
 	_, enclaveDestroyErrs, err := manager.kurtosisBackend.DestroyEnclaves(ctx, getEnclaveByEnclaveIdFilter(enclaveId))
 	if err != nil {
 		return stacktrace.Propagate(err, "Attempted to destroy enclave '%v' but the backend threw an error", enclaveId)
@@ -597,6 +588,17 @@ func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, e
 				"\n\n",
 			))
 	}
+
+	// Next, remove the enclave data dir (if it exists)
+	// TODO Replace with KurtosisBackend call
+	_, enclaveDataDirpathOnEngineContainer := manager.getEnclaveDataDirpath(enclaveId)
+	if _, statErr := os.Stat(enclaveDataDirpathOnEngineContainer); !os.IsNotExist(statErr) {
+		if removeErr := os.RemoveAll(enclaveDataDirpathOnEngineContainer); removeErr != nil {
+			return stacktrace.Propagate(removeErr, "An error occurred removing enclave data dir '%v' on engine container", enclaveDataDirpathOnEngineContainer)
+		}
+	}
+
+
 
 	return nil
 }
