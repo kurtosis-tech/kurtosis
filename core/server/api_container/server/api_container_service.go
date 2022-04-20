@@ -259,21 +259,24 @@ func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *kur
 		return nil, stacktrace.Propagate(err, "An error occurred getting the registration info for service '%v'", serviceIdStr)
 	}
 
-	privateServicePortSpecs, maybePublicIpAddr, publicServicePortSpecs, enclaveDataDirMntDirpath, err := service.serviceNetwork.GetServiceRunInfo(serviceId)
+	privateServicePortSpecs, maybePublicIpAddr, maybePublicServicePortSpecs, enclaveDataDirMntDirpath, err := service.serviceNetwork.GetServiceRunInfo(serviceId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the run info for service '%v'", serviceIdStr)
-	}
-	publicIpAddrStr := missingPublicIpAddrStr
-	if maybePublicIpAddr != nil {
-		publicIpAddrStr = maybePublicIpAddr.String()
 	}
 	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privateServicePortSpecs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's private port spec ports to API ports")
 	}
-	publicApiPorts, err := transformPortSpecMapToApiPortsMap(publicServicePortSpecs)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public port spec ports to API ports")
+	publicIpAddrStr := missingPublicIpAddrStr
+	if maybePublicIpAddr != nil {
+		publicIpAddrStr = maybePublicIpAddr.String()
+	}
+	publicApiPorts := map[string]*kurtosis_core_rpc_api_bindings.Port{}
+	if maybePublicServicePortSpecs != nil {
+		publicApiPorts, err = transformPortSpecMapToApiPortsMap(maybePublicServicePortSpecs)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public port spec ports to API ports")
+		}
 	}
 
 	serviceInfoResponse := binding_constructors.NewGetServiceInfoResponse(
