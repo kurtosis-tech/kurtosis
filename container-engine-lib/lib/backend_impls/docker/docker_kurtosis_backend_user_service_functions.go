@@ -246,21 +246,19 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 
 	// TODO Parallelize to increase perf
 	for containerId, userService := range userServices {
-		userServiceUnwrappedCommand := userServiceCommands[userService.GetGUID()]
-
-		userServiceShWrappedCmd := wrapShCommand(userServiceUnwrappedCommand)
+		userServiceCommand := userServiceCommands[userService.GetGUID()]
 
 		execOutputBuf := &bytes.Buffer{}
 		exitCode, err := backend.dockerManager.RunExecCommand(
 			ctx,
 			containerId,
-			userServiceShWrappedCmd,
+			userServiceCommand,
 			execOutputBuf)
 		if err != nil {
 			wrappedErr := stacktrace.Propagate(
 				err,
 				"An error occurred executing command '%+v' on user service with GUID '%v' and container ID '%v'",
-				userServiceShWrappedCmd,
+				userServiceCommand,
 				userService.GetGUID(),
 				containerId,
 			)

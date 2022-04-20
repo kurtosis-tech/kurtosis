@@ -371,13 +371,3 @@ func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.C
 	}
 	return enclaveNetworksFound[0], nil
 }
-
-// Embeds the given command in a call to sh shell, so that a command with things
-//  like '&&' will get executed as expected
-func wrapShCommand(unwrappedCmd []string) []string {
-	return []string{
-		"sh",
-		"-c",
-		strings.Join(unwrappedCmd, " "),
-	}
-}
