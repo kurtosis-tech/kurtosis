@@ -1,4 +1,6 @@
 # TBD
+
+# 0.14.4
 ### Fixes
 * Fix the exec commands on user services & networking sidecars being wrapped in `sh`, leading to unintended consequences
 
