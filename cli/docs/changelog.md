@@ -1,12 +1,11 @@
 # TBD
 # Breaking Changes
-* Upgraded `kurtosis engine lib` to 1.14.0
-  * Users should upgrade to `kurtosis-engine-api-lib` 1.14.0
-
+* Upgraded `kurtosis engine lib` to 1.14.2
+  * Users should upgrade to `kurtosis-engine-api-lib` 1.14.2
 
 ### Changes
-* Upgraded `container engine lib` to 0.14.1
-* Upgraded `kurtosis core lib` to 1.42.0
+* Upgraded `container engine lib` to 0.14.3
+* Upgraded `kurtosis core lib` to 1.42.2
 * Replaced `DockerManager` with `KurtosisBackend` in:
   * `EngineConsumingKurtosisCommand` struct and in `RunFunc`
   * `clean` command
@@ -15,8 +14,10 @@
   * `service logs` command
   * `service shell` command
 
-# 0.12.2
+### Fixes
+* Fix a bug where Kurtosis would fail to process containers using the old port spec
 
+# 0.12.2
 ### Fixes
 * Bumping dependencies on:
     * Engine Server 1.13.2
