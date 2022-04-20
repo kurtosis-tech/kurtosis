@@ -6,6 +6,18 @@
 * Upgrade to container-engine-lib 0.14.5
 * Upgrade to kurtosis-core-api-lib 1.42.4
 
+# 1.14.3
+### Fixes
+* Fixed a bug where Docker exec commands to user services were getting erroneously wrapped in `sh -c`
+
+# 1.14.2
+### Fixes
+* Use container-engine-lib 0.14.3 and core 1.42.2, which supports the old port specs temporarily
+
+# 1.14.1
+### Fixes
+* Upgraded to container-engine-lib 0.14.2 and core 1.42.1, which fixes a bug where stopped user services cause an error because they don't have public host port bindings
+
 # 1.14.0
 ### Breaking Changes
 * Updated enclave_manager to use kurtosis_backend for enclave operations
