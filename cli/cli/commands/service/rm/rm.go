@@ -3,7 +3,7 @@ package rm
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
@@ -28,7 +28,7 @@ const (
 
 	timeoutFlagKey = "timeout"
 
-	dockerManagerCtxKey = "docker-manager"
+	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey  = "engine-client"
 
 	defaultContainerStopTimeoutSeconds = uint32(0)
@@ -38,7 +38,7 @@ var ServiceRmCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 	CommandStr:              command_str_consts.ServiceRmCmdStr,
 	ShortDescription:        "Removes a service from an enclave",
 	LongDescription:         "Removes the service with the given ID from the given enclave",
-	DockerManagerContextKey: dockerManagerCtxKey,
+	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:  engineClientCtxKey,
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIDArg(
@@ -64,7 +64,7 @@ var ServiceRmCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 
 func run(
 	ctx context.Context,
-	dockerManager *docker_manager.DockerManager,
+	kurtosisBackend backend_interface.KurtosisBackend,
 	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,

@@ -2,5 +2,5 @@ package kurtosis_cli_version
 
 const (
 	// !!!!!!!! DO NOT UPDATE THIS! It will be updated automatically during release !!!!!!!!!!
-	KurtosisCLIVersion = "0.12.2"
+	KurtosisCLIVersion = "0.13.0"
 )

@@ -4,15 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/container_status_calculator"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"sort"
@@ -23,17 +22,13 @@ const (
 	shouldCleanRunningEnclavesFlagKey = "all"
 	defaultShouldCleanRunningEnclaves = "false"
 
-	shouldCleanRunningEngineContainers = false
-
-	// Obviously yes
-	shouldFetchStoppedContainersWhenDestroyingStoppedContainers = true
 
 	// Titles of the cleaning phases
 	// Should be lowercased as they'll go into a string like "Cleaning XXXXX...."
 	oldEngineCleaningPhaseTitle = "old Kurtosis engine containers"
 	enclavesCleaningPhaseTitle  = "enclaves"
 
-	dockerManagerCtxKey = "docker-manager"
+	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey = "engine-client"
 )
 
@@ -44,7 +39,7 @@ var CleanCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand
 		"Removes Kurtosis stopped Kurtosis enclaves (and live ones if the '%v' flag is set), as well as stopped engine containers",
 		shouldCleanRunningEnclavesFlagKey,
 	),
-	DockerManagerContextKey: dockerManagerCtxKey,
+	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:  engineClientCtxKey,
 	Flags: []*flags.FlagConfig{
 		{
@@ -60,7 +55,7 @@ var CleanCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand
 
 func run(
 	ctx context.Context,
-	dockerManager *docker_manager.DockerManager,
+	kurtosisBackend backend_interface.KurtosisBackend,
 	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
@@ -74,7 +69,7 @@ func run(
 	cleaningPhaseFunctions := map[string]func() ([]string, []error, error){
 		oldEngineCleaningPhaseTitle: func() ([]string, []error, error) {
 			// Don't use stacktrace b/c the only reason this function exists is to pass in the right args
-			return cleanStoppedEngineContainers(ctx, dockerManager)
+			return cleanStoppedEngineContainers(ctx, kurtosisBackend)
 		},
 		enclavesCleaningPhaseTitle: func() ([]string, []error, error) {
 			// Don't use stacktrace b/c the only reason this function exists is to pass in the right args
@@ -122,16 +117,34 @@ func run(
 // ====================================================================================================
 //                                       Private Helper Functions
 // ====================================================================================================
-func cleanStoppedEngineContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]string, []error, error) {
-	engineContainerLabels := map[string]string{
-		forever_constants.AppIDLabel:         forever_constants.AppIDValue,
-		forever_constants.ContainerTypeLabel: forever_constants.ContainerType_EngineServer,
+func cleanStoppedEngineContainers(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend) ([]string, []error, error) {
+
+	engineFilters := &engine.EngineFilters{
+		Statuses: map[container_status.ContainerStatus]bool{
+			container_status.ContainerStatus_Stopped: true,
+		},
 	}
-	successfullyDestroyedContainerNames, containerDestructionErrors, err := cleanContainers(ctx, dockerManager, engineContainerLabels, shouldCleanRunningEngineContainers)
+
+	successfulEngineIds, erroredEngineIds, err := kurtosisBackend.DestroyEngines(ctx, engineFilters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying engines using filters '%+v'", engineFilters)
+	}
+
+	successfullyDestroyedEngineIDs := []string{}
+	for engineId := range successfulEngineIds {
+		successfullyDestroyedEngineIDs = append(successfullyDestroyedEngineIDs, engineId)
+	}
+
+	removeEngineErrors := []error{}
+	for engineId, err := range erroredEngineIds {
+		wrappedErr := stacktrace.Propagate(err, "An error occurred destroying stopped engine '%v'", engineId)
+		removeEngineErrors = append(removeEngineErrors, wrappedErr)
+	}
+
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred cleaning stopped Kurtosis engine containers")
 	}
-	return successfullyDestroyedContainerNames, containerDestructionErrors, nil
+	return successfullyDestroyedEngineIDs, removeEngineErrors, nil
 }
 
 func cleanEnclaves(ctx context.Context, engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient, shouldCleanAll bool) ([]string, []error, error) {
@@ -146,48 +159,4 @@ func cleanEnclaves(ctx context.Context, engineClient kurtosis_engine_rpc_api_bin
 		successfullyDestroyedEnclaveIds = append(successfullyDestroyedEnclaveIds, enclaveId)
 	}
 	return successfullyDestroyedEnclaveIds, nil, nil
-}
-
-func cleanContainers(ctx context.Context, dockerManager *docker_manager.DockerManager, searchLabels map[string]string, shouldKillRunningContainers bool) ([]string, []error, error) {
-	matchingContainers, err := dockerManager.GetContainersByLabels(
-		ctx,
-		searchLabels,
-		shouldFetchStoppedContainersWhenDestroyingStoppedContainers,
-	)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting containers matching labels '%+v'", searchLabels)
-	}
-
-	containersToDestroy := []*types.Container{}
-	for _, container := range matchingContainers {
-		containerName := container.GetName()
-		containerStatus := container.GetStatus()
-		if shouldKillRunningContainers {
-			containersToDestroy = append(containersToDestroy, container)
-			continue
-		}
-
-		isRunning, err := container_status_calculator.IsContainerRunning(containerStatus)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred determining if container '%v' with status '%v' is running", containerName, containerStatus)
-		}
-		if !isRunning {
-			containersToDestroy = append(containersToDestroy, container)
-		}
-	}
-
-	successfullyDestroyedContainerNames := []string{}
-	removeContainerErrors := []error{}
-	for _, container := range containersToDestroy {
-		containerId := container.GetId()
-		containerName := container.GetName()
-		if err := dockerManager.RemoveContainer(ctx, containerId); err != nil {
-			wrappedErr := stacktrace.Propagate(err, "An error occurred removing stopped container '%v'", containerName)
-			removeContainerErrors = append(removeContainerErrors, wrappedErr)
-			continue
-		}
-		successfullyDestroyedContainerNames = append(successfullyDestroyedContainerNames, containerName)
-	}
-
-	return successfullyDestroyedContainerNames, removeContainerErrors, nil
 }
