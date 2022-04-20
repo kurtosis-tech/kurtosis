@@ -84,7 +84,7 @@ func getSortedUserServiceSliceFromUserServiceMap(userServices map[service.Servic
 
 func getContainerHostPortBindingStrings(userService *service.Service) []string {
 	var allHostPortBindings []string
-	publicPorts := userService.GetPublicPorts()
+	publicPorts := userService.GetMaybePublicPorts()
 	if len(publicPorts) > 0 {
 		//IF the service has at least one public port it will have set the public IP address
 		publicIp := userService.GetMaybePublicIP()
