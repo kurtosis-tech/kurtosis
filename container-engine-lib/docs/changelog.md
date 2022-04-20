@@ -1,4 +1,6 @@
 # TBD
+
+# 0.15.0
 ### Fixes
 * Fixed `UserService` object not having a `GetPrivatePorts` method
 * Fixed `UserService` to correctly have `nil` public ports if it's not running to match the spec
