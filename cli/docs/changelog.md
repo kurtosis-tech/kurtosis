@@ -3,6 +3,29 @@
 * The `old_enclave_continuity` test now tests having stopped old enclaves around, as well as `service add`
 * Added an extra layer to the Docker exec command test to verify we're not accidentally sh-wrapping the command
 
+# 0.13.0
+### Features
+* `enclave inspect` now prints port IDs, in sorted order
+
+### Changes
+* Upgraded `container engine lib` to 0.14.3
+* Upgraded `kurtosis core lib` to 1.42.2
+* Replaced `DockerManager` with `KurtosisBackend` in:
+  * `EngineConsumingKurtosisCommand` struct and in `RunFunc`
+  * `clean` command
+  * `enclave inspect` command
+  * `enclave rm` command
+  * `service logs` command
+  * `service shell` command
+
+### Fixes
+* Fix a bug where Kurtosis would fail to process containers using the old port spec
+* Fixed a bug where `enclave inspect` crashes if a module is stopped
+
+### Breaking Changes
+* Upgraded `kurtosis engine lib` to 1.14.2
+  * Users should upgrade to `kurtosis-engine-api-lib` 1.14.2
+
 # 0.12.2
 ### Fixes
 * Bumping dependencies on:
@@ -11,7 +34,6 @@
     * Core 1.41.1
 
 # 0.12.1
-
 # Breaking Changes
 * Bumped Dependencies for Kurtosis Core which is now version 1.41.0.
     * Users using the ExecuteBulkCommands API should remove code referencing it.
