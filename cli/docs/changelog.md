@@ -1,7 +1,8 @@
 # TBD
+### Features
+* The `old_enclave_continuity` test now tests having stopped old enclaves around, as well as `service add`
 
 # 0.12.2
-
 ### Fixes
 * Bumping dependencies on:
     * Engine Server 1.13.2

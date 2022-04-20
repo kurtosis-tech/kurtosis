@@ -155,17 +155,26 @@ jobs:
       - run: kurtosis config init dont-send-metrics
 
       # Start up an enclave with a module and some services inside
-      - run: kurtosis module exec --enclave-id old-test-enclave kurtosistech/datastore-army-module --execute-params '{"numDatastores":2}'
+      - run: kurtosis module exec --enclave-id running-old-enclave kurtosistech/datastore-army-module --execute-params '{"numDatastores":2}'
+      - run: kurtosis module exec --enclave-id stopped-old-enclave kurtosistech/datastore-army-module --execute-params '{"numDatastores":2}'
+      - run: kurtosis enclave stop stopped-old-enclave
       - run: kurtosis engine stop
 
-      # Now use the new CLI & engine and ensure everything still works
       - run: |
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+
+      # Make sure we can still interact with the old enclaves
       - run: "${KURTOSIS_BINPATH} enclave ls"
-      - run: "${KURTOSIS_BINPATH} enclave inspect old-test-enclave" 
-      - run: "${KURTOSIS_BINPATH} module exec --enclave-id new-test-enclave kurtosistech/datastore-army-module --execute-params '{\"numDatastores\":2}'"
+      - run: "${KURTOSIS_BINPATH} enclave inspect running-old-enclave" 
+      - run: "${KURTOSIS_BINPATH} service add new-enclave test-service httpd --ports http:80"
+      - run: "${KURTOSIS_BINPATH} enclave stop running-old-enclave" 
+      - run: "${KURTOSIS_BINPATH} enclave inspect stopped-old-enclave" 
+
+      # Ensure modules & enclaves still work
+      - run: "${KURTOSIS_BINPATH} module exec --enclave-id new-enclave kurtosistech/datastore-army-module --execute-params '{\"numDatastores\":2}'"
+      - run: "${KURTOSIS_BINPATH} service add new-enclave test-service httpd --ports http:80"
       - run: "${KURTOSIS_BINPATH} enclave ls"
-      - run: "${KURTOSIS_BINPATH} enclave rm -f new-test-enclave"
+      - run: "${KURTOSIS_BINPATH} enclave rm -f new-enclave"
       - run: "${KURTOSIS_BINPATH} clean -a"
       - run: "${KURTOSIS_BINPATH} engine stop"
 
