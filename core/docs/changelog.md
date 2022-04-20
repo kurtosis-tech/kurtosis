@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Upgraded to container-engine-lib 0.14.5, which removes enclave's volumes when destroying enclaves
 
 # 1.42.3
 ### Fixes
