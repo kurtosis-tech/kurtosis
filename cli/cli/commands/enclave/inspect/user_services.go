@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/stacktrace"
 	"sort"
+	"strings"
 )
 
 const (
@@ -102,7 +103,7 @@ func getPortBindingStrings(userService *service.Service) ([]string, error) {
 			"%v: %v/%v",
 			portId,
 			privatePortSpec.GetNumber(),
-			privatePortSpec.GetProtocol(),
+			strings.ToLower(privatePortSpec.GetProtocol().String()),
 		)
 		resultLines[portId] = line
 	}

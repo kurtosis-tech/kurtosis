@@ -15,6 +15,7 @@
 
 ### Fixes
 * Fix a bug where Kurtosis would fail to process containers using the old port spec
+* Fixed a bug where `enclave inspect` crashes if a module is stopped
 
 ### Breaking Changes
 * Upgraded `kurtosis engine lib` to 1.14.2

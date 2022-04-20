@@ -10,11 +10,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/stacktrace"
 	"sort"
+	"strings"
 )
 
 const (
-	moduleGUIDColHeader                                    = "GUID"
-	moduleHostMachinePortBindingsColHeader                 = "LocalPortBindings"
+	moduleGUIDColHeader  = "GUID"
+	modulePortsColHeader = "Ports"
 )
 
 func printModules(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveId enclave.EnclaveID) error {
@@ -34,22 +35,27 @@ func printModules(ctx context.Context, kurtosisBackend backend_interface.Kurtosi
 		return stacktrace.Propagate(err, "An error occurred getting modules using filters '%+v'", moduleFilters)
 	}
 
-	tablePrinter := output_printers.NewTablePrinter(moduleGUIDColHeader, moduleHostMachinePortBindingsColHeader)
+	tablePrinter := output_printers.NewTablePrinter(moduleGUIDColHeader, modulePortsColHeader)
 	sortedModules := getSortedModuleSliceFromModulesMap(modules)
 
 	for _, module := range sortedModules {
 
-		localPortBindingString :=
-			fmt.Sprintf("%v/%v -> %v:%v",
-				module.GetPrivatePort().GetNumber(),
-				module.GetPrivatePort().GetProtocol().String(),
+		portString := fmt.Sprintf(
+			"%v/%v",
+			 module.GetPrivatePort().GetNumber(),
+			 strings.ToLower(module.GetPrivatePort().GetProtocol().String()),
+		)
+		if module.GetStatus() == container_status.ContainerStatus_Running {
+			portString = portString + fmt.Sprintf(
+				" -> %v:%v",
 				module.GetPublicIp(),
 				module.GetPublicPort().GetNumber(),
 			)
+		}
 
 		moduleGuidStr := string(module.GetGUID())
 
-		if err := tablePrinter.AddRow(moduleGuidStr, localPortBindingString); err != nil {
+		if err := tablePrinter.AddRow(moduleGuidStr, portString); err != nil {
 			return stacktrace.NewError(
 				"An error occurred adding row for module GUID '%v' to the table printer",
 				moduleGuidStr,
