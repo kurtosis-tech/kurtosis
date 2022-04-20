@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Added a check to prevent generate user service's public IP address and public ports if it does not contain host port bindings
 
 # 0.14.1
 ### Fixes
