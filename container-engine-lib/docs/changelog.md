@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Temporarily support the old port spec (`portId.number-protocol_portId.number-protocol`) so that we're still backwards-compatible
 
 # 0.14.2
 ### Fixes

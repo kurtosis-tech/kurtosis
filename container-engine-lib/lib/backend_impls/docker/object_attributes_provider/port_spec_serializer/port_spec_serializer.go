@@ -14,6 +14,11 @@ const (
 	portNumAndProtocolSeparator = "/"
 	portSpecsSeparator          = ","
 
+	// TODO DELETE TEHSE AFTER JUNE 20, 2022 WHEN WE'RE CONFIDENT NOBODY'S USING THE OLD PORT SPECS!
+	oldPortIdAndInfoSeparator      = "."
+	oldPortNumAndProtocolSeparator = "-"
+	oldPortSpecsSeparator          = "_"
+
 	expectedNumPortIdAndSpecFragments      = 2
 	expectedNumPortNumAndProtocolFragments = 2
 	portUintBase                           = 10
@@ -98,10 +103,48 @@ func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*docker_label_val
 }
 
 func DeserializePortSpecs(specsStr string) (map[string]*port_spec.PortSpec, error) {
+	resultUsingNewDelimiters, err := deserializePortSpecStrUsingDelimiters(
+		specsStr,
+		portSpecsSeparator,
+		portIdAndInfoSeparator,
+		portNumAndProtocolSeparator,
+	)
+	if err == nil {
+		return resultUsingNewDelimiters, nil
+	}
+
+	// TODO DELETE THIS CHECK AFTER JUNE 20, 2022 WHEN WE'RE CONFIDENT NOBODY WILL HAVE THE OLD PORT SPEC!!!
+	resultUsingOldDelimiters, err := deserializePortSpecStrUsingDelimiters(
+		specsStr,
+		oldPortSpecsSeparator,
+		oldPortIdAndInfoSeparator,
+		oldPortNumAndProtocolSeparator,
+	)
+	if err == nil {
+		return resultUsingOldDelimiters, nil
+	}
+
+	return nil, stacktrace.Propagate(
+		err,
+		"Failed to deserialize port spec string '%v' after trying both current and old port spec delimiters",
+		specsStr,
+	)
+}
+
+func deserializePortSpecStrUsingDelimiters(
+	specsStr string,
+	portSpecsSeparator string,
+	portIdAndInfoSeparator string,
+	portNumAndProtocolSeparator string,
+) (
+	map[string]*port_spec.PortSpec,
+	error,
+) {
 	result := map[string]*port_spec.PortSpec{}
 	if specsStr == "" {
 		return result, nil
 	}
+
 	portIdAndSpecStrs := strings.Split(specsStr, portSpecsSeparator)
 	for _, portIdAndSpecStr := range portIdAndSpecStrs {
 		portIdAndSpecFragments := strings.Split(portIdAndSpecStr, portIdAndInfoSeparator)
