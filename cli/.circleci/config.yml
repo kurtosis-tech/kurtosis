@@ -155,7 +155,7 @@ jobs:
       - run: kurtosis config init dont-send-metrics
 
       # Start up an enclave with a module and some services inside
-      - run: kurtosis module exec --enclave-id running-old-enclave kurtosistech/datastore-army-module --execute-params '{"numDatastores":2}'
+      - run: kurtosis module exec --enclave-id running-old-enclave kurtosistech/near-kurtosis-module
       - run: kurtosis module exec --enclave-id stopped-old-enclave kurtosistech/datastore-army-module --execute-params '{"numDatastores":2}'
       - run: kurtosis enclave stop stopped-old-enclave
       - run: kurtosis engine stop
@@ -171,7 +171,7 @@ jobs:
       - run: "${KURTOSIS_BINPATH} enclave inspect stopped-old-enclave" 
 
       # Ensure modules & enclaves still work
-      - run: "${KURTOSIS_BINPATH} module exec --enclave-id new-enclave kurtosistech/datastore-army-module --execute-params '{\"numDatastores\":2}'"
+      - run: "${KURTOSIS_BINPATH} module exec --enclave-id new-enclave kurtosistech/near-kurtosis-module"
       - run: "${KURTOSIS_BINPATH} service add new-enclave test-service httpd --ports http:80"
       - run: "${KURTOSIS_BINPATH} enclave ls"
       - run: "${KURTOSIS_BINPATH} enclave rm -f new-enclave"
