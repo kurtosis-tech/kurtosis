@@ -3,7 +3,7 @@
 * Removed the files-artifact-expansion destroy flow when destroying enclaves because it was throwing and error if volumes were still in use and now this flow was moved to `KurtosisBackend`
 
 ### Changes
-* Upgrade to container-engine-lib 0.14.5
+* Upgrade to container-engine-lib 0.15.0
 * Upgrade to kurtosis-core-api-lib 1.42.4
 
 # 1.14.3
