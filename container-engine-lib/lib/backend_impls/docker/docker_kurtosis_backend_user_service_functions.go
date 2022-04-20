@@ -588,9 +588,9 @@ func getUserServiceObjectFromContainerInfo(
 	}
 
 	var maybePublicIpAddr net.IP = nil
-	publicPorts := map[string]*port_spec.PortSpec{}
+	var maybePublicPorts map[string]*port_spec.PortSpec
 	if status == container_status.ContainerStatus_Running && len(privatePorts) > 0 {
-		maybePublicIpAddr, publicPorts, err = condensePublicNetworkInfoFromHostMachineBindings(
+		maybePublicIpAddr, maybePublicPorts, err = condensePublicNetworkInfoFromHostMachineBindings(
 			allHostMachinePortBindings,
 			privatePorts,
 			portIdsForDockerPortObjs,
@@ -621,9 +621,10 @@ func getUserServiceObjectFromContainerInfo(
 		service.ServiceGUID(guid),
 		status,
 		enclave.EnclaveID(enclaveId),
-		maybePublicIpAddr,
-		publicPorts,
 		privateIpAddr,
+		privatePorts,
+		maybePublicIpAddr,
+		maybePublicPorts,
 	)
 
 	return newObject, nil
