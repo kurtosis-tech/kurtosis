@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"io/ioutil"
 	"net"
 	"os"
@@ -536,6 +537,42 @@ func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, e
 			enclaveId,
 		)
 	}
+	//First, delete all files artifact expansion volumes
+	enclaveFilesArtifactExpansionVolumeFilters := &files_artifact_expansion_volume.FilesArtifactExpansionVolumeFilters{
+		EnclaveIDs: map[enclave.EnclaveID]bool{
+			enclaveId: true,
+		},
+	}
+
+	_, erroredFileArtifactExpansionVolumeNames, err := manager.kurtosisBackend.DestroyFilesArtifactExpansionVolumes(ctx, enclaveFilesArtifactExpansionVolumeFilters)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying files artifact expansion volumes using filters '%+v'", enclaveFilesArtifactExpansionVolumeFilters)
+	}
+	if len(erroredFileArtifactExpansionVolumeNames) > 0 {
+		erroredVolumeNamesStrs := []string{}
+		for volumeName, volumeErr := range erroredFileArtifactExpansionVolumeNames {
+			wrappedErr := stacktrace.Propagate(volumeErr, "An error occurred destroying files artifact expansion volume '%v'", volumeName)
+			erroredVolumeNamesStrs = append(erroredVolumeNamesStrs, wrappedErr.Error())
+		}
+		return stacktrace.NewError(
+			"An error occurred destroying one or more files artifact expansion volumes in enclave '%v':\n%v",
+			enclaveId,
+			strings.Join(
+				erroredVolumeNamesStrs,
+				"\n\n",
+			),
+		)
+	}
+
+	// Next, remove the enclave data dir (if it exists)
+	_, enclaveDataDirpathOnEngineContainer := manager.getEnclaveDataDirpath(enclaveId)
+	if _, statErr := os.Stat(enclaveDataDirpathOnEngineContainer); !os.IsNotExist(statErr) {
+		if removeErr := os.RemoveAll(enclaveDataDirpathOnEngineContainer); removeErr != nil {
+			return stacktrace.Propagate(removeErr, "An error occurred removing enclave data dir '%v' on engine container", enclaveDataDirpathOnEngineContainer)
+		}
+	}
+
+
 	_, enclaveDestroyErrs, err := manager.kurtosisBackend.DestroyEnclaves(ctx, getEnclaveByEnclaveIdFilter(enclaveId))
 	if err != nil {
 		return stacktrace.Propagate(err, "Attempted to destroy enclave '%v' but the backend threw an error", enclaveId)
