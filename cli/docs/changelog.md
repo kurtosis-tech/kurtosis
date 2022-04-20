@@ -1,4 +1,7 @@
 # TBD
+# Features
+* Added `destroy_enclave_test` in Golang and Typescript internal testsuites
+
 # Breaking Changes
 * Upgraded `kurtosis engine lib` to 1.14.2
   * Users should upgrade to `kurtosis-engine-api-lib` 1.14.2

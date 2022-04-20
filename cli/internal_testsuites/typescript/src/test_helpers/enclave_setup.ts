@@ -10,6 +10,7 @@ export async function createEnclave(testName:string, isPartitioningEnabled: bool
 	Promise<Result<{ 
         enclaveContext: EnclaveContext, 
         stopEnclaveFunction: () => void
+		kurtosisContext: KurtosisContext,
     }, Error>> {
 
 	const newKurtosisContextResult = await KurtosisContext.newKurtosisContextFromLocalEngine()
@@ -37,5 +38,5 @@ export async function createEnclave(testName:string, isPartitioningEnabled: bool
 		}
 	}
 
-	return ok({ enclaveContext, stopEnclaveFunction })
+	return ok({ enclaveContext, stopEnclaveFunction, kurtosisContext })
 }

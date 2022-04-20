@@ -56,7 +56,7 @@ test("Test network soft partitions", async () => {
 
     if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
 
-    const { enclaveContext, stopEnclaveFunction } = createEnclaveResult.value
+    const { enclaveContext, stopEnclaveFunction, kurtosisContext } = createEnclaveResult.value
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
