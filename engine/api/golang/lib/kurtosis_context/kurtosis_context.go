@@ -55,47 +55,8 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 	}
 
 	engineServiceClient := kurtosis_engine_rpc_api_bindings.NewEngineServiceClient(conn)
-
-	getEngineInfoResponse, err := engineServiceClient.GetEngineInfo(ctx, &emptypb.Empty{})
-	if err != nil {
-		errorStr := "An error occurred getting engine info"
-		grpcErrorCode := status.Code(err)
-		if grpcErrorCode == codes.Unavailable {
-			errorStr = "The Kurtosis Engine Server is unavailable and is probably not running; you will need to start it using the Kurtosis CLI before you can create a connection to it"
-		}
-		return nil, stacktrace.Propagate(err, errorStr)
-	}
-	runningEngineVersionStr := getEngineInfoResponse.GetEngineVersion()
-
-	runningEngineSemver, err := semver.StrictNewVersion(runningEngineVersionStr)
-	if err != nil {
-		logrus.Warnf("We expected the running engine version to match format X.Y.Z, but instead got '%v'; "+
-			"this means that we can't verify the API library and engine versions match so you may encounter runtime errors", runningEngineVersionStr)
-	}
-
-	libraryEngineSemver, err := semver.StrictNewVersion(kurtosis_engine_version.KurtosisEngineVersion)
-	if err != nil {
-		logrus.Warnf("We expected the API library version to match format X.Y.Z, but instead got '%v'; "+
-			"this means that we can't verify the API library and engine versions match so you may encounter runtime errors", kurtosis_engine_version.KurtosisEngineVersion)
-	}
-
-	if runningEngineSemver != nil && libraryEngineSemver != nil {
-
-		runningEngineMajorVersion := runningEngineSemver.Major()
-		runningEngineMinorVersion := runningEngineSemver.Minor()
-
-		libraryEngineMajorVersion := libraryEngineSemver.Major()
-		libraryEngineMinorVersion := libraryEngineSemver.Minor()
-
-		doApiVersionsMatch := libraryEngineMajorVersion == runningEngineMajorVersion && libraryEngineMinorVersion == runningEngineMinorVersion
-
-		if !doApiVersionsMatch {
-			return nil, stacktrace.NewError(
-				"An API version mismatch was detected between the running engine version '%v' and the engine version the library expects, '%v'; you should use the version of this library that corresponds to the running engine version",
-				runningEngineSemver.String(),
-				libraryEngineSemver.String(),
-			)
-		}
+	if err := validateEngineApiVersion(ctx, engineServiceClient); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred validating the Kurtosis engine API version")
 	}
 
 	kurtosisContext := &KurtosisContext{
@@ -266,4 +227,52 @@ func newEnclaveContextFromEnclaveInfo(
 	)
 
 	return result, nil
+}
+
+func validateEngineApiVersion(ctx context.Context, engineServiceClient kurtosis_engine_rpc_api_bindings.EngineServiceClient) error {
+	getEngineInfoResponse, err := engineServiceClient.GetEngineInfo(ctx, &emptypb.Empty{})
+	if err != nil {
+		errorStr := "An error occurred getting engine info"
+		grpcErrorCode := status.Code(err)
+		if grpcErrorCode == codes.Unavailable {
+			errorStr = "The Kurtosis Engine Server is unavailable and is probably not running; you will need to start it using the Kurtosis CLI before you can create a connection to it"
+		}
+		return stacktrace.Propagate(err, errorStr)
+	}
+	runningEngineVersionStr := getEngineInfoResponse.GetEngineVersion()
+
+	runningEngineSemver, err := semver.StrictNewVersion(runningEngineVersionStr)
+	if err != nil {
+		logrus.Warnf("We expected the running engine version to match format X.Y.Z, but instead got '%v'; "+
+			"this means that we can't verify the API library and engine versions match so you may encounter runtime errors", runningEngineVersionStr)
+		return nil
+	}
+
+	libraryEngineSemver, err := semver.StrictNewVersion(kurtosis_engine_version.KurtosisEngineVersion)
+	if err != nil {
+		logrus.Warnf("We expected the API library version to match format X.Y.Z, but instead got '%v'; "+
+			"this means that we can't verify the API library and engine versions match so you may encounter runtime errors", kurtosis_engine_version.KurtosisEngineVersion)
+		return nil
+	}
+
+	runningEngineMajorVersion := runningEngineSemver.Major()
+	runningEngineMinorVersion := runningEngineSemver.Minor()
+
+	libraryEngineMajorVersion := libraryEngineSemver.Major()
+	libraryEngineMinorVersion := libraryEngineSemver.Minor()
+
+	doApiVersionsMatch := libraryEngineMajorVersion == runningEngineMajorVersion && libraryEngineMinorVersion == runningEngineMinorVersion
+
+	if !doApiVersionsMatch {
+		 return stacktrace.NewError(
+			 "An API version mismatch was detected between the running engine version '%v' and the engine version this Kurtosis SDK library expects, '%v'. You should:\n" +
+				 "  1) upgrade your Kurtosis CLI to latest using the instructions at https://docs.kurtosistech.com/installation.html\n" +
+				 "  2) use the Kurtosis CLI to restart your engine via 'kurtosis engine restart'\n"	+
+				 "  3) upgrade your Kurtosis SDK library using the instructions at https://github.com/kurtosis-tech/kurtosis-engine-api-lib\n",
+			 runningEngineSemver.String(),
+			 libraryEngineSemver.String(),
+		 )
+	}
+
+	return nil
 }
