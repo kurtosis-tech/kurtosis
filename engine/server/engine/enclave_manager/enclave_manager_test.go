@@ -21,7 +21,7 @@ const (
 	//    server's changelog whenever a breaking Core API version change happens
 	//  * Therefore, this constant must be manually updated to the X.Y version of the Core version you just
 	//    bumped to, which will remind you to update the "Breaking Change" section of the changelog.
-	expectedCoreMajorMinorVersion = "1.42"
+	expectedCoreMajorMinorVersion = "1.43"
 	// !!!!!! BEFORE YOU UPDATE THIS CONSTANT TO FIX THE TEST, ADD A "BREAKING CHANGE" SECTION IN THE CHANGELOG !!!!!!
 )
 
