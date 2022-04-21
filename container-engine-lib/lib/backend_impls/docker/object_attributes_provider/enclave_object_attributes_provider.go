@@ -31,6 +31,8 @@ const (
 
 type DockerEnclaveObjectAttributesProvider interface {
 	ForEnclaveNetwork(isPartitioningEnabled bool) (DockerObjectAttributes, error)
+	ForEnclaveDataVolume() (DockerObjectAttributes, error)
+
 	ForApiContainer(
 		ipAddr net.IP,
 		privateGrpcPortId string,
@@ -97,6 +99,29 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(isP
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred while creating the Docker object attributes impl with the name '%s' and labels '%+v'",
+			name.GetString(),
+			getLabelKeyValuesAsStrings(labels),
+		)
+	}
+
+	return objectAttributes, nil
+}
+
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveDataVolume() (DockerObjectAttributes, error) {
+	enclaveIdStr := provider.enclaveId.GetString()
+	name, err := docker_object_name.CreateNewDockerObjectName(enclaveIdStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", enclaveIdStr)
+	}
+
+	labels := provider.getLabelsForEnclaveObject()
+	labels[label_key_consts.VolumeTypeLabelKey] = label_value_consts.EnclaveDataVolumeTypeLabelValue
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred while creating the ObjectAttributesImpl with name '%s' and labels '%+v'",
 			name.GetString(),
 			getLabelKeyValuesAsStrings(labels),
 		)
@@ -306,6 +331,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpan
 	}
 
 	labels := provider.getLabelsForEnclaveObject()
+	labels[label_key_consts.VolumeTypeLabelKey] = label_value_consts.FilesArtifactExpansionVolumeTypeLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
