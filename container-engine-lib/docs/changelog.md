@@ -1,4 +1,6 @@
 # TBD
+### Features
+* `DockerKurtosisBackend.CreateEnclave` also creates an enclave data volume
 
 # 0.15.0
 ### Fixes
