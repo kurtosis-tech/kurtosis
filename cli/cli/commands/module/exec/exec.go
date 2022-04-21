@@ -267,7 +267,7 @@ func run(cmd *cobra.Command, args []string) error {
 		},
 	}
 
-	//TODO replace with call with an API Container call
+	//TODO replace with API Container call
 	successfulModuleLogs, erroredModuleGuids, err := kurtosisBackend.GetModuleLogs(ctx, moduleFilters, shouldFollowModuleLogs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the module logs using filters '%+v'", moduleFilters)

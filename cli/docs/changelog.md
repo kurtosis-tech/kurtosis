@@ -7,6 +7,9 @@
 * Replaced `DockerManager` with `KurtosisBackend` in `module exec` command
 * Upgraded `container engine lib` to 0.15.0
 
+### Features
+* Added `destroy_enclave_test` in Golang and Typescript internal testsuites
+
 # 0.13.0
 ### Features
 * `enclave inspect` now prints port IDs, in sorted order
