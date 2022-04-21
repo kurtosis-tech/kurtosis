@@ -1,4 +1,8 @@
 # TBD
+### Breaking Changes
+* Added new return value `module's GUID` in `ApiContainerService.LoadModuleResponse`
+  * Users should adapt their `ApiContainerService.LoadModuleResponse` calls to receive this new argument
+
 ### Removals
 * Removed last references of `DockerManager` in the codebase in favor of `KurtosisBackend`
 

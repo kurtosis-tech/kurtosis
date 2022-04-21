@@ -87,23 +87,24 @@ func (service ApiContainerService) LoadModule(ctx context.Context, args *kurtosi
 		logrus.Errorf("An error occurred tracking load module event\n%v", err)
 	}
 
-	privateIpAddr, privateModulePort, publicIpAddr, publicModulePort, err := service.moduleStore.LoadModule(ctx, moduleId, image, serializedParams)
+	loadedModule, err := service.moduleStore.LoadModule(ctx, moduleId, image, serializedParams)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred loading module '%v' with container image '%v' and serialized params '%v'", moduleId, image, serializedParams)
 	}
-	privateApiPort, err := transformPortSpecToApiPort(privateModulePort)
+	privateApiPort, err := transformPortSpecToApiPort(loadedModule.GetPrivatePort())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's private port spec port to an API port")
 	}
-	publicApiPort, err := transformPortSpecToApiPort(publicModulePort)
+	publicApiPort, err := transformPortSpecToApiPort(loadedModule.GetPublicPort())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's public port spec port to an API port")
 	}
 
 	result := binding_constructors.NewLoadModuleResponse(
-		privateIpAddr.String(),
+		string(loadedModule.GetGUID()),
+		loadedModule.GetPrivateIp().String(),
 		privateApiPort,
-		publicIpAddr.String(),
+		loadedModule.GetPublicIp().String(),
 		publicApiPort,
 	)
 	return result, nil
