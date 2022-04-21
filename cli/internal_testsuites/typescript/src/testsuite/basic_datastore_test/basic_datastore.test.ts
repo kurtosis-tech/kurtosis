@@ -23,7 +23,7 @@ test("Test basic datastore test", async () => {
     
     if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
     
-    const { enclaveContext, stopEnclaveFunction, kurtosisContext } = createEnclaveResult.value
+    const { enclaveContext, stopEnclaveFunction } = createEnclaveResult.value
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------

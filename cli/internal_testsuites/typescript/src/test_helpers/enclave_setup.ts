@@ -10,7 +10,7 @@ export async function createEnclave(testName:string, isPartitioningEnabled: bool
 	Promise<Result<{ 
         enclaveContext: EnclaveContext, 
         stopEnclaveFunction: () => void
-		kurtosisContext: KurtosisContext,
+		destroyEnclaveFunction: () => Promise<Result<null, Error>>,
     }, Error>> {
 
 	const newKurtosisContextResult = await KurtosisContext.newKurtosisContextFromLocalEngine()
@@ -38,5 +38,16 @@ export async function createEnclave(testName:string, isPartitioningEnabled: bool
 		}
 	}
 
-	return ok({ enclaveContext, stopEnclaveFunction, kurtosisContext })
+	const destroyEnclaveFunction = async ():Promise<Result<null, Error>> => {
+		const destroyEnclaveResult = await kurtosisContext.destroyEnclave(enclaveId)
+		if(destroyEnclaveResult.isErr()) {
+			const errMsg = `An error occurred destroying enclave ${enclaveId} that we created for this test: ${destroyEnclaveResult.error.message}`
+			log.error(errMsg)
+			log.error(`ACTION REQUIRED: You'll need to destroy enclave ${enclaveId} manually!!!!`)
+			return err(new Error(errMsg))
+		}
+		return ok(null)
+	}
+
+	return ok({ enclaveContext, stopEnclaveFunction, destroyEnclaveFunction })
 }

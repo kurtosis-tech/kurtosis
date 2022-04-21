@@ -37,7 +37,7 @@ test("Test network partition", async () => {
 
      if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
  
-     const { enclaveContext, stopEnclaveFunction, kurtosisContext } = createEnclaveResult.value
+     const { enclaveContext, stopEnclaveFunction } = createEnclaveResult.value
  
      try {
 

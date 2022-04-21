@@ -25,7 +25,7 @@ test("Test destroy enclave", async () => {
 
     if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
 
-    const { enclaveContext, stopEnclaveFunction, kurtosisContext } = createEnclaveResult.value
+    const { enclaveContext, stopEnclaveFunction, destroyEnclaveFunction } = createEnclaveResult.value
 
     let shouldStopEnclaveAtTheEnd = true
 
@@ -56,7 +56,7 @@ test("Test destroy enclave", async () => {
         log.info(`Added file server service with public IP "${fileServerPublicIp}" and port "${fileServerPublicPortNum}"`)
 
         // ------------------------------------- TEST RUN ----------------------------------------------
-        const destroyEnclaveResult = await kurtosisContext.destroyEnclave(enclaveContext.getEnclaveId())
+        const destroyEnclaveResult = await destroyEnclaveFunction()
 
         if(destroyEnclaveResult.isErr()) {
             log.error(`An error occurred destroying enclave with ID "${enclaveContext.getEnclaveId()}"`)

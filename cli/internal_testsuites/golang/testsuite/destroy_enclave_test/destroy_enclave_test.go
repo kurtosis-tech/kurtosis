@@ -31,7 +31,7 @@ func TestDestroyEnclave(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, stopEnclaveFunc, kurtosisCtx, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, stopEnclaveFunc, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	shouldStopEnclaveAtTheEnd := true
 	defer func() {
@@ -51,7 +51,7 @@ func TestDestroyEnclave(t *testing.T) {
 	_, err = enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
 	require.NoError(t, err, "An error occurred adding the file server service")
 
-	err = kurtosisCtx.DestroyEnclave(ctx, enclaveCtx.GetEnclaveID())
+	err = destroyEnclaveFunc()
 	require.NoErrorf(t, err, "An error occurred destroying enclave with ID '%v'", enclaveCtx.GetEnclaveID())
 	shouldStopEnclaveAtTheEnd = false
 }
