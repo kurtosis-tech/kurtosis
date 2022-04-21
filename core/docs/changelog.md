@@ -1,4 +1,6 @@
 # TBD
+
+# 1.43.0
 ### Breaking Changes
 * Added new return value `module's GUID` in `ApiContainerService.LoadModuleResponse`
   * Users should adapt their `ApiContainerService.LoadModuleResponse` calls to receive this new argument
