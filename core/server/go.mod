@@ -8,7 +8,6 @@ replace (
 )
 
 require (
-	github.com/docker/docker v17.12.0-ce-rc1.0.20200514193020-5da88705cccc+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220420203650-79d3f4a8977a
