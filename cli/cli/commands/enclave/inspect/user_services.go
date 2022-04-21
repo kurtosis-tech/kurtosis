@@ -10,14 +10,15 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/stacktrace"
 	"sort"
+	"strings"
 )
 
 const (
 	userServiceGUIDColHeader                                    = "GUID"
-	userServiceIDColHeader                                      = "ID"
-	userServiceHostMachinePortBindingsColHeader                 = "LocalPortBindings"
+	userServiceIDColHeader    = "ID"
+	userServicePortsColHeader = "Ports"
 
-	noUserServiceHostPortBindingsPlaceholder = "<none>"
+	missingPortPlaceholder = "<none>"
 )
 
 func printUserServices(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveId enclave.EnclaveID) error {
@@ -26,10 +27,6 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 		EnclaveIDs: map[enclave.EnclaveID]bool{
 			enclaveId: true,
 		},
-		Statuses: map[container_status.ContainerStatus]bool{
-			container_status.ContainerStatus_Stopped: true,
-			container_status.ContainerStatus_Running: true,
-		},
 	}
 
 	userServices, err := kurtosisBackend.GetUserServices(ctx, userServiceFilters)
@@ -37,20 +34,24 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 		return stacktrace.Propagate(err, "An error occurred getting user services using filters '%+v'", userServiceFilters)
 	}
 
-	tablePrinter := output_printers.NewTablePrinter(userServiceGUIDColHeader, userServiceIDColHeader, userServiceHostMachinePortBindingsColHeader)
+	tablePrinter := output_printers.NewTablePrinter(
+		userServiceGUIDColHeader,
+		userServiceIDColHeader,
+		userServicePortsColHeader,
+	)
 	sortedUserServices:= getSortedUserServiceSliceFromUserServiceMap(userServices)
 	for _, userService := range sortedUserServices {
 
-		hostPortBindingsStrings := getContainerHostPortBindingStrings(userService)
-		firstHostPortBindingStr := noUserServiceHostPortBindingsPlaceholder
-		if hostPortBindingsStrings != nil {
-			firstHostPortBindingStr = hostPortBindingsStrings[0]
-			hostPortBindingsStrings = hostPortBindingsStrings[1:]
-		}
 		guidStr := string(userService.GetGUID())
 		idStr := string(userService.GetID())
+		portBindingLines, err := getPortBindingStrings(userService)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting the port binding strings")
+		}
+		firstPortBindingLine := portBindingLines[0]
+		additionalPortBindingLines := portBindingLines[1:]
 
-		if err := tablePrinter.AddRow(guidStr, idStr, firstHostPortBindingStr); err != nil {
+		if err := tablePrinter.AddRow(guidStr, idStr, firstPortBindingLine); err != nil {
 			return stacktrace.Propagate(
 				err,
 				"An error occurred adding row for user service with GUID '%v' to the table printer",
@@ -58,12 +59,12 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 			)
 		}
 
-		for _, additionalHostPortBindingStr := range hostPortBindingsStrings {
-			if err := tablePrinter.AddRow("", "", additionalHostPortBindingStr); err != nil {
+		for _, additionalPortBindingLine := range additionalPortBindingLines {
+			if err := tablePrinter.AddRow("", "", additionalPortBindingLine); err != nil {
 				return stacktrace.Propagate(
 					err,
-					"An error occurred adding additional host port binding '%v' row for user service wit GUID '%v' to the table printer",
-					additionalHostPortBindingStr,
+					"An error occurred adding additional port binding row '%v' for user service with GUID '%v' to the table printer",
+					additionalPortBindingLine,
 					guidStr,
 				)
 			}
@@ -87,17 +88,51 @@ func getSortedUserServiceSliceFromUserServiceMap(userServices map[service.Servic
 	return userServicesResult
 }
 
-func getContainerHostPortBindingStrings(userService *service.Service) []string {
-	var allHosPortBindings []string
-	publicPorts := userService.GetPublicPorts()
-	if len(publicPorts) > 0 {
-		//IF the service has at least one public port it will have set the public IP address
-		publicIp := userService.GetMaybePublicIP()
-		for portID, portSpec := range publicPorts {
-			hostPortBindingString := fmt.Sprintf("%v -> %v:%v", portID, publicIp, portSpec.GetNumber())
-			allHosPortBindings = append(allHosPortBindings, hostPortBindingString)
+// Guaranteed to have at least one entry
+func getPortBindingStrings(userService *service.Service) ([]string, error) {
+	privatePorts := userService.GetPrivatePorts()
+	if len(privatePorts) == 0 {
+		return []string{missingPortPlaceholder}, nil
+	}
+
+	portIds := []string{}
+	resultLines := map[string]string{}
+	for portId, privatePortSpec := range privatePorts {
+		portIds = append(portIds, portId)
+		line := fmt.Sprintf(
+			"%v: %v/%v",
+			portId,
+			privatePortSpec.GetNumber(),
+			strings.ToLower(privatePortSpec.GetProtocol().String()),
+		)
+		resultLines[portId] = line
+	}
+
+	// If the container is running, add host machine port binding information
+	if userService.GetStatus() == container_status.ContainerStatus_Running {
+		publicIpAddr := userService.GetMaybePublicIP()
+		publicPorts := userService.GetMaybePublicPorts()
+		for portId := range privatePorts {
+			publicPortSpec, found := publicPorts[portId]
+			if !found {
+				return nil, stacktrace.NewError(
+					"Private port '%v' was declared on service '%v' and the container is running, but no corresponding public port " +
+						"was found; this is very strange!",
+					portId,
+					userService.GetGUID(),
+				)
+			}
+			currentPortLine := resultLines[portId]
+			resultLines[portId] = currentPortLine + fmt.Sprintf(" -> %v:%v", publicIpAddr, publicPortSpec.GetNumber())
 		}
 	}
 
-	return allHosPortBindings
+	// Finally, sort the resulting lines by port ID
+	sort.Strings(portIds)
+	result := []string{}
+	for _, portId := range portIds {
+		result = append(result, resultLines[portId])
+	}
+
+	return result, nil
 }

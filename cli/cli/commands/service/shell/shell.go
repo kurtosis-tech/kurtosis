@@ -28,8 +28,6 @@ const (
 	kurtosisLogLevelArg                    = "kurtosis-log-level"
 	enclaveIDArg                           = "enclave-id"
 	guidArg                                = "guid"
-	shouldShowStoppedUserServiceContainers = true
-
 )
 
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
@@ -80,67 +78,6 @@ func run(cmd *cobra.Command, args []string) error {
 	guidStr := parsedPositionalArgs[guidArg]
 	guid := service.ServiceGUID(guidStr)
 
-	// TODO Remove once KurtosisBackend can create an interactive shell on a container
-	/*dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
-	}
-	dockerManager := docker_manager.NewDockerManager(
-		dockerClient,
-	)
-
-	labels := labels_helper.GetUserServiceContainerLabelsWithEnclaveID(enclaveID)
-	labels[schema.GUIDLabel] = guid
-
-	containers, err := dockerManager.GetContainersByLabels(ctx, labels, shouldShowStoppedUserServiceContainers)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting containers by labels: '%+v'", labels)
-	}
-
-	if containers == nil || len(containers) == 0 {
-		logrus.Errorf("No service containers found for enclave with ID '%v'", enclaveID)
-		return stacktrace.NewError("No service containers found for service with GUID '%v' in enclave '%v'", guid, enclaveID)
-	}
-
-	if len(containers) > 1 {
-		return stacktrace.NewError("Only one container with enclave ID '%v' and GUID '%v' should exist but found '%v' containers with these properties", enclaveID, guid, len(containers))
-	}
-
-	serviceContainer := containers[0]
-
-	config := types.ExecConfig{
-		AttachStdin:  true,
-		Tty:          true,
-		AttachStderr: true,
-		AttachStdout: true,
-		Detach:       false,
-		Cmd:          commandToRun,
-	}
-
-	response, err := dockerClient.ContainerExecCreate(ctx, serviceContainer.GetId(), config)
-
-	if err != nil {
-		return stacktrace.Propagate(err, "an error occurred while creating the ContainerExec")
-	}
-
-	execID := response.ID
-	if execID == "" {
-		return stacktrace.NewError("the Exec ID was empty")
-	}
-
-	execStartCheck := types.ExecStartCheck{
-		Detach: false,
-		Tty:    true,
-	}
-
-	hijackedResponse, err := dockerClient.ContainerExecAttach(ctx, execID, execStartCheck)
-	if err != nil {
-		return stacktrace.Propagate(err, "There was an error while attaching to the ContainerExec")
-	}
-	defer hijackedResponse.Close()
-
-	 */
-
 	kurtosisBackend, err := lib.GetLocalDockerKurtosisBackend()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
@@ -150,6 +87,7 @@ func run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting connection with user service with GUID '%v' in enclave '%v'", guid, enclaveId)
 	}
+	defer conn.Close()
 
 	newReader := bufio.NewReader(conn)
 
