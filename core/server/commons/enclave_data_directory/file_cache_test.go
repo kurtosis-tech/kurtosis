@@ -12,15 +12,30 @@ import (
 	"path"
 	"testing"
 	"strings"
-	"bytes"
+	"github.com/kurtosis-tech/stacktrace"
+	"errors"
 )
+
+
+type failingReader interface {
+	Read(b []byte) (int, error)
+}
+
+type failedReader struct {
+	s string
+	i int64
+}
+
+func (reader failedReader) Read(b []byte) (int, error) {
+	return 0, stacktrace.Propagate(errors.New("You did a bad thing."), "Bad things happen to bad people.")
+}
 
 func TestFileCache_AddAndGetArtifact(t *testing.T) {
 	fileCache := getTestFileCache(t)
-
 	testKey := "test-key"
 	testContents := "test-file-contents"
-	reader := strings.NewReader(testContents)
+
+	reader := strings.NewReader(testContents);
 	addedFileObj, err := fileCache.AddFile(testKey, reader)
 	assert.Nil(t, err)
 
@@ -61,9 +76,11 @@ func TestFileCache_AddErrorsOnDuplicateAdd(t *testing.T) {
 
 func TestFileCache_FileDeletedOnSupplierError(t *testing.T) {
 	fileCache := getTestFileCache(t)
+	var readerThatFails failingReader
+	readerThatFails = failedReader{"",0}
 
 	testKey := "test-keys"
-	_, err := fileCache.AddFile(testKey, bytes.NewReader(nil))
+	_, err := fileCache.AddFile(testKey, readerThatFails)
 	assert.NotNil(t, err)
 
 	// Make sure the file cache directory is still empty

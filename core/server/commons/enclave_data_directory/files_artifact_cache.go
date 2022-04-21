@@ -12,6 +12,7 @@ import (
 	// If we don't have the "_" in front, Goland will complain it's unused
 	_ "golang.org/x/crypto/sha3"
 	"net"
+	"fmt"
 )
 
 /*
@@ -34,6 +35,7 @@ func (cache FilesArtifactCache) DownloadFilesArtifact(artifactId string, method 
 		return stacktrace.Propagate(err, "An error occurred making the request to URL '%v' to get the data for aritfact '%v'", url, artifactId)
 	}
 	defer connection.Close()
+	fmt.Fprintf(connection, "GET / HTTP/1.0\r\n\r\n")
 
 	_, err = cache.underlying.AddFile(artifactId, connection)
 	return err

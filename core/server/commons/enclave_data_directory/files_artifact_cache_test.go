@@ -15,8 +15,8 @@ func TestFilesArtifactCache_SuccessfulDownload(t *testing.T) {
 	cache := getTestFilesArtifactCache(t)
 
 	testArtifactId := "test-artifact"
-	url := "https://www.google.com"
-	err := cache.DownloadFilesArtifact(testArtifactId, "https", url)
+	url := "google.com:80"
+	err := cache.DownloadFilesArtifact(testArtifactId, "tcp", url)
 	assert.Nil(t, err)
 }
 
