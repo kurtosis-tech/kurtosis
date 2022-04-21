@@ -19,13 +19,15 @@ const FILE_SERVER_PORT_SPEC = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, PortPr
 
 jest.setTimeout(180000)
 
-test("Test files artifact mounting", async () => {
+test("Test destroy enclave", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
     const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
 
     if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
 
     const { enclaveContext, stopEnclaveFunction, kurtosisContext } = createEnclaveResult.value
+
+    let shouldStopEnclaveAtTheEnd = true
 
     try {
 
@@ -51,16 +53,21 @@ test("Test files artifact mounting", async () => {
         const fileServerPublicIp = serviceContext.getMaybePublicIPAddress();
         const fileServerPublicPortNum = publicPort.number
 
-
         log.info(`Added file server service with public IP "${fileServerPublicIp}" and port "${fileServerPublicPortNum}"`)
 
         // ------------------------------------- TEST RUN ----------------------------------------------
         const destroyEnclaveResult = await kurtosisContext.destroyEnclave(enclaveContext.getEnclaveId())
 
-        if(destroyEnclaveResult.isErr()) { throw destroyEnclaveResult.error }
+        if(destroyEnclaveResult.isErr()) {
+            log.error(`An error occurred destroying enclave with ID "${enclaveContext.getEnclaveId()}"`)
+            throw destroyEnclaveResult.error
+        }
 
+        shouldStopEnclaveAtTheEnd = false
     }finally{
-        stopEnclaveFunction()
+        if (shouldStopEnclaveAtTheEnd) {
+            stopEnclaveFunction()
+        }
     }
     jest.clearAllTimers()
 })

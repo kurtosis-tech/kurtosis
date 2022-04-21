@@ -33,7 +33,12 @@ func TestDestroyEnclave(t *testing.T) {
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
 	enclaveCtx, stopEnclaveFunc, kurtosisCtx, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
-	defer stopEnclaveFunc()
+	shouldStopEnclaveAtTheEnd := true
+	defer func() {
+		if shouldStopEnclaveAtTheEnd {
+			stopEnclaveFunc()
+		}
+	}()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	filesArtifacts := map[services.FilesArtifactID]string{
@@ -48,6 +53,7 @@ func TestDestroyEnclave(t *testing.T) {
 
 	err = kurtosisCtx.DestroyEnclave(ctx, enclaveCtx.GetEnclaveID())
 	require.NoErrorf(t, err, "An error occurred destroying enclave with ID '%v'", enclaveCtx.GetEnclaveID())
+	shouldStopEnclaveAtTheEnd = false
 }
 
 // ====================================================================================================
