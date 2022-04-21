@@ -29,12 +29,14 @@ func NewLoadModuleArgs(moduleId string, containerImage string, serializedParams 
 }
 
 func NewLoadModuleResponse(
+	guid string,
 	privateIpAddr string,
 	privatePort *kurtosis_core_rpc_api_bindings.Port,
 	publicIpAddr string,
 	publicPort *kurtosis_core_rpc_api_bindings.Port,
 ) *kurtosis_core_rpc_api_bindings.LoadModuleResponse {
 	return &kurtosis_core_rpc_api_bindings.LoadModuleResponse{
+		Guid: guid,
 		PrivateIpAddr: privateIpAddr,
 		PrivatePort:   privatePort,
 		PublicIpAddr:  publicIpAddr,

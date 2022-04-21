@@ -96,6 +96,9 @@ message LoadModuleResponse {
 
   // The port the module can be reached at *outside* the enclave
   Port public_port = 4;
+
+  // The module's GUID
+  string guid = 5;
 }
 
 // ==============================================================================================

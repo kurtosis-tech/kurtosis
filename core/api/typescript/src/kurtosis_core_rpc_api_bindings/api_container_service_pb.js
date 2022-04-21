@@ -984,7 +984,8 @@ proto.api_container_api.LoadModuleResponse.toObject = function(includeInstance, 
     privateIpAddr: jspb.Message.getFieldWithDefault(msg, 1, ""),
     privatePort: (f = msg.getPrivatePort()) && proto.api_container_api.Port.toObject(includeInstance, f),
     publicIpAddr: jspb.Message.getFieldWithDefault(msg, 3, ""),
-    publicPort: (f = msg.getPublicPort()) && proto.api_container_api.Port.toObject(includeInstance, f)
+    publicPort: (f = msg.getPublicPort()) && proto.api_container_api.Port.toObject(includeInstance, f),
+    guid: jspb.Message.getFieldWithDefault(msg, 5, "")
   };
 
   if (includeInstance) {
@@ -1038,6 +1039,10 @@ proto.api_container_api.LoadModuleResponse.deserializeBinaryFromReader = functio
       var value = new proto.api_container_api.Port;
       reader.readMessage(value,proto.api_container_api.Port.deserializeBinaryFromReader);
       msg.setPublicPort(value);
+      break;
+    case 5:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setGuid(value);
       break;
     default:
       reader.skipField();
@@ -1096,6 +1101,13 @@ proto.api_container_api.LoadModuleResponse.serializeBinaryToWriter = function(me
       4,
       f,
       proto.api_container_api.Port.serializeBinaryToWriter
+    );
+  }
+  f = message.getGuid();
+  if (f.length > 0) {
+    writer.writeString(
+      5,
+      f
     );
   }
 };
@@ -1208,6 +1220,24 @@ proto.api_container_api.LoadModuleResponse.prototype.clearPublicPort = function(
  */
 proto.api_container_api.LoadModuleResponse.prototype.hasPublicPort = function() {
   return jspb.Message.getField(this, 4) != null;
+};
+
+
+/**
+ * optional string guid = 5;
+ * @return {string}
+ */
+proto.api_container_api.LoadModuleResponse.prototype.getGuid = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.LoadModuleResponse} returns this
+ */
+proto.api_container_api.LoadModuleResponse.prototype.setGuid = function(value) {
+  return jspb.Message.setProto3StringField(this, 5, value);
 };
 
 

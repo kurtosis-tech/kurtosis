@@ -55,17 +55,14 @@ func (store *ModuleStore) LoadModule(
 	containerImage string,
 	serializedParams string,
 ) (
-	resultPrivateIp net.IP,
-	resultPrivatePort *port_spec.PortSpec,
-	resultPublicIp net.IP,
-	resultPublicPort *port_spec.PortSpec,
+	resultModule *module.Module,
 	resultErr error,
 ) {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
 
 	if _, found := store.modules[moduleId]; found {
-		return nil, nil, nil, nil, stacktrace.NewError("Module ID '%v' already exists in the module map", moduleId)
+		return nil, stacktrace.NewError("Module ID '%v' already exists in the module map", moduleId)
 	}
 
 	launchedModule, launchedModuleClient, err := store.moduleLauncher.Launch(
@@ -75,7 +72,7 @@ func (store *ModuleStore) LoadModule(
 		serializedParams,
 	)
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(
+		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred launching module from container image '%v' and serialized params '%v'",
 			containerImage,
@@ -97,7 +94,7 @@ func (store *ModuleStore) LoadModule(
 	}
 
 	store.modules[moduleId] = infoForModule
-	return privateIpAddr, privatePort, publicIpAddr, publicPort, nil
+	return launchedModule, nil
 }
 
 func (store *ModuleStore) UnloadModule(ctx context.Context, moduleId module.ModuleID) error {
