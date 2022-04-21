@@ -48,6 +48,7 @@ func (handler *FileHandler) ChangeDirectory(directoryToChangeTo string){
 }
 
 // SaveBytesToPath: Save bytes directly to the disk.
+// Replace content with reader
 func (handler *FileHandler) SaveBytesToPath(fileName string, relativeFolder string, content []byte) (string, error) {
 	absolutePath := filepath.Join(handler.currentWorkingDirectory, relativeFolder, fileName)
 	file, err := os.Create(absolutePath)

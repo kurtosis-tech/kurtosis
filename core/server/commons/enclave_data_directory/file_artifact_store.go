@@ -6,33 +6,35 @@
 package enclave_data_directory
 
 import (
-	"sync"
 	"github.com/google/uuid"
 	"strings"
 	"fmt"
+	"sync"
+)
+
+const (
+	artifactExtension = "tgz"
 )
 
 type FileStore struct {
-	uuid							string
-	absolutePath 					string
-	dirpathRelativeToDataDirRoot 	string
-	mutex 							*sync.Mutex
+	uuid		string
+	fileCache 	*FileCache
+	mutex 		*sync.Mutex
 }
 
 func newFileStore(uuid string, absolutePath string, dirpathRelativeToDataDirRoot string) *FileStore {
 	return &FileStore {
 		uuid: 							uuid,
-		absolutePath: 					absolutePath,
-		dirpathRelativeToDataDirRoot: 	dirpathRelativeToDataDirRoot,
-		mutex: 							&sync.Mutex{},
+		fileCache: newFileCache(absolutePath, dirpathRelativeToDataDirRoot),
 	}
 }
 
 // StoreFile: Saves file to disk and returns a FileStore struct.
-func StoreFile(fileName string, filedata []byte) (*FileStore, error) {
+// Just rename via uuid only and appen tgz extension.
+func (store FileStore) StoreFile(fileName string, filedata []byte) (*FileStore, error) {
 	generatedUUID, _ := getUniversallyUniqueID()
 	uuidString := strings.Replace(generatedUUID.String(), "-", "",-1)
-	uuidFileName := strings.Join([]string{uuidString, fileName}, "_")
+	uuidFileName := strings.Join([]string{uuidString, artifactExtension}, ".")
 	relativeFolder := "" //Don't need a folder?
 
 	handler, err := createFileHandler()
