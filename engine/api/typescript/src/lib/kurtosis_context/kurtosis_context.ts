@@ -80,9 +80,9 @@ export class KurtosisContext {
             ));
         }
 
-        const getEngineInfoResult = await this.getEngineInfo(genericEngineClient)
-        if(getEngineInfoResult.isErr()){
-            return err(getEngineInfoResult.error)
+        const engineApiVersionValidationResult = await KurtosisContext.validateEngineApiVersion(genericEngineClient)
+        if(engineApiVersionValidationResult.isErr()){
+            return err(engineApiVersionValidationResult.error)
         }
 
         const kurtosisContext = new KurtosisContext(genericEngineClient)
@@ -201,45 +201,6 @@ export class KurtosisContext {
     // ====================================================================================================
     //                                       Private helper functions
     // ====================================================================================================
-    private static async getEngineInfo(genericKurtosisContext: GenericEngineClient): Promise<Result<null, Error>>{
-        const getEngineInfoResult = await genericKurtosisContext.getEngineInfo()
-
-        if(getEngineInfoResult.isErr()){
-            return err(getEngineInfoResult.error)
-        }
-
-        const engineInfoResponse: GetEngineInfoResponse = getEngineInfoResult.value;
-
-        const runningEngineVersionStr: string = engineInfoResponse.getEngineVersion()
-
-        const runningEngineSemver: semver.SemVer | null = semver.parse(runningEngineVersionStr)
-        if (runningEngineSemver === null){
-            log.warn(`We expected the running engine version to match format X.Y.Z, but instead got ${runningEngineVersionStr}; this means that we can't verify the API library and engine versions match so you may encounter runtime errors`)
-        }
-
-        const libraryEngineSemver: semver.SemVer | null = semver.parse(KURTOSIS_ENGINE_VERSION)
-        if (libraryEngineSemver === null){
-            log.warn(`We expected the library engine version to match format X.Y.Z, but instead got ${KURTOSIS_ENGINE_VERSION}; this means that we can't verify the API library and engine versions match so you may encounter runtime errors`)
-        }
-
-        if(runningEngineSemver && libraryEngineSemver){
-            const runningEngineMajorVersion = semver.major(runningEngineSemver)
-            const runningEngineMinorVersion = semver.minor(runningEngineSemver)
-
-            const libraryEngineMajorVersion = semver.major(libraryEngineSemver)
-            const libraryEngineMinorVersion = semver.minor(libraryEngineSemver)
-
-            const doApiVersionsMatch: boolean = libraryEngineMajorVersion === runningEngineMajorVersion && libraryEngineMinorVersion === runningEngineMinorVersion
-            if (!doApiVersionsMatch) {
-                return err(new Error(
-                    `An API version mismatch was detected between the running engine version ${runningEngineSemver.version} and the engine version the library expects, ${libraryEngineSemver.version}; you should use the version of this library that corresponds to the running engine version`
-                ));
-            }
-        }
-
-        return ok(null)
-    }
-
     private async newEnclaveContextFromEnclaveInfo(enclaveInfo: EnclaveInfo): Promise<Result<EnclaveContext, Error>> {
         const enclaveContainersStatus = enclaveInfo.getContainersStatus()
         if (enclaveContainersStatus !== EnclaveContainersStatus.ENCLAVECONTAINERSSTATUS_RUNNING) {
@@ -283,5 +244,45 @@ export class KurtosisContext {
 
         const newEnclaveContext = newEnclaveContextResult.value
         return ok(newEnclaveContext);
+    }
+
+    private static async validateEngineApiVersion(genericKurtosisContext: GenericEngineClient): Promise<Result<null, Error>>{
+        const getEngineInfoResult = await genericKurtosisContext.getEngineInfo()
+        if(getEngineInfoResult.isErr()){
+            return err(getEngineInfoResult.error)
+        }
+        const engineInfoResponse: GetEngineInfoResponse = getEngineInfoResult.value;
+
+        const runningEngineVersionStr: string = engineInfoResponse.getEngineVersion()
+
+        const runningEngineSemver: semver.SemVer | null = semver.parse(runningEngineVersionStr)
+        if (runningEngineSemver === null){
+            log.warn(`We expected the running engine version to match format X.Y.Z, but instead got ${runningEngineVersionStr}; this means that we can't verify the API library and engine versions match so you may encounter runtime errors`)
+        }
+
+        const libraryEngineSemver: semver.SemVer | null = semver.parse(KURTOSIS_ENGINE_VERSION)
+        if (libraryEngineSemver === null){
+            log.warn(`We expected the library engine version to match format X.Y.Z, but instead got ${KURTOSIS_ENGINE_VERSION}; this means that we can't verify the API library and engine versions match so you may encounter runtime errors`)
+        }
+
+        if(runningEngineSemver && libraryEngineSemver){
+            const runningEngineMajorVersion = semver.major(runningEngineSemver)
+            const runningEngineMinorVersion = semver.minor(runningEngineSemver)
+
+            const libraryEngineMajorVersion = semver.major(libraryEngineSemver)
+            const libraryEngineMinorVersion = semver.minor(libraryEngineSemver)
+
+            const doApiVersionsMatch: boolean = libraryEngineMajorVersion === runningEngineMajorVersion && libraryEngineMinorVersion === runningEngineMinorVersion
+            if (!doApiVersionsMatch) {
+                return err(new Error(
+                    `An API version mismatch was detected between the running engine version '${runningEngineSemver.version}' and the engine version this Kurtosis SDK library expects, '${libraryEngineSemver.version}'. You should:\n` +
+                    `  1) upgrade your Kurtosis CLI to latest using the instructions at https://docs.kurtosistech.com/installation.html\n` +
+                    `  2) use the Kurtosis CLI to restart your engine via 'kurtosis engine restart'\n`	+
+                    `  3) upgrade your Kurtosis SDK library using the instructions at https://github.com/kurtosis-tech/kurtosis-engine-api-lib\n`,
+                ));
+            }
+        }
+
+        return ok(null)
     }
 }
