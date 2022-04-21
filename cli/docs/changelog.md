@@ -1,11 +1,10 @@
 # TBD
-# Features
-* `enclave inspect` now prints port IDs, in sorted order
+### Features
 * Added `destroy_enclave_test` in Golang and Typescript internal testsuites
 
-# Breaking Changes
-* Upgraded `kurtosis engine lib` to 1.14.2
-  * Users should upgrade to `kurtosis-engine-api-lib` 1.14.2
+# 0.13.0
+### Features
+* `enclave inspect` now prints port IDs, in sorted order
 
 ### Changes
 * Upgraded `container engine lib` to 0.14.3
