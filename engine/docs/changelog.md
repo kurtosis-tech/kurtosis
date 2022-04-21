@@ -1,4 +1,6 @@
 # TBD
+
+# 1.15.0
 ### Breaking Changes
 * Bumped Dependencies for Kurtosis Core which is now version 1.43.0
 
