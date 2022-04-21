@@ -16,7 +16,7 @@ import (
 func TestFileHandler_ChangeDirectory(t *testing.T) {
 	startDirectory, _ := os.Getwd()
 	testHigherDirectory := "../../gopher"
-	handler := createFileHandler(startDirectory)
+	handler,_ := createFileHandler()
 	handler.ChangeDirectory(testHigherDirectory)
 	assert.Equal(t, filepath.Join(startDirectory, testHigherDirectory), handler.currentWorkingDirectory)
 
@@ -33,18 +33,16 @@ func TestFileHandler_SaveBytesToPath(t *testing.T) {
 	startDirectory, _ := os.Getwd()
 	fileName := "TestFileHandler_SaveBytesToPath.txt"
 	content := []byte("Long live Kurtosis.")
-	handler := createFileHandler(startDirectory)
-	err := handler.SaveBytesToPath(fileName, "", content)
+	handler, _ := createFileHandler()
+	absolutePath, err := handler.SaveBytesToPath(fileName, "", content)
 	require.NoError(t, err)
 
 	fileLocation := filepath.Join(startDirectory, fileName)
 	defer os.Remove(fileLocation)
+
+	assert.Equal(t, fileLocation, absolutePath)
 	assert.FileExists(t, fileLocation)
 
 	fileContents,_ := os.ReadFile(fileLocation)
 	assert.Equal(t, content, fileContents)
-}
-
-func createFileHandler(workingDir string) *FileHandler{
-	return newFileHandler(workingDir)
 }

@@ -10,10 +10,10 @@ import (
 	"path/filepath"
 	"fmt"
 	"strings"
+	"errors"
 )
 
 //FileHandler: A class that is responsible for saving data to disk and cleaning up temporary files.
-//currentWorkingDirectory - A directory that the FileHandler will append all other relative paths to.
 type FileHandler struct {
 	currentWorkingDirectory string
 }
@@ -24,8 +24,16 @@ func newFileHandler(currentWorkingDirectory string) *FileHandler {
 	}
 }
 
+func createFileHandler() (*FileHandler, error) {
+	currentDirectory, err := os.Getwd()
+	if err != nil {
+		message := "Couldn't get working directory."
+		return nil, errors.New(message)
+	}
+	return newFileHandler(currentDirectory), nil
+}
+
 //ChangeDirectory: Changes the working directory so new files can have cleaner relative save paths in code.
-//directoryToChangeTo: A relative or absolute directory we wish to change to. Accepts "../" "./" "/" and no prefixes.
 //TODO: Check to make sure that the directory is even a valid location or not.
 func (handler *FileHandler) ChangeDirectory(directoryToChangeTo string){
 	isRelative := strings.HasPrefix(directoryToChangeTo, "../")
@@ -40,16 +48,13 @@ func (handler *FileHandler) ChangeDirectory(directoryToChangeTo string){
 }
 
 // SaveBytesToPath: Save bytes directly to the disk.
-// fileName - The name of the file we wish to save the bytes to.
-// relativeFolder - The folder name, relative to the currentWorkingDirectory, we want to save in.
-// content - The data, in the form of a byte array, we wish to save.
-func (handler *FileHandler) SaveBytesToPath(fileName string, relativeFolder string, content []byte) error{
+func (handler *FileHandler) SaveBytesToPath(fileName string, relativeFolder string, content []byte) (string, error) {
 	absolutePath := filepath.Join(handler.currentWorkingDirectory, relativeFolder, fileName)
 	file, err := os.Create(absolutePath)
 
 	if err != nil {
 		fmt.Printf("Error creating %s.\n %s", fileName, err.Error())
-		return err
+		return absolutePath, err
 	}
 
 	defer file.Close()
@@ -57,8 +62,8 @@ func (handler *FileHandler) SaveBytesToPath(fileName string, relativeFolder stri
 	_, writeErr := file.Write(content)
 	if writeErr != nil {
 		fmt.Printf("Error writing %s.\n %s", fileName, writeErr.Error())
-		return writeErr
+		return absolutePath, writeErr
 	}
 
-	return nil
+	return absolutePath, nil
 }

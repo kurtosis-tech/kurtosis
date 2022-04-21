@@ -7,25 +7,10 @@ package enclave_data_directory
 
 import (
 	"sync"
-	"os"
+	"github.com/google/uuid"
+	"strings"
+	"fmt"
 )
-
-/*
-Needs:
-File Info:
-	unique ID to reference a file.
-	the location of the file.
-	relative location, similar to the file cache system.
-
-File store manager/handler
-
-File Actions:
-	Save file to the disk.
-		While saving, need to lock up the space set aside for it.
-		Ensure the unique ID assigned to the file does not already exist.
-	File constructor
-*/
-
 
 type FileStore struct {
 	uuid							string
@@ -34,22 +19,40 @@ type FileStore struct {
 	mutex 							*sync.Mutex
 }
 
-func newFileStore(uuid string, absolutePath string, dirpathRelativeToDaraDirRoot string) *FileStore {
+func newFileStore(uuid string, absolutePath string, dirpathRelativeToDataDirRoot string) *FileStore {
 	return &FileStore {
 		uuid: 							uuid,
 		absolutePath: 					absolutePath,
-		dirpathRelativeToDataDirRoot: 	dirpathRelativeToDaraDirRoot,
+		dirpathRelativeToDataDirRoot: 	dirpathRelativeToDataDirRoot,
 		mutex: 							&sync.Mutex{},
 	}
 }
 
-func AddFile(file *os.File) {
-	/*
-	Needs to:
-		lock the data sector for writing.
-		Create a uuid.
-		Create a path for the file to be stored.
-		Save the path and its relative path to root as a string
-		Create the file store object and fill with information
-	*/
+// StoreFile: Saves file to disk and returns a FileStore struct.
+func StoreFile(fileName string, filedata []byte) (*FileStore, error) {
+	generatedUUID, _ := getUniversallyUniqueID()
+	uuidString := strings.Replace(generatedUUID.String(), "-", "",-1)
+	uuidFileName := strings.Join([]string{uuidString, fileName}, "_")
+	relativeFolder := "" //Don't need a folder?
+
+	handler, err := createFileHandler()
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	absolutePath, saveErr := handler.SaveBytesToPath(uuidFileName, relativeFolder, filedata)
+
+	if saveErr != nil {
+		fmt.Println(saveErr.Error())
+		return nil, saveErr
+	}
+	return newFileStore(uuidString, absolutePath, relativeFolder), nil
+}
+
+//There are some suggestions that go's implementation of uuid is not RFC compliant
+//If we can verify it is, it would be better to use ipv6 as nodeID and interface name where the data came in.
+//Just generating a random one for now.
+func getUniversallyUniqueID() (uuid.UUID, error) {
+	return uuid.NewRandom()
 }
