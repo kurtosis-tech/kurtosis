@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added `destroy_enclave_test` in Golang and Typescript internal testsuites
 
 # 0.13.0
 ### Features
