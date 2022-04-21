@@ -11,8 +11,6 @@ import (
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/container-engine-lib/lib"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	docker_manager_types "github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
@@ -25,8 +23,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -57,8 +53,7 @@ const (
 
 	allowedEnclaveIdCharsRegexStr = `^[-A-Za-z0-9.]{1,63}$`
 
-	shouldFollowContainerLogs         = true
-	shouldShowStoppedModuleContainers = false
+	shouldFollowModuleLogs            = true
 
 	netReadOpt = "read"
 
@@ -138,17 +133,6 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
 	}
 	moduleImage := parsedPositionalArgs[moduleImageArg]
-
-	// TODO REMOVE THIS WHEN THE KurtosisBackend HANDLES EVERYTHING!
-	/*dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
-	}
-	dockerManager := docker_manager.NewDockerManager(dockerClient)
-
-	best_effort_image_puller.PullImageBestEffort(ctx, dockerManager, moduleImage)
-
-	 */
 
 	imageNameWithUnixTimestamp := getImageNameWithUnixTimestamp(moduleImage)
 
@@ -257,10 +241,8 @@ func run(cmd *cobra.Command, args []string) error {
 	moduleId := imageNameWithUnixTimestamp
 	loadModuleArgs := binding_constructors.NewLoadModuleArgs(moduleId, moduleImage, loadParamsStr)
 
-	//TODO me quedé clavado acá porque necesitamos que LOADMODULE retorne el guid para poder usarlo después en moduleFilters
-	//TODO pero estoy esperando que Blaise haga un release de Core para poder agregar esta parte
-
-	if _, err := apiContainerClient.LoadModule(ctx, loadModuleArgs); err != nil {
+	loadModuleResponse, err := apiContainerClient.LoadModule(ctx, loadModuleArgs)
+	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred loading the module with image '%v'", moduleImage)
 	}
 	defer func() {
@@ -273,31 +255,34 @@ func run(cmd *cobra.Command, args []string) error {
 	}()
 	logrus.Info("Module loaded successfully")
 
-	moduleFilters := module.ModuleFilters{
+	moduleGUIDStr := loadModuleResponse.GetGuid()
+	moduleGUID := module.ModuleGUID(moduleGUIDStr)
+
+	moduleFilters := &module.ModuleFilters{
 		EnclaveIDs: map[enclave.EnclaveID]bool{
 			enclaveId: true,
 		},
 		GUIDs: map[module.ModuleGUID]bool{
-			moduleId: true,
+			moduleGUID: true,
 		},
 	}
 
-	modules, err := kurtosisBackend.GetModules(ctx,)
-
-	moduleContainer, err := getModuleContainer(ctx, dockerManager, enclaveIdStr, moduleId)
+	successfulModuleLogs, erroredModuleGuids, err := kurtosisBackend.GetModuleLogs(ctx, moduleFilters, shouldFollowModuleLogs)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the module container")
+		return stacktrace.Propagate(err, "An error occurred getting the module logs using filters '%+v'", moduleFilters)
+	}
+	if len(erroredModuleGuids) > 0 {
+		moduleLogErr, found := erroredModuleGuids[moduleGUID]
+		if !found {
+			return stacktrace.NewError("Expected to find an error for module with GUID '%v' in error map '%+v' but was not found; this is a bug in Kurtosis", moduleGUID, erroredModuleGuids)
+		}
+		return stacktrace.Propagate(moduleLogErr, "An error occurred getting module logs for module with GUID '%v'", moduleGUID)
+	}
+	readCloserLogs, found := successfulModuleLogs[moduleGUID]
+	if !found {
+		return stacktrace.NewError("Expected to find the read closer object for module with GUID '%v' in successful module logs map '%+v' but was not found; this is a bug in Kurtosis", moduleGUID, successfulModuleLogs)
 	}
 
-	if moduleContainer == nil {
-		return stacktrace.Propagate(err, "It was not found any container with enclave ID '%v' and module ID '%v'", enclaveIdStr, moduleId)
-	}
-
-	readCloserLogs, err := dockerManager.GetContainerLogs(ctx, moduleContainer.GetId(), shouldFollowContainerLogs)
-	if err != nil {
-		//We do not return because logs aren't mandatory, if it fails we continue executing the module without logs
-		logrus.Errorf("The module containers logs won't be printed. An error occurred getting service logs for container with ID '%v': \n%v", moduleContainer.GetId(), err)
-	}
 	logrus.Infof("Executing the module with execute params '%v'...", executeParamsStr)
 	if readCloserLogs != nil {
 		go printModuleContainerLogs(readCloserLogs)
@@ -347,32 +332,6 @@ func getImageNameWithUnixTimestamp(moduleImage string) string {
 		pathElement,
 		time.Now().Unix(),
 	)
-}
-
-func getModuleContainer(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string, moduleId string) (*docker_manager_types.Container, error) {
-	labels := getModuleContainerLabelsWithEnclaveIDAndModuleId(enclaveId, moduleId)
-	containers, err := dockerManager.GetContainersByLabels(ctx, labels, shouldShowStoppedModuleContainers)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting containers by labels: '%+v'", labels)
-	}
-
-	if containers == nil || len(containers) == 0 {
-		return nil, stacktrace.NewError("There is not any module container with enclave ID '%v' and module ID '%v'", enclaveId, moduleId)
-	}
-
-	if len(containers) > 1 {
-		return nil, stacktrace.NewError("Only one container with enclave-id '%v' and module-id '%v' should exist but there are '%v' containers with these properties", enclaveId, moduleId, len(containers))
-	}
-
-	return containers[0], nil
-}
-
-func getModuleContainerLabelsWithEnclaveIDAndModuleId(enclaveId string, moduleId string) map[string]string {
-	labels := map[string]string{}
-	labels[forever_constants.ContainerTypeLabel] = schema.ContainerTypeModuleContainer
-	labels[schema.EnclaveIDContainerLabel] = enclaveId
-	labels[schema.IDLabel] = moduleId
-	return labels
 }
 
 func printModuleContainerLogs(readCloserLogs io.ReadCloser) {
