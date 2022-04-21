@@ -1,5 +1,13 @@
 # TBD
 
+# 1.43.0
+### Breaking Changes
+* Added new return value `module's GUID` in `ApiContainerService.LoadModuleResponse`
+  * Users should adapt their `ApiContainerService.LoadModuleResponse` calls to receive this new argument
+
+### Removals
+* Removed last references of `DockerManager` in the codebase in favor of `KurtosisBackend`
+
 # 1.42.5
 ### Changes
 * Changes upgraded to container-engine-lib 0.15.0

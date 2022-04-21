@@ -74,6 +74,9 @@ export class LoadModuleResponse extends jspb.Message {
   hasPublicPort(): boolean;
   clearPublicPort(): LoadModuleResponse;
 
+  getGuid(): string;
+  setGuid(value: string): LoadModuleResponse;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LoadModuleResponse.AsObject;
   static toObject(includeInstance: boolean, msg: LoadModuleResponse): LoadModuleResponse.AsObject;
@@ -88,6 +91,7 @@ export namespace LoadModuleResponse {
     privatePort?: Port.AsObject,
     publicIpAddr: string,
     publicPort?: Port.AsObject,
+    guid: string,
   }
 }
 
