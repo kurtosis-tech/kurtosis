@@ -33,7 +33,7 @@ func TestFileStore_StoreFileSavesFile(t *testing.T) {
 	assert.Equal(t, []byte(testContent), file)
 }
 
-func TestFileStore_StoreFileRetrievesProperFilepath(t *testing.T) {
+func TestFileStore_GetFilepathByUUIDProperFilepath(t *testing.T) {
 	fileStore := getTestFileStore(t)
 	testContent := "Long Live Kurtosis!"
 	reader := strings.NewReader(testContent)
