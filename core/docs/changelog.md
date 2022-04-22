@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+* Added new backend file storage methods for future volume support.
+
 # 1.43.0
 ### Breaking Changes
 * Added new return value `module's GUID` in `ApiContainerService.LoadModuleResponse`
@@ -23,6 +26,7 @@
 # 1.42.2
 ### Fixes
 * Use container-engine-lib 0.14.3, which supports the old port specs temporarily
+
 
 # 1.42.1
 ### Fixes

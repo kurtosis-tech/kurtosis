@@ -6,12 +6,13 @@
 package enclave_data_directory
 
 import (
-	"fmt"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"os"
 	"path"
 	"sync"
+	"io"
+	"github.com/sirupsen/logrus"
+	"fmt"
 )
 
 // Represents a write-only file cache, backed by a directory inside the enclave data dir
@@ -31,7 +32,7 @@ func newFileCache(absoluteDirpath string, dirpathRelativeToDataDirRoot string) *
 	}
 }
 
-func (cache *FileCache) AddFile(key string, supplier func(destFp *os.File) error) (*EnclaveDataDirFile, error) {
+func (cache *FileCache) AddFile(key string, reader io.Reader) (*EnclaveDataDirFile, error) {
 	cache.mutex.Lock()
 	defer cache.mutex.Unlock()
 
@@ -46,12 +47,12 @@ func (cache *FileCache) AddFile(key string, supplier func(destFp *os.File) error
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred opening the filepointer of the new file with key '%v' being added to the cache", key)
 	}
+
 	defer func() {
-		// We need to delete the file we created if this function doesn't exist successfully
 		if !functionCompletedSuccessfully {
 			if err := os.Remove(destAbsFilepath); err != nil {
 				logrus.Errorf(
-					"We encountered an error adding file with key '%v' to the cache so we tried to remove " +
+					"We encountered an error adding file with key '%v' to the cache so we tried to remove "+
 						"the file we created, but got an error removing it:",
 					key,
 				)
@@ -62,8 +63,9 @@ func (cache *FileCache) AddFile(key string, supplier func(destFp *os.File) error
 	}()
 	defer fp.Close()
 
-	if err := supplier(fp); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred running the supplier function that will populate the file with data inside the cache")
+	bytesLength, err := io.Copy(fp, reader)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Writing could not be completed. Stopped writing at %v bytes.", bytesLength)
 	}
 
 	functionCompletedSuccessfully = true
@@ -81,7 +83,6 @@ func (cache *FileCache) GetFile(key string) (*EnclaveDataDirFile, error) {
 
 	return fileObj, nil
 }
-
 
 func (cache *FileCache) getFileObjFromKey(key string) *EnclaveDataDirFile {
 	absoluteFilepath := path.Join(cache.absoluteDirpath, key)
