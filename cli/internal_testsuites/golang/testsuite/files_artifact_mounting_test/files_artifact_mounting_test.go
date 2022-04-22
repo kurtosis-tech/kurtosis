@@ -19,6 +19,7 @@ const (
 
 	fileServerServiceImage                          = "flashspys/nginx-static"
 	fileServerServiceId          services.ServiceID = "file-server"
+	secondFileServerServiceId    services.ServiceID = "second-file-server"
 	fileServerPortId = "http"
 	fileServerPrivatePortNum = 80
 
@@ -27,6 +28,7 @@ const (
 	waitInitialDelayMilliseconds   = 0
 
 	testFilesArtifactId  services.FilesArtifactID = "test-files-artifact"
+	secondTestFileArtifactId services.FilesArtifactID = "second-test-files-artifact"
 	testFilesArtifactUrl                          = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
 
 	// Filenames & contents for the files stored in the files artifact
@@ -35,11 +37,24 @@ const (
 
 	expectedFile1Contents = "file1\n"
 	expectedFile2Contents = "file2\n"
+
+	userServiceMountPointForTestFilesArtifact = "/static"
+
+	duplicateMountpointDockerDemonErrMsgSentence = "Duplicate mount point"
 )
 var fileServerPortSpec = services.NewPortSpec(
 	fileServerPrivatePortNum,
 	services.PortProtocol_TCP,
 )
+
+var tesFilesArtifactMountpoint = map[services.FilesArtifactID]string{
+	testFilesArtifactId: userServiceMountPointForTestFilesArtifact,
+}
+
+var duplicateFilesArtifactMountpoints = map[services.FilesArtifactID]string{
+	testFilesArtifactId:      userServiceMountPointForTestFilesArtifact,
+	secondTestFileArtifactId: userServiceMountPointForTestFilesArtifact,
+}
 
 func TestFilesArtifactMounting(t *testing.T) {
 	ctx := context.Background()
@@ -52,10 +67,12 @@ func TestFilesArtifactMounting(t *testing.T) {
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	filesArtifacts := map[services.FilesArtifactID]string{
 		testFilesArtifactId: testFilesArtifactUrl,
+		secondTestFileArtifactId: testFilesArtifactUrl,
 	}
 	require.NoError(t, enclaveCtx.RegisterFilesArtifacts(filesArtifacts), "An error occurred registering the files artifacts")
 
 	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier()
+
 	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
 	require.NoError(t, err, "An error occurred adding the file server service")
 	publicPort, found := serviceCtx.GetPublicPorts()[fileServerPortId]
@@ -101,12 +118,17 @@ func TestFilesArtifactMounting(t *testing.T) {
 		file2Contents,
 		expectedFile2Contents,
 	)
+
+	//TODO the error is detected in Docker, it is enough for now, but we should capture it in Kurt Core for optimization and decoupling
+	wrongFileServerContainerConfigSupplier := getFileServerContainerConfigSupplierWithDuplicateMountpoint()
+	_, err = enclaveCtx.AddService(secondFileServerServiceId, wrongFileServerContainerConfigSupplier)
+	require.Errorf(t, err, "Adding service '%v' did not fails and it is wrong, because the files artifact mountpoints '%v' set in the container config supplier are duplicate and it must not be allowed", secondFileServerServiceId, duplicateFilesArtifactMountpoints)
+	require.Contains(t, err.Error(), duplicateMountpointDockerDemonErrMsgSentence, "Adding service '%v' fails, fails, but it was not the expected duplicate mountpoint error",secondFileServerServiceId)
 }
 
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-
 func getFileServerContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 
@@ -114,9 +136,24 @@ func getFileServerContainerConfigSupplier() func(ipAddr string, sharedDirectory 
 			fileServerServiceImage,
 		).WithUsedPorts(map[string]*services.PortSpec{
 			fileServerPortId: fileServerPortSpec,
-		}).WithFilesArtifacts(map[services.FilesArtifactID]string{
-			testFilesArtifactId: "/static",
-		}).Build()
+		}).WithFilesArtifacts(
+			tesFilesArtifactMountpoint,
+		).Build()
+		return containerConfig, nil
+	}
+	return containerConfigSupplier
+}
+
+func getFileServerContainerConfigSupplierWithDuplicateMountpoint() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+
+		containerConfig := services.NewContainerConfigBuilder(
+			fileServerServiceImage,
+		).WithUsedPorts(map[string]*services.PortSpec{
+			fileServerPortId: fileServerPortSpec,
+		}).WithFilesArtifacts(
+			duplicateFilesArtifactMountpoints,
+		).Build()
 		return containerConfig, nil
 	}
 	return containerConfigSupplier
@@ -142,4 +179,3 @@ func getFileContents(ipAddress string, portNum uint16, filename string) (string,
 	bodyStr := string(bodyBytes)
 	return bodyStr, nil
 }
-
