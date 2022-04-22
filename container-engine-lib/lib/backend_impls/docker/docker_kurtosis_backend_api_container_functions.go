@@ -233,7 +233,7 @@ func (backend *DockerKurtosisBackend) CopyFileFromUserServiceToAPIContainer(
 
 	apiContainerContainerId, _, err := backend.getEnclaveApiContainer(ctx, enclaveId)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting api container in enclave with ID '%v'", serviceGuid, enclaveId)
+		return stacktrace.Propagate(err, "An error occurred getting api container in enclave with ID '%v'", enclaveId)
 	}
 
 	if err := backend.dockerManager.CopyFileFromContainerToContainer(ctx, userServiceContainerId, filepathInService, apiContainerContainerId, destinationFilepath); err != nil {
