@@ -15,8 +15,8 @@ func TestFilesArtifactCache_SuccessfulDownload(t *testing.T) {
 	cache := getTestFilesArtifactCache(t)
 
 	testArtifactId := "test-artifact"
-	url := "google.com:80"
-	err := cache.DownloadFilesArtifact(testArtifactId, "tcp", url)
+	url := "https://www.google.com"
+	err := cache.DownloadFilesArtifact(testArtifactId, url)
 	assert.Nil(t, err)
 }
 
@@ -25,7 +25,7 @@ func TestDownloadArtifactToFilepath_ErrorDownload(t *testing.T) {
 
 	testArtifactId := "test-artifact"
 	url := "THIS URL DOESN'T EXIST"
-	err := cache.DownloadFilesArtifact(testArtifactId, "tcp", url)
+	err := cache.DownloadFilesArtifact(testArtifactId, url)
 	assert.NotNil(t, err)
 }
 func getTestFilesArtifactCache(t *testing.T) *FilesArtifactCache {

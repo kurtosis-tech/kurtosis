@@ -16,18 +16,18 @@ const (
 	artifactExtension = "tgz"
 )
 
-type FileStore struct {
+type FilesArtifactStore struct {
 	fileCache 	*FileCache
 }
 
-func newFileStore(absoluteDirpath string, dirpathRelativeToDataDirRoot string) (*FileStore, error) {
-	return &FileStore {
+func newFileStore(absoluteDirpath string, dirpathRelativeToDataDirRoot string) (*FilesArtifactStore, error) {
+	return &FilesArtifactStore {
 		fileCache: 	newFileCache(absoluteDirpath, dirpathRelativeToDataDirRoot),
 	}, nil
 }
 
 // StoreFile: Saves file to disk.
-func (store FileStore) StoreFile(reader io.Reader) (string, error) {
+func (store FilesArtifactStore) StoreFile(reader io.Reader) (string, error) {
 	uuid, err := getUniversallyUniqueID()
 	if err != nil{
 		return "", stacktrace.Propagate(err, "Could not generate Universally Unique ID.")
@@ -42,7 +42,7 @@ func (store FileStore) StoreFile(reader io.Reader) (string, error) {
 }
 
 // Get the file by uuid
-func (store FileStore) GetFilepathByUUID(uuid string) (string, error) {
+func (store FilesArtifactStore) GetFilepathByUUID(uuid string) (string, error) {
 	filename := strings.Join([]string{uuid, artifactExtension}, ".")
 	enclaveDataDirFile, err := store.fileCache.GetFile(filename)
 	if err != nil {

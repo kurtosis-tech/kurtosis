@@ -39,7 +39,6 @@ const (
 
 	// The string returned by the API if a service's public IP address doesn't exist
 	missingPublicIpAddrStr = ""
-	networkComMethod = "tcp"
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -176,7 +175,7 @@ func (service ApiContainerService) RegisterFilesArtifacts(ctx context.Context, a
 	// TODO PERF: Do these in parallel
 	logrus.Debug("Downloading files artifacts to the files artifact cache...")
 	for artifactId, url := range args.FilesArtifactUrls {
-		if err := filesArtifactCache.DownloadFilesArtifact(artifactId, networkComMethod, url); err != nil {
+		if err := filesArtifactCache.DownloadFilesArtifact(artifactId, url); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred downloading files artifact '%v' from URL '%v'", artifactId, url)
 		}
 	}

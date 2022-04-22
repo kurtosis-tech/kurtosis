@@ -11,8 +11,8 @@ import (
 	// This is a special type of import that includes the correct hashing algorithm that we use
 	// If we don't have the "_" in front, Goland will complain it's unused
 	_ "golang.org/x/crypto/sha3"
-	"net"
-	"fmt"
+	"net/http"
+	"bufio"
 )
 
 /*
@@ -28,17 +28,19 @@ func newFilesArtifactCache(absoluteDirpath string, dirpathRelativeToDataDirRoot 
 	}
 }
 
-func (cache FilesArtifactCache) DownloadFilesArtifact(artifactId string, method string, url string) error {
+func (cache FilesArtifactCache) DownloadFilesArtifact(artifactId string, url string) error {
 
-	connection, err := net.Dial(method, url)
+	resp, err := http.Get(url)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred making the request to URL '%v' to get the data for aritfact '%v'", url, artifactId)
+		return stacktrace.Propagate(err, "An error occurred making the request to URL '%v' to get the data for artifact '%v'", url, artifactId)
 	}
-	defer connection.Close()
-	fmt.Fprintf(connection, "GET / HTTP/1.0\r\n\r\n")
+	body := bufio.NewReader(resp.Body)
 
-	_, err = cache.underlying.AddFile(artifactId, connection)
-	return err
+	if _, err := cache.underlying.AddFile(artifactId, body); err != nil {
+
+		return stacktrace.Propagate(err, "An error occurred downloading the files artifact '%v' from URL '%v'", artifactId, url)
+	}
+	return nil
 }
 
 // Gets the artifact with the given URL, or throws an error if it doesn't exist

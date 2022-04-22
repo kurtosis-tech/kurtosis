@@ -80,7 +80,7 @@ func TestFileStore_StoreFilesUniquely(t *testing.T){
 	require.NotEqual(t, file, anotherFile)
 }
 
-func getTestFileStore(t *testing.T) *FileStore {
+func getTestFileStore(t *testing.T) *FilesArtifactStore {
 	absDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 	fileStore, err := newFileStore(absDirpath, "")
