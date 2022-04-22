@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"archive/tar"
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -12,9 +13,13 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io/ioutil"
 	"net"
+	"os"
+	"path"
 	"time"
 )
 
@@ -35,6 +40,11 @@ const (
 
 	// TODO Delete this after 2022-05-28
 	pre_2022_03_28_IpAddrLabel = "com.kurtosistech.api-container-ip"
+
+	tempDirForUserServiceFilesPrefix = "user-service-"
+	tempDirForUserServiceFilesSuffix = "-file-"
+
+	tempFileForUserServiceFilesFileMode os.FileMode = 0744
 )
 
 func (backend *DockerKurtosisBackend) CreateAPIContainer(
@@ -211,6 +221,60 @@ func (backend *DockerKurtosisBackend) GetAPIContainers(ctx context.Context, filt
 	}
 
 	return matchingApiContainersByEnclaveID, nil
+}
+
+
+func (backend *DockerKurtosisBackend) CopyFileFromUserServiceToAPIContainer(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	filePathInService string,
+)(
+	resultFilepathInAPIContainer string,
+	resultErr error,
+) {
+
+	userServiceContainerId, _, err := backend.getSingleUserService(ctx, enclaveId, serviceGuid)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting user service with GUID '%v' in enclave with ID '%v'", serviceGuid, enclaveId)
+	}
+
+	tarStreamReadCloser, containerPathStat, err := backend.dockerManager.CopyFromContainer(ctx, userServiceContainerId, filePathInService)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred copy file '%v' from user service with GUID '%v' and container ID '%v'", filePathInService, serviceGuid, userServiceContainerId)
+	}
+	defer tarStreamReadCloser.Close()
+
+	//Checks for regular file
+	if !containerPathStat.Mode.IsRegular() {
+		lastErrMsgSentence :=  "do not corresponds to a regular file"
+		if containerPathStat.Mode.IsDir() {
+			lastErrMsgSentence = "corresponds to a directory path"
+		}
+		return "", stacktrace.NewError("Expected to copy a regular file from user service '%v' but the file path received '%v' %v", serviceGuid, filePathInService, lastErrMsgSentence)
+	}
+
+	reader := tar.NewReader(tarStreamReadCloser)
+	fileContent, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred reading file '%v' from user service with GUID '%v'", filePathInService, serviceGuid)
+	}
+
+	tempDirPattern := tempDirForUserServiceFilesPrefix + string(serviceGuid) + tempDirForUserServiceFilesSuffix
+
+	tempDir, err := newTempDir(tempDirPattern)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred creating new temporary directory using pattern '%v'", tempDirPattern)
+	}
+
+	userServiceFileFilename := containerPathStat.Name
+	filepath := path.Join(tempDir, userServiceFileFilename)
+
+	if err := ioutil.WriteFile(filepath, fileContent, tempFileForUserServiceFilesFileMode); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred writing file '%v'", filepath)
+	}
+
+	return filepath, nil
 }
 
 func (backend *DockerKurtosisBackend) StopAPIContainers(
@@ -441,4 +505,13 @@ func getPrivateApiContainerPorts(containerLabels map[string]string) (
 	}
 
 	return grpcPortSpec, grpcProxyPortSpec, nil
+}
+
+func newTempDir(pattern string) (string, error)  {
+	useDefaultTmpDir := ""
+	dirpath, err := ioutil.TempDir(useDefaultTmpDir, pattern)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred creating new temporary in directory path '%v' and using pattern '%v'",useDefaultTmpDir, pattern)
+	}
+	return dirpath, nil
 }

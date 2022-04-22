@@ -884,6 +884,14 @@ func (manager DockerManager) CreateContainerExec(context context.Context, contai
 	return &hijackedResponse, nil
 }
 
+func (manager DockerManager) CopyFromContainer(ctx context.Context, containerID, srcPath string) (io.ReadCloser, types.ContainerPathStat, error) {
+	readCloser, containerPathStat, err := manager.dockerClient.CopyFromContainer(ctx, containerID, srcPath)
+	if err != nil {
+		return nil, types.ContainerPathStat{}, stacktrace.Propagate(err, "An error occurred copy file '%v' from container '%v'", srcPath, containerID)
+	}
+	return readCloser, containerPathStat, nil
+}
+
 // =================================================================================================================
 //                                          INSTANCE HELPER FUNCTIONS
 // =================================================================================================================
