@@ -74,7 +74,7 @@ func TestFileCache_AddErrorsOnDuplicateAdd(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestFileCache_FileDeletedOnSupplierError(t *testing.T) {
+func TestFileCache_FileDeletedOnReaderError(t *testing.T) {
 	fileCache := getTestFileCache(t)
 	var readerThatFails failingReader
 	readerThatFails = failedReader{"",0}

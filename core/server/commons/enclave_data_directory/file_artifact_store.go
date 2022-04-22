@@ -11,6 +11,7 @@ import (
 	"sync"
 	"io"
 	"github.com/kurtosis-tech/stacktrace"
+	"path/filepath"
 )
 
 const (
@@ -23,7 +24,7 @@ type FileStore struct {
 	mutex 		*sync.Mutex
 }
 
-func newFileStore(uuid string, absoluteDirpath string, dirpathRelativeToDataDirRoot string) (*FileStore, error) {
+func newFileStore(absoluteDirpath string, dirpathRelativeToDataDirRoot string) (*FileStore, error) {
 	uuid, err := getUniversallyUniqueID()
 
 	if err != nil {
@@ -38,11 +39,18 @@ func newFileStore(uuid string, absoluteDirpath string, dirpathRelativeToDataDirR
 
 // StoreFile: Saves file to disk.
 func (store FileStore) StoreFile(reader io.Reader) (*EnclaveDataDirFile, error) {
-	store.mutex.Lock()
-	defer store.mutex.Unlock()
+	//Can't mutex lock in this case because underlying filecache will be trying to do that.
+	return store.fileCache.AddFile(store.GetFileName(), reader)
+}
 
-	uuidKeyedFileName := strings.Join([]string{store.uuid, artifactExtension}, ".")
-	return store.fileCache.AddFile(uuidKeyedFileName, reader)
+//Get the absolute path to the file.
+func (store FileStore) GetFilePath() string {
+	return filepath.Join(store.fileCache.absoluteDirpath, store.GetFileName())
+}
+
+//Returns a file name created from the uuid and the artifactExtension.
+func (store FileStore) GetFileName() string {
+	return strings.Join([]string{store.uuid, artifactExtension}, ".")
 }
 
 //There are some suggestions that go's implementation of uuid is not RFC compliant.
