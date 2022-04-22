@@ -20,10 +20,10 @@ type FilesArtifactStore struct {
 	fileCache 	*FileCache
 }
 
-func newFileStore(absoluteDirpath string, dirpathRelativeToDataDirRoot string) (*FilesArtifactStore, error) {
+func newFileStore(absoluteDirpath string, dirpathRelativeToDataDirRoot string) *FilesArtifactStore {
 	return &FilesArtifactStore {
 		fileCache: 	newFileCache(absoluteDirpath, dirpathRelativeToDataDirRoot),
-	}, nil
+	}
 }
 
 // StoreFile: Saves file to disk.

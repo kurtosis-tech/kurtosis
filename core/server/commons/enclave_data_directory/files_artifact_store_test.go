@@ -83,7 +83,7 @@ func TestFileStore_StoreFilesUniquely(t *testing.T){
 func getTestFileStore(t *testing.T) *FilesArtifactStore {
 	absDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
-	fileStore, err := newFileStore(absDirpath, "")
+	fileStore := newFileStore(absDirpath, "")
 	assert.Nil(t, err)
 	return fileStore
 }
