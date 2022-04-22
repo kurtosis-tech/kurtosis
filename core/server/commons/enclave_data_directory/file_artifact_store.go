@@ -27,14 +27,29 @@ func newFileStore(absoluteDirpath string, dirpathRelativeToDataDirRoot string) (
 }
 
 // StoreFile: Saves file to disk.
-func (store FileStore) StoreFile(reader io.Reader) (string, *EnclaveDataDirFile, error) {
+func (store FileStore) StoreFile(reader io.Reader) (string, error) {
 	uuid, err := getUniversallyUniqueID()
 	if err != nil{
-		return "", nil, stacktrace.Propagate(err, "Could not generate Universally Unique ID.")
+		return "", stacktrace.Propagate(err, "Could not generate Universally Unique ID.")
 	}
 	filename := strings.Join([]string{uuid,artifactExtension}, ".")
-	enclaveFile, err := store.fileCache.AddFile(filename, reader)
-	return uuid, enclaveFile, err
+	_, err = store.fileCache.AddFile(filename, reader)
+	if err != nil{
+		return "", stacktrace.Propagate(err, "Could not add file with UUID %s at %s.", uuid,
+			       store.fileCache.absoluteDirpath)
+	}
+	return uuid, nil
+}
+
+// Get the file by uuid
+func (store FileStore) GetFilepathByUUID(uuid string) (string, error) {
+	filename := strings.Join([]string{uuid, artifactExtension}, ".")
+	enclaveDataDirFile, err := store.fileCache.GetFile(filename)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Could not retrieve file with UUID %s from %s.",
+					uuid, store.fileCache.absoluteDirpath)
+	}
+	return enclaveDataDirFile.absoluteFilepath, nil
 }
 
 
