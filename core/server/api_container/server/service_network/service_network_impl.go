@@ -51,7 +51,7 @@ type serviceRunInfo struct {
 	//  we need them (rather than storing them in-memory on the API container, which means the API container can't be restarted)
 	privatePorts      map[string]*port_spec.PortSpec
 	maybePublicIpAddr net.IP                         // Can be nil if the service doesn't declare any private ports
-	publicPorts       map[string]*port_spec.PortSpec // Will be empty if the service doesn't declare any private ports
+	maybePublicPorts  map[string]*port_spec.PortSpec // Will be nil if the service doesn't declare any private ports
 }
 
 /*
@@ -323,14 +323,14 @@ func (network *ServiceNetworkImpl) StartService(
 	// TODO Restart-able enclaves: Don't store any service information in memory; instead, get it all from the KurtosisBackend when required
 	serviceGUID := userService.GetGUID()
 	maybeServicePublicIpAddr := userService.GetMaybePublicIP()
-	servicePublicPorts := userService.GetPublicPorts()
+	maybeServicePublicPorts := userService.GetMaybePublicPorts()
 
 	runInfo := serviceRunInfo{
 		serviceGUID:              serviceGUID,
 		enclaveDataDirMntDirpath: enclaveDataDirMntDirpath,
 		privatePorts:             privatePorts,
 		maybePublicIpAddr:        maybeServicePublicIpAddr,
-		publicPorts:              servicePublicPorts,
+		maybePublicPorts:         maybeServicePublicPorts,
 	}
 	network.serviceRunInfo[serviceId] = runInfo
 
@@ -362,7 +362,7 @@ func (network *ServiceNetworkImpl) StartService(
 		}
 	}
 
-	return maybeServicePublicIpAddr, servicePublicPorts, nil
+	return maybeServicePublicIpAddr, maybeServicePublicPorts, nil
 }
 
 func (network *ServiceNetworkImpl) RemoveService(
@@ -490,7 +490,7 @@ func (network *ServiceNetworkImpl) GetServiceRunInfo(serviceId service.ServiceID
 	if !found {
 		return nil, nil, nil, "", stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
 	}
-	return runInfo.privatePorts, runInfo.maybePublicIpAddr, runInfo.publicPorts, runInfo.enclaveDataDirMntDirpath, nil
+	return runInfo.privatePorts, runInfo.maybePublicIpAddr, runInfo.maybePublicPorts, runInfo.enclaveDataDirMntDirpath, nil
 }
 
 func (network *ServiceNetworkImpl) GetServiceIDs() map[service.ServiceID]bool {
