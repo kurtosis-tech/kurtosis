@@ -7,9 +7,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/docker/docker/client"
 	kurtosis_backend "github.com/kurtosis-tech/container-engine-lib/lib"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
@@ -88,11 +86,6 @@ func runMain() error {
 		serverArgs.TakenIpAddrs,
 	)
 
-	dockerManager, err := createDockerManager()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the Docker manager")
-	}
-
 	enclaveDataDir := enclave_data_directory.NewEnclaveDataDirectory(serverArgs.EnclaveDataDirpathOnAPIContainer)
 
 	kurtosisBackend, err := kurtosis_backend.GetLocalDockerKurtosisBackend()
@@ -100,7 +93,7 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 	}
 
-	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(kurtosisBackend, dockerManager, enclaveDataDir, freeIpAddrTracker, serverArgs)
+	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(kurtosisBackend, enclaveDataDir, freeIpAddrTracker, serverArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the service network & module store")
 	}
@@ -152,19 +145,8 @@ func runMain() error {
 	return nil
 }
 
-func createDockerManager() (*docker_manager.DockerManager, error) {
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not initialize a Docker client from the environment")
-	}
-
-	dockerManager := docker_manager.NewDockerManager(dockerClient)
-	return dockerManager, nil
-}
-
 func createServiceNetworkAndModuleStore(
 	kurtosisBackend backend_interface.KurtosisBackend,
-	dockerManager *docker_manager.DockerManager,
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 	freeIpAddrTracker *lib.FreeIpAddrTracker,
 	args *args.APIContainerArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
