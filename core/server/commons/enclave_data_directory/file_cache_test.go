@@ -13,21 +13,13 @@ import (
 	"testing"
 	"strings"
 	"github.com/kurtosis-tech/stacktrace"
-	"errors"
 )
 
-
-type failingReader interface {
-	Read(b []byte) (int, error)
-}
-
-type failedReader struct {
-	s string
-	i int64
-}
+type failedReader struct {}
 
 func (reader failedReader) Read(b []byte) (int, error) {
-	return 0, stacktrace.Propagate(errors.New("You did a bad thing."), "Bad things happen to bad people.")
+	return 0, stacktrace.Propagate(stacktrace.NewError("This is a test failure."),
+		 "You are not supposed to see this test failure. Please contact developers if you are.")
 }
 
 func TestFileCache_AddAndGetArtifact(t *testing.T) {
@@ -76,8 +68,7 @@ func TestFileCache_AddErrorsOnDuplicateAdd(t *testing.T) {
 
 func TestFileCache_FileDeletedOnReaderError(t *testing.T) {
 	fileCache := getTestFileCache(t)
-	var readerThatFails failingReader
-	readerThatFails = failedReader{"",0}
+	var readerThatFails failedReader
 
 	testKey := "test-keys"
 	_, err := fileCache.AddFile(testKey, readerThatFails)

@@ -63,9 +63,9 @@ func (cache *FileCache) AddFile(key string, reader io.Reader) (*EnclaveDataDirFi
 	}()
 	defer fp.Close()
 
-	bLen, err := io.Copy(fp, reader)
+	bytesLength, err := io.Copy(fp, reader)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Writing could not be completed. Stopped writing at %v bytes.", bLen)
+		return nil, stacktrace.Propagate(err, "Writing could not be completed. Stopped writing at %v bytes.", bytesLength)
 	}
 
 	functionCompletedSuccessfully = true
