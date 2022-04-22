@@ -1,6 +1,7 @@
 # TBD
 ### Features
 * Added `KurtosisBackend.CopyFileFromUserServiceToAPIContainer` in Docker implementation
+* Updated `DockerKurtosisBackend.CreateEnclave` also creates an enclave data volume
 
 # 0.15.0
 ### Fixes
