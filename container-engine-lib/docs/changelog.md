@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added `KurtosisBackend.CopyFileFromUserServiceToAPIContainer` in Docker implementation
 
 # 0.15.0
 ### Fixes

@@ -183,6 +183,13 @@ func (backend *MetricsReportingKurtosisBackend) GetAPIContainers(ctx context.Con
 	return results, nil
 }
 
+func (backend *MetricsReportingKurtosisBackend) CopyFileFromUserServiceToAPIContainer(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID, filepathInService string, destinationFilepath string) error {
+	if err := backend.underlying.CopyFileFromUserServiceToAPIContainer(ctx, enclaveId, serviceGuid, filepathInService, destinationFilepath); err != nil {
+		stacktrace.Propagate(err, "An error occurred copying file with filepath '%v' from user service with GUID '%v' to destination filepath '%v' in the enclave's api container with enclave ID '%v''", filepathInService, serviceGuid, destinationFilepath, enclaveId)
+	}
+	return nil
+}
+
 func (backend *MetricsReportingKurtosisBackend) StopAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveID]bool, erroredApiContainerIds map[enclave.EnclaveID]error, resultErr error) {
 	successes, failures, err := backend.underlying.StopAPIContainers(ctx, filters)
 	if err != nil {
