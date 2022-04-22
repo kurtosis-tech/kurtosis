@@ -142,6 +142,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
 
+	// TODO Push down into MetricsReportingKurtosisBackend
 	validEnclaveId, err := regexp.Match(allowedEnclaveIdCharsRegexStr, []byte(enclaveIdStr))
 	if err != nil {
 		return stacktrace.Propagate(
@@ -270,18 +271,24 @@ func run(cmd *cobra.Command, args []string) error {
 	//TODO replace with API Container call
 	successfulModuleLogs, erroredModuleGuids, err := kurtosisBackend.GetModuleLogs(ctx, moduleFilters, shouldFollowModuleLogs)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the module logs using filters '%+v'", moduleFilters)
+		//We do not return because logs aren't mandatory, if it fails we continue executing the module without logs
+		logrus.Errorf("The module containers logs won't be printed. An error occurred getting logs for module with ID '%v': \n%v", moduleId, err)
 	}
 	if len(erroredModuleGuids) > 0 {
 		moduleLogErr, found := erroredModuleGuids[moduleGUID]
 		if !found {
-			return stacktrace.NewError("Expected to find an error for module with GUID '%v' in error map '%+v' but was not found; this is a bug in Kurtosis", moduleGUID, erroredModuleGuids)
+			//We do not return because logs aren't mandatory, if it fails we continue executing the module without logs
+			logrus.Errorf("The module containers logs won't be printed. Expected to find an error for module with ID '%v' in error map '%+v' but was not found; this is a bug in Kurtosis", moduleId, erroredModuleGuids)
 		}
-		return stacktrace.Propagate(moduleLogErr, "An error occurred getting module logs for module with GUID '%v'", moduleGUID)
+		if moduleLogErr != nil {
+			//We do not return because logs aren't mandatory, if it fails we continue executing the module without logs
+			logrus.Errorf("The module containers logs won't be printed. An error occurred getting logs for module with ID '%v': \n%v", moduleId, moduleLogErr)
+		}
 	}
 	readCloserLogs, found := successfulModuleLogs[moduleGUID]
 	if !found {
-		return stacktrace.NewError("Expected to find the read closer object for module with GUID '%v' in successful module logs map '%+v' but was not found; this is a bug in Kurtosis", moduleGUID, successfulModuleLogs)
+		//We do not return because logs aren't mandatory, if it fails we continue executing the module without logs
+		logrus.Errorf("The module containers logs won't be printed. Expected to find the read closer object for module with ID '%v' in successful module logs map '%+v' but was not found; this is a bug in Kurtosis", moduleId, successfulModuleLogs)
 	}
 
 	logrus.Infof("Executing the module with execute params '%v'...", executeParamsStr)
