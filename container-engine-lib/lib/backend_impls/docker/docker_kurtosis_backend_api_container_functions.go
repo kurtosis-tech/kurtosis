@@ -249,7 +249,6 @@ func (backend *DockerKurtosisBackend) StopAPIContainers(
 		matchingUncastedApiContainersByContainerId,
 		backend.dockerManager,
 		extractEnclaveIdFromUncastedApiContainerObj,
-		maxNumConcurrentRequestsToDocker,
 		killApiContainerOperation,
 	)
 	if err != nil {
@@ -296,7 +295,6 @@ func (backend *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, 
 		matchingUncastedApiContainersByContainerId,
 		backend.dockerManager,
 		extractEnclaveIdFromUncastedApiContainerObj,
-		maxNumConcurrentRequestsToDocker,
 		removeApiContainerOperation,
 	)
 	if err != nil {
