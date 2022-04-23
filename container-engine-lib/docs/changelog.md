@@ -12,6 +12,8 @@
     * `DockerKurtosisBackend.DestroyModules`
     * `DockerKurtosisBackend.StopNetworkingSidecars`
     * `DockerKurtosisBackend.DestroyNetworkingSidecars`
+    * `DockerKurtosisBackend.StopUserServices`
+    * `DockerKurtosisBackend.DestroyUserServices`
 
 # 0.15.0
 ### Fixes
