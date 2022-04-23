@@ -18,6 +18,8 @@ func RunDockerOperationInParallel(
 	map[string]bool,
 	map[string]error,
 ){
+	logrus.Debugf("Called RunDockerOperationInParallel on the following Docker object IDs: %+v", dockerObjectIdSet)
+
 	workerPool := workerpool.New(maxNumConcurrentRequestsToDocker)
 
 	resultsChan := make(chan dockerOperationResult, len(dockerObjectIdSet))
