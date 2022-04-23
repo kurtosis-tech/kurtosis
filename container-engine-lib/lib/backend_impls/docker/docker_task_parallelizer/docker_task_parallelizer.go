@@ -7,6 +7,11 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
+const (
+	// This should probably (?) be fine
+	maxNumConcurrentRequestsToDocker = 25
+)
+
 type dockerOperationResult struct {
 	dockerObjectId string
 	resultErr   error // Nil if no issue
@@ -15,13 +20,13 @@ type dockerOperationResult struct {
 // An operation that consumes the Docker object ID, does something, and returns an error (or not)
 type DockerOperation func(ctx context.Context, dockerManager *docker_manager.DockerManager, dockerObjectId string) error
 
-// RunDockerTaskInParallelFromKurtosisObject abstracts away a very common pattern that we have in DockerKurtosisBackend:
+// RunDockerOperationInParallelForKurtosisObject abstracts away a very common pattern that we have in DockerKurtosisBackend:
 //  1) take a list of Kurtosis objects, keyed by its Docker ID
 //  2) extract the Docker ID only
 //  3) call an arbitrary Docker function using the ID
 //  4) collect the results
 //  5) key the results by the Kurtosis ID
-func RunDockerTaskInParallelFromKurtosisObject(
+func RunDockerOperationInParallelForKurtosisObject(
 	ctx context.Context,
 	// The objects that will be operated upon, keyed by their Docker ID
 	dockerKeyedKurtosisObjects map[string]interface{},
@@ -29,7 +34,6 @@ func RunDockerTaskInParallelFromKurtosisObject(
 	// Function that will be applied to each Kurtosis object for extracting its key
 	// when categorizing the final results
 	kurtosisKeyExtractor func(kurtosisObj interface{}) (string, error),
-	parallelism int,
 	operationToApplyToAllDockerObjects DockerOperation,
 ) (
 	// Results of the Docker operation, keyed by Kurtosis object IDs (needs to be converted to the
@@ -38,7 +42,7 @@ func RunDockerTaskInParallelFromKurtosisObject(
 	resultErroredKurtosisObjectIds map[string]error,
 	resultErr error,
 ) {
-	workerPool := workerpool.New(parallelism)
+	workerPool := workerpool.New(maxNumConcurrentRequestsToDocker)
 
 	resultsChan := make(chan dockerOperationResult, len(dockerKeyedKurtosisObjects))
 	for dockerObjectId := range dockerKeyedKurtosisObjects {

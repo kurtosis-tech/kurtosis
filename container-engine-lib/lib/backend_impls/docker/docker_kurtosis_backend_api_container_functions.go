@@ -244,7 +244,7 @@ func (backend *DockerKurtosisBackend) StopAPIContainers(
 		return nil
 	}
 
-	successfulEnclaveIdStrs, erroredEnclaveIdStrs, err := docker_task_parallelizer.RunDockerTaskInParallelFromKurtosisObject(
+	successfulEnclaveIdStrs, erroredEnclaveIdStrs, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObject(
 		ctx,
 		matchingUncastedApiContainersByContainerId,
 		backend.dockerManager,
@@ -291,7 +291,7 @@ func (backend *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, 
 		return nil
 	}
 
-	successfulEnclaveIdStrs, erroredEnclaveIdStrs, err := docker_task_parallelizer.RunDockerTaskInParallelFromKurtosisObject(
+	successfulEnclaveIdStrs, erroredEnclaveIdStrs, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObject(
 		ctx,
 		matchingUncastedApiContainersByContainerId,
 		backend.dockerManager,

@@ -46,9 +46,6 @@ const (
 
 	dockerContainerPortNumUintBase = 10
 	dockerContainerPortNumUintBits = 16
-
-	// This should probably (?) be fine
-	maxNumConcurrentRequestsToDocker = 25
 )
 
 // Represents the result of doing some operation on the Docker API
@@ -349,7 +346,7 @@ func (backend *DockerKurtosisBackend) killContainersInParallel(
 		return nil
 	}
 
-	parallelizationResults := docker_task_parallelizer.RunDockerTaskInParallelFromKurtosisObject(
+	parallelizationResults := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObject(
 		ctx,
 		backend.dockerManager,
 		maxNumConcurrentRequestsToDocker,
@@ -376,7 +373,7 @@ func (backend *DockerKurtosisBackend) removeContainersInParallel(
 		return nil
 	}
 
-	parallelizationResults := docker_task_parallelizer.RunDockerTaskInParallelFromKurtosisObject(
+	parallelizationResults := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObject(
 		ctx,
 		backend.dockerManager,
 		maxNumConcurrentRequestsToDocker,
