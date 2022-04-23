@@ -255,22 +255,23 @@ func (backend *DockerKurtosisBackend) StopEnclaves(
 		containerKillErrorStrsByEnclave[containerEnclaveId] = append(existingEnclaveErrors, killContainerErr.Error())
 	}
 
-
-	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
 	erroredEnclaveIds := map[enclave.EnclaveID]error{}
-	for enclaveId, containerKillErrorStrs := range containerKillErrorStrsByEnclave {
-		if len(containerKillErrorStrs) == 0 {
+	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
+	for enclaveId := range matchingNetworkInfo {
+		containerRemovalErrorStrs, found := containerKillErrorStrsByEnclave[enclaveId]
+		if !found || len(containerRemovalErrorStrs) == 0 {
 			successfulEnclaveIds[enclaveId] = true
 			continue
 		}
-		errorStr := strings.Join(containerKillErrorStrs, "\n\n")
+
+		errorStr := strings.Join(containerRemovalErrorStrs, "\n\n")
 		erroredEnclaveIds[enclaveId] = stacktrace.NewError(
 			"One or more errors occurred killing the containers in enclave '%v':\n%v",
 			enclaveId,
 			errorStr,
 		)
-		continue
 	}
+
 	return successfulEnclaveIds, erroredEnclaveIds, nil
 }
 
@@ -746,15 +747,12 @@ func destroyContainersInEnclaves(
 		return nil
 	}
 
-	successfulContainerIds, erroredContainerIds := docker_task_parallelizer.RunDockerOperationInParallel(
+	_, erroredContainerIds := docker_task_parallelizer.RunDockerOperationInParallel(
 		ctx,
 		containerIdsToRemove,
 		dockerManager,
 		removeEnclaveContainerOperation,
 	)
-
-	logrus.Debugf("Enclave containers that were successfully removed: %+v", successfulContainerIds)
-	logrus.Debugf("Enclave containers that had errros during removal: %+v", erroredContainerIds)
 
 	containerRemovalErrorStrsByEnclave := map[enclave.EnclaveID][]string{}
 	for erroredContainerId, removeContainerErr := range erroredContainerIds {
@@ -772,11 +770,13 @@ func destroyContainersInEnclaves(
 
 	erroredEnclaveIds := map[enclave.EnclaveID]error{}
 	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
-	for enclaveId, containerRemovalErrorStrs := range containerRemovalErrorStrsByEnclave {
-		if len(containerRemovalErrorStrs) == 0 {
+	for enclaveId := range enclaves {
+		containerRemovalErrorStrs, found := containerRemovalErrorStrsByEnclave[enclaveId]
+		if !found || len(containerRemovalErrorStrs) == 0 {
 			successfulEnclaveIds[enclaveId] = true
 			continue
 		}
+
 		errorStr := strings.Join(containerRemovalErrorStrs, "\n\n")
 		erroredEnclaveIds[enclaveId] = stacktrace.NewError(
 			"One or more errors occurred removing the containers in enclave '%v':\n%v",
@@ -843,12 +843,14 @@ func destroyVolumesInEnclaves(
 
 	erroredEnclaveIds := map[enclave.EnclaveID]error{}
 	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
-	for enclaveId, volumeRemovalErrorStrs := range volumeRemovalErrorStrsByEnclave {
-		if len(volumeRemovalErrorStrs) == 0 {
+	for enclaveId := range enclaves {
+		containerRemovalErrorStrs, found := volumeRemovalErrorStrsByEnclave[enclaveId]
+		if !found || len(containerRemovalErrorStrs) == 0 {
 			successfulEnclaveIds[enclaveId] = true
 			continue
 		}
-		errorStr := strings.Join(volumeRemovalErrorStrs, "\n\n")
+
+		errorStr := strings.Join(containerRemovalErrorStrs, "\n\n")
 		erroredEnclaveIds[enclaveId] = stacktrace.NewError(
 			"One or more errors occurred removing the volumes in enclave '%v':\n%v",
 			enclaveId,
