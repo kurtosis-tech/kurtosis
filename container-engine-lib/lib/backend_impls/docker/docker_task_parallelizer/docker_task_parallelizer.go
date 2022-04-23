@@ -4,52 +4,66 @@ import (
 	"context"
 	"github.com/gammazero/workerpool"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/stacktrace"
 )
 
-type dockerTaskResult struct {
-	containerId string
+type dockerOperationResult struct {
+	dockerObjectId string
 	resultErr   error // Nil if no issue
 }
 
-type ContainerIdConsumingTask func(ctx context.Context, dockerManager *docker_manager.DockerManager, containerId string) error
+// An operation that consumes the Docker object ID, does something, and returns an error (or not)
+type DockerOperation func(ctx context.Context, dockerManager *docker_manager.DockerManager, dockerObjectId string) error
 
-// RunDockerTaskInParallel executes the given function for all the container IDs using the requested parallelism level,
-// and stores the results.
-func RunDockerTaskInParallel(
+// RunDockerTaskInParallelFromKurtosisObject abstracts away a very common pattern that we have in DockerKurtosisBackend:
+//  1) take a list of Kurtosis objects, keyed by its Docker ID
+//  2) extract the Docker ID only
+//  3) call an arbitrary Docker function using the ID
+//  4) collect the results
+//  5) key the results by the Kurtosis ID
+func RunDockerTaskInParallelFromKurtosisObject(
 	ctx context.Context,
+	// The objects that will be operated upon, keyed by their Docker ID
+	dockerKeyedKurtosisObjects map[string]interface{},
 	dockerManager *docker_manager.DockerManager,
+	// Function that will be applied to each Kurtosis object for extracting its key
+	// when categorizing the final results
+	kurtosisKeyExtractor func(kurtosisObj interface{}) (string, error),
 	parallelism int,
-	funcToApply ContainerIdConsumingTask,
-	containerIdsToOperateOn map[string]bool,
+	operationToApplyToAllDockerObjects DockerOperation,
 ) (
-	resultSuccessfulContainerIds map[string]bool,
-	resultErroredContainerIds map[string]error,
+	// Results of the Docker operation, keyed by Kurtosis object IDs (needs to be converted to the
+	// proper type). Nil error == no error occurred
+	map[string]error,
+	error,
 ) {
 	workerPool := workerpool.New(parallelism)
 
-	resultsChan := make(chan dockerTaskResult, len(containerIdsToOperateOn))
-	for containerId := range containerIdsToOperateOn {
+	resultsChan := make(chan dockerOperationResult, len(dockerKeyedKurtosisObjects))
+	for dockerObjectId := range dockerKeyedKurtosisObjects {
 		workerPool.Submit(func(){
-			taskExecutionResult := funcToApply(ctx, dockerManager, containerId)
-			resultsChan <- dockerTaskResult{
-				containerId: containerId,
-				resultErr:   taskExecutionResult,
+			operationResultErr := operationToApplyToAllDockerObjects(ctx, dockerManager, dockerObjectId)
+			resultsChan <- dockerOperationResult{
+				dockerObjectId: dockerObjectId,
+				resultErr:      operationResultErr,
 			}
 		})
 	}
 	workerPool.StopWait()
 	close(resultsChan)
 
-	successfulContainerIds := map[string]bool{}
-	erroredContainerIds := map[string]error{}
-	for result := range resultsChan {
-		containerId := result.containerId
-		resultErr := result.resultErr
-		if resultErr == nil {
-			successfulContainerIds[containerId] = true
-		} else {
-			erroredContainerIds[containerId] = resultErr
+	results := map[string]error{}
+	for taskResult := range resultsChan {
+		dockerObjectId := taskResult.dockerObjectId
+		kurtosisObj, found := dockerKeyedKurtosisObjects[dockerObjectId]
+		if !found {
+			return nil, stacktrace.NewError("Unrequested Docker object with ID '%v was operated on!", dockerObjectId)
 		}
+		kurtosisObjectId, err := kurtosisKeyExtractor(kurtosisObj)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Couldn't extract Kurtosis object key for object with Docker object ID '%v'", dockerObjectId)
+		}
+		results[kurtosisObjectId] = taskResult.resultErr
 	}
-	return successfulContainerIds, erroredContainerIds
+	return results, nil
 }
