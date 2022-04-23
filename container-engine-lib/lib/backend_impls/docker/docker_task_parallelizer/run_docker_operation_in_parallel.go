@@ -61,7 +61,7 @@ func getWorkerTask(
 	operationToApplyToAllDockerObjects DockerOperation,
 	resultsChan chan dockerOperationResult,
 ) func() {
-	logrus.Debugf("Creating a Docker concurrent operation task to operate on Docker object with ID '%v'")
+	logrus.Debugf("Creating a Docker concurrent operation task to operate on Docker object with ID '%v'", dockerObjectId)
 	return func(){
 		operationResultErr := operationToApplyToAllDockerObjects(ctx, dockerManager, dockerObjectId)
 		resultsChan <- dockerOperationResult{
