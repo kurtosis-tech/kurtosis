@@ -259,8 +259,26 @@ type KurtosisBackend interface {
 		enclaveId enclave.EnclaveID,
 		userServiceCommands map[service.ServiceGUID][]string,
 	) (
-		succesfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult,
+		successfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult,
 		erroredUserServiceGuids map[service.ServiceGUID]error,
+		resultErr error,
+	)
+
+	// Pauses execution of all processes on a service, but does not shut down the service (memory state is preserved)
+	PauseService(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		serviceId service.ServiceID,
+	) (
+		resultErr error,
+	)
+
+	// Unpauses a service, resuming execution of all processes on the service that were previously paused.
+	UnpauseService(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		serviceId service.ServiceID,
+	) (
 		resultErr error,
 	)
 
@@ -393,7 +411,7 @@ type KurtosisBackend interface {
 		destVolMntDirpathOnExpander string,
 		filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
 		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
-	)(
+	) (
 		*files_artifact_expander.FilesArtifactExpander,
 		error,
 	)
