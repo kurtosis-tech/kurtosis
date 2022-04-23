@@ -6,6 +6,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_task_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
@@ -242,33 +243,35 @@ func (backend *DockerKurtosisBackend) StopEngines(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engines matching filters '%+v'", filters)
 	}
 
-	containerIdsToKill := map[string]bool{}
-	for containerId := range matchingEnginesByContainerId {
-		containerIdsToKill[containerId] = true
+	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
+	matchingUncastedEnginesByContainerId := map[string]interface{}{}
+	for containerId, engineObj := range matchingEnginesByContainerId {
+		matchingUncastedEnginesByContainerId[containerId] = interface{}(engineObj)
 	}
 
-	successfulContainerIds, erroredContainerIds := backend.killContainersInParallel(ctx, containerIdsToKill)
-
-	successfulEngineIds := map[string]bool{}
-	for containerId := range successfulContainerIds {
-		engineObj, found := matchingEnginesByContainerId[containerId]
-		if !found {
-			return nil, nil, stacktrace.NewError("Successfully killed container with ID '%v' that wasn't requested; this is a bug in Kurtosis!", containerId)
+	var killEngineOperation docker_task_parallelizer.DockerOperation = func(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		dockerObjectId string,
+	) error {
+		if err := dockerManager.KillContainer(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred killing engine container with ID '%v'", dockerObjectId)
 		}
-		successfulEngineIds[engineObj.GetID()] = true
+		return nil
 	}
 
-	erroredEngineIds := map[string]error{}
-	for containerId := range erroredContainerIds {
-		engineObj, found := matchingEnginesByContainerId[containerId]
-		if !found {
-			return nil, nil, stacktrace.NewError("An error occurred killing container with ID '%v' that wasn't requested; this is a bug in Kurtosis!", containerId)
-		}
-		wrappedErr := stacktrace.Propagate(err, "An error occurred killing engine with ID '%v' and container ID '%v'", engineObj.GetID(), containerId)
-		erroredEngineIds[engineObj.GetID()] = wrappedErr
+	successfulEngineIdStrs, erroredEngineIdStrs, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+		ctx,
+		matchingUncastedEnginesByContainerId,
+		backend.dockerManager,
+		extractEngineIdFromUncastedEngineObj,
+		killEngineOperation,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred killing engine containers matching filters '%+v'", filters)
 	}
 
-	return successfulEngineIds, erroredEngineIds, nil
+	return successfulEngineIdStrs, erroredEngineIdStrs, nil
 }
 
 func (backend *DockerKurtosisBackend) DestroyEngines(
@@ -284,18 +287,35 @@ func (backend *DockerKurtosisBackend) DestroyEngines(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
 	}
 
-	successIds := map[string]bool{}
-	errorIds := map[string]error{}
+	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
+	matchingUncastedEnginesByContainerId := map[string]interface{}{}
 	for containerId, engineObj := range matchingEnginesByContainerId {
-		engineId := engineObj.GetID()
-		if err := backend.dockerManager.RemoveContainer(ctx, containerId); err != nil {
-			wrappedErr := stacktrace.Propagate(err, "An error occurred removing engine '%v' with container ID '%v'", engineId, containerId)
-			errorIds[engineId] = wrappedErr
-		} else {
-			successIds[engineId] = true
-		}
+		matchingUncastedEnginesByContainerId[containerId] = interface{}(engineObj)
 	}
-	return successIds, errorIds, nil
+
+	var removeEngineOperation docker_task_parallelizer.DockerOperation = func(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		dockerObjectId string,
+	) error {
+		if err := dockerManager.RemoveContainer(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing engine container with ID '%v'", dockerObjectId)
+		}
+		return nil
+	}
+
+	successfulEngineIdStrs, erroredEngineIdStrs, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+		ctx,
+		matchingUncastedEnginesByContainerId,
+		backend.dockerManager,
+		extractEngineIdFromUncastedEngineObj,
+		removeEngineOperation,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing engine containers matching filters '%+v'", filters)
+	}
+
+	return successfulEngineIdStrs, erroredEngineIdStrs, nil
 }
 
 
@@ -533,4 +553,12 @@ func deserialize_pre_2022_03_02_PortSpecs(specsStr string) (map[string]*port_spe
 		result[portId] = portSpec
 	}
 	return result, nil
+}
+
+func extractEngineIdFromUncastedEngineObj(uncastedEngineObj interface{}) (string, error) {
+	castedObj, ok := uncastedEngineObj.(*engine.Engine)
+	if !ok {
+		return "", stacktrace.NewError("An error occurred downcasting the engine object")
+	}
+	return castedObj.GetID(), nil
 }

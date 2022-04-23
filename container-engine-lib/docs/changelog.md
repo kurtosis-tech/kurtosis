@@ -2,8 +2,12 @@
 ### Features
 * `DockerKurtosisBackend.CreateEnclave` also creates an enclave data volume
 * Parallelized several operations to improve perf:
-    * `KurtosisBackend.StopEnclaves`
-    * `KurtosisBackend.DestroyEnclaves`
+    * `DockerKurtosisBackend.StopEnclaves`
+    * `DockerKurtosisBackend.DestroyEnclaves`
+    * `DockerKurtosisBackend.StopAPIContainers`
+    * `DockerKurtosisBackend.DestroyAPIContainers`
+    * `DockerKurtosisBackend.StopEngines`
+    * `DockerKurtosisBackend.DestroyEngines`
 
 # 0.15.0
 ### Fixes
