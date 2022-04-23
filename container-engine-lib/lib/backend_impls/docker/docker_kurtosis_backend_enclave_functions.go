@@ -406,6 +406,9 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 		erroredEnclaveIds[enclaveId] = networkRemovalErr
 	}
 
+	logrus.Debugf("Successfully destroyed enclave IDs: %+v", successfulNetworkRemovalEnclaveIds)
+	logrus.Debugf("Errored enclav: %+v", erroredNetworkRemovalEnclaveIds)
+
 	return successfulNetworkRemovalEnclaveIds, erroredEnclaveIds, nil
 }
 
