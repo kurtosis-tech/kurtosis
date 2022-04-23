@@ -10,6 +10,8 @@
     * `DockerKurtosisBackend.DestroyEngines`
     * `DockerKurtosisBackend.StopModules`
     * `DockerKurtosisBackend.DestroyModules`
+    * `DockerKurtosisBackend.StopNetworkingSidecars`
+    * `DockerKurtosisBackend.DestroyNetworkingSidecars`
 
 # 0.15.0
 ### Fixes

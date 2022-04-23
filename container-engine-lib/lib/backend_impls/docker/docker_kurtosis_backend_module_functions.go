@@ -317,12 +317,12 @@ func (backend *DockerKurtosisBackend) DestroyModules(
 	}
 
 	successfulGuids := map[module.ModuleGUID]bool{}
-	for enclaveIdStr := range successfulGuidStrs {
-		successfulGuids[module.ModuleGUID(enclaveIdStr)] = true
+	for guidStr := range successfulGuidStrs {
+		successfulGuids[module.ModuleGUID(guidStr)] = true
 	}
 	erroredGuids := map[module.ModuleGUID]error{}
-	for enclaveIdStr, killErr := range erroredGuidStrs {
-		erroredGuids[module.ModuleGUID(enclaveIdStr)] = killErr
+	for guidStr, removalErr := range erroredGuidStrs {
+		erroredGuids[module.ModuleGUID(guidStr)] = removalErr
 	}
 
 	return successfulGuids, erroredGuids, nil
