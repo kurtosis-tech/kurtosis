@@ -197,6 +197,22 @@ func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 	return successfulUserServicesLogs, erroredUserServices, nil
 }
 
+func (backend *DockerKurtosisBackend) PauseService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceId service.ServiceID) error {
+	// TODO TODO TODO IMPLEMENT ME
+	return nil
+}
+
+func (backend *DockerKurtosisBackend) UnpauseService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceId service.ServiceID) error {
+	// TODO TODO TODO IMPLEMENT ME
+	return nil
+}
+
 func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
