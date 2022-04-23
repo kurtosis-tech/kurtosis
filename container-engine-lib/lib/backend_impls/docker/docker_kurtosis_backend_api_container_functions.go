@@ -227,6 +227,12 @@ func (backend *DockerKurtosisBackend) StopAPIContainers(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API containers matching filters '%+v'", filters)
 	}
 
+	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
+	matchingUncastedApiContainersByContainerId := map[string]interface{}{}
+	for containerId, apiContainerObj := range matchingApiContainersByContainerId {
+		matchingUncastedApiContainersByContainerId[containerId] = interface{}(apiContainerObj)
+	}
+
 	var killApiContainerOperation docker_task_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
@@ -238,44 +244,25 @@ func (backend *DockerKurtosisBackend) StopAPIContainers(
 		return nil
 	}
 
-	docker_task_parallelizer.RunDockerTaskInParallelFromKurtosisObject(
+	successfulEnclaveIdStrs, erroredEnclaveIdStrs, err := docker_task_parallelizer.RunDockerTaskInParallelFromKurtosisObject(
 		ctx,
-		matchingApiContainersByContainerId,
+		matchingUncastedApiContainersByContainerId,
 		backend.dockerManager,
 		extractEnclaveIdFromUncastedApiContainerObj,
 		maxNumConcurrentRequestsToDocker,
 		killApiContainerOperation,
 	)
-
-
-	containerIdsToStopSet := map[string]bool{}
-	for containerId := range matchingApiContainersByContainerId {
-		containerIdsToStopSet[containerId] = true
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred killing API containers matching filters '%+v'", filters)
 	}
 
-	killResults := backend.killContainersInParallel(
-		ctx,
-		containerIdsToStopSet,
-	)
-
 	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
+	for enclaveIdStr := range successfulEnclaveIdStrs {
+		successfulEnclaveIds[enclave.EnclaveID(enclaveIdStr)] = true
+	}
 	erroredEnclaveIds := map[enclave.EnclaveID]error{}
-	for containerId, killErr := range killResults {
-		apiContainerObj, found := matchingApiContainersByContainerId[containerId]
-		if !found {
-			return nil, nil, stacktrace.NewError("Found container '%v' that shouldn't have been killed but was!", containerId)
-		}
-		enclaveId := apiContainerObj.GetEnclaveID()
-		if killErr == nil {
-			successfulEnclaveIds[enclaveId] = true
-		} else {
-			erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
-				err,
-				"An error occurred killing API container in enclave '%v' with container ID '%v'",
-				enclaveId,
-				containerId,
-			)
-		}
+	for enclaveIdStr, killErr := range erroredEnclaveIdStrs {
+		erroredEnclaveIds[enclave.EnclaveID(enclaveIdStr)] = killErr
 	}
 
 	return successfulEnclaveIds, erroredEnclaveIds, nil
@@ -287,15 +274,45 @@ func (backend *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, 
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API containers matching the following filters: %+v", filters)
 	}
 
-	containerIdsToRemove := map[string]bool{}
-	for containerId := range matchingApiContainersByContainerId {
-		containerIdsToRemove[containerId] = true
+	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
+	matchingUncastedApiContainersByContainerId := map[string]interface{}{}
+	for containerId, apiContainerObj := range matchingApiContainersByContainerId {
+		matchingUncastedApiContainersByContainerId[containerId] = interface{}(apiContainerObj)
 	}
 
-	successIds, errorIds := backend.removeContainersInParallel(ctx, containerIdsToRemove)
+	var removeApiContainerOperation docker_task_parallelizer.DockerOperation = func(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		dockerObjectId string,
+	) error {
+		if err := dockerManager.RemoveContainer(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing API container with ID '%v'", dockerObjectId)
+		}
+		return nil
+	}
 
+	successfulEnclaveIdStrs, erroredEnclaveIdStrs, err := docker_task_parallelizer.RunDockerTaskInParallelFromKurtosisObject(
+		ctx,
+		matchingUncastedApiContainersByContainerId,
+		backend.dockerManager,
+		extractEnclaveIdFromUncastedApiContainerObj,
+		maxNumConcurrentRequestsToDocker,
+		removeApiContainerOperation,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing API containers matching filters '%+v'", filters)
+	}
 
-	return successIds, errorIds, nil
+	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
+	for enclaveIdStr := range successfulEnclaveIdStrs {
+		successfulEnclaveIds[enclave.EnclaveID(enclaveIdStr)] = true
+	}
+	erroredEnclaveIds := map[enclave.EnclaveID]error{}
+	for enclaveIdStr, killErr := range erroredEnclaveIdStrs {
+		erroredEnclaveIds[enclave.EnclaveID(enclaveIdStr)] = killErr
+	}
+
+	return successfulEnclaveIds, erroredEnclaveIds, nil
 }
 
 // ====================================================================================================

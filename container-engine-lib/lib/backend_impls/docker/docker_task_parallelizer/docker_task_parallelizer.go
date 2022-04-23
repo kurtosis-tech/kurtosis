@@ -34,8 +34,9 @@ func RunDockerTaskInParallelFromKurtosisObject(
 ) (
 	// Results of the Docker operation, keyed by Kurtosis object IDs (needs to be converted to the
 	// proper type). Nil error == no error occurred
-	map[string]error,
-	error,
+	resultSuccessfulKurtosisObjectIds map[string]bool,
+	resultErroredKurtosisObjectIds map[string]error,
+	resultErr error,
 ) {
 	workerPool := workerpool.New(parallelism)
 
@@ -52,18 +53,24 @@ func RunDockerTaskInParallelFromKurtosisObject(
 	workerPool.StopWait()
 	close(resultsChan)
 
-	results := map[string]error{}
+	successfulKurtosisObjIds := map[string]bool{}
+	erroredKurtosisObjIds := map[string]error{}
 	for taskResult := range resultsChan {
 		dockerObjectId := taskResult.dockerObjectId
 		kurtosisObj, found := dockerKeyedKurtosisObjects[dockerObjectId]
 		if !found {
-			return nil, stacktrace.NewError("Unrequested Docker object with ID '%v was operated on!", dockerObjectId)
+			return nil, nil, stacktrace.NewError("Unrequested Docker object with ID '%v was operated on!", dockerObjectId)
 		}
 		kurtosisObjectId, err := kurtosisKeyExtractor(kurtosisObj)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "Couldn't extract Kurtosis object key for object with Docker object ID '%v'", dockerObjectId)
+			return nil, nil, stacktrace.Propagate(err, "Couldn't extract Kurtosis object key for object with Docker object ID '%v'", dockerObjectId)
 		}
-		results[kurtosisObjectId] = taskResult.resultErr
+		taskResultErr := taskResult.resultErr
+		if taskResultErr == nil {
+			successfulKurtosisObjIds[kurtosisObjectId] = true
+		} else {
+			erroredKurtosisObjIds[kurtosisObjectId] = taskResultErr
+		}
 	}
-	return results, nil
+	return successfulKurtosisObjIds, erroredKurtosisObjIds, nil
 }
