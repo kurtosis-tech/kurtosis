@@ -59,20 +59,27 @@ func (backend *DockerKurtosisBackend) CreateEnclave(
 ) {
 	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
 
-	enclaveIDs := map[enclave.EnclaveID]bool{
-		enclaveId: true,
+	searchNetworkLabels := map[string]string{
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
 	}
 
-	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, enclaveIDs)
+	networks, err := backend.dockerManager.GetNetworksByLabels(ctx, searchNetworkLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred checking for networks with ID '%v', which is necessary to ensure that our enclave doesn't exist yet", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting networks using labels '%+v', which is necessary to ensure that our enclave doesn't exist yet", searchNetworkLabels)
 	}
 	if len(networks) > 0 {
-		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because an enclave with ID '%v' already exists", enclaveId, enclaveId)	}
+		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because an enclave with ID '%v' already exists", enclaveId, enclaveId)
+	}
 
-	foundVolumes, err := backend.getEnclaveDataVolumesMatchingEnclaveId(ctx, enclaveId)
+	volumeSearchLabels :=  map[string]string{
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
+		label_key_consts.VolumeTypeLabelKey.GetString(): label_value_consts.EnclaveDataVolumeTypeLabelValue.GetString(),
+	}
+	foundVolumes, err := backend.dockerManager.GetVolumesByLabels(ctx, volumeSearchLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave data volumes matching enclave ID '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave data volumes matching labels '%+v'", volumeSearchLabels)
 	}
 	if len(foundVolumes) > 0 {
 		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because one or more enclave data volume for that enclave already exists", enclaveId)
@@ -171,30 +178,22 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 	error,
 ) {
 
-	networks, err := backend.getMatchingEnclaveNetworkInfo(ctx, filters)
+	allMatchingNetworkInfo, err := backend.getMatchingEnclaveNetworkInfo(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave networks matching filters '%+v'", filters)
 	}
 
 	result := map[enclave.EnclaveID]*enclave.Enclave{}
-	for networkId,
-
-	for _, network := range networks {
-		enclaveId, err := getEnclaveIdFromNetwork(network)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting enclave ID from network '%+v'", network)
-		}
-
-		enclaveStatus, _, err := backend.getEnclaveStatusAndContainers(ctx, enclaveId)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
-		}
-
-		if filters.Statuses == nil || isEnclaveStatusInEnclaveFilters(enclaveStatus, filters) {
+	for enclaveId, matchingNetworkInfo := range allMatchingNetworkInfo {
+		result[enclaveId] = enclave.NewEnclave(
+			enclaveId,
+			matchingNetworkInfo.enclaveStatus,
+			matchingNetworkInfo.dockerNetwork.GetId(),
+			matchingNetworkInfo.dockerNetwork.GetIpAndMask().String(),
 			// TODO We're returning nil here for gatewayIp and freeIpAddrProvider as a temporary hack, until we can fully push all Docker stuff under the KurtosisBackend
-			newEnclave := enclave.NewEnclave(enclaveId, enclaveStatus, network.GetId(), network.GetIpAndMask().String(), nil, nil)
-			result[enclaveId] = newEnclave
-		}
+			nil,
+			nil,
+		)
 	}
 
 	return result, nil
@@ -571,19 +570,6 @@ func (backend *DockerKurtosisBackend) getEnclaveNetworksByEnclaveIds(ctx context
 }
 
  */
-
-func (backend *DockerKurtosisBackend) getEnclaveDataVolumesMatchingEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID) ([]*docker_types.Volume, error) {
-	volumeSearchLabels :=  map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
-		label_key_consts.VolumeTypeLabelKey.GetString(): label_value_consts.EnclaveDataVolumeTypeLabelValue.GetString(),
-	}
-	foundEnclaveDataVolumes, err := backend.dockerManager.GetVolumesByLabels(ctx, volumeSearchLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave data volumes matching labels '%+v'", volumeSearchLabels)
-	}
-	return foundEnclaveDataVolumes, nil
-}
 
 func (backend *DockerKurtosisBackend) getEnclaveStatusAndContainers(
 	ctx context.Context,
