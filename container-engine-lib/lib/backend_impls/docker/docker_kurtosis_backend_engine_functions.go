@@ -247,7 +247,7 @@ func (backend *DockerKurtosisBackend) StopEngines(
 		containerIdsToKill[containerId] = true
 	}
 
-	successfulContainerIds, erroredContainerIds := backend.killContainers(ctx, containerIdsToKill)
+	successfulContainerIds, erroredContainerIds := backend.killContainersInParallel(ctx, containerIdsToKill)
 
 	successfulEngineIds := map[string]bool{}
 	for containerId := range successfulContainerIds {

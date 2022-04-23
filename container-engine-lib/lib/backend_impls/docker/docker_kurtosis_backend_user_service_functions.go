@@ -361,7 +361,7 @@ func (backend *DockerKurtosisBackend) StopUserServices(
 		containerIdsToKill[containerId] = true
 	}
 
-	successfulContainerIds, erroredContainerIds := backend.killContainers(ctx, containerIdsToKill)
+	successfulContainerIds, erroredContainerIds := backend.killContainersInParallel(ctx, containerIdsToKill)
 
 	successfulUserServiceGuids := map[service.ServiceGUID]bool{}
 	for containerId := range successfulContainerIds {

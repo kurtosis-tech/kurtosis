@@ -231,7 +231,7 @@ func (backend *DockerKurtosisBackend) StopEnclaves(
 
 			logrus.Debugf("Containers in enclave '%v' that will be stopped: %+v", enclaveId, containerIdsSet)
 
-			if _, erroredContainers := backend.killContainers(ctx, containerIdsSet); len(erroredContainers) > 0 {
+			if _, erroredContainers := backend.killContainersInParallel(ctx, containerIdsSet); len(erroredContainers) > 0 {
 				containerKillErrorStrs := []string{}
 				for _, err = range erroredContainers {
 					containerKillErrorStrs = append(containerKillErrorStrs, err.Error())

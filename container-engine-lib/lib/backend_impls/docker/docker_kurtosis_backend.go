@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/docker/go-connections/nat"
+	"github.com/gammazero/workerpool"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_network_allocator"
@@ -46,7 +47,16 @@ const (
 
 	dockerContainerPortNumUintBase = 10
 	dockerContainerPortNumUintBits = 16
+
+	// This should probably (?) be fine
+	maxNumConcurrentRequestsToDocker = 25
 )
+
+// Represents the result of doing some operation on the Docker API
+type concurrentContainerOperationResult struct {
+	containerId string
+	result error	// nil if the operation was successful
+}
 
 // This maps a Docker container's status to a binary "is the container considered running?" determiner
 // Its completeness is enforced via unit test
@@ -323,15 +333,21 @@ func getEnclaveIdFromNetwork(network *types.Network) (enclave.EnclaveID, error) 
 	return enclaveId, nil
 }
 
-func (backend *DockerKurtosisBackend) killContainers(
+func (backend *DockerKurtosisBackend) killContainersInParallel(
 	ctx context.Context,
 	containerIdsSet map[string]bool,
 ) (
 	successfulContainers map[string]bool,
 	erroredContainers map[string]error,
 ) {
+	workerPool := workerpool.New(maxNumConcurrentRequestsToDocker)
+
 	killedContainers := map[string]bool{}
 	failedToKillContainers := map[string]error{}
+
+
+
+
 	// TODO Parallelize for perf
 	for containerId := range containerIdsSet {
 		if err := backend.dockerManager.KillContainer(ctx, containerId); err != nil {
@@ -345,6 +361,8 @@ func (backend *DockerKurtosisBackend) killContainers(
 		}
 		killedContainers[containerId] = true
 	}
+
+	workerPool.StopWait()
 
 	return killedContainers, failedToKillContainers
 }

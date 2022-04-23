@@ -1,6 +1,7 @@
 # TBD
 ### Features
 * `DockerKurtosisBackend.CreateEnclave` also creates an enclave data volume
+* Parallelized several operations to improve perf, most notably `KurtosisBackend.DestroyEnclaves`
 
 # 0.15.0
 ### Fixes

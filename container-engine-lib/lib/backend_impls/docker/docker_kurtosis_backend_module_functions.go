@@ -239,7 +239,7 @@ func (backend *DockerKurtosisBackend) StopModules(
 		containerIdsToKill[containerId] = true
 	}
 
-	successfulContainerIds, erroredContainerIds := backend.killContainers(ctx, containerIdsToKill)
+	successfulContainerIds, erroredContainerIds := backend.killContainersInParallel(ctx, containerIdsToKill)
 
 	successfulModuleGuids := map[module.ModuleGUID]bool{}
 	for containerId := range successfulContainerIds {

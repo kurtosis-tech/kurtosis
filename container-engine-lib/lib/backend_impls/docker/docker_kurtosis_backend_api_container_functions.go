@@ -231,7 +231,7 @@ func (backend *DockerKurtosisBackend) StopAPIContainers(
 		containerIdsToKill[containerId] = true
 	}
 
-	successfulContainerIds, erroredContainerIds := backend.killContainers(ctx, containerIdsToKill)
+	successfulContainerIds, erroredContainerIds := backend.killContainersInParallel(ctx, containerIdsToKill)
 
 	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
 	for containerId := range successfulContainerIds {

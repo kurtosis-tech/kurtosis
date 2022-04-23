@@ -252,7 +252,7 @@ func (backend *DockerKurtosisBackend) StopNetworkingSidecars(
 		containerIdsToKill[containerId] = true
 	}
 
-	successfulContainerIds, erroredContainerIds := backend.killContainers(ctx, containerIdsToKill)
+	successfulContainerIds, erroredContainerIds := backend.killContainersInParallel(ctx, containerIdsToKill)
 
 	successfulNetworkingSidecarGuids := map[service.ServiceGUID]bool{}
 	for containerId := range successfulContainerIds {
