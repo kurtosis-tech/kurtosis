@@ -380,6 +380,8 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	for enclaveId, containerRemovalErr := range erroredContainerRemovalEnclaveIds {
 		erroredEnclaveIds[enclaveId] = containerRemovalErr
 	}
+	logrus.Debugf("Enclaves for which containers were successfully removed: %+v", successfulContainerRemovalEnclaveIds)
+	logrus.Debugf("Errored enclaves after container removal: %+v", erroredEnclaveIds)
 
 	successfulVolumeRemovalEnclaveIds, erroredVolumeRemovalEnclaveIds, err := destroyVolumesInEnclaves(ctx, backend.dockerManager, successfulContainerRemovalEnclaveIds)
 	if err != nil {
@@ -388,6 +390,8 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	for enclaveId, volumeRemovalErr := range erroredVolumeRemovalEnclaveIds {
 		erroredEnclaveIds[enclaveId] = volumeRemovalErr
 	}
+	logrus.Debugf("Enclaves for which volumes were successfully removed: %+v", successfulVolumeRemovalEnclaveIds)
+	logrus.Debugf("Errored enclaves after volume removal: %+v", erroredEnclaveIds)
 
 	// Remove the networks
 	networksToDestroy := map[enclave.EnclaveID]string{}
@@ -405,9 +409,8 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	for enclaveId, networkRemovalErr := range erroredNetworkRemovalEnclaveIds {
 		erroredEnclaveIds[enclaveId] = networkRemovalErr
 	}
-
-	logrus.Debugf("Successfully destroyed enclave IDs: %+v", successfulNetworkRemovalEnclaveIds)
-	logrus.Debugf("Errored enclav: %+v", erroredNetworkRemovalEnclaveIds)
+	logrus.Debugf("Enclaves for which networks were successfully removed: %+v", successfulNetworkRemovalEnclaveIds)
+	logrus.Debugf("Errored enclaves after network removal: %+v", erroredEnclaveIds)
 
 	return successfulNetworkRemovalEnclaveIds, erroredEnclaveIds, nil
 }
