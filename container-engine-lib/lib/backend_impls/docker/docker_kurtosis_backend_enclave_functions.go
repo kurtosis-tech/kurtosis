@@ -232,7 +232,7 @@ func (backend *DockerKurtosisBackend) StopEnclaves(
 		return nil
 	}
 
-	_, erroredContainerIds, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObject(
+	_, erroredContainerIds, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
 		containerIdsToStopToUncastedContainerId,
 		backend.dockerManager,
@@ -736,7 +736,7 @@ func destroyContainersInEnclaves(
 		return nil
 	}
 
-	_, erroredContainerIds, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObject(
+	_, erroredContainerIds, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
 		containerIdsToRemoveToUncastedContainerId,
 		dockerManager,
@@ -818,7 +818,7 @@ func destroyVolumesInEnclaves(
 		return nil
 	}
 
-	_, erroredVolumeIds, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObject(
+	_, erroredVolumeIds, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
 		volumeIdsToRemoveToUncastedVolumeId,
 		dockerManager,
@@ -885,7 +885,7 @@ func destroyEnclaveNetworks(
 		return nil
 	}
 
-	successfulNetworkIds, erroredNetworkIds, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObject(
+	successfulNetworkIds, erroredNetworkIds, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
 		networkIdsToUncastedNetworkId,
 		dockerManager,

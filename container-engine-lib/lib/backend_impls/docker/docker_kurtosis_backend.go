@@ -346,7 +346,7 @@ func (backend *DockerKurtosisBackend) killContainersInParallel(
 		return nil
 	}
 
-	parallelizationResults := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObject(
+	parallelizationResults := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
 		backend.dockerManager,
 		maxNumConcurrentRequestsToDocker,
@@ -373,7 +373,7 @@ func (backend *DockerKurtosisBackend) removeContainersInParallel(
 		return nil
 	}
 
-	parallelizationResults := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObject(
+	parallelizationResults := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
 		backend.dockerManager,
 		maxNumConcurrentRequestsToDocker,
