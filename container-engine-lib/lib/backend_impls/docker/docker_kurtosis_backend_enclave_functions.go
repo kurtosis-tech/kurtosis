@@ -723,12 +723,13 @@ func destroyContainersInEnclaves(
 ){
 	// For all the enclaves to destroy, gather all the containers that should be destroyed
 	enclaveIdsForContainerIdsToRemove := map[string]enclave.EnclaveID{}
-	contianerIdsToRemove := map[string]bool{}
+	containerIdsToRemove := map[string]bool{}
 	for enclaveId, networkInfo := range enclaves {
 		for _, container := range networkInfo.containers {
 			containerId := container.GetId()
 			enclaveIdsForContainerIdsToRemove[containerId] = enclaveId
-			contianerIdsToRemove[containerId] = true
+			containerIdsToRemove[containerId] = true
+			logrus.Debugf("Adding container '%v' associated with enclave '%v' to the list of containers to remove", containerId, enclaveId)
 		}
 	}
 
@@ -739,18 +740,21 @@ func destroyContainersInEnclaves(
 		return nil
 	}
 
-	_, erroredContainerIds := docker_task_parallelizer.RunDockerOperationInParallel(
+	successfulContainerIds, erroredContainerIds := docker_task_parallelizer.RunDockerOperationInParallel(
 		ctx,
-		contianerIdsToRemove,
+		containerIdsToRemove,
 		dockerManager,
 		removeEnclaveContainerOperation,
 	)
+
+	logrus.Debugf("Enclave containers that were successfully removed: %+v", successfulContainerIds)
+	logrus.Debugf("Enclave containers that had errros during removal: %+v", erroredContainerIds)
 
 	containerRemovalErrorStrsByEnclave := map[enclave.EnclaveID][]string{}
 	for erroredContainerId, removeContainerErr := range erroredContainerIds {
 		containerEnclaveId, found := enclaveIdsForContainerIdsToRemove[erroredContainerId]
 		if !found {
-			return nil, nil, stacktrace.NewError("An error occurred stopping container '%v' in an enclave we didn't request", erroredContainerId)
+			return nil, nil, stacktrace.NewError("An error occurred destroying container '%v' in an enclave we didn't request", erroredContainerId)
 		}
 
 		existingEnclaveErrors, found := containerRemovalErrorStrsByEnclave[containerEnclaveId]
@@ -773,7 +777,6 @@ func destroyContainersInEnclaves(
 			enclaveId,
 			errorStr,
 		)
-		continue
 	}
 
 	return successfulEnclaveIds, erroredEnclaveIds, nil
@@ -845,7 +848,6 @@ func destroyVolumesInEnclaves(
 			enclaveId,
 			errorStr,
 		)
-		continue
 	}
 
 	return successfulEnclaveIds, erroredEnclaveIds, nil

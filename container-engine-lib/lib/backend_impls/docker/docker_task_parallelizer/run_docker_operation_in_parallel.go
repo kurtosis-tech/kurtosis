@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/gammazero/workerpool"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/sirupsen/logrus"
 )
 
 // RunDockerOperationInParallel will run a Docker operation on each of the object IDs, in parallel
@@ -60,6 +61,7 @@ func getWorkerTask(
 	operationToApplyToAllDockerObjects DockerOperation,
 	resultsChan chan dockerOperationResult,
 ) func() {
+	logrus.Debugf("Creating a Docker concurrent operation task to operate on Docker object with ID '%v'")
 	return func(){
 		operationResultErr := operationToApplyToAllDockerObjects(ctx, dockerManager, dockerObjectId)
 		resultsChan <- dockerOperationResult{
