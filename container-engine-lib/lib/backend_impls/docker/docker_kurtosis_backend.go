@@ -8,9 +8,9 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_network_allocator"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_task_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
@@ -329,66 +329,14 @@ func getEnclaveIdFromNetwork(network *types.Network) (enclave.EnclaveID, error) 
 	return enclaveId, nil
 }
 
-func (backend *DockerKurtosisBackend) killContainersInParallel(
-	ctx context.Context,
-	containerIdsSet map[string]bool,
-) (
-	map[string]error,
-) {
-	var killContainerTask docker_task_parallelizer.DockerOperation = func(
-		ctx context.Context,
-		dockerManager *docker_manager.DockerManager,
-		containerId string,
-	) error {
-		if err := dockerManager.KillContainer(ctx, containerId); err != nil {
-			return stacktrace.Propagate(err, "An error occurred killing container with ID '%v'")
-		}
-		return nil
-	}
-
-	parallelizationResults := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
-		ctx,
-		backend.dockerManager,
-		maxNumConcurrentRequestsToDocker,
-		killContainerTask,
-		containerIdsSet,
-	)
-	return parallelizationResults
-}
-
-func (backend *DockerKurtosisBackend) removeContainersInParallel(
-	ctx context.Context,
-	containerIdsSet map[string]bool,
-) (
-	map[string]error,
-) {
-	var removeContainerTask docker_task_parallelizer.DockerOperation = func(
-		ctx context.Context,
-		dockerManager *docker_manager.DockerManager,
-		containerId string,
-	) error {
-		if err := dockerManager.RemoveContainer(ctx, containerId); err != nil {
-			return stacktrace.Propagate(err, "An error occurred removing container with ID '%v'")
-		}
-		return nil
-	}
-
-	parallelizationResults := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
-		ctx,
-		backend.dockerManager,
-		maxNumConcurrentRequestsToDocker,
-		removeContainerTask,
-		containerIdsSet,
-	)
-	return parallelizationResults
-}
 
 func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID) (*types.Network, error) {
-	enclaveIDs := map[enclave.EnclaveID]bool{
-		enclaveId: true,
+	networkSearchLabels := map[string]string{
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
 	}
 
-	enclaveNetworksFound, err := backend.getEnclaveNetworksByEnclaveIds(ctx, enclaveIDs)
+	enclaveNetworksFound, err := backend.dockerManager.GetNetworksByLabels(ctx, networkSearchLabels)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting Docker networks by enclave ID '%v'", enclaveId)
 	}

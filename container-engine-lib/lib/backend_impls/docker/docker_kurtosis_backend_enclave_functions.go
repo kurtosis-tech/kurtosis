@@ -216,12 +216,12 @@ func (backend *DockerKurtosisBackend) StopEnclaves(
 
 	// For all the enclaves to stop, gather all the containers that should be stopped
 	enclaveIdsForContainerIdsToStop := map[string]enclave.EnclaveID{}
-	containerIdsToStopToUncastedContainerId := map[string]interface{}{}
+	containerIdsToStop := map[string]bool{}
 	for enclaveId, networkInfo := range matchingNetworkInfo {
 		for _, container := range networkInfo.containers {
 			containerId := container.GetId()
 			enclaveIdsForContainerIdsToStop[containerId] = enclaveId
-			containerIdsToStopToUncastedContainerId[containerId] = interface{}(containerId)
+			containerIdsToStop[containerId] = true
 		}
 	}
 
@@ -232,22 +232,12 @@ func (backend *DockerKurtosisBackend) StopEnclaves(
 		return nil
 	}
 
-	_, erroredContainerIds, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+	_, erroredContainerIds := docker_task_parallelizer.RunDockerOperationInParallel(
 		ctx,
-		containerIdsToStopToUncastedContainerId,
+		containerIdsToStop,
 		backend.dockerManager,
-		func(uncastedContainerId interface{}) (string, error) {
-			containerIdStr, ok := uncastedContainerId.(string)
-			if !ok {
-				return "", stacktrace.NewError("Failed to cast uncasted container ID to a casted string container ID")
-			}
-			return containerIdStr, nil
-		},
 		stopEnclaveContainerOperation,
 	)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping the containers of enclaves matching filters '%+v'", filters)
-	}
 
 	// Do we need to explicitly wait until the containers exit?
 
@@ -400,10 +390,23 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	}
 
 	// Remove the networks
-	networkIdsToRemove
+	networksToDestroy := map[enclave.EnclaveID]string{}
+	for enclaveId := range successfulVolumeRemovalEnclaveIds {
+		networkInfo, found := matchingNetworkInfo[enclaveId]
+		if !found {
+			return nil, nil, stacktrace.NewError("Would have attempted to destroy enclave '%v' that didn't match the filters", enclaveId)
+		}
+		networksToDestroy[enclaveId] = networkInfo.dockerNetwork.GetId()
+	}
+	successfulNetworkRemovalEnclaveIds, erroredNetworkRemovalEnclaveIds, err := destroyEnclaveNetworks(ctx, backend.dockerManager, networksToDestroy)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying the networks for enclaves whose volumes were successfully destroyed: %+v", successfulVolumeRemovalEnclaveIds)
+	}
+	for enclaveId, networkRemovalErr := range erroredNetworkRemovalEnclaveIds {
+		erroredEnclaveIds[enclaveId] = networkRemovalErr
+	}
 
-
-	return successfulErroredEnclaveIds, erroredEnclaveIds, nil
+	return successfulNetworkRemovalEnclaveIds, erroredEnclaveIds, nil
 }
 
 // ====================================================================================================
@@ -720,12 +723,12 @@ func destroyContainersInEnclaves(
 ){
 	// For all the enclaves to destroy, gather all the containers that should be destroyed
 	enclaveIdsForContainerIdsToRemove := map[string]enclave.EnclaveID{}
-	containerIdsToRemoveToUncastedContainerId := map[string]interface{}{}
+	contianerIdsToRemove := map[string]bool{}
 	for enclaveId, networkInfo := range enclaves {
 		for _, container := range networkInfo.containers {
 			containerId := container.GetId()
 			enclaveIdsForContainerIdsToRemove[containerId] = enclaveId
-			containerIdsToRemoveToUncastedContainerId[containerId] = interface{}(containerId)
+			contianerIdsToRemove[containerId] = true
 		}
 	}
 
@@ -736,22 +739,12 @@ func destroyContainersInEnclaves(
 		return nil
 	}
 
-	_, erroredContainerIds, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+	_, erroredContainerIds := docker_task_parallelizer.RunDockerOperationInParallel(
 		ctx,
-		containerIdsToRemoveToUncastedContainerId,
+		contianerIdsToRemove,
 		dockerManager,
-		func(uncastedContainerId interface{}) (string, error) {
-			containerIdStr, ok := uncastedContainerId.(string)
-			if !ok {
-				return "", stacktrace.NewError("Failed to cast uncasted container ID to a casted string container ID")
-			}
-			return containerIdStr, nil
-		},
 		removeEnclaveContainerOperation,
 	)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred removing the containers of enclaves matching filters '%+v'", filters)
-	}
 
 	containerRemovalErrorStrsByEnclave := map[enclave.EnclaveID][]string{}
 	for erroredContainerId, removeContainerErr := range erroredContainerIds {
@@ -797,7 +790,7 @@ func destroyVolumesInEnclaves(
 ) {
 	// After we've tried to destroy all the containers from the enclaves, take the successful ones and destroy their volumes
 	enclaveIdsForVolumeIdsToRemove := map[string]enclave.EnclaveID{}
-	volumeIdsToRemoveToUncastedVolumeId := map[string]interface{}{}
+	volumeIdsToRemove := map[string]bool{}
 	for enclaveId := range enclaves {
 		enclaveVolumeIds, err := getAllEnclaveVolumes(ctx, dockerManager, enclaveId)
 		if err != nil {
@@ -807,7 +800,7 @@ func destroyVolumesInEnclaves(
 		for _, volume := range enclaveVolumeIds {
 			volumeId := volume.Name
 			enclaveIdsForVolumeIdsToRemove[volumeId] = enclaveId
-			volumeIdsToRemoveToUncastedVolumeId[volumeId] = interface{}(volumeId)
+			volumeIdsToRemove[volumeId] = true
 		}
 	}
 
@@ -818,22 +811,12 @@ func destroyVolumesInEnclaves(
 		return nil
 	}
 
-	_, erroredVolumeIds, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+	_, erroredVolumeIds := docker_task_parallelizer.RunDockerOperationInParallel(
 		ctx,
-		volumeIdsToRemoveToUncastedVolumeId,
+		volumeIdsToRemove,
 		dockerManager,
-		func(uncastedVolumeId interface{}) (string, error) {
-			volumeIdStr, ok := uncastedVolumeId.(string)
-			if !ok {
-				return "", stacktrace.NewError("Failed to cast uncasted volume ID to a casted string volume ID")
-			}
-			return volumeIdStr, nil
-		},
 		removeEnclaveVolumeOperation,
 	)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred trying to remove the volumes for enclaves whose containers were successfully destroyed")
-	}
 
 	volumeRemovalErrorStrsByEnclave := map[enclave.EnclaveID][]string{}
 	for erroredVolumeId, removeVolumeErr := range erroredVolumeIds {
@@ -872,10 +855,16 @@ func destroyEnclaveNetworks(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 	enclaveNetworkIds map[enclave.EnclaveID]string,
-) (map[enclave.EnclaveID]bool, map[enclave.EnclaveID]error, error) {
-	networkIdsToUncastedNetworkId := map[string]interface{}{}
-	for _, networkId := range enclaveNetworkIds {
-		networkIdsToUncastedNetworkId[networkId] = interface{}(networkId)
+) (
+	map[enclave.EnclaveID]bool,
+	map[enclave.EnclaveID]error,
+	error,
+) {
+	networkIdsToRemove := map[string]bool{}
+	enclaveIdsForNetworkIds := map[string]enclave.EnclaveID{}
+	for enclaveId, networkId := range enclaveNetworkIds {
+		networkIdsToRemove[networkId] = true
+		enclaveIdsForNetworkIds[networkId] = enclaveId
 	}
 
 	var removeNetworkOperation docker_task_parallelizer.DockerOperation = func(ctx context.Context, dockerManager *docker_manager.DockerManager, dockerObjectId string) error {
@@ -885,36 +874,30 @@ func destroyEnclaveNetworks(
 		return nil
 	}
 
-	successfulNetworkIds, erroredNetworkIds, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+	successfulNetworkIds, erroredNetworkIds := docker_task_parallelizer.RunDockerOperationInParallel(
 		ctx,
-		networkIdsToUncastedNetworkId,
+		networkIdsToRemove,
 		dockerManager,
-		func(uncastedVolumeId interface{}) (string, error) {
-			volumeIdStr, ok := uncastedVolumeId.(string)
-			if !ok {
-				return "", stacktrace.NewError("Failed to cast uncasted volume ID to a casted string volume ID")
-			}
-			return volumeIdStr, nil
-		},
 		removeNetworkOperation,
 	)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred trying to remove the volumes for enclaves whose containers were successfully destroyed")
-	}
 
-
-
-
-	successfulDeletedNetworksEnclaveIds := map[enclave.EnclaveID]bool{}
-	for _, network := range networks {
-		networkName := network.GetName()
-		enclaveId := enclave.EnclaveID(networkName)
-		if err := backend.dockerManager.RemoveNetwork(ctx, network.GetId()); err != nil {
-			erroredEnclaveIds[enclaveId] = stacktrace.Propagate(err, "An error occurred removing the network for enclave '%v'", enclaveId)
-			continue
+	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
+	for networkId := range successfulNetworkIds {
+		enclaveId, found := enclaveIdsForNetworkIds[networkId]
+		if !found {
+			return nil, nil, stacktrace.NewError("Docker network '%v' was successfully deleted, but wasn't requested to be deleted", networkId)
 		}
-		successfulDeletedNetworksEnclaveIds[enclaveId] = true
+		successfulEnclaveIds[enclaveId] = true
 	}
 
-	successfulContainerRemovalEnclaveIds := successfulDeletedNetworksEnclaveIds
+	erroredEnclaveIds := map[enclave.EnclaveID]error{}
+	for networkId, networkRemovalErr := range erroredNetworkIds {
+		enclaveId, found := enclaveIdsForNetworkIds[networkId]
+		if !found {
+			return nil, nil, stacktrace.NewError("Docker network '%v' had the following error during deletion, but wasn't requested to be deleted:\n%v", networkId, networkRemovalErr)
+		}
+		erroredEnclaveIds[enclaveId] = networkRemovalErr
+	}
+
+	return successfulEnclaveIds, erroredEnclaveIds, nil
 }
