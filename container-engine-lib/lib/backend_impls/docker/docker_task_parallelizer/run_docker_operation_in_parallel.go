@@ -21,13 +21,18 @@ func RunDockerOperationInParallel(
 
 	resultsChan := make(chan dockerOperationResult, len(dockerObjectIdSet))
 	for dockerObjectId := range dockerObjectIdSet {
-		workerPool.Submit(func(){
-			operationResultErr := operationToApplyToAllDockerObjects(ctx, dockerManager, dockerObjectId)
-			resultsChan <- dockerOperationResult{
-				dockerObjectId: dockerObjectId,
-				resultErr:      operationResultErr,
-			}
-		})
+		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		// It's VERY important that we call a function to generate the lambda, rather than inlining a lambda,
+		// because if we don't then 'dockerObjectId' will be the same for all tasks (and it will be the
+		// value of the last iteration of the loop)
+		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		workerPool.Submit(getWorkerTask(
+			ctx,
+			dockerManager,
+			dockerObjectId,
+			operationToApplyToAllDockerObjects,
+			resultsChan,
+		))
 	}
 	workerPool.StopWait()
 	close(resultsChan)
@@ -44,4 +49,22 @@ func RunDockerOperationInParallel(
 		}
 	}
 	return successfulDockerObjectIds, erroredDockerObjectIds
+}
+
+// NOTE: It's very important we do this, rather than inlining the lambda; see the place where this is called
+// for more information
+func getWorkerTask(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	dockerObjectId string,
+	operationToApplyToAllDockerObjects DockerOperation,
+	resultsChan chan dockerOperationResult,
+) func() {
+	return func(){
+		operationResultErr := operationToApplyToAllDockerObjects(ctx, dockerManager, dockerObjectId)
+		resultsChan <- dockerOperationResult{
+			dockerObjectId: dockerObjectId,
+			resultErr:      operationResultErr,
+		}
+	}
 }
