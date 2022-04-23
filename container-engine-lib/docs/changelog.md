@@ -8,6 +8,8 @@
     * `DockerKurtosisBackend.DestroyAPIContainers`
     * `DockerKurtosisBackend.StopEngines`
     * `DockerKurtosisBackend.DestroyEngines`
+    * `DockerKurtosisBackend.StopModules`
+    * `DockerKurtosisBackend.DestroyModules`
 
 # 0.15.0
 ### Fixes
