@@ -9,6 +9,8 @@
 
 ### Features
 * Added `destroy_enclave_test` in Golang and Typescript internal testsuites
+* The `old_enclave_continuity` test now tests having stopped old enclaves around, as well as `service add`
+* Added an extra layer to the Docker exec command test to verify we're not accidentally sh-wrapping the command
 
 # 0.13.0
 ### Features
