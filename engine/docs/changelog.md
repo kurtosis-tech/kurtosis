@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Sped up many things through parallelization, most notably `clean`
 
 # 1.15.0
 ### Breaking Changes
