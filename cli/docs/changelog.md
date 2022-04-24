@@ -1,5 +1,14 @@
 # TBD
+### Breaking Changes
+* Upgraded `kurtosis engine lib` to 1.15.0
+  * Users should upgrade to `kurtosis-engine-api-lib` 1.15.0
+
+### Changes
+* Replaced `DockerManager` with `KurtosisBackend` in `module exec` command
+* Upgraded `container engine lib` to 0.15.0
+
 ### Features
+* Added `destroy_enclave_test` in Golang and Typescript internal testsuites
 * The `old_enclave_continuity` test now tests having stopped old enclaves around, as well as `service add`
 * Added an extra layer to the Docker exec command test to verify we're not accidentally sh-wrapping the command
 

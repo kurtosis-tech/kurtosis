@@ -17,7 +17,7 @@ const (
 	millisInNanos = 1000
 )
 
-func CreateEnclave(t *testing.T, ctx context.Context, testName string, isPartitioningEnabled bool) (resultEnclaveCtx *enclaves.EnclaveContext, resultStopEnclaveFunc func(), resultErr error) {
+func CreateEnclave(t *testing.T, ctx context.Context, testName string, isPartitioningEnabled bool) (resultEnclaveCtx *enclaves.EnclaveContext, resultStopEnclaveFunc func(), resultDestroyEnclaveFunc func() error, resultErr error) {
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	require.NoError(t, err, "An error occurred connecting to the Kurtosis engine for running test '%v'", testName)
 	enclaveId := enclaves.EnclaveID(fmt.Sprintf(
@@ -34,6 +34,14 @@ func CreateEnclave(t *testing.T, ctx context.Context, testName string, isPartiti
 			logrus.Errorf("ACTION REQUIRED: You'll need to stop enclave '%v' manually!!!!", enclaveId)
 		}
 	}
+	destroyEnclaveFunc := func() error {
+		if err := kurtosisCtx.DestroyEnclave(ctx, enclaveId); err != nil {
+			logrus.Errorf("An error occurred destroying enclave '%v' that we created for this test:\n%v", enclaveId, err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to destroy enclave '%v' manually!!!!", enclaveId)
+			return err
+		}
+		return nil
+	}
 
-	return enclaveCtx, stopEnclaveFunc, nil
+	return enclaveCtx, stopEnclaveFunc, destroyEnclaveFunc, nil
 }
