@@ -373,6 +373,22 @@ func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
 	return userServiceLogs, erroredUserServices, nil
 }
 
+func (backend *MetricsReportingKurtosisBackend) PauseService(
+	ctx context.Context,
+	enclavedId enclave.EnclaveID,
+	serviceId service.ServiceID,
+) error {
+	return nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) UnpauseService(
+	ctx context.Context,
+	enclavedId enclave.EnclaveID,
+	serviceId service.ServiceID,
+) error {
+	return nil
+}
+
 func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
