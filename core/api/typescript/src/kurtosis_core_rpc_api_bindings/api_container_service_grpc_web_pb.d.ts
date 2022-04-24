@@ -114,6 +114,13 @@ export class ApiContainerServiceClient {
                response: api_container_service_pb.GetModulesResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.GetModulesResponse>;
 
+  uploadFilesArtifact(
+    request: api_container_service_pb.UploadFilesArtifactArgs,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: api_container_service_pb.UploadFilesArtifactResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.UploadFilesArtifactResponse>;
+
 }
 
 export class ApiContainerServicePromiseClient {
@@ -195,6 +202,11 @@ export class ApiContainerServicePromiseClient {
     request: google_protobuf_empty_pb.Empty,
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.GetModulesResponse>;
+
+  uploadFilesArtifact(
+    request: api_container_service_pb.UploadFilesArtifactArgs,
+    metadata?: grpcWeb.Metadata
+  ): Promise<api_container_service_pb.UploadFilesArtifactResponse>;
 
 }
 

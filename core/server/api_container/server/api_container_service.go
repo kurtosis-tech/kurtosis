@@ -461,6 +461,21 @@ func (service ApiContainerService) GetModules(ctx context.Context, empty *emptyp
 	return resp, nil
 }
 
+func (service ApiContainerService) UploadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse, error) {
+	store, err := service.enclaveDataDir.GetFilesArtifactStore()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred with files artifact storage initialization.")
+	}
+	reader := bytes.NewReader(args.Data)
+
+	if uuid, err := store.StoreFile(reader); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to store files.")
+	} else {
+		response := &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{Uuid: uuid}
+		return response, nil
+	}
+}
+
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================

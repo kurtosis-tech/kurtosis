@@ -20,7 +20,7 @@ type FilesArtifactStore struct {
 	fileCache 	*FileCache
 }
 
-func newFileStore(absoluteDirpath string, dirpathRelativeToDataDirRoot string) *FilesArtifactStore {
+func newFilesArtifactStore(absoluteDirpath string, dirpathRelativeToDataDirRoot string) *FilesArtifactStore {
 	return &FilesArtifactStore {
 		fileCache: 	newFileCache(absoluteDirpath, dirpathRelativeToDataDirRoot),
 	}
