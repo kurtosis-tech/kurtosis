@@ -467,14 +467,13 @@ func (service ApiContainerService) UploadFilesArtifact(ctx context.Context, args
 		return nil, stacktrace.Propagate(err, "An error occurred with files artifact storage initialization.")
 	}
 	reader := bytes.NewReader(args.Data)
-	uuid, err := store.StoreFile(reader)
 
-	if err != nil {
+	if uuid, err := store.StoreFile(reader); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to store files.")
+	} else {
+		response := &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{Uuid: uuid}
+		return response, nil
 	}
-
-	response := &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{Uuid: uuid}
-	return response, nil
 }
 
 // ====================================================================================================
