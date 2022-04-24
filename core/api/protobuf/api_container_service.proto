@@ -53,6 +53,9 @@ service ApiContainerService {
 
   // Returns the IDs of the Kurtosis modules that have been loaded into the enclave
   rpc GetModules(google.protobuf.Empty) returns (GetModulesResponse) {};
+
+  // Uploads a file to the Kurtosis File System.
+  rpc UploadFilesArtifact(UploadFilesArtifactArgs) returns (UploadFilesArtifactResponse) {};
 }
 
 // ==============================================================================================
@@ -356,4 +359,17 @@ message GetServicesResponse {
 message GetModulesResponse {
   // "Set" of current Kurtosis module IDs loaded in the enclave
   map<string, bool> module_ids = 1;
+}
+
+
+// ==============================================================================================
+//                                          Upload Files Artifact
+// ==============================================================================================
+message UploadFilesArtifactArgs {
+  bytes data = 1;
+}
+
+message UploadFilesArtifactResponse {
+  string uuid = 1;
+  string message = 2;
 }

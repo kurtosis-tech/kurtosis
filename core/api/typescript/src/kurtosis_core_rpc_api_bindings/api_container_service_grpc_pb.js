@@ -225,6 +225,28 @@ function deserialize_api_container_api_UnloadModuleArgs(buffer_arg) {
   return api_container_service_pb.UnloadModuleArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_UploadFilesArtifactArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.UploadFilesArtifactArgs)) {
+    throw new Error('Expected argument of type api_container_api.UploadFilesArtifactArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_UploadFilesArtifactArgs(buffer_arg) {
+  return api_container_service_pb.UploadFilesArtifactArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_UploadFilesArtifactResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.UploadFilesArtifactResponse)) {
+    throw new Error('Expected argument of type api_container_api.UploadFilesArtifactResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_UploadFilesArtifactResponse(buffer_arg) {
+  return api_container_service_pb.UploadFilesArtifactResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_WaitForHttpGetEndpointAvailabilityArgs(arg) {
   if (!(arg instanceof api_container_service_pb.WaitForHttpGetEndpointAvailabilityArgs)) {
     throw new Error('Expected argument of type api_container_api.WaitForHttpGetEndpointAvailabilityArgs');
@@ -440,6 +462,18 @@ getModules: {
     requestDeserialize: deserialize_google_protobuf_Empty,
     responseSerialize: serialize_api_container_api_GetModulesResponse,
     responseDeserialize: deserialize_api_container_api_GetModulesResponse,
+  },
+  // Uploads a file to the Kurtosis File System.
+uploadFilesArtifact: {
+    path: '/api_container_api.ApiContainerService/UploadFilesArtifact',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.UploadFilesArtifactArgs,
+    responseType: api_container_service_pb.UploadFilesArtifactResponse,
+    requestSerialize: serialize_api_container_api_UploadFilesArtifactArgs,
+    requestDeserialize: deserialize_api_container_api_UploadFilesArtifactArgs,
+    responseSerialize: serialize_api_container_api_UploadFilesArtifactResponse,
+    responseDeserialize: deserialize_api_container_api_UploadFilesArtifactResponse,
   },
 };
 

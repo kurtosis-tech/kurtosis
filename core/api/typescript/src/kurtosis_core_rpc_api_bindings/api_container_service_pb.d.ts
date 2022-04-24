@@ -669,3 +669,45 @@ export namespace GetModulesResponse {
   }
 }
 
+export class UploadFilesArtifactArgs extends jspb.Message {
+  getData(): Uint8Array | string;
+  getData_asU8(): Uint8Array;
+  getData_asB64(): string;
+  setData(value: Uint8Array | string): UploadFilesArtifactArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): UploadFilesArtifactArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: UploadFilesArtifactArgs): UploadFilesArtifactArgs.AsObject;
+  static serializeBinaryToWriter(message: UploadFilesArtifactArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): UploadFilesArtifactArgs;
+  static deserializeBinaryFromReader(message: UploadFilesArtifactArgs, reader: jspb.BinaryReader): UploadFilesArtifactArgs;
+}
+
+export namespace UploadFilesArtifactArgs {
+  export type AsObject = {
+    data: Uint8Array | string,
+  }
+}
+
+export class UploadFilesArtifactResponse extends jspb.Message {
+  getUuid(): string;
+  setUuid(value: string): UploadFilesArtifactResponse;
+
+  getMessage(): string;
+  setMessage(value: string): UploadFilesArtifactResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): UploadFilesArtifactResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: UploadFilesArtifactResponse): UploadFilesArtifactResponse.AsObject;
+  static serializeBinaryToWriter(message: UploadFilesArtifactResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): UploadFilesArtifactResponse;
+  static deserializeBinaryFromReader(message: UploadFilesArtifactResponse, reader: jspb.BinaryReader): UploadFilesArtifactResponse;
+}
+
+export namespace UploadFilesArtifactResponse {
+  export type AsObject = {
+    uuid: string,
+    message: string,
+  }
+}
+
