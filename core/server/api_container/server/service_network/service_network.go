@@ -62,6 +62,8 @@ type ServiceNetwork interface {
 		resultErr error,
 	)
 
+	// TODO TODO TODO ADD PAUSE AND UNPAUSE SERVICE
+
 	RemoveService(
 		ctx context.Context,
 		serviceId service.ServiceID,
