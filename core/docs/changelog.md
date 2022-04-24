@@ -2,6 +2,7 @@
 
 ### Changes
 * Added new backend file storage methods for future volume support.
+* Added UploadFilesArtifact command to API Container.
 
 # 1.43.0
 ### Breaking Changes
