@@ -351,7 +351,20 @@ func (service ApiContainerService) Repartition(ctx context.Context, args *kurtos
 	return &emptypb.Empty{}, nil
 }
 
-// TODO TODO TODO ADD DOCKER PAUSE AND UNPAUSE FUNCTIONS HERE
+func (service ApiContainerService) PauseService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.PauseServiceArgs) (*emptypb.Empty, error) {
+	// TODO TODO TODO FILL ME
+	serviceIdStr := args.ServiceId
+	_ = kurtosis_backend_service.ServiceID(serviceIdStr)
+	//service.serviceNetwork.PauseService(ctx, serviceId)
+	return &emptypb.Empty{}, nil
+}
+
+func (service ApiContainerService) UnpauseService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnpauseServiceArgs) (*emptypb.Empty, error) {
+	// TODO TODO TODO FILL ME
+	serviceIdStr := args.ServiceId
+	_ = kurtosis_backend_service.ServiceID(serviceIdStr)
+	return &emptypb.Empty{}, nil
+}
 
 func (service ApiContainerService) ExecCommand(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecCommandArgs) (*kurtosis_core_rpc_api_bindings.ExecCommandResponse, error) {
 	serviceIdStr := args.ServiceId

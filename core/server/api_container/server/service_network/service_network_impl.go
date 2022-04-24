@@ -52,6 +52,7 @@ type serviceRunInfo struct {
 	privatePorts      map[string]*port_spec.PortSpec
 	maybePublicIpAddr net.IP                         // Can be nil if the service doesn't declare any private ports
 	maybePublicPorts  map[string]*port_spec.PortSpec // Will be nil if the service doesn't declare any private ports
+	isPaused		  bool 	// true if processes are paused, false otherwise
 }
 
 /*
@@ -380,6 +381,62 @@ func (network *ServiceNetworkImpl) RemoveService(
 	if err := network.removeServiceWithoutMutex(ctx, serviceId, containerStopTimeout); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing service with ID '%v'", serviceId)
 	}
+	return nil
+}
+
+func (network *ServiceNetworkImpl) PauseService(
+	ctx context.Context,
+	serviceId service.ServiceID,
+) error {
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	if network.isDestroyed {
+		return stacktrace.NewError("Cannot run pause service; the service network has been destroyed")
+	}
+	runInfo, found := network.serviceRunInfo[serviceId]
+	if !found {
+		return stacktrace.NewError(
+			"Could not run pause service on service '%v'; no container has been created for the service yet",
+			serviceId)
+	}
+	if runInfo.isPaused {
+		return stacktrace.NewError("Can not pause service '%v', service already paused.",
+			serviceId)
+	}
+	err := network.kurtosisBackend.PauseService(ctx, network.enclaveId, serviceId)
+	if err != nil {
+		return stacktrace.Propagate(err,"Failed to pause service '%v'", serviceId)
+	}
+	// TODO TODO TODO Check that this actually updates the original and not some copy or something
+	runInfo.isPaused = true
+	return nil
+}
+
+func (network *ServiceNetworkImpl) UnpauseService(
+	ctx context.Context,
+	serviceId service.ServiceID,
+) error {
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	if network.isDestroyed {
+		return stacktrace.NewError("Cannot run unpause service; the service network has been destroyed")
+	}
+	runInfo, found := network.serviceRunInfo[serviceId]
+	if !found {
+		return stacktrace.NewError(
+			"Could not run unpause service on service '%v'; no container has been created for the service yet",
+			serviceId)
+	}
+	if !runInfo.isPaused {
+		return stacktrace.NewError("Can not unpause service '%v', service is not paused.",
+			serviceId)
+	}
+	err := network.kurtosisBackend.UnpauseService(ctx, network.enclaveId, serviceId)
+	if err != nil {
+		return stacktrace.Propagate(err,"Failed to pause service '%v'", serviceId)
+	}
+	// TODO TODO TODO Check that this actually updates the original and not some copy or something
+	runInfo.isPaused = false
 	return nil
 }
 
