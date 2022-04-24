@@ -201,6 +201,7 @@ func (backend *DockerKurtosisBackend) PauseService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceId service.ServiceID) error {
+	logrus.Infof("Pause service called on service %v in enclave %v", serviceId, enclaveId)
 	// TODO TODO TODO IMPLEMENT ME
 	return nil
 }
@@ -209,6 +210,7 @@ func (backend *DockerKurtosisBackend) UnpauseService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceId service.ServiceID) error {
+	logrus.Infof("Unpause service called on service %v in enclave %v", serviceId, enclaveId)
 	// TODO TODO TODO IMPLEMENT ME
 	return nil
 }
