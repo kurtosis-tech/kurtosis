@@ -48,11 +48,6 @@ const (
 	dockerContainerPortNumUintBits = 16
 )
 
-// Represents the result of doing some operation on the Docker API
-type concurrentContainerOperationResult struct {
-	containerId string
-	result error	// nil if the operation was successful
-}
 
 // This maps a Docker container's status to a binary "is the container considered running?" determiner
 // Its completeness is enforced via unit test
