@@ -166,13 +166,13 @@ jobs:
       # Make sure we can still interact with the old enclaves
       - run: "${KURTOSIS_BINPATH} enclave ls"
       - run: "${KURTOSIS_BINPATH} enclave inspect running-old-enclave" 
-      - run: "${KURTOSIS_BINPATH} service add running-old-enclave test-service httpd --ports http:80"
+      - run: "${KURTOSIS_BINPATH} service add running-old-enclave test-service httpd --ports http=80"
       - run: "${KURTOSIS_BINPATH} enclave stop running-old-enclave" 
       - run: "${KURTOSIS_BINPATH} enclave inspect stopped-old-enclave" 
 
       # Ensure modules & enclaves still work
       - run: "${KURTOSIS_BINPATH} module exec --enclave-id new-enclave kurtosistech/datastore-army-module --execute-params '{\"numDatastores\":2}'"
-      - run: "${KURTOSIS_BINPATH} service add new-enclave test-service httpd --ports http:80"
+      - run: "${KURTOSIS_BINPATH} service add new-enclave test-service httpd --ports http=80"
       - run: "${KURTOSIS_BINPATH} enclave ls"
       - run: "${KURTOSIS_BINPATH} enclave rm -f new-enclave"
       - run: "${KURTOSIS_BINPATH} clean -a"

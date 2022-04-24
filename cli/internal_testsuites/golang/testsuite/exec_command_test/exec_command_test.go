@@ -83,7 +83,7 @@ func TestExecCommand(t *testing.T) {
 	shouldNotGetShWrappedExitCode, shouldNotGetShWrappedLogOutput, err := runExecCmd(testServiceContext, execCommandThatWillFailIfShWrapped)
 	require.NoError(t, err, "An error occurred running exec command '%+v'", execCommandThatWillFailIfShWrapped)
 	require.Equal(t, successExitCode, shouldNotGetShWrappedExitCode, "Exec command '%v' should work, but got unsuccessful exit code %v", execCommandThatWillFailIfShWrapped, shouldNotGetShWrappedExitCode)
-	require.Equal(t, expectedAdvancedLogOutput, logOutput, "Exec command '%+v' should return '%v', but got '%v'.", execCommandThatWillFailIfShWrapped, expectedAdvancedLogOutput, shouldNotGetShWrappedLogOutput)
+	require.Equal(t, expectedAdvancedLogOutput, shouldNotGetShWrappedLogOutput, "Exec command '%+v' should return '%v', but got '%v'.", execCommandThatWillFailIfShWrapped, expectedAdvancedLogOutput, shouldNotGetShWrappedLogOutput)
 	logrus.Info("Exec command that will fail if Kurtosis is accidentally sh-wrapping did not fail")
 }
 
