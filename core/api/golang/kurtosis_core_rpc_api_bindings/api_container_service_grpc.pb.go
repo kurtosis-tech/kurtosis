@@ -46,6 +46,10 @@ type ApiContainerServiceClient interface {
 	Repartition(ctx context.Context, in *RepartitionArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Executes the given command inside a running container
 	ExecCommand(ctx context.Context, in *ExecCommandArgs, opts ...grpc.CallOption) (*ExecCommandResponse, error)
+	// Pauses all processes running in the service container
+	PauseService(ctx context.Context, in *PauseServiceArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Unpauses all paused processes running in the service container
+	UnpauseService(ctx context.Context, in *UnpauseServiceArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Block until the given HTTP endpoint returns available, calling it through a HTTP Get request
 	WaitForHttpGetEndpointAvailability(ctx context.Context, in *WaitForHttpGetEndpointAvailabilityArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Block until the given HTTP endpoint returns available, calling it through a HTTP Post request
@@ -163,6 +167,24 @@ func (c *apiContainerServiceClient) ExecCommand(ctx context.Context, in *ExecCom
 	return out, nil
 }
 
+func (c *apiContainerServiceClient) PauseService(ctx context.Context, in *PauseServiceArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/PauseService", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *apiContainerServiceClient) UnpauseService(ctx context.Context, in *UnpauseServiceArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/UnpauseService", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *apiContainerServiceClient) WaitForHttpGetEndpointAvailability(ctx context.Context, in *WaitForHttpGetEndpointAvailabilityArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/WaitForHttpGetEndpointAvailability", in, out, opts...)
@@ -226,6 +248,10 @@ type ApiContainerServiceServer interface {
 	Repartition(context.Context, *RepartitionArgs) (*emptypb.Empty, error)
 	// Executes the given command inside a running container
 	ExecCommand(context.Context, *ExecCommandArgs) (*ExecCommandResponse, error)
+	// Pauses all processes running in the service container
+	PauseService(context.Context, *PauseServiceArgs) (*emptypb.Empty, error)
+	// Unpauses all paused processes running in the service container
+	UnpauseService(context.Context, *UnpauseServiceArgs) (*emptypb.Empty, error)
 	// Block until the given HTTP endpoint returns available, calling it through a HTTP Get request
 	WaitForHttpGetEndpointAvailability(context.Context, *WaitForHttpGetEndpointAvailabilityArgs) (*emptypb.Empty, error)
 	// Block until the given HTTP endpoint returns available, calling it through a HTTP Post request
@@ -273,6 +299,12 @@ func (UnimplementedApiContainerServiceServer) Repartition(context.Context, *Repa
 }
 func (UnimplementedApiContainerServiceServer) ExecCommand(context.Context, *ExecCommandArgs) (*ExecCommandResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecCommand not implemented")
+}
+func (UnimplementedApiContainerServiceServer) PauseService(context.Context, *PauseServiceArgs) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PauseService not implemented")
+}
+func (UnimplementedApiContainerServiceServer) UnpauseService(context.Context, *UnpauseServiceArgs) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnpauseService not implemented")
 }
 func (UnimplementedApiContainerServiceServer) WaitForHttpGetEndpointAvailability(context.Context, *WaitForHttpGetEndpointAvailabilityArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method WaitForHttpGetEndpointAvailability not implemented")
@@ -497,6 +529,42 @@ func _ApiContainerService_ExecCommand_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApiContainerService_PauseService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PauseServiceArgs)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiContainerServiceServer).PauseService(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api_container_api.ApiContainerService/PauseService",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiContainerServiceServer).PauseService(ctx, req.(*PauseServiceArgs))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApiContainerService_UnpauseService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnpauseServiceArgs)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiContainerServiceServer).UnpauseService(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api_container_api.ApiContainerService/UnpauseService",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiContainerServiceServer).UnpauseService(ctx, req.(*UnpauseServiceArgs))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ApiContainerService_WaitForHttpGetEndpointAvailability_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(WaitForHttpGetEndpointAvailabilityArgs)
 	if err := dec(in); err != nil {
@@ -619,6 +687,14 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ExecCommand",
 			Handler:    _ApiContainerService_ExecCommand_Handler,
+		},
+		{
+			MethodName: "PauseService",
+			Handler:    _ApiContainerService_PauseService_Handler,
+		},
+		{
+			MethodName: "UnpauseService",
+			Handler:    _ApiContainerService_UnpauseService_Handler,
 		},
 		{
 			MethodName: "WaitForHttpGetEndpointAvailability",

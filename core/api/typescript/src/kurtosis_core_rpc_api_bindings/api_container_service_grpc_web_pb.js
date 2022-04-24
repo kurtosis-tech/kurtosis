@@ -746,6 +746,128 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.execCommand =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.PauseServiceArgs,
+ *   !proto.google.protobuf.Empty>}
+ */
+const methodDescriptor_ApiContainerService_PauseService = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/PauseService',
+  grpc.web.MethodType.UNARY,
+  proto.api_container_api.PauseServiceArgs,
+  google_protobuf_empty_pb.Empty,
+  /**
+   * @param {!proto.api_container_api.PauseServiceArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  google_protobuf_empty_pb.Empty.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.PauseServiceArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.google.protobuf.Empty)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.google.protobuf.Empty>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.pauseService =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/PauseService',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_PauseService,
+      callback);
+};
+
+
+/**
+ * @param {!proto.api_container_api.PauseServiceArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.google.protobuf.Empty>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.pauseService =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/PauseService',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_PauseService);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.UnpauseServiceArgs,
+ *   !proto.google.protobuf.Empty>}
+ */
+const methodDescriptor_ApiContainerService_UnpauseService = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/UnpauseService',
+  grpc.web.MethodType.UNARY,
+  proto.api_container_api.UnpauseServiceArgs,
+  google_protobuf_empty_pb.Empty,
+  /**
+   * @param {!proto.api_container_api.UnpauseServiceArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  google_protobuf_empty_pb.Empty.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.UnpauseServiceArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.google.protobuf.Empty)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.google.protobuf.Empty>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.unpauseService =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/UnpauseService',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_UnpauseService,
+      callback);
+};
+
+
+/**
+ * @param {!proto.api_container_api.UnpauseServiceArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.google.protobuf.Empty>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.unpauseService =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/UnpauseService',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_UnpauseService);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.api_container_api.WaitForHttpGetEndpointAvailabilityArgs,
  *   !proto.google.protobuf.Empty>}
  */

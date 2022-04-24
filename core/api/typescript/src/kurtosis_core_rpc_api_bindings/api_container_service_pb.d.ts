@@ -523,6 +523,42 @@ export namespace ExecCommandArgs {
   }
 }
 
+export class PauseServiceArgs extends jspb.Message {
+  getServiceId(): string;
+  setServiceId(value: string): PauseServiceArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): PauseServiceArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: PauseServiceArgs): PauseServiceArgs.AsObject;
+  static serializeBinaryToWriter(message: PauseServiceArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): PauseServiceArgs;
+  static deserializeBinaryFromReader(message: PauseServiceArgs, reader: jspb.BinaryReader): PauseServiceArgs;
+}
+
+export namespace PauseServiceArgs {
+  export type AsObject = {
+    serviceId: string,
+  }
+}
+
+export class UnpauseServiceArgs extends jspb.Message {
+  getServiceId(): string;
+  setServiceId(value: string): UnpauseServiceArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): UnpauseServiceArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: UnpauseServiceArgs): UnpauseServiceArgs.AsObject;
+  static serializeBinaryToWriter(message: UnpauseServiceArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): UnpauseServiceArgs;
+  static deserializeBinaryFromReader(message: UnpauseServiceArgs, reader: jspb.BinaryReader): UnpauseServiceArgs;
+}
+
+export namespace UnpauseServiceArgs {
+  export type AsObject = {
+    serviceId: string,
+  }
+}
+
 export class ExecCommandResponse extends jspb.Message {
   getExitCode(): number;
   setExitCode(value: number): ExecCommandResponse;
