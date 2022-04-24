@@ -23,6 +23,15 @@ const (
 	// The module container uses gRPC so MUST listen on TCP (no other protocols are supported)
 	moduleContainerPortProtocol = port_spec.PortProtocol_TCP
 
+	// TODO Remove when we switch fully to the enclave data volume
+	// The location where the enclave data volume will be mounted
+	//  on the module container
+	enclaveDataBindmountDirpathOnModuleContainer = "/kurtosis-data"
+
+	// The location where the enclave data volume will be mounted
+	//  on the module container
+	enclaveDataVolumeDirpathOnModuleContainer = "/kurtosis-data"
+
 	maxWaitForModuleContainerAvailabilityRetries         = 10
 	timeBetweenWaitForModuleContainerAvailabilityRetries = 1 * time.Second
 )
@@ -64,6 +73,11 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
 
+	enclaveDataVolumeName, err := backend.getEnclaveDataVolumeByEnclaveId(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveId)
+	}
+
 	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, moduleContainerPortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -99,7 +113,11 @@ func (backend *DockerKurtosisBackend) CreateModule(
 	}
 
 	bindMounts := map[string]string{
-		enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnAPIContainer,
+		enclaveDataDirpathOnHostMachine: enclaveDataBindmountDirpathOnModuleContainer,
+	}
+
+	volumeMounts := map[string]string{
+		enclaveDataVolumeName: enclaveDataVolumeDirpathOnModuleContainer,
 	}
 
 	labelStrs := map[string]string{}
@@ -120,6 +138,8 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		envVars,
 	).WithBindMounts(
 		bindMounts,
+	).WithVolumeMounts(
+		volumeMounts,
 	).WithStaticIP(
 		ipAddr,
 	).WithUsedPorts(

@@ -313,6 +313,7 @@ func waitForPortAvailabilityUsingNetstat(
 	)
 }
 
+// TODO Move to _enclave_functions file
 func getEnclaveIdFromNetwork(network *types.Network) (enclave.EnclaveID, error) {
 	labels := network.GetLabels()
 	enclaveIdLabelValue, found := labels[label_key_consts.EnclaveIDLabelKey.GetString()]
@@ -370,4 +371,20 @@ func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.C
 		)
 	}
 	return enclaveNetworksFound[0], nil
+}
+
+// Guaranteed to either return an enclave data volume name or throw an error
+func (backend *DockerKurtosisBackend) getEnclaveDataVolumeByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID) (string, error) {
+	matchingVolumes, err := backend.getEnclaveDataVolumesMatchingEnclaveId(ctx, enclaveId)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting enclave data volumes matching enclave ID '%v'", enclaveId)
+	}
+	if len(matchingVolumes) > 1 {
+		return "", stacktrace.NewError("Found multiple enclave data volumes matching enclave ID '%v'; this should never happen", enclaveId)
+	}
+	if len(matchingVolumes) == 0 {
+		return "", stacktrace.NewError("No enclave data volume found for enclave '%v'", enclaveId)
+	}
+	volume := matchingVolumes[0]
+	return volume.Name, nil
 }

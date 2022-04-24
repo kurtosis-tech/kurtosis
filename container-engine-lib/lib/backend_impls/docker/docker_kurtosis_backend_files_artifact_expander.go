@@ -19,9 +19,14 @@ const (
 	//  into a Docker volume
 	dockerImage = "alpine:3.12"
 
+	// TODO Remove this when we switch fully to the data volume
 	// Dirpath on the artifact expander container where the enclave data dir (which contains the artifacts)
 	//  will be bind-mounted
-	enclaveDataDirMountpointOnExpanderContainer = "/enclave-data"
+	enclaveDataBindmountDirpathOnExpanderContainer = "/enclave-data"
+
+	// The location where the enclave data volume will be mounted
+	//  on the files artifact expansion container
+	enclaveDataVolumeDirpathOnExpanderContainer = "/kurtosis-data"
 
 	expanderContainerSuccessExitCode = 0
 )
@@ -42,6 +47,11 @@ func (backend *DockerKurtosisBackend) RunFilesArtifactExpander(
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
 
+	enclaveDataVolumeName, err := backend.getEnclaveDataVolumeByEnclaveId(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveId)
+	}
+
 	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
@@ -60,11 +70,12 @@ func (backend *DockerKurtosisBackend) RunFilesArtifactExpander(
 	filesArtifactExpansionVolumeNameStr := string(filesArtifactExpansionVolumeName)
 
 	bindMounts := map[string]string{
-		enclaveDataDirpathOnHostMachine: enclaveDataDirMountpointOnExpanderContainer,
+		enclaveDataDirpathOnHostMachine: enclaveDataBindmountDirpathOnExpanderContainer,
 	}
 
 	volumeMounts := map[string]string{
 		filesArtifactExpansionVolumeNameStr: destVolMntDirpathOnExpander,
+		enclaveDataVolumeName:               enclaveDataVolumeDirpathOnExpanderContainer,
 	}
 
 	containerCmd := getExtractionCommand(filesArtifactFilepathRelativeToEnclaveDatadirRoot, destVolMntDirpathOnExpander)
