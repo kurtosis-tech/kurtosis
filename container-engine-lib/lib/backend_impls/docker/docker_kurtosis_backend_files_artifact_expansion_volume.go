@@ -3,7 +3,7 @@ package docker
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_task_parallelizer"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -82,7 +82,7 @@ func (backend *DockerKurtosisBackend) DestroyFilesArtifactExpansionVolumes(
 		matchingUncastedExpansionVolumesByVolumeId[string(volumeId)] = interface{}(expansionVolume)
 	}
 
-	var removeExpansionVolume docker_task_parallelizer.DockerOperation = func(
+	var removeExpansionVolume docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
 		dockerObjectId string,
@@ -93,7 +93,7 @@ func (backend *DockerKurtosisBackend) DestroyFilesArtifactExpansionVolumes(
 		return nil
 	}
 
-	successfulExpansionVolumeNameStrs, erroredExpansionVolumeNameStrs, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+	successfulExpansionVolumeNameStrs, erroredExpansionVolumeNameStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
 		matchingUncastedExpansionVolumesByVolumeId,
 		backend.dockerManager,

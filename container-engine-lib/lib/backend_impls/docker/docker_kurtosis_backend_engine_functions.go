@@ -6,7 +6,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_task_parallelizer"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
@@ -249,7 +249,7 @@ func (backend *DockerKurtosisBackend) StopEngines(
 		matchingUncastedEnginesByContainerId[containerId] = interface{}(engineObj)
 	}
 
-	var killEngineOperation docker_task_parallelizer.DockerOperation = func(
+	var killEngineOperation docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
 		dockerObjectId string,
@@ -260,7 +260,7 @@ func (backend *DockerKurtosisBackend) StopEngines(
 		return nil
 	}
 
-	successfulEngineIdStrs, erroredEngineIdStrs, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+	successfulEngineIdStrs, erroredEngineIdStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
 		matchingUncastedEnginesByContainerId,
 		backend.dockerManager,
@@ -293,7 +293,7 @@ func (backend *DockerKurtosisBackend) DestroyEngines(
 		matchingUncastedEnginesByContainerId[containerId] = interface{}(engineObj)
 	}
 
-	var removeEngineOperation docker_task_parallelizer.DockerOperation = func(
+	var removeEngineOperation docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
 		dockerObjectId string,
@@ -304,7 +304,7 @@ func (backend *DockerKurtosisBackend) DestroyEngines(
 		return nil
 	}
 
-	successfulEngineIdStrs, erroredEngineIdStrs, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+	successfulEngineIdStrs, erroredEngineIdStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
 		matchingUncastedEnginesByContainerId,
 		backend.dockerManager,

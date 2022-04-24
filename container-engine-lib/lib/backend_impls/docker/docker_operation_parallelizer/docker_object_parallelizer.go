@@ -1,4 +1,4 @@
-package docker_task_parallelizer
+package docker_operation_parallelizer
 
 import (
 	"context"
@@ -7,7 +7,23 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+
+const (
+	// This should probably (?) be fine
+	maxNumConcurrentRequestsToDocker = 25
+)
+
+type dockerOperationResult struct {
+	dockerObjectId string
+	resultErr   error // Nil if no issue
+}
+
+// DockerOperation represents an operation done on a Docker object (identified by Docker object ID)
+type DockerOperation func(ctx context.Context, dockerManager *docker_manager.DockerManager, dockerObjectId string) error
+
 // RunDockerOperationInParallel will run a Docker operation on each of the object IDs, in parallel
+// NOTE: Each call to this will get its own threadpool, so it's possible overwhelm Docker with many calls to this;
+//   we can fix this if it becom
 func RunDockerOperationInParallel(
 	ctx context.Context,
 	// The IDs of the Docker objects to operate on

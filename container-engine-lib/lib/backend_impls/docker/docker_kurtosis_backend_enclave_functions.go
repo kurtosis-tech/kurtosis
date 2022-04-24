@@ -10,7 +10,7 @@ import (
 	"github.com/gammazero/workerpool"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_task_parallelizer"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -225,14 +225,14 @@ func (backend *DockerKurtosisBackend) StopEnclaves(
 		}
 	}
 
-	var stopEnclaveContainerOperation docker_task_parallelizer.DockerOperation = func(ctx context.Context, dockerManager *docker_manager.DockerManager, dockerObjectId string) error {
+	var stopEnclaveContainerOperation docker_operation_parallelizer.DockerOperation = func(ctx context.Context, dockerManager *docker_manager.DockerManager, dockerObjectId string) error {
 		if err := dockerManager.KillContainer(ctx, dockerObjectId); err != nil {
 			return stacktrace.Propagate(err, "An error occurred killing enclave container with ID '%v'", dockerObjectId)
 		}
 		return nil
 	}
 
-	_, erroredContainerIds := docker_task_parallelizer.RunDockerOperationInParallel(
+	_, erroredContainerIds := docker_operation_parallelizer.RunDockerOperationInParallel(
 		ctx,
 		containerIdsToStop,
 		backend.dockerManager,
@@ -381,8 +381,6 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	for enclaveId, containerRemovalErr := range erroredContainerRemovalEnclaveIds {
 		erroredEnclaveIds[enclaveId] = containerRemovalErr
 	}
-	logrus.Debugf("Enclaves for which containers were successfully removed: %+v", successfulContainerRemovalEnclaveIds)
-	logrus.Debugf("Errored enclaves after container removal: %+v", erroredEnclaveIds)
 
 	successfulVolumeRemovalEnclaveIds, erroredVolumeRemovalEnclaveIds, err := destroyVolumesInEnclaves(ctx, backend.dockerManager, successfulContainerRemovalEnclaveIds)
 	if err != nil {
@@ -391,8 +389,6 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	for enclaveId, volumeRemovalErr := range erroredVolumeRemovalEnclaveIds {
 		erroredEnclaveIds[enclaveId] = volumeRemovalErr
 	}
-	logrus.Debugf("Enclaves for which volumes were successfully removed: %+v", successfulVolumeRemovalEnclaveIds)
-	logrus.Debugf("Errored enclaves after volume removal: %+v", erroredEnclaveIds)
 
 	// Remove the networks
 	networksToDestroy := map[enclave.EnclaveID]string{}
@@ -410,8 +406,6 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	for enclaveId, networkRemovalErr := range erroredNetworkRemovalEnclaveIds {
 		erroredEnclaveIds[enclaveId] = networkRemovalErr
 	}
-	logrus.Debugf("Enclaves for which networks were successfully removed: %+v", successfulNetworkRemovalEnclaveIds)
-	logrus.Debugf("Errored enclaves after network removal: %+v", erroredEnclaveIds)
 
 	return successfulNetworkRemovalEnclaveIds, erroredEnclaveIds, nil
 }
@@ -478,37 +472,6 @@ func (backend *DockerKurtosisBackend) getMatchingEnclaveNetworkInfo(
 
 	return result, nil
 }
-
-
-
-/*
-func (backend *DockerKurtosisBackend) getEnclaveNetworksByEnclaveIds(ctx context.Context, enclaveIds map[enclave.EnclaveID]bool) ([]*types.Network, error) {
-	enclaveNetworks := []*types.Network{}
-
-	kurtosisNetworkLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
-	}
-
-	appNetworks, err := backend.dockerManager.GetNetworksByLabels(ctx, kurtosisNetworkLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting Kurtosis networks")
-	}
-
-	for _, network := range appNetworks {
-		enclaveId, err := getEnclaveIdFromNetwork(network)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting enclave ID from network '%+v'; it should never happens it's a bug in Kurtosis", network)
-		}
-		numOfEnclaveIds := len(enclaveIds)
-		if _, found := enclaveIds[enclaveId]; found || numOfEnclaveIds == 0 {
-			enclaveNetworks = append(enclaveNetworks, network)
-		}
-	}
-
-	return enclaveNetworks, nil
-}
-
- */
 
 func (backend *DockerKurtosisBackend) getEnclaveStatusAndContainers(
 	ctx context.Context,
@@ -736,18 +699,17 @@ func destroyContainersInEnclaves(
 			containerId := container.GetId()
 			enclaveIdsForContainerIdsToRemove[containerId] = enclaveId
 			containerIdsToRemove[containerId] = true
-			logrus.Debugf("Adding container '%v' associated with enclave '%v' to the list of containers to remove", containerId, enclaveId)
 		}
 	}
 
-	var removeEnclaveContainerOperation docker_task_parallelizer.DockerOperation = func(ctx context.Context, dockerManager *docker_manager.DockerManager, dockerObjectId string) error {
+	var removeEnclaveContainerOperation docker_operation_parallelizer.DockerOperation = func(ctx context.Context, dockerManager *docker_manager.DockerManager, dockerObjectId string) error {
 		if err := dockerManager.RemoveContainer(ctx, dockerObjectId); err != nil {
 			return stacktrace.Propagate(err, "An error occurred removing enclave container with ID '%v'", dockerObjectId)
 		}
 		return nil
 	}
 
-	_, erroredContainerIds := docker_task_parallelizer.RunDockerOperationInParallel(
+	_, erroredContainerIds := docker_operation_parallelizer.RunDockerOperationInParallel(
 		ctx,
 		containerIdsToRemove,
 		dockerManager,
@@ -813,14 +775,14 @@ func destroyVolumesInEnclaves(
 		}
 	}
 
-	var removeEnclaveVolumeOperation docker_task_parallelizer.DockerOperation = func(ctx context.Context, dockerManager *docker_manager.DockerManager, dockerObjectId string) error {
+	var removeEnclaveVolumeOperation docker_operation_parallelizer.DockerOperation = func(ctx context.Context, dockerManager *docker_manager.DockerManager, dockerObjectId string) error {
 		if err := dockerManager.RemoveVolume(ctx, dockerObjectId); err != nil {
 			return stacktrace.Propagate(err, "An error occurred removing enclave volume with ID '%v'", dockerObjectId)
 		}
 		return nil
 	}
 
-	_, erroredVolumeIds := docker_task_parallelizer.RunDockerOperationInParallel(
+	_, erroredVolumeIds := docker_operation_parallelizer.RunDockerOperationInParallel(
 		ctx,
 		volumeIdsToRemove,
 		dockerManager,
@@ -877,14 +839,14 @@ func destroyEnclaveNetworks(
 		enclaveIdsForNetworkIds[networkId] = enclaveId
 	}
 
-	var removeNetworkOperation docker_task_parallelizer.DockerOperation = func(ctx context.Context, dockerManager *docker_manager.DockerManager, dockerObjectId string) error {
+	var removeNetworkOperation docker_operation_parallelizer.DockerOperation = func(ctx context.Context, dockerManager *docker_manager.DockerManager, dockerObjectId string) error {
 		if err := dockerManager.RemoveNetwork(ctx, dockerObjectId); err != nil {
 			return stacktrace.Propagate(err, "An error occurred removing enclave network with ID '%v'", dockerObjectId)
 		}
 		return nil
 	}
 
-	successfulNetworkIds, erroredNetworkIds := docker_task_parallelizer.RunDockerOperationInParallel(
+	successfulNetworkIds, erroredNetworkIds := docker_operation_parallelizer.RunDockerOperationInParallel(
 		ctx,
 		networkIdsToRemove,
 		dockerManager,

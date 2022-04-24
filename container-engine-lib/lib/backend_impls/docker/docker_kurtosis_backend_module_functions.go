@@ -5,7 +5,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_task_parallelizer"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
@@ -241,7 +241,7 @@ func (backend *DockerKurtosisBackend) StopModules(
 		matchingUncastedObjectsByContainerId[containerId] = interface{}(object)
 	}
 
-	var killOperation docker_task_parallelizer.DockerOperation = func(
+	var killOperation docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
 		dockerObjectId string,
@@ -252,7 +252,7 @@ func (backend *DockerKurtosisBackend) StopModules(
 		return nil
 	}
 
-	successfulGuidStrs, erroredGuidStrs, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+	successfulGuidStrs, erroredGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
 		matchingUncastedObjectsByContainerId,
 		backend.dockerManager,
@@ -294,7 +294,7 @@ func (backend *DockerKurtosisBackend) DestroyModules(
 		matchingUncastedObjectsByContainerId[containerId] = interface{}(object)
 	}
 
-	var dockerOperation docker_task_parallelizer.DockerOperation = func(
+	var dockerOperation docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
 		dockerObjectId string,
@@ -305,7 +305,7 @@ func (backend *DockerKurtosisBackend) DestroyModules(
 		return nil
 	}
 
-	successfulGuidStrs, erroredGuidStrs, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+	successfulGuidStrs, erroredGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
 		matchingUncastedObjectsByContainerId,
 		backend.dockerManager,

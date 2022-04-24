@@ -5,7 +5,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_task_parallelizer"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
@@ -233,7 +233,7 @@ func (backend *DockerKurtosisBackend) StopAPIContainers(
 		matchingUncastedApiContainersByContainerId[containerId] = interface{}(apiContainerObj)
 	}
 
-	var killApiContainerOperation docker_task_parallelizer.DockerOperation = func(
+	var killApiContainerOperation docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
 		dockerObjectId string,
@@ -244,7 +244,7 @@ func (backend *DockerKurtosisBackend) StopAPIContainers(
 		return nil
 	}
 
-	successfulEnclaveIdStrs, erroredEnclaveIdStrs, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+	successfulEnclaveIdStrs, erroredEnclaveIdStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
 		matchingUncastedApiContainersByContainerId,
 		backend.dockerManager,
@@ -279,7 +279,7 @@ func (backend *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, 
 		matchingUncastedApiContainersByContainerId[containerId] = interface{}(apiContainerObj)
 	}
 
-	var removeApiContainerOperation docker_task_parallelizer.DockerOperation = func(
+	var removeApiContainerOperation docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
 		dockerObjectId string,
@@ -290,7 +290,7 @@ func (backend *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, 
 		return nil
 	}
 
-	successfulEnclaveIdStrs, erroredEnclaveIdStrs, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+	successfulEnclaveIdStrs, erroredEnclaveIdStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
 		matchingUncastedApiContainersByContainerId,
 		backend.dockerManager,

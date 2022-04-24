@@ -1,23 +1,10 @@
-package docker_task_parallelizer
+package docker_operation_parallelizer
 
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/stacktrace"
 )
-
-const (
-	// This should probably (?) be fine
-	maxNumConcurrentRequestsToDocker = 25
-)
-
-type dockerOperationResult struct {
-	dockerObjectId string
-	resultErr   error // Nil if no issue
-}
-
-// An operation that consumes the Docker object ID, does something, and returns an error (or not)
-type DockerOperation func(ctx context.Context, dockerManager *docker_manager.DockerManager, dockerObjectId string) error
 
 // RunDockerOperationInParallelForKurtosisObjects sits on top of RunDockerOperationInParallel, abstracting away a very
 // common pattern that we have in DockerKurtosisBackend:

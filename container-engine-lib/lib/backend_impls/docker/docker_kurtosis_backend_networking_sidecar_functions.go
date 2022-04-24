@@ -5,7 +5,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_task_parallelizer"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
@@ -254,7 +254,7 @@ func (backend *DockerKurtosisBackend) StopNetworkingSidecars(
 		matchingUncastedObjectsByContainerId[containerId] = interface{}(object)
 	}
 
-	var dockerOperation docker_task_parallelizer.DockerOperation = func(
+	var dockerOperation docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
 		dockerObjectId string,
@@ -265,7 +265,7 @@ func (backend *DockerKurtosisBackend) StopNetworkingSidecars(
 		return nil
 	}
 
-	successfulServiceGuidStrs, erroredServiceGuidStrs, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+	successfulServiceGuidStrs, erroredServiceGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
 		matchingUncastedObjectsByContainerId,
 		backend.dockerManager,
@@ -307,7 +307,7 @@ func (backend *DockerKurtosisBackend) DestroyNetworkingSidecars(
 		matchingUncastedObjectsByContainerId[containerId] = interface{}(object)
 	}
 
-	var dockerOperation docker_task_parallelizer.DockerOperation = func(
+	var dockerOperation docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
 		dockerObjectId string,
@@ -318,7 +318,7 @@ func (backend *DockerKurtosisBackend) DestroyNetworkingSidecars(
 		return nil
 	}
 
-	successfulServiceGuidStrs, erroredServiceGuidStrs, err := docker_task_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+	successfulServiceGuidStrs, erroredServiceGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
 		matchingUncastedObjectsByContainerId,
 		backend.dockerManager,
