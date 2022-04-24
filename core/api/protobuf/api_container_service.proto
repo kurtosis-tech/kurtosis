@@ -371,5 +371,4 @@ message UploadFilesArtifactArgs {
 
 message UploadFilesArtifactResponse {
   string uuid = 1;
-  string message = 2;
 }

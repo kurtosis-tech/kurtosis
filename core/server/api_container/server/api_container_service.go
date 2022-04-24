@@ -473,7 +473,7 @@ func (service ApiContainerService) UploadFilesArtifact(ctx context.Context, args
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to store files.")
 	}
 
-	response := &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{Uuid: uuid, Message: "Success."}
+	response := &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{Uuid: uuid}
 	return response, nil
 }
 

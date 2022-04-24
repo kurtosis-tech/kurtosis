@@ -5744,8 +5744,7 @@ proto.api_container_api.UploadFilesArtifactResponse.prototype.toObject = functio
  */
 proto.api_container_api.UploadFilesArtifactResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    uuid: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    message: jspb.Message.getFieldWithDefault(msg, 2, "")
+    uuid: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -5786,10 +5785,6 @@ proto.api_container_api.UploadFilesArtifactResponse.deserializeBinaryFromReader 
       var value = /** @type {string} */ (reader.readString());
       msg.setUuid(value);
       break;
-    case 2:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setMessage(value);
-      break;
     default:
       reader.skipField();
       break;
@@ -5826,13 +5821,6 @@ proto.api_container_api.UploadFilesArtifactResponse.serializeBinaryToWriter = fu
       f
     );
   }
-  f = message.getMessage();
-  if (f.length > 0) {
-    writer.writeString(
-      2,
-      f
-    );
-  }
 };
 
 
@@ -5851,24 +5839,6 @@ proto.api_container_api.UploadFilesArtifactResponse.prototype.getUuid = function
  */
 proto.api_container_api.UploadFilesArtifactResponse.prototype.setUuid = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
-};
-
-
-/**
- * optional string message = 2;
- * @return {string}
- */
-proto.api_container_api.UploadFilesArtifactResponse.prototype.getMessage = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
-};
-
-
-/**
- * @param {string} value
- * @return {!proto.api_container_api.UploadFilesArtifactResponse} returns this
- */
-proto.api_container_api.UploadFilesArtifactResponse.prototype.setMessage = function(value) {
-  return jspb.Message.setProto3StringField(this, 2, value);
 };
 
 
