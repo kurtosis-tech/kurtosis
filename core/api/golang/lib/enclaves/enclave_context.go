@@ -547,9 +547,9 @@ func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc
 
 //This is a function meant to be used within a filepath.Walk function. filepath.Walk takes two arguments, the first is a
 //target folder to walk, the second argument is a function that takes 3 arguments:
-//filePath - A directory or file path that the filepath.Walk function has reached, supplied by filepath.Walk
-//fileInfo - A FileInfo object of the file or directory at filePath supplied by filepath.Walk
-//err	   - An error from previous walking iterations.
+//filePath 					- A directory or file path that the filepath.Walk function has reached, supplied by filepath.Walk
+//fileInfo 					- A FileInfo object of the file or directory at filePath supplied by filepath.Walk
+//errorFromLastIteration	- An error from previous walking iterations.
 //Because our function is a file archive writer, we need to pass those variables, a writer, and original path to this function.
 //This function should be wrapped in a lambda that passes filepath.Walk variables directly to this function.
 func addFilesToArchive(filePath string, fileInfo os.FileInfo, errorFromLastIteration error, archiveWriter *tar.Writer, pathToArchive string) error {
