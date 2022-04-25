@@ -1,5 +1,9 @@
 # TBD
 
+# 1.15.2
+### Fixes
+* Upgraded to container-engine-lib 0.15.3 to fix a bug where module enclave data volume & dirpath were getting mounted to the same place
+
 # 1.15.1
 ### Features
 * Sped up many things through parallelization, most notably `clean`
