@@ -7,6 +7,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
@@ -24,6 +25,12 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+)
+
+const (
+	// The location where the enclave data volume will be mounted
+	//  on the user service container
+	enclaveDataVolumeDirpathOnServiceContainer = "/kurtosis-data"
 )
 
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
@@ -73,6 +80,11 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
 
+	enclaveDataVolumeName, err := backend.getEnclaveDataVolumeByEnclaveId(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveId)
+	}
+
 	// TODO Replace with the (simpler) way that's currently done when creating API container/engine container
 	usedPorts, _, err := getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts)
 	if err != nil {
@@ -81,6 +93,10 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 
 	bindMounts := map[string]string{
 		enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnServiceContainer,
+	}
+
+	volumeMounts := map[string]string{
+		enclaveDataVolumeName: enclaveDataVolumeDirpathOnServiceContainer,
 	}
 
 	createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
@@ -95,6 +111,8 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 		envVars,
 	).WithBindMounts(
 		bindMounts,
+	).WithVolumeMounts(
+		volumeMounts,
 	).WithLabels(
 		labelStrs,
 	).WithAlias(
@@ -356,33 +374,44 @@ func (backend *DockerKurtosisBackend) StopUserServices(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
 
-	containerIdsToKill := map[string]bool{}
-	for containerId := range matchingUserServicesByContainerId {
-		containerIdsToKill[containerId] = true
+	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
+	matchingUncastedObjectsByContainerId := map[string]interface{}{}
+	for containerId, object := range matchingUserServicesByContainerId {
+		matchingUncastedObjectsByContainerId[containerId] = interface{}(object)
 	}
 
-	successfulContainerIds, erroredContainerIds := backend.killContainers(ctx, containerIdsToKill)
-
-	successfulUserServiceGuids := map[service.ServiceGUID]bool{}
-	for containerId := range successfulContainerIds {
-		serviceObj, found := matchingUserServicesByContainerId[containerId]
-		if !found {
-			return nil, nil, stacktrace.NewError("Successfully killed container with ID '%v' that wasn't requested; this is a bug in Kurtosis!", containerId)
+	var dockerOperation docker_operation_parallelizer.DockerOperation = func(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		dockerObjectId string,
+	) error {
+		if err := dockerManager.KillContainer(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred killing user service container with ID '%v'", dockerObjectId)
 		}
-		successfulUserServiceGuids[serviceObj.GetGUID()] = true
+		return nil
 	}
 
-	erroredUserServiceGuids := map[service.ServiceGUID]error{}
-	for containerId := range erroredContainerIds {
-		serviceObj, found := matchingUserServicesByContainerId[containerId]
-		if !found {
-			return nil, nil, stacktrace.NewError("An error occurred killing container with ID '%v' that wasn't requested; this is a bug in Kurtosis!", containerId)
-		}
-		wrappedErr := stacktrace.Propagate(err, "An error occurred killing service with GUID '%v' and container ID '%v'", serviceObj.GetGUID(), containerId)
-		erroredUserServiceGuids[serviceObj.GetGUID()] = wrappedErr
+	successfulServiceGuidStrs, erroredServiceGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+		ctx,
+		matchingUncastedObjectsByContainerId,
+		backend.dockerManager,
+		extractServiceGUIDFromServiceObj,
+		dockerOperation,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred killing user service containers matching filters '%+v'", filters)
 	}
 
-	return successfulUserServiceGuids, erroredUserServiceGuids, nil
+	successfulServiceGuids := map[service.ServiceGUID]bool{}
+	for serviceGuidStr := range successfulServiceGuidStrs {
+		successfulServiceGuids[service.ServiceGUID(serviceGuidStr)] = true
+	}
+	erroredGuids := map[service.ServiceGUID]error{}
+	for serviceGuidStr, removalErr := range erroredServiceGuidStrs {
+		erroredGuids[service.ServiceGUID(serviceGuidStr)] = removalErr
+	}
+
+	return successfulServiceGuids, erroredGuids, nil
 }
 
 func (backend *DockerKurtosisBackend) DestroyUserServices(
@@ -393,27 +422,49 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 	map[service.ServiceGUID]error,
 	error,
 ) {
-	successfulUserServiceGuids := map[service.ServiceGUID]bool{}
-	erroredUserServiceGuids := map[service.ServiceGUID]error{}
-
 	userServices, err := backend.getMatchingUserServices(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
 
-	for containerId, userService := range userServices {
-		if err := backend.dockerManager.RemoveContainer(ctx, containerId); err != nil {
-			wrappedErr := stacktrace.Propagate(
-				err,
-				"An error occurred removing user service container with ID '%v'",
-				containerId,
-			)
-			erroredUserServiceGuids[userService.GetGUID()] = wrappedErr
-			continue
-		}
-		successfulUserServiceGuids[userService.GetGUID()] = true
+	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
+	matchingUncastedObjectsByContainerId := map[string]interface{}{}
+	for containerId, object := range userServices {
+		matchingUncastedObjectsByContainerId[containerId] = interface{}(object)
 	}
-	return successfulUserServiceGuids, erroredUserServiceGuids, nil
+
+	var dockerOperation docker_operation_parallelizer.DockerOperation = func(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		dockerObjectId string,
+	) error {
+		if err := dockerManager.RemoveContainer(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing user service container with ID '%v'", dockerObjectId)
+		}
+		return nil
+	}
+
+	successfulServiceGuidStrs, erroredServiceGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+		ctx,
+		matchingUncastedObjectsByContainerId,
+		backend.dockerManager,
+		extractServiceGUIDFromServiceObj,
+		dockerOperation,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing user service containers matching filters '%+v'", filters)
+	}
+
+	successfulServiceGuids := map[service.ServiceGUID]bool{}
+	for serviceGuidStr := range successfulServiceGuidStrs {
+		successfulServiceGuids[service.ServiceGUID(serviceGuidStr)] = true
+	}
+	erroredGuids := map[service.ServiceGUID]error{}
+	for serviceGuidStr, removalErr := range erroredServiceGuidStrs {
+		erroredGuids[service.ServiceGUID(serviceGuidStr)] = removalErr
+	}
+
+	return successfulServiceGuids, erroredGuids, nil
 }
 
 // ====================================================================================================
@@ -778,4 +829,12 @@ func doesHttpResponseMatchExpected(
 		}
 	}
 	return true
+}
+
+func extractServiceGUIDFromServiceObj(uncastedObj interface{}) (string, error) {
+	castedObj, ok := uncastedObj.(*service.Service)
+	if !ok {
+		return "", stacktrace.NewError("An error occurred downcasting the user service object")
+	}
+	return string(castedObj.GetGUID()), nil
 }

@@ -14,6 +14,7 @@ const (
 	labelNamespaceStr = "com.kurtosistech."
 	appIdLabelKeyStr = labelNamespaceStr + "app-id"
 	containerTypeLabelKeyStr = labelNamespaceStr + "container-type"
+	volumeTypeLabelKeyStr = labelNamespaceStr + "volume-type"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	// A label to identify a Kurtosis resource (e.g. network, container, etc.) by its id
@@ -39,6 +40,7 @@ const (
 //
 var AppIDLabelKey = docker_label_key.MustCreateNewDockerLabelKey(appIdLabelKeyStr)
 var ContainerTypeLabelKey = docker_label_key.MustCreateNewDockerLabelKey(containerTypeLabelKeyStr)
+var VolumeTypeLabelKey = docker_label_key.MustCreateNewDockerLabelKey(volumeTypeLabelKeyStr)
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 var IDLabelKey = docker_label_key.MustCreateNewDockerLabelKey(idLabelKeyStr)
