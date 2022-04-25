@@ -987,5 +987,127 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.getModules =
 };
 
 
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.UploadFilesArtifactArgs,
+ *   !proto.api_container_api.UploadFilesArtifactResponse>}
+ */
+const methodDescriptor_ApiContainerService_UploadFilesArtifact = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/UploadFilesArtifact',
+  grpc.web.MethodType.UNARY,
+  proto.api_container_api.UploadFilesArtifactArgs,
+  proto.api_container_api.UploadFilesArtifactResponse,
+  /**
+   * @param {!proto.api_container_api.UploadFilesArtifactArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.UploadFilesArtifactResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.UploadFilesArtifactArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.UploadFilesArtifactResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.UploadFilesArtifactResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.uploadFilesArtifact =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/UploadFilesArtifact',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_UploadFilesArtifact,
+      callback);
+};
+
+
+/**
+ * @param {!proto.api_container_api.UploadFilesArtifactArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.api_container_api.UploadFilesArtifactResponse>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.uploadFilesArtifact =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/UploadFilesArtifact',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_UploadFilesArtifact);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.DownloadFilesArtifactArgs,
+ *   !proto.api_container_api.DownloadFilesArtifactResponse>}
+ */
+const methodDescriptor_ApiContainerService_DownloadFilesArtifact = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/DownloadFilesArtifact',
+  grpc.web.MethodType.UNARY,
+  proto.api_container_api.DownloadFilesArtifactArgs,
+  proto.api_container_api.DownloadFilesArtifactResponse,
+  /**
+   * @param {!proto.api_container_api.DownloadFilesArtifactArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.DownloadFilesArtifactResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.DownloadFilesArtifactArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.DownloadFilesArtifactResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.DownloadFilesArtifactResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.downloadFilesArtifact =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/DownloadFilesArtifact',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_DownloadFilesArtifact,
+      callback);
+};
+
+
+/**
+ * @param {!proto.api_container_api.DownloadFilesArtifactArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.api_container_api.DownloadFilesArtifactResponse>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.downloadFilesArtifact =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/DownloadFilesArtifact',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_DownloadFilesArtifact);
+};
+
+
 module.exports = proto.api_container_api;
 

@@ -28,6 +28,12 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"math"
 	"path/filepath"
+	"os"
+	"compress/gzip"
+	"archive/tar"
+	"io"
+	"strings"
+	"io/ioutil"
 )
 
 type EnclaveID string
@@ -41,6 +47,7 @@ const (
 
 	// The path on the user service container where the enclave data dir will be bind-mounted
 	serviceEnclaveDataDirMountpoint = "/kurtosis-enclave-data"
+	grpcDataTransferLimit = 3999000 //3.999 Mb. 1kb wiggle room. 1kb being about the size of a simple 2 paragraph readme.
 )
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -452,6 +459,61 @@ func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error
 	return moduleIDs, nil
 }
 
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (string, error) {
+	pathToUpload = strings.TrimRight(pathToUpload, string(filepath.Separator))
+	if _, err := os.Stat(pathToUpload); err != nil {
+		return "", stacktrace.Propagate(err, "There was a path error for '%s' during file uploading.", pathToUpload)
+	}
+
+	tarFile, err := ioutil.TempFile("","")
+	if err != nil {
+		return "", stacktrace.Propagate(err,
+			 "There was an error creating a temporary archive file at '%s' during files upload for '%s'.",
+			 tarFile.Name(), pathToUpload)
+	}
+	defer tarFile.Close()
+	gzipWriter := gzip.NewWriter(tarFile)
+	defer gzipWriter.Close()
+	tarWriter := tar.NewWriter(gzipWriter)
+	defer tarWriter.Close()
+
+	err = filepath.Walk(pathToUpload, func(filePath string, fileInfo os.FileInfo, err error) error {
+		return addFilesToArchive(filePath, fileInfo, err, tarWriter, pathToUpload)
+	})
+	if err != nil {
+		return "", stacktrace.Propagate(err,
+			"There was an error searching through your directory '%s' during the archive process.", pathToUpload)
+	}
+
+	tarInfo, err := tarFile.Stat()
+	if err != nil {
+		return "", stacktrace.Propagate(err,
+				"There was an error while checking the status of the temporary tar file '%s' recently compressed for upload.",
+				tarFile.Name())
+	}
+
+	if tarInfo.Size() >= grpcDataTransferLimit {
+		return "", stacktrace.Propagate(err,
+			"The files you are trying to upload, which are now compressed, exceed or reach 4mb, a limit imposed by gRPC. " +
+				"Please reduce the total file size and ensure it can compress to a size below 4mb.")
+	}
+	content, err := ioutil.ReadFile(tarFile.Name())
+	if err != nil{
+		return "", stacktrace.Propagate(err,
+					"There was an error reading from the temporary tar file '%s' recently compressed for upload.",
+			       	tarFile.Name())
+	}
+
+	args := kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs{Data: content}
+	response, err := enclaveCtx.client.UploadFilesArtifact(context.Background(), &args)
+	if err != nil {
+		return "", stacktrace.Propagate(err,
+			  "An error was encountered while uploading data to the API Container.")
+	}
+	return response.Uuid, nil;
+}
+
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
@@ -488,4 +550,46 @@ func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc
 		)
 	}
 	return result, nil
+}
+
+//This is a function meant to be used within a filepath.Walk function. filepath.Walk takes two arguments, the first is a
+//target folder to walk, the second argument is a function that takes 3 arguments:
+//filePath 					- A directory or file path that the filepath.Walk function has reached, supplied by filepath.Walk
+//fileInfo 					- A FileInfo object of the file or directory at filePath supplied by filepath.Walk
+//errorFromLastIteration	- An error from previous walking iterations.
+//Because our function is a file archive writer, we need to pass those variables, a writer, and original path to this function.
+//This function should be wrapped in a lambda that passes filepath.Walk variables directly to this function.
+func addFilesToArchive(filePath string, fileInfo os.FileInfo, errorFromLastIteration error, archiveWriter *tar.Writer, pathToArchive string) error {
+	if errorFromLastIteration != nil {
+		return stacktrace.Propagate(errorFromLastIteration,
+							   "There was an error while taring or accessing file at '%s'.", filePath)
+	}
+
+	if !fileInfo.Mode().IsRegular() {
+		return nil
+	}
+
+	header, err := tar.FileInfoHeader(fileInfo, fileInfo.Name())
+	if err != nil {
+		return stacktrace.Propagate(err, "There was a problem creating a tar header for '%s'.", filePath)
+	}
+
+	fileName := strings.TrimLeft(filePath, pathToArchive)
+	header.Name = strings.TrimPrefix(fileName, string(filepath.Separator))
+
+	if err := archiveWriter.WriteHeader(header); err != nil {
+		return stacktrace.Propagate(err, "There was a problem writing headers while archiving '%s'.", filePath)
+	}
+
+	sourceToArchive, err := os.Open(filePath)
+	if err != nil {
+		return stacktrace.Propagate(err, "There was a problem reading from '%s'.", filePath)
+	}
+	defer sourceToArchive.Close()
+
+	if _, err := io.Copy(archiveWriter, sourceToArchive); err != nil {
+		return stacktrace.Propagate(err, "There was a problem copying '%s' to the tar.", filePath)
+	}
+
+	return nil
 }

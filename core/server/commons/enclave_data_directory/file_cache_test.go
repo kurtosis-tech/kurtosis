@@ -6,28 +6,29 @@
 package enclave_data_directory
 
 import (
-	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path"
 	"testing"
+	"strings"
+	"github.com/kurtosis-tech/stacktrace"
 )
+
+type failedReader struct {}
+
+func (reader failedReader) Read(b []byte) (int, error) {
+	return 0, stacktrace.Propagate(stacktrace.NewError("This is a test failure."),
+		 "You are not supposed to see this test failure. Please contact developers if you are.")
+}
 
 func TestFileCache_AddAndGetArtifact(t *testing.T) {
 	fileCache := getTestFileCache(t)
-
 	testKey := "test-key"
 	testContents := "test-file-contents"
-	addedFileObj, err := fileCache.AddFile(
-		testKey,
-		func(fp *os.File) error {
-			if _, err := fp.Write([]byte(testContents)); err != nil {
-				return stacktrace.Propagate(err, "An error occurred writing the test file contents")
-			}
-			return nil
-		},
-	)
+
+	reader := strings.NewReader(testContents);
+	addedFileObj, err := fileCache.AddFile(testKey, reader)
 	assert.Nil(t, err)
 
 	// Check that the contents are what we expect
@@ -58,18 +59,19 @@ func TestFileCache_AddErrorsOnDuplicateAdd(t *testing.T) {
 	fileCache := getTestFileCache(t)
 
 	testKey := "test-key"
-	_, err := fileCache.AddFile(testKey, func(fp *os.File) error { return nil })
+	_, err := fileCache.AddFile(testKey, strings.NewReader(""))
 	assert.Nil(t, err)
 
-	_, err = fileCache.AddFile(testKey, func(fp *os.File) error { return nil })
+	_, err = fileCache.AddFile(testKey, strings.NewReader(""))
 	assert.NotNil(t, err)
 }
 
-func TestFileCache_FileDeletedOnSupplierError(t *testing.T) {
+func TestFileCache_FileDeletedOnReaderError(t *testing.T) {
 	fileCache := getTestFileCache(t)
+	var readerThatFails failedReader
 
-	testKey := "test-key"
-	_, err := fileCache.AddFile(testKey, func(fp *os.File) error { return stacktrace.NewError("TEST ERROR") })
+	testKey := "test-keys"
+	_, err := fileCache.AddFile(testKey, readerThatFails)
 	assert.NotNil(t, err)
 
 	// Make sure the file cache directory is still empty

@@ -54,6 +54,10 @@ type ApiContainerServiceClient interface {
 	GetServices(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetServicesResponse, error)
 	// Returns the IDs of the Kurtosis modules that have been loaded into the enclave
 	GetModules(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetModulesResponse, error)
+	// Uploads a files artifact to the Kurtosis File System.
+	UploadFilesArtifact(ctx context.Context, in *UploadFilesArtifactArgs, opts ...grpc.CallOption) (*UploadFilesArtifactResponse, error)
+	// Tells the API container to download a files artifact from the web to the Kurtosis File System
+	DownloadFilesArtifact(ctx context.Context, in *DownloadFilesArtifactArgs, opts ...grpc.CallOption) (*DownloadFilesArtifactResponse, error)
 }
 
 type apiContainerServiceClient struct {
@@ -199,6 +203,24 @@ func (c *apiContainerServiceClient) GetModules(ctx context.Context, in *emptypb.
 	return out, nil
 }
 
+func (c *apiContainerServiceClient) UploadFilesArtifact(ctx context.Context, in *UploadFilesArtifactArgs, opts ...grpc.CallOption) (*UploadFilesArtifactResponse, error) {
+	out := new(UploadFilesArtifactResponse)
+	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/UploadFilesArtifact", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *apiContainerServiceClient) DownloadFilesArtifact(ctx context.Context, in *DownloadFilesArtifactArgs, opts ...grpc.CallOption) (*DownloadFilesArtifactResponse, error) {
+	out := new(DownloadFilesArtifactResponse)
+	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/DownloadFilesArtifact", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ApiContainerServiceServer is the server API for ApiContainerService service.
 // All implementations must embed UnimplementedApiContainerServiceServer
 // for forward compatibility
@@ -234,6 +256,10 @@ type ApiContainerServiceServer interface {
 	GetServices(context.Context, *emptypb.Empty) (*GetServicesResponse, error)
 	// Returns the IDs of the Kurtosis modules that have been loaded into the enclave
 	GetModules(context.Context, *emptypb.Empty) (*GetModulesResponse, error)
+	// Uploads a files artifact to the Kurtosis File System.
+	UploadFilesArtifact(context.Context, *UploadFilesArtifactArgs) (*UploadFilesArtifactResponse, error)
+	// Tells the API container to download a files artifact from the web to the Kurtosis File System
+	DownloadFilesArtifact(context.Context, *DownloadFilesArtifactArgs) (*DownloadFilesArtifactResponse, error)
 	mustEmbedUnimplementedApiContainerServiceServer()
 }
 
@@ -285,6 +311,12 @@ func (UnimplementedApiContainerServiceServer) GetServices(context.Context, *empt
 }
 func (UnimplementedApiContainerServiceServer) GetModules(context.Context, *emptypb.Empty) (*GetModulesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetModules not implemented")
+}
+func (UnimplementedApiContainerServiceServer) UploadFilesArtifact(context.Context, *UploadFilesArtifactArgs) (*UploadFilesArtifactResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UploadFilesArtifact not implemented")
+}
+func (UnimplementedApiContainerServiceServer) DownloadFilesArtifact(context.Context, *DownloadFilesArtifactArgs) (*DownloadFilesArtifactResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DownloadFilesArtifact not implemented")
 }
 func (UnimplementedApiContainerServiceServer) mustEmbedUnimplementedApiContainerServiceServer() {}
 
@@ -569,6 +601,42 @@ func _ApiContainerService_GetModules_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApiContainerService_UploadFilesArtifact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UploadFilesArtifactArgs)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiContainerServiceServer).UploadFilesArtifact(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api_container_api.ApiContainerService/UploadFilesArtifact",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiContainerServiceServer).UploadFilesArtifact(ctx, req.(*UploadFilesArtifactArgs))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApiContainerService_DownloadFilesArtifact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DownloadFilesArtifactArgs)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiContainerServiceServer).DownloadFilesArtifact(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api_container_api.ApiContainerService/DownloadFilesArtifact",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiContainerServiceServer).DownloadFilesArtifact(ctx, req.(*DownloadFilesArtifactArgs))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ApiContainerService_ServiceDesc is the grpc.ServiceDesc for ApiContainerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -635,6 +703,14 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetModules",
 			Handler:    _ApiContainerService_GetModules_Handler,
+		},
+		{
+			MethodName: "UploadFilesArtifact",
+			Handler:    _ApiContainerService_UploadFilesArtifact_Handler,
+		},
+		{
+			MethodName: "DownloadFilesArtifact",
+			Handler:    _ApiContainerService_DownloadFilesArtifact_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

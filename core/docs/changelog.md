@@ -1,5 +1,13 @@
 # TBD
 
+# 1.43.1
+### Features
+* Added new backend file storage methods for future volume support.
+* Added UploadFilesArtifact command to API Container.
+* Added UploadFiles to enclave_context for Go.
+* Add a `DownloadFilesArtifact` endpoint to the API container for downloading files artifacts from the web
+* All container/volume/enclave stopping & destroying work is done in parallel
+
 # 1.43.0
 ### Breaking Changes
 * Added new return value `module's GUID` in `ApiContainerService.LoadModuleResponse`
@@ -23,6 +31,7 @@
 # 1.42.2
 ### Fixes
 * Use container-engine-lib 0.14.3, which supports the old port specs temporarily
+
 
 # 1.42.1
 ### Fixes

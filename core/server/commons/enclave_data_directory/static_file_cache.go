@@ -7,7 +7,7 @@ package enclave_data_directory
 
 import (
 	"github.com/kurtosis-tech/stacktrace"
-	"os"
+	"strings"
 )
 
 /*
@@ -26,7 +26,7 @@ func newStaticFileCache(absoluteDirpath string, dirpathRelativeToDataDirRoot str
 func (cache *StaticFileCache) RegisterStaticFile(key string) (*EnclaveDataDirFile, error) {
 	// The static file cache needs to initialize an empty file, which the underlying filecache already does so need
 	//  to do anything
-	result, err := cache.underlying.AddFile(key, func(fp *os.File) error { return nil })
+	result, err := cache.underlying.AddFile(key, strings.NewReader(""))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding an empty static file to the underlying cache")
 	}

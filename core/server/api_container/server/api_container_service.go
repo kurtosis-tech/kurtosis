@@ -6,6 +6,7 @@
 package server
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -459,6 +460,47 @@ func (service ApiContainerService) GetModules(ctx context.Context, empty *emptyp
 		ModuleIds: allModuleIDs,
 	}
 	return resp, nil
+}
+
+func (service ApiContainerService) UploadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse, error) {
+	store, err := service.enclaveDataDir.GetFilesArtifactStore()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred with files artifact storage initialization.")
+	}
+	reader := bytes.NewReader(args.Data)
+
+	uuid, err := store.StoreFile(reader)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to store files.")
+	}
+
+	response := &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{Uuid: uuid}
+	return response, nil
+}
+
+
+func (service ApiContainerService) DownloadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.DownloadFilesArtifactResponse, error) {
+	url := args.Url
+
+	store, err := service.enclaveDataDir.GetFilesArtifactStore()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the files artifact store")
+	}
+
+	resp, err := http.Get(args.Url)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred making the request to URL '%v' to get the files artifact bytes", url)
+	}
+	defer resp.Body.Close()
+	body := bufio.NewReader(resp.Body)
+
+	uuid, err := store.StoreFile(body)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred storing the file from URL '%v' in the files artifact store", url)
+	}
+
+	response := &kurtosis_core_rpc_api_bindings.DownloadFilesArtifactResponse{Uuid: uuid}
+	return response, nil
 }
 
 // ====================================================================================================
