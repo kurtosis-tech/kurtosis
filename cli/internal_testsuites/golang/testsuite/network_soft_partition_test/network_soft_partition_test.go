@@ -52,7 +52,7 @@ func TestNetworkSoftPartitions(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, stopEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, stopEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer stopEnclaveFunc()
 
