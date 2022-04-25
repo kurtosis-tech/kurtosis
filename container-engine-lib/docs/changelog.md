@@ -1,4 +1,6 @@
 # TBD
+
+# 0.15.1
 ### Features
 * The enclave data volume gets mounted on all services
 * `DockerKurtosisBackend.CreateEnclave` also creates an enclave data volume
