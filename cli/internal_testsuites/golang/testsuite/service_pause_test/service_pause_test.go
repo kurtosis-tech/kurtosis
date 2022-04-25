@@ -2,9 +2,9 @@ package service_pause_test
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -19,7 +19,6 @@ const (
 
 func TestPauseUnpause(t *testing.T) {
 	ctx := context.Background()
-	fmt.Printf("Running pause/unpause test...")
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
 	enclaveCtx, stopEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
@@ -34,8 +33,10 @@ func TestPauseUnpause(t *testing.T) {
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	// pause/unpause using servicectx
 	serviceCtx.PauseService()
+	logrus.Infof("Paused service!")
 	time.Sleep(5 * time.Second)
 	serviceCtx.UnpauseService()
+	logrus.Infof("Unpaused service!")
 }
 
 // ====================================================================================================
