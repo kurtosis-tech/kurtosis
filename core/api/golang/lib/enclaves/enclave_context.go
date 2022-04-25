@@ -459,16 +459,16 @@ func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error
 	return moduleIDs, nil
 }
 
-func (enclaveCtx *EnclaveContext) UploadFilesArtifact(pathToUpload string) (string, error) {
+func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (string, error) {
 	pathToUpload = strings.TrimRight(pathToUpload, string(filepath.Separator))
 	if _, err := os.Stat(pathToUpload); err != nil {
-		return "", stacktrace.Propagate(err, "There was a path error for '%s' during files artifact uploading.", pathToUpload)
+		return "", stacktrace.Propagate(err, "There was a path error for '%s' during file uploading.", pathToUpload)
 	}
 
 	tarFile, err := ioutil.TempFile("","")
 	if err != nil {
 		return "", stacktrace.Propagate(err,
-			 "There was an error creating a temporary archive file at '%s' during files artifact uploading for '%s'.",
+			 "There was an error creating a temporary archive file at '%s' during files upload for '%s'.",
 			 tarFile.Name(), pathToUpload)
 	}
 	defer tarFile.Close()
@@ -481,7 +481,8 @@ func (enclaveCtx *EnclaveContext) UploadFilesArtifact(pathToUpload string) (stri
 		return walkPathToBeArchived(filePath, fileInfo, err, tarWriter, pathToUpload)
 	})
 	if err != nil {
-		return "", stacktrace.Propagate(err, "There was an error compressing your files artifact for upload.")
+		return "", stacktrace.Propagate(err,
+			"There was an error searching through your directory '%s' during the archive process.", pathToUpload)
 	}
 
 	content, err := ioutil.ReadFile(tarFile.Name())
