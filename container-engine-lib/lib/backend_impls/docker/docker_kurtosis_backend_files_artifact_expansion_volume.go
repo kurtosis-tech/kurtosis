@@ -104,16 +104,16 @@ func (backend *DockerKurtosisBackend) DestroyFilesArtifactExpansionVolumes(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred removing files artifact expansion volumes matching filters '%+v'", filters)
 	}
 
-	successfulExpanderGUIDs := map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool{}
+	successfulExpansionGUIDs := map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool{}
 	for expansionVolumeNameStr := range successfulExpansionVolumeNameStrs {
-		successfulExpanderGUIDs[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName(expansionVolumeNameStr)] = true
+		successfulExpansionGUIDs[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName(expansionVolumeNameStr)] = true
 	}
-	erroredExpanderGUIDs := map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]error{}
+	erroredExpansionGUIDs := map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]error{}
 	for expansionVolumeNameStr, removalErr := range erroredExpansionVolumeNameStrs {
-		erroredExpanderGUIDs[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName(expansionVolumeNameStr)] = removalErr
+		erroredExpansionGUIDs[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName(expansionVolumeNameStr)] = removalErr
 	}
 
-	return successfulExpanderGUIDs, erroredExpanderGUIDs, nil
+	return successfulExpansionGUIDs, erroredExpansionGUIDs, nil
 }
 
 // ====================================================================================================

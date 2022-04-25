@@ -147,7 +147,7 @@ func (backend *DockerKurtosisBackend) DestroyFilesArtifactExpanders(
 		removeExpanderOperation,
 	)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred removing files artifact expansion containers matching filters '%+v'", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing files artifact expander containers matching filters '%+v'", filters)
 	}
 
 	successfulExpanderGUIDs := map[files_artifact_expander.FilesArtifactExpanderGUID]bool{}

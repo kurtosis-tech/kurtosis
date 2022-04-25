@@ -384,7 +384,7 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 
 	successfulVolumeRemovalEnclaveIds, erroredVolumeRemovalEnclaveIds, err := destroyVolumesInEnclaves(ctx, backend.dockerManager, successfulContainerRemovalEnclaveIds)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying containers in enclaves for which containers were successfully destroyed: %+v", successfulContainerRemovalEnclaveIds)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying volumes in enclaves for which containers were successfully destroyed: %+v", successfulContainerRemovalEnclaveIds)
 	}
 	for enclaveId, volumeRemovalErr := range erroredVolumeRemovalEnclaveIds {
 		erroredEnclaveIds[enclaveId] = volumeRemovalErr
