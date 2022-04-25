@@ -361,6 +361,30 @@ func (backend *DockerKurtosisBackend) GetConnectionWithUserService(
 	return newConnection, nil
 }
 
+// It returns io.ReadCloser which is a tar stream. It's up to the caller to close the reader.
+func (backend *DockerKurtosisBackend) CopyFromUserService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	srcPath string,
+)(
+	io.ReadCloser,
+	error,
+) {
+
+	userServiceContainerId, _, err := backend.getSingleUserService(ctx, enclaveId, serviceGuid)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service with GUID '%v' in enclave with ID '%v'", serviceGuid, enclaveId)
+	}
+
+	tarStreamReadCloser, err := backend.dockerManager.CopyFromContainer(ctx, userServiceContainerId, srcPath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred copying content from sourcepath '%v' in user service with GUID '%v' and container ID '%v' ", srcPath, serviceGuid, userServiceContainerId)
+	}
+
+	return tarStreamReadCloser, nil
+}
+
 func (backend *DockerKurtosisBackend) StopUserServices(
 	ctx context.Context,
 	filters *service.ServiceFilters,

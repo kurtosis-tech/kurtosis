@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added `KurtosisBackend.CopyFromUserService` in Docker implementation
 
 # 0.15.2
 ### Fixes
@@ -7,7 +9,7 @@
 # 0.15.1
 ### Features
 * The enclave data volume gets mounted on all services
-* `DockerKurtosisBackend.CreateEnclave` also creates an enclave data volume
+* Updated `DockerKurtosisBackend.CreateEnclave`, now also creates an enclave data volume
 * Parallelized several operations to improve perf:
     * `DockerKurtosisBackend.StopEnclaves`
     * `DockerKurtosisBackend.DestroyEnclaves`
@@ -21,7 +23,6 @@
     * `DockerKurtosisBackend.DestroyNetworkingSidecars`
     * `DockerKurtosisBackend.StopUserServices`
     * `DockerKurtosisBackend.DestroyUserServices`
-
 
 # 0.15.0
 ### Fixes
