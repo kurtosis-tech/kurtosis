@@ -280,3 +280,10 @@ func NewWaitForHttpPostEndpointAvailabilityArgs(
 		BodyText:                 bodyText,
 	}
 }
+
+// ==============================================================================================
+//                           Upload Files Artifact
+// ==============================================================================================
+func NewUploadFilesArtifactArgs(data []byte) *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs {
+	return &kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs{Data: data}
+}

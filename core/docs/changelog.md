@@ -2,6 +2,7 @@
 ### Features
 * Added new backend file storage methods for future volume support.
 * Added UploadFilesArtifact command to API Container.
+* Added UploadFiles to enclave_context for Go.
 * Add a `DownloadFilesArtifact` endpoint to the API container for downloading files artifacts from the web
 
 # 1.43.0
