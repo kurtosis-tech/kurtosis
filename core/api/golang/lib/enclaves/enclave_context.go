@@ -479,7 +479,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (string, erro
 	defer tarWriter.Close()
 
 	err = filepath.Walk(pathToUpload, func(filePath string, fileInfo os.FileInfo, err error) error {
-		return walkPathToBeArchived(filePath, fileInfo, err, tarWriter, pathToUpload)
+		return addFilesToArchive(filePath, fileInfo, err, tarWriter, pathToUpload)
 	})
 	if err != nil {
 		return "", stacktrace.Propagate(err,
@@ -552,9 +552,10 @@ func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc
 //err	   - An error from previous walking iterations.
 //Because our function is a file archive writer, we need to pass those variables, a writer, and original path to this function.
 //This function should be wrapped in a lambda that passes filepath.Walk variables directly to this function.
-func walkPathToBeArchived(filePath string, fileInfo os.FileInfo, err error, archiveWriter *tar.Writer, pathToArchive string) error {
-	if err != nil {
-		return stacktrace.Propagate(err, "There was an error while taring or accessing file at '%s'.", filePath)
+func addFilesToArchive(filePath string, fileInfo os.FileInfo, errorFromLastIteration error, archiveWriter *tar.Writer, pathToArchive string) error {
+	if errorFromLastIteration != nil {
+		return stacktrace.Propagate(errorFromLastIteration,
+							   "There was an error while taring or accessing file at '%s'.", filePath)
 	}
 
 	if !fileInfo.Mode().IsRegular() {
@@ -574,6 +575,7 @@ func walkPathToBeArchived(filePath string, fileInfo os.FileInfo, err error, arch
 	}
 
 	sourceToArchive, err := os.Open(filePath)
+	defer sourceToArchive.Close()
 	if err != nil {
 		return stacktrace.Propagate(err, "There was a problem reading from '%s'.", filePath)
 	}
@@ -581,7 +583,6 @@ func walkPathToBeArchived(filePath string, fileInfo os.FileInfo, err error, arch
 	if _, err := io.Copy(archiveWriter, sourceToArchive); err != nil {
 		return stacktrace.Propagate(err, "There was a problem copying '%s' to the tar.", filePath)
 	}
-	sourceToArchive.Close()
 
 	return nil
 }
