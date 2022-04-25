@@ -133,17 +133,6 @@ type KurtosisBackend interface {
 		error,
 	)
 
-	//Copy a file from user service filepath to API container filepath
-	CopyFileFromUserServiceToAPIContainer(
-		ctx context.Context,
-		enclaveId enclave.EnclaveID,
-		serviceGuid service.ServiceGUID,
-		filepathInService string,
-		destinationFilepath string,
-	)(
-		resultErr error,
-	)
-
 	// Stops API containers matching the given filters
 	StopAPIContainers(
 		ctx context.Context,
@@ -299,6 +288,17 @@ type KurtosisBackend interface {
 		serviceGUID service.ServiceGUID,
 	) (
 		resultConn net.Conn,
+		resultErr error,
+	)
+
+	//Copy content (it can be a file or entire folder) from user service filepath and returns and io.ReadCloser object
+	CopyFromUserService(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		serviceGuid service.ServiceGUID,
+		filepathInService string,
+	)(
+		resultReadCloser io.ReadCloser,
 		resultErr error,
 	)
 

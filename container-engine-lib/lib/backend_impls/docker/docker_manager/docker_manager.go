@@ -6,7 +6,6 @@
 package docker_manager
 
 import (
-	"archive/tar"
 	"context"
 	"fmt"
 	"github.com/docker/docker/api/types"
@@ -885,45 +884,18 @@ func (manager DockerManager) CreateContainerExec(context context.Context, contai
 	return &hijackedResponse, nil
 }
 
-func (manager DockerManager) CopyFileFromContainerToContainer(ctx context.Context, fromContainerId string, fromContainerFilepath string, toContainerId string, toContainerFilepath string ) error {
+// It returns io.ReadCloser which is a tar stream. It's up to the caller to close the reader.
+func (manager DockerManager) CopyFromContainer(ctx context.Context, fromContainerId string, fromContainerFilepath string) (io.ReadCloser, error) {
 
 	tarStreamReadCloser, _, err := manager.dockerClient.CopyFromContainer(
 		ctx,
 		fromContainerId,
 		fromContainerFilepath)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred copying content '%v' from container with ID '%v'", fromContainerFilepath, fromContainerId)
-	}
-	defer tarStreamReadCloser.Close()
-
-	//Create a reader to check if the tar file is not a directory and contains only one file
-	regularFileCheckerReader := tar.NewReader(tarStreamReadCloser)
-	regularFileCheckerHeader, err := regularFileCheckerReader.Next()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred calling the regular file checker reader '%+v' to get the header", regularFileCheckerReader)
-	}
-	if regularFileCheckerHeader.Typeflag != tar.TypeReg && regularFileCheckerHeader.Typeflag != tar.TypeRegA {
-		return stacktrace.NewError("Expected to copy a regular file from container with ID '%v' to container with ID '%v' but this source '%v' does not correspond to a regular file", fromContainerId, toContainerId, fromContainerFilepath)
-	}
-	//Checking if the tar file contains more than one file
-	//if this next calls return and err == io.EOF means there is no more files
-	_, err = regularFileCheckerReader.Next()
-	if err != nil && err != io.EOF {
-		return stacktrace.NewError("The source path '%v' in container with ID '%v' contains more than one file and it is not allowed, the source path should be a regular file filepath", fromContainerFilepath, fromContainerId)
+		return nil, stacktrace.Propagate(err, "An error occurred copying content '%v' from container with ID '%v'", fromContainerFilepath, fromContainerId)
 	}
 
-	tarReader := tar.NewReader(tarStreamReadCloser)
-
-	if err := manager.dockerClient.CopyToContainer(
-		ctx,
-		toContainerId,
-		toContainerFilepath,
-		tarReader,
-		types.CopyToContainerOptions{}); err !=nil {
-		return stacktrace.Propagate(err, "An error occurred copying file '%v' from container with ID '%v' to destination filepath '%v' in container with ID '%v'", fromContainerFilepath, fromContainerId, toContainerFilepath, toContainerId)
-	}
-
-	return nil
+	return tarStreamReadCloser, nil
 }
 
 // =================================================================================================================

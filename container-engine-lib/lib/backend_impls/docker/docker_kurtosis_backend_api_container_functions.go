@@ -12,7 +12,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -213,34 +212,6 @@ func (backend *DockerKurtosisBackend) GetAPIContainers(ctx context.Context, filt
 	}
 
 	return matchingApiContainersByEnclaveID, nil
-}
-
-
-func (backend *DockerKurtosisBackend) CopyFileFromUserServiceToAPIContainer(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceGuid service.ServiceGUID,
-	filepathInService string,
-	destinationFilepath string,
-)(
-	error,
-) {
-
-	userServiceContainerId, _, err := backend.getSingleUserService(ctx, enclaveId, serviceGuid)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting user service with GUID '%v' in enclave with ID '%v'", serviceGuid, enclaveId)
-	}
-
-	apiContainerContainerId, _, err := backend.getEnclaveApiContainer(ctx, enclaveId)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting api container in enclave with ID '%v'", enclaveId)
-	}
-
-	if err := backend.dockerManager.CopyFileFromContainerToContainer(ctx, userServiceContainerId, filepathInService, apiContainerContainerId, destinationFilepath); err != nil {
-		return stacktrace.Propagate(err, "An error occurred copying file with filepath '%v' from user service with GUID '%v' and container ID '%v' to destination filepath '%v' in api container with container ID '%v''", filepathInService, serviceGuid, userServiceContainerId, destinationFilepath, apiContainerContainerId)
-	}
-
-	return nil
 }
 
 func (backend *DockerKurtosisBackend) StopAPIContainers(

@@ -183,13 +183,6 @@ func (backend *MetricsReportingKurtosisBackend) GetAPIContainers(ctx context.Con
 	return results, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) CopyFileFromUserServiceToAPIContainer(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID, filepathInService string, destinationFilepath string) error {
-	if err := backend.underlying.CopyFileFromUserServiceToAPIContainer(ctx, enclaveId, serviceGuid, filepathInService, destinationFilepath); err != nil {
-		stacktrace.Propagate(err, "An error occurred copying file with filepath '%v' from user service with GUID '%v' to destination filepath '%v' in the enclave's api container with enclave ID '%v''", filepathInService, serviceGuid, destinationFilepath, enclaveId)
-	}
-	return nil
-}
-
 func (backend *MetricsReportingKurtosisBackend) StopAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveID]bool, erroredApiContainerIds map[enclave.EnclaveID]error, resultErr error) {
 	successes, failures, err := backend.underlying.StopAPIContainers(ctx, filters)
 	if err != nil {
@@ -458,6 +451,22 @@ func (backend *MetricsReportingKurtosisBackend) GetConnectionWithUserService(
 		return nil, stacktrace.Propagate(err, "An error occurred getting connection with user service with GUID '%v'", serviceGUID)
 	}
 	return newConn, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) CopyFromUserService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	filepathInService string,
+) (
+	io.ReadCloser,
+	error,
+) {
+	tarStreamReadCloser, err := backend.underlying.CopyFromUserServiceContainer(ctx, enclaveId, serviceGuid, filepathInService)
+	if err != nil {
+		stacktrace.Propagate(err, "An error occurred copying file with filepath '%v' from user service with GUID '%v' in enclave with ID '%v'", filepathInService, serviceGuid, enclaveId)
+	}
+	return tarStreamReadCloser, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) StopUserServices(
