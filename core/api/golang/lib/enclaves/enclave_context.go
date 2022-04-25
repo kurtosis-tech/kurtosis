@@ -459,6 +459,7 @@ func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error
 	return moduleIDs, nil
 }
 
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (string, error) {
 	pathToUpload = strings.TrimRight(pathToUpload, string(filepath.Separator))
 	if _, err := os.Stat(pathToUpload); err != nil {
