@@ -3,6 +3,7 @@
 * Added new backend file storage methods for future volume support.
 * Added UploadFilesArtifact command to API Container.
 * Add a `DownloadFilesArtifact` endpoint to the API container for downloading files artifacts from the web
+* All container/volume/enclave stopping & destroying work is done in parallel
 
 # 1.43.0
 ### Breaking Changes
