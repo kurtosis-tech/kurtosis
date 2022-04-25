@@ -10,6 +10,7 @@ import (
 	"github.com/gammazero/workerpool"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -41,6 +42,13 @@ const (
 	containerSpecJsonSerializationPrefix = ""
 )
 
+type matchingNetworkInformation struct {
+	enclaveId enclave.EnclaveID
+	enclaveStatus enclave.EnclaveStatus
+	dockerNetwork *types.Network
+	containers []*types.Container
+}
+
 func (backend *DockerKurtosisBackend) CreateEnclave(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
@@ -51,20 +59,27 @@ func (backend *DockerKurtosisBackend) CreateEnclave(
 ) {
 	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
 
-	enclaveIDs := map[enclave.EnclaveID]bool{
-		enclaveId: true,
+	searchNetworkLabels := map[string]string{
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
 	}
 
-	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, enclaveIDs)
+	networks, err := backend.dockerManager.GetNetworksByLabels(ctx, searchNetworkLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred checking for networks with ID '%v', which is necessary to ensure that our enclave doesn't exist yet", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting networks using labels '%+v', which is necessary to ensure that our enclave doesn't exist yet", searchNetworkLabels)
 	}
 	if len(networks) > 0 {
-		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because an enclave with ID '%v' already exists", enclaveId, enclaveId)	}
+		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because an enclave with ID '%v' already exists", enclaveId, enclaveId)
+	}
 
-	foundVolumes, err := backend.getEnclaveDataVolumesMatchingEnclaveId(ctx, enclaveId)
+	volumeSearchLabels :=  map[string]string{
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
+		label_key_consts.VolumeTypeLabelKey.GetString(): label_value_consts.EnclaveDataVolumeTypeLabelValue.GetString(),
+	}
+	foundVolumes, err := backend.dockerManager.GetVolumesByLabels(ctx, volumeSearchLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave data volumes matching enclave ID '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave data volumes matching labels '%+v'", volumeSearchLabels)
 	}
 	if len(foundVolumes) > 0 {
 		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because one or more enclave data volume for that enclave already exists", enclaveId)
@@ -163,29 +178,22 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 	error,
 ) {
 
-	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, filters.IDs)
+	allMatchingNetworkInfo, err := backend.getMatchingEnclaveNetworkInfo(ctx, filters)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave networks by enclave IDs '%+v'", filters.IDs)
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave networks matching filters '%+v'", filters)
 	}
 
 	result := map[enclave.EnclaveID]*enclave.Enclave{}
-
-	for _, network := range networks {
-		enclaveId, err := getEnclaveIdFromNetwork(network)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting enclave ID from network '%+v'", network)
-		}
-
-		enclaveStatus, _, err := backend.getEnclaveStatusAndContainers(ctx, enclaveId)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
-		}
-
-		if filters.Statuses == nil || isEnclaveStatusInEnclaveFilters(enclaveStatus, filters) {
+	for enclaveId, matchingNetworkInfo := range allMatchingNetworkInfo {
+		result[enclaveId] = enclave.NewEnclave(
+			enclaveId,
+			matchingNetworkInfo.enclaveStatus,
+			matchingNetworkInfo.dockerNetwork.GetId(),
+			matchingNetworkInfo.dockerNetwork.GetIpAndMask().String(),
 			// TODO We're returning nil here for gatewayIp and freeIpAddrProvider as a temporary hack, until we can fully push all Docker stuff under the KurtosisBackend
-			newEnclave := enclave.NewEnclave(enclaveId, enclaveStatus, network.GetId(), network.GetIpAndMask().String(), nil, nil)
-			result[enclaveId] = newEnclave
-		}
+			nil,
+			nil,
+		)
 	}
 
 	return result, nil
@@ -201,69 +209,69 @@ func (backend *DockerKurtosisBackend) StopEnclaves(
 	resultErr error,
 ) {
 
-	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
-	erroredEnclaveIds := map[enclave.EnclaveID]error{}
-	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, filters.IDs)
+	matchingNetworkInfo, err := backend.getMatchingEnclaveNetworkInfo(ctx, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave networks by enclave IDs '%+v'", filters.IDs)
-	}
-	if len(networks) == 0 {
-		return nil, nil, stacktrace.NewError("No Enclave was found with IDs '%+v'", filters.IDs)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave network info using filters '%+v'", filters)
 	}
 
-	for _, network := range networks {
-		enclaveId, err := getEnclaveIdFromNetwork(network)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave ID from network '%+v'", network)
+	// For all the enclaves to stop, gather all the containers that should be stopped
+	enclaveIdsForContainerIdsToStop := map[string]enclave.EnclaveID{}
+	containerIdsToStop := map[string]bool{}
+	for enclaveId, networkInfo := range matchingNetworkInfo {
+		for _, container := range networkInfo.containers {
+			containerId := container.GetId()
+			enclaveIdsForContainerIdsToStop[containerId] = enclaveId
+			containerIdsToStop[containerId] = true
+		}
+	}
+
+	var stopEnclaveContainerOperation docker_operation_parallelizer.DockerOperation = func(ctx context.Context, dockerManager *docker_manager.DockerManager, dockerObjectId string) error {
+		if err := dockerManager.KillContainer(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred killing enclave container with ID '%v'", dockerObjectId)
+		}
+		return nil
+	}
+
+	_, erroredContainerIds := docker_operation_parallelizer.RunDockerOperationInParallel(
+		ctx,
+		containerIdsToStop,
+		backend.dockerManager,
+		stopEnclaveContainerOperation,
+	)
+
+	// Do we need to explicitly wait until the containers exit?
+
+	containerKillErrorStrsByEnclave := map[enclave.EnclaveID][]string{}
+	for erroredContainerId, killContainerErr := range erroredContainerIds {
+		containerEnclaveId, found := enclaveIdsForContainerIdsToStop[erroredContainerId]
+		if !found {
+			return nil, nil, stacktrace.NewError("An error occurred stopping container '%v' in an enclave we didn't request", erroredContainerId)
 		}
 
-		enclaveStatus, containers, err := backend.getEnclaveStatusAndContainers(ctx, enclaveId)
-		if err != nil {
-			erroredEnclaveIds[enclaveId] = stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
+		existingEnclaveErrors, found := containerKillErrorStrsByEnclave[containerEnclaveId]
+		if !found {
+			existingEnclaveErrors = []string{}
+		}
+		containerKillErrorStrsByEnclave[containerEnclaveId] = append(existingEnclaveErrors, killContainerErr.Error())
+	}
+
+	erroredEnclaveIds := map[enclave.EnclaveID]error{}
+	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
+	for enclaveId := range matchingNetworkInfo {
+		containerRemovalErrorStrs, found := containerKillErrorStrsByEnclave[enclaveId]
+		if !found || len(containerRemovalErrorStrs) == 0 {
+			successfulEnclaveIds[enclaveId] = true
 			continue
 		}
 
-		if filters.Statuses == nil || isEnclaveStatusInEnclaveFilters(enclaveStatus, filters) {
-			containerIdsSet := map[string]bool{}
-			for _, container := range containers {
-				containerIdsSet[container.GetId()] = true
-			}
-
-			logrus.Debugf("Containers in enclave '%v' that will be stopped: %+v", enclaveId, containerIdsSet)
-
-			if _, erroredContainers := backend.killContainers(ctx, containerIdsSet); len(erroredContainers) > 0 {
-				containerKillErrorStrs := []string{}
-				for _, err = range erroredContainers {
-					containerKillErrorStrs = append(containerKillErrorStrs, err.Error())
-				}
-				errorStr := strings.Join(containerKillErrorStrs, "\n\n")
-				erroredEnclaveIds[enclaveId] = stacktrace.NewError(
-					"One or more errors occurred killing the containers in enclave '%v':\n%v",
-					enclaveId,
-					errorStr,
-				)
-				continue
-			}
-
-			// If all the kills went off successfully, wait for all the containers we just killed to definitively exit
-			//  before we return
-			if _, erroredContainers := backend.waitForContainerExits(ctx, containers); len(erroredContainers) > 0 {
-				containerWaitErrorStrs := []string{}
-				for _, err = range erroredContainers {
-					containerWaitErrorStrs = append(containerWaitErrorStrs, err.Error())
-				}
-				errorStr := strings.Join(containerWaitErrorStrs, "\n\n")
-				erroredEnclaveIds[enclaveId] = stacktrace.NewError(
-					"One or more errors occurred waiting for containers in enclave '%v' to exit after killing, meaning we can't guarantee the enclave is completely stopped:\n%v",
-					enclaveId,
-					errorStr,
-				)
-				continue
-			}
-
-			successfulEnclaveIds[enclaveId] = true
-		}
+		errorStr := strings.Join(containerRemovalErrorStrs, "\n\n")
+		erroredEnclaveIds[enclaveId] = stacktrace.NewError(
+			"One or more errors occurred killing the containers in enclave '%v':\n%v",
+			enclaveId,
+			errorStr,
+		)
 	}
+
 	return successfulEnclaveIds, erroredEnclaveIds, nil
 }
 
@@ -359,147 +367,110 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	resultErroredEnclaveIds map[enclave.EnclaveID]error,
 	resultErr error,
 ) {
+	matchingNetworkInfo, err := backend.getMatchingEnclaveNetworkInfo(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave network info using filters '%+v'", filters)
+	}
 
 	erroredEnclaveIds := map[enclave.EnclaveID]error{}
-	// Stop containers
-	resultSuccessfulEnclaveIds, resultErroredEnclaveIds, err := backend.StopEnclaves(ctx, filters)
+
+	successfulContainerRemovalEnclaveIds, erroredContainerRemovalEnclaveIds, err := destroyContainersInEnclaves(ctx, backend.dockerManager, matchingNetworkInfo)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping enclaves using filters '%v'", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying containers in enclaves matching filters '%+v'", filters)
+	}
+	for enclaveId, containerRemovalErr := range erroredContainerRemovalEnclaveIds {
+		erroredEnclaveIds[enclaveId] = containerRemovalErr
 	}
 
-	for enclaveId, err := range resultErroredEnclaveIds {
-		erroredEnclaveIds[enclaveId] = err
+	successfulVolumeRemovalEnclaveIds, erroredVolumeRemovalEnclaveIds, err := destroyVolumesInEnclaves(ctx, backend.dockerManager, successfulContainerRemovalEnclaveIds)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying volumes in enclaves for which containers were successfully destroyed: %+v", successfulContainerRemovalEnclaveIds)
 	}
-
-	// Remove containers
-	successfulDeletedContainerEnclaveIds := map[enclave.EnclaveID]bool{}
-	for enclaveId := range resultSuccessfulEnclaveIds {
-		containers, err := backend.getAllEnclaveContainers(ctx, enclaveId)
-		if err != nil {
-			erroredEnclaveIds[enclaveId] = stacktrace.Propagate(err, "An error occurred getting enclave containers for enclave with ID '%v'", enclaveId)
-			continue
-		}
-
-		removeContainerErrorStrs := []string{}
-		for _, container := range containers {
-			if err := backend.dockerManager.RemoveContainer(ctx, container.GetId()); err != nil {
-				wrappedErrStr := fmt.Sprintf(
-					"An error occurred removing container with ID '%v':\n%v",
-					container.GetId(),
-					err.Error(),
-				)
-				removeContainerErrorStrs = append(removeContainerErrorStrs, wrappedErrStr)
-				continue
-			}
-		}
-		if len(removeContainerErrorStrs) > 0 {
-			errorStr := strings.Join(removeContainerErrorStrs, "\n\n")
-			erroredEnclaveIds[enclaveId] = stacktrace.NewError(
-				"An error occurred removing one or more containers in enclave '%v':\n%v",
-				enclaveId,
-				errorStr,
-			)
-		}
-
-		successfulDeletedContainerEnclaveIds[enclaveId] = true
-	}
-
-	//Remove volumes
-	successfulDeletedVolumesEnclaveIds := map[enclave.EnclaveID]bool{}
-	for enclaveId := range successfulDeletedContainerEnclaveIds {
-		volumes, err := backend.getAllEnclaveVolumes(ctx, enclaveId)
-		if err != nil {
-			erroredEnclaveIds[enclaveId] = stacktrace.Propagate(err, "An error occurred getting enclave volumes for enclave with ID '%v'", enclaveId)
-			continue
-		}
-
-		removeVolumeErrorStrs := []string{}
-		for _, volume := range volumes {
-			volumeName := volume.Name
-			if err := backend.dockerManager.RemoveVolume(ctx, volumeName); err != nil {
-				wrappedErrStr := fmt.Sprintf(
-					"An error occurred removing volume '%v':\n%v",
-					volumeName,
-					err.Error(),
-				)
-				removeVolumeErrorStrs = append(removeVolumeErrorStrs, wrappedErrStr)
-				continue
-			}
-		}
-		if len(removeVolumeErrorStrs) > 0 {
-			errorStr := strings.Join(removeVolumeErrorStrs, "\n\n")
-			erroredEnclaveIds[enclaveId] = stacktrace.NewError(
-				"An error occurred removing one or more volumes in enclave '%v':\n%v",
-				enclaveId,
-				errorStr,
-			)
-		}
-
-		successfulDeletedVolumesEnclaveIds[enclaveId] = true
+	for enclaveId, volumeRemovalErr := range erroredVolumeRemovalEnclaveIds {
+		erroredEnclaveIds[enclaveId] = volumeRemovalErr
 	}
 
 	// Remove the networks
-	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, successfulDeletedVolumesEnclaveIds)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave networks by enclave IDs '%+v'", successfulDeletedVolumesEnclaveIds)
-	}
-
-	successfulDeletedNetworksEnclaveIds := map[enclave.EnclaveID]bool{}
-	for _, network := range networks {
-		networkName := network.GetName()
-		enclaveId := enclave.EnclaveID(networkName)
-		if err := backend.dockerManager.RemoveNetwork(ctx, network.GetId()); err != nil {
-			erroredEnclaveIds[enclaveId] = stacktrace.Propagate(err, "An error occurred removing the network for enclave '%v'", enclaveId)
-			continue
+	networksToDestroy := map[enclave.EnclaveID]string{}
+	for enclaveId := range successfulVolumeRemovalEnclaveIds {
+		networkInfo, found := matchingNetworkInfo[enclaveId]
+		if !found {
+			return nil, nil, stacktrace.NewError("Would have attempted to destroy enclave '%v' that didn't match the filters", enclaveId)
 		}
-		successfulDeletedNetworksEnclaveIds[enclaveId] = true
+		networksToDestroy[enclaveId] = networkInfo.dockerNetwork.GetId()
+	}
+	successfulNetworkRemovalEnclaveIds, erroredNetworkRemovalEnclaveIds, err := destroyEnclaveNetworks(ctx, backend.dockerManager, networksToDestroy)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying the networks for enclaves whose volumes were successfully destroyed: %+v", successfulVolumeRemovalEnclaveIds)
+	}
+	for enclaveId, networkRemovalErr := range erroredNetworkRemovalEnclaveIds {
+		erroredEnclaveIds[enclaveId] = networkRemovalErr
 	}
 
-	successfulEnclaveIds := successfulDeletedNetworksEnclaveIds
-
-	return successfulEnclaveIds, erroredEnclaveIds, nil
+	return successfulNetworkRemovalEnclaveIds, erroredEnclaveIds, nil
 }
 
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func (backend *DockerKurtosisBackend) getEnclaveNetworksByEnclaveIds(ctx context.Context, enclaveIds map[enclave.EnclaveID]bool) ([]*types.Network, error) {
-	enclaveNetworks := []*types.Network{}
-
+func (backend *DockerKurtosisBackend) getMatchingEnclaveNetworkInfo(
+	ctx context.Context,
+	filters *enclave.EnclaveFilters,
+) (
+	// Keyed by network ID
+	map[enclave.EnclaveID]*matchingNetworkInformation,
+	error,
+) {
 	kurtosisNetworkLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		// NOTE: we don't search by enclave ID here because Docker has no way to do disjunctive search
 	}
 
-	appNetworks, err := backend.dockerManager.GetNetworksByLabels(ctx, kurtosisNetworkLabels)
+	allKurtosisNetworks, err := backend.dockerManager.GetNetworksByLabels(ctx, kurtosisNetworkLabels)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kurtosis networks")
 	}
 
-	for _, network := range appNetworks {
-		enclaveId, err := getEnclaveIdFromNetwork(network)
+	// First, filter by enclave IDs
+	matchingKurtosisEnclaveIdsByNetworkId := map[enclave.EnclaveID]*types.Network{}
+	for _, kurtosisNetwork := range allKurtosisNetworks {
+		enclaveId, err := getEnclaveIdFromNetwork(kurtosisNetwork)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting enclave ID from network '%+v'; it should never happens it's a bug in Kurtosis", network)
+			return nil, stacktrace.Propagate(err, "An error occurred getting enclave ID from network '%+v'; this is a bug in Kurtosis", kurtosisNetwork)
 		}
-		numOfEnclaveIds := len(enclaveIds)
-		if _, found := enclaveIds[enclaveId]; found || numOfEnclaveIds == 0 {
-			enclaveNetworks = append(enclaveNetworks, network)
+
+		if filters.IDs != nil && len(filters.IDs) > 0 {
+			if _, found := filters.IDs[enclaveId]; !found {
+				continue
+			}
+		}
+
+		matchingKurtosisEnclaveIdsByNetworkId[enclaveId] = kurtosisNetwork
+	}
+
+	// Next, filter by enclave status
+	result := map[enclave.EnclaveID]*matchingNetworkInformation{}
+	for enclaveId, kurtosisNetwork := range matchingKurtosisEnclaveIdsByNetworkId {
+		status, containers, err := backend.getEnclaveStatusAndContainers(ctx, enclaveId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting enclave status and containers from network for enclave '%v'", enclaveId)
+		}
+
+		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+			if _, found := filters.Statuses[status]; !found {
+				continue
+			}
+		}
+
+		result[enclaveId] = &matchingNetworkInformation{
+			enclaveId:     enclaveId,
+			enclaveStatus: status,
+			dockerNetwork: kurtosisNetwork,
+			containers:    containers,
 		}
 	}
 
-	return enclaveNetworks, nil
-}
-
-func (backend *DockerKurtosisBackend) getEnclaveDataVolumesMatchingEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID) ([]*docker_types.Volume, error) {
-	volumeSearchLabels :=  map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
-		label_key_consts.VolumeTypeLabelKey.GetString(): label_value_consts.EnclaveDataVolumeTypeLabelValue.GetString(),
-	}
-	foundEnclaveDataVolumes, err := backend.dockerManager.GetVolumesByLabels(ctx, volumeSearchLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave data volumes matching labels '%+v'", volumeSearchLabels)
-	}
-	return foundEnclaveDataVolumes, nil
+	return result, nil
 }
 
 func (backend *DockerKurtosisBackend) getEnclaveStatusAndContainers(
@@ -553,8 +524,9 @@ func (backend *DockerKurtosisBackend) getAllEnclaveContainers(
 	return containers, nil
 }
 
-func (backend *DockerKurtosisBackend) getAllEnclaveVolumes(
+func getAllEnclaveVolumes(
 	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
 	enclaveId enclave.EnclaveID,
 ) ([]*docker_types.Volume, error) {
 
@@ -565,20 +537,12 @@ func (backend *DockerKurtosisBackend) getAllEnclaveVolumes(
 		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
 	}
 
-	volumes, err := backend.dockerManager.GetVolumesByLabels(ctx, searchLabels)
+	volumes, err := dockerManager.GetVolumesByLabels(ctx, searchLabels)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the volumes for enclave '%v' by labels '%+v'", enclaveId, searchLabels)
 	}
 
 	return volumes, nil
-}
-
-func isEnclaveStatusInEnclaveFilters(enclaveStatus enclave.EnclaveStatus, filters *enclave.EnclaveFilters) bool {
-	if _, found := filters.Statuses[enclaveStatus]; found {
-		return true
-	}
-
-	return false
 }
 
 func createDumpContainerJob(
@@ -716,4 +680,196 @@ func (backend *DockerKurtosisBackend) waitForContainerExits(
 	}
 
 	return successfulContainers, erroredContainers
+}
+
+func destroyContainersInEnclaves(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	enclaves map[enclave.EnclaveID]*matchingNetworkInformation,
+) (
+	map[enclave.EnclaveID]bool,
+	map[enclave.EnclaveID]error,
+	error,
+){
+	// For all the enclaves to destroy, gather all the containers that should be destroyed
+	enclaveIdsForContainerIdsToRemove := map[string]enclave.EnclaveID{}
+	containerIdsToRemove := map[string]bool{}
+	for enclaveId, networkInfo := range enclaves {
+		for _, container := range networkInfo.containers {
+			containerId := container.GetId()
+			enclaveIdsForContainerIdsToRemove[containerId] = enclaveId
+			containerIdsToRemove[containerId] = true
+		}
+	}
+
+	var removeEnclaveContainerOperation docker_operation_parallelizer.DockerOperation = func(ctx context.Context, dockerManager *docker_manager.DockerManager, dockerObjectId string) error {
+		if err := dockerManager.RemoveContainer(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing enclave container with ID '%v'", dockerObjectId)
+		}
+		return nil
+	}
+
+	_, erroredContainerIds := docker_operation_parallelizer.RunDockerOperationInParallel(
+		ctx,
+		containerIdsToRemove,
+		dockerManager,
+		removeEnclaveContainerOperation,
+	)
+
+	containerRemovalErrorStrsByEnclave := map[enclave.EnclaveID][]string{}
+	for erroredContainerId, removeContainerErr := range erroredContainerIds {
+		containerEnclaveId, found := enclaveIdsForContainerIdsToRemove[erroredContainerId]
+		if !found {
+			return nil, nil, stacktrace.NewError("An error occurred destroying container '%v' in an enclave we didn't request", erroredContainerId)
+		}
+
+		existingEnclaveErrors, found := containerRemovalErrorStrsByEnclave[containerEnclaveId]
+		if !found {
+			existingEnclaveErrors = []string{}
+		}
+		containerRemovalErrorStrsByEnclave[containerEnclaveId] = append(existingEnclaveErrors, removeContainerErr.Error())
+	}
+
+	erroredEnclaveIds := map[enclave.EnclaveID]error{}
+	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
+	for enclaveId := range enclaves {
+		containerRemovalErrorStrs, found := containerRemovalErrorStrsByEnclave[enclaveId]
+		if !found || len(containerRemovalErrorStrs) == 0 {
+			successfulEnclaveIds[enclaveId] = true
+			continue
+		}
+
+		errorStr := strings.Join(containerRemovalErrorStrs, "\n\n")
+		erroredEnclaveIds[enclaveId] = stacktrace.NewError(
+			"One or more errors occurred removing the containers in enclave '%v':\n%v",
+			enclaveId,
+			errorStr,
+		)
+	}
+
+	return successfulEnclaveIds, erroredEnclaveIds, nil
+}
+
+func destroyVolumesInEnclaves(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	enclaves map[enclave.EnclaveID]bool,
+) (
+	map[enclave.EnclaveID]bool,
+	map[enclave.EnclaveID]error,
+	error,
+) {
+	// After we've tried to destroy all the containers from the enclaves, take the successful ones and destroy their volumes
+	enclaveIdsForVolumeIdsToRemove := map[string]enclave.EnclaveID{}
+	volumeIdsToRemove := map[string]bool{}
+	for enclaveId := range enclaves {
+		enclaveVolumeIds, err := getAllEnclaveVolumes(ctx, dockerManager, enclaveId)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the volumes for enclave '%v'", enclaveId)
+		}
+
+		for _, volume := range enclaveVolumeIds {
+			volumeId := volume.Name
+			enclaveIdsForVolumeIdsToRemove[volumeId] = enclaveId
+			volumeIdsToRemove[volumeId] = true
+		}
+	}
+
+	var removeEnclaveVolumeOperation docker_operation_parallelizer.DockerOperation = func(ctx context.Context, dockerManager *docker_manager.DockerManager, dockerObjectId string) error {
+		if err := dockerManager.RemoveVolume(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing enclave volume with ID '%v'", dockerObjectId)
+		}
+		return nil
+	}
+
+	_, erroredVolumeIds := docker_operation_parallelizer.RunDockerOperationInParallel(
+		ctx,
+		volumeIdsToRemove,
+		dockerManager,
+		removeEnclaveVolumeOperation,
+	)
+
+	volumeRemovalErrorStrsByEnclave := map[enclave.EnclaveID][]string{}
+	for erroredVolumeId, removeVolumeErr := range erroredVolumeIds {
+		volumeEnclaveId, found := enclaveIdsForVolumeIdsToRemove[erroredVolumeId]
+		if !found {
+			return nil, nil, stacktrace.NewError("An error occurred removing volume '%v' in an enclave we didn't request", erroredVolumeId)
+		}
+
+		existingEnclaveErrors, found := volumeRemovalErrorStrsByEnclave[volumeEnclaveId]
+		if !found {
+			existingEnclaveErrors = []string{}
+		}
+		volumeRemovalErrorStrsByEnclave[volumeEnclaveId] = append(existingEnclaveErrors, removeVolumeErr.Error())
+	}
+
+	erroredEnclaveIds := map[enclave.EnclaveID]error{}
+	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
+	for enclaveId := range enclaves {
+		containerRemovalErrorStrs, found := volumeRemovalErrorStrsByEnclave[enclaveId]
+		if !found || len(containerRemovalErrorStrs) == 0 {
+			successfulEnclaveIds[enclaveId] = true
+			continue
+		}
+
+		errorStr := strings.Join(containerRemovalErrorStrs, "\n\n")
+		erroredEnclaveIds[enclaveId] = stacktrace.NewError(
+			"One or more errors occurred removing the volumes in enclave '%v':\n%v",
+			enclaveId,
+			errorStr,
+		)
+	}
+
+	return successfulEnclaveIds, erroredEnclaveIds, nil
+}
+
+func destroyEnclaveNetworks(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	enclaveNetworkIds map[enclave.EnclaveID]string,
+) (
+	map[enclave.EnclaveID]bool,
+	map[enclave.EnclaveID]error,
+	error,
+) {
+	networkIdsToRemove := map[string]bool{}
+	enclaveIdsForNetworkIds := map[string]enclave.EnclaveID{}
+	for enclaveId, networkId := range enclaveNetworkIds {
+		networkIdsToRemove[networkId] = true
+		enclaveIdsForNetworkIds[networkId] = enclaveId
+	}
+
+	var removeNetworkOperation docker_operation_parallelizer.DockerOperation = func(ctx context.Context, dockerManager *docker_manager.DockerManager, dockerObjectId string) error {
+		if err := dockerManager.RemoveNetwork(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing enclave network with ID '%v'", dockerObjectId)
+		}
+		return nil
+	}
+
+	successfulNetworkIds, erroredNetworkIds := docker_operation_parallelizer.RunDockerOperationInParallel(
+		ctx,
+		networkIdsToRemove,
+		dockerManager,
+		removeNetworkOperation,
+	)
+
+	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
+	for networkId := range successfulNetworkIds {
+		enclaveId, found := enclaveIdsForNetworkIds[networkId]
+		if !found {
+			return nil, nil, stacktrace.NewError("Docker network '%v' was successfully deleted, but wasn't requested to be deleted", networkId)
+		}
+		successfulEnclaveIds[enclaveId] = true
+	}
+
+	erroredEnclaveIds := map[enclave.EnclaveID]error{}
+	for networkId, networkRemovalErr := range erroredNetworkIds {
+		enclaveId, found := enclaveIdsForNetworkIds[networkId]
+		if !found {
+			return nil, nil, stacktrace.NewError("Docker network '%v' had the following error during deletion, but wasn't requested to be deleted:\n%v", networkId, networkRemovalErr)
+		}
+		erroredEnclaveIds[enclaveId] = networkRemovalErr
+	}
+
+	return successfulEnclaveIds, erroredEnclaveIds, nil
 }

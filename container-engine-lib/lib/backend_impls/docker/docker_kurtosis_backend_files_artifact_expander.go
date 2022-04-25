@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
@@ -19,9 +20,14 @@ const (
 	//  into a Docker volume
 	dockerImage = "alpine:3.12"
 
+	// TODO Remove this when we switch fully to the data volume
 	// Dirpath on the artifact expander container where the enclave data dir (which contains the artifacts)
 	//  will be bind-mounted
-	enclaveDataDirMountpointOnExpanderContainer = "/enclave-data"
+	enclaveDataBindmountDirpathOnExpanderContainer = "/enclave-data"
+
+	// The location where the enclave data volume will be mounted
+	//  on the files artifact expansion container
+	enclaveDataVolumeDirpathOnExpanderContainer = "/kurtosis-data"
 
 	expanderContainerSuccessExitCode = 0
 )
@@ -42,6 +48,11 @@ func (backend *DockerKurtosisBackend) RunFilesArtifactExpander(
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
 
+	enclaveDataVolumeName, err := backend.getEnclaveDataVolumeByEnclaveId(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveId)
+	}
+
 	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
@@ -60,11 +71,12 @@ func (backend *DockerKurtosisBackend) RunFilesArtifactExpander(
 	filesArtifactExpansionVolumeNameStr := string(filesArtifactExpansionVolumeName)
 
 	bindMounts := map[string]string{
-		enclaveDataDirpathOnHostMachine: enclaveDataDirMountpointOnExpanderContainer,
+		enclaveDataDirpathOnHostMachine: enclaveDataBindmountDirpathOnExpanderContainer,
 	}
 
 	volumeMounts := map[string]string{
 		filesArtifactExpansionVolumeNameStr: destVolMntDirpathOnExpander,
+		enclaveDataVolumeName:               enclaveDataVolumeDirpathOnExpanderContainer,
 	}
 
 	containerCmd := getExtractionCommand(filesArtifactFilepathRelativeToEnclaveDatadirRoot, destVolMntDirpathOnExpander)
@@ -116,27 +128,46 @@ func (backend *DockerKurtosisBackend) DestroyFilesArtifactExpanders(
 	map[files_artifact_expander.FilesArtifactExpanderGUID]error,
 	error,
 ) {
-	successfulExpanderGUIDs := map[files_artifact_expander.FilesArtifactExpanderGUID]bool{}
-	erroredExpanderGUIDs  := map[files_artifact_expander.FilesArtifactExpanderGUID]error{}
-
 	matchedExpanders, err := backend.getMatchingFilesArtifactExpanders(ctx, filters)
 	if err != nil {
 		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting files artifact expanders matching filters '%+v'", filters)
 	}
 
-	//TODO execute concurrently to improve perf
-	for containerId, expander := range matchedExpanders {
-		expanderGuid := expander.GetGUID()
-		if err := backend.dockerManager.RemoveContainer(ctx, containerId); err != nil {
-			wrappedErr := stacktrace.Propagate(
-				err,
-				"An error occurred removing container with ID '%v'",
-				containerId,
-			)
-			erroredExpanderGUIDs[expanderGuid] = wrappedErr
-			continue
+	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
+	matchingUncastedExpandersByContainerId := map[string]interface{}{}
+	for containerId, expanderObj := range matchedExpanders {
+		matchingUncastedExpandersByContainerId[containerId] = interface{}(expanderObj)
+	}
+
+	var removeExpanderOperation docker_operation_parallelizer.DockerOperation = func(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		dockerObjectId string,
+	) error {
+		if err := dockerManager.RemoveContainer(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing files artifact expander container with ID '%v'", dockerObjectId)
 		}
-		successfulExpanderGUIDs[expanderGuid] = true
+		return nil
+	}
+
+	successfulExpanderGUIDStrs, erroredExpanderGUIDStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+		ctx,
+		matchingUncastedExpandersByContainerId,
+		backend.dockerManager,
+		extractExpanderGUIDFromExpanderObj,
+		removeExpanderOperation,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing files artifact expander containers matching filters '%+v'", filters)
+	}
+
+	successfulExpanderGUIDs := map[files_artifact_expander.FilesArtifactExpanderGUID]bool{}
+	for expanderGuidStr := range successfulExpanderGUIDStrs {
+		successfulExpanderGUIDs[files_artifact_expander.FilesArtifactExpanderGUID(expanderGuidStr)] = true
+	}
+	erroredExpanderGUIDs := map[files_artifact_expander.FilesArtifactExpanderGUID]error{}
+	for expanderGuidStr, removalErr := range erroredExpanderGUIDStrs {
+		erroredExpanderGUIDs[files_artifact_expander.FilesArtifactExpanderGUID(expanderGuidStr)] = removalErr
 	}
 
 	return successfulExpanderGUIDs, erroredExpanderGUIDs, nil
@@ -239,4 +270,12 @@ func getFilesArtifactExpanderObjectFromContainerInfo(
 	)
 
 	return newObject, nil
+}
+
+func extractExpanderGUIDFromExpanderObj(uncastedObj interface{}) (string, error) {
+	castedObj, ok := uncastedObj.(*files_artifact_expander.FilesArtifactExpander)
+	if !ok {
+		return "", stacktrace.NewError("An error occurred downcasting the files artifact expander object")
+	}
+	return string(castedObj.GetGUID()), nil
 }

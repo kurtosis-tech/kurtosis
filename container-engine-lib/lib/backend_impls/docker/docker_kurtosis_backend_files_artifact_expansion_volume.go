@@ -2,6 +2,8 @@ package docker
 
 import (
 	"context"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -69,30 +71,49 @@ func (backend *DockerKurtosisBackend) DestroyFilesArtifactExpansionVolumes(
 	map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]error,
 	error,
 ) {
-	successfulExpansionVolumeNames := map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool{}
-	erroredExpansionVolumeNames  := map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]error{}
-
 	expansionVolumes, err := backend.getMatchingFileArtifactExpansionVolumes(ctx, filters)
 	if err != nil {
 		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting files artifact expansion volumes matching filters '%+v'", filters)
 	}
 
-	//TODO execute concurrently to improve perf
-	for expansionVolumeName := range expansionVolumes {
-		volumeName := string(expansionVolumeName)
-		if err := backend.dockerManager.RemoveVolume(ctx, volumeName); err != nil {
-			wrappedErr := stacktrace.Propagate(
-				err,
-				"An error occurred removing volume with name '%v'",
-				volumeName,
-			)
-			erroredExpansionVolumeNames[expansionVolumeName] = wrappedErr
-			continue
-		}
-		successfulExpansionVolumeNames[expansionVolumeName] = true
+	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
+	matchingUncastedExpansionVolumesByVolumeId := map[string]interface{}{}
+	for volumeId, expansionVolume := range expansionVolumes {
+		matchingUncastedExpansionVolumesByVolumeId[string(volumeId)] = interface{}(expansionVolume)
 	}
 
-	return successfulExpansionVolumeNames, erroredExpansionVolumeNames, nil
+	var removeExpansionVolume docker_operation_parallelizer.DockerOperation = func(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		dockerObjectId string,
+	) error {
+		if err := dockerManager.RemoveVolume(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing files artifact expansion volume with ID '%v'", dockerObjectId)
+		}
+		return nil
+	}
+
+	successfulExpansionVolumeNameStrs, erroredExpansionVolumeNameStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+		ctx,
+		matchingUncastedExpansionVolumesByVolumeId,
+		backend.dockerManager,
+		extractExpansionVolumeNameFromObj,
+		removeExpansionVolume,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing files artifact expansion volumes matching filters '%+v'", filters)
+	}
+
+	successfulExpansionGUIDs := map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool{}
+	for expansionVolumeNameStr := range successfulExpansionVolumeNameStrs {
+		successfulExpansionGUIDs[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName(expansionVolumeNameStr)] = true
+	}
+	erroredExpansionGUIDs := map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]error{}
+	for expansionVolumeNameStr, removalErr := range erroredExpansionVolumeNameStrs {
+		erroredExpansionGUIDs[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName(expansionVolumeNameStr)] = removalErr
+	}
+
+	return successfulExpansionGUIDs, erroredExpansionGUIDs, nil
 }
 
 // ====================================================================================================
@@ -153,4 +174,12 @@ func getFileArtifactExpansionVolumeFromDockerVolumeInfo(
 	)
 
 	return newObject, nil
+}
+
+func extractExpansionVolumeNameFromObj(uncastedObj interface{}) (string, error) {
+	castedObj, ok := uncastedObj.(*files_artifact_expansion_volume.FilesArtifactExpansionVolume)
+	if !ok {
+		return "", stacktrace.NewError("An error occurred downcasting the files artifact expansion volume object")
+	}
+	return string(castedObj.GetName()), nil
 }
