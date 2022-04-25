@@ -178,6 +178,34 @@ jobs:
       - run: "${KURTOSIS_BINPATH} clean -a"
       - run: "${KURTOSIS_BINPATH} engine stop"
 
+      # Ensure everything got cleaned up successfully
+      - run:
+          name: "Verify only the engine container remains after the clean"
+          command: |
+            if ! [ "$(docker container ls -a | tail -n+2 | wc -l)" -eq 1 ]; then
+              docker container ls -a
+              false
+            fi
+      - run: 
+          name: "Verify Kurtosis cleaned up all its volumes"
+          command: |
+            if ! [ $(docker volume ls | tail -n+2 | wc -l) -eq 0 ]; then
+              docker volume ls
+              false
+            fi
+      - run: 
+          name: "Verify Kurtosis cleaned up all its networks"
+          command: |
+            builtin_network_ids=(
+              "$(docker network ls --quiet --filter "name=host")"
+              "$(docker network ls --quiet --filter "name=bridge")"
+              "$(docker network ls --quiet --filter "name=none")"
+            )
+            if ! [ $(docker network ls | grep -v -f <(printf "%s\n" "${builtin_network_ids[@]}") | tail -n+2 | wc -l) -eq 0 ]; then
+              docker network ls
+              false
+            fi
+
   test_config_init_edge_cases:
     executor: ubuntu_vm
     steps:
