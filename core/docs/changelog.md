@@ -1,4 +1,6 @@
 # TBD
+
+# 1.43.2
 ### Fixes
 * Fixed a bug where modules were getting enclave data dir & volume mounted in the same place
 
