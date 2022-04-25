@@ -707,3 +707,39 @@ export namespace UploadFilesArtifactResponse {
   }
 }
 
+export class DownloadFilesArtifactArgs extends jspb.Message {
+  getUrl(): string;
+  setUrl(value: string): DownloadFilesArtifactArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): DownloadFilesArtifactArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: DownloadFilesArtifactArgs): DownloadFilesArtifactArgs.AsObject;
+  static serializeBinaryToWriter(message: DownloadFilesArtifactArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): DownloadFilesArtifactArgs;
+  static deserializeBinaryFromReader(message: DownloadFilesArtifactArgs, reader: jspb.BinaryReader): DownloadFilesArtifactArgs;
+}
+
+export namespace DownloadFilesArtifactArgs {
+  export type AsObject = {
+    url: string,
+  }
+}
+
+export class DownloadFilesArtifactResponse extends jspb.Message {
+  getUuid(): string;
+  setUuid(value: string): DownloadFilesArtifactResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): DownloadFilesArtifactResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: DownloadFilesArtifactResponse): DownloadFilesArtifactResponse.AsObject;
+  static serializeBinaryToWriter(message: DownloadFilesArtifactResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): DownloadFilesArtifactResponse;
+  static deserializeBinaryFromReader(message: DownloadFilesArtifactResponse, reader: jspb.BinaryReader): DownloadFilesArtifactResponse;
+}
+
+export namespace DownloadFilesArtifactResponse {
+  export type AsObject = {
+    uuid: string,
+  }
+}
+
