@@ -554,7 +554,7 @@ func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc
 //This function should be wrapped in a lambda that passes filepath.Walk variables directly to this function.
 func walkPathToBeArchived(filePath string, fileInfo os.FileInfo, err error, archiveWriter *tar.Writer, pathToArchive string) error {
 	if err != nil {
-		return stacktrace.Propagate(err, "There was an error while taring file at '%s'.", filePath)
+		return stacktrace.Propagate(err, "There was an error while taring or accessing file at '%s'.", filePath)
 	}
 
 	if !fileInfo.Mode().IsRegular() {
