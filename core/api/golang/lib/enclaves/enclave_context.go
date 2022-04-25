@@ -28,6 +28,13 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"math"
 	"path/filepath"
+	"os"
+	"compress/gzip"
+	"archive/tar"
+	"io"
+	"strings"
+	"path"
+	"io/ioutil"
 )
 
 type EnclaveID string
@@ -41,6 +48,7 @@ const (
 
 	// The path on the user service container where the enclave data dir will be bind-mounted
 	serviceEnclaveDataDirMountpoint = "/kurtosis-enclave-data"
+	archiveExtension = "tgz"
 )
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -452,6 +460,41 @@ func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error
 	return moduleIDs, nil
 }
 
+func (enclaveCtx *EnclaveContext) UploadFilesArtifact(pathToUpload string) (string, error) {
+	pathToUpload = strings.TrimRight(pathToUpload, string(filepath.Separator))
+	if _, err := os.Stat(pathToUpload); err != nil {
+		return "", stacktrace.Propagate(err, "There was an error checking %s.", pathToUpload)
+	}
+
+	_, target := path.Split(pathToUpload) //Get target folder or file.
+	extension := path.Ext(target) //Get the extension if there is any.
+	target = strings.Replace(target, extension, "", -1) //Replace the extension with nothing. (Remove it.)
+	tarName := strings.Join([]string{target, archiveExtension}, ".")
+	tempDir, _ := ioutil.TempDir("","")
+	tarFile, err := os.Create(filepath.Join(tempDir, tarName))
+	if err != nil {
+		return "", stacktrace.Propagate(err, "There was an error creating a temporary archive file at %s.", tarFile)
+	}
+
+	gzipWriter := gzip.NewWriter(tarFile)
+	defer gzipWriter.Close()
+	tarWriter := tar.NewWriter(gzipWriter)
+	defer tarWriter.Close()
+	err = filepath.Walk(pathToUpload, func(filePath string, fileInfo os.FileInfo, err error) error {
+		return archiveWalker(filePath, fileInfo, err, tarWriter, pathToUpload)
+	})
+	if err != nil {
+		return "", stacktrace.Propagate(err, "There was an error compressing your file(s).")
+	}
+
+	//This is really dumb but I'll have to see a better way to do it later.
+	//It is essentially writing to disk, then reading off of the disk again, then converting to bytes.
+	content, err := ioutil.ReadFile((filepath.Join(tempDir, tarName)))
+	args := kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs{Data: content}
+	enclaveCtx.client.UploadFilesArtifact(context.Background(), &args)
+	return "", nil;
+}
+
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
@@ -488,4 +531,38 @@ func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc
 		)
 	}
 	return result, nil
+}
+
+func archiveWalker(filePath string, fileInfo os.FileInfo, err error, archiveWriter *tar.Writer, pathToArchive string) error {
+	if err != nil {
+		return stacktrace.Propagate(err, "There was an error while taring file at %s.", filePath)
+	}
+
+	if !fileInfo.Mode().IsRegular() {
+		return nil
+	}
+
+	header, err := tar.FileInfoHeader(fileInfo, fileInfo.Name())
+	if err != nil {
+		return stacktrace.Propagate(err, "There was a problem creating a tar header for %s.", filePath)
+	}
+
+	fileName := strings.Replace(filePath, pathToArchive, "", -1)
+	header.Name = strings.TrimPrefix(fileName, string(filepath.Separator))
+
+	if err := archiveWriter.WriteHeader(header); err != nil {
+		return stacktrace.Propagate(err, "There was a problem writing headers while archiving %s.", filePath)
+	}
+
+	sourceToArchive, err := os.Open(filePath)
+	if err != nil {
+		return stacktrace.Propagate(err, "There was a problem reading from %s.", filePath)
+	}
+
+	if _, err := io.Copy(archiveWriter, sourceToArchive); err != nil {
+		return stacktrace.Propagate(err, "There was a problem copying %s to the tar.", filePath)
+	}
+	sourceToArchive.Close()
+
+	return nil
 }
