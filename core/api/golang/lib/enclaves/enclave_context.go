@@ -485,9 +485,18 @@ func (enclaveCtx *EnclaveContext) UploadFilesArtifact(pathToUpload string) (stri
 	}
 
 	content, err := ioutil.ReadFile(tarFile.Name())
+	if err != nil{
+		return "", stacktrace.Propagate(err,
+					"There was an error reading from the the temporary tar file '%s' recently compressed for upload.",
+			       	tarFile.Name())
+	}
 	args := kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs{Data: content}
-	enclaveCtx.client.UploadFilesArtifact(context.Background(), &args)
-	return "", nil;
+	response, err := enclaveCtx.client.UploadFilesArtifact(context.Background(), &args)
+	if err != nil {
+		return "", stacktrace.Propagate(err,
+			  "The enclave context method 'UploadFilesArtifact' has encountered an error uploading data.")
+	}
+	return response.Uuid, nil;
 }
 
 // ====================================================================================================
@@ -529,7 +538,7 @@ func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc
 }
 
 //This is a function meant to be used within a filepath.Walk function. filepath.Walk takes two arguments, the first is a
-//target folder to walk. The second argument is a function that takes 3 arguments:
+//target folder to walk, the second argument is a function that takes 3 arguments:
 //filePath - A directory or file path that the filepath.Walk function has reached, supplied by filepath.Walk
 //fileInfo - A FileInfo object of the file or directory at filePath supplied by filepath.Walk
 //err	   - An error from previous walking iterations.
