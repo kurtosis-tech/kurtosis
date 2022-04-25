@@ -14,8 +14,8 @@ require (
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220420203650-79d3f4a8977a
 	github.com/kurtosis-tech/kurtosis-cli/commons v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220420205219-c9731c525093
-	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220420205639-b1dc17163bb7
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220424213033-6143600dbfab // indirect
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220421201344-f65c2f5cbddb // indirect
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220420205629-93ad7bd4cfd7
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220225193403-74da3f3b98ce
@@ -27,6 +27,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
+	golang.org/x/net v0.0.0-20210913180222-943fd674d43e // indirect
 	google.golang.org/grpc v1.41.0
 	google.golang.org/protobuf v1.27.1
 )

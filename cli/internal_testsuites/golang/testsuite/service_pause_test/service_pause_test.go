@@ -2,14 +2,16 @@ package service_pause_test
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 const (
-	testName                  = "pauseUnpause"
+	testName                  = "pause-unpause"
 	isPartitioningEnabled     = false
 	pauseUnpauseTestImageName = "alpine:3.12.4"
 	testServiceId             = "test"
@@ -17,7 +19,7 @@ const (
 
 func TestPauseUnpause(t *testing.T) {
 	ctx := context.Background()
-
+	fmt.Printf("Running pause/unpause test...")
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
 	enclaveCtx, stopEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
@@ -26,12 +28,14 @@ func TestPauseUnpause(t *testing.T) {
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	containerConfigSupplier := getContainerConfigSupplier()
 
-	_, err = enclaveCtx.AddService(testServiceId, containerConfigSupplier)
+	serviceCtx, err := enclaveCtx.AddService(testServiceId, containerConfigSupplier)
 	require.NoError(t, err, "An error occurred adding the file server service")
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	// pause/unpause using servicectx
-	// serviceCtx.pause(..)
+	serviceCtx.PauseService()
+	time.Sleep(5 * time.Second)
+	serviceCtx.UnpauseService()
 }
 
 // ====================================================================================================
