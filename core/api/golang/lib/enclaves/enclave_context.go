@@ -492,6 +492,12 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (string, erro
 					"There was an error reading from the the temporary tar file '%s' recently compressed for upload.",
 			       	tarFile.Name())
 	}
+	if len(content) >= 3999000 { //3.999 Mb. 1kb wiggle room. 1kb being about the size of a simple 2 paragraph readme.
+		return "", stacktrace.Propagate(err,
+			"The files you are trying to upload, which are now compressed, exceed or reach 4mb, a limit imposed by gRPC. " +
+			"Please reduce the total file size and ensure it can compress to a size below 4mb.")
+	}
+
 	args := kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs{Data: content}
 	response, err := enclaveCtx.client.UploadFilesArtifact(context.Background(), &args)
 	if err != nil {
