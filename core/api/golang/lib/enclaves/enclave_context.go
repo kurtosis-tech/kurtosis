@@ -33,7 +33,6 @@ import (
 	"archive/tar"
 	"io"
 	"strings"
-	"path"
 	"io/ioutil"
 )
 
@@ -466,21 +465,18 @@ func (enclaveCtx *EnclaveContext) UploadFilesArtifact(pathToUpload string) (stri
 		return "", stacktrace.Propagate(err, "There was a path error for '%s' during files artifact uploading.", pathToUpload)
 	}
 
-	_, target := path.Split(pathToUpload) //Get target folder or file.
-	extension := path.Ext(target) //Get the extension if there is any.
-	target = strings.Replace(target, extension, "", -1) //Replace the extension with nothing. (Remove it.)
-	tarName := strings.Join([]string{target, archiveExtension}, ".")
-	tempDir, _ := ioutil.TempDir("","")
-	absoluteTarPath := filepath.Join(tempDir, tarName)
-	tarFile, err := os.Create(absoluteTarPath)
+	tarFile, err := ioutil.TempFile("","")
 	if err != nil {
-		return "", stacktrace.Propagate(err, "There was an error creating a temporary archive file at '%s' during files artifact uploading.", absoluteTarPath)
+		return "", stacktrace.Propagate(err,
+			 "There was an error creating a temporary archive file at '%s' during files artifact uploading for '%s'.",
+			 tarFile.Name(), pathToUpload)
 	}
 
 	gzipWriter := gzip.NewWriter(tarFile)
 	defer gzipWriter.Close()
 	tarWriter := tar.NewWriter(gzipWriter)
 	defer tarWriter.Close()
+
 	err = filepath.Walk(pathToUpload, func(filePath string, fileInfo os.FileInfo, err error) error {
 		return walkPathToBeArchived(filePath, fileInfo, err, tarWriter, pathToUpload)
 	})
@@ -488,7 +484,7 @@ func (enclaveCtx *EnclaveContext) UploadFilesArtifact(pathToUpload string) (stri
 		return "", stacktrace.Propagate(err, "There was an error compressing your files artifact for upload.")
 	}
 
-	content, err := ioutil.ReadFile((filepath.Join(tempDir, tarName)))
+	content, err := ioutil.ReadFile(tarFile.Name())
 	args := kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs{Data: content}
 	enclaveCtx.client.UploadFilesArtifact(context.Background(), &args)
 	return "", nil;
