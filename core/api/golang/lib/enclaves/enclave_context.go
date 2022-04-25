@@ -566,7 +566,7 @@ func walkPathToBeArchived(filePath string, fileInfo os.FileInfo, err error, arch
 		return stacktrace.Propagate(err, "There was a problem creating a tar header for '%s'.", filePath)
 	}
 
-	fileName := strings.Replace(filePath, pathToArchive, "", -1)
+	fileName := strings.TrimLeft(filePath, pathToArchive)
 	header.Name = strings.TrimPrefix(fileName, string(filepath.Separator))
 
 	if err := archiveWriter.WriteHeader(header); err != nil {
