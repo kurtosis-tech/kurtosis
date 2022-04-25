@@ -277,10 +277,23 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveIdStr 
 	defer manager.mutex.Unlock()
 
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
-	if err := manager.destroyEnclaveWithoutMutex(ctx, enclaveId); err != nil {
-		return stacktrace.Propagate(err, "An error occurred destroying the enclave without the mutex")
+	enclaveDestroyFilter := &enclave.EnclaveFilters{
+		IDs:      map[enclave.EnclaveID]bool{
+			enclaveId: true,
+		},
 	}
-	return nil
+	successfullyDestroyedEnclaves, erroredEnclaves, err := manager.destroyEnclavesWithoutMutex(ctx, enclaveDestroyFilter)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the enclave")
+	}
+	if _, found := successfullyDestroyedEnclaves[enclaveId]; found {
+		return nil
+	}
+	destructionErr, found := erroredEnclaves[enclaveId]
+	if !found {
+		return stacktrace.NewError("The requested enclave ID '%v' wasn't found in the successfully-destroyed enclaves map, nor in the errors map; this is a bug in Kurtosis!", enclaveId)
+	}
+	return destructionErr
 }
 
 func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (map[string]bool, error) {
@@ -470,41 +483,38 @@ func (manager *EnclaveManager) getEnclaveDataDirpath(enclaveId enclave.EnclaveID
 }
 
 func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll bool) ([]string, []error, error) {
-	enclaves, err := manager.getEnclavesWithoutMutex(ctx)
+	enclaveStatusFilters := map[enclave.EnclaveStatus]bool{
+		enclave.EnclaveStatus_Stopped: true,
+	}
+	if shouldCleanAll {
+		enclaveStatusFilters[enclave.EnclaveStatus_Running] = true
+	}
+
+	destroyEnclaveFilters := &enclave.EnclaveFilters{
+		Statuses: enclaveStatusFilters,
+	}
+	successfullyDestroyedEnclaves, erroredEnclaves, err := manager.destroyEnclavesWithoutMutex(ctx, destroyEnclaveFilters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclaves to determine which need to be cleaned up")
-	}
-
-	enclaveIdsToDestroy := []enclave.EnclaveID{}
-	enclaveIdsToNotDestroy := []enclave.EnclaveID{}
-	for enclaveId, enclaveInfo := range enclaves {
-		enclaveStatus := enclaveInfo.ContainersStatus
-		if shouldCleanAll || enclaveStatus == kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_STOPPED {
-			enclaveIdsToDestroy = append(enclaveIdsToDestroy, enclaveId)
-		} else {
-			enclaveIdsToNotDestroy = append(enclaveIdsToNotDestroy, enclaveId)
-		}
-	}
-
-	successfullyDestroyedEnclaveIds := []string{}
-	enclaveDestructionErrors := []error{}
-	for _, enclaveId := range enclaveIdsToDestroy {
-		if err := manager.destroyEnclaveWithoutMutex(ctx, enclaveId); err != nil {
-			wrappedErr := stacktrace.Propagate(err, "An error occurred removing enclave '%v'", enclaveId)
-			enclaveDestructionErrors = append(enclaveDestructionErrors, wrappedErr)
-			continue
-		}
-		successfullyDestroyedEnclaveIds = append(successfullyDestroyedEnclaveIds, string(enclaveId))
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying enclaves during cleaning")
 	}
 
 	// TODO: use kurtosis_backend to clean up enclave data on disk
 	//remove dangling folders if any
-	err = manager.deleteDanglingDirectories(enclaveIdsToNotDestroy)
-	if err != nil {
+	if err = manager.deleteDanglingDirectories(ctx); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to delete dangling directories")
 	}
 
-	return successfullyDestroyedEnclaveIds, enclaveDestructionErrors, nil
+	successfullyDestroyedEnclaveIdStrs := []string{}
+	for enclaveId := range successfullyDestroyedEnclaves {
+		successfullyDestroyedEnclaveIdStrs = append(successfullyDestroyedEnclaveIdStrs, string(enclaveId))
+	}
+
+	enclaveDestructionErrors := []error{}
+	for _, destructionError := range erroredEnclaves {
+		enclaveDestructionErrors = append(enclaveDestructionErrors, destructionError)
+	}
+
+	return successfullyDestroyedEnclaveIdStrs, enclaveDestructionErrors, nil
 }
 
 func (manager *EnclaveManager) getEnclavesWithoutMutex(
@@ -528,71 +538,50 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 }
 
 // Destroys an enclave, deleting all objects associated with it in the container engine (containers, volumes, networks, etc.)
-func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, enclaveId enclave.EnclaveID) error {
-	if err := manager.stopEnclaveWithoutMutex(ctx, enclaveId); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred stopping enclave with ID '%v', which is a prerequisite for destroying the enclave",
-			enclaveId,
-		)
-	}
-
-	_, enclaveDestroyErrs, err := manager.kurtosisBackend.DestroyEnclaves(ctx, getEnclaveByEnclaveIdFilter(enclaveId))
+func (manager *EnclaveManager) destroyEnclavesWithoutMutex(ctx context.Context, filters *enclave.EnclaveFilters) (
+	map[enclave.EnclaveID]bool,
+	map[enclave.EnclaveID]error,
+	error,
+) {
+	successfulEnclaveIds, enclaveDestroyErrs, err := manager.kurtosisBackend.DestroyEnclaves(ctx, filters)
 	if err != nil {
-		return stacktrace.Propagate(err, "Attempted to destroy enclave '%v' but the backend threw an error", enclaveId)
-	}
-	// Handle any err thrown by the backend
-	enclaveDestroyErrStrings := []string{}
-	for enclaveId, err := range enclaveDestroyErrs {
-		if err != nil {
-			wrappedErr := stacktrace.Propagate(
-				err,
-				"An error occurred destroying Enclave `%v'",
-				enclaveId,
-			)
-			enclaveDestroyErrStrings = append(enclaveDestroyErrStrings, wrappedErr.Error())
-		}
-	}
-	if len(enclaveDestroyErrs) > 0 {
-		return stacktrace.NewError(
-			"One or more errors occurred destroying the enclave(s):\n%v",
-			strings.Join(
-				enclaveDestroyErrStrings,
-				"\n\n",
-			))
+		return nil, nil, stacktrace.Propagate(err, "The backend threw an error destroying enclaves using filters: %+v", filters)
 	}
 
-	// Next, remove the enclave data dir (if it exists)
-	// TODO Replace with KurtosisBackend call
-	_, enclaveDataDirpathOnEngineContainer := manager.getEnclaveDataDirpath(enclaveId)
-	if _, statErr := os.Stat(enclaveDataDirpathOnEngineContainer); !os.IsNotExist(statErr) {
-		if removeErr := os.RemoveAll(enclaveDataDirpathOnEngineContainer); removeErr != nil {
-			return stacktrace.Propagate(removeErr, "An error occurred removing enclave data dir '%v' on engine container", enclaveDataDirpathOnEngineContainer)
+	// TODO Remove this when the enclave data lives in a volume! As it currently stands, it's possible to delete an enclave
+	//  WITHOUT deleting the enclave data directory!
+	for enclaveId := range successfulEnclaveIds {
+		// Next, remove the enclave data dir (if it exists)
+		_, enclaveDataDirpathOnEngineContainer := manager.getEnclaveDataDirpath(enclaveId)
+		if _, statErr := os.Stat(enclaveDataDirpathOnEngineContainer); !os.IsNotExist(statErr) {
+			if removeErr := os.RemoveAll(enclaveDataDirpathOnEngineContainer); removeErr != nil {
+				return nil, nil, stacktrace.Propagate(removeErr, "An error occurred removing enclave data dir '%v' on engine container", enclaveDataDirpathOnEngineContainer)
+			}
 		}
 	}
 
+	return successfulEnclaveIds, enclaveDestroyErrs, nil
 
-
-	return nil
 }
 
+// TODO Get rid of this when enclave data volumes are a thing
 // Gets rid of dangling folders
-func (manager *EnclaveManager) deleteDanglingDirectories(enclaveIdsToNotDestroy []enclave.EnclaveID) error {
+func (manager *EnclaveManager) deleteDanglingDirectories(ctx context.Context) error {
+	allEnclaves, err := manager.kurtosisBackend.GetEnclaves(ctx, &enclave.EnclaveFilters{})
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the currently-active enclaves")
+	}
+
 	_, allEnclavesDirpathOnEngineContainer := manager.getAllEnclavesDirpaths()
 	fileInfos, err := ioutil.ReadDir(allEnclavesDirpathOnEngineContainer)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while reading the directory '%v' ", allEnclavesDirpathOnEngineContainer)
 	}
 
-	enclaves := map[enclave.EnclaveID]bool{}
-	for _, enclaveId := range enclaveIdsToNotDestroy {
-		enclaves[enclaveId] = true
-	}
-
 	for _, fileInfo := range fileInfos {
 		enclaveIdFromFileInfoName := enclave.EnclaveID(fileInfo.Name())
-		_, ok := enclaves[enclaveIdFromFileInfoName]
-		if fileInfo.IsDir() && !ok {
+		_, found := allEnclaves[enclaveIdFromFileInfoName]
+		if fileInfo.IsDir() && !found {
 			folderPath := path.Join(allEnclavesDirpathOnEngineContainer, fileInfo.Name())
 			if removeErr := os.RemoveAll(folderPath); removeErr != nil {
 				return stacktrace.Propagate(removeErr, "An error occurred removing the data dir '%v' on engine container", folderPath)
