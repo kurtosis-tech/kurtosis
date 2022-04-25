@@ -1,5 +1,12 @@
 # TBD
 
+# 0.15.3
+### Features
+* Added `KurtosisBackend.CopyFromUserService` in Docker implementation
+
+### Fixes
+* Fixed a bug where module containers were getting duplicate mountpoints for enclave data volume & bindmounted dirpath
+
 # 0.15.2
 ### Fixes
 * Fix `DockerKurtosisBackend.getEnclaveDataVolumeByEnclaveId` helper method that was accidentally broken
@@ -7,7 +14,7 @@
 # 0.15.1
 ### Features
 * The enclave data volume gets mounted on all services
-* `DockerKurtosisBackend.CreateEnclave` also creates an enclave data volume
+* Updated `DockerKurtosisBackend.CreateEnclave`, now also creates an enclave data volume
 * Parallelized several operations to improve perf:
     * `DockerKurtosisBackend.StopEnclaves`
     * `DockerKurtosisBackend.DestroyEnclaves`
@@ -21,7 +28,6 @@
     * `DockerKurtosisBackend.DestroyNetworkingSidecars`
     * `DockerKurtosisBackend.StopUserServices`
     * `DockerKurtosisBackend.DestroyUserServices`
-
 
 # 0.15.0
 ### Fixes

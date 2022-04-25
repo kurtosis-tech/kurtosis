@@ -291,6 +291,17 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
+	//Copy content (it can be a file or entire folder) from user service source path and returns a ReadCloser object
+	CopyFromUserService(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		serviceGuid service.ServiceGUID,
+		srcPath string,
+	)(
+		resultReadCloser io.ReadCloser,
+		resultErr error,
+	)
+
 	// Stop user services using the given filters,
 	StopUserServices(
 		ctx context.Context,
