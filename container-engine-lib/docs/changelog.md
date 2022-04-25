@@ -1,6 +1,9 @@
 # TBD
 ### Features
 * Added `KurtosisBackend.CopyFromUserService` in Docker implementation
+* 
+### Fixes
+* Fix `DockerKurtosisBackend.getEnclaveDataVolumeByEnclaveId` helper method that was accidentally broken
 
 # 0.15.1
 ### Features
