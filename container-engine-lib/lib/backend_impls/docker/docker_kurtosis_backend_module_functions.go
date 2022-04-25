@@ -27,7 +27,7 @@ const (
 	// TODO Remove when we switch fully to the enclave data volume
 	// The location where the enclave data volume will be mounted
 	//  on the module container
-	enclaveDataBindmountDirpathOnModuleContainer = "/kurtosis-data"
+	enclaveDataBindmountDirpathOnModuleContainer = "/kurtosis-enclave-data"
 
 	// The location where the enclave data volume will be mounted
 	//  on the module container

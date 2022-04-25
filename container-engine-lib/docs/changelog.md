@@ -2,6 +2,9 @@
 ### Features
 * Added `KurtosisBackend.CopyFromUserService` in Docker implementation
 
+### Fixes
+* Fixed a bug where module containers were getting duplicate mountpoints for enclave data volume & bindmounted dirpath
+
 # 0.15.2
 ### Fixes
 * Fix `DockerKurtosisBackend.getEnclaveDataVolumeByEnclaveId` helper method that was accidentally broken
