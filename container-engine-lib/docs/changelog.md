@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fix `DockerKurtosisBackend.getEnclaveDataVolumeByEnclaveId` helper method that was accidentally broken
 
 # 0.15.1
 ### Features
