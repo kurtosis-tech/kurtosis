@@ -471,7 +471,7 @@ func (enclaveCtx *EnclaveContext) UploadFilesArtifact(pathToUpload string) (stri
 			 "There was an error creating a temporary archive file at '%s' during files artifact uploading for '%s'.",
 			 tarFile.Name(), pathToUpload)
 	}
-
+	defer tarFile.Close()
 	gzipWriter := gzip.NewWriter(tarFile)
 	defer gzipWriter.Close()
 	tarWriter := tar.NewWriter(gzipWriter)
