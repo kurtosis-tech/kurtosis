@@ -1,5 +1,4 @@
 package docker
-
 import (
 	"bytes"
 	"context"
@@ -11,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_network_allocator"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
@@ -47,6 +47,7 @@ const (
 	dockerContainerPortNumUintBase = 10
 	dockerContainerPortNumUintBits = 16
 )
+
 
 // This maps a Docker container's status to a binary "is the container considered running?" determiner
 // Its completeness is enforced via unit test
@@ -324,38 +325,14 @@ func getEnclaveIdFromNetwork(network *types.Network) (enclave.EnclaveID, error) 
 	return enclaveId, nil
 }
 
-func (backend *DockerKurtosisBackend) killContainers(
-	ctx context.Context,
-	containerIdsSet map[string]bool,
-) (
-	successfulContainers map[string]bool,
-	erroredContainers map[string]error,
-) {
-	killedContainers := map[string]bool{}
-	failedToKillContainers := map[string]error{}
-	// TODO Parallelize for perf
-	for containerId := range containerIdsSet {
-		if err := backend.dockerManager.KillContainer(ctx, containerId); err != nil {
-			containerError := stacktrace.Propagate(
-				err,
-				"An error occurred killing container with ID '%v'",
-				containerId,
-			)
-			failedToKillContainers[containerId] = containerError
-			continue
-		}
-		killedContainers[containerId] = true
-	}
-
-	return killedContainers, failedToKillContainers
-}
 
 func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID) (*types.Network, error) {
-	enclaveIDs := map[enclave.EnclaveID]bool{
-		enclaveId: true,
+	networkSearchLabels := map[string]string{
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
 	}
 
-	enclaveNetworksFound, err := backend.getEnclaveNetworksByEnclaveIds(ctx, enclaveIDs)
+	enclaveNetworksFound, err := backend.dockerManager.GetNetworksByLabels(ctx, networkSearchLabels)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting Docker networks by enclave ID '%v'", enclaveId)
 	}

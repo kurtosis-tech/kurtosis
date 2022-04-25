@@ -5,6 +5,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
@@ -243,30 +244,41 @@ func (backend *DockerKurtosisBackend) StopAPIContainers(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API containers matching filters '%+v'", filters)
 	}
 
-	containerIdsToKill := map[string]bool{}
-	for containerId := range matchingApiContainersByContainerId {
-		containerIdsToKill[containerId] = true
+	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
+	matchingUncastedApiContainersByContainerId := map[string]interface{}{}
+	for containerId, apiContainerObj := range matchingApiContainersByContainerId {
+		matchingUncastedApiContainersByContainerId[containerId] = interface{}(apiContainerObj)
 	}
 
-	successfulContainerIds, erroredContainerIds := backend.killContainers(ctx, containerIdsToKill)
+	var killApiContainerOperation docker_operation_parallelizer.DockerOperation = func(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		dockerObjectId string,
+	) error {
+		if err := dockerManager.KillContainer(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred killing API container with ID '%v'", dockerObjectId)
+		}
+		return nil
+	}
+
+	successfulEnclaveIdStrs, erroredEnclaveIdStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+		ctx,
+		matchingUncastedApiContainersByContainerId,
+		backend.dockerManager,
+		extractEnclaveIdFromUncastedApiContainerObj,
+		killApiContainerOperation,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred killing API containers matching filters '%+v'", filters)
+	}
 
 	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
-	for containerId := range successfulContainerIds {
-		apiContainerObj, found := matchingApiContainersByContainerId[containerId]
-		if !found {
-			return nil, nil, stacktrace.NewError("Successfully killed container with ID '%v' that wasn't requested; this is a bug in Kurtosis!", containerId)
-		}
-		successfulEnclaveIds[apiContainerObj.GetEnclaveID()] = true
+	for enclaveIdStr := range successfulEnclaveIdStrs {
+		successfulEnclaveIds[enclave.EnclaveID(enclaveIdStr)] = true
 	}
-
 	erroredEnclaveIds := map[enclave.EnclaveID]error{}
-	for containerId := range erroredContainerIds {
-		apiContainerObj, found := matchingApiContainersByContainerId[containerId]
-		if !found {
-			return nil, nil, stacktrace.NewError("An error occurred killing container with ID '%v' that wasn't requested; this is a bug in Kurtosis!", containerId)
-		}
-		wrappedErr := stacktrace.Propagate(err, "An error occurred killing API container in enclave '%v' with container ID '%v'", apiContainerObj.GetEnclaveID(), containerId)
-		erroredEnclaveIds[apiContainerObj.GetEnclaveID()] = wrappedErr
+	for enclaveIdStr, killErr := range erroredEnclaveIdStrs {
+		erroredEnclaveIds[enclave.EnclaveID(enclaveIdStr)] = killErr
 	}
 
 	return successfulEnclaveIds, erroredEnclaveIds, nil
@@ -278,23 +290,44 @@ func (backend *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, 
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API containers matching the following filters: %+v", filters)
 	}
 
-	successIds := map[enclave.EnclaveID]bool{}
-	errorIds := map[enclave.EnclaveID]error{}
-	for containerId, engineObj := range matchingApiContainersByContainerId {
-		enclaveId := engineObj.GetEnclaveID()
-		if err := backend.dockerManager.RemoveContainer(ctx, containerId); err != nil {
-			wrappedErr := stacktrace.Propagate(
-				err,
-				"An error occurred removing API container for enclave '%v' with container ID '%v'",
-				enclaveId,
-				containerId,
-			)
-			errorIds[enclaveId] = wrappedErr
-		} else {
-			successIds[enclaveId] = true
-		}
+	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
+	matchingUncastedApiContainersByContainerId := map[string]interface{}{}
+	for containerId, apiContainerObj := range matchingApiContainersByContainerId {
+		matchingUncastedApiContainersByContainerId[containerId] = interface{}(apiContainerObj)
 	}
-	return successIds, errorIds, nil
+
+	var removeApiContainerOperation docker_operation_parallelizer.DockerOperation = func(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		dockerObjectId string,
+	) error {
+		if err := dockerManager.RemoveContainer(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing API container with ID '%v'", dockerObjectId)
+		}
+		return nil
+	}
+
+	successfulEnclaveIdStrs, erroredEnclaveIdStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+		ctx,
+		matchingUncastedApiContainersByContainerId,
+		backend.dockerManager,
+		extractEnclaveIdFromUncastedApiContainerObj,
+		removeApiContainerOperation,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing API containers matching filters '%+v'", filters)
+	}
+
+	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
+	for enclaveIdStr := range successfulEnclaveIdStrs {
+		successfulEnclaveIds[enclave.EnclaveID(enclaveIdStr)] = true
+	}
+	erroredEnclaveIds := map[enclave.EnclaveID]error{}
+	for enclaveIdStr, killErr := range erroredEnclaveIdStrs {
+		erroredEnclaveIds[enclave.EnclaveID(enclaveIdStr)] = killErr
+	}
+
+	return successfulEnclaveIds, erroredEnclaveIds, nil
 }
 
 // ====================================================================================================
@@ -458,4 +491,12 @@ func getPrivateApiContainerPorts(containerLabels map[string]string) (
 	}
 
 	return grpcPortSpec, grpcProxyPortSpec, nil
+}
+
+func extractEnclaveIdFromUncastedApiContainerObj(uncastedApiContainerObj interface{}) (string, error) {
+	castedObj, ok := uncastedApiContainerObj.(*api_container.APIContainer)
+	if !ok {
+		return "", stacktrace.NewError("An error occurred downcasting the API container object")
+	}
+	return string(castedObj.GetEnclaveID()), nil
 }
