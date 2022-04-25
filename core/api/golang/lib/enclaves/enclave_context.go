@@ -482,14 +482,12 @@ func (enclaveCtx *EnclaveContext) UploadFilesArtifact(pathToUpload string) (stri
 	tarWriter := tar.NewWriter(gzipWriter)
 	defer tarWriter.Close()
 	err = filepath.Walk(pathToUpload, func(filePath string, fileInfo os.FileInfo, err error) error {
-		return archiveWalker(filePath, fileInfo, err, tarWriter, pathToUpload)
+		return walkPathToBeArchived(filePath, fileInfo, err, tarWriter, pathToUpload)
 	})
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error compressing your files artifact for upload.")
 	}
 
-	//This is really dumb but I'll have to see a better way to do it later.
-	//It is essentially writing to disk, then reading off of the disk again, then converting to bytes.
 	content, err := ioutil.ReadFile((filepath.Join(tempDir, tarName)))
 	args := kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs{Data: content}
 	enclaveCtx.client.UploadFilesArtifact(context.Background(), &args)
@@ -534,7 +532,14 @@ func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc
 	return result, nil
 }
 
-func archiveWalker(filePath string, fileInfo os.FileInfo, err error, archiveWriter *tar.Writer, pathToArchive string) error {
+//This is a function meant to be used within a filepath.Walk function. filepath.Walk takes two arguments, the first is a
+//target folder to walk. The second argument is a function that takes 3 arguments:
+//filePath - A directory or file path that the filepath.Walk function has reached, supplied by filepath.Walk
+//fileInfo - A FileInfo object of the file or directory at filePath supplied by filepath.Walk
+//err	   - An error from previous walking iterations.
+//Because our function is a file archive writer, we need to pass those variables, a writer, and original path to this function.
+//This function should be wrapped in a lambda that passes filepath.Walk variables directly to this function.
+func walkPathToBeArchived(filePath string, fileInfo os.FileInfo, err error, archiveWriter *tar.Writer, pathToArchive string) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "There was an error while taring file at '%s'.", filePath)
 	}
