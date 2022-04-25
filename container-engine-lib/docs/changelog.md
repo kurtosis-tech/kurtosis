@@ -1,4 +1,6 @@
 # TBD
+
+# 0.15.3
 ### Features
 * Added `KurtosisBackend.CopyFromUserService` in Docker implementation
 
