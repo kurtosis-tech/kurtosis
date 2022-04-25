@@ -486,16 +486,23 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (string, erro
 			"There was an error searching through your directory '%s' during the archive process.", pathToUpload)
 	}
 
+	tarInfo, err := tarFile.Stat()
+	if err != nil {
+		return "", stacktrace.Propagate(err,
+				"There was an error while checking the status of the temporary tar file '%s' recently compressed for upload.",
+				tarFile.Name())
+	}
+
+	if tarInfo.Size() >= grpcDataTransferLimit {
+		return "", stacktrace.Propagate(err,
+			"The files you are trying to upload, which are now compressed, exceed or reach 4mb, a limit imposed by gRPC. " +
+				"Please reduce the total file size and ensure it can compress to a size below 4mb.")
+	}
 	content, err := ioutil.ReadFile(tarFile.Name())
 	if err != nil{
 		return "", stacktrace.Propagate(err,
-					"There was an error reading from the the temporary tar file '%s' recently compressed for upload.",
+					"There was an error reading from the temporary tar file '%s' recently compressed for upload.",
 			       	tarFile.Name())
-	}
-	if len(content) >= grpcDataTransferLimit {
-		return "", stacktrace.Propagate(err,
-			"The files you are trying to upload, which are now compressed, exceed or reach 4mb, a limit imposed by gRPC. " +
-			"Please reduce the total file size and ensure it can compress to a size below 4mb.")
 	}
 
 	args := kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs{Data: content}
