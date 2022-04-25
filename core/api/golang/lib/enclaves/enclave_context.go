@@ -463,7 +463,7 @@ func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error
 func (enclaveCtx *EnclaveContext) UploadFilesArtifact(pathToUpload string) (string, error) {
 	pathToUpload = strings.TrimRight(pathToUpload, string(filepath.Separator))
 	if _, err := os.Stat(pathToUpload); err != nil {
-		return "", stacktrace.Propagate(err, "There was an error checking %s.", pathToUpload)
+		return "", stacktrace.Propagate(err, "There was a path error for '%s' during files artifact uploading.", pathToUpload)
 	}
 
 	_, target := path.Split(pathToUpload) //Get target folder or file.
@@ -474,7 +474,7 @@ func (enclaveCtx *EnclaveContext) UploadFilesArtifact(pathToUpload string) (stri
 	absoluteTarPath := filepath.Join(tempDir, tarName)
 	tarFile, err := os.Create(absoluteTarPath)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "There was an error creating a temporary archive file at %s.", absoluteTarPath)
+		return "", stacktrace.Propagate(err, "There was an error creating a temporary archive file at '%s' during files artifact uploading.", absoluteTarPath)
 	}
 
 	gzipWriter := gzip.NewWriter(tarFile)
@@ -485,7 +485,7 @@ func (enclaveCtx *EnclaveContext) UploadFilesArtifact(pathToUpload string) (stri
 		return archiveWalker(filePath, fileInfo, err, tarWriter, pathToUpload)
 	})
 	if err != nil {
-		return "", stacktrace.Propagate(err, "There was an error compressing your file(s).")
+		return "", stacktrace.Propagate(err, "There was an error compressing your files artifact for upload.")
 	}
 
 	//This is really dumb but I'll have to see a better way to do it later.
@@ -536,7 +536,7 @@ func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc
 
 func archiveWalker(filePath string, fileInfo os.FileInfo, err error, archiveWriter *tar.Writer, pathToArchive string) error {
 	if err != nil {
-		return stacktrace.Propagate(err, "There was an error while taring file at %s.", filePath)
+		return stacktrace.Propagate(err, "There was an error while taring file at '%s'.", filePath)
 	}
 
 	if !fileInfo.Mode().IsRegular() {
@@ -545,23 +545,23 @@ func archiveWalker(filePath string, fileInfo os.FileInfo, err error, archiveWrit
 
 	header, err := tar.FileInfoHeader(fileInfo, fileInfo.Name())
 	if err != nil {
-		return stacktrace.Propagate(err, "There was a problem creating a tar header for %s.", filePath)
+		return stacktrace.Propagate(err, "There was a problem creating a tar header for '%s'.", filePath)
 	}
 
 	fileName := strings.Replace(filePath, pathToArchive, "", -1)
 	header.Name = strings.TrimPrefix(fileName, string(filepath.Separator))
 
 	if err := archiveWriter.WriteHeader(header); err != nil {
-		return stacktrace.Propagate(err, "There was a problem writing headers while archiving %s.", filePath)
+		return stacktrace.Propagate(err, "There was a problem writing headers while archiving '%s'.", filePath)
 	}
 
 	sourceToArchive, err := os.Open(filePath)
 	if err != nil {
-		return stacktrace.Propagate(err, "There was a problem reading from %s.", filePath)
+		return stacktrace.Propagate(err, "There was a problem reading from '%s'.", filePath)
 	}
 
 	if _, err := io.Copy(archiveWriter, sourceToArchive); err != nil {
-		return stacktrace.Propagate(err, "There was a problem copying %s to the tar.", filePath)
+		return stacktrace.Propagate(err, "There was a problem copying '%s' to the tar.", filePath)
 	}
 	sourceToArchive.Close()
 
