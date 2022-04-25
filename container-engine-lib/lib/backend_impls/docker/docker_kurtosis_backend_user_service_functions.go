@@ -26,6 +26,12 @@ import (
 	"time"
 )
 
+const (
+	// The location where the enclave data volume will be mounted
+	//  on the user service container
+	enclaveDataVolumeDirpathOnServiceContainer = "/kurtosis-data"
+)
+
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
 var commandToRunWhenCreatingUserServiceShell = []string{
 	"sh",
@@ -73,6 +79,11 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
 
+	enclaveDataVolumeName, err := backend.getEnclaveDataVolumeByEnclaveId(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveId)
+	}
+
 	// TODO Replace with the (simpler) way that's currently done when creating API container/engine container
 	usedPorts, _, err := getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts)
 	if err != nil {
@@ -81,6 +92,10 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 
 	bindMounts := map[string]string{
 		enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnServiceContainer,
+	}
+
+	volumeMounts := map[string]string{
+		enclaveDataVolumeName: enclaveDataVolumeDirpathOnServiceContainer,
 	}
 
 	createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
@@ -95,6 +110,8 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 		envVars,
 	).WithBindMounts(
 		bindMounts,
+	).WithVolumeMounts(
+		volumeMounts,
 	).WithLabels(
 		labelStrs,
 	).WithAlias(

@@ -19,9 +19,14 @@ import (
 )
 
 const (
+	// TODO Remove this when we switch fully to the data volume
 	// The location where the enclave data directory (on the Docker host machine) will be bind-mounted
 	//  on the API container
-	enclaveDataDirpathOnAPIContainer = "/kurtosis-enclave-data"
+	enclaveDataBindmountDirpathOnAPIContainer = "/kurtosis-enclave-data"
+
+	// The location where the enclave data volume will be mounted
+	//  on the API container
+	enclaveDataVolumeDirpathOnAPIContainer = "/kurtosis-data"
 
 	// The API container uses gRPC so MUST listen on TCP (no other protocols are supported), which also
 	// means that its grpc-proxy must listen on TCP
@@ -44,6 +49,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
+	// TODO remove when we switch fully to enclave data volume
 	enclaveDataDirpathOnHostMachine string,
 	envVars map[string]string,
 ) (*api_container.APIContainer, error) {
@@ -59,6 +65,11 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	}
 	if len(preexistingApiContainersInEnclave) > 0 {
 		return nil, stacktrace.NewError("Found existing API container(s) in enclave '%v'; cannot start a new one", enclaveId)
+	}
+
+	enclaveDataVolumeName, err := backend.getEnclaveDataVolumeByEnclaveId(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveId)
 	}
 
 	// Get the Docker network ID where we'll start the new API container
@@ -118,7 +129,11 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	bindMounts := map[string]string{
 		// Necessary so that the API container can interact with the Docker engine
 		dockerSocketFilepath:            dockerSocketFilepath,
-		enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnAPIContainer,
+		enclaveDataDirpathOnHostMachine: enclaveDataBindmountDirpathOnAPIContainer,
+	}
+
+	volumeMounts := map[string]string{
+		enclaveDataVolumeName: enclaveDataVolumeDirpathOnAPIContainer,
 	}
 
 	labelStrs := map[string]string{}
@@ -134,6 +149,8 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		envVars,
 	).WithBindMounts(
 		bindMounts,
+	).WithVolumeMounts(
+		volumeMounts,
 	).WithUsedPorts(
 		usedPorts,
 	).WithStaticIP(
