@@ -11,6 +11,8 @@
 * Added `destroy_enclave_test` in Golang and Typescript internal testsuites
 * The `old_enclave_continuity` test now tests having stopped old enclaves around, as well as `service add`
 * Added an extra layer to the Docker exec command test to verify we're not accidentally sh-wrapping the command
+* Many operations now happen in parallel in the backend, most notably making `clean` about 50-100% faster
+* Added a test to verify that `kurtosis clean -a` cleans up its containers, volumes, and networks
 
 # 0.13.0
 ### Features
