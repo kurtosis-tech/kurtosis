@@ -471,9 +471,10 @@ func (enclaveCtx *EnclaveContext) UploadFilesArtifact(pathToUpload string) (stri
 	target = strings.Replace(target, extension, "", -1) //Replace the extension with nothing. (Remove it.)
 	tarName := strings.Join([]string{target, archiveExtension}, ".")
 	tempDir, _ := ioutil.TempDir("","")
-	tarFile, err := os.Create(filepath.Join(tempDir, tarName))
+	absoluteTarPath := filepath.Join(tempDir, tarName)
+	tarFile, err := os.Create(absoluteTarPath)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "There was an error creating a temporary archive file at %s.", tarFile)
+		return "", stacktrace.Propagate(err, "There was an error creating a temporary archive file at %s.", absoluteTarPath)
 	}
 
 	gzipWriter := gzip.NewWriter(tarFile)

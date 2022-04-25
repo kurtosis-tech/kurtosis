@@ -3,6 +3,7 @@
 ### Changes
 * Added new backend file storage methods for future volume support.
 * Added UploadFilesArtifact command to API Container.
+* Added UploadFilesArtifact to enclave_context.
 
 # 1.43.0
 ### Breaking Changes
