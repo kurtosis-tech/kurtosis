@@ -47,7 +47,7 @@ const (
 
 	// The path on the user service container where the enclave data dir will be bind-mounted
 	serviceEnclaveDataDirMountpoint = "/kurtosis-enclave-data"
-	archiveExtension = "tgz"
+	grpcDataTransferLimit = 3999000 //3.999 Mb. 1kb wiggle room. 1kb being about the size of a simple 2 paragraph readme.
 )
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -492,7 +492,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (string, erro
 					"There was an error reading from the the temporary tar file '%s' recently compressed for upload.",
 			       	tarFile.Name())
 	}
-	if len(content) >= 3999000 { //3.999 Mb. 1kb wiggle room. 1kb being about the size of a simple 2 paragraph readme.
+	if len(content) >= grpcDataTransferLimit {
 		return "", stacktrace.Propagate(err,
 			"The files you are trying to upload, which are now compressed, exceed or reach 4mb, a limit imposed by gRPC. " +
 			"Please reduce the total file size and ensure it can compress to a size below 4mb.")
@@ -502,7 +502,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (string, erro
 	response, err := enclaveCtx.client.UploadFilesArtifact(context.Background(), &args)
 	if err != nil {
 		return "", stacktrace.Propagate(err,
-			  "The enclave context method 'UploadFilesArtifact' has encountered an error uploading data.")
+			  "An error was encountered while uploading data to the API Container.")
 	}
 	return response.Uuid, nil;
 }
@@ -575,10 +575,10 @@ func addFilesToArchive(filePath string, fileInfo os.FileInfo, errorFromLastItera
 	}
 
 	sourceToArchive, err := os.Open(filePath)
-	defer sourceToArchive.Close()
 	if err != nil {
 		return stacktrace.Propagate(err, "There was a problem reading from '%s'.", filePath)
 	}
+	defer sourceToArchive.Close()
 
 	if _, err := io.Copy(archiveWriter, sourceToArchive); err != nil {
 		return stacktrace.Propagate(err, "There was a problem copying '%s' to the tar.", filePath)
