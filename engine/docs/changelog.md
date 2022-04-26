@@ -1,5 +1,9 @@
 # TBD
 
+# 1.15.4
+### Fixes
+* Upgraded to core 1.43.4, to fix a bug for UUID-keyed file artifacts
+
 # 1.15.3
 ### Features
 * Upgraded to Core 1.43.3, which has `ContainerConfigBuilder.WithFiles`
