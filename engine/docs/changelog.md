@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Upgraded to core 1.43.4, to fix a bug for UUID-keyed file artifacts
 
 # 1.15.3
 ### Features
