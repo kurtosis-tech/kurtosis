@@ -21,7 +21,7 @@ import {
     UnloadModuleArgs,
     ExecuteModuleArgs,
     GetModuleInfoArgs,
-    Port
+    Port, DownloadFilesArtifactArgs
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceID } from './services/service';
 import { PartitionID } from './enclaves/enclave_context';
@@ -286,5 +286,14 @@ export function newWaitForHttpPostEndpointAvailabilityArgs(
     result.setRetriesDelayMilliseconds(retriesDelayMilliseconds);
     result.setBodyText(bodyText);
 
+    return result;
+}
+
+// ==============================================================================================
+//                                     Download Files
+// ==============================================================================================
+export function newDownloadFilesArtifactArgs(url: string): DownloadFilesArtifactArgs {
+    const result: DownloadFilesArtifactArgs = new DownloadFilesArtifactArgs();
+    result.setUrl(url);
     return result;
 }

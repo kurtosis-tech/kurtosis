@@ -512,8 +512,8 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 			       	tarFile.Name())
 	}
 
-	args := kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs{Data: content}
-	response, err := enclaveCtx.client.UploadFilesArtifact(context.Background(), &args)
+	args := binding_constructors.NewUploadFilesArtifactArgs(content)
+	response, err := enclaveCtx.client.UploadFilesArtifact(context.Background(), args)
 	if err != nil {
 		return "", stacktrace.Propagate(err,
 			  "An error was encountered while uploading data to the API Container.")
@@ -521,9 +521,14 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 	return services.FilesArtifactID(response.Uuid), nil;
 }
 
-func (enclaveCtx *EnclaveContext) DownloadFiles(urlToDownload string) (services.FilesArtifactID, error) {
-	FilesARtifactID
-
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+func (enclaveCtx *EnclaveContext) DownloadFiles(ctx context.Context, urlToDownload string) (services.FilesArtifactID, error) {
+	args := binding_constructors.NewDownloadFilesArtifactArgs(urlToDownload)
+	response, err := enclaveCtx.client.DownloadFilesArtifact(ctx, args)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred downloading from URL '%v'", urlToDownload)
+	}
+	return services.FilesArtifactID(response.Uuid), nil
 }
 
 // ====================================================================================================

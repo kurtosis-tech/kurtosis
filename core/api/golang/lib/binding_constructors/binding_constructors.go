@@ -290,3 +290,11 @@ func NewWaitForHttpPostEndpointAvailabilityArgs(
 func NewUploadFilesArtifactArgs(data []byte) *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs {
 	return &kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs{Data: data}
 }
+
+
+// ==============================================================================================
+//                           Download Files Artifact
+// ==============================================================================================
+func NewDownloadFilesArtifactArgs(url string) *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs {
+	return &kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs{Url: url}
+}

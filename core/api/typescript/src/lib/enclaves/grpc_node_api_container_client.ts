@@ -22,7 +22,7 @@ import {
     ExecuteModuleResponse,
     ExecuteModuleArgs,
     ExecCommandArgs,
-    ExecCommandResponse,
+    ExecCommandResponse, DownloadFilesArtifactArgs, DownloadFilesArtifactResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -362,5 +362,28 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
         const execCommandResponse = execCommandResponseResult.value;
         return ok(execCommandResponse)
+    }
+
+    public async downloadFilesArtifact(downloadFilesArtifactArgs: DownloadFilesArtifactArgs): Promise<Result<DownloadFilesArtifactResponse, Error>> {
+        const downloadFilesArtifactPromise: Promise<Result<DownloadFilesArtifactResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.downloadFilesArtifact(downloadFilesArtifactArgs, (error: ServiceError | null, response?: DownloadFilesArtifactResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+        const downloadFilesArtifactResponseResult: Result<DownloadFilesArtifactResponse, Error> = await downloadFilesArtifactPromise;
+        if(downloadFilesArtifactResponseResult.isErr()){
+            return err(downloadFilesArtifactResponseResult.error)
+        }
+
+        const downloadFilesArtifactResponse = downloadFilesArtifactResponseResult.value;
+        return ok(downloadFilesArtifactResponse)
     }
 }

@@ -29,7 +29,8 @@ import { GrpcNodeApiContainerClient } from "./grpc_node_api_container_client";
 import { GrpcWebApiContainerClient } from "./grpc_web_api_container_client";
 import type { GenericApiContainerClient } from "./generic_api_container_client";
 import { ModuleContext, ModuleID } from "../modules/module_context";
-import { 
+import {
+    newDownloadFilesArtifactArgs,
     newGetModuleInfoArgs,
     newGetServiceInfoArgs,
     newLoadModuleArgs,
@@ -542,6 +543,16 @@ export class EnclaveContext {
         return ok(moduleIds)
     }
 
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    public async downloadFiles(url: string): Promise<Result<FilesArtifactID, Error>> {
+        const args = newDownloadFilesArtifactArgs(url);
+        const downloadFilesArtifactResponseResult = await this.backend.downloadFilesArtifact(args)
+        if (downloadFilesArtifactResponseResult.isErr()) {
+            return err(downloadFilesArtifactResponseResult.error)
+        }
+        const downloadFilesArtifactResponse = downloadFilesArtifactResponseResult.value;
+        return ok(downloadFilesArtifactResponse.getUuid())
+    }
 
     // ====================================================================================================
     //                                       Private helper functions
