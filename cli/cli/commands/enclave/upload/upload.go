@@ -76,7 +76,7 @@ func run(
 	}
 	filesArtifactId, err := enclaveCtx.UploadFiles(path)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred uploading files at path '%v' to the enclave")
+		return stacktrace.Propagate(err, "An error occurred uploading files at path '%v' to enclave '%v'", path, enclaveId)
 	}
 	logrus.Infof("Files package ID: %v", filesArtifactId)
 	return nil
@@ -89,7 +89,7 @@ func validatePathArg(ctx context.Context, flags *flags.ParsedFlags, args *args.P
 	}
 
 	if _, err := os.Stat(path); err != nil {
-		return stacktrace.Propagate(err, "An error occurred verifying path '%v' exists and is readable")
+		return stacktrace.Propagate(err, "An error occurred verifying path '%v' exists and is readable", path)
 	}
 	return nil
 }
