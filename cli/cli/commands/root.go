@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/config"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/engine"
+	files "github.com/kurtosis-tech/kurtosis-cli/cli/commands/files"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/module"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/version"
@@ -88,6 +89,7 @@ func init() {
 	RootCmd.AddCommand(version.VersionCmd)
 	RootCmd.AddCommand(clean.CleanCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(config.ConfigCmd)
+	RootCmd.AddCommand(files.FilesCmd)
 }
 
 // ====================================================================================================

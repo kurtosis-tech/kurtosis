@@ -13,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave/new"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave/rm"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave/stop"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave/upload"
 	"github.com/spf13/cobra"
 )
 
@@ -30,5 +29,4 @@ func init() {
 	EnclaveCmd.AddCommand(stop.StopCmd)
 	EnclaveCmd.AddCommand(rm.EnclaveRmCmd.MustGetCobraCommand())
 	EnclaveCmd.AddCommand(dump.EnclaveDumpCmd)
-	EnclaveCmd.AddCommand(upload.EnclaveUploadCmd.MustGetCobraCommand())
 }

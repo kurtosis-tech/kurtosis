@@ -6,13 +6,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var EnclaveFilesCmd = &cobra.Command{
-	Use:   command_str_consts.EnclaveFilesCmdStr,
+var FilesCmd = &cobra.Command{
+	Use:   command_str_consts.FilesCmdStr,
 	Short: "Manage files for an enclave",
 	Long: "Contains actions for managing the Kurtosis enclave filestore, used for sending around, in, and out of the enclave",
 	RunE:  nil,
 }
 
 func init() {
-	EnclaveFilesCmd.AddCommand(upload.EnclaveFilesUploadCmd.MustGetCobraCommand())
+	FilesCmd.AddCommand(upload.FilesUploadCmd.MustGetCobraCommand())
 }
