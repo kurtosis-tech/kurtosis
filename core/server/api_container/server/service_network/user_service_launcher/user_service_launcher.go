@@ -55,7 +55,7 @@ func (launcher UserServiceLauncher) Launch(
 	enclaveDataDirMountDirpath string,
 	// TODO REMOVE IN FAVOR OF filesArtifactUuidsToMounpoints
 	// Mapping files artifact ID -> mountpoint on the container to launch
-	filesArtifactIdsToMountpoints map[files_artifact.FilesArtifactID]string,
+	oldFilesArtifactIdsToMountpoints map[files_artifact.FilesArtifactID]string,
 	// Mapping of UUIDs of previously-registered files artifacts -> mountpoints on the container
 	// being launched
 	filesArtifactUuidsToMountpoints map[files_artifact.FilesArtifactID]string,
@@ -64,17 +64,17 @@ func (launcher UserServiceLauncher) Launch(
 	resultErr error,
 ) {
 	// TODO DELETE THIS ONE!!!!
-	usedArtifactIdSet := map[files_artifact.FilesArtifactID]bool{}
-	for artifactId := range filesArtifactIdsToMountpoints {
-		usedArtifactIdSet[artifactId] = true
+	oldArtifactIdSet := map[files_artifact.FilesArtifactID]bool{}
+	for artifactId := range oldFilesArtifactIdsToMountpoints {
+		oldArtifactIdSet[artifactId] = true
 	}
-	artifactIdsToVolumes, err := launcher.oldFilesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, serviceGUID, usedArtifactIdSet)
+	artifactIdsToVolumes, err := launcher.oldFilesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, serviceGUID, oldArtifactIdSet)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred expanding the requested files artifacts into volumes")
 	}
 
 	usedArtifactUuidSet := map[files_artifact.FilesArtifactID]bool{}
-	for artifactUuid := range filesArtifactIdsToMountpoints {
+	for artifactUuid := range filesArtifactUuidsToMountpoints {
 		usedArtifactUuidSet[artifactUuid] = true
 	}
 
@@ -102,7 +102,7 @@ func (launcher UserServiceLauncher) Launch(
 
 
 	// TODO DELETE THIS
-	for artifactId, mountpoint := range filesArtifactIdsToMountpoints {
+	for artifactId, mountpoint := range oldFilesArtifactIdsToMountpoints {
 		artifactVolume, found := artifactIdsToVolumes[artifactId]
 		if !found {
 			return nil, stacktrace.NewError(
