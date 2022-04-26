@@ -56,6 +56,8 @@ type ServiceNetwork interface {
 		cmdArgs []string,
 		dockerEnvVars map[string]string,
 		enclaveDataDirMountDirpath string,
+		// TODO REMOVE
+		oldFilesArtifactMountDirpaths map[files_artifact.FilesArtifactID]string,
 		filesArtifactMountDirpaths map[files_artifact.FilesArtifactID]string,
 	) (
 		resultPublicIpAddr net.IP,

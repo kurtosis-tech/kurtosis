@@ -53,26 +53,41 @@ type FilesArtifactExpander struct {
 
 	freeIpAddrTracker *lib.FreeIpAddrTracker
 
+	// TODO DELETE IN FAVOR OF FilesArtifactStore!
 	filesArtifactCache *enclave_data_directory.FilesArtifactCache
+	
+	filesArtifactStore *enclave_data_directory.FilesArtifactStore
 }
 
-func NewFilesArtifactExpander(enclaveDataDirpathOnHostMachine string, kurtosisBackend backend_interface.KurtosisBackend, enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider, enclaveId enclave.EnclaveID, freeIpAddrTracker *lib.FreeIpAddrTracker, filesArtifactCache *enclave_data_directory.FilesArtifactCache) *FilesArtifactExpander {
-	return &FilesArtifactExpander{enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine, kurtosisBackend: kurtosisBackend, enclaveObjAttrsProvider: enclaveObjAttrsProvider, enclaveId: enclaveId, freeIpAddrTracker: freeIpAddrTracker, filesArtifactCache: filesArtifactCache}
+func NewFilesArtifactExpander(enclaveDataDirpathOnHostMachine string, kurtosisBackend backend_interface.KurtosisBackend, enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider, enclaveId enclave.EnclaveID, freeIpAddrTracker *lib.FreeIpAddrTracker, filesArtifactCache *enclave_data_directory.FilesArtifactCache, filesArtifactStore *enclave_data_directory.FilesArtifactStore) *FilesArtifactExpander {
+	return &FilesArtifactExpander{enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine, kurtosisBackend: kurtosisBackend, enclaveObjAttrsProvider: enclaveObjAttrsProvider, enclaveId: enclaveId, freeIpAddrTracker: freeIpAddrTracker, filesArtifactCache: filesArtifactCache, filesArtifactStore: filesArtifactStore}
 }
 
+// TODO DELETE THIS IN FAVOR OF
 func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 	ctx context.Context,
 	serviceGUID service.ServiceGUID, // Service GUID for whom the artifacts are being expanded into volumes
-	artifactIdsToExpand map[files_artifact.FilesArtifactID]bool,
+	artifactUuidsToExpand map[files_artifact.FilesArtifactID]bool,
 ) (map[files_artifact.FilesArtifactID]files_artifact_expansion_volume.FilesArtifactExpansionVolumeName, error) {
 
 	// TODO PERF: parallelize this to increase speed
 	artifactIdsToVolNames := map[files_artifact.FilesArtifactID]files_artifact_expansion_volume.FilesArtifactExpansionVolumeName{}
 	volumesToDestroyIfSomethingFails := map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool{}
-	for filesArtifactId := range artifactIdsToExpand {
-		artifactFile, err := expander.filesArtifactCache.GetFilesArtifact(filesArtifactId)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting the file for files artifact '%v'", filesArtifactId)
+	for filesArtifactId := range artifactUuidsToExpand {
+		// TODO JANKY HACK TO REMOVE SOON: This is for supporting both old FilesArtifactCache and new FilesArtifactStore
+		var artifactFile *enclave_data_directory.EnclaveDataDirFile
+		if expander.filesArtifactCache != nil {
+			candidateArtifactFile, err := expander.filesArtifactCache.GetFilesArtifact(filesArtifactId)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred getting the file for files artifact '%v'", filesArtifactId)
+			}
+			artifactFile = candidateArtifactFile
+		} else {
+			candidateArtifactFile, err := expander.filesArtifactStore.GetFileByUUID(string(filesArtifactId))
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred getting the file for files artifact '%v'", filesArtifactId)
+			}
+			artifactFile = candidateArtifactFile
 		}
 
 		artifactRelativeFilepath := artifactFile.GetFilepathRelativeToDataDirRoot()
@@ -85,7 +100,8 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 			ctx,
 			expander.enclaveId,
 			serviceGUID,
-			filesArtifactId)
+			filesArtifactId,
+		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGUID, filesArtifactId, expander.enclaveId)
 		}

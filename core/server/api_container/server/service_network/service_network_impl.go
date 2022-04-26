@@ -251,6 +251,8 @@ func (network *ServiceNetworkImpl) StartService(
 	cmdArgs []string,
 	dockerEnvVars map[string]string,
 	enclaveDataDirMntDirpath string,
+	// TODO REMOVE
+	oldFilesArtifactMountDirpaths map[files_artifact.FilesArtifactID]string,
 	filesArtifactMountDirpaths map[files_artifact.FilesArtifactID]string,
 ) (
 	resultMaybePublicIpAddr net.IP, // Will be nil if the service doesn't declare any private ports
@@ -314,11 +316,14 @@ func (network *ServiceNetworkImpl) StartService(
 		cmdArgs,
 		dockerEnvVars,
 		enclaveDataDirMntDirpath,
-		filesArtifactMountDirpaths)
+		oldFilesArtifactMountDirpaths,
+		filesArtifactMountDirpaths,
+	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating the user service")
+			"An error occurred creating the user service",
+		)
 	}
 
 	// TODO Restart-able enclaves: Don't store any service information in memory; instead, get it all from the KurtosisBackend when required

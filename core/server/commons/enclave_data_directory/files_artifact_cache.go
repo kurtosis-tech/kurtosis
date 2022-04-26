@@ -49,6 +49,7 @@ func (cache FilesArtifactCache) DownloadFilesArtifact(artifactId string, url str
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred making the request to URL '%v' to get the data for artifact '%v'", url, artifactId)
 	}
+	defer resp.Body.Close()
 	body := bufio.NewReader(resp.Body)
 
 	if _, err := cache.underlying.AddFile(artifactId, body); err != nil {
