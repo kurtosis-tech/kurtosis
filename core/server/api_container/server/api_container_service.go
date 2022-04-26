@@ -10,7 +10,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	kurtosis_backend_service "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
@@ -78,17 +77,17 @@ func NewApiContainerService(
 	return service, nil
 }
 
-func (service ApiContainerService) LoadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadModuleArgs) (*kurtosis_core_rpc_api_bindings.LoadModuleResponse, error) {
+func (apicService ApiContainerService) LoadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadModuleArgs) (*kurtosis_core_rpc_api_bindings.LoadModuleResponse, error) {
 	moduleId := module.ModuleID(args.ModuleId)
 	image := args.ContainerImage
 	serializedParams := args.SerializedParams
 
-	if err := service.metricsClient.TrackLoadModule(args.ModuleId, image, serializedParams); err != nil {
+	if err := apicService.metricsClient.TrackLoadModule(args.ModuleId, image, serializedParams); err != nil {
 		//We don't want to interrupt users flow if something fails when tracking metrics
 		logrus.Errorf("An error occurred tracking load module event\n%v", err)
 	}
 
-	loadedModule, err := service.moduleStore.LoadModule(ctx, moduleId, image, serializedParams)
+	loadedModule, err := apicService.moduleStore.LoadModule(ctx, moduleId, image, serializedParams)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred loading module '%v' with container image '%v' and serialized params '%v'", moduleId, image, serializedParams)
 	}
@@ -111,31 +110,31 @@ func (service ApiContainerService) LoadModule(ctx context.Context, args *kurtosi
 	return result, nil
 }
 
-func (service ApiContainerService) UnloadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnloadModuleArgs) (*emptypb.Empty, error) {
+func (apicService ApiContainerService) UnloadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnloadModuleArgs) (*emptypb.Empty, error) {
 	moduleId := module.ModuleID(args.ModuleId)
 
-	if err := service.metricsClient.TrackUnloadModule(args.ModuleId); err != nil {
+	if err := apicService.metricsClient.TrackUnloadModule(args.ModuleId); err != nil {
 		//We don't want to interrupt users flow if something fails when tracking metrics
 		logrus.Errorf("An error occurred tracking unload module event\n%v", err)
 	}
 
-	if err := service.moduleStore.UnloadModule(ctx, moduleId); err != nil {
+	if err := apicService.moduleStore.UnloadModule(ctx, moduleId); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred unloading module '%v' from the network", moduleId)
 	}
 
 	return &emptypb.Empty{}, nil
 }
 
-func (service ApiContainerService) ExecuteModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteModuleResponse, error) {
+func (apicService ApiContainerService) ExecuteModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteModuleResponse, error) {
 	moduleId := module.ModuleID(args.ModuleId)
 	serializedParams := args.SerializedParams
 
-	if err := service.metricsClient.TrackExecuteModule(args.ModuleId, serializedParams); err != nil {
+	if err := apicService.metricsClient.TrackExecuteModule(args.ModuleId, serializedParams); err != nil {
 		//We don't want to interrupt users flow if something fails when tracking metrics
 		logrus.Errorf("An error occurred tracking execute module event\n%v", err)
 	}
 
-	serializedResult, err := service.moduleStore.ExecuteModule(ctx, moduleId, serializedParams)
+	serializedResult, err := apicService.moduleStore.ExecuteModule(ctx, moduleId, serializedParams)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred executing module '%v' with serialized params '%v'", moduleId, serializedParams)
 	}
@@ -144,9 +143,9 @@ func (service ApiContainerService) ExecuteModule(ctx context.Context, args *kurt
 	return resp, nil
 }
 
-func (service ApiContainerService) GetModuleInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetModuleInfoArgs) (*kurtosis_core_rpc_api_bindings.GetModuleInfoResponse, error) {
+func (apicService ApiContainerService) GetModuleInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetModuleInfoArgs) (*kurtosis_core_rpc_api_bindings.GetModuleInfoResponse, error) {
 	moduleId := module.ModuleID(args.ModuleId)
-	privateIpAddr, privateModulePort, publicIpAddr, publicModulePort, err := service.moduleStore.GetModuleInfo(moduleId)
+	privateIpAddr, privateModulePort, publicIpAddr, publicModulePort, err := apicService.moduleStore.GetModuleInfo(moduleId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the IP address for module '%v'", moduleId)
 	}
@@ -167,8 +166,8 @@ func (service ApiContainerService) GetModuleInfo(ctx context.Context, args *kurt
 	return response, nil
 }
 
-func (service ApiContainerService) RegisterFilesArtifacts(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterFilesArtifactsArgs) (*emptypb.Empty, error) {
-	filesArtifactCache, err := service.enclaveDataDir.GetFilesArtifactCache()
+func (apicService ApiContainerService) RegisterFilesArtifacts(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterFilesArtifactsArgs) (*emptypb.Empty, error) {
+	filesArtifactCache, err := apicService.enclaveDataDir.GetFilesArtifactCache()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the files artifact cache")
 	}
@@ -185,14 +184,14 @@ func (service ApiContainerService) RegisterFilesArtifacts(ctx context.Context, a
 	return &emptypb.Empty{}, nil
 }
 
-func (service ApiContainerService) RegisterService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServiceArgs) (*kurtosis_core_rpc_api_bindings.RegisterServiceResponse, error) {
+func (apicService ApiContainerService) RegisterService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServiceArgs) (*kurtosis_core_rpc_api_bindings.RegisterServiceResponse, error) {
 	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
 	partitionId := service_network_types.PartitionID(args.PartitionId)
 
-	privateIpAddr, relativeServiceDirpath, err := service.serviceNetwork.RegisterService(serviceId, partitionId)
+	privateIpAddr, relativeServiceDirpath, err := apicService.serviceNetwork.RegisterService(serviceId, partitionId)
 	if err != nil {
 		// TODO IP: Leaks internal information about API container
-		return nil, stacktrace.Propagate(err, "An error occurred registering service '%v' in the service network", serviceId)
+		return nil, stacktrace.Propagate(err, "An error occurred registering apicService '%v' in the apicService network", serviceId)
 	}
 
 	return &kurtosis_core_rpc_api_bindings.RegisterServiceResponse{
@@ -201,8 +200,8 @@ func (service ApiContainerService) RegisterService(ctx context.Context, args *ku
 	}, nil
 }
 
-func (service ApiContainerService) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
-	logrus.Debugf("Received request to start service with the following args: %+v", args)
+func (apicService ApiContainerService) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
+	logrus.Debugf("Received request to start apicService with the following args: %+v", args)
 	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
 	privateApiPorts := args.PrivatePorts
 	privateServicePortSpecs := map[string]*port_spec.PortSpec{}
@@ -214,15 +213,15 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 		privateServicePortSpecs[portId] = privateServicePortSpec
 	}
 	// TODO REMOVE
-	oldFilesArtifactMountDirPathsKeyedByFilesArtifactId := map[files_artifact.FilesArtifactID]string{}
+	oldFilesArtifactMountDirPathsKeyedByFilesArtifactId := map[kurtosis_backend_service.FilesArtifactID]string{}
 	for filesArtifactIdStr, mountDirPath := range args.FilesArtifactMountDirpaths {
-		oldFilesArtifactMountDirPathsKeyedByFilesArtifactId[files_artifact.FilesArtifactID(filesArtifactIdStr)] = mountDirPath
+		oldFilesArtifactMountDirPathsKeyedByFilesArtifactId[kurtosis_backend_service.FilesArtifactID(filesArtifactIdStr)] = mountDirPath
 	}
-	filesArtifactMountpointsByArtifactId := map[files_artifact.FilesArtifactID]string{}
+	filesArtifactMountpointsByArtifactId := map[kurtosis_backend_service.FilesArtifactID]string{}
 	for filesArtifactIdStr, mountDirPath := range args.FilesArtifactMountpoints {
-		filesArtifactMountpointsByArtifactId[files_artifact.FilesArtifactID(filesArtifactIdStr)] = mountDirPath
+		filesArtifactMountpointsByArtifactId[kurtosis_backend_service.FilesArtifactID(filesArtifactIdStr)] = mountDirPath
 	}
-	maybePublicIpAddr, publicServicePortSpecs, err := service.serviceNetwork.StartService(
+	maybePublicIpAddr, publicServicePortSpecs, err := apicService.serviceNetwork.StartService(
 		ctx,
 		serviceId,
 		args.DockerImage,
@@ -236,11 +235,11 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 	)
 	if err != nil {
 		// TODO IP: Leaks internal information about the API container
-		return nil, stacktrace.Propagate(err, "An error occurred starting the service in the service network")
+		return nil, stacktrace.Propagate(err, "An error occurred starting the apicService in the apicService network")
 	}
 	publicApiPorts, err := transformPortSpecMapToApiPortsMap(publicServicePortSpecs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public port specs to API ports")
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the apicService's public port specs to API ports")
 	}
 	publicIpAddrStr := missingPublicIpAddrStr
 	if maybePublicIpAddr != nil {
@@ -255,26 +254,26 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 			publicServicePortSpecs,
 		)
 	}
-	logrus.Infof("Started service '%v'%v", serviceId, serviceStartLoglineSuffix)
+	logrus.Infof("Started apicService '%v'%v", serviceId, serviceStartLoglineSuffix)
 
 	return response, nil
 }
 
-func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServiceInfoArgs) (*kurtosis_core_rpc_api_bindings.GetServiceInfoResponse, error) {
+func (apicService ApiContainerService) GetServiceInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServiceInfoArgs) (*kurtosis_core_rpc_api_bindings.GetServiceInfoResponse, error) {
 	serviceIdStr := args.GetServiceId()
 	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
-	privateIpAddr, relativeServiceDirpath, err := service.serviceNetwork.GetServiceRegistrationInfo(serviceId)
+	privateIpAddr, relativeServiceDirpath, err := apicService.serviceNetwork.GetServiceRegistrationInfo(serviceId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the registration info for service '%v'", serviceIdStr)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the registration info for apicService '%v'", serviceIdStr)
 	}
 
-	privateServicePortSpecs, maybePublicIpAddr, maybePublicServicePortSpecs, enclaveDataDirMntDirpath, err := service.serviceNetwork.GetServiceRunInfo(serviceId)
+	privateServicePortSpecs, maybePublicIpAddr, maybePublicServicePortSpecs, enclaveDataDirMntDirpath, err := apicService.serviceNetwork.GetServiceRunInfo(serviceId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the run info for service '%v'", serviceIdStr)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the run info for apicService '%v'", serviceIdStr)
 	}
 	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privateServicePortSpecs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's private port spec ports to API ports")
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the apicService's private port spec ports to API ports")
 	}
 	publicIpAddrStr := missingPublicIpAddrStr
 	if maybePublicIpAddr != nil {
@@ -284,7 +283,7 @@ func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *kur
 	if maybePublicServicePortSpecs != nil {
 		publicApiPorts, err = transformPortSpecMapToApiPortsMap(maybePublicServicePortSpecs)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public port spec ports to API ports")
+			return nil, stacktrace.Propagate(err, "An error occurred transforming the apicService's public port spec ports to API ports")
 		}
 	}
 
@@ -299,20 +298,20 @@ func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *kur
 	return serviceInfoResponse, nil
 }
 
-func (service ApiContainerService) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*emptypb.Empty, error) {
+func (apicService ApiContainerService) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*emptypb.Empty, error) {
 	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
 
 	containerStopTimeoutSeconds := args.ContainerStopTimeoutSeconds
 	containerStopTimeout := time.Duration(containerStopTimeoutSeconds) * time.Second
 
-	if err := service.serviceNetwork.RemoveService(ctx, serviceId, containerStopTimeout); err != nil {
+	if err := apicService.serviceNetwork.RemoveService(ctx, serviceId, containerStopTimeout); err != nil {
 		// TODO IP: Leaks internal information about the API container
-		return nil, stacktrace.Propagate(err, "An error occurred removing service with ID '%v'", serviceId)
+		return nil, stacktrace.Propagate(err, "An error occurred removing apicService with ID '%v'", serviceId)
 	}
 	return &emptypb.Empty{}, nil
 }
 
-func (service ApiContainerService) Repartition(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RepartitionArgs) (*emptypb.Empty, error) {
+func (apicService ApiContainerService) Repartition(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RepartitionArgs) (*emptypb.Empty, error) {
 	// No need to check for dupes here - that happens at the lowest-level call to ServiceNetwork.Repartition (as it should)
 	partitionServices := map[service_network_types.PartitionID]map[kurtosis_backend_service.ServiceID]bool{}
 	for partitionIdStr, servicesInPartition := range args.PartitionServices {
@@ -349,7 +348,7 @@ func (service ApiContainerService) Repartition(ctx context.Context, args *kurtos
 		PacketLossPercentage: defaultConnectionInfo.PacketLossPercentage,
 	}
 
-	if err := service.serviceNetwork.Repartition(
+	if err := apicService.serviceNetwork.Repartition(
 		ctx,
 		partitionServices,
 		partitionConnections,
@@ -359,15 +358,15 @@ func (service ApiContainerService) Repartition(ctx context.Context, args *kurtos
 	return &emptypb.Empty{}, nil
 }
 
-func (service ApiContainerService) ExecCommand(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecCommandArgs) (*kurtosis_core_rpc_api_bindings.ExecCommandResponse, error) {
+func (apicService ApiContainerService) ExecCommand(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecCommandArgs) (*kurtosis_core_rpc_api_bindings.ExecCommandResponse, error) {
 	serviceIdStr := args.ServiceId
 	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
 	command := args.CommandArgs
-	exitCode, logOutput, err := service.serviceNetwork.ExecCommand(ctx, serviceId, command)
+	exitCode, logOutput, err := apicService.serviceNetwork.ExecCommand(ctx, serviceId, command)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred running exec command '%v' against service '%v' in the service network",
+			"An error occurred running exec command '%v' against apicService '%v' in the apicService network",
 			command,
 			serviceId)
 	}
@@ -387,11 +386,11 @@ func (service ApiContainerService) ExecCommand(ctx context.Context, args *kurtos
 	return resp, nil
 }
 
-func (service ApiContainerService) WaitForHttpGetEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForHttpGetEndpointAvailabilityArgs) (*emptypb.Empty, error) {
+func (apicService ApiContainerService) WaitForHttpGetEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForHttpGetEndpointAvailabilityArgs) (*emptypb.Empty, error) {
 
 	serviceIdStr := args.ServiceId
 
-	if err := service.waitForEndpointAvailability(
+	if err := apicService.waitForEndpointAvailability(
 		serviceIdStr,
 		http.MethodGet,
 		args.Port,
@@ -411,11 +410,11 @@ func (service ApiContainerService) WaitForHttpGetEndpointAvailability(ctx contex
 	return &emptypb.Empty{}, nil
 }
 
-func (service ApiContainerService) WaitForHttpPostEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForHttpPostEndpointAvailabilityArgs) (*emptypb.Empty, error) {
+func (apicService ApiContainerService) WaitForHttpPostEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForHttpPostEndpointAvailabilityArgs) (*emptypb.Empty, error) {
 
 	serviceIdStr := args.ServiceId
 
-	if err := service.waitForEndpointAvailability(
+	if err := apicService.waitForEndpointAvailability(
 		serviceIdStr,
 		http.MethodPost,
 		args.Port,
@@ -435,11 +434,11 @@ func (service ApiContainerService) WaitForHttpPostEndpointAvailability(ctx conte
 	return &emptypb.Empty{}, nil
 }
 
-func (service ApiContainerService) GetServices(ctx context.Context, empty *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
+func (apicService ApiContainerService) GetServices(ctx context.Context, empty *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
 
-	serviceIDs := make(map[string]bool, len(service.serviceNetwork.GetServiceIDs()))
+	serviceIDs := make(map[string]bool, len(apicService.serviceNetwork.GetServiceIDs()))
 
-	for serviceID := range service.serviceNetwork.GetServiceIDs() {
+	for serviceID := range apicService.serviceNetwork.GetServiceIDs() {
 		serviceIDStr := string(serviceID)
 		if _, ok := serviceIDs[serviceIDStr]; !ok {
 			serviceIDs[serviceIDStr] = true
@@ -452,11 +451,11 @@ func (service ApiContainerService) GetServices(ctx context.Context, empty *empty
 	return resp, nil
 }
 
-func (service ApiContainerService) GetModules(ctx context.Context, empty *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetModulesResponse, error) {
+func (apicService ApiContainerService) GetModules(ctx context.Context, empty *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetModulesResponse, error) {
 
-	allModuleIDs := make(map[string]bool, len(service.moduleStore.GetModules()))
+	allModuleIDs := make(map[string]bool, len(apicService.moduleStore.GetModules()))
 
-	for moduleID, _ := range service.moduleStore.GetModules() {
+	for moduleID, _ := range apicService.moduleStore.GetModules() {
 		moduleIDStr := string(moduleID)
 		if _, ok := allModuleIDs[moduleIDStr]; !ok {
 			allModuleIDs[moduleIDStr] = true
@@ -469,8 +468,8 @@ func (service ApiContainerService) GetModules(ctx context.Context, empty *emptyp
 	return resp, nil
 }
 
-func (service ApiContainerService) UploadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse, error) {
-	store, err := service.enclaveDataDir.GetFilesArtifactStore()
+func (apicService ApiContainerService) UploadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse, error) {
+	store, err := apicService.enclaveDataDir.GetFilesArtifactStore()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred with files artifact storage initialization.")
 	}
@@ -486,10 +485,10 @@ func (service ApiContainerService) UploadFilesArtifact(ctx context.Context, args
 }
 
 
-func (service ApiContainerService) DownloadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.DownloadFilesArtifactResponse, error) {
+func (apicService ApiContainerService) StoreWebFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactResponse, error) {
 	url := args.Url
 
-	store, err := service.enclaveDataDir.GetFilesArtifactStore()
+	store, err := apicService.enclaveDataDir.GetFilesArtifactStore()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the files artifact store")
 	}
@@ -506,7 +505,7 @@ func (service ApiContainerService) DownloadFilesArtifact(ctx context.Context, ar
 		return nil, stacktrace.Propagate(err, "An error occurred storing the file from URL '%v' in the files artifact store", url)
 	}
 
-	response := &kurtosis_core_rpc_api_bindings.DownloadFilesArtifactResponse{Uuid: uuid}
+	response := &kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactResponse{Uuid: uuid}
 	return response, nil
 }
 
@@ -573,7 +572,7 @@ func transformPortSpecMapToApiPortsMap(apiPorts map[string]*port_spec.PortSpec) 
 }
 
 
-func (service ApiContainerService) waitForEndpointAvailability(
+func (apicService ApiContainerService) waitForEndpointAvailability(
 	serviceIdStr string,
 	httpMethod string,
 	port uint32,
@@ -589,9 +588,9 @@ func (service ApiContainerService) waitForEndpointAvailability(
 		err  error
 	)
 
-	privateServiceIp, _, err := service.serviceNetwork.GetServiceRegistrationInfo(kurtosis_backend_service.ServiceID(serviceIdStr))
+	privateServiceIp, _, err := apicService.serviceNetwork.GetServiceRegistrationInfo(kurtosis_backend_service.ServiceID(serviceIdStr))
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the registration info for service '%v'", serviceIdStr)
+		return stacktrace.Propagate(err, "An error occurred getting the registration info for apicService '%v'", serviceIdStr)
 	}
 
 	url := fmt.Sprintf("http://%v:%v/%v", privateServiceIp, port, path)

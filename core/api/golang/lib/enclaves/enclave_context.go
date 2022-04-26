@@ -467,7 +467,7 @@ func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (string, error) {
+func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.FilesArtifactID, error) {
 	pathToUpload = strings.TrimRight(pathToUpload, string(filepath.Separator))
 	if _, err := os.Stat(pathToUpload); err != nil {
 		return "", stacktrace.Propagate(err, "There was a path error for '%s' during file uploading.", pathToUpload)
@@ -512,13 +512,23 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (string, erro
 			       	tarFile.Name())
 	}
 
-	args := kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs{Data: content}
-	response, err := enclaveCtx.client.UploadFilesArtifact(context.Background(), &args)
+	args := binding_constructors.NewUploadFilesArtifactArgs(content)
+	response, err := enclaveCtx.client.UploadFilesArtifact(context.Background(), args)
 	if err != nil {
 		return "", stacktrace.Propagate(err,
 			  "An error was encountered while uploading data to the API Container.")
 	}
-	return response.Uuid, nil;
+	return services.FilesArtifactID(response.Uuid), nil;
+}
+
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreWeb string) (services.FilesArtifactID, error) {
+	args := binding_constructors.NewStoreWebFilesArtifactArgs(urlToStoreWeb)
+	response, err := enclaveCtx.client.StoreWebFilesArtifact(ctx, args)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred downloading files artifact from URL '%v'", urlToStoreWeb)
+	}
+	return services.FilesArtifactID(response.Uuid), nil
 }
 
 // ====================================================================================================

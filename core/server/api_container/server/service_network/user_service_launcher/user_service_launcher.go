@@ -9,7 +9,6 @@ import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
@@ -55,16 +54,16 @@ func (launcher UserServiceLauncher) Launch(
 	enclaveDataDirMountDirpath string,
 	// TODO REMOVE IN FAVOR OF filesArtifactUuidsToMounpoints
 	// Mapping files artifact ID -> mountpoint on the container to launch
-	oldFilesArtifactIdsToMountpoints map[files_artifact.FilesArtifactID]string,
+	oldFilesArtifactIdsToMountpoints map[service.FilesArtifactID]string,
 	// Mapping of UUIDs of previously-registered files artifacts -> mountpoints on the container
 	// being launched
-	filesArtifactUuidsToMountpoints map[files_artifact.FilesArtifactID]string,
+	filesArtifactUuidsToMountpoints map[service.FilesArtifactID]string,
 ) (
 	resultUserService *service.Service,
 	resultErr error,
 ) {
 	// TODO DELETE THIS ONE!!!!
-	oldArtifactIdSet := map[files_artifact.FilesArtifactID]bool{}
+	oldArtifactIdSet := map[service.FilesArtifactID]bool{}
 	for artifactId := range oldFilesArtifactIdsToMountpoints {
 		oldArtifactIdSet[artifactId] = true
 	}
@@ -73,7 +72,7 @@ func (launcher UserServiceLauncher) Launch(
 		return nil, stacktrace.Propagate(err, "An error occurred expanding the requested files artifacts into volumes")
 	}
 
-	usedArtifactUuidSet := map[files_artifact.FilesArtifactID]bool{}
+	usedArtifactUuidSet := map[service.FilesArtifactID]bool{}
 	for artifactUuid := range filesArtifactUuidsToMountpoints {
 		usedArtifactUuidSet[artifactUuid] = true
 	}

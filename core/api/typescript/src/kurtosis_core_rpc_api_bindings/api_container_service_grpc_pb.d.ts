@@ -24,7 +24,7 @@ interface IApiContainerServiceService extends grpc.ServiceDefinition<grpc.Untype
   getServices: grpc.MethodDefinition<google_protobuf_empty_pb.Empty, api_container_service_pb.GetServicesResponse>;
   getModules: grpc.MethodDefinition<google_protobuf_empty_pb.Empty, api_container_service_pb.GetModulesResponse>;
   uploadFilesArtifact: grpc.MethodDefinition<api_container_service_pb.UploadFilesArtifactArgs, api_container_service_pb.UploadFilesArtifactResponse>;
-  downloadFilesArtifact: grpc.MethodDefinition<api_container_service_pb.DownloadFilesArtifactArgs, api_container_service_pb.DownloadFilesArtifactResponse>;
+  storeWebFilesArtifact: grpc.MethodDefinition<api_container_service_pb.StoreWebFilesArtifactArgs, api_container_service_pb.StoreWebFilesArtifactResponse>;
 }
 
 export const ApiContainerServiceService: IApiContainerServiceService;
@@ -46,7 +46,7 @@ export interface IApiContainerServiceServer extends grpc.UntypedServiceImplement
   getServices: grpc.handleUnaryCall<google_protobuf_empty_pb.Empty, api_container_service_pb.GetServicesResponse>;
   getModules: grpc.handleUnaryCall<google_protobuf_empty_pb.Empty, api_container_service_pb.GetModulesResponse>;
   uploadFilesArtifact: grpc.handleUnaryCall<api_container_service_pb.UploadFilesArtifactArgs, api_container_service_pb.UploadFilesArtifactResponse>;
-  downloadFilesArtifact: grpc.handleUnaryCall<api_container_service_pb.DownloadFilesArtifactArgs, api_container_service_pb.DownloadFilesArtifactResponse>;
+  storeWebFilesArtifact: grpc.handleUnaryCall<api_container_service_pb.StoreWebFilesArtifactArgs, api_container_service_pb.StoreWebFilesArtifactResponse>;
 }
 
 export class ApiContainerServiceClient extends grpc.Client {
@@ -99,7 +99,7 @@ export class ApiContainerServiceClient extends grpc.Client {
   uploadFilesArtifact(argument: api_container_service_pb.UploadFilesArtifactArgs, callback: grpc.requestCallback<api_container_service_pb.UploadFilesArtifactResponse>): grpc.ClientUnaryCall;
   uploadFilesArtifact(argument: api_container_service_pb.UploadFilesArtifactArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.UploadFilesArtifactResponse>): grpc.ClientUnaryCall;
   uploadFilesArtifact(argument: api_container_service_pb.UploadFilesArtifactArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.UploadFilesArtifactResponse>): grpc.ClientUnaryCall;
-  downloadFilesArtifact(argument: api_container_service_pb.DownloadFilesArtifactArgs, callback: grpc.requestCallback<api_container_service_pb.DownloadFilesArtifactResponse>): grpc.ClientUnaryCall;
-  downloadFilesArtifact(argument: api_container_service_pb.DownloadFilesArtifactArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.DownloadFilesArtifactResponse>): grpc.ClientUnaryCall;
-  downloadFilesArtifact(argument: api_container_service_pb.DownloadFilesArtifactArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.DownloadFilesArtifactResponse>): grpc.ClientUnaryCall;
+  storeWebFilesArtifact(argument: api_container_service_pb.StoreWebFilesArtifactArgs, callback: grpc.requestCallback<api_container_service_pb.StoreWebFilesArtifactResponse>): grpc.ClientUnaryCall;
+  storeWebFilesArtifact(argument: api_container_service_pb.StoreWebFilesArtifactArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.StoreWebFilesArtifactResponse>): grpc.ClientUnaryCall;
+  storeWebFilesArtifact(argument: api_container_service_pb.StoreWebFilesArtifactArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.StoreWebFilesArtifactResponse>): grpc.ClientUnaryCall;
 }
