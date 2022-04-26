@@ -1,5 +1,9 @@
 # TBD
 
+# 1.43.3
+### Features
+* Add `EnclaveContext.WithFiles` for specifying mounting files artifacts that come back from the `EnclaveContext.UploadFiles` command
+
 # 1.43.2
 ### Fixes
 * Fixed a bug where modules were getting enclave data dir & volume mounted in the same place

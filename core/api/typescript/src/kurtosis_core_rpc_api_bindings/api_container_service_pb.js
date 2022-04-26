@@ -2640,7 +2640,8 @@ proto.api_container_api.StartServiceArgs.toObject = function(includeInstance, ms
     cmdArgsList: (f = jspb.Message.getRepeatedField(msg, 5)) == null ? undefined : f,
     dockerEnvVarsMap: (f = msg.getDockerEnvVarsMap()) ? f.toObject(includeInstance, undefined) : [],
     enclaveDataDirMntDirpath: jspb.Message.getFieldWithDefault(msg, 7, ""),
-    filesArtifactMountDirpathsMap: (f = msg.getFilesArtifactMountDirpathsMap()) ? f.toObject(includeInstance, undefined) : []
+    filesArtifactMountDirpathsMap: (f = msg.getFilesArtifactMountDirpathsMap()) ? f.toObject(includeInstance, undefined) : [],
+    filesArtifactMountpointsMap: (f = msg.getFilesArtifactMountpointsMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
   if (includeInstance) {
@@ -2711,6 +2712,12 @@ proto.api_container_api.StartServiceArgs.deserializeBinaryFromReader = function(
       break;
     case 8:
       var value = msg.getFilesArtifactMountDirpathsMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
+         });
+      break;
+    case 9:
+      var value = msg.getFilesArtifactMountpointsMap();
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
          });
@@ -2790,6 +2797,10 @@ proto.api_container_api.StartServiceArgs.serializeBinaryToWriter = function(mess
   f = message.getFilesArtifactMountDirpathsMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(8, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
+  }
+  f = message.getFilesArtifactMountpointsMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(9, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
   }
 };
 
@@ -2985,6 +2996,28 @@ proto.api_container_api.StartServiceArgs.prototype.getFilesArtifactMountDirpaths
  */
 proto.api_container_api.StartServiceArgs.prototype.clearFilesArtifactMountDirpathsMap = function() {
   this.getFilesArtifactMountDirpathsMap().clear();
+  return this;};
+
+
+/**
+ * map<string, string> files_artifact_mountpoints = 9;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<string,string>}
+ */
+proto.api_container_api.StartServiceArgs.prototype.getFilesArtifactMountpointsMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<string,string>} */ (
+      jspb.Message.getMapField(this, 9, opt_noLazyCreate,
+      null));
+};
+
+
+/**
+ * Clears values from the map. The map will be non-null.
+ * @return {!proto.api_container_api.StartServiceArgs} returns this
+ */
+proto.api_container_api.StartServiceArgs.prototype.clearFilesArtifactMountpointsMap = function() {
+  this.getFilesArtifactMountpointsMap().clear();
   return this;};
 
 
