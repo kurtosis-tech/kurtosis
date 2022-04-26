@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-import { ok, err, Result } from "neverthrow";
+import {ok, err, Result, Err} from "neverthrow";
 import log from "loglevel";
 import { isNode as  isExecutionEnvNode} from "browser-or-node";
 import * as jspb from "google-protobuf";
@@ -62,7 +62,8 @@ const DEFAULT_PARTITION_ID: PartitionID = "";
 
 // The path on the user service container where the enclave data dir will be bind-mounted
 const SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT: string = "/kurtosis-enclave-data";
-
+const TEMP_FOLDER_SEPERATOR: string = "-";
+const ARTIFACT_EXTENSION: string = ".tgz"
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class EnclaveContext {
 
@@ -535,7 +536,10 @@ export class EnclaveContext {
         return ok(moduleIds)
     }
 
-
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    public async uploadFiles(pathToArchive: string): Promise<Result<string, Error>>  {
+        return err(new Error("Uploading files with TypeScript clients is not implemented."))
+    }
     // ====================================================================================================
     //                                       Private helper functions
     // ====================================================================================================

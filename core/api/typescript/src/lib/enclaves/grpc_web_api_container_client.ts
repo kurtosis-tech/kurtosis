@@ -1,4 +1,4 @@
-import { ok, err, Result } from "neverthrow";
+import {ok, err, Result, Err} from "neverthrow";
 import * as grpc_web from "grpc-web";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import {
@@ -362,5 +362,10 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
 
         const execCommandResponse = execCommandResponseResult.value
         return ok(execCommandResponse)
+    }
+
+    public async uploadFiles(pathToArchive: string): Promise<Result<string, Error>> {
+        return err(new Error("Uploading files trhough the web API has not been implemented. " +
+                             "Please use the Node.js API until it is implemented."))
     }
 }

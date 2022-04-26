@@ -1,4 +1,4 @@
-import { ok, err, Result } from "neverthrow";
+import {ok, err, Result, Err} from "neverthrow";
 import type { ServiceError } from "@grpc/grpc-js";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import {
@@ -362,5 +362,30 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
         const execCommandResponse = execCommandResponseResult.value;
         return ok(execCommandResponse)
+    }
+
+    public async uploadFiles(pathToArchive: string): Promise<Result<string, Error>> {
+        return err(new Error("Uploading files with the Node.js API is under development. " +
+                             "It is not implemented yet."))
+        const filesystem = require("fs")
+        if(!filesystem.existsSync(pathToArchive)) {
+            return err(new Error("The file or folder you want to upload does not exist."))
+        }
+
+        const os = require("os")
+        const path = require("path")
+        const tarArchiver = require("targz")
+        var absoluteTarPath
+        filesystem.mkdtemp(os.tmpdir(), (tempDirError : Error, folder: string) => {
+            if (tempDirError){
+                return tempDirError
+            }
+            absoluteTarPath = path.join(folder, path.basename(pathToArchive)) ;
+        });
+        //tarArchiver.compress( { src: pathToArchive, dest: path.join(absoluteTempFolder)} )
+        //check to see if tarred version is less than 4mb
+        //upload via context
+        //check to see if context had error
+        //return uuid
     }
 }
