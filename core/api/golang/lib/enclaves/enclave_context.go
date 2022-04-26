@@ -467,7 +467,7 @@ func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (string, error) {
+func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.FilesArtifactID, error) {
 	pathToUpload = strings.TrimRight(pathToUpload, string(filepath.Separator))
 	if _, err := os.Stat(pathToUpload); err != nil {
 		return "", stacktrace.Propagate(err, "There was a path error for '%s' during file uploading.", pathToUpload)
@@ -518,7 +518,12 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (string, erro
 		return "", stacktrace.Propagate(err,
 			  "An error was encountered while uploading data to the API Container.")
 	}
-	return response.Uuid, nil;
+	return services.FilesArtifactID(response.Uuid), nil;
+}
+
+func (enclaveCtx *EnclaveContext) DownloadFiles(urlToDownload string) (services.FilesArtifactID, error) {
+	FilesARtifactID
+
 }
 
 // ====================================================================================================

@@ -160,12 +160,27 @@ Gets the IDs of the Kurtosis modules that have been loaded into the enclave.
 
 * `moduleIds`: A set of Kurtosis module IDs that are running in the enclave
 
-### uploadFiles(string pathToUpload)
+### uploadFiles(String pathToUpload)
 Takes a filepath or directory path that will be compressed and uploaded to the Kurtosis filestore for use with [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+
+**Args**
+
+* `pathToUpload`: Filepath or dirpath on the local machine to compress and upload to Kurtosis.
 
 **Returns**
 
 * `uuid`: A unique ID as a string identifying the uploaded files, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+
+### downloadFiles(String urlToDownload)
+Downloads a files-containing `.tgz` from the given URL to the Kurtosis engine, so that the files inside can be mounted inside a service's filespace at creation time via [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+
+**Args**
+
+* `urlToDownload`: The URL on the web where the files-containing `.tgz` should be downloaded from.
+
+**Returns**
+
+* `uuid`: A unique ID as a string identifying the downloaded, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
 PartitionConnection
 -------------------

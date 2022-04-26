@@ -423,6 +423,8 @@ github.com/kurtosis-tech/container-engine-lib v0.0.0-20220425185759-1b019f0aff3f
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20220425185759-1b019f0aff3f/go.mod h1:o3CxtjyJ1S0pFdSbHSo5qRYp5pfQmT1nnxZ8x7yRJoU=
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20220425213229-35ed5fda1fdb h1:wdE9BOG8m8IB2iuJD1lf85qVHZki9iI9frGE+xLAdgU=
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20220425213229-35ed5fda1fdb/go.mod h1:o3CxtjyJ1S0pFdSbHSo5qRYp5pfQmT1nnxZ8x7yRJoU=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20220426004742-bb54dbdd5ebe h1:XzZDiO8Bc3nOmyjlusTw6kwuZ4NHCCXmyD/8RuOJjFQ=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20220426004742-bb54dbdd5ebe/go.mod h1:o3CxtjyJ1S0pFdSbHSo5qRYp5pfQmT1nnxZ8x7yRJoU=
 github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d/go.mod h1:1PoW/0l4K80JRSj7A13aONsnaTdTM+dM36DIfDbYmVs=
 github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e h1:CDNMjCNCvvCPSpoakxYZ3IHjBsxo9rLiMyjgvPYL87Q=
 github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e/go.mod h1:1PoW/0l4K80JRSj7A13aONsnaTdTM+dM36DIfDbYmVs=

@@ -7,7 +7,7 @@ package enclave_data_directory
 
 import (
 	"bufio"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	// This is a special type of import that includes the correct hashing algorithm that we use
 	// If we don't have the "_" in front, Goland will complain it's unused
@@ -44,7 +44,7 @@ func (cache FilesArtifactCache) DownloadFilesArtifact(artifactId string, url str
 }
 
 // Gets the artifact with the given URL, or throws an error if it doesn't exist
-func (cache FilesArtifactCache) GetFilesArtifact(artifactId files_artifact.FilesArtifactID) (*EnclaveDataDirFile, error) {
+func (cache FilesArtifactCache) GetFilesArtifact(artifactId service.FilesArtifactID) (*EnclaveDataDirFile, error) {
 	artifactIdStr := string(artifactId)
 	result, err := cache.underlying.GetFile(artifactIdStr)
 	if err != nil {
