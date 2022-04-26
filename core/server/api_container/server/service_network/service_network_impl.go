@@ -21,6 +21,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
 	"net"
 	"strings"
 	"sync"
@@ -503,6 +504,25 @@ func (network *ServiceNetworkImpl) GetServiceIDs() map[service.ServiceID]bool {
 		}
 	}
 	return serviceIDs
+}
+
+func (network *ServiceNetworkImpl) CopyFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (
+	io.ReadCloser,
+	error,
+) {
+	runInfo, foundRunInfo := network.serviceRunInfo[serviceId]
+	if !foundRunInfo {
+		return nil, stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
+
+	}
+	serviceGuid := runInfo.serviceGUID
+
+	readCloser, err := network.kurtosisBackend.CopyFromUserService(ctx, network.enclaveId, serviceGuid, srcPath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred copying source '%v' from user service with GUID '%v' in enclave with ID '%v'", srcPath, serviceGuid, network.enclaveId)
+	}
+
+	return readCloser, nil
 }
 
 // ====================================================================================================

@@ -6,6 +6,7 @@
 package server
 
 import (
+	"archive/tar"
 	"bufio"
 	"bytes"
 	"context"
@@ -500,6 +501,54 @@ func (service ApiContainerService) DownloadFilesArtifact(ctx context.Context, ar
 	}
 
 	response := &kurtosis_core_rpc_api_bindings.DownloadFilesArtifactResponse{Uuid: uuid}
+	return response, nil
+}
+
+func (service ApiContainerService) CopyFilesArtifactFromService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.CopyFilesArtifactFromServiceArgs) (*kurtosis_core_rpc_api_bindings.CopyFilesArtifactFromServiceResponse, error) {
+
+	//TODO Do we have to add mutex here ?
+
+	serviceIdStr := args.ServiceId
+	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
+	srcPath := args.FilesArtifactPath
+
+	store, err := service.enclaveDataDir.GetFilesArtifactStore()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the files artifact store")
+	}
+
+	readCloser, err := service.serviceNetwork.CopyFromService(ctx, serviceId, srcPath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred copying source '%v' from service with ID '%v'", srcPath, serviceId)
+	}
+	defer readCloser.Close()
+
+	//TODO Should we move this line to Docker Backend impl maybe? and returning a reader instead of a readCloser instance
+	tarReader := tar.NewReader(readCloser)
+
+	//First we store the tar get from the backend in the scratch folder
+
+	//Filename tenemos que crearlo único también para evitar colisiones
+	/*filename := strings.Join([]string{uuid,artifactExtension}, ".")
+	_, err = store.fileCache.AddFile(filename, reader)
+	if err != nil{
+		return "", stacktrace.Propagate(err, "Could not add file with UUID %s at %s.", uuid,
+			store.fileCache.absoluteDirpath)
+	}*/
+	//TODO talvez podemos hacer un file_scratch_store
+
+	//then we tgz that file
+
+	//then we create a new reader from the tgz file
+
+	//Y luego pasamos el tgz reader al store file
+
+	uuid, err := store.StoreFile(tarReader)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to store files.")
+	}
+
+	response := &kurtosis_core_rpc_api_bindings.CopyFilesArtifactFromServiceResponse{Uuid: uuid}
 	return response, nil
 }
 
