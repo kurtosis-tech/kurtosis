@@ -1,4 +1,9 @@
 # TBD
+### Changes
+* The `DockerKurtosisBackend` will now track the free IPs of networks
+
+### Breaking Changes
+TODO thing about DockerKurtosisBackend needing CIDR and taken IPs
 
 # 0.16.0
 ### Removals
