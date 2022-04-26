@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added a `--files` flag to `service add` to allow mounting files artifacts on the container
 
 # 0.14.0
 ### Breaking Changes
