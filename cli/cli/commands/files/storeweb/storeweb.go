@@ -27,8 +27,9 @@ const (
 	engineClientCtxKey  = "engine-client"
 )
 
+// TODO Maybe, instead of having 'storeweb' and 'storeservice' we could just have a flag that switches between the two??
 var FilesStoreWebCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
-	CommandStr:                command_str_consts.FilesUploadCmdStr,
+	CommandStr:                command_str_consts.FilesStoreWebCmdStr,
 	ShortDescription:          "Downloads files from a URL",
 	LongDescription:           fmt.Sprintf(
 		"Instructs Kurtosis to download an archive file from the given URL and store it in the " +
