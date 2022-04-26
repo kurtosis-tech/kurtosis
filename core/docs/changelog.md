@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Bump to container-engine-lib 0.16.0 which has some internal code cleanups
 
 # 1.43.4
 ### Fixes
