@@ -33,7 +33,7 @@ const FILE_SERVER_PORT_SPEC = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, PortPr
 
 const USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT  = "/static"
 
-const DUPLICATE_MOUNTPOINT_DOCKER_DEMON_ERR_MSG  = "Duplicate mount point"
+const DUPLICATE_MOUNTPOINT_DOCKER_DAEMON_ERR_MSG  = "Duplicate mount point"
 
 jest.setTimeout(180000)
 
@@ -48,13 +48,16 @@ test("Test files artifact mounting", async () => {
     try {
 
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const filesArtifacts = new Map<string,FilesArtifactID>()
+        const filesArtifacts = new Map<FilesArtifactID, string>()
         filesArtifacts.set(TEST_FILES_ARTIFACT_ID, TEST_FILES_ARTIFACT_URL)
         const registerFilesArtifactsResult = await enclaveContext.registerFilesArtifacts(filesArtifacts);
 
         if(registerFilesArtifactsResult.isErr()) { throw registerFilesArtifactsResult.error }
 
-        const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier()
+        const filesArtifactsMountpoints = new Map<FilesArtifactID, string>()
+        filesArtifactsMountpoints.set(TEST_FILES_ARTIFACT_ID, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT)
+
+        const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier(filesArtifactsMountpoints)
 
         const addServiceResult = await enclaveContext.addService(FILE_SERVER_SERVICE_ID, fileServerContainerConfigSupplier)
 
@@ -121,7 +124,12 @@ test("Test files artifact mounting", async () => {
             throw new Error(`Actual file 2 contents "${file2Contents}" != expected file 2 contents "${EXPECTED_FILE2_CONTENTS}"`)
         }
 
-        const wrongFileServerContainerConfigSupplier = getFileServerContainerConfigSupplierWithDuplicateMountpoint()
+        const duplicateFilesArtifactMountpoints = new Map<FilesArtifactID, string>()
+        duplicateFilesArtifactMountpoints.set(TEST_FILES_ARTIFACT_ID, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT)
+        duplicateFilesArtifactMountpoints.set(SECOND_TEST_FILES_ARTIFACT_ID, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT)
+
+        //TODO the error is detected in Docker, it is enough for now, but we should capture it in Kurt Core for optimization and decoupling
+        const wrongFileServerContainerConfigSupplier = getFileServerContainerConfigSupplier(duplicateFilesArtifactMountpoints)
 
         const addSecondServiceResult = await enclaveContext.addService(SECOND_FILE_SERVER_SERVICE_ID, wrongFileServerContainerConfigSupplier)
 
@@ -131,8 +139,8 @@ test("Test files artifact mounting", async () => {
 
         if(addSecondServiceResult.isErr()){
             const errMsg = addSecondServiceResult.error.message
-            if(!errMsg.includes(DUPLICATE_MOUNTPOINT_DOCKER_DEMON_ERR_MSG)){
-                throw new Error(`Adding service "${SECOND_FILE_SERVER_SERVICE_ID}" fails, but it was not the expected duplicate mountpoint error`)
+            if(!errMsg.includes(DUPLICATE_MOUNTPOINT_DOCKER_DAEMON_ERR_MSG)){
+                throw new Error(`Adding service "${SECOND_FILE_SERVER_SERVICE_ID}" should have failed and did not, because duplicated files artifact mountpoints should throw an error`)
             }
         }
 
@@ -146,41 +154,16 @@ test("Test files artifact mounting", async () => {
 //                                       Private helper functions
 // ====================================================================================================
 
-function getFileServerContainerConfigSupplier(): (ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error> {
+function getFileServerContainerConfigSupplier(filesArtifactMountpoints: Map<FilesArtifactID, string>): (ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error> {
 	
     const containerConfigSupplier = (ipAddr:string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
 
         const usedPorts = new Map<string, PortSpec>()
         usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
 
-        const filesArtifacts = new Map<string, FilesArtifactID>()
-        filesArtifacts.set(TEST_FILES_ARTIFACT_ID, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT)
-
         const containerConfig = new ContainerConfigBuilder(FILE_SERVER_SERVICE_IMAGE)
             .withUsedPorts(usedPorts)
-            .withFilesArtifacts(filesArtifacts)
-            .build()
-
-        return ok(containerConfig)
-    }
-
-    return containerConfigSupplier
-}
-
-function getFileServerContainerConfigSupplierWithDuplicateMountpoint(): (ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error> {
-
-    const containerConfigSupplier = (ipAddr:string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
-
-        const usedPorts = new Map<string, PortSpec>()
-        usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
-
-        const filesArtifacts = new Map<string, FilesArtifactID>()
-        filesArtifacts.set(TEST_FILES_ARTIFACT_ID, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT)
-        filesArtifacts.set(SECOND_TEST_FILES_ARTIFACT_ID, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT)
-
-        const containerConfig = new ContainerConfigBuilder(FILE_SERVER_SERVICE_IMAGE)
-            .withUsedPorts(usedPorts)
-            .withFilesArtifacts(filesArtifacts)
+            .withFilesArtifacts(filesArtifactMountpoints)
             .build()
 
         return ok(containerConfig)

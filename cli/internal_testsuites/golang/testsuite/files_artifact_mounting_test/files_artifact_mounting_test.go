@@ -40,7 +40,7 @@ const (
 
 	userServiceMountPointForTestFilesArtifact = "/static"
 
-	duplicateMountpointDockerDemonErrMsgSentence = "Duplicate mount point"
+	duplicateMountpointDockerDaemonErrMsgSentence = "Duplicate mount point"
 )
 var fileServerPortSpec = services.NewPortSpec(
 	fileServerPrivatePortNum,
@@ -71,7 +71,7 @@ func TestFilesArtifactMounting(t *testing.T) {
 	}
 	require.NoError(t, enclaveCtx.RegisterFilesArtifacts(filesArtifacts), "An error occurred registering the files artifacts")
 
-	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier()
+	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(tesFilesArtifactMountpoint)
 
 	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
 	require.NoError(t, err, "An error occurred adding the file server service")
@@ -120,16 +120,16 @@ func TestFilesArtifactMounting(t *testing.T) {
 	)
 
 	//TODO the error is detected in Docker, it is enough for now, but we should capture it in Kurt Core for optimization and decoupling
-	wrongFileServerContainerConfigSupplier := getFileServerContainerConfigSupplierWithDuplicateMountpoint()
+	wrongFileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(duplicateFilesArtifactMountpoints)
 	_, err = enclaveCtx.AddService(secondFileServerServiceId, wrongFileServerContainerConfigSupplier)
-	require.Errorf(t, err, "Adding service '%v' did not fails and it is wrong, because the files artifact mountpoints '%v' set in the container config supplier are duplicate and it must not be allowed", secondFileServerServiceId, duplicateFilesArtifactMountpoints)
-	require.Contains(t, err.Error(), duplicateMountpointDockerDemonErrMsgSentence, "Adding service '%v' fails, fails, but it was not the expected duplicate mountpoint error",secondFileServerServiceId)
+	require.Errorf(t, err, "Adding service '%v' should have failed and did not, because duplicated files artifact mountpoints '%v' should throw an error", secondFileServerServiceId, duplicateFilesArtifactMountpoints)
+	require.Contains(t, err.Error(), duplicateMountpointDockerDaemonErrMsgSentence, "Adding service '%v' fails, fails, but it was not the expected duplicate mountpoint error",secondFileServerServiceId)
 }
 
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getFileServerContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+func getFileServerContainerConfigSupplier(filesArtifactMountpoints map[services.FilesArtifactID]string) func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 
 		containerConfig := services.NewContainerConfigBuilder(
@@ -137,22 +137,7 @@ func getFileServerContainerConfigSupplier() func(ipAddr string, sharedDirectory 
 		).WithUsedPorts(map[string]*services.PortSpec{
 			fileServerPortId: fileServerPortSpec,
 		}).WithFilesArtifacts(
-			tesFilesArtifactMountpoint,
-		).Build()
-		return containerConfig, nil
-	}
-	return containerConfigSupplier
-}
-
-func getFileServerContainerConfigSupplierWithDuplicateMountpoint() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-
-		containerConfig := services.NewContainerConfigBuilder(
-			fileServerServiceImage,
-		).WithUsedPorts(map[string]*services.PortSpec{
-			fileServerPortId: fileServerPortSpec,
-		}).WithFilesArtifacts(
-			duplicateFilesArtifactMountpoints,
+			filesArtifactMountpoints,
 		).Build()
 		return containerConfig, nil
 	}
