@@ -1,4 +1,10 @@
 # TBD
+### Removals
+* Removed `files_artifact.FilesArtifactID` because it was a duplicate of `serivce.FilesArtifactID`
+
+### Breaking Change
+* Removed `files_artifact.FilesArtifactID`
+    * Users should switch to `service.FilesArtifactID`
 
 # 0.15.3
 ### Features
