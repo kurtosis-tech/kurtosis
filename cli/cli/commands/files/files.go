@@ -2,6 +2,7 @@ package files
 
 import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/files/storeweb"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/files/upload"
 	"github.com/spf13/cobra"
 )
@@ -15,4 +16,5 @@ var FilesCmd = &cobra.Command{
 
 func init() {
 	FilesCmd.AddCommand(upload.FilesUploadCmd.MustGetCobraCommand())
+	FilesCmd.AddCommand(storeweb.FilesStoreWebCmd.MustGetCobraCommand())
 }

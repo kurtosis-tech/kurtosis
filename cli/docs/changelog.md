@@ -3,6 +3,7 @@
 * Added `ContainerConfigBuilder.WithFiles` which allows use of files artifacts uploaded via `EnclaveContext.UploadFiles` in services
 * Added `files upload` to send files into an enclave
 * Added a `--files` flag to `service add` to allow mounting files artifacts on the container
+* Added `files storeweb` to store files from a web URL in the enclave
 
 # 0.14.0
 ### Breaking Changes
