@@ -7,6 +7,7 @@ package service_network
 
 import (
 	"context"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
@@ -33,7 +34,7 @@ func (m MockServiceNetwork) RegisterService(serviceId service.ServiceID, partiti
 	panic("This is unimplemented for the mock network")
 }
 
-func (m MockServiceNetwork) StartService(ctx context.Context, serviceId service.ServiceID, imageName string, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, dockerEnvVars map[string]string, enclaveDataDirMountDirpath string, filesArtifactMountDirpaths map[string]string) (resultMaybePublicIpAddr net.IP, resultPublicPorts map[string]*port_spec.PortSpec, resultErr error) {
+func (m MockServiceNetwork) StartService(ctx context.Context, serviceId service.ServiceID, imageName string, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, dockerEnvVars map[string]string, enclaveDataDirMountDirpath string, oldFilesArtifactMountDirpaths map[files_artifact.FilesArtifactID]string, filesArtifactMountDirpaths map[files_artifact.FilesArtifactID]string) (resultPublicIpAddr net.IP, resultPublicPorts map[string]*port_spec.PortSpec, resultErr error) {
 	panic("This is unimplemented for the mock network")
 }
 

@@ -26,9 +26,11 @@ type FilesArtifactID string
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 type ContainerConfig struct {
 	image                        string
-	usedPorts                    map[string]*PortSpec
-	filesArtifactMountpoints     map[FilesArtifactID]string
-	entrypointOverrideArgs       []string
+	usedPorts                   map[string]*PortSpec
+	// TODO REMOVE
+	oldFilesArtifactMountpoints map[FilesArtifactID]string
+	filesArtifactMountpoints    map[FilesArtifactID]string
+	entrypointOverrideArgs      []string
 	cmdOverrideArgs              []string
 	environmentVariableOverrides map[string]string
 }
@@ -43,6 +45,11 @@ func (config *ContainerConfig) GetUsedPorts() map[string]*PortSpec {
 
 func (config *ContainerConfig) GetFilesArtifactMountpoints() map[FilesArtifactID]string {
 	return config.filesArtifactMountpoints
+}
+
+// TODO REMOVE
+func (config *ContainerConfig) GetOldFilesArtifactMountpoints() map[FilesArtifactID]string {
+	return config.oldFilesArtifactMountpoints
 }
 
 func (config *ContainerConfig) GetEntrypointOverrideArgs() []string {
@@ -64,9 +71,11 @@ func (config *ContainerConfig) GetEnvironmentVariableOverrides() map[string]stri
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 type ContainerConfigBuilder struct {
 	image                        string
-	usedPorts                    map[string]*PortSpec
-	filesArtifactMountpoints     map[FilesArtifactID]string
-	entrypointOverrideArgs       []string
+	usedPorts                   map[string]*PortSpec
+	// TODO REMOVE
+	oldFilesArtifactMountpoints map[FilesArtifactID]string
+	filesArtifactMountpoints  map[FilesArtifactID]string
+	entrypointOverrideArgs      []string
 	cmdOverrideArgs              []string
 	environmentVariableOverrides map[string]string
 }
@@ -75,6 +84,7 @@ func NewContainerConfigBuilder(image string) *ContainerConfigBuilder {
 	return &ContainerConfigBuilder{
 		image:                        image,
 		usedPorts:                    map[string]*PortSpec{},
+		oldFilesArtifactMountpoints:  map[FilesArtifactID]string{},
 		filesArtifactMountpoints:     map[FilesArtifactID]string{},
 		entrypointOverrideArgs:       nil,
 		cmdOverrideArgs:              nil,
@@ -87,7 +97,13 @@ func (builder *ContainerConfigBuilder) WithUsedPorts(usedPorts map[string]*PortS
 	return builder
 }
 
+// TODO REMOVE THIS
 func (builder *ContainerConfigBuilder) WithFilesArtifacts(filesArtifactMountpoints map[FilesArtifactID]string) *ContainerConfigBuilder {
+	builder.oldFilesArtifactMountpoints = filesArtifactMountpoints
+	return builder
+}
+
+func (builder *ContainerConfigBuilder) WithFiles(filesArtifactMountpoints map[FilesArtifactID]string) *ContainerConfigBuilder {
 	builder.filesArtifactMountpoints = filesArtifactMountpoints
 	return builder
 }
@@ -111,6 +127,7 @@ func (builder *ContainerConfigBuilder) Build() *ContainerConfig {
 	return &ContainerConfig{
 		image:                        builder.image,
 		usedPorts:                    builder.usedPorts,
+		oldFilesArtifactMountpoints:  builder.oldFilesArtifactMountpoints,
 		filesArtifactMountpoints:     builder.filesArtifactMountpoints,
 		entrypointOverrideArgs:       builder.entrypointOverrideArgs,
 		cmdOverrideArgs:              builder.cmdOverrideArgs,

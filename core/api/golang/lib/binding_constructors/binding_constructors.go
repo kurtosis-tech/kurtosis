@@ -122,23 +122,26 @@ func NewRegisterServiceResponse(privateIpAddr string, relativeServiceDirpath str
 //                                        Start Service
 // ==============================================================================================
 func NewStartServiceArgs(
-		serviceId string,
-		image string,
-		privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-		entrypointArgs []string,
-		cmdArgs []string,
-		envVars map[string]string,
-		enclaveDataDirMntDirpath string,
-		filesArtifactMountDirpaths map[string]string) *kurtosis_core_rpc_api_bindings.StartServiceArgs {
+	serviceId string,
+	image string,
+	privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
+	entrypointArgs []string,
+	cmdArgs []string,
+	envVars map[string]string,
+	enclaveDataDirMntDirpath string,
+	oldFilesArtifactMountDirpaths map[string]string,
+	filesArtifactMountDirpaths map[string]string,
+) *kurtosis_core_rpc_api_bindings.StartServiceArgs {
 	return &kurtosis_core_rpc_api_bindings.StartServiceArgs{
 		ServiceId:                  serviceId,
 		DockerImage:                image,
-		PrivatePorts:                  privatePorts,
+		PrivatePorts:               privatePorts,
 		EntrypointArgs:             entrypointArgs,
 		CmdArgs:                    cmdArgs,
 		DockerEnvVars:              envVars,
 		EnclaveDataDirMntDirpath:   enclaveDataDirMntDirpath,
-		FilesArtifactMountDirpaths: filesArtifactMountDirpaths,
+		FilesArtifactMountDirpaths: oldFilesArtifactMountDirpaths,
+		FilesArtifactMountpoints:   filesArtifactMountDirpaths,
 	}
 }
 

@@ -7,9 +7,9 @@ package enclave_data_directory
 
 import (
 	"github.com/google/uuid"
-	"strings"
-	"io"
 	"github.com/kurtosis-tech/stacktrace"
+	"io"
+	"strings"
 )
 
 const (
@@ -28,28 +28,34 @@ func newFilesArtifactStore(absoluteDirpath string, dirpathRelativeToDataDirRoot 
 
 // StoreFile: Saves file to disk.
 func (store FilesArtifactStore) StoreFile(reader io.Reader) (string, error) {
-	uuid, err := getUniversallyUniqueID()
+	newFileUuid, err := getUniversallyUniqueID()
 	if err != nil{
 		return "", stacktrace.Propagate(err, "Could not generate Universally Unique ID.")
 	}
-	filename := strings.Join([]string{uuid,artifactExtension}, ".")
+	filename := strings.Join([]string{newFileUuid,artifactExtension}, ".")
 	_, err = store.fileCache.AddFile(filename, reader)
 	if err != nil{
-		return "", stacktrace.Propagate(err, "Could not add file with UUID %s at %s.", uuid,
-			       store.fileCache.absoluteDirpath)
+		return "", stacktrace.Propagate(
+			err,
+			"Could not store file '%s' to the file cache",
+			filename,
+		)
 	}
-	return uuid, nil
+	return newFileUuid, nil
 }
 
 // Get the file by uuid
-func (store FilesArtifactStore) GetFilepathByUUID(uuid string) (string, error) {
-	filename := strings.Join([]string{uuid, artifactExtension}, ".")
+func (store FilesArtifactStore) GetFileByUUID(retrievalUuid string) (*EnclaveDataDirFile, error) {
+	filename := strings.Join([]string{retrievalUuid, artifactExtension}, ".")
 	enclaveDataDirFile, err := store.fileCache.GetFile(filename)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Could not retrieve file with UUID %s from %s.",
-					uuid, store.fileCache.absoluteDirpath)
+		return nil, stacktrace.Propagate(
+			err,
+			"Could not retrieve file with filename '%s' from the file cache",
+			filename,
+		)
 	}
-	return enclaveDataDirFile.absoluteFilepath, nil
+	return enclaveDataDirFile, nil
 }
 
 
@@ -58,6 +64,8 @@ func (store FilesArtifactStore) GetFilepathByUUID(uuid string) (string, error) {
 //Just generating a random one for now.
 func getUniversallyUniqueID() (string, error) {
 	generatedUUID, err := uuid.NewRandom()
-	uuidString := strings.Replace(generatedUUID.String(), "-", "",-1)
-	return uuidString, err
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred generating a UUID")
+	}
+	return generatedUUID.String(), nil
 }
