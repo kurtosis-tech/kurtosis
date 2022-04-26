@@ -1,5 +1,9 @@
 # TBD
 
+# 1.43.5
+### Changes
+* Bump to container-engine-lib 0.16.0 which has some internal code cleanups
+
 # 1.43.4
 ### Fixes
 * Fix a bug with expanding UUID-keyed files artifacts
@@ -7,6 +11,7 @@
 # 1.43.3
 ### Features
 * Add `EnclaveContext.WithFiles` for specifying mounting files artifacts that come back from the `EnclaveContext.UploadFiles` command
+* Add `EnclaveContext.StoreWebFiles` for downloading files artifacts from the internet
 
 # 1.43.2
 ### Fixes

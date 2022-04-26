@@ -711,37 +711,37 @@ export namespace UploadFilesArtifactResponse {
   }
 }
 
-export class DownloadFilesArtifactArgs extends jspb.Message {
+export class StoreWebFilesArtifactArgs extends jspb.Message {
   getUrl(): string;
-  setUrl(value: string): DownloadFilesArtifactArgs;
+  setUrl(value: string): StoreWebFilesArtifactArgs;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): DownloadFilesArtifactArgs.AsObject;
-  static toObject(includeInstance: boolean, msg: DownloadFilesArtifactArgs): DownloadFilesArtifactArgs.AsObject;
-  static serializeBinaryToWriter(message: DownloadFilesArtifactArgs, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): DownloadFilesArtifactArgs;
-  static deserializeBinaryFromReader(message: DownloadFilesArtifactArgs, reader: jspb.BinaryReader): DownloadFilesArtifactArgs;
+  toObject(includeInstance?: boolean): StoreWebFilesArtifactArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: StoreWebFilesArtifactArgs): StoreWebFilesArtifactArgs.AsObject;
+  static serializeBinaryToWriter(message: StoreWebFilesArtifactArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StoreWebFilesArtifactArgs;
+  static deserializeBinaryFromReader(message: StoreWebFilesArtifactArgs, reader: jspb.BinaryReader): StoreWebFilesArtifactArgs;
 }
 
-export namespace DownloadFilesArtifactArgs {
+export namespace StoreWebFilesArtifactArgs {
   export type AsObject = {
     url: string,
   }
 }
 
-export class DownloadFilesArtifactResponse extends jspb.Message {
+export class StoreWebFilesArtifactResponse extends jspb.Message {
   getUuid(): string;
-  setUuid(value: string): DownloadFilesArtifactResponse;
+  setUuid(value: string): StoreWebFilesArtifactResponse;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): DownloadFilesArtifactResponse.AsObject;
-  static toObject(includeInstance: boolean, msg: DownloadFilesArtifactResponse): DownloadFilesArtifactResponse.AsObject;
-  static serializeBinaryToWriter(message: DownloadFilesArtifactResponse, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): DownloadFilesArtifactResponse;
-  static deserializeBinaryFromReader(message: DownloadFilesArtifactResponse, reader: jspb.BinaryReader): DownloadFilesArtifactResponse;
+  toObject(includeInstance?: boolean): StoreWebFilesArtifactResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: StoreWebFilesArtifactResponse): StoreWebFilesArtifactResponse.AsObject;
+  static serializeBinaryToWriter(message: StoreWebFilesArtifactResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StoreWebFilesArtifactResponse;
+  static deserializeBinaryFromReader(message: StoreWebFilesArtifactResponse, reader: jspb.BinaryReader): StoreWebFilesArtifactResponse;
 }
 
-export namespace DownloadFilesArtifactResponse {
+export namespace StoreWebFilesArtifactResponse {
   export type AsObject = {
     uuid: string,
   }

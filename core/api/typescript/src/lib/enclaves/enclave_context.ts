@@ -29,7 +29,7 @@ import { GrpcNodeApiContainerClient } from "./grpc_node_api_container_client";
 import { GrpcWebApiContainerClient } from "./grpc_web_api_container_client";
 import type { GenericApiContainerClient } from "./generic_api_container_client";
 import { ModuleContext, ModuleID } from "../modules/module_context";
-import { 
+import {
     newGetModuleInfoArgs,
     newGetServiceInfoArgs,
     newLoadModuleArgs,
@@ -40,7 +40,7 @@ import {
     newRegisterServiceArgs,
     newRemoveServiceArgs,
     newRepartitionArgs,
-    newStartServiceArgs,
+    newStartServiceArgs, newStoreWebFilesArtifactArgs,
     newUnloadModuleArgs,
     newWaitForHttpGetEndpointAvailabilityArgs,
     newWaitForHttpPostEndpointAvailabilityArgs
@@ -542,6 +542,16 @@ export class EnclaveContext {
         return ok(moduleIds)
     }
 
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    public async storeWebFiles(url: string): Promise<Result<FilesArtifactID, Error>> {
+        const args = newStoreWebFilesArtifactArgs(url);
+        const storeWebFilesArtifactResponseResult = await this.backend.storeWebFilesArtifact(args)
+        if (storeWebFilesArtifactResponseResult.isErr()) {
+            return err(storeWebFilesArtifactResponseResult.error)
+        }
+        const storeWebFilesArtifactResponse = storeWebFilesArtifactResponseResult.value;
+        return ok(storeWebFilesArtifactResponse.getUuid())
+    }
 
     // ====================================================================================================
     //                                       Private helper functions

@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
@@ -67,11 +66,11 @@ func NewFilesArtifactExpander(enclaveDataDirpathOnHostMachine string, kurtosisBa
 func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 	ctx context.Context,
 	serviceGUID service.ServiceGUID, // Service GUID for whom the artifacts are being expanded into volumes
-	artifactUuidsToExpand map[files_artifact.FilesArtifactID]bool,
-) (map[files_artifact.FilesArtifactID]files_artifact_expansion_volume.FilesArtifactExpansionVolumeName, error) {
+	artifactUuidsToExpand map[service.FilesArtifactID]bool,
+) (map[service.FilesArtifactID]files_artifact_expansion_volume.FilesArtifactExpansionVolumeName, error) {
 
 	// TODO PERF: parallelize this to increase speed
-	artifactIdsToVolNames := map[files_artifact.FilesArtifactID]files_artifact_expansion_volume.FilesArtifactExpansionVolumeName{}
+	artifactIdsToVolNames := map[service.FilesArtifactID]files_artifact_expansion_volume.FilesArtifactExpansionVolumeName{}
 	volumesToDestroyIfSomethingFails := map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool{}
 	for filesArtifactId := range artifactUuidsToExpand {
 		// TODO JANKY HACK TO REMOVE SOON: This is for supporting both old FilesArtifactCache and new FilesArtifactStore
@@ -140,7 +139,7 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 //  goes back into the IP pool
 func (expander *FilesArtifactExpander) runFilesArtifactExpander(
 	ctx context.Context,
-	filesArtifactId files_artifact.FilesArtifactID,
+	filesArtifactId service.FilesArtifactID,
 	serviceGuid service.ServiceGUID,
 	filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
 	artifactFilepathOnExpanderContainer string,
@@ -208,7 +207,7 @@ func (expander *FilesArtifactExpander) destroyFilesArtifactExpansionVolumes(ctx 
 	}
 }
 
-func newFilesArtifactExpanderGUID(filesArtifactId files_artifact.FilesArtifactID, userServiceGuid service.ServiceGUID) files_artifact_expander.FilesArtifactExpanderGUID {
+func newFilesArtifactExpanderGUID(filesArtifactId service.FilesArtifactID, userServiceGuid service.ServiceGUID) files_artifact_expander.FilesArtifactExpanderGUID {
 	userServiceGuidStr := string(userServiceGuid)
 	filesArtifactIdStr := string(filesArtifactId)
 	suffix := current_time_str_provider.GetCurrentTimeStr()
