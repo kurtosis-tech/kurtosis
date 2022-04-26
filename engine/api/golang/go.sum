@@ -51,10 +51,10 @@ github.com/kr/pretty v0.2.1/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfn
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
-github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220425214202-7d54d8d8b9fc h1:lXOji6npx2h5m/5ygO0wy9gnNAjo0Q7P/0JG+BmXOHk=
-github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220425214202-7d54d8d8b9fc/go.mod h1:mE55IK3ZgJA7LW2qr2nVa3W88sY79kgVnVmKIcMIMIg=
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220426024838-b4e201b632df h1:aLL96O4IXHUj4DIsFQi2APrRUu+DOt7rJHhHsBoio4Q=
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220426024838-b4e201b632df/go.mod h1:mE55IK3ZgJA7LW2qr2nVa3W88sY79kgVnVmKIcMIMIg=
+github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220426041529-8b8b7b09e967 h1:JxES1SkkJ6iXJ9w6e1/q2nKK06yP+MGDigXvMGffxEY=
+github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220426041529-8b8b7b09e967/go.mod h1:mE55IK3ZgJA7LW2qr2nVa3W88sY79kgVnVmKIcMIMIg=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 h1:YQTATifMUwZEtZYb0LVA7DK2pj8s71iY8rzweuUQ5+g=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409/go.mod h1:y5weVs5d9wXXHcDA1awRxkIhhHC1xxYJN8a7aXnE6S8=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
