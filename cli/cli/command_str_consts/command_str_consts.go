@@ -24,6 +24,7 @@ const (
 		EngineRestartCmdStr = "restart"
 	FilesCmdStr           = "files"
 		FilesUploadCmdStr = "upload"
+		FilesStoreWebCmdStr = "storeweb"
 	ModuleCmdStr = "module"
 		ModuleExecCmdStr = "exec"
 	ServiceCmdStr = "service"
