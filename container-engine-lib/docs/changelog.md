@@ -1,4 +1,6 @@
 # TBD
+
+# 0.16.0
 ### Removals
 * Removed `files_artifact.FilesArtifactID` because it was a duplicate of `serivce.FilesArtifactID`
 
