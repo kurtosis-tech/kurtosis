@@ -842,6 +842,7 @@ func (manager DockerManager) GetContainersByLabels(ctx context.Context, labels m
 
 func (manager DockerManager) PullImage(context context.Context, imageName string) (err error) {
 	logrus.Infof("Pulling image '%s'...", imageName)
+	logrus.Infof("TODO TODO TODO REMOVE THIS LINE: GMARCHETTI PAUSE UNPAUSE")
 	out, err := manager.dockerClient.ImagePull(context, imageName, types.ImagePullOptions{})
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to pull image %s", imageName)
