@@ -37,4 +37,6 @@ type FlagConfig struct {
 	Default string
 
 	// TODO Validation function
+
+	// TODO Add the ability to have greedy params!!! Would be very useful for things like '--ports' and '--files' in 'service add'
 }
