@@ -22,14 +22,16 @@ import (
 Convenience struct whose only purpose is launching user services
 */
 type UserServiceLauncher struct {
-	kurtosisBackend                 backend_interface.KurtosisBackend
-	filesArtifactExpander           *files_artifact_expander.FilesArtifactExpander
-	freeIpAddrTracker               *lib.FreeIpAddrTracker
+	kurtosisBackend          backend_interface.KurtosisBackend
+	filesArtifactExpander    *files_artifact_expander.FilesArtifactExpander
+	// TODO delete this
+	oldFilesArtifactExpander *files_artifact_expander.FilesArtifactExpander
+	freeIpAddrTracker        *lib.FreeIpAddrTracker
 	enclaveDataDirpathOnHostMachine string
 }
 
-func NewUserServiceLauncher(kurtosisBackend backend_interface.KurtosisBackend, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, freeIpAddrTracker *lib.FreeIpAddrTracker, enclaveDataDirpathOnHostMachine string) *UserServiceLauncher {
-	return &UserServiceLauncher{kurtosisBackend: kurtosisBackend, filesArtifactExpander: filesArtifactExpander, freeIpAddrTracker: freeIpAddrTracker, enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine}
+func NewUserServiceLauncher(kurtosisBackend backend_interface.KurtosisBackend, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, oldFilesArtifactExpander *files_artifact_expander.FilesArtifactExpander, freeIpAddrTracker *lib.FreeIpAddrTracker, enclaveDataDirpathOnHostMachine string) *UserServiceLauncher {
+	return &UserServiceLauncher{kurtosisBackend: kurtosisBackend, filesArtifactExpander: filesArtifactExpander, oldFilesArtifactExpander: oldFilesArtifactExpander, freeIpAddrTracker: freeIpAddrTracker, enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine}
 }
 
 /**
@@ -51,26 +53,55 @@ func (launcher UserServiceLauncher) Launch(
 	cmdArgs []string,
 	envVars map[string]string,
 	enclaveDataDirMountDirpath string,
+	// TODO REMOVE IN FAVOR OF filesArtifactUuidsToMounpoints
 	// Mapping files artifact ID -> mountpoint on the container to launch
 	filesArtifactIdsToMountpoints map[files_artifact.FilesArtifactID]string,
+	// Mapping of UUIDs of previously-registered files artifacts -> mountpoints on the container
+	// being launched
+	filesArtifactUuidsToMountpoints map[files_artifact.FilesArtifactID]string,
 ) (
 	resultUserService *service.Service,
 	resultErr error,
 ) {
+	// TODO DELETE THIS ONE!!!!
 	usedArtifactIdSet := map[files_artifact.FilesArtifactID]bool{}
 	for artifactId := range filesArtifactIdsToMountpoints {
 		usedArtifactIdSet[artifactId] = true
+	}
+	artifactIdsToVolumes, err := launcher.oldFilesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, serviceGUID, usedArtifactIdSet)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred expanding the requested files artifacts into volumes")
+	}
+
+	usedArtifactUuidSet := map[files_artifact.FilesArtifactID]bool{}
+	for artifactUuid := range filesArtifactIdsToMountpoints {
+		usedArtifactUuidSet[artifactUuid] = true
 	}
 
 	// First expand the files artifacts into volumes, so that any errors get caught early
 	// NOTE: if users don't need to investigate the volume contents, we could keep track of the volumes we create
 	//  and delete them at the end of the test to keep things cleaner
-	artifactIdsToVolumes, err := launcher.filesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, serviceGUID, usedArtifactIdSet)
+	artifactUuidsToVolumes, err := launcher.filesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, serviceGUID, usedArtifactUuidSet)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred expanding the requested files artifacts into volumes")
 	}
 
+
 	artifactVolumeMounts := map[string]string{}
+	for artifactUuid, mountpoint := range filesArtifactUuidsToMountpoints {
+		artifactVolume, found := artifactUuidsToVolumes[artifactUuid]
+		if !found {
+			return nil, stacktrace.NewError(
+				"Even though we declared that we need files artifact '%v' to be expanded, no volume containing the "+
+					"expanded contents was found; this is a bug in Kurtosis",
+				artifactUuid,
+			)
+		}
+		artifactVolumeMounts[string(artifactVolume)] = mountpoint
+	}
+
+
+	// TODO DELETE THIS
 	for artifactId, mountpoint := range filesArtifactIdsToMountpoints {
 		artifactVolume, found := artifactIdsToVolumes[artifactId]
 		if !found {

@@ -61,6 +61,7 @@ Gets the [ModuleContext][modulecontext] associated with an already-running modul
 
 * `moduleContext`: The [ModuleContext][modulecontext] representation of the running module container, which allows execution of the module's execute function (if it exists).
 
+<!-- TODO DELETE THIS!!! -->
 ### registerFilesArtifacts(Map\<FilesArtifactID, String\> filesArtifactUrls)
 Downloads the given files artifacts to the Kurtosis engine, associating them with the given IDs, so they can be mounted inside a service's filespace at creation time via [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
@@ -160,11 +161,11 @@ Gets the IDs of the Kurtosis modules that have been loaded into the enclave.
 * `moduleIds`: A set of Kurtosis module IDs that are running in the enclave
 
 ### uploadFiles(string pathToUpload)
-Takes a filepath or directory path that will be compressed and uploaded to the Kurtosis File System.
+Takes a filepath or directory path that will be compressed and uploaded to the Kurtosis filestore for use .
 
 **Returns**
 
-* `uuid`: A unique id as a string that represents the files artifact and its location.
+* `uuid`: A unique ID as a string identifying the uploaded files, which can be used in 
 
 PartitionConnection
 -------------------
@@ -187,11 +188,11 @@ The name of the container image that Kurtosis should use when creating the servi
 The ports that the container will be listening on, identified by a user-friendly ID that can be used to select the port again in the future (e.g. via [ServiceContext.getPublicPorts][servicecontext_getpublicports].
 
 ### Map\<String, String\> filesArtifactMountpoints
-Sometimes a service needs files to be available before it starts, but creating those files manually is slow, difficult, or would require committing a very large artifact to the testsuite's Git repo (e.g. starting a service with a 5 GB Postgres database mounted). To ease this pain, Kurtosis allows you to specify URLs of gzipped TAR files that Kurtosis will download, uncompress, and mount inside your service containers. 
+Sometimes a service needs files to be available before it starts (e.g. starting a service with a 5 GB Postgres database mounted). To ease this pain, Kurtosis allows you to specify gzipped TAR files that Kurtosis will uncompress and mount at locations on your service containers. These "files artifacts" will need to have been stored in Kurtosis beforehand using methods like [EnclaveContext.uploadFiles][enclavecontext_uploadfiles].
 
-This property is therefore a map of the file artifact ID -> path on the container where the uncompressed artifact contents should be mounted, with the file artifact IDs corresponding to the files artifacts registered via [EnclaveContext.registerFilesArtifacts][enclavecontext_registerfilesartifacts]. 
+This property is therefore a map of the files artifact ID -> path on the container where the uncompressed artifact contents should be mounted, with the file artifact IDs corresponding to the ID returned by files-storing methods like [EnclaveContext.uploadFiles][enclavecontext_uploadfiles]. 
 
-E.g. if my test declares an artifact called `5gb-database` that lives at `https://my-site.com/test-artifacts/5gb-database.tgz`, I might return the following map from this function to mount the artifact at the `/database` path inside my container: `{"5gb-database": "/database"}`.
+E.g. if I've previously uploaded a set of files using [EnclaveContext.uploadFiles][enclavecontext_uploadfiles] and Kurtosis has returned me the ID `813bdb20-3aab-4c5b-a0f5-a7deba7bf0d7`, I might ask Kurtosis to mount the contents inside my container at the `/database` path using a map like `{"813bdb20-3aab-4c5b-a0f5-a7deba7bf0d7": "/database"}`.
 
 ### List\<String\> entrypointOverrideArgs
 You often won't control the container images that you'll be using in your testnet, and the `ENTRYPOINT` statement  hardcoded in their Dockerfiles might not be suitable for what you need. This function allows you to override these statements when necessary.
@@ -312,6 +313,7 @@ _Found a bug? File it on [the repo][issues]!_
 [enclavecontext_addservice]: #addserviceserviceid-serviceid--funcstring-ipaddr-sharedpath-shareddirectory---containerconfig-containerconfigsupplier---servicecontext-servicecontext-mapstring-portbinding-hostportbindings
 [enclavecontext_addservicetopartition]: #addservicetopartitionserviceid-serviceid-partitionid-partitionid-funcstring-ipaddr-sharedpath-shareddirectory---containerconfig-containerconfigsupplier---servicecontext-servicecontext-mapstring-portbinding-hostportbindings
 [enclavecontext_repartitionnetwork]: #repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnection-partitionconnections-partitionconnection-defaultconnection
+[enclavecontext_uploadfiles]: #uploadfilesstring-pathtoupload
 
 [partitionconnection]: #partitionconnection
 

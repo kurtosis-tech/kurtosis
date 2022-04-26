@@ -259,7 +259,7 @@ export class EnclaveContext {
 
         log.trace("Creating files artifact ID str -> mount dirpaths map...");
         const artifactIdStrToMountDirpath: Map<string, string> = new Map();
-        for (const [filesArtifactId, mountDirpath] of containerConfig.filesArtifactMountpoints.entries()) {
+        for (const [filesArtifactId, mountDirpath] of containerConfig.oldFilesArtifactMountpoints.entries()) {
 
             artifactIdStrToMountDirpath.set(String(filesArtifactId), mountDirpath);
         }

@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Add `EnclaveContext.WithFiles` for specifying mounting files artifacts that come back from the `EnclaveContext.UploadFiles` command
 
 # 1.43.2
 ### Fixes

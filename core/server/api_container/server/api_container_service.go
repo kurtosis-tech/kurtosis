@@ -213,9 +213,14 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 		}
 		privateServicePortSpecs[portId] = privateServicePortSpec
 	}
-	filesArtifactMountDirPathsKeyedByFilesArtifactId := map[files_artifact.FilesArtifactID]string{}
+	// TODO REMOVE
+	oldFilesArtifactMountDirPathsKeyedByFilesArtifactId := map[files_artifact.FilesArtifactID]string{}
 	for filesArtifactIdStr, mountDirPath := range args.FilesArtifactMountDirpaths {
-		filesArtifactMountDirPathsKeyedByFilesArtifactId[files_artifact.FilesArtifactID(filesArtifactIdStr)] = mountDirPath
+		oldFilesArtifactMountDirPathsKeyedByFilesArtifactId[files_artifact.FilesArtifactID(filesArtifactIdStr)] = mountDirPath
+	}
+	filesArtifactMountpointsByArtifactId := map[files_artifact.FilesArtifactID]string{}
+	for filesArtifactIdStr, mountDirPath := range args.FilesArtifactMountpoints {
+		filesArtifactMountpointsByArtifactId[files_artifact.FilesArtifactID(filesArtifactIdStr)] = mountDirPath
 	}
 	maybePublicIpAddr, publicServicePortSpecs, err := service.serviceNetwork.StartService(
 		ctx,
@@ -226,7 +231,9 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 		args.CmdArgs,
 		args.DockerEnvVars,
 		args.EnclaveDataDirMntDirpath,
-		filesArtifactMountDirPathsKeyedByFilesArtifactId)
+		oldFilesArtifactMountDirPathsKeyedByFilesArtifactId,
+		filesArtifactMountpointsByArtifactId,
+	)
 	if err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "An error occurred starting the service in the service network")
