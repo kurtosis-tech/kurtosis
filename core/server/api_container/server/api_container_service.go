@@ -485,7 +485,7 @@ func (apicService ApiContainerService) UploadFilesArtifact(ctx context.Context, 
 }
 
 
-func (apicService ApiContainerService) DownloadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.DownloadFilesArtifactResponse, error) {
+func (apicService ApiContainerService) StoreWebFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactResponse, error) {
 	url := args.Url
 
 	store, err := apicService.enclaveDataDir.GetFilesArtifactStore()
@@ -505,7 +505,7 @@ func (apicService ApiContainerService) DownloadFilesArtifact(ctx context.Context
 		return nil, stacktrace.Propagate(err, "An error occurred storing the file from URL '%v' in the files artifact store", url)
 	}
 
-	response := &kurtosis_core_rpc_api_bindings.DownloadFilesArtifactResponse{Uuid: uuid}
+	response := &kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactResponse{Uuid: uuid}
 	return response, nil
 }
 
