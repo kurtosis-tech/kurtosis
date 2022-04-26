@@ -354,8 +354,11 @@ func (service ApiContainerService) Repartition(ctx context.Context, args *kurtos
 func (service ApiContainerService) PauseService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.PauseServiceArgs) (*emptypb.Empty, error) {
 	// TODO TODO TODO FILL ME
 	serviceIdStr := args.ServiceId
-	_ = kurtosis_backend_service.ServiceID(serviceIdStr)
-	//service.serviceNetwork.PauseService(ctx, serviceId)
+	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
+	err := service.serviceNetwork.PauseService(ctx, serviceId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to pause service %+v", serviceId)
+	}
 	return &emptypb.Empty{}, nil
 }
 
