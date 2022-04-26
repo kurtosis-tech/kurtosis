@@ -29,9 +29,14 @@ type EngineConsumingKurtosisCommand struct {
 
 	LongDescription string
 
+
 	// The name of the key that will be set during PreValidationAndRun where the KurtosisBackend can be found
 	KurtosisBackendContextKey string
 
+	// TODO Replace with KurtosisContext!!! This will:
+	//  1) be easier to work with and
+	//  2) force us to use the same SDK we give to users, so there's no "secret" or "private" API, which will force
+	//     us to improve the SDK
 	// The name of the key that will be set during PreValidationAndRun where the engine client will be made available
 	EngineClientContextKey string
 
