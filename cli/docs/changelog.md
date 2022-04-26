@@ -1,7 +1,7 @@
 # TBD
 ### Features
 * Added `ContainerConfigBuilder.WithFiles` which allows use of files artifacts uploaded via `EnclaveContext.UploadFiles` in services
-* Added `enclave upload` to push files to an enclave for later use
+* Added `enclave files upload` to push files to an enclave for later use
 
 # 0.14.0
 ### Breaking Changes
