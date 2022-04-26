@@ -365,7 +365,7 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
     }
 
     public async uploadFiles(pathToArchive: string): Promise<Result<string, Error>> {
-        return err(new Error("Uploading files trhough the web API has not been implemented. " +
+        return err(new Error("Uploading files through the web API has not been implemented. " +
                              "Please use the Node.js API until it is implemented."))
     }
 }
