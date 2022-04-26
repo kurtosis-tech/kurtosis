@@ -1872,9 +1872,9 @@ func (x *UploadFilesArtifactResponse) GetUuid() string {
 }
 
 // ==============================================================================================
-//                                        Download Files Artifact
+//                                        Store Web Files Artifact
 // ==============================================================================================
-type DownloadFilesArtifactArgs struct {
+type StoreWebFilesArtifactArgs struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -1883,8 +1883,8 @@ type DownloadFilesArtifactArgs struct {
 	Url string `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
 }
 
-func (x *DownloadFilesArtifactArgs) Reset() {
-	*x = DownloadFilesArtifactArgs{}
+func (x *StoreWebFilesArtifactArgs) Reset() {
+	*x = StoreWebFilesArtifactArgs{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_api_container_service_proto_msgTypes[28]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1892,13 +1892,13 @@ func (x *DownloadFilesArtifactArgs) Reset() {
 	}
 }
 
-func (x *DownloadFilesArtifactArgs) String() string {
+func (x *StoreWebFilesArtifactArgs) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DownloadFilesArtifactArgs) ProtoMessage() {}
+func (*StoreWebFilesArtifactArgs) ProtoMessage() {}
 
-func (x *DownloadFilesArtifactArgs) ProtoReflect() protoreflect.Message {
+func (x *StoreWebFilesArtifactArgs) ProtoReflect() protoreflect.Message {
 	mi := &file_api_container_service_proto_msgTypes[28]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1910,19 +1910,19 @@ func (x *DownloadFilesArtifactArgs) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DownloadFilesArtifactArgs.ProtoReflect.Descriptor instead.
-func (*DownloadFilesArtifactArgs) Descriptor() ([]byte, []int) {
+// Deprecated: Use StoreWebFilesArtifactArgs.ProtoReflect.Descriptor instead.
+func (*StoreWebFilesArtifactArgs) Descriptor() ([]byte, []int) {
 	return file_api_container_service_proto_rawDescGZIP(), []int{28}
 }
 
-func (x *DownloadFilesArtifactArgs) GetUrl() string {
+func (x *StoreWebFilesArtifactArgs) GetUrl() string {
 	if x != nil {
 		return x.Url
 	}
 	return ""
 }
 
-type DownloadFilesArtifactResponse struct {
+type StoreWebFilesArtifactResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -1931,8 +1931,8 @@ type DownloadFilesArtifactResponse struct {
 	Uuid string `protobuf:"bytes,1,opt,name=uuid,proto3" json:"uuid,omitempty"`
 }
 
-func (x *DownloadFilesArtifactResponse) Reset() {
-	*x = DownloadFilesArtifactResponse{}
+func (x *StoreWebFilesArtifactResponse) Reset() {
+	*x = StoreWebFilesArtifactResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_api_container_service_proto_msgTypes[29]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1940,13 +1940,13 @@ func (x *DownloadFilesArtifactResponse) Reset() {
 	}
 }
 
-func (x *DownloadFilesArtifactResponse) String() string {
+func (x *StoreWebFilesArtifactResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DownloadFilesArtifactResponse) ProtoMessage() {}
+func (*StoreWebFilesArtifactResponse) ProtoMessage() {}
 
-func (x *DownloadFilesArtifactResponse) ProtoReflect() protoreflect.Message {
+func (x *StoreWebFilesArtifactResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_api_container_service_proto_msgTypes[29]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1958,12 +1958,12 @@ func (x *DownloadFilesArtifactResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DownloadFilesArtifactResponse.ProtoReflect.Descriptor instead.
-func (*DownloadFilesArtifactResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use StoreWebFilesArtifactResponse.ProtoReflect.Descriptor instead.
+func (*StoreWebFilesArtifactResponse) Descriptor() ([]byte, []int) {
 	return file_api_container_service_proto_rawDescGZIP(), []int{29}
 }
 
-func (x *DownloadFilesArtifactResponse) GetUuid() string {
+func (x *StoreWebFilesArtifactResponse) GetUuid() string {
 	if x != nil {
 		return x.Uuid
 	}
@@ -2335,11 +2335,11 @@ var file_api_container_service_proto_rawDesc = []byte{
 	0x64, 0x61, 0x74, 0x61, 0x22, 0x31, 0x0a, 0x1b, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x46, 0x69,
 	0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f,
 	0x6e, 0x73, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x75, 0x75, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x04, 0x75, 0x75, 0x69, 0x64, 0x22, 0x2d, 0x0a, 0x19, 0x44, 0x6f, 0x77, 0x6e, 0x6c,
-	0x6f, 0x61, 0x64, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74,
+	0x09, 0x52, 0x04, 0x75, 0x75, 0x69, 0x64, 0x22, 0x2d, 0x0a, 0x19, 0x53, 0x74, 0x6f, 0x72, 0x65,
+	0x57, 0x65, 0x62, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74,
 	0x41, 0x72, 0x67, 0x73, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x72, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x03, 0x75, 0x72, 0x6c, 0x22, 0x33, 0x0a, 0x1d, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f,
-	0x61, 0x64, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x52,
+	0x09, 0x52, 0x03, 0x75, 0x72, 0x6c, 0x22, 0x33, 0x0a, 0x1d, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x57,
+	0x65, 0x62, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x52,
 	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x75, 0x75, 0x69, 0x64, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x75, 0x75, 0x69, 0x64, 0x32, 0x99, 0x0d, 0x0a, 0x13,
 	0x41, 0x70, 0x69, 0x43, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76,
@@ -2440,12 +2440,12 @@ var file_api_container_service_proto_rawDesc = []byte{
 	0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x55,
 	0x70, 0x6c, 0x6f, 0x61, 0x64, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61,
 	0x63, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x79, 0x0a, 0x15,
-	0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74,
+	0x53, 0x74, 0x6f, 0x72, 0x65, 0x57, 0x65, 0x62, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74,
 	0x69, 0x66, 0x61, 0x63, 0x74, 0x12, 0x2c, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74,
-	0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f,
-	0x61, 0x64, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x41,
+	0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x57,
+	0x65, 0x62, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x41,
 	0x72, 0x67, 0x73, 0x1a, 0x30, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69,
-	0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64,
+	0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x57, 0x65, 0x62,
 	0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x52, 0x65, 0x73,
 	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x52, 0x5a, 0x50, 0x67, 0x69, 0x74, 0x68, 0x75,
 	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x75, 0x72, 0x74, 0x6f, 0x73, 0x69, 0x73, 0x2d, 0x74,
@@ -2500,8 +2500,8 @@ var file_api_container_service_proto_goTypes = []interface{}{
 	(*GetModulesResponse)(nil),                      // 26: api_container_api.GetModulesResponse
 	(*UploadFilesArtifactArgs)(nil),                 // 27: api_container_api.UploadFilesArtifactArgs
 	(*UploadFilesArtifactResponse)(nil),             // 28: api_container_api.UploadFilesArtifactResponse
-	(*DownloadFilesArtifactArgs)(nil),               // 29: api_container_api.DownloadFilesArtifactArgs
-	(*DownloadFilesArtifactResponse)(nil),           // 30: api_container_api.DownloadFilesArtifactResponse
+	(*StoreWebFilesArtifactArgs)(nil),               // 29: api_container_api.StoreWebFilesArtifactArgs
+	(*StoreWebFilesArtifactResponse)(nil),           // 30: api_container_api.StoreWebFilesArtifactResponse
 	nil,                                             // 31: api_container_api.RegisterFilesArtifactsArgs.FilesArtifactUrlsEntry
 	nil,                                             // 32: api_container_api.StartServiceArgs.PrivatePortsEntry
 	nil,                                             // 33: api_container_api.StartServiceArgs.DockerEnvVarsEntry
@@ -2562,7 +2562,7 @@ var file_api_container_service_proto_depIdxs = []int32{
 	45, // 40: api_container_api.ApiContainerService.GetServices:input_type -> google.protobuf.Empty
 	45, // 41: api_container_api.ApiContainerService.GetModules:input_type -> google.protobuf.Empty
 	27, // 42: api_container_api.ApiContainerService.UploadFilesArtifact:input_type -> api_container_api.UploadFilesArtifactArgs
-	29, // 43: api_container_api.ApiContainerService.DownloadFilesArtifact:input_type -> api_container_api.DownloadFilesArtifactArgs
+	29, // 43: api_container_api.ApiContainerService.StoreWebFilesArtifact:input_type -> api_container_api.StoreWebFilesArtifactArgs
 	3,  // 44: api_container_api.ApiContainerService.LoadModule:output_type -> api_container_api.LoadModuleResponse
 	45, // 45: api_container_api.ApiContainerService.UnloadModule:output_type -> google.protobuf.Empty
 	6,  // 46: api_container_api.ApiContainerService.ExecuteModule:output_type -> api_container_api.ExecuteModuleResponse
@@ -2579,7 +2579,7 @@ var file_api_container_service_proto_depIdxs = []int32{
 	25, // 57: api_container_api.ApiContainerService.GetServices:output_type -> api_container_api.GetServicesResponse
 	26, // 58: api_container_api.ApiContainerService.GetModules:output_type -> api_container_api.GetModulesResponse
 	28, // 59: api_container_api.ApiContainerService.UploadFilesArtifact:output_type -> api_container_api.UploadFilesArtifactResponse
-	30, // 60: api_container_api.ApiContainerService.DownloadFilesArtifact:output_type -> api_container_api.DownloadFilesArtifactResponse
+	30, // 60: api_container_api.ApiContainerService.StoreWebFilesArtifact:output_type -> api_container_api.StoreWebFilesArtifactResponse
 	44, // [44:61] is the sub-list for method output_type
 	27, // [27:44] is the sub-list for method input_type
 	27, // [27:27] is the sub-list for extension type_name
@@ -2930,7 +2930,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DownloadFilesArtifactArgs); i {
+			switch v := v.(*StoreWebFilesArtifactArgs); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2942,7 +2942,7 @@ func file_api_container_service_proto_init() {
 			}
 		}
 		file_api_container_service_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DownloadFilesArtifactResponse); i {
+			switch v := v.(*StoreWebFilesArtifactResponse); i {
 			case 0:
 				return &v.state
 			case 1:

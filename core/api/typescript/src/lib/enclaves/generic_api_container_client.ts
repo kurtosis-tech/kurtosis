@@ -6,7 +6,6 @@
 import { Result } from "neverthrow";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import {
-    DownloadFilesArtifactArgs, DownloadFilesArtifactResponse,
     ExecCommandArgs,
     ExecCommandResponse,
     ExecuteModuleArgs,
@@ -23,7 +22,7 @@ import {
     RemoveServiceArgs,
     RepartitionArgs,
     StartServiceArgs,
-    StartServiceResponse,
+    StartServiceResponse, StoreWebFilesArtifactArgs, StoreWebFilesArtifactResponse,
     UnloadModuleArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
     WaitForHttpPostEndpointAvailabilityArgs
@@ -47,5 +46,5 @@ export interface GenericApiContainerClient {
     getModules(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetModulesResponse, Error>>
     executeModule(executeModuleArgs: ExecuteModuleArgs): Promise<Result<ExecuteModuleResponse, Error>>
     execCommand(execCommandArgs: ExecCommandArgs): Promise<Result<ExecCommandResponse, Error>>
-    downloadFilesArtifact(downloadFilesArtifactArgs: DownloadFilesArtifactArgs): Promise<Result<DownloadFilesArtifactResponse, Error>>
+    storeWebFilesArtifact(storeWebFilesArtifactArgs: StoreWebFilesArtifactArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>>
 }

@@ -171,7 +171,7 @@ Takes a filepath or directory path that will be compressed and uploaded to the K
 
 * `uuid`: A unique ID as a string identifying the uploaded files, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
-### downloadFiles(String urlToDownload)
+### storeWebFiles(String urlToDownload)
 Downloads a files-containing `.tgz` from the given URL to the Kurtosis engine, so that the files inside can be mounted inside a service's filespace at creation time via [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
 **Args**

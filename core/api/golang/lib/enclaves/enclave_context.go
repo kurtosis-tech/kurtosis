@@ -522,11 +522,11 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveCtx *EnclaveContext) DownloadFiles(ctx context.Context, urlToDownload string) (services.FilesArtifactID, error) {
-	args := binding_constructors.NewDownloadFilesArtifactArgs(urlToDownload)
-	response, err := enclaveCtx.client.DownloadFilesArtifact(ctx, args)
+func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreWeb string) (services.FilesArtifactID, error) {
+	args := binding_constructors.NewStoreWebFilesArtifactArgs(urlToStoreWeb)
+	response, err := enclaveCtx.client.StoreWebFilesArtifact(ctx, args)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred downloading from URL '%v'", urlToDownload)
+		return "", stacktrace.Propagate(err, "An error occurred downloading files artifact from URL '%v'", urlToStoreWeb)
 	}
 	return services.FilesArtifactID(response.Uuid), nil
 }

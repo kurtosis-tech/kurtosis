@@ -22,7 +22,9 @@ import {
     ExecuteModuleResponse,
     ExecuteModuleArgs,
     ExecCommandArgs,
-    ExecCommandResponse, DownloadFilesArtifactArgs, DownloadFilesArtifactResponse,
+    ExecCommandResponse,
+    StoreWebFilesArtifactArgs,
+    StoreWebFilesArtifactResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -364,9 +366,9 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(execCommandResponse)
     }
 
-    public async downloadFilesArtifact(downloadFilesArtifactArgs: DownloadFilesArtifactArgs): Promise<Result<DownloadFilesArtifactResponse, Error>> {
-        const downloadFilesArtifactPromise: Promise<Result<DownloadFilesArtifactResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.downloadFilesArtifact(downloadFilesArtifactArgs, (error: ServiceError | null, response?: DownloadFilesArtifactResponse) => {
+    public async storeWebFilesArtifact(storeWebFilesArtifactArgs: StoreWebFilesArtifactArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>> {
+        const storeWebFilesArtifactPromise: Promise<Result<StoreWebFilesArtifactResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.storeWebFilesArtifact(storeWebFilesArtifactArgs, (error: ServiceError | null, response?: StoreWebFilesArtifactResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -378,12 +380,12 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
                 }
             })
         });
-        const downloadFilesArtifactResponseResult: Result<DownloadFilesArtifactResponse, Error> = await downloadFilesArtifactPromise;
-        if(downloadFilesArtifactResponseResult.isErr()){
-            return err(downloadFilesArtifactResponseResult.error)
+        const storeWebFilesArtifactResponseResult: Result<StoreWebFilesArtifactResponse, Error> = await storeWebFilesArtifactPromise;
+        if(storeWebFilesArtifactResponseResult.isErr()){
+            return err(storeWebFilesArtifactResponseResult.error)
         }
 
-        const downloadFilesArtifactResponse = downloadFilesArtifactResponseResult.value;
-        return ok(downloadFilesArtifactResponse)
+        const storeWebFilesArtifactResponse = storeWebFilesArtifactResponseResult.value;
+        return ok(storeWebFilesArtifactResponse)
     }
 }

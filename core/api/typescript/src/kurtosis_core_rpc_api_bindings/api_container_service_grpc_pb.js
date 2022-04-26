@@ -5,28 +5,6 @@ var grpc = require('@grpc/grpc-js');
 var api_container_service_pb = require('./api_container_service_pb.js');
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 
-function serialize_api_container_api_DownloadFilesArtifactArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.DownloadFilesArtifactArgs)) {
-    throw new Error('Expected argument of type api_container_api.DownloadFilesArtifactArgs');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_DownloadFilesArtifactArgs(buffer_arg) {
-  return api_container_service_pb.DownloadFilesArtifactArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_DownloadFilesArtifactResponse(arg) {
-  if (!(arg instanceof api_container_service_pb.DownloadFilesArtifactResponse)) {
-    throw new Error('Expected argument of type api_container_api.DownloadFilesArtifactResponse');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_DownloadFilesArtifactResponse(buffer_arg) {
-  return api_container_service_pb.DownloadFilesArtifactResponse.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
 function serialize_api_container_api_ExecCommandArgs(arg) {
   if (!(arg instanceof api_container_service_pb.ExecCommandArgs)) {
     throw new Error('Expected argument of type api_container_api.ExecCommandArgs');
@@ -234,6 +212,28 @@ function serialize_api_container_api_StartServiceResponse(arg) {
 
 function deserialize_api_container_api_StartServiceResponse(buffer_arg) {
   return api_container_service_pb.StartServiceResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_StoreWebFilesArtifactArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.StoreWebFilesArtifactArgs)) {
+    throw new Error('Expected argument of type api_container_api.StoreWebFilesArtifactArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_StoreWebFilesArtifactArgs(buffer_arg) {
+  return api_container_service_pb.StoreWebFilesArtifactArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_StoreWebFilesArtifactResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.StoreWebFilesArtifactResponse)) {
+    throw new Error('Expected argument of type api_container_api.StoreWebFilesArtifactResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_StoreWebFilesArtifactResponse(buffer_arg) {
+  return api_container_service_pb.StoreWebFilesArtifactResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_UnloadModuleArgs(arg) {
@@ -498,16 +498,16 @@ uploadFilesArtifact: {
     responseDeserialize: deserialize_api_container_api_UploadFilesArtifactResponse,
   },
   // Tells the API container to download a files artifact from the web to the Kurtosis File System
-downloadFilesArtifact: {
-    path: '/api_container_api.ApiContainerService/DownloadFilesArtifact',
+storeWebFilesArtifact: {
+    path: '/api_container_api.ApiContainerService/StoreWebFilesArtifact',
     requestStream: false,
     responseStream: false,
-    requestType: api_container_service_pb.DownloadFilesArtifactArgs,
-    responseType: api_container_service_pb.DownloadFilesArtifactResponse,
-    requestSerialize: serialize_api_container_api_DownloadFilesArtifactArgs,
-    requestDeserialize: deserialize_api_container_api_DownloadFilesArtifactArgs,
-    responseSerialize: serialize_api_container_api_DownloadFilesArtifactResponse,
-    responseDeserialize: deserialize_api_container_api_DownloadFilesArtifactResponse,
+    requestType: api_container_service_pb.StoreWebFilesArtifactArgs,
+    responseType: api_container_service_pb.StoreWebFilesArtifactResponse,
+    requestSerialize: serialize_api_container_api_StoreWebFilesArtifactArgs,
+    requestDeserialize: deserialize_api_container_api_StoreWebFilesArtifactArgs,
+    responseSerialize: serialize_api_container_api_StoreWebFilesArtifactResponse,
+    responseDeserialize: deserialize_api_container_api_StoreWebFilesArtifactResponse,
   },
 };
 

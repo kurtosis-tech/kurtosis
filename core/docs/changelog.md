@@ -1,7 +1,7 @@
 # TBD
 ### Features
 * Add `EnclaveContext.WithFiles` for specifying mounting files artifacts that come back from the `EnclaveContext.UploadFiles` command
-* Add `EnclaveContext.DownloadFiles` for downloading files artifacts from the internet
+* Add `EnclaveContext.StoreWebFiles` for downloading files artifacts from the internet
 
 # 1.43.2
 ### Fixes

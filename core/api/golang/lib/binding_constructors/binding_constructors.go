@@ -293,8 +293,8 @@ func NewUploadFilesArtifactArgs(data []byte) *kurtosis_core_rpc_api_bindings.Upl
 
 
 // ==============================================================================================
-//                           Download Files Artifact
+//                           Store Web Files Artifact
 // ==============================================================================================
-func NewDownloadFilesArtifactArgs(url string) *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs {
-	return &kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs{Url: url}
+func NewStoreWebFilesArtifactArgs(url string) *kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs {
+	return &kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs{Url: url}
 }
