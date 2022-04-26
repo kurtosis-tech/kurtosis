@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fix a bug with expanding UUID-keyed files artifacts
 
 # 1.43.3
 ### Features
