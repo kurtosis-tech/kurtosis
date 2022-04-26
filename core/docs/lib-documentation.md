@@ -161,11 +161,11 @@ Gets the IDs of the Kurtosis modules that have been loaded into the enclave.
 * `moduleIds`: A set of Kurtosis module IDs that are running in the enclave
 
 ### uploadFiles(string pathToUpload)
-Takes a filepath or directory path that will be compressed and uploaded to the Kurtosis filestore for use .
+Takes a filepath or directory path that will be compressed and uploaded to the Kurtosis filestore for use with [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
 **Returns**
 
-* `uuid`: A unique ID as a string identifying the uploaded files, which can be used in 
+* `uuid`: A unique ID as a string identifying the uploaded files, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
 PartitionConnection
 -------------------
