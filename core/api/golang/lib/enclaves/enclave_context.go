@@ -18,6 +18,8 @@
 package enclaves
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"context"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/binding_constructors"
@@ -26,14 +28,12 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"math"
-	"path/filepath"
-	"os"
-	"compress/gzip"
-	"archive/tar"
 	"io"
-	"strings"
 	"io/ioutil"
+	"math"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 type EnclaveID string
@@ -191,6 +191,12 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	logrus.Trace("Container config object successfully generated")
 
 	logrus.Tracef("Creating files artifact ID str -> mount dirpaths map...")
+	// TODO DELETE THIS CHUNK
+	oldArtifactIdStrToMountDirpath := map[string]string{}
+	for filesArtifactId, mountDirpath := range containerConfig.GetOldFilesArtifactMountpoints() {
+		oldArtifactIdStrToMountDirpath[string(filesArtifactId)] = mountDirpath
+	}
+
 	artifactIdStrToMountDirpath := map[string]string{}
 	for filesArtifactId, mountDirpath := range containerConfig.GetFilesArtifactMountpoints() {
 		artifactIdStrToMountDirpath[string(filesArtifactId)] = mountDirpath
@@ -214,6 +220,7 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 		containerConfig.GetCmdOverrideArgs(),
 		containerConfig.GetEnvironmentVariableOverrides(),
 		serviceEnclaveDataDirMountpoint,
+		oldArtifactIdStrToMountDirpath,
 		artifactIdStrToMountDirpath,
 	)
 	resp, err := enclaveCtx.client.StartService(ctx, startServiceArgs)
