@@ -6256,7 +6256,7 @@ proto.api_container_api.StoreFilesArtifactFromServiceArgs.prototype.toObject = f
 proto.api_container_api.StoreFilesArtifactFromServiceArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
     serviceId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    filesArtifactPath: jspb.Message.getFieldWithDefault(msg, 2, "")
+    sourcePath: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -6299,7 +6299,7 @@ proto.api_container_api.StoreFilesArtifactFromServiceArgs.deserializeBinaryFromR
       break;
     case 2:
       var value = /** @type {string} */ (reader.readString());
-      msg.setFilesArtifactPath(value);
+      msg.setSourcePath(value);
       break;
     default:
       reader.skipField();
@@ -6337,7 +6337,7 @@ proto.api_container_api.StoreFilesArtifactFromServiceArgs.serializeBinaryToWrite
       f
     );
   }
-  f = message.getFilesArtifactPath();
+  f = message.getSourcePath();
   if (f.length > 0) {
     writer.writeString(
       2,
@@ -6366,10 +6366,10 @@ proto.api_container_api.StoreFilesArtifactFromServiceArgs.prototype.setServiceId
 
 
 /**
- * optional string files_artifact_path = 2;
+ * optional string source_path = 2;
  * @return {string}
  */
-proto.api_container_api.StoreFilesArtifactFromServiceArgs.prototype.getFilesArtifactPath = function() {
+proto.api_container_api.StoreFilesArtifactFromServiceArgs.prototype.getSourcePath = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
 };
 
@@ -6378,7 +6378,7 @@ proto.api_container_api.StoreFilesArtifactFromServiceArgs.prototype.getFilesArti
  * @param {string} value
  * @return {!proto.api_container_api.StoreFilesArtifactFromServiceArgs} returns this
  */
-proto.api_container_api.StoreFilesArtifactFromServiceArgs.prototype.setFilesArtifactPath = function(value) {
+proto.api_container_api.StoreFilesArtifactFromServiceArgs.prototype.setSourcePath = function(value) {
   return jspb.Message.setProto3StringField(this, 2, value);
 };
 

@@ -751,8 +751,8 @@ export class StoreFilesArtifactFromServiceArgs extends jspb.Message {
   getServiceId(): string;
   setServiceId(value: string): StoreFilesArtifactFromServiceArgs;
 
-  getFilesArtifactPath(): string;
-  setFilesArtifactPath(value: string): StoreFilesArtifactFromServiceArgs;
+  getSourcePath(): string;
+  setSourcePath(value: string): StoreFilesArtifactFromServiceArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StoreFilesArtifactFromServiceArgs.AsObject;
@@ -765,7 +765,7 @@ export class StoreFilesArtifactFromServiceArgs extends jspb.Message {
 export namespace StoreFilesArtifactFromServiceArgs {
   export type AsObject = {
     serviceId: string,
-    filesArtifactPath: string,
+    sourcePath: string,
   }
 }
 

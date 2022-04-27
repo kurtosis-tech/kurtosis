@@ -182,17 +182,17 @@ Downloads a files-containing `.tgz` from the given URL to the Kurtosis engine, s
 
 * `uuid`: A unique ID as a string identifying the downloaded, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
-### storeFilesFromUserService(ServiceID serviceId, String absoluteFilepathInUserService)
-Copy a file or and entire folder from a user service filepath to the Kurtosis filestore for use with [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+### storeFilesFromService(ServiceID serviceId, String absoluteFilepathOnServiceContainer)
+Copy a file or folder from a service container to the Kurtosis filestore for use with [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints]
 
 **Args**
 
 * `serviceId`: The ID of the service which contains the file or the folder.
-* `absoluteFilepathInUserService`: The absolute user service's filepath
+* `absoluteFilepathOnServiceContainer`: The absolute filepath on the service where the file or folder should be copied from
 
 **Returns**
 
-* `uuid`: A unique ID as a string identifying the downloaded, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+* `uuid`: A unique ID as a string identifying the downloaded files artifact, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
 PartitionConnection
 -------------------

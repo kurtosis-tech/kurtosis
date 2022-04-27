@@ -1,6 +1,6 @@
 # TBD
 ### Features
-* Add `EnclaveContext.StoreFilesFromUserService` for copy files artifacts from a user service
+* Add `EnclaveContext.StoreFilesFromService` for copy files from a user service
 
 # 1.43.5
 ### Changes

@@ -532,12 +532,12 @@ func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreW
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (EnclaveContext *EnclaveContext) StoreFilesFromUserService(ctx context.Context, serviceId services.ServiceID, absoluteFilepathInUserService string) (services.FilesArtifactID, error) {
+func (EnclaveContext *EnclaveContext) StoreFilesFromService(ctx context.Context, serviceId services.ServiceID, absoluteFilepathOnServiceContainer string) (services.FilesArtifactID, error) {
 	serviceIdStr := string(serviceId)
-	args := binding_constructors.NewStoreFilesArtifactFromServiceArgs(serviceIdStr, absoluteFilepathInUserService)
+	args := binding_constructors.NewStoreFilesArtifactFromServiceArgs(serviceIdStr, absoluteFilepathOnServiceContainer)
 	response, err := EnclaveContext.client.StoreFilesArtifactFromService(ctx, args)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred copying files artifact from absolute filepath '%v' in user service with ID '%v'", absoluteFilepathInUserService, serviceIdStr)
+		return "", stacktrace.Propagate(err, "An error occurred copying files artifact from absolute filepath '%v' in service container with ID '%v'", absoluteFilepathOnServiceContainer, serviceIdStr)
 	}
 	return services.FilesArtifactID(response.Uuid), nil
 }

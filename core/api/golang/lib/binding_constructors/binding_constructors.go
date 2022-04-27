@@ -302,6 +302,6 @@ func NewStoreWebFilesArtifactArgs(url string) *kurtosis_core_rpc_api_bindings.St
 // ==============================================================================================
 //                       Store Files Artifact From Service
 // ==============================================================================================
-func NewStoreFilesArtifactFromServiceArgs(serviceId string, filepath string) *kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs {
-	return &kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs{ServiceId: serviceId, FilesArtifactPath: filepath}
+func NewStoreFilesArtifactFromServiceArgs(serviceId string, sourcePath string) *kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs {
+	return &kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs{ServiceId: serviceId, SourcePath: sourcePath}
 }

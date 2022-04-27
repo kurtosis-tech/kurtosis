@@ -6,7 +6,6 @@
 package server
 
 import (
-	"archive/tar"
 	"bufio"
 	"bytes"
 	"compress/gzip"
@@ -31,9 +30,6 @@ import (
 	"math"
 	"net/http"
 	"os"
-	"path"
-	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -46,8 +42,6 @@ const (
 
 	// The string returned by the API if a service's public IP address doesn't exist
 	missingPublicIpAddrStr = ""
-
-	TempDirFileFileMode os.FileMode = 0744
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -717,152 +711,12 @@ func gzipCompressFile(readCloser io.Reader) (resultFilepath string, resultErr er
 	}
 	defer tgzFile.Close()
 	gzipCompressingWriter := gzip.NewWriter(tgzFile)
+	defer gzipCompressingWriter.Close()
 
 	tarGzipFileFilepath := tgzFile.Name()
 	if _, err := io.Copy(gzipCompressingWriter, readCloser); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred copying content from tar reader to file '%v'", tarGzipFileFilepath)
+		return "", stacktrace.Propagate(err, "An error occurred copying content to file '%v'", tarGzipFileFilepath)
 	}
 
 	return tarGzipFileFilepath, nil
-}
-
-func createTemporaryTarGzFileFromTarReader(tarReader *tar.Reader) (string, error) {
-
-	tarContentTempDir, err := saveTarContentInTempDir(tarReader)
-
-	tarGzipFileFilepath, err := archiveFiles(tarContentTempDir)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred creating a new gzip-tar-file for the content saved in temporary directory '%v'", tarContentTempDir)
-	}
-
-	return tarGzipFileFilepath, nil
-}
-
-func saveTarContentInTempDir(tarReader *tar.Reader) (string, error) {
-	useDefaultDirectoryArg := ""
-	withoutPatternArg := ""
-	tempDirectoryName, err := ioutil.TempDir(useDefaultDirectoryArg,withoutPatternArg)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred creating a new temporary directory to save tar file content")
-	}
-
-	for {
-		tarHeader, err := tarReader.Next()
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return "", stacktrace.Propagate(err, "And error occurred reading reading tar file")
-		}
-
-		destinationFilepath := path.Join(tempDirectoryName, tarHeader.Name)
-
-		switch tarHeader.Typeflag {
-		case tar.TypeDir:
-			if err := createNewDirInTempDir(destinationFilepath); err != nil {
-				return "", stacktrace.Propagate(err, "An error occurred creating new directory '%v'", destinationFilepath)
-			}
-		case tar.TypeReg, tar.TypeRegA:
-			if err := createNewFileInTempDir(destinationFilepath, tarReader); err != nil {
-				return "", stacktrace.Propagate(err, "An error occurred creating new file '%v'", destinationFilepath)
-			}
-		default:
-			return "", stacktrace.Propagate(err, "File type '%v' of file '%v it is not supported for copying tar content between nodes", tarHeader.Typeflag, tarHeader.Name)
-		}
-
-		// maintaining access and modification time in best effort fashion
-		if err := os.Chtimes(destinationFilepath, tarHeader.AccessTime, tarHeader.ModTime); err != nil {
-			//We don't want to block the entire process because we were not able to update time files
-			logrus.Debugf("An error occurred updating access and modifications times for '%v' using acces time '%v' and modification time '%v' from tar file '%v'", destinationFilepath, tarHeader.AccessTime, tarHeader.ModTime, tarHeader.Name)
-		}
-	}
-
-	return tempDirectoryName, nil
-}
-
-func createNewDirInTempDir(dirpath string) error {
-	if err := os.Mkdir(dirpath, TempDirFileFileMode); err != nil {
-		if !os.IsExist(err) {
-			return stacktrace.Propagate(err, "An error occurred creating new directory '%v' with file mode '%v'", dirpath, TempDirFileFileMode)
-		}
-		//If dir exist change update permissions
-		err = os.Chmod(dirpath, TempDirFileFileMode)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred changing directory permissions for '%v' with file mode '%v'", dirpath, TempDirFileFileMode)
-		}
-	}
-	return nil
-}
-
-func createNewFileInTempDir(filepath string, tarReader *tar.Reader) error {
-	openFileFlags := os.O_CREATE|os.O_TRUNC|os.O_WRONLY
-	file, err := os.OpenFile(filepath, openFileFlags, TempDirFileFileMode)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred opening file '%v' using flags '%v' and file mode '%v'", filepath, openFileFlags, TempDirFileFileMode)
-	}
-	defer file.Close()
-	if _, err := io.Copy(file, tarReader); err != nil {
-		return stacktrace.Propagate(err, "An error occurred copying content from tar reader to file '%v' in filepath '%v'", file.Name(), filepath)
-	}
-	return nil
-}
-
-func archiveFiles(pathToUpload string) (string, error) {
-	useDefaultDirectoryArg := ""
-	withoutPatternArg := ""
-	tarFile, err := ioutil.TempFile(useDefaultDirectoryArg,withoutPatternArg)
-	if err != nil {
-		return "", stacktrace.Propagate(err,
-			"There was an error creating a temporary archive file at '%s' during files upload for '%s'.",
-			tarFile.Name(), pathToUpload)
-	}
-	defer tarFile.Close()
-	gzipWriter := gzip.NewWriter(tarFile)
-	defer gzipWriter.Close()
-	tarWriter := tar.NewWriter(gzipWriter)
-	defer tarWriter.Close()
-
-	if err = filepath.Walk(pathToUpload, func(filePath string, fileInfo os.FileInfo, err error) error {
-		return addFilesToArchive(filePath, fileInfo, err, tarWriter, pathToUpload)
-	}); err != nil {
-		return "", stacktrace.Propagate(err,
-			"There was an error searching through directory '%s' during the archive process.", pathToUpload)
-	}
-
-	return tarFile.Name(), nil
-}
-
-func addFilesToArchive(filePath string, fileInfo os.FileInfo, errorFromLastIteration error, archiveWriter *tar.Writer, pathToArchive string) error {
-	if errorFromLastIteration != nil {
-		return stacktrace.Propagate(errorFromLastIteration,
-			"There was an error while taring or accessing file at '%s'.", filePath)
-	}
-
-	if !fileInfo.Mode().IsRegular() {
-		return nil
-	}
-
-	pathToArchiveWithLastForwardSlash := pathToArchive + "/"
-
-	//Create a file header that determines the relative path, w.r.t extraction, where the file belongs.
-	header := &tar.Header{
-		Name:    strings.Replace(filePath, pathToArchiveWithLastForwardSlash, "", 1),
-		Size:    fileInfo.Size(),
-		Mode:    int64(fileInfo.Mode()),
-		ModTime: fileInfo.ModTime(),
-	}
-
-	if err := archiveWriter.WriteHeader(header); err != nil {
-		return stacktrace.Propagate(err, "There was a problem writing headers while archiving '%s'.", filePath)
-	}
-
-	sourceToArchive, err := os.Open(filePath)
-	if err != nil {
-		return stacktrace.Propagate(err, "There was a problem reading from '%s'.", filePath)
-	}
-	defer sourceToArchive.Close()
-	if _, err := io.Copy(archiveWriter, sourceToArchive); err != nil {
-		return stacktrace.Propagate(err, "There was a problem copying '%s' to the tar.", filePath)
-	}
-	return nil
 }

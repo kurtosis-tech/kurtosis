@@ -404,11 +404,11 @@ message StoreWebFilesArtifactResponse {
 // ==============================================================================================
 
 message StoreFilesArtifactFromServiceArgs {
-  // ID that will be used to identify the service where is the files artifact
+  // ID that will be used to identify the service where the source files will be copied from
   string service_id = 1;
 
-  // The source path where the files artifact is stored in the service
-  string files_artifact_path = 2;
+  // The absolute source path where the source files will be copied from
+  string source_path = 2;
 }
 
 message StoreFilesArtifactFromServiceResponse {

@@ -303,9 +303,9 @@ export function newStoreWebFilesArtifactArgs(url: string): StoreWebFilesArtifact
 // ==============================================================================================
 //                             Store Files Artifact From Service
 // ==============================================================================================
-export function newStoreFilesArtifactFromServiceArgs(serviceId: string, filepath: string): StoreFilesArtifactFromServiceArgs {
+export function newStoreFilesArtifactFromServiceArgs(serviceId: string, sourcePath: string): StoreFilesArtifactFromServiceArgs {
     const result: StoreFilesArtifactFromServiceArgs = new StoreFilesArtifactFromServiceArgs();
     result.setServiceId(serviceId)
-    result.setFilesArtifactPath(filepath)
+    result.setSourcePath(sourcePath)
     return result;
 }
