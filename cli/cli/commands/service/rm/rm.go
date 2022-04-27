@@ -29,17 +29,17 @@ const (
 	timeoutFlagKey = "timeout"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
-	engineClientCtxKey  = "engine-client"
+	engineClientCtxKey    = "engine-client"
 
 	defaultContainerStopTimeoutSeconds = uint32(0)
 )
 
 var ServiceRmCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
-	CommandStr:              command_str_consts.ServiceRmCmdStr,
-	ShortDescription:        "Removes a service from an enclave",
-	LongDescription:         "Removes the service with the given ID from the given enclave",
+	CommandStr:                command_str_consts.ServiceRmCmdStr,
+	ShortDescription:          "Removes a service from an enclave",
+	LongDescription:           "Removes the service with the given ID from the given enclave",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
-	EngineClientContextKey:  engineClientCtxKey,
+	EngineClientContextKey:    engineClientCtxKey,
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIDArg(
 			enclaveIdArgKey,
@@ -53,10 +53,10 @@ var ServiceRmCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 	},
 	Flags: []*flags.FlagConfig{
 		{
-			Key:       timeoutFlagKey,
-			Usage:     "Number of seconds to wait for the service to gracefully stop before sending SIGKILL",
-			Type:      flags.FlagType_Uint32,
-			Default:   fmt.Sprintf("%v", defaultContainerStopTimeoutSeconds),
+			Key:     timeoutFlagKey,
+			Usage:   "Number of seconds to wait for the service to gracefully stop before sending SIGKILL",
+			Type:    flags.FlagType_Uint32,
+			Default: fmt.Sprintf("%v", defaultContainerStopTimeoutSeconds),
 		},
 	},
 	RunFunc: run,
@@ -112,7 +112,7 @@ func getEnclaveContextFromEnclaveInfo(infoForEnclave *kurtosis_engine_rpc_api_bi
 
 	apiContainerHostMachineIpAddr, apiContainerHostMachineGrpcPortNum, err := enclave_liveness_validator.ValidateEnclaveLiveness(infoForEnclave)
 	if err != nil {
-		return nil, stacktrace.NewError("Cannot add service because the API container in enclave '%v' is not running", enclaveId)
+		return nil, stacktrace.Propagate(err, "Cannot add service because the API container in enclave '%v' is not running", enclaveId)
 	}
 
 	apiContainerHostMachineUrl := fmt.Sprintf(

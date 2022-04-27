@@ -13,12 +13,13 @@ require (
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/docker v20.10.16+incompatible
 	github.com/go-yaml/yaml v2.1.0+incompatible
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220516032526-2f7b0c5d22c3
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220516192201-8ef2663a536f
 	github.com/kurtosis-tech/kurtosis-cli/commons v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220516050748-e7c9c95a0b50
 	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220516051749-b322340e37ee
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220516051734-f9f61ce000f9
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
+	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211205213337-f5088fc26465
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220225193403-74da3f3b98ce
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/manifoldco/promptui v0.9.0
@@ -30,4 +31,7 @@ require (
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 	google.golang.org/grpc v1.41.0
 	google.golang.org/protobuf v1.27.1
+	k8s.io/api v0.20.6
+	k8s.io/apimachinery v0.20.6
+	k8s.io/client-go v0.20.6
 )

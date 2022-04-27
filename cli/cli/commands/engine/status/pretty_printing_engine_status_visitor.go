@@ -2,6 +2,7 @@ package status
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/sirupsen/logrus"
 )
@@ -26,7 +27,9 @@ func (p *prettyPrintingEngineStatusVisitor) VisitStopped() error {
 }
 
 func (p *prettyPrintingEngineStatusVisitor) VisitContainerRunningButServerNotResponding() error {
-	fmt.Fprintln(logrus.StandardLogger().Out, "A Kurtosis engine container is running, but the server inside couldn't be reached")
+	formattedStr := fmt.Sprintf("A Kurtosis engine container is running, but the server inside couldn't be reached.\n"+
+		"If you are running kurtosis in a Kubernetes cluster, and attempting to access kurtosis from outside the cluster, consider running `%v %v` to open up a local gateway kurtosis in Kubernetes", command_str_consts.KurtosisCmdStr, command_str_consts.GatewayCmdStr)
+	fmt.Fprintln(logrus.StandardLogger().Out, formattedStr)
 	return nil
 }
 
@@ -38,4 +41,3 @@ func (p *prettyPrintingEngineStatusVisitor) VisitRunning() error {
 	keyValuePrinter.Print()
 	return nil
 }
-
