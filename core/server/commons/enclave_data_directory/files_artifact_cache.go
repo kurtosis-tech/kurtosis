@@ -9,7 +9,6 @@ import (
 	"bufio"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
-	"io"
 	// This is a special type of import that includes the correct hashing algorithm that we use
 	// If we don't have the "_" in front, Goland will complain it's unused
 	_ "golang.org/x/crypto/sha3"
@@ -27,20 +26,6 @@ func newFilesArtifactCache(absoluteDirpath string, dirpathRelativeToDataDirRoot 
 	return &FilesArtifactCache{
 		underlying: newFileCache(absoluteDirpath, dirpathRelativeToDataDirRoot),
 	}
-}
-
-// StoreFile: Saves file to disk.
-func (cache FilesArtifactCache) StoreFile(reader io.Reader, filename string) (string, error) {
-	uuid, err := getUniversallyUniqueID()
-	if err != nil{
-		return "", stacktrace.Propagate(err, "Could not generate Universally Unique ID.")
-	}
-	_, err = cache.underlying.AddFile(filename, reader)
-	if err != nil{
-		return "", stacktrace.Propagate(err, "Could not add file with UUID %s at %s.", uuid,
-			cache.underlying.absoluteDirpath)
-	}
-	return uuid, nil
 }
 
 func (cache FilesArtifactCache) DownloadFilesArtifact(artifactId string, url string) error {
