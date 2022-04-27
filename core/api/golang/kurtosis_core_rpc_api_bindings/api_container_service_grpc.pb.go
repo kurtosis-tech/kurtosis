@@ -57,9 +57,9 @@ type ApiContainerServiceClient interface {
 	// Uploads a files artifact to the Kurtosis File System.
 	UploadFilesArtifact(ctx context.Context, in *UploadFilesArtifactArgs, opts ...grpc.CallOption) (*UploadFilesArtifactResponse, error)
 	// Tells the API container to download a files artifact from the web to the Kurtosis File System
-	DownloadFilesArtifact(ctx context.Context, in *DownloadFilesArtifactArgs, opts ...grpc.CallOption) (*DownloadFilesArtifactResponse, error)
+	StoreWebFilesArtifact(ctx context.Context, in *StoreWebFilesArtifactArgs, opts ...grpc.CallOption) (*StoreWebFilesArtifactResponse, error)
 	// Tells the API container to copy a files artifact from a service to the Kurtosis File System
-	CopyFilesArtifactFromService(ctx context.Context, in *CopyFilesArtifactFromServiceArgs, opts ...grpc.CallOption) (*CopyFilesArtifactFromServiceResponse, error)
+	StoreFilesArtifactFromService(ctx context.Context, in *StoreFilesArtifactFromServiceArgs, opts ...grpc.CallOption) (*StoreFilesArtifactFromServiceResponse, error)
 }
 
 type apiContainerServiceClient struct {
@@ -214,18 +214,18 @@ func (c *apiContainerServiceClient) UploadFilesArtifact(ctx context.Context, in 
 	return out, nil
 }
 
-func (c *apiContainerServiceClient) DownloadFilesArtifact(ctx context.Context, in *DownloadFilesArtifactArgs, opts ...grpc.CallOption) (*DownloadFilesArtifactResponse, error) {
-	out := new(DownloadFilesArtifactResponse)
-	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/DownloadFilesArtifact", in, out, opts...)
+func (c *apiContainerServiceClient) StoreWebFilesArtifact(ctx context.Context, in *StoreWebFilesArtifactArgs, opts ...grpc.CallOption) (*StoreWebFilesArtifactResponse, error) {
+	out := new(StoreWebFilesArtifactResponse)
+	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/StoreWebFilesArtifact", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *apiContainerServiceClient) CopyFilesArtifactFromService(ctx context.Context, in *CopyFilesArtifactFromServiceArgs, opts ...grpc.CallOption) (*CopyFilesArtifactFromServiceResponse, error) {
-	out := new(CopyFilesArtifactFromServiceResponse)
-	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/CopyFilesArtifactFromService", in, out, opts...)
+func (c *apiContainerServiceClient) StoreFilesArtifactFromService(ctx context.Context, in *StoreFilesArtifactFromServiceArgs, opts ...grpc.CallOption) (*StoreFilesArtifactFromServiceResponse, error) {
+	out := new(StoreFilesArtifactFromServiceResponse)
+	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/StoreFilesArtifactFromService", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -270,9 +270,9 @@ type ApiContainerServiceServer interface {
 	// Uploads a files artifact to the Kurtosis File System.
 	UploadFilesArtifact(context.Context, *UploadFilesArtifactArgs) (*UploadFilesArtifactResponse, error)
 	// Tells the API container to download a files artifact from the web to the Kurtosis File System
-	DownloadFilesArtifact(context.Context, *DownloadFilesArtifactArgs) (*DownloadFilesArtifactResponse, error)
+	StoreWebFilesArtifact(context.Context, *StoreWebFilesArtifactArgs) (*StoreWebFilesArtifactResponse, error)
 	// Tells the API container to copy a files artifact from a service to the Kurtosis File System
-	CopyFilesArtifactFromService(context.Context, *CopyFilesArtifactFromServiceArgs) (*CopyFilesArtifactFromServiceResponse, error)
+	StoreFilesArtifactFromService(context.Context, *StoreFilesArtifactFromServiceArgs) (*StoreFilesArtifactFromServiceResponse, error)
 	mustEmbedUnimplementedApiContainerServiceServer()
 }
 
@@ -328,11 +328,11 @@ func (UnimplementedApiContainerServiceServer) GetModules(context.Context, *empty
 func (UnimplementedApiContainerServiceServer) UploadFilesArtifact(context.Context, *UploadFilesArtifactArgs) (*UploadFilesArtifactResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UploadFilesArtifact not implemented")
 }
-func (UnimplementedApiContainerServiceServer) DownloadFilesArtifact(context.Context, *DownloadFilesArtifactArgs) (*DownloadFilesArtifactResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DownloadFilesArtifact not implemented")
+func (UnimplementedApiContainerServiceServer) StoreWebFilesArtifact(context.Context, *StoreWebFilesArtifactArgs) (*StoreWebFilesArtifactResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StoreWebFilesArtifact not implemented")
 }
-func (UnimplementedApiContainerServiceServer) CopyFilesArtifactFromService(context.Context, *CopyFilesArtifactFromServiceArgs) (*CopyFilesArtifactFromServiceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CopyFilesArtifactFromService not implemented")
+func (UnimplementedApiContainerServiceServer) StoreFilesArtifactFromService(context.Context, *StoreFilesArtifactFromServiceArgs) (*StoreFilesArtifactFromServiceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StoreFilesArtifactFromService not implemented")
 }
 func (UnimplementedApiContainerServiceServer) mustEmbedUnimplementedApiContainerServiceServer() {}
 
@@ -635,38 +635,38 @@ func _ApiContainerService_UploadFilesArtifact_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApiContainerService_DownloadFilesArtifact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DownloadFilesArtifactArgs)
+func _ApiContainerService_StoreWebFilesArtifact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StoreWebFilesArtifactArgs)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).DownloadFilesArtifact(ctx, in)
+		return srv.(ApiContainerServiceServer).StoreWebFilesArtifact(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api_container_api.ApiContainerService/DownloadFilesArtifact",
+		FullMethod: "/api_container_api.ApiContainerService/StoreWebFilesArtifact",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).DownloadFilesArtifact(ctx, req.(*DownloadFilesArtifactArgs))
+		return srv.(ApiContainerServiceServer).StoreWebFilesArtifact(ctx, req.(*StoreWebFilesArtifactArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApiContainerService_CopyFilesArtifactFromService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CopyFilesArtifactFromServiceArgs)
+func _ApiContainerService_StoreFilesArtifactFromService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StoreFilesArtifactFromServiceArgs)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).CopyFilesArtifactFromService(ctx, in)
+		return srv.(ApiContainerServiceServer).StoreFilesArtifactFromService(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api_container_api.ApiContainerService/CopyFilesArtifactFromService",
+		FullMethod: "/api_container_api.ApiContainerService/StoreFilesArtifactFromService",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).CopyFilesArtifactFromService(ctx, req.(*CopyFilesArtifactFromServiceArgs))
+		return srv.(ApiContainerServiceServer).StoreFilesArtifactFromService(ctx, req.(*StoreFilesArtifactFromServiceArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -743,12 +743,12 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ApiContainerService_UploadFilesArtifact_Handler,
 		},
 		{
-			MethodName: "DownloadFilesArtifact",
-			Handler:    _ApiContainerService_DownloadFilesArtifact_Handler,
+			MethodName: "StoreWebFilesArtifact",
+			Handler:    _ApiContainerService_StoreWebFilesArtifact_Handler,
 		},
 		{
-			MethodName: "CopyFilesArtifactFromService",
-			Handler:    _ApiContainerService_CopyFilesArtifactFromService_Handler,
+			MethodName: "StoreFilesArtifactFromService",
+			Handler:    _ApiContainerService_StoreFilesArtifactFromService_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
