@@ -747,3 +747,43 @@ export namespace DownloadFilesArtifactResponse {
   }
 }
 
+export class CopyFilesArtifactFromServiceArgs extends jspb.Message {
+  getServiceId(): string;
+  setServiceId(value: string): CopyFilesArtifactFromServiceArgs;
+
+  getFilesArtifactPath(): string;
+  setFilesArtifactPath(value: string): CopyFilesArtifactFromServiceArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): CopyFilesArtifactFromServiceArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: CopyFilesArtifactFromServiceArgs): CopyFilesArtifactFromServiceArgs.AsObject;
+  static serializeBinaryToWriter(message: CopyFilesArtifactFromServiceArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): CopyFilesArtifactFromServiceArgs;
+  static deserializeBinaryFromReader(message: CopyFilesArtifactFromServiceArgs, reader: jspb.BinaryReader): CopyFilesArtifactFromServiceArgs;
+}
+
+export namespace CopyFilesArtifactFromServiceArgs {
+  export type AsObject = {
+    serviceId: string,
+    filesArtifactPath: string,
+  }
+}
+
+export class CopyFilesArtifactFromServiceResponse extends jspb.Message {
+  getUuid(): string;
+  setUuid(value: string): CopyFilesArtifactFromServiceResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): CopyFilesArtifactFromServiceResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: CopyFilesArtifactFromServiceResponse): CopyFilesArtifactFromServiceResponse.AsObject;
+  static serializeBinaryToWriter(message: CopyFilesArtifactFromServiceResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): CopyFilesArtifactFromServiceResponse;
+  static deserializeBinaryFromReader(message: CopyFilesArtifactFromServiceResponse, reader: jspb.BinaryReader): CopyFilesArtifactFromServiceResponse;
+}
+
+export namespace CopyFilesArtifactFromServiceResponse {
+  export type AsObject = {
+    uuid: string,
+  }
+}
+

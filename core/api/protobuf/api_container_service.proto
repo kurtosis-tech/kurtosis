@@ -59,6 +59,9 @@ service ApiContainerService {
 
   // Tells the API container to download a files artifact from the web to the Kurtosis File System
   rpc DownloadFilesArtifact(DownloadFilesArtifactArgs) returns (DownloadFilesArtifactResponse) {};
+
+  // Tells the API container to copy a files artifact from a service to the Kurtosis File System
+  rpc CopyFilesArtifactFromService(CopyFilesArtifactFromServiceArgs) returns (CopyFilesArtifactFromServiceResponse) {}
 }
 
 // ==============================================================================================
@@ -203,7 +206,6 @@ message StartServiceArgs {
   // The full path where the API container should mount the enclave data directory on the service container
   string enclave_data_dir_mnt_dirpath = 7;
 
-  // TODO DELETE THIS IN FAVOR OF files_artifact_mountpoints
   // Mapping of files_artifact_id -> filepath_on_container_to_mount_artifact_contents
   map<string, string> files_artifact_mount_dirpaths = 8;
 
@@ -392,6 +394,24 @@ message DownloadFilesArtifactArgs {
 }
 
 message DownloadFilesArtifactResponse {
+  // UUID of the files artifact, for use when referencing it in the future
+  string uuid = 1;
+}
+
+
+// ==============================================================================================
+//                            Copy Files Artifact From User Service
+// ==============================================================================================
+
+message CopyFilesArtifactFromServiceArgs {
+  // ID that will be used to identify the service where is the files artifact
+  string service_id = 1;
+
+  // The source path where the files artifact is stored in the service
+  string files_artifact_path = 2;
+}
+
+message CopyFilesArtifactFromServiceResponse {
   // UUID of the files artifact, for use when referencing it in the future
   string uuid = 1;
 }

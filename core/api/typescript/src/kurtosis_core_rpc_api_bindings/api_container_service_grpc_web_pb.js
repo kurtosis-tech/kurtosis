@@ -1109,5 +1109,66 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.downloadFiles
 };
 
 
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.CopyFilesArtifactFromServiceArgs,
+ *   !proto.api_container_api.CopyFilesArtifactFromServiceResponse>}
+ */
+const methodDescriptor_ApiContainerService_CopyFilesArtifactFromService = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/CopyFilesArtifactFromService',
+  grpc.web.MethodType.UNARY,
+  proto.api_container_api.CopyFilesArtifactFromServiceArgs,
+  proto.api_container_api.CopyFilesArtifactFromServiceResponse,
+  /**
+   * @param {!proto.api_container_api.CopyFilesArtifactFromServiceArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.CopyFilesArtifactFromServiceResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.CopyFilesArtifactFromServiceArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.CopyFilesArtifactFromServiceResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.CopyFilesArtifactFromServiceResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.copyFilesArtifactFromService =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/CopyFilesArtifactFromService',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_CopyFilesArtifactFromService,
+      callback);
+};
+
+
+/**
+ * @param {!proto.api_container_api.CopyFilesArtifactFromServiceArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.api_container_api.CopyFilesArtifactFromServiceResponse>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.copyFilesArtifactFromService =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/CopyFilesArtifactFromService',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_CopyFilesArtifactFromService);
+};
+
+
 module.exports = proto.api_container_api;
 

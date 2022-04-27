@@ -5,6 +5,28 @@ var grpc = require('@grpc/grpc-js');
 var api_container_service_pb = require('./api_container_service_pb.js');
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 
+function serialize_api_container_api_CopyFilesArtifactFromServiceArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.CopyFilesArtifactFromServiceArgs)) {
+    throw new Error('Expected argument of type api_container_api.CopyFilesArtifactFromServiceArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_CopyFilesArtifactFromServiceArgs(buffer_arg) {
+  return api_container_service_pb.CopyFilesArtifactFromServiceArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_CopyFilesArtifactFromServiceResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.CopyFilesArtifactFromServiceResponse)) {
+    throw new Error('Expected argument of type api_container_api.CopyFilesArtifactFromServiceResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_CopyFilesArtifactFromServiceResponse(buffer_arg) {
+  return api_container_service_pb.CopyFilesArtifactFromServiceResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_DownloadFilesArtifactArgs(arg) {
   if (!(arg instanceof api_container_service_pb.DownloadFilesArtifactArgs)) {
     throw new Error('Expected argument of type api_container_api.DownloadFilesArtifactArgs');
@@ -508,6 +530,18 @@ downloadFilesArtifact: {
     requestDeserialize: deserialize_api_container_api_DownloadFilesArtifactArgs,
     responseSerialize: serialize_api_container_api_DownloadFilesArtifactResponse,
     responseDeserialize: deserialize_api_container_api_DownloadFilesArtifactResponse,
+  },
+  // Tells the API container to copy a files artifact from a service to the Kurtosis File System
+copyFilesArtifactFromService: {
+    path: '/api_container_api.ApiContainerService/CopyFilesArtifactFromService',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.CopyFilesArtifactFromServiceArgs,
+    responseType: api_container_service_pb.CopyFilesArtifactFromServiceResponse,
+    requestSerialize: serialize_api_container_api_CopyFilesArtifactFromServiceArgs,
+    requestDeserialize: deserialize_api_container_api_CopyFilesArtifactFromServiceArgs,
+    responseSerialize: serialize_api_container_api_CopyFilesArtifactFromServiceResponse,
+    responseDeserialize: deserialize_api_container_api_CopyFilesArtifactFromServiceResponse,
   },
 };
 
