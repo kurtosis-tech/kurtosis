@@ -518,7 +518,7 @@ func (apicService ApiContainerService) StoreWebFilesArtifact(ctx context.Context
 	return response, nil
 }
 
-func (apicService ApiContainerService) CopyFilesArtifactFromService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs) (*kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceResponse, error) {
+func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs) (*kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceResponse, error) {
 	serviceIdStr := args.ServiceId
 	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
 	srcPath := args.FilesArtifactPath

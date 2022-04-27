@@ -424,6 +424,8 @@ github.com/kurtosis-tech/container-engine-lib v0.0.0-20220426170434-b6da6d148295
 github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d/go.mod h1:1PoW/0l4K80JRSj7A13aONsnaTdTM+dM36DIfDbYmVs=
 github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e h1:CDNMjCNCvvCPSpoakxYZ3IHjBsxo9rLiMyjgvPYL87Q=
 github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e/go.mod h1:1PoW/0l4K80JRSj7A13aONsnaTdTM+dM36DIfDbYmVs=
+github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220426170659-e93f35a2964a h1:CJudVRRt3LfOViHVTEl3F9X0QHYDyhikv6E3+ROV4sE=
+github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220426170659-e93f35a2964a/go.mod h1:mE55IK3ZgJA7LW2qr2nVa3W88sY79kgVnVmKIcMIMIg=
 github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739 h1:iRUB05IfjPxizmRwsyjZ+jXaFRQ7atj3E+/aiK1nLcE=
 github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739/go.mod h1:tteWV+M47xMHxqCIPQmdmgPW80rhN8YfzrgRRWbQhOw=
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3 h1:Begoh17x/9rLWQLM64A8oINjoQk1DFKN2iwhQf1i0Rc=
