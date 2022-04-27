@@ -529,11 +529,8 @@ func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context
 	}
 	defer readCloser.Close()
 
-	//First receives tar stream and create tar reader
-	tarReader := tar.NewReader(readCloser)
-
 	//Then creates a new tgz file in a temporary directory
-	tarGzipFileFilepath, err := createTemporaryTarGzFileFromTarReader(tarReader)
+	tarGzipFileFilepath, err := gzipCompressFile(readCloser)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating new temporary tar-gzip-file")
 	}
@@ -708,6 +705,25 @@ func makeHttpRequest(httpMethod string, url string, body string) (*http.Response
 		return nil, stacktrace.NewError("Received non-OK status code: '%v'", resp.StatusCode)
 	}
 	return resp, nil
+}
+
+func gzipCompressFile(readCloser io.Reader) (resultFilepath string, resultErr error) {
+	useDefaultDirectoryArg := ""
+	withoutPatternArg := ""
+	tgzFile, err := ioutil.TempFile(useDefaultDirectoryArg,withoutPatternArg)
+	if err != nil {
+		return "", stacktrace.Propagate(err,
+			"There was an error creating a temporary file")
+	}
+	defer tgzFile.Close()
+	gzipCompressingWriter := gzip.NewWriter(tgzFile)
+
+	tarGzipFileFilepath := tgzFile.Name()
+	if _, err := io.Copy(gzipCompressingWriter, readCloser); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred copying content from tar reader to file '%v'", tarGzipFileFilepath)
+	}
+
+	return tarGzipFileFilepath, nil
 }
 
 func createTemporaryTarGzFileFromTarReader(tarReader *tar.Reader) (string, error) {
