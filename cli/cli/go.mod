@@ -2,7 +2,11 @@ module github.com/kurtosis-tech/kurtosis-cli/cli
 
 go 1.15
 
-replace github.com/kurtosis-tech/kurtosis-cli/commons => ../commons
+replace (
+	github.com/kurtosis-tech/kurtosis-cli/commons => ../commons
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang => /Users/lporoli/Kurtosis/kurtosis-core/api/golang
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang => /Users/lporoli/Kurtosis/kurtosis-engine-server/api/golang
+)
 
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
@@ -15,6 +19,7 @@ require (
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220426170434-b6da6d148295
 	github.com/kurtosis-tech/kurtosis-cli/commons v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220426170659-e93f35a2964a
+	github.com/kurtosis-tech/kurtosis-core/api/golang v0.0.0-20220426170649-7a55dd6b1496 // indirect
 	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220426171003-3d6c2a923d2d
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220426170952-04a19299d1ed
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
