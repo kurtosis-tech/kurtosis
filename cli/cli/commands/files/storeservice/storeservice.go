@@ -31,10 +31,10 @@ const (
 
 var FilesStoreServiceCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.FilesStoreServiceCmdStr,
-	ShortDescription:          "Copy files from a user service's absolute filepath",
+	ShortDescription:          "Store files from a service",
 	LongDescription:           fmt.Sprintf(
 		"Instructs Kurtosis to copy a file or folder from the given absolute filepath in " +
-			" service, identified by its ID, and store it in the enclave for later use (e.g. with '%v %v')",
+			"the given service and store it in the enclave for later use (e.g. with '%v %v')",
 		command_str_consts.ServiceCmdStr,
 		command_str_consts.ServiceAddCmdStr,
 	),
