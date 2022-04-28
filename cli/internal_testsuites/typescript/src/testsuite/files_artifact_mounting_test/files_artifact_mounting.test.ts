@@ -50,6 +50,7 @@ test("Test files artifact mounting", async () => {
         // ------------------------------------- TEST SETUP ----------------------------------------------
         const filesArtifacts = new Map<FilesArtifactID, string>()
         filesArtifacts.set(TEST_FILES_ARTIFACT_ID, TEST_FILES_ARTIFACT_URL)
+        filesArtifacts.set(SECOND_TEST_FILES_ARTIFACT_ID, TEST_FILES_ARTIFACT_URL)
         const registerFilesArtifactsResult = await enclaveContext.registerFilesArtifacts(filesArtifacts);
 
         if(registerFilesArtifactsResult.isErr()) { throw registerFilesArtifactsResult.error }
@@ -140,7 +141,7 @@ test("Test files artifact mounting", async () => {
         if(addSecondServiceResult.isErr()){
             const errMsg = addSecondServiceResult.error.message
             if(!errMsg.includes(DUPLICATE_MOUNTPOINT_DOCKER_DAEMON_ERR_MSG)){
-                throw new Error(`Adding service "${SECOND_FILE_SERVER_SERVICE_ID}" should have failed and did not, because duplicated files artifact mountpoints should throw an error`)
+               throw new Error(`Adding service "${SECOND_FILE_SERVER_SERVICE_ID}" has failed, but the error is not the duplicated-files-artifact-mountpoints-error that we expected, this is throwing this error instead:\n "${errMsg}"`)
             }
         }
 

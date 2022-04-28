@@ -123,7 +123,7 @@ func TestFilesArtifactMounting(t *testing.T) {
 	wrongFileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(duplicateFilesArtifactMountpoints)
 	_, err = enclaveCtx.AddService(secondFileServerServiceId, wrongFileServerContainerConfigSupplier)
 	require.Errorf(t, err, "Adding service '%v' should have failed and did not, because duplicated files artifact mountpoints '%v' should throw an error", secondFileServerServiceId, duplicateFilesArtifactMountpoints)
-	require.Contains(t, err.Error(), duplicateMountpointDockerDaemonErrMsgSentence, "Adding service '%v' fails, fails, but it was not the expected duplicate mountpoint error",secondFileServerServiceId)
+	require.Contains(t, err.Error(), duplicateMountpointDockerDaemonErrMsgSentence, "Adding service '%v' has failed, but the error is not the duplicated-files-artifact-mountpoints-error that we expected, this is throwing this error instead:\n%v", secondFileServerServiceId, err.Error())
 }
 
 // ====================================================================================================
