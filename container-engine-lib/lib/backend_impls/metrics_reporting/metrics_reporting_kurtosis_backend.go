@@ -376,7 +376,7 @@ func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
 func (backend *MetricsReportingKurtosisBackend) PauseService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	serviceId service.ServiceID,
+	serviceId service.ServiceGUID,
 ) error {
 	err := backend.underlying.PauseService(ctx, enclaveId, serviceId)
 	if err != nil {
@@ -388,7 +388,7 @@ func (backend *MetricsReportingKurtosisBackend) PauseService(
 func (backend *MetricsReportingKurtosisBackend) UnpauseService(
 	ctx context.Context,
 	enclavedId enclave.EnclaveID,
-	serviceId service.ServiceID,
+	serviceId service.ServiceGUID,
 ) error {
 	return nil
 }

@@ -200,17 +200,17 @@ func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 func (backend *DockerKurtosisBackend) PauseService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	serviceId service.ServiceID) error {
+	serviceId service.ServiceGUID) error {
 	logrus.Infof("Pause service called on service %v in enclave %v", serviceId, enclaveId)
-	fmt.Sprintf("\"Pause service called on service %v in enclave %v\", serviceId, enclaveId")
 	// TODO TODO TODO IMPLEMENT ME
+	backend.getSingleUserService(ctx, enclaveId, serviceId)
 	return nil
 }
 
 func (backend *DockerKurtosisBackend) UnpauseService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	serviceId service.ServiceID) error {
+	serviceId service.ServiceGUID) error {
 	logrus.Warnf("Unpause service called on service %v in enclave %v", serviceId, enclaveId)
 	// TODO TODO TODO IMPLEMENT ME
 	return nil
