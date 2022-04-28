@@ -46,6 +46,10 @@ const (
 	portNumberUintParsingBase = 10
 	portNumberUintParsingBits = 16
 
+	filesFlagKey                       = "files"
+	filesArtifactMountsDelimiter       = ","
+	filesArtifactIdMountpointDelimiter = ":"
+
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey  = "engine-client"
 
@@ -131,6 +135,20 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			),
 			Type:      flags.FlagType_String,
 		},
+		{
+			Key:       filesFlagKey,
+			Usage:     fmt.Sprintf(
+				"String containing declarations of files artifact IDs -> paths on the container where the contents of those " +
+					"files artifacts should be mounted, in the form \"ARTIFACTID1%vMOUNTPATH1%vARTIFACTID2%vMOUNTPATH2\" where " +
+					"ARTIFACTID is the ID returned by Kurtosis when uploading files to the enclave (e.g. via the '%v %v' command)",
+				filesArtifactIdMountpointDelimiter,
+				filesArtifactMountsDelimiter,
+				filesArtifactIdMountpointDelimiter,
+				command_str_consts.FilesCmdStr,
+				command_str_consts.FilesUploadCmdStr,
+			),
+			Type:      flags.FlagType_String,
+		},
 	},
 	RunFunc: run,
 }
@@ -177,6 +195,11 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the ports string using key '%v'", portsFlagKey)
 	}
 
+	filesArtifactMountsStr, err := flags.GetString(filesFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the files artifact mounts string using key '%v'", filesFlagKey)
+	}
+
 	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting existing enclaves")
@@ -192,7 +215,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveId)
 	}
 
-	containerConfigSupplier, err := getContainerConfigSupplier(image, portsStr, cmdArgs, entrypointStr, envvarsStr)
+	containerConfigSupplier, err := getContainerConfigSupplier(image, portsStr, cmdArgs, entrypointStr, envvarsStr, filesArtifactMountsStr)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -288,6 +311,7 @@ func getContainerConfigSupplier(
 	cmdArgs []string,
 	entrypoint string,
 	envvarsStr string,
+	filesArtifactMountsStr string,
 ) (func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error), error) {
 	envvarsMap, err := parseEnvVarsStr(envvarsStr)
 	if err != nil {
@@ -297,6 +321,11 @@ func getContainerConfigSupplier(
 	ports, err := parsePortsStr(portsStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing ports string '%v'", portsStr)
+	}
+
+	filesArtifactMounts, err := parseFilesArtifactMountsStr(filesArtifactMountsStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred parsing files artifact mounts string '%v'", filesArtifactMountsStr)
 	}
 
 	return func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
@@ -326,6 +355,9 @@ func getContainerConfigSupplier(
 		}
 		if len(ports) > 0 {
 			resultBuilder.WithUsedPorts(ports)
+		}
+		if len(filesArtifactMounts) > 0 {
+			resultBuilder.WithFiles(filesArtifactMounts)
 		}
 
 		return resultBuilder.Build(), nil
@@ -375,7 +407,7 @@ func parseEnvVarsStr(envvarsStr string) (map[string]string, error) {
 // Empty strings will be skipped (e.g. ',,,' will result in an empty map)
 func parsePortsStr(portsStr string) (map[string]*services.PortSpec, error) {
 	result := map[string]*services.PortSpec{}
-	if portsStr == "" {
+	if strings.TrimSpace(portsStr) == "" {
 		return result, nil
 	}
 
@@ -457,4 +489,45 @@ func parsePortSpecStr(specStr string) (*services.PortSpec, error) {
 	portProtocol := services.PortProtocol(portProtocolEnumInt)
 
 	return services.NewPortSpec(portNumberUint16, portProtocol), nil
+}
+
+func parseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[services.FilesArtifactID]string, error) {
+	result := map[services.FilesArtifactID]string{}
+	if strings.TrimSpace(filesArtifactMountsStr) == "" {
+		return result, nil
+	}
+
+	// NOTE: we might actually want to allow the same artifact being mounted in multiple places
+	allMountStrs := strings.Split(filesArtifactMountsStr, filesArtifactMountsDelimiter)
+	for idx, mountStr := range allMountStrs {
+		trimmedMountStr := strings.TrimSpace(mountStr)
+		if len(trimmedMountStr) == 0 {
+			continue
+		}
+
+		mountFragments := strings.Split(trimmedMountStr, filesArtifactIdMountpointDelimiter)
+		if len(mountFragments) != 2 {
+			return nil, stacktrace.NewError(
+				"Files artifact mountpoint string %v was '%v' but should be in the form 'files_artifact_id%vmountpoint'",
+				idx,
+				trimmedMountStr,
+				filesArtifactIdMountpointDelimiter,
+			)
+		}
+		filesArtifactId := services.FilesArtifactID(mountFragments[0])
+		mountpoint := mountFragments[1]
+
+		if existingMountpoint, found := result[filesArtifactId]; found {
+			return nil, stacktrace.NewError(
+				"Files artifact with ID '%v' is declared twice; once to mountpoint '%v' and again to mountpoint '%v'",
+				filesArtifactId,
+				existingMountpoint,
+				mountpoint,
+			)
+		}
+
+		result[filesArtifactId] = mountpoint
+	}
+
+	return result, nil
 }

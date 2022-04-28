@@ -1,7 +1,20 @@
 # TBD
 ### Features
 * Updated `files_artifact_mounting` internal test in order to test duplicate mountpoints
+* Added `files storeservice` to store files from a service in the enclave
 
+### Changes
+* Upgraded `kurtosis core lib` to 1.43.6 which adds `EnclaveContext.StoreFilesFromService` 
+* Upgraded `kurtosis engine lib` to 1.15.6
+
+# 0.14.1
+### Features
+* Added `ContainerConfigBuilder.WithFiles` which allows use of files artifacts uploaded via `EnclaveContext.UploadFiles` in services
+* Added `files upload` to send files into an enclave
+* Added a `--files` flag to `service add` to allow mounting files artifacts on the container
+* Added `files storeweb` to store files from a web URL in the enclave
+
+# 0.14.0
 ### Breaking Changes
 * Upgraded `kurtosis engine lib` to 1.15.0
   * Users should upgrade to `kurtosis-engine-api-lib` 1.15.0
@@ -12,6 +25,10 @@
 
 ### Features
 * Added `destroy_enclave_test` in Golang and Typescript internal testsuites
+* The `old_enclave_continuity` test now tests having stopped old enclaves around, as well as `service add`
+* Added an extra layer to the Docker exec command test to verify we're not accidentally sh-wrapping the command
+* Many operations now happen in parallel in the backend, most notably making `clean` about 50-100% faster
+* Added a test to verify that `kurtosis clean -a` cleans up its containers, volumes, and networks
 
 # 0.13.0
 ### Features
