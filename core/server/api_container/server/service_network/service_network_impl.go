@@ -408,6 +408,7 @@ func (network *ServiceNetworkImpl) PauseService(
 	if err != nil {
 		return stacktrace.Propagate(err,"Failed to pause service '%v'", serviceId)
 	}
+	logrus.Infof("Service network called pause service on service id '%+v' and didn't get an error.", serviceId)
 	// TODO TODO TODO Check that this actually updates the original and not some copy or something
 	runInfo.isPaused = true
 	return nil
