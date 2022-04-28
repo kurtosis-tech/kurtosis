@@ -498,7 +498,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 	content, err := ioutil.ReadFile(compressedFilePath)
 	if err != nil{
 		return "", stacktrace.Propagate(err,
-					"There was an error reading from the temporary tar file '%s' recently compressed for upload.",
+			"There was an error reading from the temporary tar file '%s' recently compressed for upload.",
 			compressedFileInfo.Name())
 	}
 
