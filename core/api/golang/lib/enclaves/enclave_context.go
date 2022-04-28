@@ -18,7 +18,6 @@
 package enclaves
 
 import (
-	"archive/tar"
 	"context"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/binding_constructors"
@@ -28,7 +27,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/mholt/archiver"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"io"
 	"io/ioutil"
 	"math"
 	"os"
@@ -490,7 +488,6 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 			tempDir, pathToUpload)
 	}
 
-
 	if compressedFileInfo.Size() >= grpcDataTransferLimit {
 		return "", stacktrace.Propagate(err,
 			"The files you are trying to upload, which are now compressed, exceed or reach 4mb, a limit imposed by gRPC. " +
@@ -569,46 +566,4 @@ func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc
 		)
 	}
 	return result, nil
-}
-
-//This is a function meant to be used within a filepath.Walk function. filepath.Walk takes two arguments, the first is a
-//target folder to walk, the second argument is a function that takes 3 arguments:
-//filePath 					- A directory or file path that the filepath.Walk function has reached, supplied by filepath.Walk
-//fileInfo 					- A FileInfo object of the file or directory at filePath supplied by filepath.Walk
-//errorFromLastIteration	- An error from previous walking iterations.
-//Because our function is a file archive writer, we need to pass those variables, a writer, and original path to this function.
-//This function should be wrapped in a lambda that passes filepath.Walk variables directly to this function.
-func addFilesToArchive(filePath string, fileInfo os.FileInfo, errorFromLastIteration error, archiveWriter *tar.Writer, pathToArchive string) error {
-	if errorFromLastIteration != nil {
-		return stacktrace.Propagate(errorFromLastIteration,
-							   "There was an error while taring or accessing file at '%s'.", filePath)
-	}
-
-	if !fileInfo.Mode().IsRegular() {
-		return nil
-	}
-
-	header, err := tar.FileInfoHeader(fileInfo, fileInfo.Name())
-	if err != nil {
-		return stacktrace.Propagate(err, "There was a problem creating a tar header for '%s'.", filePath)
-	}
-
-	fileName := strings.TrimLeft(filePath, pathToArchive)
-	header.Name = strings.TrimPrefix(fileName, string(filepath.Separator))
-
-	if err := archiveWriter.WriteHeader(header); err != nil {
-		return stacktrace.Propagate(err, "There was a problem writing headers while archiving '%s'.", filePath)
-	}
-
-	sourceToArchive, err := os.Open(filePath)
-	if err != nil {
-		return stacktrace.Propagate(err, "There was a problem reading from '%s'.", filePath)
-	}
-	defer sourceToArchive.Close()
-
-	if _, err := io.Copy(archiveWriter, sourceToArchive); err != nil {
-		return stacktrace.Propagate(err, "There was a problem copying '%s' to the tar.", filePath)
-	}
-
-	return nil
 }
