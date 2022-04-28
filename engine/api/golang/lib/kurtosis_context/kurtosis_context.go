@@ -7,8 +7,8 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_version"
+	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -28,7 +28,7 @@ const (
 	DefaultKurtosisEngineServerGrpcProxyPortNum = uint16(9711)
 
 	// Blank tells the engine server to use the default
-	defaultApiContainerVersionTag = "leandro.poroli_copy-from-user-service"
+	defaultApiContainerVersionTag = ""
 )
 
 var apiContainerLogLevel = logrus.DebugLevel
