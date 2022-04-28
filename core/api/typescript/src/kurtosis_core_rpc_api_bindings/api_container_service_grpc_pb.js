@@ -214,6 +214,28 @@ function deserialize_api_container_api_StartServiceResponse(buffer_arg) {
   return api_container_service_pb.StartServiceResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_StoreFilesArtifactFromServiceArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.StoreFilesArtifactFromServiceArgs)) {
+    throw new Error('Expected argument of type api_container_api.StoreFilesArtifactFromServiceArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_StoreFilesArtifactFromServiceArgs(buffer_arg) {
+  return api_container_service_pb.StoreFilesArtifactFromServiceArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_StoreFilesArtifactFromServiceResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.StoreFilesArtifactFromServiceResponse)) {
+    throw new Error('Expected argument of type api_container_api.StoreFilesArtifactFromServiceResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_StoreFilesArtifactFromServiceResponse(buffer_arg) {
+  return api_container_service_pb.StoreFilesArtifactFromServiceResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_StoreWebFilesArtifactArgs(arg) {
   if (!(arg instanceof api_container_service_pb.StoreWebFilesArtifactArgs)) {
     throw new Error('Expected argument of type api_container_api.StoreWebFilesArtifactArgs');
@@ -508,6 +530,18 @@ storeWebFilesArtifact: {
     requestDeserialize: deserialize_api_container_api_StoreWebFilesArtifactArgs,
     responseSerialize: serialize_api_container_api_StoreWebFilesArtifactResponse,
     responseDeserialize: deserialize_api_container_api_StoreWebFilesArtifactResponse,
+  },
+  // Tells the API container to copy a files artifact from a service to the Kurtosis File System
+storeFilesArtifactFromService: {
+    path: '/api_container_api.ApiContainerService/StoreFilesArtifactFromService',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.StoreFilesArtifactFromServiceArgs,
+    responseType: api_container_service_pb.StoreFilesArtifactFromServiceResponse,
+    requestSerialize: serialize_api_container_api_StoreFilesArtifactFromServiceArgs,
+    requestDeserialize: deserialize_api_container_api_StoreFilesArtifactFromServiceArgs,
+    responseSerialize: serialize_api_container_api_StoreFilesArtifactFromServiceResponse,
+    responseDeserialize: deserialize_api_container_api_StoreFilesArtifactFromServiceResponse,
   },
 };
 

@@ -90,4 +90,9 @@ type ServiceNetwork interface {
 	)
 
 	GetServiceIDs() map[service.ServiceID]bool
+
+	CopyFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (
+		resultFileArtifactUUID string,
+		resultErr error,
+	)
 }

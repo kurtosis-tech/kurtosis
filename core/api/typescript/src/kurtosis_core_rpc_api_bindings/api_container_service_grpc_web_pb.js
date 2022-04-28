@@ -1109,5 +1109,66 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.storeWebFiles
 };
 
 
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.StoreFilesArtifactFromServiceArgs,
+ *   !proto.api_container_api.StoreFilesArtifactFromServiceResponse>}
+ */
+const methodDescriptor_ApiContainerService_StoreFilesArtifactFromService = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/StoreFilesArtifactFromService',
+  grpc.web.MethodType.UNARY,
+  proto.api_container_api.StoreFilesArtifactFromServiceArgs,
+  proto.api_container_api.StoreFilesArtifactFromServiceResponse,
+  /**
+   * @param {!proto.api_container_api.StoreFilesArtifactFromServiceArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.StoreFilesArtifactFromServiceResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.StoreFilesArtifactFromServiceArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.StoreFilesArtifactFromServiceResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StoreFilesArtifactFromServiceResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.storeFilesArtifactFromService =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/StoreFilesArtifactFromService',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_StoreFilesArtifactFromService,
+      callback);
+};
+
+
+/**
+ * @param {!proto.api_container_api.StoreFilesArtifactFromServiceArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.api_container_api.StoreFilesArtifactFromServiceResponse>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.storeFilesArtifactFromService =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/StoreFilesArtifactFromService',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_StoreFilesArtifactFromService);
+};
+
+
 module.exports = proto.api_container_api;
 
