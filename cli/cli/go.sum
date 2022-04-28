@@ -490,16 +490,8 @@ github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220426170659-e93f35a2964a/go.mod h1:mE55IK3ZgJA7LW2qr2nVa3W88sY79kgVnVmKIcMIMIg=
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220428115252-6668f26c7fdd h1:3oJfMO6u/1p3J26PbeoutMJpXAhyO/HsIXYGRCtpvus=
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220428115252-6668f26c7fdd/go.mod h1:mE55IK3ZgJA7LW2qr2nVa3W88sY79kgVnVmKIcMIMIg=
-github.com/kurtosis-tech/kurtosis-core/api/golang v0.0.0-20220428115230-e66d7a4e56af h1:VuPMvuQwfe8vWHIyPUAhQelT5FxucKudiT+OVUgScns=
-github.com/kurtosis-tech/kurtosis-core/api/golang v0.0.0-20220428115230-e66d7a4e56af/go.mod h1:c862NKdbm0sFZ1/NjNNoCxQtGl2ZcV6eAbBVVq1GXqI=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220426171003-3d6c2a923d2d h1:a8pkPcaQ4yNBjurPjV0CL8GlK6zlInpGnMJCXMLqN/I=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220426171003-3d6c2a923d2d/go.mod h1:KPs4sZGtKRNXxxxJcL6rgcBNb3j8MTvZ13zpcaxl1lU=
-github.com/kurtosis-tech/kurtosis-engine-server/api/golang v0.0.0-20220428120555-29f57f6cb418 h1:DpD+YCIxSItQ+taHziqkO9IjB9fHbxha48S5El/hPzA=
-github.com/kurtosis-tech/kurtosis-engine-server/api/golang v0.0.0-20220428120555-29f57f6cb418/go.mod h1:aPissT1puOBA18YnL03oR7FV2BojjHk1oztKwmOZF9s=
-github.com/kurtosis-tech/kurtosis-engine-server/api/golang v0.0.0-20220428120555-e6a85fa3f7ec h1:4IV4OchAFutXu2zlT7IAxXzEbORDnaaibQadnDIMx04=
-github.com/kurtosis-tech/kurtosis-engine-server/api/golang v0.0.0-20220428120555-e6a85fa3f7ec/go.mod h1:aPissT1puOBA18YnL03oR7FV2BojjHk1oztKwmOZF9s=
-github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220426170952-04a19299d1ed h1:2CIJDiRnQuci0hpdk/7xpLScrVo/G4xBHKBEYJXYCoE=
-github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220426170952-04a19299d1ed/go.mod h1:j3BhvIKpRmDzrttYQrKD+pEdVwEZ4Ae2R1TmXGPilEE=
 github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220428120555-e6a85fa3f7ec h1:JSUdDiHgw21mfMu+nqWeV4FEFV2CEgbbzfgxD20REmw=
 github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220428120555-e6a85fa3f7ec/go.mod h1:j3BhvIKpRmDzrttYQrKD+pEdVwEZ4Ae2R1TmXGPilEE=
 github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739 h1:iRUB05IfjPxizmRwsyjZ+jXaFRQ7atj3E+/aiK1nLcE=

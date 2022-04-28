@@ -2,9 +2,7 @@ module github.com/kurtosis-tech/kurtosis-cli/cli
 
 go 1.15
 
-replace (
-	github.com/kurtosis-tech/kurtosis-cli/commons => ../commons
-)
+replace github.com/kurtosis-tech/kurtosis-cli/commons => ../commons
 
 require (
 	github.com/Masterminds/semver/v3 v3.1.1

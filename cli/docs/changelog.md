@@ -5,7 +5,6 @@
 ### Changes
 * Upgraded `kurtosis core lib` to 1.43.6 which adds `EnclaveContext.StoreFilesFromService` 
 * Upgraded `kurtosis engine lib` to 1.15.6
-* Upgraded `container engine lib` to 0.16.0
 
 # 0.14.1
 ### Features
