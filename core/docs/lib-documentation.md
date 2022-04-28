@@ -192,7 +192,7 @@ Copy a file or folder from a service container to the Kurtosis filestore for use
 
 **Returns**
 
-* `uuid`: A unique ID as a string identifying the downloaded files artifact, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+* `uuid`: A unique ID as a string identifying the generated files artifact, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
 PartitionConnection
 -------------------

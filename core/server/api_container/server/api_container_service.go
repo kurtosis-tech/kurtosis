@@ -8,7 +8,6 @@ package server
 import (
 	"bufio"
 	"bytes"
-	"compress/gzip"
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
@@ -25,11 +24,9 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"io"
 	"io/ioutil"
 	"math"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -515,39 +512,14 @@ func (apicService ApiContainerService) StoreWebFilesArtifact(ctx context.Context
 func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs) (*kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceResponse, error) {
 	serviceIdStr := args.ServiceId
 	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
-	srcPath := args.FilesArtifactPath
+	srcPath := args.SourcePath
 
-	readCloser, err := apicService.serviceNetwork.CopyFromService(ctx, serviceId, srcPath)
+	fileArtifactUUID, err := apicService.serviceNetwork.CopyFromService(ctx, serviceId, srcPath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred copying source '%v' from service with ID '%v'", srcPath, serviceId)
 	}
-	defer readCloser.Close()
 
-	//Then creates a new tgz file in a temporary directory
-	tarGzipFileFilepath, err := gzipCompressFile(readCloser)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating new temporary tar-gzip-file")
-	}
-
-	//Then opens the .tgz file
-	tarGzipFile, err := os.Open(tarGzipFileFilepath)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred opening file '%v'", tarGzipFileFilepath)
-	}
-	defer tarGzipFile.Close()
-
-	store, err := apicService.enclaveDataDir.GetFilesArtifactStore()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the files artifact store")
-	}
-
-	//And finally pass it the .tgz file to the artifact file store
-	uuid, err := store.StoreFile(tarGzipFile)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while trying to store file '%v' into the artifact file store", tarGzipFileFilepath)
-	}
-
-	response := &kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceResponse{Uuid: uuid}
+	response := &kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceResponse{Uuid: fileArtifactUUID}
 	return response, nil
 }
 
@@ -699,24 +671,4 @@ func makeHttpRequest(httpMethod string, url string, body string) (*http.Response
 		return nil, stacktrace.NewError("Received non-OK status code: '%v'", resp.StatusCode)
 	}
 	return resp, nil
-}
-
-func gzipCompressFile(readCloser io.Reader) (resultFilepath string, resultErr error) {
-	useDefaultDirectoryArg := ""
-	withoutPatternArg := ""
-	tgzFile, err := ioutil.TempFile(useDefaultDirectoryArg,withoutPatternArg)
-	if err != nil {
-		return "", stacktrace.Propagate(err,
-			"There was an error creating a temporary file")
-	}
-	defer tgzFile.Close()
-	gzipCompressingWriter := gzip.NewWriter(tgzFile)
-	defer gzipCompressingWriter.Close()
-
-	tarGzipFileFilepath := tgzFile.Name()
-	if _, err := io.Copy(gzipCompressingWriter, readCloser); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred copying content to file '%v'", tarGzipFileFilepath)
-	}
-
-	return tarGzipFileFilepath, nil
 }

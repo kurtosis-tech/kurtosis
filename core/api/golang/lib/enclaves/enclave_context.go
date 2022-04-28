@@ -537,7 +537,7 @@ func (EnclaveContext *EnclaveContext) StoreFilesFromService(ctx context.Context,
 	args := binding_constructors.NewStoreFilesArtifactFromServiceArgs(serviceIdStr, absoluteFilepathOnServiceContainer)
 	response, err := EnclaveContext.client.StoreFilesArtifactFromService(ctx, args)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred copying files artifact from absolute filepath '%v' in service container with ID '%v'", absoluteFilepathOnServiceContainer, serviceIdStr)
+		return "", stacktrace.Propagate(err, "An error occurred copying source content from absolute filepath '%v' in service container with ID '%v'", absoluteFilepathOnServiceContainer, serviceIdStr)
 	}
 	return services.FilesArtifactID(response.Uuid), nil
 }
