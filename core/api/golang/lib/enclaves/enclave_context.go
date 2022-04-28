@@ -474,7 +474,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 		return "", stacktrace.Propagate(err, "There was a path error for '%s' during file uploading.", pathToUpload)
 	}
 
-	tempDir, err := os.MkdirTemp("", tempCompressionDirPattern)
+	tempDir, err := ioutil.TempDir("", tempCompressionDirPattern)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to compress files for upload.")
 	}
