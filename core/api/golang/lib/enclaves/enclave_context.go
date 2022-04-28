@@ -32,7 +32,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"fmt"
 )
 
 type EnclaveID string
@@ -502,14 +501,13 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 					"There was an error reading from the temporary tar file '%s' recently compressed for upload.",
 			compressedFileInfo.Name())
 	}
-	logrus.Infof("The length of content before archiving is '%v'.", len(content))
 
 	args := binding_constructors.NewUploadFilesArtifactArgs(content)
 	response, err := enclaveCtx.client.UploadFilesArtifact(context.Background(), args)
 	if err != nil {
 		return "", stacktrace.Propagate(err,"An error was encountered while uploading data to the API Container.")
 	}
-	return services.FilesArtifactID(response.Uuid + "-length-" + fmt.Sprint(len(content))), nil;
+	return services.FilesArtifactID(response.Uuid), nil;
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
