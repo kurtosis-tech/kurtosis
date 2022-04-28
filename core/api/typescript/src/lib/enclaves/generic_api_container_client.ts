@@ -22,7 +22,7 @@ import {
     RemoveServiceArgs,
     RepartitionArgs,
     StartServiceArgs,
-    StartServiceResponse, StoreWebFilesArtifactArgs, StoreWebFilesArtifactResponse,
+    StartServiceResponse, StoreFilesArtifactFromServiceArgs, StoreWebFilesArtifactArgs, StoreWebFilesArtifactResponse,
     UnloadModuleArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
     WaitForHttpPostEndpointAvailabilityArgs
@@ -47,4 +47,5 @@ export interface GenericApiContainerClient {
     executeModule(executeModuleArgs: ExecuteModuleArgs): Promise<Result<ExecuteModuleResponse, Error>>
     execCommand(execCommandArgs: ExecCommandArgs): Promise<Result<ExecCommandResponse, Error>>
     storeWebFilesArtifact(storeWebFilesArtifactArgs: StoreWebFilesArtifactArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>>
+    storeFilesArtifactFromService(storeFilesArtifactFromServiceArgs: StoreFilesArtifactFromServiceArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>>
 }

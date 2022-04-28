@@ -22,7 +22,8 @@ import {
     ExecuteModuleArgs,
     GetModuleInfoArgs,
     Port,
-    StoreWebFilesArtifactArgs
+    StoreWebFilesArtifactArgs,
+    StoreFilesArtifactFromServiceArgs
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceID } from './services/service';
 import { PartitionID } from './enclaves/enclave_context';
@@ -296,5 +297,15 @@ export function newWaitForHttpPostEndpointAvailabilityArgs(
 export function newStoreWebFilesArtifactArgs(url: string): StoreWebFilesArtifactArgs {
     const result: StoreWebFilesArtifactArgs = new StoreWebFilesArtifactArgs();
     result.setUrl(url);
+    return result;
+}
+
+// ==============================================================================================
+//                             Store Files Artifact From Service
+// ==============================================================================================
+export function newStoreFilesArtifactFromServiceArgs(serviceId: string, sourcePath: string): StoreFilesArtifactFromServiceArgs {
+    const result: StoreFilesArtifactFromServiceArgs = new StoreFilesArtifactFromServiceArgs();
+    result.setServiceId(serviceId)
+    result.setSourcePath(sourcePath)
     return result;
 }

@@ -298,3 +298,10 @@ func NewUploadFilesArtifactArgs(data []byte) *kurtosis_core_rpc_api_bindings.Upl
 func NewStoreWebFilesArtifactArgs(url string) *kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs {
 	return &kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs{Url: url}
 }
+
+// ==============================================================================================
+//                       Store Files Artifact From Service
+// ==============================================================================================
+func NewStoreFilesArtifactFromServiceArgs(serviceId string, sourcePath string) *kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs {
+	return &kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs{ServiceId: serviceId, SourcePath: sourcePath}
+}

@@ -22,7 +22,11 @@ import {
     ExecuteModuleArgs,
     ExecuteModuleResponse,
     ExecCommandArgs,
-    ExecCommandResponse, StoreWebFilesArtifactResponse, StoreWebFilesArtifactArgs,
+    ExecCommandResponse,
+    StoreWebFilesArtifactResponse,
+    StoreWebFilesArtifactArgs,
+    StoreFilesArtifactFromServiceArgs,
+    StoreFilesArtifactFromServiceResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -384,5 +388,27 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         }
         const storeWebFilesArtifactResponse = storeWebFilesArtifactResponseResult.value;
         return ok(storeWebFilesArtifactResponse);
+    }
+
+    public async storeFilesArtifactFromService(storeFilesArtifactFromServiceArgs: StoreFilesArtifactFromServiceArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>> {
+        const storeFilesArtifactFromServicePromise: Promise<Result<StoreFilesArtifactFromServiceResponse, Error>> = new Promise( (resolve, _unusedReject) => {
+            this.client.storeFilesArtifactFromService(storeFilesArtifactFromServiceArgs, {}, (error: grpc_web.RpcError | null, response?: StoreFilesArtifactFromServiceResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+        const storeFilesArtifactFromServiceResponseResult: Result<StoreFilesArtifactFromServiceResponse, Error>  = await storeFilesArtifactFromServicePromise;
+        if (storeFilesArtifactFromServiceResponseResult.isErr()) {
+            return err(storeFilesArtifactFromServiceResponseResult.error)
+        }
+        const storeFilesArtifactFromServiceResponse = storeFilesArtifactFromServiceResponseResult.value;
+        return ok(storeFilesArtifactFromServiceResponse);
     }
 }

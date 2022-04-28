@@ -455,7 +455,7 @@ func (apicService ApiContainerService) GetModules(ctx context.Context, empty *em
 
 	allModuleIDs := make(map[string]bool, len(apicService.moduleStore.GetModules()))
 
-	for moduleID, _ := range apicService.moduleStore.GetModules() {
+	for moduleID := range apicService.moduleStore.GetModules() {
 		moduleIDStr := string(moduleID)
 		if _, ok := allModuleIDs[moduleIDStr]; !ok {
 			allModuleIDs[moduleIDStr] = true
@@ -506,6 +506,20 @@ func (apicService ApiContainerService) StoreWebFilesArtifact(ctx context.Context
 	}
 
 	response := &kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactResponse{Uuid: uuid}
+	return response, nil
+}
+
+func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs) (*kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceResponse, error) {
+	serviceIdStr := args.ServiceId
+	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
+	srcPath := args.SourcePath
+
+	fileArtifactUUID, err := apicService.serviceNetwork.CopyFromService(ctx, serviceId, srcPath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred copying source '%v' from service with ID '%v'", srcPath, serviceId)
+	}
+
+	response := &kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceResponse{Uuid: fileArtifactUUID}
 	return response, nil
 }
 
@@ -570,7 +584,6 @@ func transformPortSpecMapToApiPortsMap(apiPorts map[string]*port_spec.PortSpec) 
 	}
 	return result, nil
 }
-
 
 func (apicService ApiContainerService) waitForEndpointAvailability(
 	serviceIdStr string,

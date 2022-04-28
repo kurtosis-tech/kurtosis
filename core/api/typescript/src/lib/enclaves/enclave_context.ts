@@ -40,7 +40,9 @@ import {
     newRegisterServiceArgs,
     newRemoveServiceArgs,
     newRepartitionArgs,
-    newStartServiceArgs, newStoreWebFilesArtifactArgs,
+    newStartServiceArgs,
+    newStoreWebFilesArtifactArgs,
+    newStoreFilesArtifactFromServiceArgs,
     newUnloadModuleArgs,
     newWaitForHttpGetEndpointAvailabilityArgs,
     newWaitForHttpPostEndpointAvailabilityArgs
@@ -551,6 +553,17 @@ export class EnclaveContext {
         }
         const storeWebFilesArtifactResponse = storeWebFilesArtifactResponseResult.value;
         return ok(storeWebFilesArtifactResponse.getUuid())
+    }
+
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    public async storeFilesFromService(serviceId: ServiceID, absoluteFilepathOnServiceContainer: string): Promise<Result<FilesArtifactID, Error>> {
+        const args = newStoreFilesArtifactFromServiceArgs(serviceId, absoluteFilepathOnServiceContainer)
+        const storeFilesArtifactFromServiceResponseResult = await this.backend.storeFilesArtifactFromService(args)
+        if (storeFilesArtifactFromServiceResponseResult.isErr()) {
+            return err(storeFilesArtifactFromServiceResponseResult.error)
+        }
+        const storeFilesArtifactFromServiceResponse = storeFilesArtifactFromServiceResponseResult.value;
+        return ok(storeFilesArtifactFromServiceResponse.getUuid())
     }
 
     // ====================================================================================================
