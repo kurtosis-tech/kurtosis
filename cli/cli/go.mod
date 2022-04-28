@@ -4,8 +4,6 @@ go 1.15
 
 replace (
 	github.com/kurtosis-tech/kurtosis-cli/commons => ../commons
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang => /Users/lporoli/Kurtosis/kurtosis-core/api/golang
-	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang => /Users/lporoli/Kurtosis/kurtosis-engine-server/api/golang
 )
 
 require (
@@ -18,10 +16,9 @@ require (
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220426170434-b6da6d148295
 	github.com/kurtosis-tech/kurtosis-cli/commons v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220426170659-e93f35a2964a
-	github.com/kurtosis-tech/kurtosis-core/api/golang v0.0.0-20220426170649-7a55dd6b1496 // indirect
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220428115252-6668f26c7fdd
 	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220426171003-3d6c2a923d2d
-	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220426170952-04a19299d1ed
+	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220428120555-e6a85fa3f7ec
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220225193403-74da3f3b98ce
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
