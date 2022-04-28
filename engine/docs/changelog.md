@@ -1,5 +1,9 @@
 # TBD
 
+# 1.15.6
+### Features
+* Upgraded to Core 1.43.6, which has `EnclaveContext.StoreFilesFromService`
+
 # 1.15.5
 ### Changes
 * Upgrade to container-engine-lib 0.16.0 and core 1.43.5, which contains `EnclaveContext.StoreWebFiles`
