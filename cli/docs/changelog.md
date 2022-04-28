@@ -1,4 +1,11 @@
 # TBD
+### Features
+* Added `files storeservice` to store files from a service in the enclave
+* Updated `files_artifact_mounting` internal test in order to test duplicate mountpoints
+
+### Changes
+* Upgraded `kurtosis core lib` to 1.43.6 which adds `EnclaveContext.StoreFilesFromService` 
+* Upgraded `kurtosis engine lib` to 1.15.6
 
 # 0.14.1
 ### Features
