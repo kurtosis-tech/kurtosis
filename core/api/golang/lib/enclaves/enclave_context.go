@@ -19,7 +19,6 @@ package enclaves
 
 import (
 	"archive/tar"
-	"compress/gzip"
 	"context"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/binding_constructors"
@@ -27,6 +26,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/services"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"github.com/mholt/archiver"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
 	"io/ioutil"
@@ -48,6 +48,8 @@ const (
 	// The path on the user service container where the enclave data dir will be bind-mounted
 	serviceEnclaveDataDirMountpoint = "/kurtosis-enclave-data"
 	grpcDataTransferLimit = 3999000 //3.999 Mb. 1kb wiggle room. 1kb being about the size of a simple 2 paragraph readme.
+	tempCompressionDirPattern = "upload-compression-cache-"
+	compressionExtension = ".tgz"
 )
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -473,43 +475,32 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 		return "", stacktrace.Propagate(err, "There was a path error for '%s' during file uploading.", pathToUpload)
 	}
 
-	tarFile, err := ioutil.TempFile("","")
+	tempDir, err := os.MkdirTemp("", tempCompressionDirPattern)
 	if err != nil {
-		return "", stacktrace.Propagate(err,
-			 "There was an error creating a temporary archive file at '%s' during files upload for '%s'.",
-			 tarFile.Name(), pathToUpload)
-	}
-	defer tarFile.Close()
-	gzipWriter := gzip.NewWriter(tarFile)
-	defer gzipWriter.Close()
-	tarWriter := tar.NewWriter(gzipWriter)
-	defer tarWriter.Close()
-
-	err = filepath.Walk(pathToUpload, func(filePath string, fileInfo os.FileInfo, err error) error {
-		return addFilesToArchive(filePath, fileInfo, err, tarWriter, pathToUpload)
-	})
-	if err != nil {
-		return "", stacktrace.Propagate(err,
-			"There was an error searching through your directory '%s' during the archive process.", pathToUpload)
+		return "", stacktrace.Propagate(err, "Failed to compress files for upload.")
 	}
 
-	tarInfo, err := tarFile.Stat()
+	compressedFilePath := filepath.Join(tempDir, filepath.Base(pathToUpload) + compressionExtension)
+	archiver.Archive([]string{pathToUpload}, compressedFilePath)
+
+	compressedFileInfo, err := os.Stat(compressedFilePath)
 	if err != nil {
 		return "", stacktrace.Propagate(err,
-				"There was an error while checking the status of the temporary tar file '%s' recently compressed for upload.",
-				tarFile.Name())
+			 "Failed to create a temporary archive file at '%s' during files upload for '%s'.",
+			tempDir, pathToUpload)
 	}
 
-	if tarInfo.Size() >= grpcDataTransferLimit {
+
+	if compressedFileInfo.Size() >= grpcDataTransferLimit {
 		return "", stacktrace.Propagate(err,
 			"The files you are trying to upload, which are now compressed, exceed or reach 4mb, a limit imposed by gRPC. " +
 				"Please reduce the total file size and ensure it can compress to a size below 4mb.")
 	}
-	content, err := ioutil.ReadFile(tarFile.Name())
+	content, err := ioutil.ReadFile(compressedFilePath)
 	if err != nil{
 		return "", stacktrace.Propagate(err,
 					"There was an error reading from the temporary tar file '%s' recently compressed for upload.",
-			       	tarFile.Name())
+			compressedFileInfo.Name())
 	}
 
 	args := binding_constructors.NewUploadFilesArtifactArgs(content)
