@@ -1,4 +1,6 @@
 # TBD
+
+# 1.15.6
 ### Features
 * Upgraded to Core 1.43.6, which has `EnclaveContext.StoreFilesFromService`
 
