@@ -403,6 +403,7 @@ func (network *ServiceNetworkImpl) PauseService(
 		return stacktrace.NewError("Can not pause service '%v', service already paused.",
 			serviceId)
 	}
+	logrus.Infof("Service network calling pause service on service id %+v.", serviceId)
 	err := network.kurtosisBackend.PauseService(ctx, network.enclaveId, serviceId)
 	if err != nil {
 		return stacktrace.Propagate(err,"Failed to pause service '%v'", serviceId)
