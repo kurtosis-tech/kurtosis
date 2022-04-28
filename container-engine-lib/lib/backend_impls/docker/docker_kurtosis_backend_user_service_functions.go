@@ -240,6 +240,8 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 		GUIDs: userServiceGuids,
 	}
 
+	logrus.Infof("running exec command TODO TODO TODO REMOVE THIS")
+
 	userServices, err := backend.getMatchingUserServices(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
