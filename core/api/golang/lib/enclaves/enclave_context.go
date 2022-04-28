@@ -479,7 +479,9 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 	}
 
 	compressedFilePath := filepath.Join(tempDir, filepath.Base(pathToUpload) + compressionExtension)
-	archiver.Archive([]string{pathToUpload}, compressedFilePath)
+	if err = archiver.Archive([]string{pathToUpload}, compressedFilePath); err != nil {
+		return "", stacktrace.Propagate(err, "Failed to compress '%s'.", pathToUpload)
+	}
 
 	compressedFileInfo, err := os.Stat(compressedFilePath)
 	if err != nil {
@@ -499,6 +501,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 					"There was an error reading from the temporary tar file '%s' recently compressed for upload.",
 			compressedFileInfo.Name())
 	}
+	logrus.Debugf("The length of content before archiving is '%v'.", len(content))
 
 	args := binding_constructors.NewUploadFilesArtifactArgs(content)
 	response, err := enclaveCtx.client.UploadFilesArtifact(context.Background(), args)
