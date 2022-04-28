@@ -501,7 +501,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 					"There was an error reading from the temporary tar file '%s' recently compressed for upload.",
 			compressedFileInfo.Name())
 	}
-	logrus.Debugf("The length of content before archiving is '%v'.", len(content))
+	logrus.Infof("The length of content before archiving is '%v'.", len(content))
 
 	args := binding_constructors.NewUploadFilesArtifactArgs(content)
 	response, err := enclaveCtx.client.UploadFilesArtifact(context.Background(), args)
