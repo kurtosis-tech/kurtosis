@@ -375,9 +375,13 @@ func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
 
 func (backend *MetricsReportingKurtosisBackend) PauseService(
 	ctx context.Context,
-	enclavedId enclave.EnclaveID,
+	enclaveId enclave.EnclaveID,
 	serviceId service.ServiceID,
 ) error {
+	err := backend.underlying.PauseService(ctx, enclaveId, serviceId)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to pause service %+v", serviceId)
+	}
 	return nil
 }
 
