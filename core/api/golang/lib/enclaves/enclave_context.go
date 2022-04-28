@@ -503,8 +503,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 	args := binding_constructors.NewUploadFilesArtifactArgs(content)
 	response, err := enclaveCtx.client.UploadFilesArtifact(context.Background(), args)
 	if err != nil {
-		return "", stacktrace.Propagate(err,
-			  "An error was encountered while uploading data to the API Container.")
+		return "", stacktrace.Propagate(err,"An error was encountered while uploading data to the API Container.")
 	}
 	return services.FilesArtifactID(response.Uuid), nil;
 }
