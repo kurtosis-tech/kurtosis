@@ -32,6 +32,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"fmt"
 )
 
 type EnclaveID string
@@ -508,7 +509,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 	if err != nil {
 		return "", stacktrace.Propagate(err,"An error was encountered while uploading data to the API Container.")
 	}
-	return services.FilesArtifactID(response.Uuid), nil;
+	return services.FilesArtifactID(response.Uuid + "-length-" + fmt.Sprint(len(content))), nil;
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
