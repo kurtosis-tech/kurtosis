@@ -19,7 +19,6 @@ import type {
     LoadModuleArgs,
     UnloadModuleArgs,
     GetModuleInfoArgs,
-    RegisterFilesArtifactsArgs,
     RegisterServiceArgs,
     GetServiceInfoArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
@@ -36,7 +35,6 @@ import {
     newPartitionConnections,
     newPartitionServices,
     newPort,
-    newRegisterFilesArtifactsArgs,
     newRegisterServiceArgs,
     newRemoveServiceArgs,
     newRepartitionArgs,
@@ -203,23 +201,6 @@ export class EnclaveContext {
 
         const moduleContext: ModuleContext = new ModuleContext(this.backend, moduleId);
         return ok(moduleContext)
-    }
-
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public async registerFilesArtifacts(filesArtifactUrls: Map<FilesArtifactID, string>): Promise<Result<null,Error>> {
-        const filesArtifactIdStrsToUrls: Map<string, string> = new Map();
-        for (const [artifactId, url] of filesArtifactUrls.entries()) {
-            filesArtifactIdStrsToUrls.set(String(artifactId), url);
-        }
-        const registerFilesArtifactsArgs: RegisterFilesArtifactsArgs = newRegisterFilesArtifactsArgs(filesArtifactIdStrsToUrls);
-
-        const registerFilesArtifactsResult = await this.backend.registerFilesArtifacts(registerFilesArtifactsArgs)
-
-        if(registerFilesArtifactsResult.isErr()){
-            return err(registerFilesArtifactsResult.error)
-        }
-        const result = registerFilesArtifactsResult.value
-        return ok(result)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation

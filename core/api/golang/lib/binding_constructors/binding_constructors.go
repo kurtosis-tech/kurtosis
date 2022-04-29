@@ -93,15 +93,6 @@ func NewGetModuleInfoResponse(
 }
 
 // ==============================================================================================
-//                                       Register Files Artifacts
-// ==============================================================================================
-func NewRegisterFilesArtifactArgs(filesArtifactUrls map[string]string) *kurtosis_core_rpc_api_bindings.RegisterFilesArtifactsArgs {
-	return &kurtosis_core_rpc_api_bindings.RegisterFilesArtifactsArgs{
-		FilesArtifactUrls: filesArtifactUrls,
-	}
-}
-
-// ==============================================================================================
 //                                     Register Service
 // ==============================================================================================
 func NewRegisterServiceArgs(serviceId string, partitionId string) *kurtosis_core_rpc_api_bindings.RegisterServiceArgs {

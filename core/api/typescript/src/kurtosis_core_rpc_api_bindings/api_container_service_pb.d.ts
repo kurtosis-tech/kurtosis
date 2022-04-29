@@ -205,24 +205,6 @@ export namespace GetModuleInfoResponse {
   }
 }
 
-export class RegisterFilesArtifactsArgs extends jspb.Message {
-  getFilesArtifactUrlsMap(): jspb.Map<string, string>;
-  clearFilesArtifactUrlsMap(): RegisterFilesArtifactsArgs;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): RegisterFilesArtifactsArgs.AsObject;
-  static toObject(includeInstance: boolean, msg: RegisterFilesArtifactsArgs): RegisterFilesArtifactsArgs.AsObject;
-  static serializeBinaryToWriter(message: RegisterFilesArtifactsArgs, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): RegisterFilesArtifactsArgs;
-  static deserializeBinaryFromReader(message: RegisterFilesArtifactsArgs, reader: jspb.BinaryReader): RegisterFilesArtifactsArgs;
-}
-
-export namespace RegisterFilesArtifactsArgs {
-  export type AsObject = {
-    filesArtifactUrlsMap: Array<[string, string]>,
-  }
-}
-
 export class RegisterServiceArgs extends jspb.Message {
   getServiceId(): string;
   setServiceId(value: string): RegisterServiceArgs;

@@ -24,8 +24,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/modules"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/services"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"github.com/mholt/archiver"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io/ioutil"
 	"math"
@@ -120,19 +120,6 @@ func (enclaveCtx *EnclaveContext) GetModuleContext(moduleId modules.ModuleID) (*
 	}
 	moduleCtx := modules.NewModuleContext(enclaveCtx.client, moduleId)
 	return moduleCtx, nil
-}
-
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveCtx *EnclaveContext) RegisterFilesArtifacts(filesArtifactUrls map[services.FilesArtifactID]string) error {
-	filesArtifactIdStrsToUrls := map[string]string{}
-	for artifactId, url := range filesArtifactUrls {
-		filesArtifactIdStrsToUrls[string(artifactId)] = url
-	}
-	args := binding_constructors.NewRegisterFilesArtifactArgs(filesArtifactIdStrsToUrls)
-	if _, err := enclaveCtx.client.RegisterFilesArtifacts(context.Background(), args); err != nil {
-		return stacktrace.Propagate(err, "An error occurred registering files artifacts: %+v", filesArtifactUrls)
-	}
-	return nil
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation

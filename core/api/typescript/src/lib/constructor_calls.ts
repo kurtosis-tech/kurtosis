@@ -6,7 +6,6 @@
 import * as jspb from "google-protobuf";
 import {
     ExecCommandArgs,
-    RegisterFilesArtifactsArgs,
     GetServiceInfoArgs,
     PartitionServices,
     PartitionConnections,
@@ -83,19 +82,6 @@ export function newGetModuleInfoArgs(moduleId: ModuleID): GetModuleInfoArgs {
     const result: GetModuleInfoArgs = new GetModuleInfoArgs();
     result.setModuleId(String(moduleId));
 
-    return result;
-}
-
-
-// ==============================================================================================
-//                                       Register Files Artifacts
-// ==============================================================================================
-export function newRegisterFilesArtifactsArgs(filesArtifactIdStrsToUrls: Map<string, string>): RegisterFilesArtifactsArgs {
-    const result: RegisterFilesArtifactsArgs = new RegisterFilesArtifactsArgs();
-    const filesArtifactUrlsMap: jspb.Map<string, string> = result.getFilesArtifactUrlsMap();
-    for (const [artifactId, artifactUrl] of filesArtifactIdStrsToUrls.entries()) {
-        filesArtifactUrlsMap.set(artifactId, artifactUrl);
-    }
     return result;
 }
 
