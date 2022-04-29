@@ -6,7 +6,6 @@ export type { FilesArtifactID, ContainerConfig } from "./lib/services/container_
 export { ContainerConfigBuilder } from "./lib/services/container_config";
 export type { ServiceID } from "./lib/services/service";
 export { ServiceContext } from "./lib/services/service_context";
-export { SharedPath } from "./lib/services/shared_path"
 export { PortSpec, PortProtocol } from "./lib/services/port_spec"
 
 // Enclaves
@@ -19,7 +18,7 @@ export type { ModuleID } from "./lib/modules/module_context";
 export { ModuleContext } from "./lib/modules/module_context";
 
 // Constructor Calls
-export { newExecCommandArgs, newLoadModuleArgs, newRegisterFilesArtifactsArgs, newRegisterServiceArgs, newStartServiceArgs, newGetServiceInfoArgs, newRemoveServiceArgs, newPartitionServices, newRepartitionArgs, newPartitionConnections, newPartitionConnectionInfo, newWaitForHttpGetEndpointAvailabilityArgs, newWaitForHttpPostEndpointAvailabilityArgs, newExecuteModuleArgs, newGetModuleInfoArgs } from "./lib/constructor_calls";
+export { newExecCommandArgs, newLoadModuleArgs, newRegisterServiceArgs, newStartServiceArgs, newGetServiceInfoArgs, newRemoveServiceArgs, newPartitionServices, newRepartitionArgs, newPartitionConnections, newPartitionConnectionInfo, newWaitForHttpGetEndpointAvailabilityArgs, newWaitForHttpPostEndpointAvailabilityArgs, newExecuteModuleArgs, newGetModuleInfoArgs } from "./lib/constructor_calls";
 
 // Module Launch API
 export { ModuleContainerArgs } from "./module_launch_api/module_container_args";

@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-import { ok, err, Result } from "neverthrow";
+import {ok, err, Result, Err} from "neverthrow";
 import log from "loglevel";
 import { isNode as  isExecutionEnvNode} from "browser-or-node";
 import * as jspb from "google-protobuf";
@@ -19,7 +19,6 @@ import type {
     LoadModuleArgs,
     UnloadModuleArgs,
     GetModuleInfoArgs,
-    RegisterFilesArtifactsArgs,
     RegisterServiceArgs,
     GetServiceInfoArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
@@ -36,7 +35,6 @@ import {
     newPartitionConnections,
     newPartitionServices,
     newPort,
-    newRegisterFilesArtifactsArgs,
     newRegisterServiceArgs,
     newRemoveServiceArgs,
     newRepartitionArgs,
@@ -45,15 +43,16 @@ import {
     newStoreFilesArtifactFromServiceArgs,
     newUnloadModuleArgs,
     newWaitForHttpGetEndpointAvailabilityArgs,
-    newWaitForHttpPostEndpointAvailabilityArgs
+    newWaitForHttpPostEndpointAvailabilityArgs,
+    newUploadFilesArtifactArgs
 } from "../constructor_calls";
 import type { ContainerConfig, FilesArtifactID } from "../services/container_config";
 import type { ServiceID } from "../services/service";
-import { SharedPath } from "../services/shared_path";
 import { ServiceContext } from "../services/service_context";
 import { PortProtocol, PortSpec } from "../services/port_spec";
 import type { GenericPathJoiner } from "./generic_path_joiner";
 import type { PartitionConnection } from "./partition_connection";
+import {GenericTgzArchiver} from "./generic_tgz_archiver";
 
 export type EnclaveID = string;
 export type PartitionID = string;
@@ -70,13 +69,16 @@ export class EnclaveContext {
 
     private readonly backend: GenericApiContainerClient
     private readonly pathJoiner: GenericPathJoiner
+    private readonly genericTgzArchiver: GenericTgzArchiver
     // The location on the filesystem where this code is running where the enclave data dir exists
     private readonly enclaveDataDirpath: string;
 
-    private constructor(backend: GenericApiContainerClient, enclaveDataDirpath: string, pathJoiner: GenericPathJoiner){
+    private constructor(backend: GenericApiContainerClient, enclaveDataDirpath: string, pathJoiner: GenericPathJoiner,
+                        genericTgzArchiver: GenericTgzArchiver){
         this.backend = backend;
         this.enclaveDataDirpath = enclaveDataDirpath;
         this.pathJoiner = pathJoiner;
+        this.genericTgzArchiver = genericTgzArchiver
     }
 
     public static async newGrpcWebEnclaveContext(
@@ -91,14 +93,19 @@ export class EnclaveContext {
         }
 
         let genericApiContainerClient: GenericApiContainerClient
+        let genericTgzArchiver: GenericTgzArchiver
         let pathJoiner: GenericPathJoiner
         try {
+
             pathJoiner = await import("path-browserify")
             const apiContainerServiceWeb = await import("../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb")
 
             const apiContainerGrpcProxyUrl: string = `${ipAddress}:${apiContainerGrpcProxyPortNum}`
             const apiContainerClient = new apiContainerServiceWeb.ApiContainerServiceClient(apiContainerGrpcProxyUrl);
             genericApiContainerClient = new GrpcWebApiContainerClient(apiContainerClient, enclaveId)
+
+            const webFileArchiver = await import("./web_file_archiver")
+            genericTgzArchiver = new webFileArchiver.WebTgzArchiver()
         }catch(error) {
             if (error instanceof Error) {
                 return err(error);
@@ -108,7 +115,7 @@ export class EnclaveContext {
             ));
         }
         
-        const enclaveContext = new EnclaveContext(genericApiContainerClient, enclaveDataDirpath, pathJoiner);
+        const enclaveContext = new EnclaveContext(genericApiContainerClient, enclaveDataDirpath, pathJoiner, genericTgzArchiver);
         return ok(enclaveContext)
     }
 
@@ -124,7 +131,9 @@ export class EnclaveContext {
         }
 
         let genericApiContainerClient: GenericApiContainerClient
+        let genericTgzArchiver: GenericTgzArchiver
         let pathJoiner: GenericPathJoiner
+        //TODO Pull things that can't throw an error out of try statement.
         try {
             pathJoiner = await import( /* webpackIgnore: true */ "path")
             const grpc_node = await import( /* webpackIgnore: true */ "@grpc/grpc-js")
@@ -134,6 +143,8 @@ export class EnclaveContext {
             const apiContainerClient = new apiContainerServiceNode.ApiContainerServiceClient(apiContainerGrpcUrl, grpc_node.credentials.createInsecure());
             genericApiContainerClient = new GrpcNodeApiContainerClient(apiContainerClient, enclaveId)
 
+            const nodeFileArchiver = await import(/* webpackIgnore: true */ "./node_file_archiver")
+            genericTgzArchiver = new nodeFileArchiver.NodeTgzArchiver()
         }catch(error) {
             if (error instanceof Error) {
                 return err(error);
@@ -143,7 +154,7 @@ export class EnclaveContext {
             ));
         }
 
-        const enclaveContext = new EnclaveContext(genericApiContainerClient, enclaveDataDirpath, pathJoiner);
+        const enclaveContext = new EnclaveContext(genericApiContainerClient, enclaveDataDirpath, pathJoiner, genericTgzArchiver);
         return ok(enclaveContext)
     }
 
@@ -192,26 +203,9 @@ export class EnclaveContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public async registerFilesArtifacts(filesArtifactUrls: Map<FilesArtifactID, string>): Promise<Result<null,Error>> {
-        const filesArtifactIdStrsToUrls: Map<string, string> = new Map();
-        for (const [artifactId, url] of filesArtifactUrls.entries()) {
-            filesArtifactIdStrsToUrls.set(String(artifactId), url);
-        }
-        const registerFilesArtifactsArgs: RegisterFilesArtifactsArgs = newRegisterFilesArtifactsArgs(filesArtifactIdStrsToUrls);
-
-        const registerFilesArtifactsResult = await this.backend.registerFilesArtifacts(registerFilesArtifactsArgs)
-
-        if(registerFilesArtifactsResult.isErr()){
-            return err(registerFilesArtifactsResult.error)
-        }
-        const result = registerFilesArtifactsResult.value
-        return ok(result)
-    }
-
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async addService(
             serviceId: ServiceID,
-            containerConfigSupplier: (ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error>
+            containerConfigSupplier: (ipAddr: string) => Result<ContainerConfig, Error>
         ): Promise<Result<ServiceContext, Error>> {
 
         const resultAddServiceToPartition: Result<ServiceContext, Error> = await this.addServiceToPartition(
@@ -230,7 +224,7 @@ export class EnclaveContext {
     public async addServiceToPartition(
             serviceId: ServiceID,
             partitionId: PartitionID,
-            containerConfigSupplier: (ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error>
+            containerConfigSupplier: (ipAddr: string) => Result<ContainerConfig, Error>
         ): Promise<Result<ServiceContext, Error>> {
 
         log.trace("Registering new service ID with Kurtosis API...");
@@ -249,10 +243,8 @@ export class EnclaveContext {
         const privateIpAddr: string = registerServiceResponse.getPrivateIpAddr();
         const relativeServiceDirpath: string = registerServiceResponse.getRelativeServiceDirpath();
 
-        const sharedDirectory = this.getSharedDirectory(relativeServiceDirpath)
-
         log.trace("Generating container config object using the container config supplier...")
-        const containerConfigSupplierResult: Result<ContainerConfig, Error> = containerConfigSupplier(privateIpAddr, sharedDirectory);
+        const containerConfigSupplierResult: Result<ContainerConfig, Error> = containerConfigSupplier(privateIpAddr);
         if (containerConfigSupplierResult.isErr()){
             return err(containerConfigSupplierResult.error);
         }
@@ -310,7 +302,6 @@ export class EnclaveContext {
         const serviceContext: ServiceContext = new ServiceContext(
             this.backend,
             serviceId,
-            sharedDirectory,
             privateIpAddr,
             privatePorts,
             startServiceResponse.getPublicIpAddr(),
@@ -343,14 +334,6 @@ export class EnclaveContext {
             );
         }
 
-        const relativeServiceDirpath: string = serviceInfo.getRelativeServiceDirpath();
-        if (relativeServiceDirpath === "") {
-            return err(new Error(
-                    "Kurtosis API reported an empty relative service directory path for service " + serviceId + " - this should never happen, and is a bug with Kurtosis!",
-                )
-            );
-        }
-
         const enclaveDataDirMountDirpathOnSvcContainer: string = serviceInfo.getEnclaveDataDirMountDirpath();
         if (enclaveDataDirMountDirpathOnSvcContainer === "") {
             return err(new Error(
@@ -358,8 +341,6 @@ export class EnclaveContext {
                 )
             );
         }
-
-        const sharedDirectory: SharedPath = this.getSharedDirectory(relativeServiceDirpath)
 
         const serviceCtxPrivatePorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
             serviceInfo.getPrivatePortsMap(),
@@ -371,7 +352,6 @@ export class EnclaveContext {
         const serviceContext: ServiceContext = new ServiceContext(
             this.backend,
             serviceId,
-            sharedDirectory,
             serviceInfo.getPrivateIpAddr(),
             serviceCtxPrivatePorts,
             serviceInfo.getPublicIpAddr(),
@@ -545,6 +525,22 @@ export class EnclaveContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    public async uploadFiles(pathToArchive: string): Promise<Result<FilesArtifactID, Error>>  {
+        const archiverResponse = await this.genericTgzArchiver.createTgzByteArray(pathToArchive)
+        if (archiverResponse.isErr()){
+            return err(archiverResponse.error)
+        }
+
+        const args = newUploadFilesArtifactArgs(archiverResponse.value)
+        const uploadResult = await this.backend.uploadFiles(args)
+        if (uploadResult.isErr()){
+            return err(uploadResult.error)
+        }
+
+        return ok(uploadResult.value.getUuid())
+    }
+      
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async storeWebFiles(url: string): Promise<Result<FilesArtifactID, Error>> {
         const args = newStoreWebFilesArtifactArgs(url);
         const storeWebFilesArtifactResponseResult = await this.backend.storeWebFilesArtifact(args)
@@ -565,19 +561,10 @@ export class EnclaveContext {
         const storeFilesArtifactFromServiceResponse = storeFilesArtifactFromServiceResponseResult.value;
         return ok(storeFilesArtifactFromServiceResponse.getUuid())
     }
-
+  
     // ====================================================================================================
     //                                       Private helper functions
     // ====================================================================================================
-    private getSharedDirectory(relativeServiceDirpath: string): SharedPath {
-
-        const absFilepathOnThisContainer = this.pathJoiner.join(this.enclaveDataDirpath, relativeServiceDirpath);
-        const absFilepathOnServiceContainer = this.pathJoiner.join(SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT, relativeServiceDirpath);
-
-        const sharedDirectory = new SharedPath(absFilepathOnThisContainer, absFilepathOnServiceContainer, this.pathJoiner);
-        return sharedDirectory;
-    }
-
     private static convertApiPortsToServiceContextPorts(apiPorts: jspb.Map<string, Port>): Map<string, PortSpec> {
         const result: Map<string, PortSpec> = new Map();
         for (const [portId, apiPortSpec] of apiPorts.entries()) {

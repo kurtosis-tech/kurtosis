@@ -6,7 +6,6 @@
 import * as jspb from "google-protobuf";
 import {
     ExecCommandArgs,
-    RegisterFilesArtifactsArgs,
     GetServiceInfoArgs,
     PartitionServices,
     PartitionConnections,
@@ -23,7 +22,8 @@ import {
     GetModuleInfoArgs,
     Port,
     StoreWebFilesArtifactArgs,
-    StoreFilesArtifactFromServiceArgs
+    StoreFilesArtifactFromServiceArgs,
+    UploadFilesArtifactArgs
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceID } from './services/service';
 import { PartitionID } from './enclaves/enclave_context';
@@ -82,19 +82,6 @@ export function newGetModuleInfoArgs(moduleId: ModuleID): GetModuleInfoArgs {
     const result: GetModuleInfoArgs = new GetModuleInfoArgs();
     result.setModuleId(String(moduleId));
 
-    return result;
-}
-
-
-// ==============================================================================================
-//                                       Register Files Artifacts
-// ==============================================================================================
-export function newRegisterFilesArtifactsArgs(filesArtifactIdStrsToUrls: Map<string, string>): RegisterFilesArtifactsArgs {
-    const result: RegisterFilesArtifactsArgs = new RegisterFilesArtifactsArgs();
-    const filesArtifactUrlsMap: jspb.Map<string, string> = result.getFilesArtifactUrlsMap();
-    for (const [artifactId, artifactUrl] of filesArtifactIdStrsToUrls.entries()) {
-        filesArtifactUrlsMap.set(artifactId, artifactUrl);
-    }
     return result;
 }
 
@@ -308,4 +295,13 @@ export function newStoreFilesArtifactFromServiceArgs(serviceId: string, sourcePa
     result.setServiceId(serviceId)
     result.setSourcePath(sourcePath)
     return result;
+}
+
+// ==============================================================================================
+//                                      Upload Files
+// ==============================================================================================
+export function newUploadFilesArtifactArgs(data: Uint8Array) : UploadFilesArtifactArgs {
+    const result: UploadFilesArtifactArgs = new UploadFilesArtifactArgs()
+    result.setData(data)
+    return result
 }

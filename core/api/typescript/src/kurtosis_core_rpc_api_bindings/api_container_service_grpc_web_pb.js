@@ -319,67 +319,6 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.getModuleInfo
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
- *   !proto.api_container_api.RegisterFilesArtifactsArgs,
- *   !proto.google.protobuf.Empty>}
- */
-const methodDescriptor_ApiContainerService_RegisterFilesArtifacts = new grpc.web.MethodDescriptor(
-  '/api_container_api.ApiContainerService/RegisterFilesArtifacts',
-  grpc.web.MethodType.UNARY,
-  proto.api_container_api.RegisterFilesArtifactsArgs,
-  google_protobuf_empty_pb.Empty,
-  /**
-   * @param {!proto.api_container_api.RegisterFilesArtifactsArgs} request
-   * @return {!Uint8Array}
-   */
-  function(request) {
-    return request.serializeBinary();
-  },
-  google_protobuf_empty_pb.Empty.deserializeBinary
-);
-
-
-/**
- * @param {!proto.api_container_api.RegisterFilesArtifactsArgs} request The
- *     request proto
- * @param {?Object<string, string>} metadata User defined
- *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.google.protobuf.Empty)}
- *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.google.protobuf.Empty>|undefined}
- *     The XHR Node Readable Stream
- */
-proto.api_container_api.ApiContainerServiceClient.prototype.registerFilesArtifacts =
-    function(request, metadata, callback) {
-  return this.client_.rpcCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/RegisterFilesArtifacts',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_RegisterFilesArtifacts,
-      callback);
-};
-
-
-/**
- * @param {!proto.api_container_api.RegisterFilesArtifactsArgs} request The
- *     request proto
- * @param {?Object<string, string>=} metadata User defined
- *     call metadata
- * @return {!Promise<!proto.google.protobuf.Empty>}
- *     Promise that resolves to the response
- */
-proto.api_container_api.ApiContainerServicePromiseClient.prototype.registerFilesArtifacts =
-    function(request, metadata) {
-  return this.client_.unaryCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/RegisterFilesArtifacts',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_RegisterFilesArtifacts);
-};
-
-
-/**
- * @const
- * @type {!grpc.web.MethodDescriptor<
  *   !proto.api_container_api.RegisterServiceArgs,
  *   !proto.api_container_api.RegisterServiceResponse>}
  */

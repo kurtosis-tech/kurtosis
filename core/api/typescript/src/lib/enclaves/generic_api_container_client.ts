@@ -16,7 +16,6 @@ import {
     GetServiceInfoResponse,
     GetServicesResponse,
     LoadModuleArgs,
-    RegisterFilesArtifactsArgs,
     RegisterServiceArgs,
     RegisterServiceResponse,
     RemoveServiceArgs,
@@ -24,6 +23,8 @@ import {
     StartServiceArgs,
     StartServiceResponse, StoreFilesArtifactFromServiceArgs, StoreWebFilesArtifactArgs, StoreWebFilesArtifactResponse,
     UnloadModuleArgs,
+    UploadFilesArtifactArgs,
+    UploadFilesArtifactResponse,
     WaitForHttpGetEndpointAvailabilityArgs,
     WaitForHttpPostEndpointAvailabilityArgs
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
@@ -34,7 +35,6 @@ export interface GenericApiContainerClient {
     loadModule(loadModuleArgs: LoadModuleArgs): Promise<Result<null, Error>>
     unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<null,Error>>
     getModuleInfo(getModuleInfoArgs: GetModuleInfoArgs): Promise<Result<null, Error>>
-    registerFilesArtifacts(registerFilesArtifactsArgs: RegisterFilesArtifactsArgs): Promise<Result<null,Error>>
     registerService(registerServiceArgs: RegisterServiceArgs): Promise<Result<RegisterServiceResponse, Error>>
     startService(startServiceArgs: StartServiceArgs): Promise<Result<StartServiceResponse, Error>>
     getServiceInfo(getServiceInfoArgs: GetServiceInfoArgs): Promise<Result<GetServiceInfoResponse, Error>>
@@ -46,6 +46,7 @@ export interface GenericApiContainerClient {
     getModules(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetModulesResponse, Error>>
     executeModule(executeModuleArgs: ExecuteModuleArgs): Promise<Result<ExecuteModuleResponse, Error>>
     execCommand(execCommandArgs: ExecCommandArgs): Promise<Result<ExecCommandResponse, Error>>
+    uploadFiles(uploadFilesArtifactArgs: UploadFilesArtifactArgs): Promise<Result<UploadFilesArtifactResponse, Error>>
     storeWebFilesArtifact(storeWebFilesArtifactArgs: StoreWebFilesArtifactArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>>
     storeFilesArtifactFromService(storeFilesArtifactFromServiceArgs: StoreFilesArtifactFromServiceArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>>
 }
