@@ -1,5 +1,14 @@
 # TBD
 
+# 1.16.0
+### Changes
+* Switched to using Kurtosis Core 1.44.0, which forces use of the files API
+
+### Breaking Changes
+* Upgraded to Kurtosis Core 1.44.0
+    * Users should upgrade their engine-api-lib to version 1.44.0
+* The `EnclaveContext` has been modified fairly significantly; for a list of breaking changes and remediations see [the 1.44.0 docs](https://docs.kurtosistech.com/kurtosis-core/changelog)
+
 # 1.15.6
 ### Features
 * Upgraded to Core 1.43.6, which has `EnclaveContext.StoreFilesFromService`
