@@ -1,4 +1,6 @@
 # TBD
+
+# 1.16.0
 ### Changes
 * Switched to using Kurtosis Core 1.44.0, which forces use of the files API
 
