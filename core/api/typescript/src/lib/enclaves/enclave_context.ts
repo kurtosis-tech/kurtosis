@@ -57,8 +57,8 @@ import type { GenericPathJoiner } from "./generic_path_joiner";
 import type { PartitionConnection } from "./partition_connection";
 import {UploadFilesArtifactArgs} from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
-import {NodeFileArchiver} from "./node_file_archiver";
-import {WebFileArchiver} from "./web_file_archiver";
+import {NodeTgzArchiver} from "./node_file_archiver";
+import {WebTgzArchiver} from "./web_file_archiver";
 
 export type EnclaveID = string;
 export type PartitionID = string;
@@ -108,7 +108,7 @@ export class EnclaveContext {
             const apiContainerGrpcProxyUrl: string = `${ipAddress}:${apiContainerGrpcProxyPortNum}`
             const apiContainerClient = new apiContainerServiceWeb.ApiContainerServiceClient(apiContainerGrpcProxyUrl);
             genericApiContainerClient = new GrpcWebApiContainerClient(apiContainerClient, enclaveId)
-            genericTgzArchiver = new WebFileArchiver()
+            genericTgzArchiver = new WebTgzArchiver()
         }catch(error) {
             if (error instanceof Error) {
                 return err(error);
@@ -145,7 +145,7 @@ export class EnclaveContext {
             const apiContainerGrpcUrl: string = `${ipAddress}:${apiContainerGrpcPortNum}`
             const apiContainerClient = new apiContainerServiceNode.ApiContainerServiceClient(apiContainerGrpcUrl, grpc_node.credentials.createInsecure());
             genericApiContainerClient = new GrpcNodeApiContainerClient(apiContainerClient, enclaveId)
-            genericTgzArchiver = new NodeFileArchiver()
+            genericTgzArchiver = new NodeTgzArchiver()
         }catch(error) {
             if (error instanceof Error) {
                 return err(error);

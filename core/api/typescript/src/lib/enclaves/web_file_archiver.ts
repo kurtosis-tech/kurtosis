@@ -6,7 +6,7 @@
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
 import {err, Result} from "neverthrow";
 
-export class WebFileArchiver implements GenericTgzArchiver{
+export class WebTgzArchiver implements GenericTgzArchiver{
 
     public async createTgzByteArray(pathToArchive: string): Promise<Result<Uint8Array, Error>> {
         return err(new Error("Sending compressed archives over the Web API is not implemented yet." +
