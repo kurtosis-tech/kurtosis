@@ -87,6 +87,8 @@ type ServiceNetworkImpl struct {
 	serviceRegistrationInfo map[service.ServiceID]serviceRegistrationInfo
 	serviceRunInfo          map[service.ServiceID]serviceRunInfo
 
+	pausedServices	map[service.ServiceID]bool
+
 	networkingSidecars map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper
 
 	networkingSidecarManager networking_sidecar.NetworkingSidecarManager
@@ -116,6 +118,7 @@ func NewServiceNetworkImpl(
 		),
 		serviceRegistrationInfo:  map[service.ServiceID]serviceRegistrationInfo{},
 		serviceRunInfo:           map[service.ServiceID]serviceRunInfo{},
+		pausedServices:			  map[service.ServiceID]bool{},
 		networkingSidecars:       map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper{},
 		networkingSidecarManager: networkingSidecarManager,
 	}
@@ -399,7 +402,7 @@ func (network *ServiceNetworkImpl) PauseService(
 			"Could not run pause service on service '%v'; no container has been created for the service yet",
 			serviceId)
 	}
-	if runInfo.isPaused {
+	if network.pausedServices[serviceId] {
 		return stacktrace.NewError("Can not pause service '%v', service already paused.",
 			serviceId)
 	}
@@ -410,8 +413,6 @@ func (network *ServiceNetworkImpl) PauseService(
 		return stacktrace.Propagate(err,"Failed to pause service '%v'", serviceId)
 	}
 	logrus.Infof("Service network called pause service on service id '%+v' and didn't get an error.", serviceId)
-	// TODO TODO TODO Check that this actually updates the original and not some copy or something
-	runInfo.isPaused = true
 	return nil
 }
 
@@ -430,7 +431,7 @@ func (network *ServiceNetworkImpl) UnpauseService(
 			"Could not run unpause service on service '%v'; no container has been created for the service yet",
 			serviceId)
 	}
-	if !runInfo.isPaused {
+	if !network.pausedServices[serviceId] {
 		return stacktrace.NewError("Can not unpause service '%v', service is not paused.",
 			serviceId)
 	}
