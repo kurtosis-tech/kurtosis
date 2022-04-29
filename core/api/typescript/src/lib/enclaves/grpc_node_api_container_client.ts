@@ -23,10 +23,16 @@ import {
     ExecuteModuleArgs,
     ExecCommandArgs,
     ExecCommandResponse,
+    UploadFilesArtifactArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
 import { EnclaveID } from "./enclave_context";
+import "fs";
+import "os";
+import "path";
+
+const COMPRESSION_EXTENSION = ".tgz"
 
 export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
@@ -364,28 +370,49 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(execCommandResponse)
     }
 
-    public async uploadFiles(pathToArchive: string): Promise<Result<string, Error>> {
-        return err(new Error("Uploading files with the Node.js API is under development. " +
-                             "It is not implemented yet."))
+    public async uploadFiles(sourcePath: string): Promise<Result<string, Error>> {
+        const targz = require("targz")
         const filesystem = require("fs")
-        if(!filesystem.existsSync(pathToArchive)) {
+        const os = require("os")
+        const path = require("path")
+
+        //Check if it exists
+        if(!filesystem.existsSync(sourcePath)) {
             return err(new Error("The file or folder you want to upload does not exist."))
         }
 
-        const os = require("os")
-        const path = require("path")
-        const tarArchiver = require("targz")
-        var absoluteTarPath
-        filesystem.mkdtemp(os.tmpdir(), (tempDirError : Error, folder: string) => {
-            if (tempDirError){
-                return tempDirError
-            }
-            absoluteTarPath = path.join(folder, path.basename(pathToArchive)) ;
+        //Make directory for usage.
+        var absoluteTarPath : string = ""
+        var tempDirectoryErr : Error | null = null
+        filesystem.mkdtemp(os.tmpdir(),  (tempDirError : Error, folder: string) => {
+            tempDirectoryErr = tempDirError
+            absoluteTarPath = path.join(folder, path.basename(sourcePath)) ;
         });
-        //tarArchiver.compress( { src: pathToArchive, dest: path.join(absoluteTempFolder)} )
-        //check to see if tarred version is less than 4mb
-        //upload via context
+
+        if (tempDirectoryErr != null){
+            return err(tempDirectoryErr)
+        }
+
+        const baseName = path.basename(sourcePath) + COMPRESSION_EXTENSION
+        const options  = {
+            src: sourcePath,
+            dest: path.join(absoluteTarPath,baseName),
+        }
+
+        var error : Error | string | null = null
+        targz.compress(options, function(compressErr: Error) { error = compressErr })
+        if(error != null){
+            return err(error)
+        }
+
+        if (filesystem.existsSync(options.dest)){
+            return err(new Error(`Your files were compressed but could not be found at ${options.dest}.`))
+        }
+
+        //this.client.uploadFilesArtifact()
         //check to see if context had error
         //return uuid
+        return err(new Error("Uploading files with the Node.js API is under development. " +
+            "It is not implemented yet."))
     }
 }

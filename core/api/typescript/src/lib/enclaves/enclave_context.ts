@@ -52,6 +52,10 @@ import { ServiceContext } from "../services/service_context";
 import { PortProtocol, PortSpec } from "../services/port_spec";
 import type { GenericPathJoiner } from "./generic_path_joiner";
 import type { PartitionConnection } from "./partition_connection";
+import "targz"
+import "fs";
+import "os";
+import "path";
 
 export type EnclaveID = string;
 export type PartitionID = string;
@@ -538,7 +542,13 @@ export class EnclaveContext {
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async uploadFiles(pathToArchive: string): Promise<Result<string, Error>>  {
-        return err(new Error("Uploading files with TypeScript clients is not implemented."))
+        //Use backend to upload
+        const uploadResult = await this.backend.uploadFiles(pathToArchive)
+        if (uploadResult.isErr()){
+            return err(uploadResult.error)
+        }
+
+        return ok(uploadResult.value)
     }
     // ====================================================================================================
     //                                       Private helper functions

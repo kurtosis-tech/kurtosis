@@ -46,4 +46,5 @@ export interface GenericApiContainerClient {
     getModules(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetModulesResponse, Error>>
     executeModule(executeModuleArgs: ExecuteModuleArgs): Promise<Result<ExecuteModuleResponse, Error>>
     execCommand(execCommandArgs: ExecCommandArgs): Promise<Result<ExecCommandResponse, Error>>
+    uploadFiles(sourcePath: string): Promise<Result<string, Error>>
 }
