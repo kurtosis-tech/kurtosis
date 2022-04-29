@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
@@ -309,6 +308,17 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
+	//Copy content (it can be a file or entire folder) from user service source path and returns a ReadCloser object
+	CopyFromUserService(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		serviceGuid service.ServiceGUID,
+		srcPath string,
+	)(
+		resultReadCloser io.ReadCloser,
+		resultErr error,
+	)
+
 	// Stop user services using the given filters,
 	StopUserServices(
 		ctx context.Context,
@@ -385,7 +395,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
 		serviceGuid service.ServiceGUID,
-		filesArtifactId files_artifact.FilesArtifactID,
+		filesArtifactId service.FilesArtifactID,
 	) (
 		*files_artifact_expansion_volume.FilesArtifactExpansionVolume,
 		error,

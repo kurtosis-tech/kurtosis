@@ -1,8 +1,45 @@
 # TBD
+
+# 0.16.0
+### Removals
+* Removed `files_artifact.FilesArtifactID` because it was a duplicate of `serivce.FilesArtifactID`
+
+### Breaking Change
+* Removed `files_artifact.FilesArtifactID`
+    * Users should switch to `service.FilesArtifactID`
+
+# 0.15.3
+### Features
+* Added `KurtosisBackend.CopyFromUserService` in Docker implementation
+
+### Fixes
+* Fixed a bug where module containers were getting duplicate mountpoints for enclave data volume & bindmounted dirpath
+
+# 0.15.2
+### Fixes
+* Fix `DockerKurtosisBackend.getEnclaveDataVolumeByEnclaveId` helper method that was accidentally broken
+
+# 0.15.1
 ### Features
 * `DockerKurtosisBackend.CreateEnclave` also creates an enclave data volume
+* The enclave data volume gets mounted on all services
+* Updated `DockerKurtosisBackend.CreateEnclave`, now also creates an enclave data volume
+* Parallelized several operations to improve perf:
+    * `DockerKurtosisBackend.StopEnclaves`
+    * `DockerKurtosisBackend.DestroyEnclaves`
+    * `DockerKurtosisBackend.StopAPIContainers`
+    * `DockerKurtosisBackend.DestroyAPIContainers`
+    * `DockerKurtosisBackend.StopEngines`
+    * `DockerKurtosisBackend.DestroyEngines`
+    * `DockerKurtosisBackend.StopModules`
+    * `DockerKurtosisBackend.DestroyModules`
+    * `DockerKurtosisBackend.StopNetworkingSidecars`
+    * `DockerKurtosisBackend.DestroyNetworkingSidecars`
+    * `DockerKurtosisBackend.StopUserServices`
+    * `DockerKurtosisBackend.DestroyUserServices`
 * Added `PauseService` and `UnpauseService` to `KurtosisBackend`
 * Added docker implementation of `PauseService` and `UnpauseService`
+
 
 # 0.15.0
 ### Fixes

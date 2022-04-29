@@ -908,6 +908,20 @@ func (manager DockerManager) CreateContainerExec(context context.Context, contai
 	return &hijackedResponse, nil
 }
 
+// It returns io.ReadCloser which is a tar stream. It's up to the caller to close the reader.
+func (manager DockerManager) CopyFromContainer(ctx context.Context, containerId string, srcPath string) (io.ReadCloser, error) {
+
+	tarStreamReadCloser, _, err := manager.dockerClient.CopyFromContainer(
+		ctx,
+		containerId,
+		srcPath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred copying content '%v' from container with ID '%v'", srcPath, containerId)
+	}
+
+	return tarStreamReadCloser, nil
+}
+
 // =================================================================================================================
 //                                          INSTANCE HELPER FUNCTIONS
 // =================================================================================================================
