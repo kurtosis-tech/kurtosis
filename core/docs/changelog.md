@@ -3,8 +3,8 @@
 ### Fixes
 * Fixed Upload Files bug.
 
-### Changes
-* Added `EnclaveContext.UploadFiles` for uploading files to the API Container.
+### Features
+* Added `EnclaveContext.UploadFiles` to Typescript client for uploading files to the API Container.
 
 # 1.43.6
 ### Features
