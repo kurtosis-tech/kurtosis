@@ -203,11 +203,11 @@ func (backend *DockerKurtosisBackend) PauseService(
 	serviceId service.ServiceGUID) error {
 	containerId, _, err := backend.getSingleUserService(ctx, enclaveId, serviceId)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to get information about service %+v from Kurtosis backend.", serviceId)
+		return stacktrace.Propagate(err, "Failed to get information about service '%+v' from Kurtosis backend.", serviceId)
 	}
 	err = backend.dockerManager.PauseContainer(ctx, containerId)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to pause service %+v running in container %+v", serviceId, containerId)
+		return stacktrace.Propagate(err, "Failed to pause service' %+v' running in container '%+v'", serviceId, containerId)
 	}
 	return nil
 }
@@ -218,11 +218,11 @@ func (backend *DockerKurtosisBackend) UnpauseService(
 	serviceId service.ServiceGUID) error {
 	containerId, _, err := backend.getSingleUserService(ctx, enclaveId, serviceId)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to get information about service %+v from Kurtosis backend.", serviceId)
+		return stacktrace.Propagate(err, "Failed to get information about service '%+v' from Kurtosis backend.", serviceId)
 	}
 	err = backend.dockerManager.UnpauseContainer(ctx, containerId)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to unpause service %+v running in container %+v", serviceId, containerId)
+		return stacktrace.Propagate(err, "Failed to unpause service '%+v' running in container '%+v'", serviceId, containerId)
 	}
 	return nil
 }
