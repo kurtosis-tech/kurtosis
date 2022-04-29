@@ -24,7 +24,7 @@ import {
     ExecCommandArgs,
     ExecCommandResponse,
     UploadFilesArtifactArgs,
-    UploadFilesArtifactResponse
+    UploadFilesArtifactResponse,
     StoreWebFilesArtifactResponse,
     StoreWebFilesArtifactArgs,
     StoreFilesArtifactFromServiceArgs,

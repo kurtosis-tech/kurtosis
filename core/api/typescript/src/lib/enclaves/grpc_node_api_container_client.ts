@@ -24,9 +24,11 @@ import {
     ExecCommandArgs,
     ExecCommandResponse,
     UploadFilesArtifactArgs,
-    UploadFilesArtifactResponse
+    UploadFilesArtifactResponse,
     StoreWebFilesArtifactArgs,
-    StoreWebFilesArtifactResponse, StoreFilesArtifactFromServiceArgs, StoreFilesArtifactFromServiceResponse,
+    StoreWebFilesArtifactResponse,
+    StoreFilesArtifactFromServiceArgs,
+    StoreFilesArtifactFromServiceResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -371,6 +373,29 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
         const execCommandResponse = execCommandResponseResult.value;
         return ok(execCommandResponse)
+    }
+
+    public async uploadFiles(uploadFilesArtifactArgs: UploadFilesArtifactArgs): Promise<Result<UploadFilesArtifactResponse, Error>> {
+        const uploadFilesPromise: Promise<Result<UploadFilesArtifactResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.uploadFilesArtifact(uploadFilesArtifactArgs, (error: ServiceError | null, response?: UploadFilesArtifactResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+        const uploadFilesResult: Result<UploadFilesArtifactResponse, Error> = await uploadFilesPromise;
+        if(uploadFilesResult.isErr()){
+            return err(uploadFilesResult.error)
+        }
+
+        const uploadFilesResponse = uploadFilesResult.value
+        return ok(uploadFilesResponse)
     }
 
     public async storeWebFilesArtifact(storeWebFilesArtifactArgs: StoreWebFilesArtifactArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>> {
