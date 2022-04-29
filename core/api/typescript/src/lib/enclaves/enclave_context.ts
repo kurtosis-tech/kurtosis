@@ -558,7 +558,6 @@ export class EnclaveContext {
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async uploadFiles(pathToArchive: string): Promise<Result<FilesArtifactID, Error>>  {
-
         const archiverResponse = await this.genericTgzArchiver.createTgzByteArray(pathToArchive)
         if (archiverResponse.isErr()){
             return err(archiverResponse.error)
