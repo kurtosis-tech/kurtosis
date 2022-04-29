@@ -6,7 +6,6 @@ export type { FilesArtifactID, ContainerConfig } from "./lib/services/container_
 export { ContainerConfigBuilder } from "./lib/services/container_config";
 export type { ServiceID } from "./lib/services/service";
 export { ServiceContext } from "./lib/services/service_context";
-export { SharedPath } from "./lib/services/shared_path"
 export { PortSpec, PortProtocol } from "./lib/services/port_spec"
 
 // Enclaves

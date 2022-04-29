@@ -13,6 +13,8 @@
     * Users should:
         * Switch to using the `EnclaveContext` functions `UploadFiles`, `StoreWebFiles`, and `StoreFilesFromService` for storing files before starting a service
         * Use the `ContainerConfigBuilder.WithFiles` function to mount the previously-stored files on the service being started
+* Removed the `ServiceContext.GetSharedPath` function
+    * Users should switch to using `EnclaveContext.StoreFilesFromService`
 
 # 1.43.6
 ### Features
