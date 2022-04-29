@@ -120,7 +120,6 @@ func NewStartServiceArgs(
 	cmdArgs []string,
 	envVars map[string]string,
 	enclaveDataDirMntDirpath string,
-	oldFilesArtifactMountDirpaths map[string]string,
 	filesArtifactMountDirpaths map[string]string,
 ) *kurtosis_core_rpc_api_bindings.StartServiceArgs {
 	return &kurtosis_core_rpc_api_bindings.StartServiceArgs{
@@ -131,7 +130,6 @@ func NewStartServiceArgs(
 		CmdArgs:                    cmdArgs,
 		DockerEnvVars:              envVars,
 		EnclaveDataDirMntDirpath:   enclaveDataDirMntDirpath,
-		FilesArtifactMountDirpaths: oldFilesArtifactMountDirpaths,
 		FilesArtifactMountpoints:   filesArtifactMountDirpaths,
 	}
 }

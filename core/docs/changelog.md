@@ -1,4 +1,7 @@
 # TBD
+### Breaking Changes
+* Removed `ContainerConfigBuilder.WithFilesArtifacts`, as it's been replaced by `ContainerConfigBuilder.WithFiles`
+    * Users should use `ContainerConfigBuilder.WithFiles` instead
 
 # 1.44.0
 ### Fixes

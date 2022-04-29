@@ -252,12 +252,6 @@ export class EnclaveContext {
         log.trace("Container config object successfully generated")
 
         log.trace("Creating files artifact ID str -> mount dirpaths map...");
-        // TODO DELETE THIS CHUNK
-        const oldArtifactIdStrToMountDirpath: Map<string, string> = new Map();
-        for (const [filesArtifactId, mountDirpath] of containerConfig.oldFilesArtifactMountpoints.entries()) {
-            oldArtifactIdStrToMountDirpath.set(String(filesArtifactId), mountDirpath);
-        }
-
         const artifactIdStrToMountDirpath: Map<string, string> = new Map();
         for (const [filesArtifactId, mountDirpath] of containerConfig.filesArtifactMountpoints.entries()) {
             artifactIdStrToMountDirpath.set(String(filesArtifactId), mountDirpath);
@@ -282,7 +276,6 @@ export class EnclaveContext {
             containerConfig.cmdOverrideArgs,
             containerConfig.environmentVariableOverrides,
             SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT,
-            oldArtifactIdStrToMountDirpath,
             artifactIdStrToMountDirpath,
         );
 

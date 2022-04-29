@@ -175,12 +175,6 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	logrus.Trace("Container config object successfully generated")
 
 	logrus.Tracef("Creating files artifact ID str -> mount dirpaths map...")
-	// TODO DELETE THIS CHUNK
-	oldArtifactIdStrToMountDirpath := map[string]string{}
-	for filesArtifactId, mountDirpath := range containerConfig.GetOldFilesArtifactMountpoints() {
-		oldArtifactIdStrToMountDirpath[string(filesArtifactId)] = mountDirpath
-	}
-
 	artifactIdStrToMountDirpath := map[string]string{}
 	for filesArtifactId, mountDirpath := range containerConfig.GetFilesArtifactMountpoints() {
 		artifactIdStrToMountDirpath[string(filesArtifactId)] = mountDirpath
@@ -204,7 +198,6 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 		containerConfig.GetCmdOverrideArgs(),
 		containerConfig.GetEnvironmentVariableOverrides(),
 		serviceEnclaveDataDirMountpoint,
-		oldArtifactIdStrToMountDirpath,
 		artifactIdStrToMountDirpath,
 	)
 	resp, err := enclaveCtx.client.StartService(ctx, startServiceArgs)

@@ -2529,7 +2529,6 @@ proto.api_container_api.StartServiceArgs.toObject = function(includeInstance, ms
     cmdArgsList: (f = jspb.Message.getRepeatedField(msg, 5)) == null ? undefined : f,
     dockerEnvVarsMap: (f = msg.getDockerEnvVarsMap()) ? f.toObject(includeInstance, undefined) : [],
     enclaveDataDirMntDirpath: jspb.Message.getFieldWithDefault(msg, 7, ""),
-    filesArtifactMountDirpathsMap: (f = msg.getFilesArtifactMountDirpathsMap()) ? f.toObject(includeInstance, undefined) : [],
     filesArtifactMountpointsMap: (f = msg.getFilesArtifactMountpointsMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
@@ -2598,12 +2597,6 @@ proto.api_container_api.StartServiceArgs.deserializeBinaryFromReader = function(
     case 7:
       var value = /** @type {string} */ (reader.readString());
       msg.setEnclaveDataDirMntDirpath(value);
-      break;
-    case 8:
-      var value = msg.getFilesArtifactMountDirpathsMap();
-      reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
-         });
       break;
     case 9:
       var value = msg.getFilesArtifactMountpointsMap();
@@ -2682,10 +2675,6 @@ proto.api_container_api.StartServiceArgs.serializeBinaryToWriter = function(mess
       7,
       f
     );
-  }
-  f = message.getFilesArtifactMountDirpathsMap(true);
-  if (f && f.getLength() > 0) {
-    f.serializeBinary(8, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
   }
   f = message.getFilesArtifactMountpointsMap(true);
   if (f && f.getLength() > 0) {
@@ -2864,28 +2853,6 @@ proto.api_container_api.StartServiceArgs.prototype.getEnclaveDataDirMntDirpath =
 proto.api_container_api.StartServiceArgs.prototype.setEnclaveDataDirMntDirpath = function(value) {
   return jspb.Message.setProto3StringField(this, 7, value);
 };
-
-
-/**
- * map<string, string> files_artifact_mount_dirpaths = 8;
- * @param {boolean=} opt_noLazyCreate Do not create the map if
- * empty, instead returning `undefined`
- * @return {!jspb.Map<string,string>}
- */
-proto.api_container_api.StartServiceArgs.prototype.getFilesArtifactMountDirpathsMap = function(opt_noLazyCreate) {
-  return /** @type {!jspb.Map<string,string>} */ (
-      jspb.Message.getMapField(this, 8, opt_noLazyCreate,
-      null));
-};
-
-
-/**
- * Clears values from the map. The map will be non-null.
- * @return {!proto.api_container_api.StartServiceArgs} returns this
- */
-proto.api_container_api.StartServiceArgs.prototype.clearFilesArtifactMountDirpathsMap = function() {
-  this.getFilesArtifactMountDirpathsMap().clear();
-  return this;};
 
 
 /**

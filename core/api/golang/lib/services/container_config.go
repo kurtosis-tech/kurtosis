@@ -27,8 +27,6 @@ type FilesArtifactID string
 type ContainerConfig struct {
 	image                        string
 	usedPorts                   map[string]*PortSpec
-	// TODO REMOVE
-	oldFilesArtifactMountpoints map[FilesArtifactID]string
 	filesArtifactMountpoints    map[FilesArtifactID]string
 	entrypointOverrideArgs      []string
 	cmdOverrideArgs              []string
@@ -45,11 +43,6 @@ func (config *ContainerConfig) GetUsedPorts() map[string]*PortSpec {
 
 func (config *ContainerConfig) GetFilesArtifactMountpoints() map[FilesArtifactID]string {
 	return config.filesArtifactMountpoints
-}
-
-// TODO REMOVE
-func (config *ContainerConfig) GetOldFilesArtifactMountpoints() map[FilesArtifactID]string {
-	return config.oldFilesArtifactMountpoints
 }
 
 func (config *ContainerConfig) GetEntrypointOverrideArgs() []string {
@@ -72,8 +65,6 @@ func (config *ContainerConfig) GetEnvironmentVariableOverrides() map[string]stri
 type ContainerConfigBuilder struct {
 	image                        string
 	usedPorts                   map[string]*PortSpec
-	// TODO REMOVE
-	oldFilesArtifactMountpoints map[FilesArtifactID]string
 	filesArtifactMountpoints  map[FilesArtifactID]string
 	entrypointOverrideArgs      []string
 	cmdOverrideArgs              []string
@@ -84,7 +75,6 @@ func NewContainerConfigBuilder(image string) *ContainerConfigBuilder {
 	return &ContainerConfigBuilder{
 		image:                        image,
 		usedPorts:                    map[string]*PortSpec{},
-		oldFilesArtifactMountpoints:  map[FilesArtifactID]string{},
 		filesArtifactMountpoints:     map[FilesArtifactID]string{},
 		entrypointOverrideArgs:       nil,
 		cmdOverrideArgs:              nil,
@@ -94,12 +84,6 @@ func NewContainerConfigBuilder(image string) *ContainerConfigBuilder {
 
 func (builder *ContainerConfigBuilder) WithUsedPorts(usedPorts map[string]*PortSpec) *ContainerConfigBuilder {
 	builder.usedPorts = usedPorts
-	return builder
-}
-
-// TODO REMOVE THIS
-func (builder *ContainerConfigBuilder) WithFilesArtifacts(filesArtifactMountpoints map[FilesArtifactID]string) *ContainerConfigBuilder {
-	builder.oldFilesArtifactMountpoints = filesArtifactMountpoints
 	return builder
 }
 
@@ -127,7 +111,6 @@ func (builder *ContainerConfigBuilder) Build() *ContainerConfig {
 	return &ContainerConfig{
 		image:                        builder.image,
 		usedPorts:                    builder.usedPorts,
-		oldFilesArtifactMountpoints:  builder.oldFilesArtifactMountpoints,
 		filesArtifactMountpoints:     builder.filesArtifactMountpoints,
 		entrypointOverrideArgs:       builder.entrypointOverrideArgs,
 		cmdOverrideArgs:              builder.cmdOverrideArgs,

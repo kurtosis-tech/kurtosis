@@ -275,9 +275,6 @@ export class StartServiceArgs extends jspb.Message {
   getEnclaveDataDirMntDirpath(): string;
   setEnclaveDataDirMntDirpath(value: string): StartServiceArgs;
 
-  getFilesArtifactMountDirpathsMap(): jspb.Map<string, string>;
-  clearFilesArtifactMountDirpathsMap(): StartServiceArgs;
-
   getFilesArtifactMountpointsMap(): jspb.Map<string, string>;
   clearFilesArtifactMountpointsMap(): StartServiceArgs;
 
@@ -298,7 +295,6 @@ export namespace StartServiceArgs {
     cmdArgsList: Array<string>,
     dockerEnvVarsMap: Array<[string, string]>,
     enclaveDataDirMntDirpath: string,
-    filesArtifactMountDirpathsMap: Array<[string, string]>,
     filesArtifactMountpointsMap: Array<[string, string]>,
   }
 }
