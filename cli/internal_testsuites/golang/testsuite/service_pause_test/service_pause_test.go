@@ -17,6 +17,10 @@ const (
 	testServiceId             = "test"
 )
 
+var spamHis = []string{
+	"while sleep 0.1; do echo \"Hi\"; done",
+}
+
 func TestPauseUnpause(t *testing.T) {
 	ctx := context.Background()
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
@@ -30,13 +34,18 @@ func TestPauseUnpause(t *testing.T) {
 	serviceCtx, err := enclaveCtx.AddService(testServiceId, containerConfigSupplier)
 	require.NoError(t, err, "An error occurred adding the file server service")
 
+	_, _, err = serviceCtx.ExecCommand(spamHis)
+	require.NoError(t, err, "An error occurred running exec command '%v'", spamHis)
+
+	time.Sleep(10 * time.Second)
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	// pause/unpause using servicectx
 	serviceCtx.PauseService()
 	logrus.Infof("Paused service!")
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 	serviceCtx.UnpauseService()
 	logrus.Infof("Unpaused service!")
+	time.Sleep(10 * time.Second)
 }
 
 // ====================================================================================================
