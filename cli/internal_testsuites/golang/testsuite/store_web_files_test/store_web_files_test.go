@@ -47,10 +47,6 @@ var fileServerPortSpec = services.NewPortSpec(
 	services.PortProtocol_TCP,
 )
 
-var tesFilesArtifactMountpoint = map[services.FilesArtifactID]string{
-	testFilesArtifactId: userServiceMountPointForTestFilesArtifact,
-}
-
 var duplicateFilesArtifactMountpoints = map[services.FilesArtifactID]string{
 	testFilesArtifactId:      userServiceMountPointForTestFilesArtifact,
 	secondTestFileArtifactId: userServiceMountPointForTestFilesArtifact,
@@ -65,13 +61,10 @@ func TestFilesArtifactMounting(t *testing.T) {
 	defer stopEnclaveFunc()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
-	filesArtifacts := map[services.FilesArtifactID]string{
-		testFilesArtifactId: testFilesArtifactUrl,
-		secondTestFileArtifactId: testFilesArtifactUrl,
-	}
-	require.NoError(t, enclaveCtx.RegisterFilesArtifacts(filesArtifacts), "An error occurred registering the files artifacts")
+	filesArtifactId, err := enclaveCtx.StoreWebFiles(context.Background(), testFilesArtifactUrl)
+	require.NoError(t, err, "An error occurred registering the files artifacts")
 
-	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(tesFilesArtifactMountpoint)
+	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactId)
 
 	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
 	require.NoError(t, err, "An error occurred adding the file server service")
@@ -129,8 +122,8 @@ func TestFilesArtifactMounting(t *testing.T) {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getFileServerContainerConfigSupplier(filesArtifactMountpoints map[services.FilesArtifactID]string) func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+func getFileServerContainerConfigSupplier(filesArtifactMountpoints map[services.FilesArtifactID]string) func(ipAddr string) (*services.ContainerConfig, error) {
+	containerConfigSupplier  := func(ipAddr string) (*services.ContainerConfig, error) {
 
 		containerConfig := services.NewContainerConfigBuilder(
 			fileServerServiceImage,
