@@ -13,10 +13,10 @@ const COMPRESSION_TEMP_FOLDER_PREFIX = "temp-node-archiver-compression-"
 export class NodeTgzArchiver implements GenericTgzArchiver{
 
      public async createTgzByteArray(pathToArchive: string): Promise<Result<Uint8Array, Error>> {
-         const targz = await import( /* webpackIgnore: true */ "targz")
-         const filesystemPromises = await import( /* webpackIgnore: true */ "fs/promises")
-         const filesystem = await import( /* webpackIgnore: true */ "fs")
-         const path = await import( /* webpackIgnore: true */ "path")
+         const targz = require("targz")
+         const filesystemPromises = require("fs").promises
+         const filesystem = require("fs")
+         const path = require("path")
 
          //Check if it exists
          if (!filesystem.existsSync(pathToArchive)) {
