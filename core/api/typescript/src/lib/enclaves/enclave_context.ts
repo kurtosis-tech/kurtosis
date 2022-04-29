@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-import { ok, err, Result } from "neverthrow";
+import {ok, err, Result, Err} from "neverthrow";
 import log from "loglevel";
 import { isNode as  isExecutionEnvNode} from "browser-or-node";
 import * as jspb from "google-protobuf";
@@ -45,7 +45,8 @@ import {
     newStoreFilesArtifactFromServiceArgs,
     newUnloadModuleArgs,
     newWaitForHttpGetEndpointAvailabilityArgs,
-    newWaitForHttpPostEndpointAvailabilityArgs
+    newWaitForHttpPostEndpointAvailabilityArgs,
+    newUploadFilesArtifactArgs
 } from "../constructor_calls";
 import type { ContainerConfig, FilesArtifactID } from "../services/container_config";
 import type { ServiceID } from "../services/service";
@@ -54,6 +55,7 @@ import { ServiceContext } from "../services/service_context";
 import { PortProtocol, PortSpec } from "../services/port_spec";
 import type { GenericPathJoiner } from "./generic_path_joiner";
 import type { PartitionConnection } from "./partition_connection";
+import {GenericTgzArchiver} from "./generic_tgz_archiver";
 
 export type EnclaveID = string;
 export type PartitionID = string;
@@ -70,13 +72,16 @@ export class EnclaveContext {
 
     private readonly backend: GenericApiContainerClient
     private readonly pathJoiner: GenericPathJoiner
+    private readonly genericTgzArchiver: GenericTgzArchiver
     // The location on the filesystem where this code is running where the enclave data dir exists
     private readonly enclaveDataDirpath: string;
 
-    private constructor(backend: GenericApiContainerClient, enclaveDataDirpath: string, pathJoiner: GenericPathJoiner){
+    private constructor(backend: GenericApiContainerClient, enclaveDataDirpath: string, pathJoiner: GenericPathJoiner,
+                        genericTgzArchiver: GenericTgzArchiver){
         this.backend = backend;
         this.enclaveDataDirpath = enclaveDataDirpath;
         this.pathJoiner = pathJoiner;
+        this.genericTgzArchiver = genericTgzArchiver
     }
 
     public static async newGrpcWebEnclaveContext(
@@ -91,14 +96,19 @@ export class EnclaveContext {
         }
 
         let genericApiContainerClient: GenericApiContainerClient
+        let genericTgzArchiver: GenericTgzArchiver
         let pathJoiner: GenericPathJoiner
         try {
+
             pathJoiner = await import("path-browserify")
             const apiContainerServiceWeb = await import("../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb")
 
             const apiContainerGrpcProxyUrl: string = `${ipAddress}:${apiContainerGrpcProxyPortNum}`
             const apiContainerClient = new apiContainerServiceWeb.ApiContainerServiceClient(apiContainerGrpcProxyUrl);
             genericApiContainerClient = new GrpcWebApiContainerClient(apiContainerClient, enclaveId)
+
+            const webFileArchiver = await import("./web_file_archiver")
+            genericTgzArchiver = new webFileArchiver.WebTgzArchiver()
         }catch(error) {
             if (error instanceof Error) {
                 return err(error);
@@ -108,7 +118,7 @@ export class EnclaveContext {
             ));
         }
         
-        const enclaveContext = new EnclaveContext(genericApiContainerClient, enclaveDataDirpath, pathJoiner);
+        const enclaveContext = new EnclaveContext(genericApiContainerClient, enclaveDataDirpath, pathJoiner, genericTgzArchiver);
         return ok(enclaveContext)
     }
 
@@ -124,7 +134,9 @@ export class EnclaveContext {
         }
 
         let genericApiContainerClient: GenericApiContainerClient
+        let genericTgzArchiver: GenericTgzArchiver
         let pathJoiner: GenericPathJoiner
+        //TODO Pull things that can't throw an error out of try statement.
         try {
             pathJoiner = await import( /* webpackIgnore: true */ "path")
             const grpc_node = await import( /* webpackIgnore: true */ "@grpc/grpc-js")
@@ -134,6 +146,8 @@ export class EnclaveContext {
             const apiContainerClient = new apiContainerServiceNode.ApiContainerServiceClient(apiContainerGrpcUrl, grpc_node.credentials.createInsecure());
             genericApiContainerClient = new GrpcNodeApiContainerClient(apiContainerClient, enclaveId)
 
+            const nodeFileArchiver = await import(/* webpackIgnore: true */ "./node_file_archiver")
+            genericTgzArchiver = new nodeFileArchiver.NodeTgzArchiver()
         }catch(error) {
             if (error instanceof Error) {
                 return err(error);
@@ -143,7 +157,7 @@ export class EnclaveContext {
             ));
         }
 
-        const enclaveContext = new EnclaveContext(genericApiContainerClient, enclaveDataDirpath, pathJoiner);
+        const enclaveContext = new EnclaveContext(genericApiContainerClient, enclaveDataDirpath, pathJoiner, genericTgzArchiver);
         return ok(enclaveContext)
     }
 
@@ -545,6 +559,22 @@ export class EnclaveContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    public async uploadFiles(pathToArchive: string): Promise<Result<FilesArtifactID, Error>>  {
+        const archiverResponse = await this.genericTgzArchiver.createTgzByteArray(pathToArchive)
+        if (archiverResponse.isErr()){
+            return err(archiverResponse.error)
+        }
+
+        const args = newUploadFilesArtifactArgs(archiverResponse.value)
+        const uploadResult = await this.backend.uploadFiles(args)
+        if (uploadResult.isErr()){
+            return err(uploadResult.error)
+        }
+
+        return ok(uploadResult.value.getUuid())
+    }
+      
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async storeWebFiles(url: string): Promise<Result<FilesArtifactID, Error>> {
         const args = newStoreWebFilesArtifactArgs(url);
         const storeWebFilesArtifactResponseResult = await this.backend.storeWebFilesArtifact(args)
@@ -565,7 +595,7 @@ export class EnclaveContext {
         const storeFilesArtifactFromServiceResponse = storeFilesArtifactFromServiceResponseResult.value;
         return ok(storeFilesArtifactFromServiceResponse.getUuid())
     }
-
+  
     // ====================================================================================================
     //                                       Private helper functions
     // ====================================================================================================
