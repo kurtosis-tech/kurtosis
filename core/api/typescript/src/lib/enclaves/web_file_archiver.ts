@@ -8,7 +8,8 @@ import {err, Result} from "neverthrow";
 
 export class WebFileArchiver implements GenericTgzArchiver{
 
-    public async createTgz(pathToArchive: string): Promise<Result<Uint8Array, Error>> {
-        return err(new Error("Web File Archiver has not been implemented yet."))
+    public async createTgzByteArray(pathToArchive: string): Promise<Result<Uint8Array, Error>> {
+        return err(new Error("Sending compressed archives over the Web API is not implemented yet." +
+            "Please use the Node.js API instead."))
     }
 }

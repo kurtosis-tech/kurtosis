@@ -376,7 +376,7 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
     }
 
     public async uploadFiles(uploadFilesArtifactArgs: UploadFilesArtifactArgs): Promise<Result<UploadFilesArtifactResponse, Error>> {
-        const uploadFilesPromise: Promise<Result<UploadFilesArtifactResponse, Error>> = new Promise((resolve, _unusedReject) => {
+        const uploadFilesArtifactPromise: Promise<Result<UploadFilesArtifactResponse, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.uploadFilesArtifact(uploadFilesArtifactArgs, (error: ServiceError | null, response?: UploadFilesArtifactResponse) => {
                 if (error === null) {
                     if (!response) {
@@ -389,13 +389,13 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
                 }
             })
         });
-        const uploadFilesResult: Result<UploadFilesArtifactResponse, Error> = await uploadFilesPromise;
-        if(uploadFilesResult.isErr()){
-            return err(uploadFilesResult.error)
+        const uploadFilesArtifactResponseResult: Result<UploadFilesArtifactResponse, Error> = await uploadFilesArtifactPromise;
+        if(uploadFilesArtifactResponseResult.isErr()){
+            return err(uploadFilesArtifactResponseResult.error)
         }
 
-        const uploadFilesResponse = uploadFilesResult.value
-        return ok(uploadFilesResponse)
+        const uploadFilesArtifactResponse = uploadFilesArtifactResponseResult.value
+        return ok(uploadFilesArtifactResponse)
     }
 
     public async storeWebFilesArtifact(storeWebFilesArtifactArgs: StoreWebFilesArtifactArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>> {
