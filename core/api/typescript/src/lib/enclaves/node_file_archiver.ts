@@ -4,20 +4,20 @@
  */
 import "targz";
 import "fs";
-import "os";
 import "path";
 import "neverthrow"
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
-import {ok, err, Result, Err} from "neverthrow";
+import {ok, err, Result} from "neverthrow";
 
 const COMPRESSION_EXTENSION = ".tgz"
-
+const GRPC_DATA_TRANSFER_LIMIT = 3999000 //3.999 Mb. 1kb wiggle room. 1kb being about the size of a 2 paragraph readme.
+const COMPRESSION_TEMP_FOLDER_PREFIX = "temp-node-archiver-compression-"
 export class NodeFileArchiver implements GenericTgzArchiver{
 
      public async createTgz(pathToArchive: string): Promise<Result<Uint8Array, Error>> {
          const targz = require("targz")
+         const filesystemPromises = require("fs").promises
          const filesystem = require("fs")
-         const os = require("os")
          const path = require("path")
 
          //Check if it exists
@@ -26,37 +26,42 @@ export class NodeFileArchiver implements GenericTgzArchiver{
          }
 
          //Make directory for usage.
-         var absoluteTarPath : string = ""
-         var tempDirectoryErr : Error | null = null
-         //TODO FS.promises.make
-         filesystem.mkdtemp(os.tmpdir(),  (tempDirError : Error, folder: string) => {
-             tempDirectoryErr = tempDirError
-             absoluteTarPath = path.join(folder, path.basename(pathToArchive)) ;
-         });
-
-         if (tempDirectoryErr != null){
-             return err(tempDirectoryErr)
-         }
+         var absoluteTarPath
+         filesystemPromises.mkdtemp(COMPRESSION_TEMP_FOLDER_PREFIX)
+             .then((folder : string) =>{
+                 absoluteTarPath = folder
+             })
+             .catch((tempDirErr: Error)=>{
+                 return err(tempDirErr)
+             });
 
          const baseName = path.basename(pathToArchive) + COMPRESSION_EXTENSION
-         const options  = {
+         const archiveOptions  = {
              src: pathToArchive,
              dest: path.join(absoluteTarPath,baseName),
          }
 
          var error : Error | string | null = null
-         targz.compress(options, function(compressErr: Error) { error = compressErr })
+         targz.compress(archiveOptions, (compressErr: Error) => { error = compressErr })
          if(error != null){
              return err(error)
          }
 
-         if (!filesystem.existsSync(options.dest)){
-             return err(new Error(`Your files were compressed but could not be found at ${options.dest}.`))
+         if (!filesystem.existsSync(archiveOptions.dest)){
+             return err(new Error(`Your files were compressed but could not be found at '${archiveOptions.dest}'.`))
          }
 
-         //Convert to bytes.
-         //Return
+         const stats = filesystem.statSync(archiveOptions.dest)
+         if(stats.size >= GRPC_DATA_TRANSFER_LIMIT){
+             return err(new Error("The files you are trying to upload, which are now compressed, exceed or reach 4mb, " +
+                 "a limit imposed by gRPC. Please reduce the total file size and ensure it can compress to a size below 4mb."))
+         }
+         const data = filesystem.readFileSync(archiveOptions.dest)
+         if(data.length != stats.size){
+             return err(new Error(`Something went wrong while reading your recently compressed file ${baseName}.` +
+             `The file size of ${stats.size} bytes and read size of ${data.length} bytes are not equal.`))
+         }
 
-         return err(new Error("Node File Archiver has not been implemented yet."))
+         return ok(data.buffer)
     }
 }
