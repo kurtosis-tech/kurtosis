@@ -25,9 +25,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/services"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"github.com/mholt/archiver"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"io/ioutil"
 	"math"
+	"os"
 	"path/filepath"
+	"strings"
 )
 
 type EnclaveID string
@@ -41,6 +45,9 @@ const (
 
 	// The path on the user service container where the enclave data dir will be bind-mounted
 	serviceEnclaveDataDirMountpoint = "/kurtosis-enclave-data"
+	grpcDataTransferLimit = 3999000 //3.999 Mb. 1kb wiggle room. 1kb being about the size of a simple 2 paragraph readme.
+	tempCompressionDirPattern = "upload-compression-cache-"
+	compressionExtension = ".tgz"
 )
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -184,6 +191,12 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	logrus.Trace("Container config object successfully generated")
 
 	logrus.Tracef("Creating files artifact ID str -> mount dirpaths map...")
+	// TODO DELETE THIS CHUNK
+	oldArtifactIdStrToMountDirpath := map[string]string{}
+	for filesArtifactId, mountDirpath := range containerConfig.GetOldFilesArtifactMountpoints() {
+		oldArtifactIdStrToMountDirpath[string(filesArtifactId)] = mountDirpath
+	}
+
 	artifactIdStrToMountDirpath := map[string]string{}
 	for filesArtifactId, mountDirpath := range containerConfig.GetFilesArtifactMountpoints() {
 		artifactIdStrToMountDirpath[string(filesArtifactId)] = mountDirpath
@@ -207,6 +220,7 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 		containerConfig.GetCmdOverrideArgs(),
 		containerConfig.GetEnvironmentVariableOverrides(),
 		serviceEnclaveDataDirMountpoint,
+		oldArtifactIdStrToMountDirpath,
 		artifactIdStrToMountDirpath,
 	)
 	resp, err := enclaveCtx.client.StartService(ctx, startServiceArgs)
@@ -450,6 +464,71 @@ func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error
 	}
 
 	return moduleIDs, nil
+}
+
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.FilesArtifactID, error) {
+	pathToUpload = strings.TrimRight(pathToUpload, string(filepath.Separator))
+	if _, err := os.Stat(pathToUpload); err != nil {
+		return "", stacktrace.Propagate(err, "There was a path error for '%s' during file uploading.", pathToUpload)
+	}
+
+	tempDir, err := ioutil.TempDir("", tempCompressionDirPattern)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to create temporary directory '%s' for compression.", tempDir)
+	}
+
+	compressedFilePath := filepath.Join(tempDir, filepath.Base(pathToUpload) + compressionExtension)
+	if err = archiver.Archive([]string{pathToUpload}, compressedFilePath); err != nil {
+		return "", stacktrace.Propagate(err, "Failed to compress '%s'.", pathToUpload)
+	}
+
+	compressedFileInfo, err := os.Stat(compressedFilePath)
+	if err != nil {
+		return "", stacktrace.Propagate(err,
+			 "Failed to create a temporary archive file at '%s' during files upload for '%s'.",
+			tempDir, pathToUpload)
+	}
+
+	if compressedFileInfo.Size() >= grpcDataTransferLimit {
+		return "", stacktrace.Propagate(err,
+			"The files you are trying to upload, which are now compressed, exceed or reach 4mb, a limit imposed by gRPC. " +
+				"Please reduce the total file size and ensure it can compress to a size below 4mb.")
+	}
+	content, err := ioutil.ReadFile(compressedFilePath)
+	if err != nil{
+		return "", stacktrace.Propagate(err,
+			"There was an error reading from the temporary tar file '%s' recently compressed for upload.",
+			compressedFileInfo.Name())
+	}
+
+	args := binding_constructors.NewUploadFilesArtifactArgs(content)
+	response, err := enclaveCtx.client.UploadFilesArtifact(context.Background(), args)
+	if err != nil {
+		return "", stacktrace.Propagate(err,"An error was encountered while uploading data to the API Container.")
+	}
+	return services.FilesArtifactID(response.Uuid), nil;
+}
+
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreWeb string) (services.FilesArtifactID, error) {
+	args := binding_constructors.NewStoreWebFilesArtifactArgs(urlToStoreWeb)
+	response, err := enclaveCtx.client.StoreWebFilesArtifact(ctx, args)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred downloading files artifact from URL '%v'", urlToStoreWeb)
+	}
+	return services.FilesArtifactID(response.Uuid), nil
+}
+
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+func (EnclaveContext *EnclaveContext) StoreFilesFromService(ctx context.Context, serviceId services.ServiceID, absoluteFilepathOnServiceContainer string) (services.FilesArtifactID, error) {
+	serviceIdStr := string(serviceId)
+	args := binding_constructors.NewStoreFilesArtifactFromServiceArgs(serviceIdStr, absoluteFilepathOnServiceContainer)
+	response, err := EnclaveContext.client.StoreFilesArtifactFromService(ctx, args)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred copying source content from absolute filepath '%v' in service container with ID '%v'", absoluteFilepathOnServiceContainer, serviceIdStr)
+	}
+	return services.FilesArtifactID(response.Uuid), nil
 }
 
 // ====================================================================================================

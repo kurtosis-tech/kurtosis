@@ -121,6 +121,20 @@ export class ApiContainerServiceClient {
                response: api_container_service_pb.UploadFilesArtifactResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.UploadFilesArtifactResponse>;
 
+  storeWebFilesArtifact(
+    request: api_container_service_pb.StoreWebFilesArtifactArgs,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: api_container_service_pb.StoreWebFilesArtifactResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.StoreWebFilesArtifactResponse>;
+
+  storeFilesArtifactFromService(
+    request: api_container_service_pb.StoreFilesArtifactFromServiceArgs,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: api_container_service_pb.StoreFilesArtifactFromServiceResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.StoreFilesArtifactFromServiceResponse>;
+
 }
 
 export class ApiContainerServicePromiseClient {
@@ -207,6 +221,16 @@ export class ApiContainerServicePromiseClient {
     request: api_container_service_pb.UploadFilesArtifactArgs,
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.UploadFilesArtifactResponse>;
+
+  storeWebFilesArtifact(
+    request: api_container_service_pb.StoreWebFilesArtifactArgs,
+    metadata?: grpcWeb.Metadata
+  ): Promise<api_container_service_pb.StoreWebFilesArtifactResponse>;
+
+  storeFilesArtifactFromService(
+    request: api_container_service_pb.StoreFilesArtifactFromServiceArgs,
+    metadata?: grpcWeb.Metadata
+  ): Promise<api_container_service_pb.StoreFilesArtifactFromServiceResponse>;
 
 }
 

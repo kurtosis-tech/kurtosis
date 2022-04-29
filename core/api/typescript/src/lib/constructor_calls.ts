@@ -21,7 +21,9 @@ import {
     UnloadModuleArgs,
     ExecuteModuleArgs,
     GetModuleInfoArgs,
-    Port
+    Port,
+    StoreWebFilesArtifactArgs,
+    StoreFilesArtifactFromServiceArgs
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceID } from './services/service';
 import { PartitionID } from './enclaves/enclave_context';
@@ -113,14 +115,17 @@ export function newRegisterServiceArgs(serviceId: ServiceID, partitionId: Partit
 //                                        Start Service
 // ==============================================================================================
 export function newStartServiceArgs(
-        serviceId: ServiceID, 
-        dockerImage: string,
-        privatePorts: Map<string, Port>,
-        entrypointArgs: string[],
-        cmdArgs: string[],
-        dockerEnvVars: Map<string, string>,
-        enclaveDataDirMntDirpath: string,
-        filesArtifactMountDirpaths: Map<string, string>): StartServiceArgs {
+    serviceId: ServiceID,
+    dockerImage: string,
+    privatePorts: Map<string, Port>,
+    entrypointArgs: string[],
+    cmdArgs: string[],
+    dockerEnvVars: Map<string, string>,
+    enclaveDataDirMntDirpath: string,
+    // TODO REMOVE
+    oldFilesArtifactMountDirpaths: Map<string, string>,
+    filesArtifactMountDirpaths: Map<string, string>,
+): StartServiceArgs {
     const result: StartServiceArgs = new StartServiceArgs();
     result.setServiceId(String(serviceId));
     result.setDockerImage(dockerImage);
@@ -141,7 +146,11 @@ export function newStartServiceArgs(
         dockerEnvVarArray.set(name, value);
     }
     result.setEnclaveDataDirMntDirpath(enclaveDataDirMntDirpath);
-    const filesArtificatMountDirpathsMap: jspb.Map<string, string> = result.getFilesArtifactMountDirpathsMap();
+    const oldFilesArtificatMountDirpathsMap: jspb.Map<string, string> = result.getFilesArtifactMountDirpathsMap();
+    for (const [artifactId, mountDirpath] of oldFilesArtifactMountDirpaths.entries()) {
+        oldFilesArtificatMountDirpathsMap.set(artifactId, mountDirpath);
+    }
+    const filesArtificatMountDirpathsMap: jspb.Map<string, string> = result.getFilesArtifactMountpointsMap();
     for (const [artifactId, mountDirpath] of filesArtifactMountDirpaths.entries()) {
         filesArtificatMountDirpathsMap.set(artifactId, mountDirpath);
     }
@@ -279,5 +288,24 @@ export function newWaitForHttpPostEndpointAvailabilityArgs(
     result.setRetriesDelayMilliseconds(retriesDelayMilliseconds);
     result.setBodyText(bodyText);
 
+    return result;
+}
+
+// ==============================================================================================
+//                                     Download Files
+// ==============================================================================================
+export function newStoreWebFilesArtifactArgs(url: string): StoreWebFilesArtifactArgs {
+    const result: StoreWebFilesArtifactArgs = new StoreWebFilesArtifactArgs();
+    result.setUrl(url);
+    return result;
+}
+
+// ==============================================================================================
+//                             Store Files Artifact From Service
+// ==============================================================================================
+export function newStoreFilesArtifactFromServiceArgs(serviceId: string, sourcePath: string): StoreFilesArtifactFromServiceArgs {
+    const result: StoreFilesArtifactFromServiceArgs = new StoreFilesArtifactFromServiceArgs();
+    result.setServiceId(serviceId)
+    result.setSourcePath(sourcePath)
     return result;
 }

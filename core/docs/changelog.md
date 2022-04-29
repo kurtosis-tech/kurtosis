@@ -1,8 +1,36 @@
 # TBD
 
+### Fixes
+* Fixed Upload Files bug.
+
+# 1.43.6
+### Features
+* Add `EnclaveContext.StoreFilesFromService` for copy files from a user service
+
+# 1.43.5
 ### Changes
+* Bump to container-engine-lib 0.16.0 which has some internal code cleanups
+
+# 1.43.4
+### Fixes
+* Fix a bug with expanding UUID-keyed files artifacts
+
+# 1.43.3
+### Features
+* Add `EnclaveContext.WithFiles` for specifying mounting files artifacts that come back from the `EnclaveContext.UploadFiles` command
+* Add `EnclaveContext.StoreWebFiles` for downloading files artifacts from the internet
+
+# 1.43.2
+### Fixes
+* Fixed a bug where modules were getting enclave data dir & volume mounted in the same place
+
+# 1.43.1
+### Features
 * Added new backend file storage methods for future volume support.
 * Added UploadFilesArtifact command to API Container.
+* Added UploadFiles to enclave_context for Go.
+* Add a `DownloadFilesArtifact` endpoint to the API container for downloading files artifacts from the web
+* All container/volume/enclave stopping & destroying work is done in parallel
 
 # 1.43.0
 ### Breaking Changes

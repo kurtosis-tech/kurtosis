@@ -7,7 +7,6 @@ package service_network
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
@@ -55,7 +54,9 @@ type ServiceNetwork interface {
 		cmdArgs []string,
 		dockerEnvVars map[string]string,
 		enclaveDataDirMountDirpath string,
-		filesArtifactMountDirpaths map[files_artifact.FilesArtifactID]string,
+		// TODO REMOVE
+		oldFilesArtifactMountDirpaths map[service.FilesArtifactID]string,
+		filesArtifactMountDirpaths map[service.FilesArtifactID]string,
 	) (
 		resultPublicIpAddr net.IP,
 		resultPublicPorts map[string]*port_spec.PortSpec,
@@ -89,4 +90,9 @@ type ServiceNetwork interface {
 	)
 
 	GetServiceIDs() map[service.ServiceID]bool
+
+	CopyFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (
+		resultFileArtifactUUID string,
+		resultErr error,
+	)
 }

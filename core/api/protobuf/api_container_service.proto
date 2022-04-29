@@ -54,8 +54,14 @@ service ApiContainerService {
   // Returns the IDs of the Kurtosis modules that have been loaded into the enclave
   rpc GetModules(google.protobuf.Empty) returns (GetModulesResponse) {};
 
-  // Uploads a file to the Kurtosis File System.
+  // Uploads a files artifact to the Kurtosis File System.
   rpc UploadFilesArtifact(UploadFilesArtifactArgs) returns (UploadFilesArtifactResponse) {};
+
+  // Tells the API container to download a files artifact from the web to the Kurtosis File System
+  rpc StoreWebFilesArtifact(StoreWebFilesArtifactArgs) returns (StoreWebFilesArtifactResponse) {};
+
+  // Tells the API container to copy a files artifact from a service to the Kurtosis File System
+  rpc StoreFilesArtifactFromService(StoreFilesArtifactFromServiceArgs) returns (StoreFilesArtifactFromServiceResponse) {}
 }
 
 // ==============================================================================================
@@ -200,8 +206,12 @@ message StartServiceArgs {
   // The full path where the API container should mount the enclave data directory on the service container
   string enclave_data_dir_mnt_dirpath = 7;
 
+  // TODO DELETE THIS IN FAVOR OF files_artifact_mountpoints
   // Mapping of files_artifact_id -> filepath_on_container_to_mount_artifact_contents
   map<string, string> files_artifact_mount_dirpaths = 8;
+
+  // Mapping of files_artifact_uuid -> filepath_on_container_to_mount_artifact_contents
+  map<string, string> files_artifact_mountpoints = 9;
 }
 
 message StartServiceResponse {
@@ -366,9 +376,43 @@ message GetModulesResponse {
 //                                          Upload Files Artifact
 // ==============================================================================================
 message UploadFilesArtifactArgs {
+  // Bytes of the files artifact to store
   bytes data = 1;
 }
 
 message UploadFilesArtifactResponse {
+  // UUID of the files artifact, for use when referencing it in the future
+  string uuid = 1;
+}
+
+
+// ==============================================================================================
+//                                        Store Web Files Artifact
+// ==============================================================================================
+message StoreWebFilesArtifactArgs {
+  // URL to download the artifact from
+  string url = 1;
+}
+
+message StoreWebFilesArtifactResponse {
+  // UUID of the files artifact, for use when referencing it in the future
+  string uuid = 1;
+}
+
+
+// ==============================================================================================
+//                               Store Files Artifact From Service
+// ==============================================================================================
+
+message StoreFilesArtifactFromServiceArgs {
+  // ID that will be used to identify the service where the source files will be copied from
+  string service_id = 1;
+
+  // The absolute source path where the source files will be copied from
+  string source_path = 2;
+}
+
+message StoreFilesArtifactFromServiceResponse {
+  // UUID of the files artifact, for use when referencing it in the future
   string uuid = 1;
 }

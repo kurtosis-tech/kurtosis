@@ -6,10 +6,10 @@
 package service_network
 
 import (
+	"compress/gzip"
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
@@ -21,7 +21,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
+	"io/ioutil"
 	"net"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -250,7 +253,9 @@ func (network *ServiceNetworkImpl) StartService(
 	cmdArgs []string,
 	dockerEnvVars map[string]string,
 	enclaveDataDirMntDirpath string,
-	filesArtifactMountDirpaths map[files_artifact.FilesArtifactID]string,
+	// TODO REMOVE
+	oldFilesArtifactMountDirpaths map[service.FilesArtifactID]string,
+	filesArtifactMountDirpaths map[service.FilesArtifactID]string,
 ) (
 	resultMaybePublicIpAddr net.IP, // Will be nil if the service doesn't declare any private ports
 	resultPublicPorts map[string]*port_spec.PortSpec,
@@ -313,11 +318,14 @@ func (network *ServiceNetworkImpl) StartService(
 		cmdArgs,
 		dockerEnvVars,
 		enclaveDataDirMntDirpath,
-		filesArtifactMountDirpaths)
+		oldFilesArtifactMountDirpaths,
+		filesArtifactMountDirpaths,
+	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating the user service")
+			"An error occurred creating the user service",
+		)
 	}
 
 	// TODO Restart-able enclaves: Don't store any service information in memory; instead, get it all from the KurtosisBackend when required
@@ -505,6 +513,46 @@ func (network *ServiceNetworkImpl) GetServiceIDs() map[service.ServiceID]bool {
 	return serviceIDs
 }
 
+func (network *ServiceNetworkImpl) CopyFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (string, error) {
+	runInfo, foundRunInfo := network.serviceRunInfo[serviceId]
+	if !foundRunInfo {
+		return "", stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
+	}
+	serviceGuid := runInfo.serviceGUID
+
+	readCloser, err := network.kurtosisBackend.CopyFromUserService(ctx, network.enclaveId, serviceGuid, srcPath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred copying source '%v' from user service with GUID '%v' in enclave with ID '%v'", srcPath, serviceGuid, network.enclaveId)
+	}
+	defer readCloser.Close()
+
+	//Creates a new tgz file in a temporary directory
+	tarGzipFileFilepath, err := gzipCompressFile(readCloser)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred creating new temporary tar-gzip-file")
+	}
+
+	//Then opens the .tgz file
+	tarGzipFile, err := os.Open(tarGzipFileFilepath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred opening file '%v'", tarGzipFileFilepath)
+	}
+	defer tarGzipFile.Close()
+
+	store, err := network.enclaveDataDir.GetFilesArtifactStore()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the files artifact store")
+	}
+
+	//And finally pass it the .tgz file to the artifact file store
+	uuid, err := store.StoreFile(tarGzipFile)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while trying to store file '%v' into the artifact file store", tarGzipFileFilepath)
+	}
+
+	return uuid, nil
+}
+
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
@@ -631,4 +679,25 @@ func getServiceByServiceGUIDFilter(serviceGUID service.ServiceGUID) *service.Ser
 			serviceGUID: true,
 		},
 	}
+}
+
+func gzipCompressFile(readCloser io.Reader) (resultFilepath string, resultErr error) {
+	useDefaultDirectoryArg := ""
+	withoutPatternArg := ""
+	tgzFile, err := ioutil.TempFile(useDefaultDirectoryArg,withoutPatternArg)
+	if err != nil {
+		return "", stacktrace.Propagate(err,
+			"There was an error creating a temporary file")
+	}
+	defer tgzFile.Close()
+
+	gzipCompressingWriter := gzip.NewWriter(tgzFile)
+	defer gzipCompressingWriter.Close()
+
+	tarGzipFileFilepath := tgzFile.Name()
+	if _, err := io.Copy(gzipCompressingWriter, readCloser); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred copying content to file '%v'", tarGzipFileFilepath)
+	}
+
+	return tarGzipFileFilepath, nil
 }

@@ -29,7 +29,7 @@ import { GrpcNodeApiContainerClient } from "./grpc_node_api_container_client";
 import { GrpcWebApiContainerClient } from "./grpc_web_api_container_client";
 import type { GenericApiContainerClient } from "./generic_api_container_client";
 import { ModuleContext, ModuleID } from "../modules/module_context";
-import { 
+import {
     newGetModuleInfoArgs,
     newGetServiceInfoArgs,
     newLoadModuleArgs,
@@ -41,6 +41,8 @@ import {
     newRemoveServiceArgs,
     newRepartitionArgs,
     newStartServiceArgs,
+    newStoreWebFilesArtifactArgs,
+    newStoreFilesArtifactFromServiceArgs,
     newUnloadModuleArgs,
     newWaitForHttpGetEndpointAvailabilityArgs,
     newWaitForHttpPostEndpointAvailabilityArgs
@@ -269,9 +271,14 @@ export class EnclaveContext {
         log.trace("Container config object successfully generated")
 
         log.trace("Creating files artifact ID str -> mount dirpaths map...");
+        // TODO DELETE THIS CHUNK
+        const oldArtifactIdStrToMountDirpath: Map<string, string> = new Map();
+        for (const [filesArtifactId, mountDirpath] of containerConfig.oldFilesArtifactMountpoints.entries()) {
+            oldArtifactIdStrToMountDirpath.set(String(filesArtifactId), mountDirpath);
+        }
+
         const artifactIdStrToMountDirpath: Map<string, string> = new Map();
         for (const [filesArtifactId, mountDirpath] of containerConfig.filesArtifactMountpoints.entries()) {
-
             artifactIdStrToMountDirpath.set(String(filesArtifactId), mountDirpath);
         }
         log.trace("Successfully created files artifact ID str -> mount dirpaths map");
@@ -294,7 +301,9 @@ export class EnclaveContext {
             containerConfig.cmdOverrideArgs,
             containerConfig.environmentVariableOverrides,
             SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT,
-            artifactIdStrToMountDirpath);
+            oldArtifactIdStrToMountDirpath,
+            artifactIdStrToMountDirpath,
+        );
 
         const startServiceResponseResult = await this.backend.startService(startServiceArgs)
         if(startServiceResponseResult.isErr()){
@@ -563,6 +572,29 @@ export class EnclaveContext {
 
         return ok(uploadResult.value.getUuid())
     }
+      
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    public async storeWebFiles(url: string): Promise<Result<FilesArtifactID, Error>> {
+        const args = newStoreWebFilesArtifactArgs(url);
+        const storeWebFilesArtifactResponseResult = await this.backend.storeWebFilesArtifact(args)
+        if (storeWebFilesArtifactResponseResult.isErr()) {
+            return err(storeWebFilesArtifactResponseResult.error)
+        }
+        const storeWebFilesArtifactResponse = storeWebFilesArtifactResponseResult.value;
+        return ok(storeWebFilesArtifactResponse.getUuid())
+    }
+
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    public async storeFilesFromService(serviceId: ServiceID, absoluteFilepathOnServiceContainer: string): Promise<Result<FilesArtifactID, Error>> {
+        const args = newStoreFilesArtifactFromServiceArgs(serviceId, absoluteFilepathOnServiceContainer)
+        const storeFilesArtifactFromServiceResponseResult = await this.backend.storeFilesArtifactFromService(args)
+        if (storeFilesArtifactFromServiceResponseResult.isErr()) {
+            return err(storeFilesArtifactFromServiceResponseResult.error)
+        }
+        const storeFilesArtifactFromServiceResponse = storeFilesArtifactFromServiceResponseResult.value;
+        return ok(storeFilesArtifactFromServiceResponse.getUuid())
+    }
+  
     // ====================================================================================================
     //                                       Private helper functions
     // ====================================================================================================

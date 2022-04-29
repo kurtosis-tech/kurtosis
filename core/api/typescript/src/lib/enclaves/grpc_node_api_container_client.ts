@@ -25,6 +25,8 @@ import {
     ExecCommandResponse,
     UploadFilesArtifactArgs,
     UploadFilesArtifactResponse
+    StoreWebFilesArtifactArgs,
+    StoreWebFilesArtifactResponse, StoreFilesArtifactFromServiceArgs, StoreFilesArtifactFromServiceResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -371,9 +373,9 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(execCommandResponse)
     }
 
-    public async uploadFiles(uploadFilesArtifactArgs: UploadFilesArtifactArgs): Promise<Result<UploadFilesArtifactResponse, Error>> {
-        const uploadFilesPromise: Promise<Result<UploadFilesArtifactResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.uploadFilesArtifact(uploadFilesArtifactArgs, (error: ServiceError | null, response?: UploadFilesArtifactResponse) => {
+    public async storeWebFilesArtifact(storeWebFilesArtifactArgs: StoreWebFilesArtifactArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>> {
+        const storeWebFilesArtifactPromise: Promise<Result<StoreWebFilesArtifactResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.storeWebFilesArtifact(storeWebFilesArtifactArgs, (error: ServiceError | null, response?: StoreWebFilesArtifactResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -385,12 +387,35 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
                 }
             })
         });
-        const uploadFilesResult: Result<UploadFilesArtifactResponse, Error> = await uploadFilesPromise;
-        if(uploadFilesResult.isErr()){
-            return err(uploadFilesResult.error)
+
+        const storeWebFilesArtifactResponseResult: Result<StoreWebFilesArtifactResponse, Error> = await storeWebFilesArtifactPromise;
+        if(storeWebFilesArtifactResponseResult.isErr()){
+            return err(storeWebFilesArtifactResponseResult.error)
         }
 
-        const uploadFilesResponse = uploadFilesResult.value
-        return ok(uploadFilesResponse)
+        const storeWebFilesArtifactResponse = storeWebFilesArtifactResponseResult.value;
+        return ok(storeWebFilesArtifactResponse)
+    }
+
+    public async storeFilesArtifactFromService(storeFilesArtifactFromServiceArgs: StoreFilesArtifactFromServiceArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>> {
+        const storeFilesArtifactFromServicePromise: Promise<Result<StoreFilesArtifactFromServiceResponse, Error>> = new Promise( (resolve, _unusedReject) => {
+            this.client.storeFilesArtifactFromService(storeFilesArtifactFromServiceArgs, {}, (error: ServiceError | null, response?: StoreFilesArtifactFromServiceResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+        const storeFilesArtifactFromServiceResponseResult: Result<StoreFilesArtifactFromServiceResponse, Error> = await storeFilesArtifactFromServicePromise;
+        if (storeFilesArtifactFromServiceResponseResult.isErr()) {
+            return err(storeFilesArtifactFromServiceResponseResult.error)
+        }
+        const storeFilesArtifactFromServiceResponse = storeFilesArtifactFromServiceResponseResult.value;
+        return ok(storeFilesArtifactFromServiceResponse);
     }
 }
