@@ -1,7 +1,12 @@
 # TBD
+### Removals
+* Removed vestigial enclave data directories (e.g. `FilesArtifactCache`, `StaticFilesCache`, etc.)
+
 ### Breaking Changes
 * Removed `ContainerConfigBuilder.WithFilesArtifacts`, as it's been replaced by `ContainerConfigBuilder.WithFiles`
     * Users should use `ContainerConfigBuilder.WithFiles` instead
+* Renamed `EnclaveContext.StoreFilesFromService` to `StoreServiceFiles`
+    * Users should rename their code
 
 # 1.44.0
 ### Fixes

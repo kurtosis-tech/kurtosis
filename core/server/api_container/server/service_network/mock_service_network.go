@@ -45,12 +45,12 @@ func (m MockServiceNetwork) ExecCommand(ctx context.Context, serviceId service.S
 	panic("This is unimplemented for the mock network")
 }
 
-func (m MockServiceNetwork) GetServiceRegistrationInfo(serviceId service.ServiceID) (privateIpAddr net.IP, relativeServiceDirpath string, resultErr error) {
+func (m MockServiceNetwork) GetServiceRegistrationInfo(serviceId service.ServiceID) (privateIpAddr net.IP, resultErr error) {
 	ip, found := m.servicePrivateIps[serviceId]
 	if !found {
-		return nil, "", stacktrace.NewError("No private IP defined for service with ID '%v'", serviceId)
+		return nil, stacktrace.NewError("No private IP defined for service with ID '%v'", serviceId)
 	}
-	return ip, "", nil
+	return ip, nil
 }
 
 func (m MockServiceNetwork) GetServiceRunInfo(serviceId service.ServiceID) (privatePorts map[string]*port_spec.PortSpec, maybePublicIpAddr net.IP, publicPorts map[string]*port_spec.PortSpec, enclaveDataDirMntDirpath string, resultErr error) {

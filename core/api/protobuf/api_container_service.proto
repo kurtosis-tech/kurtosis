@@ -165,9 +165,6 @@ message RegisterServiceArgs {
 message RegisterServiceResponse {
   // The IP address *inside* the enclave that the service will receive when it starts
   string private_ip_addr = 1;
-
-  // The dirpath where the service's directory exists inside the enclave data directory, relative to the enclave data dir root
-  string relative_service_dirpath = 2;
 }
 
 // ==============================================================================================
@@ -236,9 +233,6 @@ message GetServiceInfoResponse {
 
   // The full path where the enclave data dir is mounted on the service
   string enclave_data_dir_mount_dirpath = 5;
-
-  // The dirpath where the service's directory exists inside the enclave data directory, relative to the enclave data directory root
-  string relative_service_dirpath = 6;
 }
 
 // ==============================================================================================

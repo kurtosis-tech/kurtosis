@@ -231,9 +231,6 @@ export class RegisterServiceResponse extends jspb.Message {
   getPrivateIpAddr(): string;
   setPrivateIpAddr(value: string): RegisterServiceResponse;
 
-  getRelativeServiceDirpath(): string;
-  setRelativeServiceDirpath(value: string): RegisterServiceResponse;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RegisterServiceResponse.AsObject;
   static toObject(includeInstance: boolean, msg: RegisterServiceResponse): RegisterServiceResponse.AsObject;
@@ -245,7 +242,6 @@ export class RegisterServiceResponse extends jspb.Message {
 export namespace RegisterServiceResponse {
   export type AsObject = {
     privateIpAddr: string,
-    relativeServiceDirpath: string,
   }
 }
 
@@ -355,9 +351,6 @@ export class GetServiceInfoResponse extends jspb.Message {
   getEnclaveDataDirMountDirpath(): string;
   setEnclaveDataDirMountDirpath(value: string): GetServiceInfoResponse;
 
-  getRelativeServiceDirpath(): string;
-  setRelativeServiceDirpath(value: string): GetServiceInfoResponse;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetServiceInfoResponse.AsObject;
   static toObject(includeInstance: boolean, msg: GetServiceInfoResponse): GetServiceInfoResponse.AsObject;
@@ -373,7 +366,6 @@ export namespace GetServiceInfoResponse {
     publicIpAddr: string,
     publicPortsMap: Array<[string, Port.AsObject]>,
     enclaveDataDirMountDirpath: string,
-    relativeServiceDirpath: string,
   }
 }
 

@@ -156,12 +156,6 @@ func createServiceNetworkAndModuleStore(
 	objAttrsProvider := schema.GetObjectAttributesProvider()
 	enclaveObjAttrsProvider := objAttrsProvider.ForEnclave(enclaveIdStr)
 
-	// TODO REMOVE THIS
-	filesArtifactCache, err := enclaveDataDir.GetFilesArtifactCache()
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the files artifact cache")
-	}
-
 	filesArtifactStore, err := enclaveDataDir.GetFilesArtifactStore()
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the files artifact store")
@@ -175,30 +169,18 @@ func createServiceNetworkAndModuleStore(
 		args.GrpcListenPortNum,
 	)
 
-	oldFilesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
-		args.EnclaveDataDirpathOnHostMachine,
-		kurtosisBackend,
-		enclaveObjAttrsProvider,
-		enclaveId,
-		freeIpAddrTracker,
-		filesArtifactCache,
-		nil,
-	)
-
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
 		args.EnclaveDataDirpathOnHostMachine,
 		kurtosisBackend,
 		enclaveObjAttrsProvider,
 		enclaveId,
 		freeIpAddrTracker,
-		nil,
 		filesArtifactStore,
 	)
 
 	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
 		kurtosisBackend,
 		filesArtifactExpander,
-		oldFilesArtifactExpander,
 		freeIpAddrTracker,
 		args.EnclaveDataDirpathOnHostMachine,
 	)

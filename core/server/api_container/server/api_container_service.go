@@ -170,7 +170,7 @@ func (apicService ApiContainerService) RegisterService(ctx context.Context, args
 	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
 	partitionId := service_network_types.PartitionID(args.PartitionId)
 
-	privateIpAddr, relativeServiceDirpath, err := apicService.serviceNetwork.RegisterService(serviceId, partitionId)
+	privateIpAddr, err := apicService.serviceNetwork.RegisterService(serviceId, partitionId)
 	if err != nil {
 		// TODO IP: Leaks internal information about API container
 		return nil, stacktrace.Propagate(err, "An error occurred registering apicService '%v' in the apicService network", serviceId)
@@ -178,7 +178,6 @@ func (apicService ApiContainerService) RegisterService(ctx context.Context, args
 
 	return &kurtosis_core_rpc_api_bindings.RegisterServiceResponse{
 		PrivateIpAddr:          privateIpAddr.String(),
-		RelativeServiceDirpath: relativeServiceDirpath,
 	}, nil
 }
 
@@ -238,7 +237,7 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 func (apicService ApiContainerService) GetServiceInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServiceInfoArgs) (*kurtosis_core_rpc_api_bindings.GetServiceInfoResponse, error) {
 	serviceIdStr := args.GetServiceId()
 	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
-	privateIpAddr, relativeServiceDirpath, err := apicService.serviceNetwork.GetServiceRegistrationInfo(serviceId)
+	privateIpAddr, err := apicService.serviceNetwork.GetServiceRegistrationInfo(serviceId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the registration info for apicService '%v'", serviceIdStr)
 	}
@@ -269,7 +268,6 @@ func (apicService ApiContainerService) GetServiceInfo(ctx context.Context, args 
 		publicIpAddrStr,
 		publicApiPorts,
 		enclaveDataDirMntDirpath,
-		relativeServiceDirpath,
 	)
 	return serviceInfoResponse, nil
 }
@@ -577,7 +575,7 @@ func (apicService ApiContainerService) waitForEndpointAvailability(
 		err  error
 	)
 
-	privateServiceIp, _, err := apicService.serviceNetwork.GetServiceRegistrationInfo(kurtosis_backend_service.ServiceID(serviceIdStr))
+	privateServiceIp, err := apicService.serviceNetwork.GetServiceRegistrationInfo(kurtosis_backend_service.ServiceID(serviceIdStr))
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the registration info for apicService '%v'", serviceIdStr)
 	}

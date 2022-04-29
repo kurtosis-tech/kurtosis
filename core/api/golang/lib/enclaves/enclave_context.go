@@ -244,13 +244,6 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID
 			serviceId)
 	}
 
-	relativeServiceDirpath := resp.GetRelativeServiceDirpath()
-	if relativeServiceDirpath == "" {
-		return nil, stacktrace.NewError(
-			"Kurtosis API reported an empty relative service directory path for service '%v' - this should never happen, and is a bug with Kurtosis!",
-			serviceId)
-	}
-
 	enclaveDataDirMountDirpathOnSvcContainer := resp.GetEnclaveDataDirMountDirpath()
 	if enclaveDataDirMountDirpathOnSvcContainer == "" {
 		return nil, stacktrace.NewError(

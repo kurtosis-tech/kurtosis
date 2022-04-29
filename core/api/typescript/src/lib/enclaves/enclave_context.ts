@@ -241,7 +241,6 @@ export class EnclaveContext {
         log.trace("New service successfully registered with Kurtosis API");
 
         const privateIpAddr: string = registerServiceResponse.getPrivateIpAddr();
-        const relativeServiceDirpath: string = registerServiceResponse.getRelativeServiceDirpath();
 
         log.trace("Generating container config object using the container config supplier...")
         const containerConfigSupplierResult: Result<ContainerConfig, Error> = containerConfigSupplier(privateIpAddr);

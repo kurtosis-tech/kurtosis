@@ -33,7 +33,7 @@ type ServiceNetwork interface {
 	RegisterService(
 		serviceId service.ServiceID,
 		partitionId service_network_types.PartitionID,
-	) (net.IP, string, error)
+	) (net.IP, error)
 
 	/*
 		StartService
@@ -75,7 +75,6 @@ type ServiceNetwork interface {
 
 	GetServiceRegistrationInfo(serviceId service.ServiceID) (
 		privateIpAddr net.IP,
-		relativeServiceDirpath string, // The dirpath, relative to the enclave data dir, where the service directory lives
 		resultErr error,
 	)
 

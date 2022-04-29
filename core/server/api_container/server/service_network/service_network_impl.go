@@ -39,7 +39,6 @@ const (
 type serviceRegistrationInfo struct {
 	serviceGUID      service.ServiceGUID
 	privateIpAddr    net.IP
-	serviceDirectory *enclave_data_directory.ServiceDirectory
 }
 
 // Information that gets created when a container is started for a service
@@ -162,27 +161,27 @@ func (network *ServiceNetworkImpl) Repartition(
 func (network ServiceNetworkImpl) RegisterService(
 	serviceId service.ServiceID,
 	partitionId service_network_types.PartitionID,
-) (net.IP, string, error) {
+) (net.IP, error) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
-		return nil, "", stacktrace.NewError("Cannot register service with ID '%v'; the service network has been destroyed", serviceId)
+		return nil, stacktrace.NewError("Cannot register service with ID '%v'; the service network has been destroyed", serviceId)
 	}
 
 	if strings.TrimSpace(string(serviceId)) == "" {
-		return nil, "", stacktrace.NewError("Service ID cannot be empty or whitespace")
+		return nil, stacktrace.NewError("Service ID cannot be empty or whitespace")
 	}
 
 	if _, found := network.serviceRegistrationInfo[serviceId]; found {
-		return nil, "", stacktrace.NewError("Cannot register service with ID '%v'; a service with that ID already exists", serviceId)
+		return nil, stacktrace.NewError("Cannot register service with ID '%v'; a service with that ID already exists", serviceId)
 	}
 
 	if partitionId == "" {
 		partitionId = defaultPartitionId
 	}
 	if _, found := network.topology.GetPartitionServices()[partitionId]; !found {
-		return nil, "", stacktrace.NewError(
+		return nil, stacktrace.NewError(
 			"No partition with ID '%v' exists in the current partition topology",
 			partitionId,
 		)
@@ -190,7 +189,7 @@ func (network ServiceNetworkImpl) RegisterService(
 
 	ip, err := network.freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
-		return nil, "", stacktrace.Propagate(err, "An error occurred getting an IP for service with ID '%v'", serviceId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting an IP for service with ID '%v'", serviceId)
 	}
 	shouldFreeIpAddr := true
 	defer func() {
@@ -202,15 +201,10 @@ func (network ServiceNetworkImpl) RegisterService(
 	logrus.Debugf("Giving service '%v' IP '%v'", serviceId, ip.String())
 
 	serviceGuid := newServiceGUID(serviceId)
-	serviceDirectory, err := network.enclaveDataDir.GetServiceDirectory(serviceGuid)
-	if err != nil {
-		return nil, "", stacktrace.Propagate(err, "An error occurred creating a new service directory for service with GUID '%v'", serviceGuid)
-	}
 
 	newServiceRegistrationInfo := serviceRegistrationInfo{
 		serviceGUID:      serviceGuid,
 		privateIpAddr:    ip,
-		serviceDirectory: serviceDirectory,
 	}
 
 	network.serviceRegistrationInfo[serviceId] = newServiceRegistrationInfo
@@ -223,7 +217,7 @@ func (network ServiceNetworkImpl) RegisterService(
 	}()
 
 	if err := network.topology.AddService(serviceId, partitionId); err != nil {
-		return nil, "", stacktrace.Propagate(
+		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred adding service with ID '%v' to partition '%v' in the topology",
 			serviceId,
@@ -233,7 +227,7 @@ func (network ServiceNetworkImpl) RegisterService(
 
 	shouldFreeIpAddr = false
 	shouldUndoRegistrationInfoAdd = false
-	return ip, serviceDirectory.GetDirpathRelativeToDataDirRoot(), nil
+	return ip, nil
 }
 
 // TODO add tests for this
@@ -460,21 +454,20 @@ func (network *ServiceNetworkImpl) ExecCommand(
 
 func (network *ServiceNetworkImpl) GetServiceRegistrationInfo(serviceId service.ServiceID) (
 	privateIpAddr net.IP,
-	relativeServiceDirpath string,
 	resultErr error,
 ) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
-		return nil, "", stacktrace.NewError("Cannot get registration info for service '%v'; the service network has been destroyed", serviceId)
+		return nil, stacktrace.NewError("Cannot get registration info for service '%v'; the service network has been destroyed", serviceId)
 	}
 
 	registrationInfo, found := network.serviceRegistrationInfo[serviceId]
 	if !found {
-		return nil, "", stacktrace.NewError("No registration information found for service with ID '%v'", serviceId)
+		return nil, stacktrace.NewError("No registration information found for service with ID '%v'", serviceId)
 	}
 
-	return registrationInfo.privateIpAddr, registrationInfo.serviceDirectory.GetDirpathRelativeToDataDirRoot(), nil
+	return registrationInfo.privateIpAddr, nil
 }
 
 
