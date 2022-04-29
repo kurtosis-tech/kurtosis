@@ -44,8 +44,17 @@ export class NodeTgzArchiver implements GenericTgzArchiver{
          const targzPromise: Promise<Result<null, Error>> = new Promise((resolve,unusedReject) => {
              targz.compress(archiveOptions, (callbackErr: string | Error | null) => {
                 if (callbackErr !== null) {
-                    resolve(err(new Error(callbackErr.toString())))
-                    return
+                    if (callbackErr instanceof Error) {
+                        resolve(err(callbackErr))
+                        return
+                    } else if((typeof callbackErr) === "string"){
+                        resolve(err(new Error(callbackErr.toString())))
+                        return
+                    } else {
+                        resolve(err(new Error("Compression callback encountered an unknown error type; " +
+                            "this should never happen.")))
+                        return
+                    }
                 }
                 resolve(ok(null))
              });
