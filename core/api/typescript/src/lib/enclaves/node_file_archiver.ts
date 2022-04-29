@@ -6,6 +6,7 @@
 import "neverthrow"
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
 import {ok, err, Result} from "neverthrow";
+import {UploadFilesArtifactResponse} from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
 const COMPRESSION_EXTENSION = ".tgz"
 const GRPC_DATA_TRANSFER_LIMIT = 3999000 //3.999 Mb. 1kb wiggle room. 1kb being about the size of a 2 paragraph readme.
@@ -41,12 +42,20 @@ export class NodeFileArchiver implements GenericTgzArchiver{
              dest: path.join(tempPathResponse.value, baseName),
          }
 
-         var error: string | Error | null = null
-         targz.compress(archiveOptions, (compressErr: string | Error | null) => {
-             error = compressErr
+         const targzPromise: Promise<Result<null, Error>> = new Promise((resolve,unusedReject) => {
+             targz.compress(archiveOptions, (callbackErr: string | Error | null) => {
+                if (callbackErr !== null) {
+                    resolve(err(new Error(callbackErr.toString())))
+                    return
+                } else {
+                    resolve(ok(null))
+                    return
+                }
+             });
          })
-         if (error != null) {
-             return err(error)
+         const targzResult = await targzPromise
+         if(targzResult.isErr()) {
+             return err(targzResult.error)
          }
 
          if (!filesystem.existsSync(archiveOptions.dest)) {
