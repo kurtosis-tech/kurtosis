@@ -52,11 +52,10 @@ import { ServiceContext } from "../services/service_context";
 import { PortProtocol, PortSpec } from "../services/port_spec";
 import type { GenericPathJoiner } from "./generic_path_joiner";
 import type { PartitionConnection } from "./partition_connection";
-import "targz"
-import "fs";
-import "os";
-import "path";
 import {UploadFilesArtifactArgs} from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
+import {GenericTgzArchiver} from "./generic_tgz_archiver";
+import {NodeFileArchiver} from "./node_file_archiver";
+import {WebFileArchiver} from "./web_file_archiver";
 
 export type EnclaveID = string;
 export type PartitionID = string;
@@ -73,13 +72,16 @@ export class EnclaveContext {
 
     private readonly backend: GenericApiContainerClient
     private readonly pathJoiner: GenericPathJoiner
+    private readonly genericTgzArchiver: GenericTgzArchiver
     // The location on the filesystem where this code is running where the enclave data dir exists
     private readonly enclaveDataDirpath: string;
 
-    private constructor(backend: GenericApiContainerClient, enclaveDataDirpath: string, pathJoiner: GenericPathJoiner){
+    private constructor(backend: GenericApiContainerClient, enclaveDataDirpath: string, pathJoiner: GenericPathJoiner,
+                        genericTgzArchiver: GenericTgzArchiver){
         this.backend = backend;
         this.enclaveDataDirpath = enclaveDataDirpath;
         this.pathJoiner = pathJoiner;
+        this.genericTgzArchiver = genericTgzArchiver
     }
 
     public static async newGrpcWebEnclaveContext(
@@ -94,6 +96,7 @@ export class EnclaveContext {
         }
 
         let genericApiContainerClient: GenericApiContainerClient
+        let genericTgzArchiver: GenericTgzArchiver
         let pathJoiner: GenericPathJoiner
         try {
             pathJoiner = await import("path-browserify")
@@ -102,6 +105,7 @@ export class EnclaveContext {
             const apiContainerGrpcProxyUrl: string = `${ipAddress}:${apiContainerGrpcProxyPortNum}`
             const apiContainerClient = new apiContainerServiceWeb.ApiContainerServiceClient(apiContainerGrpcProxyUrl);
             genericApiContainerClient = new GrpcWebApiContainerClient(apiContainerClient, enclaveId)
+            genericTgzArchiver = new WebFileArchiver()
         }catch(error) {
             if (error instanceof Error) {
                 return err(error);
@@ -111,7 +115,7 @@ export class EnclaveContext {
             ));
         }
         
-        const enclaveContext = new EnclaveContext(genericApiContainerClient, enclaveDataDirpath, pathJoiner);
+        const enclaveContext = new EnclaveContext(genericApiContainerClient, enclaveDataDirpath, pathJoiner, genericTgzArchiver);
         return ok(enclaveContext)
     }
 
@@ -127,7 +131,9 @@ export class EnclaveContext {
         }
 
         let genericApiContainerClient: GenericApiContainerClient
+        let genericTgzArchiver: GenericTgzArchiver
         let pathJoiner: GenericPathJoiner
+        //TODO Pull things that can't throw an error out of try statement.
         try {
             pathJoiner = await import( /* webpackIgnore: true */ "path")
             const grpc_node = await import( /* webpackIgnore: true */ "@grpc/grpc-js")
@@ -136,7 +142,7 @@ export class EnclaveContext {
             const apiContainerGrpcUrl: string = `${ipAddress}:${apiContainerGrpcPortNum}`
             const apiContainerClient = new apiContainerServiceNode.ApiContainerServiceClient(apiContainerGrpcUrl, grpc_node.credentials.createInsecure());
             genericApiContainerClient = new GrpcNodeApiContainerClient(apiContainerClient, enclaveId)
-
+            genericTgzArchiver = new NodeFileArchiver()
         }catch(error) {
             if (error instanceof Error) {
                 return err(error);
@@ -146,7 +152,7 @@ export class EnclaveContext {
             ));
         }
 
-        const enclaveContext = new EnclaveContext(genericApiContainerClient, enclaveDataDirpath, pathJoiner);
+        const enclaveContext = new EnclaveContext(genericApiContainerClient, enclaveDataDirpath, pathJoiner, genericTgzArchiver);
         return ok(enclaveContext)
     }
 
@@ -544,13 +550,18 @@ export class EnclaveContext {
     public async uploadFiles(pathToArchive: string): Promise<Result<string, Error>>  {
         //Use backend to upload
         const uploadArgs: UploadFilesArtifactArgs = new UploadFilesArtifactArgs()
-        const uploadResult = await this.backend.uploadFiles(uploadArgs) //TODO: This is not valid.
+        const archiverResponse = await this.genericTgzArchiver.createTgz(pathToArchive)
+        if (archiverResponse.isErr()){
+            return err(archiverResponse.error)
+        }
+
+        uploadArgs.setData(archiverResponse.value)
+        const uploadResult = await this.backend.uploadFiles(uploadArgs)
         if (uploadResult.isErr()){
             return err(uploadResult.error)
         }
 
-        return err(new Error("uploadFiles is not implemented."))
-        //return ok(uploadResult.value.getUuid())
+        return ok(uploadResult.value.getUuid())
     }
     // ====================================================================================================
     //                                       Private helper functions

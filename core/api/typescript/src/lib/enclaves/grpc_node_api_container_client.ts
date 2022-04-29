@@ -393,48 +393,4 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         const uploadFilesResponse = uploadFilesResult.value
         return ok(uploadFilesResponse)
     }
-
-    private TarCreator(sourcePath : string) {
-        const targz = require("targz")
-        const filesystem = require("fs")
-        const os = require("os")
-        const path = require("path")
-
-        //Check if it exists
-        if(!filesystem.existsSync(sourcePath)) {
-            return err(new Error("The file or folder you want to upload does not exist."))
-        }
-
-        //Make directory for usage.
-        var absoluteTarPath : string = ""
-        var tempDirectoryErr : Error | null = null
-        filesystem.mkdtemp(os.tmpdir(),  (tempDirError : Error, folder: string) => {
-            tempDirectoryErr = tempDirError
-            absoluteTarPath = path.join(folder, path.basename(sourcePath)) ;
-        });
-
-        if (tempDirectoryErr != null){
-            return err(tempDirectoryErr)
-        }
-
-        const baseName = path.basename(sourcePath) + COMPRESSION_EXTENSION
-        const options  = {
-            src: sourcePath,
-            dest: path.join(absoluteTarPath,baseName),
-        }
-
-        var error : Error | string | null = null
-        targz.compress(options, function(compressErr: Error) { error = compressErr })
-        if(error != null){
-            return err(error)
-        }
-
-        if (filesystem.existsSync(options.dest)){
-            return err(new Error(`Your files were compressed but could not be found at ${options.dest}.`))
-        }
-
-        //this.client.uploadFilesArtifact()
-        //check to see if context had error
-        //return uuid
-    }
 }
