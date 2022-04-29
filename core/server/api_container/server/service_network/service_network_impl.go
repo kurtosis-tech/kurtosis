@@ -434,7 +434,7 @@ func (network *ServiceNetworkImpl) UnpauseService(
 		return stacktrace.NewError("Can not unpause service '%v', service is not paused.",
 			serviceId)
 	}
-	err := network.kurtosisBackend.UnpauseService(ctx, network.enclaveId, serviceId)
+	err := network.kurtosisBackend.UnpauseService(ctx, network.enclaveId, runInfo.serviceGUID)
 	if err != nil {
 		return stacktrace.Propagate(err,"Failed to pause service '%v'", serviceId)
 	}
