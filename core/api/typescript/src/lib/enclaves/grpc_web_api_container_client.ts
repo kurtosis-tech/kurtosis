@@ -33,6 +33,7 @@ import {
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
 import { EnclaveID } from "./enclave_context";
+import {ServiceError} from "@grpc/grpc-js";
 
 export class GrpcWebApiContainerClient implements GenericApiContainerClient {
 
@@ -371,8 +372,26 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
     }
 
     public async uploadFiles(uploadFilesArtifactArgs: UploadFilesArtifactArgs): Promise<Result<UploadFilesArtifactResponse, Error>> {
-        return err(new Error("Uploading files through the web API has not been implemented. " +
-                             "Please use the Node.js API until it is implemented."))
+            const uploadFilesPromise: Promise<Result<UploadFilesArtifactResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.uploadFilesArtifact(uploadFilesArtifactArgs, {}, (error: grpc_web.RpcError | null, response?: UploadFilesArtifactResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+        const uploadFilesResult = await uploadFilesPromise;
+        if(uploadFilesResult.isErr()){
+            return err(uploadFilesResult.error)
+        }
+
+        const uploadFilesResponse = uploadFilesResult.value
+        return ok(uploadFilesResponse)
     }
   
     public async storeWebFilesArtifact(storeWebFilesArtifactArgs: StoreWebFilesArtifactArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>> {
