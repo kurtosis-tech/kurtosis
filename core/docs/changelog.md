@@ -1,10 +1,20 @@
 # TBD
-
 ### Fixes
 * Fixed Upload Files bug.
 
 ### Features
 * Added `EnclaveContext.UploadFiles` to Typescript client for uploading files to the API Container.
+* Added `api/scripts/build.sh` to build just the API subproject
+
+### Breaking Changes
+* Removed `EnclaveContext.RegisterFilesArtifacts`
+    * Users should use `EnclaveContext.StoreWebFiles` instead
+* Removed the `SharedPath` argument from the container config supplier passed in to `EnclaveContext.AddService` and `EnclaveContext.AddServiceToPartition`
+    * Users should:
+        * Switch to using the `EnclaveContext` functions `UploadFiles`, `StoreWebFiles`, and `StoreFilesFromService` for storing files before starting a service
+        * Use the `ContainerConfigBuilder.WithFiles` function to mount the previously-stored files on the service being started
+* Removed the `ServiceContext.GetSharedPath` function
+    * Users should switch to using `EnclaveContext.StoreFilesFromService`
 
 # 1.43.6
 ### Features

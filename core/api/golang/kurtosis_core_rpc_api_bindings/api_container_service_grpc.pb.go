@@ -31,9 +31,6 @@ type ApiContainerServiceClient interface {
 	ExecuteModule(ctx context.Context, in *ExecuteModuleArgs, opts ...grpc.CallOption) (*ExecuteModuleResponse, error)
 	// Gets information about a loaded module
 	GetModuleInfo(ctx context.Context, in *GetModuleInfoArgs, opts ...grpc.CallOption) (*GetModuleInfoResponse, error)
-	// Tells the API container that the client has files artifacts from the web that it would like the API container to know about
-	// The API container will download these artifacts locally, so they're available when launching services
-	RegisterFilesArtifacts(ctx context.Context, in *RegisterFilesArtifactsArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Registers a service with the API container but doesn't start the container for it
 	RegisterService(ctx context.Context, in *RegisterServiceArgs, opts ...grpc.CallOption) (*RegisterServiceResponse, error)
 	// Starts a previously-registered service by creating a Docker container for it
@@ -100,15 +97,6 @@ func (c *apiContainerServiceClient) ExecuteModule(ctx context.Context, in *Execu
 func (c *apiContainerServiceClient) GetModuleInfo(ctx context.Context, in *GetModuleInfoArgs, opts ...grpc.CallOption) (*GetModuleInfoResponse, error) {
 	out := new(GetModuleInfoResponse)
 	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/GetModuleInfo", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiContainerServiceClient) RegisterFilesArtifacts(ctx context.Context, in *RegisterFilesArtifactsArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/RegisterFilesArtifacts", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -244,9 +232,6 @@ type ApiContainerServiceServer interface {
 	ExecuteModule(context.Context, *ExecuteModuleArgs) (*ExecuteModuleResponse, error)
 	// Gets information about a loaded module
 	GetModuleInfo(context.Context, *GetModuleInfoArgs) (*GetModuleInfoResponse, error)
-	// Tells the API container that the client has files artifacts from the web that it would like the API container to know about
-	// The API container will download these artifacts locally, so they're available when launching services
-	RegisterFilesArtifacts(context.Context, *RegisterFilesArtifactsArgs) (*emptypb.Empty, error)
 	// Registers a service with the API container but doesn't start the container for it
 	RegisterService(context.Context, *RegisterServiceArgs) (*RegisterServiceResponse, error)
 	// Starts a previously-registered service by creating a Docker container for it
@@ -291,9 +276,6 @@ func (UnimplementedApiContainerServiceServer) ExecuteModule(context.Context, *Ex
 }
 func (UnimplementedApiContainerServiceServer) GetModuleInfo(context.Context, *GetModuleInfoArgs) (*GetModuleInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetModuleInfo not implemented")
-}
-func (UnimplementedApiContainerServiceServer) RegisterFilesArtifacts(context.Context, *RegisterFilesArtifactsArgs) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RegisterFilesArtifacts not implemented")
 }
 func (UnimplementedApiContainerServiceServer) RegisterService(context.Context, *RegisterServiceArgs) (*RegisterServiceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterService not implemented")
@@ -415,24 +397,6 @@ func _ApiContainerService_GetModuleInfo_Handler(srv interface{}, ctx context.Con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ApiContainerServiceServer).GetModuleInfo(ctx, req.(*GetModuleInfoArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiContainerService_RegisterFilesArtifacts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RegisterFilesArtifactsArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).RegisterFilesArtifacts(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api_container_api.ApiContainerService/RegisterFilesArtifacts",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).RegisterFilesArtifacts(ctx, req.(*RegisterFilesArtifactsArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -693,10 +657,6 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetModuleInfo",
 			Handler:    _ApiContainerService_GetModuleInfo_Handler,
-		},
-		{
-			MethodName: "RegisterFilesArtifacts",
-			Handler:    _ApiContainerService_RegisterFilesArtifacts_Handler,
 		},
 		{
 			MethodName: "RegisterService",

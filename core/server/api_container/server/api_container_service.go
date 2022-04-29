@@ -166,24 +166,6 @@ func (apicService ApiContainerService) GetModuleInfo(ctx context.Context, args *
 	return response, nil
 }
 
-func (apicService ApiContainerService) RegisterFilesArtifacts(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterFilesArtifactsArgs) (*emptypb.Empty, error) {
-	filesArtifactCache, err := apicService.enclaveDataDir.GetFilesArtifactCache()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the files artifact cache")
-	}
-
-	// TODO PERF: Do these in parallel
-	logrus.Debug("Downloading files artifacts to the files artifact cache...")
-	for artifactId, url := range args.FilesArtifactUrls {
-		if err := filesArtifactCache.DownloadFilesArtifact(artifactId, url); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred downloading files artifact '%v' from URL '%v'", artifactId, url)
-		}
-	}
-	logrus.Debug("Files artifacts downloaded successfully")
-
-	return &emptypb.Empty{}, nil
-}
-
 func (apicService ApiContainerService) RegisterService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServiceArgs) (*kurtosis_core_rpc_api_bindings.RegisterServiceResponse, error) {
 	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
 	partitionId := service_network_types.PartitionID(args.PartitionId)

@@ -3,47 +3,22 @@ import { newExecCommandArgs } from '../constructor_calls';
 import type { ExecCommandArgs } from '../../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import type { PortSpec } from './port_spec';
 import type { ServiceID } from './service';
-import type { SharedPath } from './shared_path';
 import { GenericApiContainerClient } from '../enclaves/generic_api_container_client';
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class ServiceContext {
-
-    private readonly client: GenericApiContainerClient
-    private readonly serviceId: ServiceID
-    private readonly sharedDirectory: SharedPath
-    private readonly privateIpAddress: string
-    private readonly privatePorts: Map<string, PortSpec>
-    private readonly publicIpAddress: string
-    private readonly publicPorts: Map<string, PortSpec>
-
     constructor(
-        client: GenericApiContainerClient,
-        serviceId: ServiceID,
-        sharedDirectory: SharedPath,
-        privateIpAddress: string,
-        privatePorts: Map<string, PortSpec>,
-        publicIpAddress: string,
-        publicPorts: Map<string, PortSpec>
-        ){
-
-        this.client = client
-        this.serviceId = serviceId
-        this.sharedDirectory = sharedDirectory
-        this.privateIpAddress = privateIpAddress
-        this.privatePorts = privatePorts
-        this.publicIpAddress = publicIpAddress
-        this.publicPorts = publicPorts
-    }
+        private readonly client: GenericApiContainerClient,
+        private readonly serviceId: ServiceID,
+        private readonly privateIpAddress: string,
+        private readonly privatePorts: Map<string, PortSpec>,
+        private readonly publicIpAddress: string,
+        private readonly publicPorts: Map<string, PortSpec>,
+    ) {}
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public getServiceID(): ServiceID { 
         return this.serviceId;
-    }
-
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public getSharedDirectory(): SharedPath {
-        return  this.sharedDirectory
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation

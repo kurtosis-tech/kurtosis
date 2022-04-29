@@ -20,10 +20,6 @@ service ApiContainerService {
   // Gets information about a loaded module
   rpc GetModuleInfo(GetModuleInfoArgs) returns (GetModuleInfoResponse) {};
 
-  // Tells the API container that the client has files artifacts from the web that it would like the API container to know about
-  // The API container will download these artifacts locally, so they're available when launching services
-  rpc RegisterFilesArtifacts(RegisterFilesArtifactsArgs) returns (google.protobuf.Empty) {};
-
   // Registers a service with the API container but doesn't start the container for it
   rpc RegisterService(RegisterServiceArgs) returns (RegisterServiceResponse) {};
 
@@ -153,14 +149,6 @@ message GetModuleInfoResponse {
 
   // The port the module can be reached at *outside* the enclave
   Port public_port = 4;
-}
-
-// ==============================================================================================
-//                                       Register Files Artifacts
-// ==============================================================================================
-message RegisterFilesArtifactsArgs {
-  // A mapping of user_defined_id -> url_of_file_artifact
-  map<string, string> files_artifact_urls = 1;
 }
 
 // ==============================================================================================

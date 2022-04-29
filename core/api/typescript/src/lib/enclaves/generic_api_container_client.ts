@@ -16,7 +16,6 @@ import {
     GetServiceInfoResponse,
     GetServicesResponse,
     LoadModuleArgs,
-    RegisterFilesArtifactsArgs,
     RegisterServiceArgs,
     RegisterServiceResponse,
     RemoveServiceArgs,
@@ -36,7 +35,6 @@ export interface GenericApiContainerClient {
     loadModule(loadModuleArgs: LoadModuleArgs): Promise<Result<null, Error>>
     unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<null,Error>>
     getModuleInfo(getModuleInfoArgs: GetModuleInfoArgs): Promise<Result<null, Error>>
-    registerFilesArtifacts(registerFilesArtifactsArgs: RegisterFilesArtifactsArgs): Promise<Result<null,Error>>
     registerService(registerServiceArgs: RegisterServiceArgs): Promise<Result<RegisterServiceResponse, Error>>
     startService(startServiceArgs: StartServiceArgs): Promise<Result<StartServiceResponse, Error>>
     getServiceInfo(getServiceInfoArgs: GetServiceInfoArgs): Promise<Result<GetServiceInfoResponse, Error>>

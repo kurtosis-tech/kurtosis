@@ -24,8 +24,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/modules"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/services"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"github.com/mholt/archiver"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io/ioutil"
 	"math"
@@ -123,22 +123,9 @@ func (enclaveCtx *EnclaveContext) GetModuleContext(moduleId modules.ModuleID) (*
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveCtx *EnclaveContext) RegisterFilesArtifacts(filesArtifactUrls map[services.FilesArtifactID]string) error {
-	filesArtifactIdStrsToUrls := map[string]string{}
-	for artifactId, url := range filesArtifactUrls {
-		filesArtifactIdStrsToUrls[string(artifactId)] = url
-	}
-	args := binding_constructors.NewRegisterFilesArtifactArgs(filesArtifactIdStrsToUrls)
-	if _, err := enclaveCtx.client.RegisterFilesArtifacts(context.Background(), args); err != nil {
-		return stacktrace.Propagate(err, "An error occurred registering files artifacts: %+v", filesArtifactUrls)
-	}
-	return nil
-}
-
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) AddService(
 	serviceId services.ServiceID,
-	containerConfigSupplier func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error),
+	containerConfigSupplier func(ipAddr string) (*services.ContainerConfig, error),
 ) (*services.ServiceContext, error) {
 
 	serviceContext, err := enclaveCtx.AddServiceToPartition(
@@ -157,7 +144,7 @@ func (enclaveCtx *EnclaveContext) AddService(
 func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	serviceId services.ServiceID,
 	partitionID PartitionID,
-	containerConfigSupplier func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error),
+	containerConfigSupplier func(ipAddr string) (*services.ContainerConfig, error),
 ) (*services.ServiceContext, error) {
 
 	ctx := context.Background()
@@ -176,12 +163,9 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	logrus.Trace("New service successfully registered with Kurtosis API")
 
 	privateIpAddr := registerServiceResp.PrivateIpAddr
-	relativeServiceDirpath := registerServiceResp.RelativeServiceDirpath
-
-	sharedDirectory := enclaveCtx.getSharedDirectory(relativeServiceDirpath)
 
 	logrus.Trace("Generating container config object using the container config supplier...")
-	containerConfig, err := containerConfigSupplier(privateIpAddr, sharedDirectory)
+	containerConfig, err := containerConfigSupplier(privateIpAddr)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -237,7 +221,6 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	serviceContext := services.NewServiceContext(
 		enclaveCtx.client,
 		serviceId,
-		sharedDirectory,
 		privateIpAddr,
 		privatePorts,
 		resp.GetPublicIpAddr(),
@@ -282,8 +265,6 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID
 			serviceId)
 	}
 
-	sharedDirectory := enclaveCtx.getSharedDirectory(relativeServiceDirpath)
-
 	serviceCtxPrivatePorts, err := convertApiPortsToServiceContextPorts(resp.GetPrivatePorts())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred converting the private ports returned by the API to ports usable by the service context")
@@ -296,7 +277,6 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID
 	serviceContext := services.NewServiceContext(
 		enclaveCtx.client,
 		serviceId,
-		sharedDirectory,
 		resp.GetPrivateIpAddr(),
 		serviceCtxPrivatePorts,
 		resp.GetPublicIpAddr(),
@@ -534,16 +514,6 @@ func (EnclaveContext *EnclaveContext) StoreFilesFromService(ctx context.Context,
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func (enclaveCtx *EnclaveContext) getSharedDirectory(relativeServiceDirpath string) *services.SharedPath {
-
-	absFilepathOnThisContainer := filepath.Join(enclaveCtx.enclaveDataDirpath, relativeServiceDirpath)
-	absFilepathOnServiceContainer := filepath.Join(serviceEnclaveDataDirMountpoint, relativeServiceDirpath)
-
-	sharedDirectory := services.NewSharedPath(absFilepathOnThisContainer, absFilepathOnServiceContainer)
-
-	return sharedDirectory
-}
-
 func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc_api_bindings.Port) (map[string]*services.PortSpec, error) {
 	result := map[string]*services.PortSpec{}
 	for portId, apiPortSpec := range apiPorts {

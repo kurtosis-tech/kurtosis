@@ -2,7 +2,6 @@ import {ok, err, Result, Err} from "neverthrow";
 import type { ServiceError } from "@grpc/grpc-js";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import {
-    RegisterFilesArtifactsArgs,
     RegisterServiceArgs,
     RegisterServiceResponse,
     StartServiceArgs,
@@ -108,28 +107,6 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         const getModuleInfoResponseResult: Result<GetModuleInfoResponse, Error> = await getModuleInfoPromise;
         if (getModuleInfoResponseResult.isErr()) {
             return err(getModuleInfoResponseResult.error);
-        }
-
-        return ok(null);
-    }
-
-    public async registerFilesArtifacts(registerFilesArtifactsArgs: RegisterFilesArtifactsArgs): Promise<Result<null,Error>> {
-        const promiseRegisterFilesArtifacts: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.registerFilesArtifacts(registerFilesArtifactsArgs, (error: ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const resultRegisterFilesArtifacts: Result<google_protobuf_empty_pb.Empty, Error> = await promiseRegisterFilesArtifacts;
-        if (resultRegisterFilesArtifacts.isErr()) {
-            return err(resultRegisterFilesArtifacts.error);
         }
 
         return ok(null);

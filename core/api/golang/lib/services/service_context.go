@@ -28,7 +28,6 @@ import (
 type ServiceContext struct {
 	client			kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
 	serviceId		ServiceID
-	sharedDirectory	*SharedPath
 
 	// Network location inside the enclave
 	privateIpAddr	string
@@ -39,18 +38,13 @@ type ServiceContext struct {
 	publicPorts		map[string]*PortSpec
 }
 
-func NewServiceContext(client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient, serviceId ServiceID, sharedDirectory *SharedPath, privateIpAddr string, privatePorts map[string]*PortSpec, publicIpAddr string, publicPorts map[string]*PortSpec) *ServiceContext {
-	return &ServiceContext{client: client, serviceId: serviceId, sharedDirectory: sharedDirectory, privateIpAddr: privateIpAddr, privatePorts: privatePorts, publicIpAddr: publicIpAddr, publicPorts: publicPorts}
+func NewServiceContext(client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient, serviceId ServiceID, privateIpAddr string, privatePorts map[string]*PortSpec, publicIpAddr string, publicPorts map[string]*PortSpec) *ServiceContext {
+	return &ServiceContext{client: client, serviceId: serviceId, privateIpAddr: privateIpAddr, privatePorts: privatePorts, publicIpAddr: publicIpAddr, publicPorts: publicPorts}
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (self *ServiceContext) GetServiceID() ServiceID {
 	return self.serviceId
-}
-
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (self *ServiceContext) GetSharedDirectory() *SharedPath {
-	return self.sharedDirectory
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation

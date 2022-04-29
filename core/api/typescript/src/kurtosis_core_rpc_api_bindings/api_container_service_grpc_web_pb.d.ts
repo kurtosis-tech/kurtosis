@@ -37,13 +37,6 @@ export class ApiContainerServiceClient {
                response: api_container_service_pb.GetModuleInfoResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.GetModuleInfoResponse>;
 
-  registerFilesArtifacts(
-    request: api_container_service_pb.RegisterFilesArtifactsArgs,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: google_protobuf_empty_pb.Empty) => void
-  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
-
   registerService(
     request: api_container_service_pb.RegisterServiceArgs,
     metadata: grpcWeb.Metadata | undefined,
@@ -161,11 +154,6 @@ export class ApiContainerServicePromiseClient {
     request: api_container_service_pb.GetModuleInfoArgs,
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.GetModuleInfoResponse>;
-
-  registerFilesArtifacts(
-    request: api_container_service_pb.RegisterFilesArtifactsArgs,
-    metadata?: grpcWeb.Metadata
-  ): Promise<google_protobuf_empty_pb.Empty>;
 
   registerService(
     request: api_container_service_pb.RegisterServiceArgs,
