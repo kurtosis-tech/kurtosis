@@ -63,7 +63,7 @@ export class NodeFileArchiver implements GenericTgzArchiver{
 
          const data = filesystem.readFileSync(archiveOptions.dest)
          if(data.length != stats.size){
-             return err(new Error(`Something went wrong while reading your recently compressed file ${baseName}.` +
+             return err(new Error(`Something went wrong while reading your recently compressed file '${baseName}'.` +
                  `The file size of ${stats.size} bytes and read size of ${data.length} bytes are not equal.`))
          }
 
