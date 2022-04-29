@@ -23,6 +23,8 @@ import {
     ExecuteModuleResponse,
     ExecCommandArgs,
     ExecCommandResponse,
+    UploadFilesArtifactArgs,
+    UploadFilesArtifactResponse
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -364,7 +366,7 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         return ok(execCommandResponse)
     }
 
-    public async uploadFiles(pathToArchive: string): Promise<Result<string, Error>> {
+    public async uploadFiles(uploadFilesArtifactArgs: UploadFilesArtifactArgs): Promise<Result<UploadFilesArtifactResponse, Error>> {
         return err(new Error("Uploading files through the web API has not been implemented. " +
                              "Please use the Node.js API until it is implemented."))
     }

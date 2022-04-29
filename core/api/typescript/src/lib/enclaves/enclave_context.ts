@@ -56,6 +56,7 @@ import "targz"
 import "fs";
 import "os";
 import "path";
+import {UploadFilesArtifactArgs} from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
 export type EnclaveID = string;
 export type PartitionID = string;
@@ -66,8 +67,7 @@ const DEFAULT_PARTITION_ID: PartitionID = "";
 
 // The path on the user service container where the enclave data dir will be bind-mounted
 const SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT: string = "/kurtosis-enclave-data";
-const TEMP_FOLDER_SEPERATOR: string = "-";
-const ARTIFACT_EXTENSION: string = ".tgz"
+
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class EnclaveContext {
 
@@ -543,12 +543,14 @@ export class EnclaveContext {
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async uploadFiles(pathToArchive: string): Promise<Result<string, Error>>  {
         //Use backend to upload
-        const uploadResult = await this.backend.uploadFiles(pathToArchive)
+        const uploadArgs: UploadFilesArtifactArgs = new UploadFilesArtifactArgs()
+        const uploadResult = await this.backend.uploadFiles(uploadArgs) //TODO: This is not valid.
         if (uploadResult.isErr()){
             return err(uploadResult.error)
         }
 
-        return ok(uploadResult.value)
+        return err(new Error("uploadFiles is not implemented."))
+        //return ok(uploadResult.value.getUuid())
     }
     // ====================================================================================================
     //                                       Private helper functions

@@ -6,5 +6,5 @@ import { Result } from "neverthrow";
 
 //This interface was created to support development of web api file uploading and Node.js file uploading.
 export interface GenericTgzArchiver {
-    createTgz(pathToArchive: string): Promise<Result<string, Error>>
+    createTgz(pathToArchive: string): Promise<Result<Uint8Array, Error>>
 }
