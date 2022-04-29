@@ -2,9 +2,7 @@
  * Copyright (c) 2022 - present Kurtosis Technologies Inc.
  * All Rights Reserved.
  */
-import "targz";
-import "fs";
-import "path";
+
 import "neverthrow"
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
 import {ok, err, Result} from "neverthrow";
@@ -15,10 +13,10 @@ const COMPRESSION_TEMP_FOLDER_PREFIX = "temp-node-archiver-compression-"
 export class NodeFileArchiver implements GenericTgzArchiver{
 
      public async createTgzByteArray(pathToArchive: string): Promise<Result<Uint8Array, Error>> {
-         const targz = require("targz")
-         const filesystemPromises = require("fs").promises
-         const filesystem = require("fs")
-         const path = require("path")
+         const targz = await import( /* webpackIgnore: true */ "targz")
+         const filesystemPromises = await import( /* webpackIgnore: true */ "fs/promises")
+         const filesystem = await import( /* webpackIgnore: true */ "fs")
+         const path = await import( /* webpackIgnore: true */ "path")
 
          //Check if it exists
          if (!filesystem.existsSync(pathToArchive)) {
@@ -26,23 +24,25 @@ export class NodeFileArchiver implements GenericTgzArchiver{
          }
 
          //Make directory for usage.
-         var absoluteTarPath
-         filesystemPromises.mkdtemp(COMPRESSION_TEMP_FOLDER_PREFIX)
+         const tempPathResponse = await filesystemPromises.mkdtemp(COMPRESSION_TEMP_FOLDER_PREFIX)
              .then((folder: string) => {
-                 absoluteTarPath = folder
+                 return ok(folder)
              })
              .catch((tempDirErr: Error) => {
                  return err(tempDirErr)
              });
+         if (tempPathResponse.isErr()) {
+             return err(new Error("Failed to create temporary directory for file compression."))
+         }
 
          const baseName = path.basename(pathToArchive) + COMPRESSION_EXTENSION
          const archiveOptions = {
              src: pathToArchive,
-             dest: path.join(absoluteTarPath, baseName),
+             dest: path.join(tempPathResponse.value, baseName),
          }
 
-         var error: Error | string | null = null
-         targz.compress(archiveOptions, (compressErr: Error) => {
+         var error: string | Error | null = null
+         targz.compress(archiveOptions, (compressErr: string | Error | null) => {
              error = compressErr
          })
          if (error != null) {
@@ -57,7 +57,7 @@ export class NodeFileArchiver implements GenericTgzArchiver{
          if (stats.size >= GRPC_DATA_TRANSFER_LIMIT) {
              return err(new Error("The files you are trying to upload, which are now compressed, exceed or reach 4mb, " +
                  "a limit imposed by gRPC. Please reduce the total file size and ensure it can compress to a size below 4mb."))
-         } else if (stats.length <= 0) {
+         } else if (stats.size <= 0) {
              return err(new Error("Something went wrong during compression. The compressed file size is 0 bytes."))
          }
 
@@ -67,6 +67,6 @@ export class NodeFileArchiver implements GenericTgzArchiver{
                  `The file size of ${stats.size} bytes and read size of ${data.length} bytes are not equal.`))
          }
 
-         return ok(data.buffer)
+         return ok(new Uint8Array(data.buffer))
     }
 }
