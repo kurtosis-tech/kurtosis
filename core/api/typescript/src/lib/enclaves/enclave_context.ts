@@ -45,7 +45,8 @@ import {
     newStoreFilesArtifactFromServiceArgs,
     newUnloadModuleArgs,
     newWaitForHttpGetEndpointAvailabilityArgs,
-    newWaitForHttpPostEndpointAvailabilityArgs
+    newWaitForHttpPostEndpointAvailabilityArgs,
+    newUploadFilesArtifactArgs
 } from "../constructor_calls";
 import type { ContainerConfig, FilesArtifactID } from "../services/container_config";
 import type { ServiceID } from "../services/service";
@@ -557,14 +558,14 @@ export class EnclaveContext {
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async uploadFiles(pathToArchive: string): Promise<Result<FilesArtifactID, Error>>  {
-        const uploadArgs: UploadFilesArtifactArgs = new UploadFilesArtifactArgs()
+
         const archiverResponse = await this.genericTgzArchiver.createTgzByteArray(pathToArchive)
         if (archiverResponse.isErr()){
             return err(archiverResponse.error)
         }
 
-        uploadArgs.setData(archiverResponse.value)
-        const uploadResult = await this.backend.uploadFiles(uploadArgs)
+        const args = newUploadFilesArtifactArgs(archiverResponse.value)
+        const uploadResult = await this.backend.uploadFiles(args)
         if (uploadResult.isErr()){
             return err(uploadResult.error)
         }

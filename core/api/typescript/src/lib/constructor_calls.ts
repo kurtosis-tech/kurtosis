@@ -23,7 +23,8 @@ import {
     GetModuleInfoArgs,
     Port,
     StoreWebFilesArtifactArgs,
-    StoreFilesArtifactFromServiceArgs
+    StoreFilesArtifactFromServiceArgs,
+    UploadFilesArtifactArgs
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceID } from './services/service';
 import { PartitionID } from './enclaves/enclave_context';
@@ -308,4 +309,13 @@ export function newStoreFilesArtifactFromServiceArgs(serviceId: string, sourcePa
     result.setServiceId(serviceId)
     result.setSourcePath(sourcePath)
     return result;
+}
+
+// ==============================================================================================
+//                                      Upload Files
+// ==============================================================================================
+export function newUploadFilesArtifactArgs(data: Uint8Array) : UploadFilesArtifactArgs {
+    const result: UploadFilesArtifactArgs = new UploadFilesArtifactArgs()
+    result.setData(data)
+    return result
 }
