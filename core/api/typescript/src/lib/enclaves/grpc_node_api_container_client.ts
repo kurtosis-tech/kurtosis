@@ -33,11 +33,6 @@ import {
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
 import { EnclaveID } from "./enclave_context";
-import "fs";
-import "os";
-import "path";
-
-const COMPRESSION_EXTENSION = ".tgz"
 
 export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 

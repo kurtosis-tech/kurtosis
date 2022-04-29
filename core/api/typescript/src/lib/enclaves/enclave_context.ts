@@ -55,10 +55,7 @@ import { ServiceContext } from "../services/service_context";
 import { PortProtocol, PortSpec } from "../services/port_spec";
 import type { GenericPathJoiner } from "./generic_path_joiner";
 import type { PartitionConnection } from "./partition_connection";
-import {UploadFilesArtifactArgs} from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
-import {NodeTgzArchiver} from "./node_file_archiver";
-import {WebTgzArchiver} from "./web_file_archiver";
 
 export type EnclaveID = string;
 export type PartitionID = string;
@@ -102,13 +99,16 @@ export class EnclaveContext {
         let genericTgzArchiver: GenericTgzArchiver
         let pathJoiner: GenericPathJoiner
         try {
+
             pathJoiner = await import("path-browserify")
             const apiContainerServiceWeb = await import("../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb")
 
             const apiContainerGrpcProxyUrl: string = `${ipAddress}:${apiContainerGrpcProxyPortNum}`
             const apiContainerClient = new apiContainerServiceWeb.ApiContainerServiceClient(apiContainerGrpcProxyUrl);
             genericApiContainerClient = new GrpcWebApiContainerClient(apiContainerClient, enclaveId)
-            genericTgzArchiver = new WebTgzArchiver()
+
+            const webFileArchiver = await import("./web_file_archiver")
+            genericTgzArchiver = new webFileArchiver.WebTgzArchiver()
         }catch(error) {
             if (error instanceof Error) {
                 return err(error);
@@ -145,7 +145,9 @@ export class EnclaveContext {
             const apiContainerGrpcUrl: string = `${ipAddress}:${apiContainerGrpcPortNum}`
             const apiContainerClient = new apiContainerServiceNode.ApiContainerServiceClient(apiContainerGrpcUrl, grpc_node.credentials.createInsecure());
             genericApiContainerClient = new GrpcNodeApiContainerClient(apiContainerClient, enclaveId)
-            genericTgzArchiver = new NodeTgzArchiver()
+
+            const nodeFileArchiver = await import(/* webpackIgnore: true */ "./node_file_archiver")
+            genericTgzArchiver = new nodeFileArchiver.NodeTgzArchiver()
         }catch(error) {
             if (error instanceof Error) {
                 return err(error);
