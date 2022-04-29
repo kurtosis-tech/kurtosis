@@ -78,4 +78,9 @@ export class ServiceContext {
         const execCommandResponse = execCommandResponseResult.value
         return ok([execCommandResponse.getExitCode(), execCommandResponse.getLogOutput()]);
     }
+
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    /*public async pauseService(serviceId: string, ): Promise<Error> {
+        this.client.
+    }*/
 }

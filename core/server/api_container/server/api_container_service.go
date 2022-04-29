@@ -362,12 +362,11 @@ func (service ApiContainerService) PauseService(ctx context.Context, args *kurto
 }
 
 func (service ApiContainerService) UnpauseService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnpauseServiceArgs) (*emptypb.Empty, error) {
-	// TODO TODO TODO FILL ME
 	serviceIdStr := args.ServiceId
 	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
 	err := service.serviceNetwork.UnpauseService(ctx, serviceId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to pause service %+v", serviceId)
+		return nil, stacktrace.Propagate(err, "Failed to unpause service %+v", serviceId)
 	}
 	return &emptypb.Empty{}, nil
 }

@@ -52,7 +52,6 @@ type serviceRunInfo struct {
 	privatePorts      map[string]*port_spec.PortSpec
 	maybePublicIpAddr net.IP                         // Can be nil if the service doesn't declare any private ports
 	maybePublicPorts  map[string]*port_spec.PortSpec // Will be nil if the service doesn't declare any private ports
-	isPaused		  bool 	// true if processes are paused, false otherwise
 }
 
 /*
@@ -406,14 +405,11 @@ func (network *ServiceNetworkImpl) PauseService(
 		return stacktrace.NewError("Can not pause service '%v', service already paused.",
 			serviceId)
 	}
-	logrus.Infof("Service network calling pause service on service id %+v.", serviceId)
-	serviceGuid := runInfo.serviceGUID
-	err := network.kurtosisBackend.PauseService(ctx, network.enclaveId, serviceGuid)
+	err := network.kurtosisBackend.PauseService(ctx, network.enclaveId, runInfo.serviceGUID)
 	if err != nil {
 		return stacktrace.Propagate(err,"Failed to pause service '%v'", serviceId)
 	}
 	network.pausedServices[serviceId] = true
-	logrus.Infof("Service network called pause service on service id '%+v' and didn't get an error.", serviceId)
 	return nil
 }
 
@@ -436,7 +432,6 @@ func (network *ServiceNetworkImpl) UnpauseService(
 		return stacktrace.NewError("Can not unpause service '%v', service is not paused.",
 			serviceId)
 	}
-	logrus.Infof("Service network calling unpause service on service id %+v.", serviceId)
 	err := network.kurtosisBackend.UnpauseService(ctx, network.enclaveId, runInfo.serviceGUID)
 	if err != nil {
 		return stacktrace.Propagate(err,"Failed to pause service '%v'", serviceId)

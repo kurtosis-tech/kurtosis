@@ -93,7 +93,10 @@ func (self *ServiceContext) PauseService() error {
 	serviceId := self.serviceId
 	args := binding_constructors.NewPauseServiceArgs(string(serviceId))
 	_, err := self.client.PauseService(context.Background(), args)
-	return err
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to pause service '%+v'", serviceId)
+	}
+	return nil
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -101,5 +104,8 @@ func (self *ServiceContext) UnpauseService() error {
 	serviceId := self.serviceId
 	args := binding_constructors.NewUnpauseServiceArgs(string(serviceId))
 	_, err := self.client.UnpauseService(context.Background(), args)
-	return err
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to unpause service '%+v'", serviceId)
+	}
+	return nil
 }
