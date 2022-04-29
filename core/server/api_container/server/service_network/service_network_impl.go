@@ -253,8 +253,6 @@ func (network *ServiceNetworkImpl) StartService(
 	cmdArgs []string,
 	dockerEnvVars map[string]string,
 	enclaveDataDirMntDirpath string,
-	// TODO REMOVE
-	oldFilesArtifactMountDirpaths map[service.FilesArtifactID]string,
 	filesArtifactMountDirpaths map[service.FilesArtifactID]string,
 ) (
 	resultMaybePublicIpAddr net.IP, // Will be nil if the service doesn't declare any private ports
@@ -318,7 +316,6 @@ func (network *ServiceNetworkImpl) StartService(
 		cmdArgs,
 		dockerEnvVars,
 		enclaveDataDirMntDirpath,
-		oldFilesArtifactMountDirpaths,
 		filesArtifactMountDirpaths,
 	)
 	if err != nil {

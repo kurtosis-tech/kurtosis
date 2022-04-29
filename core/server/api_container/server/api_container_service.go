@@ -194,11 +194,6 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 		}
 		privateServicePortSpecs[portId] = privateServicePortSpec
 	}
-	// TODO REMOVE
-	oldFilesArtifactMountDirPathsKeyedByFilesArtifactId := map[kurtosis_backend_service.FilesArtifactID]string{}
-	for filesArtifactIdStr, mountDirPath := range args.FilesArtifactMountDirpaths {
-		oldFilesArtifactMountDirPathsKeyedByFilesArtifactId[kurtosis_backend_service.FilesArtifactID(filesArtifactIdStr)] = mountDirPath
-	}
 	filesArtifactMountpointsByArtifactId := map[kurtosis_backend_service.FilesArtifactID]string{}
 	for filesArtifactIdStr, mountDirPath := range args.FilesArtifactMountpoints {
 		filesArtifactMountpointsByArtifactId[kurtosis_backend_service.FilesArtifactID(filesArtifactIdStr)] = mountDirPath
@@ -212,7 +207,6 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 		args.CmdArgs,
 		args.DockerEnvVars,
 		args.EnclaveDataDirMntDirpath,
-		oldFilesArtifactMountDirPathsKeyedByFilesArtifactId,
 		filesArtifactMountpointsByArtifactId,
 	)
 	if err != nil {
