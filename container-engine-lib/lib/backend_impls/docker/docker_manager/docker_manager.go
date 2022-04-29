@@ -717,8 +717,8 @@ func (manager DockerManager) PauseContainer(context context.Context, containerId
 }
 
 /*
-PauseContainer
-Pauses all processes running in the given container, but does not shut it down.
+UnpauseContainer
+Unpauses all processes running in the given container.
 */
 func (manager DockerManager) UnpauseContainer(context context.Context, containerId string) error {
 	err := manager.dockerClient.ContainerUnpause(context, containerId)
