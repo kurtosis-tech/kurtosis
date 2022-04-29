@@ -46,10 +46,8 @@ export class NodeTgzArchiver implements GenericTgzArchiver{
                 if (callbackErr !== null) {
                     resolve(err(new Error(callbackErr.toString())))
                     return
-                } else {
-                    resolve(ok(null))
-                    return
                 }
+                resolve(ok(null))
              });
          })
          const targzResult = await targzPromise
@@ -65,7 +63,9 @@ export class NodeTgzArchiver implements GenericTgzArchiver{
          if (stats.size >= GRPC_DATA_TRANSFER_LIMIT) {
              return err(new Error("The files you are trying to upload, which are now compressed, exceed or reach 4mb, " +
                  "a limit imposed by gRPC. Please reduce the total file size and ensure it can compress to a size below 4mb."))
-         } else if (stats.size <= 0) {
+         }
+
+         if (stats.size <= 0) {
              return err(new Error("Something went wrong during compression. The compressed file size is 0 bytes."))
          }
 
