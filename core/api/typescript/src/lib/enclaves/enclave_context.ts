@@ -544,7 +544,7 @@ export class EnclaveContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public async storeFilesFromService(serviceId: ServiceID, absoluteFilepathOnServiceContainer: string): Promise<Result<FilesArtifactID, Error>> {
+    public async storeServiceFiles(serviceId: ServiceID, absoluteFilepathOnServiceContainer: string): Promise<Result<FilesArtifactID, Error>> {
         const args = newStoreFilesArtifactFromServiceArgs(serviceId, absoluteFilepathOnServiceContainer)
         const storeFilesArtifactFromServiceResponseResult = await this.backend.storeFilesArtifactFromService(args)
         if (storeFilesArtifactFromServiceResponseResult.isErr()) {

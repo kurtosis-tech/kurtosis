@@ -179,7 +179,7 @@ Downloads a files-containing `.tgz` from the given URL to the Kurtosis engine, s
 
 * `uuid`: A unique ID as a string identifying the downloaded, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
-### storeFilesFromService(ServiceID serviceId, String absoluteFilepathOnServiceContainer)
+### storeServiceFiles(ServiceID serviceId, String absoluteFilepathOnServiceContainer)
 Copy a file or folder from a service container to the Kurtosis filestore for use with [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints]
 
 **Args**

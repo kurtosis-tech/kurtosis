@@ -487,7 +487,7 @@ func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreW
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (EnclaveContext *EnclaveContext) StoreFilesFromService(ctx context.Context, serviceId services.ServiceID, absoluteFilepathOnServiceContainer string) (services.FilesArtifactID, error) {
+func (EnclaveContext *EnclaveContext) StoreServiceFiles(ctx context.Context, serviceId services.ServiceID, absoluteFilepathOnServiceContainer string) (services.FilesArtifactID, error) {
 	serviceIdStr := string(serviceId)
 	args := binding_constructors.NewStoreFilesArtifactFromServiceArgs(serviceIdStr, absoluteFilepathOnServiceContainer)
 	response, err := EnclaveContext.client.StoreFilesArtifactFromService(ctx, args)
