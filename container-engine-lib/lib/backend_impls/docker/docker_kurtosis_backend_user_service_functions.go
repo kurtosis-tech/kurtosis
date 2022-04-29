@@ -201,7 +201,6 @@ func (backend *DockerKurtosisBackend) PauseService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceId service.ServiceGUID) error {
-	logrus.Infof("Pause service called on service %+v in enclave %+v", serviceId, enclaveId)
 	containerId, _, err := backend.getSingleUserService(ctx, enclaveId, serviceId)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get information about service %+v from Kurtosis backend.", serviceId)
@@ -217,7 +216,6 @@ func (backend *DockerKurtosisBackend) UnpauseService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceId service.ServiceGUID) error {
-	logrus.Infof("Unpause service called on service %+v in enclave %+v", serviceId, enclaveId)
 	containerId, _, err := backend.getSingleUserService(ctx, enclaveId, serviceId)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get information about service %+v from Kurtosis backend.", serviceId)
@@ -252,8 +250,6 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 		},
 		GUIDs: userServiceGuids,
 	}
-
-	logrus.Infof("running exec command TODO TODO TODO REMOVE THIS")
 
 	userServices, err := backend.getMatchingUserServices(ctx, filters)
 	if err != nil {
