@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	testName = "files-artifact-mounting"
+	testName = "duplicate-files-artifact-mount"
 	isPartitioningEnabled = false
 
 	image                        = "flashspys/nginx-static"
@@ -36,13 +36,13 @@ func TestStoreWebFiles(t *testing.T) {
 	secondFilesArtifactId, err := enclaveCtx.StoreWebFiles(context.Background(), testFilesArtifactUrl)
 	require.NoError(t, err, "An error occurred storing the second files artifact")
 
-	// ------------------------------------- TEST RUN ----------------------------------------------
 	filesArtifactMountpoints := map[services.FilesArtifactID]string{
 		firstFilesArtifactId: userServiceMountPointForTestFilesArtifact,
 		secondFilesArtifactId: userServiceMountPointForTestFilesArtifact,
 	}
 	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactMountpoints)
 
+	// ------------------------------------- TEST RUN ----------------------------------------------
 	_, err = enclaveCtx.AddService(serviceId, fileServerContainerConfigSupplier)
 	require.Errorf(
 		t,

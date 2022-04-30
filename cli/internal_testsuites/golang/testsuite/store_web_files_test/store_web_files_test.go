@@ -19,7 +19,6 @@ const (
 
 	fileServerServiceImage                          = "flashspys/nginx-static"
 	fileServerServiceId          services.ServiceID = "file-server"
-	secondFileServerServiceId    services.ServiceID = "second-file-server"
 	fileServerPortId = "http"
 	fileServerPrivatePortNum = 80
 
@@ -37,8 +36,6 @@ const (
 	expectedFile2Contents = "file2\n"
 
 	userServiceMountPointForTestFilesArtifact = "/static"
-
-	duplicateMountpointDockerDaemonErrMsgSentence = "Duplicate mount point"
 )
 var fileServerPortSpec = services.NewPortSpec(
 	fileServerPrivatePortNum,
@@ -107,18 +104,6 @@ func TestStoreWebFiles(t *testing.T) {
 		file2Contents,
 		expectedFile2Contents,
 	)
-
-	//TODO the error is detected in Docker, it is enough for now, but we should capture it in Kurt Core for optimization and decoupling
-	secondFilesArtifactId, err := enclaveCtx.StoreWebFiles(context.Background(), testFilesArtifactUrl)
-	require.NoError(t, err, "An error occurred storing the second files artifacts")
-	duplicateFilesArtifactMountpoints := map[services.FilesArtifactID]string{
-		filesArtifactId:      userServiceMountPointForTestFilesArtifact,
-		secondFilesArtifactId: userServiceMountPointForTestFilesArtifact,
-	}
-	wrongFileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(duplicateFilesArtifactMountpoints)
-	_, err = enclaveCtx.AddService(secondFileServerServiceId, wrongFileServerContainerConfigSupplier)
-	require.Errorf(t, err, "Adding service '%v' should have failed and did not, because duplicated files artifact mountpoints '%v' should throw an error", secondFileServerServiceId, duplicateFilesArtifactMountpoints)
-	require.Contains(t, err.Error(), duplicateMountpointDockerDaemonErrMsgSentence, "Adding service '%v' has failed, but the error is not the duplicated-files-artifact-mountpoints-error that we expected, this is throwing this error instead:\n%v", secondFileServerServiceId, err.Error())
 }
 
 // ====================================================================================================

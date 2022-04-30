@@ -12,7 +12,6 @@ const FILE_SERVER_SERVICE_ID: ServiceID = "file-server"
 const FILE_SERVER_PORT_ID = "http"
 const FILE_SERVER_PRIVATE_PORT_NUM = 80
 
-const TEST_FILES_ARTIFACT_ID: FilesArtifactID = "test-files-artifact"
 const TEST_FILES_ARTIFACT_URL = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
 
 const FILE_SERVER_PORT_SPEC = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, PortProtocol.TCP )
@@ -32,16 +31,13 @@ test("Test destroy enclave", async () => {
     try {
 
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const filesArtifacts = new Map<string,FilesArtifactID>()
-        filesArtifacts.set(TEST_FILES_ARTIFACT_ID, TEST_FILES_ARTIFACT_URL)
-        const registerFilesArtifactsResult = await enclaveContext.registerFilesArtifacts(filesArtifacts);
-
-        if(registerFilesArtifactsResult.isErr()) { throw registerFilesArtifactsResult.error }
+        const storeWebFilesResult = await enclaveContext.storeWebFiles(TEST_FILES_ARTIFACT_URL);
+        if(storeWebFilesResult.isErr()) { throw storeWebFilesResult.error }
+        const filesArtifactId = storeWebFilesResult.value;
 
         const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier()
 
         const addServiceResult = await enclaveContext.addService(FILE_SERVER_SERVICE_ID, fileServerContainerConfigSupplier)
-
         if(addServiceResult.isErr()){ throw addServiceResult.error }
 
         const serviceContext = addServiceResult.value
@@ -76,19 +72,19 @@ test("Test destroy enclave", async () => {
 //                                       Private helper functions
 // ====================================================================================================
 
-function getFileServerContainerConfigSupplier(): (ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error> {
+function getFileServerContainerConfigSupplier(filesArtifactId: FilesArtifactID): (ipAddr: string) => Result<ContainerConfig, Error> {
 
-    const containerConfigSupplier = (ipAddr:string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
+    const containerConfigSupplier = (ipAddr:string): Result<ContainerConfig, Error> => {
 
         const usedPorts = new Map<string, PortSpec>()
         usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
 
-        const filesArtifacts = new Map<string, FilesArtifactID>()
-        filesArtifacts.set(TEST_FILES_ARTIFACT_ID, "/static")
+        const filesArtifactMountpoints = new Map<FilesArtifactID, string>
+        filesArtifactMountpoints.set(filesArtifactId, )
 
         const containerConfig = new ContainerConfigBuilder(FILE_SERVER_SERVICE_IMAGE)
             .withUsedPorts(usedPorts)
-            .withFilesArtifacts(filesArtifacts)
+            .withFiles(filesArtifacts)
             .build()
 
         return ok(containerConfig)
