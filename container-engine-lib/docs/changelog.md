@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Added `PauseService` and `UnpauseService` to `KurtosisBackend`
+* Added docker implementation of `PauseService` and `UnpauseService`
 
 # 0.16.0
 ### Removals
@@ -21,7 +24,6 @@
 
 # 0.15.1
 ### Features
-* `DockerKurtosisBackend.CreateEnclave` also creates an enclave data volume
 * The enclave data volume gets mounted on all services
 * Updated `DockerKurtosisBackend.CreateEnclave`, now also creates an enclave data volume
 * Parallelized several operations to improve perf:
@@ -37,8 +39,6 @@
     * `DockerKurtosisBackend.DestroyNetworkingSidecars`
     * `DockerKurtosisBackend.StopUserServices`
     * `DockerKurtosisBackend.DestroyUserServices`
-* Added `PauseService` and `UnpauseService` to `KurtosisBackend`
-* Added docker implementation of `PauseService` and `UnpauseService`
 
 
 # 0.15.0
