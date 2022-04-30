@@ -2,6 +2,7 @@ import {err, ok, Result, Err} from "neverthrow";
 import * as filesystem from "fs"
 import * as path from "path"
 import * as os from "os";
+import {createEnclave} from "../../test_helpers/enclave_setup";
 
 const ARCHIVE_ROOT_DIRECTORY_TEST_PATTERN = "upload-test-"
 const ARCHIVE_SUBDIRECTORY_TEST_PATTERN = "sub-folder-"
@@ -15,10 +16,20 @@ const NUMBER_OF_TEMP_FILES_IN_ROOT_DIRECTORY = 1
 const ENCLAVE_TEST_NAME = "upload-files-test"
 const IS_PARTITIONING_ENABLED = true
 
+jest.setTimeout(180000)
+
 test("Test Upload Files", async () => {
-    //Make directory for usage.
     const tempDirectory = await createTestFolderToUpload()
     if (tempDirectory.isErr()) { throw tempDirectory.error }
+    const pathToUpload = tempDirectory.value
+
+    const createEnclaveResult = await createEnclave(ENCLAVE_TEST_NAME, IS_PARTITIONING_ENABLED)
+    if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
+    const enclaveCtx = createEnclaveResult.value.enclaveContext
+
+    const uploadResults = await enclaveCtx.uploadFiles(pathToUpload)
+    if(uploadResults.isErr()) { throw uploadResults.error }
+    jest.clearAllTimers()
 })
 
 //========================================================================
