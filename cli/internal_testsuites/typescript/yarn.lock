@@ -1996,6 +1996,10 @@ kurtosis-core-api-lib@1.42.5:
     neverthrow "^4.2.2"
     path-browserify "^1.0.1"
 
+kurtosis-core-api-lib@kurtosis-tech/kurtosis-core-api-lib#gmarchetti/expose-docker-pause-unpause:
+  version "0.0.0"
+  resolved "https://codeload.github.com/kurtosis-tech/kurtosis-core-api-lib/tar.gz/ad21d7d2bf8e650999b6341dc7f6daa386cfd6cf"
+
 kurtosis-engine-api-lib@1.14.4:
   version "1.14.4"
   resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.14.4.tgz#c21ff012f588f22df933e4bc569baf223682f7fb"
