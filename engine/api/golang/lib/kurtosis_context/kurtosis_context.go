@@ -223,7 +223,6 @@ func newEnclaveContextFromEnclaveInfo(
 	result := enclaves.NewEnclaveContext(
 		apiContainerClient,
 		enclaves.EnclaveID(enclaveInfo.EnclaveId),
-		enclaveInfo.EnclaveDataDirpathOnHostMachine,
 	)
 
 	return result, nil
