@@ -1,18 +1,18 @@
 package upload_files_test
 
 import (
-	"testing"
-	"io/ioutil"
-	"github.com/kurtosis-tech/stacktrace"
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/require"
+	"io/ioutil"
+	"testing"
 )
 
 const archiveRootDirectoryTestPattern = "upload-test-"
 const archiveSubDirectoryTestPattern = "sub-folder-"
 const archiveFileTestPattern = "test-file-"
-const archiveTestFileContent = "This is file is for testing purposes."
+const archiveTestFileContent = "This file is for testing purposes."
 
 const numberOfTempTestFilesToCreateInSubDir = 3
 const numberOfTempTestFilesToCreateInRootDir = 1
@@ -32,6 +32,7 @@ func TestUploadFiles(t *testing.T) {
 	require.NoError(t, err)
 	println(uuid)
 }
+
 //========================================================================
 // Helpers
 //========================================================================
@@ -55,7 +56,7 @@ func createTestFiles(pathToCreateAt string, fileCount int) error {
 //Where x is numberOfTempTestFilesToCreateInRootDir
 //Where y is numberOfTempTestFilesToCreateInSubDir
 func createTestFolderToUpload() (string, error) {
-	baseTempDirPath, err := ioutil.TempDir("",archiveRootDirectoryTestPattern)
+	baseTempDirPath, err := ioutil.TempDir("", archiveRootDirectoryTestPattern)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to create a temporary root directory for testing.")
 	}
@@ -67,13 +68,13 @@ func createTestFolderToUpload() (string, error) {
 			baseTempDirPath)
 	}
 
-	if err = createTestFiles(tempSubDirectory, numberOfTempTestFilesToCreateInSubDir);  err != nil {
+	if err = createTestFiles(tempSubDirectory, numberOfTempTestFilesToCreateInSubDir); err != nil {
 		return "", stacktrace.Propagate(err, "Failed to create archive test files at '%s'.",
 			tempSubDirectory)
 	}
 
 	if err := createTestFiles(baseTempDirPath, numberOfTempTestFilesToCreateInRootDir); err != nil {
-		return "", stacktrace.Propagate(err,"Failed to create archive test files in your root directory at '%s'.",
+		return "", stacktrace.Propagate(err, "Failed to create archive test files in your root directory at '%s'.",
 			baseTempDirPath)
 	}
 	return baseTempDirPath, nil
