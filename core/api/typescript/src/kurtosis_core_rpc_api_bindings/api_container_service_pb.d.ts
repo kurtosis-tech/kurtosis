@@ -231,9 +231,6 @@ export class RegisterServiceResponse extends jspb.Message {
   getPrivateIpAddr(): string;
   setPrivateIpAddr(value: string): RegisterServiceResponse;
 
-  getRelativeServiceDirpath(): string;
-  setRelativeServiceDirpath(value: string): RegisterServiceResponse;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RegisterServiceResponse.AsObject;
   static toObject(includeInstance: boolean, msg: RegisterServiceResponse): RegisterServiceResponse.AsObject;
@@ -245,7 +242,6 @@ export class RegisterServiceResponse extends jspb.Message {
 export namespace RegisterServiceResponse {
   export type AsObject = {
     privateIpAddr: string,
-    relativeServiceDirpath: string,
   }
 }
 
@@ -272,12 +268,6 @@ export class StartServiceArgs extends jspb.Message {
   getDockerEnvVarsMap(): jspb.Map<string, string>;
   clearDockerEnvVarsMap(): StartServiceArgs;
 
-  getEnclaveDataDirMntDirpath(): string;
-  setEnclaveDataDirMntDirpath(value: string): StartServiceArgs;
-
-  getFilesArtifactMountDirpathsMap(): jspb.Map<string, string>;
-  clearFilesArtifactMountDirpathsMap(): StartServiceArgs;
-
   getFilesArtifactMountpointsMap(): jspb.Map<string, string>;
   clearFilesArtifactMountpointsMap(): StartServiceArgs;
 
@@ -297,8 +287,6 @@ export namespace StartServiceArgs {
     entrypointArgsList: Array<string>,
     cmdArgsList: Array<string>,
     dockerEnvVarsMap: Array<[string, string]>,
-    enclaveDataDirMntDirpath: string,
-    filesArtifactMountDirpathsMap: Array<[string, string]>,
     filesArtifactMountpointsMap: Array<[string, string]>,
   }
 }
@@ -356,12 +344,6 @@ export class GetServiceInfoResponse extends jspb.Message {
   getPublicPortsMap(): jspb.Map<string, Port>;
   clearPublicPortsMap(): GetServiceInfoResponse;
 
-  getEnclaveDataDirMountDirpath(): string;
-  setEnclaveDataDirMountDirpath(value: string): GetServiceInfoResponse;
-
-  getRelativeServiceDirpath(): string;
-  setRelativeServiceDirpath(value: string): GetServiceInfoResponse;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetServiceInfoResponse.AsObject;
   static toObject(includeInstance: boolean, msg: GetServiceInfoResponse): GetServiceInfoResponse.AsObject;
@@ -376,8 +358,6 @@ export namespace GetServiceInfoResponse {
     privatePortsMap: Array<[string, Port.AsObject]>,
     publicIpAddr: string,
     publicPortsMap: Array<[string, Port.AsObject]>,
-    enclaveDataDirMountDirpath: string,
-    relativeServiceDirpath: string,
   }
 }
 

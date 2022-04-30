@@ -12,8 +12,6 @@ export class ContainerConfig {
     constructor(
         public readonly image: string,
         public readonly usedPorts: Map<string, PortSpec>,
-        // TODO REMOVE
-        public readonly oldFilesArtifactMountpoints: Map<FilesArtifactID, string>,
         public readonly filesArtifactMountpoints: Map<FilesArtifactID, string>,
         public readonly entrypointOverrideArgs: string[],
         public readonly cmdOverrideArgs: string[],
@@ -31,7 +29,6 @@ export class ContainerConfig {
 export class ContainerConfigBuilder {
     private readonly image: string;
     private usedPorts: Map<string, PortSpec>;
-    private oldFilesArtifactMountpoints: Map<FilesArtifactID, string>;
     private filesArtifactMountpoints: Map<FilesArtifactID, string>;
     private entrypointOverrideArgs: string[];
 	private cmdOverrideArgs: string[];
@@ -40,7 +37,6 @@ export class ContainerConfigBuilder {
     constructor (image: string) {
         this.image = image;
         this.usedPorts = new Map();
-        this.oldFilesArtifactMountpoints = new Map();
         this.filesArtifactMountpoints = new Map();
         this.entrypointOverrideArgs = [];
         this.cmdOverrideArgs = [];
@@ -49,11 +45,6 @@ export class ContainerConfigBuilder {
 
     public withUsedPorts(usedPorts: Map<string, PortSpec>): ContainerConfigBuilder {
         this.usedPorts = usedPorts;
-        return this;
-    }
-
-    public withFilesArtifacts(filesArtifactMountpoints: Map<FilesArtifactID, string>): ContainerConfigBuilder {
-        this.oldFilesArtifactMountpoints = filesArtifactMountpoints;
         return this;
     }
 
@@ -81,7 +72,6 @@ export class ContainerConfigBuilder {
         return new ContainerConfig(
             this.image,
             this.usedPorts,
-            this.oldFilesArtifactMountpoints,
             this.filesArtifactMountpoints,
             this.entrypointOverrideArgs,
             this.cmdOverrideArgs,

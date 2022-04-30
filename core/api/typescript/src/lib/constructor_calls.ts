@@ -108,9 +108,6 @@ export function newStartServiceArgs(
     entrypointArgs: string[],
     cmdArgs: string[],
     dockerEnvVars: Map<string, string>,
-    enclaveDataDirMntDirpath: string,
-    // TODO REMOVE
-    oldFilesArtifactMountDirpaths: Map<string, string>,
     filesArtifactMountDirpaths: Map<string, string>,
 ): StartServiceArgs {
     const result: StartServiceArgs = new StartServiceArgs();
@@ -131,11 +128,6 @@ export function newStartServiceArgs(
     const dockerEnvVarArray: jspb.Map<string, string> = result.getDockerEnvVarsMap();
     for (const [name, value] of dockerEnvVars.entries()) {
         dockerEnvVarArray.set(name, value);
-    }
-    result.setEnclaveDataDirMntDirpath(enclaveDataDirMntDirpath);
-    const oldFilesArtificatMountDirpathsMap: jspb.Map<string, string> = result.getFilesArtifactMountDirpathsMap();
-    for (const [artifactId, mountDirpath] of oldFilesArtifactMountDirpaths.entries()) {
-        oldFilesArtificatMountDirpathsMap.set(artifactId, mountDirpath);
     }
     const filesArtificatMountDirpathsMap: jspb.Map<string, string> = result.getFilesArtifactMountpointsMap();
     for (const [artifactId, mountDirpath] of filesArtifactMountDirpaths.entries()) {
