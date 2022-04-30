@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Added `PauseService` and `UnpauseService` to `KurtosisBackend`
+* Added docker implementation of `PauseService` and `UnpauseService`
 
 # 0.16.0
 ### Removals

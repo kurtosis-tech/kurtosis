@@ -263,6 +263,24 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
+	// Pauses execution of all processes on a service, but does not shut down the service (memory state is preserved)
+	PauseService(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		serviceId service.ServiceGUID,
+	) (
+		resultErr error,
+	)
+
+	// Unpauses a service, resuming execution of all processes on the service that were previously paused.
+	UnpauseService(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		serviceId service.ServiceGUID,
+	) (
+		resultErr error,
+	)
+
 	// Wait for succesful http endpoint response which can be used to check if the service is available
 	WaitForUserServiceHttpEndpointAvailability(
 		ctx context.Context,
@@ -403,7 +421,7 @@ type KurtosisBackend interface {
 		destVolMntDirpathOnExpander string,
 		filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
 		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
-	)(
+	) (
 		*files_artifact_expander.FilesArtifactExpander,
 		error,
 	)
