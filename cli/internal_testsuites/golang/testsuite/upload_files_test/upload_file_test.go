@@ -4,6 +4,9 @@ import (
 	"testing"
 	"io/ioutil"
 	"github.com/kurtosis-tech/stacktrace"
+	"context"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
+	"github.com/stretchr/testify/require"
 )
 
 const archiveRootDirectoryTestPattern = "upload-test-"
@@ -14,8 +17,20 @@ const archiveTestFileContent = "This is file is for testing purposes."
 const numberOfTempTestFilesToCreateInSubDir = 3
 const numberOfTempTestFilesToCreateInRootDir = 1
 
-func TestUploadFiles(t *testing.T) {
+const enclaveTestName = "upload-files-test"
+const isPartitioningEnabled = true
 
+func TestUploadFiles(t *testing.T) {
+	ctx := context.Background()
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, enclaveTestName, isPartitioningEnabled)
+	require.NoError(t, err, "An error occurred creating an enclave")
+	defer destroyEnclaveFunc()
+
+	pathToUpload, err := createTestFolderToUpload()
+	require.NoError(t, err)
+	uuid, err := enclaveCtx.UploadFiles(pathToUpload)
+	require.NoError(t, err)
+	println(uuid)
 }
 //========================================================================
 // Helpers
