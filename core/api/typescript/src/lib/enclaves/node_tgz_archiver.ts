@@ -9,7 +9,7 @@ import {ok, err, Result} from "neverthrow";
 import * as targz from "targz"
 import * as filesystem from "fs"
 import * as path from "path"
-
+import * as os from "os";
 
 const COMPRESSION_EXTENSION = ".tgz"
 const GRPC_DATA_TRANSFER_LIMIT = 3999000 //3.999 Mb. 1kb wiggle room. 1kb being about the size of a 2 paragraph readme.
@@ -23,13 +23,14 @@ export class NodeTgzArchiver implements GenericTgzArchiver{
          }
 
          //Make directory for usage.
-         const tempPathResponse = await filesystem.promises.mkdtemp(COMPRESSION_TEMP_FOLDER_PREFIX)
-             .then((folder: string) => {
-                 return ok(folder)
-             })
-             .catch((tempDirErr: Error) => {
-                 return err(tempDirErr)
-             });
+         const osTempDirpath = os.tmpdir()
+         const tempPathResponse = await filesystem.promises.mkdtemp(
+             path.join(osTempDirpath, COMPRESSION_TEMP_FOLDER_PREFIX),
+         ).then((folder: string) => {
+             return ok(folder)
+         }).catch((tempDirErr: Error) => {
+             return err(tempDirErr)
+         });
          if (tempPathResponse.isErr()) {
              return err(new Error("Failed to create temporary directory for file compression."))
          }
