@@ -356,7 +356,7 @@ func (service ApiContainerService) PauseService(ctx context.Context, args *kurto
 	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
 	err := service.serviceNetwork.PauseService(ctx, serviceId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to pause service %+v", serviceId)
+		return nil, stacktrace.Propagate(err, "Failed to pause service %v", serviceId)
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -366,7 +366,7 @@ func (service ApiContainerService) UnpauseService(ctx context.Context, args *kur
 	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
 	err := service.serviceNetwork.UnpauseService(ctx, serviceId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to unpause service %+v", serviceId)
+		return nil, stacktrace.Propagate(err, "Failed to unpause service %v", serviceId)
 	}
 	return &emptypb.Empty{}, nil
 }

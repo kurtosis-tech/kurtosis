@@ -94,7 +94,7 @@ func (self *ServiceContext) PauseService() error {
 	args := binding_constructors.NewPauseServiceArgs(string(serviceId))
 	_, err := self.client.PauseService(context.Background(), args)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to pause service '%+v'", serviceId)
+		return stacktrace.Propagate(err, "Failed to pause service '%v'", serviceId)
 	}
 	return nil
 }
@@ -105,7 +105,7 @@ func (self *ServiceContext) UnpauseService() error {
 	args := binding_constructors.NewUnpauseServiceArgs(string(serviceId))
 	_, err := self.client.UnpauseService(context.Background(), args)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to unpause service '%+v'", serviceId)
+		return stacktrace.Propagate(err, "Failed to unpause service '%v'", serviceId)
 	}
 	return nil
 }
