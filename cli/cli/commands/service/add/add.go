@@ -299,7 +299,6 @@ func getEnclaveContextFromEnclaveInfo(infoForEnclave *kurtosis_engine_rpc_api_bi
 	enclaveCtx := enclaves.NewEnclaveContext(
 		apiContainerClient,
 		enclaves.EnclaveID(enclaveId),
-		infoForEnclave.EnclaveDataDirpathOnHostMachine,
 	)
 
 	return enclaveCtx, nil
@@ -312,7 +311,7 @@ func getContainerConfigSupplier(
 	entrypoint string,
 	envvarsStr string,
 	filesArtifactMountsStr string,
-) (func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error), error) {
+) (func(ipAddr string) (*services.ContainerConfig, error), error) {
 	envvarsMap, err := parseEnvVarsStr(envvarsStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing environment variables string '%v'", envvarsStr)
@@ -328,7 +327,7 @@ func getContainerConfigSupplier(
 		return nil, stacktrace.Propagate(err, "An error occurred parsing files artifact mounts string '%v'", filesArtifactMountsStr)
 	}
 
-	return func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+	return func(ipAddr string) (*services.ContainerConfig, error) {
 		ipReplacedCmdArgs := []string{}
 		for _, arg := range cmdArgs {
 			newArg := strings.ReplaceAll(arg, serviceIpAddrReplaceKeyword, ipAddr)
