@@ -40,7 +40,7 @@
         "loglevel": "^1.7.1",
         "neverthrow": "^4.2.2",
         "path-browserify": "^1.0.1",
-        "targz": "^1.0.1"
+        "tar": "^6.1.11"
     },
     "devDependencies": {
         "@types/chai": "^4.2.21",
