@@ -1,3 +1,4 @@
+/*
 import { ContainerConfig, ContainerConfigBuilder, ServiceID, SharedPath } from "kurtosis-core-api-lib";
 import log from "loglevel"
 import { ok, Result, err } from "neverthrow";
@@ -127,3 +128,5 @@ function generateFileInServiceContainer(relativePath: string, contents: string, 
 
     return ok(null)
 };
+
+ */

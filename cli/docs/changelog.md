@@ -5,8 +5,8 @@
 * Added a dedicated test for testing if files artifacts get mounted to the same location
 
 ### Changes
-* Upgraded `kurtosis core lib` to 1.45.0 which adds `EnclaveContext.StoreFilesFromService`  and removes `EnclaveContext.RegisterFilesArtifacts`
-* Upgraded `kurtosis engine lib` to 1.17.0
+* Upgraded `kurtosis core lib` to 1.45.3 which adds `EnclaveContext.StoreFilesFromService`  and removes `EnclaveContext.RegisterFilesArtifacts`
+* Upgraded `kurtosis engine lib` to 1.17.3
 
 ### Breaking Changes
 * Upgraded the engine to v1.17.0

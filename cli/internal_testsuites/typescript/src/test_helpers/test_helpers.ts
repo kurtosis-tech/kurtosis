@@ -17,6 +17,7 @@ import log from "loglevel";
 import * as fs from 'fs';
 import * as path from "path";
 import {create} from "domain";
+import * as os from "os";
 
 const CONFIG_FILENAME = "config.json"
 const CONFIG_MOUNTPATH_ON_API_CONTAINER = "/config"
@@ -245,9 +246,13 @@ function getApiServiceContainerConfigSupplier(
 }
 
 async function createApiConfigFile(datastoreIP: string): Promise<Result<string, Error>> {
-    const mkdirResult = await fs.promises.mkdtemp("")
-        .then((result) => ok(result))
-        .catch((mkdirErr) => err(mkdirErr))
+    const mkdirResult = await fs.promises.mkdtemp(
+        `${os.tmpdir()}${path.sep}`,
+    ).then(
+        (result) => ok(result),
+    ).catch(
+        (mkdirErr) => err(mkdirErr),
+    )
     if (mkdirResult.isErr()) {
         return err(mkdirResult.error);
     }
