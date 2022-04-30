@@ -44,7 +44,7 @@ func TestPauseUnpause(t *testing.T) {
 	logrus.Infof("Paused service!")
 	require.NoError(t, err, "An error occurred unpausing")
 	time.Sleep(10 * time.Second)
-	serviceCtx.UnpauseService()
+	err = serviceCtx.UnpauseService()
 	require.NoError(t, err, "An error occurred unpausing")
 	logrus.Infof("Unpaused service!")
 	time.Sleep(10 * time.Second)
