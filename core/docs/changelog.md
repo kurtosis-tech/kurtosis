@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed bug with Typescript `EnclaveContext.uploadFiles` where garbage data was getting written to the TAR rather than the compressed data
 
 # 1.45.2
 ### Fixes
