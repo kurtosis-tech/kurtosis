@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -54,7 +53,7 @@ type DockerEnclaveObjectAttributesProvider interface {
 	) (DockerObjectAttributes, error)
 	ForFilesArtifactExpansionVolume(
 		serviceGUID service.ServiceGUID,
-		fileArtifactID files_artifact.FilesArtifactID,
+		fileArtifactID service.FilesArtifactID,
 	) (DockerObjectAttributes, error)
 	ForModuleContainer(
 		privateIpAddr net.IP,
@@ -314,7 +313,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForModuleContainer(
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpansionVolume(
 	serviceGUID service.ServiceGUID,
-	fileArtifactID files_artifact.FilesArtifactID,
+	fileArtifactID service.FilesArtifactID,
 )(
 	DockerObjectAttributes,
 	error,

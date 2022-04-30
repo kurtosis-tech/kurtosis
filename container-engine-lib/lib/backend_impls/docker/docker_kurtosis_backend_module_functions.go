@@ -5,6 +5,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
@@ -22,6 +23,15 @@ import (
 const (
 	// The module container uses gRPC so MUST listen on TCP (no other protocols are supported)
 	moduleContainerPortProtocol = port_spec.PortProtocol_TCP
+
+	// TODO Remove when we switch fully to the enclave data volume
+	// The location where the enclave data volume will be mounted
+	//  on the module container
+	enclaveDataBindmountDirpathOnModuleContainer = "/kurtosis-enclave-data"
+
+	// The location where the enclave data volume will be mounted
+	//  on the module container
+	enclaveDataVolumeDirpathOnModuleContainer = "/kurtosis-data"
 
 	maxWaitForModuleContainerAvailabilityRetries         = 10
 	timeBetweenWaitForModuleContainerAvailabilityRetries = 1 * time.Second
@@ -64,6 +74,11 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
 
+	enclaveDataVolumeName, err := backend.getEnclaveDataVolumeByEnclaveId(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveId)
+	}
+
 	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, moduleContainerPortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -99,7 +114,11 @@ func (backend *DockerKurtosisBackend) CreateModule(
 	}
 
 	bindMounts := map[string]string{
-		enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnAPIContainer,
+		enclaveDataDirpathOnHostMachine: enclaveDataBindmountDirpathOnModuleContainer,
+	}
+
+	volumeMounts := map[string]string{
+		enclaveDataVolumeName: enclaveDataVolumeDirpathOnModuleContainer,
 	}
 
 	labelStrs := map[string]string{}
@@ -120,6 +139,8 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		envVars,
 	).WithBindMounts(
 		bindMounts,
+	).WithVolumeMounts(
+		volumeMounts,
 	).WithStaticIP(
 		ipAddr,
 	).WithUsedPorts(
@@ -234,33 +255,44 @@ func (backend *DockerKurtosisBackend) StopModules(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting modules matching filters '%+v'", filters)
 	}
 
-	containerIdsToKill := map[string]bool{}
-	for containerId := range matchingModulesByContainerId {
-		containerIdsToKill[containerId] = true
+	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
+	matchingUncastedObjectsByContainerId := map[string]interface{}{}
+	for containerId, object := range matchingModulesByContainerId {
+		matchingUncastedObjectsByContainerId[containerId] = interface{}(object)
 	}
 
-	successfulContainerIds, erroredContainerIds := backend.killContainers(ctx, containerIdsToKill)
-
-	successfulModuleGuids := map[module.ModuleGUID]bool{}
-	for containerId := range successfulContainerIds {
-		moduleObj, found := matchingModulesByContainerId[containerId]
-		if !found {
-			return nil, nil, stacktrace.NewError("Successfully killed container with ID '%v' that wasn't requested; this is a bug in Kurtosis!", containerId)
+	var killOperation docker_operation_parallelizer.DockerOperation = func(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		dockerObjectId string,
+	) error {
+		if err := dockerManager.KillContainer(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred killing module container with ID '%v'", dockerObjectId)
 		}
-		successfulModuleGuids[moduleObj.GetGUID()] = true
+		return nil
 	}
 
-	erroredModuleGuids := map[module.ModuleGUID]error{}
-	for containerId := range erroredContainerIds {
-		moduleObj, found := matchingModulesByContainerId[containerId]
-		if !found {
-			return nil, nil, stacktrace.NewError("An error occurred killing container with ID '%v' that wasn't requested; this is a bug in Kurtosis!", containerId)
-		}
-		wrappedErr := stacktrace.Propagate(err, "An error occurred killing module with GUID '%v' and container ID '%v'", moduleObj.GetGUID(), containerId)
-		erroredModuleGuids[moduleObj.GetGUID()] = wrappedErr
+	successfulGuidStrs, erroredGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+		ctx,
+		matchingUncastedObjectsByContainerId,
+		backend.dockerManager,
+		extractModuleGuidFromObj,
+		killOperation,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred killing modules containers matching filters '%+v'", filters)
 	}
 
-	return successfulModuleGuids, erroredModuleGuids, nil
+	successfulGuids := map[module.ModuleGUID]bool{}
+	for enclaveIdStr := range successfulGuidStrs {
+		successfulGuids[module.ModuleGUID(enclaveIdStr)] = true
+	}
+	erroredGuids := map[module.ModuleGUID]error{}
+	for enclaveIdStr, killErr := range erroredGuidStrs {
+		erroredGuids[module.ModuleGUID(enclaveIdStr)] = killErr
+	}
+
+	return successfulGuids, erroredGuids, nil
 }
 
 func (backend *DockerKurtosisBackend) DestroyModules(
@@ -271,30 +303,49 @@ func (backend *DockerKurtosisBackend) DestroyModules(
 	erroredModuleIds map[module.ModuleGUID]error,
 	resultErr error,
 ) {
-	matchingModuleContainersByContainerId, err := backend.getMatchingModules(ctx, filters)
+	matchingModulesByContainerId, err := backend.getMatchingModules(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting module containers matching the following filters: %+v", filters)
 	}
 
-	successIds := map[module.ModuleGUID]bool{}
-	errorIds := map[module.ModuleGUID]error{}
-	for containerId, moduleObj := range matchingModuleContainersByContainerId {
-		moduleGuid := moduleObj.GetGUID()
-		enclaveId := moduleObj.GetEnclaveID()
-		if err := backend.dockerManager.RemoveContainer(ctx, containerId); err != nil {
-			wrappedErr := stacktrace.Propagate(
-				err,
-				"An error occurred removing module container for GUID '%v' with container ID '%v' from enclave '%v'",
-				moduleGuid,
-				containerId,
-				enclaveId,
-			)
-			errorIds[moduleGuid] = wrappedErr
-		} else {
-			successIds[moduleGuid] = true
-		}
+	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
+	matchingUncastedObjectsByContainerId := map[string]interface{}{}
+	for containerId, object := range matchingModulesByContainerId {
+		matchingUncastedObjectsByContainerId[containerId] = interface{}(object)
 	}
-	return successIds, errorIds, nil
+
+	var dockerOperation docker_operation_parallelizer.DockerOperation = func(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		dockerObjectId string,
+	) error {
+		if err := dockerManager.RemoveContainer(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing module container with ID '%v'", dockerObjectId)
+		}
+		return nil
+	}
+
+	successfulGuidStrs, erroredGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+		ctx,
+		matchingUncastedObjectsByContainerId,
+		backend.dockerManager,
+		extractModuleGuidFromObj,
+		dockerOperation,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing modules containers matching filters '%+v'", filters)
+	}
+
+	successfulGuids := map[module.ModuleGUID]bool{}
+	for guidStr := range successfulGuidStrs {
+		successfulGuids[module.ModuleGUID(guidStr)] = true
+	}
+	erroredGuids := map[module.ModuleGUID]error{}
+	for guidStr, removalErr := range erroredGuidStrs {
+		erroredGuids[module.ModuleGUID(guidStr)] = removalErr
+	}
+
+	return successfulGuids, erroredGuids, nil
 }
 
 // ====================================================================================================
@@ -450,4 +501,12 @@ func getPrivateModulePorts(containerLabels map[string]string) (
 	}
 
 	return grpcPortSpec, nil
+}
+
+func extractModuleGuidFromObj(uncastedModuleObj interface{}) (string, error) {
+	castedObj, ok := uncastedModuleObj.(*module.Module)
+	if !ok {
+		return "", stacktrace.NewError("An error occurred downcasting the module object")
+	}
+	return string(castedObj.GetGUID()), nil
 }

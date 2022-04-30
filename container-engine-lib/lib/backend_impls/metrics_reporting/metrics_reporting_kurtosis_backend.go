@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
@@ -477,6 +476,22 @@ func (backend *MetricsReportingKurtosisBackend) GetConnectionWithUserService(
 	return newConn, nil
 }
 
+func (backend *MetricsReportingKurtosisBackend) CopyFromUserService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	srcPath string,
+) (
+	io.ReadCloser,
+	error,
+) {
+	tarStreamReadCloser, err := backend.underlying.CopyFromUserService(ctx, enclaveId, serviceGuid, srcPath)
+	if err != nil {
+		stacktrace.Propagate(err, "An error occurred copying content from sourcepath '%v' in user service with GUID '%v' in enclave with ID '%v'", srcPath, serviceGuid, enclaveId)
+	}
+	return tarStreamReadCloser, nil
+}
+
 func (backend *MetricsReportingKurtosisBackend) StopUserServices(
 	ctx context.Context,
 	filters *service.ServiceFilters,
@@ -587,7 +602,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateFilesArtifactExpansionVolu
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
-	filesArtifactId files_artifact.FilesArtifactID,
+	filesArtifactId service.FilesArtifactID,
 ) (
 	*files_artifact_expansion_volume.FilesArtifactExpansionVolume,
 	error,
