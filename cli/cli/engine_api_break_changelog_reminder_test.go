@@ -18,7 +18,7 @@ const (
 	//    changelog whenever an engine API break happens
 	//  * Therefore, this constant must be manually updated to the X.Y version of the engine server version you just
 	//    bumped to, which will remind you to update the "Breaking Change" section of the changelog.
-	expectedEngineMajorMinorVersion = "1.15"
+	expectedEngineMajorMinorVersion = "1.17"
 	// !!!!!! BEFORE YOU UPDATE THIS CONSTANT TO FIX THE TEST, ADD A "BREAKING CHANGE" SECTION IN THE CHANGELOG !!!!!!
 )
 

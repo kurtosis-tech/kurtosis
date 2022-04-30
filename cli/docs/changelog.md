@@ -1,5 +1,21 @@
 # TBD
 
+# 0.15.0
+### Features
+* Added `files storeservice` to store files from a service in the enclave
+* Updated `files_artifact_mounting` internal test in order to test duplicate mountpoints
+* Added a dedicated test for testing if files artifacts get mounted to the same location
+
+### Changes
+* Upgraded `kurtosis core lib` to 1.45.3 which adds `EnclaveContext.StoreFilesFromService`  and removes `EnclaveContext.RegisterFilesArtifacts`
+* Upgraded `kurtosis engine lib` to 1.17.3
+
+### Breaking Changes
+* Upgraded the engine to v1.17.3
+    * Users should run `kurtosis engine restart` to use the latest version
+    * Users should upgrade their version of `kurtosis-engine-api-lib` to 1.17.3 as well
+* Removed several methods from `EnclaveContext`; users should follow [the remediation steps here](https://docs.kurtosistech.com/kurtosis-core/changelog#1.45.3)
+
 # 0.14.1
 ### Features
 * Added `ContainerConfigBuilder.WithFiles` which allows use of files artifacts uploaded via `EnclaveContext.UploadFiles` in services

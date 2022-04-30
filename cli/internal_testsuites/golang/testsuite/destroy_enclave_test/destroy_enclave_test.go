@@ -17,10 +17,9 @@ const (
 	fileServerPortId = "http"
 	fileServerPrivatePortNum = 80
 
-
-	testFilesArtifactId  services.FilesArtifactID = "test-files-artifact"
 	testFilesArtifactUrl                          = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
 
+	filesArtifactMountpoint = "/static"
 )
 var fileServerPortSpec = services.NewPortSpec(
 	fileServerPrivatePortNum,
@@ -41,13 +40,10 @@ func TestDestroyEnclave(t *testing.T) {
 	}()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
-	filesArtifacts := map[services.FilesArtifactID]string{
-		testFilesArtifactId: testFilesArtifactUrl,
-	}
-	require.NoError(t, enclaveCtx.RegisterFilesArtifacts(filesArtifacts), "An error occurred registering the files artifacts")
+	filesArtifactId, err := enclaveCtx.StoreWebFiles(ctx, testFilesArtifactUrl)
+	require.NoError(t, err, "An error occurred storing the files artifact")
 
-
-	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier()
+	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactId)
 	_, err = enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
 	require.NoError(t, err, "An error occurred adding the file server service")
 
@@ -60,15 +56,15 @@ func TestDestroyEnclave(t *testing.T) {
 //                                       Private helper functions
 // ====================================================================================================
 
-func getFileServerContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+func getFileServerContainerConfigSupplier(filesArtifactId services.FilesArtifactID) func(ipAddr string) (*services.ContainerConfig, error) {
+	containerConfigSupplier  := func(ipAddr string) (*services.ContainerConfig, error) {
 
 		containerConfig := services.NewContainerConfigBuilder(
 			fileServerServiceImage,
 		).WithUsedPorts(map[string]*services.PortSpec{
 			fileServerPortId: fileServerPortSpec,
-		}).WithFilesArtifacts(map[services.FilesArtifactID]string{
-			testFilesArtifactId: "/static",
+		}).WithFiles(map[services.FilesArtifactID]string{
+			filesArtifactId: filesArtifactMountpoint,
 		}).Build()
 		return containerConfig, nil
 	}

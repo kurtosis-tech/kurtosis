@@ -26,7 +26,6 @@ const (
 	waitForStartupMaxRetries       = 15
 	waitInitialDelayMilliseconds   = 0
 
-	testFilesArtifactId  services.FilesArtifactID = "test-files-artifact"
 	testFilesArtifactUrl                          = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
 
 	// Filenames & contents for the files stored in the files artifact
@@ -35,13 +34,15 @@ const (
 
 	expectedFile1Contents = "file1\n"
 	expectedFile2Contents = "file2\n"
+
+	userServiceMountPointForTestFilesArtifact = "/static"
 )
 var fileServerPortSpec = services.NewPortSpec(
 	fileServerPrivatePortNum,
 	services.PortProtocol_TCP,
 )
 
-func TestFilesArtifactMounting(t *testing.T) {
+func TestStoreWebFiles(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
@@ -50,12 +51,14 @@ func TestFilesArtifactMounting(t *testing.T) {
 	defer stopEnclaveFunc()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
-	filesArtifacts := map[services.FilesArtifactID]string{
-		testFilesArtifactId: testFilesArtifactUrl,
-	}
-	require.NoError(t, enclaveCtx.RegisterFilesArtifacts(filesArtifacts), "An error occurred registering the files artifacts")
+	filesArtifactId, err := enclaveCtx.StoreWebFiles(context.Background(), testFilesArtifactUrl)
+	require.NoError(t, err, "An error occurred storing the files artifact")
 
-	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier()
+	filesArtifactMountpoints := map[services.FilesArtifactID]string{
+		filesArtifactId: userServiceMountPointForTestFilesArtifact,
+	}
+	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactMountpoints)
+
 	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
 	require.NoError(t, err, "An error occurred adding the file server service")
 	publicPort, found := serviceCtx.GetPublicPorts()[fileServerPortId]
@@ -106,17 +109,16 @@ func TestFilesArtifactMounting(t *testing.T) {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-
-func getFileServerContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+func getFileServerContainerConfigSupplier(filesArtifactMountpoints map[services.FilesArtifactID]string) func(ipAddr string) (*services.ContainerConfig, error) {
+	containerConfigSupplier  := func(ipAddr string) (*services.ContainerConfig, error) {
 
 		containerConfig := services.NewContainerConfigBuilder(
 			fileServerServiceImage,
 		).WithUsedPorts(map[string]*services.PortSpec{
 			fileServerPortId: fileServerPortSpec,
-		}).WithFilesArtifacts(map[services.FilesArtifactID]string{
-			testFilesArtifactId: "/static",
-		}).Build()
+		}).WithFiles(
+			filesArtifactMountpoints,
+		).Build()
 		return containerConfig, nil
 	}
 	return containerConfigSupplier
@@ -142,4 +144,3 @@ func getFileContents(ipAddress string, portNum uint16, filename string) (string,
 	bodyStr := string(bodyBytes)
 	return bodyStr, nil
 }
-

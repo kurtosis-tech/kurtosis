@@ -1,4 +1,4 @@
-import { ContainerConfig, ContainerConfigBuilder, FilesArtifactID, PortProtocol, PortSpec, ServiceID, SharedPath } from "kurtosis-core-api-lib"
+import { ContainerConfig, ContainerConfigBuilder, FilesArtifactID, PortProtocol, PortSpec, ServiceID } from "kurtosis-core-api-lib"
 import log from "loglevel";
 import { Result, ok, err } from "neverthrow";
 import axios from "axios"
@@ -17,7 +17,6 @@ const WAIT_FOR_STARTUP_TIME_BETWEEN_POLLS = 500
 const WAIT_FOR_STARTUP_MAX_RETRIES = 15
 const WAIT_INITIAL_DELAY_MILLISECONDS = 0
 
-const TEST_FILES_ARTIFACT_ID: FilesArtifactID = "test-files-artifact"
 const TEST_FILES_ARTIFACT_URL = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
 
 // Filenames & contents for the files stored in the files artifact
@@ -29,9 +28,11 @@ const EXPECTED_FILE2_CONTENTS = "file2\n"
 
 const FILE_SERVER_PORT_SPEC = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, PortProtocol.TCP )
 
+const USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT  = "/static"
+
 jest.setTimeout(180000)
 
-test("Test files artifact mounting", async () => {
+test("Test web file storing", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
     const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
 
@@ -42,16 +43,16 @@ test("Test files artifact mounting", async () => {
     try {
 
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const filesArtifacts = new Map<string,FilesArtifactID>()
-        filesArtifacts.set(TEST_FILES_ARTIFACT_ID, TEST_FILES_ARTIFACT_URL)
-        const registerFilesArtifactsResult = await enclaveContext.registerFilesArtifacts(filesArtifacts);
+        const storeWebFilesResult = await enclaveContext.storeWebFiles(TEST_FILES_ARTIFACT_URL);
+        if(storeWebFilesResult.isErr()) { throw storeWebFilesResult.error }
+        const filesArtifactId = storeWebFilesResult.value;
 
-        if(registerFilesArtifactsResult.isErr()) { throw registerFilesArtifactsResult.error }
+        const filesArtifactsMountpoints = new Map<FilesArtifactID, string>()
+        filesArtifactsMountpoints.set(filesArtifactId, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT)
 
-        const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier()
+        const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier(filesArtifactsMountpoints)
 
         const addServiceResult = await enclaveContext.addService(FILE_SERVER_SERVICE_ID, fileServerContainerConfigSupplier)
-
         if(addServiceResult.isErr()){ throw addServiceResult.error }
 
         const serviceContext = addServiceResult.value
@@ -114,8 +115,6 @@ test("Test files artifact mounting", async () => {
         if(file2Contents !== EXPECTED_FILE2_CONTENTS){
             throw new Error(`Actual file 2 contents "${file2Contents}" != expected file 2 contents "${EXPECTED_FILE2_CONTENTS}"`)
         }
-
-
     }finally{
         stopEnclaveFunction()
     }
@@ -126,19 +125,16 @@ test("Test files artifact mounting", async () => {
 //                                       Private helper functions
 // ====================================================================================================
 
-function getFileServerContainerConfigSupplier(): (ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error> {
+function getFileServerContainerConfigSupplier(filesArtifactMountpoints: Map<FilesArtifactID, string>): (ipAddr: string) => Result<ContainerConfig, Error> {
 	
-    const containerConfigSupplier = (ipAddr:string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
+    const containerConfigSupplier = (ipAddr:string): Result<ContainerConfig, Error> => {
 
         const usedPorts = new Map<string, PortSpec>()
         usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
 
-        const filesArtifacts = new Map<string, FilesArtifactID>()
-        filesArtifacts.set(TEST_FILES_ARTIFACT_ID, "/static")
-
         const containerConfig = new ContainerConfigBuilder(FILE_SERVER_SERVICE_IMAGE)
             .withUsedPorts(usedPorts)
-            .withFilesArtifacts(filesArtifacts)
+            .withFiles(filesArtifactMountpoints)
             .build()
 
         return ok(containerConfig)
