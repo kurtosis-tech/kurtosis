@@ -6,10 +6,10 @@
 import "neverthrow"
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
 import {ok, err, Result} from "neverthrow";
-import * as tar from "tar"
 import * as filesystem from "fs"
 import * as path from "path"
 import * as os from "os";
+import * as tar from "tar";
 
 const COMPRESSION_EXTENSION = ".tgz"
 const GRPC_DATA_TRANSFER_LIMIT = 3999000 //3.999 Mb. 1kb wiggle room. 1kb being about the size of a 2 paragraph readme.
@@ -41,25 +41,18 @@ export class NodeTgzArchiver implements GenericTgzArchiver{
          const tempDirpath = tempDirpathResult.value
          const destFilename = path.basename(pathToArchive) + COMPRESSION_EXTENSION
          const destFilepath = path.join(tempDirpath, destFilename)
-         /*
-         const archiveOptions = {
-             src: pathToArchive,
-             dest: path.join(tempPathResponse.value, baseName),
-         }
-          */
-         const archiveOptions = {
-             cwd: path.dirname(pathToArchive),
-             file: destFilepath,
-             gzip: true,
-             async: true,
-         }
 
-         const targzPromise: Promise<Result<null, Error>> = tar.create(
-             archiveOptions,
+         const targzPromise = tar.create(
+             {
+                 cwd: path.dirname(pathToArchive),
+                 gzip: true,
+                 file: destFilepath,
+             },
              [destFilename],
-         ).then(() => {
+         ).then((_) => {
              return ok(null)
          }).catch((err: any) => {
+             // Use duck-typing to detect Error types
              if (err && err.stack && err.message) {
                  return err(err as Error);
              }
