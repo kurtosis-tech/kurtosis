@@ -1,6 +1,7 @@
 # TBD
 ### Fixes
-* Attempt to fix the node archiver
+* Attempt to fix the bug in the node archiver
+* Renamed `web/node_file_archiver` -> `web/node_tgz_archiver` to match class name
 
 # 1.45.0
 ### Removals

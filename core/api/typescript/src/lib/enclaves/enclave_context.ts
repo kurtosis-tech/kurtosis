@@ -97,7 +97,7 @@ export class EnclaveContext {
             const apiContainerClient = new apiContainerServiceWeb.ApiContainerServiceClient(apiContainerGrpcProxyUrl);
             genericApiContainerClient = new GrpcWebApiContainerClient(apiContainerClient, enclaveId)
 
-            const webFileArchiver = await import("./web_file_archiver")
+            const webFileArchiver = await import("./web_tgz_archiver")
             genericTgzArchiver = new webFileArchiver.WebTgzArchiver()
         }catch(error) {
             if (error instanceof Error) {
@@ -135,8 +135,8 @@ export class EnclaveContext {
             const apiContainerClient = new apiContainerServiceNode.ApiContainerServiceClient(apiContainerGrpcUrl, grpc_node.credentials.createInsecure());
             genericApiContainerClient = new GrpcNodeApiContainerClient(apiContainerClient, enclaveId)
 
-            const nodeFileArchiver = await import(/* webpackIgnore: true */ "./node_file_archiver")
-            genericTgzArchiver = new nodeFileArchiver.NodeTgzArchiver()
+            const nodeTgzArchiver = await import(/* webpackIgnore: true */ "./node_tgz_archiver")
+            genericTgzArchiver = new nodeTgzArchiver.NodeTgzArchiver()
         }catch(error) {
             if (error instanceof Error) {
                 return err(error);
