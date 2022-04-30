@@ -1,5 +1,9 @@
 # TBD
 
+# 1.45.3
+### Fixes
+* Fixed bug with Typescript `EnclaveContext.uploadFiles` where garbage data was getting written to the TAR rather than the compressed data
+
 # 1.45.2
 ### Fixes
 * Switch to `tar` library (from `targz` library) for Node archiving, as `targz` seems to be incorrectly passing in an `undefined` type
