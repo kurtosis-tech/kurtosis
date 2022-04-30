@@ -25,6 +25,9 @@ export class NodeTgzArchiver implements GenericTgzArchiver{
              return err(new Error("Cannot archive the root directory"))
          }
 
+         const srcParentDirpath = path.dirname(pathToArchive)
+         const srcFilename = path.basename(pathToArchive)
+
          //Make directory for usage.
          const osTempDirpath = os.tmpdir()
          const tempDirpathPrefix = path.join(osTempDirpath, COMPRESSION_TEMP_FOLDER_PREFIX)
@@ -44,11 +47,11 @@ export class NodeTgzArchiver implements GenericTgzArchiver{
 
          const targzPromise = tar.create(
              {
-                 cwd: path.dirname(pathToArchive),
+                 cwd: srcParentDirpath,
                  gzip: true,
                  file: destFilepath,
              },
-             [destFilename],
+             [srcFilename],
          ).then((_) => {
              return ok(null)
          }).catch((err: any) => {
