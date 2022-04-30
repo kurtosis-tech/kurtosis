@@ -1,5 +1,10 @@
 # TBD
 
+# 1.17.0
+### Breaking Changes
+* Upgraded to Kurtosis Core 1.45.0
+    * Users should follow the changes [described in the changelog](https://docs.kurtosistech.com/kurtosis-core/changelog)
+
 # 1.16.0
 ### Changes
 * Switched to using Kurtosis Core 1.44.0, which forces use of the files API
