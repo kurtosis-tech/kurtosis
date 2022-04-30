@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
+	"path"
 	"testing"
 )
 
@@ -18,17 +19,14 @@ const (
 	dockerImage                    = "alpine:3.12.4"
 	testService services.ServiceID = "test-service"
 
-	execCommandSuccessExitCode = int32(0)
-	expectedTestFile1Contents  = "This is a test file"
-	expectedTestFile2Contents  = "This is another test file"
+	testFilename = "this-is-a-test-file.txt"
+	testFileContents = "This is a test file"
 
 	generatedFilePermBits = 0644
+
+	execCommandSuccessExitCode = int32(0)
+
 )
-// Mapping of filepath_rel_to_shared_dir_root -> contents
-var generatedFileRelPathsAndContents = map[string]string{
-	"test1.txt": expectedTestFile1Contents,
-	"test2.txt": expectedTestFile2Contents,
-}
 
 func TestFiles(t *testing.T) {
 	ctx := context.Background()
@@ -38,13 +36,24 @@ func TestFiles(t *testing.T) {
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer stopEnclaveFunc()
 
+
 	// ------------------------------------- TEST SETUP ----------------------------------------------
+	tempDirpath, err := ioutil.TempDir("", "")
+	require.NoError(t, err)
+
+	filepath := path.Join(tempDirpath, testFilename)
+	require.NoError(t, ioutil.WriteFile(filepath, []byte(testFileContents), generatedFilePermBits))
+
+	// ------------------------------------- TEST RUN ----------------------------------------------
+	enclaveCtx.
+
+
+
 	containerConfigSupplier := getContainerConfigSupplier()
 
 	serviceCtx, err := enclaveCtx.AddService(testService, containerConfigSupplier)
 	require.NoError(t, err, "An error occurred adding the file server service")
 
-	// ------------------------------------- TEST RUN ----------------------------------------------
 	for relativeFilepath, expectedContents := range generatedFileRelPathsAndContents {
 		sharedFilepath := serviceCtx.GetSharedDirectory().GetChildPath(relativeFilepath)
 
@@ -81,8 +90,8 @@ func TestFiles(t *testing.T) {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+func getContainerConfigSupplier() func(ipAddr string) (*services.ContainerConfig, error) {
+	containerConfigSupplier  := func(ipAddr string) (*services.ContainerConfig, error) {
 
 		for relFilepath, contents := range generatedFileRelPathsAndContents {
 			if err := generateFileInServiceContainer(relFilepath, contents, sharedDirectory); err != nil {
@@ -111,6 +120,8 @@ func getContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.
 
 func generateFileInServiceContainer(relativePath string, contents string, sharedDirectory *services.SharedPath) error {
 	sharedFilepath := sharedDirectory.GetChildPath(relativePath)
+
+
 	absFilepathOnThisContainer := sharedFilepath.GetAbsPathOnThisContainer()
 	if err := ioutil.WriteFile(sharedFilepath.GetAbsPathOnThisContainer(), []byte(contents), generatedFilePermBits); err != nil {
 		return stacktrace.Propagate(
