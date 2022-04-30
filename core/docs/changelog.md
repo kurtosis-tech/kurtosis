@@ -1,4 +1,6 @@
 # TBD
+
+# 1.45.0
 ### Removals
 * Removed vestigial enclave data directories (e.g. `FilesArtifactCache`, `StaticFilesCache`, etc.)
 
