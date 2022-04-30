@@ -4,11 +4,11 @@ import * as path from "path"
 import * as os from "os";
 import {createEnclave} from "../../test_helpers/enclave_setup";
 
-const ARCHIVE_ROOT_DIRECTORY_TEST_PATTERN = "upload-test-"
+const ARCHIVE_ROOT_DIRECTORY_TEST_PATTERN = "upload-test-typescript-"
 const ARCHIVE_SUBDIRECTORY_TEST_PATTERN = "sub-folder-"
 const ARCHIVE_TEST_FILE_PATTERN = "test-file-"
 const ARCHIVE_TEST_FILE_EXTENSION = ".txt"
-const ARCHIVE_TEST_CONTENT = "This is file is for testing purposes."
+const ARCHIVE_TEST_CONTENT = "This file is for testing purposes."
 
 const NUMBER_OF_TEMP_FILES_IN_SUBDIRECTORY = 3
 const NUMBER_OF_TEMP_FILES_IN_ROOT_DIRECTORY = 1

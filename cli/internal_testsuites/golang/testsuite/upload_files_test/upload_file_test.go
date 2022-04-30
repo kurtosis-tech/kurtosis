@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-const archiveRootDirectoryTestPattern = "upload-test-"
+const archiveRootDirectoryTestPattern = "upload-test-golang-"
 const archiveSubDirectoryTestPattern = "sub-folder-"
 const archiveFileTestPattern = "test-file-"
 const archiveTestFileContent = "This file is for testing purposes."
