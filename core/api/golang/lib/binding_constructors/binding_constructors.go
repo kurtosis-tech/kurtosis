@@ -102,10 +102,9 @@ func NewRegisterServiceArgs(serviceId string, partitionId string) *kurtosis_core
 	}
 }
 
-func NewRegisterServiceResponse(privateIpAddr string, relativeServiceDirpath string) *kurtosis_core_rpc_api_bindings.RegisterServiceResponse {
+func NewRegisterServiceResponse(privateIpAddr string) *kurtosis_core_rpc_api_bindings.RegisterServiceResponse {
 	return &kurtosis_core_rpc_api_bindings.RegisterServiceResponse{
 		PrivateIpAddr:          privateIpAddr,
-		RelativeServiceDirpath: relativeServiceDirpath,
 	}
 }
 
@@ -119,8 +118,6 @@ func NewStartServiceArgs(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	enclaveDataDirMntDirpath string,
-	oldFilesArtifactMountDirpaths map[string]string,
 	filesArtifactMountDirpaths map[string]string,
 ) *kurtosis_core_rpc_api_bindings.StartServiceArgs {
 	return &kurtosis_core_rpc_api_bindings.StartServiceArgs{
@@ -130,8 +127,6 @@ func NewStartServiceArgs(
 		EntrypointArgs:             entrypointArgs,
 		CmdArgs:                    cmdArgs,
 		DockerEnvVars:              envVars,
-		EnclaveDataDirMntDirpath:   enclaveDataDirMntDirpath,
-		FilesArtifactMountDirpaths: oldFilesArtifactMountDirpaths,
 		FilesArtifactMountpoints:   filesArtifactMountDirpaths,
 	}
 }
@@ -157,16 +152,12 @@ func NewGetServiceInfoResponse(
 	privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
 	publicIpAddr string,
 	publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-	enclaveDataDirMountDirpath string,
-	relativeServiceDirpath string,
 ) *kurtosis_core_rpc_api_bindings.GetServiceInfoResponse {
 	return &kurtosis_core_rpc_api_bindings.GetServiceInfoResponse{
 		PrivateIpAddr:              privateIpAddr,
 		PrivatePorts:               privatePorts,
 		PublicIpAddr:               publicIpAddr,
 		PublicPorts:                publicPorts,
-		EnclaveDataDirMountDirpath: enclaveDataDirMountDirpath,
-		RelativeServiceDirpath:     relativeServiceDirpath,
 	}
 }
 

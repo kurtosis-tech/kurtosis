@@ -18,11 +18,10 @@ import (
 
 type MockServiceNetwork struct {
 	servicePrivateIps                map[service.ServiceID]net.IP
-	serviceEnclaveDataDirMntDirpaths map[service.ServiceID]string
 }
 
-func NewMockServiceNetwork(serviceIps map[service.ServiceID]net.IP, serviceEnclaveDataDirMntDirpaths map[service.ServiceID]string) *MockServiceNetwork {
-	return &MockServiceNetwork{servicePrivateIps: serviceIps, serviceEnclaveDataDirMntDirpaths: serviceEnclaveDataDirMntDirpaths}
+func NewMockServiceNetwork(servicePrivateIps map[service.ServiceID]net.IP) *MockServiceNetwork {
+	return &MockServiceNetwork{servicePrivateIps: servicePrivateIps}
 }
 
 func (m MockServiceNetwork) Repartition(ctx context.Context, newPartitionServices map[service_network_types.PartitionID]map[service.ServiceID]bool, newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection, newDefaultConnection partition_topology.PartitionConnection) error {
@@ -33,7 +32,7 @@ func (m MockServiceNetwork) RegisterService(serviceId service.ServiceID, partiti
 	panic("This is unimplemented for the mock network")
 }
 
-func (m MockServiceNetwork) StartService(ctx context.Context, serviceId service.ServiceID, imageName string, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, dockerEnvVars map[string]string, enclaveDataDirMountDirpath string, oldFilesArtifactMountDirpaths map[service.FilesArtifactID]string, filesArtifactMountDirpaths map[service.FilesArtifactID]string) (resultPublicIpAddr net.IP, resultPublicPorts map[string]*port_spec.PortSpec, resultErr error) {
+func (m MockServiceNetwork) StartService(ctx context.Context, serviceId service.ServiceID, imageName string, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, dockerEnvVars map[string]string, oldFilesArtifactMountDirpaths map[service.FilesArtifactID]string, filesArtifactMountDirpaths map[service.FilesArtifactID]string) (resultPublicIpAddr net.IP, resultPublicPorts map[string]*port_spec.PortSpec, resultErr error) {
 	panic("This is unimplemented for the mock network")
 }
 
@@ -45,20 +44,16 @@ func (m MockServiceNetwork) ExecCommand(ctx context.Context, serviceId service.S
 	panic("This is unimplemented for the mock network")
 }
 
-func (m MockServiceNetwork) GetServiceRegistrationInfo(serviceId service.ServiceID) (privateIpAddr net.IP, relativeServiceDirpath string, resultErr error) {
+func (m MockServiceNetwork) GetServiceRegistrationInfo(serviceId service.ServiceID) (privateIpAddr net.IP, resultErr error) {
 	ip, found := m.servicePrivateIps[serviceId]
 	if !found {
-		return nil, "", stacktrace.NewError("No private IP defined for service with ID '%v'", serviceId)
+		return nil, stacktrace.NewError("No private IP defined for service with ID '%v'", serviceId)
 	}
-	return ip, "", nil
+	return ip, nil
 }
 
-func (m MockServiceNetwork) GetServiceRunInfo(serviceId service.ServiceID) (privatePorts map[string]*port_spec.PortSpec, maybePublicIpAddr net.IP, publicPorts map[string]*port_spec.PortSpec, enclaveDataDirMntDirpath string, resultErr error) {
-	dataDirMntDirpath, found := m.serviceEnclaveDataDirMntDirpaths[serviceId]
-	if !found {
-		return nil, nil, nil, "", stacktrace.NewError("No enclave data directory mount dirpath defined for service with ID '%v'", serviceId)
-	}
-	return nil, nil, nil, dataDirMntDirpath, nil
+func (m MockServiceNetwork) GetServiceRunInfo(serviceId service.ServiceID) (privatePorts map[string]*port_spec.PortSpec, maybePublicIpAddr net.IP, publicPorts map[string]*port_spec.PortSpec, resultErr error) {
+	panic("This is unimplemented for the mock network")
 }
 
 func (m MockServiceNetwork) GetServiceIDs() map[service.ServiceID]bool {

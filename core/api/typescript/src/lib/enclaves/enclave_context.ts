@@ -61,22 +61,16 @@ export type PartitionID = string;
 //  or it was repartitioned away)
 const DEFAULT_PARTITION_ID: PartitionID = "";
 
-// The path on the user service container where the enclave data dir will be bind-mounted
-const SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT: string = "/kurtosis-enclave-data";
-
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class EnclaveContext {
 
     private readonly backend: GenericApiContainerClient
     private readonly pathJoiner: GenericPathJoiner
     private readonly genericTgzArchiver: GenericTgzArchiver
-    // The location on the filesystem where this code is running where the enclave data dir exists
-    private readonly enclaveDataDirpath: string;
 
-    private constructor(backend: GenericApiContainerClient, enclaveDataDirpath: string, pathJoiner: GenericPathJoiner,
+    private constructor(backend: GenericApiContainerClient, pathJoiner: GenericPathJoiner,
                         genericTgzArchiver: GenericTgzArchiver){
         this.backend = backend;
-        this.enclaveDataDirpath = enclaveDataDirpath;
         this.pathJoiner = pathJoiner;
         this.genericTgzArchiver = genericTgzArchiver
     }
@@ -85,7 +79,6 @@ export class EnclaveContext {
             ipAddress: string,
             apiContainerGrpcProxyPortNum: number,
             enclaveId: string,
-            enclaveDataDirpath: string
         ): Promise<Result<EnclaveContext, Error>> {
 
         if(isExecutionEnvNode){
@@ -115,7 +108,7 @@ export class EnclaveContext {
             ));
         }
         
-        const enclaveContext = new EnclaveContext(genericApiContainerClient, enclaveDataDirpath, pathJoiner, genericTgzArchiver);
+        const enclaveContext = new EnclaveContext(genericApiContainerClient, pathJoiner, genericTgzArchiver);
         return ok(enclaveContext)
     }
 
@@ -123,7 +116,6 @@ export class EnclaveContext {
             ipAddress: string,
             apiContainerGrpcPortNum: number,
             enclaveId: string,
-            enclaveDataDirpath: string
         ): Promise<Result<EnclaveContext, Error>> {
 
         if(!isExecutionEnvNode){
@@ -154,7 +146,7 @@ export class EnclaveContext {
             ));
         }
 
-        const enclaveContext = new EnclaveContext(genericApiContainerClient, enclaveDataDirpath, pathJoiner, genericTgzArchiver);
+        const enclaveContext = new EnclaveContext(genericApiContainerClient, pathJoiner, genericTgzArchiver);
         return ok(enclaveContext)
     }
 
@@ -241,7 +233,6 @@ export class EnclaveContext {
         log.trace("New service successfully registered with Kurtosis API");
 
         const privateIpAddr: string = registerServiceResponse.getPrivateIpAddr();
-        const relativeServiceDirpath: string = registerServiceResponse.getRelativeServiceDirpath();
 
         log.trace("Generating container config object using the container config supplier...")
         const containerConfigSupplierResult: Result<ContainerConfig, Error> = containerConfigSupplier(privateIpAddr);
@@ -252,12 +243,6 @@ export class EnclaveContext {
         log.trace("Container config object successfully generated")
 
         log.trace("Creating files artifact ID str -> mount dirpaths map...");
-        // TODO DELETE THIS CHUNK
-        const oldArtifactIdStrToMountDirpath: Map<string, string> = new Map();
-        for (const [filesArtifactId, mountDirpath] of containerConfig.oldFilesArtifactMountpoints.entries()) {
-            oldArtifactIdStrToMountDirpath.set(String(filesArtifactId), mountDirpath);
-        }
-
         const artifactIdStrToMountDirpath: Map<string, string> = new Map();
         for (const [filesArtifactId, mountDirpath] of containerConfig.filesArtifactMountpoints.entries()) {
             artifactIdStrToMountDirpath.set(String(filesArtifactId), mountDirpath);
@@ -281,8 +266,6 @@ export class EnclaveContext {
             containerConfig.entrypointOverrideArgs,
             containerConfig.cmdOverrideArgs,
             containerConfig.environmentVariableOverrides,
-            SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT,
-            oldArtifactIdStrToMountDirpath,
             artifactIdStrToMountDirpath,
         );
 
@@ -330,14 +313,6 @@ export class EnclaveContext {
         if (serviceInfo.getPublicIpAddr() === "") {
             return err(new Error(
                     "Kurtosis API reported an empty public IP address for service " + serviceId +  " - this should never happen, and is a bug with Kurtosis!",
-                )
-            );
-        }
-
-        const enclaveDataDirMountDirpathOnSvcContainer: string = serviceInfo.getEnclaveDataDirMountDirpath();
-        if (enclaveDataDirMountDirpathOnSvcContainer === "") {
-            return err(new Error(
-                    "Kurtosis API reported an empty enclave data dir mount dirpath for service " + serviceId + " - this should never happen, and is a bug with Kurtosis!",
                 )
             );
         }
@@ -552,7 +527,7 @@ export class EnclaveContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public async storeFilesFromService(serviceId: ServiceID, absoluteFilepathOnServiceContainer: string): Promise<Result<FilesArtifactID, Error>> {
+    public async storeServiceFiles(serviceId: ServiceID, absoluteFilepathOnServiceContainer: string): Promise<Result<FilesArtifactID, Error>> {
         const args = newStoreFilesArtifactFromServiceArgs(serviceId, absoluteFilepathOnServiceContainer)
         const storeFilesArtifactFromServiceResponseResult = await this.backend.storeFilesArtifactFromService(args)
         if (storeFilesArtifactFromServiceResponseResult.isErr()) {

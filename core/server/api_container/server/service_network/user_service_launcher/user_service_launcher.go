@@ -17,20 +17,22 @@ import (
 	"net"
 )
 
+const (
+	enclaveDataDirMntDirpath = "/kurtosis-enclave-data"
+)
+
 /*
 Convenience struct whose only purpose is launching user services
 */
 type UserServiceLauncher struct {
 	kurtosisBackend          backend_interface.KurtosisBackend
 	filesArtifactExpander    *files_artifact_expander.FilesArtifactExpander
-	// TODO delete this
-	oldFilesArtifactExpander *files_artifact_expander.FilesArtifactExpander
 	freeIpAddrTracker        *lib.FreeIpAddrTracker
 	enclaveDataDirpathOnHostMachine string
 }
 
-func NewUserServiceLauncher(kurtosisBackend backend_interface.KurtosisBackend, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, oldFilesArtifactExpander *files_artifact_expander.FilesArtifactExpander, freeIpAddrTracker *lib.FreeIpAddrTracker, enclaveDataDirpathOnHostMachine string) *UserServiceLauncher {
-	return &UserServiceLauncher{kurtosisBackend: kurtosisBackend, filesArtifactExpander: filesArtifactExpander, oldFilesArtifactExpander: oldFilesArtifactExpander, freeIpAddrTracker: freeIpAddrTracker, enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine}
+func NewUserServiceLauncher(kurtosisBackend backend_interface.KurtosisBackend, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, freeIpAddrTracker *lib.FreeIpAddrTracker, enclaveDataDirpathOnHostMachine string) *UserServiceLauncher {
+	return &UserServiceLauncher{kurtosisBackend: kurtosisBackend, filesArtifactExpander: filesArtifactExpander, freeIpAddrTracker: freeIpAddrTracker, enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine}
 }
 
 /**
@@ -51,10 +53,6 @@ func (launcher UserServiceLauncher) Launch(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	enclaveDataDirMountDirpath string,
-	// TODO REMOVE IN FAVOR OF filesArtifactUuidsToMounpoints
-	// Mapping files artifact ID -> mountpoint on the container to launch
-	oldFilesArtifactIdsToMountpoints map[service.FilesArtifactID]string,
 	// Mapping of UUIDs of previously-registered files artifacts -> mountpoints on the container
 	// being launched
 	filesArtifactUuidsToMountpoints map[service.FilesArtifactID]string,
@@ -62,16 +60,6 @@ func (launcher UserServiceLauncher) Launch(
 	resultUserService *service.Service,
 	resultErr error,
 ) {
-	// TODO DELETE THIS ONE!!!!
-	oldArtifactIdSet := map[service.FilesArtifactID]bool{}
-	for artifactId := range oldFilesArtifactIdsToMountpoints {
-		oldArtifactIdSet[artifactId] = true
-	}
-	artifactIdsToVolumes, err := launcher.oldFilesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, serviceGUID, oldArtifactIdSet)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred expanding the requested files artifacts into volumes")
-	}
-
 	usedArtifactUuidSet := map[service.FilesArtifactID]bool{}
 	for artifactUuid := range filesArtifactUuidsToMountpoints {
 		usedArtifactUuidSet[artifactUuid] = true
@@ -99,20 +87,6 @@ func (launcher UserServiceLauncher) Launch(
 		artifactVolumeMounts[string(artifactVolume)] = mountpoint
 	}
 
-
-	// TODO DELETE THIS
-	for artifactId, mountpoint := range oldFilesArtifactIdsToMountpoints {
-		artifactVolume, found := artifactIdsToVolumes[artifactId]
-		if !found {
-			return nil, stacktrace.NewError(
-				"Even though we declared that we need files artifact '%v' to be expanded, no volume containing the "+
-					"expanded contents was found; this is a bug in Kurtosis",
-				artifactId,
-			)
-		}
-		artifactVolumeMounts[string(artifactVolume)] = mountpoint
-	}
-
 	launchedUserService, err := launcher.kurtosisBackend.CreateUserService(
 		ctx,
 		serviceId,
@@ -125,7 +99,7 @@ func (launcher UserServiceLauncher) Launch(
 		cmdArgs,
 		envVars,
 		launcher.enclaveDataDirpathOnHostMachine,
-		enclaveDataDirMountDirpath,
+		enclaveDataDirMntDirpath,
 		artifactVolumeMounts,
 	)
 	if err != nil {

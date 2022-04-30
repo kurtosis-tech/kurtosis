@@ -43,8 +43,6 @@ const (
 	//  or it was repartitioned away)
 	defaultPartitionId PartitionID = ""
 
-	// The path on the user service container where the enclave data dir will be bind-mounted
-	serviceEnclaveDataDirMountpoint = "/kurtosis-enclave-data"
 	grpcDataTransferLimit = 3999000 //3.999 Mb. 1kb wiggle room. 1kb being about the size of a simple 2 paragraph readme.
 	tempCompressionDirPattern = "upload-compression-cache-"
 	compressionExtension = ".tgz"
@@ -55,9 +53,6 @@ type EnclaveContext struct {
 	client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
 
 	enclaveId EnclaveID
-
-	// The location on the filesystem where this code is running where the enclave data dir exists
-	enclaveDataDirpath string
 }
 
 /*
@@ -68,12 +63,10 @@ Creates a new EnclaveContext object with the given parameters.
 func NewEnclaveContext(
 	client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient,
 	enclaveId EnclaveID,
-	enclaveDataDirpath string,
 ) *EnclaveContext {
 	return &EnclaveContext{
 		client:             client,
 		enclaveId:          enclaveId,
-		enclaveDataDirpath: enclaveDataDirpath,
 	}
 }
 
@@ -175,12 +168,6 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	logrus.Trace("Container config object successfully generated")
 
 	logrus.Tracef("Creating files artifact ID str -> mount dirpaths map...")
-	// TODO DELETE THIS CHUNK
-	oldArtifactIdStrToMountDirpath := map[string]string{}
-	for filesArtifactId, mountDirpath := range containerConfig.GetOldFilesArtifactMountpoints() {
-		oldArtifactIdStrToMountDirpath[string(filesArtifactId)] = mountDirpath
-	}
-
 	artifactIdStrToMountDirpath := map[string]string{}
 	for filesArtifactId, mountDirpath := range containerConfig.GetFilesArtifactMountpoints() {
 		artifactIdStrToMountDirpath[string(filesArtifactId)] = mountDirpath
@@ -203,8 +190,6 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 		containerConfig.GetEntrypointOverrideArgs(),
 		containerConfig.GetCmdOverrideArgs(),
 		containerConfig.GetEnvironmentVariableOverrides(),
-		serviceEnclaveDataDirMountpoint,
-		oldArtifactIdStrToMountDirpath,
 		artifactIdStrToMountDirpath,
 	)
 	resp, err := enclaveCtx.client.StartService(ctx, startServiceArgs)
@@ -248,20 +233,6 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID
 	if resp.GetPublicIpAddr() == "" {
 		return nil, stacktrace.NewError(
 			"Kurtosis API reported an empty public IP address for service '%v' - this should never happen, and is a bug with Kurtosis!",
-			serviceId)
-	}
-
-	relativeServiceDirpath := resp.GetRelativeServiceDirpath()
-	if relativeServiceDirpath == "" {
-		return nil, stacktrace.NewError(
-			"Kurtosis API reported an empty relative service directory path for service '%v' - this should never happen, and is a bug with Kurtosis!",
-			serviceId)
-	}
-
-	enclaveDataDirMountDirpathOnSvcContainer := resp.GetEnclaveDataDirMountDirpath()
-	if enclaveDataDirMountDirpathOnSvcContainer == "" {
-		return nil, stacktrace.NewError(
-			"Kurtosis API reported an empty enclave data dir mount dirpath for service '%v' - this should never happen, and is a bug with Kurtosis!",
 			serviceId)
 	}
 
@@ -501,7 +472,7 @@ func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreW
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (EnclaveContext *EnclaveContext) StoreFilesFromService(ctx context.Context, serviceId services.ServiceID, absoluteFilepathOnServiceContainer string) (services.FilesArtifactID, error) {
+func (EnclaveContext *EnclaveContext) StoreServiceFiles(ctx context.Context, serviceId services.ServiceID, absoluteFilepathOnServiceContainer string) (services.FilesArtifactID, error) {
 	serviceIdStr := string(serviceId)
 	args := binding_constructors.NewStoreFilesArtifactFromServiceArgs(serviceIdStr, absoluteFilepathOnServiceContainer)
 	response, err := EnclaveContext.client.StoreFilesArtifactFromService(ctx, args)
