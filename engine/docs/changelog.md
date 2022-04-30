@@ -1,7 +1,9 @@
 # TBD
+### Fixes
+* Upgraded to Core 1.45.3 to finally fix the bug with the Typescript Node TGZ archiver
 
 # 1.17.2
-### Changes
+### Fixes
 * Upgraded Core to 1.45.2 to fix more bugs with node archiver
 
 # 1.17.1
