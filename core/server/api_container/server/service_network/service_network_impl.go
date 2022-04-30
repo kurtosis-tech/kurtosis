@@ -46,9 +46,6 @@ type serviceRunInfo struct {
 	// Service's container ID
 	serviceGUID service.ServiceGUID
 
-	// Where the enclave data dir is bind-mounted on the service
-	enclaveDataDirMntDirpath string
-
 	// NOTE: When we want to make restart-able enclaves, we'll need to read these values from the container every time
 	//  we need them (rather than storing them in-memory on the API container, which means the API container can't be restarted)
 	privatePorts      map[string]*port_spec.PortSpec
@@ -246,7 +243,6 @@ func (network *ServiceNetworkImpl) StartService(
 	entrypointArgs []string,
 	cmdArgs []string,
 	dockerEnvVars map[string]string,
-	enclaveDataDirMntDirpath string,
 	filesArtifactMountDirpaths map[service.FilesArtifactID]string,
 ) (
 	resultMaybePublicIpAddr net.IP, // Will be nil if the service doesn't declare any private ports
@@ -309,7 +305,6 @@ func (network *ServiceNetworkImpl) StartService(
 		entrypointArgs,
 		cmdArgs,
 		dockerEnvVars,
-		enclaveDataDirMntDirpath,
 		filesArtifactMountDirpaths,
 	)
 	if err != nil {
@@ -326,7 +321,6 @@ func (network *ServiceNetworkImpl) StartService(
 
 	runInfo := serviceRunInfo{
 		serviceGUID:              serviceGUID,
-		enclaveDataDirMntDirpath: enclaveDataDirMntDirpath,
 		privatePorts:             privatePorts,
 		maybePublicIpAddr:        maybeServicePublicIpAddr,
 		maybePublicPorts:         maybeServicePublicPorts,
@@ -475,20 +469,19 @@ func (network *ServiceNetworkImpl) GetServiceRunInfo(serviceId service.ServiceID
 	privatePorts map[string]*port_spec.PortSpec,
 	publicIpAddr net.IP,
 	publicPorts map[string]*port_spec.PortSpec,
-	enclaveDataDirMntDirpath string,
 	resultErr error,
 ) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
-		return nil, nil, nil, "", stacktrace.NewError("Cannot get run info for service '%v'; the service network has been destroyed", serviceId)
+		return nil, nil, nil, stacktrace.NewError("Cannot get run info for service '%v'; the service network has been destroyed", serviceId)
 	}
 
 	runInfo, found := network.serviceRunInfo[serviceId]
 	if !found {
-		return nil, nil, nil, "", stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
+		return nil, nil, nil, stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
 	}
-	return runInfo.privatePorts, runInfo.maybePublicIpAddr, runInfo.maybePublicPorts, runInfo.enclaveDataDirMntDirpath, nil
+	return runInfo.privatePorts, runInfo.maybePublicIpAddr, runInfo.maybePublicPorts, nil
 }
 
 func (network *ServiceNetworkImpl) GetServiceIDs() map[service.ServiceID]bool {

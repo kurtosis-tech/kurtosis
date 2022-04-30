@@ -108,7 +108,6 @@ export function newStartServiceArgs(
     entrypointArgs: string[],
     cmdArgs: string[],
     dockerEnvVars: Map<string, string>,
-    enclaveDataDirMntDirpath: string,
     filesArtifactMountDirpaths: Map<string, string>,
 ): StartServiceArgs {
     const result: StartServiceArgs = new StartServiceArgs();

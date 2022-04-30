@@ -205,7 +205,6 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 		args.EntrypointArgs,
 		args.CmdArgs,
 		args.DockerEnvVars,
-		args.EnclaveDataDirMntDirpath,
 		filesArtifactMountpointsByArtifactId,
 	)
 	if err != nil {
@@ -242,7 +241,7 @@ func (apicService ApiContainerService) GetServiceInfo(ctx context.Context, args 
 		return nil, stacktrace.Propagate(err, "An error occurred getting the registration info for apicService '%v'", serviceIdStr)
 	}
 
-	privateServicePortSpecs, maybePublicIpAddr, maybePublicServicePortSpecs, enclaveDataDirMntDirpath, err := apicService.serviceNetwork.GetServiceRunInfo(serviceId)
+	privateServicePortSpecs, maybePublicIpAddr, maybePublicServicePortSpecs, err := apicService.serviceNetwork.GetServiceRunInfo(serviceId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the run info for apicService '%v'", serviceIdStr)
 	}
@@ -267,7 +266,6 @@ func (apicService ApiContainerService) GetServiceInfo(ctx context.Context, args 
 		privateApiPorts,
 		publicIpAddrStr,
 		publicApiPorts,
-		enclaveDataDirMntDirpath,
 	)
 	return serviceInfoResponse, nil
 }

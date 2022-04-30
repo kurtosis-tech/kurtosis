@@ -118,7 +118,6 @@ func NewStartServiceArgs(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	enclaveDataDirMntDirpath string,
 	filesArtifactMountDirpaths map[string]string,
 ) *kurtosis_core_rpc_api_bindings.StartServiceArgs {
 	return &kurtosis_core_rpc_api_bindings.StartServiceArgs{
@@ -128,7 +127,6 @@ func NewStartServiceArgs(
 		EntrypointArgs:             entrypointArgs,
 		CmdArgs:                    cmdArgs,
 		DockerEnvVars:              envVars,
-		EnclaveDataDirMntDirpath:   enclaveDataDirMntDirpath,
 		FilesArtifactMountpoints:   filesArtifactMountDirpaths,
 	}
 }
@@ -154,14 +152,12 @@ func NewGetServiceInfoResponse(
 	privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
 	publicIpAddr string,
 	publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-	enclaveDataDirMountDirpath string,
 ) *kurtosis_core_rpc_api_bindings.GetServiceInfoResponse {
 	return &kurtosis_core_rpc_api_bindings.GetServiceInfoResponse{
 		PrivateIpAddr:              privateIpAddr,
 		PrivatePorts:               privatePorts,
 		PublicIpAddr:               publicIpAddr,
 		PublicPorts:                publicPorts,
-		EnclaveDataDirMountDirpath: enclaveDataDirMountDirpath,
 	}
 }
 

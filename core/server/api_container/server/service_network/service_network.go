@@ -53,7 +53,6 @@ type ServiceNetwork interface {
 		entrypointArgs []string,
 		cmdArgs []string,
 		dockerEnvVars map[string]string,
-		enclaveDataDirMountDirpath string,
 		filesArtifactMountDirpaths map[service.FilesArtifactID]string,
 	) (
 		resultPublicIpAddr net.IP,
@@ -82,7 +81,6 @@ type ServiceNetwork interface {
 		privatePorts map[string]*port_spec.PortSpec,
 		maybePublicIpAddr net.IP, // Will be nil if the service didn't declare any private ports
 		publicPorts map[string]*port_spec.PortSpec, // Will be empty if the service didn't declare any private ports
-		enclaveDataDirMntDirpath string, // The filepath on the service container where the enclave data dir is mounted
 		resultErr error,
 	)
 

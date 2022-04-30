@@ -2498,7 +2498,6 @@ proto.api_container_api.StartServiceArgs.toObject = function(includeInstance, ms
     entrypointArgsList: (f = jspb.Message.getRepeatedField(msg, 4)) == null ? undefined : f,
     cmdArgsList: (f = jspb.Message.getRepeatedField(msg, 5)) == null ? undefined : f,
     dockerEnvVarsMap: (f = msg.getDockerEnvVarsMap()) ? f.toObject(includeInstance, undefined) : [],
-    enclaveDataDirMntDirpath: jspb.Message.getFieldWithDefault(msg, 7, ""),
     filesArtifactMountpointsMap: (f = msg.getFilesArtifactMountpointsMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
@@ -2564,11 +2563,7 @@ proto.api_container_api.StartServiceArgs.deserializeBinaryFromReader = function(
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
          });
       break;
-    case 7:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setEnclaveDataDirMntDirpath(value);
-      break;
-    case 9:
+    case 8:
       var value = msg.getFilesArtifactMountpointsMap();
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
@@ -2639,16 +2634,9 @@ proto.api_container_api.StartServiceArgs.serializeBinaryToWriter = function(mess
   if (f && f.getLength() > 0) {
     f.serializeBinary(6, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
   }
-  f = message.getEnclaveDataDirMntDirpath();
-  if (f.length > 0) {
-    writer.writeString(
-      7,
-      f
-    );
-  }
   f = message.getFilesArtifactMountpointsMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(9, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
+    f.serializeBinary(8, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
   }
 };
 
@@ -2808,32 +2796,14 @@ proto.api_container_api.StartServiceArgs.prototype.clearDockerEnvVarsMap = funct
 
 
 /**
- * optional string enclave_data_dir_mnt_dirpath = 7;
- * @return {string}
- */
-proto.api_container_api.StartServiceArgs.prototype.getEnclaveDataDirMntDirpath = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, ""));
-};
-
-
-/**
- * @param {string} value
- * @return {!proto.api_container_api.StartServiceArgs} returns this
- */
-proto.api_container_api.StartServiceArgs.prototype.setEnclaveDataDirMntDirpath = function(value) {
-  return jspb.Message.setProto3StringField(this, 7, value);
-};
-
-
-/**
- * map<string, string> files_artifact_mountpoints = 9;
+ * map<string, string> files_artifact_mountpoints = 8;
  * @param {boolean=} opt_noLazyCreate Do not create the map if
  * empty, instead returning `undefined`
  * @return {!jspb.Map<string,string>}
  */
 proto.api_container_api.StartServiceArgs.prototype.getFilesArtifactMountpointsMap = function(opt_noLazyCreate) {
   return /** @type {!jspb.Map<string,string>} */ (
-      jspb.Message.getMapField(this, 9, opt_noLazyCreate,
+      jspb.Message.getMapField(this, 8, opt_noLazyCreate,
       null));
 };
 
@@ -3175,8 +3145,7 @@ proto.api_container_api.GetServiceInfoResponse.toObject = function(includeInstan
     privateIpAddr: jspb.Message.getFieldWithDefault(msg, 1, ""),
     privatePortsMap: (f = msg.getPrivatePortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : [],
     publicIpAddr: jspb.Message.getFieldWithDefault(msg, 3, ""),
-    publicPortsMap: (f = msg.getPublicPortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : [],
-    enclaveDataDirMountDirpath: jspb.Message.getFieldWithDefault(msg, 5, "")
+    publicPortsMap: (f = msg.getPublicPortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : []
   };
 
   if (includeInstance) {
@@ -3233,10 +3202,6 @@ proto.api_container_api.GetServiceInfoResponse.deserializeBinaryFromReader = fun
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api_container_api.Port.deserializeBinaryFromReader, "", new proto.api_container_api.Port());
          });
       break;
-    case 5:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setEnclaveDataDirMountDirpath(value);
-      break;
     default:
       reader.skipField();
       break;
@@ -3287,13 +3252,6 @@ proto.api_container_api.GetServiceInfoResponse.serializeBinaryToWriter = functio
   f = message.getPublicPortsMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(4, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api_container_api.Port.serializeBinaryToWriter);
-  }
-  f = message.getEnclaveDataDirMountDirpath();
-  if (f.length > 0) {
-    writer.writeString(
-      5,
-      f
-    );
   }
 };
 
@@ -3376,24 +3334,6 @@ proto.api_container_api.GetServiceInfoResponse.prototype.getPublicPortsMap = fun
 proto.api_container_api.GetServiceInfoResponse.prototype.clearPublicPortsMap = function() {
   this.getPublicPortsMap().clear();
   return this;};
-
-
-/**
- * optional string enclave_data_dir_mount_dirpath = 5;
- * @return {string}
- */
-proto.api_container_api.GetServiceInfoResponse.prototype.getEnclaveDataDirMountDirpath = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
-};
-
-
-/**
- * @param {string} value
- * @return {!proto.api_container_api.GetServiceInfoResponse} returns this
- */
-proto.api_container_api.GetServiceInfoResponse.prototype.setEnclaveDataDirMountDirpath = function(value) {
-  return jspb.Message.setProto3StringField(this, 5, value);
-};
 
 
 
