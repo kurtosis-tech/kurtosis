@@ -6,7 +6,6 @@ import {
     PortProtocol, 
     PortSpec, 
     ServiceID, 
-    SharedPath, 
     SoftPartitionConnection,
     UnblockedPartitionConnection
 } from "kurtosis-core-api-lib";
@@ -293,9 +292,9 @@ async function repartitionNetwork(enclaveContext: EnclaveContext, partitionConne
     return ok(null)
 }
 
-function getExampleServiceConfigSupplier():(ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error>{
+function getExampleServiceConfigSupplier():(ipAddr: string) => Result<ContainerConfig, Error>{
     const portSpec = new PortSpec(EXAMPLE_SERVICE_PORT_NUM_INSIDE_NETWORK, PortProtocol.TCP);
-    const containerConfigSupplier = (ipAddr: string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
+    const containerConfigSupplier = (ipAddr: string): Result<ContainerConfig, Error> => {
         const usedPorts = new Map<string,PortSpec>()
         usedPorts.set(EXAMPLE_SERVICE_MAIN_PORT_ID,portSpec)
         const containerConfig = new ContainerConfigBuilder(DOCKER_GETTING_STARTED_IMAGE)
@@ -307,8 +306,8 @@ function getExampleServiceConfigSupplier():(ipAddr: string, sharedDirectory: Sha
     return containerConfigSupplier
 }
 
-function getTestServiceContainerConfigSupplier():(ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error> {
-    const containerConfigSupplier = (ipAddr: string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
+function getTestServiceContainerConfigSupplier():(ipAddr: string) => Result<ContainerConfig, Error> {
+    const containerConfigSupplier = (ipAddr: string): Result<ContainerConfig, Error> => {
         
         // We sleep because the only function of this container is to test Docker executing a command while it's running
         // NOTE: We could just as easily combine this into a single array (rather than splitting between ENTRYPOINT and CMD
