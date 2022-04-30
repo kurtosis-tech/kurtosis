@@ -4,6 +4,8 @@
 
 ### Breaking Changes
 TODO thing about DockerKurtosisBackend needing CIDR and taken IPs
+* Renamed `service.ServiceID` to `user_service_registration.UserServiceID`
+    * Users should update their imports/packages accordingly
 
 # 0.16.0
 ### Removals

@@ -211,14 +211,26 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the modules
 	)
 
-	// Creates a user service inside an enclave with the given configuration
+	// CreateUserServiceRegistration registers the intent to start a service at a future point in time, which:
+	// - In Docker means allocating a static IP address
+	// - In Kubernetes means creating a Kubernetes service with an IP address
+	// A service registration is required to start a service
+	CreateUserServiceRegistration()
+
+	// GetUserServiceRegistrations gets the existing user service registrations
+	GetUserServiceRegistrations()
+
+	// DestroyUserServiceRegistration removes a previously-created user service registration object
+	// This will fail if a service is consuming the registration
+	DestroyUserServiceRegistration()
+
+	// CreateUserService consumes a service registration to create a user service with the given parameters
 	CreateUserService(
 		ctx context.Context,
 		id service.ServiceID,
-		guid service.ServiceGUID,
+		guid service.ServiceGUID, // TODO remove this??
 		containerImageName string,
 		enclaveId enclave.EnclaveID,
-		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 		privatePorts map[string]*port_spec.PortSpec,
 		entrypointArgs []string,
 		cmdArgs []string,
