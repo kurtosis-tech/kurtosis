@@ -40,7 +40,6 @@
     * `DockerKurtosisBackend.StopUserServices`
     * `DockerKurtosisBackend.DestroyUserServices`
 
-
 # 0.15.0
 ### Fixes
 * Fixed `UserService` object not having a `GetPrivatePorts` method
