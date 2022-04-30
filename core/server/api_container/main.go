@@ -156,12 +156,11 @@ func createServiceNetworkAndModuleStore(
 	objAttrsProvider := schema.GetObjectAttributesProvider()
 	enclaveObjAttrsProvider := objAttrsProvider.ForEnclave(enclaveIdStr)
 
-	// TODO We don't want to have the artifact cache inside the enclave data dir anymore - it should prob be a separate directory local filesystem
-	//  This is because, with Kurtosis interactive, it will need to be independent of executions of Kurtosis
-	filesArtifactCache, err := enclaveDataDir.GetFilesArtifactCache()
+	filesArtifactStore, err := enclaveDataDir.GetFilesArtifactStore()
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the files artifact cache")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the files artifact store")
 	}
+
 	isPartitioningEnabled := args.IsPartitioningEnabled
 
 	apiContainerSocketInsideNetwork := fmt.Sprintf(
@@ -176,7 +175,7 @@ func createServiceNetworkAndModuleStore(
 		enclaveObjAttrsProvider,
 		enclaveId,
 		freeIpAddrTracker,
-		filesArtifactCache,
+		filesArtifactStore,
 	)
 
 	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(

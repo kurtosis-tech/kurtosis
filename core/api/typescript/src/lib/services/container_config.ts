@@ -48,7 +48,7 @@ export class ContainerConfigBuilder {
         return this;
     }
 
-    public withFilesArtifacts(filesArtifactMountpoints: Map<FilesArtifactID, string>): ContainerConfigBuilder {
+    public withFiles(filesArtifactMountpoints: Map<FilesArtifactID, string>): ContainerConfigBuilder {
         this.filesArtifactMountpoints = filesArtifactMountpoints;
         return this;
     }

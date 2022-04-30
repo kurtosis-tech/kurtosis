@@ -24,10 +24,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/modules"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/services"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/mholt/archiver"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"io/ioutil"
 	"math"
+	"os"
 	"path/filepath"
+	"strings"
 )
 
 type EnclaveID string
@@ -39,8 +43,9 @@ const (
 	//  or it was repartitioned away)
 	defaultPartitionId PartitionID = ""
 
-	// The path on the user service container where the enclave data dir will be bind-mounted
-	serviceEnclaveDataDirMountpoint = "/kurtosis-enclave-data"
+	grpcDataTransferLimit = 3999000 //3.999 Mb. 1kb wiggle room. 1kb being about the size of a simple 2 paragraph readme.
+	tempCompressionDirPattern = "upload-compression-cache-"
+	compressionExtension = ".tgz"
 )
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -48,9 +53,6 @@ type EnclaveContext struct {
 	client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
 
 	enclaveId EnclaveID
-
-	// The location on the filesystem where this code is running where the enclave data dir exists
-	enclaveDataDirpath string
 }
 
 /*
@@ -61,12 +63,10 @@ Creates a new EnclaveContext object with the given parameters.
 func NewEnclaveContext(
 	client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient,
 	enclaveId EnclaveID,
-	enclaveDataDirpath string,
 ) *EnclaveContext {
 	return &EnclaveContext{
 		client:             client,
 		enclaveId:          enclaveId,
-		enclaveDataDirpath: enclaveDataDirpath,
 	}
 }
 
@@ -116,22 +116,9 @@ func (enclaveCtx *EnclaveContext) GetModuleContext(moduleId modules.ModuleID) (*
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveCtx *EnclaveContext) RegisterFilesArtifacts(filesArtifactUrls map[services.FilesArtifactID]string) error {
-	filesArtifactIdStrsToUrls := map[string]string{}
-	for artifactId, url := range filesArtifactUrls {
-		filesArtifactIdStrsToUrls[string(artifactId)] = url
-	}
-	args := binding_constructors.NewRegisterFilesArtifactArgs(filesArtifactIdStrsToUrls)
-	if _, err := enclaveCtx.client.RegisterFilesArtifacts(context.Background(), args); err != nil {
-		return stacktrace.Propagate(err, "An error occurred registering files artifacts: %+v", filesArtifactUrls)
-	}
-	return nil
-}
-
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) AddService(
 	serviceId services.ServiceID,
-	containerConfigSupplier func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error),
+	containerConfigSupplier func(ipAddr string) (*services.ContainerConfig, error),
 ) (*services.ServiceContext, error) {
 
 	serviceContext, err := enclaveCtx.AddServiceToPartition(
@@ -150,7 +137,7 @@ func (enclaveCtx *EnclaveContext) AddService(
 func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	serviceId services.ServiceID,
 	partitionID PartitionID,
-	containerConfigSupplier func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error),
+	containerConfigSupplier func(ipAddr string) (*services.ContainerConfig, error),
 ) (*services.ServiceContext, error) {
 
 	ctx := context.Background()
@@ -169,12 +156,9 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	logrus.Trace("New service successfully registered with Kurtosis API")
 
 	privateIpAddr := registerServiceResp.PrivateIpAddr
-	relativeServiceDirpath := registerServiceResp.RelativeServiceDirpath
-
-	sharedDirectory := enclaveCtx.getSharedDirectory(relativeServiceDirpath)
 
 	logrus.Trace("Generating container config object using the container config supplier...")
-	containerConfig, err := containerConfigSupplier(privateIpAddr, sharedDirectory)
+	containerConfig, err := containerConfigSupplier(privateIpAddr)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -206,7 +190,6 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 		containerConfig.GetEntrypointOverrideArgs(),
 		containerConfig.GetCmdOverrideArgs(),
 		containerConfig.GetEnvironmentVariableOverrides(),
-		serviceEnclaveDataDirMountpoint,
 		artifactIdStrToMountDirpath,
 	)
 	resp, err := enclaveCtx.client.StartService(ctx, startServiceArgs)
@@ -223,7 +206,6 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	serviceContext := services.NewServiceContext(
 		enclaveCtx.client,
 		serviceId,
-		sharedDirectory,
 		privateIpAddr,
 		privatePorts,
 		resp.GetPublicIpAddr(),
@@ -254,22 +236,6 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID
 			serviceId)
 	}
 
-	relativeServiceDirpath := resp.GetRelativeServiceDirpath()
-	if relativeServiceDirpath == "" {
-		return nil, stacktrace.NewError(
-			"Kurtosis API reported an empty relative service directory path for service '%v' - this should never happen, and is a bug with Kurtosis!",
-			serviceId)
-	}
-
-	enclaveDataDirMountDirpathOnSvcContainer := resp.GetEnclaveDataDirMountDirpath()
-	if enclaveDataDirMountDirpathOnSvcContainer == "" {
-		return nil, stacktrace.NewError(
-			"Kurtosis API reported an empty enclave data dir mount dirpath for service '%v' - this should never happen, and is a bug with Kurtosis!",
-			serviceId)
-	}
-
-	sharedDirectory := enclaveCtx.getSharedDirectory(relativeServiceDirpath)
-
 	serviceCtxPrivatePorts, err := convertApiPortsToServiceContextPorts(resp.GetPrivatePorts())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred converting the private ports returned by the API to ports usable by the service context")
@@ -282,7 +248,6 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID
 	serviceContext := services.NewServiceContext(
 		enclaveCtx.client,
 		serviceId,
-		sharedDirectory,
 		resp.GetPrivateIpAddr(),
 		serviceCtxPrivatePorts,
 		resp.GetPublicIpAddr(),
@@ -452,19 +417,74 @@ func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error
 	return moduleIDs, nil
 }
 
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.FilesArtifactID, error) {
+	pathToUpload = strings.TrimRight(pathToUpload, string(filepath.Separator))
+	if _, err := os.Stat(pathToUpload); err != nil {
+		return "", stacktrace.Propagate(err, "There was a path error for '%s' during file uploading.", pathToUpload)
+	}
+
+	tempDir, err := ioutil.TempDir("", tempCompressionDirPattern)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to create temporary directory '%s' for compression.", tempDir)
+	}
+
+	compressedFilePath := filepath.Join(tempDir, filepath.Base(pathToUpload) + compressionExtension)
+	if err = archiver.Archive([]string{pathToUpload}, compressedFilePath); err != nil {
+		return "", stacktrace.Propagate(err, "Failed to compress '%s'.", pathToUpload)
+	}
+
+	compressedFileInfo, err := os.Stat(compressedFilePath)
+	if err != nil {
+		return "", stacktrace.Propagate(err,
+			 "Failed to create a temporary archive file at '%s' during files upload for '%s'.",
+			tempDir, pathToUpload)
+	}
+
+	if compressedFileInfo.Size() >= grpcDataTransferLimit {
+		return "", stacktrace.Propagate(err,
+			"The files you are trying to upload, which are now compressed, exceed or reach 4mb, a limit imposed by gRPC. " +
+				"Please reduce the total file size and ensure it can compress to a size below 4mb.")
+	}
+	content, err := ioutil.ReadFile(compressedFilePath)
+	if err != nil{
+		return "", stacktrace.Propagate(err,
+			"There was an error reading from the temporary tar file '%s' recently compressed for upload.",
+			compressedFileInfo.Name())
+	}
+
+	args := binding_constructors.NewUploadFilesArtifactArgs(content)
+	response, err := enclaveCtx.client.UploadFilesArtifact(context.Background(), args)
+	if err != nil {
+		return "", stacktrace.Propagate(err,"An error was encountered while uploading data to the API Container.")
+	}
+	return services.FilesArtifactID(response.Uuid), nil;
+}
+
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreWeb string) (services.FilesArtifactID, error) {
+	args := binding_constructors.NewStoreWebFilesArtifactArgs(urlToStoreWeb)
+	response, err := enclaveCtx.client.StoreWebFilesArtifact(ctx, args)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred downloading files artifact from URL '%v'", urlToStoreWeb)
+	}
+	return services.FilesArtifactID(response.Uuid), nil
+}
+
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+func (EnclaveContext *EnclaveContext) StoreServiceFiles(ctx context.Context, serviceId services.ServiceID, absoluteFilepathOnServiceContainer string) (services.FilesArtifactID, error) {
+	serviceIdStr := string(serviceId)
+	args := binding_constructors.NewStoreFilesArtifactFromServiceArgs(serviceIdStr, absoluteFilepathOnServiceContainer)
+	response, err := EnclaveContext.client.StoreFilesArtifactFromService(ctx, args)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred copying source content from absolute filepath '%v' in service container with ID '%v'", absoluteFilepathOnServiceContainer, serviceIdStr)
+	}
+	return services.FilesArtifactID(response.Uuid), nil
+}
+
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func (enclaveCtx *EnclaveContext) getSharedDirectory(relativeServiceDirpath string) *services.SharedPath {
-
-	absFilepathOnThisContainer := filepath.Join(enclaveCtx.enclaveDataDirpath, relativeServiceDirpath)
-	absFilepathOnServiceContainer := filepath.Join(serviceEnclaveDataDirMountpoint, relativeServiceDirpath)
-
-	sharedDirectory := services.NewSharedPath(absFilepathOnThisContainer, absFilepathOnServiceContainer)
-
-	return sharedDirectory
-}
-
 func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc_api_bindings.Port) (map[string]*services.PortSpec, error) {
 	result := map[string]*services.PortSpec{}
 	for portId, apiPortSpec := range apiPorts {

@@ -319,67 +319,6 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.getModuleInfo
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
- *   !proto.api_container_api.RegisterFilesArtifactsArgs,
- *   !proto.google.protobuf.Empty>}
- */
-const methodDescriptor_ApiContainerService_RegisterFilesArtifacts = new grpc.web.MethodDescriptor(
-  '/api_container_api.ApiContainerService/RegisterFilesArtifacts',
-  grpc.web.MethodType.UNARY,
-  proto.api_container_api.RegisterFilesArtifactsArgs,
-  google_protobuf_empty_pb.Empty,
-  /**
-   * @param {!proto.api_container_api.RegisterFilesArtifactsArgs} request
-   * @return {!Uint8Array}
-   */
-  function(request) {
-    return request.serializeBinary();
-  },
-  google_protobuf_empty_pb.Empty.deserializeBinary
-);
-
-
-/**
- * @param {!proto.api_container_api.RegisterFilesArtifactsArgs} request The
- *     request proto
- * @param {?Object<string, string>} metadata User defined
- *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.google.protobuf.Empty)}
- *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.google.protobuf.Empty>|undefined}
- *     The XHR Node Readable Stream
- */
-proto.api_container_api.ApiContainerServiceClient.prototype.registerFilesArtifacts =
-    function(request, metadata, callback) {
-  return this.client_.rpcCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/RegisterFilesArtifacts',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_RegisterFilesArtifacts,
-      callback);
-};
-
-
-/**
- * @param {!proto.api_container_api.RegisterFilesArtifactsArgs} request The
- *     request proto
- * @param {?Object<string, string>=} metadata User defined
- *     call metadata
- * @return {!Promise<!proto.google.protobuf.Empty>}
- *     Promise that resolves to the response
- */
-proto.api_container_api.ApiContainerServicePromiseClient.prototype.registerFilesArtifacts =
-    function(request, metadata) {
-  return this.client_.unaryCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/RegisterFilesArtifacts',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_RegisterFilesArtifacts);
-};
-
-
-/**
- * @const
- * @type {!grpc.web.MethodDescriptor<
  *   !proto.api_container_api.RegisterServiceArgs,
  *   !proto.api_container_api.RegisterServiceResponse>}
  */
@@ -1106,6 +1045,189 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.getModules =
       request,
       metadata || {},
       methodDescriptor_ApiContainerService_GetModules);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.UploadFilesArtifactArgs,
+ *   !proto.api_container_api.UploadFilesArtifactResponse>}
+ */
+const methodDescriptor_ApiContainerService_UploadFilesArtifact = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/UploadFilesArtifact',
+  grpc.web.MethodType.UNARY,
+  proto.api_container_api.UploadFilesArtifactArgs,
+  proto.api_container_api.UploadFilesArtifactResponse,
+  /**
+   * @param {!proto.api_container_api.UploadFilesArtifactArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.UploadFilesArtifactResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.UploadFilesArtifactArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.UploadFilesArtifactResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.UploadFilesArtifactResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.uploadFilesArtifact =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/UploadFilesArtifact',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_UploadFilesArtifact,
+      callback);
+};
+
+
+/**
+ * @param {!proto.api_container_api.UploadFilesArtifactArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.api_container_api.UploadFilesArtifactResponse>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.uploadFilesArtifact =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/UploadFilesArtifact',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_UploadFilesArtifact);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.StoreWebFilesArtifactArgs,
+ *   !proto.api_container_api.StoreWebFilesArtifactResponse>}
+ */
+const methodDescriptor_ApiContainerService_StoreWebFilesArtifact = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/StoreWebFilesArtifact',
+  grpc.web.MethodType.UNARY,
+  proto.api_container_api.StoreWebFilesArtifactArgs,
+  proto.api_container_api.StoreWebFilesArtifactResponse,
+  /**
+   * @param {!proto.api_container_api.StoreWebFilesArtifactArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.StoreWebFilesArtifactResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.StoreWebFilesArtifactArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.StoreWebFilesArtifactResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StoreWebFilesArtifactResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.storeWebFilesArtifact =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/StoreWebFilesArtifact',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_StoreWebFilesArtifact,
+      callback);
+};
+
+
+/**
+ * @param {!proto.api_container_api.StoreWebFilesArtifactArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.api_container_api.StoreWebFilesArtifactResponse>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.storeWebFilesArtifact =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/StoreWebFilesArtifact',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_StoreWebFilesArtifact);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.StoreFilesArtifactFromServiceArgs,
+ *   !proto.api_container_api.StoreFilesArtifactFromServiceResponse>}
+ */
+const methodDescriptor_ApiContainerService_StoreFilesArtifactFromService = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/StoreFilesArtifactFromService',
+  grpc.web.MethodType.UNARY,
+  proto.api_container_api.StoreFilesArtifactFromServiceArgs,
+  proto.api_container_api.StoreFilesArtifactFromServiceResponse,
+  /**
+   * @param {!proto.api_container_api.StoreFilesArtifactFromServiceArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.StoreFilesArtifactFromServiceResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.StoreFilesArtifactFromServiceArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.StoreFilesArtifactFromServiceResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StoreFilesArtifactFromServiceResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.storeFilesArtifactFromService =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/StoreFilesArtifactFromService',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_StoreFilesArtifactFromService,
+      callback);
+};
+
+
+/**
+ * @param {!proto.api_container_api.StoreFilesArtifactFromServiceArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.api_container_api.StoreFilesArtifactFromServiceResponse>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.storeFilesArtifactFromService =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/StoreFilesArtifactFromService',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_StoreFilesArtifactFromService);
 };
 
 

@@ -6,10 +6,10 @@
 package service_network
 
 import (
+	"compress/gzip"
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
@@ -21,7 +21,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
+	"io/ioutil"
 	"net"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -36,16 +39,12 @@ const (
 type serviceRegistrationInfo struct {
 	serviceGUID      service.ServiceGUID
 	privateIpAddr    net.IP
-	serviceDirectory *enclave_data_directory.ServiceDirectory
 }
 
 // Information that gets created when a container is started for a service
 type serviceRunInfo struct {
 	// Service's container ID
 	serviceGUID service.ServiceGUID
-
-	// Where the enclave data dir is bind-mounted on the service
-	enclaveDataDirMntDirpath string
 
 	// NOTE: When we want to make restart-able enclaves, we'll need to read these values from the container every time
 	//  we need them (rather than storing them in-memory on the API container, which means the API container can't be restarted)
@@ -162,27 +161,27 @@ func (network *ServiceNetworkImpl) Repartition(
 func (network ServiceNetworkImpl) RegisterService(
 	serviceId service.ServiceID,
 	partitionId service_network_types.PartitionID,
-) (net.IP, string, error) {
+) (net.IP, error) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
-		return nil, "", stacktrace.NewError("Cannot register service with ID '%v'; the service network has been destroyed", serviceId)
+		return nil, stacktrace.NewError("Cannot register service with ID '%v'; the service network has been destroyed", serviceId)
 	}
 
 	if strings.TrimSpace(string(serviceId)) == "" {
-		return nil, "", stacktrace.NewError("Service ID cannot be empty or whitespace")
+		return nil, stacktrace.NewError("Service ID cannot be empty or whitespace")
 	}
 
 	if _, found := network.serviceRegistrationInfo[serviceId]; found {
-		return nil, "", stacktrace.NewError("Cannot register service with ID '%v'; a service with that ID already exists", serviceId)
+		return nil, stacktrace.NewError("Cannot register service with ID '%v'; a service with that ID already exists", serviceId)
 	}
 
 	if partitionId == "" {
 		partitionId = defaultPartitionId
 	}
 	if _, found := network.topology.GetPartitionServices()[partitionId]; !found {
-		return nil, "", stacktrace.NewError(
+		return nil, stacktrace.NewError(
 			"No partition with ID '%v' exists in the current partition topology",
 			partitionId,
 		)
@@ -190,7 +189,7 @@ func (network ServiceNetworkImpl) RegisterService(
 
 	ip, err := network.freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
-		return nil, "", stacktrace.Propagate(err, "An error occurred getting an IP for service with ID '%v'", serviceId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting an IP for service with ID '%v'", serviceId)
 	}
 	shouldFreeIpAddr := true
 	defer func() {
@@ -202,15 +201,10 @@ func (network ServiceNetworkImpl) RegisterService(
 	logrus.Debugf("Giving service '%v' IP '%v'", serviceId, ip.String())
 
 	serviceGuid := newServiceGUID(serviceId)
-	serviceDirectory, err := network.enclaveDataDir.GetServiceDirectory(serviceGuid)
-	if err != nil {
-		return nil, "", stacktrace.Propagate(err, "An error occurred creating a new service directory for service with GUID '%v'", serviceGuid)
-	}
 
 	newServiceRegistrationInfo := serviceRegistrationInfo{
 		serviceGUID:      serviceGuid,
 		privateIpAddr:    ip,
-		serviceDirectory: serviceDirectory,
 	}
 
 	network.serviceRegistrationInfo[serviceId] = newServiceRegistrationInfo
@@ -223,7 +217,7 @@ func (network ServiceNetworkImpl) RegisterService(
 	}()
 
 	if err := network.topology.AddService(serviceId, partitionId); err != nil {
-		return nil, "", stacktrace.Propagate(
+		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred adding service with ID '%v' to partition '%v' in the topology",
 			serviceId,
@@ -233,7 +227,7 @@ func (network ServiceNetworkImpl) RegisterService(
 
 	shouldFreeIpAddr = false
 	shouldUndoRegistrationInfoAdd = false
-	return ip, serviceDirectory.GetDirpathRelativeToDataDirRoot(), nil
+	return ip, nil
 }
 
 // TODO add tests for this
@@ -252,8 +246,7 @@ func (network *ServiceNetworkImpl) StartService(
 	entrypointArgs []string,
 	cmdArgs []string,
 	dockerEnvVars map[string]string,
-	enclaveDataDirMntDirpath string,
-	filesArtifactMountDirpaths map[files_artifact.FilesArtifactID]string,
+	filesArtifactMountDirpaths map[service.FilesArtifactID]string,
 ) (
 	resultMaybePublicIpAddr net.IP, // Will be nil if the service doesn't declare any private ports
 	resultPublicPorts map[string]*port_spec.PortSpec,
@@ -315,12 +308,13 @@ func (network *ServiceNetworkImpl) StartService(
 		entrypointArgs,
 		cmdArgs,
 		dockerEnvVars,
-		enclaveDataDirMntDirpath,
-		filesArtifactMountDirpaths)
+		filesArtifactMountDirpaths,
+	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating the user service")
+			"An error occurred creating the user service",
+		)
 	}
 
 	// TODO Restart-able enclaves: Don't store any service information in memory; instead, get it all from the KurtosisBackend when required
@@ -330,7 +324,6 @@ func (network *ServiceNetworkImpl) StartService(
 
 	runInfo := serviceRunInfo{
 		serviceGUID:              serviceGUID,
-		enclaveDataDirMntDirpath: enclaveDataDirMntDirpath,
 		privatePorts:             privatePorts,
 		maybePublicIpAddr:        maybeServicePublicIpAddr,
 		maybePublicPorts:         maybeServicePublicPorts,
@@ -512,21 +505,20 @@ func (network *ServiceNetworkImpl) ExecCommand(
 
 func (network *ServiceNetworkImpl) GetServiceRegistrationInfo(serviceId service.ServiceID) (
 	privateIpAddr net.IP,
-	relativeServiceDirpath string,
 	resultErr error,
 ) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
-		return nil, "", stacktrace.NewError("Cannot get registration info for service '%v'; the service network has been destroyed", serviceId)
+		return nil, stacktrace.NewError("Cannot get registration info for service '%v'; the service network has been destroyed", serviceId)
 	}
 
 	registrationInfo, found := network.serviceRegistrationInfo[serviceId]
 	if !found {
-		return nil, "", stacktrace.NewError("No registration information found for service with ID '%v'", serviceId)
+		return nil, stacktrace.NewError("No registration information found for service with ID '%v'", serviceId)
 	}
 
-	return registrationInfo.privateIpAddr, registrationInfo.serviceDirectory.GetDirpathRelativeToDataDirRoot(), nil
+	return registrationInfo.privateIpAddr, nil
 }
 
 
@@ -534,20 +526,19 @@ func (network *ServiceNetworkImpl) GetServiceRunInfo(serviceId service.ServiceID
 	privatePorts map[string]*port_spec.PortSpec,
 	publicIpAddr net.IP,
 	publicPorts map[string]*port_spec.PortSpec,
-	enclaveDataDirMntDirpath string,
 	resultErr error,
 ) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
-		return nil, nil, nil, "", stacktrace.NewError("Cannot get run info for service '%v'; the service network has been destroyed", serviceId)
+		return nil, nil, nil, stacktrace.NewError("Cannot get run info for service '%v'; the service network has been destroyed", serviceId)
 	}
 
 	runInfo, found := network.serviceRunInfo[serviceId]
 	if !found {
-		return nil, nil, nil, "", stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
+		return nil, nil, nil, stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
 	}
-	return runInfo.privatePorts, runInfo.maybePublicIpAddr, runInfo.maybePublicPorts, runInfo.enclaveDataDirMntDirpath, nil
+	return runInfo.privatePorts, runInfo.maybePublicIpAddr, runInfo.maybePublicPorts, nil
 }
 
 func (network *ServiceNetworkImpl) GetServiceIDs() map[service.ServiceID]bool {
@@ -560,6 +551,46 @@ func (network *ServiceNetworkImpl) GetServiceIDs() map[service.ServiceID]bool {
 		}
 	}
 	return serviceIDs
+}
+
+func (network *ServiceNetworkImpl) CopyFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (string, error) {
+	runInfo, foundRunInfo := network.serviceRunInfo[serviceId]
+	if !foundRunInfo {
+		return "", stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
+	}
+	serviceGuid := runInfo.serviceGUID
+
+	readCloser, err := network.kurtosisBackend.CopyFromUserService(ctx, network.enclaveId, serviceGuid, srcPath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred copying source '%v' from user service with GUID '%v' in enclave with ID '%v'", srcPath, serviceGuid, network.enclaveId)
+	}
+	defer readCloser.Close()
+
+	//Creates a new tgz file in a temporary directory
+	tarGzipFileFilepath, err := gzipCompressFile(readCloser)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred creating new temporary tar-gzip-file")
+	}
+
+	//Then opens the .tgz file
+	tarGzipFile, err := os.Open(tarGzipFileFilepath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred opening file '%v'", tarGzipFileFilepath)
+	}
+	defer tarGzipFile.Close()
+
+	store, err := network.enclaveDataDir.GetFilesArtifactStore()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the files artifact store")
+	}
+
+	//And finally pass it the .tgz file to the artifact file store
+	uuid, err := store.StoreFile(tarGzipFile)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while trying to store file '%v' into the artifact file store", tarGzipFileFilepath)
+	}
+
+	return uuid, nil
 }
 
 // ====================================================================================================
@@ -688,4 +719,25 @@ func getServiceByServiceGUIDFilter(serviceGUID service.ServiceGUID) *service.Ser
 			serviceGUID: true,
 		},
 	}
+}
+
+func gzipCompressFile(readCloser io.Reader) (resultFilepath string, resultErr error) {
+	useDefaultDirectoryArg := ""
+	withoutPatternArg := ""
+	tgzFile, err := ioutil.TempFile(useDefaultDirectoryArg,withoutPatternArg)
+	if err != nil {
+		return "", stacktrace.Propagate(err,
+			"There was an error creating a temporary file")
+	}
+	defer tgzFile.Close()
+
+	gzipCompressingWriter := gzip.NewWriter(tgzFile)
+	defer gzipCompressingWriter.Close()
+
+	tarGzipFileFilepath := tgzFile.Name()
+	if _, err := io.Copy(gzipCompressingWriter, readCloser); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred copying content to file '%v'", tarGzipFileFilepath)
+	}
+
+	return tarGzipFileFilepath, nil
 }

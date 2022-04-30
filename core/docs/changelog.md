@@ -1,5 +1,68 @@
 # TBD
 
+# 1.45.1
+### Fixes
+* Attempt to fix the bug in the node archiver
+* Renamed `web/node_file_archiver` -> `web/node_tgz_archiver` to match class name
+* The temporary files used by the node archiver are created in the operating system's temporary directory rather than the working directory
+
+# 1.45.0
+### Removals
+* Removed vestigial enclave data directories (e.g. `FilesArtifactCache`, `StaticFilesCache`, etc.)
+
+### Breaking Changes
+* Removed `ContainerConfigBuilder.WithFilesArtifacts`, as it's been replaced by `ContainerConfigBuilder.WithFiles`
+    * Users should use `ContainerConfigBuilder.WithFiles` instead
+* Renamed `EnclaveContext.StoreFilesFromService` to `StoreServiceFiles`
+    * Users should rename their code
+
+# 1.44.0
+### Fixes
+* Fixed Upload Files bug.
+
+### Features
+* Added `EnclaveContext.UploadFiles` to Typescript client for uploading files to the API Container.
+* Added `api/scripts/build.sh` to build just the API subproject
+
+### Breaking Changes
+* Removed `EnclaveContext.RegisterFilesArtifacts`
+    * Users should use `EnclaveContext.StoreWebFiles` instead
+* Removed the `SharedPath` argument from the container config supplier passed in to `EnclaveContext.AddService` and `EnclaveContext.AddServiceToPartition`
+    * Users should:
+        * Switch to using the `EnclaveContext` functions `UploadFiles`, `StoreWebFiles`, and `StoreFilesFromService` for storing files before starting a service
+        * Use the `ContainerConfigBuilder.WithFiles` function to mount the previously-stored files on the service being started
+* Removed the `ServiceContext.GetSharedPath` function
+    * Users should switch to using `EnclaveContext.StoreFilesFromService`
+
+# 1.43.6
+### Features
+* Add `EnclaveContext.StoreFilesFromService` for copy files from a user service
+
+# 1.43.5
+### Changes
+* Bump to container-engine-lib 0.16.0 which has some internal code cleanups
+
+# 1.43.4
+### Fixes
+* Fix a bug with expanding UUID-keyed files artifacts
+
+# 1.43.3
+### Features
+* Add `EnclaveContext.WithFiles` for specifying mounting files artifacts that come back from the `EnclaveContext.UploadFiles` command
+* Add `EnclaveContext.StoreWebFiles` for downloading files artifacts from the internet
+
+# 1.43.2
+### Fixes
+* Fixed a bug where modules were getting enclave data dir & volume mounted in the same place
+
+# 1.43.1
+### Features
+* Added new backend file storage methods for future volume support.
+* Added UploadFilesArtifact command to API Container.
+* Added UploadFiles to enclave_context for Go.
+* Add a `DownloadFilesArtifact` endpoint to the API container for downloading files artifacts from the web
+* All container/volume/enclave stopping & destroying work is done in parallel
+
 # 1.43.0
 ### Breaking Changes
 * Added new return value `module's GUID` in `ApiContainerService.LoadModuleResponse`
@@ -23,6 +86,7 @@
 # 1.42.2
 ### Fixes
 * Use container-engine-lib 0.14.3, which supports the old port specs temporarily
+
 
 # 1.42.1
 ### Fixes

@@ -26,9 +26,9 @@ type FilesArtifactID string
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 type ContainerConfig struct {
 	image                        string
-	usedPorts                    map[string]*PortSpec
-	filesArtifactMountpoints     map[FilesArtifactID]string
-	entrypointOverrideArgs       []string
+	usedPorts                   map[string]*PortSpec
+	filesArtifactMountpoints    map[FilesArtifactID]string
+	entrypointOverrideArgs      []string
 	cmdOverrideArgs              []string
 	environmentVariableOverrides map[string]string
 }
@@ -64,9 +64,9 @@ func (config *ContainerConfig) GetEnvironmentVariableOverrides() map[string]stri
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 type ContainerConfigBuilder struct {
 	image                        string
-	usedPorts                    map[string]*PortSpec
-	filesArtifactMountpoints     map[FilesArtifactID]string
-	entrypointOverrideArgs       []string
+	usedPorts                   map[string]*PortSpec
+	filesArtifactMountpoints  map[FilesArtifactID]string
+	entrypointOverrideArgs      []string
 	cmdOverrideArgs              []string
 	environmentVariableOverrides map[string]string
 }
@@ -87,7 +87,7 @@ func (builder *ContainerConfigBuilder) WithUsedPorts(usedPorts map[string]*PortS
 	return builder
 }
 
-func (builder *ContainerConfigBuilder) WithFilesArtifacts(filesArtifactMountpoints map[FilesArtifactID]string) *ContainerConfigBuilder {
+func (builder *ContainerConfigBuilder) WithFiles(filesArtifactMountpoints map[FilesArtifactID]string) *ContainerConfigBuilder {
 	builder.filesArtifactMountpoints = filesArtifactMountpoints
 	return builder
 }

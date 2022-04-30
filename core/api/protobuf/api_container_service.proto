@@ -20,10 +20,6 @@ service ApiContainerService {
   // Gets information about a loaded module
   rpc GetModuleInfo(GetModuleInfoArgs) returns (GetModuleInfoResponse) {};
 
-  // Tells the API container that the client has files artifacts from the web that it would like the API container to know about
-  // The API container will download these artifacts locally, so they're available when launching services
-  rpc RegisterFilesArtifacts(RegisterFilesArtifactsArgs) returns (google.protobuf.Empty) {};
-
   // Registers a service with the API container but doesn't start the container for it
   rpc RegisterService(RegisterServiceArgs) returns (RegisterServiceResponse) {};
 
@@ -59,6 +55,15 @@ service ApiContainerService {
 
   // Returns the IDs of the Kurtosis modules that have been loaded into the enclave
   rpc GetModules(google.protobuf.Empty) returns (GetModulesResponse) {};
+
+  // Uploads a files artifact to the Kurtosis File System.
+  rpc UploadFilesArtifact(UploadFilesArtifactArgs) returns (UploadFilesArtifactResponse) {};
+
+  // Tells the API container to download a files artifact from the web to the Kurtosis File System
+  rpc StoreWebFilesArtifact(StoreWebFilesArtifactArgs) returns (StoreWebFilesArtifactResponse) {};
+
+  // Tells the API container to copy a files artifact from a service to the Kurtosis File System
+  rpc StoreFilesArtifactFromService(StoreFilesArtifactFromServiceArgs) returns (StoreFilesArtifactFromServiceResponse) {}
 }
 
 // ==============================================================================================
@@ -153,14 +158,6 @@ message GetModuleInfoResponse {
 }
 
 // ==============================================================================================
-//                                       Register Files Artifacts
-// ==============================================================================================
-message RegisterFilesArtifactsArgs {
-  // A mapping of user_defined_id -> url_of_file_artifact
-  map<string, string> files_artifact_urls = 1;
-}
-
-// ==============================================================================================
 //                                     Register Service
 // ==============================================================================================
 message RegisterServiceArgs {
@@ -174,9 +171,6 @@ message RegisterServiceArgs {
 message RegisterServiceResponse {
   // The IP address *inside* the enclave that the service will receive when it starts
   string private_ip_addr = 1;
-
-  // The dirpath where the service's directory exists inside the enclave data directory, relative to the enclave data dir root
-  string relative_service_dirpath = 2;
 }
 
 // ==============================================================================================
@@ -200,11 +194,8 @@ message StartServiceArgs {
   // Docker environment variables that should be set in the service's container
   map<string, string> docker_env_vars = 6;
 
-  // The full path where the API container should mount the enclave data directory on the service container
-  string enclave_data_dir_mnt_dirpath = 7;
-
-  // Mapping of files_artifact_id -> filepath_on_container_to_mount_artifact_contents
-  map<string, string> files_artifact_mount_dirpaths = 8;
+  // Mapping of files_artifact_uuid -> filepath_on_container_to_mount_artifact_contents
+  map<string, string> files_artifact_mountpoints = 8;
 }
 
 message StartServiceResponse {
@@ -242,12 +233,6 @@ message GetServiceInfoResponse {
   // The user_specified_port_id will match the keys specified in StartServiceArgs
   // NOTE: Will be empty if the service isn't running or didn't define any private ports
   map<string, Port> public_ports = 4;
-
-  // The full path where the enclave data dir is mounted on the service
-  string enclave_data_dir_mount_dirpath = 5;
-
-  // The dirpath where the service's directory exists inside the enclave data directory, relative to the enclave data directory root
-  string relative_service_dirpath = 6;
 }
 
 // ==============================================================================================
@@ -372,4 +357,50 @@ message GetServicesResponse {
 message GetModulesResponse {
   // "Set" of current Kurtosis module IDs loaded in the enclave
   map<string, bool> module_ids = 1;
+}
+
+
+// ==============================================================================================
+//                                          Upload Files Artifact
+// ==============================================================================================
+message UploadFilesArtifactArgs {
+  // Bytes of the files artifact to store
+  bytes data = 1;
+}
+
+message UploadFilesArtifactResponse {
+  // UUID of the files artifact, for use when referencing it in the future
+  string uuid = 1;
+}
+
+
+// ==============================================================================================
+//                                        Store Web Files Artifact
+// ==============================================================================================
+message StoreWebFilesArtifactArgs {
+  // URL to download the artifact from
+  string url = 1;
+}
+
+message StoreWebFilesArtifactResponse {
+  // UUID of the files artifact, for use when referencing it in the future
+  string uuid = 1;
+}
+
+
+// ==============================================================================================
+//                               Store Files Artifact From Service
+// ==============================================================================================
+
+message StoreFilesArtifactFromServiceArgs {
+  // ID that will be used to identify the service where the source files will be copied from
+  string service_id = 1;
+
+  // The absolute source path where the source files will be copied from
+  string source_path = 2;
+}
+
+message StoreFilesArtifactFromServiceResponse {
+  // UUID of the files artifact, for use when referencing it in the future
+  string uuid = 1;
 }

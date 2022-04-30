@@ -61,6 +61,7 @@ Gets the [ModuleContext][modulecontext] associated with an already-running modul
 
 * `moduleContext`: The [ModuleContext][modulecontext] representation of the running module container, which allows execution of the module's execute function (if it exists).
 
+<!-- TODO DELETE THIS!!! -->
 ### registerFilesArtifacts(Map\<FilesArtifactID, String\> filesArtifactUrls)
 Downloads the given files artifacts to the Kurtosis engine, associating them with the given IDs, so they can be mounted inside a service's filespace at creation time via [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
@@ -68,24 +69,21 @@ Downloads the given files artifacts to the Kurtosis engine, associating them wit
 
 * `filesArtifactUrls`: A map of files_artifact_id -> url, where the ID is how the artifact will be referenced in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints] and the URL is the URL on the web where the files artifact should be downloaded from.
 
-### addServiceToPartition(ServiceID serviceId, PartitionID partitionId, Func(String ipAddr, [SharedPath][sharedpath] sharedDirectory) -\> [ContainerConfig][containerconfig] containerConfigSupplier) -\> ([ServiceContext][servicecontext] serviceContext, Map\<String, PortBinding\> hostPortBindings)
+### addServiceToPartition(ServiceID serviceId, PartitionID partitionId, Func(String ipAddr) -\> [ContainerConfig][containerconfig] containerConfigSupplier) -\> ([ServiceContext][servicecontext] serviceContext, Map\<String, PortBinding\> hostPortBindings)
 Starts a new service in the enclave with the given service ID, inside the partition with the given ID, using the given config supplier.
 
 **Args**
 
 * `serviceId`: The ID that the new service should have.
 * `partitionId`: The ID of the partition that the new service should be started in. This can be left blank to start the service in the default partition if it exists (i.e. if the enclave hasn't been repartitioned and the default partition removed).
-* `containerConfigSupplier`: An anonymous function, used to produce the [ContainerConfig][containerconfig] for starting the service, which receives two dynamic values as arguments: 
-    1. The private IP address of the service being started (the IP address of the service _inside_ the service's enclave)
-    1. A [SharedPath][sharedpath] object which represents a shared directory that is mounted on both a) the container where this code is running and b) the service container being started, so that files can be made available to the service container by creating them with this container. E.g. calling `sharedDirectory.getChildPath("newfile.txt")` will get the path to an object that can be a) written by this container via [SharedPath.getAbsPathOnThisContainer][sharedpath_getabspathonthiscontainer] and b) used by the service container via [SharedPath.getAbsPathOnServiceContainer][sharedpath_getabspathonservicecontainer].
-
+* `containerConfigSupplier`: An anonymous function, used to produce the [ContainerConfig][containerconfig] for starting the service, which receives the private IP address of the service being started (the IP address of the service _inside_ the service's enclave)
 
 **Returns**
 
 * `serviceContext`: The [ServiceContext][servicecontext] representation of a service running in a Docker container.
 * `hostPortBindings`: The port spec strings that the service declared (as defined in [ContainerConfig.usedPorts][containerconfig_usedports]), mapped to the port on the host machine where the port has been bound to. This allows you to make requests to a service running in Kurtosis by making requests to a port on your local machine. If a port was not bound to a host machine port, it will not be present in the map (and if no ports were bound to host machine ports, the map will be empty).
 
-### addService(ServiceID serviceId,  Func(String ipAddr, [SharedPath][sharedpath] sharedDirectory) -\> [ContainerConfig][containerconfig] containerConfigSupplier) -\> ([ServiceContext][servicecontext] serviceContext, Map\<String, PortBinding\> hostPortBindings)
+### addService(ServiceID serviceId,  Func(String ipAddr) -\> [ContainerConfig][containerconfig] containerConfigSupplier) -\> ([ServiceContext][servicecontext] serviceContext, Map\<String, PortBinding\> hostPortBindings)
 Convenience wrapper around [EnclaveContext.addServiceToPartition][enclavecontext_addservicetopartition], that adds the service to the default partition. Note that if the enclave has been repartitioned and the default partition doesn't exist anymore, this method will fail.
 
 ### getServiceContext(ServiceID serviceId) -\> [ServiceContext][servicecontext]
@@ -159,7 +157,39 @@ Gets the IDs of the Kurtosis modules that have been loaded into the enclave.
 
 * `moduleIds`: A set of Kurtosis module IDs that are running in the enclave
 
+### uploadFiles(String pathToUpload)
+Takes a filepath or directory path that will be compressed and uploaded to the Kurtosis filestore for use with [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
+**Args**
+
+* `pathToUpload`: Filepath or dirpath on the local machine to compress and upload to Kurtosis.
+
+**Returns**
+
+* `uuid`: A unique ID as a string identifying the uploaded files, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+
+### storeWebFiles(String urlToDownload)
+Downloads a files-containing `.tgz` from the given URL to the Kurtosis engine, so that the files inside can be mounted inside a service's filespace at creation time via [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+
+**Args**
+
+* `urlToDownload`: The URL on the web where the files-containing `.tgz` should be downloaded from.
+
+**Returns**
+
+* `uuid`: A unique ID as a string identifying the downloaded, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+
+### storeServiceFiles(ServiceID serviceId, String absoluteFilepathOnServiceContainer)
+Copy a file or folder from a service container to the Kurtosis filestore for use with [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints]
+
+**Args**
+
+* `serviceId`: The ID of the service which contains the file or the folder.
+* `absoluteFilepathOnServiceContainer`: The absolute filepath on the service where the file or folder should be copied from
+
+**Returns**
+
+* `uuid`: A unique ID as a string identifying the generated files artifact, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
 PartitionConnection
 -------------------
@@ -182,11 +212,11 @@ The name of the container image that Kurtosis should use when creating the servi
 The ports that the container will be listening on, identified by a user-friendly ID that can be used to select the port again in the future (e.g. via [ServiceContext.getPublicPorts][servicecontext_getpublicports].
 
 ### Map\<String, String\> filesArtifactMountpoints
-Sometimes a service needs files to be available before it starts, but creating those files manually is slow, difficult, or would require committing a very large artifact to the testsuite's Git repo (e.g. starting a service with a 5 GB Postgres database mounted). To ease this pain, Kurtosis allows you to specify URLs of gzipped TAR files that Kurtosis will download, uncompress, and mount inside your service containers. 
+Sometimes a service needs files to be available before it starts (e.g. starting a service with a 5 GB Postgres database mounted). To ease this pain, Kurtosis allows you to specify gzipped TAR files that Kurtosis will uncompress and mount at locations on your service containers. These "files artifacts" will need to have been stored in Kurtosis beforehand using methods like [EnclaveContext.uploadFiles][enclavecontext_uploadfiles].
 
-This property is therefore a map of the file artifact ID -> path on the container where the uncompressed artifact contents should be mounted, with the file artifact IDs corresponding to the files artifacts registered via [EnclaveContext.registerFilesArtifacts][enclavecontext_registerfilesartifacts]. 
+This property is therefore a map of the files artifact ID -> path on the container where the uncompressed artifact contents should be mounted, with the file artifact IDs corresponding to the ID returned by files-storing methods like [EnclaveContext.uploadFiles][enclavecontext_uploadfiles]. 
 
-E.g. if my test declares an artifact called `5gb-database` that lives at `https://my-site.com/test-artifacts/5gb-database.tgz`, I might return the following map from this function to mount the artifact at the `/database` path inside my container: `{"5gb-database": "/database"}`.
+E.g. if I've previously uploaded a set of files using [EnclaveContext.uploadFiles][enclavecontext_uploadfiles] and Kurtosis has returned me the ID `813bdb20-3aab-4c5b-a0f5-a7deba7bf0d7`, I might ask Kurtosis to mount the contents inside my container at the `/database` path using a map like `{"813bdb20-3aab-4c5b-a0f5-a7deba7bf0d7": "/database"}`.
 
 ### List\<String\> entrypointOverrideArgs
 You often won't control the container images that you'll be using in your testnet, and the `ENTRYPOINT` statement  hardcoded in their Dockerfiles might not be suitable for what you need. This function allows you to override these statements when necessary.
@@ -215,13 +245,6 @@ Gets the ID that Kurtosis uses to identify the service.
 **Returns**
 
 The service's ID.
-
-### getSharedDirectory() -\> [SharedPath][sharedpath]
-Get the directory that is mounted on both the current container running this code and the service container, so that files can be passed back and forth. The directory is expressed as a [SharedPath][sharedpath] object, so file inside can be referenced by absolute filepath on either this container or the service container.
-
-**Returns**
-
-The [SharedPath][sharedpath] object.
 
 ### getPrivateIpAddress() -\> String
 Gets the IP address where the service is reachable at from _inside_ the enclave that the container is running inside. This IP address is how other containers inside the enclave can connect to the service.
@@ -263,27 +286,6 @@ Uses [Docker exec](https://docs.docker.com/engine/reference/commandline/exec/) f
 * `exitCode`: The exit code of the command.
 * `logs`: The output of the run command, assuming a UTF-8 encoding. **NOTE:** Commands that output non-UTF-8 output will likely be garbled!
 
-SharedPath
-----------
-Simple structure that holds information about a filepath shared between two containers: this container, and a container running a service in a testnet. The actual object referenced by this path could be anything - a file, a directory, a symlink, nonexistent, etc.
-
-### getAbsPathOnThisContainer() -\> String
-For the object in the shared directory represented by this `SharedPath` object, gets the absolute filepath on the container where this code is running.
-
-### getAbsPathOnServiceContainer() -\> String
-For the object in the shared directory represented by this `SharedPath` object, gets the absolute filepath on the remote service container where the shared directory is also mounted.
-
-### getChildPath(String relativePath) -\> [SharedPath][sharedpath]
-Gets a new [SharedPath][sharedpath] object that represents another path inside the shared directory, relative to the current path object. E.g. if the shared directory had a subdirectory called `my-dir` which has `some-file.txt`, `sharedDirRoot.getChildPath("my-dir")` would represent that subdirectory and `sharedDirRoot.getChildPath("my-dir/some-file.txt")` would get the file inside.
-
-**Args**
-
-* `relativePath`: The relative path to add at the end of the [SharedPath][sharedpath].
-
-**Returns**
-
-The new [SharedPath][sharedpath] object.
-
 ---
 
 _Found a bug? File it on [the repo][issues]!_
@@ -304,17 +306,14 @@ _Found a bug? File it on [the repo][issues]!_
 
 [enclavecontext]: #enclavecontext
 [enclavecontext_registerfilesartifacts]: #registerfilesartifactsmapfilesartifactid-string-filesartifacturls
-[enclavecontext_addservice]: #addserviceserviceid-serviceid--funcstring-ipaddr-sharedpath-shareddirectory---containerconfig-containerconfigsupplier---servicecontext-servicecontext-mapstring-portbinding-hostportbindings
-[enclavecontext_addservicetopartition]: #addservicetopartitionserviceid-serviceid-partitionid-partitionid-funcstring-ipaddr-sharedpath-shareddirectory---containerconfig-containerconfigsupplier---servicecontext-servicecontext-mapstring-portbinding-hostportbindings
+[enclavecontext_addservice]: #addserviceserviceid-serviceid--funcstring-ipaddr---containerconfig-containerconfigsupplier---servicecontext-servicecontext-mapstring-portbinding-hostportbindings
+[enclavecontext_addservicetopartition]: #addservicetopartitionserviceid-serviceid-partitionid-partitionid-funcstring-ipaddr---containerconfig-containerconfigsupplier---servicecontext-servicecontext-mapstring-portbinding-hostportbindings
 [enclavecontext_repartitionnetwork]: #repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnection-partitionconnections-partitionconnection-defaultconnection
+[enclavecontext_uploadfiles]: #uploadfilesstring-pathtoupload
 
 [partitionconnection]: #partitionconnection
 
 [servicecontext]: #servicecontext
 [servicecontext_getpublicports]: #getpublicports---mapportid-portspec
-
-[sharedpath]: #sharedpath
-[sharedpath_getabspathonthiscontainer]: #getabspathonthiscontainer---string
-[sharedpath_getabspathonservicecontainer]: #getabspathonservicecontainer---string
 
 [kurtosiscontext_createenclave]: ../kurtosis-engine-server/lib-documentation#lib-documentation.md#createenclaveenclaveid-enclaveid-boolean-ispartitioningenabled---enclavecontext-enclavecontext

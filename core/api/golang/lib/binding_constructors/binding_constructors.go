@@ -93,15 +93,6 @@ func NewGetModuleInfoResponse(
 }
 
 // ==============================================================================================
-//                                       Register Files Artifacts
-// ==============================================================================================
-func NewRegisterFilesArtifactArgs(filesArtifactUrls map[string]string) *kurtosis_core_rpc_api_bindings.RegisterFilesArtifactsArgs {
-	return &kurtosis_core_rpc_api_bindings.RegisterFilesArtifactsArgs{
-		FilesArtifactUrls: filesArtifactUrls,
-	}
-}
-
-// ==============================================================================================
 //                                     Register Service
 // ==============================================================================================
 func NewRegisterServiceArgs(serviceId string, partitionId string) *kurtosis_core_rpc_api_bindings.RegisterServiceArgs {
@@ -111,10 +102,9 @@ func NewRegisterServiceArgs(serviceId string, partitionId string) *kurtosis_core
 	}
 }
 
-func NewRegisterServiceResponse(privateIpAddr string, relativeServiceDirpath string) *kurtosis_core_rpc_api_bindings.RegisterServiceResponse {
+func NewRegisterServiceResponse(privateIpAddr string) *kurtosis_core_rpc_api_bindings.RegisterServiceResponse {
 	return &kurtosis_core_rpc_api_bindings.RegisterServiceResponse{
 		PrivateIpAddr:          privateIpAddr,
-		RelativeServiceDirpath: relativeServiceDirpath,
 	}
 }
 
@@ -122,23 +112,22 @@ func NewRegisterServiceResponse(privateIpAddr string, relativeServiceDirpath str
 //                                        Start Service
 // ==============================================================================================
 func NewStartServiceArgs(
-		serviceId string,
-		image string,
-		privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-		entrypointArgs []string,
-		cmdArgs []string,
-		envVars map[string]string,
-		enclaveDataDirMntDirpath string,
-		filesArtifactMountDirpaths map[string]string) *kurtosis_core_rpc_api_bindings.StartServiceArgs {
+	serviceId string,
+	image string,
+	privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
+	entrypointArgs []string,
+	cmdArgs []string,
+	envVars map[string]string,
+	filesArtifactMountDirpaths map[string]string,
+) *kurtosis_core_rpc_api_bindings.StartServiceArgs {
 	return &kurtosis_core_rpc_api_bindings.StartServiceArgs{
 		ServiceId:                  serviceId,
 		DockerImage:                image,
-		PrivatePorts:                  privatePorts,
+		PrivatePorts:               privatePorts,
 		EntrypointArgs:             entrypointArgs,
 		CmdArgs:                    cmdArgs,
 		DockerEnvVars:              envVars,
-		EnclaveDataDirMntDirpath:   enclaveDataDirMntDirpath,
-		FilesArtifactMountDirpaths: filesArtifactMountDirpaths,
+		FilesArtifactMountpoints:   filesArtifactMountDirpaths,
 	}
 }
 
@@ -163,16 +152,12 @@ func NewGetServiceInfoResponse(
 	privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
 	publicIpAddr string,
 	publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-	enclaveDataDirMountDirpath string,
-	relativeServiceDirpath string,
 ) *kurtosis_core_rpc_api_bindings.GetServiceInfoResponse {
 	return &kurtosis_core_rpc_api_bindings.GetServiceInfoResponse{
 		PrivateIpAddr:              privateIpAddr,
 		PrivatePorts:               privatePorts,
 		PublicIpAddr:               publicIpAddr,
 		PublicPorts:                publicPorts,
-		EnclaveDataDirMountDirpath: enclaveDataDirMountDirpath,
-		RelativeServiceDirpath:     relativeServiceDirpath,
 	}
 }
 
@@ -295,4 +280,26 @@ func NewWaitForHttpPostEndpointAvailabilityArgs(
 		RetriesDelayMilliseconds: retriesDelayMilliseconds,
 		BodyText:                 bodyText,
 	}
+}
+
+// ==============================================================================================
+//                           Upload Files Artifact
+// ==============================================================================================
+func NewUploadFilesArtifactArgs(data []byte) *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs {
+	return &kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs{Data: data}
+}
+
+
+// ==============================================================================================
+//                           Store Web Files Artifact
+// ==============================================================================================
+func NewStoreWebFilesArtifactArgs(url string) *kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs {
+	return &kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs{Url: url}
+}
+
+// ==============================================================================================
+//                       Store Files Artifact From Service
+// ==============================================================================================
+func NewStoreFilesArtifactFromServiceArgs(serviceId string, sourcePath string) *kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs {
+	return &kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs{ServiceId: serviceId, SourcePath: sourcePath}
 }

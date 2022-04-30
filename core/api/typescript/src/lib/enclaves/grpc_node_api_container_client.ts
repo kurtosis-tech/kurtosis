@@ -1,8 +1,7 @@
-import { ok, err, Result } from "neverthrow";
+import {ok, err, Result, Err} from "neverthrow";
 import type { ServiceError } from "@grpc/grpc-js";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import {
-    RegisterFilesArtifactsArgs,
     RegisterServiceArgs,
     RegisterServiceResponse,
     StartServiceArgs,
@@ -22,7 +21,15 @@ import {
     ExecuteModuleResponse,
     ExecuteModuleArgs,
     ExecCommandArgs,
-    ExecCommandResponse, PauseServiceArgs, UnpauseServiceArgs,
+    ExecCommandResponse,
+    PauseServiceArgs,
+    UnpauseServiceArgs,
+    UploadFilesArtifactArgs,
+    UploadFilesArtifactResponse,
+    StoreWebFilesArtifactArgs,
+    StoreWebFilesArtifactResponse,
+    StoreFilesArtifactFromServiceArgs,
+    StoreFilesArtifactFromServiceResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -103,28 +110,6 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         const getModuleInfoResponseResult: Result<GetModuleInfoResponse, Error> = await getModuleInfoPromise;
         if (getModuleInfoResponseResult.isErr()) {
             return err(getModuleInfoResponseResult.error);
-        }
-
-        return ok(null);
-    }
-
-    public async registerFilesArtifacts(registerFilesArtifactsArgs: RegisterFilesArtifactsArgs): Promise<Result<null,Error>> {
-        const promiseRegisterFilesArtifacts: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.registerFilesArtifacts(registerFilesArtifactsArgs, (error: ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const resultRegisterFilesArtifacts: Result<google_protobuf_empty_pb.Empty, Error> = await promiseRegisterFilesArtifacts;
-        if (resultRegisterFilesArtifacts.isErr()) {
-            return err(resultRegisterFilesArtifacts.error);
         }
 
         return ok(null);
@@ -365,16 +350,29 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(execCommandResponse)
     }
 
+<<<<<<< HEAD
     public async pauseService(pauseServiceArgs: PauseServiceArgs): Promise<Result<null, Error>> {
         const pauseServicePromise: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.pauseService(pauseServiceArgs, (error: ServiceError | null) => {
                 if (error === null) {
                     resolve(ok(null))
+=======
+    public async uploadFiles(uploadFilesArtifactArgs: UploadFilesArtifactArgs): Promise<Result<UploadFilesArtifactResponse, Error>> {
+        const uploadFilesArtifactPromise: Promise<Result<UploadFilesArtifactResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.uploadFilesArtifact(uploadFilesArtifactArgs, (error: ServiceError | null, response?: UploadFilesArtifactResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+>>>>>>> develop
                 } else {
                     resolve(err(error));
                 }
             })
         });
+<<<<<<< HEAD
         const pauseServiceResult: Result<null, Error> = await pauseServicePromise;
         if(pauseServiceResult.isErr()){
             return err(pauseServiceResult.error)
@@ -388,16 +386,69 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
             this.client.unpauseService(unpauseServiceArgs, (error: ServiceError | null) => {
                 if (error === null) {
                     resolve(ok(null))
+=======
+        const uploadFilesArtifactResponseResult: Result<UploadFilesArtifactResponse, Error> = await uploadFilesArtifactPromise;
+        if(uploadFilesArtifactResponseResult.isErr()){
+            return err(uploadFilesArtifactResponseResult.error)
+        }
+
+        const uploadFilesArtifactResponse = uploadFilesArtifactResponseResult.value
+        return ok(uploadFilesArtifactResponse)
+    }
+
+    public async storeWebFilesArtifact(storeWebFilesArtifactArgs: StoreWebFilesArtifactArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>> {
+        const storeWebFilesArtifactPromise: Promise<Result<StoreWebFilesArtifactResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.storeWebFilesArtifact(storeWebFilesArtifactArgs, (error: ServiceError | null, response?: StoreWebFilesArtifactResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+>>>>>>> develop
                 } else {
                     resolve(err(error));
                 }
             })
         });
+<<<<<<< HEAD
         const unpauseServiceResult: Result<null, Error> = await unpauseServicePromise;
         if(unpauseServiceResult.isErr()){
             return err(unpauseServiceResult.error)
         }
 
         return ok(null)
+=======
+
+        const storeWebFilesArtifactResponseResult: Result<StoreWebFilesArtifactResponse, Error> = await storeWebFilesArtifactPromise;
+        if(storeWebFilesArtifactResponseResult.isErr()){
+            return err(storeWebFilesArtifactResponseResult.error)
+        }
+
+        const storeWebFilesArtifactResponse = storeWebFilesArtifactResponseResult.value;
+        return ok(storeWebFilesArtifactResponse)
+    }
+
+    public async storeFilesArtifactFromService(storeFilesArtifactFromServiceArgs: StoreFilesArtifactFromServiceArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>> {
+        const storeFilesArtifactFromServicePromise: Promise<Result<StoreFilesArtifactFromServiceResponse, Error>> = new Promise( (resolve, _unusedReject) => {
+            this.client.storeFilesArtifactFromService(storeFilesArtifactFromServiceArgs, {}, (error: ServiceError | null, response?: StoreFilesArtifactFromServiceResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+        const storeFilesArtifactFromServiceResponseResult: Result<StoreFilesArtifactFromServiceResponse, Error> = await storeFilesArtifactFromServicePromise;
+        if (storeFilesArtifactFromServiceResponseResult.isErr()) {
+            return err(storeFilesArtifactFromServiceResponseResult.error)
+        }
+        const storeFilesArtifactFromServiceResponse = storeFilesArtifactFromServiceResponseResult.value;
+        return ok(storeFilesArtifactFromServiceResponse);
+>>>>>>> develop
     }
 }

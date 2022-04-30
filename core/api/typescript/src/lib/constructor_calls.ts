@@ -6,7 +6,6 @@
 import * as jspb from "google-protobuf";
 import {
     ExecCommandArgs,
-    RegisterFilesArtifactsArgs,
     GetServiceInfoArgs,
     PartitionServices,
     PartitionConnections,
@@ -21,7 +20,10 @@ import {
     UnloadModuleArgs,
     ExecuteModuleArgs,
     GetModuleInfoArgs,
-    Port, PauseServiceArgs, UnpauseServiceArgs
+    Port,
+    StoreWebFilesArtifactArgs,
+    StoreFilesArtifactFromServiceArgs,
+    UploadFilesArtifactArgs
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceID } from './services/service';
 import { PartitionID } from './enclaves/enclave_context';
@@ -85,19 +87,6 @@ export function newGetModuleInfoArgs(moduleId: ModuleID): GetModuleInfoArgs {
 
 
 // ==============================================================================================
-//                                       Register Files Artifacts
-// ==============================================================================================
-export function newRegisterFilesArtifactsArgs(filesArtifactIdStrsToUrls: Map<string, string>): RegisterFilesArtifactsArgs {
-    const result: RegisterFilesArtifactsArgs = new RegisterFilesArtifactsArgs();
-    const filesArtifactUrlsMap: jspb.Map<string, string> = result.getFilesArtifactUrlsMap();
-    for (const [artifactId, artifactUrl] of filesArtifactIdStrsToUrls.entries()) {
-        filesArtifactUrlsMap.set(artifactId, artifactUrl);
-    }
-    return result;
-}
-
-
-// ==============================================================================================
 //                                     Register Service
 // ==============================================================================================
 export function newRegisterServiceArgs(serviceId: ServiceID, partitionId: PartitionID): RegisterServiceArgs {
@@ -113,14 +102,14 @@ export function newRegisterServiceArgs(serviceId: ServiceID, partitionId: Partit
 //                                        Start Service
 // ==============================================================================================
 export function newStartServiceArgs(
-        serviceId: ServiceID, 
-        dockerImage: string,
-        privatePorts: Map<string, Port>,
-        entrypointArgs: string[],
-        cmdArgs: string[],
-        dockerEnvVars: Map<string, string>,
-        enclaveDataDirMntDirpath: string,
-        filesArtifactMountDirpaths: Map<string, string>): StartServiceArgs {
+    serviceId: ServiceID,
+    dockerImage: string,
+    privatePorts: Map<string, Port>,
+    entrypointArgs: string[],
+    cmdArgs: string[],
+    dockerEnvVars: Map<string, string>,
+    filesArtifactMountDirpaths: Map<string, string>,
+): StartServiceArgs {
     const result: StartServiceArgs = new StartServiceArgs();
     result.setServiceId(String(serviceId));
     result.setDockerImage(dockerImage);
@@ -140,8 +129,7 @@ export function newStartServiceArgs(
     for (const [name, value] of dockerEnvVars.entries()) {
         dockerEnvVarArray.set(name, value);
     }
-    result.setEnclaveDataDirMntDirpath(enclaveDataDirMntDirpath);
-    const filesArtificatMountDirpathsMap: jspb.Map<string, string> = result.getFilesArtifactMountDirpathsMap();
+    const filesArtificatMountDirpathsMap: jspb.Map<string, string> = result.getFilesArtifactMountpointsMap();
     for (const [artifactId, mountDirpath] of filesArtifactMountDirpaths.entries()) {
         filesArtificatMountDirpathsMap.set(artifactId, mountDirpath);
     }
@@ -297,4 +285,32 @@ export function newWaitForHttpPostEndpointAvailabilityArgs(
     result.setBodyText(bodyText);
 
     return result;
+}
+
+// ==============================================================================================
+//                                     Download Files
+// ==============================================================================================
+export function newStoreWebFilesArtifactArgs(url: string): StoreWebFilesArtifactArgs {
+    const result: StoreWebFilesArtifactArgs = new StoreWebFilesArtifactArgs();
+    result.setUrl(url);
+    return result;
+}
+
+// ==============================================================================================
+//                             Store Files Artifact From Service
+// ==============================================================================================
+export function newStoreFilesArtifactFromServiceArgs(serviceId: string, sourcePath: string): StoreFilesArtifactFromServiceArgs {
+    const result: StoreFilesArtifactFromServiceArgs = new StoreFilesArtifactFromServiceArgs();
+    result.setServiceId(serviceId)
+    result.setSourcePath(sourcePath)
+    return result;
+}
+
+// ==============================================================================================
+//                                      Upload Files
+// ==============================================================================================
+export function newUploadFilesArtifactArgs(data: Uint8Array) : UploadFilesArtifactArgs {
+    const result: UploadFilesArtifactArgs = new UploadFilesArtifactArgs()
+    result.setData(data)
+    return result
 }

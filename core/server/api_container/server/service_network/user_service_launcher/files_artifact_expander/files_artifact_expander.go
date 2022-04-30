@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
@@ -53,24 +52,24 @@ type FilesArtifactExpander struct {
 
 	freeIpAddrTracker *lib.FreeIpAddrTracker
 
-	filesArtifactCache *enclave_data_directory.FilesArtifactCache
+	filesArtifactStore *enclave_data_directory.FilesArtifactStore
 }
 
-func NewFilesArtifactExpander(enclaveDataDirpathOnHostMachine string, kurtosisBackend backend_interface.KurtosisBackend, enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider, enclaveId enclave.EnclaveID, freeIpAddrTracker *lib.FreeIpAddrTracker, filesArtifactCache *enclave_data_directory.FilesArtifactCache) *FilesArtifactExpander {
-	return &FilesArtifactExpander{enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine, kurtosisBackend: kurtosisBackend, enclaveObjAttrsProvider: enclaveObjAttrsProvider, enclaveId: enclaveId, freeIpAddrTracker: freeIpAddrTracker, filesArtifactCache: filesArtifactCache}
+func NewFilesArtifactExpander(enclaveDataDirpathOnHostMachine string, kurtosisBackend backend_interface.KurtosisBackend, enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider, enclaveId enclave.EnclaveID, freeIpAddrTracker *lib.FreeIpAddrTracker, filesArtifactStore *enclave_data_directory.FilesArtifactStore) *FilesArtifactExpander {
+	return &FilesArtifactExpander{enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine, kurtosisBackend: kurtosisBackend, enclaveObjAttrsProvider: enclaveObjAttrsProvider, enclaveId: enclaveId, freeIpAddrTracker: freeIpAddrTracker, filesArtifactStore: filesArtifactStore}
 }
 
 func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 	ctx context.Context,
 	serviceGUID service.ServiceGUID, // Service GUID for whom the artifacts are being expanded into volumes
-	artifactIdsToExpand map[files_artifact.FilesArtifactID]bool,
-) (map[files_artifact.FilesArtifactID]files_artifact_expansion_volume.FilesArtifactExpansionVolumeName, error) {
+	artifactUuidsToExpand map[service.FilesArtifactID]bool,
+) (map[service.FilesArtifactID]files_artifact_expansion_volume.FilesArtifactExpansionVolumeName, error) {
 
 	// TODO PERF: parallelize this to increase speed
-	artifactIdsToVolNames := map[files_artifact.FilesArtifactID]files_artifact_expansion_volume.FilesArtifactExpansionVolumeName{}
+	artifactIdsToVolNames := map[service.FilesArtifactID]files_artifact_expansion_volume.FilesArtifactExpansionVolumeName{}
 	volumesToDestroyIfSomethingFails := map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool{}
-	for filesArtifactId := range artifactIdsToExpand {
-		artifactFile, err := expander.filesArtifactCache.GetFilesArtifact(filesArtifactId)
+	for filesArtifactId := range artifactUuidsToExpand {
+		artifactFile, err := expander.filesArtifactStore.GetFileByUUID(string(filesArtifactId))
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the file for files artifact '%v'", filesArtifactId)
 		}
@@ -85,7 +84,8 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 			ctx,
 			expander.enclaveId,
 			serviceGUID,
-			filesArtifactId)
+			filesArtifactId,
+		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGUID, filesArtifactId, expander.enclaveId)
 		}
@@ -124,7 +124,7 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 //  goes back into the IP pool
 func (expander *FilesArtifactExpander) runFilesArtifactExpander(
 	ctx context.Context,
-	filesArtifactId files_artifact.FilesArtifactID,
+	filesArtifactId service.FilesArtifactID,
 	serviceGuid service.ServiceGUID,
 	filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
 	artifactFilepathOnExpanderContainer string,
@@ -192,7 +192,7 @@ func (expander *FilesArtifactExpander) destroyFilesArtifactExpansionVolumes(ctx 
 	}
 }
 
-func newFilesArtifactExpanderGUID(filesArtifactId files_artifact.FilesArtifactID, userServiceGuid service.ServiceGUID) files_artifact_expander.FilesArtifactExpanderGUID {
+func newFilesArtifactExpanderGUID(filesArtifactId service.FilesArtifactID, userServiceGuid service.ServiceGUID) files_artifact_expander.FilesArtifactExpanderGUID {
 	userServiceGuidStr := string(userServiceGuid)
 	filesArtifactIdStr := string(filesArtifactId)
 	suffix := current_time_str_provider.GetCurrentTimeStr()

@@ -137,6 +137,7 @@ function deserialize_api_container_api_LoadModuleResponse(buffer_arg) {
   return api_container_service_pb.LoadModuleResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+<<<<<<< HEAD
 function serialize_api_container_api_PauseServiceArgs(arg) {
   if (!(arg instanceof api_container_service_pb.PauseServiceArgs)) {
     throw new Error('Expected argument of type api_container_api.PauseServiceArgs');
@@ -159,6 +160,8 @@ function deserialize_api_container_api_RegisterFilesArtifactsArgs(buffer_arg) {
   return api_container_service_pb.RegisterFilesArtifactsArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+=======
+>>>>>>> develop
 function serialize_api_container_api_RegisterServiceArgs(arg) {
   if (!(arg instanceof api_container_service_pb.RegisterServiceArgs)) {
     throw new Error('Expected argument of type api_container_api.RegisterServiceArgs');
@@ -225,6 +228,50 @@ function deserialize_api_container_api_StartServiceResponse(buffer_arg) {
   return api_container_service_pb.StartServiceResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_StoreFilesArtifactFromServiceArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.StoreFilesArtifactFromServiceArgs)) {
+    throw new Error('Expected argument of type api_container_api.StoreFilesArtifactFromServiceArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_StoreFilesArtifactFromServiceArgs(buffer_arg) {
+  return api_container_service_pb.StoreFilesArtifactFromServiceArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_StoreFilesArtifactFromServiceResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.StoreFilesArtifactFromServiceResponse)) {
+    throw new Error('Expected argument of type api_container_api.StoreFilesArtifactFromServiceResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_StoreFilesArtifactFromServiceResponse(buffer_arg) {
+  return api_container_service_pb.StoreFilesArtifactFromServiceResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_StoreWebFilesArtifactArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.StoreWebFilesArtifactArgs)) {
+    throw new Error('Expected argument of type api_container_api.StoreWebFilesArtifactArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_StoreWebFilesArtifactArgs(buffer_arg) {
+  return api_container_service_pb.StoreWebFilesArtifactArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_StoreWebFilesArtifactResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.StoreWebFilesArtifactResponse)) {
+    throw new Error('Expected argument of type api_container_api.StoreWebFilesArtifactResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_StoreWebFilesArtifactResponse(buffer_arg) {
+  return api_container_service_pb.StoreWebFilesArtifactResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_UnloadModuleArgs(arg) {
   if (!(arg instanceof api_container_service_pb.UnloadModuleArgs)) {
     throw new Error('Expected argument of type api_container_api.UnloadModuleArgs');
@@ -236,15 +283,37 @@ function deserialize_api_container_api_UnloadModuleArgs(buffer_arg) {
   return api_container_service_pb.UnloadModuleArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+<<<<<<< HEAD
 function serialize_api_container_api_UnpauseServiceArgs(arg) {
   if (!(arg instanceof api_container_service_pb.UnpauseServiceArgs)) {
     throw new Error('Expected argument of type api_container_api.UnpauseServiceArgs');
+=======
+function serialize_api_container_api_UploadFilesArtifactArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.UploadFilesArtifactArgs)) {
+    throw new Error('Expected argument of type api_container_api.UploadFilesArtifactArgs');
+>>>>>>> develop
   }
   return Buffer.from(arg.serializeBinary());
 }
 
+<<<<<<< HEAD
 function deserialize_api_container_api_UnpauseServiceArgs(buffer_arg) {
   return api_container_service_pb.UnpauseServiceArgs.deserializeBinary(new Uint8Array(buffer_arg));
+=======
+function deserialize_api_container_api_UploadFilesArtifactArgs(buffer_arg) {
+  return api_container_service_pb.UploadFilesArtifactArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_UploadFilesArtifactResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.UploadFilesArtifactResponse)) {
+    throw new Error('Expected argument of type api_container_api.UploadFilesArtifactResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_UploadFilesArtifactResponse(buffer_arg) {
+  return api_container_service_pb.UploadFilesArtifactResponse.deserializeBinary(new Uint8Array(buffer_arg));
+>>>>>>> develop
 }
 
 function serialize_api_container_api_WaitForHttpGetEndpointAvailabilityArgs(arg) {
@@ -329,19 +398,6 @@ getModuleInfo: {
     requestDeserialize: deserialize_api_container_api_GetModuleInfoArgs,
     responseSerialize: serialize_api_container_api_GetModuleInfoResponse,
     responseDeserialize: deserialize_api_container_api_GetModuleInfoResponse,
-  },
-  // Tells the API container that the client has files artifacts from the web that it would like the API container to know about
-// The API container will download these artifacts locally, so they're available when launching services
-registerFilesArtifacts: {
-    path: '/api_container_api.ApiContainerService/RegisterFilesArtifacts',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.RegisterFilesArtifactsArgs,
-    responseType: google_protobuf_empty_pb.Empty,
-    requestSerialize: serialize_api_container_api_RegisterFilesArtifactsArgs,
-    requestDeserialize: deserialize_api_container_api_RegisterFilesArtifactsArgs,
-    responseSerialize: serialize_google_protobuf_Empty,
-    responseDeserialize: deserialize_google_protobuf_Empty,
   },
   // Registers a service with the API container but doesn't start the container for it
 registerService: {
@@ -486,6 +542,42 @@ getModules: {
     requestDeserialize: deserialize_google_protobuf_Empty,
     responseSerialize: serialize_api_container_api_GetModulesResponse,
     responseDeserialize: deserialize_api_container_api_GetModulesResponse,
+  },
+  // Uploads a files artifact to the Kurtosis File System.
+uploadFilesArtifact: {
+    path: '/api_container_api.ApiContainerService/UploadFilesArtifact',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.UploadFilesArtifactArgs,
+    responseType: api_container_service_pb.UploadFilesArtifactResponse,
+    requestSerialize: serialize_api_container_api_UploadFilesArtifactArgs,
+    requestDeserialize: deserialize_api_container_api_UploadFilesArtifactArgs,
+    responseSerialize: serialize_api_container_api_UploadFilesArtifactResponse,
+    responseDeserialize: deserialize_api_container_api_UploadFilesArtifactResponse,
+  },
+  // Tells the API container to download a files artifact from the web to the Kurtosis File System
+storeWebFilesArtifact: {
+    path: '/api_container_api.ApiContainerService/StoreWebFilesArtifact',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.StoreWebFilesArtifactArgs,
+    responseType: api_container_service_pb.StoreWebFilesArtifactResponse,
+    requestSerialize: serialize_api_container_api_StoreWebFilesArtifactArgs,
+    requestDeserialize: deserialize_api_container_api_StoreWebFilesArtifactArgs,
+    responseSerialize: serialize_api_container_api_StoreWebFilesArtifactResponse,
+    responseDeserialize: deserialize_api_container_api_StoreWebFilesArtifactResponse,
+  },
+  // Tells the API container to copy a files artifact from a service to the Kurtosis File System
+storeFilesArtifactFromService: {
+    path: '/api_container_api.ApiContainerService/StoreFilesArtifactFromService',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.StoreFilesArtifactFromServiceArgs,
+    responseType: api_container_service_pb.StoreFilesArtifactFromServiceResponse,
+    requestSerialize: serialize_api_container_api_StoreFilesArtifactFromServiceArgs,
+    requestDeserialize: deserialize_api_container_api_StoreFilesArtifactFromServiceArgs,
+    responseSerialize: serialize_api_container_api_StoreFilesArtifactFromServiceResponse,
+    responseDeserialize: deserialize_api_container_api_StoreFilesArtifactFromServiceResponse,
   },
 };
 
