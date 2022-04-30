@@ -1,7 +1,7 @@
 {
     "name": "kurtosis-core-api-lib",
     "//": "NOTE: DO NOT UPDATE THIS VERSION MANUALLY - IT WILL BE UPDATED DURING THE RELEASE PROCESS!",
-    "version": "1.45.1",
+    "version": "1.45.2",
     "description": "This repo contains a Typescript client for communicating with the Kurtosis API server, which both testsuites and Kurtosis Modules use to manipulate the test environment.",
     "main": "./build/index",
     "types": "./build/index",
@@ -40,11 +40,12 @@
         "loglevel": "^1.7.1",
         "neverthrow": "^4.2.2",
         "path-browserify": "^1.0.1",
-        "targz": "^1.0.1"
+        "tar": "^6.1.11"
     },
     "devDependencies": {
         "@types/chai": "^4.2.21",
         "@types/mocha": "^9.0.0",
+        "@types/tar": "^6.1.1",
         "@types/targz": "^1.0.1",
         "chai": "^4.3.4",
         "mocha": "^9.0.3",

@@ -1,5 +1,9 @@
 # TBD
 
+# 1.45.2
+### Fixes
+* Switch to `tar` library (from `targz` library) for Node archiving, as `targz` seems to be incorrectly passing in an `undefined` type
+
 # 1.45.1
 ### Fixes
 * Attempt to fix the bug in the node archiver
