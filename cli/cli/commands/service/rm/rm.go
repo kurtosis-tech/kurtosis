@@ -84,6 +84,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the timeout seconds value using key '%v'", timeoutFlagKey)
 	}
 
+	// TODO SWITCH TO RETURNING A KURTOSIS_CTX
 	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting existing enclaves")
@@ -132,7 +133,6 @@ func getEnclaveContextFromEnclaveInfo(infoForEnclave *kurtosis_engine_rpc_api_bi
 	enclaveCtx := enclaves.NewEnclaveContext(
 		apiContainerClient,
 		enclaves.EnclaveID(enclaveId),
-		infoForEnclave.EnclaveDataDirpathOnHostMachine,
 	)
 
 	return enclaveCtx, nil

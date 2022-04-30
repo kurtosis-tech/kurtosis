@@ -1,4 +1,4 @@
-import { ContainerConfig, ContainerConfigBuilder, FilesArtifactID, PortProtocol, PortSpec, ServiceID, SharedPath } from "kurtosis-core-api-lib"
+import { ContainerConfig, ContainerConfigBuilder, FilesArtifactID, PortProtocol, PortSpec, ServiceID } from "kurtosis-core-api-lib"
 import log from "loglevel";
 import { Result, ok, err } from "neverthrow";
 import axios from "axios"
@@ -37,7 +37,7 @@ const DUPLICATE_MOUNTPOINT_DOCKER_DAEMON_ERR_MSG  = "Duplicate mount point"
 
 jest.setTimeout(180000)
 
-test("Test files artifact mounting", async () => {
+test("Test web file storing", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
     const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
 
@@ -51,12 +51,12 @@ test("Test files artifact mounting", async () => {
         const filesArtifacts = new Map<FilesArtifactID, string>()
         filesArtifacts.set(TEST_FILES_ARTIFACT_ID, TEST_FILES_ARTIFACT_URL)
         filesArtifacts.set(SECOND_TEST_FILES_ARTIFACT_ID, TEST_FILES_ARTIFACT_URL)
-        const registerFilesArtifactsResult = await enclaveContext.registerFilesArtifacts(filesArtifacts);
-
-        if(registerFilesArtifactsResult.isErr()) { throw registerFilesArtifactsResult.error }
+        const storeWebFilesResult = await enclaveContext.storeWebFiles(TEST_FILES_ARTIFACT_URL);
+        if(storeWebFilesResult.isErr()) { throw storeWebFilesResult.error }
+        const filesArtifactId = storeWebFilesResult.value;
 
         const filesArtifactsMountpoints = new Map<FilesArtifactID, string>()
-        filesArtifactsMountpoints.set(TEST_FILES_ARTIFACT_ID, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT)
+        filesArtifactsMountpoints.set(filesArtifactId, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT)
 
         const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier(filesArtifactsMountpoints)
 
@@ -155,16 +155,16 @@ test("Test files artifact mounting", async () => {
 //                                       Private helper functions
 // ====================================================================================================
 
-function getFileServerContainerConfigSupplier(filesArtifactMountpoints: Map<FilesArtifactID, string>): (ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error> {
+function getFileServerContainerConfigSupplier(filesArtifactMountpoints: Map<FilesArtifactID, string>): (ipAddr: string) => Result<ContainerConfig, Error> {
 	
-    const containerConfigSupplier = (ipAddr:string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
+    const containerConfigSupplier = (ipAddr:string): Result<ContainerConfig, Error> => {
 
         const usedPorts = new Map<string, PortSpec>()
         usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
 
         const containerConfig = new ContainerConfigBuilder(FILE_SERVER_SERVICE_IMAGE)
             .withUsedPorts(usedPorts)
-            .withFilesArtifacts(filesArtifactMountpoints)
+            .withFiles(filesArtifactMountpoints)
             .build()
 
         return ok(containerConfig)

@@ -89,7 +89,7 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveId)
 	}
-	filesArtifactId, err := enclaveCtx.StoreFilesFromService(ctx, serviceId, filepath)
+	filesArtifactId, err := enclaveCtx.StoreServiceFiles(ctx, serviceId, filepath)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,

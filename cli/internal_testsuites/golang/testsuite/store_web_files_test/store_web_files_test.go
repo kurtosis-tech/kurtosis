@@ -27,8 +27,6 @@ const (
 	waitForStartupMaxRetries       = 15
 	waitInitialDelayMilliseconds   = 0
 
-	testFilesArtifactId  services.FilesArtifactID = "test-files-artifact"
-	secondTestFileArtifactId services.FilesArtifactID = "second-test-files-artifact"
 	testFilesArtifactUrl                          = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
 
 	// Filenames & contents for the files stored in the files artifact
@@ -47,12 +45,7 @@ var fileServerPortSpec = services.NewPortSpec(
 	services.PortProtocol_TCP,
 )
 
-var duplicateFilesArtifactMountpoints = map[services.FilesArtifactID]string{
-	testFilesArtifactId:      userServiceMountPointForTestFilesArtifact,
-	secondTestFileArtifactId: userServiceMountPointForTestFilesArtifact,
-}
-
-func TestFilesArtifactMounting(t *testing.T) {
+func TestStoreWebFiles(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
@@ -62,9 +55,12 @@ func TestFilesArtifactMounting(t *testing.T) {
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	filesArtifactId, err := enclaveCtx.StoreWebFiles(context.Background(), testFilesArtifactUrl)
-	require.NoError(t, err, "An error occurred registering the files artifacts")
+	require.NoError(t, err, "An error occurred storing the files artifact")
 
-	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactId)
+	filesArtifactMountpoints := map[services.FilesArtifactID]string{
+		filesArtifactId: userServiceMountPointForTestFilesArtifact,
+	}
+	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactMountpoints)
 
 	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
 	require.NoError(t, err, "An error occurred adding the file server service")
@@ -113,6 +109,12 @@ func TestFilesArtifactMounting(t *testing.T) {
 	)
 
 	//TODO the error is detected in Docker, it is enough for now, but we should capture it in Kurt Core for optimization and decoupling
+	secondFilesArtifactId, err := enclaveCtx.StoreWebFiles(context.Background(), testFilesArtifactUrl)
+	require.NoError(t, err, "An error occurred storing the second files artifacts")
+	duplicateFilesArtifactMountpoints := map[services.FilesArtifactID]string{
+		filesArtifactId:      userServiceMountPointForTestFilesArtifact,
+		secondFilesArtifactId: userServiceMountPointForTestFilesArtifact,
+	}
 	wrongFileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(duplicateFilesArtifactMountpoints)
 	_, err = enclaveCtx.AddService(secondFileServerServiceId, wrongFileServerContainerConfigSupplier)
 	require.Errorf(t, err, "Adding service '%v' should have failed and did not, because duplicated files artifact mountpoints '%v' should throw an error", secondFileServerServiceId, duplicateFilesArtifactMountpoints)
@@ -129,7 +131,7 @@ func getFileServerContainerConfigSupplier(filesArtifactMountpoints map[services.
 			fileServerServiceImage,
 		).WithUsedPorts(map[string]*services.PortSpec{
 			fileServerPortId: fileServerPortSpec,
-		}).WithFilesArtifacts(
+		}).WithFiles(
 			filesArtifactMountpoints,
 		).Build()
 		return containerConfig, nil
