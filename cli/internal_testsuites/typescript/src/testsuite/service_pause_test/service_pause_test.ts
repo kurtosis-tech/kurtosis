@@ -1,6 +1,6 @@
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import {ContainerConfig, ContainerConfigBuilder, SharedPath} from "kurtosis-core-api-lib";
-import {ok, Result} from "neverthrow";
+import {err, ok, Result} from "neverthrow";
 import log from "loglevel";
 
 const TEST_NAME = "pause-unpause-test"
@@ -30,11 +30,25 @@ test("Test service pause", async () => {
         };
 
         const testServiceContext = addServiceResult.value
-
+        await delay(5000)
         // ------------------------------------- TEST RUN ----------------------------------------------
-        //const pauseServiceResult = await testServiceContext
+        const pauseServiceResult = await testServiceContext.pauseService(TEST_SERVICE_ID)
+        if(pauseServiceResult.isErr()){
+            log.error("An error occurred pausing service.")
+            throw(pauseServiceResult.error)
 
-    }finally{
+        }
+        // Wait 5 seconds
+        await delay(5000)
+        const unpauseServiceResult = await testServiceContext.unpauseService(TEST_SERVICE_ID)
+        if(unpauseServiceResult.isErr()){
+            log.error("An error occurred unpausing service.")
+            throw(unpauseServiceResult.error)
+
+        }
+        await delay(5000)
+
+    } finally{
         stopEnclaveFunction()
     }
 })
@@ -57,4 +71,8 @@ function getContainerConfigSupplier(): (ipAddr:string, sharedDirectory: SharedPa
     }
 
     return containerConfigSupplier
+}
+
+function delay(ms: number) {
+    return new Promise( resolve => setTimeout(resolve, ms) );
 }
