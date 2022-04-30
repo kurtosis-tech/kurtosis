@@ -1,5 +1,9 @@
 # TBD
 
+# 1.17.1
+### Changes
+* Upgraded to Core 1.45.1 to fix some bugs with the node archiver
+
 # 1.17.0
 ### Breaking Changes
 * Upgraded to Kurtosis Core 1.45.0
