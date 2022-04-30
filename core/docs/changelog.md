@@ -1,4 +1,8 @@
 # TBD
+### Fixes
+* Attempt to fix the bug in the node archiver
+* Renamed `web/node_file_archiver` -> `web/node_tgz_archiver` to match class name
+* The temporary files used by the node archiver are created in the operating system's temporary directory rather than the working directory
 
 # 1.45.0
 ### Removals
