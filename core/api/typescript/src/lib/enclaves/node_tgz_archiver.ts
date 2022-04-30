@@ -19,7 +19,7 @@ export class NodeTgzArchiver implements GenericTgzArchiver{
      public async createTgzByteArray(pathToArchive: string): Promise<Result<Uint8Array, Error>> {
          //Check if it exists
          if (!filesystem.existsSync(pathToArchive)) {
-             return err(new Error("The file or folder you want to upload does not exist."))
+             return err(new Error(`Path '${pathToArchive}' does not exist.`))
          }
          if (pathToArchive === "/") {
              return err(new Error("Cannot archive the root directory"))
@@ -39,10 +39,10 @@ export class NodeTgzArchiver implements GenericTgzArchiver{
              return err(tempDirErr)
          });
          if (tempDirpathResult.isErr()) {
-             return err(new Error("Failed to create temporary directory for file compression."))
+             return err(tempDirpathResult.error)
          }
          const tempDirpath = tempDirpathResult.value
-         const destFilename = path.basename(pathToArchive) + COMPRESSION_EXTENSION
+         const destFilename = srcFilename + COMPRESSION_EXTENSION
          const destFilepath = path.join(tempDirpath, destFilename)
 
          const targzPromise = tar.create(
@@ -86,6 +86,6 @@ export class NodeTgzArchiver implements GenericTgzArchiver{
                  `The file size of ${stats.size} bytes and read size of ${data.length} bytes are not equal.`))
          }
 
-         return ok(new Uint8Array(data.buffer))
+         return ok(data)
     }
 }
