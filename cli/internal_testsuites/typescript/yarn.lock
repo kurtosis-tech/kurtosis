@@ -1981,10 +1981,11 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-kurtosis-core-api-lib@1.43.4:
-  version "1.43.4"
-  resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.43.4.tgz#4a5f4192b3843ebd6a1f499076ef2769720acd3b"
-  integrity sha512-Jm+sRFxwlLrVtgMUYSe8nPEYL1N/ehCd6/xZ0qsjeXCAgrJu/pzpPx51IUEZDyPyV/LAD7Qgy4ErKFAcdpxz1w==
+kurtosis-core-api-lib@1.43.6:
+  version "1.43.6"
+  resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.43.6.tgz#dd8869a16c7791f04f2bc664b603d6db5ecd40ca"
+  integrity sha512-wAkkxwoygTmtapf2E8jF/UcJbmuKX0FZ/2LHyBeq0Eb7gucfjyXH/i2ucfp+yuO2Drm+C53HaPsVuak6Gqoc0g==
+
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
     "@types/google-protobuf" "^3.15.5"
@@ -1996,6 +1997,7 @@ kurtosis-core-api-lib@1.43.4:
     neverthrow "^4.2.2"
     path-browserify "^1.0.1"
 
+<<<<<<< HEAD
 "kurtosis-core-api-lib@file:../../../../../../../../../tmp/kurtosis-core-api-lib-1.45.0.tgz":
   version "1.45.0"
   resolved "file:../../../../../../../../../tmp/kurtosis-core-api-lib-1.45.0.tgz#2c715126c421ebe23f40c19099d574bcdc55a7ef"
@@ -2013,13 +2015,23 @@ kurtosis-core-api-lib@1.43.4:
 "kurtosis-engine-api-lib@file:../../../../../../../../../tmp/kurtosis-engine-api-lib-v1.15.4.tgz":
   version "1.15.4"
   resolved "file:../../../../../../../../../tmp/kurtosis-engine-api-lib-v1.15.4.tgz#7f87c2089508884c42005a3f4080f36a31db61ef"
+=======
+kurtosis-engine-api-lib@1.15.6:
+  version "1.15.6"
+  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.15.6.tgz#f3c612d70a048a396119393b4ba9161338553735"
+  integrity sha512-fzwDz/7tb5GAY87F8Lx4Xb2RlXTwglFl4J+BmGznXVzmxEL32ZG8X2XBz3nFR8qxaxwBitOuiN8GYxIo6IT2OQ==
+>>>>>>> develop
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
     "@types/semver" "^7.3.9"
     browser-or-node "^2.0.0"
     google-protobuf "^3.17.3"
     grpc-web "^1.3.0"
+<<<<<<< HEAD
     kurtosis-core-api-lib "1.43.4"
+=======
+    kurtosis-core-api-lib "1.43.6"
+>>>>>>> develop
     loglevel "^1.7.1"
     neverthrow "^4.2.2"
     semver "^7.3.5"

@@ -8,8 +8,8 @@ require (
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211207020812-00a54fc29318
 	github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211207020830-504dbf5ed1a6
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220429223132-7098411750d4
-	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220426105730-ab183164b697 // indirect
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220428115252-6668f26c7fdd
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220428120614-0a15c1c0bc79
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0

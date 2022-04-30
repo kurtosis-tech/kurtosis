@@ -10,6 +10,7 @@ const IS_PARTITIONING_ENABLED = false
 
 const FILE_SERVER_SERVICE_IMAGE = "flashspys/nginx-static"
 const FILE_SERVER_SERVICE_ID: ServiceID = "file-server"
+const SECOND_FILE_SERVER_SERVICE_ID: ServiceID = "second-file-server"
 const FILE_SERVER_PORT_ID = "http"
 const FILE_SERVER_PRIVATE_PORT_NUM = 80
 
@@ -18,6 +19,7 @@ const WAIT_FOR_STARTUP_MAX_RETRIES = 15
 const WAIT_INITIAL_DELAY_MILLISECONDS = 0
 
 const TEST_FILES_ARTIFACT_ID: FilesArtifactID = "test-files-artifact"
+const SECOND_TEST_FILES_ARTIFACT_ID: FilesArtifactID = "second-test-files-artifact"
 const TEST_FILES_ARTIFACT_URL = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
 
 // Filenames & contents for the files stored in the files artifact
@@ -28,6 +30,10 @@ const EXPECTED_FILE1_CONTENTS = "file1\n"
 const EXPECTED_FILE2_CONTENTS = "file2\n"
 
 const FILE_SERVER_PORT_SPEC = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, PortProtocol.TCP )
+
+const USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT  = "/static"
+
+const DUPLICATE_MOUNTPOINT_DOCKER_DAEMON_ERR_MSG  = "Duplicate mount point"
 
 jest.setTimeout(180000)
 
@@ -42,13 +48,17 @@ test("Test files artifact mounting", async () => {
     try {
 
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const filesArtifacts = new Map<string,FilesArtifactID>()
+        const filesArtifacts = new Map<FilesArtifactID, string>()
         filesArtifacts.set(TEST_FILES_ARTIFACT_ID, TEST_FILES_ARTIFACT_URL)
+        filesArtifacts.set(SECOND_TEST_FILES_ARTIFACT_ID, TEST_FILES_ARTIFACT_URL)
         const registerFilesArtifactsResult = await enclaveContext.registerFilesArtifacts(filesArtifacts);
 
         if(registerFilesArtifactsResult.isErr()) { throw registerFilesArtifactsResult.error }
 
-        const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier()
+        const filesArtifactsMountpoints = new Map<FilesArtifactID, string>()
+        filesArtifactsMountpoints.set(TEST_FILES_ARTIFACT_ID, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT)
+
+        const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier(filesArtifactsMountpoints)
 
         const addServiceResult = await enclaveContext.addService(FILE_SERVER_SERVICE_ID, fileServerContainerConfigSupplier)
 
@@ -115,6 +125,25 @@ test("Test files artifact mounting", async () => {
             throw new Error(`Actual file 2 contents "${file2Contents}" != expected file 2 contents "${EXPECTED_FILE2_CONTENTS}"`)
         }
 
+        const duplicateFilesArtifactMountpoints = new Map<FilesArtifactID, string>()
+        duplicateFilesArtifactMountpoints.set(TEST_FILES_ARTIFACT_ID, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT)
+        duplicateFilesArtifactMountpoints.set(SECOND_TEST_FILES_ARTIFACT_ID, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT)
+
+        //TODO the error is detected in Docker, it is enough for now, but we should capture it in Kurt Core for optimization and decoupling
+        const wrongFileServerContainerConfigSupplier = getFileServerContainerConfigSupplier(duplicateFilesArtifactMountpoints)
+
+        const addSecondServiceResult = await enclaveContext.addService(SECOND_FILE_SERVER_SERVICE_ID, wrongFileServerContainerConfigSupplier)
+
+        if(addSecondServiceResult.isOk()){
+            throw new Error(`Adding service "${SECOND_FILE_SERVER_SERVICE_ID}" did not fails and it is wrong, because the files artifact mountpoints set in the container config supplier are duplicate and it must not be allowed`)
+        }
+
+        if(addSecondServiceResult.isErr()){
+            const errMsg = addSecondServiceResult.error.message
+            if(!errMsg.includes(DUPLICATE_MOUNTPOINT_DOCKER_DAEMON_ERR_MSG)){
+               throw new Error(`Adding service "${SECOND_FILE_SERVER_SERVICE_ID}" has failed, but the error is not the duplicated-files-artifact-mountpoints-error that we expected, this is throwing this error instead:\n "${errMsg}"`)
+            }
+        }
 
     }finally{
         stopEnclaveFunction()
@@ -126,19 +155,16 @@ test("Test files artifact mounting", async () => {
 //                                       Private helper functions
 // ====================================================================================================
 
-function getFileServerContainerConfigSupplier(): (ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error> {
+function getFileServerContainerConfigSupplier(filesArtifactMountpoints: Map<FilesArtifactID, string>): (ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error> {
 	
     const containerConfigSupplier = (ipAddr:string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
 
         const usedPorts = new Map<string, PortSpec>()
         usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
 
-        const filesArtifacts = new Map<string, FilesArtifactID>()
-        filesArtifacts.set(TEST_FILES_ARTIFACT_ID, "/static")
-
         const containerConfig = new ContainerConfigBuilder(FILE_SERVER_SERVICE_IMAGE)
             .withUsedPorts(usedPorts)
-            .withFilesArtifacts(filesArtifacts)
+            .withFilesArtifacts(filesArtifactMountpoints)
             .build()
 
         return ok(containerConfig)
