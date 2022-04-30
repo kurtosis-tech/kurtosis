@@ -1,4 +1,4 @@
-import { ContainerConfig, ContainerConfigBuilder, FilesArtifactID, PortProtocol, PortSpec, ServiceID, SharedPath } from "kurtosis-core-api-lib"
+import { ContainerConfig, ContainerConfigBuilder, FilesArtifactID, PortProtocol, PortSpec, ServiceID } from "kurtosis-core-api-lib"
 import log from "loglevel";
 import { Result, ok, err } from "neverthrow";
 
@@ -15,6 +15,8 @@ const FILE_SERVER_PRIVATE_PORT_NUM = 80
 const TEST_FILES_ARTIFACT_URL = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
 
 const FILE_SERVER_PORT_SPEC = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, PortProtocol.TCP )
+
+const FILES_ARTIFACT_MOUNTPOINT  = "/static"
 
 jest.setTimeout(180000)
 
@@ -35,7 +37,7 @@ test("Test destroy enclave", async () => {
         if(storeWebFilesResult.isErr()) { throw storeWebFilesResult.error }
         const filesArtifactId = storeWebFilesResult.value;
 
-        const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier()
+        const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier(filesArtifactId)
 
         const addServiceResult = await enclaveContext.addService(FILE_SERVER_SERVICE_ID, fileServerContainerConfigSupplier)
         if(addServiceResult.isErr()){ throw addServiceResult.error }
@@ -79,12 +81,12 @@ function getFileServerContainerConfigSupplier(filesArtifactId: FilesArtifactID):
         const usedPorts = new Map<string, PortSpec>()
         usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
 
-        const filesArtifactMountpoints = new Map<FilesArtifactID, string>
-        filesArtifactMountpoints.set(filesArtifactId, )
+        const filesArtifactMountpoints = new Map<FilesArtifactID, string>()
+        filesArtifactMountpoints.set(filesArtifactId, FILES_ARTIFACT_MOUNTPOINT)
 
         const containerConfig = new ContainerConfigBuilder(FILE_SERVER_SERVICE_IMAGE)
             .withUsedPorts(usedPorts)
-            .withFiles(filesArtifacts)
+            .withFiles(filesArtifactMountpoints)
             .build()
 
         return ok(containerConfig)
