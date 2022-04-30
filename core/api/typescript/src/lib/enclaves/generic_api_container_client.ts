@@ -28,7 +28,6 @@ import {
     WaitForHttpPostEndpointAvailabilityArgs
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { EnclaveID } from "./enclave_context";
-import { ServiceID } from "../services/service";
 
 export interface GenericApiContainerClient {
     getEnclaveId(): EnclaveID
