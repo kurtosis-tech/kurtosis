@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Upgraded Core to 1.45.2 to fix more bugs with node archiver
 
 # 1.17.1
 ### Changes
