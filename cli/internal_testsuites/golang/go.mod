@@ -3,7 +3,6 @@ module github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite
 go 1.15
 
 require (
-	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/golang/protobuf v1.5.2
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211207020812-00a54fc29318
