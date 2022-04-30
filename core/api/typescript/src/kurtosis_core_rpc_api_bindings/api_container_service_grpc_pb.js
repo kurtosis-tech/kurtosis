@@ -137,7 +137,6 @@ function deserialize_api_container_api_LoadModuleResponse(buffer_arg) {
   return api_container_service_pb.LoadModuleResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-<<<<<<< HEAD
 function serialize_api_container_api_PauseServiceArgs(arg) {
   if (!(arg instanceof api_container_service_pb.PauseServiceArgs)) {
     throw new Error('Expected argument of type api_container_api.PauseServiceArgs');
@@ -149,19 +148,6 @@ function deserialize_api_container_api_PauseServiceArgs(buffer_arg) {
   return api_container_service_pb.PauseServiceArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_RegisterFilesArtifactsArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.RegisterFilesArtifactsArgs)) {
-    throw new Error('Expected argument of type api_container_api.RegisterFilesArtifactsArgs');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_RegisterFilesArtifactsArgs(buffer_arg) {
-  return api_container_service_pb.RegisterFilesArtifactsArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-=======
->>>>>>> develop
 function serialize_api_container_api_RegisterServiceArgs(arg) {
   if (!(arg instanceof api_container_service_pb.RegisterServiceArgs)) {
     throw new Error('Expected argument of type api_container_api.RegisterServiceArgs');
@@ -283,23 +269,24 @@ function deserialize_api_container_api_UnloadModuleArgs(buffer_arg) {
   return api_container_service_pb.UnloadModuleArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-<<<<<<< HEAD
 function serialize_api_container_api_UnpauseServiceArgs(arg) {
   if (!(arg instanceof api_container_service_pb.UnpauseServiceArgs)) {
     throw new Error('Expected argument of type api_container_api.UnpauseServiceArgs');
-=======
-function serialize_api_container_api_UploadFilesArtifactArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.UploadFilesArtifactArgs)) {
-    throw new Error('Expected argument of type api_container_api.UploadFilesArtifactArgs');
->>>>>>> develop
   }
   return Buffer.from(arg.serializeBinary());
 }
 
-<<<<<<< HEAD
 function deserialize_api_container_api_UnpauseServiceArgs(buffer_arg) {
   return api_container_service_pb.UnpauseServiceArgs.deserializeBinary(new Uint8Array(buffer_arg));
-=======
+}
+
+function serialize_api_container_api_UploadFilesArtifactArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.UploadFilesArtifactArgs)) {
+    throw new Error('Expected argument of type api_container_api.UploadFilesArtifactArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
 function deserialize_api_container_api_UploadFilesArtifactArgs(buffer_arg) {
   return api_container_service_pb.UploadFilesArtifactArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
@@ -313,7 +300,6 @@ function serialize_api_container_api_UploadFilesArtifactResponse(arg) {
 
 function deserialize_api_container_api_UploadFilesArtifactResponse(buffer_arg) {
   return api_container_service_pb.UploadFilesArtifactResponse.deserializeBinary(new Uint8Array(buffer_arg));
->>>>>>> develop
 }
 
 function serialize_api_container_api_WaitForHttpGetEndpointAvailabilityArgs(arg) {

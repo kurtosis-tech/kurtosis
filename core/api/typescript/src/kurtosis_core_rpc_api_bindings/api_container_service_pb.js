@@ -46,12 +46,9 @@ goog.exportSymbol('proto.api_container_api.StoreFilesArtifactFromServiceResponse
 goog.exportSymbol('proto.api_container_api.StoreWebFilesArtifactArgs', null, global);
 goog.exportSymbol('proto.api_container_api.StoreWebFilesArtifactResponse', null, global);
 goog.exportSymbol('proto.api_container_api.UnloadModuleArgs', null, global);
-<<<<<<< HEAD
 goog.exportSymbol('proto.api_container_api.UnpauseServiceArgs', null, global);
-=======
 goog.exportSymbol('proto.api_container_api.UploadFilesArtifactArgs', null, global);
 goog.exportSymbol('proto.api_container_api.UploadFilesArtifactResponse', null, global);
->>>>>>> develop
 goog.exportSymbol('proto.api_container_api.WaitForHttpGetEndpointAvailabilityArgs', null, global);
 goog.exportSymbol('proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs', null, global);
 /**
