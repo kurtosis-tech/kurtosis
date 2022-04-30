@@ -380,7 +380,7 @@ func (backend *MetricsReportingKurtosisBackend) PauseService(
 ) error {
 	err := backend.underlying.PauseService(ctx, enclaveId, serviceId)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to pause service '%+v'", serviceId)
+		return stacktrace.Propagate(err, "Failed to pause service '%v'", serviceId)
 	}
 	return nil
 }
@@ -392,7 +392,7 @@ func (backend *MetricsReportingKurtosisBackend) UnpauseService(
 ) error {
 	err := backend.underlying.UnpauseService(ctx, enclaveId, serviceId)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to unpause service '%+v'", serviceId)
+		return stacktrace.Propagate(err, "Failed to unpause service '%v'", serviceId)
 	}
 	return nil
 }
