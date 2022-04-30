@@ -22,11 +22,12 @@ import {
     ExecuteModuleResponse,
     ExecuteModuleArgs,
     ExecCommandArgs,
-    ExecCommandResponse,
+    ExecCommandResponse, PauseServiceArgs, UnpauseServiceArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
 import { EnclaveID } from "./enclave_context";
+import {Empty} from "google-protobuf/google/protobuf/empty_pb";
 
 export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
@@ -362,5 +363,41 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
         const execCommandResponse = execCommandResponseResult.value;
         return ok(execCommandResponse)
+    }
+
+    public async pauseService(pauseServiceArgs: PauseServiceArgs): Promise<Result<null, Error>> {
+        const pauseServicePromise: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.pauseService(pauseServiceArgs, (error: ServiceError | null) => {
+                if (error === null) {
+                    resolve(ok(null))
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+        const pauseServiceResult: Result<null, Error> = await pauseServicePromise;
+        if(pauseServiceResult.isErr()){
+            return err(pauseServiceResult.error)
+        }
+
+        return ok(null)
+    }
+
+    public async unpauseService(unpauseServiceArgs: UnpauseServiceArgs): Promise<Result<null, Error>> {
+        const unpauseServicePromise: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.unpauseService(unpauseServiceArgs, (error: ServiceError | null) => {
+                if (error === null) {
+                    resolve(ok(null))
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+        const unpauseServiceResult: Result<null, Error> = await unpauseServicePromise;
+        if(unpauseServiceResult.isErr()){
+            return err(unpauseServiceResult.error)
+        }
+
+        return ok(null)
     }
 }

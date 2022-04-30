@@ -21,7 +21,7 @@ import {
     UnloadModuleArgs,
     ExecuteModuleArgs,
     GetModuleInfoArgs,
-    Port
+    Port, PauseServiceArgs, UnpauseServiceArgs
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceID } from './services/service';
 import { PartitionID } from './enclaves/enclave_context';
@@ -228,6 +228,23 @@ export function newExecCommandArgs(serviceId: ServiceID, command: string[]): Exe
     const result: ExecCommandArgs = new ExecCommandArgs();
     result.setServiceId(serviceId);
     result.setCommandArgsList(command);
+
+    return result;
+}
+
+// ==============================================================================================
+//                                          Pause/Unpause Service
+// ==============================================================================================
+export function newPauseServiceArgs(serviceId: ServiceID): PauseServiceArgs {
+    const result: PauseServiceArgs = new PauseServiceArgs();
+    result.setServiceId(serviceId);
+
+    return result;
+}
+
+export function newUnpauseServiceArgs(serviceId: ServiceID): UnpauseServiceArgs {
+    const result: UnpauseServiceArgs = new UnpauseServiceArgs();
+    result.setServiceId(serviceId);
 
     return result;
 }

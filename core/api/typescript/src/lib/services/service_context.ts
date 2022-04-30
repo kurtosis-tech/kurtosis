@@ -1,10 +1,11 @@
 import { err, ok, Result } from 'neverthrow';
-import { newExecCommandArgs } from '../constructor_calls';
+import { newExecCommandArgs, newPauseServiceArgs, newUnpauseServiceArgs } from '../constructor_calls';
 import type { ExecCommandArgs } from '../../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import type { PortSpec } from './port_spec';
 import type { ServiceID } from './service';
 import type { SharedPath } from './shared_path';
 import { GenericApiContainerClient } from '../enclaves/generic_api_container_client';
+import {PauseServiceArgs, UnpauseServiceArgs} from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class ServiceContext {
@@ -80,7 +81,26 @@ export class ServiceContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    /*public async pauseService(serviceId: string, ): Promise<Error> {
-        this.client.
-    }*/
+    public async pauseService(serviceId: string): Promise<Result<null, Error>> {
+        const pauseServiceArgs: PauseServiceArgs = newPauseServiceArgs(this.serviceId)
+
+        const pauseServiceResult = await this.client.pauseService(pauseServiceArgs)
+        if(pauseServiceResult.isErr()){
+            return err(pauseServiceResult.error)
+        }
+        const pauseServiceResponse = pauseServiceResult.value
+        return ok(null)
+    }
+
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    public async unpauseService(serviceId: string): Promise<Result<null, Error>> {
+        const unpauseServiceArgs: UnpauseServiceArgs = newUnpauseServiceArgs(this.serviceId)
+
+        const unpauseServiceResult = await this.client.unpauseService(unpauseServiceArgs)
+        if(unpauseServiceResult.isErr()){
+            return err(unpauseServiceResult.error)
+        }
+        const pauseServiceResponse = unpauseServiceResult.value
+        return ok(null)
+    }
 }
