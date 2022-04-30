@@ -1,6 +1,7 @@
 import { ok, err, Result } from "neverthrow";
 import * as grpc_web from "grpc-web";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
+// @ts-ignore
 import {
     RegisterFilesArtifactsArgs,
     RegisterServiceArgs,
@@ -27,7 +28,6 @@ import {
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
 import { EnclaveID } from "./enclave_context";
-import {ServiceError} from "@grpc/grpc-js";
 
 export class GrpcWebApiContainerClient implements GenericApiContainerClient {
 
