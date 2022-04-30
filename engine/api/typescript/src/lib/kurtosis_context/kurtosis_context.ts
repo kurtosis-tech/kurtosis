@@ -228,14 +228,12 @@ export class KurtosisContext {
                 LOCAL_HOSTNAME,
                 apiContainerHostMachineInfo.getGrpcPortOnHostMachine(),
                 enclaveInfo.getEnclaveId(),
-                enclaveInfo.getEnclaveDataDirpathOnHostMachine(),
-                )
+            )
         }else{
             newEnclaveContextResult = await EnclaveContext.newGrpcWebEnclaveContext(
                 LOCAL_HOSTNAME,
                 apiContainerHostMachineInfo.getGrpcProxyPortOnHostMachine(),
                 enclaveInfo.getEnclaveId(),
-                enclaveInfo.getEnclaveDataDirpathOnHostMachine(),
             )
         }
         if(newEnclaveContextResult.isErr()){

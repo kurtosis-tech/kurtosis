@@ -1,4 +1,7 @@
 # TBD
+### Breaking Changes
+* Upgraded to Kurtosis Core 1.45.0
+    * Users should follow the changes [described in the changelog](https://docs.kurtosistech.com/kurtosis-core/changelog)
 
 # 1.16.0
 ### Changes
