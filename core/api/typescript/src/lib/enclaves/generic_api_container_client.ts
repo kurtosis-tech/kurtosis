@@ -16,6 +16,7 @@ import {
     GetServiceInfoResponse,
     GetServicesResponse,
     LoadModuleArgs,
+    PauseServiceArgs,
     RegisterServiceArgs,
     RegisterServiceResponse,
     RemoveServiceArgs,
@@ -23,6 +24,7 @@ import {
     StartServiceArgs,
     StartServiceResponse, StoreFilesArtifactFromServiceArgs, StoreWebFilesArtifactArgs, StoreWebFilesArtifactResponse,
     UnloadModuleArgs,
+    UnpauseServiceArgs,
     UploadFilesArtifactArgs,
     UploadFilesArtifactResponse,
     WaitForHttpGetEndpointAvailabilityArgs,
@@ -46,6 +48,8 @@ export interface GenericApiContainerClient {
     getModules(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetModulesResponse, Error>>
     executeModule(executeModuleArgs: ExecuteModuleArgs): Promise<Result<ExecuteModuleResponse, Error>>
     execCommand(execCommandArgs: ExecCommandArgs): Promise<Result<ExecCommandResponse, Error>>
+    pauseService(pauseServiceArgs: PauseServiceArgs): Promise<Result<null, Error>>
+    unpauseService(unpauseServiceArgs: UnpauseServiceArgs): Promise<Result<null, Error>>
     uploadFiles(uploadFilesArtifactArgs: UploadFilesArtifactArgs): Promise<Result<UploadFilesArtifactResponse, Error>>
     storeWebFilesArtifact(storeWebFilesArtifactArgs: StoreWebFilesArtifactArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>>
     storeFilesArtifactFromService(storeFilesArtifactFromServiceArgs: StoreFilesArtifactFromServiceArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>>

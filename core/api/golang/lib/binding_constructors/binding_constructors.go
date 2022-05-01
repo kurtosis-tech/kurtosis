@@ -204,6 +204,22 @@ func NewPartitionConnectionInfo(packetLossPercentage float32) *kurtosis_core_rpc
 }
 
 // ==============================================================================================
+//                                          Pause/Unpause Service
+// ==============================================================================================
+
+func NewPauseServiceArgs(serviceId string) *kurtosis_core_rpc_api_bindings.PauseServiceArgs {
+	return &kurtosis_core_rpc_api_bindings.PauseServiceArgs{
+		ServiceId:   serviceId,
+	}
+}
+
+func NewUnpauseServiceArgs(serviceId string) *kurtosis_core_rpc_api_bindings.UnpauseServiceArgs {
+	return &kurtosis_core_rpc_api_bindings.UnpauseServiceArgs{
+		ServiceId:   serviceId,
+	}
+}
+
+// ==============================================================================================
 //                                          Exec Command
 // ==============================================================================================
 func NewExecCommandArgs(serviceId string, commandArgs []string) *kurtosis_core_rpc_api_bindings.ExecCommandArgs {

@@ -1,9 +1,10 @@
 import { err, ok, Result } from 'neverthrow';
-import { newExecCommandArgs } from '../constructor_calls';
+import { newExecCommandArgs, newPauseServiceArgs, newUnpauseServiceArgs } from '../constructor_calls';
 import type { ExecCommandArgs } from '../../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import type { PortSpec } from './port_spec';
 import type { ServiceID } from './service';
 import { GenericApiContainerClient } from '../enclaves/generic_api_container_client';
+import {PauseServiceArgs, UnpauseServiceArgs} from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class ServiceContext {
