@@ -87,6 +87,7 @@ type ServiceNetworkImpl struct {
 
 	// TODO TODO TODO Transfer this to KurtosisBackend so that we can read directly from
 	// the underlying orchestration system whether a service is paused or not
+	// This is necessary for restartable enclaves (so container engine doesn't store enclave state in memory)
 	pausedServices	map[service.ServiceID]bool
 
 	networkingSidecars map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper
