@@ -23,7 +23,9 @@ import {
     Port,
     StoreWebFilesArtifactArgs,
     StoreFilesArtifactFromServiceArgs,
-    UploadFilesArtifactArgs
+    UploadFilesArtifactArgs,
+    PauseServiceArgs,
+    UnpauseServiceArgs
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceID } from './services/service';
 import { PartitionID } from './enclaves/enclave_context';

@@ -350,13 +350,44 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(execCommandResponse)
     }
 
-<<<<<<< HEAD
+
     public async pauseService(pauseServiceArgs: PauseServiceArgs): Promise<Result<null, Error>> {
         const pauseServicePromise: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.pauseService(pauseServiceArgs, (error: ServiceError | null) => {
                 if (error === null) {
                     resolve(ok(null))
-=======
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+        const pauseServiceResult: Result<null, Error> = await pauseServicePromise;
+        if(pauseServiceResult.isErr()){
+            return err(pauseServiceResult.error)
+        }
+
+        return ok(null)
+    }
+
+
+    public async unpauseService(unpauseServiceArgs: UnpauseServiceArgs): Promise<Result<null, Error>> {
+        const unpauseServicePromise: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.unpauseService(unpauseServiceArgs, (error: ServiceError | null) => {
+                if (error === null) {
+                    resolve(ok(null))
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+        const unpauseServiceResult: Result<null, Error> = await unpauseServicePromise;
+        if(unpauseServiceResult.isErr()){
+            return err(unpauseServiceResult.error)
+        }
+
+        return ok(null)
+    }
+
     public async uploadFiles(uploadFilesArtifactArgs: UploadFilesArtifactArgs): Promise<Result<UploadFilesArtifactResponse, Error>> {
         const uploadFilesArtifactPromise: Promise<Result<UploadFilesArtifactResponse, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.uploadFilesArtifact(uploadFilesArtifactArgs, (error: ServiceError | null, response?: UploadFilesArtifactResponse) => {
@@ -366,27 +397,11 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
                     } else {
                         resolve(ok(response!));
                     }
->>>>>>> develop
                 } else {
                     resolve(err(error));
                 }
             })
         });
-<<<<<<< HEAD
-        const pauseServiceResult: Result<null, Error> = await pauseServicePromise;
-        if(pauseServiceResult.isErr()){
-            return err(pauseServiceResult.error)
-        }
-
-        return ok(null)
-    }
-
-    public async unpauseService(unpauseServiceArgs: UnpauseServiceArgs): Promise<Result<null, Error>> {
-        const unpauseServicePromise: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.unpauseService(unpauseServiceArgs, (error: ServiceError | null) => {
-                if (error === null) {
-                    resolve(ok(null))
-=======
         const uploadFilesArtifactResponseResult: Result<UploadFilesArtifactResponse, Error> = await uploadFilesArtifactPromise;
         if(uploadFilesArtifactResponseResult.isErr()){
             return err(uploadFilesArtifactResponseResult.error)
@@ -405,20 +420,11 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
                     } else {
                         resolve(ok(response!));
                     }
->>>>>>> develop
                 } else {
                     resolve(err(error));
                 }
             })
         });
-<<<<<<< HEAD
-        const unpauseServiceResult: Result<null, Error> = await unpauseServicePromise;
-        if(unpauseServiceResult.isErr()){
-            return err(unpauseServiceResult.error)
-        }
-
-        return ok(null)
-=======
 
         const storeWebFilesArtifactResponseResult: Result<StoreWebFilesArtifactResponse, Error> = await storeWebFilesArtifactPromise;
         if(storeWebFilesArtifactResponseResult.isErr()){
@@ -449,6 +455,5 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         }
         const storeFilesArtifactFromServiceResponse = storeFilesArtifactFromServiceResponseResult.value;
         return ok(storeFilesArtifactFromServiceResponse);
->>>>>>> develop
     }
 }
