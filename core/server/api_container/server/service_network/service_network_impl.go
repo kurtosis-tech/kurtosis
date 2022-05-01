@@ -51,7 +51,6 @@ type serviceRunInfo struct {
 	privatePorts      map[string]*port_spec.PortSpec
 	maybePublicIpAddr net.IP                         // Can be nil if the service doesn't declare any private ports
 	maybePublicPorts  map[string]*port_spec.PortSpec // Will be nil if the service doesn't declare any private ports
-	isPaused		  bool
 }
 
 /*
@@ -86,6 +85,8 @@ type ServiceNetworkImpl struct {
 	serviceRegistrationInfo map[service.ServiceID]serviceRegistrationInfo
 	serviceRunInfo          map[service.ServiceID]serviceRunInfo
 
+	// TODO TODO TODO Transfer this to KurtosisBackend so that we can read directly from
+	// the underlying orchestration system whether a service is paused or not
 	pausedServices	map[service.ServiceID]bool
 
 	networkingSidecars map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper
