@@ -51,6 +51,7 @@ type serviceRunInfo struct {
 	privatePorts      map[string]*port_spec.PortSpec
 	maybePublicIpAddr net.IP                         // Can be nil if the service doesn't declare any private ports
 	maybePublicPorts  map[string]*port_spec.PortSpec // Will be nil if the service doesn't declare any private ports
+	isPaused		  bool
 }
 
 /*

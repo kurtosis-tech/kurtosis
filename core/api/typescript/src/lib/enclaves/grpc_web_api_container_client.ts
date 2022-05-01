@@ -1,7 +1,6 @@
 import {ok, err, Result, Err} from "neverthrow";
 import * as grpc_web from "grpc-web";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
-// @ts-ignore
 import {
     RegisterServiceArgs,
     RegisterServiceResponse,

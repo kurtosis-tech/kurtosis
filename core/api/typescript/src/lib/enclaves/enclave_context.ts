@@ -44,7 +44,7 @@ import {
     newUnloadModuleArgs,
     newWaitForHttpGetEndpointAvailabilityArgs,
     newWaitForHttpPostEndpointAvailabilityArgs,
-    newUploadFilesArtifactArgs
+    newUploadFilesArtifactArgs, newPauseServiceArgs, newUnpauseServiceArgs
 } from "../constructor_calls";
 import type { ContainerConfig, FilesArtifactID } from "../services/container_config";
 import type { ServiceID } from "../services/service";
@@ -53,6 +53,7 @@ import { PortProtocol, PortSpec } from "../services/port_spec";
 import type { GenericPathJoiner } from "./generic_path_joiner";
 import type { PartitionConnection } from "./partition_connection";
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
+import {PauseServiceArgs, UnpauseServiceArgs} from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
 export type EnclaveID = string;
 export type PartitionID = string;
@@ -535,6 +536,30 @@ export class EnclaveContext {
         }
         const storeFilesArtifactFromServiceResponse = storeFilesArtifactFromServiceResponseResult.value;
         return ok(storeFilesArtifactFromServiceResponse.getUuid())
+    }
+
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    public async pauseService(serviceId: string): Promise<Result<null, Error>> {
+        const pauseServiceArgs: PauseServiceArgs = newPauseServiceArgs(serviceId)
+
+        const pauseServiceResult = await this.backend.pauseService(pauseServiceArgs)
+        if(pauseServiceResult.isErr()){
+            return err(pauseServiceResult.error)
+        }
+        const pauseServiceResponse = pauseServiceResult.value
+        return ok(null)
+    }
+
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    public async unpauseService(serviceId: string): Promise<Result<null, Error>> {
+        const unpauseServiceArgs: UnpauseServiceArgs = newUnpauseServiceArgs(serviceId)
+
+        const unpauseServiceResult = await this.backend.unpauseService(unpauseServiceArgs)
+        if(unpauseServiceResult.isErr()){
+            return err(unpauseServiceResult.error)
+        }
+        const pauseServiceResponse = unpauseServiceResult.value
+        return ok(null)
     }
   
     // ====================================================================================================

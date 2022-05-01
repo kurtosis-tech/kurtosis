@@ -284,6 +284,9 @@ message ExecCommandArgs {
   repeated string command_args = 2;
 }
 
+// ==============================================================================================
+//                                          Pause/Unpause Service
+// ==============================================================================================
 message PauseServiceArgs {
   // The service ID of the container that should be paused
   string service_id = 1;

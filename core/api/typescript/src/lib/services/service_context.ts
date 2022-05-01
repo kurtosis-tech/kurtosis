@@ -54,28 +54,4 @@ export class ServiceContext {
         const execCommandResponse = execCommandResponseResult.value
         return ok([execCommandResponse.getExitCode(), execCommandResponse.getLogOutput()]);
     }
-
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public async pauseService(serviceId: string): Promise<Result<null, Error>> {
-        const pauseServiceArgs: PauseServiceArgs = newPauseServiceArgs(this.serviceId)
-
-        const pauseServiceResult = await this.client.pauseService(pauseServiceArgs)
-        if(pauseServiceResult.isErr()){
-            return err(pauseServiceResult.error)
-        }
-        const pauseServiceResponse = pauseServiceResult.value
-        return ok(null)
-    }
-
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public async unpauseService(serviceId: string): Promise<Result<null, Error>> {
-        const unpauseServiceArgs: UnpauseServiceArgs = newUnpauseServiceArgs(this.serviceId)
-
-        const unpauseServiceResult = await this.client.unpauseService(unpauseServiceArgs)
-        if(unpauseServiceResult.isErr()){
-            return err(unpauseServiceResult.error)
-        }
-        const pauseServiceResponse = unpauseServiceResult.value
-        return ok(null)
-    }
 }
