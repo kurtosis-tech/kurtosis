@@ -191,6 +191,20 @@ Copy a file or folder from a service container to the Kurtosis filestore for use
 
 * `uuid`: A unique ID as a string identifying the generated files artifact, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
+### pauseService(ServiceID serviceId)
+Stops all running processes in the specified service, but does not shut down the service. Processes can be restarted with `unpauseService`.
+
+**Args**
+
+* `serviceId`: The ID of the service to pause.
+
+### unpauseService(ServiceID serviceId)
+Resumes all paused processes in the specified service. Specified service must have been previously paused.
+
+**Args**
+
+* `serviceId`: The ID of the service to unpause.
+
 PartitionConnection
 -------------------
 This interface represents the network state between two partitions (e.g. whether network traffic is blocked, being partially dropped, etc.).
