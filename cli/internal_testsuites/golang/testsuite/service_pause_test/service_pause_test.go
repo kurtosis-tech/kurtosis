@@ -56,9 +56,7 @@ func TestPauseUnpause(t *testing.T) {
 func getContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 	containerConfigSupplier := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 
-		// We sleep because the only function of this container is to test Docker executing a command while it's running
-		// NOTE: We could just as easily combine this into a single array (rather than splitting between ENTRYPOINT and CMD
-		// args), but this provides a nice little regression test of the ENTRYPOINT overriding
+		// We spam timestamps so that we can measure pausing processes (no more log output) and unpausing (log output resumes)
 		entrypointArgs := []string{"/bin/sh", "-c"}
 		cmdArgs := []string{"while sleep 1; do ts=$(date +\"%s\") ; echo \"Time: $ts\" ; done"}
 

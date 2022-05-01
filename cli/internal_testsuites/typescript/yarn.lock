@@ -1995,9 +1995,9 @@ kleur@^3.0.3:
     neverthrow "^4.2.2"
     path-browserify "^1.0.1"
 
-"kurtosis-engine-api-lib@file:../../../../../../../../../tmp/kurtosis-engine-api-lib-1.15.4.tgz":
+"kurtosis-engine-api-lib@file:../../../../../../../../../tmp/kurtosis-engine-api-lib-v1.15.4.tgz":
   version "1.15.4"
-  resolved "file:../../../../../../../../../tmp/kurtosis-engine-api-lib-1.15.4.tgz#6cf5890481084ae5b04bc344f35370e598ac4eab"
+  resolved "file:../../../../../../../../../tmp/kurtosis-engine-api-lib-v1.15.4.tgz#47f1cbe648d58c6b20286435ee6b07e19478ffec"
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
     "@types/semver" "^7.3.9"
