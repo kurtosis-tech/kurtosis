@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Exposed service pause/unpause functionality on the API container
 
 # 1.45.3
 ### Fixes
