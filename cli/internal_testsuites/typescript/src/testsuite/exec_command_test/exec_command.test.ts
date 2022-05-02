@@ -1,4 +1,4 @@
-import { ContainerConfig, ContainerConfigBuilder, ServiceContext, SharedPath } from "kurtosis-core-api-lib";
+import { ContainerConfig, ContainerConfigBuilder, ServiceContext } from "kurtosis-core-api-lib";
 import log from "loglevel";
 import { err, ok, Result } from "neverthrow";
 
@@ -117,9 +117,9 @@ test("Test exec command", async () => {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-function getContainerConfigSupplier(): (ipAddr:string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error> {
+function getContainerConfigSupplier(): (ipAddr:string) => Result<ContainerConfig, Error> {
 	
-    const containerConfigSupplier = (ipAddr:string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
+    const containerConfigSupplier = (ipAddr:string): Result<ContainerConfig, Error> => {
         const entrypointArgs = ["sleep"]
         const cmdArgs = ["30"]
 

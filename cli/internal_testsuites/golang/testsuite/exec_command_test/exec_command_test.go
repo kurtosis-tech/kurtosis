@@ -90,8 +90,8 @@ func TestExecCommand(t *testing.T) {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+func getContainerConfigSupplier() func(ipAddr string) (*services.ContainerConfig, error) {
+	containerConfigSupplier  := func(ipAddr string) (*services.ContainerConfig, error) {
 
 		// We sleep because the only function of this container is to test Docker executing a command while it's running
 		// NOTE: We could just as easily combine this into a single array (rather than splitting between ENTRYPOINT and CMD

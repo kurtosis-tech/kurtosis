@@ -1,13 +1,12 @@
 import {
     ServiceID,
     EnclaveContext,
-    SharedPath,
     ContainerConfig,
     ContainerConfigBuilder,
     ServiceContext,
     PartitionID,
     PortSpec,
-    PortProtocol,
+    PortProtocol, FilesArtifactID,
 } from "kurtosis-core-api-lib";
 import * as datastoreApi from "example-datastore-server-api-lib";
 import * as serverApi from "example-api-server-api-lib";
@@ -16,8 +15,12 @@ import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty
 import * as grpc from "@grpc/grpc-js";
 import log from "loglevel";
 import * as fs from 'fs';
+import * as path from "path";
+import {create} from "domain";
+import * as os from "os";
 
-const CONFIG_FILEPATH_RELATIVE_TO_SHARED_DIR_ROOT = "config-file.txt";
+const CONFIG_FILENAME = "config.json"
+const CONFIG_MOUNTPATH_ON_API_CONTAINER = "/config"
 
 const DATASTORE_IMAGE = "kurtosistech/example-datastore-server";
 const API_SERVICE_IMAGE = "kurtosistech/example-api-server";
@@ -108,14 +111,29 @@ export async function addAPIService( serviceId: ServiceID, enclaveContext: Encla
     return ok({ serviceContext, client, clientCloseFunction})
 }
 
-export async function addAPIServiceToPartition( serviceId: ServiceID, enclaveContext: EnclaveContext, datastoreIPInsideNetwork: string, partitionId: PartitionID):
-    Promise<Result<{
-        serviceContext: ServiceContext;
-        client: serverApi.ExampleAPIServerServiceClientNode;
-        clientCloseFunction: () => void;
-    },Error>> {
-  
-    const containerConfigSupplier = getApiServiceContainerConfigSupplier(datastoreIPInsideNetwork)
+export async function addAPIServiceToPartition(
+    serviceId: ServiceID,
+    enclaveContext: EnclaveContext,
+    datastorePrivateIp: string,
+    partitionId: PartitionID
+): Promise<Result<{
+    serviceContext: ServiceContext;
+    client: serverApi.ExampleAPIServerServiceClientNode;
+    clientCloseFunction: () => void;
+}, Error>> {
+    const createDatastoreConfigResult = await createApiConfigFile(datastorePrivateIp)
+    if (createDatastoreConfigResult.isErr()) {
+        return err(createDatastoreConfigResult.error)
+    }
+    const configFilepath = createDatastoreConfigResult.value;
+
+    const uploadConfigResult = await enclaveContext.uploadFiles(configFilepath)
+    if (uploadConfigResult.isErr()) {
+        return err(uploadConfigResult.error)
+    }
+    const datastoreConfigArtifactId = uploadConfigResult.value
+
+    const containerConfigSupplier = getApiServiceContainerConfigSupplier(datastoreConfigArtifactId)
 
     const addServiceToPartitionResult = await enclaveContext.addServiceToPartition(serviceId, partitionId, containerConfigSupplier)
     if(addServiceToPartitionResult.isErr()) return err(addServiceToPartitionResult.error)
@@ -183,9 +201,9 @@ export async function waitForHealthy(
 //                                      Private Helper Methods
 // ====================================================================================================
 
-function getDatastoreContainerConfigSupplier(): ( ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error> {
+function getDatastoreContainerConfigSupplier(): ( ipAddr: string) => Result<ContainerConfig, Error> {
 
-    const containerConfigSupplier = ( ipAddr: string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
+    const containerConfigSupplier = ( ipAddr: string): Result<ContainerConfig, Error> => {
         const usedPorts = new Map<string, PortSpec>();
         usedPorts.set(DATASTORE_PORT_ID, DATASTORE_PORT_SPEC);
 
@@ -197,58 +215,71 @@ function getDatastoreContainerConfigSupplier(): ( ipAddr: string, sharedDirector
     return containerConfigSupplier;
 }
 
-function getApiServiceContainerConfigSupplier(datastoreIPInsideNetwork:string):
-    (ipAddr:string,sharedDirectory: SharedPath)=> Result<ContainerConfig, Error> {
+function getApiServiceContainerConfigSupplier(
+    apiConfigArtifactId: FilesArtifactID,
+): (ipAddr:string) => Result<ContainerConfig, Error> {
 
-    const containerConfigSupplier = (ipAddr:string,sharedDirectory: SharedPath): Result<ContainerConfig, Error> =>{
-        const datastoreConfigFileFilePathResult = createDatastoreConfigFileInServiceDirectory(datastoreIPInsideNetwork, sharedDirectory)
-        if(datastoreConfigFileFilePathResult.isErr()) { return err(datastoreConfigFileFilePathResult.error) }
-       
-        const datastoreConfigFileFilePath = datastoreConfigFileFilePathResult.value
-  
+    const containerConfigSupplier = (ipAddr: string): Result<ContainerConfig, Error> => {
+
         const usedPorts = new Map<string, PortSpec>();
         usedPorts.set(API_PORT_ID, API_PORT_SPEC);
-        const startCmd:string[] = ["./example-api-server.bin", "--config", datastoreConfigFileFilePath.getAbsPathOnServiceContainer()]
-  
+        const startCmd: string[] = [
+            "./example-api-server.bin",
+            "--config",
+            path.join(CONFIG_MOUNTPATH_ON_API_CONTAINER, CONFIG_FILENAME),
+        ]
+
+        const filesArtifactMountpoints = new Map<FilesArtifactID, string>()
+        filesArtifactMountpoints.set(apiConfigArtifactId, CONFIG_MOUNTPATH_ON_API_CONTAINER)
+
         const containerConfig = new ContainerConfigBuilder(API_SERVICE_IMAGE)
             .withUsedPorts(usedPorts)
+            .withFiles(filesArtifactMountpoints)
             .withCmdOverride(startCmd)
             .build()
-  
+
         return ok(containerConfig)
     }
 
     return containerConfigSupplier;
 
-  }
-  
-  function createDatastoreConfigFileInServiceDirectory(datastoreIP: string, sharedDirectory: SharedPath): Result<SharedPath,Error>{
-    const configFileFilePath = sharedDirectory.getChildPath(CONFIG_FILEPATH_RELATIVE_TO_SHARED_DIR_ROOT)
-  
-    log.info(`Config file absolute path on this container: ${configFileFilePath.getAbsPathOnThisContainer()}, on service container:${configFileFilePath.getAbsPathOnServiceContainer()}`)
-    
-    log.debug(`Datastore IP:${datastoreIP} , port: ${datastoreApi.LISTEN_PORT}`)
-    
+}
+
+async function createApiConfigFile(datastoreIP: string): Promise<Result<string, Error>> {
+    const mkdirResult = await fs.promises.mkdtemp(
+        `${os.tmpdir()}${path.sep}`,
+    ).then(
+        (result) => ok(result),
+    ).catch(
+        (mkdirErr) => err(mkdirErr),
+    )
+    if (mkdirResult.isErr()) {
+        return err(mkdirResult.error);
+    }
+    const tempDirpath = mkdirResult.value;
+    const tempFilepath = path.join(tempDirpath, CONFIG_FILENAME)
+
     const config = {
-        datastoreIp:   datastoreIP,
+        datastoreIp: datastoreIP,
         datastorePort: datastoreApi.LISTEN_PORT,
     };
 
     const configJSONStringified = JSON.stringify(config);
-  
+
     log.debug(`API config JSON: ${configJSONStringified}`)
 
     try {
-        fs.writeFileSync(configFileFilePath.getAbsPathOnThisContainer(), configJSONStringified);
-    }catch(error) {
+        fs.writeFileSync(tempFilepath, configJSONStringified);
+    } catch (error) {
         log.error("An error occurred writing the serialized config JSON to file")
-        if(error instanceof Error){
+        if (error instanceof Error) {
             return err(error)
-        }else {
+        } else {
             return err(new Error("Encountered error while writing the file, but the error wasn't of type Error"))
         }
     }
-  
-    return ok(configFileFilePath);
+
+    return ok(tempFilepath);
+
 }
 

@@ -58,8 +58,8 @@ func TestWaitForEndpointAvailabilityFunction(t *testing.T) {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getExampleServiceConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-	containerConfigSupplier := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+func getExampleServiceConfigSupplier() func(ipAddr string) (*services.ContainerConfig, error) {
+	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
 		containerConfig := services.NewContainerConfigBuilder(
 			dockerGettingStartedImage,
 		).WithUsedPorts(map[string]*services.PortSpec{

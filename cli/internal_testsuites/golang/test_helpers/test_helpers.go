@@ -17,11 +17,13 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io/ioutil"
 	"os"
+	"path"
 	"time"
 )
 
 const (
-	configFilepathRelativeToSharedDirRoot = "config-file.txt"
+	configFilename                = "config.json"
+	configMountpathOnApiContainer = "/config"
 
 	datastoreImage  = "kurtosistech/example-datastore-server"
 	apiServiceImage = "kurtosistech/example-api-server"
@@ -120,7 +122,16 @@ func AddAPIService(ctx context.Context, serviceId services.ServiceID, enclaveCtx
 }
 
 func AddAPIServiceToPartition(ctx context.Context, serviceId services.ServiceID, enclaveCtx *enclaves.EnclaveContext, datastorePrivateIp string, partitionId enclaves.PartitionID) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
-	containerConfigSupplier := getApiServiceContainerConfigSupplier(datastorePrivateIp)
+	configFilepath, err := createApiConfigFile(datastorePrivateIp)
+	if err != nil {
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the datastore config file")
+	}
+	datastoreConfigArtifactId, err := enclaveCtx.UploadFiles(configFilepath)
+	if err != nil {
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred uploading the datastore config file")
+	}
+
+	containerConfigSupplier := getApiServiceContainerConfigSupplier(datastoreConfigArtifactId)
 
 	serviceCtx, err := enclaveCtx.AddServiceToPartition(serviceId, partitionId, containerConfigSupplier)
 	if err != nil {
@@ -179,8 +190,8 @@ func WaitForHealthy(ctx context.Context, client GrpcAvailabilityChecker, retries
 // ====================================================================================================
 //                                      Private Helper Methods
 // ====================================================================================================
-func getDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-	containerConfigSupplier := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+func getDatastoreContainerConfigSupplier() func(ipAddr string) (*services.ContainerConfig, error) {
+	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
 		containerConfig := services.NewContainerConfigBuilder(
 			datastoreImage,
 		).WithUsedPorts(map[string]*services.PortSpec{
@@ -191,24 +202,20 @@ func getDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *
 	return containerConfigSupplier
 }
 
-func getApiServiceContainerConfigSupplier(datastoreIPInsideNetwork string) func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-	containerConfigSupplier := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-
-		datastoreConfigFileFilePath, err := createDatastoreConfigFileInServiceDirectory(datastoreIPInsideNetwork, sharedDirectory)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating data store config file in service container")
-		}
-
+func getApiServiceContainerConfigSupplier(apiConfigArtifactId services.FilesArtifactID) func(ipAddr string) (*services.ContainerConfig, error) {
+	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
 		startCmd := []string{
 			"./example-api-server.bin",
 			"--config",
-			datastoreConfigFileFilePath.GetAbsPathOnServiceContainer(),
+			path.Join(configMountpathOnApiContainer, configFilename),
 		}
 
 		containerConfig := services.NewContainerConfigBuilder(
 			apiServiceImage,
 		).WithUsedPorts(map[string]*services.PortSpec{
 			apiPortId: apiPortSpec,
+		}).WithFiles(map[services.FilesArtifactID]string{
+			apiConfigArtifactId: configMountpathOnApiContainer,
 		}).WithCmdOverride(startCmd).Build()
 
 		return containerConfig, nil
@@ -217,12 +224,12 @@ func getApiServiceContainerConfigSupplier(datastoreIPInsideNetwork string) func(
 	return containerConfigSupplier
 }
 
-func createDatastoreConfigFileInServiceDirectory(datastoreIP string, sharedDirectory *services.SharedPath) (*services.SharedPath, error) {
-	configFileFilePath := sharedDirectory.GetChildPath(configFilepathRelativeToSharedDirRoot)
-
-	logrus.Infof("Config file absolute path on this container: %v , on service container: %v", configFileFilePath.GetAbsPathOnThisContainer(), configFileFilePath.GetAbsPathOnServiceContainer())
-
-	logrus.Debugf("Datastore IP: %v , port: %v", datastoreIP, datastore_rpc_api_consts.ListenPort)
+func createApiConfigFile(datastoreIP string) (string, error) {
+	tempDirpath, err := ioutil.TempDir("", "")
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred creating a temporary directory to house the datastore config file")
+	}
+	tempFilepath := path.Join(tempDirpath, configFilename)
 
 	configObj := datastoreConfig{
 		DatastoreIp:   datastoreIP,
@@ -230,14 +237,12 @@ func createDatastoreConfigFileInServiceDirectory(datastoreIP string, sharedDirec
 	}
 	configBytes, err := json.Marshal(configObj)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred serializing the config to JSON")
+		return "", stacktrace.Propagate(err, "An error occurred serializing the config to JSON")
 	}
 
-	logrus.Debugf("API config JSON: %v", string(configBytes))
-
-	if err := ioutil.WriteFile(configFileFilePath.GetAbsPathOnThisContainer(), configBytes, os.ModePerm); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred writing the serialized config JSON to file")
+	if err := ioutil.WriteFile(tempFilepath, configBytes, os.ModePerm); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred writing the serialized config JSON to file")
 	}
 
-	return configFileFilePath, nil
+	return tempFilepath, nil
 }
