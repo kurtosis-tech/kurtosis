@@ -332,4 +332,3 @@ _Found a bug? File it on [the repo][issues]!_
 [servicecontext_getpublicports]: #getpublicports---mapportid-portspec
 
 [kurtosiscontext_createenclave]: ../kurtosis-engine-server/lib-documentation#lib-documentation.md#createenclaveenclaveid-enclaveid-boolean-ispartitioningenabled---enclavecontext-enclavecontext
-https://stackedit.io/app#:~:text=service%20to%20pause.-,unpauseService,-(ServiceID%20serviceId)
