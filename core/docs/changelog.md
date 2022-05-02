@@ -1,5 +1,10 @@
 # TBD
 
+# 1.45.4
+### Features
+* Exposed service pause/unpause functionality on the API container
+* Adding documentation for service pause/unpause
+
 # 1.45.3
 ### Fixes
 * Fixed bug with Typescript `EnclaveContext.uploadFiles` where garbage data was getting written to the TAR rather than the compressed data

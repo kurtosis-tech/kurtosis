@@ -472,14 +472,34 @@ func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreW
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (EnclaveContext *EnclaveContext) StoreServiceFiles(ctx context.Context, serviceId services.ServiceID, absoluteFilepathOnServiceContainer string) (services.FilesArtifactID, error) {
+func (enclaveContext *EnclaveContext) StoreServiceFiles(ctx context.Context, serviceId services.ServiceID, absoluteFilepathOnServiceContainer string) (services.FilesArtifactID, error) {
 	serviceIdStr := string(serviceId)
 	args := binding_constructors.NewStoreFilesArtifactFromServiceArgs(serviceIdStr, absoluteFilepathOnServiceContainer)
-	response, err := EnclaveContext.client.StoreFilesArtifactFromService(ctx, args)
+	response, err := enclaveContext.client.StoreFilesArtifactFromService(ctx, args)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred copying source content from absolute filepath '%v' in service container with ID '%v'", absoluteFilepathOnServiceContainer, serviceIdStr)
 	}
 	return services.FilesArtifactID(response.Uuid), nil
+}
+
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+func (enclaveContext *EnclaveContext) PauseService(serviceId services.ServiceID) error {
+	args := binding_constructors.NewPauseServiceArgs(string(serviceId))
+	_, err := enclaveContext.client.PauseService(context.Background(), args)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to pause service '%v'", serviceId)
+	}
+	return nil
+}
+
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+func (enclaveContext *EnclaveContext) UnpauseService(serviceId services.ServiceID) error {
+	args := binding_constructors.NewUnpauseServiceArgs(string(serviceId))
+	_, err := enclaveContext.client.UnpauseService(context.Background(), args)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to unpause service '%v'", serviceId)
+	}
+	return nil
 }
 
 // ====================================================================================================

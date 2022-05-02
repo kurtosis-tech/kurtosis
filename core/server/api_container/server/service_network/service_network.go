@@ -60,6 +60,16 @@ type ServiceNetwork interface {
 		resultErr error,
 	)
 
+	PauseService(
+		ctx context.Context,
+		serviceId service.ServiceID,
+	) error
+
+	UnpauseService(
+		ctx context.Context,
+		serviceId service.ServiceID,
+	) error
+
 	RemoveService(
 		ctx context.Context,
 		serviceId service.ServiceID,

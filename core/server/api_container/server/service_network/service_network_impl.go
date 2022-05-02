@@ -85,6 +85,11 @@ type ServiceNetworkImpl struct {
 	serviceRegistrationInfo map[service.ServiceID]serviceRegistrationInfo
 	serviceRunInfo          map[service.ServiceID]serviceRunInfo
 
+	// TODO TODO TODO Transfer this to KurtosisBackend so that we can read directly from
+	// the underlying orchestration system whether a service is paused or not
+	// This is necessary for restartable enclaves (so container engine doesn't store enclave state in memory)
+	pausedServices	map[service.ServiceID]bool
+
 	networkingSidecars map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper
 
 	networkingSidecarManager networking_sidecar.NetworkingSidecarManager
@@ -114,6 +119,7 @@ func NewServiceNetworkImpl(
 		),
 		serviceRegistrationInfo:  map[service.ServiceID]serviceRegistrationInfo{},
 		serviceRunInfo:           map[service.ServiceID]serviceRunInfo{},
+		pausedServices:			  map[service.ServiceID]bool{},
 		networkingSidecars:       map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper{},
 		networkingSidecarManager: networkingSidecarManager,
 	}
@@ -373,6 +379,60 @@ func (network *ServiceNetworkImpl) RemoveService(
 	if err := network.removeServiceWithoutMutex(ctx, serviceId, containerStopTimeout); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing service with ID '%v'", serviceId)
 	}
+	return nil
+}
+
+func (network *ServiceNetworkImpl) PauseService(
+	ctx context.Context,
+	serviceId service.ServiceID,
+) error {
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	if network.isDestroyed {
+		return stacktrace.NewError("Cannot run pause service; the service network has been destroyed")
+	}
+	runInfo, found := network.serviceRunInfo[serviceId]
+	if !found {
+		return stacktrace.NewError(
+			"Could not run pause service on service '%v'; no container has been created for the service yet",
+			serviceId)
+	}
+	if network.pausedServices[serviceId] {
+		return stacktrace.NewError("Can not pause service '%v', service already paused.",
+			serviceId)
+	}
+	err := network.kurtosisBackend.PauseService(ctx, network.enclaveId, runInfo.serviceGUID)
+	if err != nil {
+		return stacktrace.Propagate(err,"Failed to pause service '%v'", serviceId)
+	}
+	network.pausedServices[serviceId] = true
+	return nil
+}
+
+func (network *ServiceNetworkImpl) UnpauseService(
+	ctx context.Context,
+	serviceId service.ServiceID,
+) error {
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	if network.isDestroyed {
+		return stacktrace.NewError("Cannot run unpause service; the service network has been destroyed")
+	}
+	runInfo, found := network.serviceRunInfo[serviceId]
+	if !found {
+		return stacktrace.NewError(
+			"Could not run unpause service on service '%v'; no container has been created for the service yet",
+			serviceId)
+	}
+	if !network.pausedServices[serviceId] {
+		return stacktrace.NewError("Can not unpause service '%v', service is not paused.",
+			serviceId)
+	}
+	err := network.kurtosisBackend.UnpauseService(ctx, network.enclaveId, runInfo.serviceGUID)
+	if err != nil {
+		return stacktrace.Propagate(err,"Failed to pause service '%v'", serviceId)
+	}
+	network.pausedServices[serviceId] = false
 	return nil
 }
 

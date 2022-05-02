@@ -81,3 +81,4 @@ func (self *ServiceContext) ExecCommand(command []string) (int32, string, error)
 	}
 	return resp.ExitCode, resp.LogOutput, nil
 }
+
