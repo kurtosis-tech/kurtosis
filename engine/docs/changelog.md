@@ -2,6 +2,9 @@
 ### Fixes
 * Fixed a bug where clean wouldn't remove empty enclaves
 
+### Changes
+* Upgraded to Core 1.45.4 to pass through service pause/unpause
+
 # 1.17.3
 ### Fixes
 * Upgraded to Core 1.45.3 to finally fix the bug with the Typescript Node TGZ archiver
