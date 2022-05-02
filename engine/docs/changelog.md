@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed a bug where clean wouldn't remove empty enclaves
 
 # 1.17.3
 ### Fixes
