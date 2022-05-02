@@ -1,21 +1,5 @@
 package kubernetes
 
-const (
-	kurtosisEngineNamespace    = "kurtosis-namespace"
-	numKurtosisEngineReplicas  = 1
-	storageClass               = "standard"
-	defaultQuantity            = "10Gi"
-	defaultHostPathInMinikube  = "/host/data/engine-data"
-	externalServiceType        = "LoadBalancer"
-	numReplicasToStopContainer = 0
-
-	// Engine container port number string parsing constants
-	hostMachinePortNumStrParsingBase = 10
-	hostMachinePortNumStrParsingBits = 16
-
-	shouldCleanRunningEngineContainers = false
-)
-
 /*
 var engineLabels = map[string]string{
 	// TODO don't use a shared place for both Docker & Kubernetes for this; each backend should have its own labels
@@ -275,4 +259,4 @@ func (backendCore KubernetesKurtosisBackendCore) cleanEngineServer(ctx context.C
 	return nil
 }
 
- */
+*/

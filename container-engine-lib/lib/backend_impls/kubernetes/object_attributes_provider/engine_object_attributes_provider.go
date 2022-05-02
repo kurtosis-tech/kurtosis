@@ -16,24 +16,21 @@ import (
 )
 
 const (
-	engineNamePrefix        = "kurtosis-engine"
-	enginePodNameSuffix     = "pod"
-	engineVolumeNameSuffix  = "volume"
-	engineServiceNameSuffix = "service"
+	engineNamePrefix           = "kurtosis-engine"
+	enginePodNameSuffix        = "pod"
+	engineServiceNameSuffix    = "service"
+	engineDeploymentNameSuffix = "deployment"
 )
 
 type KubernetesEngineObjectAttributesProvider interface {
 	ForEnginePod() (KubernetesObjectAttributes, error)
 
-	ForEngineVolume() (KubernetesObjectAttributes, error)
+	ForEngineDeployment() (KubernetesObjectAttributes, error)
 
 	ForEngineService(privateGrpcPortId string,
 		privateGrpcPortSpec *port_spec.PortSpec,
 		privateGrpcProxyPortId string,
 		privateGrpcProxyPortSpec *port_spec.PortSpec) (KubernetesObjectAttributes, error)
-	
-	// Sometimes, we want to get an object name without passing in all our port information
-	GetEngineServiceName() (*kubernetes_object_name.KubernetesObjectName, error)
 }
 
 // Private so it can't be instantiated
@@ -51,16 +48,6 @@ func newKubernetesEngineObjectAttributesProviderImpl(
 	return &kubernetesEngineObjectAttributesProviderImpl{
 		engineId: engineId,
 	}
-}
-
-func (provider *kubernetesEngineObjectAttributesProviderImpl) GetEngineServiceName() (*kubernetes_object_name.KubernetesObjectName, error) {
-	nameStr := provider.getEngineObjectNameString(engineServiceNameSuffix)
-	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
-	}
-
-	return name, nil
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEnginePod() (KubernetesObjectAttributes, error) {
@@ -91,16 +78,16 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEnginePod() (Ku
 	return objectAttributes, nil
 }
 
-func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineVolume() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(engineVolumeNameSuffix)
+func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineDeployment() (KubernetesObjectAttributes, error) {
+	nameStr := provider.getEngineObjectNameString(engineDeploymentNameSuffix)
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a kubernetes object name object from string '%v'", nameStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
 	}
 
 	idLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.engineId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the engine ID label from string '%v'", provider.engineId)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine ID Kubernetes label from string '%v'", provider.engineId)
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
@@ -108,12 +95,12 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineVolume() 
 		label_key_consts.IDLabelKey:           idLabelValue,
 	}
 
-	// No custom annotations for engine volume
+	// No custom annotations for engine deployment
 	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name '%s' and labels '%+v', and annotations '%+v'", name, labels, annotations)
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name '%s' and labels '%+v', and annotations '%+v'", name, labels, annotations)
 	}
 
 	return objectAttributes, nil
@@ -124,7 +111,8 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 	grpcProxyPortId string,
 	grpcProxyPortSpec *port_spec.PortSpec,
 ) (KubernetesObjectAttributes, error) {
-	name, err := provider.GetEngineServiceName()
+	nameStr := provider.getEngineObjectNameString(engineServiceNameSuffix)
+	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a name for our engine service")
 	}
