@@ -127,14 +127,14 @@ func (backendCore KubernetesKurtosisBackendCore) CreateEngine(
 	publicIpAddr := net.ParseIP(service.Spec.ClusterIP)
 
 	publicPortNumStr := string(service.Spec.Ports[0].NodePort)
-	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, hostMachinePortNumStrParsingBase, hostMachinePortNumStrParsingBits)
+	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, publicPortNumStrParsingBase, publicPortNumStrParsingBits)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(
 			err,
 			"An error occurred parsing engine server public port string '%v' using base '%v' and uint bits '%v'",
 			publicPortNumStr,
-			hostMachinePortNumStrParsingBase,
-			hostMachinePortNumStrParsingBits,
+			publicPortNumStrParsingBase,
+			publicPortNumStrParsingBits,
 		)
 	}
 	publicPortNumUint16 := uint16(publicPortNumUint64) // Safe to do because we pass the requisite number of bits into the parse command
@@ -182,14 +182,14 @@ func (backendCore KubernetesKurtosisBackendCore) GetEnginePublicIPAndPort(
 	publicIpAddr := net.ParseIP(service.Spec.ClusterIP)
 
 	publicPortNumStr := string(service.Spec.Ports[0].NodePort)
-	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, hostMachinePortNumStrParsingBase, hostMachinePortNumStrParsingBits)
+	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, publicPortNumStrParsingBase, publicPortNumStrParsingBits)
 	if err != nil {
 		return nil, 0, false, stacktrace.Propagate(
 			err,
 			"An error occurred parsing engine server public port string '%v' using base '%v' and uint bits '%v'",
 			publicPortNumStr,
-			hostMachinePortNumStrParsingBase,
-			hostMachinePortNumStrParsingBits,
+			publicPortNumStrParsingBase,
+			publicPortNumStrParsingBits,
 		)
 	}
 	publicPortNumUint16 := uint16(publicPortNumUint64) // Safe to do because we pass the requisite number of bits into the parse command

@@ -118,6 +118,20 @@ func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(ctx context.Context
 	panic("implement me")
 }
 
+func (backend *KubernetesKurtosisBackend) PauseService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceId service.ServiceGUID) error {
+	panic("implement me")
+}
+
+func (backend *KubernetesKurtosisBackend) UnpauseService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceId service.ServiceGUID) error {
+	panic("implement me")
+}
+
 func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(ctx context.Context, enclaveId enclave.EnclaveID, userServiceCommands map[service.ServiceGUID][]string) (succesfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult, erroredUserServiceGuids map[service.ServiceGUID]error, resultErr error) {
 	//TODO implement me
 	panic("implement me")

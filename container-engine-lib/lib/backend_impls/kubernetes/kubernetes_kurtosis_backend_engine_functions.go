@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
 	"net"
 	"strconv"
@@ -46,11 +47,11 @@ const (
 	numKurtosisEngineReplicas = 1
 	storageClass              = "standard"
 	defaultQuantity           = "10Gi"
-	externalServiceType       = "LoadBalancer"
+	externalServiceType       = "ClusterIP"
 
 	// Engine container port number string parsing constants
-	hostMachinePortNumStrParsingBase = 10
-	hostMachinePortNumStrParsingBits = 16
+	publicPortNumStrParsingBase = 10
+	publicPortNumStrParsingBits = 16
 )
 
 // ====================================================================================================
@@ -131,7 +132,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 		imageOrgAndRepo,
 		imageVersionTag,
 	)
-	engineContainers, engineVolumes := getEngineContainersAndVolumes(containerImageAndTag, envVars)
+	engineContainers, engineVolumes := getEngineContainers(containerImageAndTag, envVars)
 
 	// Deploy pods with engine containers and volumes to kubernetes
 	_, err = backend.kubernetesManager.CreateDeployment(ctx,
@@ -140,8 +141,16 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the deployment with name '%s' in namespace '%s' with image '%s'", engineDeploymentName, kurtosisEngineNamespace, containerImageAndTag)
 	}
+	var shouldRemoveDeployment = true
+	defer func() {
+		if shouldRemoveDeployment {
+			if err := backend.kubernetesManager.RemoveDeployment(ctx, kurtosisEngineNamespace, engineDeploymentName); err != nil {
+				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete kubernetes deployment '%v' that we created but an error was thrown:\n%v", engineDeploymentName, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove kubernetes deployment with name '%v'!!!!!!!", engineDeploymentName)
+			}
+		}
+	}()
 
-	// Get Service Attributes
 	engineServiceAttributes, err := engineAttributesProvider.ForEngineService(kurtosisInternalContainerGrpcPortSpecId, privateGrpcPortSpec, kurtosisInternalContainerGrpcProxyPortSpecId, privateGrpcProxyPortSpec)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get attributes for a kubernetes service, instead a non-nil err was returned")
@@ -171,31 +180,39 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the service with name '%s' in namespace '%s' with ports '%v' and '%v'", engineServiceName, kurtosisEngineNamespace, grpcPortInt32, grpcProxyPortInt32)
 	}
+	var shouldRemoveService = true
+	defer func() {
+		if shouldRemoveService {
+			if err := backend.kubernetesManager.RemoveService(ctx, kurtosisEngineNamespace, engineServiceName); err != nil {
+				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete kubernetes service '%v' that we created but an error was thrown:\n%v", engineServiceName, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove kubernetes service with name '%v'!!!!!!!", engineServiceName)
+			}
+		}
+	}()
 
-	// TODO implement retry in case load balancer doesn't have ingress set up in time for our engine service
-	time.Sleep(2 * time.Second)
 	service, err = backend.kubernetesManager.GetServiceByName(ctx, kurtosisEngineNamespace, service.Name)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the service with name '%v' in namespace '%v'", service.Name, kurtosisEngineNamespace)
 	}
 
-	// Determine our public ip address from the loadbalancer ingress
-	loadBalancerIps := service.Status.LoadBalancer.Ingress
-	if len(loadBalancerIps) != 1 {
-		return nil, stacktrace.NewError("Expected there to be exactly 1 load balancer IP for our engine service, instead found '%v'", len(loadBalancerIps))
+	// Use cluster IP as public IP
+	clusterIp := net.ParseIP(service.Spec.ClusterIP)
+	if clusterIp == nil {
+		return nil, stacktrace.NewError("Expected to be able to parse cluster IP from the kubernetes spec for service '%v', instead nil was parsed.", service.Name)
 	}
-	publicIpAddress := net.ParseIP(loadBalancerIps[0].IP)
 
 	publicGrpcPort, publicGrpcProxyPort, err := getEngineGrpcPortSpecsFromServicePorts(service.Spec.Ports)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to determine kurtosis port specs from kubernetes service '%v', instead a non-nil err was returned")
+		return nil, stacktrace.Propagate(err, "Expected to be able to determine kurtosis port specs from kubernetes service '%v', instead a non-nil err was returned", service.Name)
 	}
 
 	resultEngine := engine.NewEngine(
 		engineIdStr,
 		container_status.ContainerStatus_Running,
-		publicIpAddress, publicGrpcPort, publicGrpcProxyPort)
+		clusterIp, publicGrpcPort, publicGrpcProxyPort)
 
+	shouldRemoveDeployment = false
+	shouldRemoveService = false
 	return resultEngine, nil
 }
 
@@ -356,11 +373,10 @@ func getEngineObjectFromKubernetesService(service apiv1.Service) (*engine.Engine
 	var publicGrpcPortSpec *port_spec.PortSpec
 	var publicGrpcProxyPortSpec *port_spec.PortSpec
 	if engineStatus == container_status.ContainerStatus_Running {
-		serviceExternalIps := service.Status.LoadBalancer.Ingress
-		if len(serviceExternalIps) != 1 {
-			return nil, stacktrace.NewError("Expected there to be exactly 1 external IP for our engine service '%v', instead found '%v'", service.Name, len(serviceExternalIps))
+		publicIpAddr = net.ParseIP(service.Spec.ClusterIP)
+		if publicIpAddr == nil {
+			return nil, stacktrace.NewError("Expected to be able to get the cluster ip of the engine service, instead parsing the cluster ip of service '%v' returned nil", service.Name)
 		}
-		publicIpAddr = net.ParseIP(serviceExternalIps[0].IP)
 		var portSpecError error
 		publicGrpcPortSpec, publicGrpcProxyPortSpec, portSpecError = getEngineGrpcPortSpecsFromServicePorts(service.Spec.Ports)
 		if portSpecError != nil {
@@ -383,29 +399,8 @@ func getKurtosisStatusFromKubernetesService(service apiv1.Service) container_sta
 	return container_status.ContainerStatus_Running
 }
 
-func getEngineContainersAndVolumes(containerImageAndTag string, engineEnvVars map[string]string) (resultContainers []apiv1.Container, resultVolumes []apiv1.Volume) {
-	// Define Engine Container and Volumes with Kubernetes API
-	//containerVolumeName := "kurtosis-engine-container-volume"
+func getEngineContainers(containerImageAndTag string, engineEnvVars map[string]string) (resultContainers []apiv1.Container, resultVolumes []apiv1.Volume) {
 	containerName := "kurtosis-engine-container"
-	/*
-		volumes := []apiv1.Volume{
-			{
-				Name: containerVolumeName,
-				VolumeSource: apiv1.VolumeSource{
-					PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
-						ClaimName: persistentVolumeClaimName,
-					},
-				},
-			},
-		}
-		// TODO determine EngineDataDirpathOnEngineServerContainer
-		volumeMounts := []apiv1.VolumeMount{
-			{
-				Name:      containerVolumeName,
-				MountPath: engineDataDirpathOnEngineServerContainer,
-			},
-		}
-	*/
 
 	var engineContainerEnvVars []apiv1.EnvVar
 	for varName, varValue := range engineEnvVars {
@@ -429,10 +424,13 @@ func getEngineContainersAndVolumes(containerImageAndTag string, engineEnvVars ma
 func getEngineGrpcPortSpecsFromServicePorts(servicePorts []apiv1.ServicePort) (resultGrpcPortSpec *port_spec.PortSpec, resultGrpcProxyPortSpec *port_spec.PortSpec, resultErr error) {
 	var publicGrpcPort *port_spec.PortSpec
 	var publicGrpcProxyPort *port_spec.PortSpec
+	grpcPortName := object_name_constants.KurtosisInternalContainerGrpcPortName.GetString()
+	grpcProxyPortName := object_name_constants.KurtosisInternalContainerGrpcProxyPortName.GetString()
+
 	for _, servicePort := range servicePorts {
 		servicePortName := servicePort.Name
 		switch servicePortName {
-		case kurtosisInternalContainerGrpcPortSpecId:
+		case grpcPortName:
 			{
 				publicGrpcPortSpec, err := getPublicPortSpecFromServicePort(servicePort, enginePortProtocol)
 				if err != nil {
@@ -440,7 +438,7 @@ func getEngineGrpcPortSpecsFromServicePorts(servicePorts []apiv1.ServicePort) (r
 				}
 				publicGrpcPort = publicGrpcPortSpec
 			}
-		case kurtosisInternalContainerGrpcProxyPortSpecId:
+		case grpcProxyPortName:
 			{
 				publicGrpcProxyPortSpec, err := getPublicPortSpecFromServicePort(servicePort, enginePortProtocol)
 				if err != nil {
@@ -462,14 +460,14 @@ func getEngineGrpcPortSpecsFromServicePorts(servicePorts []apiv1.ServicePort) (r
 // getPublicPortSpecFromServicePort returns a port_spec representing a kurtosis port spec for a service port in kubernetes
 func getPublicPortSpecFromServicePort(servicePort apiv1.ServicePort, portProtocol port_spec.PortProtocol) (*port_spec.PortSpec, error) {
 	publicPortNumStr := strconv.FormatInt(int64(servicePort.Port), 10)
-	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, hostMachinePortNumStrParsingBase, hostMachinePortNumStrParsingBits)
+	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, publicPortNumStrParsingBase, publicPortNumStrParsingBits)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred parsing engine server public port string '%v' using base '%v' and uint bits '%v'",
 			publicPortNumStr,
-			hostMachinePortNumStrParsingBase,
-			hostMachinePortNumStrParsingBits,
+			publicPortNumStrParsingBase,
+			publicPortNumStrParsingBits,
 		)
 	}
 	publicPortNum := uint16(publicPortNumUint64) // Safe to do because we pass the requisite number of bits into the parse command

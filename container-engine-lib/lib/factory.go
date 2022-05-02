@@ -42,6 +42,9 @@ func GetLocalKubernetesKurtosisBackend() (backend_interface.KurtosisBackend, err
 		return nil, stacktrace.Propagate(err, "An error occured creating kubernetes configuration from flags in file '%v'", kubeconfig)
 	}
 	clientSet, err := kubernetes.NewForConfig(kubernetesConfig)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get kubernetes config from flags in file '%v', instead a non nil error was returned", kubeconfig)
+	}
 
 	kubernetesManager := kubernetes_manager.NewKubernetesManager(clientSet)
 

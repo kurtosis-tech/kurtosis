@@ -2,6 +2,7 @@
 ### Features
 * Added `PauseService` and `UnpauseService` to `KurtosisBackend`
 * Added docker implementation of `PauseService` and `UnpauseService`
+* Added kubernetes implenetation of engine functions in kubernetes backend
 
 # 0.16.0
 ### Removals
