@@ -23,20 +23,21 @@ import (
 const (
 	configFilepathRelativeToSharedDirRoot = "config-file.txt"
 
-	datastoreImage = "kurtosistech/example-datastore-server"
+	datastoreImage  = "kurtosistech/example-datastore-server"
 	apiServiceImage = "kurtosistech/example-api-server"
 
 	datastorePortId string = "rpc"
-	apiPortId string = "rpc"
+	apiPortId       string = "rpc"
 
-	datastoreWaitForStartupMaxPolls = 10
+	datastoreWaitForStartupMaxPolls          = 10
 	datastoreWaitForStartupDelayMilliseconds = 1000
 
-	apiWaitForStartupMaxPolls = 10
+	apiWaitForStartupMaxPolls          = 10
 	apiWaitForStartupDelayMilliseconds = 1000
 
 	defaultPartitionId = ""
 )
+
 var datastorePortSpec = services.NewPortSpec(
 	datastore_rpc_api_consts.ListenPort,
 	services.PortProtocol_TCP,
@@ -52,7 +53,7 @@ type GrpcAvailabilityChecker interface {
 
 type datastoreConfig struct {
 	DatastoreIp   string `json:"datastoreIp"`
-	DatastorePort uint16    `json:"datastorePort"`
+	DatastorePort uint16 `json:"datastorePort"`
 }
 
 func AddDatastoreService(
@@ -117,7 +118,6 @@ func AddAPIService(ctx context.Context, serviceId services.ServiceID, enclaveCtx
 	}
 	return serviceCtx, client, clientCloseFunc, nil
 }
-
 
 func AddAPIServiceToPartition(ctx context.Context, serviceId services.ServiceID, enclaveCtx *enclaves.EnclaveContext, datastorePrivateIp string, partitionId enclaves.PartitionID) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
 	containerConfigSupplier := getApiServiceContainerConfigSupplier(datastorePrivateIp)
@@ -216,8 +216,6 @@ func getApiServiceContainerConfigSupplier(datastoreIPInsideNetwork string) func(
 
 	return containerConfigSupplier
 }
-
-
 
 func createDatastoreConfigFileInServiceDirectory(datastoreIP string, sharedDirectory *services.SharedPath) (*services.SharedPath, error) {
 	configFileFilePath := sharedDirectory.GetChildPath(configFilepathRelativeToSharedDirRoot)
