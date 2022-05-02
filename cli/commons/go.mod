@@ -3,13 +3,9 @@ module github.com/kurtosis-tech/kurtosis-cli/commons
 go 1.15
 
 require (
-	github.com/Masterminds/semver/v3 v3.1.1 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/kr/pretty v0.2.1 // indirect
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220425111543-dc3819025a79 // indirect
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
-	golang.org/x/net v0.0.0-20210913180222-943fd674d43e // indirect
-	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
-	google.golang.org/grpc v1.41.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
