@@ -18,7 +18,6 @@ const ARCHIVE_ROOT_DIRECTORY_TEST_PATTERN = "upload-test-typescript-"
 const ARCHIVE_SUBDIRECTORY_TEST_PATTERN = "sub-folder-"
 const ARCHIVE_TEST_FILE_PATTERN = "test-file-"
 const ARCHIVE_TEST_FILE_EXTENSION = ".txt"
-const ARCHIVE_EXTENSION = ".tgz"
 const ARCHIVE_TEST_CONTENT = "This file is for testing purposes."
 
 const NUMBER_OF_TEMP_FILES_IN_SUBDIRECTORY = 3
@@ -94,15 +93,17 @@ async function TestUploadFiles() {
 
         // ------------------------------------- TEST RUN ----------------------------------------------
 
-        const file1ContentsResult = await getFileContents(
+        const fileRetrievalResults = await getFileContents(
             fileServerPublicIp,
             fileServerPublicPortNum,
             filename
         )
-        if(file1ContentsResult.isErr()){
+        if(fileRetrievalResults.isErr()){
             log.error("An error occurred getting file 1's contents")
-            throw file1ContentsResult.error
+            throw fileRetrievalResults.error
         }
+
+        fileRetrievalResults.value
     } catch (err) {
         throw err
     }
@@ -181,7 +182,7 @@ function getFileServerContainerConfigSupplier(filesArtifactMountpoints: Map<File
     return containerConfigSupplier
 }
 
-async function getFileContents(ipAddress: string, portNum: number, filename: string): Promise<Result<string, Error>> {
+async function getFileContents(ipAddress: string, portNum: number, filename: string): Promise<Result<any, Error>> {
     let response;
     try {
         response = await axios(`http://${ipAddress}:${portNum}/${filename}`)
@@ -193,6 +194,7 @@ async function getFileContents(ipAddress: string, portNum: number, filename: str
             return err(new Error("An error occurred getting the contents of file, but the error wasn't of type Error"))
         }
     }
+
     const bodyStr = String(response.data)
     return ok(bodyStr)
 }
