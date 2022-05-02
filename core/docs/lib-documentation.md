@@ -192,14 +192,14 @@ Copy a file or folder from a service container to the Kurtosis filestore for use
 * `uuid`: A unique ID as a string identifying the generated files artifact, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
 ### pauseService(ServiceID serviceId)
-Stops all running processes in the specified service, but does not shut down the service. Processes can be restarted with `unpauseService`.
+Pauses all running processes in the specified service, but does not shut down the service. Processes can be restarted with [EnclaveContext.unpauseService][enclavecontext_unpauseservice].
 
 **Args**
 
 * `serviceId`: The ID of the service to pause.
 
 ### unpauseService(ServiceID serviceId)
-Resumes all paused processes in the specified service. Specified service must have been previously paused.
+Unpauses all paused processes in the specified service. Specified service must have been previously paused.
 
 **Args**
 
@@ -322,6 +322,7 @@ _Found a bug? File it on [the repo][issues]!_
 [enclavecontext_registerfilesartifacts]: #registerfilesartifactsmapfilesartifactid-string-filesartifacturls
 [enclavecontext_addservice]: #addserviceserviceid-serviceid--funcstring-ipaddr---containerconfig-containerconfigsupplier---servicecontext-servicecontext-mapstring-portbinding-hostportbindings
 [enclavecontext_addservicetopartition]: #addservicetopartitionserviceid-serviceid-partitionid-partitionid-funcstring-ipaddr---containerconfig-containerconfigsupplier---servicecontext-servicecontext-mapstring-portbinding-hostportbindings
+[enclavecontext_unpauseservice]: #unpauseserviceserviceid-serviceid
 [enclavecontext_repartitionnetwork]: #repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnection-partitionconnections-partitionconnection-defaultconnection
 [enclavecontext_uploadfiles]: #uploadfilesstring-pathtoupload
 
@@ -331,3 +332,4 @@ _Found a bug? File it on [the repo][issues]!_
 [servicecontext_getpublicports]: #getpublicports---mapportid-portspec
 
 [kurtosiscontext_createenclave]: ../kurtosis-engine-server/lib-documentation#lib-documentation.md#createenclaveenclaveid-enclaveid-boolean-ispartitioningenabled---enclavecontext-enclavecontext
+https://stackedit.io/app#:~:text=service%20to%20pause.-,unpauseService,-(ServiceID%20serviceId)
