@@ -485,6 +485,7 @@ func (manager *EnclaveManager) getEnclaveDataDirpath(enclaveId enclave.EnclaveID
 func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll bool) ([]string, []error, error) {
 	enclaveStatusFilters := map[enclave.EnclaveStatus]bool{
 		enclave.EnclaveStatus_Stopped: true,
+		enclave.EnclaveStatus_Empty: true,
 	}
 	if shouldCleanAll {
 		enclaveStatusFilters[enclave.EnclaveStatus_Running] = true
