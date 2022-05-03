@@ -53,9 +53,9 @@ var fileServerPortSpec = services.NewPortSpec(
 
 func TestUploadFiles(t *testing.T) {
 	ctx := context.Background()
-	enclaveCtx, _, _, err := test_helpers.CreateEnclave(t, ctx, enclaveTestName, isPartitioningEnabled)
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, enclaveTestName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
-	//defer destroyEnclaveFunc() //TODO: Turn back on when you find the bug.
+	defer destroyEnclaveFunc()
 
 	filePathsMap, err := createTestFolderToUpload()
 	require.NoError(t, err)
