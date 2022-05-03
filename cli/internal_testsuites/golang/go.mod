@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/golang/protobuf v1.5.2
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220430002645-f6f12963bab9 // indirect
 	github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211207020812-00a54fc29318
 	github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211207020830-504dbf5ed1a6
 	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220502012240-8678c7e81298
