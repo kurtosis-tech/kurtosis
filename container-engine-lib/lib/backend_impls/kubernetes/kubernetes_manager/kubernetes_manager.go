@@ -660,7 +660,7 @@ func (manager *KubernetesManager) CrateRoleBindings(ctx context.Context, name st
 
 	roleBindingResult, err := client.Create(ctx, roleBinding, metav1.CreateOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create role binding with name '%s', subjects '%+v' and role ref", name, subjects, roleRef)
+		return nil, stacktrace.Propagate(err, "Failed to create role binding with name '%s', subjects '%+v' and role ref '%v'", name, subjects, roleRef)
 	}
 
 	return roleBindingResult, nil
@@ -699,7 +699,7 @@ func (manager *KubernetesManager) CrateClusterRoleBindings(ctx context.Context, 
 
 	clusterRoleBindingResult, err := client.Create(ctx, clusterRoleBinding, metav1.CreateOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create cluster role binding with name '%s', subjects '%+v' and role ref", name, subjects, roleRef)
+		return nil, stacktrace.Propagate(err, "Failed to create cluster role binding with name '%s', subjects '%+v' and role ref '%v'", name, subjects, roleRef)
 	}
 
 	return clusterRoleBindingResult, nil
