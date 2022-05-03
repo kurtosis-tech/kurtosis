@@ -17,10 +17,6 @@ const (
 	testServiceId             = "test"
 )
 
-var spamHis = []string{
-	"while sleep 0.1; do echo \"Hi\"; done",
-}
-
 func TestPauseUnpause(t *testing.T) {
 	ctx := context.Background()
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
@@ -34,17 +30,14 @@ func TestPauseUnpause(t *testing.T) {
 	serviceCtx, err := enclaveCtx.AddService(testServiceId, containerConfigSupplier)
 	require.NoError(t, err, "An error occurred adding the file server service")
 
-	_, _, err = serviceCtx.ExecCommand(spamHis)
-	require.NoError(t, err, "An error occurred running exec command '%v'", spamHis)
-
 	time.Sleep(10 * time.Second)
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	// pause/unpause using servicectx
-	err = serviceCtx.PauseService()
+	err = enclaveCtx.PauseService(serviceCtx.GetServiceID())
 	logrus.Infof("Paused service!")
 	require.NoError(t, err, "An error occurred unpausing")
 	time.Sleep(10 * time.Second)
-	err = serviceCtx.UnpauseService()
+	err = enclaveCtx.UnpauseService(serviceCtx.GetServiceID())
 	require.NoError(t, err, "An error occurred unpausing")
 	logrus.Infof("Unpaused service!")
 	time.Sleep(10 * time.Second)
@@ -53,8 +46,8 @@ func TestPauseUnpause(t *testing.T) {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-	containerConfigSupplier := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+func getContainerConfigSupplier() func(ipAddr string) (*services.ContainerConfig, error) {
+	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
 
 		// We spam timestamps so that we can measure pausing processes (no more log output) and unpausing (log output resumes)
 		entrypointArgs := []string{"/bin/sh", "-c"}
