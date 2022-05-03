@@ -2,7 +2,6 @@ package kubernetes
 
 import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -25,7 +24,7 @@ type KubernetesKurtosisBackend struct {
 	kubernetesManager *kubernetes_manager.KubernetesManager
 }
 
-func NewKubernetesKurtosisBackend(log *logrus.Logger, k8sManager *kubernetes_manager.KubernetesManager) *KubernetesKurtosisBackend {
+func NewKubernetesKurtosisBackend(k8sManager *kubernetes_manager.KubernetesManager) *KubernetesKurtosisBackend {
 	return &KubernetesKurtosisBackend{
 		kubernetesManager: k8sManager,
 	}
