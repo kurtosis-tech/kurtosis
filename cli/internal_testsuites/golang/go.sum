@@ -420,6 +420,8 @@ github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-202112070208
 github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d/go.mod h1:1PoW/0l4K80JRSj7A13aONsnaTdTM+dM36DIfDbYmVs=
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220502012240-8678c7e81298 h1:5Es0J1x/5XylNBtXmfLHl7J7SXWcN4MLvzcqPHTIgW8=
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220502012240-8678c7e81298/go.mod h1:EspqQYgTxYqA/addjv04Fbs7d7MXDUGfP+BKkWvRAdA=
+github.com/kurtosis-tech/kurtosis-engine-api-lib v0.0.0-20220502151332-514e737adeee h1:XsWAaTtOGwY05cjKfoK6XATN96uYNncmjnDjDCf3WOo=
+github.com/kurtosis-tech/kurtosis-engine-api-lib v0.0.0-20220502151332-514e737adeee/go.mod h1:tI9idlwAhA0CqPOAUxxf5CMRCk89gbQAySQc4pdMDr8=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220502151332-514e737adeee h1:GWJ4OPLHEISFwpVNG2QfKX1dex9TwVv7eVpBudzif7I=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220502151332-514e737adeee/go.mod h1:jjKnp9GKNs9IjEXMbQQ8ANhpDVabuSkiV6MKlU6O0Tg=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 h1:YQTATifMUwZEtZYb0LVA7DK2pj8s71iY8rzweuUQ5+g=
