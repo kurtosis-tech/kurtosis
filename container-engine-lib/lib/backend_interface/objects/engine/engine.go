@@ -16,8 +16,8 @@ type Engine struct {
 
 	// Public (i.e. external to Kurtosis) information about the engine
 	// This information will be nil if the engine isn't running
-	publicIpAddr net.IP
-	publicGrpcPort *port_spec.PortSpec
+	publicIpAddr        net.IP
+	publicGrpcPort      *port_spec.PortSpec
 	publicGrpcProxyPort *port_spec.PortSpec
 }
 
