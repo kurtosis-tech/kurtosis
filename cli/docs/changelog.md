@@ -1,8 +1,10 @@
 # TBD
+
 ### Features
 * Added `files storeservice` to store files from a service in the enclave
 * Updated `files_artifact_mounting` internal test in order to test duplicate mountpoints
 * Added a dedicated test for testing if files artifacts get mounted to the same location
+* Added `uploadFiles` to typescript and go clients.
 
 ### Changes
 * Upgraded `kurtosis core lib` to 1.45.3 which adds `EnclaveContext.StoreFilesFromService`  and removes `EnclaveContext.RegisterFilesArtifacts`
