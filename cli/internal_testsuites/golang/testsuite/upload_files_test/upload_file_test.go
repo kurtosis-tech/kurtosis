@@ -182,6 +182,9 @@ func createTestFolderToUpload() (map[string]string, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create a temporary root directory for testing.")
 	}
+	if err = os.Chmod(baseTempDirPath, 0755); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to set file permissions for '%s'.", baseTempDirPath)
+	}
 
 	//Create a temporary subdirectory.
 	tempSubDirectory, err := ioutil.TempDir(baseTempDirPath, archiveSubDirectoryTestPattern)
