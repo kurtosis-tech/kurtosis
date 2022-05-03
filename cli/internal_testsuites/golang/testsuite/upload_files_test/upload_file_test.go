@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -148,6 +149,11 @@ func createTestFiles(pathToCreateAt string, fileCount int) ([]string, error) {
 		}
 		defer tempFile.Close()
 
+		err = os.Chmod(tempFile.Name(), 0644)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to set file permissions for '%s'.", tempFile.Name())
+		}
+
 		_, err = tempFile.Write([]byte(archiveTestFileContent))
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to archive test file '%s' at '%s'.", tempFile.Name(), pathToCreateAt)
@@ -175,6 +181,11 @@ func createTestFolderToUpload() (map[string]string, error) {
 			baseTempDirPath)
 	}
 
+	err = os.Chmod(tempSubDirectory, 0755)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to set file permissions for '%s'.", tempSubDirectory)
+	}
+
 	subFilenames, err := createTestFiles(tempSubDirectory, numberOfTempTestFilesToCreateInSubDir)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create archive test files at '%s'.",
@@ -189,7 +200,7 @@ func createTestFolderToUpload() (map[string]string, error) {
 
 	allPaths := map[string]string{}
 	allPaths[diskDirKeyword] = baseTempDirPath //The full disk path before getting relative endpoints.
-	allPaths[rootDirKeyword] = "/" + filepath.Base(baseTempDirPath)
+	allPaths[rootDirKeyword] = filepath.Base(baseTempDirPath)
 	clientTempDirToStrip := strings.Replace(baseTempDirPath, allPaths[rootDirKeyword], "", 1)
 
 	tempSubDirectory = strings.Replace(tempSubDirectory, clientTempDirToStrip, "", 1)
