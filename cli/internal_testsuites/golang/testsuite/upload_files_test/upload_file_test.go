@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
-	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -12,7 +11,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -57,18 +55,17 @@ func TestUploadFiles(t *testing.T) {
 	ctx := context.Background()
 	enclaveCtx, _, _, err := test_helpers.CreateEnclave(t, ctx, enclaveTestName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
-	//defer destroyEnclaveFunc()
+	//defer destroyEnclaveFunc() //TODO: Turn back on when you find the bug.
 
 	filePathsMap, err := createTestFolderToUpload()
 	require.NoError(t, err)
 	uuid, err := enclaveCtx.UploadFiles(filePathsMap[diskDirKeyword])
 	require.NoError(t, err)
-	println(uuid)
 
-	filesArtifactMountpoints := map[services.FilesArtifactID]string{
+	filesArtifactMountPoints := map[services.FilesArtifactID]string{
 		uuid: userServiceMountPointForTestFilesArtifact,
 	}
-	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactMountpoints)
+	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactMountPoints)
 
 	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
 	require.NoError(t, err, "An error occurred adding the file server service")
@@ -76,6 +73,7 @@ func TestUploadFiles(t *testing.T) {
 	require.True(t, found, "Expected to find public port for ID '%v', but none was found", fileServerPortId)
 	fileServerPublicIp := serviceCtx.GetMaybePublicIPAddress()
 	fileServerPublicPortNum := publicPort.GetNumber()
+
 	println(filePathsMap[rootFilePatternKeyword+"0"])
 	require.NoError(t,
 		enclaveCtx.WaitForHttpGetEndpointAvailability(
@@ -90,39 +88,49 @@ func TestUploadFiles(t *testing.T) {
 	)
 	logrus.Infof("Added file server service with public IP '%v' and port '%v'", fileServerPublicIp,
 		fileServerPublicPortNum)
-	testContents(t, filePathsMap, serviceCtx, enclaveCtx, publicPort)
+
+	err = testContents(filePathsMap, serviceCtx, publicPort)
+	require.NoError(t, err)
 }
 
 //========================================================================
 // Helpers
 //========================================================================
-func testContents(t *testing.T, pathMap map[string]string, serviceCtx *services.ServiceContext,
-	enclaveCtx *enclaves.EnclaveContext, publicPort *services.PortSpec) error {
-
-	fileServerPublicIp := serviceCtx.GetMaybePublicIPAddress()
-	fileServerPublicPortNum := publicPort.GetNumber()
+func testContents(pathMap map[string]string, serviceCtx *services.ServiceContext, publicPort *services.PortSpec) error {
+	ipAddress := serviceCtx.GetMaybePublicIPAddress()
+	portNum := publicPort.GetNumber()
 
 	//Test root file dirs.
-	for i := 0; i < numberOfTempTestFilesToCreateInRootDir; i++ {
-		rootFileKeyword := fmt.Sprintf("%s%v", rootFilePatternKeyword, i)
-
-		if err := testFileContents(fileServerPublicIp, fileServerPublicPortNum, pathMap[rootFileKeyword]); err != nil {
-			return stacktrace.Propagate(err, "There was an error testing the content of file '%s'.",
-				pathMap[rootFileKeyword])
-		}
+	if err := testDirectoryContents(pathMap, numberOfTempTestFilesToCreateInRootDir, rootFilePatternKeyword, ipAddress,
+		portNum); err != nil {
+		return stacktrace.Propagate(err, "File contents and or folder names in '%s' could not be verified.",
+			pathMap[rootDirKeyword])
 	}
-	//Test Subdir files
-	for i := 0; i < numberOfTempTestFilesToCreateInSubDir; i++ {
-		subFileKeyword := fmt.Sprintf("%s%v", subFilePatternKeyword, i)
-		relativePath := path.Join(pathMap[subDirKeyword], subFileKeyword)
 
-		if err := testFileContents(fileServerPublicIp, fileServerPublicPortNum, relativePath); err != nil {
+	//Test subdirectory.
+	if err := testDirectoryContents(pathMap, numberOfTempTestFilesToCreateInSubDir, subFilePatternKeyword, ipAddress,
+		portNum); err != nil {
+		return stacktrace.Propagate(err, "File contents and or folder names in '%s' could not be verified.",
+			pathMap[subDirKeyword])
+	}
+	return nil
+}
+
+//Check all a directories mapped files and ensure they contain the same content as archiveTestFileContent
+func testDirectoryContents(pathMap map[string]string, fileCount int, fileKeywordPattern string,
+	ipAddress string, portNum uint16) error {
+	for i := 0; i < fileCount; i++ {
+		fileKeyword := fmt.Sprintf("%s%v", fileKeywordPattern, i)
+		relativePath := pathMap[fileKeyword]
+
+		if err := testFileContents(ipAddress, portNum, relativePath); err != nil {
 			return stacktrace.Propagate(err, "There was an error testing the content of file '%s'.", relativePath)
 		}
 	}
 	return nil
 }
 
+//Compare the file contents of the directories against archiveTestFileContent and see if they match.
 func testFileContents(serverIP string, port uint16, filename string) error {
 	fileContents, err := getFileContents(
 		serverIP,
@@ -149,14 +157,15 @@ func createTestFiles(pathToCreateAt string, fileCount int) ([]string, error) {
 		}
 		defer tempFile.Close()
 
-		err = os.Chmod(tempFile.Name(), 0644)
+		err = os.Chmod(tempFile.Name(), 0644) //Change permission for nginx access.
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to set file permissions for '%s'.", tempFile.Name())
 		}
 
 		_, err = tempFile.Write([]byte(archiveTestFileContent))
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "Failed to archive test file '%s' at '%s'.", tempFile.Name(), pathToCreateAt)
+			return nil, stacktrace.Propagate(err, "Failed to archive test file '%s' at '%s'.", tempFile.Name(),
+				pathToCreateAt)
 		}
 		filenames = append(filenames, tempFile.Name())
 	}
@@ -181,7 +190,7 @@ func createTestFolderToUpload() (map[string]string, error) {
 			baseTempDirPath)
 	}
 
-	err = os.Chmod(tempSubDirectory, 0755)
+	err = os.Chmod(tempSubDirectory, 0755) ////Change permission for nginx access.
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to set file permissions for '%s'.", tempSubDirectory)
 	}
@@ -219,7 +228,7 @@ func createTestFolderToUpload() (map[string]string, error) {
 	return allPaths, nil
 }
 
-func getFileServerContainerConfigSupplier(filesArtifactMountpoints map[services.FilesArtifactID]string) func(ipAddr string) (*services.ContainerConfig, error) {
+func getFileServerContainerConfigSupplier(filesArtifactMountPoints map[services.FilesArtifactID]string) func(ipAddr string) (*services.ContainerConfig, error) {
 	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
 
 		containerConfig := services.NewContainerConfigBuilder(
@@ -227,7 +236,7 @@ func getFileServerContainerConfigSupplier(filesArtifactMountpoints map[services.
 		).WithUsedPorts(map[string]*services.PortSpec{
 			fileServerPortId: fileServerPortSpec,
 		}).WithFiles(
-			filesArtifactMountpoints,
+			filesArtifactMountPoints,
 		).Build()
 		return containerConfig, nil
 	}
@@ -248,7 +257,8 @@ func getFileContents(ipAddress string, portNum uint16, filename string) (string,
 
 	bodyBytes, err := ioutil.ReadAll(body)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred reading the response body when getting the contents of file '%v'", filename)
+		return "", stacktrace.Propagate(err,
+			"An error occurred reading the response body when getting the contents of file '%v'", filename)
 	}
 
 	bodyStr := string(bodyBytes)
