@@ -636,42 +636,7 @@ func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name
 	return serviceAccountResult, nil
 }
 
-func (manager *KubernetesManager) CreateClusterRoles(ctx context.Context, name string, rules []rbacv1.PolicyRule) (*rbacv1.ClusterRole, error) {
-	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
-
-	clusterRole :=  &rbacv1.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-		},
-		Rules: rules,
-	}
-
-	clusterRoleResult, err := client.Create(ctx, clusterRole, metav1.CreateOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create cluster role with name '%s' with rules '%+v'", name, rules)
-	}
-
-	return clusterRoleResult, nil
-}
-
-func (manager *KubernetesManager) CrateClusterRoleBindings(ctx context.Context, name string, subjects []rbacv1.Subject, roleRef rbacv1.RoleRef) (*rbacv1.ClusterRoleBinding, error) {
-	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
-
-	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-		},
-		Subjects: subjects,
-		RoleRef: roleRef,
-	}
-
-	clusterRoleBindingResult, err := client.Create(ctx, clusterRoleBinding, metav1.CreateOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create cluster role binding with name '%s', subjects '%+v' and role ref", name, subjects, roleRef)
-	}
-
-	return clusterRoleBindingResult, nil
-}
+// ---------------------------roles------------------------------------------------------------------------------
 
 func (manager *KubernetesManager) CreateRole(ctx context.Context, name string, namespace string, rules []rbacv1.PolicyRule) (*rbacv1.Role, error) {
 	client := manager.kubernetesClientSet.RbacV1().Roles(namespace)
@@ -708,6 +673,45 @@ func (manager *KubernetesManager) CrateRoleBindings(ctx context.Context, name st
 	}
 
 	return roleBindingResult, nil
+}
+
+// ---------------------------cluster roles------------------------------------------------------------------------------
+
+func (manager *KubernetesManager) CreateClusterRoles(ctx context.Context, name string, rules []rbacv1.PolicyRule) (*rbacv1.ClusterRole, error) {
+	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
+
+	clusterRole :=  &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+		},
+		Rules: rules,
+	}
+
+	clusterRoleResult, err := client.Create(ctx, clusterRole, metav1.CreateOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create cluster role with name '%s' with rules '%+v'", name, rules)
+	}
+
+	return clusterRoleResult, nil
+}
+
+func (manager *KubernetesManager) CrateClusterRoleBindings(ctx context.Context, name string, subjects []rbacv1.Subject, roleRef rbacv1.RoleRef) (*rbacv1.ClusterRoleBinding, error) {
+	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
+
+	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+		},
+		Subjects: subjects,
+		RoleRef: roleRef,
+	}
+
+	clusterRoleBindingResult, err := client.Create(ctx, clusterRoleBinding, metav1.CreateOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create cluster role binding with name '%s', subjects '%+v' and role ref", name, subjects, roleRef)
+	}
+
+	return clusterRoleBindingResult, nil
 }
 
 // Private functions
