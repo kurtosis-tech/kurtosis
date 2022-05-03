@@ -16,7 +16,14 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	*enclave.Enclave,
 	error,
 ) {
+	if isPartitioningEnabled {
+		return nil, stacktrace.NewError("Partitioning not supported for kubernetes-backed modules.")
+	}
 	namespaceName := fmt.Sprintf("kurtosis-%v", enclaveId)
+	_, err := backend.kubernetesManager.GetNamespace(ctx, namespaceName)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting namespaces using name '%+v', which is necessary to ensure that our enclave doesn't exist yet", namespaceName)
+	}
 	namespaceLabels := map[string]string{}
 	namespace, err := backend.kubernetesManager.CreateNamespace(ctx, namespaceName, namespaceLabels)
 	if err != nil {
