@@ -22,14 +22,11 @@ const (
 )
 
 type KubernetesKurtosisBackend struct {
-	log *logrus.Logger
-
 	kubernetesManager *kubernetes_manager.KubernetesManager
 }
 
 func NewKubernetesKurtosisBackend(log *logrus.Logger, k8sManager *kubernetes_manager.KubernetesManager) *KubernetesKurtosisBackend {
 	return &KubernetesKurtosisBackend{
-		log: log,
 		kubernetesManager: k8sManager,
 	}
 }
