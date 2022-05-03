@@ -1,10 +1,9 @@
 # TBD
 ### Features
-* Added `KurtosisManager.CreateServiceAccount`, `KurtosisManager.CreateRole`, `KurtosisManager.CrateRoleBindings`, `KurtosisManager.CreateClusterRoles`, `KurtosisManager.CrateClusterRoleBindings`,
-
-### Features
 * Added `PauseService` and `UnpauseService` to `KurtosisBackend`
 * Added docker implementation of `PauseService` and `UnpauseService`
+* Added kubernetes implementation of engine functions in kubernetes backend
+* Added `CreateServiceAccount`, `CreateRole`, `CrateRoleBindings`, `CreateClusterRoles` and `CrateClusterRoleBindings` to `KurtosisManager`
 
 # 0.16.0
 ### Removals
