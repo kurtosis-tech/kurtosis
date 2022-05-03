@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"net"
 )
 
 func (backend *KubernetesKurtosisBackend) CreateEnclave(
@@ -19,6 +20,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	if isPartitioningEnabled {
 		return nil, stacktrace.NewError("Partitioning not supported for kubernetes-backed modules.")
 	}
+	teardownContext := context.Background()
 	namespaceName := fmt.Sprintf("kurtosis-%v", enclaveId)
 	namespaceList, err := backend.kubernetesManager.ListNamespaces(ctx)
 	if err != nil {
@@ -37,5 +39,17 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		return nil, stacktrace.Propagate(err, "Failed to create namespace.")
 	}
 	logrus.Infof("Namespace: %+v", namespace)
-	return nil, nil
+	shouldDeleteNetwork := true
+	defer func() {
+		if shouldDeleteNetwork {
+			if err := backend.kubernetesManager.RemoveNamespace(teardownContext, namespaceName); err != nil {
+				logrus.Errorf("Creating the enclave didn't complete successfully, so we tried to delete namespace '%v' that we created but an error was thrown:\n%v", namespaceName, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove namespace with name '%v'!!!!!!!", namespaceName)
+			}
+		}
+	}()
+	newEnclave := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty, "", "", net.IP{}, nil)
+
+	shouldDeleteNetwork = false
+	return newEnclave, nil
 }
