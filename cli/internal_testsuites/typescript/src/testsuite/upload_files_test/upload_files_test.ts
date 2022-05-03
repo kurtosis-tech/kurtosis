@@ -14,23 +14,23 @@ import {
 import axios from "axios";
 import log from "loglevel";
 
-const ARCHIVE_ROOT_DIRECTORY_TEST_PATTERN = "upload-test-typescript-"
-const ARCHIVE_SUBDIRECTORY_TEST_PATTERN = "sub-folder-"
-const ARCHIVE_TEST_FILE_PATTERN = "test-file-"
-const ARCHIVE_TEST_FILE_EXTENSION = ".txt"
-const ARCHIVE_TEST_CONTENT = "This file is for testing purposes."
+const ARCHIVE_ROOT_DIRECTORY_TEST_PATTERN   = "upload-test-typescript-"
+const ARCHIVE_SUBDIRECTORY_TEST_PATTERN     = "sub-folder-"
+const ARCHIVE_TEST_FILE_PATTERN             = "test-file-"
+const ARCHIVE_TEST_FILE_EXTENSION           = ".txt"
+const ARCHIVE_TEST_CONTENT                  = "This file is for testing purposes."
 
-const NUMBER_OF_TEMP_FILES_IN_SUBDIRECTORY = 3
-const NUMBER_OF_TEMP_FILES_IN_ROOT_DIRECTORY = 1
+const NUMBER_OF_TEMP_FILES_IN_SUBDIRECTORY      = 3
+const NUMBER_OF_TEMP_FILES_IN_ROOT_DIRECTORY    = 1
 
-const ENCLAVE_TEST_NAME = "upload-files-test"
-const IS_PARTITIONING_ENABLED = true
+const ENCLAVE_TEST_NAME                                = "upload-files-test"
+const IS_PARTITIONING_ENABLED                          = true
 const USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT = "/static"
 
-const FILE_SERVER_PORT_ID = "http"
-const FILE_SERVER_PRIVATE_PORT_NUM = 80
-const FILE_SERVER_PORT_SPEC = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, PortProtocol.TCP )
-const FILE_SERVER_SERVICE_IMAGE = "flashspys/nginx-static"
+const FILE_SERVER_PORT_ID               = "http"
+const FILE_SERVER_PRIVATE_PORT_NUM      = 80
+const FILE_SERVER_PORT_SPEC             = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, PortProtocol.TCP )
+const FILE_SERVER_SERVICE_IMAGE         = "flashspys/nginx-static"
 const FILE_SERVER_SERVICE_ID: ServiceID = "file-server"
 
 const WAIT_FOR_STARTUP_TIME_BETWEEN_POLLS = 500
@@ -59,7 +59,7 @@ async function TestUploadFiles() {
 
     try {
         const pathToUpload = allPaths.get(DISK_DIR_KEYWORD)
-        if (typeof pathToUpload === "undefined") {throw new Error("Failed to store uploadable path.")}
+        if (typeof pathToUpload === "undefined") {throw new Error("Failed to store uploadable path in path map.")}
         const uploadResults = await enclaveCtx.uploadFiles(pathToUpload)
         if(uploadResults.isErr()) { throw uploadResults.error }
         const filesArtifactId = uploadResults.value
@@ -68,7 +68,6 @@ async function TestUploadFiles() {
         filesArtifactsMountPoints.set(filesArtifactId, USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT)
 
         const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier(filesArtifactsMountPoints)
-
         const addServiceResult = await enclaveCtx.addService(FILE_SERVER_SERVICE_ID, fileServerContainerConfigSupplier)
         if(addServiceResult.isErr()){ throw addServiceResult.error }
 
@@ -200,15 +199,16 @@ async function createTestFolderToUpload(): Promise<Result<Map<string,string>, Er
 
     for(let i = 0; i < subDirFilenames.length; i++){
         let basename = path.basename(tempDirectoryResult.value)
-        let relativeSubFile = `${subDir}/${basename}`
+        let relativeSubFile = `${rootDir}/${subDir}/${basename}`
         let keyword = `${SUB_FILE_PATTERN_KEYWORD}${i}`
         allPaths.set(keyword, relativeSubFile)
     }
 
     for(let i = 0; i < rootFilenames.length; i++){
         let basename = path.basename(tempDirectoryResult.value)
+        let relativeRootFile = `${rootDir}/${basename}`
         let keyword = `${ROOT_FILE_PATTERN_KEYWORD}${i}`
-        allPaths.set(keyword, basename)
+        allPaths.set(keyword, relativeRootFile)
     }
 
     return ok(allPaths)
