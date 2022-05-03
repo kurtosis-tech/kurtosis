@@ -30,7 +30,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	// that distinguishes between failed lookup mechanism and namespace not existing
 	for _, namespace := range namespaceList.Items {
 		if namespace.GetName() == namespaceName {
-			return nil, stacktrace.NewError("Namespace with name %v already exists.")
+			return nil, stacktrace.NewError("Namespace with name %v already exists.", namespaceName)
 		}
 	}
 	namespaceLabels := map[string]string{}
