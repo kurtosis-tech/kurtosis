@@ -612,6 +612,42 @@ func (manager *KubernetesManager) GetDaemonSet(ctx context.Context, name string,
 func (manager *KubernetesManager) int32Ptr(i int32) *int32 { return &i }
 
 // Pods
+func (manager *KubernetesManager) CreatePod(ctx context.Context, namespace string, name string, podLabels map[string]string, podAnnotations map[string]string, podContainers []apiv1.Container, podVolumes []apiv1.Volume) (*apiv1.Pod, error) {
+	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
+
+	podMeta := metav1.ObjectMeta{
+		Name:        name,
+		Labels:      podLabels,
+		Annotations: podAnnotations,
+	}
+	podSpec := apiv1.PodSpec{
+		Volumes:    podVolumes,
+		Containers: podContainers,
+	}
+
+	podToCreate := &apiv1.Pod{
+		Spec:       podSpec,
+		ObjectMeta: podMeta,
+	}
+
+	createdPod, err := podClient.Create(ctx, podToCreate, metav1.CreateOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to create pod with name '%v' and labels '%+v', instead a non-nil error was returned", name, podLabels)
+	}
+
+	return createdPod, nil
+}
+
+func (manager *KubernetesManager) RemovePod(ctx context.Context, namespace string, name string) error {
+	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
+
+	if err := podClient.Delete(ctx, name, removeObjectDeleteOptions); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete pod with name '%s' with delete options '%+v'", name, removeObjectDeleteOptions)
+	}
+
+	return nil
+}
+
 func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace string, podLabels map[string]string) (*apiv1.PodList, error) {
 	namespacePodClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
 

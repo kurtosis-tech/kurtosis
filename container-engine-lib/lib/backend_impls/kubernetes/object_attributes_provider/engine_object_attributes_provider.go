@@ -16,16 +16,13 @@ import (
 )
 
 const (
-	engineNamePrefix           = "kurtosis-engine"
-	enginePodNameSuffix        = "pod"
-	engineServiceNameSuffix    = "service"
-	engineDeploymentNameSuffix = "deployment"
+	engineNamePrefix        = "kurtosis-engine"
+	enginePodNameSuffix     = "pod"
+	engineServiceNameSuffix = "service"
 )
 
 type KubernetesEngineObjectAttributesProvider interface {
 	ForEnginePod() (KubernetesObjectAttributes, error)
-
-	ForEngineDeployment() (KubernetesObjectAttributes, error)
 
 	ForEngineService(privateGrpcPortId string,
 		privateGrpcPortSpec *port_spec.PortSpec,
@@ -68,34 +65,6 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEnginePod() (Ku
 	}
 
 	// No custom annotations for engine pod
-	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
-
-	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
-	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name '%s' and labels '%+v', and annotations '%+v'", name, labels, annotations)
-	}
-
-	return objectAttributes, nil
-}
-
-func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineDeployment() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(engineDeploymentNameSuffix)
-	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
-	}
-
-	idLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.engineId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the engine ID Kubernetes label from string '%v'", provider.engineId)
-	}
-
-	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.ResourceTypeLabelKey: label_value_consts.EngineResourceTypeLabelValue,
-		label_key_consts.IDLabelKey:           idLabelValue,
-	}
-
-	// No custom annotations for engine deployment
 	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
