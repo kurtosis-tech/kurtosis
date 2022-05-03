@@ -1,5 +1,10 @@
 package kubernetes
 
+import (
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
+	"github.com/sirupsen/logrus"
+)
+
 const (
 	kurtosisEngineNamespace    = "kurtosis-namespace"
 	numKurtosisEngineReplicas  = 1
@@ -16,6 +21,12 @@ const (
 	shouldCleanRunningEngineContainers = false
 )
 
+type KubernetesKurtosisBackend struct {
+	log *logrus.Logger
+
+	kubernetesManager *kubernetes_manager.KubernetesManager
+}
+
 /*
 var engineLabels = map[string]string{
 	// TODO don't use a shared place for both Docker & Kubernetes for this; each backend should have its own labels
@@ -23,7 +34,7 @@ var engineLabels = map[string]string{
 	forever_constants.ContainerTypeLabel: forever_constants.ContainerType_EngineServer,
 }
 
-type KubernetesKurtosisBackendCore struct {
+type KubernetesKurtosisBackend struct {
 	log *logrus.Logger
 
 	kubernetesManager *kubernetes_manager.KubernetesManager
