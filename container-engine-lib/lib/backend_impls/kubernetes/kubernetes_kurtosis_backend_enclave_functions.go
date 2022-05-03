@@ -21,6 +21,9 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	}
 	namespaceName := fmt.Sprintf("kurtosis-%v", enclaveId)
 	namespaceList, err := backend.kubernetesManager.ListNamespaces(ctx)
+	if err != nil {
+		return nil, stacktrace.NewError("Failed to list namespaces from Kubernetes, so can not verify if namespace already exists.")
+	}
 	// Iterate through namespace list to do name matching because GetNamespace doesn't return a clear error
 	// that distinguishes between failed lookup mechanism and namespace not existing
 	for _, namespace := range namespaceList.Items {
