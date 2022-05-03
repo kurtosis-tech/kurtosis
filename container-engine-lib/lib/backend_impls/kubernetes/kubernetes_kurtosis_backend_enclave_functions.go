@@ -20,9 +20,13 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		return nil, stacktrace.NewError("Partitioning not supported for kubernetes-backed modules.")
 	}
 	namespaceName := fmt.Sprintf("kurtosis-%v", enclaveId)
-	_, err := backend.kubernetesManager.GetNamespace(ctx, namespaceName)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting namespaces using name '%+v', which is necessary to ensure that our enclave doesn't exist yet", namespaceName)
+	namespaceList, err := backend.kubernetesManager.ListNamespaces(ctx)
+	// Iterate through namespace list to do name matching because GetNamespace doesn't return a clear error
+	// that distinguishes between failed lookup mechanism and namespace not existing
+	for _, namespace := range namespaceList.Items {
+		if namespace.GetName() == namespaceName {
+			return nil, stacktrace.NewError("Namespace with name %v already exists.")
+		}
 	}
 	namespaceLabels := map[string]string{}
 	namespace, err := backend.kubernetesManager.CreateNamespace(ctx, namespaceName, namespaceLabels)
