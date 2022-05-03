@@ -18,11 +18,7 @@ import (
 )
 
 const (
-	// The location where the engine data directory (on the Docker host machine) will be bind-mounted
-	//  on the engine server
-	// This is the same for kubernetes as it is for docker
-	engineDataDirpathOnEngineServerContainer = "/engine-data"
-
+	// Default namespace the engine lives in
 	kurtosisEngineNamespace = "default"
 	// The ID of the GRPC port for Kurtosis-internal containers (e.g. API container, engine, modules, etc.) which will
 	//  be stored in the port spec label
@@ -37,17 +33,7 @@ const (
 	// means that its grpc-proxy must listen on TCP
 	enginePortProtocol = port_spec.PortProtocol_TCP
 
-	maxWaitForEngineAvailabilityRetries         = 10
-	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
-
-	// We leave a relatively short timeout so that the engine gets a chance to gracefully clean up, but the
-	// user isn't stuck waiting on a long-running operation when they tell the engine to stop
-	engineStopTimeout = 1 * time.Second
-
-	numKurtosisEngineReplicas = 1
-	storageClass              = "standard"
-	defaultQuantity           = "10Gi"
-	externalServiceType       = "ClusterIP"
+	externalServiceType = "ClusterIP"
 
 	// Engine container port number string parsing constants
 	publicPortNumStrParsingBase = 10
@@ -389,12 +375,12 @@ func getEngineObjectFromKubernetesService(service apiv1.Service) (*engine.Engine
 
 }
 func getKurtosisStatusFromKubernetesService(service apiv1.Service) container_status.ContainerStatus {
-	// If a Kubernetes Service has open ports, then we assume the engine is reachable, and thus not stopped
+	// If a Kubernetes Service has selectors, then we assume the engine is reachable, and thus not stopped
 	// see stopEngineService for how we stop the engine
 	// label keys and values used to determine pods this service routes traffic too
 	// TODO Better determination of if the engine is reachable? Check that there are two ports with names we expect them to have?
-	servicePorts := service.Spec.Selector
-	if len(servicePorts) == 0 {
+	serviceSelectors := service.Spec.Selector
+	if len(serviceSelectors) == 0 {
 		return container_status.ContainerStatus_Stopped
 	}
 	return container_status.ContainerStatus_Running

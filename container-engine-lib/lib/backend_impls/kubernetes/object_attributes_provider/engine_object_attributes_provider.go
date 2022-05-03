@@ -118,6 +118,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 	return objectAttributes, nil
 }
 
+// TODO Move this to its own searcher class, so the AttributesProvider isn't also doing searching
 func (provider *kubernetesEngineObjectAttributesProviderImpl) GetEngineSelectorLabels() (map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
 	idLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.engineId)
 	if err != nil {

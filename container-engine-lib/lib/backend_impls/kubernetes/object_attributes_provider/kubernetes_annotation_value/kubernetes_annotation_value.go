@@ -1,6 +1,6 @@
 package kubernetes_annotation_value
 
-// Represents a Kubernetes label value that is guaranteed to be valid for the Kubernetes cluster
+// Represents a Kubernetes annotation value that is guaranteed to be valid for the Kubernetes cluster
 // NOTE: This is a struct-based enum
 type KubernetesAnnotationValue struct {
 	value string
