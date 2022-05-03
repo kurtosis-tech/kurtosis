@@ -16,7 +16,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	*enclave.Enclave,
 	error,
 ) {
-	namespaceName := fmt.Sprintf("kurtosis-'%v'", enclaveId)
+	namespaceName := fmt.Sprintf("kurtosis-%v", enclaveId)
 	namespaceLabels := map[string]string{}
 	namespace, err := backend.kubernetesManager.CreateNamespace(ctx, namespaceName, namespaceLabels)
 	if err != nil {
