@@ -2,54 +2,78 @@ package unpause
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/enclave_id_arg"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/lib/kurtosis_context"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/spf13/cobra"
-	"strings"
 )
 
 const (
-	enclaveIdArg = "enclave-id"
-	guidArg      = "guid"
+	enclaveIdArgKey        = "enclave-id"
+	isEnclaveIdArgOptional = false
+	isEnclaveIdArgGreedy   = false
+
+	serviceIdArgKey = "service-id"
+
+	kurtosisBackendCtxKey = "kurtosis-backend"
+	engineClientCtxKey    = "engine-client"
 )
 
-var positionalArgs = []string{
-	enclaveIdArg,
-	guidArg,
+var UnpauseCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
+	CommandStr:                command_str_consts.ServiceUnpauseCmdStr,
+	ShortDescription:          "Unpauses all processes running in a service.",
+	KurtosisBackendContextKey: kurtosisBackendCtxKey,
+	EngineClientContextKey:    engineClientCtxKey,
+	Args: []*args.ArgConfig{
+		enclave_id_arg.NewEnclaveIDArg(
+			enclaveIdArgKey,
+			engineClientCtxKey,
+			isEnclaveIdArgOptional,
+			isEnclaveIdArgGreedy,
+		),
+		{
+			Key: serviceIdArgKey,
+		},
+	},
+	RunFunc: run,
 }
 
-var UnpauseCmd = &cobra.Command{
-	Use:                   command_str_consts.ServiceUnpauseCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
-	DisableFlagsInUseLine: true,
-	Short:                 "Unpause all processes running in a service inside of an enclave",
-	RunE:                  run,
-}
-
-func run(cmd *cobra.Command, args []string) error {
-	ctx := context.Background()
-
-	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
+func run(ctx context.Context,
+	kurtosisBackend backend_interface.KurtosisBackend,
+	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	flags *flags.ParsedFlags,
+	args *args.ParsedArgs) error {
+	enclaveIdStr, err := args.GetNonGreedyArg(enclaveIdArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
+		return stacktrace.Propagate(err, "An error occurred getting the enclave ID using key '%v'", enclaveIdArgKey)
 	}
-	enclaveIdStr := parsedPositionalArgs[enclaveIdArg]
-	enclaveId := enclave.EnclaveID(enclaveIdStr)
-	guidStr := parsedPositionalArgs[guidArg]
-	guid := service.ServiceGUID(guidStr)
+	enclaveId := enclaves.EnclaveID(enclaveIdStr)
 
-	kurtosisBackend, err := lib.GetLocalDockerKurtosisBackend()
+	serviceIdStr, err := args.GetNonGreedyArg(serviceIdArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
+		return stacktrace.Propagate(err, "An error occurred getting the service ID value using key '%v'", serviceIdArgKey)
 	}
+	serviceId := services.ServiceID(serviceIdStr)
 
-	err = kurtosisBackend.UnpauseService(ctx, enclaveId, guid)
+	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred trying to unpause service '%v' in enclave '%v'", guid, enclaveId)
+		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
+	}
+	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveId)
 	}
 
+	err = enclaveCtx.UnpauseService(serviceId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred trying to unpause service '%v' in enclave '%v'", serviceId, enclaveId)
+	}
 	return nil
 }
