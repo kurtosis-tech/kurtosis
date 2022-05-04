@@ -164,7 +164,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEncla
 	}, nil
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObjectWithGUID(guid string) (map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.kubernetesLabelValue, error) {
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObjectWithGUID(guid string) (map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
 	labels, err := provider.getLabelsForEnclaveObject()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get labels for enclave object with guid '%v'", guid)
