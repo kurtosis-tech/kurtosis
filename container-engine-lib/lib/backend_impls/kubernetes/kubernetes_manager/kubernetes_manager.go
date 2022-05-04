@@ -611,12 +611,13 @@ func (manager *KubernetesManager) GetDaemonSet(ctx context.Context, name string,
 
 // ---------------------------service accounts------------------------------------------------------------------------------
 
-func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name string, namespace string) (*apiv1.ServiceAccount, error) {
+func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name string, namespace string, labels map[string]string) (*apiv1.ServiceAccount, error) {
 	client := manager.kubernetesClientSet.CoreV1().ServiceAccounts(namespace)
 
 	serviceAccount := &apiv1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
+			Labels: labels,
 		},
 	}
 
@@ -639,12 +640,13 @@ func (manager *KubernetesManager) DeleteServiceAccount(ctx context.Context, name
 
 // ---------------------------roles------------------------------------------------------------------------------
 
-func (manager *KubernetesManager) CreateRole(ctx context.Context, name string, namespace string, rules []rbacv1.PolicyRule) (*rbacv1.Role, error) {
+func (manager *KubernetesManager) CreateRole(ctx context.Context, name string, namespace string, rules []rbacv1.PolicyRule, labels map[string]string) (*rbacv1.Role, error) {
 	client := manager.kubernetesClientSet.RbacV1().Roles(namespace)
 
 	role :=  &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
+			Labels: labels,
 		},
 		Rules: rules,
 	}
@@ -667,12 +669,13 @@ func (manager *KubernetesManager) DeleteRole(ctx context.Context, name string, n
 	return nil
 }
 
-func (manager *KubernetesManager) CrateRoleBindings(ctx context.Context, name string, namespace string, subjects []rbacv1.Subject, roleRef rbacv1.RoleRef) (*rbacv1.RoleBinding, error) {
+func (manager *KubernetesManager) CrateRoleBindings(ctx context.Context, name string, namespace string, subjects []rbacv1.Subject, roleRef rbacv1.RoleRef, labels map[string]string) (*rbacv1.RoleBinding, error) {
 	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
 
 	roleBinding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
+			Labels: labels,
 		},
 		Subjects: subjects,
 		RoleRef: roleRef,
@@ -698,12 +701,13 @@ func (manager *KubernetesManager) DeleteRoleBindings(ctx context.Context, name s
 
 // ---------------------------cluster roles------------------------------------------------------------------------------
 
-func (manager *KubernetesManager) CreateClusterRoles(ctx context.Context, name string, rules []rbacv1.PolicyRule) (*rbacv1.ClusterRole, error) {
+func (manager *KubernetesManager) CreateClusterRoles(ctx context.Context, name string, rules []rbacv1.PolicyRule, labels map[string]string) (*rbacv1.ClusterRole, error) {
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
 
 	clusterRole :=  &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
+			Labels: labels,
 		},
 		Rules: rules,
 	}
@@ -726,12 +730,13 @@ func (manager *KubernetesManager) DeleteClusterRole(ctx context.Context, name st
 	return nil
 }
 
-func (manager *KubernetesManager) CrateClusterRoleBindings(ctx context.Context, name string, subjects []rbacv1.Subject, roleRef rbacv1.RoleRef) (*rbacv1.ClusterRoleBinding, error) {
+func (manager *KubernetesManager) CrateClusterRoleBindings(ctx context.Context, name string, subjects []rbacv1.Subject, roleRef rbacv1.RoleRef, labels map[string]string) (*rbacv1.ClusterRoleBinding, error) {
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
 
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
+			Labels: labels,
 		},
 		Subjects: subjects,
 		RoleRef: roleRef,
