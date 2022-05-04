@@ -20,6 +20,7 @@ const (
 	archiveDirectoryTestPattern    = "upload-test-golang-"
 	archiveSubDirectoryTestPattern = "sub-folder-"
 	archiveFileTestPattern         = "test-file-"
+	archiveTestFileExtension       = ".txt"
 	archiveTestFileContent         = "This file is for testing purposes."
 
 	numberOfTempTestFilesToCreateInSubDir     = 3
