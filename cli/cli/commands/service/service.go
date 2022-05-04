@@ -27,6 +27,6 @@ func init() {
 	ServiceCmd.AddCommand(logs.LogsCmd)
 	ServiceCmd.AddCommand(rm.ServiceRmCmd.MustGetCobraCommand())
 	ServiceCmd.AddCommand(shell.ShellCmd)
-	ServiceCmd.AddCommand(pause.PauseCmd)
-	ServiceCmd.AddCommand(unpause.UnpauseCmd)
+	ServiceCmd.AddCommand(pause.PauseCmd.MustGetCobraCommand())
+	ServiceCmd.AddCommand(unpause.UnpauseCmd.MustGetCobraCommand())
 }
