@@ -7,6 +7,7 @@ const TEST_NAME = "pause-unpause-test"
 const IS_PARTITIONING_ENABLED = false
 const PAUSE_UNPAUSE_TEST_IMAGE =  "alpine:3.12.4"
 const TEST_SERVICE_ID = "test";
+const TEST_LOG_FILEPATH = "/test.log"
 
 jest.setTimeout(180000)
 
@@ -30,7 +31,7 @@ test("Test service pause", async () => {
         };
 
         const testServiceContext = addServiceResult.value
-        await delay(5000)
+        await delay(4000)
         // ------------------------------------- TEST RUN ----------------------------------------------
         const pauseServiceResult = await enclaveContext.pauseService(TEST_SERVICE_ID)
         if(pauseServiceResult.isErr()){
@@ -39,15 +40,37 @@ test("Test service pause", async () => {
 
         }
         // Wait 5 seconds
-        await delay(5000)
+        await delay(4000)
         const unpauseServiceResult = await enclaveContext.unpauseService(TEST_SERVICE_ID)
         if(unpauseServiceResult.isErr()){
             log.error("An error occurred unpausing service.")
             throw(unpauseServiceResult.error)
 
         }
-        await delay(5000)
-
+        await delay(4000)
+        const testLogResults = await testServiceContext.execCommand(["cat", TEST_LOG_FILEPATH])
+        if (testLogResults.isErr()) {
+            log.error("An error occurred reading test logs")
+            throw(testLogResults.error)
+        }
+        const logString = testLogResults.value[1]
+        const logStringArray = logString.split("\n")
+        let foundGap = false
+        for (let i = 0; i < logStringArray.length; i++) {
+            if(i > 0) {
+                const logLine = logStringArray[i].trim()
+                const currentSeconds = Number(logLine)
+                const previousLogLine = logStringArray[i-1].trim()
+                const previousSeconds = Number(previousLogLine)
+                if(currentSeconds-previousSeconds > 2){
+                    foundGap = true
+                }
+                log.info("Seconds: " + currentSeconds)
+            }
+        }
+        if(!foundGap) {
+            throw new Error("Failed to find a >2 second gap in second-ticker, which was expected given service should have been paused.")
+        }
     } finally{
         stopEnclaveFunction()
     }
@@ -62,7 +85,7 @@ function getContainerConfigSupplier(): (ipAddr:string) => Result<ContainerConfig
 
         // We spam timestamps so that we can measure pausing processes (no more log output) and unpausing (log output resumes)
         const entrypointArgs = ["/bin/sh", "-c"]
-        const cmdArgs = ["while sleep 1; do ts=$(date +\"%s\") ; echo \"Time: $ts\" ; done"]
+        const cmdArgs = ["while sleep 1; do ts=$(date +\"%s\") ; echo \"$ts\" > " + TEST_LOG_FILEPATH + " ; done"]
 
         const containerConfig = new ContainerConfigBuilder(PAUSE_UNPAUSE_TEST_IMAGE)
             .withEntrypointOverride(entrypointArgs)
