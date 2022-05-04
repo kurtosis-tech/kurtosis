@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added `service pause` and `service unpause` to CLI
 
 # 0.15.0
 ### Features
