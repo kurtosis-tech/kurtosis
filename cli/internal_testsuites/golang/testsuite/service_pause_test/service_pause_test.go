@@ -2,6 +2,7 @@ package service_pause_test
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
 	"github.com/sirupsen/logrus"
@@ -17,6 +18,7 @@ const (
 	isPartitioningEnabled     = false
 	pauseUnpauseTestImageName = "alpine:3.12.4"
 	testServiceId             = "test"
+	testLogFilepath           = "/time.log"
 )
 
 func TestPauseUnpause(t *testing.T) {
@@ -43,7 +45,7 @@ func TestPauseUnpause(t *testing.T) {
 	require.NoError(t, err, "An error occurred unpausing")
 	logrus.Infof("Unpaused service!")
 	time.Sleep(3 * time.Second)
-	_, results, err := serviceCtx.ExecCommand([]string{"cat", "/time.log"})
+	_, results, err := serviceCtx.ExecCommand([]string{"cat", testLogFilepath})
 	require.NoError(t, err, "An error occurred reading the logs.")
 	secondCounter := strings.Split(strings.TrimSuffix(results, "\n"), "\n")
 	foundGap := false
@@ -69,7 +71,7 @@ func getContainerConfigSupplier() func(ipAddr string) (*services.ContainerConfig
 
 		// We spam timestamps so that we can measure pausing processes (no more log output) and unpausing (log output resumes)
 		entrypointArgs := []string{"/bin/sh", "-c"}
-		cmdArgs := []string{"while sleep 1; do ts=$(date +\"%s\") ; echo \"$ts\" >> /time.log ; done"}
+		cmdArgs := []string{fmt.Sprintf("while sleep 1; do ts=$(date +\"%%s\") ; echo \"$ts\" >> %v ; done", testLogFilepath)}
 
 		containerConfig := services.NewContainerConfigBuilder(
 			pauseUnpauseTestImageName,
