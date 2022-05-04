@@ -54,15 +54,15 @@ jest.setTimeout(180000)
 test("Test Upload Files", TestUploadFiles)
 
 async function TestUploadFiles() {
-    const tempDirectory = await createTestFolderToUpload()
-    if (tempDirectory.isErr()) { throw tempDirectory.error }
-    const allPaths = tempDirectory.value
+    const testFolderResults = await createTestFolderToUpload()
+    if (testFolderResults.isErr()) { throw testFolderResults.error }
+    const filePathsMap = testFolderResults.value
 
     const createEnclaveResult = await createEnclave(ENCLAVE_TEST_NAME, IS_PARTITIONING_ENABLED)
     if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
     const enclaveCtx = createEnclaveResult.value.enclaveContext
     try {
-        const pathToUpload = allPaths.get(DISK_DIR_KEYWORD)
+        const pathToUpload = filePathsMap.get(DISK_DIR_KEYWORD)
         if (typeof pathToUpload === "undefined") {throw new Error("Failed to store uploadable path in path map.")}
         const uploadResults = await enclaveCtx.uploadFiles(pathToUpload)
         if(uploadResults.isErr()) { throw uploadResults.error }
@@ -83,12 +83,12 @@ async function TestUploadFiles() {
 
         const fileServerPublicIp = serviceContext.getMaybePublicIPAddress();
         const fileServerPublicPortNum = publicPort.number
-        const firstRootFilename = `${allPaths.get(ARCHIVE_DIR_KEYWORD)}/${ARCHIVE_ROOT_FILE_KEYWORD_PATTERN}0`
+        const firstArchiveRootFilename = `${filePathsMap.get(ARCHIVE_DIR_KEYWORD)}/${ARCHIVE_ROOT_FILE_KEYWORD_PATTERN}0`
 
         const waitForHttpGetEndpointAvailabilityResult = await enclaveCtx.waitForHttpGetEndpointAvailability(
             FILE_SERVER_SERVICE_ID,
             FILE_SERVER_PRIVATE_PORT_NUM,
-            firstRootFilename,
+            firstArchiveRootFilename,
             WAIT_INITIAL_DELAY_MILLISECONDS,
             WAIT_FOR_STARTUP_MAX_RETRIES,
             WAIT_FOR_STARTUP_TIME_BETWEEN_POLLS,
@@ -101,7 +101,7 @@ async function TestUploadFiles() {
         }
         log.info(`Added file server service with public IP "${fileServerPublicIp}" and port "${fileServerPublicPortNum}"`)
 
-        const allContentTestResults = await testAllContent(allPaths, fileServerPublicIp, fileServerPublicPortNum)
+        const allContentTestResults = await testAllContent(filePathsMap, fileServerPublicIp, fileServerPublicPortNum)
         if(allContentTestResults.isErr()) { throw allContentTestResults.error}
     } catch (err) {
         throw err
@@ -112,39 +112,52 @@ async function TestUploadFiles() {
 //========================================================================
 // Helpers
 //========================================================================
-async function testAllContent(allPaths: Map<string,string>, ipAddress: string, portNum: number):
-Promise<Result<null, Error>>{
-
-    const rootDirTestResults = await  testDirectoryFiles(allPaths, ARCHIVE_ROOT_FILE_KEYWORD_PATTERN,
-        NUMBER_OF_TEMP_FILES_IN_ROOT_DIRECTORY, ipAddress, portNum)
+async function testAllContent(
+    allPaths: Map<string,string>,
+    ipAddress: string,
+    portNum: number
+): Promise<Result<null, Error>>{
+    //Test files in archive root directory.
+    const rootDirTestResults = await testDirectoryContents(
+        allPaths,
+        ARCHIVE_ROOT_FILE_KEYWORD_PATTERN,
+        NUMBER_OF_TEMP_FILES_IN_ROOT_DIRECTORY,
+        ipAddress,
+        portNum
+    )
     if(rootDirTestResults.isErr()){ return err(rootDirTestResults.error) }
 
-    const subDirTestResults = await testDirectoryFiles(allPaths, SUB_FILE_KEYWORD_PATTERN,
-        NUMBER_OF_TEMP_FILES_IN_SUBDIRECTORY, ipAddress, portNum)
+    //Test files in subdirectory.
+    const subDirTestResults = await testDirectoryContents(
+        allPaths,
+        SUB_FILE_KEYWORD_PATTERN,
+        NUMBER_OF_TEMP_FILES_IN_SUBDIRECTORY,
+        ipAddress,
+        portNum
+    )
     if (subDirTestResults.isErr()){ return err(subDirTestResults.error) }
 
     return ok(null)
 }
 
 //Cycle through a directory and check the file contents.
-async function testDirectoryFiles(
-    allPaths: Map<string, string>,
-    keywordPattern: string,
+async function testDirectoryContents(
+    pathsMap: Map<string, string>,
+    fileKeywordPattern: string,
     fileCount: number,
     ipAddress: string,
     portNum: number
 ): Promise<Result<null, Error>> {
 
     for(let i = 0; i < fileCount; i++){
-        let fileKeyword = `${keywordPattern}${i}`
-        let filename = allPaths.get(fileKeyword)
-        if (typeof filename === "undefined"){
+        let fileKeyword = `${fileKeywordPattern}${i}`
+        let relativePath = pathsMap.get(fileKeyword)
+        if (typeof relativePath === "undefined"){
             return err(new Error(`The file for keyword ${fileKeyword} was not mapped in the paths map.`))
         }
-        let testContentResults = await testFileContents(ipAddress, portNum, filename)
+        let testContentResults = await testFileContents(ipAddress, portNum, relativePath)
         if (testContentResults.isErr()) { return  err(testContentResults.error) }
     }
-
     return ok(null)
 }
 
@@ -155,42 +168,46 @@ async function testFileContents(ipAddress: string, portNum: number, filename: st
 
     let dataAsString = String(fileContentResults.value)
     if (dataAsString !== ARCHIVE_TEST_CONTENT){
-        return err(new Error(`The file contents of '${filename}' do not match the test content.\n
-                              ${dataAsString} !== ${ARCHIVE_TEST_CONTENT}`))
+        return err(new Error(`The contents of '${filename}' do not match the test contents of ${ARCHIVE_TEST_CONTENT}.\n`))
     }
     return ok(null)
 }
 
-async function createTestFiles(directory : string, fileCount : number): Promise<Result<string[], Error>>{
+async function createTestFiles(pathToCreateAt : string, fileCount : number): Promise<Result<string[], Error>>{
     let filenames: string[] = []
 
     for (let i = 0; i < fileCount; i++) {
         const filename = `${ARCHIVE_TEST_FILE_PATTERN}${i}${ARCHIVE_TEST_FILE_EXTENSION}`
-        const fullFilepath = path.join(directory, filename)
+        const fullFilepath = path.join(pathToCreateAt, filename)
         filenames.push(filename)
         try {
             await filesystem.promises.writeFile(fullFilepath, ARCHIVE_TEST_CONTENT)
             await filesystem.promises.chmod(fullFilepath, FILE_PERMISSION)
         } catch {
-            return err(new Error(`Failed to create a test file at '${fullFilepath}'.`))
+            return err(new Error(`Failed to write test file ${filename} at '${fullFilepath}'.`))
         }
     }
     return ok(filenames)
 }
 
+//Creates a temporary folder with x files and 1 sub folder that has y files each.
+//Where x is numberOfTempTestFilesToCreateInArchiveDir
+//Where y is numberOfTempTestFilesToCreateInSubDir
 async function createTestFolderToUpload(): Promise<Result<Map<string,string>, Error>> {
     const testDirectory = os.tmpdir()
 
     //Create a base directory
     const tempDirectoryResult = await createTempDirectory(testDirectory, ARCHIVE_DIRECTORY_TEST_PATTERN)
     if(tempDirectoryResult.isErr()) { return err(tempDirectoryResult.error) }
+    const baseTempDirPath = tempDirectoryResult.value
 
     //Create a single subdirectory.
-    const subDirectoryResult = await  createTempDirectory(tempDirectoryResult.value, ARCHIVE_SUBDIRECTORY_TEST_PATTERN)
+    const subDirectoryResult = await  createTempDirectory(baseTempDirPath, ARCHIVE_SUBDIRECTORY_TEST_PATTERN)
     if(subDirectoryResult.isErr()) { return err(subDirectoryResult.error) }
+    const tempSubDirectory = subDirectoryResult.value
 
     //Create NUMBER_OF_TEMP_FILES_IN_SUBDIRECTORY
-    const subDirTestFileResult = await createTestFiles(subDirectoryResult.value, NUMBER_OF_TEMP_FILES_IN_SUBDIRECTORY)
+    const subDirTestFileResult = await createTestFiles(tempSubDirectory, NUMBER_OF_TEMP_FILES_IN_SUBDIRECTORY)
     if(subDirTestFileResult.isErr()){ return err(subDirTestFileResult.error)}
 
     //Create NUMBER_OF_TEMP_FILES_IN_ROOT_DIRECTORY
@@ -206,32 +223,32 @@ async function createTestFolderToUpload(): Promise<Result<Map<string,string>, Er
     }
 
     let subDirFilenames = subDirTestFileResult.value
-    let rootFilenames = rootDirTestFileResults.value
-    let rootDir = path.basename(tempDirectoryResult.value)
-    let subDir = path.basename(subDirectoryResult.value)
+    let archiveRootFilenames = rootDirTestFileResults.value
+    let archiveRootDir = path.basename(baseTempDirPath)
+    let subDir = path.basename(tempSubDirectory)
 
-    let allPaths = new Map<string, string>()
-    allPaths.set(DISK_DIR_KEYWORD, `${testDirectory}/${rootDir}`)
-    allPaths.set(ARCHIVE_DIR_KEYWORD, rootDir)
-    allPaths.set(SUB_DIR_KEYWORD, subDir)
+    let relativeDiskPaths = new Map<string, string>()
+    relativeDiskPaths.set(DISK_DIR_KEYWORD, `${testDirectory}/${archiveRootDir}`)
+    relativeDiskPaths.set(ARCHIVE_DIR_KEYWORD, archiveRootDir)
+    relativeDiskPaths.set(SUB_DIR_KEYWORD, `${archiveRootDir}/${subDir}`)
 
     for(let i = 0; i < subDirFilenames.length; i++){
-        let basename = path.basename(tempDirectoryResult.value)
-        let relativeSubFile = `${rootDir}/${subDir}/${basename}`
         let keyword = `${SUB_FILE_KEYWORD_PATTERN}${i}`
-        allPaths.set(keyword, relativeSubFile)
+        let basename = path.basename(subDirFilenames[i])
+        let relativeSubFile = `${archiveRootDir}/${subDir}/${basename}`
+        relativeDiskPaths.set(keyword, relativeSubFile)
     }
 
-    for(let i = 0; i < rootFilenames.length; i++){
-        let basename = path.basename(tempDirectoryResult.value)
-        let relativeRootFile = `${rootDir}/${basename}`
+    for(let i = 0; i < archiveRootFilenames.length; i++){
         let keyword = `${ARCHIVE_ROOT_FILE_KEYWORD_PATTERN}${i}`
-        allPaths.set(keyword, relativeRootFile)
+        let basename = path.basename(archiveRootFilenames[i])
+        let relativeRootFile = `${archiveRootDir}/${basename}`
+        relativeDiskPaths.set(keyword, relativeRootFile)
     }
-
-    return ok(allPaths)
+    return ok(relativeDiskPaths)
 }
 
+//Stand in for go's ioutil.TempDir
 async function createTempDirectory(directoryBase: string, directoryPattern: string): Promise<Result<string, Error>> {
     const tempDirPathPrefix = path.join(directoryBase, directoryPattern)
     const tempDirPathResult = await filesystem.promises.mkdtemp(
@@ -248,11 +265,8 @@ async function createTempDirectory(directoryBase: string, directoryPattern: stri
     return ok(tempDirPathResult.value)
 }
 
-function getFileServerContainerConfigSupplier(filesArtifactMountPoints: Map<FilesArtifactID, string>):
-(ipAddr: string) => Result<ContainerConfig, Error> {
-
+function getFileServerContainerConfigSupplier(filesArtifactMountPoints: Map<FilesArtifactID, string>): (ipAddr: string) => Result<ContainerConfig, Error> {
     const containerConfigSupplier = (ipAddr:string): Result<ContainerConfig, Error> => {
-
         const usedPorts = new Map<string, PortSpec>()
         usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
 
@@ -263,7 +277,6 @@ function getFileServerContainerConfigSupplier(filesArtifactMountPoints: Map<File
 
         return ok(containerConfig)
     }
-
     return containerConfigSupplier
 }
 
