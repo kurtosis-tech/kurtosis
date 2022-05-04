@@ -17,13 +17,13 @@ import (
 )
 
 const (
-	archiveRootDirectoryTestPattern = "upload-test-golang-"
-	archiveSubDirectoryTestPattern  = "sub-folder-"
-	archiveFileTestPattern          = "test-file-"
-	archiveTestFileContent          = "This file is for testing purposes."
+	archiveDirectoryTestPattern    = "upload-test-golang-"
+	archiveSubDirectoryTestPattern = "sub-folder-"
+	archiveFileTestPattern         = "test-file-"
+	archiveTestFileContent         = "This file is for testing purposes."
 
-	numberOfTempTestFilesToCreateInSubDir  = 3
-	numberOfTempTestFilesToCreateInRootDir = 1
+	numberOfTempTestFilesToCreateInSubDir     = 3
+	numberOfTempTestFilesToCreateInArchiveDir = 1
 
 	enclaveTestName       = "upload-files-test"
 	isPartitioningEnabled = true
@@ -39,10 +39,10 @@ const (
 
 	// Filenames & contents for the files stored in the files artifact
 	diskDirKeyword                            = "diskDir"
-	rootDirKeyword                            = "rootDir"
+	archiveDirKeyword                         = "archiveDir"
 	subDirKeyword                             = "subDir"
 	subFilePatternKeyword                     = "subFile"
-	rootFilePatternKeyword                    = "rootFile"
+	archiveRootFilePatternKeyword             = "archiveRootFile"
 	userServiceMountPointForTestFilesArtifact = "/static"
 )
 
@@ -74,12 +74,12 @@ func TestUploadFiles(t *testing.T) {
 	fileServerPublicIp := serviceCtx.GetMaybePublicIPAddress()
 	fileServerPublicPortNum := publicPort.GetNumber()
 
-	println(filePathsMap[rootFilePatternKeyword+"0"])
+	println(filePathsMap[archiveRootFilePatternKeyword+"0"])
 	require.NoError(t,
 		enclaveCtx.WaitForHttpGetEndpointAvailability(
 			fileServerServiceId,
 			fileServerPrivatePortNum,
-			filePathsMap[rootFilePatternKeyword+"0"],
+			filePathsMap[archiveRootFilePatternKeyword+"0"],
 			waitInitialDelayMilliseconds,
 			waitForStartupMaxRetries,
 			waitForStartupTimeBetweenPolls,
@@ -100,11 +100,11 @@ func testContents(pathMap map[string]string, serviceCtx *services.ServiceContext
 	ipAddress := serviceCtx.GetMaybePublicIPAddress()
 	portNum := publicPort.GetNumber()
 
-	//Test root file dirs.
-	if err := testDirectoryContents(pathMap, numberOfTempTestFilesToCreateInRootDir, rootFilePatternKeyword, ipAddress,
+	//Test files archive root directory.
+	if err := testDirectoryContents(pathMap, numberOfTempTestFilesToCreateInArchiveDir, archiveRootFilePatternKeyword, ipAddress,
 		portNum); err != nil {
 		return stacktrace.Propagate(err, "File contents and or folder names in '%s' could not be verified.",
-			pathMap[rootDirKeyword])
+			pathMap[archiveDirKeyword])
 	}
 
 	//Test subdirectory.
@@ -174,13 +174,13 @@ func createTestFiles(pathToCreateAt string, fileCount int) ([]string, error) {
 }
 
 //Creates a temporary folder with x files and 1 sub folder that has y files each.
-//Where x is numberOfTempTestFilesToCreateInRootDir
+//Where x is numberOfTempTestFilesToCreateInArchiveDir
 //Where y is numberOfTempTestFilesToCreateInSubDir
 func createTestFolderToUpload() (map[string]string, error) {
-	baseTempDirPath, err := ioutil.TempDir("", archiveRootDirectoryTestPattern)
+	baseTempDirPath, err := ioutil.TempDir("", archiveDirectoryTestPattern)
 	println(baseTempDirPath)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create a temporary root directory for testing.")
+		return nil, stacktrace.Propagate(err, "Failed to create a temporary directory for testing files.")
 	}
 	if err = os.Chmod(baseTempDirPath, 0755); err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to set file permissions for '%s'.", baseTempDirPath)
@@ -204,16 +204,16 @@ func createTestFolderToUpload() (map[string]string, error) {
 			tempSubDirectory)
 	}
 
-	rootFilenames, err := createTestFiles(baseTempDirPath, numberOfTempTestFilesToCreateInRootDir)
+	archiveRootFilenames, err := createTestFiles(baseTempDirPath, numberOfTempTestFilesToCreateInArchiveDir)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create archive test files in your root directory at '%s'.",
-			baseTempDirPath)
+		return nil, stacktrace.Propagate(err, "Failed to create archive test files in the root of your temporary "+
+			"archive directory at '%s'.", baseTempDirPath)
 	}
 
 	allPaths := map[string]string{}
 	allPaths[diskDirKeyword] = baseTempDirPath //The full disk path before getting relative endpoints.
-	allPaths[rootDirKeyword] = filepath.Base(baseTempDirPath)
-	clientTempDirToStrip := strings.Replace(baseTempDirPath, allPaths[rootDirKeyword], "", 1)
+	allPaths[archiveDirKeyword] = filepath.Base(baseTempDirPath)
+	clientTempDirToStrip := strings.Replace(baseTempDirPath, allPaths[archiveDirKeyword], "", 1)
 
 	tempSubDirectory = strings.Replace(tempSubDirectory, clientTempDirToStrip, "", 1)
 	allPaths[subDirKeyword] = tempSubDirectory
@@ -223,9 +223,9 @@ func createTestFolderToUpload() (map[string]string, error) {
 		relativePath := strings.Replace(subFilenames[i], clientTempDirToStrip, "", 1)
 		allPaths[keyword] = relativePath
 	}
-	for i := 0; i < len(rootFilenames); i++ {
-		keyword := fmt.Sprintf("%s%v", rootFilePatternKeyword, i)
-		relativePath := strings.Replace(rootFilenames[i], clientTempDirToStrip, "", 1)
+	for i := 0; i < len(archiveRootFilenames); i++ {
+		keyword := fmt.Sprintf("%s%v", archiveRootFilePatternKeyword, i)
+		relativePath := strings.Replace(archiveRootFilenames[i], clientTempDirToStrip, "", 1)
 		allPaths[keyword] = relativePath
 	}
 	return allPaths, nil
