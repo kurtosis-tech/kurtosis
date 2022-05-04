@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added `ServiceAccounts`, `Roles`, `RoleBindings`, `ClusterRole`, and `ClusterRoleBindings` create and remove methods to `KurtosisManager`
 
 # 0.17.0
 ### Features
