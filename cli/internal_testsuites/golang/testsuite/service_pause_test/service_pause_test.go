@@ -14,11 +14,13 @@ import (
 )
 
 const (
-	testName                  = "pause-unpause"
-	isPartitioningEnabled     = false
-	pauseUnpauseTestImageName = "alpine:3.12.4"
-	testServiceId             = "test"
-	testLogFilepath           = "/time.log"
+	testName                          = "pause-unpause"
+	isPartitioningEnabled             = false
+	pauseUnpauseTestImageName         = "alpine:3.12.4"
+	testServiceId                     = "test"
+	testLogFilepath                   = "/time.log"
+	sleepTimeBetweenCommandsInSeconds = 3
+	minimumGap                        = 2
 )
 
 func TestPauseUnpause(t *testing.T) {
@@ -34,17 +36,17 @@ func TestPauseUnpause(t *testing.T) {
 	serviceCtx, err := enclaveCtx.AddService(testServiceId, containerConfigSupplier)
 	require.NoError(t, err, "An error occurred adding the file server service")
 
-	time.Sleep(3 * time.Second)
+	time.Sleep(sleepTimeBetweenCommandsInSeconds * time.Second)
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	// pause/unpause using servicectx
 	err = enclaveCtx.PauseService(serviceCtx.GetServiceID())
 	logrus.Infof("Paused service!")
 	require.NoError(t, err, "An error occurred pausing")
-	time.Sleep(3 * time.Second)
+	time.Sleep(sleepTimeBetweenCommandsInSeconds * time.Second)
 	err = enclaveCtx.UnpauseService(serviceCtx.GetServiceID())
 	require.NoError(t, err, "An error occurred unpausing")
 	logrus.Infof("Unpaused service!")
-	time.Sleep(3 * time.Second)
+	time.Sleep(sleepTimeBetweenCommandsInSeconds * time.Second)
 	_, results, err := serviceCtx.ExecCommand([]string{"cat", testLogFilepath})
 	require.NoError(t, err, "An error occurred reading the logs.")
 	secondCounter := strings.Split(strings.TrimSuffix(results, "\n"), "\n")
@@ -55,12 +57,12 @@ func TestPauseUnpause(t *testing.T) {
 			require.NoError(t, err, "An error occurred converting seconds to int.")
 			previousSecondCount, err := strconv.Atoi(secondCounter[i-1])
 			require.NoError(t, err, "An error occurred converting seconds to int.")
-			if currentSecondCount-previousSecondCount > 2 {
+			if currentSecondCount-previousSecondCount > minimumGap {
 				foundGap = true
 			}
 		}
 	}
-	require.True(t, foundGap, "Should have found an at least 2 second gap in second-ticker due to pause, but found none.")
+	require.True(t, foundGap, "Should have found an at least %d second gap in second-ticker due to pause, but found none.", minimumGap)
 }
 
 // ====================================================================================================
