@@ -86,7 +86,7 @@ function getContainerConfigSupplier(): (ipAddr:string) => Result<ContainerConfig
 
         // We spam timestamps so that we can measure pausing processes (no more log output) and unpausing (log output resumes)
         const entrypointArgs = ["/bin/sh", "-c"]
-        const cmdArgs = ["while sleep 1; do ts=$(date +\"%s\") ; echo \"$ts\" > " + TEST_LOG_FILEPATH + " ; done"]
+        const cmdArgs = ["while sleep 1; do ts=$(date +\"%s\") ; echo \"$ts\" >> " + TEST_LOG_FILEPATH + " ; done"]
 
         const containerConfig = new ContainerConfigBuilder(PAUSE_UNPAUSE_TEST_IMAGE)
             .withEntrypointOverride(entrypointArgs)
