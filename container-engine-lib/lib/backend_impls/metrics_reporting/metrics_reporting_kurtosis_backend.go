@@ -151,6 +151,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
 	enclaveDataDirpathOnHostMachine string,
+	enclaveDataVolumeDirpath string,
 	envVars map[string]string,
 ) (*api_container.APIContainer, error) {
 	result, err := backend.underlying.CreateAPIContainer(
@@ -161,6 +162,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 		grpcPortNum,
 		grpcProxyPortNum,
 		enclaveDataDirpathOnHostMachine,
+		enclaveDataVolumeDirpath,
 		envVars,
 	)
 	if err != nil {

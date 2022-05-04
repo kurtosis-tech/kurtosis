@@ -33,7 +33,17 @@ func (backend *KubernetesKurtosisBackend) PullImage(image string) error {
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateAPIContainer(ctx context.Context, image string, enclaveId enclave.EnclaveID, ipAddr net.IP, grpcPortNum uint16, grpcProxyPortNum uint16, enclaveDataDirpathOnHostMachine string, envVars map[string]string) (*api_container.APIContainer, error) {
+func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
+	ctx context.Context,
+	image string,
+	enclaveId enclave.EnclaveID,
+	ipAddr net.IP,
+	grpcPortNum uint16,
+	grpcProxyPortNum uint16,
+	enclaveDataDirpathOnHostMachine string,
+	enclaveDataVolumeDirpath string,
+	envVars map[string]string,
+) (*api_container.APIContainer, error) {
 	//TODO implement me
 	panic("implement me")
 }
