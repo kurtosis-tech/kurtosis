@@ -3,6 +3,7 @@ package kubernetes_label_key
 import (
 	"github.com/kurtosis-tech/stacktrace"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"strings"
 )
 
 // Represents a Kubernetes label ney that is guaranteed to be valid for Kubernetes
@@ -33,9 +34,8 @@ func (key *KubernetesLabelKey) GetString() string {
 func validateLabelKey(str string) error {
 	validationErrs := validation.IsQualifiedName(str)
 	if len(validationErrs) > 0 {
-		// TODO pretty up printing of errors
-		// return err
-		return stacktrace.NewError("Expected label string '%v' to be a valid kubernetes label key, instead it failed validation:\n%+v", str, validationErrs)
+		errString := strings.Join(validationErrs, "\n\n")
+		return stacktrace.NewError("Expected label string '%v' to be a valid kubernetes label key, instead it failed validation:\n%+v", str, errString)
 	}
 	return nil
 

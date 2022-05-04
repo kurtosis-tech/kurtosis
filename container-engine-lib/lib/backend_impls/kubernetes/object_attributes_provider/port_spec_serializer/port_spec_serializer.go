@@ -23,7 +23,7 @@ const (
 	// See https://github.com/docker/for-mac/issues/2208
 	// This is copied over from our docker serializer
 	// TODO: share port_spec serialization logic between kubernetes and docker?
-	maxLabelValueBytes = 65518
+	maxAnnotationBytes = 65518
 )
 
 // "Set" of the disallowed characters for a port ID
@@ -85,11 +85,11 @@ func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*kubernetes_annot
 	}
 	resultStr := strings.Join(portIdAndSpecStrs, portSpecsSeparator)
 	numResultBytes := len([]byte(resultStr))
-	if numResultBytes > maxLabelValueBytes {
+	if numResultBytes > maxAnnotationBytes {
 		return nil, stacktrace.NewError(
 			"The port specs label value string is %v bytes long, but the max number of label value bytes is %v; the number of ports this container is listening on must be reduced",
 			numResultBytes,
-			maxLabelValueBytes,
+			maxAnnotationBytes,
 		)
 	}
 	result, err := kubernetes_annotation_value.CreateNewKubernetesAnnotationValue(resultStr)
