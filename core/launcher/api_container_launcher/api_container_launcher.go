@@ -117,6 +117,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		enclaveDataDirpathOnHostMachine,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
+
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the API container args")
