@@ -3,7 +3,7 @@
 * Added `PauseService` and `UnpauseService` to `KurtosisBackend`
 * Added docker implementation of `PauseService` and `UnpauseService`
 * Added kubernetes implementation of engine functions in kubernetes backend
-* Added `CreateServiceAccount`, `CreateRole`, `CrateRoleBindings`, `CreateClusterRoles` and `CrateClusterRoleBindings` to `KurtosisManager`
+* Added `ServiceAccounts`, `Roles`, `RoleBindings`, `ClusterRole`, and `ClusterRoleBindings` create and delete methods to `KurtosisManager`
 
 # 0.16.0
 ### Removals

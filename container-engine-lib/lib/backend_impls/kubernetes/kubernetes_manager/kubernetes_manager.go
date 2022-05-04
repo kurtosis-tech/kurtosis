@@ -627,6 +627,16 @@ func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name
 	return serviceAccountResult, nil
 }
 
+func (manager *KubernetesManager) DeleteServiceAccount(ctx context.Context, name string, namespace string) error {
+	client := manager.kubernetesClientSet.CoreV1().ServiceAccounts(namespace)
+
+	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete service account with name '%s' in namespace '%v'", name, namespace)
+	}
+
+	return nil
+}
+
 // ---------------------------roles------------------------------------------------------------------------------
 
 func (manager *KubernetesManager) CreateRole(ctx context.Context, name string, namespace string, rules []rbacv1.PolicyRule) (*rbacv1.Role, error) {
@@ -647,6 +657,16 @@ func (manager *KubernetesManager) CreateRole(ctx context.Context, name string, n
 	return roleResult, nil
 }
 
+func (manager *KubernetesManager) DeleteRole(ctx context.Context, name string, namespace string) error {
+	client := manager.kubernetesClientSet.RbacV1().Roles(namespace)
+
+	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete role with name '%s' in namespace '%v'", name, namespace)
+	}
+
+	return nil
+}
+
 func (manager *KubernetesManager) CrateRoleBindings(ctx context.Context, name string, namespace string, subjects []rbacv1.Subject, roleRef rbacv1.RoleRef) (*rbacv1.RoleBinding, error) {
 	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
 
@@ -664,6 +684,16 @@ func (manager *KubernetesManager) CrateRoleBindings(ctx context.Context, name st
 	}
 
 	return roleBindingResult, nil
+}
+
+func (manager *KubernetesManager) DeleteRoleBindings(ctx context.Context, name string, namespace string) error {
+	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
+
+	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete role bindings with name '%s' in namespace '%v'", name, namespace)
+	}
+
+	return nil
 }
 
 // ---------------------------cluster roles------------------------------------------------------------------------------
@@ -686,6 +716,16 @@ func (manager *KubernetesManager) CreateClusterRoles(ctx context.Context, name s
 	return clusterRoleResult, nil
 }
 
+func (manager *KubernetesManager) DeleteClusterRole(ctx context.Context, name string) error {
+	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
+
+	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete cluster role with name '%s'", name)
+	}
+
+	return nil
+}
+
 func (manager *KubernetesManager) CrateClusterRoleBindings(ctx context.Context, name string, subjects []rbacv1.Subject, roleRef rbacv1.RoleRef) (*rbacv1.ClusterRoleBinding, error) {
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
 
@@ -703,6 +743,16 @@ func (manager *KubernetesManager) CrateClusterRoleBindings(ctx context.Context, 
 	}
 
 	return clusterRoleBindingResult, nil
+}
+
+func (manager *KubernetesManager) DeleteClusterRoleBinding(ctx context.Context, name string) error {
+	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
+
+	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete cluster role binding with name '%s'", name)
+	}
+
+	return nil
 }
 
 // Private functions
