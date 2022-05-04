@@ -1,14 +1,16 @@
 # TBD
+### Features
+* Added `ServiceAccounts`, `Roles`, `RoleBindings`, `ClusterRole`, and `ClusterRoleBindings` create and remove methods to `KurtosisManager`
+* Added `ServiceAccounts`, `Roles`, `RoleBindings`, `ClusterRole`, and `ClusterRoleBindings` create and remove methods to `KurtosisManager`
+* Added `ForEngineNamespace`, `ForEngineServiceAccount`, `ForEngineClusterRole` and `ForEngineClusterRoleBindings` to  `KubernetesEngineObjectAttributesProvider`
+* Updated `KubernetesBackend.CreateEngine` added the kubernetes role based resources creation and namespace creation process
+* Updated `KubernetesBackend.StopEngines` added the kubernetes role based resources removal and namespace removal process
 
 # 0.17.0
 ### Features
 * Added `PauseService` and `UnpauseService` to `KurtosisBackend`
 * Added docker implementation of `PauseService` and `UnpauseService`
 * Added Kubernetes implementation of engine functions in kubernetes backend
-* Added `ServiceAccounts`, `Roles`, `RoleBindings`, `ClusterRole`, and `ClusterRoleBindings` create and remove methods to `KurtosisManager`
-* Added `ForEngineNamespace`, `ForEngineServiceAccount`, `ForEngineClusterRole` and `ForEngineClusterRoleBindings` to  `KubernetesEngineObjectAttributesProvider`
-* Updated `KubernetesBackend.CreateEngine` added the kubernetes role based resources creation and namespace creation process 
-* Updated `KubernetesBackend.StopEngines` added the kubernetes role based resources removal and namespace removal process 
 
 ### Breaking Changes
 * Added an extra `enclaveDataVolumeDirpath` to `KurtosisBackend.CreateAPIContainer`

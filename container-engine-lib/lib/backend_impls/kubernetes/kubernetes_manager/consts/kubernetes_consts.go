@@ -18,6 +18,5 @@ const (
 
 	ClusterRoleKubernetesResourceType = "ClusterRole"
 
-	AllApiGroups              = "*"
 	RbacAuthorizationApiGroup = "rbac.authorization.k8s.io"
 )

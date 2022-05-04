@@ -15,7 +15,6 @@ import (
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/kubernetes/pkg/apis/rbac"
 	"net"
 	"strconv"
 	"time"
@@ -443,7 +442,7 @@ func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx con
 	clusterRolePolicyRules := []rbacv1.PolicyRule{
 		{
 			Verbs: []string{consts.CreateKubernetesVerb, consts.UpdateKubernetesVerb, consts.PatchKubernetesVerb, consts.DeleteKubernetesVerb, consts.GetKubernetesVerb, consts.ListKubernetesVerb, consts.WatchKubernetesVerb},
-			APIGroups: []string{consts.AllApiGroups},
+			APIGroups: []string{rbacv1.APIGroupAll},
 			Resources: []string{consts.NamespacesKubernetesResource, consts.DeploymentsKubernetesResource, consts.ServiceAccountsKubernetesResource, consts.RolesKubernetesResource, consts.RoleBindingsKubernetesResource, consts.PodsKubernetesResource},
 		},
 	}
@@ -471,7 +470,7 @@ func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx con
 
 	clusterRoleBindingsSubjects := []rbacv1.Subject{
 		{
-			Kind:      rbac.ServiceAccountKind,
+			Kind:      rbacv1.ServiceAccountKind,
 			Name:      serviceAccountName,
 			Namespace: namespace,
 		},
@@ -556,7 +555,7 @@ func (backend *KubernetesKurtosisBackend) removeEngineRoleBasedResources(ctx con
 			continue
 		}
 		if err := backend.kubernetesManager.RemoveServiceAccount(ctx, serviceAccountName, namespace); err != nil {
-			wrapErr := stacktrace.Propagate(err, "An error occurred removing service account '%v' in namespace", serviceAccountName, namespace)
+			wrapErr := stacktrace.Propagate(err, "An error occurred removing service account '%v' in namespace '%v'", serviceAccountName, namespace)
 			erroredEngineIds[engineIdStr] = wrapErr
 			continue
 		}
