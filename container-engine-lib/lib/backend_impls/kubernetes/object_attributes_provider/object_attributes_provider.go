@@ -4,6 +4,10 @@ type KubernetesObjectAttributesProvider interface {
 	ForEngine(
 		id string,
 	) (KubernetesEngineObjectAttributesProvider, error)
+
+	ForEnclave(
+		enclaveId string,
+	) (KubernetesEnclaveObjectAttributesProvider, error)
 }
 
 func GetKubernetesObjectAttributesProvider() KubernetesObjectAttributesProvider {
@@ -19,4 +23,8 @@ func newKubernetesObjectAttributesProviderImpl() *kubernetesObjectAttributesProv
 
 func (provider *kubernetesObjectAttributesProviderImpl) ForEngine(engineId string) (KubernetesEngineObjectAttributesProvider, error) {
 	return GetKubernetesEngineObjectAttributesProvider(engineId), nil
+}
+
+func (provider *kubernetesObjectAttributesProviderImpl) ForEnclave(enclaveId string) (KubernetesEnclaveObjectAttributesProvider, error) {
+	return GetKubernetesEnclaveObjectAttributesProvider(enclaveId), nil
 }

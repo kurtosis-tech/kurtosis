@@ -31,18 +31,15 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	namespaceName := fmt.Sprintf("kurtosis-%v", enclaveId)
 	namespaceList, err := backend.kubernetesManager.GetNamespacesByLabels(ctx, searchNamespaceLabels)
 	if err != nil {
-		return nil, stacktrace.NewError("Failed to list namespaces from Kubernetes, so can not verify if namespace already exists.")
+		return nil, stacktrace.NewError("Failed to list namespaces from Kubernetes, so can not verify if enclave '%v' already exists.", enclaveId)
 	}
 	if len(namespaceList.Items) > 0 {
 		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because an enclave with ID '%v' already exists", enclaveId, enclaveId)
 	}
-	// Iterate through namespace list to do name matching because GetNamespace doesn't return a clear error
-	// that distinguishes between failed lookup mechanism and namespace not existing
-	for _, namespace := range namespaceList.Items {
-		if namespace.GetName() == namespaceName {
-			return nil, stacktrace.NewError("Namespace with name %v already exists.", namespaceName)
-		}
-	}
+
+	// Make Enclave attributes provider
+	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave()
+
 	// TODO TODO TODO REPLACE THIS WITH NAME LABELS AND ANNOTATIONS FROM ATTRIBUTES PROVIDER
 	namespaceLabels := map[string]string{}
 	_, err = backend.kubernetesManager.CreateNamespace(ctx, namespaceName, namespaceLabels)
