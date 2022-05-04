@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+* Added `uploadFiles` tests for typescript and go clients.
+
 # 0.15.0
 ### Features
 * Added `files storeservice` to store files from a service in the enclave
