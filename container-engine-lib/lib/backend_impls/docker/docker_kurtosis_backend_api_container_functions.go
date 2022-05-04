@@ -25,10 +25,6 @@ const (
 	//  on the API container
 	enclaveDataBindmountDirpathOnAPIContainer = "/kurtosis-enclave-data"
 
-	// The location where the enclave data volume will be mounted
-	//  on the API container
-	enclaveDataVolumeDirpathOnAPIContainer = "/kurtosis-data"
-
 	// The API container uses gRPC so MUST listen on TCP (no other protocols are supported), which also
 	// means that its grpc-proxy must listen on TCP
 	apiContainerPortProtocol = port_spec.PortProtocol_TCP
@@ -52,6 +48,8 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	grpcProxyPortNum uint16,
 	// TODO remove when we switch fully to enclave data volume
 	enclaveDataDirpathOnHostMachine string,
+	// The dirpath on the API container where the enclave data volume should be mounted
+	enclaveDataVolumeDirpath string,
 	envVars map[string]string,
 ) (*api_container.APIContainer, error) {
 	// Verify no API container already exists in the enclave
@@ -134,7 +132,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	}
 
 	volumeMounts := map[string]string{
-		enclaveDataVolumeName: enclaveDataVolumeDirpathOnAPIContainer,
+		enclaveDataVolumeName: enclaveDataVolumeDirpath,
 	}
 
 	labelStrs := map[string]string{}

@@ -151,6 +151,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
 	enclaveDataDirpathOnHostMachine string,
+	enclaveDataVolumeDirpath string,
 	envVars map[string]string,
 ) (*api_container.APIContainer, error) {
 	result, err := backend.underlying.CreateAPIContainer(
@@ -161,6 +162,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 		grpcPortNum,
 		grpcProxyPortNum,
 		enclaveDataDirpathOnHostMachine,
+		enclaveDataVolumeDirpath,
 		envVars,
 	)
 	if err != nil {
@@ -370,6 +372,30 @@ func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user service logs using filters '%+v'", filters)
 	}
 	return userServiceLogs, erroredUserServices, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) PauseService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceId service.ServiceGUID,
+) error {
+	err := backend.underlying.PauseService(ctx, enclaveId, serviceId)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to pause service '%v'", serviceId)
+	}
+	return nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) UnpauseService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceId service.ServiceGUID,
+) error {
+	err := backend.underlying.UnpauseService(ctx, enclaveId, serviceId)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to unpause service '%v'", serviceId)
+	}
+	return nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands(
