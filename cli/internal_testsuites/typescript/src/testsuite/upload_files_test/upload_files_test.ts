@@ -280,12 +280,12 @@ function getFileServerContainerConfigSupplier(filesArtifactMountPoints: Map<File
     return containerConfigSupplier
 }
 
-async function getFileContents(ipAddress: string, portNum: number, filename: string): Promise<Result<any, Error>> {
+async function getFileContents(ipAddress: string, portNum: number, relativeFilepath: string): Promise<Result<any, Error>> {
     let response;
     try {
-        response = await axios(`http://${ipAddress}:${portNum}/${filename}`)
+        response = await axios(`http://${ipAddress}:${portNum}/${relativeFilepath}`)
     } catch(error){
-        log.error(`An error occurred getting the contents of file "${filename}"`)
+        log.error(`An error occurred getting the contents of file "${relativeFilepath}"`)
         if(error instanceof Error){
             return err(error)
         }else{
