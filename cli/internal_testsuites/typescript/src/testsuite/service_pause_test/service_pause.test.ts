@@ -1,5 +1,5 @@
 import {createEnclave} from "../../test_helpers/enclave_setup";
-import {ContainerConfig, ContainerConfigBuilder, SharedPath} from "kurtosis-core-api-lib";
+import {ContainerConfig, ContainerConfigBuilder} from "kurtosis-core-api-lib";
 import {err, ok, Result} from "neverthrow";
 import log from "loglevel";
 
@@ -32,7 +32,7 @@ test("Test service pause", async () => {
         const testServiceContext = addServiceResult.value
         await delay(5000)
         // ------------------------------------- TEST RUN ----------------------------------------------
-        const pauseServiceResult = await testServiceContext.pauseService(TEST_SERVICE_ID)
+        const pauseServiceResult = await enclaveContext.pauseService(TEST_SERVICE_ID)
         if(pauseServiceResult.isErr()){
             log.error("An error occurred pausing service.")
             throw(pauseServiceResult.error)
@@ -40,7 +40,7 @@ test("Test service pause", async () => {
         }
         // Wait 5 seconds
         await delay(5000)
-        const unpauseServiceResult = await testServiceContext.unpauseService(TEST_SERVICE_ID)
+        const unpauseServiceResult = await enclaveContext.unpauseService(TEST_SERVICE_ID)
         if(unpauseServiceResult.isErr()){
             log.error("An error occurred unpausing service.")
             throw(unpauseServiceResult.error)
@@ -56,9 +56,9 @@ test("Test service pause", async () => {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-function getContainerConfigSupplier(): (ipAddr:string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error> {
+function getContainerConfigSupplier(): (ipAddr:string) => Result<ContainerConfig, Error> {
 
-    const containerConfigSupplier = (ipAddr:string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
+    const containerConfigSupplier = (ipAddr:string): Result<ContainerConfig, Error> => {
 
         // We spam timestamps so that we can measure pausing processes (no more log output) and unpausing (log output resumes)
         const entrypointArgs = ["/bin/sh", "-c"]
