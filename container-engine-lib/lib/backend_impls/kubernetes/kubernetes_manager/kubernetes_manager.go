@@ -628,7 +628,7 @@ func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name
 	return serviceAccountResult, nil
 }
 
-func (manager *KubernetesManager) DeleteServiceAccount(ctx context.Context, name string, namespace string) error {
+func (manager *KubernetesManager) RemoveServiceAccount(ctx context.Context, name string, namespace string) error {
 	client := manager.kubernetesClientSet.CoreV1().ServiceAccounts(namespace)
 
 	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
@@ -659,7 +659,7 @@ func (manager *KubernetesManager) CreateRole(ctx context.Context, name string, n
 	return roleResult, nil
 }
 
-func (manager *KubernetesManager) DeleteRole(ctx context.Context, name string, namespace string) error {
+func (manager *KubernetesManager) RemoveRole(ctx context.Context, name string, namespace string) error {
 	client := manager.kubernetesClientSet.RbacV1().Roles(namespace)
 
 	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
@@ -689,7 +689,7 @@ func (manager *KubernetesManager) CrateRoleBindings(ctx context.Context, name st
 	return roleBindingResult, nil
 }
 
-func (manager *KubernetesManager) DeleteRoleBindings(ctx context.Context, name string, namespace string) error {
+func (manager *KubernetesManager) RemoveRoleBindings(ctx context.Context, name string, namespace string) error {
 	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
 
 	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
@@ -720,7 +720,7 @@ func (manager *KubernetesManager) CreateClusterRoles(ctx context.Context, name s
 	return clusterRoleResult, nil
 }
 
-func (manager *KubernetesManager) DeleteClusterRole(ctx context.Context, name string) error {
+func (manager *KubernetesManager) RemoveClusterRole(ctx context.Context, name string) error {
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
 
 	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
@@ -750,7 +750,7 @@ func (manager *KubernetesManager) CreateClusterRoleBindings(ctx context.Context,
 	return clusterRoleBindingResult, nil
 }
 
-func (manager *KubernetesManager) DeleteClusterRoleBindings(ctx context.Context, name string) error {
+func (manager *KubernetesManager) RemoveClusterRoleBindings(ctx context.Context, name string) error {
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
 
 	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
