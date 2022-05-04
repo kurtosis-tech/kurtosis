@@ -32,6 +32,7 @@ test("Test service pause", async () => {
 
         const testServiceContext = addServiceResult.value
         await delay(4000)
+        log.info("Pausing service.")
         // ------------------------------------- TEST RUN ----------------------------------------------
         const pauseServiceResult = await enclaveContext.pauseService(TEST_SERVICE_ID)
         if(pauseServiceResult.isErr()){
