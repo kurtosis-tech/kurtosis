@@ -117,6 +117,7 @@ type KurtosisBackend interface {
 		grpcPortNum uint16,
 		grpcProxyPortNum uint16,
 		enclaveDataDirpathOnHostMachine string, // TODO DELETE WHEN WE HAVE AN ENCLAVE DATA VOLUME!
+		enclaveDataVolumeDirpath string,
 		envVars map[string]string,
 	) (
 		*api_container.APIContainer,
