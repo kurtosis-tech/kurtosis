@@ -23,8 +23,8 @@ const ARCHIVE_TEST_CONTENT                  = "This file is for testing purposes
 const NUMBER_OF_TEMP_FILES_IN_SUBDIRECTORY      = 3
 const NUMBER_OF_TEMP_FILES_IN_ROOT_DIRECTORY    = 1
 
-const ENCLAVE_TEST_NAME                                = "upload-files-test"
-const IS_PARTITIONING_ENABLED                          = true
+const ENCLAVE_TEST_NAME         = "upload-files-test"
+const IS_PARTITIONING_ENABLED   = false
 
 const FILE_SERVER_SERVICE_IMAGE         = "flashspys/nginx-static"
 const FILE_SERVER_SERVICE_ID: ServiceID = "file-server"
@@ -33,14 +33,18 @@ const FILE_SERVER_PORT_ID               = "http"
 const WAIT_FOR_STARTUP_TIME_BETWEEN_POLLS = 500
 const WAIT_FOR_STARTUP_MAX_RETRIES        = 15
 const WAIT_INITIAL_DELAY_MILLISECONDS     = 0
+const WAIT_FOR_AVAILABILITY_BODY_TEXT     = ""
 
 //Keywords for mapping paths for file integrity checking.
 const DISK_DIR_KEYWORD                                  = "diskDir"
 const ARCHIVE_DIR_KEYWORD                               = "archiveDir"
 const SUB_DIR_KEYWORD                                   = "subDir"
-const SUB_FILE_PATTERN_KEYWORD                          = "subFile"
-const ARCHIVE_ROOT_FILE_PATTERN_KEYWORD                 = "archiveRootFile"
+const SUB_FILE_KEYWORD_PATTERN                          = "subFile"
+const ARCHIVE_ROOT_FILE_KEYWORD_PATTERN                 = "archiveRootFile"
 const USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT  = "/static"
+
+const FOLDER_PERMISSION = 755
+const FILE_PERMISSION   = 644
 
 const FILE_SERVER_PRIVATE_PORT_NUM      = 80
 const FILE_SERVER_PORT_SPEC             = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, PortProtocol.TCP )
@@ -57,7 +61,6 @@ async function TestUploadFiles() {
     const createEnclaveResult = await createEnclave(ENCLAVE_TEST_NAME, IS_PARTITIONING_ENABLED)
     if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
     const enclaveCtx = createEnclaveResult.value.enclaveContext
-
     try {
         const pathToUpload = allPaths.get(DISK_DIR_KEYWORD)
         if (typeof pathToUpload === "undefined") {throw new Error("Failed to store uploadable path in path map.")}
@@ -80,7 +83,7 @@ async function TestUploadFiles() {
 
         const fileServerPublicIp = serviceContext.getMaybePublicIPAddress();
         const fileServerPublicPortNum = publicPort.number
-        const firstRootFilename = `${allPaths.get(ARCHIVE_DIR_KEYWORD)}/${ARCHIVE_ROOT_FILE_PATTERN_KEYWORD}0`
+        const firstRootFilename = `${allPaths.get(ARCHIVE_DIR_KEYWORD)}/${ARCHIVE_ROOT_FILE_KEYWORD_PATTERN}0`
 
         const waitForHttpGetEndpointAvailabilityResult = await enclaveCtx.waitForHttpGetEndpointAvailability(
             FILE_SERVER_SERVICE_ID,
@@ -89,7 +92,7 @@ async function TestUploadFiles() {
             WAIT_INITIAL_DELAY_MILLISECONDS,
             WAIT_FOR_STARTUP_MAX_RETRIES,
             WAIT_FOR_STARTUP_TIME_BETWEEN_POLLS,
-            ""
+            WAIT_FOR_AVAILABILITY_BODY_TEXT
         );
 
         if(waitForHttpGetEndpointAvailabilityResult.isErr()){
@@ -112,11 +115,11 @@ async function TestUploadFiles() {
 async function testAllContent(allPaths: Map<string,string>, ipAddress: string, portNum: number):
 Promise<Result<null, Error>>{
 
-    const rootDirTestResults = await  testDirectoryFiles(allPaths, ARCHIVE_ROOT_FILE_PATTERN_KEYWORD,
+    const rootDirTestResults = await  testDirectoryFiles(allPaths, ARCHIVE_ROOT_FILE_KEYWORD_PATTERN,
         NUMBER_OF_TEMP_FILES_IN_ROOT_DIRECTORY, ipAddress, portNum)
     if(rootDirTestResults.isErr()){ return err(rootDirTestResults.error) }
 
-    const subDirTestResults = await testDirectoryFiles(allPaths, SUB_FILE_PATTERN_KEYWORD,
+    const subDirTestResults = await testDirectoryFiles(allPaths, SUB_FILE_KEYWORD_PATTERN,
         NUMBER_OF_TEMP_FILES_IN_SUBDIRECTORY, ipAddress, portNum)
     if (subDirTestResults.isErr()){ return err(subDirTestResults.error) }
 
@@ -124,8 +127,13 @@ Promise<Result<null, Error>>{
 }
 
 //Cycle through a directory and check the file contents.
-async function testDirectoryFiles(allPaths: Map<string, string>, keywordPattern: string, fileCount: number,
-ipAddress: string, portNum: number): Promise<Result<null, Error>> {
+async function testDirectoryFiles(
+    allPaths: Map<string, string>,
+    keywordPattern: string,
+    fileCount: number,
+    ipAddress: string,
+    portNum: number
+): Promise<Result<null, Error>> {
 
     for(let i = 0; i < fileCount; i++){
         let fileKeyword = `${keywordPattern}${i}`
@@ -162,7 +170,7 @@ async function createTestFiles(directory : string, fileCount : number): Promise<
         filenames.push(filename)
         try {
             await filesystem.promises.writeFile(fullFilepath, ARCHIVE_TEST_CONTENT)
-            await filesystem.promises.chmod(fullFilepath, 655)
+            await filesystem.promises.chmod(fullFilepath, FILE_PERMISSION)
         } catch {
             return err(new Error(`Failed to create a test file at '${fullFilepath}'.`))
         }
@@ -191,8 +199,8 @@ async function createTestFolderToUpload(): Promise<Result<Map<string,string>, Er
 
     //Set folder permissions.
     try {
-        await filesystem.promises.chmod(tempDirectoryResult.value, 744) //baseDirectory
-        await filesystem.promises.chmod(subDirectoryResult.value, 744) //subdirectory
+        await filesystem.promises.chmod(tempDirectoryResult.value, FOLDER_PERMISSION) //baseDirectory
+        await filesystem.promises.chmod(subDirectoryResult.value, FOLDER_PERMISSION) //subdirectory
     } catch {
         return err(new Error("Could not set permissions for root directory or subdirectories while creating test files."))
     }
@@ -210,14 +218,14 @@ async function createTestFolderToUpload(): Promise<Result<Map<string,string>, Er
     for(let i = 0; i < subDirFilenames.length; i++){
         let basename = path.basename(tempDirectoryResult.value)
         let relativeSubFile = `${rootDir}/${subDir}/${basename}`
-        let keyword = `${SUB_FILE_PATTERN_KEYWORD}${i}`
+        let keyword = `${SUB_FILE_KEYWORD_PATTERN}${i}`
         allPaths.set(keyword, relativeSubFile)
     }
 
     for(let i = 0; i < rootFilenames.length; i++){
         let basename = path.basename(tempDirectoryResult.value)
         let relativeRootFile = `${rootDir}/${basename}`
-        let keyword = `${ARCHIVE_ROOT_FILE_PATTERN_KEYWORD}${i}`
+        let keyword = `${ARCHIVE_ROOT_FILE_KEYWORD_PATTERN}${i}`
         allPaths.set(keyword, relativeRootFile)
     }
 
