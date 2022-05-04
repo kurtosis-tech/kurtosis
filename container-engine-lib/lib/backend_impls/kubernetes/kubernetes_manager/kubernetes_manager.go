@@ -730,7 +730,7 @@ func (manager *KubernetesManager) DeleteClusterRole(ctx context.Context, name st
 	return nil
 }
 
-func (manager *KubernetesManager) CrateClusterRoleBindings(ctx context.Context, name string, subjects []rbacv1.Subject, roleRef rbacv1.RoleRef, labels map[string]string) (*rbacv1.ClusterRoleBinding, error) {
+func (manager *KubernetesManager) CreateClusterRoleBindings(ctx context.Context, name string, subjects []rbacv1.Subject, roleRef rbacv1.RoleRef, labels map[string]string) (*rbacv1.ClusterRoleBinding, error) {
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
 
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
@@ -750,7 +750,7 @@ func (manager *KubernetesManager) CrateClusterRoleBindings(ctx context.Context, 
 	return clusterRoleBindingResult, nil
 }
 
-func (manager *KubernetesManager) DeleteClusterRoleBinding(ctx context.Context, name string) error {
+func (manager *KubernetesManager) DeleteClusterRoleBindings(ctx context.Context, name string) error {
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
 
 	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
