@@ -1,7 +1,9 @@
 # TBD
-
 ### Features
 * Added `uploadFiles` tests for typescript and go clients.
+
+### Fixes
+* Fixed `uploadFiles` typescript test.
 
 # 0.15.0
 ### Features
