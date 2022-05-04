@@ -31,7 +31,7 @@ const (
 )
 
 type KubernetesEnclaveObjectAttributesProvider interface {
-	ForEnclaveNamespace() (KubernetesObjectAttributes, error)
+	ForEnclaveNamespace(isPartitioningEnabled bool) (KubernetesObjectAttributes, error)
 }
 
 // Private so it can't be instantiated
@@ -45,6 +45,10 @@ func newKubernetesEnclaveObjectAttributesProviderImpl(
 	return &kubernetesEnclaveObjectAttributesProviderImpl{
 		enclaveId: enclaveId,
 	}
+}
+
+func GetKubernetesEnclaveObjectAttributesProvider(enclaveId string) KubernetesEnclaveObjectAttributesProvider {
+	return newKubernetesEnclaveObjectAttributesProviderImpl(enclaveId)
 }
 
 

@@ -38,11 +38,27 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	}
 
 	// Make Enclave attributes provider
-	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave()
+	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(string(enclaveId))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to generate an object attributes provider for the enclave with ID '%v'", enclaveId)
+	}
 
-	// TODO TODO TODO REPLACE THIS WITH NAME LABELS AND ANNOTATIONS FROM ATTRIBUTES PROVIDER
-	namespaceLabels := map[string]string{}
-	_, err = backend.kubernetesManager.CreateNamespace(ctx, namespaceName, namespaceLabels)
+	enclaveNamespaceAttrs, err := enclaveObjAttrsProvider.ForEnclaveNamespace(isPartitioningEnabled)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave network attributes for the enclave with ID '%v'", enclaveId)
+	}
+
+	enclaveNamespaceName := enclaveNamespaceAttrs.GetName().GetString()
+	enclaveNamespaceLabels := enclaveNamespaceAttrs.GetLabels()
+
+	enclaveNamespaceLabelMap := map[string]string{}
+	for kubernetesLabelKey, kubernetesLabelValue := range enclaveNamespaceLabels {
+		enclaveNamespaceLabelKey := kubernetesLabelKey.GetString()
+		enclaveNamespaceValue := kubernetesLabelValue.GetString()
+		enclaveNamespaceLabelMap[enclaveNamespaceLabelKey] = enclaveNamespaceValue
+	}
+
+	_, err = backend.kubernetesManager.CreateNamespace(ctx, enclaveNamespaceName, enclaveNamespaceLabelMap)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create namespace with name '%v'", namespaceName)
 	}
