@@ -48,7 +48,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	err = kurtosisBackend.PauseService(ctx, enclaveId, guid)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occured trying to pause service '%v' in enclave '%v'", enclaveId, guid)
+		return stacktrace.Propagate(err, "An error occurred trying to pause service '%v' in enclave '%v'", guid, enclaveId)
 	}
 	return nil
 }
