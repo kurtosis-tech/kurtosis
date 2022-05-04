@@ -2,6 +2,7 @@ package pause
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
@@ -76,5 +77,6 @@ func run(ctx context.Context,
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred trying to pause service '%v' in enclave '%v'", serviceId, enclaveId)
 	}
+	fmt.Println(fmt.Sprintf("Paused service '%v' in enclave '%v'", serviceId, enclaveId))
 	return nil
 }
