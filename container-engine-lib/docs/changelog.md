@@ -1,9 +1,15 @@
 # TBD
+
+# 0.17.0
 ### Features
 * Added `PauseService` and `UnpauseService` to `KurtosisBackend`
 * Added docker implementation of `PauseService` and `UnpauseService`
-* Added kubernetes implementation of engine functions in kubernetes backend
+* Added Kubernetes implementation of engine functions in kubernetes backend
 * Added `ServiceAccounts`, `Roles`, `RoleBindings`, `ClusterRole`, and `ClusterRoleBindings` create and remove methods to `KurtosisManager`
+
+### Breaking Changes
+* Added an extra `enclaveDataVolumeDirpath` to `KurtosisBackend.CreateAPIContainer`
+    * Users should pass in the location where the enclave data volume should be mounted
 
 # 0.16.0
 ### Removals
