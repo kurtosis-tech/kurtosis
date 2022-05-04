@@ -3,6 +3,7 @@ package kubernetes_annotation_key
 import (
 	"github.com/kurtosis-tech/stacktrace"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"strings"
 )
 
 // Represents a Kubernetes label ney that is guaranteed to be valid for Kubernetes
@@ -34,9 +35,8 @@ func (key *KubernetesAnnotationKey) GetString() string {
 func validateAnnotationKey(str string) error {
 	validationErrs := validation.IsQualifiedName(str)
 	if len(validationErrs) > 0 {
-		// TODO pretty up printing of errors
-		// return err
-		return stacktrace.NewError("Expected string '%v' to be a valid kubernetes annotation key, instead it failed validation:\n%+v", str, validationErrs)
+		errString := strings.Join(validationErrs, "\n\n")
+		return stacktrace.NewError("Expected string '%v' to be a valid kubernetes annotation key, instead it failed validation:\n%+v", str, errString)
 	}
 	return nil
 

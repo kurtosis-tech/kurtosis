@@ -3,6 +3,7 @@ package kubernetes_object_name
 import (
 	"github.com/kurtosis-tech/stacktrace"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"strings"
 )
 
 // Represents a Kubernetes label that is guaranteed to be valid for the kubernetes cluster
@@ -34,12 +35,14 @@ func (key *KubernetesObjectName) GetString() string {
 
 // https://github.com/kubernetes/design-proposals-archive/blob/main/architecture/identifiers.md
 // In kubernetes, to create an object you must specify a 'name' that is a DNS_LABEL, following rfc1123
+// Most object names are valid rfc1123 DNS_SUBDOMAIN, but some are not. All Object names are valid DNS_LABEL
+// We chose DNS_LABEL, to ensure that our object names will always be valid in kubernetes
+// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
 func validateKubernetesObjectName(str string) error {
 	validationErrs := validation.IsDNS1123Label(str)
 	if len(validationErrs) > 0 {
-		// TODO pretty up printing of errors
-		// return err
-		return stacktrace.NewError("Expected object name string '%v' to be a valid DNS_LABEL, instead it failed validation:\n%+v", str, validationErrs)
+		errString := strings.Join(validationErrs, "\n\n")
+		return stacktrace.NewError("Expected object name string '%v' to be a valid DNS_LABEL, instead it failed validation:\n%+v", str, errString)
 	}
 	return nil
 }

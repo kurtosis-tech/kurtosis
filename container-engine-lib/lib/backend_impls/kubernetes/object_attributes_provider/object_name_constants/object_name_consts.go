@@ -5,13 +5,6 @@ import (
 )
 
 const (
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// If these value change, it will lead to the Kurtosis engine losing track of old containers
-	//  which will cause a resource leak on the user's system!
-	//
-	//   If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
-	//
-
 	// The name of the GRPC ports exposed in services
 	kurtosisInternalContainerGrpcPortId = "grpc"
 
@@ -20,11 +13,5 @@ const (
 	kurtosisInternalContainerGrpcProxyPortId = "grpc-proxy"
 )
 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// If these value change, it will lead to the Kurtosis engine losing track of old containers
-//  which will cause a resource leak on the user's system!
-//
-//   If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
-//
 var KurtosisInternalContainerGrpcPortName = kubernetes_object_name.MustCreateNewKubernetesObjectName(kurtosisInternalContainerGrpcPortId)
 var KurtosisInternalContainerGrpcProxyPortName = kubernetes_object_name.MustCreateNewKubernetesObjectName(kurtosisInternalContainerGrpcProxyPortId)
