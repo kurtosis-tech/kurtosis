@@ -42,7 +42,7 @@ test("Test service pause", async () => {
             throw(pauseServiceResult.error)
 
         }
-        // Wait 5 seconds
+
         await delay(DELAY_BETWEEN_COMMANDS_IN_SECONDS * 1000)
         const unpauseServiceResult = await enclaveContext.unpauseService(TEST_SERVICE_ID)
         if(unpauseServiceResult.isErr()){
