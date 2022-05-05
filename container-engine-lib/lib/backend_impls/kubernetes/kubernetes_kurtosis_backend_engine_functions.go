@@ -266,17 +266,11 @@ func (backend *KubernetesKurtosisBackend) StopEngines(
 	erroredEngineIds := map[string]error{}
 	for engineNamespace, engineServices := range matchingEnginesByNamespaceAndServiceName {
 		for engineServiceName, engine := range engineServices {
-			engineAttributesProvider, err := backend.objAttrsProvider.ForEngine(engine.GetID())
+			enginePod, err := backend.getEnginePod(ctx, engine.GetID(), engineNamespace)
 			if err != nil {
-				return nil, nil, stacktrace.Propagate(err, "Expected to be able to get a kubernetes attributes provider for engine with id '%v', instead a non-nil error was returned", engine.GetID())
+				return nil, nil, stacktrace.Propagate(err, "An error occurred getting the engine pod for engine with ID '%v' in namespace '%v'", engine.GetID(), engineNamespace)
 			}
-
-			enginePodAttributesProvider, err := engineAttributesProvider.ForEnginePod()
-			if err != nil {
-				return nil, nil, stacktrace.Propagate(err, "Expected to be able to get a kubernetes pod attributes provider for engine with id '%v', instead a non-nil error was returned", engine.GetID())
-			}
-
-			engineServicesToEnginePodsMap[engineServiceName] = enginePodAttributesProvider.GetName().GetString()
+			engineServicesToEnginePodsMap[engineServiceName] = enginePod.GetName()
 		}
 		successfulServiceNames, erroredServiceNames := backend.removeEngineServiceSelectorsAndEnginePods(ctx, engineNamespace, engineServicesToEnginePodsMap)
 
@@ -340,27 +334,16 @@ func (backend *KubernetesKurtosisBackend) DestroyEngines(
 // Gets engines matching the search filters, indexed by their [namespace][service name]
 func (backend *KubernetesKurtosisBackend) getMatchingEngines(ctx context.Context, filters *engine.EngineFilters) (map[string]map[string]*engine.Engine, error) {
 	matchingEngines := map[string]map[string]*engine.Engine{}
-	engineMatchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString():        label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.ResourceTypeLabelKey.GetString(): label_value_consts.EngineResourceTypeLabelValue.GetString(),
-	}
 
-	for engineIdStr := range filters.IDs {
-		engineAttributesProvider, err := backend.objAttrsProvider.ForEngine(engineIdStr)
-		if err != nil {
-			return nil, stacktrace.Propagate(err,"An error occurred getting the engine attributes provider using id '%v'", engineIdStr)
-		}
+	engineMatchLabels := getEngineMatchLabels()
 
-		// Get Namespace Attributes
-		engineNamespaceAttributes, err := engineAttributesProvider.ForEngineNamespace()
+	for engineId := range filters.IDs {
+
+		engineNamespace, err := backend.getEngineNamespace(ctx, engineId)
 		if err != nil {
-			return nil, stacktrace.Propagate(
-				err,
-				"Expected to be able to get attributes for a kubernetes namespace for engine with  id '%v', instead got a non-nil error",
-				engineIdStr,
-			)
+			return nil, stacktrace.Propagate(err, "An error occurred getting the namespace for engine with ID '%v'", engineId)
 		}
-		engineNamespaceName := engineNamespaceAttributes.GetName().GetString()
+		engineNamespaceName := engineNamespace.GetName()
 
 		serviceList, err := backend.kubernetesManager.GetServicesByLabels(ctx, engineNamespaceName, engineMatchLabels)
 		if err != nil {
@@ -566,6 +549,81 @@ func (backend *KubernetesKurtosisBackend) removeEngineRoleBasedResources(ctx con
 	return successfulEngineIds, erroredEngineIds
 }
 
+func (backend *KubernetesKurtosisBackend) getEngineNamespace(ctx context.Context, engineId string) (*apiv1.Namespace, error) {
+
+	engineMatchLabels := getEngineMatchLabels()
+
+	namespaces, err := backend.kubernetesManager.GetNamespacesByLabels(ctx, engineMatchLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the engine namespace using labels '%+v'", engineMatchLabels)
+	}
+
+	filteredNamespaces := []*apiv1.Namespace{}
+
+	for _, foundNamespace := range namespaces.Items {
+		foundNamespaceLabels := foundNamespace.GetLabels()
+
+		foundEngineId, found := foundNamespaceLabels[label_key_consts.IDLabelKey.GetString()]
+		if !found {
+			return nil, stacktrace.NewError("Expected to find ID label key '%v' but none was found", label_key_consts.IDLabelKey.GetString())
+		}
+
+		if engineId == foundEngineId {
+			filteredNamespaces = append(filteredNamespaces, &foundNamespace)
+		}
+	}
+	numOfNamespaces := len(filteredNamespaces)
+	if numOfNamespaces == 0 {
+		return nil, stacktrace.NewError("No namespace matching labels '%+v' was found", engineMatchLabels)
+	}
+	if numOfNamespaces > 1 {
+		return nil, stacktrace.NewError("Expected to find only one engine namespace for engine ID '%v', but '%v' was found; this is a bug in Kurtosis", engineId, numOfNamespaces)
+	}
+
+	resultNamespace := filteredNamespaces[0]
+
+	return resultNamespace, nil
+}
+
+// The current Kurtosis Kubernetes architecture defines only one pod for Engine
+// This method should be refactored if the architecture changes, and we decide to use replicas for the Engine
+func (backend *KubernetesKurtosisBackend) getEnginePod(ctx context.Context, engineId string, namespace string) (*apiv1.Pod, error) {
+
+	engineMatchLabels := getEngineMatchLabels()
+
+	pods, err := backend.kubernetesManager.GetPodsByLabels(ctx, namespace, engineMatchLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the engine pod in namespace '%v' using labels '%+v' ", namespace, engineMatchLabels)
+	}
+
+	filteredPods := []*apiv1.Pod{}
+
+	for _, foundPod := range pods.Items {
+		foundPodLabels := foundPod.GetLabels()
+
+		foundEngineId, found := foundPodLabels[label_key_consts.IDLabelKey.GetString()]
+		if !found {
+			return nil, stacktrace.NewError("Expected to find ID label key '%v' but none was found", label_key_consts.IDLabelKey.GetString())
+		}
+
+		if engineId == foundEngineId {
+			filteredPods = append(filteredPods, &foundPod)
+		}
+	}
+	numOfPods := len(filteredPods)
+	if numOfPods == 0 {
+		return nil, stacktrace.NewError("No pods matching labels '%+v' was found", engineMatchLabels)
+	}
+	//We are not using replicas for Kurtosis engines
+	if numOfPods > 1 {
+		return nil, stacktrace.NewError("Expected to find only one engine pod for engine ID '%v', but '%v' was found; this is a bug in Kurtosis", engineId, numOfPods)
+	}
+
+	resultPod := filteredPods[0]
+
+	return resultPod, nil
+}
+
 func getEngineServiceAccountNameAndLabels(engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider) (resultEngineServiceAccountName string, resultEngineServiceAccountLabels map[string]string, resultErr error) {
 	serviceAccountAttributes, err := engineAttributesProvider.ForEngineServiceAccount()
 	if err != nil {
@@ -610,6 +668,8 @@ func getEngineClusterRoleBindingsNameAndLabels(engineAttributesProvider object_a
 
 	return clusterRoleBindingsName, clusterRoleBindingsLabels, nil
 }
+
+
 
 /*
 func (backend *KubernetesKurtosisBackend) destroyEngineResources(ctx context.Context, engineId string) {
@@ -745,4 +805,12 @@ func getPublicPortSpecFromServicePort(servicePort apiv1.ServicePort, portProtoco
 	}
 
 	return publicGrpcPort, nil
+}
+
+func getEngineMatchLabels() map[string]string {
+	engineMatchLabels := map[string]string{
+		label_key_consts.AppIDLabelKey.GetString():        label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.ResourceTypeLabelKey.GetString(): label_value_consts.EngineResourceTypeLabelValue.GetString(),
+	}
+	return engineMatchLabels
 }
