@@ -9,8 +9,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service/add"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service/logs"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service/pause"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service/rm"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service/shell"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service/unpause"
 	"github.com/spf13/cobra"
 )
 
@@ -25,4 +27,6 @@ func init() {
 	ServiceCmd.AddCommand(logs.LogsCmd)
 	ServiceCmd.AddCommand(rm.ServiceRmCmd.MustGetCobraCommand())
 	ServiceCmd.AddCommand(shell.ShellCmd)
+	ServiceCmd.AddCommand(pause.PauseCmd.MustGetCobraCommand())
+	ServiceCmd.AddCommand(unpause.UnpauseCmd.MustGetCobraCommand())
 }
