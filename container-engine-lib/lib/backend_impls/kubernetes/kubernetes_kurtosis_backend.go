@@ -58,26 +58,6 @@ func (backend *KubernetesKurtosisBackend) DestroyEnclaves(ctx context.Context, f
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
-	ctx context.Context,
-	image string,
-	enclaveId enclave.EnclaveID,
-	ipAddr net.IP,
-	grpcPortNum uint16,
-	grpcProxyPortNum uint16,
-	enclaveDataDirpathOnHostMachine string,
-	enclaveDataVolumeDirpath string,
-	envVars map[string]string,
-) (*api_container.APIContainer, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) GetAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[enclave.EnclaveID]*api_container.APIContainer, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (backend *KubernetesKurtosisBackend) StopAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveID]bool, erroredApiContainerIds map[enclave.EnclaveID]error, resultErr error) {
 	//TODO implement me
 	panic("implement me")

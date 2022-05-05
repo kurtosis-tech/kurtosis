@@ -17,12 +17,6 @@ import (
 
 const (
 	engineNamePrefix                = "kurtosis-engine"
-	enginePodNameSuffix             = "pod"
-	engineServiceNameSuffix         = "service"
-	engineNamespaceSuffix           = "namespace"
-	engineServiceAccountSuffix      = "service-account"
-	engineClusterRoleSuffix         = "cluster-role"
-	engineClusterRoleBindingsSuffix = "cluster-role-bindings"
 )
 
 type KubernetesEngineObjectAttributesProvider interface {
@@ -60,7 +54,7 @@ func newKubernetesEngineObjectAttributesProviderImpl(
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEnginePod() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(enginePodNameSuffix, []string{})
+	nameStr := provider.getEngineObjectNameString(podNameSuffix, []string{})
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
@@ -72,8 +66,8 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEnginePod() (Ku
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.ResourceTypeLabelKey: label_value_consts.EngineResourceTypeLabelValue,
-		label_key_consts.IDLabelKey:           idLabelValue,
+		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.EngineResourceTypeLabelValue,
+		label_key_consts.IDLabelKey:                   idLabelValue,
 	}
 
 	// No custom annotations for engine pod
@@ -92,7 +86,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 	grpcProxyPortId string,
 	grpcProxyPortSpec *port_spec.PortSpec,
 ) (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(engineServiceNameSuffix, []string{})
+	nameStr := provider.getEngineObjectNameString(serviceNameSuffix, []string{})
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a name for our engine service")
@@ -104,8 +98,8 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.ResourceTypeLabelKey: label_value_consts.EngineResourceTypeLabelValue,
-		label_key_consts.IDLabelKey:           idLabelValue,
+		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.EngineResourceTypeLabelValue,
+		label_key_consts.IDLabelKey:                   idLabelValue,
 	}
 
 	usedPorts := map[string]*port_spec.PortSpec{
@@ -131,7 +125,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineNamespace() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(engineNamespaceSuffix, []string{})
+	nameStr := provider.getEngineObjectNameString(namespaceSuffix, []string{})
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
@@ -143,8 +137,8 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineNamespace
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.ResourceTypeLabelKey: label_value_consts.EngineResourceTypeLabelValue,
-		label_key_consts.IDLabelKey:           idLabelValue,
+		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.EngineResourceTypeLabelValue,
+		label_key_consts.IDLabelKey:                   idLabelValue,
 	}
 
 	// No custom annotations for engine namespace
@@ -159,7 +153,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineNamespace
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineServiceAccount() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(engineServiceAccountSuffix, []string{})
+	nameStr := provider.getEngineObjectNameString(serviceAccountSuffix, []string{})
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
@@ -171,8 +165,8 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineServiceAc
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.ResourceTypeLabelKey: label_value_consts.EngineResourceTypeLabelValue,
-		label_key_consts.IDLabelKey:           idLabelValue,
+		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.EngineResourceTypeLabelValue,
+		label_key_consts.IDLabelKey:                   idLabelValue,
 	}
 
 	// No custom annotations for engine service account
@@ -187,7 +181,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineServiceAc
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRole() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(engineClusterRoleSuffix, []string{})
+	nameStr := provider.getEngineObjectNameString(clusterRoleSuffix, []string{})
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
@@ -199,8 +193,8 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRo
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.ResourceTypeLabelKey: label_value_consts.EngineResourceTypeLabelValue,
-		label_key_consts.IDLabelKey:           idLabelValue,
+		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.EngineResourceTypeLabelValue,
+		label_key_consts.IDLabelKey:                   idLabelValue,
 	}
 
 	// No custom annotations for engine cluster role
@@ -215,7 +209,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRo
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRoleBindings(engineServiceAccountName string, engineClusterRoleName string) (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(engineClusterRoleBindingsSuffix, []string{engineServiceAccountName, engineClusterRoleName})
+	nameStr := provider.getEngineObjectNameString(clusterRoleBindingsSuffix, []string{engineServiceAccountName, engineClusterRoleName})
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
@@ -227,8 +221,8 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRo
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.ResourceTypeLabelKey: label_value_consts.EngineResourceTypeLabelValue,
-		label_key_consts.IDLabelKey:           idLabelValue,
+		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.EngineResourceTypeLabelValue,
+		label_key_consts.IDLabelKey:                   idLabelValue,
 	}
 
 	// No custom annotations for engine cluster role bindings
@@ -250,8 +244,8 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) GetEngineSelectorL
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.ResourceTypeLabelKey: label_value_consts.EngineResourceTypeLabelValue,
-		label_key_consts.IDLabelKey:           idLabelValue,
+		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.EngineResourceTypeLabelValue,
+		label_key_consts.IDLabelKey:                   idLabelValue,
 	}
 
 	return labels, nil

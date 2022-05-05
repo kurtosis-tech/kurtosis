@@ -341,8 +341,8 @@ func (backend *KubernetesKurtosisBackend) DestroyEngines(
 func (backend *KubernetesKurtosisBackend) getMatchingEngines(ctx context.Context, filters *engine.EngineFilters) (map[string]map[string]*engine.Engine, error) {
 	matchingEngines := map[string]map[string]*engine.Engine{}
 	engineMatchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString():        label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.ResourceTypeLabelKey.GetString(): label_value_consts.EngineResourceTypeLabelValue.GetString(),
+		label_key_consts.AppIDLabelKey.GetString():                label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.KurtosisResourceTypeLabelKey.GetString(): label_value_consts.EngineResourceTypeLabelValue.GetString(),
 	}
 
 	for engineIdStr := range filters.IDs {
