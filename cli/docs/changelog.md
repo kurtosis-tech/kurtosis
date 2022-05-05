@@ -1,4 +1,6 @@
 # TBD
+
+# 0.15.1
 ### Features
 * Added `service pause` and `service unpause` to CLI
 * Added E2E tests for pause and unpause for both Golang and Typescript
