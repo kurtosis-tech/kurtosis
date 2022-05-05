@@ -30,7 +30,7 @@ const (
 var UnpauseCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.ServiceUnpauseCmdStr,
 	ShortDescription:          "Unpauses all processes running in a service.",
-	LongDescription:           "Unpauses all processes running in a service. Only available in docker-backed Kurtosis.",
+	LongDescription:           "Unpauses all processes running in a service. Only available in Docker-backed Kurtosis.",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
 	Args: []*args.ArgConfig{

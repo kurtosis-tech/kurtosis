@@ -30,7 +30,7 @@ const (
 var PauseCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.ServicePauseCmdStr,
 	ShortDescription:          "Pauses all processes running in a service.",
-	LongDescription:           "Pauses all processes running in a service. Only available in docker-backed Kurtosis.",
+	LongDescription:           "Pauses all processes running in a service. Only available in Docker-backed Kurtosis.",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
 	Args: []*args.ArgConfig{

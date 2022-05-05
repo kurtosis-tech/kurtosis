@@ -19,8 +19,8 @@ const (
 	pauseUnpauseTestImageName         = "alpine:3.12.4"
 	testServiceId                     = "test"
 	testLogFilepath                   = "/time.log"
-	sleepTimeBetweenCommandsInSeconds = 3
-	minimumGap                        = 2
+	sleepTimeBetweenCommandsInSeconds = 4
+	minimumGap                        = 3
 )
 
 func TestPauseUnpause(t *testing.T) {
@@ -40,8 +40,9 @@ func TestPauseUnpause(t *testing.T) {
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	// pause/unpause using servicectx
 	err = enclaveCtx.PauseService(serviceCtx.GetServiceID())
-	logrus.Infof("Paused service!")
 	require.NoError(t, err, "An error occurred pausing")
+	logrus.Infof("Paused service!")
+
 	time.Sleep(sleepTimeBetweenCommandsInSeconds * time.Second)
 	err = enclaveCtx.UnpauseService(serviceCtx.GetServiceID())
 	require.NoError(t, err, "An error occurred unpausing")
@@ -54,9 +55,9 @@ func TestPauseUnpause(t *testing.T) {
 	for i, line := range secondCounter {
 		if i > 0 {
 			currentSecondCount, err := strconv.Atoi(line)
-			require.NoError(t, err, "An error occurred converting seconds to int.")
+			require.NoError(t, err, "An error occurred converting seconds to int for string %v.", line)
 			previousSecondCount, err := strconv.Atoi(secondCounter[i-1])
-			require.NoError(t, err, "An error occurred converting seconds to int.")
+			require.NoError(t, err, "An error occurred converting seconds to int for string %v.", line)
 			if currentSecondCount-previousSecondCount > minimumGap {
 				foundGap = true
 			}
