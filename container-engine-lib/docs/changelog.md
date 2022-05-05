@@ -1,6 +1,7 @@
 # TBD
 ### Features
 * Added `ServiceAccounts`, `Roles`, `RoleBindings`, `ClusterRole`, and `ClusterRoleBindings` create and remove methods to `KurtosisManager`
+* Added `CreateEnclave` functionality to kubernetes backend
 
 # 0.17.0
 ### Features
