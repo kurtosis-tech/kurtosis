@@ -71,6 +71,7 @@ test("Test service pause", async () => {
                 log.info("Seconds: " + currentSeconds)
             }
         }
+
         if(!foundGap) {
             throw new Error("Failed to find a >" + MINIMUM_GAP_REQUIREMENT_IN_SECONDS + " second gap in second-ticker, which was expected given service should have been paused.")
         }
