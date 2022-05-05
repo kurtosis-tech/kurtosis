@@ -6,6 +6,10 @@
 ### Changes
 * Upgraded `kurtosis core lib` to 1.45.4 which adds `EnclaveContext.PauseService` and `EnclaveContext.UnpauseService`
 * Upgraded `kurtosis engine lib` to 1.17.4
+* Added `uploadFiles` tests for typescript and go clients.
+
+### Fixes
+* Fixed `uploadFiles` typescript test.
 
 # 0.15.0
 ### Features
