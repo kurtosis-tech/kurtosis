@@ -394,7 +394,7 @@ func (network *ServiceNetworkImpl) PauseService(
 	runInfo, found := network.serviceRunInfo[serviceId]
 	if !found {
 		return stacktrace.NewError(
-			"Could not run pause service on service '%v'; no container has been created for the service yet",
+			"Could not run pause service on service '%v'; service does not exist or no container has been created for the service yet",
 			serviceId)
 	}
 	if network.pausedServices[serviceId] {
@@ -421,7 +421,7 @@ func (network *ServiceNetworkImpl) UnpauseService(
 	runInfo, found := network.serviceRunInfo[serviceId]
 	if !found {
 		return stacktrace.NewError(
-			"Could not run unpause service on service '%v'; no container has been created for the service yet",
+			"Could not run unpause service on service '%v'; service does not exist or no container has been created for the service yet",
 			serviceId)
 	}
 	if !network.pausedServices[serviceId] {
