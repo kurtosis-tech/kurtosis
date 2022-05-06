@@ -21,8 +21,18 @@ const (
 )
 
 type KubernetesApiContainerObjectAttributesProvider interface {
-	ForApiContainerService(privateGrpcPortId string, privateGrpcPortSpec *port_spec.PortSpec) (KubernetesObjectAttributes, error)
+	ForApiContainerPod() (KubernetesObjectAttributes, error)
+	ForApiContainerService(
+		privateGrpcPortId string,
+		privateGrpcPortSpec *port_spec.PortSpec,
+		privateGrpcProxyPortId string,
+		privateGrpcProxyPortSpec *port_spec.PortSpec) (KubernetesObjectAttributes, error)
 	ForApiContainerNamespace() (KubernetesObjectAttributes, error)
+	ForApiContainerServiceAccount() (KubernetesObjectAttributes, error)
+	ForApiContainerRole() (KubernetesObjectAttributes, error)
+	ForApiContainerRoleBindings(
+		apiContainerServiceAccountName string,
+		apiContainerRoleName string) (KubernetesObjectAttributes, error)
 }
 
 // Private so it can't be instantiated
@@ -40,7 +50,41 @@ func newKubernetesApiContainerObjectAttributesProviderImpl(enclaveId enclave.Enc
 	}
 }
 
-func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContainerService(grpcPortId string, grpcPortSpec *port_spec.PortSpec) (KubernetesObjectAttributes, error) {
+func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContainerPod() (KubernetesObjectAttributes, error) {
+	nameStr := provider.getApiContainerObjectNameString(podNameSuffix, []string{})
+	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
+	}
+
+	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the enclave ID Kubernetes label from string '%v'", provider.enclaveId)
+	}
+
+	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
+		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.APIContainerContainerTypeLabelValue,
+		label_key_consts.EnclaveIDLabelKey:            enclaveIdLabelValue,
+	}
+
+	// No custom annotations for api container pod
+	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
+
+	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
+	if err != nil {
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name '%s' and labels '%+v', and annotations '%+v'", name, labels, annotations)
+	}
+
+	return objectAttributes, nil
+}
+
+func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContainerService(
+	grpcPortId string,
+	grpcPortSpec *port_spec.PortSpec,
+	grpcProxyPortId string,
+	grpcProxyPortSpec *port_spec.PortSpec,
+) (KubernetesObjectAttributes, error) {
+
 	nameStr := provider.getApiContainerObjectNameString(serviceNameSuffix, []string{})
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
@@ -59,6 +103,7 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContai
 
 	usedPorts := map[string]*port_spec.PortSpec{
 		grpcPortId:      grpcPortSpec,
+		grpcProxyPortId: grpcProxyPortSpec,
 	}
 	serializedPortsSpec, err := port_spec_serializer.SerializePortSpecs(usedPorts)
 	if err != nil {
@@ -105,6 +150,91 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContai
 
 	return objectAttributes, nil
 }
+
+func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContainerServiceAccount() (KubernetesObjectAttributes, error) {
+	nameStr := provider.getApiContainerObjectNameString(serviceAccountSuffix, []string{})
+	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
+	}
+
+	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the enclave ID Kubernetes label from string '%v'", provider.enclaveId)
+	}
+
+	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
+		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.APIContainerContainerTypeLabelValue,
+		label_key_consts.EnclaveIDLabelKey:            enclaveIdLabelValue,
+	}
+
+	// No custom annotations for api container service account
+	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
+
+	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
+	if err != nil {
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name '%s' and labels '%+v', and annotations '%+v'", name, labels, annotations)
+	}
+
+	return objectAttributes, nil
+}
+
+func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContainerRole() (KubernetesObjectAttributes, error) {
+	nameStr := provider.getApiContainerObjectNameString(roleSuffix, []string{})
+	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
+	}
+
+	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the enclave ID Kubernetes label from string '%v'", provider.enclaveId)
+	}
+
+	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
+		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.APIContainerContainerTypeLabelValue,
+		label_key_consts.EnclaveIDLabelKey:            enclaveIdLabelValue,
+	}
+
+	// No custom annotations for api container role
+	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
+
+	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
+	if err != nil {
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name '%s' and labels '%+v', and annotations '%+v'", name, labels, annotations)
+	}
+
+	return objectAttributes, nil
+}
+
+func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContainerRoleBindings(apiContainerServiceAccountName string, apiContainerRoleName string) (KubernetesObjectAttributes, error) {
+	nameStr := provider.getApiContainerObjectNameString(roleBindingsSuffix, []string{apiContainerServiceAccountName, apiContainerRoleName})
+	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
+	}
+
+	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the enclave ID Kubernetes label from string '%v'", provider.enclaveId)
+	}
+
+	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
+		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.APIContainerContainerTypeLabelValue,
+		label_key_consts.EnclaveIDLabelKey:            enclaveIdLabelValue,
+	}
+
+	// No custom annotations for api container role bindings
+	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
+
+	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
+	if err != nil {
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name '%s' and labels '%+v', and annotations '%+v'", name, labels, annotations)
+	}
+
+	return objectAttributes, nil
+}
+
 
 func (provider *kubernetesApiContainerObjectAttributesProviderImpl) getApiContainerObjectNameString(suffix string, elems []string) string {
 	toJoin := []string{

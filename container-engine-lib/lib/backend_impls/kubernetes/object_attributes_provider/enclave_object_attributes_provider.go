@@ -52,7 +52,6 @@ func GetKubernetesEnclaveObjectAttributesProvider(enclaveId enclave.EnclaveID) K
 	return newKubernetesEnclaveObjectAttributesProviderImpl(enclaveId)
 }
 
-
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespace(isPartitioningEnabled bool) (KubernetesObjectAttributes, error) {
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(provider.enclaveId)
 	if err != nil {

@@ -41,6 +41,11 @@ type KubernetesManager struct {
 	kubernetesClientSet *kubernetes.Clientset
 }
 
+//TODO remove remove remove, it's only for test
+func (manager *KubernetesManager) GetClients() *kubernetes.Clientset {
+	return manager.kubernetesClientSet
+}
+
 /*
 NewKubernetesManager
 Creates a new K8s manager for manipulating the k8s cluster using the given client.
@@ -67,7 +72,7 @@ Args:
 Returns:
 	id: The deployment ID
 */
-func (manager *KubernetesManager) CreateDeployment(ctx context.Context, namespace string, deploymentName string, deploymentLabels map[string]string, podLabels map[string]string, replicas int32, deploymentContainers []apiv1.Container, deploymentVolumes []apiv1.Volume) (*appsv1.Deployment, error) {
+func (manager *KubernetesManager) CreateDeployment(ctx context.Context, namespace string, deploymentName string, deploymentLabels map[string]string, podLabels map[string]string, replicas int32, deploymentContainers []apiv1.Container, deploymentVolumes []apiv1.Volume, podServiceAccountName string) (*appsv1.Deployment, error) {
 	deploymentsClient := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
 
 	objectMeta := metav1.ObjectMeta{
@@ -669,7 +674,7 @@ func (manager *KubernetesManager) RemoveRole(ctx context.Context, name string, n
 	return nil
 }
 
-func (manager *KubernetesManager) CrateRoleBindings(ctx context.Context, name string, namespace string, subjects []rbacv1.Subject, roleRef rbacv1.RoleRef, labels map[string]string) (*rbacv1.RoleBinding, error) {
+func (manager *KubernetesManager) CreateRoleBindings(ctx context.Context, name string, namespace string, subjects []rbacv1.Subject, roleRef rbacv1.RoleRef, labels map[string]string) (*rbacv1.RoleBinding, error) {
 	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
 
 	roleBinding := &rbacv1.RoleBinding{

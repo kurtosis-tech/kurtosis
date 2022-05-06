@@ -16,29 +16,12 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"net"
-	"strconv"
 	"time"
 )
 
 const (
-	// The ID of the GRPC port for Kurtosis-internal containers (e.g. API container, engine, modules, etc.) which will
-	//  be stored in the port spec label
-	kurtosisInternalContainerGrpcPortSpecId = "grpc"
-
-	// The ID of the GRPC proxy port for Kurtosis-internal containers. This is necessary because
-	// Typescript's grpc-web cannot communicate directly with GRPC ports, so Kurtosis-internal containers
-	// need a proxy  that will translate grpc-web requests before they hit the main GRPC server
-	kurtosisInternalContainerGrpcProxyPortSpecId = "grpcProxy"
-
-	// The engine server uses gRPC so MUST listen on TCP (no other protocols are supported), which also
-	// means that its grpc-proxy must listen on TCP
-	enginePortProtocol = port_spec.PortProtocol_TCP
-
-	externalServiceType = "ClusterIP"
-
-	// Engine container port number string parsing constants
-	publicPortNumStrParsingBase = 10
-	publicPortNumStrParsingBits = 16
+	kurtosisEngineContainerName = "kurtosis-engine-container"
+	externalServiceType         = "ClusterIP"
 )
 
 // ====================================================================================================
@@ -61,22 +44,22 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	containerStartTimeUnixSecs := time.Now().Unix()
 	engineIdStr := fmt.Sprintf("%v", containerStartTimeUnixSecs)
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, enginePortProtocol)
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, kurtosisServersPortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the engine's private grpc port spec object using number '%v' and protocol '%v'",
 			grpcPortNum,
-			enginePortProtocol.String(),
+			kurtosisServersPortProtocol.String(),
 		)
 	}
-	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, enginePortProtocol)
+	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, kurtosisServersPortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the engine's private grpc proxy port spec object using number '%v' and protocol '%v'",
 			grpcProxyPortNum,
-			enginePortProtocol.String(),
+			kurtosisServersPortProtocol.String(),
 		)
 	}
 	engineAttributesProvider, err := backend.objAttrsProvider.ForEngine(engineIdStr)
@@ -159,7 +142,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	}()
 
 	// Get Service Attributes
-	engineServiceAttributes, err := engineAttributesProvider.ForEngineService(kurtosisInternalContainerGrpcPortSpecId, privateGrpcPortSpec, kurtosisInternalContainerGrpcProxyPortSpecId, privateGrpcProxyPortSpec)
+	engineServiceAttributes, err := engineAttributesProvider.ForEngineService(object_name_constants.KurtosisInternalContainerGrpcPortName.GetString(), privateGrpcPortSpec, object_name_constants.KurtosisInternalContainerGrpcProxyPortName.GetString(), privateGrpcProxyPortSpec)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -215,7 +198,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 		return nil, stacktrace.NewError("Expected to be able to parse cluster IP from the kubernetes spec for service '%v', instead nil was parsed.", service.Name)
 	}
 
-	publicGrpcPort, publicGrpcProxyPort, err := getEngineGrpcPortSpecsFromServicePorts(service.Spec.Ports)
+	publicGrpcPort, publicGrpcProxyPort, err := getGrpcAndGrpcProxyPortSpecsFromServicePorts(service.Spec.Ports)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to determine kurtosis port specs from kubernetes service '%v', instead a non-nil err was returned", service.Name)
 	}
@@ -415,7 +398,7 @@ func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx con
 	}
 
 	if _, err = backend.kubernetesManager.CreateClusterRoles(ctx, clusterRoleName, clusterRolePolicyRules, clusterRoleLabels); err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred creating cluster role '%v' with policy rules '%+v' and labels '%+v' in namespace '%v'", clusterRoleName, clusterRolePolicyRules, clusterRoleLabels, namespace)
+		return "", nil, stacktrace.Propagate(err, "An error occurred creating cluster role '%v' with policy rules '%+v' and labels '%+v'", clusterRoleName, clusterRolePolicyRules, clusterRoleLabels)
 	}
 	shouldRemoveClusterRole := true
 	removeClusterRoleFunc := func() {
@@ -450,7 +433,7 @@ func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx con
 	}
 
 	if _, err := backend.kubernetesManager.CreateClusterRoleBindings(ctx, clusterRoleBindingsName, clusterRoleBindingsSubjects, clusterRoleBindingsRoleRef, clusterRoleBindingsLabels); err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred creating cluster role bindings '%v' with subjects '%+v' and role ref '%+v' in namespace '%v'", clusterRoleBindingsName, clusterRoleBindingsSubjects, clusterRoleBindingsRoleRef, namespace)
+		return "", nil, stacktrace.Propagate(err, "An error occurred creating cluster role bindings '%v' with subjects '%+v' and role ref '%+v'", clusterRoleBindingsName, clusterRoleBindingsSubjects, clusterRoleBindingsRoleRef)
 	}
 	shouldRemoveClusterRoleBindings := true
 	removeClusterRoleBindingsFunc := func() {
@@ -688,7 +671,7 @@ func getEngineObjectFromKubernetesService(service apiv1.Service) (*engine.Engine
 			return nil, stacktrace.NewError("Expected to be able to get the cluster ip of the engine service, instead parsing the cluster ip of service '%v' returned nil", service.Name)
 		}
 		var portSpecError error
-		publicGrpcPortSpec, publicGrpcProxyPortSpec, portSpecError = getEngineGrpcPortSpecsFromServicePorts(service.Spec.Ports)
+		publicGrpcPortSpec, publicGrpcProxyPortSpec, portSpecError = getGrpcAndGrpcProxyPortSpecsFromServicePorts(service.Spec.Ports)
 		if portSpecError != nil {
 			return nil, stacktrace.Propagate(portSpecError, "Expected to be able to determine engine grpc port specs from kubernetes service ports for engine '%v', instead a non-nil error was returned", engineId)
 		}
@@ -710,7 +693,6 @@ func getKurtosisStatusFromKubernetesService(service apiv1.Service) container_sta
 }
 
 func getEngineContainers(containerImageAndTag string, engineEnvVars map[string]string) (resultContainers []apiv1.Container, resultVolumes []apiv1.Volume) {
-	containerName := "kurtosis-engine-container"
 
 	var engineContainerEnvVars []apiv1.EnvVar
 	for varName, varValue := range engineEnvVars {
@@ -722,71 +704,13 @@ func getEngineContainers(containerImageAndTag string, engineEnvVars map[string]s
 	}
 	containers := []apiv1.Container{
 		{
-			Name:  containerName,
+			Name:  kurtosisEngineContainerName,
 			Image: containerImageAndTag,
 			Env:   engineContainerEnvVars,
 		},
 	}
 
 	return containers, nil
-}
-
-func getEngineGrpcPortSpecsFromServicePorts(servicePorts []apiv1.ServicePort) (resultGrpcPortSpec *port_spec.PortSpec, resultGrpcProxyPortSpec *port_spec.PortSpec, resultErr error) {
-	var publicGrpcPort *port_spec.PortSpec
-	var publicGrpcProxyPort *port_spec.PortSpec
-	grpcPortName := object_name_constants.KurtosisInternalContainerGrpcPortName.GetString()
-	grpcProxyPortName := object_name_constants.KurtosisInternalContainerGrpcProxyPortName.GetString()
-
-	for _, servicePort := range servicePorts {
-		servicePortName := servicePort.Name
-		switch servicePortName {
-		case grpcPortName:
-			{
-				publicGrpcPortSpec, err := getPublicPortSpecFromServicePort(servicePort, enginePortProtocol)
-				if err != nil {
-					return nil, nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing an engine's public grpc port from kubernetes service port '%v', instead a non nil error was returned", servicePortName)
-				}
-				publicGrpcPort = publicGrpcPortSpec
-			}
-		case grpcProxyPortName:
-			{
-				publicGrpcProxyPortSpec, err := getPublicPortSpecFromServicePort(servicePort, enginePortProtocol)
-				if err != nil {
-					return nil, nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing an engine's public grpc proxy port from kubernetes service port '%v', instead a non nil error was returned", servicePortName)
-				}
-				publicGrpcProxyPort = publicGrpcProxyPortSpec
-			}
-		}
-	}
-
-	if publicGrpcPort == nil || publicGrpcProxyPort == nil {
-		return nil, nil, stacktrace.NewError("Expected to get public port specs from kubernetes service ports, instead got a nil pointer")
-	}
-
-	return publicGrpcPort, publicGrpcProxyPort, nil
-
-}
-
-// getPublicPortSpecFromServicePort returns a port_spec representing a kurtosis port spec for a service port in kubernetes
-func getPublicPortSpecFromServicePort(servicePort apiv1.ServicePort, portProtocol port_spec.PortProtocol) (*port_spec.PortSpec, error) {
-	publicPortNumStr := strconv.FormatInt(int64(servicePort.Port), 10)
-	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, publicPortNumStrParsingBase, publicPortNumStrParsingBits)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred parsing engine server public port string '%v' using base '%v' and uint bits '%v'",
-			publicPortNumStr,
-			publicPortNumStrParsingBase,
-			publicPortNumStrParsingBits,
-		)
-	}
-	publicPortNum := uint16(publicPortNumUint64) // Safe to do because we pass the requisite number of bits into the parse command
-	publicGrpcPort, err := port_spec.NewPortSpec(publicPortNum, portProtocol)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a public port on a kubernetes node using number '%v' and protocol '%v', instead a non nil error was returned", publicPortNum, portProtocol)
-	}
-
-	return publicGrpcPort, nil
 }
 
 func getEngineMatchLabels() map[string]string {
