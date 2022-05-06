@@ -5,6 +5,9 @@
 * Added `ForEngineNamespace`, `ForEngineServiceAccount`, `ForEngineClusterRole` and `ForEngineClusterRoleBindings` to  `KubernetesEngineObjectAttributesProvider`
 * Updated `KubernetesBackend.CreateEngine` added the kubernetes role based resources creation and namespace creation process
 
+### Changes
+* Updated `KubernetesManager.CreatePod` added `serviceAccount` argument to set the pod's service account
+
 # 0.17.0
 ### Features
 * Added `PauseService` and `UnpauseService` to `KurtosisBackend`
