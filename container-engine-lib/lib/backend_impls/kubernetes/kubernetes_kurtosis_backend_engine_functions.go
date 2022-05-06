@@ -410,7 +410,7 @@ func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx con
 		{
 			Verbs: []string{consts.CreateKubernetesVerb, consts.UpdateKubernetesVerb, consts.PatchKubernetesVerb, consts.DeleteKubernetesVerb, consts.GetKubernetesVerb, consts.ListKubernetesVerb, consts.WatchKubernetesVerb},
 			APIGroups: []string{rbacv1.APIGroupAll},
-			Resources: []string{consts.NamespacesKubernetesResource, consts.DeploymentsKubernetesResource, consts.ServiceAccountsKubernetesResource, consts.RolesKubernetesResource, consts.RoleBindingsKubernetesResource, consts.PodsKubernetesResource},
+			Resources: []string{consts.NamespacesKubernetesResource, consts.ServiceAccountsKubernetesResource, consts.RolesKubernetesResource, consts.RoleBindingsKubernetesResource, consts.PodsKubernetesResource, consts.ServicesKubernetesResource, consts.PersistentVolumeClaimsKubernetesResource},
 		},
 	}
 

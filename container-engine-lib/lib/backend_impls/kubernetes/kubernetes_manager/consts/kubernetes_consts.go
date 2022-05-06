@@ -9,12 +9,13 @@ const (
 	ListKubernetesVerb   = "list"
 	WatchKubernetesVerb  = "watch"
 
-	NamespacesKubernetesResource      = "namespaces"
-	DeploymentsKubernetesResource     = "deployments"
-	ServiceAccountsKubernetesResource = "serviceaccounts"
-	RolesKubernetesResource           = "roles"
-	RoleBindingsKubernetesResource    = "rolebindings"
-	PodsKubernetesResource            = "pods"
+	NamespacesKubernetesResource             = "namespaces"
+	ServiceAccountsKubernetesResource        = "serviceaccounts"
+	RolesKubernetesResource                  = "roles"
+	RoleBindingsKubernetesResource           = "rolebindings"
+	PodsKubernetesResource                   = "pods"
+	ServicesKubernetesResource               = "services"
+	PersistentVolumeClaimsKubernetesResource = "persistentvolumeclaims"
 
 	ClusterRoleKubernetesResourceType = "ClusterRole"
 
