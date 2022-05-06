@@ -162,7 +162,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 			Port:     grpcProxyPortInt32,
 		},
 	}
-
+/*
 	// Create Service
 	service, err := backend.kubernetesManager.CreateService(ctx, engineNamespaceName, apiContainerServiceName, apiContainerServiceLabels, apiContainerServiceAnnotations, enginePodLabels, externalServiceType, servicePorts)
 	if err != nil {
@@ -199,12 +199,13 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		container_status.ContainerStatus_Running,
 		clusterIp, publicGrpcPort, publicGrpcProxyPort)
 
-	shouldRemoveNamespace = false
 	shouldRemovePod = false
 	shouldRemoveService = false
-	shouldRemoveAllEngineRoleBasedResources = false
+	shouldRemoveAllApiContainerRoleBasedResources = false
 	return resultEngine, nil
 
+ */
+	return nil
 }
 
 func (backend *KubernetesKurtosisBackend) GetAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[enclave.EnclaveID]*api_container.APIContainer, error) {
@@ -373,7 +374,7 @@ resultErr error,
 		}
 	}()
 
-	roleBindingsName, roleBindingsLabels, err := getApiContainerRoleBindingsNameAndLabels(apiContainerAttributesProvider, serviceAccountName, roleName)
+	roleBindingsName, roleBindingsLabels, err := getApiContainerRoleBindingsNameAndLabels(apiContainerAttributesProvider)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred getting api container role bindings name and labels")
 	}
@@ -450,8 +451,8 @@ func getApiContainerRoleNameAndLabels(apiContainerAttributesProvider object_attr
 	return roleName, roleLabels, nil
 }
 
-func getApiContainerRoleBindingsNameAndLabels(apiContainerAttributesProvider object_attributes_provider.KubernetesApiContainerObjectAttributesProvider, serviceAccountName string, roleName string) (resultApiContainerRoleBindingsName string, resultApiContainerRoleBindingsLabels map[string]string, resultErr error) {
-	roleBindingsAttributes, err := apiContainerAttributesProvider.ForApiContainerRoleBindings(serviceAccountName, roleName)
+func getApiContainerRoleBindingsNameAndLabels(apiContainerAttributesProvider object_attributes_provider.KubernetesApiContainerObjectAttributesProvider) (resultApiContainerRoleBindingsName string, resultApiContainerRoleBindingsLabels map[string]string, resultErr error) {
+	roleBindingsAttributes, err := apiContainerAttributesProvider.ForApiContainerRoleBindings()
 	if err != nil {
 		return "", nil, stacktrace.Propagate(
 			err,

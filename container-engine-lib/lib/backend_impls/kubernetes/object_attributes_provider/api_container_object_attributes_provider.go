@@ -30,9 +30,7 @@ type KubernetesApiContainerObjectAttributesProvider interface {
 	ForApiContainerNamespace() (KubernetesObjectAttributes, error)
 	ForApiContainerServiceAccount() (KubernetesObjectAttributes, error)
 	ForApiContainerRole() (KubernetesObjectAttributes, error)
-	ForApiContainerRoleBindings(
-		apiContainerServiceAccountName string,
-		apiContainerRoleName string) (KubernetesObjectAttributes, error)
+	ForApiContainerRoleBindings() (KubernetesObjectAttributes, error)
 }
 
 // Private so it can't be instantiated
@@ -207,8 +205,8 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContai
 	return objectAttributes, nil
 }
 
-func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContainerRoleBindings(apiContainerServiceAccountName string, apiContainerRoleName string) (KubernetesObjectAttributes, error) {
-	nameStr := provider.getApiContainerObjectNameString(roleBindingsSuffix, []string{apiContainerServiceAccountName, apiContainerRoleName})
+func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContainerRoleBindings() (KubernetesObjectAttributes, error) {
+	nameStr := provider.getApiContainerObjectNameString(roleBindingsSuffix, []string{})
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
