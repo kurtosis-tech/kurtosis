@@ -1,6 +1,6 @@
 # TBD
 ### Features
-* Added `ServiceAccounts`, `Roles`, `RoleBindings`, `ClusterRole`, and `ClusterRoleBindings` create and remove methods to `KurtosisManager`
+* Added `CreateEnclave` functionality to kubernetes backend
 * Added `ServiceAccounts`, `Roles`, `RoleBindings`, `ClusterRole`, and `ClusterRoleBindings` create and remove methods to `KurtosisManager`
 * Added `ForEngineNamespace`, `ForEngineServiceAccount`, `ForEngineClusterRole` and `ForEngineClusterRoleBindings` to  `KubernetesEngineObjectAttributesProvider`
 * Updated `KubernetesBackend.CreateEngine` added the kubernetes role based resources creation and namespace creation process

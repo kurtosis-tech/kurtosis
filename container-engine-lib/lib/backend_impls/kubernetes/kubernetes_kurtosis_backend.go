@@ -33,31 +33,6 @@ func (backend *KubernetesKurtosisBackend) PullImage(image string) error {
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateEnclave(ctx context.Context, enclaveId enclave.EnclaveID, isPartitioningEnabled bool) (*enclave.Enclave, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) GetEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (map[enclave.EnclaveID]*enclave.Enclave, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) StopEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (successfulEnclaveIds map[enclave.EnclaveID]bool, erroredEnclaveIds map[enclave.EnclaveID]error, resultErr error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, enclaveId enclave.EnclaveID, outputDirpath string) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) DestroyEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (successfulEnclaveIds map[enclave.EnclaveID]bool, erroredEnclaveIds map[enclave.EnclaveID]error, resultErr error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
 	image string,
