@@ -832,3 +832,8 @@ func (manager *KubernetesManager) GetNodePodRunsOn(ctx context.Context, namespac
 
 	return node, nil
 }
+
+func (manager *KubernetesManager) GetVolumesByLabels(ctx context.Context, searchLabels map[string]string) (interface{}, interface{}) {
+	//manager.GetVolumesByLabels(ctx, searchLabels)
+	panic("implement me")
+}
