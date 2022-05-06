@@ -39,7 +39,7 @@ type KubernetesEngineObjectAttributesProvider interface {
 
 	ForEngineClusterRole() (KubernetesObjectAttributes, error)
 
-	ForEngineClusterRoleBindings(engineServiceAccountName string, engineClusterRoleName string) (KubernetesObjectAttributes, error)
+	ForEngineClusterRoleBindings() (KubernetesObjectAttributes, error)
 }
 
 // Private so it can't be instantiated
@@ -214,8 +214,8 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRo
 	return objectAttributes, nil
 }
 
-func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRoleBindings(engineServiceAccountName string, engineClusterRoleName string) (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(engineClusterRoleBindingsSuffix, []string{engineServiceAccountName, engineClusterRoleName})
+func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRoleBindings() (KubernetesObjectAttributes, error) {
+	nameStr := provider.getEngineObjectNameString(engineClusterRoleBindingsSuffix, []string{})
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)

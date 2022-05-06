@@ -430,7 +430,7 @@ func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx con
 		}
 	}()
 
-	clusterRoleBindingsName, clusterRoleBindingsLabels, err := getEngineClusterRoleBindingsNameAndLabels(engineAttributesProvider, serviceAccountName, clusterRoleName)
+	clusterRoleBindingsName, clusterRoleBindingsLabels, err := getEngineClusterRoleBindingsNameAndLabels(engineAttributesProvider)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred getting engine cluster role bindings name and labels")
 	}
@@ -503,7 +503,7 @@ func (backend *KubernetesKurtosisBackend) removeEngineRoleBasedResources(ctx con
 			erroredEngineIds[engineIdStr] = wrapErr
 			continue
 		}
-		clusterRoleBindingsName, _, err := getEngineClusterRoleBindingsNameAndLabels(engineAttributesProvider, serviceAccountName, clusterRoleName)
+		clusterRoleBindingsName, _, err := getEngineClusterRoleBindingsNameAndLabels(engineAttributesProvider)
 		if err != nil {
 			wrapErr := stacktrace.Propagate(err, "An error occurred getting engine cluster role bindings name and labels")
 			erroredEngineIds[engineIdStr] = wrapErr
@@ -638,8 +638,8 @@ func getEngineClusterRoleNameAndLabels(engineAttributesProvider object_attribute
 	return clusterRoleName, clusterRoleLabels, nil
 }
 
-func getEngineClusterRoleBindingsNameAndLabels(engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider, serviceAccountName string, clusterRoleName string) (resultEngineClusterRoleBindingsName string, resultEngineClusterRoleBindingsLabels map[string]string, resultErr error) {
-	clusterRoleBindingsAttributes, err := engineAttributesProvider.ForEngineClusterRoleBindings(serviceAccountName, clusterRoleName)
+func getEngineClusterRoleBindingsNameAndLabels(engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider) (resultEngineClusterRoleBindingsName string, resultEngineClusterRoleBindingsLabels map[string]string, resultErr error) {
+	clusterRoleBindingsAttributes, err := engineAttributesProvider.ForEngineClusterRoleBindings()
 	if err != nil {
 		return "", nil, stacktrace.Propagate(
 			err,
