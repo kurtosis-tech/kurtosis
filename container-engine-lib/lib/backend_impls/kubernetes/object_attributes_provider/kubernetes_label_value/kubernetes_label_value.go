@@ -21,6 +21,7 @@ func MustCreateNewKubernetesLabelValue(str string) *KubernetesLabelValue {
 	}
 	return key
 }
+
 func CreateNewKubernetesLabelValue(labelValue string) (*KubernetesLabelValue, error) {
 	if err := validateLabelValue(labelValue); err != nil {
 		return nil, stacktrace.Propagate(err, "Label value string '%v' doesn't pass validation of being a kubernetes label value", labelValue)
