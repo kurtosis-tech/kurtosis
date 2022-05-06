@@ -292,23 +292,7 @@ func (backend *KubernetesKurtosisBackend) StopEngines(
 			erroredEngineIds[engineObj.GetID()] = wrappedErr
 		}
 
-		removedEngineRoleBasedResourcesSuccessfulEngineIds, removedEngineRoleBasedResourcesErroredEngineIds := backend.removeEngineRoleBasedResources(ctx, engineNamespace, removeEngineServiceSelectorsAndEnginePodsSuccessfulEngineIds)
-		for erroredEngineId := range removedEngineRoleBasedResourcesErroredEngineIds{
-			wrappedErr := stacktrace.Propagate(err, "An error occurred removing engine role based resources for kurtosis engine with ID '%v'", erroredEngineId)
-			erroredEngineIds[erroredEngineId] = wrappedErr
-		}
-
-		removeEngineNamespaceSuccessfulEngineIds := map[string]bool{}
-		for engineIdStr := range removedEngineRoleBasedResourcesSuccessfulEngineIds {
-			if err := backend.kubernetesManager.RemoveNamespace(ctx, engineNamespace); err != nil{
-				wrappedErr := stacktrace.Propagate(err, "An error occurred removing engine namespace '%v' for engine with ID '%v'", engineNamespace, engineIdStr)
-				erroredEngineIds[engineIdStr] = wrappedErr
-				continue
-			}
-			removeEngineNamespaceSuccessfulEngineIds[engineIdStr] = true
-		}
-
-		successfulEngineIds = removeEngineNamespaceSuccessfulEngineIds
+		successfulEngineIds = removeEngineServiceSelectorsAndEnginePodsSuccessfulEngineIds
 	}
 
 	return successfulEngineIds, erroredEngineIds, nil
