@@ -112,7 +112,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	}()
 
 	//Create engine's service account, cluster roles and cluster role bindings
-	removeAllEngineRoleBasedResourcesFunc, err := backend.createEngineRoleBasedResources(ctx, engineNamespaceName, engineAttributesProvider)
+	engineServiceAccountName, removeAllEngineRoleBasedResourcesFunc, err := backend.createEngineRoleBasedResources(ctx, engineNamespaceName, engineAttributesProvider)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating engine service account, cluster roles and cluster role bindings for engine '%v' in namespace '%v'", engineIdStr, engineNamespaceName)
 	}
@@ -144,7 +144,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	)
 	engineContainers, engineVolumes := getEngineContainers(containerImageAndTag, envVars)
 	// Create pods with engine containers and volumes in kubernetes
-	_, err = backend.kubernetesManager.CreatePod(ctx, engineNamespaceName, enginePodName, enginePodLabels, enginePodAnnotations, engineContainers, engineVolumes)
+	_, err = backend.kubernetesManager.CreatePod(ctx, engineNamespaceName, enginePodName, enginePodLabels, enginePodAnnotations, engineContainers, engineVolumes, engineServiceAccountName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", enginePodName, engineNamespaceName, containerImageAndTag)
 	}
@@ -265,10 +265,10 @@ func (backend *KubernetesKurtosisBackend) StopEngines(
 	successfulEngineIds :=map[string]bool{}
 	erroredEngineIds := map[string]error{}
 	for engineNamespace, engineServices := range matchingEnginesByNamespaceAndServiceName {
-		for engineServiceName, engine := range engineServices {
-			enginePod, err := backend.getEnginePod(ctx, engine.GetID(), engineNamespace)
+		for engineServiceName, engineObj := range engineServices {
+			enginePod, err := backend.getEnginePod(ctx, engineObj.GetID(), engineNamespace)
 			if err != nil {
-				return nil, nil, stacktrace.Propagate(err, "An error occurred getting the engine pod for engine with ID '%v' in namespace '%v'", engine.GetID(), engineNamespace)
+				return nil, nil, stacktrace.Propagate(err, "An error occurred getting the engine pod for engine with ID '%v' in namespace '%v'", engineObj.GetID(), engineNamespace)
 			}
 			engineServicesToEnginePodsMap[engineServiceName] = enginePod.GetName()
 		}
@@ -378,15 +378,15 @@ func (backend *KubernetesKurtosisBackend) removeEngineServiceSelectorsAndEngineP
 	return successfulServices, failedServices
 }
 
-func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx context.Context, namespace string, engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider) (resultRemoveAllEngineRoleBasedResourcesFunc func(), resultErr error)  {
+func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx context.Context, namespace string, engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider) (resultEngineServiceAccountName string, resultRemoveAllEngineRoleBasedResourcesFunc func(), resultErr error)  {
 
 	serviceAccountName, serviceAccountLabels, err := getEngineServiceAccountNameAndLabels(engineAttributesProvider)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting service account name and labels in namespace '%v'", namespace)
+		return "", nil, stacktrace.Propagate(err, "An error occurred getting service account name and labels in namespace '%v'", namespace)
 	}
 
 	if _, err = backend.kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, namespace, serviceAccountLabels); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating service account '%v' with labels '%+v' in namespace '%v'", serviceAccountName, serviceAccountLabels, namespace)
+		return "", nil, stacktrace.Propagate(err, "An error occurred creating service account '%v' with labels '%+v' in namespace '%v'", serviceAccountName, serviceAccountLabels, namespace)
 	}
 	shouldRemoveServiceAccount := true
 	removeServiceAccountFunc := func() {
@@ -403,7 +403,7 @@ func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx con
 
 	clusterRoleName, clusterRoleLabels, err := getEngineClusterRoleNameAndLabels(engineAttributesProvider)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting cluster role name and labels in namespace '%v'", namespace)
+		return "", nil, stacktrace.Propagate(err, "An error occurred getting cluster role name and labels in namespace '%v'", namespace)
 	}
 
 	clusterRolePolicyRules := []rbacv1.PolicyRule{
@@ -415,7 +415,7 @@ func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx con
 	}
 
 	if _, err = backend.kubernetesManager.CreateClusterRoles(ctx, clusterRoleName, clusterRolePolicyRules, clusterRoleLabels); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating cluster role '%v' with policy rules '%+v' and labels '%+v' in namespace '%v'", clusterRoleName, clusterRolePolicyRules, clusterRoleLabels, namespace)
+		return "", nil, stacktrace.Propagate(err, "An error occurred creating cluster role '%v' with policy rules '%+v' and labels '%+v' in namespace '%v'", clusterRoleName, clusterRolePolicyRules, clusterRoleLabels, namespace)
 	}
 	shouldRemoveClusterRole := true
 	removeClusterRoleFunc := func() {
@@ -432,7 +432,7 @@ func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx con
 
 	clusterRoleBindingsName, clusterRoleBindingsLabels, err := getEngineClusterRoleBindingsNameAndLabels(engineAttributesProvider, serviceAccountName, clusterRoleName)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting engine cluster role bindings name and labels")
+		return "", nil, stacktrace.Propagate(err, "An error occurred getting engine cluster role bindings name and labels")
 	}
 
 	clusterRoleBindingsSubjects := []rbacv1.Subject{
@@ -450,7 +450,7 @@ func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx con
 	}
 
 	if _, err := backend.kubernetesManager.CreateClusterRoleBindings(ctx, clusterRoleBindingsName, clusterRoleBindingsSubjects, clusterRoleBindingsRoleRef, clusterRoleBindingsLabels); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating cluster role bindings '%v' with subjects '%+v' and role ref '%+v' in namespace '%v'", clusterRoleBindingsName, clusterRoleBindingsSubjects, clusterRoleBindingsRoleRef, namespace)
+		return "", nil, stacktrace.Propagate(err, "An error occurred creating cluster role bindings '%v' with subjects '%+v' and role ref '%+v' in namespace '%v'", clusterRoleBindingsName, clusterRoleBindingsSubjects, clusterRoleBindingsRoleRef, namespace)
 	}
 	shouldRemoveClusterRoleBindings := true
 	removeClusterRoleBindingsFunc := func() {
@@ -474,7 +474,7 @@ func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx con
 		removeClusterRoleFunc()
 		removeClusterRoleBindingsFunc()
 	}
-	return removeAllRoleBasedResourcesFunc, nil
+	return serviceAccountName, removeAllRoleBasedResourcesFunc, nil
 }
 
 // TODO parallelize to improve performance
