@@ -93,7 +93,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	gatewayIpAddr net.IP,
 	apiContainerIpAddr net.IP,
 	isPartitioningEnabled bool,
-	// TODO REMOVE THIS
+	// TODO REMOVE THIS after we release the switch to enclave data volume
 	enclaveDataDirpathOnHostMachine string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
@@ -117,7 +117,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		apiContainerIpAddr.String(),
 		takenIpAddrStrSet,
 		isPartitioningEnabled,
-		// TODO REMOVE
+		// TODO REMOVE THIS after we release the switch to enclave data volume
 		enclaveDataDirpathOnAPIContainer,
 		enclaveDataDirpathOnHostMachine,
 		metricsUserID,

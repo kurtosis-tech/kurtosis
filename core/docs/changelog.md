@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Switch the API container to storing its data in the enclave data volume, rather than in the bindmounted enclave data dirpath on the host machine
 
 # 1.45.4
 ### Features
