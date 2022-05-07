@@ -22,9 +22,12 @@ const (
 	DefaultVersion = "1.45.4"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
+	// TODO REMOVE THIS WHEN WE SWITCH TO ENCLAVE DATA VOLUME
 	// The location where the enclave data directory (on the Docker host machine) will be bind-mounted
 	//  on the API container
 	enclaveDataDirpathOnAPIContainer = "/kurtosis-enclave-data"
+
+	enclaveDataVolumeDirpath = "/kurtosis-data"
 
 	// TODO This should come from the same logic that builds the server image!!!!!
 	containerImage = "kurtosistech/kurtosis-core_api"
@@ -50,7 +53,6 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	apiContainerIpAddr net.IP,
 	isPartitioningEnabled bool,
 	enclaveDataDirpathOnHostMachine string,
-	enclaveDataVolumeDirpath string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 ) (
@@ -70,7 +72,6 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		apiContainerIpAddr,
 		isPartitioningEnabled,
 		enclaveDataDirpathOnHostMachine,
-		enclaveDataVolumeDirpath,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 	)
@@ -94,7 +95,6 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	isPartitioningEnabled bool,
 	// TODO REMOVE THIS
 	enclaveDataDirpathOnHostMachine string,
-	enclaveDataVolumeDirpath string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 ) (
@@ -117,6 +117,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		apiContainerIpAddr.String(),
 		takenIpAddrStrSet,
 		isPartitioningEnabled,
+		// TODO REMOVE
 		enclaveDataDirpathOnAPIContainer,
 		enclaveDataDirpathOnHostMachine,
 		metricsUserID,
