@@ -1,5 +1,12 @@
 # TBD
 
+# 1.45.5
+### Fixes
+* Improved error reporting for typos in service ids to pause/unpause service
+
+### Changes
+* Switch the API container to storing its data in the enclave data volume, rather than in the bindmounted enclave data dirpath on the host machine
+
 # 1.45.4
 ### Features
 * Exposed service pause/unpause functionality on the API container

@@ -86,7 +86,7 @@ func runMain() error {
 		serverArgs.TakenIpAddrs,
 	)
 
-	enclaveDataDir := enclave_data_directory.NewEnclaveDataDirectory(serverArgs.EnclaveDataDirpathOnAPIContainer)
+	enclaveDataDir := enclave_data_directory.NewEnclaveDataDirectory(serverArgs.EnclaveDataVolumeDirpath)
 
 	kurtosisBackend, err := kurtosis_backend.GetLocalDockerKurtosisBackend()
 	if err != nil {

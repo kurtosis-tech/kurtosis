@@ -10,7 +10,7 @@ replace (
 require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0 // indirect
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220430002645-f6f12963bab9
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220504203948-77823fff64a4
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e
 	github.com/kurtosis-tech/kurtosis-core/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0
@@ -21,7 +21,6 @@ require (
 	github.com/moby/term v0.0.0-20200507201656-73f35e472e8f // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
 	google.golang.org/grpc v1.40.0
 	google.golang.org/protobuf v1.27.1
