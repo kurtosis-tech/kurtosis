@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Improved error reporting for typos in service ids to pause/unpause service
 
 # 1.45.4
 ### Features
