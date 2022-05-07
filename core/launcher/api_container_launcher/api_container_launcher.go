@@ -22,9 +22,12 @@ const (
 	DefaultVersion = "1.45.4"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
+	// TODO REMOVE THIS WHEN WE SWITCH TO ENCLAVE DATA VOLUME
 	// The location where the enclave data directory (on the Docker host machine) will be bind-mounted
 	//  on the API container
 	enclaveDataDirpathOnAPIContainer = "/kurtosis-enclave-data"
+
+	enclaveDataVolumeDirpath = "/kurtosis-data"
 
 	// TODO This should come from the same logic that builds the server image!!!!!
 	containerImage = "kurtosistech/kurtosis-core_api"
@@ -90,6 +93,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	gatewayIpAddr net.IP,
 	apiContainerIpAddr net.IP,
 	isPartitioningEnabled bool,
+	// TODO REMOVE THIS after we release the switch to enclave data volume
 	enclaveDataDirpathOnHostMachine string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
@@ -113,10 +117,12 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		apiContainerIpAddr.String(),
 		takenIpAddrStrSet,
 		isPartitioningEnabled,
+		// TODO REMOVE THIS after we release the switch to enclave data volume
 		enclaveDataDirpathOnAPIContainer,
 		enclaveDataDirpathOnHostMachine,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
+		enclaveDataVolumeDirpath,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the API container args")
@@ -142,6 +148,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		grpcPortNum,
 		grpcProxyPortNum,
 		enclaveDataDirpathOnHostMachine,
+		enclaveDataVolumeDirpath,
 		envVars,
 	)
 	if err != nil {

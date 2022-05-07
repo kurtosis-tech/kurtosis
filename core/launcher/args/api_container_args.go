@@ -32,9 +32,11 @@ type APIContainerArgs struct {
 
 	IsPartitioningEnabled bool `json:"isPartitioningEnabled"`
 
+	// TODO Remove when we've verified enclave data volume is working
 	// The location on the API container where the enclave data directory will have been bind-mounted
 	EnclaveDataDirpathOnAPIContainer string `json:"enclaveDataDirpathOnAPIContainer"`
 
+	// TODO Remove when we've verified enclave data volume is working
 	// The dirpath on the Docker host machine where enclave data is stored, which the API container
 	//  will use to bind-mount the directory into the services that it starts
 	EnclaveDataDirpathOnHostMachine string `json:"enclaveDataDirpathOnHostMachine"`
@@ -44,6 +46,9 @@ type APIContainerArgs struct {
 
 	//User consent to send metrics
 	DidUserAcceptSendingMetrics bool `json:"didUserAcceptSendingMetrics"`
+
+	// The directory on the API container where the enclave data directory will have been mounted
+	EnclaveDataVolumeDirpath string `json:"enclaveDataVolume"`
 }
 
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
@@ -63,6 +68,7 @@ func NewAPIContainerArgs(
 	enclaveDataDirpathOnHostMachine string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
+	enclaveDataVolumeDirpath string,
 ) (*APIContainerArgs, error) {
 	result := &APIContainerArgs{
 		Version:                          version,
@@ -79,6 +85,7 @@ func NewAPIContainerArgs(
 		EnclaveDataDirpathOnHostMachine:  enclaveDataDirpathOnHostMachine,
 		MetricsUserID:                    metricsUserID,
 		DidUserAcceptSendingMetrics:      didUserAcceptSendingMetrics,
+		EnclaveDataVolumeDirpath:         enclaveDataVolumeDirpath,
 	}
 
 	if err := result.validate(); err != nil {
