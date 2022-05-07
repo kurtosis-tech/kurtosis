@@ -50,6 +50,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	apiContainerIpAddr net.IP,
 	isPartitioningEnabled bool,
 	enclaveDataDirpathOnHostMachine string,
+	enclaveDataVolumeDirpath string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 ) (
@@ -69,6 +70,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		apiContainerIpAddr,
 		isPartitioningEnabled,
 		enclaveDataDirpathOnHostMachine,
+		enclaveDataVolumeDirpath,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 	)
@@ -90,7 +92,9 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	gatewayIpAddr net.IP,
 	apiContainerIpAddr net.IP,
 	isPartitioningEnabled bool,
+	// TODO REMOVE THIS
 	enclaveDataDirpathOnHostMachine string,
+	enclaveDataVolumeDirpath string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 ) (
@@ -117,7 +121,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		enclaveDataDirpathOnHostMachine,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
-
+		enclaveDataVolumeDirpath,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the API container args")
@@ -143,6 +147,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		grpcPortNum,
 		grpcProxyPortNum,
 		enclaveDataDirpathOnHostMachine,
+		enclaveDataVolumeDirpath,
 		envVars,
 	)
 	if err != nil {
