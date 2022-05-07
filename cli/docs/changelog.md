@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Upgrade to engine 1.17.5, which uses the enclave data volume (rather than enclave data dirpath) for enclave data storage
 
 # 0.15.1
 ### Features
