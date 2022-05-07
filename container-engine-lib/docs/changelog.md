@@ -1,4 +1,10 @@
 # TBD
+### Changes
+* Stopped mounting an enclave data directory on the API container
+
+### Breaking Changes
+* Removed the `enclaveDataDirpathOnHostMachine` parameter from `KurtosisBackend.CreateAPIContainer`
+    * Users no longer need to provide this parameter
 
 # 0.17.0
 ### Features
