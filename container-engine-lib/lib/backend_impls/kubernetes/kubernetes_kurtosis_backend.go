@@ -40,7 +40,6 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	ipAddr net.IP,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
-	enclaveDataDirpathOnHostMachine string,
 	enclaveDataVolumeDirpath string,
 	envVars map[string]string,
 ) (*api_container.APIContainer, error) {
