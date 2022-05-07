@@ -1,4 +1,8 @@
 # TBD
+### Features
+* Added `ServiceAccounts`, `Roles`, `RoleBindings`, `ClusterRole`, and `ClusterRoleBindings` create and remove methods to `KurtosisManager`
+* Added `CreateEnclave` functionality to kubernetes backend
+
 ### Changes
 * Stopped mounting an enclave data directory on the API container
 

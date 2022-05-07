@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -606,6 +607,157 @@ func (manager *KubernetesManager) GetDaemonSet(ctx context.Context, name string,
 	}
 
 	return daemonSet, nil
+}
+
+// ---------------------------service accounts------------------------------------------------------------------------------
+
+func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name string, namespace string, labels map[string]string) (*apiv1.ServiceAccount, error) {
+	client := manager.kubernetesClientSet.CoreV1().ServiceAccounts(namespace)
+
+	serviceAccount := &apiv1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: labels,
+		},
+	}
+
+	serviceAccountResult, err := client.Create(ctx, serviceAccount, metav1.CreateOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create service account with name '%s' in namespace '%v'", name, namespace)
+	}
+	return serviceAccountResult, nil
+}
+
+func (manager *KubernetesManager) RemoveServiceAccount(ctx context.Context, name string, namespace string) error {
+	client := manager.kubernetesClientSet.CoreV1().ServiceAccounts(namespace)
+
+	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete service account with name '%s' in namespace '%v'", name, namespace)
+	}
+
+	return nil
+}
+
+// ---------------------------roles------------------------------------------------------------------------------
+
+func (manager *KubernetesManager) CreateRole(ctx context.Context, name string, namespace string, rules []rbacv1.PolicyRule, labels map[string]string) (*rbacv1.Role, error) {
+	client := manager.kubernetesClientSet.RbacV1().Roles(namespace)
+
+	role :=  &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: labels,
+		},
+		Rules: rules,
+	}
+
+	roleResult, err := client.Create(ctx, role, metav1.CreateOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create role with name '%s' in namespace '%v' and rules '%+v'", name, namespace, rules)
+	}
+
+	return roleResult, nil
+}
+
+func (manager *KubernetesManager) RemoveRole(ctx context.Context, name string, namespace string) error {
+	client := manager.kubernetesClientSet.RbacV1().Roles(namespace)
+
+	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete role with name '%s' in namespace '%v'", name, namespace)
+	}
+
+	return nil
+}
+
+func (manager *KubernetesManager) CrateRoleBindings(ctx context.Context, name string, namespace string, subjects []rbacv1.Subject, roleRef rbacv1.RoleRef, labels map[string]string) (*rbacv1.RoleBinding, error) {
+	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
+
+	roleBinding := &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: labels,
+		},
+		Subjects: subjects,
+		RoleRef: roleRef,
+	}
+
+	roleBindingResult, err := client.Create(ctx, roleBinding, metav1.CreateOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create role binding with name '%s', subjects '%+v' and role ref '%v'", name, subjects, roleRef)
+	}
+
+	return roleBindingResult, nil
+}
+
+func (manager *KubernetesManager) RemoveRoleBindings(ctx context.Context, name string, namespace string) error {
+	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
+
+	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete role bindings with name '%s' in namespace '%v'", name, namespace)
+	}
+
+	return nil
+}
+
+// ---------------------------cluster roles------------------------------------------------------------------------------
+
+func (manager *KubernetesManager) CreateClusterRoles(ctx context.Context, name string, rules []rbacv1.PolicyRule, labels map[string]string) (*rbacv1.ClusterRole, error) {
+	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
+
+	clusterRole :=  &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: labels,
+		},
+		Rules: rules,
+	}
+
+	clusterRoleResult, err := client.Create(ctx, clusterRole, metav1.CreateOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create cluster role with name '%s' with rules '%+v'", name, rules)
+	}
+
+	return clusterRoleResult, nil
+}
+
+func (manager *KubernetesManager) RemoveClusterRole(ctx context.Context, name string) error {
+	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
+
+	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete cluster role with name '%s'", name)
+	}
+
+	return nil
+}
+
+func (manager *KubernetesManager) CreateClusterRoleBindings(ctx context.Context, name string, subjects []rbacv1.Subject, roleRef rbacv1.RoleRef, labels map[string]string) (*rbacv1.ClusterRoleBinding, error) {
+	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
+
+	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: labels,
+		},
+		Subjects: subjects,
+		RoleRef: roleRef,
+	}
+
+	clusterRoleBindingResult, err := client.Create(ctx, clusterRoleBinding, metav1.CreateOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create cluster role binding with name '%s', subjects '%+v' and role ref '%v'", name, subjects, roleRef)
+	}
+
+	return clusterRoleBindingResult, nil
+}
+
+func (manager *KubernetesManager) RemoveClusterRoleBindings(ctx context.Context, name string) error {
+	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
+
+	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete cluster role binding with name '%s'", name)
+	}
+
+	return nil
 }
 
 // Private functions
