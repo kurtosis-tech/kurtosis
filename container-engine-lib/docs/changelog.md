@@ -6,6 +6,9 @@
 ### Changes
 * Stopped mounting an enclave data directory on the API container
 
+### Fixes
+* `RunFilesArtifactExpander` now correctly only requires the user to pass in the filepath of the artifact to expand, relative to the enclave data volume root
+
 ### Breaking Changes
 * Removed the `enclaveDataDirpathOnHostMachine` parameter from `KurtosisBackend.CreateAPIContainer`
     * Users no longer need to provide this parameter
