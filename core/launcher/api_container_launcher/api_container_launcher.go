@@ -19,7 +19,7 @@ import (
 
 const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-	DefaultVersion = "1.45.4"
+	DefaultVersion = "1.45.5"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
 	// TODO REMOVE THIS WHEN WE SWITCH TO ENCLAVE DATA VOLUME
