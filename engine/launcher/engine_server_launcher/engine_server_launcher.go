@@ -8,12 +8,10 @@ package engine_server_launcher
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
-	"net"
-	"time"
-
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"net"
 )
 
 const (
@@ -23,31 +21,6 @@ const (
 
 	// TODO This should come from the same logic that builds the server image!!!!!
 	containerImage = "kurtosistech/kurtosis-engine-server"
-
-	dockerSocketFilepath = "/var/run/docker.sock"
-
-	networkToStartEngineContainerIn = "bridge"
-
-	// The engine server uses gRPC so MUST listen on TCP (no other protocols are supported)
-	// This is the Docker constant indicating a TCP port
-	grpcPortProtocol = "tcp"
-
-	grpcProxyPortProtocol = "tcp"
-
-	// The protocol string we use in the netstat command used to ensure the engine container is available
-	netstatWaitForAvailabilityPortProtocol = "tcp"
-
-	maxWaitForAvailabilityRetries         = 10
-	timeBetweenWaitForAvailabilityRetries = 1 * time.Second
-
-	availabilityWaitingExecCmdSuccessExitCode = 0
-
-	publicPortNumParsingBase     = 10
-	publicPortNumParsingUintBits = 16
-
-	// The location where the engine data directory (on the Docker host machine) will be bind-mounted
-	//  on the engine server
-	EngineDataDirpathOnEngineServerContainer = "/engine-data"
 )
 
 type EngineServerLauncher struct {
@@ -63,7 +36,6 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	logLevel logrus.Level,
 	grpcListenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
 	grpcProxyListenPortNum uint16, // Envoy proxy port that will forward grpc-web calls to the engine
-	engineDataDirpathOnHostMachine string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 ) (
@@ -78,7 +50,6 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		logLevel,
 		grpcListenPortNum,
 		grpcProxyListenPortNum,
-		engineDataDirpathOnHostMachine,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 	)
@@ -94,7 +65,6 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	logLevel logrus.Level,
 	grpcListenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
 	grpcProxyListenPortNum uint16, // Envoy proxy port that will forward grpc-web calls to the engine
-	engineDataDirpathOnHostMachine string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 ) (
@@ -107,7 +77,6 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		grpcProxyListenPortNum,
 		logLevel.String(),
 		imageVersionTag,
-		engineDataDirpathOnHostMachine,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 	)
@@ -120,7 +89,14 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		return nil, 0, stacktrace.Propagate(err, "An error occurred generating the engine server's environment variables")
 	}
 
-	engine, err := launcher.kurtosisBackend.CreateEngine(ctx, containerImage, imageVersionTag, grpcListenPortNum, grpcProxyListenPortNum, engineDataDirpathOnHostMachine, envVars)
+	engine, err := launcher.kurtosisBackend.CreateEngine(
+		ctx,
+		containerImage,
+		imageVersionTag,
+		grpcListenPortNum,
+		grpcProxyListenPortNum,
+		envVars,
+	)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred launching the engine server container with environment variables '%+v'", envVars)
 	}

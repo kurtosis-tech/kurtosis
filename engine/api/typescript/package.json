@@ -34,7 +34,7 @@
         "browser-or-node": "^2.0.0",
         "google-protobuf": "^3.17.3",
         "grpc-web": "^1.3.0",
-        "kurtosis-core-api-lib": "1.45.5",
+        "kurtosis-core-api-lib": "1.46.0",
         "loglevel": "^1.7.1",
         "neverthrow": "^4.2.2",
         "semver": "^7.3.5"

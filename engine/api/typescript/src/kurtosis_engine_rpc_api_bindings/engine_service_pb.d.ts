@@ -157,9 +157,6 @@ export class EnclaveInfo extends jspb.Message {
   hasApiContainerHostMachineInfo(): boolean;
   clearApiContainerHostMachineInfo(): EnclaveInfo;
 
-  getEnclaveDataDirpathOnHostMachine(): string;
-  setEnclaveDataDirpathOnHostMachine(value: string): EnclaveInfo;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): EnclaveInfo.AsObject;
   static toObject(includeInstance: boolean, msg: EnclaveInfo): EnclaveInfo.AsObject;
@@ -177,7 +174,6 @@ export namespace EnclaveInfo {
     apiContainerStatus: EnclaveAPIContainerStatus,
     apiContainerInfo?: EnclaveAPIContainerInfo.AsObject,
     apiContainerHostMachineInfo?: EnclaveAPIContainerHostMachineInfo.AsObject,
-    enclaveDataDirpathOnHostMachine: string,
   }
 }
 
