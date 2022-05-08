@@ -1,5 +1,14 @@
 # TBD
 
+# 0.19.0
+### Breaking Changes
+* Removed `enclaveDataDirpathOnHostMachine` and `enclaveDataDirpathOnServiceContainer` from `KurtosisBackend.CreateUserService`
+    * Users no longer need to provide this argument
+* Removed `enclaveDataDirpathOnHostMachine` argument from `KurtosisBackend.CreateModule`
+    * Users no longer need to provide this argument
+* Removed `engineDataDirpathOnHostMachine` from `KurtosisBackend.CreateEngine`
+    * Users no longer need to provide this argument
+
 # 0.18.0
 ### Features
 * Added `ServiceAccounts`, `Roles`, `RoleBindings`, `ClusterRole`, and `ClusterRoleBindings` create and remove methods to `KubernetesManager`

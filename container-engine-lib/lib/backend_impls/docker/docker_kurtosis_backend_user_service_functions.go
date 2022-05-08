@@ -51,8 +51,6 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	enclaveDataDirpathOnHostMachine string,
-	enclaveDataDirpathOnServiceContainer string,
 	filesArtifactMountDirpaths map[string]string,
 ) (
 	newUserService *service.Service,
@@ -91,10 +89,6 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 		return nil, stacktrace.Propagate(err, "An error occurred getting used port from private port spec '%+v'", privatePorts)
 	}
 
-	bindMounts := map[string]string{
-		enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnServiceContainer,
-	}
-
 	volumeMounts := map[string]string{
 		enclaveDataVolumeName: enclaveDataVolumeDirpathOnServiceContainer,
 	}
@@ -109,8 +103,6 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 		usedPorts,
 	).WithEnvironmentVariables(
 		envVars,
-	).WithBindMounts(
-		bindMounts,
 	).WithVolumeMounts(
 		volumeMounts,
 	).WithLabels(
