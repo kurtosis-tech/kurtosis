@@ -17,10 +17,6 @@ import (
 	"net"
 )
 
-const (
-	enclaveDataDirMntDirpath = "/kurtosis-enclave-data"
-)
-
 /*
 Convenience struct whose only purpose is launching user services
 */
@@ -97,7 +93,6 @@ func (launcher UserServiceLauncher) Launch(
 		entrypointArgs,
 		cmdArgs,
 		envVars,
-		enclaveDataDirMntDirpath,
 		artifactVolumeMounts,
 	)
 	if err != nil {

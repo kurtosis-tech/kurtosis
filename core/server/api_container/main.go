@@ -181,7 +181,6 @@ func createServiceNetworkAndModuleStore(
 		kurtosisBackend,
 		filesArtifactExpander,
 		freeIpAddrTracker,
-		args.EnclaveDataDirpathOnHostMachine,
 	)
 
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
@@ -197,13 +196,13 @@ func createServiceNetworkAndModuleStore(
 		kurtosisBackend,
 		enclaveDataDir,
 		userServiceLauncher,
-		networkingSidecarManager)
+		networkingSidecarManager,
+	)
 
 	moduleLauncher := module_launcher.NewModuleLauncher(
 		enclaveId,
 		kurtosisBackend,
 		apiContainerSocketInsideNetwork,
-		args.EnclaveDataDirpathOnHostMachine,
 		freeIpAddrTracker,
 	)
 

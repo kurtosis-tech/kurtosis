@@ -77,10 +77,10 @@ export class EnclaveContext {
     }
 
     public static async newGrpcWebEnclaveContext(
-            ipAddress: string,
-            apiContainerGrpcProxyPortNum: number,
-            enclaveId: string,
-        ): Promise<Result<EnclaveContext, Error>> {
+        ipAddress: string,
+        apiContainerGrpcProxyPortNum: number,
+        enclaveId: string,
+    ): Promise<Result<EnclaveContext, Error>> {
 
         if(isExecutionEnvNode){
             return err(new Error("It seems you're trying to create Enclave Context from Node environment. Please consider the 'newGrpcNodeEnclaveContext()' method instead."))
@@ -114,10 +114,10 @@ export class EnclaveContext {
     }
 
     public static async newGrpcNodeEnclaveContext(
-            ipAddress: string,
-            apiContainerGrpcPortNum: number,
-            enclaveId: string,
-        ): Promise<Result<EnclaveContext, Error>> {
+        ipAddress: string,
+        apiContainerGrpcPortNum: number,
+        enclaveId: string,
+    ): Promise<Result<EnclaveContext, Error>> {
 
         if(!isExecutionEnvNode){
             return err(new Error("It seems you're trying to create Enclave Context from Web environment. Please consider the 'newGrpcWebEnclaveContext()' method instead."))
