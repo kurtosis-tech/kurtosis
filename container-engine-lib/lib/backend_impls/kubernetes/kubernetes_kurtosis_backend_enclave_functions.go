@@ -35,19 +35,6 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because an enclave with ID '%v' already exists", enclaveId, enclaveId)
 	}
 
-	volumeSearchLabels :=  map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
-		label_key_consts.VolumeTypeLabelKey.GetString(): label_value_consts.EnclaveDataVolumeTypeLabelValue.GetString(),
-	}
-	foundVolumes, err := backend.kubernetesManager.GetVolumesByLabels(ctx, volumeSearchLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave data volumes matching labels '%+v'", volumeSearchLabels)
-	}
-	if len(foundVolumes) > 0 {
-		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because one or more enclave data volume for that enclave already exists", enclaveId)
-	}
-
 	// Make Enclave attributes provider
 	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(string(enclaveId))
 	if err != nil {
@@ -82,6 +69,22 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 			}
 		}
 	}()
+
+	// Create Persistent Volume Claim for the enclave (associated with namespace)
+	volumeSearchLabels :=  map[string]string{
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
+		label_key_consts.VolumeTypeLabelKey.GetString(): label_value_consts.EnclaveDataVolumeTypeLabelValue.GetString(),
+	}
+	foundVolumes, err := backend.kubernetesManager.GetVolumesByLabels(ctx, enclaveNamespaceName, volumeSearchLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave data volumes matching labels '%+v'", volumeSearchLabels)
+	}
+	if len(foundVolumes.Items) > 0 {
+		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because one or more enclave data volumes for that enclave already exists", enclaveId)
+	}
+
+
 	newEnclave := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty, "", "", net.IP{}, nil)
 
 	shouldDeleteNamespace = false
