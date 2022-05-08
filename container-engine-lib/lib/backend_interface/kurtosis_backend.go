@@ -163,7 +163,6 @@ type KurtosisBackend interface {
 		guid module.ModuleGUID,
 		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 		grpcPortNum uint16,
-		enclaveDataDirpathOnHostMachine string,
 		envVars map[string]string,
 	) (
 		newModule *module.Module,

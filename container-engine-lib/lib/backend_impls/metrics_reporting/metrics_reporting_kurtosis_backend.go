@@ -206,7 +206,6 @@ func (backend *MetricsReportingKurtosisBackend) CreateModule(
 	guid module.ModuleGUID,
 	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 	grpcPortNum uint16,
-	enclaveDataDirpathOnHostMachine string,
 	envVars map[string]string,
 ) (
 	newModule *module.Module,
@@ -220,7 +219,6 @@ func (backend *MetricsReportingKurtosisBackend) CreateModule(
 		guid,
 		ipAddr,
 		grpcPortNum,
-		enclaveDataDirpathOnHostMachine,
 		envVars,
 	)
 	if err != nil {
