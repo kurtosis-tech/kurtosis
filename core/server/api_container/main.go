@@ -170,7 +170,6 @@ func createServiceNetworkAndModuleStore(
 	)
 
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
-		args.EnclaveDataDirpathOnHostMachine,
 		kurtosisBackend,
 		enclaveObjAttrsProvider,
 		enclaveId,

@@ -28,11 +28,10 @@ type UserServiceLauncher struct {
 	kurtosisBackend          backend_interface.KurtosisBackend
 	filesArtifactExpander    *files_artifact_expander.FilesArtifactExpander
 	freeIpAddrTracker        *lib.FreeIpAddrTracker
-	enclaveDataDirpathOnHostMachine string
 }
 
-func NewUserServiceLauncher(kurtosisBackend backend_interface.KurtosisBackend, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, freeIpAddrTracker *lib.FreeIpAddrTracker, enclaveDataDirpathOnHostMachine string) *UserServiceLauncher {
-	return &UserServiceLauncher{kurtosisBackend: kurtosisBackend, filesArtifactExpander: filesArtifactExpander, freeIpAddrTracker: freeIpAddrTracker, enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine}
+func NewUserServiceLauncher(kurtosisBackend backend_interface.KurtosisBackend, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, freeIpAddrTracker *lib.FreeIpAddrTracker) *UserServiceLauncher {
+	return &UserServiceLauncher{kurtosisBackend: kurtosisBackend, filesArtifactExpander: filesArtifactExpander, freeIpAddrTracker: freeIpAddrTracker}
 }
 
 /**
@@ -98,7 +97,6 @@ func (launcher UserServiceLauncher) Launch(
 		entrypointArgs,
 		cmdArgs,
 		envVars,
-		launcher.enclaveDataDirpathOnHostMachine,
 		enclaveDataDirMntDirpath,
 		artifactVolumeMounts,
 	)
