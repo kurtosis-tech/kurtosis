@@ -19,15 +19,10 @@ import (
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"path"
 	"strings"
 )
 
 const (
-	// Dirpath on the artifact expander container where the enclave data dir (which contains the artifacts)
-	//  will be bind-mounted
-	enclaveDataDirMountpointOnExpanderContainer = "/enclave-data"
-
 	// Dirpath on the artifact expander container where the destination volume containing expanded files will be mounted
 	destVolMntDirpathOnExpander = "/dest"
 
@@ -41,9 +36,6 @@ Class responsible for taking an artifact containing compressed files and creatin
 	into the new volume, and this volume will be mounted on a new service
 */
 type FilesArtifactExpander struct {
-	// Host machine dirpath so the expander can bind-mount it to the artifact expansion containers
-	enclaveDataDirpathOnHostMachine string
-
 	kurtosisBackend backend_interface.KurtosisBackend
 
 	enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider
@@ -55,8 +47,8 @@ type FilesArtifactExpander struct {
 	filesArtifactStore *enclave_data_directory.FilesArtifactStore
 }
 
-func NewFilesArtifactExpander(enclaveDataDirpathOnHostMachine string, kurtosisBackend backend_interface.KurtosisBackend, enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider, enclaveId enclave.EnclaveID, freeIpAddrTracker *lib.FreeIpAddrTracker, filesArtifactStore *enclave_data_directory.FilesArtifactStore) *FilesArtifactExpander {
-	return &FilesArtifactExpander{enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine, kurtosisBackend: kurtosisBackend, enclaveObjAttrsProvider: enclaveObjAttrsProvider, enclaveId: enclaveId, freeIpAddrTracker: freeIpAddrTracker, filesArtifactStore: filesArtifactStore}
+func NewFilesArtifactExpander(kurtosisBackend backend_interface.KurtosisBackend, enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider, enclaveId enclave.EnclaveID, freeIpAddrTracker *lib.FreeIpAddrTracker, filesArtifactStore *enclave_data_directory.FilesArtifactStore) *FilesArtifactExpander {
+	return &FilesArtifactExpander{kurtosisBackend: kurtosisBackend, enclaveObjAttrsProvider: enclaveObjAttrsProvider, enclaveId: enclaveId, freeIpAddrTracker: freeIpAddrTracker, filesArtifactStore: filesArtifactStore}
 }
 
 func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
@@ -73,12 +65,6 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the file for files artifact '%v'", filesArtifactId)
 		}
-
-		artifactRelativeFilepath := artifactFile.GetFilepathRelativeToDataDirRoot()
-		artifactFilepathOnExpanderContainer := path.Join(
-			enclaveDataDirMountpointOnExpanderContainer,
-			artifactRelativeFilepath,
-		)
 
 		filesArtifactExpansionVolume, err := expander.kurtosisBackend.CreateFilesArtifactExpansionVolume(
 			ctx,
@@ -104,7 +90,7 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 			filesArtifactId,
 			serviceGUID,
 			volumeName,
-			artifactFilepathOnExpanderContainer,
+			artifactFile.GetFilepathRelativeToDataDirRoot(),
 		); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred running files artifact expander for user service with GUID '%v' and files artifact ID '%v' and files artifact expansion volume '%v' in enclave with ID '%v'",serviceGUID, filesArtifactId, volumeName, expander.enclaveId)
 		}
@@ -127,7 +113,7 @@ func (expander *FilesArtifactExpander) runFilesArtifactExpander(
 	filesArtifactId service.FilesArtifactID,
 	serviceGuid service.ServiceGUID,
 	filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
-	artifactFilepathOnExpanderContainer string,
+	artifactFilepathRelativeToEnclaveDataVolRoot string,
 ) error {
 	// NOTE: This silently (temporarily) uses up one of the user's requested IP addresses with a node
 	//  that's not one of their services! This could get confusing if the user requests exactly a wide enough
@@ -147,9 +133,8 @@ func (expander *FilesArtifactExpander) runFilesArtifactExpander(
 		guid,
 		expander.enclaveId,
 		filesArtifactExpansionVolumeName,
-		expander.enclaveDataDirpathOnHostMachine,
 		destVolMntDirpathOnExpander,
-		artifactFilepathOnExpanderContainer,
+		artifactFilepathRelativeToEnclaveDataVolRoot,
 		expanderIpAddr,
 	); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running files artifact expander with GUID '%v' for files artifact expansion volume '%v' in enclave with ID '%v'", guid, filesArtifactExpansionVolumeName, expander.enclaveId)

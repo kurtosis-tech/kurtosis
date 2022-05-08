@@ -1,4 +1,7 @@
 # TBD
+### Breaking Changes
+* The APIContainerLauncher no longer takes in `enclaveDataDirpathOnHostMachine`
+    * Users no longer need to pass in this argument
 
 # 1.45.5
 ### Fixes

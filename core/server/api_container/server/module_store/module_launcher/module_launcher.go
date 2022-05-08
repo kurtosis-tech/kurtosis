@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/module_launch_api"
@@ -27,25 +26,7 @@ const (
 	waitForModuleAvailabilityTimeout = 10 * time.Second
 
 	modulePortNum      = uint16(1111)
-	modulePortProtocol = port_spec.PortProtocol_TCP
-
-	// The filepath where the enclave data directory will be mounted on the module container
-	enclaveDataDirMountFilepathOnContainer = "/kurtosis-enclave-data"
-
-	// This should probably be configurable
-	shouldPullContainerImageBeforeStarting = true
-
-	// Modules don't need to access the Docker engine directly, instead doing that through the API container
-	shouldBindMountDockerSocket = false
-
-	// Indicates that no alias should be set for the module
-	moduleAlias = ""
 )
-
-// These values indicate "don't override the ENTRYPOINT/CMD args" (since modules are configured via envvars)
-var entrypointArgs []string = nil
-var cmdArgs []string = nil
-var volumeMounts map[string]string = nil
 
 type ModuleLauncher struct {
 	// The ID of the enclave that the API container is running inside
@@ -56,17 +37,15 @@ type ModuleLauncher struct {
 	// Modules have a connection to the API container, so the launcher must know what socket to pass to modules
 	apiContainerSocketInsideNetwork string
 
-	enclaveDataDirPath string
 	freeIpAddrTracker  *lib.FreeIpAddrTracker
 }
 
-func NewModuleLauncher(enclaveId enclave.EnclaveID, kurtosisBackend backend_interface.KurtosisBackend, apiContainerSocketInsideNetwork string, enclaveDataDirPath string, freeIpAddrTracker *lib.FreeIpAddrTracker) *ModuleLauncher {
+func NewModuleLauncher(enclaveId enclave.EnclaveID, kurtosisBackend backend_interface.KurtosisBackend, apiContainerSocketInsideNetwork string, freeIpAddrTracker *lib.FreeIpAddrTracker) *ModuleLauncher {
 	return &ModuleLauncher{
 		enclaveId:                       enclaveId,
 		kurtosisBackend:                 kurtosisBackend,
 		apiContainerSocketInsideNetwork: apiContainerSocketInsideNetwork,
 		freeIpAddrTracker:               freeIpAddrTracker,
-		enclaveDataDirPath:              enclaveDataDirPath,
 	}
 }
 
@@ -93,7 +72,6 @@ func (launcher ModuleLauncher) Launch(
 		modulePortNum,
 		launcher.apiContainerSocketInsideNetwork,
 		serializedParams,
-		enclaveDataDirMountFilepathOnContainer,
 	)
 	envVars, err := module_launch_api.GetEnvFromArgs(args)
 	if err != nil {
@@ -108,7 +86,6 @@ func (launcher ModuleLauncher) Launch(
 		moduleGUID,
 		privateIpAddr,
 		modulePortNum,
-		launcher.enclaveDataDirPath,
 		envVars,
 	)
 
