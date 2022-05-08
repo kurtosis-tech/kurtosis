@@ -33,31 +33,6 @@ func (backend *KubernetesKurtosisBackend) PullImage(image string) error {
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateEnclave(ctx context.Context, enclaveId enclave.EnclaveID, isPartitioningEnabled bool) (*enclave.Enclave, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) GetEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (map[enclave.EnclaveID]*enclave.Enclave, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) StopEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (successfulEnclaveIds map[enclave.EnclaveID]bool, erroredEnclaveIds map[enclave.EnclaveID]error, resultErr error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, enclaveId enclave.EnclaveID, outputDirpath string) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) DestroyEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (successfulEnclaveIds map[enclave.EnclaveID]bool, erroredEnclaveIds map[enclave.EnclaveID]error, resultErr error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
 	image string,
@@ -65,7 +40,6 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	ipAddr net.IP,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
-	enclaveDataDirpathOnHostMachine string,
 	enclaveDataVolumeDirpath string,
 	envVars map[string]string,
 ) (*api_container.APIContainer, error) {
@@ -207,7 +181,7 @@ func (backend *KubernetesKurtosisBackend) DestroyFilesArtifactExpansionVolumes(c
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) RunFilesArtifactExpander(ctx context.Context, guid files_artifact_expander.FilesArtifactExpanderGUID, enclaveId enclave.EnclaveID, filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName, enclaveDataDirpathOnHostMachine string, destVolMntDirpathOnExpander string, filesArtifactFilepathRelativeToEnclaveDatadirRoot string, ipAddr net.IP) (*files_artifact_expander.FilesArtifactExpander, error) {
+func (backend *KubernetesKurtosisBackend) RunFilesArtifactExpander(ctx context.Context, guid files_artifact_expander.FilesArtifactExpanderGUID, enclaveId enclave.EnclaveID, filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName, destVolMntDirpathOnExpander string, filesArtifactFilepathRelativeToEnclaveDatadirRoot string, ipAddr net.IP) (*files_artifact_expander.FilesArtifactExpander, error) {
 	//TODO implement me
 	panic("implement me")
 }

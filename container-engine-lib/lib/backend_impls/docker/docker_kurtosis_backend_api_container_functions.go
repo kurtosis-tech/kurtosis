@@ -20,11 +20,6 @@ import (
 )
 
 const (
-	// TODO Remove this when we switch fully to the data volume
-	// The location where the enclave data directory (on the Docker host machine) will be bind-mounted
-	//  on the API container
-	enclaveDataBindmountDirpathOnAPIContainer = "/kurtosis-enclave-data"
-
 	// The API container uses gRPC so MUST listen on TCP (no other protocols are supported), which also
 	// means that its grpc-proxy must listen on TCP
 	apiContainerPortProtocol = port_spec.PortProtocol_TCP
@@ -46,8 +41,6 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
-	// TODO remove when we switch fully to enclave data volume
-	enclaveDataDirpathOnHostMachine string,
 	// The dirpath on the API container where the enclave data volume should be mounted
 	enclaveDataVolumeDirpath string,
 	envVars map[string]string,
@@ -128,7 +121,6 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	bindMounts := map[string]string{
 		// Necessary so that the API container can interact with the Docker engine
 		dockerSocketFilepath:            dockerSocketFilepath,
-		enclaveDataDirpathOnHostMachine: enclaveDataBindmountDirpathOnAPIContainer,
 	}
 
 	volumeMounts := map[string]string{

@@ -116,7 +116,6 @@ type KurtosisBackend interface {
 		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 		grpcPortNum uint16,
 		grpcProxyPortNum uint16,
-		enclaveDataDirpathOnHostMachine string, // TODO DELETE WHEN WE HAVE AN ENCLAVE DATA VOLUME!
 		enclaveDataVolumeDirpath string,
 		envVars map[string]string,
 	) (
@@ -418,7 +417,6 @@ type KurtosisBackend interface {
 		guid files_artifact_expander.FilesArtifactExpanderGUID,
 		enclaveId enclave.EnclaveID,
 		filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
-		enclaveDataDirpathOnHostMachine string,
 		destVolMntDirpathOnExpander string,
 		filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
 		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!

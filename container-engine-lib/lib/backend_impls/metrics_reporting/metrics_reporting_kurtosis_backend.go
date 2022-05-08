@@ -150,7 +150,6 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 	ipAddr net.IP,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
-	enclaveDataDirpathOnHostMachine string,
 	enclaveDataVolumeDirpath string,
 	envVars map[string]string,
 ) (*api_container.APIContainer, error) {
@@ -161,7 +160,6 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 		ipAddr,
 		grpcPortNum,
 		grpcProxyPortNum,
-		enclaveDataDirpathOnHostMachine,
 		enclaveDataVolumeDirpath,
 		envVars,
 	)
@@ -638,7 +636,6 @@ func (backend *MetricsReportingKurtosisBackend) RunFilesArtifactExpander(
 	guid files_artifact_expander.FilesArtifactExpanderGUID,
 	enclaveId enclave.EnclaveID,
 	filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
-	enclaveDataDirpathOnHostMachine string,
 	destVolMntDirpathOnExpander string,
 	filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
 	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
@@ -648,7 +645,6 @@ func (backend *MetricsReportingKurtosisBackend) RunFilesArtifactExpander(
 		guid,
 		enclaveId,
 		filesArtifactExpansionVolumeName,
-		enclaveDataDirpathOnHostMachine,
 		destVolMntDirpathOnExpander,
 		filesArtifactFilepathRelativeToEnclaveDatadirRoot,
 		ipAddr)
