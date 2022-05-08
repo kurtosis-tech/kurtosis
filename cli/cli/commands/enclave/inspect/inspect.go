@@ -31,7 +31,6 @@ const (
 	isEnclaveIdArgGreedy   = false
 
 	enclaveIdTitleName                 = "Enclave ID"
-	enclaveDataDirpathTitleName        = "Data Directory"
 	enclaveStatusTitleName             = "Enclave Status"
 	apiContainerStatusTitleName        = "API Container Status"
 	apiContainerHostGrpcPortTitle      = "API Container Host GRPC Port"
@@ -89,13 +88,11 @@ func run(
 		return stacktrace.NewError("No enclave with ID '%v' exists", enclaveIdStr)
 	}
 
-	enclaveDataDirpath := enclaveInfo.GetEnclaveDataDirpathOnHostMachine()
 	enclaveContainersStatus := enclaveInfo.ContainersStatus
 	enclaveApiContainerStatus := enclaveInfo.ApiContainerStatus
 
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
 	keyValuePrinter.AddPair(enclaveIdTitleName, enclaveIdStr)
-	keyValuePrinter.AddPair(enclaveDataDirpathTitleName, enclaveDataDirpath)
 	// TODO Refactor these to use a user-friendly string and not the enum name
 	keyValuePrinter.AddPair(enclaveStatusTitleName, enclaveContainersStatus.String())
 	keyValuePrinter.AddPair(apiContainerStatusTitleName, enclaveApiContainerStatus.String())

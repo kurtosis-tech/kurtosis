@@ -36,6 +36,10 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred stopping the Kurtosis engine")
 	}
 
+	// TODO after 2022-07-08, when we're confident nobody is running enclaves/engines that use the bindmounted directory,
+	//  add a step here that will delete the engine data dirpath if it exists on the host machine
+	// host_machine_directories.GetEngineDataDirpath()
+
 	logrus.Info("Kurtosis engine successfully stopped")
 	return nil
 }

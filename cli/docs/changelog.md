@@ -1,6 +1,12 @@
 # TBD
 ### Changes
-* Upgrade to engine 1.17.5, which uses the enclave data volume (rather than enclave data dirpath) for enclave data storage
+* Upgrade to engine 1.18.0, which uses the enclave data volume (rather than enclave data dirpath) for enclave data storage
+* `enclave inspect` no longer prints out the enclave data directory
+    * Users looking to explore an enclave's data should now look for the volume with the enclave's name, and mount that in a container
+
+### Breaking Changes
+* The engine has now been upgraded to 1.18.0
+    * Users will need to run `engine restart` to get the new version of the engine
 
 # 0.15.1
 ### Features
