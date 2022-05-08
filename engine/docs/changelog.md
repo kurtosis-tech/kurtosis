@@ -10,6 +10,10 @@
 * Removed the `engineDataDirpathOnHostMachine` arg from `EngineServerLauncher`'s `LaunchWithDefaultVersion` and `LaunchWithCustomVersion`
     * Users no longer need to pass in this parameter
 
+# 1.17.5
+### Changes
+* Upgrade to Core 1.45.5, which uses the enclave data volume (rather than the enclave data dirpath) for storing data
+
 # 1.17.4
 ### Fixes
 * Fixed a bug where clean wouldn't remove empty enclaves
