@@ -1,4 +1,6 @@
 # TBD
+
+# 0.18.0
 ### Features
 * Added `ServiceAccounts`, `Roles`, `RoleBindings`, `ClusterRole`, and `ClusterRoleBindings` create and remove methods to `KubernetesManager`
 * Added `CreateEnclave` functionality to Kubernetes backend
