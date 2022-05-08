@@ -1,4 +1,6 @@
 # TBD
+
+# 1.18.0
 ### Changes
 * The engine server no longer requires a host machine directory, as it now creates enclave data volumes for API containers
 
