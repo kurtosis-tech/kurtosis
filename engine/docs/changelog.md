@@ -1,4 +1,9 @@
 # TBD
+### Changes
+* Removed any sort fo 
+
+### Breaking Changes
+* Removed the `EnclaveDataDirpathOnHostMachine` property from the `EnclaveInfo` object returned by the API
 
 # 1.17.4
 ### Fixes

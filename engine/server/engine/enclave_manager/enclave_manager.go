@@ -7,10 +7,8 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"io/ioutil"
 	"net"
 	"os"
-	"path"
 	"sort"
 	"strings"
 	"sync"
@@ -24,27 +22,9 @@ import (
 )
 
 const (
-	allEnclavesDirname = "enclaves"
-
 	apiContainerListenGrpcPortNumInsideNetwork = uint16(7443)
 
 	apiContainerListenGrpcProxyPortNumInsideNetwork = uint16(7444)
-
-	// NOTE: It's very important that all directories created inside the engine data directory are created with 0777
-	//  permissions, because:
-	//  a) the engine data directory is bind-mounted on the Docker host machine
-	//  b) the engine container, and pretty much every Docker container, runs as 'root'
-	//  c) the Docker host machine will not be running as root
-	//  d) For the host machine to be able to read & write files inside the engine data directory, it needs to be able
-	//      to access the directories inside the engine data directory
-	// The longterm fix to this is probably to:
-	//  1) make the engine server data a Docker volume
-	//  2) have the engine server expose the engine data directory to the Docker host machine via some filesystem-sharing
-	//      server, like NFS or CIFS
-	// This way, we preserve the host machine's ability to write to services as if they were local on the filesystem, while
-	//  actually having the data live inside a Docker volume. This also sets the stage for Kurtosis-as-a-Service (where bind-mount
-	//  the engine data dirpath would be impossible).
-	engineDataSubdirectoryPerms = 0777
 
 	enclavesCleaningPhaseTitle             = "enclaves"
 )
@@ -75,23 +55,14 @@ type EnclaveManager struct {
 	mutex *sync.Mutex
 
 	kurtosisBackend backend_interface.KurtosisBackend
-	// We need this so that when the engine container starts enclaves & containers, it can tell Docker where the enclave
-	//  data directory is on the host machine os Docker can bind-mount it in
-	engineDataDirpathOnHostMachine string
-
-	engineDataDirpathOnEngineContainer string
 }
 
 func NewEnclaveManager(
 	kurtosisBackend backend_interface.KurtosisBackend,
-	engineDataDirpathOnHostMachine string,
-	engineDataDirpathOnEngineContainer string,
 ) *EnclaveManager {
 	return &EnclaveManager{
 		mutex:                              &sync.Mutex{},
 		kurtosisBackend:					kurtosisBackend,
-		engineDataDirpathOnHostMachine:     engineDataDirpathOnHostMachine,
-		engineDataDirpathOnEngineContainer: engineDataDirpathOnEngineContainer,
 	}
 }
 
@@ -282,7 +253,7 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveIdStr 
 			enclaveId: true,
 		},
 	}
-	successfullyDestroyedEnclaves, erroredEnclaves, err := manager.destroyEnclavesWithoutMutex(ctx, enclaveDestroyFilter)
+	successfullyDestroyedEnclaves, erroredEnclaves, err := manager.kurtosisBackend.DestroyEnclaves(ctx, enclaveDestroyFilter)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying the enclave")
 	}
@@ -431,57 +402,6 @@ func (manager *EnclaveManager) stopEnclaveWithoutMutex(ctx context.Context, encl
 	return nil
 }
 
-// TODO This is copied from Kurt Core; merge these (likely into an EngineDataVolume object)!!!
-func ensureDirpathExists(absoluteDirpath string) error {
-	if _, statErr := os.Stat(absoluteDirpath); os.IsNotExist(statErr) {
-		if mkdirErr := os.Mkdir(absoluteDirpath, engineDataSubdirectoryPerms); mkdirErr != nil {
-			return stacktrace.Propagate(
-				mkdirErr,
-				"Directory '%v' in the engine data volume didn't exist, and an error occurred trying to create it",
-				absoluteDirpath)
-		}
-	}
-	// This is necessary because the os.Mkdir might not create the directory with the perms that we want due to the umask
-	// Chmod is not affected by the umask, so this will guarantee we get a directory with the perms that we want
-	// NOTE: This has the added benefit of, if this directory already exists (due to the user running an old engine from
-	//  before 2021-11-16), we'll correct the perms
-	if err := os.Chmod(absoluteDirpath, engineDataSubdirectoryPerms); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred setting the permissions on directory '%v' to '%v'",
-			absoluteDirpath,
-			engineDataSubdirectoryPerms,
-		)
-	}
-	return nil
-}
-
-func (manager *EnclaveManager) getAllEnclavesDirpaths() (onHostMachine string, onEngineContainer string) {
-	onHostMachine = path.Join(
-		manager.engineDataDirpathOnHostMachine,
-		allEnclavesDirname,
-	)
-	onEngineContainer = path.Join(
-		manager.engineDataDirpathOnEngineContainer,
-		allEnclavesDirname,
-	)
-	return
-}
-
-func (manager *EnclaveManager) getEnclaveDataDirpath(enclaveId enclave.EnclaveID) (onHostMachine string, onEngineContainer string) {
-	enclaveIdStr := string(enclaveId)
-	allEnclavesOnHostMachine, allEnclavesOnEngineContainer := manager.getAllEnclavesDirpaths()
-	onHostMachine = path.Join(
-		allEnclavesOnHostMachine,
-		enclaveIdStr,
-	)
-	onEngineContainer = path.Join(
-		allEnclavesOnEngineContainer,
-		enclaveIdStr,
-	)
-	return
-}
-
 func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll bool) ([]string, []error, error) {
 	enclaveStatusFilters := map[enclave.EnclaveStatus]bool{
 		enclave.EnclaveStatus_Stopped: true,
@@ -494,7 +414,7 @@ func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll
 	destroyEnclaveFilters := &enclave.EnclaveFilters{
 		Statuses: enclaveStatusFilters,
 	}
-	successfullyDestroyedEnclaves, erroredEnclaves, err := manager.destroyEnclavesWithoutMutex(ctx, destroyEnclaveFilters)
+	successfullyDestroyedEnclaves, erroredEnclaves, err := manager.kurtosisBackend.DestroyEnclaves(ctx, destroyEnclaveFilters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying enclaves during cleaning")
 	}
@@ -538,61 +458,6 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 
 }
 
-// Destroys an enclave, deleting all objects associated with it in the container engine (containers, volumes, networks, etc.)
-func (manager *EnclaveManager) destroyEnclavesWithoutMutex(ctx context.Context, filters *enclave.EnclaveFilters) (
-	map[enclave.EnclaveID]bool,
-	map[enclave.EnclaveID]error,
-	error,
-) {
-	successfulEnclaveIds, enclaveDestroyErrs, err := manager.kurtosisBackend.DestroyEnclaves(ctx, filters)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "The backend threw an error destroying enclaves using filters: %+v", filters)
-	}
-
-	// TODO Remove this when the enclave data lives in a volume! As it currently stands, it's possible to delete an enclave
-	//  WITHOUT deleting the enclave data directory!
-	for enclaveId := range successfulEnclaveIds {
-		// Next, remove the enclave data dir (if it exists)
-		_, enclaveDataDirpathOnEngineContainer := manager.getEnclaveDataDirpath(enclaveId)
-		if _, statErr := os.Stat(enclaveDataDirpathOnEngineContainer); !os.IsNotExist(statErr) {
-			if removeErr := os.RemoveAll(enclaveDataDirpathOnEngineContainer); removeErr != nil {
-				return nil, nil, stacktrace.Propagate(removeErr, "An error occurred removing enclave data dir '%v' on engine container", enclaveDataDirpathOnEngineContainer)
-			}
-		}
-	}
-
-	return successfulEnclaveIds, enclaveDestroyErrs, nil
-
-}
-
-// TODO Get rid of this when enclave data volumes are a thing
-// Gets rid of dangling folders
-func (manager *EnclaveManager) deleteDanglingDirectories(ctx context.Context) error {
-	allEnclaves, err := manager.kurtosisBackend.GetEnclaves(ctx, &enclave.EnclaveFilters{})
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the currently-active enclaves")
-	}
-
-	_, allEnclavesDirpathOnEngineContainer := manager.getAllEnclavesDirpaths()
-	fileInfos, err := ioutil.ReadDir(allEnclavesDirpathOnEngineContainer)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while reading the directory '%v' ", allEnclavesDirpathOnEngineContainer)
-	}
-
-	for _, fileInfo := range fileInfos {
-		enclaveIdFromFileInfoName := enclave.EnclaveID(fileInfo.Name())
-		_, found := allEnclaves[enclaveIdFromFileInfoName]
-		if fileInfo.IsDir() && !found {
-			folderPath := path.Join(allEnclavesDirpathOnEngineContainer, fileInfo.Name())
-			if removeErr := os.RemoveAll(folderPath); removeErr != nil {
-				return stacktrace.Propagate(removeErr, "An error occurred removing the data dir '%v' on engine container", folderPath)
-			}
-		}
-	}
-
-	return nil
-}
-
 func getEnclaveByEnclaveIdFilter(enclaveId enclave.EnclaveID) *enclave.EnclaveFilters {
 	return &enclave.EnclaveFilters{
 		IDs: map[enclave.EnclaveID]bool {
@@ -627,7 +492,6 @@ func (manager *EnclaveManager) launchApiContainer(
 	gatewayIpAddr net.IP,
 	apiContainerIpAddr net.IP,
 	isPartitioningEnabled bool,
-	enclaveDataDirpathOnHostMachine string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 ) (
@@ -650,7 +514,6 @@ func (manager *EnclaveManager) launchApiContainer(
 			gatewayIpAddr,
 			apiContainerIpAddr,
 			isPartitioningEnabled,
-			enclaveDataDirpathOnHostMachine,
 			metricsUserID,
 			didUserAcceptSendingMetrics,
 		)
@@ -670,7 +533,6 @@ func (manager *EnclaveManager) launchApiContainer(
 		gatewayIpAddr,
 		apiContainerIpAddr,
 		isPartitioningEnabled,
-		enclaveDataDirpathOnHostMachine,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 	)
@@ -691,7 +553,6 @@ func (manager *EnclaveManager) getEnclaveInfoForEnclave(ctx context.Context, enc
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get EnclaveContainersStatus from the enclave status of enclave '%v', but an error occurred", enclaveId)
 	}
-	enclaveDataDirpathOnHostMachine, _ := manager.getEnclaveDataDirpath(enclaveId)
 	return &kurtosis_engine_rpc_api_bindings.EnclaveInfo {
 		EnclaveId:          enclaveIdStr,
 		ContainersStatus:   enclaveContainersStatus,
