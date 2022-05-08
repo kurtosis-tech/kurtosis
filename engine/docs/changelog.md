@@ -1,5 +1,17 @@
 # TBD
 
+# 1.18.0
+### Changes
+* The engine server no longer requires a host machine directory, as it now creates enclave data volumes for API containers
+
+### Breaking Changes
+* Upgraded to Kurtosis Core 1.46.0, which uses enclave data volumes exclusively
+    * Users will need to restart their engine to start using the new Core
+* Removed the `EnclaveDataDirpathOnHostMachine` property from the `EnclaveInfo` object returned by the API
+    * Users interested in investigating the enclave data will now need to mount the enclave data volume on a container
+* Removed the `engineDataDirpathOnHostMachine` arg from `EngineServerLauncher`'s `LaunchWithDefaultVersion` and `LaunchWithCustomVersion`
+    * Users no longer need to pass in this parameter
+
 # 1.17.5
 ### Changes
 * Upgrade to Core 1.45.5, which uses the enclave data volume (rather than the enclave data dirpath) for storing data

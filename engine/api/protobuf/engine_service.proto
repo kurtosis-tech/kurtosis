@@ -130,9 +130,6 @@ message EnclaveInfo {
 
   // NOTE: Will not be present if the API container status is not "RUNNING"!!
   EnclaveAPIContainerHostMachineInfo api_container_host_machine_info = 7;
-
-  // The dirpath of the enclave data directory on the host machine
-  string enclave_data_dirpath_on_host_machine = 8;
 }
 
 message GetEnclavesResponse {

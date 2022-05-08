@@ -10,7 +10,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args"
-	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/kurtosis-engine-server/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-server/server/engine/server"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
@@ -70,11 +69,7 @@ func runMain () error {
 		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
 	}
 
-	enclaveManager := enclave_manager.NewEnclaveManager(
-		kurtosisBackend,
-		serverArgs.EngineDataDirpathOnHostMachine,
-		engine_server_launcher.EngineDataDirpathOnEngineServerContainer,
-	)
+	enclaveManager := enclave_manager.NewEnclaveManager(kurtosisBackend)
 
 	metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
 		source.KurtosisEngineSource,

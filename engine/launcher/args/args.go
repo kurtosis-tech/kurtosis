@@ -21,10 +21,6 @@ type EngineServerArgs struct {
 	// So that the engine server knows its own version
 	ImageVersionTag string `json:"imageVersionTag"`
 
-	// The engine needs to know about this so it knows what filepath on the host machine to use when bind-mounting
-	//  enclave data directories to the API container & services that the APIC starts
-	EngineDataDirpathOnHostMachine string `json:"engineDataDirpathOnHostMachine"`
-
 	//The anonymized user ID for metrics analytics purpose `json:"metricsUserId"`
 	MetricsUserID string `json:"metricsUserId"`
 
@@ -39,7 +35,6 @@ func NewEngineServerArgs(
 	grpcProxyListenPortNum uint16,
 	logLevelStr string,
 	imageVersionTag string,
-	engineDataDirpathOnHostMachine string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 ) (*EngineServerArgs, error) {
@@ -48,7 +43,6 @@ func NewEngineServerArgs(
 		GrpcProxyListenPortNum:         grpcProxyListenPortNum,
 		LogLevelStr:                    logLevelStr,
 		ImageVersionTag:                imageVersionTag,
-		EngineDataDirpathOnHostMachine: engineDataDirpathOnHostMachine,
 		MetricsUserID:                  metricsUserID,
 		DidUserAcceptSendingMetrics:    didUserAcceptSendingMetrics,
 	}
