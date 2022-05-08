@@ -223,8 +223,6 @@ type KurtosisBackend interface {
 		entrypointArgs []string,
 		cmdArgs []string,
 		envVars map[string]string,
-		enclaveDataDirpathOnHostMachine string,
-		enclaveDataDirpathOnServiceContainer string,
 		filesArtifactMountDirpaths map[string]string,
 	) (
 		newUserService *service.Service,

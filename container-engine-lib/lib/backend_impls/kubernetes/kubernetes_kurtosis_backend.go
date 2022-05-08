@@ -87,7 +87,7 @@ func (backend *KubernetesKurtosisBackend) DestroyModules(ctx context.Context, fi
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateUserService(ctx context.Context, id service.ServiceID, guid service.ServiceGUID, containerImageName string, enclaveId enclave.EnclaveID, ipAddr net.IP, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, enclaveDataDirpathOnHostMachine string, enclaveDataDirpathOnServiceContainer string, filesArtifactMountDirpaths map[string]string) (newUserService *service.Service, resultErr error) {
+func (backend *KubernetesKurtosisBackend) CreateUserService(ctx context.Context, id service.ServiceID, guid service.ServiceGUID, containerImageName string, enclaveId enclave.EnclaveID, ipAddr net.IP, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactMountDirpaths map[string]string) (newUserService *service.Service, resultErr error) {
 	//TODO implement me
 	panic("implement me")
 }
