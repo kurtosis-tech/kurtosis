@@ -417,7 +417,6 @@ type KurtosisBackend interface {
 		guid files_artifact_expander.FilesArtifactExpanderGUID,
 		enclaveId enclave.EnclaveID,
 		filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
-		enclaveDataDirpathOnHostMachine string,
 		destVolMntDirpathOnExpander string,
 		filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
 		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
