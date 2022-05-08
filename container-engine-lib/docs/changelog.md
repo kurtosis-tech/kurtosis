@@ -1,4 +1,6 @@
 # TBD
+
+# 0.19.0
 ### Breaking Changes
 * Removed `enclaveDataDirpathOnHostMachine` and `enclaveDataDirpathOnServiceContainer` from `KurtosisBackend.CreateUserService`
     * Users no longer need to provide this argument
