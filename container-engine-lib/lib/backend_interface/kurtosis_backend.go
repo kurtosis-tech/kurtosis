@@ -31,7 +31,6 @@ type KurtosisBackend interface {
 		imageVersionTag string,
 		grpcPortNum uint16,
 		grpcProxyPortNum uint16,
-		engineDataDirpathOnHostMachine string,
 		envVars map[string]string,
 	) (
 		*engine.Engine,
@@ -163,7 +162,6 @@ type KurtosisBackend interface {
 		guid module.ModuleGUID,
 		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 		grpcPortNum uint16,
-		enclaveDataDirpathOnHostMachine string,
 		envVars map[string]string,
 	) (
 		newModule *module.Module,
@@ -223,8 +221,6 @@ type KurtosisBackend interface {
 		entrypointArgs []string,
 		cmdArgs []string,
 		envVars map[string]string,
-		enclaveDataDirpathOnHostMachine string,
-		enclaveDataDirpathOnServiceContainer string,
 		filesArtifactMountDirpaths map[string]string,
 	) (
 		newUserService *service.Service,
