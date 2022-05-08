@@ -14,7 +14,9 @@ import (
 const enclaveVolumeInGigabytesStr = "10"
 // Blank storage class name invokes the default set by administrator IF the DefaultStorageClass admission plugin is turned on
 // See more here: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#class-1
-const enclaveStorageClassName = ""
+const defaultStorageClassName = ""
+// Local storage class works with minikube
+const enclaveStorageClassName = "standard"
 
 func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	ctx context.Context,
