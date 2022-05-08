@@ -76,7 +76,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
 		label_key_consts.VolumeTypeLabelKey.GetString(): label_value_consts.EnclaveDataVolumeTypeLabelValue.GetString(),
 	}
-	foundVolumes, err := backend.kubernetesManager.GetVolumesByLabels(ctx, enclaveNamespaceName, volumeSearchLabels)
+	foundVolumes, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, enclaveNamespaceName, volumeSearchLabels)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave data volumes matching labels '%+v'", volumeSearchLabels)
 	}

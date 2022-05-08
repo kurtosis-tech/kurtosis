@@ -832,16 +832,3 @@ func (manager *KubernetesManager) GetNodePodRunsOn(ctx context.Context, namespac
 
 	return node, nil
 }
-
-func (manager *KubernetesManager) GetVolumesByLabels(ctx context.Context, namespace string, searchLabels map[string]string) (*apiv1.PersistentVolumeClaimList, error) {
-	pvcClient := manager.kubernetesClientSet.CoreV1().PersistentVolumeClaims(namespace)
-	opts := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(searchLabels).String(),
-	}
-	pvcs, err := pvcClient.List(ctx, opts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get persistent volme claims with labels '%+v', instead a non-nil error was returned", searchLabels)
-	}
-
-	return pvcs, nil
-}
