@@ -10,6 +10,12 @@ import (
 	"net"
 )
 
+// This can be requested by start, but getting dynamic resizing requires customizing a storage class.
+const enclaveVolumeInGigabytesStr = "10"
+// Blank storage class name invokes the default set by administrator IF the DefaultStorageClass admission plugin is turned on
+// See more here: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#class-1
+const enclaveStorageClassName = ""
+
 func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
@@ -70,20 +76,45 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		}
 	}()
 
-	// Create Persistent Volume Claim for the enclave (associated with namespace)
-	volumeSearchLabels :=  map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
-		label_key_consts.VolumeTypeLabelKey.GetString(): label_value_consts.EnclaveDataVolumeTypeLabelValue.GetString(),
-	}
-	foundVolumes, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, enclaveNamespaceName, volumeSearchLabels)
+	enclaveDataVolumeAttrs, err := enclaveObjAttrsProvider.ForEnclaveDataVolume()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave data volumes matching labels '%+v'", volumeSearchLabels)
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave data volume attributes for the enclave with ID '%v'", enclaveId)
+	}
+
+	persistentVolumeClaimName := enclaveDataVolumeAttrs.GetName()
+	persistentVolumeClaimLabels := enclaveDataVolumeAttrs.GetLabels()
+
+	enclaveVolumeLabelMap := map[string]string{}
+	for kubernetesLabelKey, kubernetesLabelValue := range persistentVolumeClaimLabels {
+		pvcLabelKey := kubernetesLabelKey.GetString()
+		pvcLabelValue := kubernetesLabelValue.GetString()
+		enclaveVolumeLabelMap[pvcLabelKey] = pvcLabelValue
+	}
+
+	// Create Persistent Volume Claim for the enclave (associated with namespace)
+	foundVolumes, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, enclaveNamespaceName, enclaveVolumeLabelMap)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave data volumes matching labels '%+v'", enclaveVolumeLabelMap)
 	}
 	if len(foundVolumes.Items) > 0 {
 		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because one or more enclave data volumes for that enclave already exists", enclaveId)
 	}
 
+
+	pvc, err := backend.kubernetesManager.CreatePersistentVolumeClaim(ctx,
+		enclaveNamespaceName,
+		persistentVolumeClaimName.GetString(),
+		enclaveVolumeLabelMap,
+		enclaveVolumeInGigabytesStr,
+		enclaveStorageClassName)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,
+			"Failed to create persistent volume claim in enclave '%v' with name '%v' and storage class name '%v'",
+			enclaveNamespaceName,
+			persistentVolumeClaimName.GetString(),
+			enclaveStorageClassName)
+	}
+	logrus.Info("PVC: %+v", pvc)
 	newEnclave := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty, "", "", net.IP{}, nil)
 
 	shouldDeleteNamespace = false
