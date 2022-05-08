@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"net"
-	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -116,29 +115,6 @@ func (manager *EnclaveManager) CreateEnclave(
 		}
 	}()
 
-	// TODO Handle enclave data in backend
-	_, allEnclavesDirpathOnEngineContainer := manager.getAllEnclavesDirpaths()
-	if err := ensureDirpathExists(allEnclavesDirpathOnEngineContainer); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred ensuring enclaves directory '%v' exists", allEnclavesDirpathOnEngineContainer)
-	}
-	enclaveDataDirpathOnHostMachine, enclaveDataDirpathOnEngineContainer := manager.getEnclaveDataDirpath(enclaveId)
-	if _, err := os.Stat(enclaveDataDirpathOnEngineContainer); err == nil {
-		return nil, stacktrace.NewError("Cannot create enclave '%v' because an enclave data directory already exists at '%v'", enclaveId, enclaveDataDirpathOnEngineContainer)
-	}
-	if err := ensureDirpathExists(enclaveDataDirpathOnEngineContainer); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred ensuring enclave data directory '%v' exists", enclaveDataDirpathOnEngineContainer)
-	}
-	shouldDeleteEnclaveDataDir := true
-	defer func() {
-		if shouldDeleteEnclaveDataDir {
-			if err := os.RemoveAll(enclaveDataDirpathOnEngineContainer); err != nil {
-				// 'clean' will remove this dangling directories, so this is a warn rather than an error
-				logrus.Warnf("Enclave creation didn't complete successfully so we tried to remove the enclave data directory '%v', but removing threw the following error; this directory will stay around until a clean is run", enclaveDataDirpathOnEngineContainer)
-				fmt.Fprintln(logrus.StandardLogger().Out, err)
-			}
-		}
-	}()
-
 	enclaveNetworkId := createdEnclave.GetNetworkID()
 	enclaveNetworkGatewayIp := createdEnclave.GetNetworkGatewayIp()
 	enclaveNetworkCidr := createdEnclave.GetNetworkCIDR()
@@ -160,9 +136,9 @@ func (manager *EnclaveManager) CreateEnclave(
 		enclaveNetworkGatewayIp,
 		apiContainerPrivateIpAddr,
 		isPartitioningEnabled,
-		enclaveDataDirpathOnHostMachine,
 		metricsUserID,
-		didUserAcceptSendingMetrics)
+		didUserAcceptSendingMetrics,
+	)
 
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the API container")
@@ -200,12 +176,10 @@ func (manager *EnclaveManager) CreateEnclave(
 			GrpcPortOnHostMachine:      uint32(apiContainer.GetPublicGRPCPort().GetNumber()),
 			GrpcProxyPortOnHostMachine: uint32(apiContainer.GetPublicGRPCProxyPort().GetNumber()),
 		},
-		EnclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine,
 	}
 
 	// Everything started successfully, so the responsibility of deleting the enclave is now transferred to the caller
 	shouldDestroyEnclave = false
-	shouldDeleteEnclaveDataDir = false
 	shouldStopApiContainer = false
 	return result, nil
 }
@@ -419,12 +393,6 @@ func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying enclaves during cleaning")
 	}
 
-	// TODO: use kurtosis_backend to clean up enclave data on disk
-	//remove dangling folders if any
-	if err = manager.deleteDanglingDirectories(ctx); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to delete dangling directories")
-	}
-
 	successfullyDestroyedEnclaveIdStrs := []string{}
 	for enclaveId := range successfullyDestroyedEnclaves {
 		successfullyDestroyedEnclaveIdStrs = append(successfullyDestroyedEnclaveIdStrs, string(enclaveId))
@@ -559,7 +527,6 @@ func (manager *EnclaveManager) getEnclaveInfoForEnclave(ctx context.Context, enc
 		ApiContainerStatus: apiContainerStatus,
 		ApiContainerInfo: apiContainerInfo,
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
-		EnclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine,
 	}, nil
 }
 

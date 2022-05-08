@@ -1,9 +1,12 @@
 # TBD
 ### Changes
-* Removed any sort fo 
+* The engine server no longer requires a host machine directory, as it now creates enclave data volumes for API containers
 
 ### Breaking Changes
 * Removed the `EnclaveDataDirpathOnHostMachine` property from the `EnclaveInfo` object returned by the API
+    * Users interested in investigating the enclave data will now need to mount the enclave data volume on a container
+* Removed the `engineDataDirpathOnHostMachine` arg from `EngineServerLauncher`'s `LaunchWithDefaultVersion` and `LaunchWithCustomVersion`
+    * Users no longer need to pass in this parameter
 
 # 1.17.4
 ### Fixes
