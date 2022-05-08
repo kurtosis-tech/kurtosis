@@ -1,5 +1,10 @@
 # TBD
 
+# 1.46.0
+### Breaking Changes
+* The APIContainerLauncher no longer takes in `enclaveDataDirpathOnHostMachine`
+    * Users no longer need to pass in this argument
+
 # 1.45.5
 ### Fixes
 * Improved error reporting for typos in service ids to pause/unpause service

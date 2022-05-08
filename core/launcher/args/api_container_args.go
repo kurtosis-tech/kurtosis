@@ -32,15 +32,6 @@ type APIContainerArgs struct {
 
 	IsPartitioningEnabled bool `json:"isPartitioningEnabled"`
 
-	// TODO Remove when we've verified enclave data volume is working
-	// The location on the API container where the enclave data directory will have been bind-mounted
-	EnclaveDataDirpathOnAPIContainer string `json:"enclaveDataDirpathOnAPIContainer"`
-
-	// TODO Remove when we've verified enclave data volume is working
-	// The dirpath on the Docker host machine where enclave data is stored, which the API container
-	//  will use to bind-mount the directory into the services that it starts
-	EnclaveDataDirpathOnHostMachine string `json:"enclaveDataDirpathOnHostMachine"`
-
 	//The anonymized user ID for metrics analytics purpose
 	MetricsUserID string `json:"metricsUserID"`
 
@@ -64,8 +55,6 @@ func NewAPIContainerArgs(
 	apiContainerIpAddr string,
 	takenIpAddrs map[string]bool,
 	isPartitioningEnabled bool,
-	enclaveDataDirpathOnAPIContainer string,
-	enclaveDataDirpathOnHostMachine string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	enclaveDataVolumeDirpath string,
@@ -81,8 +70,6 @@ func NewAPIContainerArgs(
 		ApiContainerIpAddr:               apiContainerIpAddr,
 		TakenIpAddrs:                     takenIpAddrs,
 		IsPartitioningEnabled:            isPartitioningEnabled,
-		EnclaveDataDirpathOnAPIContainer: enclaveDataDirpathOnAPIContainer,
-		EnclaveDataDirpathOnHostMachine:  enclaveDataDirpathOnHostMachine,
 		MetricsUserID:                    metricsUserID,
 		DidUserAcceptSendingMetrics:      didUserAcceptSendingMetrics,
 		EnclaveDataVolumeDirpath:         enclaveDataVolumeDirpath,

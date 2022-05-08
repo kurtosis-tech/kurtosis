@@ -19,13 +19,8 @@ import (
 
 const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-	DefaultVersion = "1.45.5"
+	DefaultVersion = "1.46.0"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-
-	// TODO REMOVE THIS WHEN WE SWITCH TO ENCLAVE DATA VOLUME
-	// The location where the enclave data directory (on the Docker host machine) will be bind-mounted
-	//  on the API container
-	enclaveDataDirpathOnAPIContainer = "/kurtosis-enclave-data"
 
 	enclaveDataVolumeDirpath = "/kurtosis-data"
 
@@ -52,7 +47,6 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	gatewayIpAddr net.IP,
 	apiContainerIpAddr net.IP,
 	isPartitioningEnabled bool,
-	enclaveDataDirpathOnHostMachine string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 ) (
@@ -71,7 +65,6 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		gatewayIpAddr,
 		apiContainerIpAddr,
 		isPartitioningEnabled,
-		enclaveDataDirpathOnHostMachine,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 	)
@@ -93,8 +86,6 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	gatewayIpAddr net.IP,
 	apiContainerIpAddr net.IP,
 	isPartitioningEnabled bool,
-	// TODO REMOVE THIS after we release the switch to enclave data volume
-	enclaveDataDirpathOnHostMachine string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 ) (
@@ -117,9 +108,6 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		apiContainerIpAddr.String(),
 		takenIpAddrStrSet,
 		isPartitioningEnabled,
-		// TODO REMOVE THIS after we release the switch to enclave data volume
-		enclaveDataDirpathOnAPIContainer,
-		enclaveDataDirpathOnHostMachine,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 		enclaveDataVolumeDirpath,
@@ -147,7 +135,6 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		apiContainerIpAddr,
 		grpcPortNum,
 		grpcProxyPortNum,
-		enclaveDataDirpathOnHostMachine,
 		enclaveDataVolumeDirpath,
 		envVars,
 	)
