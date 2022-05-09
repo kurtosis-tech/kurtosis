@@ -9,8 +9,6 @@ import (
 const (
 	applicationDirname = "kurtosis"
 
-	sessionCacheFilename = "session-cache"
-
 	kurtosisConfigYAMLFilename = "kurtosis-config.yml"
 
 	latestCLIReleaseVersionCacheFilename = "latest-cli-release-version-cache"
@@ -23,6 +21,8 @@ const (
 	engineDataDirname = "engine-data"
 )
 
+// TODO after 2022-07-08, when we're confident nobody is using engines without engine data directories anymore,
+//  add a step to 'engine stop' that will delete this directory on the user's machine if it exists
 // Gets the engine data directory on the host machine, and ensures the path exists
 func GetEngineDataDirpath() (string, error) {
 	xdgRelFilepath := getRelativeFilepathForXDG(engineDataDirname)
@@ -59,16 +59,6 @@ func GetUserSendMetricsElectionFilepath() (string, error) {
 		return "", stacktrace.Propagate(err, "An error occurred getting the user-send-metrics-election filepath from relative path '%v'", xdgRelFilepath)
 	}
 	return filepath, nil
-}
-
-// TODO Plug this into the 'test' auth framework in a different PR
-func GetSessionCacheFilepath() (string, error) {
-	xdgRelFilepath := getRelativeFilepathForXDG(sessionCacheFilename)
-	sessionCacheFilepath, err := xdg.CacheFile(xdgRelFilepath)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the session cache filepath from relative path '%v'", xdgRelFilepath)
-	}
-	return sessionCacheFilepath, nil
 }
 
 func GetLatestCLIReleaseVersionCacheFilepath() (string, error) {
