@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
+	"strconv"
 )
 
 // This can be requested by start, but getting dynamic resizing requires customizing a storage class.
@@ -107,14 +108,14 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		enclaveNamespaceName,
 		persistentVolumeClaimName.GetString(),
 		enclaveVolumeLabelMap,
-		enclaveVolumeInGigabytesStr,
-		enclaveStorageClassName)
+		strconv.Itoa(backend.volumeSizePerEnclaveInGigabytes),
+		backend.volumeStorageClassName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,
 			"Failed to create persistent volume claim in enclave '%v' with name '%v' and storage class name '%v'",
 			enclaveNamespaceName,
 			persistentVolumeClaimName.GetString(),
-			enclaveStorageClassName)
+			backend.volumeStorageClassName)
 	}
 	logrus.Info("PVC: %+v", pvc)
 	newEnclave := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty, "", "", net.IP{}, nil)
