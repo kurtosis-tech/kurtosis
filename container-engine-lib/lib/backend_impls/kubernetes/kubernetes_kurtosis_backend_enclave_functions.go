@@ -11,14 +11,6 @@ import (
 	"strconv"
 )
 
-// This can be requested by start, but getting dynamic resizing requires customizing a storage class.
-const enclaveVolumeInGigabytesStr = "10"
-// Blank storage class name invokes the default set by administrator IF the DefaultStorageClass admission plugin is turned on
-// See more here: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#class-1
-const defaultStorageClassName = ""
-// Local storage class works with minikube
-const enclaveStorageClassName = "standard"
-
 func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
@@ -102,8 +94,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because one or more enclave data volumes for that enclave already exists", enclaveId)
 	}
 
-
-	pvc, err := backend.kubernetesManager.CreatePersistentVolumeClaim(ctx,
+	_, err = backend.kubernetesManager.CreatePersistentVolumeClaim(ctx,
 		enclaveNamespaceName,
 		persistentVolumeClaimName.GetString(),
 		enclaveVolumeLabelMap,
@@ -116,7 +107,20 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 			persistentVolumeClaimName.GetString(),
 			backend.volumeStorageClassName)
 	}
-	logrus.Info("PVC: %+v", pvc)
+	shouldDeleteVolume := true
+	defer func() {
+		if shouldDeleteVolume {
+			if err := backend.kubernetesManager.RemovePersistentVolumeClaim(teardownContext, enclaveNamespaceName,persistentVolumeClaimName.GetString()); err != nil {
+				logrus.Errorf(
+					"Creating the enclave didn't complete successfully, so we tried to delete enclave persistent volume claim '%v' " +
+						"that we created but an error was thrown:\n%v",
+					persistentVolumeClaimName.GetString(),
+					err,
+				)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove persistent volume claim with name '%v'!!!!!!!", persistentVolumeClaimName.GetString())
+			}
+		}
+	}()
 	newEnclave := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty, "", "", net.IP{}, nil)
 
 	shouldDeleteNamespace = false
