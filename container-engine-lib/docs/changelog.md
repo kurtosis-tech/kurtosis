@@ -1,4 +1,9 @@
 # TBD
+### Features
+* Added persistent volume claim creation to kubernetes-backed enclaves
+
+### Breaking Changes
+* NewKurtosisKubernetesBackend now takes in extra arguments - `volumeStorageClassName` and `volumeSizePerEnclaveInGigabytes`
 
 # 0.19.0
 ### Breaking Changes
