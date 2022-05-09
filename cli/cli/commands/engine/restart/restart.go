@@ -3,9 +3,9 @@ package restart
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/backend_for_cmd"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/stacktrace"
@@ -31,6 +31,8 @@ var RestartCmd = &cobra.Command{
 	RunE:  run,
 }
 
+var WithKubernetes bool
+
 func init() {
 	RestartCmd.Flags().StringVar(
 		&engineVersion,
@@ -50,6 +52,7 @@ func init() {
 			),
 		),
 	)
+	RestartCmd.Flags().BoolVarP(&WithKubernetes, "with-kubernetes", "k", false, "Operate on the engine in kubernetes")
 }
 
 func run(cmd *cobra.Command, args []string) error {
@@ -62,9 +65,9 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred parsing log level string '%v'", logLevelStr)
 	}
 
-	kurtosisBackend, err := lib.GetLocalDockerKurtosisBackend()
+	kurtosisBackend, err := backend_for_cmd.GetBackendForCmd(WithKubernetes)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
+		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend")
 	}
 	engineManager := engine_manager.NewEngineManager(kurtosisBackend)
 
