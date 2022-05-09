@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Can use kubernetes backend for engine commands through the `--with-kubernetes` flag
 
 # 0.16.0
 ### Changes
