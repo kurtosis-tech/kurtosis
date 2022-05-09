@@ -1,8 +1,33 @@
 # TBD
 ### Features
-* Added `ServiceAccounts`, `Roles`, `RoleBindings`, `ClusterRole`, and `ClusterRoleBindings` create and remove methods to `KurtosisManager`
-* Added `CreateEnclave` functionality to kubernetes backend
 * Added persistent volume claim creation to kubernetes-backed enclaves
+
+### Breaking Changes
+* NewKurtosisKubernetesBackend now takes in extra arguments - `volumeStorageClassName` and `volumeSizePerEnclaveInGigabytes`
+
+# 0.19.0
+### Breaking Changes
+* Removed `enclaveDataDirpathOnHostMachine` and `enclaveDataDirpathOnServiceContainer` from `KurtosisBackend.CreateUserService`
+    * Users no longer need to provide this argument
+* Removed `enclaveDataDirpathOnHostMachine` argument from `KurtosisBackend.CreateModule`
+    * Users no longer need to provide this argument
+* Removed `engineDataDirpathOnHostMachine` from `KurtosisBackend.CreateEngine`
+    * Users no longer need to provide this argument
+
+# 0.18.0
+### Features
+* Added `ServiceAccounts`, `Roles`, `RoleBindings`, `ClusterRole`, and `ClusterRoleBindings` create and remove methods to `KubernetesManager`
+* Added `CreateEnclave` functionality to Kubernetes backend
+
+### Changes
+* Stopped mounting an enclave data directory on the API container
+
+### Fixes
+* `RunFilesArtifactExpander` now correctly only requires the user to pass in the filepath of the artifact to expand, relative to the enclave data volume root
+
+### Breaking Changes
+* Removed the `enclaveDataDirpathOnHostMachine` parameter from `KurtosisBackend.CreateAPIContainer`
+    * Users no longer need to provide this parameter
 
 # 0.17.0
 ### Features
