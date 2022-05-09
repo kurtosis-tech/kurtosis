@@ -20,7 +20,7 @@ var StatusCmd = &cobra.Command{
 var WithKubernetes bool
 
 func init() {
-	// No flags yet
+	// TODO Remove this in favor of actual Kubernetes info in the config file
 	StatusCmd.Flags().BoolVarP(&WithKubernetes, "with-kubernetes", "k", false, "Operate on the engine in kubernetes")
 }
 

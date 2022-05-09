@@ -52,6 +52,7 @@ func init() {
 			),
 		),
 	)
+	// TODO Remove this in favor of actual Kubernetes info in the config file
 	StartCmd.Flags().BoolVarP(&WithKubernetes, "with-kubernetes", "k", false, "Operate on the engine in kubernetes")
 }
 
