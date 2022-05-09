@@ -135,6 +135,11 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 
 // Stops the engine if it's running, doing nothing if not
 func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error {
+
+	// TODO after 2022-07-08, when we're confident nobody is running enclaves/engines that use the bindmounted directory,
+	//  add a step here that will delete the engine data dirpath if it exists on the host machine
+	// host_machine_directories.GetEngineDataDirpath()
+
 	_, erroredEngineIds, err := manager.kurtosisBackend.StopEngines(ctx, getRunningEnginesFilter())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping ")
