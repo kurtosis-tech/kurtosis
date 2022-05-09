@@ -123,6 +123,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	}()
 	newEnclave := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty, "", "", net.IP{}, nil)
 
+	shouldDeleteVolume = false
 	shouldDeleteNamespace = false
 	return newEnclave, nil
 }
