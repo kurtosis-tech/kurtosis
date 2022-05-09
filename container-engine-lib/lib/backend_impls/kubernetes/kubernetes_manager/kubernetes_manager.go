@@ -633,6 +633,21 @@ func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name
 	return serviceAccountResult, nil
 }
 
+func (manager *KubernetesManager) GetServiceAccountsByLabels(ctx context.Context, namespace string, serviceAccountsLabels map[string]string) (*apiv1.ServiceAccountList, error) {
+	client := manager.kubernetesClientSet.CoreV1().ServiceAccounts(namespace)
+
+	opts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(serviceAccountsLabels).String(),
+	}
+
+	pods, err := client.List(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get service accounts with labels '%+v', instead a non-nil error was returned", serviceAccountsLabels)
+	}
+
+	return pods, nil
+}
+
 func (manager *KubernetesManager) RemoveServiceAccount(ctx context.Context, name string, namespace string) error {
 	client := manager.kubernetesClientSet.CoreV1().ServiceAccounts(namespace)
 
@@ -664,6 +679,21 @@ func (manager *KubernetesManager) CreateRole(ctx context.Context, name string, n
 	return roleResult, nil
 }
 
+func (manager *KubernetesManager) GetRolesByLabels(ctx context.Context, namespace string, rolesLabels map[string]string) (*rbacv1.RoleList, error) {
+	client := manager.kubernetesClientSet.RbacV1().Roles(namespace)
+
+	opts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(rolesLabels).String(),
+	}
+
+	pods, err := client.List(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get roles with labels '%+v', instead a non-nil error was returned", rolesLabels)
+	}
+
+	return pods, nil
+}
+
 func (manager *KubernetesManager) RemoveRole(ctx context.Context, name string, namespace string) error {
 	client := manager.kubernetesClientSet.RbacV1().Roles(namespace)
 
@@ -692,6 +722,21 @@ func (manager *KubernetesManager) CreateRoleBindings(ctx context.Context, name s
 	}
 
 	return roleBindingResult, nil
+}
+
+func (manager *KubernetesManager) GetRoleBindingsByLabels(ctx context.Context, namespace string, roleBindingsLabels map[string]string) (*rbacv1.RoleBindingList, error) {
+	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
+
+	opts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(roleBindingsLabels).String(),
+	}
+
+	pods, err := client.List(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get role bindings with labels '%+v', instead a non-nil error was returned", roleBindingsLabels)
+	}
+
+	return pods, nil
 }
 
 func (manager *KubernetesManager) RemoveRoleBindings(ctx context.Context, name string, namespace string) error {
@@ -725,6 +770,21 @@ func (manager *KubernetesManager) CreateClusterRoles(ctx context.Context, name s
 	return clusterRoleResult, nil
 }
 
+func (manager *KubernetesManager) GetClusterRolesByLabels(ctx context.Context, clusterRoleLabels map[string]string) (*rbacv1.ClusterRoleList, error) {
+	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
+
+	opts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(clusterRoleLabels).String(),
+	}
+
+	pods, err := client.List(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get cluster roles with labels '%+v', instead a non-nil error was returned", clusterRoleLabels)
+	}
+
+	return pods, nil
+}
+
 func (manager *KubernetesManager) RemoveClusterRole(ctx context.Context, name string) error {
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
 
@@ -753,6 +813,21 @@ func (manager *KubernetesManager) CreateClusterRoleBindings(ctx context.Context,
 	}
 
 	return clusterRoleBindingResult, nil
+}
+
+func (manager *KubernetesManager) GetClusterRoleBindingsByLabels(ctx context.Context, clusterRoleBindingsLabels map[string]string) (*rbacv1.ClusterRoleBindingList, error) {
+	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
+
+	opts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(clusterRoleBindingsLabels).String(),
+	}
+
+	pods, err := client.List(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get cluster role bindings with labels '%+v', instead a non-nil error was returned", clusterRoleBindingsLabels)
+	}
+
+	return pods, nil
 }
 
 func (manager *KubernetesManager) RemoveClusterRoleBindings(ctx context.Context, name string) error {

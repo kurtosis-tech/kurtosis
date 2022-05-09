@@ -22,10 +22,6 @@ import (
 )
 
 const (
-	// The location where the engine data directory (on the Docker host machine) will be bind-mounted
-	//  on the engine server
-	engineDataDirpathOnEngineServerContainer = "/engine-data"
-
 	// This needs to be bind-mounted into the engine & API containers so they can manipulate Docker
 	dockerSocketFilepath = "/var/run/docker.sock"
 
@@ -53,7 +49,6 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
-	engineDataDirpathOnHostMachine string,
 	envVars map[string]string,
 ) (
 	*engine.Engine,
@@ -135,7 +130,6 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 	bindMounts := map[string]string{
 		// Necessary so that the engine server can interact with the Docker engine
 		dockerSocketFilepath:           dockerSocketFilepath,
-		engineDataDirpathOnHostMachine: engineDataDirpathOnEngineServerContainer,
 	}
 
 	containerImageAndTag := fmt.Sprintf(

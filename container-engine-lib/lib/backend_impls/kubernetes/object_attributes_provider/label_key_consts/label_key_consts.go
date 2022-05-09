@@ -14,6 +14,7 @@ const (
 	labelKeyPrefixStr       = "kurtosistech.com/"
 	appIdLabelKeyStr        = labelKeyPrefixStr + "app-id"
 	resourceTypeLabelKeyStr = labelKeyPrefixStr + "resource-type"
+	volumeTypeLabelKeyStr = labelKeyPrefixStr + "volume-type"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	// A label to identify a Kurtosis resource (e.g. network, container, etc.) by its id
@@ -40,6 +41,7 @@ const (
 //
 var AppIDLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(appIdLabelKeyStr)
 var KurtosisResourceTypeLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(resourceTypeLabelKeyStr)
+var VolumeTypeLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(volumeTypeLabelKeyStr)
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

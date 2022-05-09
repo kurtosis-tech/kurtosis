@@ -33,6 +33,7 @@ const (
 
 type KubernetesEnclaveObjectAttributesProvider interface {
 	ForEnclaveNamespace(isPartitioningEnabled bool) (KubernetesObjectAttributes, error)
+	ForEnclaveDataVolume() (KubernetesObjectAttributes, error)
 }
 
 // Private so it can't be instantiated
@@ -87,7 +88,28 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespa
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataVolume() (KubernetesObjectAttributes, error) {
-	panic("implement me")
+	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(provider.enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", provider.enclaveId)
+	}
+
+	labels, err := provider.getLabelsForEnclaveObject()
+	labels[label_key_consts.VolumeTypeLabelKey] = label_value_consts.EnclaveDataVolumeTypeLabelValue
+
+	// No custom annotations for enclave data volume
+	customAnnotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
+
+	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, customAnnotations)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred while creating the ObjectAttributesImpl with name '%s' and labels '%+v'",
+			name.GetString(),
+			getLabelKeyValuesAsStrings(labels),
+		)
+	}
+
+	return objectAttributes, nil
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForApiContainer(

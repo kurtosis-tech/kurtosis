@@ -54,7 +54,7 @@ func newKubernetesEngineObjectAttributesProviderImpl(
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEnginePod() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(podNameSuffix, []string{})
+	nameStr := provider.getEngineObjectNameString(podNameSuffix)
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
@@ -86,7 +86,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 	grpcProxyPortId string,
 	grpcProxyPortSpec *port_spec.PortSpec,
 ) (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(serviceNameSuffix, []string{})
+	nameStr := provider.getEngineObjectNameString(serviceNameSuffix)
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a name for our engine service")
@@ -125,7 +125,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineNamespace() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(namespaceSuffix, []string{})
+	nameStr := provider.getEngineObjectNameString(namespaceSuffix)
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
@@ -153,7 +153,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineNamespace
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineServiceAccount() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(serviceAccountSuffix, []string{})
+	nameStr := provider.getEngineObjectNameString(serviceAccountSuffix)
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
@@ -181,7 +181,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineServiceAc
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRole() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(clusterRoleSuffix, []string{})
+	nameStr := provider.getEngineObjectNameString(clusterRoleSuffix)
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
@@ -209,7 +209,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRo
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRoleBindings() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(clusterRoleBindingsSuffix, []string{})
+	nameStr := provider.getEngineObjectNameString(clusterRoleBindingsSuffix)
 
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
@@ -252,15 +252,12 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) GetEngineSelectorL
 	return labels, nil
 }
 
-func (provider *kubernetesEngineObjectAttributesProviderImpl) getEngineObjectNameString(suffix string, elems []string) string {
+func (provider *kubernetesEngineObjectAttributesProviderImpl) getEngineObjectNameString(suffix string) string {
 	toJoin := []string{
 		engineNamePrefix,
 		provider.engineId,
+		suffix,
 	}
-	if elems != nil {
-		toJoin = append(toJoin, elems...)
-	}
-	toJoin = append(toJoin, suffix)
 	nameStr := strings.Join(
 		toJoin,
 		objectNameElementSeparator,

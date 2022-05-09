@@ -16,12 +16,15 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"net"
+	"strings"
 	"time"
 )
 
 const (
 	kurtosisEngineContainerName = "kurtosis-engine-container"
 	externalServiceType         = "ClusterIP"
+
+	sentencesSeparator = ", "
 )
 
 // ====================================================================================================
@@ -34,7 +37,6 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
-	engineDataDirpathOnHostMachine string,
 	envVars map[string]string,
 ) (
 	*engine.Engine,
@@ -95,14 +97,20 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	}()
 
 	//Create engine's service account, cluster roles and cluster role bindings
-	engineServiceAccountName, removeAllEngineRoleBasedResourcesFunc, err := backend.createEngineRoleBasedResources(ctx, engineNamespaceName, engineAttributesProvider)
+	engineServiceAccountName, err := backend.createEngineRoleBasedResources(ctx, engineNamespaceName, engineAttributesProvider)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating engine service account, cluster roles and cluster role bindings for engine '%v' in namespace '%v'", engineIdStr, engineNamespaceName)
+		return nil, stacktrace.Propagate(err, "An error occurred creating engine role based resources for engine '%v' in namespace '%v'", engineIdStr, engineNamespaceName)
 	}
 	shouldRemoveAllEngineRoleBasedResources := true
 	defer func(){
 		if shouldRemoveAllEngineRoleBasedResources {
-			removeAllEngineRoleBasedResourcesFunc()
+			engineIds := map[string]bool {
+				engineIdStr: true,
+			}
+			if _, resultErroredEngineIds := backend.removeEngineRoleBasedResources(ctx, engineNamespaceName, engineIds); len(resultErroredEngineIds) > 0{
+				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete the engine kubernetes role based resources that we created for engine '%v' but an error was thrown:\n%v", engineIdStr, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove kubernetes role based resources for engine '%v' in namespace '%v'!!!!!!!", engineIdStr, engineNamespace)
+			}
 		}
 	}()
 
@@ -216,13 +224,13 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 }
 
 func (backend *KubernetesKurtosisBackend) GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[string]*engine.Engine, error) {
-	matchingEngines, err := backend.getMatchingEngines(ctx, filters)
+	matchingEnginesByNamespaceAndServiceName, err := backend.getMatchingEngines(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
 	}
 
 	matchingEnginesByEngineId := map[string]*engine.Engine{}
-	for _, engineServices := range matchingEngines {
+	for _, engineServices := range matchingEnginesByNamespaceAndServiceName {
 		for _, engineObj := range engineServices {
 			matchingEnginesByEngineId[engineObj.GetID()] = engineObj
 		}
@@ -244,14 +252,17 @@ func (backend *KubernetesKurtosisBackend) StopEngines(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engines matching filters '%+v'", filters)
 	}
 
-	engineServicesToEnginePodsMap := map[string]string{}
 	successfulEngineIds :=map[string]bool{}
 	erroredEngineIds := map[string]error{}
 	for engineNamespace, engineServices := range matchingEnginesByNamespaceAndServiceName {
+		engineServicesToEnginePodsMap := map[string]string{}
 		for engineServiceName, engineObj := range engineServices {
 			enginePod, err := backend.getEnginePod(ctx, engineObj.GetID(), engineNamespace)
 			if err != nil {
 				return nil, nil, stacktrace.Propagate(err, "An error occurred getting the engine pod for engine with ID '%v' in namespace '%v'", engineObj.GetID(), engineNamespace)
+			}
+			if _, found := engineServicesToEnginePodsMap[engineServiceName]; found {
+				return nil, nil, stacktrace.NewError("Engine service name '%v' already exist in the engine services to engines pod map '%+v'; it should never happens; this is a bug in Kurtosis", engineServiceName, engineServicesToEnginePodsMap)
 			}
 			engineServicesToEnginePodsMap[engineServiceName] = enginePod.GetName()
 		}
@@ -361,33 +372,33 @@ func (backend *KubernetesKurtosisBackend) removeEngineServiceSelectorsAndEngineP
 	return successfulServices, failedServices
 }
 
-func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx context.Context, namespace string, engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider) (resultEngineServiceAccountName string, resultRemoveAllEngineRoleBasedResourcesFunc func(), resultErr error)  {
+func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx context.Context, namespace string, engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider) (resultEngineServiceAccountName string, resultErr error)  {
 
-	serviceAccountName, serviceAccountLabels, err := getEngineServiceAccountNameAndLabels(engineAttributesProvider)
+	serviceAccountAttributes, err := engineAttributesProvider.ForEngineServiceAccount()
 	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred getting service account name and labels in namespace '%v'", namespace)
+		return "", stacktrace.Propagate(
+			err,
+			"Expected to be able to get engine attributes for a kubernetes service account, instead got a non-nil error",
+		)
 	}
+
+	serviceAccountName := serviceAccountAttributes.GetName().GetString()
+	serviceAccountLabels := getStringMapFromLabelMap(serviceAccountAttributes.GetLabels())
 
 	if _, err = backend.kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, namespace, serviceAccountLabels); err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred creating service account '%v' with labels '%+v' in namespace '%v'", serviceAccountName, serviceAccountLabels, namespace)
+		return "", stacktrace.Propagate(err, "An error occurred creating service account '%v' with labels '%+v' in namespace '%v'", serviceAccountName, serviceAccountLabels, namespace)
 	}
-	shouldRemoveServiceAccount := true
-	removeServiceAccountFunc := func() {
-		if err := backend.kubernetesManager.RemoveServiceAccount(ctx, serviceAccountName, namespace); err != nil {
-			logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete kubernetes service account '%v' that we created but an error was thrown:\n%v", serviceAccountName, err)
-			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove kubernetes service account with name '%v'!!!!!!!", serviceAccountName)
-		}
-	}
-	defer func () {
-		if shouldRemoveServiceAccount {
-			removeServiceAccountFunc()
-		}
-	}()
 
-	clusterRoleName, clusterRoleLabels, err := getEngineClusterRoleNameAndLabels(engineAttributesProvider)
+	clusterRolesAttributes, err := engineAttributesProvider.ForEngineClusterRole()
 	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred getting cluster role name and labels in namespace '%v'", namespace)
+		return "", stacktrace.Propagate(
+			err,
+			"Expected to be able to get engine attributes for a kubernetes cluster role, instead got a non-nil error",
+		)
 	}
+
+	clusterRoleName := clusterRolesAttributes.GetName().GetString()
+	clusterRoleLabels := getStringMapFromLabelMap(clusterRolesAttributes.GetLabels())
 
 	clusterRolePolicyRules := []rbacv1.PolicyRule{
 		{
@@ -398,25 +409,19 @@ func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx con
 	}
 
 	if _, err = backend.kubernetesManager.CreateClusterRoles(ctx, clusterRoleName, clusterRolePolicyRules, clusterRoleLabels); err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred creating cluster role '%v' with policy rules '%+v' and labels '%+v'", clusterRoleName, clusterRolePolicyRules, clusterRoleLabels)
+		return "", stacktrace.Propagate(err, "An error occurred creating cluster role '%v' with policy rules '%+v' and labels '%+v'", clusterRoleName, clusterRolePolicyRules, clusterRoleLabels)
 	}
-	shouldRemoveClusterRole := true
-	removeClusterRoleFunc := func() {
-		if err := backend.kubernetesManager.RemoveClusterRole(ctx, clusterRoleName); err != nil {
-			logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete kubernetes cluster role '%v' that we created but an error was thrown:\n%v", clusterRoleName, err)
-			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove kubernetes cluster role with name '%v'!!!!!!!", clusterRoleName)
-		}
-	}
-	defer func () {
-		if shouldRemoveClusterRole {
-			removeClusterRoleFunc()
-		}
-	}()
 
-	clusterRoleBindingsName, clusterRoleBindingsLabels, err := getEngineClusterRoleBindingsNameAndLabels(engineAttributesProvider)
+	clusterRoleBindingsAttributes, err := engineAttributesProvider.ForEngineClusterRoleBindings()
 	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred getting engine cluster role bindings name and labels")
+		return "", stacktrace.Propagate(
+			err,
+			"Expected to be able to get engine attributes for a kubernetes cluster role bindings, instead got a non-nil error",
+		)
 	}
+
+	clusterRoleBindingsName := clusterRoleBindingsAttributes.GetName().GetString()
+	clusterRoleBindingsLabels := getStringMapFromLabelMap(clusterRoleBindingsAttributes.GetLabels())
 
 	clusterRoleBindingsSubjects := []rbacv1.Subject{
 		{
@@ -433,31 +438,10 @@ func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx con
 	}
 
 	if _, err := backend.kubernetesManager.CreateClusterRoleBindings(ctx, clusterRoleBindingsName, clusterRoleBindingsSubjects, clusterRoleBindingsRoleRef, clusterRoleBindingsLabels); err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred creating cluster role bindings '%v' with subjects '%+v' and role ref '%+v'", clusterRoleBindingsName, clusterRoleBindingsSubjects, clusterRoleBindingsRoleRef)
+		return "", stacktrace.Propagate(err, "An error occurred creating cluster role bindings '%v' with subjects '%+v' and role ref '%+v' in namespace '%v'", clusterRoleBindingsName, clusterRoleBindingsSubjects, clusterRoleBindingsRoleRef, namespace)
 	}
-	shouldRemoveClusterRoleBindings := true
-	removeClusterRoleBindingsFunc := func() {
-		if err := backend.kubernetesManager.RemoveClusterRoleBindings(ctx, clusterRoleBindingsName); err != nil {
-			logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete kubernetes cluster role bindings '%v' that we created but an error was thrown:\n%v", clusterRoleBindingsName, err)
-			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove kubernetes cluster role bindings with name '%v'!!!!!!!", clusterRoleBindingsName)
-		}
-	}
-	defer func () {
-		if shouldRemoveClusterRoleBindings {
-			removeClusterRoleBindingsFunc()
-		}
-	}()
 
-	shouldRemoveServiceAccount = false
-	shouldRemoveClusterRole = false
-	shouldRemoveClusterRoleBindings = false
-
-	removeAllRoleBasedResourcesFunc := func() {
-		removeServiceAccountFunc()
-		removeClusterRoleFunc()
-		removeClusterRoleBindingsFunc()
-	}
-	return serviceAccountName, removeAllRoleBasedResourcesFunc, nil
+	return serviceAccountName,  nil
 }
 
 // TODO parallelize to improve performance
@@ -466,47 +450,92 @@ func (backend *KubernetesKurtosisBackend) removeEngineRoleBasedResources(ctx con
 	successfulEngineIds := map[string]bool{}
 	erroredEngineIds := map[string]error{}
 	for engineIdStr := range engineIds {
-		engineAttributesProvider, err := backend.objAttrsProvider.ForEngine(engineIdStr)
+
+		//First remove cluster role bindings
+		clusterRoleBindings, err := backend.getAllEngineClusterRoleBindings(ctx, engineIdStr)
 		if err != nil {
-			wrapErr := stacktrace.Propagate(err, "An error occurred getting the engine attributes provider using id '%v'", engineIdStr)
+			wrapErr := stacktrace.Propagate(err, "An error occurred getting all engine cluster role bindings for engine '%v'", engineIdStr)
 			erroredEngineIds[engineIdStr] = wrapErr
 			continue
 		}
 
-		//Get names first
-		serviceAccountName, _, err := getEngineServiceAccountNameAndLabels(engineAttributesProvider)
-		if err != nil {
-			wrapErr := stacktrace.Propagate(err, "An error occurred getting service account name and labels in namespace '%v'", namespace)
+		errClusterRoleBindingNames := []string{}
+		errClusterRoleBindingErrMsgs := []string{}
+		for _, clusterRoleBinding := range clusterRoleBindings {
+			clusterRoleBindingName := clusterRoleBinding.GetName()
+			if err := backend.kubernetesManager.RemoveClusterRoleBindings(ctx, clusterRoleBindingName); err != nil {
+				wrapErr := stacktrace.Propagate(err, "An error occurred removing engine cluster role binding '%v'", clusterRoleBindingName)
+				errClusterRoleBindingNames = append(errClusterRoleBindingNames, clusterRoleBindingName)
+				errClusterRoleBindingErrMsgs = append(errClusterRoleBindingErrMsgs, wrapErr.Error())
+			}
+		}
+
+		if len(errClusterRoleBindingNames) > 0 {
+			errClusterRoleBindingNamesStr := strings.Join(errClusterRoleBindingNames, sentencesSeparator)
+			errClusterRoleBindingErrMsgsStr := strings.Join(errClusterRoleBindingErrMsgs, sentencesSeparator)
+			wrapErr := stacktrace.NewError("An error occurred removing cluster role bindings '%v' error: %v ", errClusterRoleBindingNames, errClusterRoleBindingErrMsgsStr)
 			erroredEngineIds[engineIdStr] = wrapErr
+			logrus.Errorf("Removing the engine role-based resources didn't complete successfully, so we tried to delete kubernetes cluster role bindings '%v' that we created but an error was thrown:\n%v", errClusterRoleBindingNamesStr, errClusterRoleBindingErrMsgsStr)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove kubernetes cluster role bindings with name '%v'!!!!!!!", errClusterRoleBindingNamesStr)
 			continue
 		}
-		clusterRoleName, _, err := getEngineClusterRoleNameAndLabels(engineAttributesProvider)
+
+		//Then cluster roles
+		clusterRoles, err := backend.getAllEngineClusterRoles(ctx, engineIdStr)
 		if err != nil {
-			wrapErr := stacktrace.Propagate(err, "An error occurred getting cluster role name and labels")
-			erroredEngineIds[engineIdStr] = wrapErr
-			continue
-		}
-		clusterRoleBindingsName, _, err := getEngineClusterRoleBindingsNameAndLabels(engineAttributesProvider)
-		if err != nil {
-			wrapErr := stacktrace.Propagate(err, "An error occurred getting engine cluster role bindings name and labels")
+			wrapErr := stacktrace.Propagate(err, "An error occurred getting all engine cluster roles for engine '%v'", engineIdStr)
 			erroredEngineIds[engineIdStr] = wrapErr
 			continue
 		}
 
-		//Then remove resources in dependency order
-		if err := backend.kubernetesManager.RemoveClusterRoleBindings(ctx, clusterRoleBindingsName); err != nil {
-			wrapErr := stacktrace.Propagate(err, "An error occurred removing engine cluster role bindings '%v'", clusterRoleBindingsName)
+		errClusterRoleNames := []string{}
+		errClusterRoleErrMsgs := []string{}
+		for _, clusterRole := range clusterRoles {
+			clusterRoleName := clusterRole.GetName()
+			if err := backend.kubernetesManager.RemoveClusterRole(ctx, clusterRoleName); err != nil {
+				wrapErr := stacktrace.Propagate(err, "An error occurred removing engine cluster role '%v'", clusterRoleName)
+				errClusterRoleNames = append(errClusterRoleNames, clusterRoleName)
+				errClusterRoleErrMsgs = append(errClusterRoleErrMsgs, wrapErr.Error())
+			}
+		}
+
+		if len(errClusterRoleNames) > 0 {
+			errClusterRoleNamesStr := strings.Join(errClusterRoleNames, sentencesSeparator)
+			errClusterRoleErrMsgsStr := strings.Join(errClusterRoleErrMsgs, sentencesSeparator)
+			wrapErr := stacktrace.NewError("An error occurred removing cluster roles '%v' error: %v ", errClusterRoleNamesStr, errClusterRoleErrMsgsStr)
+			erroredEngineIds[engineIdStr] = wrapErr
+			logrus.Errorf("Removing the engine role-based resources didn't complete successfully, so we tried to delete kubernetes cluster roles '%v' that we created but an error was thrown:\n%v", errClusterRoleNamesStr, errClusterRoleErrMsgsStr)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove kubernetes cluster roles with name '%v'!!!!!!!", errClusterRoleNamesStr)
+			continue
+		}
+
+
+		//And finally, the service accounts
+		serviceAccounts, err := backend.getAllEngineServiceAccounts(ctx, namespace, engineIdStr)
+		if err != nil {
+			wrapErr := stacktrace.Propagate(err, "An error occurred getting all engine service accounts for engine '%v' in namespace '%v'", engineIdStr, namespace)
 			erroredEngineIds[engineIdStr] = wrapErr
 			continue
 		}
-		if err := backend.kubernetesManager.RemoveClusterRole(ctx, clusterRoleName); err != nil {
-			wrapErr := stacktrace.Propagate(err, "An error occurred removing engine cluster role '%v'", clusterRoleName)
-			erroredEngineIds[engineIdStr] = wrapErr
-			continue
+
+		errServiceAccountNames := []string{}
+		errServiceAccountErrMsgs := []string{}
+		for _, serviceAccount := range serviceAccounts {
+			serviceAccountName := serviceAccount.GetName()
+			if err := backend.kubernetesManager.RemoveServiceAccount(ctx, serviceAccountName, namespace); err != nil {
+				wrapErr := stacktrace.Propagate(err, "An error occurred removing engine service account '%v' in namespace '%v'", serviceAccountName, namespace)
+				errServiceAccountNames = append(errServiceAccountNames, serviceAccountName)
+				errServiceAccountErrMsgs = append(errServiceAccountErrMsgs, wrapErr.Error())
+			}
 		}
-		if err := backend.kubernetesManager.RemoveServiceAccount(ctx, serviceAccountName, namespace); err != nil {
-			wrapErr := stacktrace.Propagate(err, "An error occurred removing service account '%v' in namespace '%v'", serviceAccountName, namespace)
+
+		if len(errServiceAccountNames) > 0 {
+			errServiceAccountNamesStr := strings.Join(errServiceAccountNames, sentencesSeparator)
+			errServiceAccountErrMsgsStr := strings.Join(errServiceAccountErrMsgs, sentencesSeparator)
+			wrapErr := stacktrace.NewError("An error occurred removing service accounts '%v' error: %v ", errServiceAccountNamesStr, errServiceAccountErrMsgsStr)
 			erroredEngineIds[engineIdStr] = wrapErr
+			logrus.Errorf("Removing the engine role-based resources didn't complete successfully, so we tried to delete kubernetes service accounts '%v' that we created but an error was thrown:\n%v", errServiceAccountNamesStr, errServiceAccountErrMsgsStr)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove kubernetes service accounts with name '%v' in namespace '%v'!!!!!!!", errServiceAccountNamesStr, namespace)
 			continue
 		}
 
@@ -591,50 +620,84 @@ func (backend *KubernetesKurtosisBackend) getEnginePod(ctx context.Context, engi
 	return resultPod, nil
 }
 
-func getEngineServiceAccountNameAndLabels(engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider) (resultEngineServiceAccountName string, resultEngineServiceAccountLabels map[string]string, resultErr error) {
-	serviceAccountAttributes, err := engineAttributesProvider.ForEngineServiceAccount()
+func (backend *KubernetesKurtosisBackend) getAllEngineServiceAccounts(ctx context.Context, engineNamespace string, engineId string) ([]*apiv1.ServiceAccount, error) {
+	engineMatchLabels := getEngineMatchLabels()
+
+	serviceAccounts, err := backend.kubernetesManager.GetServiceAccountsByLabels(ctx, engineNamespace, engineMatchLabels)
 	if err != nil {
-		return "", nil, stacktrace.Propagate(
-			err,
-			"Expected to be able to get engine attributes for a kubernetes service account, instead got a non-nil error",
-		)
+		return nil, stacktrace.Propagate(err, "An error occurred getting service accounts using labels '%+v' ", engineMatchLabels)
 	}
 
-	serviceAccountName := serviceAccountAttributes.GetName().GetString()
-	serviceAccountLabels := getStringMapFromLabelMap(serviceAccountAttributes.GetLabels())
+	filteredServiceAccounts := []*apiv1.ServiceAccount{}
 
-	return serviceAccountName, serviceAccountLabels, nil
-}
+	for _, foundServiceAccount := range serviceAccounts.Items {
+		foundServiceAccountLabels := foundServiceAccount.GetLabels()
 
-func getEngineClusterRoleNameAndLabels(engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider) (resultEngineClusterRoleName string, resultEngineClusterRoleLabels map[string]string, resultErr error) {
-	clusterRolesAttributes, err := engineAttributesProvider.ForEngineClusterRole()
-	if err != nil {
-		return "", nil, stacktrace.Propagate(
-			err,
-			"Expected to be able to get engine attributes for a kubernetes cluster role, instead got a non-nil error",
-		)
+		foundEngineId, found := foundServiceAccountLabels[label_key_consts.IDLabelKey.GetString()]
+		if !found {
+			return nil, stacktrace.NewError("Expected to find ID label key '%v' but none was found", label_key_consts.IDLabelKey.GetString())
+		}
+
+		if engineId == foundEngineId {
+			filteredServiceAccounts = append(filteredServiceAccounts, &foundServiceAccount)
+		}
 	}
 
-	clusterRoleName := clusterRolesAttributes.GetName().GetString()
-	clusterRoleLabels := getStringMapFromLabelMap(clusterRolesAttributes.GetLabels())
-
-	return clusterRoleName, clusterRoleLabels, nil
+	return filteredServiceAccounts, nil
 }
 
-func getEngineClusterRoleBindingsNameAndLabels(engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider) (resultEngineClusterRoleBindingsName string, resultEngineClusterRoleBindingsLabels map[string]string, resultErr error) {
-	clusterRoleBindingsAttributes, err := engineAttributesProvider.ForEngineClusterRoleBindings()
+func (backend *KubernetesKurtosisBackend) getAllEngineClusterRoles(ctx context.Context, engineId string) ([]*rbacv1.ClusterRole, error) {
+	engineMatchLabels := getEngineMatchLabels()
+
+	clusterRoles, err := backend.kubernetesManager.GetClusterRolesByLabels(ctx, engineMatchLabels)
 	if err != nil {
-		return "", nil, stacktrace.Propagate(
-			err,
-			"Expected to be able to get engine attributes for a kubernetes cluster role bindings, instead got a non-nil error",
-		)
+		return nil, stacktrace.Propagate(err, "An error occurred getting cluster roles using labels '%+v' ", engineMatchLabels)
 	}
 
-	clusterRoleBindingsName := clusterRoleBindingsAttributes.GetName().GetString()
-	clusterRoleBindingsLabels := getStringMapFromLabelMap(clusterRoleBindingsAttributes.GetLabels())
+	filteredClusterRoles := []*rbacv1.ClusterRole{}
 
-	return clusterRoleBindingsName, clusterRoleBindingsLabels, nil
+	for _, foundClusterRole := range clusterRoles.Items {
+		foundClusterRoleLabels := foundClusterRole.GetLabels()
+
+		foundEngineId, found := foundClusterRoleLabels[label_key_consts.IDLabelKey.GetString()]
+		if !found {
+			return nil, stacktrace.NewError("Expected to find ID label key '%v' but none was found", label_key_consts.IDLabelKey.GetString())
+		}
+
+		if engineId == foundEngineId {
+			filteredClusterRoles = append(filteredClusterRoles, &foundClusterRole)
+		}
+	}
+
+	return filteredClusterRoles, nil
 }
+
+func (backend *KubernetesKurtosisBackend) getAllEngineClusterRoleBindings(ctx context.Context, engineId string) ([]*rbacv1.ClusterRoleBinding, error) {
+	engineMatchLabels := getEngineMatchLabels()
+
+	clusterRoleBindings, err := backend.kubernetesManager.GetClusterRoleBindingsByLabels(ctx, engineMatchLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting engine cluster role bindings using labels '%+v' ", engineMatchLabels)
+	}
+
+	filteredClusterRoleBindings := []*rbacv1.ClusterRoleBinding{}
+
+	for _, foundClusterRoleBinding := range clusterRoleBindings.Items {
+		foundClusterRoleBindingLabels := foundClusterRoleBinding.GetLabels()
+
+		foundEngineId, found := foundClusterRoleBindingLabels[label_key_consts.IDLabelKey.GetString()]
+		if !found {
+			return nil, stacktrace.NewError("Expected to find ID label key '%v' but none was found", label_key_consts.IDLabelKey.GetString())
+		}
+
+		if engineId == foundEngineId {
+			filteredClusterRoleBindings = append(filteredClusterRoleBindings, &foundClusterRoleBinding)
+		}
+	}
+
+	return filteredClusterRoleBindings, nil
+}
+
 
 /*
 func (backend *KubernetesKurtosisBackend) destroyEngineResources(ctx context.Context, engineId string) {
@@ -680,6 +743,7 @@ func getEngineObjectFromKubernetesService(service apiv1.Service) (*engine.Engine
 	return engine.NewEngine(engineId, engineStatus, publicIpAddr, publicGrpcPortSpec, publicGrpcProxyPortSpec), nil
 
 }
+
 func getKurtosisStatusFromKubernetesService(service apiv1.Service) container_status.ContainerStatus {
 	// If a Kubernetes Service has selectors, then we assume the engine is reachable, and thus not stopped
 	// see stopEngineService for how we stop the engine

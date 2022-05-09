@@ -32,7 +32,7 @@ func GetLocalDockerKurtosisBackend() (backend_interface.KurtosisBackend, error) 
 	return wrappedBackend, nil
 }
 
-func GetLocalKubernetesKurtosisBackend() (backend_interface.KurtosisBackend, error) {
+func GetLocalKubernetesKurtosisBackend(volumeStorageClassName string, volumeSizeInGigabytes int) (backend_interface.KurtosisBackend, error) {
 	// TODO Implement GetLocalKubernetesProxyKurtosisBackend?
 	kubeconfig := filepath.Join(
 		os.Getenv("HOME"), ".kube", "config",
@@ -48,9 +48,9 @@ func GetLocalKubernetesKurtosisBackend() (backend_interface.KurtosisBackend, err
 
 	kubernetesManager := kubernetes_manager.NewKubernetesManager(clientSet)
 
-	dockerKurtosisBackend := kb.NewKubernetesKurtosisBackend(kubernetesManager)
+	kurtosisBackend := kb.NewKubernetesKurtosisBackend(kubernetesManager, volumeStorageClassName, volumeSizeInGigabytes)
 
-	wrappedBackend := metrics_reporting.NewMetricsReportingKurtosisBackend(dockerKurtosisBackend)
+	wrappedBackend := metrics_reporting.NewMetricsReportingKurtosisBackend(kurtosisBackend)
 
 	return wrappedBackend, nil
 }

@@ -20,6 +20,7 @@ const (
 	networkingSidecarContainerTypeLabelValueStr     = "networking-sidecar"
 	moduleContainerTypeLabelValueStr                = "module"
 	filesArtifactExpanderContainerTypeLabelValueStr = "files-artifact-expander"
+	enclaveDataVolumeTypeLabelValueStr = "enclave-data"
 
 	trueValueStr  = "true"
 	falseValueStr = "false"
@@ -43,3 +44,4 @@ var NetworkingSidecarContainerTypeLabelValue = kubernetes_label_value.MustCreate
 var NetworkPartitioningEnabledLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(trueValueStr)
 var NetworkPartitioningDisabledLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(falseValueStr)
 var FilesArtifactExpanderContainerTypeLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(filesArtifactExpanderContainerTypeLabelValueStr)
+var EnclaveDataVolumeTypeLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(enclaveDataVolumeTypeLabelValueStr)
