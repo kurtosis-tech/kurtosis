@@ -26,6 +26,18 @@ type KubernetesKurtosisBackend struct {
 	kubernetesManager *kubernetes_manager.KubernetesManager
 
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider
+
+	/*
+		StorageClass name to be used for volumes in the cluster
+		StorageClasses must be defined by a cluster administrator.
+		passes this in when starting Kurtosis with Kubernetes.
+	*/
+	volumeStorageClassName string
+	/*
+		Enclave availability must be set and defined by a cluster administrator.
+		The user passes this in when starting Kurtosis with Kubernetes.
+	 */
+	volumeSizePerEnclaveInGigabytes int
 }
 
 func (backend *KubernetesKurtosisBackend) PullImage(image string) error {
@@ -40,7 +52,6 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	ipAddr net.IP,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
-	enclaveDataDirpathOnHostMachine string,
 	enclaveDataVolumeDirpath string,
 	envVars map[string]string,
 ) (*api_container.APIContainer, error) {
@@ -63,7 +74,7 @@ func (backend *KubernetesKurtosisBackend) DestroyAPIContainers(ctx context.Conte
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateModule(ctx context.Context, image string, enclaveId enclave.EnclaveID, id module.ModuleID, guid module.ModuleGUID, ipAddr net.IP, grpcPortNum uint16, enclaveDataDirpathOnHostMachine string, envVars map[string]string) (newModule *module.Module, resultErr error) {
+func (backend *KubernetesKurtosisBackend) CreateModule(ctx context.Context, image string, enclaveId enclave.EnclaveID, id module.ModuleID, guid module.ModuleGUID, ipAddr net.IP, grpcPortNum uint16, envVars map[string]string) (newModule *module.Module, resultErr error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -88,7 +99,7 @@ func (backend *KubernetesKurtosisBackend) DestroyModules(ctx context.Context, fi
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateUserService(ctx context.Context, id service.ServiceID, guid service.ServiceGUID, containerImageName string, enclaveId enclave.EnclaveID, ipAddr net.IP, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, enclaveDataDirpathOnHostMachine string, enclaveDataDirpathOnServiceContainer string, filesArtifactMountDirpaths map[string]string) (newUserService *service.Service, resultErr error) {
+func (backend *KubernetesKurtosisBackend) CreateUserService(ctx context.Context, id service.ServiceID, guid service.ServiceGUID, containerImageName string, enclaveId enclave.EnclaveID, ipAddr net.IP, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactMountDirpaths map[string]string) (newUserService *service.Service, resultErr error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -182,7 +193,7 @@ func (backend *KubernetesKurtosisBackend) DestroyFilesArtifactExpansionVolumes(c
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) RunFilesArtifactExpander(ctx context.Context, guid files_artifact_expander.FilesArtifactExpanderGUID, enclaveId enclave.EnclaveID, filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName, enclaveDataDirpathOnHostMachine string, destVolMntDirpathOnExpander string, filesArtifactFilepathRelativeToEnclaveDatadirRoot string, ipAddr net.IP) (*files_artifact_expander.FilesArtifactExpander, error) {
+func (backend *KubernetesKurtosisBackend) RunFilesArtifactExpander(ctx context.Context, guid files_artifact_expander.FilesArtifactExpanderGUID, enclaveId enclave.EnclaveID, filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName, destVolMntDirpathOnExpander string, filesArtifactFilepathRelativeToEnclaveDatadirRoot string, ipAddr net.IP) (*files_artifact_expander.FilesArtifactExpander, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -192,11 +203,13 @@ func (backend *KubernetesKurtosisBackend) DestroyFilesArtifactExpanders(ctx cont
 	panic("implement me")
 }
 
-func NewKubernetesKurtosisBackend(kubernetesManager *kubernetes_manager.KubernetesManager) *KubernetesKurtosisBackend {
+func NewKubernetesKurtosisBackend(kubernetesManager *kubernetes_manager.KubernetesManager, volumeStorageClassName string, volumeSizePerEnclaveInGigabytes int) *KubernetesKurtosisBackend {
 	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	return &KubernetesKurtosisBackend{
 		kubernetesManager: kubernetesManager,
 		objAttrsProvider:  objAttrsProvider,
+		volumeStorageClassName: volumeStorageClassName,
+		volumeSizePerEnclaveInGigabytes: volumeSizePerEnclaveInGigabytes,
 	}
 }
 

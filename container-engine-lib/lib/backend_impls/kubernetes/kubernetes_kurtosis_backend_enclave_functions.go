@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
+	"strconv"
 )
 
 func (backend *KubernetesKurtosisBackend) CreateEnclave(
@@ -69,8 +70,60 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 			}
 		}
 	}()
+
+	enclaveDataVolumeAttrs, err := enclaveObjAttrsProvider.ForEnclaveDataVolume()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave data volume attributes for the enclave with ID '%v'", enclaveId)
+	}
+
+	persistentVolumeClaimName := enclaveDataVolumeAttrs.GetName()
+	persistentVolumeClaimLabels := enclaveDataVolumeAttrs.GetLabels()
+
+	enclaveVolumeLabelMap := map[string]string{}
+	for kubernetesLabelKey, kubernetesLabelValue := range persistentVolumeClaimLabels {
+		pvcLabelKey := kubernetesLabelKey.GetString()
+		pvcLabelValue := kubernetesLabelValue.GetString()
+		enclaveVolumeLabelMap[pvcLabelKey] = pvcLabelValue
+	}
+
+	foundVolumes, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, enclaveNamespaceName, enclaveVolumeLabelMap)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave data volumes matching labels '%+v'", enclaveVolumeLabelMap)
+	}
+	if len(foundVolumes.Items) > 0 {
+		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because one or more enclave data volumes for that enclave already exists", enclaveId)
+	}
+
+	_, err = backend.kubernetesManager.CreatePersistentVolumeClaim(ctx,
+		enclaveNamespaceName,
+		persistentVolumeClaimName.GetString(),
+		enclaveVolumeLabelMap,
+		strconv.Itoa(backend.volumeSizePerEnclaveInGigabytes),
+		backend.volumeStorageClassName)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,
+			"Failed to create persistent volume claim in enclave '%v' with name '%v' and storage class name '%v'",
+			enclaveNamespaceName,
+			persistentVolumeClaimName.GetString(),
+			backend.volumeStorageClassName)
+	}
+	shouldDeleteVolume := true
+	defer func() {
+		if shouldDeleteVolume {
+			if err := backend.kubernetesManager.RemovePersistentVolumeClaim(teardownContext, enclaveNamespaceName,persistentVolumeClaimName.GetString()); err != nil {
+				logrus.Errorf(
+					"Creating the enclave didn't complete successfully, so we tried to delete enclave persistent volume claim '%v' " +
+						"that we created but an error was thrown:\n%v",
+					persistentVolumeClaimName.GetString(),
+					err,
+				)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove persistent volume claim with name '%v'!!!!!!!", persistentVolumeClaimName.GetString())
+			}
+		}
+	}()
 	newEnclave := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty, "", "", net.IP{}, nil)
 
+	shouldDeleteVolume = false
 	shouldDeleteNamespace = false
 	return newEnclave, nil
 }
