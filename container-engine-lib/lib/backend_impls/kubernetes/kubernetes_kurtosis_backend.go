@@ -204,12 +204,13 @@ func (backend *KubernetesKurtosisBackend) DestroyFilesArtifactExpanders(ctx cont
 	panic("implement me")
 }
 
-func NewKubernetesKurtosisBackend(kubernetesManager *kubernetes_manager.KubernetesManager, volumeStorageClassName string) *KubernetesKurtosisBackend {
+func NewKubernetesKurtosisBackend(kubernetesManager *kubernetes_manager.KubernetesManager, volumeStorageClassName string, volumeSizePerEnclaveInGigabytes int) *KubernetesKurtosisBackend {
 	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	return &KubernetesKurtosisBackend{
 		kubernetesManager: kubernetesManager,
 		objAttrsProvider:  objAttrsProvider,
 		volumeStorageClassName: volumeStorageClassName,
+		volumeSizePerEnclaveInGigabytes: volumeSizePerEnclaveInGigabytes,
 	}
 }
 

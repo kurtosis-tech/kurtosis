@@ -94,7 +94,6 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		enclaveVolumeLabelMap[pvcLabelKey] = pvcLabelValue
 	}
 
-	// Create Persistent Volume Claim for the enclave (associated with namespace)
 	foundVolumes, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, enclaveNamespaceName, enclaveVolumeLabelMap)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave data volumes matching labels '%+v'", enclaveVolumeLabelMap)
