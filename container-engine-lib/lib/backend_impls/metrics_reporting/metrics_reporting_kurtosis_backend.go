@@ -35,8 +35,15 @@ func (backend *MetricsReportingKurtosisBackend) PullImage(image string) error {
 	return nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) CreateEngine(ctx context.Context, imageOrgAndRepo string, imageVersionTag string, grpcPortNum uint16, grpcProxyPortNum uint16, engineDataDirpathOnHostMachine string, envVars map[string]string) (*engine.Engine, error) {
-	result, err := backend.underlying.CreateEngine(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, grpcProxyPortNum, engineDataDirpathOnHostMachine, envVars)
+func (backend *MetricsReportingKurtosisBackend) CreateEngine(ctx context.Context, imageOrgAndRepo string, imageVersionTag string, grpcPortNum uint16, grpcProxyPortNum uint16, envVars map[string]string) (*engine.Engine, error) {
+	result, err := backend.underlying.CreateEngine(
+		ctx,
+		imageOrgAndRepo,
+		imageVersionTag,
+		grpcPortNum,
+		grpcProxyPortNum,
+		envVars,
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the engine using image '%v' with tag '%v'", imageOrgAndRepo, imageVersionTag)
 	}
@@ -150,7 +157,6 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 	ipAddr net.IP,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
-	enclaveDataDirpathOnHostMachine string,
 	enclaveDataVolumeDirpath string,
 	envVars map[string]string,
 ) (*api_container.APIContainer, error) {
@@ -161,7 +167,6 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 		ipAddr,
 		grpcPortNum,
 		grpcProxyPortNum,
-		enclaveDataDirpathOnHostMachine,
 		enclaveDataVolumeDirpath,
 		envVars,
 	)
@@ -208,7 +213,6 @@ func (backend *MetricsReportingKurtosisBackend) CreateModule(
 	guid module.ModuleGUID,
 	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 	grpcPortNum uint16,
-	enclaveDataDirpathOnHostMachine string,
 	envVars map[string]string,
 ) (
 	newModule *module.Module,
@@ -222,7 +226,6 @@ func (backend *MetricsReportingKurtosisBackend) CreateModule(
 		guid,
 		ipAddr,
 		grpcPortNum,
-		enclaveDataDirpathOnHostMachine,
 		envVars,
 	)
 	if err != nil {
@@ -303,8 +306,6 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	enclaveDataDirpathOnHostMachine string,
-	enclaveDataDirpathOnContainer string,
 	filesArtifactMountDirpaths map[string]string,
 ) (
 	newUserService *service.Service,
@@ -321,25 +322,23 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 		entrypointArgs,
 		cmdArgs,
 		envVars,
-		enclaveDataDirpathOnHostMachine,
-		enclaveDataDirpathOnContainer,
 		filesArtifactMountDirpaths,
 	)
 	if err != nil {
-		return nil,
-			stacktrace.Propagate(
-				err,
-				"An error occurred creating the user service with ID '%v' and GUID '%v' using image '%v' with private ports '%+v' with entry point args '%+v', command args '%+v', environment vars '%+v', enclave data mount dirpath '%v' and file artifacts mount dirpath '%v'",
-				id,
-				guid,
-				containerImageName,
-				privatePorts,
-				entrypointArgs,
-				cmdArgs,
-				envVars,
-				enclaveDataDirpathOnHostMachine,
-				filesArtifactMountDirpaths,
-			)
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the user service with ID '%v' and GUID '%v' using image '%v' " +
+				"with private ports '%+v' with entry point args '%+v', command args '%+v', environment " +
+				"vars '%+v', and file artifacts mount dirpath '%v'",
+			id,
+			guid,
+			containerImageName,
+			privatePorts,
+			entrypointArgs,
+			cmdArgs,
+			envVars,
+			filesArtifactMountDirpaths,
+		)
 	}
 	return userService, nil
 }
@@ -638,7 +637,6 @@ func (backend *MetricsReportingKurtosisBackend) RunFilesArtifactExpander(
 	guid files_artifact_expander.FilesArtifactExpanderGUID,
 	enclaveId enclave.EnclaveID,
 	filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
-	enclaveDataDirpathOnHostMachine string,
 	destVolMntDirpathOnExpander string,
 	filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
 	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
@@ -648,7 +646,6 @@ func (backend *MetricsReportingKurtosisBackend) RunFilesArtifactExpander(
 		guid,
 		enclaveId,
 		filesArtifactExpansionVolumeName,
-		enclaveDataDirpathOnHostMachine,
 		destVolMntDirpathOnExpander,
 		filesArtifactFilepathRelativeToEnclaveDatadirRoot,
 		ipAddr)

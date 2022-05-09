@@ -50,7 +50,6 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
-	engineDataDirpathOnHostMachine string,
 	envVars map[string]string,
 ) (
 	*engine.Engine,

@@ -52,7 +52,6 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	ipAddr net.IP,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
-	enclaveDataDirpathOnHostMachine string,
 	enclaveDataVolumeDirpath string,
 	envVars map[string]string,
 ) (*api_container.APIContainer, error) {
@@ -75,7 +74,7 @@ func (backend *KubernetesKurtosisBackend) DestroyAPIContainers(ctx context.Conte
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateModule(ctx context.Context, image string, enclaveId enclave.EnclaveID, id module.ModuleID, guid module.ModuleGUID, ipAddr net.IP, grpcPortNum uint16, enclaveDataDirpathOnHostMachine string, envVars map[string]string) (newModule *module.Module, resultErr error) {
+func (backend *KubernetesKurtosisBackend) CreateModule(ctx context.Context, image string, enclaveId enclave.EnclaveID, id module.ModuleID, guid module.ModuleGUID, ipAddr net.IP, grpcPortNum uint16, envVars map[string]string) (newModule *module.Module, resultErr error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -100,7 +99,7 @@ func (backend *KubernetesKurtosisBackend) DestroyModules(ctx context.Context, fi
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateUserService(ctx context.Context, id service.ServiceID, guid service.ServiceGUID, containerImageName string, enclaveId enclave.EnclaveID, ipAddr net.IP, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, enclaveDataDirpathOnHostMachine string, enclaveDataDirpathOnServiceContainer string, filesArtifactMountDirpaths map[string]string) (newUserService *service.Service, resultErr error) {
+func (backend *KubernetesKurtosisBackend) CreateUserService(ctx context.Context, id service.ServiceID, guid service.ServiceGUID, containerImageName string, enclaveId enclave.EnclaveID, ipAddr net.IP, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactMountDirpaths map[string]string) (newUserService *service.Service, resultErr error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -194,7 +193,7 @@ func (backend *KubernetesKurtosisBackend) DestroyFilesArtifactExpansionVolumes(c
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) RunFilesArtifactExpander(ctx context.Context, guid files_artifact_expander.FilesArtifactExpanderGUID, enclaveId enclave.EnclaveID, filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName, enclaveDataDirpathOnHostMachine string, destVolMntDirpathOnExpander string, filesArtifactFilepathRelativeToEnclaveDatadirRoot string, ipAddr net.IP) (*files_artifact_expander.FilesArtifactExpander, error) {
+func (backend *KubernetesKurtosisBackend) RunFilesArtifactExpander(ctx context.Context, guid files_artifact_expander.FilesArtifactExpanderGUID, enclaveId enclave.EnclaveID, filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName, destVolMntDirpathOnExpander string, filesArtifactFilepathRelativeToEnclaveDatadirRoot string, ipAddr net.IP) (*files_artifact_expander.FilesArtifactExpander, error) {
 	//TODO implement me
 	panic("implement me")
 }
