@@ -16,6 +16,9 @@ import (
 	"path/filepath"
 )
 
+const volumeStorageClassName = "standard"
+const volumeSizeInGigabytes = 10
+
 // GetLocalDockerKurtosisBackend is the entrypoint method we expect users of container-engine-lib to call
 func GetLocalDockerKurtosisBackend() (backend_interface.KurtosisBackend, error) {
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -48,9 +51,9 @@ func GetLocalKubernetesKurtosisBackend() (backend_interface.KurtosisBackend, err
 
 	kubernetesManager := kubernetes_manager.NewKubernetesManager(clientSet)
 
-	dockerKurtosisBackend := kb.NewKubernetesKurtosisBackend(kubernetesManager)
+	minikubeKurtosisBackend := kb.NewKubernetesKurtosisBackend(kubernetesManager, volumeStorageClassName, volumeSizeInGigabytes)
 
-	wrappedBackend := metrics_reporting.NewMetricsReportingKurtosisBackend(dockerKurtosisBackend)
+	wrappedBackend := metrics_reporting.NewMetricsReportingKurtosisBackend(minikubeKurtosisBackend)
 
 	return wrappedBackend, nil
 }
