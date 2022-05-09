@@ -1,4 +1,6 @@
 # TBD
+
+# 0.16.0
 ### Changes
 * Upgrade to engine 1.18.0, which uses the enclave data volume (rather than enclave data dirpath) for enclave data storage
 * `enclave inspect` no longer prints out the enclave data directory
