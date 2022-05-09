@@ -11,7 +11,7 @@ import { createDatastoreClient, waitForHealthy } from "../../test_helpers/test_h
 const TEST_NAME = "module"
 const IS_PARTITIONING_ENABLED = false
 
-const TEST_MODULE_IMAGE = "kurtosistech/datastore-army-module:0.2.0"
+const TEST_MODULE_IMAGE = "kurtosistech/datastore-army-module:0.2.2"
 
 const DATASTORE_ARMY_MODULE_ID:ModuleID = "datastore-army"
 

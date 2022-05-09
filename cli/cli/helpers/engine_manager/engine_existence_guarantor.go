@@ -6,7 +6,6 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/lib/kurtosis_context"
@@ -14,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
-	"os"
 )
 
 const (
@@ -101,15 +99,6 @@ func (guarantor *engineExistenceGuarantor) getPostVisitingHostMachineIpAndPort()
 // If the engine is stopped, try to start it
 func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 	logrus.Infof("No Kurtosis engine was found; attempting to start one...")
-	engineDataDirpath, err := host_machine_directories.GetEngineDataDirpath()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the engine data dirpath")
-	}
-
-	// NOTE: We create this in advance because if we leave
-	if err := os.MkdirAll(engineDataDirpath, engineDataDirPermBits); err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the engine data dirpath '%v'", engineDataDirpath)
-	}
 
 	metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
 	metricsUserId, err := metricsUserIdStore.GetUserID()
@@ -131,7 +120,6 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.logLevel,
 			kurtosis_context.DefaultKurtosisEngineServerGrpcPortNum,
 			kurtosis_context.DefaultKurtosisEngineServerGrpcProxyPortNum,
-			engineDataDirpath,
 			metricsUserId,
 			kurtosisConfig.ShouldSendMetrics,
 		)
@@ -142,7 +130,6 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.logLevel,
 			kurtosis_context.DefaultKurtosisEngineServerGrpcPortNum,
 			kurtosis_context.DefaultKurtosisEngineServerGrpcProxyPortNum,
-			engineDataDirpath,
 			metricsUserId,
 			kurtosisConfig.ShouldSendMetrics,
 		)
