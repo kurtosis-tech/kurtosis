@@ -22,9 +22,6 @@ import (
 
 const (
 	kurtosisEngineContainerName = "kurtosis-engine-container"
-	externalServiceType         = "ClusterIP"
-
-	sentencesSeparator = ", "
 )
 
 // ====================================================================================================
@@ -109,7 +106,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 			}
 			if _, resultErroredEngineIds := backend.removeEngineRoleBasedResources(ctx, engineNamespaceName, engineIds); len(resultErroredEngineIds) > 0{
 				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete the engine kubernetes role based resources that we created for engine '%v' but an error was thrown:\n%v", engineIdStr, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove kubernetes role based resources for engine '%v' in namespace '%v'!!!!!!!", engineIdStr, engineNamespace)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove kubernetes role based resources for engine '%v' in namespace '%v'!!!!!!!", engineIdStr, engineNamespaceName)
 			}
 		}
 	}()
@@ -181,8 +178,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	}
 
 	// Create Service
-	service, err := backend.kubernetesManager.CreateService(ctx, engineNamespaceName, engineServiceName, engineServiceLabels, engineServiceAnnotations, enginePodLabels, externalServiceType, servicePorts)
-	if err != nil {
+	if _, err = backend.kubernetesManager.CreateService(ctx, engineNamespaceName, engineServiceName, engineServiceLabels, engineServiceAnnotations, enginePodLabels, externalServiceType, servicePorts); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the service with name '%s' in namespace '%s' with ports '%v' and '%v'", engineServiceName, engineNamespaceName, grpcPortInt32, grpcProxyPortInt32)
 	}
 	var shouldRemoveService = true
@@ -195,26 +191,15 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 		}
 	}()
 
-	service, err = backend.kubernetesManager.GetServiceByName(ctx, engineNamespaceName, service.Name)
+	service, err := backend.kubernetesManager.GetServiceByName(ctx, engineNamespaceName, engineServiceName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the service with name '%v' in namespace '%v'", service.Name, engineNamespaceName)
 	}
 
-	// Use cluster IP as public IP
-	clusterIp := net.ParseIP(service.Spec.ClusterIP)
-	if clusterIp == nil {
-		return nil, stacktrace.NewError("Expected to be able to parse cluster IP from the kubernetes spec for service '%v', instead nil was parsed.", service.Name)
-	}
-
-	publicGrpcPort, publicGrpcProxyPort, err := getGrpcAndGrpcProxyPortSpecsFromServicePorts(service.Spec.Ports)
+	resultEngine, err := getEngineObjectFromKubernetesService(service)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to determine kurtosis port specs from kubernetes service '%v', instead a non-nil err was returned", service.Name)
+		return nil, stacktrace.Propagate(err, "An error occurred getting engine object from kubernetes service '%+v'", service)
 	}
-
-	resultEngine := engine.NewEngine(
-		engineIdStr,
-		container_status.ContainerStatus_Running,
-		clusterIp, publicGrpcPort, publicGrpcProxyPort)
 
 	shouldRemoveNamespace = false
 	shouldRemovePod = false
@@ -329,7 +314,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEngines(ctx context.Context
 		}
 
 		for _, service := range serviceList.Items {
-			engineObj, err := getEngineObjectFromKubernetesService(service)
+			engineObj, err := getEngineObjectFromKubernetesService(&service)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "Expected to be able to get a kurtosis engine object service from kubernetes service '%v', instead a non-nil error was returned", service.Name)
 			}
@@ -718,13 +703,16 @@ func (backend *KubernetesKurtosisBackend) destroyEngineResources(ctx context.Con
 }
 */
 
-func getEngineObjectFromKubernetesService(service apiv1.Service) (*engine.Engine, error) {
+func getEngineObjectFromKubernetesService(service *apiv1.Service) (*engine.Engine, error) {
 	engineId, isFound := service.Labels[label_key_consts.IDLabelKey.GetString()]
 	if isFound == false {
 		return nil, stacktrace.NewError("Expected to be able to find label describing the engine id on service '%v' with label key '%v', but was unable to", service.Name, label_key_consts.IDLabelKey.GetString())
 	}
 	// the ContainerStatus naming is confusing
-	engineStatus := getKurtosisStatusFromKubernetesService(service)
+	// see stopEngineService for how we stop the engine
+	// label keys and values used to determine pods this service routes traffic too
+	// TODO Better determination of if the engine is reachable? Check that there are two ports with names we expect them to have?
+	engineStatus := getContainerStatusFromKubernetesService(service)
 	var publicIpAddr net.IP
 	var publicGrpcPortSpec *port_spec.PortSpec
 	var publicGrpcProxyPortSpec *port_spec.PortSpec
@@ -741,14 +729,10 @@ func getEngineObjectFromKubernetesService(service apiv1.Service) (*engine.Engine
 	}
 
 	return engine.NewEngine(engineId, engineStatus, publicIpAddr, publicGrpcPortSpec, publicGrpcProxyPortSpec), nil
-
 }
 
-func getKurtosisStatusFromKubernetesService(service apiv1.Service) container_status.ContainerStatus {
-	// If a Kubernetes Service has selectors, then we assume the engine is reachable, and thus not stopped
-	// see stopEngineService for how we stop the engine
-	// label keys and values used to determine pods this service routes traffic too
-	// TODO Better determination of if the engine is reachable? Check that there are two ports with names we expect them to have?
+func getContainerStatusFromKubernetesService(service *apiv1.Service) container_status.ContainerStatus {
+	// If a Kubernetes Service has selectors, then we assume the container is reachable, and thus not stopped
 	serviceSelectors := service.Spec.Selector
 	if len(serviceSelectors) == 0 {
 		return container_status.ContainerStatus_Stopped

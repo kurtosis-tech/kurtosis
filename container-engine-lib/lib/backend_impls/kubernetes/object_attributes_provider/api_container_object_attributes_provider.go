@@ -55,14 +55,9 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContai
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
 	}
 
-	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.enclaveId)
+	labels, err := provider.getLabelsForApiContainerObject()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the enclave ID Kubernetes label from string '%v'", provider.enclaveId)
-	}
-
-	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.APIContainerContainerTypeLabelValue,
-		label_key_consts.EnclaveIDLabelKey:            enclaveIdLabelValue,
+		return nil, stacktrace.Propagate(err, "Failed to get labels for api container object in enclave with ID '%v'", provider.enclaveId)
 	}
 
 	// No custom annotations for api container pod
@@ -89,14 +84,9 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContai
 		return nil, stacktrace.Propagate(err, "An error occurred creating a name for api container service")
 	}
 
-	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.enclaveId)
+	labels, err := provider.getLabelsForApiContainerObject()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the enclave ID Kubernetes label from string '%v'", provider.enclaveId)
-	}
-
-	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.APIContainerContainerTypeLabelValue,
-		label_key_consts.EnclaveIDLabelKey:            enclaveIdLabelValue,
+		return nil, stacktrace.Propagate(err, "Failed to get labels for api container object in enclave with ID '%v'", provider.enclaveId)
 	}
 
 	usedPorts := map[string]*port_spec.PortSpec{
@@ -128,14 +118,9 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContai
 		return nil, stacktrace.Propagate(err, "An error occurred creating a name for api container namespace")
 	}
 
-	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.enclaveId)
+	labels, err := provider.getLabelsForApiContainerObject()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the enclave ID Kubernetes label from string '%v'", provider.enclaveId)
-	}
-
-	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.APIContainerContainerTypeLabelValue,
-		label_key_consts.EnclaveIDLabelKey:            enclaveIdLabelValue,
+		return nil, stacktrace.Propagate(err, "Failed to get labels for api container object in enclave with ID '%v'", provider.enclaveId)
 	}
 
 	// No custom annotations for api container namespace
@@ -156,14 +141,9 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContai
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
 	}
 
-	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.enclaveId)
+	labels, err := provider.getLabelsForApiContainerObject()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the enclave ID Kubernetes label from string '%v'", provider.enclaveId)
-	}
-
-	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.APIContainerContainerTypeLabelValue,
-		label_key_consts.EnclaveIDLabelKey:            enclaveIdLabelValue,
+		return nil, stacktrace.Propagate(err, "Failed to get labels for api container object in enclave with ID '%v'", provider.enclaveId)
 	}
 
 	// No custom annotations for api container service account
@@ -184,14 +164,9 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContai
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
 	}
 
-	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.enclaveId)
+	labels, err := provider.getLabelsForApiContainerObject()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the enclave ID Kubernetes label from string '%v'", provider.enclaveId)
-	}
-
-	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.APIContainerContainerTypeLabelValue,
-		label_key_consts.EnclaveIDLabelKey:            enclaveIdLabelValue,
+		return nil, stacktrace.Propagate(err, "Failed to get labels for api container object in enclave with ID '%v'", provider.enclaveId)
 	}
 
 	// No custom annotations for api container role
@@ -212,14 +187,9 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContai
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
 	}
 
-	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.enclaveId)
+	labels, err := provider.getLabelsForApiContainerObject()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the enclave ID Kubernetes label from string '%v'", provider.enclaveId)
-	}
-
-	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.APIContainerContainerTypeLabelValue,
-		label_key_consts.EnclaveIDLabelKey:            enclaveIdLabelValue,
+		return nil, stacktrace.Propagate(err, "Failed to get labels for api container object in enclave with ID '%v'", provider.enclaveId)
 	}
 
 	// No custom annotations for api container role bindings
@@ -248,4 +218,15 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) getApiContai
 		objectNameElementSeparator,
 	)
 	return nameStr
+}
+
+func (provider *kubernetesApiContainerObjectAttributesProviderImpl) getLabelsForApiContainerObject() (map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
+	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create kubernetes label value from enclaveId '%v'", provider.enclaveId)
+	}
+	return map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
+		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.APIContainerContainerTypeLabelValue,
+		label_key_consts.EnclaveIDLabelKey: enclaveIdLabelValue,
+	}, nil
 }

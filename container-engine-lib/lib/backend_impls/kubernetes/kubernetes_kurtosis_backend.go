@@ -8,6 +8,9 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/object_name_constants"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
@@ -18,7 +21,9 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
+	"github.com/kurtosis-tech/stacktrace"
 	"io"
+	apiv1 "k8s.io/api/core/v1"
 	"net"
 	"strconv"
 )
@@ -31,6 +36,10 @@ const (
 	// Port number string parsing constants
 	publicPortNumStrParsingBase = 10
 	publicPortNumStrParsingBits = 16
+
+	externalServiceType = "ClusterIP"
+
+	sentencesSeparator = ", "
 )
 
 type KubernetesKurtosisBackend struct {
@@ -52,25 +61,6 @@ type KubernetesKurtosisBackend struct {
 }
 
 func (backend *KubernetesKurtosisBackend) PullImage(image string) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
-	ctx context.Context,
-	image string,
-	enclaveId enclave.EnclaveID,
-	ipAddr net.IP,
-	grpcPortNum uint16,
-	grpcProxyPortNum uint16,
-	enclaveDataVolumeDirpath string,
-	envVars map[string]string,
-) (*api_container.APIContainer, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) GetAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[enclave.EnclaveID]*api_container.APIContainer, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -319,8 +309,12 @@ func (backend *KubernetesKurtosisBackend) getEnclaveNamespace(ctx context.Contex
 	return resultNamespace, nil
 }
 
-func (backend *KubernetesKurtosisBackend) getEnclavePersistentVolumeClaim(ctx context.Context, enclaveNamespaceName string, enclaveId enclave.EnclaveID) (*apiv1.PersistentVolumeClaim, error) {
-	matchLabels := getEnclaveMatchLabels(enclaveId)
+func (backend *KubernetesKurtosisBackend) getEnclaveDataPersistentVolumeClaim(ctx context.Context, enclaveNamespaceName string, enclaveId enclave.EnclaveID) (*apiv1.PersistentVolumeClaim, error) {
+	matchLabels :=  map[string]string{
+		label_key_consts.AppIDLabelKey.GetString():     label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.VolumeTypeLabelKey.GetString(): label_value_consts.EnclaveDataVolumeTypeLabelValue.GetString(),
+		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
+	}
 
 	persistentVolumeClaims, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, enclaveNamespaceName, matchLabels)
 	if err != nil {
@@ -332,7 +326,7 @@ func (backend *KubernetesKurtosisBackend) getEnclavePersistentVolumeClaim(ctx co
 		return nil, stacktrace.NewError("No persistent volume claim matching labels '%+v' was found", matchLabels)
 	}
 	if numOfPersistentVolumeClaims > 1 {
-		return nil, stacktrace.NewError("Expected to find only one enclave persistent volume claim for enclave ID '%v', but '%v' was found; this is a bug in Kurtosis", enclaveId, numOfPersistentVolumeClaims)
+		return nil, stacktrace.NewError("Expected to find only one enclave data persistent volume claim for enclave ID '%v', but '%v' was found; this is a bug in Kurtosis", enclaveId, numOfPersistentVolumeClaims)
 	}
 
 	resultPersistentVolumeClaim := &persistentVolumeClaims.Items[0]
@@ -350,3 +344,4 @@ func getEnclaveMatchLabels(enclaveId enclave.EnclaveID) map[string]string {
 
 	return matchLabels
 }
+
