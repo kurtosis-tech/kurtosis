@@ -60,7 +60,7 @@ func newKubernetesEngineObjectAttributesProviderImpl(
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEnginePod() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(enginePodNameSuffix, []string{})
+	nameStr := provider.getEngineObjectNameString(enginePodNameSuffix)
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
@@ -92,7 +92,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 	grpcProxyPortId string,
 	grpcProxyPortSpec *port_spec.PortSpec,
 ) (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(engineServiceNameSuffix, []string{})
+	nameStr := provider.getEngineObjectNameString(engineServiceNameSuffix)
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a name for our engine service")
@@ -131,7 +131,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineNamespace() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(engineNamespaceSuffix, []string{})
+	nameStr := provider.getEngineObjectNameString(engineNamespaceSuffix)
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
@@ -159,7 +159,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineNamespace
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineServiceAccount() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(engineServiceAccountSuffix, []string{})
+	nameStr := provider.getEngineObjectNameString(engineServiceAccountSuffix)
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
@@ -187,7 +187,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineServiceAc
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRole() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(engineClusterRoleSuffix, []string{})
+	nameStr := provider.getEngineObjectNameString(engineClusterRoleSuffix)
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
@@ -215,7 +215,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRo
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRoleBindings() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(engineClusterRoleBindingsSuffix, []string{})
+	nameStr := provider.getEngineObjectNameString(engineClusterRoleBindingsSuffix)
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
@@ -257,15 +257,12 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) GetEngineSelectorL
 	return labels, nil
 }
 
-func (provider *kubernetesEngineObjectAttributesProviderImpl) getEngineObjectNameString(suffix string, elems []string) string {
+func (provider *kubernetesEngineObjectAttributesProviderImpl) getEngineObjectNameString(suffix string) string {
 	toJoin := []string{
 		engineNamePrefix,
 		provider.engineId,
+		suffix,
 	}
-	if elems != nil {
-		toJoin = append(toJoin, elems...)
-	}
-	toJoin = append(toJoin, suffix)
 	nameStr := strings.Join(
 		toJoin,
 		objectNameElementSeparator,
