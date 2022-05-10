@@ -340,7 +340,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEngines(ctx context.Context
 		engineNamespaceName := engineNamespace.GetName()
 
 		engineId, isFound := engineNamespace.Labels[label_key_consts.IDLabelKey.GetString()]
-		if !isFound != false {
+		if !isFound {
 			return nil, stacktrace.NewError("Expected to find a label with name '%v' in Kubernetes namespace '%v', instead no such label was found", label_key_consts.IDLabelKey.GetString(), engineNamespaceName)
 		}
 		// If the ID filter is specified, drop engines not matching it
