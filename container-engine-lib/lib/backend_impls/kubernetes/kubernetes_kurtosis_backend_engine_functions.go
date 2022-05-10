@@ -334,14 +334,14 @@ func (backend *KubernetesKurtosisBackend) getMatchingEngines(ctx context.Context
 
 	engineNamespaces, err := backend.kubernetesManager.GetNamespacesByLabels(ctx, engineMatchLabels)
 	if err != nil {
-		return nil, stacktrace.NewError("Expected to be able to get engine namespaces from Kubernetes, insetad a non-nil error was returned")
+		return nil, stacktrace.NewError("Expected to be able to get engine namespaces from Kubernetes, instead a non-nil error was returned")
 	}
 	for _, engineNamespace := range engineNamespaces.Items {
 		engineNamespaceName := engineNamespace.GetName()
 
 		engineId, isFound := engineNamespace.Labels[label_key_consts.IDLabelKey.GetString()]
 		if !isFound != false {
-			return nil, stacktrace.NewError("Expected to find a label with name '%v' in Kubernetes service '%v', instead no such label waas found", label_key_consts.IDLabelKey.GetString(), engineNamespaceName)
+			return nil, stacktrace.NewError("Expected to find a label with name '%v' in Kubernetes namespace '%v', instead no such label was found", label_key_consts.IDLabelKey.GetString(), engineNamespaceName)
 		}
 		// If the ID filter is specified, drop engines not matching it
 		if filters.IDs != nil && len(filters.IDs) > 0 {
