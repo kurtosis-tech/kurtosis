@@ -2,6 +2,7 @@ package kubernetes
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager/consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
@@ -239,19 +240,23 @@ func (backend *KubernetesKurtosisBackend) StopAPIContainers(
 
 	successfulEnclaveIds :=map[enclave.EnclaveID]bool{}
 	erroredEnclaveIds := map[enclave.EnclaveID]error{}
+
+	//First iterate over namespaces
 	for enclaveNamespace, apiContainerServices := range matchingApiContainersByNamespaceAndServiceName {
-		apiContainerServicesToapiContainerPodsMap := map[string]string{}
+		apiContainerServicesToApiContainerPodsMap := map[string]string{}
+
+		//Then over services
 		for apiContainerServiceName, apiContainerObj := range apiContainerServices {
 			apiContainerPod, err := backend.getApiContainerPod(ctx, apiContainerObj.GetEnclaveID(), enclaveNamespace)
 			if err != nil {
-				return nil, nil, stacktrace.Propagate(err, "An error occurred getting the api container pod in enclave with ID '%v' in namespace '%v'", apiContainerObj.GetEnclaveID(), enclaveNamespace)
+				return nil, nil, stacktrace.Propagate(err, "An error occurred getting the api container pod for enclave with ID '%v' in namespace '%v'", apiContainerObj.GetEnclaveID(), enclaveNamespace)
 			}
-			if _, found := apiContainerServicesToapiContainerPodsMap[apiContainerServiceName]; found {
-				return nil, nil, stacktrace.NewError("Api container service name '%v' already exist in the api container services to api container pod map '%+v'; it should never happens; this is a bug in Kurtosis", apiContainerServiceName, apiContainerServicesToapiContainerPodsMap)
+			if _, found := apiContainerServicesToApiContainerPodsMap[apiContainerServiceName]; found {
+				return nil, nil, stacktrace.NewError("Api container service name '%v' already exist in the api container services to api container pod map '%+v'; it should never happens; this is a bug in Kurtosis", apiContainerServiceName, apiContainerServicesToApiContainerPodsMap)
 			}
-			apiContainerServicesToapiContainerPodsMap[apiContainerServiceName] = apiContainerPod.GetName()
+			apiContainerServicesToApiContainerPodsMap[apiContainerServiceName] = apiContainerPod.GetName()
 		}
-		successfulServiceNames, erroredServiceNames := backend.removeApiContainerServiceSelectorsAndApiContainerPods(ctx, enclaveNamespace, apiContainerServicesToapiContainerPodsMap)
+		successfulServiceNames, erroredServiceNames := backend.removeApiContainerServiceSelectorsAndApiContainerPods(ctx, enclaveNamespace, apiContainerServicesToApiContainerPodsMap)
 
 		removeApiContainerServiceSelectorsAndApiContainerPodsSuccessfulEnclaveIds := map[enclave.EnclaveID]bool{}
 		for serviceName := range successfulServiceNames {
@@ -274,6 +279,72 @@ func (backend *KubernetesKurtosisBackend) StopAPIContainers(
 		successfulEnclaveIds = removeApiContainerServiceSelectorsAndApiContainerPodsSuccessfulEnclaveIds
 	}
 
+	return successfulEnclaveIds, erroredEnclaveIds, nil
+}
+
+func (backend *KubernetesKurtosisBackend) DestroyAPIContainers(
+	ctx context.Context,
+	filters *api_container.APIContainerFilters,
+) (
+	map[enclave.EnclaveID]bool,
+	map[enclave.EnclaveID]error,
+	error,
+) {
+
+	matchingApiContainersByNamespaceAndServiceName, err := backend.getMatchingApiContainers(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "Failed to get api container matching filters '%+v'", filters)
+	}
+
+	successfulEnclaveIds :=map[enclave.EnclaveID]bool{}
+	erroredEnclaveIds := map[enclave.EnclaveID]error{}
+
+	//First iterate over namespaces
+	for enclaveNamespace, apiContainerServices := range matchingApiContainersByNamespaceAndServiceName {
+		apiContainerServicesToApiContainerPodsMap := map[string]string{}
+
+		//Then over services
+		for apiContainerServiceName, apiContainerObj := range apiContainerServices {
+			apiContainerPod, err := backend.getApiContainerPod(ctx, apiContainerObj.GetEnclaveID(), enclaveNamespace)
+			if err != nil {
+				return nil, nil, stacktrace.Propagate(err, "An error occurred getting the api container pod for enclave with ID '%v' in namespace '%v'", apiContainerObj.GetEnclaveID(), enclaveNamespace)
+			}
+			if _, found := apiContainerServicesToApiContainerPodsMap[apiContainerServiceName]; found {
+				return nil, nil, stacktrace.NewError("Api container service name '%v' already exist in the api container services to api container pod map '%+v'; it should never happens; this is a bug in Kurtosis", apiContainerServiceName, apiContainerServicesToApiContainerPodsMap)
+			}
+			apiContainerServicesToApiContainerPodsMap[apiContainerServiceName] = apiContainerPod.GetName()
+		}
+
+		successfulServiceNames, erroredServiceNames := backend.removeApiContainerServicesAndApiContainerPods(ctx, enclaveNamespace, apiContainerServicesToApiContainerPodsMap)
+
+		removeApiContainerServicesAndApiContainerPodsSuccessfulEnclaveIds := map[enclave.EnclaveID]bool{}
+		for serviceName := range successfulServiceNames {
+			apiContainerObj, found := apiContainerServices[serviceName]
+			if !found {
+				return nil, nil, stacktrace.NewError("Expected to find service name '%v' in the api container service list '%+v' but it was not found; this is a bug in Kurtosis!", serviceName, apiContainerServices)
+			}
+			removeApiContainerServicesAndApiContainerPodsSuccessfulEnclaveIds[apiContainerObj.GetEnclaveID()] = true
+		}
+
+		for serviceName, err := range erroredServiceNames {
+			apiContainerObj, found := apiContainerServices[serviceName]
+			if !found {
+				return nil, nil, stacktrace.NewError("Expected to find service name '%v' in the api container service list '%+v' but it was not found; this is a bug in Kurtosis!", serviceName, apiContainerServices)
+			}
+			wrappedErr := stacktrace.Propagate(err, "An error occurred removing api container service and pod for enclave with ID '%v' and kubernetes service name '%v'", apiContainerObj.GetEnclaveID(), serviceName)
+			erroredEnclaveIds[apiContainerObj.GetEnclaveID()] = wrappedErr
+		}
+		
+		removeRoleBasedResourcesSuccessfulEnclaveIds, removeRoleBasedResourcesErroredEnclaveIds := backend.removeApiContainerRoleBasedResources(ctx, enclaveNamespace, removeApiContainerServicesAndApiContainerPodsSuccessfulEnclaveIds)
+
+		for erroredEnclaveId, removeRoleBasedResourcesErr := range removeRoleBasedResourcesErroredEnclaveIds {
+			wrappedErr := stacktrace.Propagate(removeRoleBasedResourcesErr, "An error occurred removing api container role based resources for enclave with ID '%v' ", erroredEnclaveId)
+			erroredEnclaveIds[erroredEnclaveId] = wrappedErr
+		}
+		
+		successfulEnclaveIds = removeRoleBasedResourcesSuccessfulEnclaveIds
+	}
+	
 	return successfulEnclaveIds, erroredEnclaveIds, nil
 }
 
@@ -338,17 +409,57 @@ func (backend *KubernetesKurtosisBackend) removeApiContainerServiceSelectorsAndA
 	enclaveNamespace string,
 	serviceNameToPodNameMap map[string]string,
 ) (
-	resultSuccessfulServices map[string]bool,
-	resultFailedServices map[string]error,
+	map[string]bool,
+	map[string]error,
 ) {
 	successfulServices := map[string]bool{}
 	failedServices := map[string]error{}
 	for serviceName, podName := range serviceNameToPodNameMap {
 		if err := backend.kubernetesManager.RemoveSelectorsFromService(ctx, enclaveNamespace, serviceName); err != nil {
-			failedServices[serviceName] = err
+			wrapperErr := stacktrace.Propagate(err, "An error occurred removing selectors from service '%v' in namespace '%v'", serviceName, enclaveNamespace)
+			failedServices[serviceName] = wrapperErr
 		} else {
 			if err := backend.kubernetesManager.RemovePod(ctx, enclaveNamespace, podName); err != nil {
-				failedServices[serviceName] = stacktrace.Propagate(err, "Tried to remove pod '%v' associated with service '%v' in namespace '%v', instead a non-nil err was returned", podName, serviceName, enclaveNamespace)
+				wrapperErr := stacktrace.Propagate(err, "An error occurred removing pod '%v' associated with service '%v' in namespace '%v'", podName, serviceName, enclaveNamespace)
+				failedServices[serviceName] = wrapperErr
+				continue
+			}
+			successfulServices[serviceName] = true
+		}
+	}
+
+	return successfulServices, failedServices
+}
+
+func (backend *KubernetesKurtosisBackend) removeApiContainerServicesAndApiContainerPods(
+	ctx context.Context,
+	enclaveNamespace string,
+	serviceNameToPodNameMap map[string]string,
+) (
+	map[string]bool,
+	map[string]error,
+) {
+	successfulServices := map[string]bool{}
+	failedServices := map[string]error{}
+	for serviceName, podName := range serviceNameToPodNameMap {
+		if err := backend.kubernetesManager.RemoveService(ctx, enclaveNamespace, serviceName); err != nil {
+			wrapperErr := stacktrace.Propagate(err, "An error occurred removing service '%v' in namespace '%v'", serviceName, enclaveNamespace)
+			failedServices[serviceName] = wrapperErr
+		} else {
+			//First checks if Api Container Pod exist because it could have been destroyed with StopEngines
+			pod, err := backend.kubernetesManager.GetPod(ctx, enclaveNamespace, podName)
+			if err != nil {
+				wrapperErr := stacktrace.Propagate(err, "An error occurred getting pod '%v' in namespace '%v'", podName, enclaveNamespace)
+				failedServices[serviceName] = wrapperErr
+				continue
+			}
+			//Remove pod if it exists
+			if pod != nil {
+				if err := backend.kubernetesManager.RemovePod(ctx, enclaveNamespace, podName); err != nil {
+					wrapperErr := stacktrace.Propagate(err, "An error occurred removing pod '%v' associated with service '%v' in namespace '%v'", podName, serviceName, enclaveNamespace)
+					failedServices[serviceName] = wrapperErr
+					continue
+				}
 			}
 			successfulServices[serviceName] = true
 		}

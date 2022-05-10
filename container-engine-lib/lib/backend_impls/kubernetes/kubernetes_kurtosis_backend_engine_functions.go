@@ -349,6 +349,7 @@ func (backend *KubernetesKurtosisBackend) removeEngineServiceSelectorsAndEngineP
 		} else {
 			if err := backend.kubernetesManager.RemovePod(ctx, engineNamespace, podName); err != nil {
 				failedServices[serviceName] = stacktrace.Propagate(err, "Tried to remove pod '%v' associated with service '%v' in namespace '%v', instead a non-nil err was returned", podName, serviceName, engineNamespace)
+				continue
 			}
 			successfulServices[serviceName] = true
 		}

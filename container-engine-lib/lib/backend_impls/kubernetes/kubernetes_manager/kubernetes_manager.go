@@ -135,7 +135,7 @@ func (manager *KubernetesManager) RemoveDeployment(ctx context.Context, namespac
 	return nil
 }
 
-func (manager *KubernetesManager) GetDeploymentByName(ctx context.Context, namespace string, name string) (*appsv1.Deployment, error) {
+func (manager *KubernetesManager) GetDeployment(ctx context.Context, namespace string, name string) (*appsv1.Deployment, error) {
 	deploymentsClient := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
 
 	deployment, err := deploymentsClient.Get(ctx, name, metav1.GetOptions{})
@@ -395,17 +395,6 @@ func (manager *KubernetesManager) GetPersistentVolume(ctx context.Context, volum
 	return persistentVolumeResult, nil
 }
 
-func (manager *KubernetesManager) ListPersistentVolumes(ctx context.Context) (*apiv1.PersistentVolumeList, error) {
-	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
-
-	persistentVolumesResult, err := volumesClient.List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to list persistent volumes")
-	}
-
-	return persistentVolumesResult, nil
-}
-
 func (manager *KubernetesManager) GetPersistentVolumesByLabels(ctx context.Context, persistentVolumeLabels map[string]string) (*apiv1.PersistentVolumeList, error) {
 	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
 
@@ -416,6 +405,17 @@ func (manager *KubernetesManager) GetPersistentVolumesByLabels(ctx context.Conte
 	persistentVolumesResult, err := volumesClient.List(ctx, listOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get persistent volumes by labels '%+v'", persistentVolumeLabels)
+	}
+
+	return persistentVolumesResult, nil
+}
+
+func (manager *KubernetesManager) ListPersistentVolumes(ctx context.Context) (*apiv1.PersistentVolumeList, error) {
+	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
+
+	persistentVolumesResult, err := volumesClient.List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to list persistent volumes")
 	}
 
 	return persistentVolumesResult, nil
@@ -603,7 +603,7 @@ func (manager *KubernetesManager) RemoveDaemonSet(ctx context.Context, name stri
 	return nil
 }
 
-func (manager *KubernetesManager) GetDaemonSet(ctx context.Context, name string, namespace string) (*appsv1.DaemonSet, error) {
+func (manager *KubernetesManager) GetDaemonSet(ctx context.Context, namespace string, name string) (*appsv1.DaemonSet, error) {
 	daemonSetClient := manager.kubernetesClientSet.AppsV1().DaemonSets(namespace)
 
 	daemonSet, err := daemonSetClient.Get(ctx, name, metav1.GetOptions{})
@@ -879,6 +879,17 @@ func (manager *KubernetesManager) RemovePod(ctx context.Context, namespace strin
 	}
 
 	return nil
+}
+
+func (manager *KubernetesManager) GetPod(ctx context.Context, namespace string, name string) (*apiv1.Pod, error) {
+	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
+
+	pod, err := podClient.Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get pod with name '%s'", name)
+	}
+
+	return pod, nil
 }
 
 func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace string, podLabels map[string]string) (*apiv1.PodList, error) {
