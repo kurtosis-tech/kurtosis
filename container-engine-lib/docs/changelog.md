@@ -6,6 +6,7 @@
 * Added `ForEngineNamespace`, `ForEngineServiceAccount`, `ForEngineClusterRole` and `ForEngineClusterRoleBindings` to  `KubernetesEngineObjectAttributesProvider`
 * Updated `KubernetesBackend.CreateEngine` added the kubernetes role based resources creation and namespace creation process
 * Fixed `KubernetesBackend.GetEngines`returning an empty list for filters with no IDs specified
+* Added `GetInClusterKubernetesKurtosisBackend` Kurtosis backend factory method to be used for pods inside Kubernetes cluster
 
 ### Changes
 * Updated `KubernetesManager.CreatePod` added `serviceAccount` argument to set the pod's service account
