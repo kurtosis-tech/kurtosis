@@ -230,7 +230,7 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 	return runningEngineSemver, launcherEngineSemver, nil
 }
 
-func getKurtosisConfig() (*kurtosis_config.KurtosisConfig, error) {
+func getKurtosisConfig() (*kurtosis_config.KurtosisConfigV0, error) {
 	configStore := kurtosis_config.GetKurtosisConfigStore()
 	configProvider := kurtosis_config.NewKurtosisConfigProvider(configStore)
 
