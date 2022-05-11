@@ -3,6 +3,8 @@ package kurtosis_config
 import (
 	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/v0"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/v1"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -125,7 +127,7 @@ func (configStore *kurtosisConfigStore) getKurtosisConfigFromYAMLFile() (*Kurtos
 	if configVersionDetector.ConfigVersion == nil {
 		// NIL CONFIG VERSION INDICATES V0 - BEFORE CONFIG VERSION WAS PART OF THE CLI YAML
 		// READ CONFIGURATION FILE AS KURTOSIS CONFIG V0
-		kurtosisConfigStruct := &KurtosisConfigV0{}
+		kurtosisConfigStruct := &v0.KurtosisConfigV0{}
 		fileContentBytes, err := configStore.readConfigFileBytes()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred reading Kurtosis config YAML file")
@@ -136,7 +138,7 @@ func (configStore *kurtosisConfigStore) getKurtosisConfigFromYAMLFile() (*Kurtos
 		return NewKurtosisConfigFromConfigV0(kurtosisConfigStruct), nil
 	} else if *configVersionDetector.ConfigVersion == 1 {
 		// READ CONFIGURATION FILE AS KURTOSIS CONFIG V1
-		kurtosisConfigStruct := &KurtosisConfigV1{}
+		kurtosisConfigStruct := &v1.KurtosisConfigV1{}
 		fileContentBytes, err := configStore.readConfigFileBytes()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred reading Kurtosis config YAML file")

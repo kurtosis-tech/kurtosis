@@ -1,4 +1,10 @@
-package kurtosis_config
+package v1
+
+const (
+	kurtosisConfigV1DockerType     = "docker"
+	kurtosisConfigV1KubernetesType = "kubernetes"
+)
+
 // NOTE: All new YAML property names here should be kebab-case because
 //a) it's easier to read b) it's easier to write
 //c) it's consistent with previous properties and changing the format of
@@ -17,12 +23,12 @@ type KurtosisConfigV1 struct {
 	//All fields should be pointers, that way we can enforce required fields
 	//by detecting nil pointers.
 	ConfigVersion *int `yaml:"config-version"`
-	ShouldSendMetrics *bool `yaml:"should-send-metrics"`
+	ShouldSendMetrics *bool                         `yaml:"should-send-metrics"`
 	KurtosisClusters *map[string]*KurtosisClusterV1 `yaml:"kurtosis-clusters"`
 }
 
 type KurtosisClusterV1 struct {
-	Type *string `yaml:"type"`
+	Type *string                      `yaml:"type"`
 	Config *KubernetesClusterConfigV1 `yaml:"config"`
 }
 
@@ -33,14 +39,14 @@ type KubernetesClusterConfigV1 struct {
 }
 
 func getDefaultDockerKurtosisClusterConfig() *KurtosisClusterV1 {
-	clusterType := KurtosisConfigV1DockerType
+	clusterType := kurtosisConfigV1DockerType
 	return &KurtosisClusterV1{
 		Type: &clusterType,
 	}
 }
 
 func getDefaultMinikubeKurtosisClusterConfig() *KurtosisClusterV1 {
-	clusterType := KurtosisConfigV1KubernetesType
+	clusterType := kurtosisConfigV1KubernetesType
 	minikubeKubernetesCluster := getDefaultMinikubeKubernetesClusterConfig()
 	return &KurtosisClusterV1{
 		Type: &clusterType,
@@ -65,7 +71,7 @@ func NewDefaultKurtosisConfigV1(doesUserAcceptSendingMetrics *bool) *KurtosisCon
 	dockerClusterConfig := getDefaultDockerKurtosisClusterConfig()
 	minikubeClusterConfig := getDefaultMinikubeKurtosisClusterConfig()
 	kurtosisClusters := map[string]*KurtosisClusterV1{
-		defaultDockerClusterName: dockerClusterConfig,
+		defaultDockerClusterName:   dockerClusterConfig,
 		defaultMinikubeClusterName: minikubeClusterConfig,
 	}
 	return &KurtosisConfigV1{

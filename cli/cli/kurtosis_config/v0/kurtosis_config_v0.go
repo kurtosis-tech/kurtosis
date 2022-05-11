@@ -1,4 +1,4 @@
-package kurtosis_config
+package v0
 // NOTE: All new YAML property names here should be kebab-case because
 //a) it's easier to read b) it's easier to write
 //c) it's consistent with previous properties and changing the format of
