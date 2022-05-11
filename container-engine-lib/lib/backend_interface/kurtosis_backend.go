@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
 	"io"
 	"net"
@@ -213,19 +214,39 @@ type KurtosisBackend interface {
 	// - In Docker means allocating a static IP address
 	// - In Kubernetes means creating a Kubernetes service with an IP address
 	// A service registration is required to start a service
-	CreateUserServiceRegistration()
+	CreateUserServiceRegistration(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		serviceId user_service_registration.ServiceID,
+	) (
+		*user_service_registration.UserServiceRegistration,
+		error,
+	)
 
 	// GetUserServiceRegistrations gets the existing user service registrations
-	GetUserServiceRegistrations()
+	GetUserServiceRegistrations(
+		ctx context.Context,
+		filters *user_service_registration.UserServiceRegistrationFilters,
+	) (
+		map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration,
+		error,
+	)
 
 	// DestroyUserServiceRegistration removes a previously-created user service registration object
 	// This will fail if a service is consuming the registration
-	DestroyUserServiceRegistration()
+	DestroyUserServiceRegistration(
+		ctx context.Context,
+		filters *user_service_registration.UserServiceRegistrationFilters,
+	) (
+		resultSuccessfulServiceIds map[user_service_registration.ServiceID]bool,
+		resultErroredServiceIds map[user_service_registration.ServiceID]error,
+		resultErr error,
+	)
 
 	// CreateUserService consumes a service registration to create a user service with the given parameters
 	CreateUserService(
 		ctx context.Context,
-		id service.ServiceID,
+		id user_service_registration.ServiceID,
 		guid service.ServiceGUID, // TODO remove this??
 		containerImageName string,
 		enclaveId enclave.EnclaveID,
