@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager/consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
@@ -43,6 +44,24 @@ const (
 
 	sentencesSeparator = ", "
 )
+
+// Any of these values being nil indicates that the resource doesn't exist
+type engineKubernetesResources struct {
+	clusterRole *rbacv1.ClusterRole
+
+	clusterRoleBinding *rbacv1.ClusterRoleBinding
+
+	namespace *apiv1.Namespace
+
+	// Should always be nil if namespace is nil
+	serviceAccount *apiv1.ServiceAccount
+
+	// Should always be nil if namespace is nil
+	service *apiv1.Service
+
+	// Should always be nil if namespace is nil
+	pod *apiv1.Pod
+}
 
 // ====================================================================================================
 //                                     Engine CRUD Methods
@@ -374,6 +393,189 @@ func (backend *KubernetesKurtosisBackend) getMatchingEngines(ctx context.Context
 	}
 
 	return matchingEngines, nil
+}
+
+// Get back any and all Kubernetes resources matching the given IDs, where a nil or empty map == "match all IDs"
+func (backend *KubernetesKurtosisBackend) getMatchingKubernetesResources(ctx context.Context, engineIds map[string]bool) (
+	map[string]*engineKubernetesResources,
+	error,
+) {
+	engineMatchLabels := getEngineMatchLabels()
+
+	result := map[string]*engineKubernetesResources{}
+
+	// Namespaces
+	namespaces, err := kubernetes_resource_collectors.CollectMatchingNamespaces(
+		ctx,
+		backend.kubernetesManager,
+		engineMatchLabels,
+		label_key_consts.IDLabelKey.GetString(),
+		engineIds,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting engine namespaces matching IDs '%+v'", engineIds)
+	}
+	for engineId, namespacesForId := range namespaces {
+		if len(namespacesForId) > 1 {
+			return nil, stacktrace.NewError(
+				"Expected at most one namespace to match engine ID '%v', but got '%v'",
+				len(namespacesForId),
+				engineId,
+			)
+		}
+		engineResources, found := result[engineId]
+		if !found {
+			engineResources = &engineKubernetesResources{}
+		}
+		engineResources.namespace = namespacesForId[0]
+		result[engineId] = engineResources
+	}
+
+	// Cluster roles
+	clusterRoles, err := kubernetes_resource_collectors.CollectMatchingClusterRoles(
+		ctx,
+		backend.kubernetesManager,
+		engineMatchLabels,
+		label_key_consts.IDLabelKey.GetString(),
+		engineIds,
+	)
+	for engineId, clusterRolesForId := range clusterRoles {
+		if len(clusterRolesForId) > 1 {
+			return nil, stacktrace.NewError(
+				"Expected at most one cluster role to match engine ID '%v', but got '%v'",
+				len(clusterRolesForId),
+				engineId,
+			)
+		}
+		engineResources, found := result[engineId]
+		if !found {
+			engineResources = &engineKubernetesResources{}
+		}
+		engineResources.clusterRole = clusterRolesForId[0]
+		result[engineId] = engineResources
+	}
+
+	// Cluster role bindings
+	clusterRoleBindings, err := kubernetes_resource_collectors.CollectMatchingClusterRoleBindings(
+		ctx,
+		backend.kubernetesManager,
+		engineMatchLabels,
+		label_key_consts.IDLabelKey.GetString(),
+		engineIds,
+	)
+	for engineId, clusterRoleBindingsForId := range clusterRoleBindings {
+		if len(clusterRoleBindingsForId) > 1 {
+			return nil, stacktrace.NewError(
+				"Expected at most one cluster role binding to match engine ID '%v', but got '%v'",
+				len(clusterRoleBindingsForId),
+				engineId,
+			)
+		}
+		engineResources, found := result[engineId]
+		if !found {
+			engineResources = &engineKubernetesResources{}
+		}
+		engineResources.clusterRoleBinding = clusterRoleBindingsForId[0]
+		result[engineId] = engineResources
+	}
+
+	// Per-namespace objects
+	for engineId, engineResources := range result {
+		if engineResources.namespace == nil {
+			continue
+		}
+		namespaceName := engineResources.namespace.Name
+
+		// Service accounts
+		serviceAccounts, err := kubernetes_resource_collectors.CollectMatchingServiceAccounts(
+			ctx,
+			backend.kubernetesManager,
+			namespaceName,
+			engineMatchLabels,
+			label_key_consts.IDLabelKey.GetString(),
+			map[string]bool{
+				engineId: true,
+			},
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting service accounts matching engine ID '%v' in namespace '%v'", engineId, namespaceName)
+		}
+		var serviceAccount *apiv1.ServiceAccount
+		if serviceAccountsForId, found := serviceAccounts[engineId]; found {
+			if len(serviceAccountsForId) > 1 {
+				return nil, stacktrace.NewError(
+					"Expected at most one engine service account in namespace '%v' for engine with ID '%v' " +
+						"but found '%v'",
+					namespaceName,
+					engineId,
+					len(serviceAccounts),
+				)
+			}
+			serviceAccount = serviceAccountsForId[0]
+		}
+
+		// Services
+		services, err := kubernetes_resource_collectors.CollectMatchingServices(
+			ctx,
+			backend.kubernetesManager,
+			namespaceName,
+			engineMatchLabels,
+			label_key_consts.IDLabelKey.GetString(),
+			map[string]bool{
+				engineId: true,
+			},
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting services matching engine ID '%v' in namespace '%v'", engineId, namespaceName)
+		}
+		var service *apiv1.Service
+		if servicesForId, found := services[engineId]; found {
+			if len(servicesForId) > 1 {
+				return nil, stacktrace.NewError(
+					"Expected at most one engine service in namespace '%v' for engine with ID '%v' " +
+						"but found '%v'",
+					namespaceName,
+					engineId,
+					len(services),
+				)
+			}
+			service = servicesForId[0]
+		}
+
+		// Pods
+		pods, err := kubernetes_resource_collectors.CollectMatchingPods(
+			ctx,
+			backend.kubernetesManager,
+			namespaceName,
+			engineMatchLabels,
+			label_key_consts.IDLabelKey.GetString(),
+			map[string]bool{
+				engineId: true,
+			},
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting pods matching engine ID '%v' in namespace '%v'", engineId, namespaceName)
+		}
+		var pod *apiv1.Pod
+		if podsForId, found := pods[engineId]; found {
+			if len(podsForId) > 1 {
+				return nil, stacktrace.NewError(
+					"Expected at most one engine pod in namespace '%v' for engine with ID '%v' " +
+						"but found '%v'",
+					namespaceName,
+					engineId,
+					len(pods),
+				)
+			}
+			pod = podsForId[0]
+		}
+
+		engineResources.service = service
+		engineResources.pod = pod
+		engineResources.serviceAccount = serviceAccount
+	}
+
+	return result, nil
 }
 
 // TODO parallelize to improve performance
