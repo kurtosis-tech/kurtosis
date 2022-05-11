@@ -1,5 +1,9 @@
 # TBD
 
+# 1.46.1
+### Features
+* Upgrade to container-engine-lib 0.20.0, which provides a bunch of new Kubernetes features
+
 # 1.46.0
 ### Breaking Changes
 * The APIContainerLauncher no longer takes in `enclaveDataDirpathOnHostMachine`
