@@ -47,21 +47,19 @@ const (
 
 // Any of these values being nil indicates that the resource doesn't exist
 type engineKubernetesResources struct {
-	namespace *apiv1.Namespace
-
-	// Should never exist if the namespace doesn't exist
 	clusterRole *rbacv1.ClusterRole
 
-	// Should never exist if the namespace doesn't exist
 	clusterRoleBinding *rbacv1.ClusterRoleBinding
 
-	// Should never exist if the namespace doesn't exist
+	namespace *apiv1.Namespace
+
+	// Should always be nil if namespace is nil
 	serviceAccount *apiv1.ServiceAccount
 
-	// Should never exist if the namespace doesn't exist
+	// Should always be nil if namespace is nil
 	service *apiv1.Service
 
-	// Should never exist if the namespace doesn't exist
+	// Should always be nil if namespace is nil
 	pod *apiv1.Pod
 }
 
