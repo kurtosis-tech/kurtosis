@@ -1,4 +1,6 @@
 # TBD
+
+# 0.20.0
 ### Features
 * Added persistent volume claim creation to kubernetes-backed enclaves
 * Added `CreateEnclave` functionality to kubernetes backend
