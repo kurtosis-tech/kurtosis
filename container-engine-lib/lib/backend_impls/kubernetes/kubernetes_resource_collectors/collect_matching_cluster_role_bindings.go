@@ -36,7 +36,7 @@ func CollectMatchingClusterRoleBindings(
 	postFilterLabelKey string,
 	postFilterLabelValues map[string]bool,
 ) (
-	map[string][]rbacv1.ClusterRoleBinding,
+	map[string]*rbacv1.ClusterRoleBinding,
 	error,
 ) {
 	allObjects, err := kubernetesManager.GetClusterRoleBindingsByLabels(ctx, searchLabels)
@@ -54,17 +54,13 @@ func CollectMatchingClusterRoleBindings(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred during postfiltering")
 	}
-	result := map[string][]rbacv1.ClusterRoleBinding{}
-	for labelValue, matchingResources := range filteredKubernetesResources {
-		castedObjects := []rbacv1.ClusterRoleBinding{}
-		for _, resource := range matchingResources {
-			casted, ok := resource.getUnderlying().(rbacv1.ClusterRoleBinding)
-			if !ok {
-				return nil, stacktrace.NewError("An error occurred downcasting Kubernetes resource object '%+v'", resource.getUnderlying())
-			}
-			castedObjects = append(castedObjects, casted)
-		}
-		result[labelValue] = castedObjects
+	result := map[string]*rbacv1.ClusterRoleBinding{}
+	for labelValue, uncastedResource := range filteredKubernetesResources {
+		 castedResource, ok := uncastedResource.getUnderlying().(rbacv1.ClusterRoleBinding)
+		 if !ok {
+			 return nil, stacktrace.NewError("An error occurred downcasting Kubernetes resource object '%+v'", uncastedResource.getUnderlying())
+		 }
+		result[labelValue] = &castedResource
 	}
 	return result, nil
 }

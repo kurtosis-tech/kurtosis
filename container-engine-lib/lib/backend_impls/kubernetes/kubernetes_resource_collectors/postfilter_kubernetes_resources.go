@@ -2,17 +2,18 @@ package kubernetes_resource_collectors
 
 import "github.com/kurtosis-tech/stacktrace"
 
-// Finds namespaces using labels, postfilters them using a label value, and returns them categorized by that label
+// Takes in a list of Kubernetes objects, filters them by the given label, and returns a list of matching ones
+// An error is thrown if more than one resource matches the same label value
 func postfilterKubernetesResources(
 	resources []kubernetesResource,
 	postFilterLabelKey string,
 // A nil or empty map will match all values
 	postFilterLabelValues map[string]bool,
 ) (
-	map[string][]kubernetesResource,
+	map[string]kubernetesResource,
 	error,
 ) {
-	result := map[string][]kubernetesResource{}
+	result := map[string]kubernetesResource{}
 
 	for _, resource := range resources {
 		labelValue, hasLabel := resource.getLabels()[postFilterLabelKey]
@@ -30,11 +31,20 @@ func postfilterKubernetesResources(
 			}
 		}
 
-		matchingResources, found := result[labelValue]
-		if !found {
-			matchingResources = []kubernetesResource{}
+		// We don't want to tolerate multiple resources that have the exact same label value
+		preexistingResource, found := result[labelValue]
+		if found {
+			return nil, stacktrace.NewError(
+				"Encountered Kubernetes resource with name '%v', label '%v', and label value '%v' that collides with already-seen " +
+					"resource with name '%v'",
+				resource.getName(),
+				postFilterLabelKey,
+				labelValue,
+				preexistingResource.getName(),
+			)
 		}
-		result[labelValue] = append(matchingResources, resource)
+
+		result[labelValue] =  resource
 	}
 	return result, nil
 }

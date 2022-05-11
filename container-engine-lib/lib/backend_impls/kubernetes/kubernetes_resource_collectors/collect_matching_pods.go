@@ -37,7 +37,7 @@ func CollectMatchingPods(
 	postFilterLabelKey string,
 	postFilterLabelValues map[string]bool,
 ) (
-	map[string][]apiv1.Pod,
+	map[string]*apiv1.Pod,
 	error,
 ) {
 	allObjects, err := kubernetesManager.GetPodsByLabels(ctx, namespace, searchLabels)
@@ -55,17 +55,13 @@ func CollectMatchingPods(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred during postfiltering")
 	}
-	result := map[string][]apiv1.Pod{}
-	for labelValue, matchingResources := range filteredKubernetesResources {
-		castedObjects := []apiv1.Pod{}
-		for _, resource := range matchingResources {
-			casted, ok := resource.getUnderlying().(apiv1.Pod)
-			if !ok {
-				return nil, stacktrace.NewError("An error occurred downcasting Kubernetes resource object '%+v'", resource.getUnderlying())
-			}
-			castedObjects = append(castedObjects, casted)
+	result := map[string]*apiv1.Pod{}
+	for labelValue, uncastedResource := range filteredKubernetesResources {
+		castedResource, ok := uncastedResource.getUnderlying().(apiv1.Pod)
+		if !ok {
+			return nil, stacktrace.NewError("An error occurred downcasting Kubernetes resource object '%+v'", uncastedResource.getUnderlying())
 		}
-		result[labelValue] = castedObjects
+		result[labelValue] = &castedResource
 	}
 	return result, nil
 }

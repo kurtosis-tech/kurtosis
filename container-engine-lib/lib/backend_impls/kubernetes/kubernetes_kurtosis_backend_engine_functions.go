@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager/consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
@@ -43,6 +44,26 @@ const (
 
 	sentencesSeparator = ", "
 )
+
+// Any of these values being nil indicates that the resource doesn't exist
+type engineKubernetesResources struct {
+	namespace *apiv1.Namespace
+
+	// Should never exist if the namespace doesn't exist
+	clusterRole *rbacv1.ClusterRole
+
+	// Should never exist if the namespace doesn't exist
+	clusterRoleBinding *rbacv1.ClusterRoleBinding
+
+	// Should never exist if the namespace doesn't exist
+	serviceAccount *apiv1.ServiceAccount
+
+	// Should never exist if the namespace doesn't exist
+	service *apiv1.Service
+
+	// Should never exist if the namespace doesn't exist
+	pod *apiv1.Pod
+}
 
 // ====================================================================================================
 //                                     Engine CRUD Methods
@@ -374,6 +395,159 @@ func (backend *KubernetesKurtosisBackend) getMatchingEngines(ctx context.Context
 	}
 
 	return matchingEngines, nil
+}
+
+// Get back any and all Kubernetes resources matching the given IDs, where a nil or empty map == "match all IDs"
+func (backend *KubernetesKurtosisBackend) getMatchingKubernetesResources(ctx context.Context, engineIds map[string]bool) (
+	map[string]*engineKubernetesResources,
+	error,
+) {
+	engineMatchLabels := getEngineMatchLabels()
+
+	result := map[string]*engineKubernetesResources{}
+
+	// Namespaces
+	namespaces, err := kubernetes_resource_collectors.CollectMatchingNamespaces(
+		ctx,
+		backend.kubernetesManager,
+		engineMatchLabels,
+		label_key_consts.IDLabelKey.GetString(),
+		engineIds,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting engine namespaces matching IDs '%+v'", engineIds)
+	}
+	for engineId, namespace := range namespaces {
+		engineResources, found := result[engineId]
+		if !found {
+			engineResources = &engineKubernetesResources{}
+		}
+		engineResources.namespace = namespace
+		result[engineId] = engineResources
+	}
+
+	// Cluster roles
+	clusterRoles, err := kubernetes_resource_collectors.CollectMatchingClusterRoles(
+		ctx,
+		backend.kubernetesManager,
+		engineMatchLabels,
+		label_key_consts.IDLabelKey.GetString(),
+		engineIds,
+	)
+	for engineId, clusterRole := range clusterRoles {
+		engineResources, found := result[engineId]
+		if !found {
+			engineResources = &engineKubernetesResources{}
+		}
+		engineResources.clusterRole = clusterRole
+		result[engineId] = engineResources
+	}
+
+	// Cluster role bindings
+	clusterRoleBindings, err := kubernetes_resource_collectors.CollectMatchingClusterRoleBindings(
+		ctx,
+		backend.kubernetesManager,
+		engineMatchLabels,
+		label_key_consts.IDLabelKey.GetString(),
+		engineIds,
+	)
+	for engineId, clusterRoleBinding := range clusterRoleBindings {
+		engineResources, found := result[engineId]
+		if !found {
+			engineResources = &engineKubernetesResources{}
+		}
+		engineResources.clusterRoleBinding = clusterRoleBinding
+		result[engineId] = engineResources
+	}
+
+	// Per-namespace objects
+	for engineId, engineResources := range result {
+		if engineResources.namespace == nil {
+			continue
+		}
+		namespaceName := engineResources.namespace.Name
+
+		// Service accounts
+		serviceAccounts, err := kubernetes_resource_collectors.CollectMatchingServiceAccounts(
+			ctx,
+			backend.kubernetesManager,
+			namespaceName,
+			engineMatchLabels,
+			label_key_consts.IDLabelKey.GetString(),
+			map[string]bool{
+				engineId: true,
+			},
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting service accounts matching engine ID '%v' in namespace '%v'", engineId, namespaceName)
+		}
+		if len(serviceAccounts) > 1 {
+			return nil, stacktrace.NewError(
+				"Expected at most one engine service account in namespace '%v' for engine with ID '%v' " +
+					"but found '%v'",
+				namespaceName,
+				engineId,
+				len(serviceAccounts),
+			)
+		}
+		serviceAccount := serviceAccounts[engineId]
+
+		// Services
+		services, err := kubernetes_resource_collectors.CollectMatchingServices(
+			ctx,
+			backend.kubernetesManager,
+			namespaceName,
+			engineMatchLabels,
+			label_key_consts.IDLabelKey.GetString(),
+			map[string]bool{
+				engineId: true,
+			},
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting services matching engine ID '%v' in namespace '%v'", engineId, namespaceName)
+		}
+		if len(services) > 1 {
+			return nil, stacktrace.NewError(
+				"Expected at most one engine service in namespace '%v' for engine with ID '%v' " +
+					"but found '%v'",
+				namespaceName,
+				engineId,
+				len(services),
+			)
+		}
+		service := services[engineId]
+
+		// Pods
+		pods, err := kubernetes_resource_collectors.CollectMatchingPods(
+			ctx,
+			backend.kubernetesManager,
+			namespaceName,
+			engineMatchLabels,
+			label_key_consts.IDLabelKey.GetString(),
+			map[string]bool{
+				engineId: true,
+			},
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting pods matching engine ID '%v' in namespace '%v'", engineId, namespaceName)
+		}
+		if len(pods) > 1 {
+			return nil, stacktrace.NewError(
+				"Expected at most one engine pod in namespace '%v' for engine with ID '%v' " +
+					"but found '%v'",
+				namespaceName,
+				engineId,
+				len(pods),
+			)
+		}
+		pod := pods[engineId]
+
+		engineResources.service = service
+		engineResources.pod = pod
+		engineResources.serviceAccount = serviceAccount
+	}
+
+	return result, nil
 }
 
 // TODO parallelize to improve performance
