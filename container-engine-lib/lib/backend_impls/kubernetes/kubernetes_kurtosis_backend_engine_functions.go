@@ -17,7 +17,6 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"net"
-	"strings"
 	"time"
 )
 
@@ -666,13 +665,6 @@ func getEngineObjectsFromKubernetesResources(allResources map[string]*engineKube
 	return result, nil
 }
 
-func (backend *KubernetesKurtosisBackend) destroyEngineKubernetesResources(
-	ctx context.Context,
-	resources *engineKubernetesResources,
-) error {
-
-}
-
 func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx context.Context, namespace string, engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider) (resultEngineServiceAccountName string, resultErr error) {
 
 	serviceAccountAttributes, err := engineAttributesProvider.ForEngineServiceAccount()
@@ -747,6 +739,7 @@ func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx con
 
 
 
+/*
 // TODO parallelize to improve performance
 func (backend *KubernetesKurtosisBackend) removeEngineRoleBasedResources(ctx context.Context, namespace string, engineIds map[string]bool) (resultSuccessfulEngineIds map[string]bool, resultErroredEngineIds map[string]error) {
 
@@ -846,6 +839,8 @@ func (backend *KubernetesKurtosisBackend) removeEngineRoleBasedResources(ctx con
 
 	return successfulEngineIds, erroredEngineIds
 }
+
+ */
 
 func getEngineContainers(containerImageAndTag string, engineEnvVars map[string]string) (resultContainers []apiv1.Container, resultVolumes []apiv1.Volume) {
 	containerName := "kurtosis-engine-container"
