@@ -59,7 +59,7 @@ func initInteractiveConfig() (*KurtosisConfig, error) {
 		}
 	}
 
-	kurtosisConfig := NewDefaultKurtosisConfig(&didUserAcceptSendingMetrics)
+	kurtosisConfig := InitializeKurtosisConfigFromUserInput(didUserAcceptSendingMetrics)
 	return kurtosisConfig, nil
 }
 

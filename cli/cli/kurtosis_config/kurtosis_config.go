@@ -1,7 +1,6 @@
 package kurtosis_config
 
 import (
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/v0"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/v1"
 )
 
@@ -17,22 +16,24 @@ type KurtosisConfig struct {
 	versionSpecificConfig *v1.KurtosisConfigV1
 }
 
-func NewDefaultKurtosisConfig(doesUserAcceptSendingMetrics *bool) *KurtosisConfig {
+func InitializeKurtosisConfigFromUserInput(didUserAcceptSendingMetrics bool) *KurtosisConfig {
+	versionSpecificConfig := v1.NewDefaultKurtosisConfigV1()
+	overrides := &v1.KurtosisConfigV1{ShouldSendMetrics: &didUserAcceptSendingMetrics}
+	versionSpecificConfig.OverlayOverrides(overrides)
 	return &KurtosisConfig{
-		versionSpecificConfig: v1.NewDefaultKurtosisConfigV1(doesUserAcceptSendingMetrics),
+		versionSpecificConfig: versionSpecificConfig,
 	}
 }
 
-func NewKurtosisConfigFromConfigV0(v0 *v0.KurtosisConfigV0) *KurtosisConfig {
+func NewKurtosisConfig(versionSpecificConfig *v1.KurtosisConfigV1) *KurtosisConfig {
 	return &KurtosisConfig{
-		versionSpecificConfig: v1.NewDefaultKurtosisConfigV1(v0.ShouldSendMetrics),
+		versionSpecificConfig: versionSpecificConfig,
 	}
 }
 
-func NewKurtosisConfigFromConfigV1(v1 *v1.KurtosisConfigV1) *KurtosisConfig {
-	return &KurtosisConfig{
-		versionSpecificConfig: v1,
-	}
+func (kurtosisConfig *KurtosisConfig) Validate() error {
+	versionedKurtosisConfig := VersionedKurtosisConfig(kurtosisConfig)
+	return versionedKurtosisConfig.Validate()
 }
 
 func (kurtosisConfig *KurtosisConfig) GetConfigVersion() int {
