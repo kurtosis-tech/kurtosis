@@ -121,7 +121,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			kurtosis_context.DefaultKurtosisEngineServerGrpcPortNum,
 			kurtosis_context.DefaultKurtosisEngineServerGrpcProxyPortNum,
 			metricsUserId,
-			kurtosisConfig.ShouldSendMetrics,
+			*kurtosisConfig.ShouldSendMetrics,
 		)
 	} else {
 		hostMachineIpAddr, hostMachinePortNum, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -131,7 +131,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			kurtosis_context.DefaultKurtosisEngineServerGrpcPortNum,
 			kurtosis_context.DefaultKurtosisEngineServerGrpcProxyPortNum,
 			metricsUserId,
-			kurtosisConfig.ShouldSendMetrics,
+			*kurtosisConfig.ShouldSendMetrics,
 		)
 	}
 	if engineLaunchErr != nil {
@@ -230,7 +230,7 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 	return runningEngineSemver, launcherEngineSemver, nil
 }
 
-func getKurtosisConfig() (*kurtosis_config.KurtosisConfigV0, error) {
+func getKurtosisConfig() (*kurtosis_config.KurtosisConfigV1, error) {
 	configStore := kurtosis_config.GetKurtosisConfigStore()
 	configProvider := kurtosis_config.NewKurtosisConfigProvider(configStore)
 
