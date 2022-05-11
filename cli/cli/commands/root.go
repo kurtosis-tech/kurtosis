@@ -315,7 +315,7 @@ func getLatestCLIReleaseVersionFromCacheFile(filepath string) (string, error) {
 	return latestReleaseVersion, nil
 }
 
-func getKurtosisConfig() (*kurtosis_config.KurtosisConfigV1, error) {
+func getKurtosisConfig() (*kurtosis_config.KurtosisConfig, error) {
 	configStore := kurtosis_config.GetKurtosisConfigStore()
 	configProvider := kurtosis_config.NewKurtosisConfigProvider(configStore)
 

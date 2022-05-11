@@ -18,13 +18,13 @@ func NewDefaultKurtosisConfig(doesUserAcceptSendingMetrics *bool) *KurtosisConfi
 	}
 }
 
-func NewKurtosisConfigVersionedConfig(v1 *KurtosisConfigV1) *KurtosisConfig {
+func NewKurtosisConfigFromConfigV1(v1 *KurtosisConfigV1) *KurtosisConfig {
 	return &KurtosisConfig{
 		versionSpecificConfig: v1,
 	}
 }
 
-func (kurtosisConfig *KurtosisConfig) GetVersionNumber() int {
+func (kurtosisConfig *KurtosisConfig) GetConfigVersion() int {
 	return *kurtosisConfig.versionSpecificConfig.ConfigVersion
 }
 

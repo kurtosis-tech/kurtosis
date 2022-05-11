@@ -85,6 +85,11 @@ func (configStore *kurtosisConfigStore) SetConfig(kurtosisConfig *KurtosisConfig
 // ====================================================================================================
 //                                     Private Helper Functions
 // ====================================================================================================
+
+type kurtosisConfigVersionDetector struct {
+	ConfigVersion *int `yaml:"config-version"`
+}
+
 func (configStore *kurtosisConfigStore) saveKurtosisConfigYAMLFile(kurtosisConfig *KurtosisConfig) error {
 	kurtosisConfigYAMLContent, err := yaml.Marshal(kurtosisConfig.GetVersionSpecificConfig())
 	if err != nil {
@@ -106,6 +111,43 @@ func (configStore *kurtosisConfigStore) saveKurtosisConfigYAMLFile(kurtosisConfi
 }
 
 func (configStore *kurtosisConfigStore) getKurtosisConfigFromYAMLFile() (*KurtosisConfig, error) {
+	fileContentBytes, err := configStore.readConfigFileBytes()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred reading Kurtosis config YAML file")
+	}
+
+	configVersionDetector := &kurtosisConfigVersionDetector{}
+	if err := yaml.Unmarshal(fileContentBytes, configVersionDetector); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(fileContentBytes))
+	}
+
+	// PARSE VERSION NUMBER
+	if configVersionDetector.ConfigVersion == nil {
+		kurtosisConfigStruct := &KurtosisConfigV0{}
+		fileContentBytes, err := configStore.readConfigFileBytes()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred reading Kurtosis config YAML file")
+		}
+		if err := yaml.Unmarshal(fileContentBytes, kurtosisConfigStruct); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(fileContentBytes))
+		}
+		return NewDefaultKurtosisConfig(kurtosisConfigStruct.ShouldSendMetrics), nil
+	} else if *configVersionDetector.ConfigVersion == 1 {
+		kurtosisConfigStruct := &KurtosisConfigV1{}
+		fileContentBytes, err := configStore.readConfigFileBytes()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred reading Kurtosis config YAML file")
+		}
+		if err := yaml.Unmarshal(fileContentBytes, kurtosisConfigStruct); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(fileContentBytes))
+		}
+		return NewKurtosisConfigFromConfigV1(kurtosisConfigStruct), nil
+	} else {
+		return nil, stacktrace.NewError("Read invalid configuration version number %d from Kurtosis configuration file", *configVersionDetector.ConfigVersion)
+	}
+}
+
+func (configStore *kurtosisConfigStore) readConfigFileBytes() ([]byte, error) {
 	kurtosisConfigYAMLFilepath, err := host_machine_directories.GetKurtosisConfigYAMLFilepath()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kurtosis config YAML filepath")
@@ -126,20 +168,5 @@ func (configStore *kurtosisConfigStore) getKurtosisConfigFromYAMLFile() (*Kurtos
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred reading Kurtosis config YAML file")
 	}
-
-	newKurtosisConfig := &KurtosisConfigV1{}
-
-	if err := yaml.Unmarshal(fileContentBytes, newKurtosisConfig); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(fileContentBytes))
-	}
-
-	// ENSURE BACKWARDS COMPATIBILITY - CORRECTLY READ PREVIOUSLY WRITTEN PREFERENCES FROM DIFFERENT CONFIG VERSIONS
-
-	// READ V0 AND CONVERT TO V1
-	if newKurtosisConfig.ConfigVersion == nil && newKurtosisConfig.ShouldSendMetrics != nil {
-		defaultKurtosisConfig := NewDefaultKurtosisConfig(newKurtosisConfig.ShouldSendMetrics)
-		return defaultKurtosisConfig, nil
-	}
-
-	return NewKurtosisConfigVersionedConfig(newKurtosisConfig), nil
+	return fileContentBytes, nil
 }
