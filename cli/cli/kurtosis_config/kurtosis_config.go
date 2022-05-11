@@ -32,8 +32,9 @@ func NewKurtosisConfig(versionSpecificConfig *v1.KurtosisConfigV1) *KurtosisConf
 }
 
 func (kurtosisConfig *KurtosisConfig) Validate() error {
-	versionedKurtosisConfig := VersionedKurtosisConfig(kurtosisConfig)
-	return versionedKurtosisConfig.Validate()
+	return nil
+	//versionedKurtosisConfig := VersionedKurtosisConfig(kurtosisConfig)
+	//return versionedKurtosisConfig.Validate()
 }
 
 func (kurtosisConfig *KurtosisConfig) GetConfigVersion() int {
