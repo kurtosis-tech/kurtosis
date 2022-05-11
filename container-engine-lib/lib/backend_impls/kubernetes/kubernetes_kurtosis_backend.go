@@ -26,6 +26,18 @@ type KubernetesKurtosisBackend struct {
 	kubernetesManager *kubernetes_manager.KubernetesManager
 
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider
+
+	/*
+		StorageClass name to be used for volumes in the cluster
+		StorageClasses must be defined by a cluster administrator.
+		passes this in when starting Kurtosis with Kubernetes.
+	*/
+	volumeStorageClassName string
+	/*
+		Enclave availability must be set and defined by a cluster administrator.
+		The user passes this in when starting Kurtosis with Kubernetes.
+	 */
+	volumeSizePerEnclaveInGigabytes int
 }
 
 func (backend *KubernetesKurtosisBackend) PullImage(image string) error {
@@ -191,11 +203,13 @@ func (backend *KubernetesKurtosisBackend) DestroyFilesArtifactExpanders(ctx cont
 	panic("implement me")
 }
 
-func NewKubernetesKurtosisBackend(kubernetesManager *kubernetes_manager.KubernetesManager) *KubernetesKurtosisBackend {
+func NewKubernetesKurtosisBackend(kubernetesManager *kubernetes_manager.KubernetesManager, volumeStorageClassName string, volumeSizePerEnclaveInGigabytes int) *KubernetesKurtosisBackend {
 	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	return &KubernetesKurtosisBackend{
 		kubernetesManager: kubernetesManager,
 		objAttrsProvider:  objAttrsProvider,
+		volumeStorageClassName: volumeStorageClassName,
+		volumeSizePerEnclaveInGigabytes: volumeSizePerEnclaveInGigabytes,
 	}
 }
 
