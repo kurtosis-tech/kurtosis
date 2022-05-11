@@ -19,7 +19,7 @@ const (
 	shouldSendMetricsOptOutEventDefaultValue = true
 )
 
-func initInteractiveConfig() (*KurtosisConfigV1, error) {
+func initInteractiveConfig() (*KurtosisConfig, error) {
 	// Check if we're actually running in interactive mode (i.e. STDOUT is a terminal)
 	if !interactive_terminal_decider.IsInteractiveTerminal() {
 		return nil, stacktrace.NewError(
@@ -59,7 +59,7 @@ func initInteractiveConfig() (*KurtosisConfigV1, error) {
 		}
 	}
 
-	kurtosisConfig := NewDefaultKurtosisConfigV1(&didUserAcceptSendingMetrics)
+	kurtosisConfig := NewDefaultKurtosisConfig(&didUserAcceptSendingMetrics)
 	return kurtosisConfig, nil
 }
 
