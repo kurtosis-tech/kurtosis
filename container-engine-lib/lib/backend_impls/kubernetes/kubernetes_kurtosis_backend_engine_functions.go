@@ -105,8 +105,8 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	defer func() {
 		if shouldRemoveNamespace {
 			if err := backend.kubernetesManager.RemoveNamespace(ctx, namespace.Name); err != nil {
-				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete kubernetes namespace '%v' that we created but an error was thrown:\n%v", namespace.Name, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove kubernetes namespace with name '%v'!!!!!!!", namespace.Name)
+				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes namespace '%v' that we created but an error was thrown:\n%v", namespace.Name, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes namespace with name '%v'!!!!!!!", namespace.Name)
 			}
 		}
 	}()
@@ -162,8 +162,8 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	defer func() {
 		if shouldRemovePod {
 			if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, enginePod.Name); err != nil {
-				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete kubernetes pod '%v' that we created but an error was thrown:\n%v", enginePod.Name, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove kubernetes pod with name '%v'!!!!!!!", enginePod.Name)
+				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes pod '%v' that we created but an error was thrown:\n%v", enginePod.Name, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes pod with name '%v'!!!!!!!", enginePod.Name)
 			}
 		}
 	}()
@@ -176,8 +176,8 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	defer func() {
 		if shouldRemoveService {
 			if err := backend.kubernetesManager.RemoveService(ctx, namespaceName, engineService.Name); err != nil {
-				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete kubernetes service '%v' that we created but an error was thrown:\n%v", engineService.Name, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove kubernetes service with name '%v'!!!!!!!", engineService.Name)
+				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes service '%v' that we created but an error was thrown:\n%v", engineService.Name, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes service with name '%v'!!!!!!!", engineService.Name)
 			}
 		}
 	}()
