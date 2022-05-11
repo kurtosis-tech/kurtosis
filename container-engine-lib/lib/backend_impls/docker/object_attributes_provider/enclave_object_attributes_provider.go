@@ -42,6 +42,7 @@ type DockerEnclaveObjectAttributesProvider interface {
 	) (DockerObjectAttributes, error)
 	ForUserServiceContainer(
 		registrationGUID user_service_registration.UserServiceRegistrationGUID,
+		serviceID user_service_registration.ServiceID,
 		serviceGUID service.ServiceGUID,
 		privateIpAddr net.IP,
 		privatePorts map[string]*port_spec.PortSpec,

@@ -56,13 +56,49 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 	newUserService *service.Service,
 	resultErr error,
 ) {
+	// Find the actual registration
+	serviceRegistrationFilters := &user_service_registration.UserServiceRegistrationFilters{
+		GUIDs:      map[user_service_registration.UserServiceRegistrationGUID]bool{
+			registrationGuid: true,
+		},
+	}
+	matchingServiceRegistrations, err := backend.GetUserServiceRegistrations(ctx, serviceRegistrationFilters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service registrations matching registration GUID '%v'", registrationGuid)
+	}
+	serviceRegistration, found := matchingServiceRegistrations[registrationGuid]
+	if !found {
+		return nil, stacktrace.NewError("No service registrations matched registration GUID '%v'", registrationGuid)
+	}
+	serviceId := serviceRegistration.GetServiceID()
+	serviceIpAddress := serviceRegistration.GetIPAddress()
+
+	// Ensure no other services are using the registration
+	preexistingRegistrationConsumersFilters := &service.ServiceFilters{
+		RegistrationGUIDs:      map[user_service_registration.UserServiceRegistrationGUID]bool{
+			registrationGuid: true,
+		},
+	}
+	preexistingRegistrationConsumers, err := backend.GetUserServices(ctx, preexistingRegistrationConsumersFilters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting preexisting services consuming registration '%v'", registrationGuid)
+	}
+	if len(preexistingRegistrationConsumers) > 0 {
+		return nil, stacktrace.NewError("Cannot start service using service registration '%v' because existing service(s) are already using it", registrationGuid)
+	}
 
 	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
 
-	containerAttrs, err := enclaveObjAttrsProvider.ForUserServiceContainer(id, guid, ipAddr, privatePorts)
+	containerAttrs, err := enclaveObjAttrsProvider.ForUserServiceContainer(
+		registrationGuid,
+		serviceId,
+		guid,
+		serviceIpAddress,
+		privatePorts,
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the user service container attributes for user service with GUID '%v'", guid)
 	}
@@ -98,7 +134,7 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 		containerName.GetString(),
 		enclaveNetwork.GetId(),
 	).WithStaticIP(
-		ipAddr,
+		serviceIpAddress,
 	).WithUsedPorts(
 		usedPorts,
 	).WithEnvironmentVariables(
@@ -108,7 +144,7 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 	).WithLabels(
 		labelStrs,
 	).WithAlias(
-		string(id),
+		string(serviceId),
 	)
 	if entrypointArgs != nil {
 		createAndStartArgsBuilder.WithEntrypointArgs(entrypointArgs)
@@ -651,6 +687,11 @@ func getUserServiceObjectFromContainerInfo(
 		return nil, stacktrace.NewError("Expected the user service's enclave ID to be found under label '%v' but the label wasn't present", label_key_consts.EnclaveIDLabelKey.GetString())
 	}
 
+	registrationGuid, found := labels[label_key_consts.UserServiceRegistrationGUIDLabelKey.GetString()]
+	if !found {
+		return nil, stacktrace.NewError("Expected the user service's registration GUID to be found under label '%v' but the label wasn't present", label_key_consts.UserServiceRegistrationGUIDLabelKey.GetString())
+	}
+
 	id, found := labels[label_key_consts.IDLabelKey.GetString()]
 	if !found {
 		return nil, stacktrace.NewError("Expected to find user service ID label key '%v' but none was found", label_key_consts.IDLabelKey.GetString())
@@ -714,6 +755,7 @@ func getUserServiceObjectFromContainerInfo(
 	}
 
 	newObject := service.NewService(
+		user_service_registration.UserServiceRegistrationGUID(registrationGuid),
 		user_service_registration.ServiceID(id),
 		service.ServiceGUID(guid),
 		status,

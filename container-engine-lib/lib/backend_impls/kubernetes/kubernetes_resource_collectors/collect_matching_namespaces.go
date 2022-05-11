@@ -36,10 +36,10 @@ func CollectMatchingNamespaces(
 	postFilterLabelKey string,
 	postFilterLabelValues map[string]bool,
 ) (
-	map[string][]apiv1.Namespace,
+	map[string][]*apiv1.Namespace,
 	error,
 ) {
-	allObjects, err := kubernetesManager.GetClusterRolesByLabels(ctx, searchLabels)
+	allObjects, err := kubernetesManager.GetNamespacesByLabels(ctx, searchLabels)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes resources matching labels: %+v", searchLabels)
 	}
@@ -47,22 +47,22 @@ func CollectMatchingNamespaces(
 	for _, object := range allObjects.Items {
 		allKubernetesResources = append(
 			allKubernetesResources,
-			clusterRoleKubernetesResource{underlying: object},
+			namespaceKubernetesResource{underlying: object},
 		)
 	}
 	filteredKubernetesResources, err := postfilterKubernetesResources(allKubernetesResources, postFilterLabelKey, postFilterLabelValues)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred during postfiltering")
 	}
-	result := map[string][]apiv1.Namespace{}
+	result := map[string][]*apiv1.Namespace{}
 	for labelValue, matchingResources := range filteredKubernetesResources {
-		castedObjects := []apiv1.Namespace{}
+		castedObjects := []*apiv1.Namespace{}
 		for _, resource := range matchingResources {
 			casted, ok := resource.getUnderlying().(apiv1.Namespace)
 			if !ok {
 				return nil, stacktrace.NewError("An error occurred downcasting Kubernetes resource object '%+v'", resource.getUnderlying())
 			}
-			castedObjects = append(castedObjects, casted)
+			castedObjects = append(castedObjects, &casted)
 		}
 		result[labelValue] = castedObjects
 	}
