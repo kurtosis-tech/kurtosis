@@ -18,6 +18,12 @@ func NewDefaultKurtosisConfig(doesUserAcceptSendingMetrics *bool) *KurtosisConfi
 	}
 }
 
+func NewKurtosisConfigFromConfigV0(v0 *KurtosisConfigV0) *KurtosisConfig {
+	return &KurtosisConfig{
+		versionSpecificConfig: NewDefaultKurtosisConfigV1(v0.ShouldSendMetrics),
+	}
+}
+
 func NewKurtosisConfigFromConfigV1(v1 *KurtosisConfigV1) *KurtosisConfig {
 	return &KurtosisConfig{
 		versionSpecificConfig: v1,

@@ -121,8 +121,10 @@ func (configStore *kurtosisConfigStore) getKurtosisConfigFromYAMLFile() (*Kurtos
 		return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(fileContentBytes))
 	}
 
-	// PARSE VERSION NUMBER
+	// PARSE VERSION NUMBER TO KNOW WHICH CONFIGURATION VERSION USER SET PREVIOUSLY
 	if configVersionDetector.ConfigVersion == nil {
+		// NIL CONFIG VERSION INDICATES V0 - BEFORE CONFIG VERSION WAS PART OF THE CLI YAML
+		// READ CONFIGURATION FILE AS KURTOSIS CONFIG V0
 		kurtosisConfigStruct := &KurtosisConfigV0{}
 		fileContentBytes, err := configStore.readConfigFileBytes()
 		if err != nil {
@@ -131,8 +133,9 @@ func (configStore *kurtosisConfigStore) getKurtosisConfigFromYAMLFile() (*Kurtos
 		if err := yaml.Unmarshal(fileContentBytes, kurtosisConfigStruct); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(fileContentBytes))
 		}
-		return NewDefaultKurtosisConfig(kurtosisConfigStruct.ShouldSendMetrics), nil
+		return NewKurtosisConfigFromConfigV0(kurtosisConfigStruct), nil
 	} else if *configVersionDetector.ConfigVersion == 1 {
+		// READ CONFIGURATION FILE AS KURTOSIS CONFIG V1
 		kurtosisConfigStruct := &KurtosisConfigV1{}
 		fileContentBytes, err := configStore.readConfigFileBytes()
 		if err != nil {
