@@ -13,6 +13,7 @@
 ### Changes
 * Updated `KubernetesManager.CreatePod` added `serviceAccount` argument to set the pod's service account
 * Switched all the engine methods to use a more Kubernetes-friendly way of getting & managing resources
+* Cleaned up the `KubernetesManager.CreateEngine` method
 
 ### Breaking Changes
 * NewKurtosisKubernetesBackend now takes in extra arguments - `volumeStorageClassName` and `volumeSizePerEnclaveInGigabytes`
