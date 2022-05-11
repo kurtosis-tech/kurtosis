@@ -8,6 +8,7 @@
 * Fixed `KubernetesBackend.GetEngines`returning an empty list for filters with no IDs specified
 * Added a (currently unused) framework for collecting all Kubernetes resource that match a specific filter
 * Add `getEngineKubernetesResources` in preparation for refactoring the engine methods
+* Implement `KubernetesKurtosisBackend.DestroyEngines`
 
 ### Changes
 * Updated `KubernetesManager.CreatePod` added `serviceAccount` argument to set the pod's service account

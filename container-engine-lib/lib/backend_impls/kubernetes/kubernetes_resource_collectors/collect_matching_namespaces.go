@@ -39,7 +39,7 @@ func CollectMatchingNamespaces(
 	map[string][]*apiv1.Namespace,
 	error,
 ) {
-	allObjects, err := kubernetesManager.GetClusterRolesByLabels(ctx, searchLabels)
+	allObjects, err := kubernetesManager.GetNamespacesByLabels(ctx, searchLabels)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes resources matching labels: %+v", searchLabels)
 	}
@@ -47,7 +47,7 @@ func CollectMatchingNamespaces(
 	for _, object := range allObjects.Items {
 		allKubernetesResources = append(
 			allKubernetesResources,
-			clusterRoleKubernetesResource{underlying: object},
+			namespaceKubernetesResource{underlying: object},
 		)
 	}
 	filteredKubernetesResources, err := postfilterKubernetesResources(allKubernetesResources, postFilterLabelKey, postFilterLabelValues)
