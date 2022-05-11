@@ -582,7 +582,7 @@ func (backend *KubernetesKurtosisBackend) removeApiContainerRoleBasedResources(
 		errRoleBindingErrMsgs := []string{}
 		for _, roleBinding := range roleBindings {
 			roleBindingName := roleBinding.GetName()
-			if err := backend.kubernetesManager.RemoveRoleBindings(ctx, enclaveNamespaceName, roleBindingName); err != nil {
+			if err := backend.kubernetesManager.RemoveRoleBindings(ctx, roleBindingName, enclaveNamespaceName); err != nil {
 				wrapErr := stacktrace.Propagate(err, "An error occurred removing api container role binding '%v' in namespace '%v'", roleBindingName, enclaveNamespaceName)
 				errRoleBindingNames = append(errRoleBindingNames, roleBindingName)
 				errRoleBindingErrMsgs = append(errRoleBindingErrMsgs, wrapErr.Error())
@@ -764,7 +764,7 @@ func (backend *KubernetesKurtosisBackend) getApiContainerPod(ctx context.Context
 	for _, foundPod := range pods.Items {
 		foundPodLabels := foundPod.GetLabels()
 
-		foundEnclaveId, found := foundPodLabels[label_key_consts.IDLabelKey.GetString()]
+		foundEnclaveId, found := foundPodLabels[label_key_consts.EnclaveIDLabelKey.GetString()]
 		if !found {
 			return nil, stacktrace.NewError("Expected to find enclave ID label key '%v' but none was found", label_key_consts.EnclaveIDLabelKey.GetString())
 		}
