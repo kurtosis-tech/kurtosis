@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 	"strings"
@@ -40,7 +41,7 @@ type DockerEnclaveObjectAttributesProvider interface {
 		privateGrpcProxyPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
 	ForUserServiceContainer(
-		serviceID service.ServiceID,
+		registrationGUID user_service_registration.UserServiceRegistrationGUID,
 		serviceGUID service.ServiceGUID,
 		privateIpAddr net.IP,
 		privatePorts map[string]*port_spec.PortSpec,
@@ -181,7 +182,14 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 	return objectAttributes, nil
 }
 
-func (provider *dockerEnclaveObjectAttributesProviderImpl)ForUserServiceContainer(serviceID service.ServiceID, serviceGUID service.ServiceGUID, privateIpAddr net.IP, privatePorts map[string]*port_spec.PortSpec) (DockerObjectAttributes, error) {
+func (provider *dockerEnclaveObjectAttributesProviderImpl)ForUserServiceContainer(
+	registrationGUID user_service_registration.UserServiceRegistrationGUID,
+	// TODO DELETE THIS (the user service doesn't actually track the service ID; the service registration does)
+	serviceID user_service_registration.ServiceID,
+	serviceGUID service.ServiceGUID,
+	privateIpAddr net.IP,
+	privatePorts map[string]*port_spec.PortSpec,
+) (DockerObjectAttributes, error) {
 	name, err := provider.getNameForEnclaveObject(
 		[]string{
 			userServiceContainerNameFragment,
@@ -206,6 +214,15 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl)ForUserServiceContaine
 		)
 	}
 
+	registrationGuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(string(registrationGUID))
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating a Docker label value object from user service registration GUID '%v'",
+			registrationGUID,
+		)
+	}
+
 	serviceIdStr := string(serviceID)
 	serviceGuidStr := string(serviceGUID)
 
@@ -216,6 +233,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl)ForUserServiceContaine
 	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.UserServiceContainerTypeLabelValue
 	labels[label_key_consts.PortSpecsLabelKey] = serializedPortsSpec
 	labels[label_key_consts.PrivateIPLabelKey] = privateIpLabelValue
+	labels[label_key_consts.UserServiceRegistrationGUIDLabelKey] = registrationGuidLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
