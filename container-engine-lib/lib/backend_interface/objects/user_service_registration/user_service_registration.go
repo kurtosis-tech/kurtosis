@@ -11,6 +11,11 @@ type UserServiceRegistrationGUID string
 // A user service represents a fixed IP and a domain name for a given user service
 // This can be thought of as a Kubernetes Service, though in Docker it's implemented a bit differently
 type UserServiceRegistration struct {
+	// Unique ID representing this registration
+	// It's important that each registration has its own GUID so that we can tag containers/pods with the registration
+	// GUID which will:
+	//  1) allow us to delete any containers/pods consuming the registration if we delete the registration
+	//  2) give a unique ID to return registrations by
 	guid UserServiceRegistrationGUID
 
 	// The ID to which the registration is associated

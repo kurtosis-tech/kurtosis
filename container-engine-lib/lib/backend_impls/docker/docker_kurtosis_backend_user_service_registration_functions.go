@@ -56,6 +56,7 @@ func (backend *DockerKurtosisBackend) CreateUserServiceRegistration(
 		}
 	}()
 
+	// TODO Switch this, and all other GUIDs, to a UUID!
 	guid := user_service_registration.UserServiceRegistrationGUID(fmt.Sprintf(
 		"%v--%v--%v",
 		enclaveId,
