@@ -234,26 +234,26 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *user_service_registration.UserServiceRegistrationFilters,
 	) (
-		map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration,
+		map[user_service_registration.UserServiceRegistrationGUID]*user_service_registration.UserServiceRegistration,
 		error,
 	)
 
 	// DestroyUserServiceRegistration removes a previously-created user service registration object
-	// This will fail if a service is consuming the registration
+	// This will fail if a service is currently consuming the registration
 	DestroyUserServiceRegistration(
 		ctx context.Context,
 		filters *user_service_registration.UserServiceRegistrationFilters,
 	) (
-		resultSuccessfulServiceIds map[user_service_registration.ServiceID]bool,
-		resultErroredServiceIds map[user_service_registration.ServiceID]error,
+		resultSuccessfulServiceIds map[user_service_registration.UserServiceRegistrationGUID]bool,
+		resultErroredServiceIds map[user_service_registration.UserServiceRegistrationGUID]error,
 		resultErr error,
 	)
 
 	// CreateUserService consumes a service registration to create a user service with the given parameters
 	CreateUserService(
 		ctx context.Context,
-		id user_service_registration.ServiceID,
-		guid service.ServiceGUID, // TODO remove this??
+		registrationGuid user_service_registration.UserServiceRegistrationGUID,
+		guid service.ServiceGUID, // TODO autogenerate this?
 		containerImageName string,
 		enclaveId enclave.EnclaveID,
 		privatePorts map[string]*port_spec.PortSpec,

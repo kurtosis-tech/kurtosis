@@ -43,8 +43,8 @@ var commandToRunWhenCreatingUserServiceShell = []string{
 
 func (backend *DockerKurtosisBackend) CreateUserService(
 	ctx context.Context,
-	id user_service_registration.ServiceID,
-	guid service.ServiceGUID,
+	registrationGuid user_service_registration.UserServiceRegistrationGUID,
+	guid service.ServiceGUID,	// TDOO autogenerate?
 	containerImageName string,
 	enclaveId enclave.EnclaveID,
 	privatePorts map[string]*port_spec.PortSpec,
