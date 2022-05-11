@@ -11,20 +11,19 @@ import (
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/retry"
 )
 
 const (
-	defaultServiceProtocol = "TCP"
-	defaultPersistentVolumeAccessMode = apiv1.ReadWriteMany
-	defaultPersistentVolumeClaimAccessMode = apiv1.ReadWriteOnce
-
+	defaultServiceProtocol                 = "TCP"
+	defaultPersistentVolumeAccessMode      = apiv1.ReadWriteMany
+	defaultPersistentVolumeClaimAccessMode = apiv1.ReadWriteMany
 )
 
 var (
@@ -50,9 +49,8 @@ Args:
 	log: The logger that this K8s manager will write all its log messages to.
 	kubernetesClientSet: The k8s client that will be used when interacting with the underlying k8s cluster.
 */
-func NewKubernetesManager(log *logrus.Logger, kubernetesClientSet *kubernetes.Clientset) *KubernetesManager {
+func NewKubernetesManager(kubernetesClientSet *kubernetes.Clientset) *KubernetesManager {
 	return &KubernetesManager{
-		log:                 log,
 		kubernetesClientSet: kubernetesClientSet,
 	}
 }
@@ -69,18 +67,8 @@ Args:
 Returns:
 	id: The deployment ID
 */
-func (manager *KubernetesManager) CreateDeployment(ctx context.Context, deploymentName string, namespace string, deploymentLabels map[string]string, podLabels map[string]string, containerImage string, replicas int32, volumes []apiv1.Volume, volumeMounts []apiv1.VolumeMount, containerEnvVars map[string]string, containerName string) (*appsv1.Deployment, error) {
+func (manager *KubernetesManager) CreateDeployment(ctx context.Context, namespace string, deploymentName string, deploymentLabels map[string]string, podLabels map[string]string, replicas int32, deploymentContainers []apiv1.Container, deploymentVolumes []apiv1.Volume) (*appsv1.Deployment, error) {
 	deploymentsClient := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
-
-	var podEnvVars []apiv1.EnvVar
-
-	for varName, varValue := range containerEnvVars {
-		envVar := apiv1.EnvVar{
-			Name:  varName,
-			Value: varValue,
-		}
-		podEnvVars = append(podEnvVars, envVar)
-	}
 
 	objectMeta := metav1.ObjectMeta{
 		Name:   deploymentName,
@@ -91,18 +79,9 @@ func (manager *KubernetesManager) CreateDeployment(ctx context.Context, deployme
 		MatchLabels: podLabels, // this should always match the Pod labels, otherwise it will fail
 	}
 
-	containers := []apiv1.Container{
-		{
-			Name:         containerName,
-			Image:        containerImage,
-			VolumeMounts: volumeMounts,
-			Env:          podEnvVars,
-		},
-	}
-
 	podSpec := apiv1.PodSpec{
-		Volumes:    volumes,
-		Containers: containers,
+		Volumes:    deploymentVolumes,
+		Containers: deploymentContainers,
 	}
 
 	podTemplateSpec := apiv1.PodTemplateSpec{
@@ -206,27 +185,22 @@ func (manager *KubernetesManager) UpdateDeploymentReplicas(ctx context.Context, 
 
 // ---------------------------Services------------------------------------------------------------------------------
 
-func (manager *KubernetesManager) CreateService(ctx context.Context, name string, namespace string, serviceLabels map[string]string, serviceType apiv1.ServiceType, port int32, targetPort int32) (*apiv1.Service, error) {
+// CreateService creates a k8s service in the specified namespace. It connects pods to the service according to the pod labels passed in
+func (manager *KubernetesManager) CreateService(ctx context.Context, namespace string, name string, serviceLabels map[string]string, serviceAnnotations map[string]string, matchPodLabels map[string]string, serviceType apiv1.ServiceType, ports []apiv1.ServicePort) (*apiv1.Service, error) {
 	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
 
 	objectMeta := metav1.ObjectMeta{
-		Name:   name,
-		Labels: serviceLabels,
+		Name:        name,
+		Labels:      serviceLabels,
+		Annotations: serviceAnnotations,
 	}
 
-	ports := []apiv1.ServicePort{
-		{
-			Protocol: defaultServiceProtocol,
-			Port:     port,
-			TargetPort: intstr.IntOrString{
-				IntVal: targetPort, // internal container port
-			},
-		},
-	}
+	// Figure out selector api
 
+	// There must be a better way
 	serviceSpec := apiv1.ServiceSpec{
 		Ports:    ports,
-		Selector: serviceLabels, // these labels are used to match with the Pod
+		Selector: matchPodLabels, // these labels are used to match with the Pod
 		Type:     serviceType,
 	}
 
@@ -248,6 +222,23 @@ func (manager *KubernetesManager) RemoveService(ctx context.Context, namespace s
 
 	if err := servicesClient.Delete(ctx, name, removeObjectDeleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete service '%s' with delete options '%+v' in namespace '%s'", name, removeObjectDeleteOptions, namespace)
+	}
+
+	return nil
+}
+
+func (manager *KubernetesManager) RemoveSelectorsFromService(ctx context.Context, namespace string, name string) error {
+	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
+	service, err := manager.GetServiceByName(ctx, namespace, name)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to find service with name '%v' in namespace '%v'", name, namespace)
+	}
+	service.Spec.Selector = make(map[string]string)
+
+	updateOpts := metav1.UpdateOptions{}
+
+	if _, err := servicesClient.Update(ctx, service, updateOpts); err != nil {
+		return stacktrace.Propagate(err, "Failed to remove selectors from service '%v' in namespace '%v'", name, namespace)
 	}
 
 	return nil
@@ -275,7 +266,7 @@ func (manager *KubernetesManager) ListServices(ctx context.Context, namespace st
 	return serviceResult, nil
 }
 
-func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, serviceLabels map[string]string, namespace string) (*apiv1.ServiceList, error) {
+func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, namespace string, serviceLabels map[string]string) (*apiv1.ServiceList, error) {
 	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
 
 	listOptions := metav1.ListOptions{
@@ -336,22 +327,23 @@ func (manager *KubernetesManager) GetStorageClass(ctx context.Context, name stri
 	return storageClassResult, nil
 }
 
-func (manager *KubernetesManager) CreatePersistentVolume(ctx context.Context, volumeName string, volumeLabels map[string]string, quantityInGigabytes string, pathInSingleNodeCluster string, storageClassName string) (*apiv1.PersistentVolume, error) {
+func (manager *KubernetesManager) CreatePersistentVolume(ctx context.Context, volumeName string, volumeLabels map[string]string, volumeAnnotations map[string]string, quantityInGigabytes string, pathInSingleNodeCluster string, storageClassName string) (*apiv1.PersistentVolume, error) {
 	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
 
 	//quantity := "100Gi"
 	//storageClassName := "my-local-storage"
 	//pathInSingleNodeCluster := "/Users/mariofernandez/Library/Application Support/kurtosis/engine-data"
 
-	quantity, err :=resource.ParseQuantity(quantityInGigabytes)
-	if err != nil{
+	quantity, err := resource.ParseQuantity(quantityInGigabytes)
+	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to parse quantityInGigabytes '%s'", quantityInGigabytes)
 	}
 
 	persistentVolume := &apiv1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   volumeName,
-			Labels: volumeLabels,
+			Name:        volumeName,
+			Labels:      volumeLabels,
+			Annotations: volumeAnnotations,
 		},
 		Spec: apiv1.PersistentVolumeSpec{
 			Capacity: map[apiv1.ResourceName]resource.Quantity{
@@ -430,8 +422,8 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Contex
 	//storageClassName := "my-local-storage"
 	//quantity := "10Gi"
 
-	quantity, err :=resource.ParseQuantity(quantityInGigabytes)
-	if err != nil{
+	quantity, err := resource.ParseQuantity(quantityInGigabytes)
+	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to parse quantityInGigabytes '%s'", quantityInGigabytes)
 	}
 
@@ -617,5 +609,302 @@ func (manager *KubernetesManager) GetDaemonSet(ctx context.Context, name string,
 	return daemonSet, nil
 }
 
+// ---------------------------service accounts------------------------------------------------------------------------------
+
+func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name string, namespace string, labels map[string]string) (*apiv1.ServiceAccount, error) {
+	client := manager.kubernetesClientSet.CoreV1().ServiceAccounts(namespace)
+
+	serviceAccount := &apiv1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: labels,
+		},
+	}
+
+	serviceAccountResult, err := client.Create(ctx, serviceAccount, metav1.CreateOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create service account with name '%s' in namespace '%v'", name, namespace)
+	}
+	return serviceAccountResult, nil
+}
+
+func (manager *KubernetesManager) GetServiceAccountsByLabels(ctx context.Context, namespace string, serviceAccountsLabels map[string]string) (*apiv1.ServiceAccountList, error) {
+	client := manager.kubernetesClientSet.CoreV1().ServiceAccounts(namespace)
+
+	opts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(serviceAccountsLabels).String(),
+	}
+
+	pods, err := client.List(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get service accounts with labels '%+v', instead a non-nil error was returned", serviceAccountsLabels)
+	}
+
+	return pods, nil
+}
+
+func (manager *KubernetesManager) RemoveServiceAccount(ctx context.Context, name string, namespace string) error {
+	client := manager.kubernetesClientSet.CoreV1().ServiceAccounts(namespace)
+
+	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete service account with name '%s' in namespace '%v'", name, namespace)
+	}
+
+	return nil
+}
+
+// ---------------------------roles------------------------------------------------------------------------------
+
+func (manager *KubernetesManager) CreateRole(ctx context.Context, name string, namespace string, rules []rbacv1.PolicyRule, labels map[string]string) (*rbacv1.Role, error) {
+	client := manager.kubernetesClientSet.RbacV1().Roles(namespace)
+
+	role :=  &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: labels,
+		},
+		Rules: rules,
+	}
+
+	roleResult, err := client.Create(ctx, role, metav1.CreateOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create role with name '%s' in namespace '%v' and rules '%+v'", name, namespace, rules)
+	}
+
+	return roleResult, nil
+}
+
+func (manager *KubernetesManager) GetRolesByLabels(ctx context.Context, namespace string, rolesLabels map[string]string) (*rbacv1.RoleList, error) {
+	client := manager.kubernetesClientSet.RbacV1().Roles(namespace)
+
+	opts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(rolesLabels).String(),
+	}
+
+	pods, err := client.List(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get roles with labels '%+v', instead a non-nil error was returned", rolesLabels)
+	}
+
+	return pods, nil
+}
+
+func (manager *KubernetesManager) RemoveRole(ctx context.Context, name string, namespace string) error {
+	client := manager.kubernetesClientSet.RbacV1().Roles(namespace)
+
+	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete role with name '%s' in namespace '%v'", name, namespace)
+	}
+
+	return nil
+}
+
+func (manager *KubernetesManager) CrateRoleBindings(ctx context.Context, name string, namespace string, subjects []rbacv1.Subject, roleRef rbacv1.RoleRef, labels map[string]string) (*rbacv1.RoleBinding, error) {
+	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
+
+	roleBinding := &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: labels,
+		},
+		Subjects: subjects,
+		RoleRef: roleRef,
+	}
+
+	roleBindingResult, err := client.Create(ctx, roleBinding, metav1.CreateOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create role binding with name '%s', subjects '%+v' and role ref '%v'", name, subjects, roleRef)
+	}
+
+	return roleBindingResult, nil
+}
+
+func (manager *KubernetesManager) GetRoleBindingsByLabels(ctx context.Context, namespace string, roleBindingsLabels map[string]string) (*rbacv1.RoleBindingList, error) {
+	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
+
+	opts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(roleBindingsLabels).String(),
+	}
+
+	pods, err := client.List(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get role bindings with labels '%+v', instead a non-nil error was returned", roleBindingsLabels)
+	}
+
+	return pods, nil
+}
+
+func (manager *KubernetesManager) RemoveRoleBindings(ctx context.Context, name string, namespace string) error {
+	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
+
+	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete role bindings with name '%s' in namespace '%v'", name, namespace)
+	}
+
+	return nil
+}
+
+// ---------------------------cluster roles------------------------------------------------------------------------------
+
+func (manager *KubernetesManager) CreateClusterRoles(ctx context.Context, name string, rules []rbacv1.PolicyRule, labels map[string]string) (*rbacv1.ClusterRole, error) {
+	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
+
+	clusterRole :=  &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: labels,
+		},
+		Rules: rules,
+	}
+
+	clusterRoleResult, err := client.Create(ctx, clusterRole, metav1.CreateOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create cluster role with name '%s' with rules '%+v'", name, rules)
+	}
+
+	return clusterRoleResult, nil
+}
+
+func (manager *KubernetesManager) GetClusterRolesByLabels(ctx context.Context, clusterRoleLabels map[string]string) (*rbacv1.ClusterRoleList, error) {
+	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
+
+	opts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(clusterRoleLabels).String(),
+	}
+
+	pods, err := client.List(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get cluster roles with labels '%+v', instead a non-nil error was returned", clusterRoleLabels)
+	}
+
+	return pods, nil
+}
+
+func (manager *KubernetesManager) RemoveClusterRole(ctx context.Context, name string) error {
+	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
+
+	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete cluster role with name '%s'", name)
+	}
+
+	return nil
+}
+
+func (manager *KubernetesManager) CreateClusterRoleBindings(ctx context.Context, name string, subjects []rbacv1.Subject, roleRef rbacv1.RoleRef, labels map[string]string) (*rbacv1.ClusterRoleBinding, error) {
+	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
+
+	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: labels,
+		},
+		Subjects: subjects,
+		RoleRef: roleRef,
+	}
+
+	clusterRoleBindingResult, err := client.Create(ctx, clusterRoleBinding, metav1.CreateOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create cluster role binding with name '%s', subjects '%+v' and role ref '%v'", name, subjects, roleRef)
+	}
+
+	return clusterRoleBindingResult, nil
+}
+
+func (manager *KubernetesManager) GetClusterRoleBindingsByLabels(ctx context.Context, clusterRoleBindingsLabels map[string]string) (*rbacv1.ClusterRoleBindingList, error) {
+	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
+
+	opts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(clusterRoleBindingsLabels).String(),
+	}
+
+	pods, err := client.List(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get cluster role bindings with labels '%+v', instead a non-nil error was returned", clusterRoleBindingsLabels)
+	}
+
+	return pods, nil
+}
+
+func (manager *KubernetesManager) RemoveClusterRoleBindings(ctx context.Context, name string) error {
+	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
+
+	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete cluster role binding with name '%s'", name)
+	}
+
+	return nil
+}
+
 // Private functions
 func (manager *KubernetesManager) int32Ptr(i int32) *int32 { return &i }
+
+// Pods
+func (manager *KubernetesManager) CreatePod(ctx context.Context, namespace string, name string, podLabels map[string]string, podAnnotations map[string]string, podContainers []apiv1.Container, podVolumes []apiv1.Volume, podServiceAccountName string) (*apiv1.Pod, error) {
+	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
+
+	podMeta := metav1.ObjectMeta{
+		Name:        name,
+		Labels:      podLabels,
+		Annotations: podAnnotations,
+	}
+	podSpec := apiv1.PodSpec{
+		Volumes:    podVolumes,
+		Containers: podContainers,
+		ServiceAccountName: podServiceAccountName,
+	}
+
+	podToCreate := &apiv1.Pod{
+		Spec:       podSpec,
+		ObjectMeta: podMeta,
+	}
+
+	createdPod, err := podClient.Create(ctx, podToCreate, metav1.CreateOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to create pod with name '%v' and labels '%+v', instead a non-nil error was returned", name, podLabels)
+	}
+
+	return createdPod, nil
+}
+
+func (manager *KubernetesManager) RemovePod(ctx context.Context, namespace string, name string) error {
+	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
+
+	if err := podClient.Delete(ctx, name, removeObjectDeleteOptions); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete pod with name '%s' with delete options '%+v'", name, removeObjectDeleteOptions)
+	}
+
+	return nil
+}
+
+func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace string, podLabels map[string]string) (*apiv1.PodList, error) {
+	namespacePodClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
+
+	opts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(podLabels).String(),
+	}
+
+	pods, err := namespacePodClient.List(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get pods with labels '%+v', instead a non-nil error was returned", podLabels)
+	}
+
+	return pods, nil
+}
+
+// Returns the node a pod with name 'podName' runs on
+func (manager *KubernetesManager) GetNodePodRunsOn(ctx context.Context, namespace string, podName string) (*apiv1.Node, error) {
+	namespacePodClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
+	nodeClient := manager.kubernetesClientSet.CoreV1().Nodes()
+
+	pod, err := namespacePodClient.Get(ctx, podName, metav1.GetOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get a pod with name '%v' from kubernetes, instead a non-nil error was returned", podName)
+	}
+	nodeName := pod.Spec.NodeName
+	node, err := nodeClient.Get(ctx, nodeName, metav1.GetOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get a pod with name '%v' from kubernetes, instead a non-nil error was returned", nodeName)
+	}
+
+	return node, nil
+}

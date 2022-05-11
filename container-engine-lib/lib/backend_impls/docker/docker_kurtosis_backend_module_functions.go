@@ -24,11 +24,6 @@ const (
 	// The module container uses gRPC so MUST listen on TCP (no other protocols are supported)
 	moduleContainerPortProtocol = port_spec.PortProtocol_TCP
 
-	// TODO Remove when we switch fully to the enclave data volume
-	// The location where the enclave data volume will be mounted
-	//  on the module container
-	enclaveDataBindmountDirpathOnModuleContainer = "/kurtosis-enclave-data"
-
 	// The location where the enclave data volume will be mounted
 	//  on the module container
 	enclaveDataVolumeDirpathOnModuleContainer = "/kurtosis-data"
@@ -45,7 +40,6 @@ func (backend *DockerKurtosisBackend) CreateModule(
 	guid module.ModuleGUID,
 	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 	grpcPortNum uint16,
-	enclaveDataDirpathOnHostMachine string,
 	envVars map[string]string,
 ) (
 	newModule *module.Module,
@@ -113,10 +107,6 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		privateGrpcDockerPort: docker_manager.NewAutomaticPublishingSpec(),
 	}
 
-	bindMounts := map[string]string{
-		enclaveDataDirpathOnHostMachine: enclaveDataBindmountDirpathOnModuleContainer,
-	}
-
 	volumeMounts := map[string]string{
 		enclaveDataVolumeName: enclaveDataVolumeDirpathOnModuleContainer,
 	}
@@ -137,8 +127,6 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		enclaveNetwork.GetId(),
 	).WithEnvironmentVariables(
 		envVars,
-	).WithBindMounts(
-		bindMounts,
 	).WithVolumeMounts(
 		volumeMounts,
 	).WithStaticIP(

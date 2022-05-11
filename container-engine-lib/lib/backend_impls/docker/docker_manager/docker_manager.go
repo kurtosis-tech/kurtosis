@@ -705,6 +705,30 @@ func (manager DockerManager) GetContainerLogs(context context.Context, container
 }
 
 /*
+PauseContainer
+Pauses all processes running in the given container, but does not shut it down.
+*/
+func (manager DockerManager) PauseContainer(context context.Context, containerId string) error {
+	err := manager.dockerClient.ContainerPause(context, containerId)
+	if err != nil {
+		return stacktrace.Propagate(err, "Docker client failed to pause container '%v'", containerId)
+	}
+	return nil
+}
+
+/*
+UnpauseContainer
+Unpauses all processes running in the given container.
+*/
+func (manager DockerManager) UnpauseContainer(context context.Context, containerId string) error {
+	err := manager.dockerClient.ContainerUnpause(context, containerId)
+	if err != nil {
+		return stacktrace.Propagate(err, "Docker client failed to unpause container '%v'", containerId)
+	}
+	return nil
+}
+
+/*
 RunExecCommand
 Executes the given command inside the container with the given ID, blocking until the command completes
 */

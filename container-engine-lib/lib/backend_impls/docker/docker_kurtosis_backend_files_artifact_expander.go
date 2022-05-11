@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
+	"path"
 )
 
 const (
@@ -20,14 +21,9 @@ const (
 	//  into a Docker volume
 	dockerImage = "alpine:3.12"
 
-	// TODO Remove this when we switch fully to the data volume
-	// Dirpath on the artifact expander container where the enclave data dir (which contains the artifacts)
-	//  will be bind-mounted
-	enclaveDataBindmountDirpathOnExpanderContainer = "/enclave-data"
-
-	// The location where the enclave data volume will be mounted
-	//  on the files artifact expansion container
-	enclaveDataVolumeDirpathOnExpanderContainer = "/kurtosis-data"
+	// Dirpath on the artifact expander container where the enclave data volume (which contains artifacts)
+	//  will be mounted
+	enclaveDataVolumeDirpathOnExpanderContainer = "/enclave-data"
 
 	expanderContainerSuccessExitCode = 0
 )
@@ -37,9 +33,8 @@ func (backend *DockerKurtosisBackend) RunFilesArtifactExpander(
 	guid files_artifact_expander.FilesArtifactExpanderGUID,
 	enclaveId enclave.EnclaveID,
 	filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
-	enclaveDataDirpathOnHostMachine string,
 	destVolMntDirpathOnExpander string,
-	filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
+	filesArtifactFilepathRelativeToEnclaveDataVolumeRoot string,
 	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 )(*files_artifact_expander.FilesArtifactExpander, error){
 
@@ -70,16 +65,13 @@ func (backend *DockerKurtosisBackend) RunFilesArtifactExpander(
 
 	filesArtifactExpansionVolumeNameStr := string(filesArtifactExpansionVolumeName)
 
-	bindMounts := map[string]string{
-		enclaveDataDirpathOnHostMachine: enclaveDataBindmountDirpathOnExpanderContainer,
-	}
-
 	volumeMounts := map[string]string{
 		filesArtifactExpansionVolumeNameStr: destVolMntDirpathOnExpander,
 		enclaveDataVolumeName:               enclaveDataVolumeDirpathOnExpanderContainer,
 	}
 
-	containerCmd := getExtractionCommand(filesArtifactFilepathRelativeToEnclaveDatadirRoot, destVolMntDirpathOnExpander)
+	artifactFilepath := path.Join(enclaveDataVolumeDirpathOnExpanderContainer, filesArtifactFilepathRelativeToEnclaveDataVolumeRoot)
+	containerCmd := getExtractionCommand(artifactFilepath, destVolMntDirpathOnExpander)
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		dockerImage,
@@ -89,8 +81,6 @@ func (backend *DockerKurtosisBackend) RunFilesArtifactExpander(
 		ipAddr,
 	).WithCmdArgs(
 		containerCmd,
-	).WithBindMounts(
-		bindMounts,
 	).WithVolumeMounts(
 		volumeMounts,
 	).WithLabels(
@@ -98,7 +88,7 @@ func (backend *DockerKurtosisBackend) RunFilesArtifactExpander(
 	).Build()
 	containerId, _, err := backend.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker container to expand the file artifact '%v' into the volume '%v'", filesArtifactFilepathRelativeToEnclaveDatadirRoot, filesArtifactExpansionVolumeNameStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker container to expand the file artifact '%v' into the volume '%v'", filesArtifactFilepathRelativeToEnclaveDataVolumeRoot, filesArtifactExpansionVolumeNameStr)
 	}
 
 	exitCode, err := backend.dockerManager.WaitForExit(ctx, containerId)

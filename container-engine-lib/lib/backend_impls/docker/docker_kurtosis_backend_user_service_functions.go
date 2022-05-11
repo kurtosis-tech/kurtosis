@@ -51,8 +51,6 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	enclaveDataDirpathOnHostMachine string,
-	enclaveDataDirpathOnServiceContainer string,
 	filesArtifactMountDirpaths map[string]string,
 ) (
 	newUserService *service.Service,
@@ -91,10 +89,6 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 		return nil, stacktrace.Propagate(err, "An error occurred getting used port from private port spec '%+v'", privatePorts)
 	}
 
-	bindMounts := map[string]string{
-		enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnServiceContainer,
-	}
-
 	volumeMounts := map[string]string{
 		enclaveDataVolumeName: enclaveDataVolumeDirpathOnServiceContainer,
 	}
@@ -109,8 +103,6 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 		usedPorts,
 	).WithEnvironmentVariables(
 		envVars,
-	).WithBindMounts(
-		bindMounts,
 	).WithVolumeMounts(
 		volumeMounts,
 	).WithLabels(
@@ -213,6 +205,36 @@ func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 	}
 
 	return successfulUserServicesLogs, erroredUserServices, nil
+}
+
+func (backend *DockerKurtosisBackend) PauseService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceId service.ServiceGUID) error {
+	containerId, _, err := backend.getSingleUserService(ctx, enclaveId, serviceId)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to get information about service '%v' from Kurtosis backend.", serviceId)
+	}
+	err = backend.dockerManager.PauseContainer(ctx, containerId)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to pause service' %v' running in container '%v'", serviceId, containerId)
+	}
+	return nil
+}
+
+func (backend *DockerKurtosisBackend) UnpauseService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceId service.ServiceGUID) error {
+	containerId, _, err := backend.getSingleUserService(ctx, enclaveId, serviceId)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to get information about service '%v' from Kurtosis backend.", serviceId)
+	}
+	err = backend.dockerManager.UnpauseContainer(ctx, containerId)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to unpause service '%v' running in container '%v'", serviceId, containerId)
+	}
+	return nil
 }
 
 func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
