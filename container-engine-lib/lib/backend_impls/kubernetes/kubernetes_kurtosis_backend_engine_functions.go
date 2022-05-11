@@ -415,12 +415,19 @@ func (backend *KubernetesKurtosisBackend) getMatchingKubernetesResources(ctx con
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting engine namespaces matching IDs '%+v'", engineIds)
 	}
-	for engineId, namespace := range namespaces {
+	for engineId, namespacesForId := range namespaces {
+		if len(namespacesForId) > 1 {
+			return nil, stacktrace.NewError(
+				"Expected at most one namespace to match engine ID '%v', but got '%v'",
+				len(namespacesForId),
+				engineId,
+			)
+		}
 		engineResources, found := result[engineId]
 		if !found {
 			engineResources = &engineKubernetesResources{}
 		}
-		engineResources.namespace = namespace
+		engineResources.namespace = namespacesForId[0]
 		result[engineId] = engineResources
 	}
 
@@ -432,12 +439,19 @@ func (backend *KubernetesKurtosisBackend) getMatchingKubernetesResources(ctx con
 		label_key_consts.IDLabelKey.GetString(),
 		engineIds,
 	)
-	for engineId, clusterRole := range clusterRoles {
+	for engineId, clusterRolesForId := range clusterRoles {
+		if len(clusterRolesForId) > 1 {
+			return nil, stacktrace.NewError(
+				"Expected at most one cluster role to match engine ID '%v', but got '%v'",
+				len(clusterRolesForId),
+				engineId,
+			)
+		}
 		engineResources, found := result[engineId]
 		if !found {
 			engineResources = &engineKubernetesResources{}
 		}
-		engineResources.clusterRole = clusterRole
+		engineResources.clusterRole = clusterRolesForId[0]
 		result[engineId] = engineResources
 	}
 
@@ -449,12 +463,19 @@ func (backend *KubernetesKurtosisBackend) getMatchingKubernetesResources(ctx con
 		label_key_consts.IDLabelKey.GetString(),
 		engineIds,
 	)
-	for engineId, clusterRoleBinding := range clusterRoleBindings {
+	for engineId, clusterRoleBindingsForId := range clusterRoleBindings {
+		if len(clusterRoleBindingsForId) > 1 {
+			return nil, stacktrace.NewError(
+				"Expected at most one cluster role binding to match engine ID '%v', but got '%v'",
+				len(clusterRoleBindingsForId),
+				engineId,
+			)
+		}
 		engineResources, found := result[engineId]
 		if !found {
 			engineResources = &engineKubernetesResources{}
 		}
-		engineResources.clusterRoleBinding = clusterRoleBinding
+		engineResources.clusterRoleBinding = clusterRoleBindingsForId[0]
 		result[engineId] = engineResources
 	}
 
@@ -479,16 +500,19 @@ func (backend *KubernetesKurtosisBackend) getMatchingKubernetesResources(ctx con
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting service accounts matching engine ID '%v' in namespace '%v'", engineId, namespaceName)
 		}
-		if len(serviceAccounts) > 1 {
-			return nil, stacktrace.NewError(
-				"Expected at most one engine service account in namespace '%v' for engine with ID '%v' " +
-					"but found '%v'",
-				namespaceName,
-				engineId,
-				len(serviceAccounts),
-			)
+		var serviceAccount *apiv1.ServiceAccount
+		if serviceAccountsForId, found := serviceAccounts[engineId]; found {
+			if len(serviceAccountsForId) > 1 {
+				return nil, stacktrace.NewError(
+					"Expected at most one engine service account in namespace '%v' for engine with ID '%v' " +
+						"but found '%v'",
+					namespaceName,
+					engineId,
+					len(serviceAccounts),
+				)
+			}
+			serviceAccount = serviceAccountsForId[0]
 		}
-		serviceAccount := serviceAccounts[engineId]
 
 		// Services
 		services, err := kubernetes_resource_collectors.CollectMatchingServices(
@@ -504,16 +528,19 @@ func (backend *KubernetesKurtosisBackend) getMatchingKubernetesResources(ctx con
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting services matching engine ID '%v' in namespace '%v'", engineId, namespaceName)
 		}
-		if len(services) > 1 {
-			return nil, stacktrace.NewError(
-				"Expected at most one engine service in namespace '%v' for engine with ID '%v' " +
-					"but found '%v'",
-				namespaceName,
-				engineId,
-				len(services),
-			)
+		var service *apiv1.Service
+		if servicesForId, found := services[engineId]; found {
+			if len(servicesForId) > 1 {
+				return nil, stacktrace.NewError(
+					"Expected at most one engine service in namespace '%v' for engine with ID '%v' " +
+						"but found '%v'",
+					namespaceName,
+					engineId,
+					len(services),
+				)
+			}
+			service = servicesForId[0]
 		}
-		service := services[engineId]
 
 		// Pods
 		pods, err := kubernetes_resource_collectors.CollectMatchingPods(
@@ -529,16 +556,19 @@ func (backend *KubernetesKurtosisBackend) getMatchingKubernetesResources(ctx con
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting pods matching engine ID '%v' in namespace '%v'", engineId, namespaceName)
 		}
-		if len(pods) > 1 {
-			return nil, stacktrace.NewError(
-				"Expected at most one engine pod in namespace '%v' for engine with ID '%v' " +
-					"but found '%v'",
-				namespaceName,
-				engineId,
-				len(pods),
-			)
+		var pod *apiv1.Pod
+		if podsForId, found := pods[engineId]; found {
+			if len(podsForId) > 1 {
+				return nil, stacktrace.NewError(
+					"Expected at most one engine pod in namespace '%v' for engine with ID '%v' " +
+						"but found '%v'",
+					namespaceName,
+					engineId,
+					len(pods),
+				)
+			}
+			pod = podsForId[0]
 		}
-		pod := pods[engineId]
 
 		engineResources.service = service
 		engineResources.pod = pod
