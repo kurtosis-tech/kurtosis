@@ -39,7 +39,16 @@ func getDefaultDockerKurtosisClusterConfig() *KurtosisClusterV1 {
 	}
 }
 
-func getDefaultKubernetesMinikubeClusterConfig() *KubernetesClusterConfigV1 {
+func getDefaultMinikubeKurtosisClusterConfig() *KurtosisClusterV1 {
+	clusterType := KurtosisConfigV1KubernetesType
+	minikubeKubernetesCluster := getDefaultMinikubeKubernetesClusterConfig()
+	return &KurtosisClusterV1{
+		Type: &clusterType,
+		Config: minikubeKubernetesCluster,
+	}
+}
+
+func getDefaultMinikubeKubernetesClusterConfig() *KubernetesClusterConfigV1 {
 	kubernetesClusterName := defaultMinikubeClusterName
 	storageClass := defaultMinikubeStorageClass
 	gbPerEnclave := defaultMinikubeGigabytesPerEnclave
@@ -54,8 +63,10 @@ func getDefaultKubernetesMinikubeClusterConfig() *KubernetesClusterConfigV1 {
 func NewDefaultKurtosisConfigV1(doesUserAcceptSendingMetrics *bool) *KurtosisConfigV1 {
 	version := versionNumber
 	dockerClusterConfig := getDefaultDockerKurtosisClusterConfig()
+	minikubeClusterConfig := getDefaultMinikubeKurtosisClusterConfig()
 	kurtosisClusters := map[string]*KurtosisClusterV1{
 		defaultDockerClusterName: dockerClusterConfig,
+		defaultMinikubeClusterName: minikubeClusterConfig,
 	}
 	return &KurtosisConfigV1{
 		ConfigVersion: &version,
