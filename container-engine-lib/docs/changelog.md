@@ -7,6 +7,7 @@
 * Updated `KubernetesBackend.CreateEngine` added the kubernetes role based resources creation and namespace creation process
 * Fixed `KubernetesBackend.GetEngines`returning an empty list for filters with no IDs specified
 * Added a (currently unused) framework for collecting all Kubernetes resource that match a specific filter
+* Add `getEngineKubernetesResources` in preparation for refactoring the engine methods
 
 ### Changes
 * Updated `KubernetesManager.CreatePod` added `serviceAccount` argument to set the pod's service account
