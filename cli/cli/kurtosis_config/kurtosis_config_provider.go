@@ -13,10 +13,10 @@ func NewKurtosisConfigProvider(configStore *kurtosisConfigStore) *KurtosisConfig
 	return &KurtosisConfigProvider{configStore: configStore}
 }
 
-func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*KurtosisConfigV0, error){
+func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*KurtosisConfigV1, error){
 
 	var (
-		kurtosisConfig *KurtosisConfigV0
+		kurtosisConfig *KurtosisConfigV1
 		err            error
 	)
 
