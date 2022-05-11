@@ -20,7 +20,6 @@ func postfilterKubernetesResources(
 			return nil, stacktrace.NewError(
 				"Expected to find label '%v' on Kubernetes resource with name '%v' but none was found",
 				postFilterLabelKey,
-				resource.getResourceType(),
 				resource.getName(),
 			)
 		}
