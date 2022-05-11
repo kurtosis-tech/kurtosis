@@ -737,7 +737,7 @@ func (backend *KubernetesKurtosisBackend) createEnginePod(
 	if err != nil {
 		return "", stacktrace.Propagate(
 			err,
-			"Expected to be able to get Kubernetes attributes for pod for engine with id '%v', instead got a non-nil error",
+			"Expected to be able to get Kubernetes attributes for engine pod, instead got a non-nil error",
 		)
 	}
 	enginePodName := enginePodAttributes.GetName().GetString()
