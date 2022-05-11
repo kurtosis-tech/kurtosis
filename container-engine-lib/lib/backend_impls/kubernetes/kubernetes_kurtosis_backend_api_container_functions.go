@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	kurtosisApiContainerContainerName = "kurtosis-core_api"
+	kurtosisApiContainerContainerName = "kurtosis-core-api"
 )
 
 // ====================================================================================================
