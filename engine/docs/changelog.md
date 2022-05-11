@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Upgrade to Core 1.46.1 and container-engine-lib 0.20.0, which allow for more Kubernetes functionality
 
 # 1.18.0
 ### Changes
