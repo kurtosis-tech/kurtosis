@@ -219,7 +219,7 @@ func getStringMapFromAnnotationMap(labelMap map[*kubernetes_annotation_key.Kuber
 	return strMap
 }
 
-// getPublicPortSpecFromServicePort returns a port_spec representing a kurtosis port spec for a service port in kubernetes
+// getPublicPortSpecFromServicePort returns a port_spec representing a kurtosis port spec for a service port in Kubernetes
 func getPublicPortSpecFromServicePort(servicePort apiv1.ServicePort, portProtocol port_spec.PortProtocol) (*port_spec.PortSpec, error) {
 	publicPortNumStr := strconv.FormatInt(int64(servicePort.Port), 10)
 	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, publicPortNumStrParsingBase, publicPortNumStrParsingBits)
@@ -235,7 +235,7 @@ func getPublicPortSpecFromServicePort(servicePort apiv1.ServicePort, portProtoco
 	publicPortNum := uint16(publicPortNumUint64) // Safe to do because we pass the requisite number of bits into the parse command
 	publicGrpcPort, err := port_spec.NewPortSpec(publicPortNum, portProtocol)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a public port on a kubernetes node using number '%v' and protocol '%v', instead a non nil error was returned", publicPortNum, portProtocol)
+		return nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a public port on a Kubernetes node using number '%v' and protocol '%v', instead a non nil error was returned", publicPortNum, portProtocol)
 	}
 
 	return publicGrpcPort, nil
@@ -254,7 +254,7 @@ func getGrpcAndGrpcProxyPortSpecsFromServicePorts(servicePorts []apiv1.ServicePo
 			{
 				publicGrpcPortSpec, err := getPublicPortSpecFromServicePort(servicePort, kurtosisServersPortProtocol)
 				if err != nil {
-					return nil, nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a public grpc port from kubernetes service port '%v', instead a non nil error was returned", servicePortName)
+					return nil, nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a public grpc port from Kubernetes service port '%v', instead a non nil error was returned", servicePortName)
 				}
 				publicGrpcPort = publicGrpcPortSpec
 			}
@@ -262,7 +262,7 @@ func getGrpcAndGrpcProxyPortSpecsFromServicePorts(servicePorts []apiv1.ServicePo
 			{
 				publicGrpcProxyPortSpec, err := getPublicPortSpecFromServicePort(servicePort, kurtosisServersPortProtocol)
 				if err != nil {
-					return nil, nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a public grpc proxy port from kubernetes service port '%v', instead a non nil error was returned", servicePortName)
+					return nil, nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a public grpc proxy port from Kubernetes service port '%v', instead a non nil error was returned", servicePortName)
 				}
 				publicGrpcProxyPort = publicGrpcProxyPortSpec
 			}
@@ -270,15 +270,28 @@ func getGrpcAndGrpcProxyPortSpecsFromServicePorts(servicePorts []apiv1.ServicePo
 	}
 
 	if publicGrpcPort == nil || publicGrpcProxyPort == nil {
-		return nil, nil, stacktrace.NewError("Expected to get public port specs from kubernetes service ports, instead got a nil pointer")
+		return nil, nil, stacktrace.NewError("Expected to get public port specs from Kubernetes service ports, instead got a nil pointer")
 	}
 
 	return publicGrpcPort, publicGrpcProxyPort, nil
 }
 
+func (backend *KubernetesKurtosisBackend) getAllEnclaveNamespaces(ctx context.Context) ([]apiv1.Namespace, error) {
+
+	matchLabels := getEnclaveMatchLabels()
+
+	namespaces, err := backend.kubernetesManager.GetNamespacesByLabels(ctx, matchLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave namespace using labels '%+v'", matchLabels)
+	}
+
+	return namespaces.Items, nil
+}
+
 func (backend *KubernetesKurtosisBackend) getEnclaveNamespace(ctx context.Context, enclaveId enclave.EnclaveID) (*apiv1.Namespace, error) {
 
-	matchLabels := getEnclaveMatchLabels(enclaveId)
+	matchLabels := getEnclaveMatchLabels()
+	matchLabels[label_key_consts.EnclaveIDLabelKey.GetString()] = string(enclaveId)
 
 	namespaces, err := backend.kubernetesManager.GetNamespacesByLabels(ctx, matchLabels)
 	if err != nil {
@@ -299,11 +312,9 @@ func (backend *KubernetesKurtosisBackend) getEnclaveNamespace(ctx context.Contex
 }
 
 func (backend *KubernetesKurtosisBackend) getEnclaveDataPersistentVolumeClaim(ctx context.Context, enclaveNamespaceName string, enclaveId enclave.EnclaveID) (*apiv1.PersistentVolumeClaim, error) {
-	matchLabels :=  map[string]string{
-		label_key_consts.AppIDLabelKey.GetString():     label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.VolumeTypeLabelKey.GetString(): label_value_consts.EnclaveDataVolumeTypeLabelValue.GetString(),
-		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
-	}
+	matchLabels := getEnclaveMatchLabels()
+	matchLabels[label_key_consts.VolumeTypeLabelKey.GetString()] = label_value_consts.EnclaveDataVolumeTypeLabelValue.GetString()
+	matchLabels[label_key_consts.EnclaveIDLabelKey.GetString()] = string(enclaveId)
 
 	persistentVolumeClaims, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, enclaveNamespaceName, matchLabels)
 	if err != nil {
@@ -323,14 +334,10 @@ func (backend *KubernetesKurtosisBackend) getEnclaveDataPersistentVolumeClaim(ct
 	return resultPersistentVolumeClaim, nil
 }
 
-func getEnclaveMatchLabels(enclaveId enclave.EnclaveID) map[string]string {
-	enclaveIdStr := string(enclaveId)
-
+func getEnclaveMatchLabels() map[string]string {
 	matchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString():     label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.EnclaveIDLabelKey.GetString(): enclaveIdStr,
+		label_key_consts.AppIDLabelKey.GetString():                label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.KurtosisResourceTypeLabelKey.GetString(): label_value_consts.EnclaveResourceTypeLabelValue.GetString(),
 	}
-
 	return matchLabels
 }
-

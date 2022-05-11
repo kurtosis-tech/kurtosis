@@ -121,9 +121,24 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	return newEnclave, nil
 }
 
-func (backend *KubernetesKurtosisBackend) GetEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (map[enclave.EnclaveID]*enclave.Enclave, error) {
-	//TODO implement me
-	panic("implement me")
+func (backend *KubernetesKurtosisBackend) GetEnclaves(
+	ctx context.Context,
+	filters *enclave.EnclaveFilters,
+) (
+	map[enclave.EnclaveID]*enclave.Enclave,
+	error,
+) {
+	matchingEnclavesByNamespace, err := backend.getMatchingEnclaves(ctx, filters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclaves matching the following filters: %+v", filters)
+	}
+
+	matchingEnclavesByEnclaveId := map[enclave.EnclaveID]*enclave.Enclave{}
+	for _, enclaveObj := range matchingEnclavesByNamespace {
+		matchingEnclavesByEnclaveId[enclaveObj.GetID()] = enclaveObj
+	}
+
+	return matchingEnclavesByEnclaveId, nil
 }
 
 func (backend *KubernetesKurtosisBackend) StopEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (successfulEnclaveIds map[enclave.EnclaveID]bool, erroredEnclaveIds map[enclave.EnclaveID]error, resultErr error) {
@@ -139,4 +154,49 @@ func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, encla
 func (backend *KubernetesKurtosisBackend) DestroyEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (successfulEnclaveIds map[enclave.EnclaveID]bool, erroredEnclaveIds map[enclave.EnclaveID]error, resultErr error) {
 	//TODO implement me
 	panic("implement me")
+}
+
+// ====================================================================================================
+//                                     Private Helper Methods
+// ====================================================================================================
+// Gets enclaves matching the search filters, indexed by their [namespace]
+func (backend *KubernetesKurtosisBackend) getMatchingEnclaves(
+	ctx context.Context,
+	filters *enclave.EnclaveFilters,
+) (
+	map[string]*enclave.Enclave,
+	error,
+) {
+	matchingEnclaves := map[string]*enclave.Enclave{}
+
+	enclaveNamespaces, err := backend.getAllEnclaveNamespaces(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting all enclave namespaces")
+	}
+
+	for _, enclaveNamespace := range enclaveNamespaces {
+		enclaveNamespaceName := enclaveNamespace.GetName()
+		enclaveNamespaceLabels := enclaveNamespace.GetLabels()
+
+		enclaveIdStr, found := enclaveNamespaceLabels[label_key_consts.EnclaveIDLabelKey.GetString()]
+		if !found {
+			return nil, stacktrace.NewError("Expected to find a label with name '%v' in Kubernetes namespace '%v', instead no such label was found", label_key_consts.EnclaveIDLabelKey.GetString(), enclaveNamespaceName)
+		}
+		enclaveId := enclave.EnclaveID(enclaveIdStr)
+		// If the IDs filter is specified, drop namespaces not matching it
+		if filters.IDs != nil && len(filters.IDs) > 0 {
+			if _, found := filters.IDs[enclaveId]; !found {
+				continue
+			}
+		}
+
+		//TODO implement checking status
+		//TODO implement checking status
+		//TODO implement getEnclaveObjectFromKubernetesServices
+
+		newEnclave := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty, "", "", net.IP{}, nil)
+		matchingEnclaves[enclaveNamespaceName] = newEnclave
+	}
+
+	return matchingEnclaves, nil
 }

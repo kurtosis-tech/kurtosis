@@ -23,7 +23,7 @@ func MustCreateNewKubernetesAnnotationKey(str string) *KubernetesAnnotationKey {
 
 func CreateNewKubernetesAnnotationKey(str string) (*KubernetesAnnotationKey, error) {
 	if err := validateAnnotationKey(str); err != nil {
-		return nil, stacktrace.Propagate(err, "Annotation value string '%v' doesn't pass validation of being a kubernetes annotation key", str)
+		return nil, stacktrace.Propagate(err, "Annotation value string '%v' doesn't pass validation of being a Kubernetes annotation key", str)
 	}
 
 	return &KubernetesAnnotationKey{value: str}, nil
@@ -36,7 +36,7 @@ func validateAnnotationKey(str string) error {
 	validationErrs := validation.IsQualifiedName(str)
 	if len(validationErrs) > 0 {
 		errString := strings.Join(validationErrs, "\n\n")
-		return stacktrace.NewError("Expected string '%v' to be a valid kubernetes annotation key, instead it failed validation:\n%+v", str, errString)
+		return stacktrace.NewError("Expected string '%v' to be a valid Kubernetes annotation key, instead it failed validation:\n%+v", str, errString)
 	}
 	return nil
 

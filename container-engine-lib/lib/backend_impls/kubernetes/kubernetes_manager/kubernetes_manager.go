@@ -914,12 +914,12 @@ func (manager *KubernetesManager) GetNodePodRunsOn(ctx context.Context, namespac
 
 	pod, err := namespacePodClient.Get(ctx, podName, metav1.GetOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get a pod with name '%v' from kubernetes, instead a non-nil error was returned", podName)
+		return nil, stacktrace.Propagate(err, "Expected to be able to get a pod with name '%v' from Kubernetes, instead a non-nil error was returned", podName)
 	}
 	nodeName := pod.Spec.NodeName
 	node, err := nodeClient.Get(ctx, nodeName, metav1.GetOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get a pod with name '%v' from kubernetes, instead a non-nil error was returned", nodeName)
+		return nil, stacktrace.Propagate(err, "Expected to be able to get a pod with name '%v' from Kubernetes, instead a non-nil error was returned", nodeName)
 	}
 
 	return node, nil

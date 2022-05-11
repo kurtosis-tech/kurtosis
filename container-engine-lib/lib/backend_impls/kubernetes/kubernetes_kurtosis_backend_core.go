@@ -38,13 +38,13 @@ func (backendCore KubernetesKurtosisBackendCore) CreateEngine(
 	resultErr error,
 ) {
 	// getting the object attributes for the engine server
-	engineAttrs, err := backendCore.objAttrsProvider.ForEngineServer(listenPortNum) // TODO we should probably create a new function for labels that make sense for kubernetes deployment
+	engineAttrs, err := backendCore.objAttrsProvider.ForEngineServer(listenPortNum) // TODO we should probably create a new function for labels that make sense for Kubernetes deployment
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred getting the engine server container attributes using port num '%v'", listenPortNum)
 	}
 
 	// getting the object attributes for the engine server
-	engineAttrsForPod, err := backendCore.objAttrsProvider.ForEngineServer(listenPortNum) // TODO we should probably create a new function for labels that make sense for kubernetes pod
+	engineAttrsForPod, err := backendCore.objAttrsProvider.ForEngineServer(listenPortNum) // TODO we should probably create a new function for labels that make sense for Kubernetes pod
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred getting the engine server container attributes using port num '%v'", listenPortNum)
 	}
@@ -57,12 +57,12 @@ func (backendCore KubernetesKurtosisBackendCore) CreateEngine(
 		imageVersionTag,
 	)
 
-	// checking if the kurtosis namespace already exists and creating it otherwise
+	// checking if the Kurtosis namespace already exists and creating it otherwise
 	kurtosisNamespaceList, err := backendCore.kubernetesManager.GetNamespacesByLabels(ctx, engineLabels)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(
 			err,
-			"An error occurred when trying to get the kurtosis engine namespace by labels '%+v'",
+			"An error occurred when trying to get the Kurtosis engine namespace by labels '%+v'",
 			engineAttrs.GetLabels())
 	}
 	if len(kurtosisNamespaceList.Items) == 0 {
@@ -70,7 +70,7 @@ func (backendCore KubernetesKurtosisBackendCore) CreateEngine(
 		if err != nil {
 			return nil, 0, stacktrace.Propagate(
 				err,
-				"An error occurred when trying to create the kurtosis engine namespace to be named '%v'",
+				"An error occurred when trying to create the Kurtosis engine namespace to be named '%v'",
 				kurtosisEngineNamespace)
 		}
 	}

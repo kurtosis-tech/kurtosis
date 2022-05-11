@@ -78,7 +78,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespa
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred while creating the kubernetes object attributes impl with the name '%s' and labels '%+v'",
+			"An error occurred while creating the Kubernetes object attributes impl with the name '%s' and labels '%+v'",
 			name.GetString(),
 			getLabelKeyValuesAsStrings(labels),
 		)
@@ -174,7 +174,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getNameForEnclave
 	)
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating kubernetes object name from string '%v'", nameStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating Kubernetes object name from string '%v'", nameStr)
 	}
 	return name, nil
 }
@@ -183,9 +183,10 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getNameForEnclave
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObject() (map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
 	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.enclaveId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create kubernetes label value from enclaveId '%v'", provider.enclaveId)
+		return nil, stacktrace.Propagate(err, "Failed to create Kubernetes label value from enclaveId '%v'", provider.enclaveId)
 	}
 	return map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
+		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.EnclaveResourceTypeLabelValue,
 		label_key_consts.EnclaveIDLabelKey: enclaveIdLabelValue,
 	}, nil
 }
@@ -197,7 +198,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEncla
 	}
 	guidLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(guid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a kubernetes label value from GUID string '%v'", guid)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes label value from GUID string '%v'", guid)
 	}
 	labels[label_key_consts.GUIDLabelKey] = guidLabelValue
 	return labels, nil
@@ -210,7 +211,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEncla
 	}
 	idLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(id)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a kubernetes label value from ID string '%v'", id)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes label value from ID string '%v'", id)
 	}
 	labels[label_key_consts.IDLabelKey] = idLabelValue
 	return labels, nil

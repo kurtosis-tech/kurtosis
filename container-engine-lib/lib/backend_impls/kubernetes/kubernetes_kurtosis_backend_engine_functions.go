@@ -71,7 +71,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"Expected to be able to get attributes for a kubernetes namespace for engine with  id '%v', instead got a non-nil error",
+			"Expected to be able to get attributes for a Kubernetes namespace for engine with  id '%v', instead got a non-nil error",
 			engineIdStr,
 		)
 	}
@@ -87,8 +87,8 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	defer func() {
 		if shouldRemoveNamespace {
 			if err := backend.kubernetesManager.RemoveNamespace(ctx, engineNamespaceName); err != nil {
-				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete kubernetes namespace '%v' that we created but an error was thrown:\n%v", engineNamespaceName, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove kubernetes namespace with name '%v'!!!!!!!", engineNamespaceName)
+				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes namespace '%v' that we created but an error was thrown:\n%v", engineNamespaceName, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes namespace with name '%v'!!!!!!!", engineNamespaceName)
 			}
 		}
 	}()
@@ -105,8 +105,8 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 				engineIdStr: true,
 			}
 			if _, resultErroredEngineIds := backend.removeEngineRoleBasedResources(ctx, engineNamespaceName, engineIds); len(resultErroredEngineIds) > 0 {
-				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete the engine kubernetes role based resources that we created for engine '%v' but an error was thrown:\n%v", engineIdStr, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove kubernetes role based resources for engine '%v' in namespace '%v'!!!!!!!", engineIdStr, engineNamespaceName)
+				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete the engine Kubernetes role based resources that we created for engine '%v' but an error was thrown:\n%v", engineIdStr, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes role based resources for engine '%v' in namespace '%v'!!!!!!!", engineIdStr, engineNamespaceName)
 			}
 		}
 	}()
@@ -116,7 +116,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"Expected to be able to get attributes for a kubernetes pod for engine with id '%v', instead got a non-nil error",
+			"Expected to be able to get attributes for a Kubernetes pod for engine with id '%v', instead got a non-nil error",
 			engineIdStr,
 		)
 	}
@@ -131,7 +131,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 		imageVersionTag,
 	)
 	engineContainers, engineVolumes := getEngineContainers(containerImageAndTag, envVars)
-	// Create pods with engine containers and volumes in kubernetes
+	// Create pods with engine containers and volumes in Kubernetes
 	_, err = backend.kubernetesManager.CreatePod(ctx, engineNamespaceName, enginePodName, enginePodLabels, enginePodAnnotations, engineContainers, engineVolumes, engineServiceAccountName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", enginePodName, engineNamespaceName, containerImageAndTag)
@@ -140,8 +140,8 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	defer func() {
 		if shouldRemovePod {
 			if err := backend.kubernetesManager.RemovePod(ctx, engineNamespaceName, enginePodName); err != nil {
-				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete kubernetes pod '%v' that we created but an error was thrown:\n%v", enginePodName, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove kubernetes pod with name '%v'!!!!!!!", enginePodName)
+				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes pod '%v' that we created but an error was thrown:\n%v", enginePodName, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes pod with name '%v'!!!!!!!", enginePodName)
 			}
 		}
 	}()
@@ -185,8 +185,8 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	defer func() {
 		if shouldRemoveService {
 			if err := backend.kubernetesManager.RemoveService(ctx, engineNamespaceName, engineServiceName); err != nil {
-				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete kubernetes service '%v' that we created but an error was thrown:\n%v", engineServiceName, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove kubernetes service with name '%v'!!!!!!!", engineServiceName)
+				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes service '%v' that we created but an error was thrown:\n%v", engineServiceName, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes service with name '%v'!!!!!!!", engineServiceName)
 			}
 		}
 	}()
@@ -198,7 +198,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 
 	resultEngine, err := getEngineObjectFromKubernetesService(service)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting engine object from kubernetes service '%+v'", service)
+		return nil, stacktrace.Propagate(err, "An error occurred getting engine object from Kubernetes service '%+v'", service)
 	}
 
 	shouldRemoveNamespace = false
@@ -267,7 +267,7 @@ func (backend *KubernetesKurtosisBackend) StopEngines(
 			if !found {
 				return nil, nil, stacktrace.NewError("Expected to find service name '%v' in the engine service list '%+v' but it was not found; this is a bug in Kurtosis!", serviceName, engineServices)
 			}
-			wrappedErr := stacktrace.Propagate(err, "An error occurred removing engine selectors and pods from kubernetes service for kurtosis engine with ID '%v' and kubernetes service name '%v'", engineObj.GetID(), serviceName)
+			wrappedErr := stacktrace.Propagate(err, "An error occurred removing engine selectors and pods from Kubernetes service for Kurtosis engine with ID '%v' and Kubernetes service name '%v'", engineObj.GetID(), serviceName)
 			erroredEngineIds[engineObj.GetID()] = wrappedErr
 		}
 
@@ -327,7 +327,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEngines(ctx context.Context
 		for _, service := range serviceList.Items {
 			engineObj, err := getEngineObjectFromKubernetesService(&service)
 			if err != nil {
-				return nil, stacktrace.Propagate(err, "Expected to be able to get a kurtosis engine object service from kubernetes service '%v', instead a non-nil error was returned", service.Name)
+				return nil, stacktrace.Propagate(err, "Expected to be able to get a Kurtosis engine object service from Kubernetes service '%v', instead a non-nil error was returned", service.Name)
 			}
 
 			// If status filter is specified, drop engines not matching it
@@ -369,7 +369,7 @@ func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx con
 	if err != nil {
 		return "", stacktrace.Propagate(
 			err,
-			"Expected to be able to get engine attributes for a kubernetes service account, instead got a non-nil error",
+			"Expected to be able to get engine attributes for a Kubernetes service account, instead got a non-nil error",
 		)
 	}
 
@@ -384,7 +384,7 @@ func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx con
 	if err != nil {
 		return "", stacktrace.Propagate(
 			err,
-			"Expected to be able to get engine attributes for a kubernetes cluster role, instead got a non-nil error",
+			"Expected to be able to get engine attributes for a Kubernetes cluster role, instead got a non-nil error",
 		)
 	}
 
@@ -407,7 +407,7 @@ func (backend *KubernetesKurtosisBackend) createEngineRoleBasedResources(ctx con
 	if err != nil {
 		return "", stacktrace.Propagate(
 			err,
-			"Expected to be able to get engine attributes for a kubernetes cluster role bindings, instead got a non-nil error",
+			"Expected to be able to get engine attributes for a Kubernetes cluster role bindings, instead got a non-nil error",
 		)
 	}
 
