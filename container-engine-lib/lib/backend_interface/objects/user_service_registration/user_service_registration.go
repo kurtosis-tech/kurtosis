@@ -11,6 +11,10 @@ type UserServiceRegistration struct {
 	ipAddress net.IP
 }
 
+func NewUserServiceRegistration(enclaveId enclave.EnclaveID, id ServiceID, ipAddress net.IP) *UserServiceRegistration {
+	return &UserServiceRegistration{enclaveId: enclaveId, id: id, ipAddress: ipAddress}
+}
+
 func (registration *UserServiceRegistration) GetEnclaveID() enclave.EnclaveID {
 	return registration.enclaveId
 }

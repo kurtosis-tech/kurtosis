@@ -18,6 +18,13 @@ import (
 	"net"
 )
 
+// TODO This mega-backend should really have its individual functionalities split up into
+//  the appropriate places it's used - e.g. APIContainerBackend, EngineBackend, etc.
+//  The reason we don't do this right now is because the CLI uses some KurtosisBackend methods
+//  (e.g. GetUserServices to power 'enclave inspect', GetUserServiceLogs) because the Kurtosis
+//  APIs don't yet support them. Once the Kurtosis APIs support everything, we'll have the CLI
+//  use purely the Kurtosis SDK (as it should)
+
 // KurtosisBackend abstracts a Kurtosis backend, which will be a container engine (Docker or Kubernetes).
 // The heuristic for "do I need a method in KurtosisBackend?" here is "will I make one or more calls to
 // the underlying container engine?"

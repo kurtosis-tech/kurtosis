@@ -47,7 +47,6 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 	guid service.ServiceGUID,
 	containerImageName string,
 	enclaveId enclave.EnclaveID,
-	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 	privatePorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
 	cmdArgs []string,
