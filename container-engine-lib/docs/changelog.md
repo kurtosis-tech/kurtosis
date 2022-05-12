@@ -10,9 +10,13 @@
 
 ### Changes
 * Updated `KubernetesManager.CreatePod` added `serviceAccount` argument to set the pod's service account
+* The `DockerKurtosisBackend` will now track the free IPs of networks
 
 ### Breaking Changes
 * NewKurtosisKubernetesBackend now takes in extra arguments - `volumeStorageClassName` and `volumeSizePerEnclaveInGigabytes`
+TODO thing about DockerKurtosisBackend needing CIDR and taken IPs
+* Renamed `service.ServiceID` to `user_service_registration.UserServiceID`
+    * Users should update their imports/packages accordingly
 
 # 0.19.0
 ### Breaking Changes

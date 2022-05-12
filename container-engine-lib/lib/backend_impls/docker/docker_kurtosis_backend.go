@@ -13,11 +13,14 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -68,20 +71,43 @@ var portSpecProtosToDockerPortProtos = map[port_spec.PortProtocol]string{
 	port_spec.PortProtocol_UDP:  "udp",
 }
 
+
 type DockerKurtosisBackend struct {
 	dockerManager *docker_manager.DockerManager
 
 	dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator
 
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider
+
+	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker
+
+	// TODO Migrate this to an on-disk database, so that the API container can be shut down & restarted!
+	// NOTE: Unlike Kubernetes, Docker doesn't have a concrete object representing a service registration/IP address
+	//  allocation. We use this in-memory store to accomplish the same thing. Because registering a service requires
+	//  a free IP address, this map will *only* contain enclaves for which a free IP address tracker was defined in
+	//  enclaveFreeIpProviders.
+	serviceRegistrations map[enclave.EnclaveID]map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration
+
+	// Control concurrent access to serviceRegistrations
+	serviceRegistrationMutex *sync.Mutex
 }
 
-func NewDockerKurtosisBackend(dockerManager *docker_manager.DockerManager) *DockerKurtosisBackend {
+func NewDockerKurtosisBackend(
+	dockerManager *docker_manager.DockerManager,
+	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker,
+) *DockerKurtosisBackend {
 	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator(dockerManager)
+	serviceRegistrations := map[enclave.EnclaveID]map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration{}
+	for enclaveId := range enclaveFreeIpProviders {
+		serviceRegistrations[enclaveId] = map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration{}
+	}
 	return &DockerKurtosisBackend{
 		dockerManager:          dockerManager,
 		dockerNetworkAllocator: dockerNetworkAllocator,
 		objAttrsProvider:       object_attributes_provider.GetDockerObjectAttributesProvider(),
+		enclaveFreeIpProviders: enclaveFreeIpProviders,
+		serviceRegistrations: serviceRegistrations,
+		serviceRegistrationMutex: &sync.Mutex{},
 	}
 }
 
@@ -370,3 +396,4 @@ func (backend *DockerKurtosisBackend) getEnclaveDataVolumeByEnclaveId(ctx contex
 	volume := foundVolumes[0]
 	return volume.Name, nil
 }
+

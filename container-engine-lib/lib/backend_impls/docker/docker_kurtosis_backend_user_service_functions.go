@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -42,11 +43,10 @@ var commandToRunWhenCreatingUserServiceShell = []string{
 
 func (backend *DockerKurtosisBackend) CreateUserService(
 	ctx context.Context,
-	id service.ServiceID,
+	id user_service_registration.ServiceID,
 	guid service.ServiceGUID,
 	containerImageName string,
 	enclaveId enclave.EnclaveID,
-	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 	privatePorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
 	cmdArgs []string,
@@ -714,7 +714,7 @@ func getUserServiceObjectFromContainerInfo(
 	}
 
 	newObject := service.NewService(
-		service.ServiceID(id),
+		user_service_registration.ServiceID(id),
 		service.ServiceGUID(guid),
 		status,
 		enclave.EnclaveID(enclaveId),
