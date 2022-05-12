@@ -37,7 +37,7 @@ func CollectMatchingServices(
 	postFilterLabelKey string,
 	postFilterLabelValues map[string]bool,
 ) (
-	map[string][]apiv1.Service,
+	map[string][]*apiv1.Service,
 	error,
 ) {
 	allObjects, err := kubernetesManager.GetServicesByLabels(ctx, namespace, searchLabels)
@@ -55,15 +55,15 @@ func CollectMatchingServices(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred during postfiltering")
 	}
-	result := map[string][]apiv1.Service{}
+	result := map[string][]*apiv1.Service{}
 	for labelValue, matchingResources := range filteredKubernetesResources {
-		castedObjects := []apiv1.Service{}
+		castedObjects := []*apiv1.Service{}
 		for _, resource := range matchingResources {
 			casted, ok := resource.getUnderlying().(apiv1.Service)
 			if !ok {
 				return nil, stacktrace.NewError("An error occurred downcasting Kubernetes resource object '%+v'", resource.getUnderlying())
 			}
-			castedObjects = append(castedObjects, casted)
+			castedObjects = append(castedObjects, &casted)
 		}
 		result[labelValue] = castedObjects
 	}
