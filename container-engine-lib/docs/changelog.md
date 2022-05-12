@@ -5,6 +5,11 @@
 
 ### Breaking Changes
 TODO something about the user_service_registration ID
+TODO thing about DockerKurtosisBackend needing CIDR and taken IPs
+* Renamed `service.ServiceID` to `user_service_registration.UserServiceID`
+    * Users should update their imports/packages accordingly
+* `KurtosisBackend.CreateUserService` now takes in a service registration, rather than a static IP
+    * Users should make sure to call `CreateUserServiceRegistration` and pass in the returned GUID to the user service
 
 # 0.20.0
 ### Features
@@ -25,9 +30,6 @@ TODO something about the user_service_registration ID
 
 ### Breaking Changes
 * NewKurtosisKubernetesBackend now takes in extra arguments - `volumeStorageClassName` and `volumeSizePerEnclaveInGigabytes`
-TODO thing about DockerKurtosisBackend needing CIDR and taken IPs
-* Renamed `service.ServiceID` to `user_service_registration.UserServiceID`
-    * Users should update their imports/packages accordingly
 
 # 0.19.0
 ### Breaking Changes

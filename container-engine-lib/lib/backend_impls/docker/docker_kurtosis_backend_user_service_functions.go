@@ -61,14 +61,17 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 		GUIDs:      map[user_service_registration.UserServiceRegistrationGUID]bool{
 			registrationGuid: true,
 		},
+		EnclaveIDs: map[enclave.EnclaveID]bool{
+			enclaveId: true,
+		},
 	}
 	matchingServiceRegistrations, err := backend.GetUserServiceRegistrations(ctx, serviceRegistrationFilters)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user service registrations matching registration GUID '%v'", registrationGuid)
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service registrations matching registration GUID '%v' in enclave '%v'", registrationGuid, enclaveId)
 	}
 	serviceRegistration, found := matchingServiceRegistrations[registrationGuid]
 	if !found {
-		return nil, stacktrace.NewError("No service registrations matched registration GUID '%v'", registrationGuid)
+		return nil, stacktrace.NewError("No service registrations matched registration GUID '%v' in enclave '%v'", registrationGuid, enclaveId)
 	}
 	serviceId := serviceRegistration.GetServiceID()
 	serviceIpAddress := serviceRegistration.GetIPAddress()
@@ -78,13 +81,16 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 		RegistrationGUIDs:      map[user_service_registration.UserServiceRegistrationGUID]bool{
 			registrationGuid: true,
 		},
+		EnclaveIDs: map[enclave.EnclaveID]bool{
+			enclaveId: true,
+		},
 	}
 	preexistingRegistrationConsumers, err := backend.GetUserServices(ctx, preexistingRegistrationConsumersFilters)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting preexisting services consuming registration '%v'", registrationGuid)
+		return nil, stacktrace.Propagate(err, "An error occurred getting preexisting services consuming registration '%v' in enclave '%v'", registrationGuid, enclaveId)
 	}
 	if len(preexistingRegistrationConsumers) > 0 {
-		return nil, stacktrace.NewError("Cannot start service using service registration '%v' because existing service(s) are already using it", registrationGuid)
+		return nil, stacktrace.NewError("Cannot start service using service registration '%v' because existing service(s) in enclave '%v' are already using it", registrationGuid, enclaveId)
 	}
 
 	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)

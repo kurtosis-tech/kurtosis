@@ -183,9 +183,8 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 	return objectAttributes, nil
 }
 
-func (provider *dockerEnclaveObjectAttributesProviderImpl)ForUserServiceContainer(
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContainer(
 	registrationGUID user_service_registration.UserServiceRegistrationGUID,
-	// TODO DELETE THIS (the user service doesn't actually track the service ID; the service registration does)
 	serviceID user_service_registration.ServiceID,
 	serviceGUID service.ServiceGUID,
 	privateIpAddr net.IP,
