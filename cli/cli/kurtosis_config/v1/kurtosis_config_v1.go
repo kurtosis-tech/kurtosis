@@ -44,17 +44,11 @@ type KubernetesClusterConfigV1 struct {
 	EnclaveSizeInGigabytes *int `yaml:"enclave-size-in-gigabytes,omitempty"`
 }
 
-func NewDefaultKubernetesClusterConfigV1() *KurtosisClusterV1 {
-	return getDefaultMinikubeKurtosisClusterConfig()
-}
-
 func NewDefaultKurtosisConfigV1() *KurtosisConfigV1 {
 	version := versionNumber
 	dockerClusterConfig := getDefaultDockerKurtosisClusterConfig()
-	minikubeClusterConfig := getDefaultMinikubeKurtosisClusterConfig()
 	kurtosisClusters := map[string]*KurtosisClusterV1{
 		defaultDockerClusterName:   dockerClusterConfig,
-		defaultMinikubeClusterName: minikubeClusterConfig,
 	}
 	return &KurtosisConfigV1{
 		ConfigVersion: &version,
@@ -103,11 +97,7 @@ func (kurtosisConfigV1 *KurtosisConfigV1) OverlayOverrides(overrides *KurtosisCo
 				}
 				baseClusterMap[clusterId] = overlaidClusterConfig
 			} else {
-				overlaidClusterConfig, err := NewDefaultKubernetesClusterConfigV1().OverlayOverrides(clusterConfig)
-				if err != nil {
-					return nil, stacktrace.Propagate(err, "Failed to overlay configuration overrides for clusterId '%v'", clusterId)
-				}
-				baseClusterMap[clusterId] = overlaidClusterConfig
+				baseClusterMap[clusterId] = clusterConfig
 			}
 		}
 		baseKurtosisConfig.KurtosisClusters = &baseClusterMap
