@@ -221,8 +221,10 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaves(
 func (backend *KubernetesKurtosisBackend) getAllEnclavePods(ctx context.Context, enclaveNamespaceName string, enclaveId enclave.EnclaveID) ([]apiv1.Pod, error) {
 	matchingPods := []apiv1.Pod{}
 
-	matchLabels := getEnclaveMatchLabels()
-	matchLabels[label_key_consts.EnclaveIDLabelKey.GetString()] = string(enclaveId)
+	matchLabels := map[string]string{
+		label_key_consts.AppIDLabelKey.GetString():     label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
+	}
 
 	foundPods, err := backend.kubernetesManager.GetPodsByLabels(ctx, enclaveNamespaceName, matchLabels)
 	if err != nil {
@@ -239,6 +241,7 @@ func getEnclaveStatusFromEnclavePods(enclavePods []apiv1.Pod) (enclave.EnclaveSt
 	resultEnclaveStatus := enclave.EnclaveStatus_Stopped
 	for _, enclavePod := range enclavePods {
 		podPhase := enclavePod.Status.Phase
+
 		isPodRunning, found := isPodRunningDeterminer[podPhase]
 		if !found {
 			// This should never happen because we enforce completeness in a unit test
