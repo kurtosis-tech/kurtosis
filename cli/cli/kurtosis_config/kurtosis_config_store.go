@@ -172,6 +172,14 @@ func (configStore *kurtosisConfigStore) readConfigFileBytes() ([]byte, error) {
 	return fileContentBytes, nil
 }
 
+/*
+	Takes in user overrides (which make come from any version from v0->current version), and migrates them across version upgrades
+	to maintain as much backwards compatibility as possible.
+	This is a delicate operation: be careful to write override migration logic carefully.
+	Overrides are partial fillings of YAML structs for v0->current version. The correct process for ensuring backwards compatibility is:
+		1. Migrate overrides sequentially from their own version up to the latest version
+		2. Overlay migrated overrides on top of the "default" latest version YAML struct
+ */
 func  (configStore *kurtosisConfigStore) migrateOverridesAcrossYAMLVersions(configVersionOnDisk config_version.ConfigVersion) (*KurtosisConfig, error) {
 	v0ConfigOverrides := &v0.KurtosisConfigV0{}
 	v1ConfigOverrides := &v1.KurtosisConfigV1{}
