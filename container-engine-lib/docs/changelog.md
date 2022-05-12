@@ -1,5 +1,6 @@
 # TBD
 ### Features
+* Added `GetInClusterKubernetesKurtosisBackend` Kurtosis backend factory method to be used for pods inside Kubernetes cluster
 * `Network` objects returned by `DockerManager` will have the gateway IP and the IPs of the containers on the network
 
 # 0.20.0

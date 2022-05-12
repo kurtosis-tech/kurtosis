@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	kb "github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes"
+	"k8s.io/client-go/rest"
 
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/metrics_reporting"
@@ -34,16 +35,40 @@ func GetLocalDockerKurtosisBackend() (backend_interface.KurtosisBackend, error) 
 
 func GetLocalKubernetesKurtosisBackend(volumeStorageClassName string, volumeSizeInGigabytes int) (backend_interface.KurtosisBackend, error) {
 	// TODO Implement GetLocalKubernetesProxyKurtosisBackend?
-	kubeconfig := filepath.Join(
+	kubeConfigFileFilepath := filepath.Join(
 		os.Getenv("HOME"), ".kube", "config",
 	)
-	kubernetesConfig, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	kubernetesConfig, err := clientcmd.BuildConfigFromFlags("", kubeConfigFileFilepath)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occured creating kubernetes configuration from flags in file '%v'", kubeconfig)
+		return nil, stacktrace.Propagate(err, "An error occurred creating kubernetes configuration from flags in file '%v'", kubeConfigFileFilepath)
 	}
+
+	wrappedBackend, err:= newWrappedKubernetesKurtosisBackend(kubernetesConfig, volumeStorageClassName, volumeSizeInGigabytes)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating new wrapped Kubernetes Kurtosis Backend using Kubernetes config '%+v', volume storage class name '%v' and size '%v'", kubernetesConfig, volumeStorageClassName, volumeSizeInGigabytes)
+	}
+
+	return wrappedBackend, nil
+}
+
+func GetInClusterKubernetesKurtosisBackend(volumeStorageClassName string, volumeSizeInGigabytes int) (backend_interface.KurtosisBackend, error) {
+	kubernetesConfig, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting in cluster Kubernetes config")
+	}
+
+	wrappedBackend, err:= newWrappedKubernetesKurtosisBackend(kubernetesConfig, volumeStorageClassName, volumeSizeInGigabytes)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating new wrapped Kubernetes Kurtosis Backend using Kubernetes config '%+v', volume storage class name '%v' and size '%v'", kubernetesConfig, volumeStorageClassName, volumeSizeInGigabytes)
+	}
+
+	return wrappedBackend, nil
+}
+
+func newWrappedKubernetesKurtosisBackend(kubernetesConfig *rest.Config, volumeStorageClassName string, volumeSizeInGigabytes int) (*metrics_reporting.MetricsReportingKurtosisBackend, error){
 	clientSet, err := kubernetes.NewForConfig(kubernetesConfig)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get kubernetes config from flags in file '%v', instead a non nil error was returned", kubeconfig)
+		return nil, stacktrace.Propagate(err, "Expected to be able to create kubernetes client set using Kubernetes config '%+v', instead a non nil error was returned", kubernetesConfig)
 	}
 
 	kubernetesManager := kubernetes_manager.NewKubernetesManager(clientSet)
