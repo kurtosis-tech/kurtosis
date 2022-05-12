@@ -611,7 +611,7 @@ func (backend *KubernetesKurtosisBackend) removeApiContainerRoleBasedResources(
 		errRoleErrMsgs := []string{}
 		for _, role := range roles {
 			roleName := role.GetName()
-			if err := backend.kubernetesManager.RemoveRole(ctx, enclaveNamespaceName, roleName); err != nil {
+			if err := backend.kubernetesManager.RemoveRole(ctx, roleName, enclaveNamespaceName); err != nil {
 				wrapErr := stacktrace.Propagate(err, "An error occurred removing api container role '%v' in namespace '%v'", roleName, enclaveNamespaceName)
 				errRoleNames = append(errRoleNames, roleName)
 				errRoleErrMsgs = append(errRoleErrMsgs, wrapErr.Error())
