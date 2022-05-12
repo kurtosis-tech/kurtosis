@@ -16,7 +16,7 @@ const (
 //an already-written config file is very difficult
 
 const (
-	versionNumber = config_version.ConfigVersion_v0
+	versionNumber = config_version.ConfigVersion_v1
 	defaultDockerClusterName = "docker"
 	defaultMinikubeClusterName = "minikube"
 	defaultMinikubeStorageClass = "standard"
