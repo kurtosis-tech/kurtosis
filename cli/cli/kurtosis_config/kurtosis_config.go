@@ -16,6 +16,10 @@ type KurtosisConfig struct {
 	versionSpecificConfig *v1.KurtosisConfigV1
 }
 
+type KurtosisClusterConfig struct {
+	versionSpecificClusterConfig *v1.KurtosisClusterV1
+}
+
 func InitializeKurtosisConfigFromUserInput(didUserAcceptSendingMetrics bool) *KurtosisConfig {
 	versionSpecificConfig := v1.NewDefaultKurtosisConfigV1()
 	overrides := &v1.KurtosisConfigV1{ShouldSendMetrics: &didUserAcceptSendingMetrics}
@@ -43,8 +47,12 @@ func (kurtosisConfig *KurtosisConfig) GetShouldSendMetrics() bool {
 	return *kurtosisConfig.versionSpecificConfig.ShouldSendMetrics
 }
 
-func (kurtosisConfig *KurtosisConfig) GetKurtosisClusters() map[string]*v1.KurtosisClusterV1 {
-	return *kurtosisConfig.versionSpecificConfig.KurtosisClusters
+func (kurtosisConfig *KurtosisConfig) GetKurtosisClusters() map[string]*KurtosisClusterConfig {
+	clusterConfigMap := map[string]*KurtosisClusterConfig{}
+	for clusterId, clusterConfigV1 := range *kurtosisConfig.versionSpecificConfig.KurtosisClusters {
+		clusterConfigMap[clusterId] = &KurtosisClusterConfig{versionSpecificClusterConfig: clusterConfigV1}
+	}
+	return clusterConfigMap
 }
 
 func (kurtosisConfig *KurtosisConfig) GetVersionSpecificConfig() *v1.KurtosisConfigV1 {
