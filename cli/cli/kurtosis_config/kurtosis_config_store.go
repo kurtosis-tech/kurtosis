@@ -197,14 +197,9 @@ func  (configStore *kurtosisConfigStore) migrateOverridesAcrossYAMLVersions() (*
 	}
 
 	// PASS OVERRIDES STRUCT THROUGH A SERIES OF MIGRATIONS
-	for versionToUpgradeTo := configVersionOnDisk; versionToUpgradeTo <= latestConfigFileVersion; versionToUpgradeTo++ {
-		/*
-			If versionToUpgradeTo is 0, there are no upgrade actions because
-			v0 is the first version (no previous version to upgrade from)
-		 */
-
-		// If versionToUpgradeTo is 1, migrate overrides from v0 to v1
-		if versionToUpgradeTo == config_version.ConfigVersion_v1 {
+	for versionToUpgradeFrom := configVersionOnDisk; versionToUpgradeFrom < latestConfigFileVersion; versionToUpgradeFrom++ {
+		// If versionToUpgradeFrom is 0, migrate overrides from v0 to v1
+		if versionToUpgradeFrom == config_version.ConfigVersion_v0 {
 			// Migrate overrides from V0 to V1
 			if v0ConfigOverrides.ShouldSendMetrics != nil {
 				v1ConfigOverrides.ShouldSendMetrics = v0ConfigOverrides.ShouldSendMetrics
