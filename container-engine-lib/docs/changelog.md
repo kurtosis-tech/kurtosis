@@ -1,4 +1,6 @@
 # TBD
+### Features
+* `Network` objects returned by `DockerManager` will have the gateway IP and the IPs of the containers on the network
 
 # 0.20.0
 ### Features
