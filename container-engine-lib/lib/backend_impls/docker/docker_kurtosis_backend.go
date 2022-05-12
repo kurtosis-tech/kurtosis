@@ -79,6 +79,13 @@ type DockerKurtosisBackend struct {
 
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider
 
+	// TODO This is ONLY relevant to internal-to-enclave functions, meaning that we now have a DockerKurtosisBackend
+	//  which takes in some values which are only useful for certain functions. What we should really do is split all
+	//  KurtosisBackend functions into API container, engine server, and CLI functions, and move the functionality there
+	//  (in essence creating APIContainerKurtosisBackend, EngineKurtosisBackend, CLIKurtosisBackend). That way, everything
+	//  will be cleaner. HOWEVER, the reason it's not done this way as of 2022-05-12 is because the CLI still uses some
+	//  KurtosisBackend functionality that it shouldn't (e.g. GetUserServiceLogs). This should all flow through the API
+	//  container API instaed.
 	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker
 
 	// TODO Migrate this to an on-disk database, so that the API container can be shut down & restarted!

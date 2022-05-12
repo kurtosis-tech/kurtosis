@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
@@ -295,13 +296,36 @@ func (backend *MetricsReportingKurtosisBackend) DestroyModules(
 	return successes, failures, nil
 }
 
+func (backend *MetricsReportingKurtosisBackend) CreateUserServiceRegistration(ctx context.Context, enclaveId enclave.EnclaveID, serviceId user_service_registration.ServiceID) (*user_service_registration.UserServiceRegistration, error) {
+	result, err := backend.underlying.CreateUserServiceRegistration(ctx, enclaveId, serviceId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating service registration in enclave '%v' for service ID '%v'", enclaveId, serviceId)
+	}
+	return result, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) GetUserServiceRegistrations(ctx context.Context, filters *user_service_registration.UserServiceRegistrationFilters) (map[user_service_registration.UserServiceRegistrationGUID]*user_service_registration.UserServiceRegistration, error) {
+	result, err := backend.underlying.GetUserServiceRegistrations(ctx, filters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service registrations using filters: %+v", filters)
+	}
+	return result, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) DestroyUserServiceRegistration(ctx context.Context, filters *user_service_registration.UserServiceRegistrationFilters) (resultSuccessfulServiceIds map[user_service_registration.UserServiceRegistrationGUID]bool, resultErroredServiceIds map[user_service_registration.UserServiceRegistrationGUID]error, resultErr error) {
+	successes, failures, err := backend.underlying.DestroyUserServiceRegistration(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying user service registrations matching filters: %+v", filters)
+	}
+	return successes, failures, nil
+}
+
 func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 	ctx context.Context,
-	id service.ServiceID,
+	registrationGuid user_service_registration.UserServiceRegistrationGUID,
 	guid service.ServiceGUID,
 	containerImageName string,
 	enclaveId enclave.EnclaveID,
-	ipAddr net.IP,
 	privatePorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
 	cmdArgs []string,
@@ -313,11 +337,10 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 ) {
 	userService, err := backend.underlying.CreateUserService(
 		ctx,
-		id,
+		registrationGuid,
 		guid,
 		containerImageName,
 		enclaveId,
-		ipAddr,
 		privatePorts,
 		entrypointArgs,
 		cmdArgs,
@@ -327,10 +350,10 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating the user service with ID '%v' and GUID '%v' using image '%v' " +
+			"An error occurred creating the user service bound to registration '%v' and GUID '%v' using image '%v' " +
 				"with private ports '%+v' with entry point args '%+v', command args '%+v', environment " +
 				"vars '%+v', and file artifacts mount dirpath '%v'",
-			id,
+			registrationGuid,
 			guid,
 			containerImageName,
 			privatePorts,
@@ -671,3 +694,5 @@ func (backend *MetricsReportingKurtosisBackend) DestroyFilesArtifactExpanders(
 
 	return successfulFilesArtifactExpanderGuids, erroredFilesArtifactExpanderGuids, nil
 }
+
+

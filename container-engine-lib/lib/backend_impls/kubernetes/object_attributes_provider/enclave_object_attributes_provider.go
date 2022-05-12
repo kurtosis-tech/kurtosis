@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 	"strings"
@@ -122,7 +123,12 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForApiContainer(
 	panic("implement me")
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl)ForUserServiceContainer(serviceID service.ServiceID, serviceGUID service.ServiceGUID, privateIpAddr net.IP, privatePorts map[string]*port_spec.PortSpec) (KubernetesObjectAttributes, error) {
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl)ForUserServiceContainer(
+	serviceID user_service_registration.ServiceID,
+	serviceGUID service.ServiceGUID,
+	privateIpAddr net.IP,
+	privatePorts map[string]*port_spec.PortSpec,
+) (KubernetesObjectAttributes, error) {
 	panic("implement me")
 }
 
