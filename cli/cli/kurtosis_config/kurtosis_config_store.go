@@ -15,7 +15,7 @@ import (
 
 const (
 	kurtosisConfigFilePermissions os.FileMode = 0644
-	latestConfigFileVersion = 1
+	latestConfigFileVersion = config_version.ConfigVersion_v1
 )
 
 var (
