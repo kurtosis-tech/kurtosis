@@ -32,6 +32,22 @@ type KurtosisConfigV1 struct {
 	KurtosisClusters *map[string]*KurtosisClusterV1 `yaml:"kurtosis-clusters,omitempty"`
 }
 
+type KurtosisClusterV1 struct {
+	Type *string                      `yaml:"type,omitempty"`
+	// If we ever get another type of cluster that has configuration, this will need to be polymorphically deserialized
+	Config *KubernetesClusterConfigV1 `yaml:"config,omitempty"`
+}
+
+type KubernetesClusterConfigV1 struct {
+	KubernetesClusterName *string `yaml:"kubernetes-cluster-name,omitempty"`
+	StorageClass *string `yaml:"storage-class,omitempty"`
+	EnclaveSizeInGigabytes *int `yaml:"enclave-size-in-gigabytes,omitempty"`
+}
+
+func NewDefaultKubernetesClusterConfigV1() *KurtosisClusterV1 {
+	return getDefaultMinikubeKurtosisClusterConfig()
+}
+
 func NewDefaultKurtosisConfigV1() *KurtosisConfigV1 {
 	version := versionNumber
 	dockerClusterConfig := getDefaultDockerKurtosisClusterConfig()
@@ -71,21 +87,51 @@ func (kurtosisConfigV1 *KurtosisConfigV1) Validate() error {
 	return nil
 }
 
-func (kurtosisConfigV1 *KurtosisConfigV1) OverlayOverrides(overrides *KurtosisConfigV1) {
+func (kurtosisConfigV1 *KurtosisConfigV1) OverlayOverrides(overrides *KurtosisConfigV1) error {
 	if overrides.ShouldSendMetrics != nil {
 		kurtosisConfigV1.ShouldSendMetrics = overrides.ShouldSendMetrics
 	}
 	if overrides.KurtosisClusters != nil {
 		for clusterId, clusterConfig := range *overrides.KurtosisClusters {
-			(*kurtosisConfigV1.KurtosisClusters)[clusterId] = clusterConfig
+			existingClusters := *kurtosisConfigV1.KurtosisClusters
+			if existingClusters[clusterId] != nil {
+				if err := existingClusters[clusterId].OverlayOverrides(clusterConfig); err != nil {
+					return stacktrace.Propagate(err, "Failed to overlay configuration overrides for clusterId '%v'", clusterId)
+				}
+			} else {
+				existingClusters[clusterId] = NewDefaultKubernetesClusterConfigV1()
+				if err := existingClusters[clusterId].OverlayOverrides(clusterConfig); err != nil {
+					return stacktrace.Propagate(err, "Failed to overlay configuration overrides for clusterId '%v'", clusterId)
+				}
+			}
 		}
 	}
+	return nil
 }
 
-type KurtosisClusterV1 struct {
-	Type *string                      `yaml:"type,omitempty"`
-	// If we ever get another type of cluster that has configuration, this will need to be polymorphically deserialized
-	Config *KubernetesClusterConfigV1 `yaml:"config,omitempty"`
+func (kurtosisClusterV1 *KurtosisClusterV1) OverlayOverrides(overrides *KurtosisClusterV1) error {
+	if overrides.Type == nil {
+		return stacktrace.NewError("If a Kurtosis cluster is defined, it must have a type. There is no default type for a Kurtosis cluster.")
+	}
+	if overrides.Type != nil {
+		kurtosisClusterV1.Type = overrides.Type
+	}
+	if overrides.Config != nil {
+		overrides.Config.OverlayOverrides(overrides.Config)
+	}
+	return nil
+}
+
+func (kubernetesClusterV1 *KubernetesClusterConfigV1) OverlayOverrides(overrides *KubernetesClusterConfigV1) {
+	if overrides.KubernetesClusterName != nil {
+		kubernetesClusterV1.KubernetesClusterName = overrides.KubernetesClusterName
+	}
+	if overrides.EnclaveSizeInGigabytes != nil {
+		kubernetesClusterV1.EnclaveSizeInGigabytes = overrides.EnclaveSizeInGigabytes
+	}
+	if overrides.StorageClass != nil {
+		kubernetesClusterV1.StorageClass = overrides.StorageClass
+	}
 }
 
 func (kurtosisClusterV1 *KurtosisClusterV1) Validate(clusterId string) error {
@@ -117,12 +163,6 @@ func (kurtosisClusterV1 *KurtosisClusterV1) Validate(clusterId string) error {
 		}
 	}
 	return nil
-}
-
-type KubernetesClusterConfigV1 struct {
-	KubernetesClusterName *string `yaml:"kubernetes-cluster-name,omitempty"`
-	StorageClass *string `yaml:"storage-class,omitempty"`
-	EnclaveSizeInGigabytes *int `yaml:"enclave-size-in-gigabytes,omitempty"`
 }
 
 // ===================== HELPERS==============================
