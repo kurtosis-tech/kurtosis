@@ -88,39 +88,35 @@ func (kurtosisConfigV1 *KurtosisConfigV1) Validate() error {
 }
 
 func (kurtosisConfigV1 *KurtosisConfigV1) OverlayOverrides(overrides *KurtosisConfigV1) (*KurtosisConfigV1, error) {
-	overlaidKurtosisConfig := kurtosisConfigV1
+	baseKurtosisConfig := kurtosisConfigV1
 	if overrides.ShouldSendMetrics != nil {
-		overlaidKurtosisConfig.ShouldSendMetrics = overrides.ShouldSendMetrics
+		baseKurtosisConfig.ShouldSendMetrics = overrides.ShouldSendMetrics
 	}
 	if overrides.KurtosisClusters != nil {
-		clusterMapToOverlay := *overlaidKurtosisConfig.KurtosisClusters
+		baseClusterMap := *baseKurtosisConfig.KurtosisClusters
 		for clusterId, clusterConfig := range *overrides.KurtosisClusters {
-			clusterConfigToOverlay := clusterMapToOverlay[clusterId]
-			if clusterConfigToOverlay != nil {
-				overlaidClusterConfig, err := clusterConfigToOverlay.OverlayOverrides(clusterConfig)
+			baseClusterConfig := baseClusterMap[clusterId]
+			if baseClusterConfig != nil {
+				overlaidClusterConfig, err := baseClusterConfig.OverlayOverrides(clusterConfig)
 				if err != nil {
 					return nil, stacktrace.Propagate(err, "Failed to overlay configuration overrides for clusterId '%v'", clusterId)
 				}
-				clusterMapToOverlay[clusterId] = overlaidClusterConfig
+				baseClusterMap[clusterId] = overlaidClusterConfig
 			} else {
-				clusterMapToOverlay[clusterId] = NewDefaultKubernetesClusterConfigV1()
-				overlaidClusterConfig, err := clusterMapToOverlay[clusterId].OverlayOverrides(clusterConfig)
+				overlaidClusterConfig, err := NewDefaultKubernetesClusterConfigV1().OverlayOverrides(clusterConfig)
 				if err != nil {
 					return nil, stacktrace.Propagate(err, "Failed to overlay configuration overrides for clusterId '%v'", clusterId)
 				}
-				clusterMapToOverlay[clusterId] = overlaidClusterConfig
+				baseClusterMap[clusterId] = overlaidClusterConfig
 			}
 		}
-		overlaidKurtosisConfig.KurtosisClusters = &clusterMapToOverlay
+		baseKurtosisConfig.KurtosisClusters = &baseClusterMap
 	}
-	return overlaidKurtosisConfig, nil
+	return baseKurtosisConfig, nil
 }
 
 func (kurtosisClusterV1 *KurtosisClusterV1) OverlayOverrides(overrides *KurtosisClusterV1) (*KurtosisClusterV1, error) {
 	overlaidKurtosisClusterConfig := kurtosisClusterV1
-	if overrides.Type == nil {
-		return nil, stacktrace.NewError("If a Kurtosis cluster is defined, it must have a type. There is no default type for a Kurtosis cluster.")
-	}
 	if overrides.Type != nil {
 		overlaidKurtosisClusterConfig.Type = overrides.Type
 	}
