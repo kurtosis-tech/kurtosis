@@ -41,6 +41,15 @@ const (
 	sentencesSeparator = ", "
 )
 
+// This maps a Kubernetes pod's phase to a binary "is the pod considered running?" determiner
+// Its completeness is enforced via unit test
+var isPodRunningDeterminer = map[apiv1.PodPhase]bool{
+	apiv1.PodPending: true,
+	apiv1.PodRunning: true,
+	apiv1.PodSucceeded: false,
+	apiv1.PodUnknown: true, //We can not say that a pod is not running if we don't know the real state
+}
+
 type KubernetesKurtosisBackend struct {
 	kubernetesManager *kubernetes_manager.KubernetesManager
 

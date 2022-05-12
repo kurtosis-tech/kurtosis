@@ -500,6 +500,8 @@ func (backend *DockerKurtosisBackend) getEnclaveStatusAndContainers(
 		}
 		if isContainerRunning {
 			resultEnclaveStatus = enclave.EnclaveStatus_Running
+			//Enclave is considered running if we found at least one container running
+			break
 		}
 	}
 

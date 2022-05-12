@@ -376,7 +376,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainers(
 			return nil, stacktrace.NewError("Expected to find a label with name '%v' in Kubernetes namespace '%v', instead no such label was found", label_key_consts.EnclaveIDLabelKey.GetString(), enclaveNamespaceName)
 		}
 		enclaveId := enclave.EnclaveID(enclaveIdStr)
-		// If the EnclaveIDs filter is specified, drop namespaces not matching it
+		// If the EnclaveIDs filter is specified, drop api containers not matching it
 		if filters.EnclaveIDs != nil && len(filters.EnclaveIDs) > 0 {
 			if _, found := filters.EnclaveIDs[enclaveId]; !found {
 				continue
@@ -809,15 +809,20 @@ func getApiContainerObjectFromKubernetesService(service *apiv1.Service) (*api_co
 		}
 	}
 
+	// NOTE: We set these to nil because in Kubernetes we have no way of knowing what the public info is!
+	var publicIpAddr net.IP = nil
+	var publicGrpcPortSpec *port_spec.PortSpec = nil
+	var publicGrpcProxyPortSpec *port_spec.PortSpec = nil
+
 	resultApiContainer := api_container.NewAPIContainer(
 		enclave.EnclaveID(enclaveId),
 		status,
 		privateIpAddr,
 		privateGrpcPortSpec,
 		privateGrpcProxyPortSpec,
-		nil, //Public IP address and public ports are then filled by the Kurtosis Gateway
-		nil, //Public IP address and public ports are then filled by the Kurtosis Gateway
-		nil, //Public IP address and public ports are then filled by the Kurtosis Gateway
+		publicIpAddr,
+		publicGrpcPortSpec,
+		publicGrpcProxyPortSpec,
 	)
 
 	return resultApiContainer, nil

@@ -1,12 +1,13 @@
 # TBD
 ### Features
 * Added persistent volume claim creation to kubernetes-backed enclaves
-* Added `CreateEnclave` functionality to kubernetes backend
+* Added `CreateEnclave` and `GetEnclaves` functionality to kubernetes backend
 * Added `ServiceAccounts`, `Roles`, `RoleBindings`, `ClusterRole`, and `ClusterRoleBindings` create, getByLabels and remove methods to `KubernetesManager`
 * Added `ForEngineNamespace`, `ForEngineServiceAccount`, `ForEngineClusterRole` and `ForEngineClusterRoleBindings` to  `KubernetesEngineObjectAttributesProvider`
 * Updated `KubernetesBackend.CreateEngine` added the kubernetes role based resources creation and namespace creation process
 * Fixed `KubernetesBackend.GetEngines`returning an empty list for filters with no IDs specified
 * Added `GetInClusterKubernetesKurtosisBackend` Kurtosis backend factory method to be used for pods inside Kubernetes cluster
+* Added `isPodRunningDeterminer` utility variable that we use for determine if a pod is running
 
 ### Changes
 * Updated `KubernetesManager.CreatePod` added `serviceAccount` argument to set the pod's service account

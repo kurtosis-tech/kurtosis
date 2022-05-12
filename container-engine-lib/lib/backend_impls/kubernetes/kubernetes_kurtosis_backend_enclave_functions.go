@@ -5,8 +5,10 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	apiv1 "k8s.io/api/core/v1"
 	"net"
 	"strconv"
 )
@@ -114,11 +116,12 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 			}
 		}
 	}()
-	newEnclave := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty, "", "", net.IP{}, nil)
+
+	enclaveObj := newEnclave(enclaveId, enclave.EnclaveStatus_Empty)
 
 	shouldDeleteVolume = false
 	shouldDeleteNamespace = false
-	return newEnclave, nil
+	return enclaveObj, nil
 }
 
 func (backend *KubernetesKurtosisBackend) GetEnclaves(
@@ -183,20 +186,88 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaves(
 			return nil, stacktrace.NewError("Expected to find a label with name '%v' in Kubernetes namespace '%v', instead no such label was found", label_key_consts.EnclaveIDLabelKey.GetString(), enclaveNamespaceName)
 		}
 		enclaveId := enclave.EnclaveID(enclaveIdStr)
-		// If the IDs filter is specified, drop namespaces not matching it
+		// If the IDs filter is specified, drop enclaves not matching it
 		if filters.IDs != nil && len(filters.IDs) > 0 {
 			if _, found := filters.IDs[enclaveId]; !found {
 				continue
 			}
 		}
 
-		//TODO implement checking status
-		//TODO implement checking status
-		//TODO implement getEnclaveObjectFromKubernetesServices
+		enclavePods, err := backend.getAllEnclavePods(ctx, enclaveNamespaceName, enclaveId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting all enclave pods for enclave '%v' in namespace '%v'", enclaveId, enclaveNamespaceName)
+		}
 
-		newEnclave := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty, "", "", net.IP{}, nil)
-		matchingEnclaves[enclaveNamespaceName] = newEnclave
+		enclaveStatus, err := getEnclaveStatusFromEnclavePods(enclavePods)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting enclave status from enclave pods '%+v'", enclavePods)
+		}
+
+		// If the Statuses filter is specified, drop enclaves not matching it
+		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+			if _, found := filters.Statuses[enclaveStatus]; !found {
+				continue
+			}
+		}
+
+		enclaveObj := newEnclave(enclaveId, enclaveStatus)
+
+		matchingEnclaves[enclaveNamespaceName] = enclaveObj
 	}
 
 	return matchingEnclaves, nil
+}
+
+func (backend *KubernetesKurtosisBackend) getAllEnclavePods(ctx context.Context, enclaveNamespaceName string, enclaveId enclave.EnclaveID) ([]apiv1.Pod, error) {
+	matchingPods := []apiv1.Pod{}
+
+	matchLabels := getEnclaveMatchLabels()
+	matchLabels[label_key_consts.EnclaveIDLabelKey.GetString()] = string(enclaveId)
+
+	foundPods, err := backend.kubernetesManager.GetPodsByLabels(ctx, enclaveNamespaceName, matchLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting pods by labels '%+v' in namespace '%v'", matchLabels, enclaveNamespaceName)
+	}
+
+	if foundPods.Items != nil {
+		matchingPods = foundPods.Items
+	}
+	return matchingPods, nil
+}
+
+func getEnclaveStatusFromEnclavePods(enclavePods []apiv1.Pod) (enclave.EnclaveStatus, error) {
+	resultEnclaveStatus := enclave.EnclaveStatus_Stopped
+	for _, enclavePod := range enclavePods {
+		podPhase := enclavePod.Status.Phase
+		isPodRunning, found := isPodRunningDeterminer[podPhase]
+		if !found {
+			// This should never happen because we enforce completeness in a unit test
+			return resultEnclaveStatus, stacktrace.NewError("No is-running designation found for enclave pod phase '%v'; this is a bug in Kurtosis!", podPhase)
+		}
+		if isPodRunning {
+			resultEnclaveStatus = enclave.EnclaveStatus_Running
+			//Enclave is considered running if we found at least one pod running
+			break
+		}
+	}
+	return resultEnclaveStatus, nil
+}
+
+func newEnclave(id enclave.EnclaveID, status enclave.EnclaveStatus) *enclave.Enclave {
+	//We don't need to establish these values for Kubernetes Backend
+	//TODO these values will be removed when we finish the Kubernetes implementation
+	networkID := ""
+	networkCIDR := ""
+	networkGatewayIP := net.IP{}
+	var networkIpAddrTracker *lib.FreeIpAddrTracker
+
+	enclave := enclave.NewEnclave(
+		id,
+		status,
+		networkID,
+		networkCIDR,
+		networkGatewayIP,
+		networkIpAddrTracker,
+		)
+	return enclave
 }
