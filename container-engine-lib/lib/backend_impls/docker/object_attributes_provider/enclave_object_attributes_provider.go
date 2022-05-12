@@ -41,9 +41,9 @@ type DockerEnclaveObjectAttributesProvider interface {
 		privateGrpcProxyPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
 	ForUserServiceContainer(
-		registrationGUID user_service_registration.UserServiceRegistrationGUID,
-		serviceID user_service_registration.ServiceID,
-		serviceGUID service.ServiceGUID,
+		registrationGuid user_service_registration.UserServiceRegistrationGUID,
+		serviceId user_service_registration.ServiceID,
+		serviceGuid service.ServiceGUID,
 		privateIpAddr net.IP,
 		privatePorts map[string]*port_spec.PortSpec,
 	) (DockerObjectAttributes, error)

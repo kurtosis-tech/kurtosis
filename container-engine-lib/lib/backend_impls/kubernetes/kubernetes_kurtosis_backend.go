@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
 	"io"
 	"net"
@@ -99,7 +100,22 @@ func (backend *KubernetesKurtosisBackend) DestroyModules(ctx context.Context, fi
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateUserService(ctx context.Context, id service.ServiceID, guid service.ServiceGUID, containerImageName string, enclaveId enclave.EnclaveID, ipAddr net.IP, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactMountDirpaths map[string]string) (newUserService *service.Service, resultErr error) {
+func (backend *KubernetesKurtosisBackend) CreateUserServiceRegistration(ctx context.Context, enclaveId enclave.EnclaveID, serviceId user_service_registration.ServiceID) (*user_service_registration.UserServiceRegistration, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (backend *KubernetesKurtosisBackend) GetUserServiceRegistrations(ctx context.Context, filters *user_service_registration.UserServiceRegistrationFilters) (map[user_service_registration.UserServiceRegistrationGUID]*user_service_registration.UserServiceRegistration, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (backend *KubernetesKurtosisBackend) DestroyUserServiceRegistration(ctx context.Context, filters *user_service_registration.UserServiceRegistrationFilters) (resultSuccessfulServiceIds map[user_service_registration.UserServiceRegistrationGUID]bool, resultErroredServiceIds map[user_service_registration.UserServiceRegistrationGUID]error, resultErr error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (backend *KubernetesKurtosisBackend) CreateUserService(ctx context.Context, registrationGuid user_service_registration.UserServiceRegistrationGUID, guid service.ServiceGUID, containerImageName string, enclaveId enclave.EnclaveID, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactMountDirpaths map[string]string) (newUserService *service.Service, resultErr error) {
 	//TODO implement me
 	panic("implement me")
 }
