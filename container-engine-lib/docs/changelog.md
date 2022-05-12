@@ -1,16 +1,26 @@
 # TBD
 ### Features
+* Added `KubernetesKurtosisBackend.GetEnclaves` functionality to kubernetes backend
+* Added `KubernetesKurtosisBackend.CreateAPIContainer`, `KubernetesKurtosisBackend.GetAPIContainers`, `KubernetesKurtosisBackend.StopAPIContainers` and `KubernetesKurtosisBackend.DestroyAPIContainers` 
+* Added `KubernetesKurtosisBackend.isPodRunningDeterminer` utility variable that we use for determine if a pod is running
+* Added `GetInClusterKubernetesKurtosisBackend` Kurtosis backend factory method to be used for pods inside Kubernetes cluster
+
+# 0.20.0
+### Features
 * Added persistent volume claim creation to kubernetes-backed enclaves
-* Added `CreateEnclave` and `GetEnclaves` functionality to kubernetes backend
+* Added `CreateEnclave` functionality to kubernetes backend
 * Added `ServiceAccounts`, `Roles`, `RoleBindings`, `ClusterRole`, and `ClusterRoleBindings` create, getByLabels and remove methods to `KubernetesManager`
 * Added `ForEngineNamespace`, `ForEngineServiceAccount`, `ForEngineClusterRole` and `ForEngineClusterRoleBindings` to  `KubernetesEngineObjectAttributesProvider`
 * Updated `KubernetesBackend.CreateEngine` added the kubernetes role based resources creation and namespace creation process
 * Fixed `KubernetesBackend.GetEngines`returning an empty list for filters with no IDs specified
-* Added `GetInClusterKubernetesKurtosisBackend` Kurtosis backend factory method to be used for pods inside Kubernetes cluster
-* Added `isPodRunningDeterminer` utility variable that we use for determine if a pod is running
+* Added a (currently unused) framework for collecting all Kubernetes resource that match a specific filter
+* Add `getEngineKubernetesResources` in preparation for refactoring the engine methods
+* Implement `KubernetesKurtosisBackend.DestroyEngines`
 
 ### Changes
 * Updated `KubernetesManager.CreatePod` added `serviceAccount` argument to set the pod's service account
+* Switched all the engine methods to use a more Kubernetes-friendly way of getting & managing resources
+* Cleaned up the `KubernetesManager.CreateEngine` method
 
 ### Breaking Changes
 * NewKurtosisKubernetesBackend now takes in extra arguments - `volumeStorageClassName` and `volumeSizePerEnclaveInGigabytes`

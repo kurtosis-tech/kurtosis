@@ -874,6 +874,15 @@ func getApiContainerContainersAndVolumes(
 	return containers, volumes
 }
 
+func getContainerStatusFromKubernetesService(service *apiv1.Service) container_status.ContainerStatus {
+	// If a Kubernetes Service has selectors, then we assume the container is reachable, and thus not stopped
+	serviceSelectors := service.Spec.Selector
+	if len(serviceSelectors) == 0 {
+		return container_status.ContainerStatus_Stopped
+	}
+	return container_status.ContainerStatus_Running
+}
+
 func getApiContainerMatchLabels() map[string]string {
 	engineMatchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString():                label_value_consts.AppIDLabelValue.GetString(),

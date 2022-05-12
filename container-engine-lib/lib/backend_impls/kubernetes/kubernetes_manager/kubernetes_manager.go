@@ -41,11 +41,6 @@ type KubernetesManager struct {
 	kubernetesClientSet *kubernetes.Clientset
 }
 
-//TODO remove remove remove, it's only for test
-func (manager *KubernetesManager) GetClients() *kubernetes.Clientset {
-	return manager.kubernetesClientSet
-}
-
 /*
 NewKubernetesManager
 Creates a new K8s manager for manipulating the k8s cluster using the given client.
@@ -72,7 +67,7 @@ Args:
 Returns:
 	id: The deployment ID
 */
-func (manager *KubernetesManager) CreateDeployment(ctx context.Context, namespace string, deploymentName string, deploymentLabels map[string]string, podLabels map[string]string, replicas int32, deploymentContainers []apiv1.Container, deploymentVolumes []apiv1.Volume, podServiceAccountName string) (*appsv1.Deployment, error) {
+func (manager *KubernetesManager) CreateDeployment(ctx context.Context, namespace string, deploymentName string, deploymentLabels map[string]string, podLabels map[string]string, replicas int32, deploymentContainers []apiv1.Container, deploymentVolumes []apiv1.Volume) (*appsv1.Deployment, error) {
 	deploymentsClient := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
 
 	objectMeta := metav1.ObjectMeta{
