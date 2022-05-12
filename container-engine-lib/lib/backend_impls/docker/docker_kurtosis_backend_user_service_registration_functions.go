@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/stacktrace"
 	"time"
@@ -94,6 +95,82 @@ func (backend *DockerKurtosisBackend) GetUserServiceRegistrations(
 	backend.serviceRegistrationMutex.Lock()
 	defer backend.serviceRegistrationMutex.Unlock()
 
+	result := backend.getMatchingRegistrations(filters)
+
+	return result, nil
+}
+
+func (backend *DockerKurtosisBackend) DestroyUserServiceRegistration(
+	ctx context.Context,
+	filters *user_service_registration.UserServiceRegistrationFilters,
+) (
+	resultSuccessfulRegistrationGuids map[user_service_registration.UserServiceRegistrationGUID]bool,
+	resultErroredRegistrationGuids map[user_service_registration.UserServiceRegistrationGUID]error,
+	resultErr error,
+) {
+	backend.serviceRegistrationMutex.Lock()
+	defer backend.serviceRegistrationMutex.Unlock()
+
+	registrationsToDestroy := backend.getMatchingRegistrations(filters)
+	registrationGuidsToDestroy := map[user_service_registration.UserServiceRegistrationGUID]bool{}
+	for registrationGuid := range registrationsToDestroy {
+		registrationGuidsToDestroy[registrationGuid] = true
+	}
+
+	findConsumingServicesFilters := &service.ServiceFilters{
+		RegistrationGUIDs: registrationGuidsToDestroy,
+	}
+	allConsumingServices, err := backend.GetUserServices(ctx, findConsumingServicesFilters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting services matching the following registration GUIDs: %+v", registrationGuidsToDestroy)
+	}
+
+	consumingServiceGuidsByRegistrationGuid := map[user_service_registration.UserServiceRegistrationGUID][]service.ServiceGUID{}
+	for _, consumingService := range allConsumingServices {
+		registrationGuid := consumingService.GetRegistrationGUID()
+		serviceGuidsForRegistrationGuid, found := consumingServiceGuidsByRegistrationGuid[registrationGuid]
+		if !found {
+			serviceGuidsForRegistrationGuid = []service.ServiceGUID{}
+		}
+		serviceGuidsForRegistrationGuid = append(serviceGuidsForRegistrationGuid, consumingService.GetGUID())
+		consumingServiceGuidsByRegistrationGuid[registrationGuid] = serviceGuidsForRegistrationGuid
+	}
+
+	successfulGuids := map[user_service_registration.UserServiceRegistrationGUID]bool{}
+	erroredGuids := map[user_service_registration.UserServiceRegistrationGUID]error{}
+	for registrationGuid, registration := range registrationsToDestroy {
+		consumingServiceGuids, found := consumingServiceGuidsByRegistrationGuid[registrationGuid]
+		if found {
+			erroredGuids[registrationGuid] = stacktrace.NewError(
+				"Can't destroy user service registration with GUID '%v' and service ID '%v' because the following service(s) consume it: %+v",
+				registrationGuid,
+				registration.GetServiceID(),
+				consumingServiceGuids,
+			)
+			continue
+		}
+
+		if err := backend.destroyServiceRegistration(registration); err != nil {
+			erroredGuids[registrationGuid] = stacktrace.Propagate(
+				err,
+				"An error occurred destroying service registration '%v'",
+				registrationGuid,
+			)
+			continue
+		}
+
+		successfulGuids[registrationGuid] = true
+	}
+
+	return successfulGuids, erroredGuids, nil
+}
+
+// ====================================================================================================
+//                                       Private Helper Functions
+// ====================================================================================================
+func (backend *DockerKurtosisBackend) getMatchingRegistrations(filters *user_service_registration.UserServiceRegistrationFilters) (
+	map[user_service_registration.UserServiceRegistrationGUID]*user_service_registration.UserServiceRegistration,
+){
 	result := map[user_service_registration.UserServiceRegistrationGUID]*user_service_registration.UserServiceRegistration{}
 	for enclaveId, serviceRegistrationsForEnclave := range backend.serviceRegistrationsIndex {
 		if filters.EnclaveIDs != nil && len(filters.EnclaveIDs) > 0 {
@@ -119,10 +196,53 @@ func (backend *DockerKurtosisBackend) GetUserServiceRegistrations(
 			result[registrationGuid] = serviceRegistration
 		}
 	}
-	return result, nil
+	return result
 }
 
-func (backend *DockerKurtosisBackend) DestroyUserServiceRegistration(ctx context.Context, filters *user_service_registration.UserServiceRegistrationFilters) (resultSuccessfulServiceIds map[user_service_registration.ServiceID]bool, resultErroredServiceIds map[user_service_registration.ServiceID]error, resultErr error) {
-	//TODO implement me
-	panic("implement me")
+func (backend *DockerKurtosisBackend) destroyServiceRegistration(registration *user_service_registration.UserServiceRegistration) error {
+	registrationGuid := registration.GetGUID()
+	enclaveId := registration.GetEnclaveID()
+	serviceId := registration.GetServiceID()
+
+	freeIpProviderForEnclave, found := backend.enclaveFreeIpProviders[enclaveId]
+	if !found {
+		return stacktrace.NewError(
+			// Should never happen because getting the service registration required the free IP addr provider
+			"Needed to delete service registration '%v' in enclave '%v', but no free IP address provider was specified for the enclave; this is a bug in Kurtosis",
+			registrationGuid,
+			enclaveId,
+		)
+	}
+
+	registrationsForEnclave, found := backend.serviceRegistrationsIndex[enclaveId]
+	if !found {
+		return stacktrace.NewError(
+			"Got asked to destroy registration '%v' in enclave '%v' but no registrations are being tracked for the enclave; this should never happen and is a bug in Kurtosis",
+			registrationGuid,
+			enclaveId,
+		)
+	}
+
+	delete(registrationsForEnclave, serviceId)
+	shouldReplaceRegistrationsForEnclave := true
+	defer func() {
+		if shouldReplaceRegistrationsForEnclave {
+			registrationsForEnclave[serviceId] = registration
+		}
+	}()
+
+	delete(backend.serviceRegistrations, registrationGuid)
+	shouldReplaceCanonicalRegistrationEntry := true
+	defer func() {
+		if shouldReplaceCanonicalRegistrationEntry {
+			backend.serviceRegistrations[registrationGuid] = registration
+		}
+	}()
+
+	// NOTE: Important to do this last because there's no way to defer-undo this!!
+	freeIpProviderForEnclave.ReleaseIpAddr(registration.GetIPAddress())
+
+	shouldReplaceRegistrationsForEnclave = false
+	shouldReplaceCanonicalRegistrationEntry = false
+	return nil
 }
