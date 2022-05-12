@@ -4,6 +4,7 @@
 * Added `KubernetesKurtosisBackend.CreateAPIContainer`, `KubernetesKurtosisBackend.GetAPIContainers`, `KubernetesKurtosisBackend.StopAPIContainers` and `KubernetesKurtosisBackend.DestroyAPIContainers` 
 * Added `KubernetesKurtosisBackend.isPodRunningDeterminer` utility variable that we use for determine if a pod is running
 * Added `GetInClusterKubernetesKurtosisBackend` Kurtosis backend factory method to be used for pods inside Kubernetes cluster
+* `Network` objects returned by `DockerManager` will have the gateway IP and the IPs of the containers on the network
 
 # 0.20.0
 ### Features
