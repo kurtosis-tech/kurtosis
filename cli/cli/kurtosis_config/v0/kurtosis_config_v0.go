@@ -10,7 +10,7 @@ type KurtosisConfigV0 struct {
 	//We set public fields because YAML marshalling needs it on this way
 	//All fields should be pointers, that way we can enforce required fields
 	//by detecting nil pointers.
-	ShouldSendMetrics *bool `yaml:"should-send-metrics"`
+	ShouldSendMetrics *bool `yaml:"should-send-metrics,omitempty"`
 }
 
 func NewKurtosisConfigV0(doesUserAcceptSendingMetrics *bool) *KurtosisConfigV0 {

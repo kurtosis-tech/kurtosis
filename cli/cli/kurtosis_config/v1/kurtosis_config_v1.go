@@ -17,7 +17,7 @@ const (
 	defaultDockerClusterName = "docker"
 	defaultMinikubeClusterName = "minikube"
 	defaultMinikubeStorageClass = "standard"
-	defaultMinikubeGigabytesPerEnclave = 10
+	defaultMinikubeGigabytesPerEnclave = 2
 )
 
 type KurtosisConfigV1 struct {
