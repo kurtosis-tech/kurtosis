@@ -40,6 +40,7 @@ func NewDefaultKurtosisConfigV1() *KurtosisConfigV1 {
 	return &KurtosisConfigV1{
 		ConfigVersion: &version,
 		KurtosisClusters: &kurtosisClusters,
+		ShouldSendMetrics: nil, // ShouldSendMetrics is nil because it MUST be a user input - can not be a default
 	}
 }
 
