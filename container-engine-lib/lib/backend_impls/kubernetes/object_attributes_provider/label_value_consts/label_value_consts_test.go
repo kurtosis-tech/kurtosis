@@ -7,13 +7,13 @@ import (
 )
 
 var labelValueStrsToEnsure = map[string]string{
-	appIdLabelValueStr:              "kurtosis",
-	engineResourceTypeLabelValueStr: "kurtosis-engine",
+	appIdLabelValueStr:                      "kurtosis",
+	engineKurtosisResourceTypeLabelValueStr: "kurtosis-engine",
 }
 
 var labelValuesToEnsure = map[*kubernetes_label_value.KubernetesLabelValue]string{
-	AppIDLabelValue:              "kurtosis",
-	EngineResourceTypeLabelValue: "kurtosis-engine",
+	AppIDLabelValue:                      "kurtosis",
+	EngineKurtosisResourceTypeLabelValue: "kurtosis-engine",
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

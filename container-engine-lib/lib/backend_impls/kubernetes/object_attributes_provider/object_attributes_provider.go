@@ -1,13 +1,10 @@
 package object_attributes_provider
 
-type KubernetesObjectAttributesProvider interface {
-	ForEngine(
-		id string,
-	) (KubernetesEngineObjectAttributesProvider, error)
+import "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 
-	ForEnclave(
-		enclaveId string,
-	) (KubernetesEnclaveObjectAttributesProvider, error)
+type KubernetesObjectAttributesProvider interface {
+	ForEngine(id string) (KubernetesEngineObjectAttributesProvider, error)
+	ForEnclave(enclaveId enclave.EnclaveID) (KubernetesEnclaveObjectAttributesProvider, error)
 }
 
 func GetKubernetesObjectAttributesProvider() KubernetesObjectAttributesProvider {
@@ -25,6 +22,7 @@ func (provider *kubernetesObjectAttributesProviderImpl) ForEngine(engineId strin
 	return GetKubernetesEngineObjectAttributesProvider(engineId), nil
 }
 
-func (provider *kubernetesObjectAttributesProviderImpl) ForEnclave(enclaveId string) (KubernetesEnclaveObjectAttributesProvider, error) {
+func (provider *kubernetesObjectAttributesProviderImpl) ForEnclave(enclaveId enclave.EnclaveID) (KubernetesEnclaveObjectAttributesProvider, error) {
 	return GetKubernetesEnclaveObjectAttributesProvider(enclaveId), nil
 }
+
