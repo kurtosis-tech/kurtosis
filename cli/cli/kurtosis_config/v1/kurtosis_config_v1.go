@@ -1,6 +1,8 @@
 package v1
 
-import "github.com/kurtosis-tech/stacktrace"
+import (
+	"github.com/kurtosis-tech/stacktrace"
+)
 
 const (
 	kurtosisConfigV1DockerType     = "docker"
@@ -13,7 +15,7 @@ const (
 //an already-written config file is very difficult
 
 const (
-	versionNumber = 1
+	versionNumber = ConfigVersion_v1
 	defaultDockerClusterName = "docker"
 	defaultMinikubeClusterName = "minikube"
 	defaultMinikubeStorageClass = "standard"
