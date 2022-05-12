@@ -15,7 +15,6 @@ import (
 
 const (
 	kurtosisConfigFilePermissions os.FileMode = 0644
-	latestConfigFileVersion = config_version.ConfigVersion_v1
 )
 
 var (
@@ -91,7 +90,7 @@ func (configStore *kurtosisConfigStore) SetConfig(kurtosisConfig *KurtosisConfig
 // ====================================================================================================
 
 type kurtosisConfigVersionDetector struct {
-	ConfigVersion *config_version.ConfigVersion `yaml:"config-version"`
+	ConfigVersion config_version.ConfigVersion `yaml:"config-version"`
 }
 
 func (configStore *kurtosisConfigStore) saveKurtosisConfigYAMLFile(kurtosisConfig *KurtosisConfig) error {
@@ -176,18 +175,13 @@ func  (configStore *kurtosisConfigStore) migrateOverridesAcrossYAMLVersions() (*
 		return nil, stacktrace.Propagate(err, "An error occurred reading Kurtosis config YAML file")
 	}
 
-	configVersionDetector := &kurtosisConfigVersionDetector{}
+	configVersionDetector := &kurtosisConfigVersionDetector{
+		ConfigVersion: config_version.ConfigVersion_v0,
+	}
 	if err := yaml.Unmarshal(fileContentBytes, configVersionDetector); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(fileContentBytes))
 	}
-
-	var configVersionOnDisk config_version.ConfigVersion
-	if configVersionDetector.ConfigVersion == nil {
-		// If ConfigVersion pointer is nil, the config version is V0
-		configVersionOnDisk = config_version.ConfigVersion_v0
-	} else {
-		configVersionOnDisk = config_version.ConfigVersion_v1
-	}
+	configVersionOnDisk := configVersionDetector.ConfigVersion
 
 	var uncastedConfig interface{}
 	switch configVersionOnDisk {
@@ -207,8 +201,16 @@ func  (configStore *kurtosisConfigStore) migrateOverridesAcrossYAMLVersions() (*
 		return nil, stacktrace.NewError("Read invalid configuration version number %d from Kurtosis configuration file", configVersionOnDisk)
 	}
 
+	// Dynamically get latest config version
+	var latestConfigVersion config_version.ConfigVersion
+	for _, configVersion := range config_version.ConfigVersionValues() {
+		if uint(configVersion) > uint(latestConfigVersion) {
+			latestConfigVersion = configVersion
+		}
+	}
+
 	// PASS OVERRIDES STRUCT THROUGH A SERIES OF MIGRATIONS
-	for versionToUpgradeFrom := configVersionOnDisk; versionToUpgradeFrom < latestConfigFileVersion; versionToUpgradeFrom++ {
+	for versionToUpgradeFrom := configVersionOnDisk; versionToUpgradeFrom < latestConfigVersion; versionToUpgradeFrom++ {
 		switch versionToUpgradeFrom {
 		case config_version.ConfigVersion_v0:
 			// cast "uncastedConfig" to current version we're upgrading from
@@ -224,13 +226,17 @@ func  (configStore *kurtosisConfigStore) migrateOverridesAcrossYAMLVersions() (*
 			}
 			// uncast new config interface with upgrade done
 			uncastedConfig = newConfig
+		default:
+			return nil, stacktrace.NewError("Needed to migrate from config version '%v' to the next highest version but " +
+				"no migration was defined for this version; this is a bug in Kurtosis")
 		}
+
 	}
 
 	// cast back to expected latest version
 	resultConfig, ok := uncastedConfig.(*v1.KurtosisConfigV1)
 	if !ok {
-		return nil, stacktrace.NewError("Failed to cast configuration '%+v' to expected configuration version %d.", uncastedConfig, latestConfigFileVersion)
+		return nil, stacktrace.NewError("Failed to cast configuration '%+v' to expected configuration version %d.", uncastedConfig, latestConfigVersion)
 	}
 	return resultConfig, nil
 }

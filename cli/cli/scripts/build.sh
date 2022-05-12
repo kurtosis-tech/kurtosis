@@ -45,7 +45,11 @@ fi
 
 (
     if ! cd "${cli_module_dirpath}"; then
-        echo "Error: Couldn't cd to the CLI module directory in preparation for running Go tests" >&2
+        echo "Error: Couldn't cd to the CLI module directory in preparation for running Go generate & tests" >&2
+        exit 1
+    fi
+    if ! go generate "./..."; then
+        echo "Error: Go generate failed" >&2
         exit 1
     fi
     if ! CGO_ENABLED=0 go test "./..."; then
