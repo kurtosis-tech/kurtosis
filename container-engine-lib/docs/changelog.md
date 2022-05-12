@@ -1,13 +1,4 @@
 # TBD
-
-# 0.20.1
-### Features
-* Added `KubernetesKurtosisBackend.GetEnclaves` functionality to kubernetes backend
-* Added `KubernetesKurtosisBackend.CreateAPIContainer`, `KubernetesKurtosisBackend.GetAPIContainers`, `KubernetesKurtosisBackend.StopAPIContainers` and `KubernetesKurtosisBackend.DestroyAPIContainers` 
-* Added `KubernetesKurtosisBackend.isPodRunningDeterminer` utility variable that we use for determine if a pod is running
-* Added `GetInClusterKubernetesKurtosisBackend` Kurtosis backend factory method to be used for pods inside Kubernetes cluster
-* `Network` objects returned by `DockerManager` will have the gateway IP and the IPs of the containers on the network
-
 ### Changes
 * The `DockerKurtosisBackend` will now track the free IPs of networks
 * `KurtosisBackend` now has `UserServiceRegistration` CRUD methods
@@ -19,6 +10,14 @@
     * Users should make sure to call `CreateUserServiceRegistration` and pass in the returned GUID to the user service
 * `GetLocalDockerKurtosisBackend` now takes in an optional argument for providing the enclave ID, if running inside an enclave
     * API containers should pass in the information; all other consumers of the `DockerKurtosisBackend` should pass in `nil`
+
+# 0.20.1
+### Features
+* Added `KubernetesKurtosisBackend.GetEnclaves` functionality to kubernetes backend
+* Added `KubernetesKurtosisBackend.CreateAPIContainer`, `KubernetesKurtosisBackend.GetAPIContainers`, `KubernetesKurtosisBackend.StopAPIContainers` and `KubernetesKurtosisBackend.DestroyAPIContainers` 
+* Added `KubernetesKurtosisBackend.isPodRunningDeterminer` utility variable that we use for determine if a pod is running
+* Added `GetInClusterKubernetesKurtosisBackend` Kurtosis backend factory method to be used for pods inside Kubernetes cluster
+* `Network` objects returned by `DockerManager` will have the gateway IP and the IPs of the containers on the network
 
 # 0.20.0
 ### Features
