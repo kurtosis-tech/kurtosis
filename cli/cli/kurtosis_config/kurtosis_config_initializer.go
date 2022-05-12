@@ -59,7 +59,10 @@ func initInteractiveConfig() (*KurtosisConfig, error) {
 		}
 	}
 
-	kurtosisConfig := InitializeKurtosisConfigFromUserInput(didUserAcceptSendingMetrics)
+	kurtosisConfig, err := InitializeKurtosisConfigFromUserInput(didUserAcceptSendingMetrics)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to initialize Kurtosis configuration from user input %t.", didUserAcceptSendingMetrics)
+	}
 	return kurtosisConfig, nil
 }
 

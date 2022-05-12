@@ -108,7 +108,10 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 		}
 	}
 
-	kurtosisConfig := kurtosis_config.InitializeKurtosisConfigFromUserInput(didUserAcceptSendingMetrics)
+	kurtosisConfig, err := kurtosis_config.InitializeKurtosisConfigFromUserInput(didUserAcceptSendingMetrics)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to initialize Kurtosis configuration from user input %t", didUserAcceptSendingMetrics)
+	}
 
 	if err := kurtosisConfigStore.SetConfig(kurtosisConfig); err != nil {
 		return stacktrace.Propagate(err, "An error occurred setting Kurtosis config")

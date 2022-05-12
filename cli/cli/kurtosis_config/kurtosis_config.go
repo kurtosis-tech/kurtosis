@@ -3,6 +3,7 @@ package kurtosis_config
 import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/config_version"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/v1"
+	"github.com/kurtosis-tech/stacktrace"
 )
 
 /*
@@ -14,48 +15,62 @@ import (
  */
 
 type KurtosisConfig struct {
-	versionSpecificConfig *v1.KurtosisConfigV1
+	renderedConfig *v1.KurtosisConfigV1
+	overrides      *v1.KurtosisConfigV1
 }
 
 type KurtosisClusterConfig struct {
 	versionSpecificClusterConfig *v1.KurtosisClusterV1
 }
 
-func InitializeKurtosisConfigFromUserInput(didUserAcceptSendingMetrics bool) *KurtosisConfig {
-	versionSpecificConfig := v1.NewDefaultKurtosisConfigV1()
-	overrides := &v1.KurtosisConfigV1{ShouldSendMetrics: &didUserAcceptSendingMetrics}
-	versionSpecificConfig.OverlayOverrides(overrides)
+func NewDefaultKurtosisConfig() *KurtosisConfig {
+	defaultConfig := v1.NewDefaultKurtosisConfigV1()
 	return &KurtosisConfig{
-		versionSpecificConfig: versionSpecificConfig,
+		renderedConfig: defaultConfig,
 	}
 }
 
-func NewKurtosisConfig(versionSpecificConfig *v1.KurtosisConfigV1) *KurtosisConfig {
-	return &KurtosisConfig{
-		versionSpecificConfig: versionSpecificConfig,
+func InitializeKurtosisConfigFromUserInput(didUserAcceptSendingMetrics bool) (*KurtosisConfig, error) {
+	kurtosisConfig := NewDefaultKurtosisConfig()
+	overrides := &v1.KurtosisConfigV1{ShouldSendMetrics: &didUserAcceptSendingMetrics}
+	kurtosisConfigWithInput, err := kurtosisConfig.WithOverrides(overrides)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to render Kurtosis config from user input %t", didUserAcceptSendingMetrics)
 	}
+	return kurtosisConfigWithInput, nil
+}
+
+func (kurtosisConfig *KurtosisConfig) WithOverrides(overrides *v1.KurtosisConfigV1) (*KurtosisConfig, error) {
+	renderedKurtosisConfig, err := kurtosisConfig.renderedConfig.OverlayOverrides(overrides)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to overlay configuration overrides on default Kurtosis configuration.")
+	}
+	return &KurtosisConfig{
+		renderedConfig: renderedKurtosisConfig,
+		overrides:      overrides,
+	}, nil
 }
 
 func (kurtosisConfig *KurtosisConfig) Validate() error {
-	return kurtosisConfig.versionSpecificConfig.Validate()
+	return kurtosisConfig.renderedConfig.Validate()
+}
+
+func (kurtosisConfig *KurtosisConfig) GetOverrides() *v1.KurtosisConfigV1 {
+	return kurtosisConfig.overrides
 }
 
 func (kurtosisConfig *KurtosisConfig) GetConfigVersion() config_version.ConfigVersion {
-	return *kurtosisConfig.versionSpecificConfig.ConfigVersion
+	return *kurtosisConfig.renderedConfig.ConfigVersion
 }
 
 func (kurtosisConfig *KurtosisConfig) GetShouldSendMetrics() bool {
-	return *kurtosisConfig.versionSpecificConfig.ShouldSendMetrics
+	return *kurtosisConfig.renderedConfig.ShouldSendMetrics
 }
 
 func (kurtosisConfig *KurtosisConfig) GetKurtosisClusters() map[string]*KurtosisClusterConfig {
 	clusterConfigMap := map[string]*KurtosisClusterConfig{}
-	for clusterId, clusterConfigV1 := range *kurtosisConfig.versionSpecificConfig.KurtosisClusters {
+	for clusterId, clusterConfigV1 := range *kurtosisConfig.renderedConfig.KurtosisClusters {
 		clusterConfigMap[clusterId] = &KurtosisClusterConfig{versionSpecificClusterConfig: clusterConfigV1}
 	}
 	return clusterConfigMap
-}
-
-func (kurtosisConfig *KurtosisConfig) GetVersionSpecificConfig() *v1.KurtosisConfigV1 {
-	return kurtosisConfig.versionSpecificConfig
 }

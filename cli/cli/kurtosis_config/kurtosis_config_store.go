@@ -99,7 +99,7 @@ func (configStore *kurtosisConfigStore) saveKurtosisConfigYAMLFile(kurtosisConfi
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to validate configuration before saving to file.")
 	}
-	kurtosisConfigYAMLContent, err := yaml.Marshal(kurtosisConfig.GetVersionSpecificConfig())
+	kurtosisConfigYAMLContent, err := yaml.Marshal(kurtosisConfig.GetOverrides())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred marshalling Kurtosis config '%+v'", kurtosisConfig)
 	}
@@ -119,15 +119,23 @@ func (configStore *kurtosisConfigStore) saveKurtosisConfigYAMLFile(kurtosisConfi
 }
 
 func (configStore *kurtosisConfigStore) getKurtosisConfigFromYAMLFile() (*KurtosisConfig, error) {
-	kurtosisConfig, err := configStore.migrateOverridesAcrossYAMLVersions()
+	// Initialize default configuration for the latest version available
+	kurtosisConfig := NewDefaultKurtosisConfig()
+	// Overlay overrides that are now stored in the latest versions' override struct
+	// kurtosisConfig.OverlayOverrides(v1ConfigOverrides)
+	kurtosisConfigOverrides, err := configStore.migrateOverridesAcrossYAMLVersions()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to migrate overrides across YAML versions, starting with config version")
 	}
-	err = kurtosisConfig.Validate()
+	kurtosisConfigWithOverrides, err := kurtosisConfig.WithOverrides(kurtosisConfigOverrides)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to apply overrides to default configuration when reading configuration file.")
+	}
+	err = kurtosisConfigWithOverrides.Validate()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to validate configuration when reading from file.")
 	}
-	return kurtosisConfig, nil
+	return kurtosisConfigWithOverrides, nil
 }
 
 func (configStore *kurtosisConfigStore) readConfigFileBytes() ([]byte, error) {
@@ -162,7 +170,7 @@ func (configStore *kurtosisConfigStore) readConfigFileBytes() ([]byte, error) {
 		1. Migrate overrides sequentially from their own version up to the latest version
 		2. Overlay migrated overrides on top of the "default" latest version YAML struct
  */
-func  (configStore *kurtosisConfigStore) migrateOverridesAcrossYAMLVersions() (*KurtosisConfig, error) {
+func  (configStore *kurtosisConfigStore) migrateOverridesAcrossYAMLVersions() (*v1.KurtosisConfigV1, error) {
 	fileContentBytes, err := configStore.readConfigFileBytes()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred reading Kurtosis config YAML file")
@@ -196,25 +204,48 @@ func  (configStore *kurtosisConfigStore) migrateOverridesAcrossYAMLVersions() (*
 		return nil, stacktrace.NewError("Read invalid configuration version number %d from Kurtosis configuration file", configVersionOnDisk)
 	}
 
-	// PASS OVERRIDES STRUCT THROUGH A SERIES OF MIGRATIONS
-	for versionToUpgradeFrom := configVersionOnDisk; versionToUpgradeFrom < latestConfigFileVersion; versionToUpgradeFrom++ {
-		// If versionToUpgradeFrom is 0, migrate overrides from v0 to v1
-		if versionToUpgradeFrom == config_version.ConfigVersion_v0 {
-			// Migrate overrides from V0 to V1
-			if v0ConfigOverrides.ShouldSendMetrics != nil {
-				v1ConfigOverrides.ShouldSendMetrics = v0ConfigOverrides.ShouldSendMetrics
-			}
+	var uncastedConfig interface{}
+	switch configVersionOnDisk {
+	case config_version.ConfigVersion_v0:
+		overrides := &v0.KurtosisConfigV0{}
+		if err := yaml.Unmarshal(fileContentBytes, overrides); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(fileContentBytes))
 		}
-		// =====================================
-		// WHEN ADDING ANOTHER YAML VERSION, ADD ANOTHER IF STATEMENT
-		// TO HANDLE MIGRATION BETWEEN THE LATEST VERSION ABOVE THIS COMMENT
-		// AND THE NEWEST VERSION YOU'RE ADDING
-		// ==================================
+		uncastedConfig = overrides
+	case config_version.ConfigVersion_v1:
+		overrides := &v1.KurtosisConfigV1{}
+		if err := yaml.Unmarshal(fileContentBytes, overrides); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(fileContentBytes))
+		}
+		uncastedConfig = overrides
+	default:
+		return nil, stacktrace.NewError("Read invalid configuration version number %d from Kurtosis configuration file", configVersionOnDisk)
 	}
 
-	// Initialize default configuration for the latest version available
-	kurtosisConfig := v1.NewDefaultKurtosisConfigV1()
-	// Overlay overrides that are now stored in the latest versions' override struct
-	kurtosisConfig.OverlayOverrides(v1ConfigOverrides)
-	return NewKurtosisConfig(kurtosisConfig), nil
+	// PASS OVERRIDES STRUCT THROUGH A SERIES OF MIGRATIONS
+	for versionToUpgradeFrom := configVersionOnDisk; versionToUpgradeFrom < latestConfigFileVersion; versionToUpgradeFrom++ {
+		switch versionToUpgradeFrom {
+		case config_version.ConfigVersion_v0:
+			// cast "uncastedConfig" to current version we're upgrading from
+			castedOldConfig, ok := uncastedConfig.(*v0.KurtosisConfigV0)
+			if !ok {
+				return nil, stacktrace.NewError("Failed to cast configuration '%+v' to expected configuration version v0.", uncastedConfig)
+			}
+			// create a new configuration object to represent the migrated work
+			newConfig := &v1.KurtosisConfigV1{}
+			// do migration steps
+			if castedOldConfig.ShouldSendMetrics != nil {
+				newConfig.ShouldSendMetrics = castedOldConfig.ShouldSendMetrics
+			}
+			// uncast new config interface with upgrade done
+			uncastedConfig = newConfig
+		}
+	}
+
+	// cast back to expected latest version
+	resultConfig, ok := uncastedConfig.(*v1.KurtosisConfigV1)
+	if !ok {
+		return nil, stacktrace.NewError("Failed to cast configuration '%+v' to expected configuration version %d.", uncastedConfig, latestConfigFileVersion)
+	}
+	return resultConfig, nil
 }
