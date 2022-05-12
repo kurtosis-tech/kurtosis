@@ -86,16 +86,16 @@ type KurtosisClusterV1 struct {
 func (kurtosisClusterV1 *KurtosisClusterV1) Validate(clusterId string) error {
 	clusterConfig := kurtosisClusterV1
 	if clusterConfig.Type == nil {
-		return stacktrace.NewError("KurtosisCluster '%v' has nil Type field, when it should be %v or %v",
+		return stacktrace.NewError("KurtosisCluster '%v' has nil Type field, when it should be'%v' or '%v'",
 			clusterId, kurtosisConfigV1DockerType, kurtosisConfigV1KubernetesType)
 	}
 	if *clusterConfig.Type != kurtosisConfigV1DockerType && *clusterConfig.Type != kurtosisConfigV1KubernetesType {
-		return stacktrace.NewError("KurtosisCluster '%v' has Type field '%v', when it should be %v or %v",
+		return stacktrace.NewError("KurtosisCluster '%v' has Type field '%v', when it should be '%v' or '%v'",
 			clusterId, *clusterConfig.Type, kurtosisConfigV1DockerType, kurtosisConfigV1KubernetesType)
 	}
 	if *clusterConfig.Type == kurtosisConfigV1KubernetesType {
 		if clusterConfig.Config == nil {
-			return stacktrace.NewError("KurtosisCluster '%v' has Type field '%v' but has no Config field. Config fields are required for type %v",
+			return stacktrace.NewError("KurtosisCluster '%v' has Type field '%v' but has no Config field. Config fields are required for type '%v'",
 				clusterId, *clusterConfig.Type, kurtosisConfigV1KubernetesType)
 		}
 		if clusterConfig.Config.KubernetesClusterName == nil {
