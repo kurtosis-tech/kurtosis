@@ -1,4 +1,6 @@
 # TBD
+
+# 0.20.1
 ### Features
 * Added `KubernetesKurtosisBackend.GetEnclaves` functionality to kubernetes backend
 * Added `KubernetesKurtosisBackend.CreateAPIContainer`, `KubernetesKurtosisBackend.GetAPIContainers`, `KubernetesKurtosisBackend.StopAPIContainers` and `KubernetesKurtosisBackend.DestroyAPIContainers` 
