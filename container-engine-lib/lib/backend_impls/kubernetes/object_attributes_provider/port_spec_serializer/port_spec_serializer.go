@@ -21,8 +21,8 @@ const (
 
 	// The maximum number of bytes that a label value can be
 	// See https://github.com/docker/for-mac/issues/2208
-	// This is copied over from our docker serializer
-	// TODO: share port_spec serialization logic between kubernetes and docker?
+	// This is copied over from our Docker serializer
+	// TODO: share port_spec serialization logic between Kubernetes and Docker?
 	maxAnnotationBytes = 65518
 )
 

@@ -18,6 +18,7 @@ const (
 	PersistentVolumeClaimsKubernetesResource = "persistentvolumeclaims"
 
 	ClusterRoleKubernetesResourceType = "ClusterRole"
+	RoleKubernetesResourceType = "Role"
 
 	RbacAuthorizationApiGroup = "rbac.authorization.k8s.io"
 )

@@ -17,7 +17,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/util/retry"
 )
 
 const (
@@ -53,134 +52,6 @@ func NewKubernetesManager(kubernetesClientSet *kubernetes.Clientset) *Kubernetes
 	return &KubernetesManager{
 		kubernetesClientSet: kubernetesClientSet,
 	}
-}
-
-// ---------------------------Deployments------------------------------------------------------------------------------
-
-/*
-CreateDeployment
-Creates a new k8s deployment with the given parameters
-
-Args:
-
-
-Returns:
-	id: The deployment ID
-*/
-func (manager *KubernetesManager) CreateDeployment(ctx context.Context, namespace string, deploymentName string, deploymentLabels map[string]string, podLabels map[string]string, replicas int32, deploymentContainers []apiv1.Container, deploymentVolumes []apiv1.Volume) (*appsv1.Deployment, error) {
-	deploymentsClient := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
-
-	objectMeta := metav1.ObjectMeta{
-		Name:   deploymentName,
-		Labels: deploymentLabels,
-	}
-
-	selector := &metav1.LabelSelector{
-		MatchLabels: podLabels, // this should always match the Pod labels, otherwise it will fail
-	}
-
-	podSpec := apiv1.PodSpec{
-		Volumes:    deploymentVolumes,
-		Containers: deploymentContainers,
-	}
-
-	podTemplateSpec := apiv1.PodTemplateSpec{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels: podLabels,
-		},
-		Spec: podSpec,
-	}
-
-	deploymentSpec := appsv1.DeploymentSpec{
-		Replicas: manager.int32Ptr(replicas),
-		Selector: selector,
-		Template: podTemplateSpec,
-	}
-
-	deployment := &appsv1.Deployment{
-		ObjectMeta: objectMeta,
-		Spec:       deploymentSpec,
-	}
-
-	deploymentResult, err := deploymentsClient.Create(ctx, deployment, metav1.CreateOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create deployment '%s' in namespace '%s'", deploymentName, namespace)
-	}
-
-	return deploymentResult, nil
-}
-
-func (manager *KubernetesManager) ListDeployments(ctx context.Context, namespace string) (*appsv1.DeploymentList, error) {
-	deploymentsClient := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
-
-	list, err := deploymentsClient.List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to list deployments in namespace '%s'", namespace)
-	}
-
-	return list, nil
-}
-
-func (manager *KubernetesManager) RemoveDeployment(ctx context.Context, namespace string, name string) error {
-	deploymentsClient := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
-
-	if err := deploymentsClient.Delete(ctx, name, removeObjectDeleteOptions); err != nil {
-		return stacktrace.Propagate(err, "Failed to delete deployment '%s' with delete options '%+v' in namespace '%s'", name, removeObjectDeleteOptions, namespace)
-	}
-	return nil
-}
-
-func (manager *KubernetesManager) GetDeploymentByName(ctx context.Context, namespace string, name string) (*appsv1.Deployment, error) {
-	deploymentsClient := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
-
-	deployment, err := deploymentsClient.Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get deployment '%s' with namespace '%s'", name, namespace)
-	}
-
-	return deployment, nil
-}
-
-func (manager *KubernetesManager) GetDeploymentsByLabels(ctx context.Context, namespace string, deploymentLabels map[string]string) (*appsv1.DeploymentList, error) {
-	deploymentsClient := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
-
-	listOptions := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(deploymentLabels).String(),
-	}
-
-	deployments, err := deploymentsClient.List(ctx, listOptions)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get deployment by labels '%+v' in namespace '%s'", deploymentLabels, namespace)
-	}
-
-	return deployments, nil
-}
-
-func (manager *KubernetesManager) UpdateDeploymentReplicas(ctx context.Context, namespace string, deploymentLabels map[string]string, replicas int32) error {
-	deploymentsClient := manager.kubernetesClientSet.AppsV1().Deployments(apiv1.NamespaceDefault)
-
-	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		// Retrieve the latest version of Deployment before attempting update
-		// RetryOnConflict uses exponential backoff to avoid exhausting the apiserver
-		result, err := manager.GetDeploymentsByLabels(ctx, namespace, deploymentLabels)
-		if err != nil {
-			return stacktrace.Propagate(err, "Failed to get deployments by labels %+v", deploymentLabels)
-		}
-
-		for _, deployment := range result.Items {
-			deployment.Spec.Replicas = manager.int32Ptr(replicas)
-			_, err = deploymentsClient.Update(ctx, &deployment, metav1.UpdateOptions{})
-			if err != nil {
-				return stacktrace.Propagate(err, "Failed to update replicas to '%v' in deployment with name '%s'", replicas, deployment.Name)
-			}
-		}
-		return nil
-	})
-	if retryErr != nil {
-		return stacktrace.Propagate(retryErr, "Failed to update deployment replicas by labels '%+v' in namespace '%s'", deploymentLabels, namespace)
-	}
-
-	return nil
 }
 
 // ---------------------------Services------------------------------------------------------------------------------
@@ -390,17 +261,6 @@ func (manager *KubernetesManager) GetPersistentVolume(ctx context.Context, volum
 	return persistentVolumeResult, nil
 }
 
-func (manager *KubernetesManager) ListPersistentVolumes(ctx context.Context) (*apiv1.PersistentVolumeList, error) {
-	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
-
-	persistentVolumesResult, err := volumesClient.List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to list persistent volumes")
-	}
-
-	return persistentVolumesResult, nil
-}
-
 func (manager *KubernetesManager) GetPersistentVolumesByLabels(ctx context.Context, persistentVolumeLabels map[string]string) (*apiv1.PersistentVolumeList, error) {
 	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
 
@@ -598,7 +458,7 @@ func (manager *KubernetesManager) RemoveDaemonSet(ctx context.Context, name stri
 	return nil
 }
 
-func (manager *KubernetesManager) GetDaemonSet(ctx context.Context, name string, namespace string) (*appsv1.DaemonSet, error) {
+func (manager *KubernetesManager) GetDaemonSet(ctx context.Context, namespace string, name string) (*appsv1.DaemonSet, error) {
 	daemonSetClient := manager.kubernetesClientSet.AppsV1().DaemonSets(namespace)
 
 	daemonSet, err := daemonSetClient.Get(ctx, name, metav1.GetOptions{})
@@ -699,7 +559,7 @@ func (manager *KubernetesManager) RemoveRole(ctx context.Context, name string, n
 	return nil
 }
 
-func (manager *KubernetesManager) CrateRoleBindings(ctx context.Context, name string, namespace string, subjects []rbacv1.Subject, roleRef rbacv1.RoleRef, labels map[string]string) (*rbacv1.RoleBinding, error) {
+func (manager *KubernetesManager) CreateRoleBindings(ctx context.Context, name string, namespace string, subjects []rbacv1.Subject, roleRef rbacv1.RoleRef, labels map[string]string) (*rbacv1.RoleBinding, error) {
 	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
 
 	roleBinding := &rbacv1.RoleBinding{
@@ -876,6 +736,17 @@ func (manager *KubernetesManager) RemovePod(ctx context.Context, namespace strin
 	return nil
 }
 
+func (manager *KubernetesManager) GetPod(ctx context.Context, namespace string, name string) (*apiv1.Pod, error) {
+	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
+
+	pod, err := podClient.Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get pod with name '%s'", name)
+	}
+
+	return pod, nil
+}
+
 func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace string, podLabels map[string]string) (*apiv1.PodList, error) {
 	namespacePodClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
 
@@ -898,12 +769,12 @@ func (manager *KubernetesManager) GetNodePodRunsOn(ctx context.Context, namespac
 
 	pod, err := namespacePodClient.Get(ctx, podName, metav1.GetOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get a pod with name '%v' from kubernetes, instead a non-nil error was returned", podName)
+		return nil, stacktrace.Propagate(err, "Expected to be able to get a pod with name '%v' from Kubernetes, instead a non-nil error was returned", podName)
 	}
 	nodeName := pod.Spec.NodeName
 	node, err := nodeClient.Get(ctx, nodeName, metav1.GetOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get a pod with name '%v' from kubernetes, instead a non-nil error was returned", nodeName)
+		return nil, stacktrace.Propagate(err, "Expected to be able to get a pod with name '%v' from Kubernetes, instead a non-nil error was returned", nodeName)
 	}
 
 	return node, nil

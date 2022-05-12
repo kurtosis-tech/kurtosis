@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Represents a Kubernetes label value that is guaranteed to be valid for kubernetes
+// Represents a Kubernetes label value that is guaranteed to be valid for Kubernetes
 // NOTE: This is a struct-based enum
 type KubernetesLabelValue struct {
 	value string
@@ -24,7 +24,7 @@ func MustCreateNewKubernetesLabelValue(str string) *KubernetesLabelValue {
 
 func CreateNewKubernetesLabelValue(labelValue string) (*KubernetesLabelValue, error) {
 	if err := validateLabelValue(labelValue); err != nil {
-		return nil, stacktrace.Propagate(err, "Label value string '%v' doesn't pass validation of being a kubernetes label value", labelValue)
+		return nil, stacktrace.Propagate(err, "Label value string '%v' doesn't pass validation of being a Kubernetes label value", labelValue)
 	}
 
 	return &KubernetesLabelValue{value: labelValue}, nil
@@ -34,12 +34,12 @@ func (key *KubernetesLabelValue) GetString() string {
 	return key.value
 }
 
-// validateLabelStr throws an error if str isn't a "qualified name" in kubernetes
+// validateLabelStr throws an error if str isn't a "qualified name" in Kubernetes
 func validateLabelValue(str string) error {
 	validationErrs := validation.IsValidLabelValue(str)
 	if len(validationErrs) > 0 {
 		errString := strings.Join(validationErrs, "\n\n")
-		return stacktrace.NewError("Expected label string '%v' to be a kubernetes label value, instead it failed validation:\n%+v", str, errString)
+		return stacktrace.NewError("Expected label string '%v' to be a Kubernetes label value, instead it failed validation:\n%+v", str, errString)
 	}
 	return nil
 }

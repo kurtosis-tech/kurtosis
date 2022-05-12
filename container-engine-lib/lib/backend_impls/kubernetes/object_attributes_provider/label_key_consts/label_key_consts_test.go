@@ -13,8 +13,8 @@ var labelKeyStrsToEnsure = map[string]string{
 }
 
 var labelKeysToEnsure = map[*kubernetes_label_key.KubernetesLabelKey]string{
-	AppIDLabelKey:        "kurtosistech.com/app-id",
-	ResourceTypeLabelKey: "kurtosistech.com/resource-type",
+	AppIDLabelKey:                "kurtosistech.com/app-id",
+	KurtosisResourceTypeLabelKey: "kurtosistech.com/resource-type",
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

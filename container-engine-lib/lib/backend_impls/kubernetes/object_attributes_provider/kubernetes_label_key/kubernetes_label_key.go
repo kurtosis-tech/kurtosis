@@ -22,7 +22,7 @@ func MustCreateNewKubernetesLabelKey(str string) *KubernetesLabelKey {
 }
 func CreateNewKubernetesLabelKey(str string) (*KubernetesLabelKey, error) {
 	if err := validateLabelKey(str); err != nil {
-		return nil, stacktrace.Propagate(err, "Label value string '%v' doesn't pass validation of being a kubernetes label key", str)
+		return nil, stacktrace.Propagate(err, "Label value string '%v' doesn't pass validation of being a Kubernetes label key", str)
 	}
 
 	return &KubernetesLabelKey{value: str}, nil
@@ -35,7 +35,7 @@ func validateLabelKey(str string) error {
 	validationErrs := validation.IsQualifiedName(str)
 	if len(validationErrs) > 0 {
 		errString := strings.Join(validationErrs, "\n\n")
-		return stacktrace.NewError("Expected label string '%v' to be a valid kubernetes label key, instead it failed validation:\n%+v", str, errString)
+		return stacktrace.NewError("Expected label string '%v' to be a valid Kubernetes label key, instead it failed validation:\n%+v", str, errString)
 	}
 	return nil
 

@@ -21,20 +21,7 @@ import (
 )
 
 const (
-	// The ID of the GRPC port for Kurtosis-internal containers (e.g. API container, engine, modules, etc.) which will
-	//  be stored in the port spec label
-	kurtosisInternalContainerGrpcPortSpecId = "grpc"
-
-	// The ID of the GRPC proxy port for Kurtosis-internal containers. This is necessary because
-	// Typescript's grpc-web cannot communicate directly with GRPC ports, so Kurtosis-internal containers
-	// need a proxy  that will translate grpc-web requests before they hit the main GRPC server
-	kurtosisInternalContainerGrpcProxyPortSpecId = "grpcProxy"
-
-	// The engine server uses gRPC so MUST listen on TCP (no other protocols are supported), which also
-	// means that its grpc-proxy must listen on TCP
-	enginePortProtocol = port_spec.PortProtocol_TCP
-
-	externalServiceType = "ClusterIP"
+	kurtosisEngineContainerName = "kurtosis-engine-container"
 )
 
 // Any of these values being nil indicates that the resource doesn't exist
@@ -74,22 +61,22 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	containerStartTimeUnixSecs := time.Now().Unix()
 	engineIdStr := fmt.Sprintf("%v", containerStartTimeUnixSecs)
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, enginePortProtocol)
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, kurtosisServersPortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the engine's private grpc port spec object using number '%v' and protocol '%v'",
 			grpcPortNum,
-			enginePortProtocol.String(),
+			kurtosisServersPortProtocol.String(),
 		)
 	}
-	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, enginePortProtocol)
+	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, kurtosisServersPortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the engine's private grpc proxy port spec object using number '%v' and protocol '%v'",
 			grpcProxyPortNum,
-			enginePortProtocol.String(),
+			kurtosisServersPortProtocol.String(),
 		)
 	}
 	engineAttributesProvider, err := backend.objAttrsProvider.ForEngine(engineIdStr)
@@ -622,7 +609,7 @@ func getEngineContainers(containerImageAndTag string, engineEnvVars map[string]s
 func getEngineMatchLabels() map[string]string {
 	engineMatchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString():        label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.ResourceTypeLabelKey.GetString(): label_value_consts.EngineResourceTypeLabelValue.GetString(),
+		label_key_consts.KurtosisResourceTypeLabelKey.GetString(): label_value_consts.EngineKurtosisResourceTypeLabelValue.GetString(),
 	}
 	return engineMatchLabels
 }
@@ -776,7 +763,11 @@ func (backend *KubernetesKurtosisBackend) createEngineService(
 	privateGrpcPortSpec *port_spec.PortSpec,
 	privateGrpcProxyPortSpec *port_spec.PortSpec,
 ) (*apiv1.Service, error) {
-	engineServiceAttributes, err := engineAttributesProvider.ForEngineService(kurtosisInternalContainerGrpcPortSpecId, privateGrpcPortSpec, kurtosisInternalContainerGrpcProxyPortSpecId, privateGrpcProxyPortSpec)
+	engineServiceAttributes, err := engineAttributesProvider.ForEngineService(
+		kurtosisInternalContainerGrpcPortSpecId,
+		privateGrpcPortSpec,
+		kurtosisInternalContainerGrpcProxyPortSpecId,
+		privateGrpcProxyPortSpec)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -797,13 +788,13 @@ func (backend *KubernetesKurtosisBackend) createEngineService(
 		{
 			Name:     object_name_constants.KurtosisInternalContainerGrpcPortName.GetString(),
 			// TODO MAKE THIS DYNAMIC FROM THE PORTSPEC!!
-			Protocol: apiv1.ProtocolTCP,
+			Protocol: kurtosisInternalContainerGrpcPortProtocol,
 			Port:     grpcPortInt32,
 		},
 		{
 			Name:     object_name_constants.KurtosisInternalContainerGrpcProxyPortName.GetString(),
 			// TODO MAKE THIS DYNAMIC FROM THE PORTSPEC!!
-			Protocol: apiv1.ProtocolTCP,
+			Protocol: kurtosisInternalContainerGrpcProxyPortProtocol,
 			Port:     grpcProxyPortInt32,
 		},
 	}
