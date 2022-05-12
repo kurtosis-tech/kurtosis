@@ -12,6 +12,7 @@ var labelKeyStrsToEnsure = map[string]string{
 	resourceTypeLabelKeyStr: 	"kurtosistech.com/resource-type",
 	volumeTypeLabelKeyStr: 		"kurtosistech.com/volume-type",
 	containerTypeLabelKeyStr: 	"kurtosistech.com/container-type",
+	podTypeLabelKeyStr: 		"kurtosistech.com/pod-type",
 }
 
 var labelKeysToEnsure = map[*kubernetes_label_key.KubernetesLabelKey]string{
@@ -19,6 +20,7 @@ var labelKeysToEnsure = map[*kubernetes_label_key.KubernetesLabelKey]string{
 	KurtosisResourceTypeLabelKey: 	"kurtosistech.com/resource-type",
 	KurtosisVolumeTypeLabelKey: 	"kurtosistech.com/volume-type",
 	KurtosisContainerTypeLabelKey: 	"kurtosistech.com/container-type",
+	KurtosisPodTypeLabelKey: 		"kurtosistech.com/pod-type",
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
