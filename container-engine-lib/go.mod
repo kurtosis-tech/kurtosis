@@ -13,7 +13,6 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/sys v0.0.0-20210426230700-d19ff857e887
 	google.golang.org/protobuf v1.27.1 // indirect
 	k8s.io/api v0.20.6
 	k8s.io/apimachinery v0.20.6

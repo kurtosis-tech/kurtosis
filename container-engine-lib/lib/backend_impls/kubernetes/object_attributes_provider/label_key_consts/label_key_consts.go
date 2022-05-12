@@ -11,10 +11,11 @@ const (
 	//
 	//   If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
 	//
-	labelKeyPrefixStr       = "kurtosistech.com/"
-	appIdLabelKeyStr        = labelKeyPrefixStr + "app-id"
-	resourceTypeLabelKeyStr = labelKeyPrefixStr + "resource-type"
-	volumeTypeLabelKeyStr = labelKeyPrefixStr + "volume-type"
+	labelKeyPrefixStr       	= "kurtosistech.com/"
+	appIdLabelKeyStr        	= labelKeyPrefixStr + "app-id"
+	resourceTypeLabelKeyStr 	= labelKeyPrefixStr + "resource-type"
+	volumeTypeLabelKeyStr 		= labelKeyPrefixStr + "volume-type"
+	containerTypeLabelKeyStr 	= labelKeyPrefixStr + "container-type"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	// A label to identify a Kurtosis resource (e.g. network, container, etc.) by its id
@@ -41,8 +42,8 @@ const (
 //
 var AppIDLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(appIdLabelKeyStr)
 var KurtosisResourceTypeLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(resourceTypeLabelKeyStr)
-var VolumeTypeLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(volumeTypeLabelKeyStr)
-
+var KurtosisVolumeTypeLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(volumeTypeLabelKeyStr)
+var KurtosisContainerTypeLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(containerTypeLabelKeyStr)
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 var IDLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(idLabelKeyStr)

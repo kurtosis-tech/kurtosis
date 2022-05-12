@@ -7,14 +7,18 @@ import (
 )
 
 var labelKeyStrsToEnsure = map[string]string{
-	labelKeyPrefixStr:       "kurtosistech.com/",
-	appIdLabelKeyStr:        "kurtosistech.com/app-id",
-	resourceTypeLabelKeyStr: "kurtosistech.com/resource-type",
+	labelKeyPrefixStr:       	"kurtosistech.com/",
+	appIdLabelKeyStr:        	"kurtosistech.com/app-id",
+	resourceTypeLabelKeyStr: 	"kurtosistech.com/resource-type",
+	volumeTypeLabelKeyStr: 		"kurtosistech.com/volume-type",
+	containerTypeLabelKeyStr: 	"kurtosistech.com/container-type",
 }
 
 var labelKeysToEnsure = map[*kubernetes_label_key.KubernetesLabelKey]string{
-	AppIDLabelKey:                "kurtosistech.com/app-id",
-	KurtosisResourceTypeLabelKey: "kurtosistech.com/resource-type",
+	AppIDLabelKey:                	"kurtosistech.com/app-id",
+	KurtosisResourceTypeLabelKey: 	"kurtosistech.com/resource-type",
+	KurtosisVolumeTypeLabelKey: 	"kurtosistech.com/volume-type",
+	KurtosisContainerTypeLabelKey: 	"kurtosistech.com/container-type",
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

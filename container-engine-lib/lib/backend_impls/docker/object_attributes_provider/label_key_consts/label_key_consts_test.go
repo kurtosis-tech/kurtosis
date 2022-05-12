@@ -7,14 +7,16 @@ import (
 )
 
 var labelKeyStrsToEnsure = map[string]string{
-	labelNamespaceStr:        "com.kurtosistech.",
-	appIdLabelKeyStr:         "com.kurtosistech.app-id",
-	containerTypeLabelKeyStr: "com.kurtosistech.container-type",
+	labelNamespaceStr:        	"com.kurtosistech.",
+	appIdLabelKeyStr:         	"com.kurtosistech.app-id",
+	containerTypeLabelKeyStr: 	"com.kurtosistech.container-type",
+	volumeTypeLabelKeyStr: 		"com.kurtosistech.volume-type",
 }
 
 var labelKeysToEnsure = map[*docker_label_key.DockerLabelKey]string{
-	AppIDLabelKey:         "com.kurtosistech.app-id",
-	ContainerTypeLabelKey: "com.kurtosistech.container-type",
+	AppIDLabelKey:         	"com.kurtosistech.app-id",
+	ContainerTypeLabelKey: 	"com.kurtosistech.container-type",
+	VolumeTypeLabelKey: 	"com.kurtosistech.volume-type",
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
