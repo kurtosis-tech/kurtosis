@@ -14,7 +14,7 @@ const (
 
 const (
 	versionNumber = 1
-	defaultDockerClusterName = "local-docker"
+	defaultDockerClusterName = "docker"
 	defaultMinikubeClusterName = "minikube"
 	defaultMinikubeStorageClass = "standard"
 	defaultMinikubeGigabytesPerEnclave = 10
