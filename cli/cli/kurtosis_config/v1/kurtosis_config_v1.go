@@ -60,9 +60,8 @@ func (kurtosisConfigV1 *KurtosisConfigV1) Validate() error {
 		return stacktrace.NewError("KurtosisCluster field of Kurtosis Config v1 has no clusters, when it should have at least one.")
 	}
 	for clusterId, clusterConfig := range *kurtosisConfigV1.KurtosisClusters {
-		clusterValid := clusterConfig.Validate(clusterId)
-		if clusterValid != nil {
-			return clusterValid
+		if err := clusterConfig.Validate(clusterId); err != nil {
+			return stacktrace.Propagate(err, "Failed to validate KurtosisCluster configuration for clusterId '%v'", clusterId)
 		}
 	}
 	return nil
