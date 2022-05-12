@@ -1,4 +1,7 @@
 # TBD
+### Features
+* `Network` objects returned by `DockerManager` will have the gateway IP and the IPs of the containers on the network
+
 ### Changes
 * The `DockerKurtosisBackend` will now track the free IPs of networks
 * `KurtosisBackend` now has `UserServiceRegistration` CRUD methods

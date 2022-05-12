@@ -1238,11 +1238,11 @@ func newNetworkListFromDockerNetworkList(dockerNetworks []types.NetworkResource)
 	networks := []*docker_manager_types.Network{}
 
 	for _, dockerNetwork := range dockerNetworks {
-		network, err := newNetworkFromDockerNetwork(dockerNetwork)
+		dockerManagerNetwork, err := newNetworkFromDockerNetwork(dockerNetwork)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating new network from Docker network with ID '%v'", dockerNetwork.ID)
 		}
-		networks = append(networks, network)
+		networks = append(networks, dockerManagerNetwork)
 	}
 
 	return networks, nil
@@ -1255,7 +1255,6 @@ func newNetworkFromDockerNetwork(dockerNetwork types.NetworkResource) (*docker_m
 	if len(dockerNetwork.IPAM.Config) > 1 {
 		return nil, stacktrace.NewError("This is an unexpected error Docker network with ID '%v' shouldn't have more than one IPAM config; this is a bug in Kurtosis itself", dockerNetwork.ID)
 	}
-
 	firstIpamConfig := dockerNetwork.IPAM.Config[0]
 
 	_, ipAndMask, err := net.ParseCIDR(firstIpamConfig.Subnet)
@@ -1263,7 +1262,27 @@ func newNetworkFromDockerNetwork(dockerNetwork types.NetworkResource) (*docker_m
 		return nil, stacktrace.Propagate(err, "An error occurred parsing CIDR '%v'", firstIpamConfig.Subnet)
 	}
 
-	network := docker_manager_types.NewNetwork(dockerNetwork.Name, dockerNetwork.ID, ipAndMask, dockerNetwork.Labels)
+	gatewayIp := firstIpamConfig.Gateway
+
+	containerIps := map[string]bool{}
+	for _, endpointResource := range dockerNetwork.Containers {
+		// Even though Docker *calls* this IPv4Address, it's actually in CIDR notation!
+		containerIpCidrStr := endpointResource.IPv4Address
+		containerIp, _, err := net.ParseCIDR(containerIpCidrStr)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred parsing container IP CIDR string '%v' to an IP address", containerIpCidrStr)
+		}
+		containerIps[containerIp.String()] = true
+	}
+
+	network := docker_manager_types.NewNetwork(
+		dockerNetwork.Name,
+		dockerNetwork.ID,
+		ipAndMask,
+		gatewayIp,
+		containerIps,
+		dockerNetwork.Labels,
+	)
 
 	return network, nil
 }
