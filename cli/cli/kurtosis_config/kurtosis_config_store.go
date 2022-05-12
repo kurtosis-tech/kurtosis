@@ -121,7 +121,7 @@ func (configStore *kurtosisConfigStore) saveKurtosisConfigYAMLFile(kurtosisConfi
 func (configStore *kurtosisConfigStore) getKurtosisConfigFromYAMLFile() (*KurtosisConfig, error) {
 	kurtosisConfig, err := configStore.migrateOverridesAcrossYAMLVersions()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to migrate overrides across YAML versions, starting with config version %d", configVersion)
+		return nil, stacktrace.Propagate(err, "Failed to migrate overrides across YAML versions, starting with config version")
 	}
 	err = kurtosisConfig.Validate()
 	if err != nil {
