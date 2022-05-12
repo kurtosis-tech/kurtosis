@@ -50,11 +50,14 @@ func (kurtosisConfigV1 *KurtosisConfigV1) Validate() error {
 	if kurtosisConfigV1.ConfigVersion == nil {
 		return stacktrace.NewError("ConfigVersion field of Kurtosis Config v1 is nil, when it should be %d.", versionNumber)
 	}
-	if *kurtosisConfigV1.ConfigVersion != 1 {
+	if *kurtosisConfigV1.ConfigVersion != versionNumber {
 		return stacktrace.NewError("ConfigVersion field of Kurtosis Config v1 is %d, when it should be %d.", kurtosisConfigV1.ConfigVersion, versionNumber)
 	}
 	if kurtosisConfigV1.KurtosisClusters == nil {
 		return stacktrace.NewError("KurtosisCluster field of Kurtosis Config v1 is nil, when it should have a map of Kurtosis cluster configurations.")
+	}
+	if len(*kurtosisConfigV1.KurtosisClusters) == 0 {
+		return stacktrace.NewError("KurtosisCluster field of Kurtosis Config v1 has no clusters, when it should have at least one.")
 	}
 	for clusterId, clusterConfig := range *kurtosisConfigV1.KurtosisClusters {
 		clusterValid := clusterConfig.Validate(clusterId)
