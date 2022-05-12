@@ -1,6 +1,7 @@
 package kurtosis_config
 
 import (
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/config_version"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/v1"
 )
 
@@ -39,7 +40,7 @@ func (kurtosisConfig *KurtosisConfig) Validate() error {
 	return kurtosisConfig.versionSpecificConfig.Validate()
 }
 
-func (kurtosisConfig *KurtosisConfig) GetConfigVersion() int {
+func (kurtosisConfig *KurtosisConfig) GetConfigVersion() config_version.ConfigVersion {
 	return *kurtosisConfig.versionSpecificConfig.ConfigVersion
 }
 

@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/config_version"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -15,7 +16,7 @@ const (
 //an already-written config file is very difficult
 
 const (
-	versionNumber = ConfigVersion_v1
+	versionNumber = config_version.ConfigVersion_v0
 	defaultDockerClusterName = "docker"
 	defaultMinikubeClusterName = "minikube"
 	defaultMinikubeStorageClass = "standard"
@@ -26,7 +27,7 @@ type KurtosisConfigV1 struct {
 	//We set public fields because YAML marshalling needs it on this way
 	//All fields should be pointers, that way we can enforce required fields
 	//by detecting nil pointers.
-	ConfigVersion *int `yaml:"config-version,omitempty"`
+	ConfigVersion *config_version.ConfigVersion `yaml:"config-version,omitempty"`
 	ShouldSendMetrics *bool                         `yaml:"should-send-metrics,omitempty"`
 	KurtosisClusters *map[string]*KurtosisClusterV1 `yaml:"kurtosis-clusters,omitempty"`
 }
