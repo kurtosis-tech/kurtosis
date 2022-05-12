@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_object_name"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -21,19 +22,12 @@ import (
 
 const (
 	artifactExpansionObjectTimestampFormat = "2006-01-02T15.04.05.000"
-	enclaveNamespacePrefix        = "kurtosis-enclave"
-
-	apiContainerNameSuffix                 = "kurtosis-api"
-	userServiceContainerNameFragment       = "user-service"
-	networkingSidecarContainerNameFragment = "networking-sidecar"
-	artifactExpanderContainerNameFragment  = "files-artifact-expander"
-	artifactExpansionVolumeNameFragment    = "files-artifact-expansion"
-	moduleContainerNameFragment            = "module"
 )
 
 type KubernetesEnclaveObjectAttributesProvider interface {
 	ForEnclaveNamespace(isPartitioningEnabled bool) (KubernetesObjectAttributes, error)
 	ForEnclaveDataVolume() (KubernetesObjectAttributes, error)
+	ForApiContainer() (KubernetesApiContainerObjectAttributesProvider, error)
 }
 
 // Private so it can't be instantiated
@@ -42,17 +36,16 @@ type kubernetesEnclaveObjectAttributesProviderImpl struct {
 }
 
 func newKubernetesEnclaveObjectAttributesProviderImpl(
-	enclaveId string,
+	enclaveId enclave.EnclaveID,
 ) *kubernetesEnclaveObjectAttributesProviderImpl {
 	return &kubernetesEnclaveObjectAttributesProviderImpl{
-		enclaveId: enclaveId,
+		enclaveId: string(enclaveId),
 	}
 }
 
-func GetKubernetesEnclaveObjectAttributesProvider(enclaveId string) KubernetesEnclaveObjectAttributesProvider {
+func GetKubernetesEnclaveObjectAttributesProvider(enclaveId enclave.EnclaveID) KubernetesEnclaveObjectAttributesProvider {
 	return newKubernetesEnclaveObjectAttributesProviderImpl(enclaveId)
 }
-
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespace(isPartitioningEnabled bool) (KubernetesObjectAttributes, error) {
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(provider.enclaveId)
@@ -79,7 +72,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespa
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred while creating the kubernetes object attributes impl with the name '%s' and labels '%+v'",
+			"An error occurred while creating the Kubernetes object attributes impl with the name '%s' and labels '%+v'",
 			name.GetString(),
 			getLabelKeyValuesAsStrings(labels),
 		)
@@ -113,14 +106,9 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataVol
 	return objectAttributes, nil
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForApiContainer(
-	ipAddr net.IP,
-	privateGrpcPortId string,
-	privateGrpcPortSpec *port_spec.PortSpec,
-	privateGrpcProxyPortId string,
-	privateGrpcProxyPortSpec *port_spec.PortSpec,
-) (KubernetesObjectAttributes, error) {
-	panic("implement me")
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForApiContainer() (KubernetesApiContainerObjectAttributesProvider, error) {
+	enclaveId := enclave.EnclaveID(provider.enclaveId)
+	return GetKubernetesApiContainerObjectAttributesProvider(enclaveId), nil
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl)ForUserServiceContainer(
@@ -180,7 +168,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getNameForEnclave
 	)
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating kubernetes object name from string '%v'", nameStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating Kubernetes object name from string '%v'", nameStr)
 	}
 	return name, nil
 }
@@ -189,9 +177,10 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getNameForEnclave
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObject() (map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
 	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.enclaveId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create kubernetes label value from enclaveId '%v'", provider.enclaveId)
+		return nil, stacktrace.Propagate(err, "Failed to create Kubernetes label value from enclaveId '%v'", provider.enclaveId)
 	}
 	return map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
+		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.EnclaveKurtosisResourceTypeLabelValue,
 		label_key_consts.EnclaveIDLabelKey: enclaveIdLabelValue,
 	}, nil
 }
@@ -203,7 +192,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEncla
 	}
 	guidLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(guid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a kubernetes label value from GUID string '%v'", guid)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes label value from GUID string '%v'", guid)
 	}
 	labels[label_key_consts.GUIDLabelKey] = guidLabelValue
 	return labels, nil
@@ -216,7 +205,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEncla
 	}
 	idLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(id)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a kubernetes label value from ID string '%v'", id)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes label value from ID string '%v'", id)
 	}
 	labels[label_key_consts.IDLabelKey] = idLabelValue
 	return labels, nil

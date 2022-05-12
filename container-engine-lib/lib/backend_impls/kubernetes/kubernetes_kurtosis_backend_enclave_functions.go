@@ -5,8 +5,10 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	apiv1 "k8s.io/api/core/v1"
 	"net"
 	"strconv"
 )
@@ -37,7 +39,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	}
 
 	// Make Enclave attributes provider
-	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(string(enclaveId))
+	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to generate an object attributes provider for the enclave with ID '%v'", enclaveId)
 	}
@@ -48,16 +50,9 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	}
 
 	enclaveNamespaceName := enclaveNamespaceAttrs.GetName().GetString()
-	enclaveNamespaceLabels := enclaveNamespaceAttrs.GetLabels()
+	enclaveNamespaceLabels := getStringMapFromLabelMap(enclaveNamespaceAttrs.GetLabels())
 
-	enclaveNamespaceLabelMap := map[string]string{}
-	for kubernetesLabelKey, kubernetesLabelValue := range enclaveNamespaceLabels {
-		enclaveNamespaceLabelKey := kubernetesLabelKey.GetString()
-		enclaveNamespaceValue := kubernetesLabelValue.GetString()
-		enclaveNamespaceLabelMap[enclaveNamespaceLabelKey] = enclaveNamespaceValue
-	}
-
-	_, err = backend.kubernetesManager.CreateNamespace(ctx, enclaveNamespaceName, enclaveNamespaceLabelMap)
+	_, err = backend.kubernetesManager.CreateNamespace(ctx, enclaveNamespaceName, enclaveNamespaceLabels)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create namespace with name '%v' for enclave '%v'", enclaveNamespaceName, enclaveId)
 	}
@@ -121,16 +116,32 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 			}
 		}
 	}()
-	newEnclave := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty, "", "", net.IP{}, nil)
+
+	enclaveObj := newEnclave_TODO_REMOVE(enclaveId, enclave.EnclaveStatus_Empty)
 
 	shouldDeleteVolume = false
 	shouldDeleteNamespace = false
-	return newEnclave, nil
+	return enclaveObj, nil
 }
 
-func (backend *KubernetesKurtosisBackend) GetEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (map[enclave.EnclaveID]*enclave.Enclave, error) {
-	//TODO implement me
-	panic("implement me")
+func (backend *KubernetesKurtosisBackend) GetEnclaves(
+	ctx context.Context,
+	filters *enclave.EnclaveFilters,
+) (
+	map[enclave.EnclaveID]*enclave.Enclave,
+	error,
+) {
+	matchingEnclavesByNamespace, err := backend.getMatchingEnclaves(ctx, filters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclaves matching the following filters: %+v", filters)
+	}
+
+	matchingEnclavesByEnclaveId := map[enclave.EnclaveID]*enclave.Enclave{}
+	for _, enclaveObj := range matchingEnclavesByNamespace {
+		matchingEnclavesByEnclaveId[enclaveObj.GetID()] = enclaveObj
+	}
+
+	return matchingEnclavesByEnclaveId, nil
 }
 
 func (backend *KubernetesKurtosisBackend) StopEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (successfulEnclaveIds map[enclave.EnclaveID]bool, erroredEnclaveIds map[enclave.EnclaveID]error, resultErr error) {
@@ -146,4 +157,120 @@ func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, encla
 func (backend *KubernetesKurtosisBackend) DestroyEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (successfulEnclaveIds map[enclave.EnclaveID]bool, erroredEnclaveIds map[enclave.EnclaveID]error, resultErr error) {
 	//TODO implement me
 	panic("implement me")
+}
+
+// ====================================================================================================
+//                                     Private Helper Methods
+// ====================================================================================================
+// Gets enclaves matching the search filters, indexed by their [namespace]
+func (backend *KubernetesKurtosisBackend) getMatchingEnclaves(
+	ctx context.Context,
+	filters *enclave.EnclaveFilters,
+) (
+	map[string]*enclave.Enclave,
+	error,
+) {
+	matchingEnclaves := map[string]*enclave.Enclave{}
+
+	enclaveNamespaces, err := backend.getAllEnclaveNamespaces(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting all enclave namespaces")
+	}
+
+	for _, enclaveNamespace := range enclaveNamespaces {
+		enclaveNamespaceName := enclaveNamespace.GetName()
+		enclaveNamespaceLabels := enclaveNamespace.GetLabels()
+
+		enclaveIdStr, found := enclaveNamespaceLabels[label_key_consts.EnclaveIDLabelKey.GetString()]
+		if !found {
+			return nil, stacktrace.NewError("Expected to find a label with name '%v' in Kubernetes namespace '%v', but no such label was found", label_key_consts.EnclaveIDLabelKey.GetString(), enclaveNamespaceName)
+		}
+		enclaveId := enclave.EnclaveID(enclaveIdStr)
+		// If the IDs filter is specified, drop enclaves not matching it
+		if filters.IDs != nil && len(filters.IDs) > 0 {
+			if _, found := filters.IDs[enclaveId]; !found {
+				continue
+			}
+		}
+
+		enclavePods, err := backend.getAllEnclavePods(ctx, enclaveNamespaceName, enclaveId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting all enclave pods for enclave '%v' in namespace '%v'", enclaveId, enclaveNamespaceName)
+		}
+
+		enclaveStatus, err := getEnclaveStatusFromEnclavePods(enclavePods)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting enclave status from enclave pods '%+v'", enclavePods)
+		}
+
+		// If the Statuses filter is specified, drop enclaves not matching it
+		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+			if _, found := filters.Statuses[enclaveStatus]; !found {
+				continue
+			}
+		}
+
+		enclaveObj := newEnclave_TODO_REMOVE(enclaveId, enclaveStatus)
+
+		matchingEnclaves[enclaveNamespaceName] = enclaveObj
+	}
+
+	return matchingEnclaves, nil
+}
+
+func (backend *KubernetesKurtosisBackend) getAllEnclavePods(ctx context.Context, enclaveNamespaceName string, enclaveId enclave.EnclaveID) ([]apiv1.Pod, error) {
+	matchingPods := []apiv1.Pod{}
+
+	matchLabels := map[string]string{
+		label_key_consts.AppIDLabelKey.GetString():     label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
+	}
+
+	foundPods, err := backend.kubernetesManager.GetPodsByLabels(ctx, enclaveNamespaceName, matchLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting pods by labels '%+v' in namespace '%v'", matchLabels, enclaveNamespaceName)
+	}
+
+	if foundPods.Items != nil {
+		matchingPods = foundPods.Items
+	}
+	return matchingPods, nil
+}
+
+func getEnclaveStatusFromEnclavePods(enclavePods []apiv1.Pod) (enclave.EnclaveStatus, error) {
+	resultEnclaveStatus := enclave.EnclaveStatus_Stopped
+	for _, enclavePod := range enclavePods {
+		podPhase := enclavePod.Status.Phase
+
+		isPodRunning, found := isPodRunningDeterminer[podPhase]
+		if !found {
+			// This should never happen because we enforce completeness in a unit test
+			return resultEnclaveStatus, stacktrace.NewError("No is-running designation found for enclave pod phase '%v'; this is a bug in Kurtosis!", podPhase)
+		}
+		if isPodRunning {
+			resultEnclaveStatus = enclave.EnclaveStatus_Running
+			//Enclave is considered running if we found at least one pod running
+			break
+		}
+	}
+	return resultEnclaveStatus, nil
+}
+
+func newEnclave_TODO_REMOVE(id enclave.EnclaveID, status enclave.EnclaveStatus) *enclave.Enclave {
+	//We don't need to establish these values for Kubernetes Backend
+	//TODO these values will be removed when we finish the Kubernetes implementation
+	networkID := ""
+	networkCIDR := ""
+	networkGatewayIP := net.IP{}
+	var networkIpAddrTracker *lib.FreeIpAddrTracker
+
+	enclave := enclave.NewEnclave(
+		id,
+		status,
+		networkID,
+		networkCIDR,
+		networkGatewayIP,
+		networkIpAddrTracker,
+		)
+	return enclave
 }
