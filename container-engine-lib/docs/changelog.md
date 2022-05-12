@@ -1,11 +1,15 @@
 # TBD
 ### Changes
 * The `DockerKurtosisBackend` will now track the free IPs of networks
+* `KurtosisBackend` now has `UserServiceRegistration` CRUD methods
 
 ### Breaking Changes
+TODO something about the user_service_registration ID
 TODO thing about DockerKurtosisBackend needing CIDR and taken IPs
 * Renamed `service.ServiceID` to `user_service_registration.UserServiceID`
     * Users should update their imports/packages accordingly
+* `KurtosisBackend.CreateUserService` now takes in a service registration, rather than a static IP
+    * Users should make sure to call `CreateUserServiceRegistration` and pass in the returned GUID to the user service
 
 # 0.20.0
 ### Features

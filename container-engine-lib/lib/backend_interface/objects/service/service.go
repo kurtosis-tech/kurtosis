@@ -13,6 +13,9 @@ type ServiceGUID string
 // Object that represents POINT-IN-TIME information about an user service
 // Store this object and continue to reference it at your own risk!!!
 type Service struct {
+	// The GUID of the registration that the service consumed to start
+	registrationGuid user_service_registration.UserServiceRegistrationGUID
+
 	id               user_service_registration.ServiceID
 	guid             ServiceGUID
 	status           container_status.ContainerStatus
@@ -23,8 +26,12 @@ type Service struct {
 	maybePublicPorts map[string]*port_spec.PortSpec //Mapping of port-used-by-service -> port-on-the-host-machine where the user can make requests to the port to access the port. If a used port doesn't have a host port bound, then the value will be nil.
 }
 
-func NewService(id user_service_registration.ServiceID, guid ServiceGUID, status container_status.ContainerStatus, enclaveId enclave.EnclaveID, privateIp net.IP, privatePorts map[string]*port_spec.PortSpec, maybePublicIp net.IP, publicPorts map[string]*port_spec.PortSpec) *Service {
-	return &Service{id: id, guid: guid, status: status, enclaveId: enclaveId, privateIp: privateIp, privatePorts: privatePorts, maybePublicIp: maybePublicIp, maybePublicPorts: publicPorts}
+func NewService(registrationGuid user_service_registration.UserServiceRegistrationGUID, id user_service_registration.ServiceID, guid ServiceGUID, status container_status.ContainerStatus, enclaveId enclave.EnclaveID, privateIp net.IP, privatePorts map[string]*port_spec.PortSpec, maybePublicIp net.IP, maybePublicPorts map[string]*port_spec.PortSpec) *Service {
+	return &Service{registrationGuid: registrationGuid, id: id, guid: guid, status: status, enclaveId: enclaveId, privateIp: privateIp, privatePorts: privatePorts, maybePublicIp: maybePublicIp, maybePublicPorts: maybePublicPorts}
+}
+
+func (service *Service) GetRegistrationGUID() user_service_registration.UserServiceRegistrationGUID {
+	return service.registrationGuid
 }
 
 func (service *Service) GetID() user_service_registration.ServiceID {
