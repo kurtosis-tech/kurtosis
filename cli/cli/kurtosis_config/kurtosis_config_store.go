@@ -189,21 +189,6 @@ func  (configStore *kurtosisConfigStore) migrateOverridesAcrossYAMLVersions() (*
 		configVersionOnDisk = config_version.ConfigVersion_v1
 	}
 
-	v0ConfigOverrides := &v0.KurtosisConfigV0{}
-	v1ConfigOverrides := &v1.KurtosisConfigV1{}
-
-	if configVersionOnDisk == config_version.ConfigVersion_v0 {
-		if err := yaml.Unmarshal(fileContentBytes, v0ConfigOverrides); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(fileContentBytes))
-		}
-	} else if configVersionOnDisk == config_version.ConfigVersion_v1 {
-		if err := yaml.Unmarshal(fileContentBytes, v1ConfigOverrides); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(fileContentBytes))
-		}
-	} else {
-		return nil, stacktrace.NewError("Read invalid configuration version number %d from Kurtosis configuration file", configVersionOnDisk)
-	}
-
 	var uncastedConfig interface{}
 	switch configVersionOnDisk {
 	case config_version.ConfigVersion_v0:
