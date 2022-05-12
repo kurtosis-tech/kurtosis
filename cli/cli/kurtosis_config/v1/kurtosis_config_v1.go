@@ -24,9 +24,9 @@ type KurtosisConfigV1 struct {
 	//We set public fields because YAML marshalling needs it on this way
 	//All fields should be pointers, that way we can enforce required fields
 	//by detecting nil pointers.
-	ConfigVersion *int `yaml:"config-version"`
-	ShouldSendMetrics *bool                         `yaml:"should-send-metrics"`
-	KurtosisClusters *map[string]*KurtosisClusterV1 `yaml:"kurtosis-clusters"`
+	ConfigVersion *int `yaml:"config-version,omitempty"`
+	ShouldSendMetrics *bool                         `yaml:"should-send-metrics,omitempty"`
+	KurtosisClusters *map[string]*KurtosisClusterV1 `yaml:"kurtosis-clusters,omitempty"`
 }
 
 func NewDefaultKurtosisConfigV1() *KurtosisConfigV1 {
@@ -79,8 +79,8 @@ func (kurtosisConfigV1 *KurtosisConfigV1) OverlayOverrides(overrides *KurtosisCo
 }
 
 type KurtosisClusterV1 struct {
-	Type *string                      `yaml:"type"`
-	Config *KubernetesClusterConfigV1 `yaml:"config"`
+	Type *string                      `yaml:"type,omitempty"`
+	Config *KubernetesClusterConfigV1 `yaml:"config,omitempty"`
 }
 
 func (kurtosisClusterV1 *KurtosisClusterV1) Validate(clusterId string) error {
@@ -115,9 +115,9 @@ func (kurtosisClusterV1 *KurtosisClusterV1) Validate(clusterId string) error {
 }
 
 type KubernetesClusterConfigV1 struct {
-	KubernetesClusterName *string `yaml:"kubernetes-cluster-name"`
-	StorageClass *string `yaml:"storage-class"`
-	EnclaveSizeInGigabytes *int `yaml:"enclave-size-in-gigabytes"`
+	KubernetesClusterName *string `yaml:"kubernetes-cluster-name,omitempty"`
+	StorageClass *string `yaml:"storage-class,omitempty"`
+	EnclaveSizeInGigabytes *int `yaml:"enclave-size-in-gigabytes,omitempty"`
 }
 
 // ===================== HELPERS==============================
