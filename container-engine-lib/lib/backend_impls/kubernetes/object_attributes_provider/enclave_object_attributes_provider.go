@@ -21,19 +21,12 @@ import (
 
 const (
 	artifactExpansionObjectTimestampFormat = "2006-01-02T15.04.05.000"
-	enclaveNamespacePrefix        = "kurtosis-enclave"
-
-	apiContainerNameSuffix                 = "kurtosis-api"
-	userServiceContainerNameFragment       = "user-service"
-	networkingSidecarContainerNameFragment = "networking-sidecar"
-	artifactExpanderContainerNameFragment  = "files-artifact-expander"
-	artifactExpansionVolumeNameFragment    = "files-artifact-expansion"
-	moduleContainerNameFragment            = "module"
 )
 
 type KubernetesEnclaveObjectAttributesProvider interface {
 	ForEnclaveNamespace(isPartitioningEnabled bool) (KubernetesObjectAttributes, error)
 	ForEnclaveDataVolume() (KubernetesObjectAttributes, error)
+	ForApiContainer() (KubernetesApiContainerObjectAttributesProvider, error)
 }
 
 // Private so it can't be instantiated
@@ -112,14 +105,9 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataVol
 	return objectAttributes, nil
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForApiContainer(
-	ipAddr net.IP,
-	privateGrpcPortId string,
-	privateGrpcPortSpec *port_spec.PortSpec,
-	privateGrpcProxyPortId string,
-	privateGrpcProxyPortSpec *port_spec.PortSpec,
-) (KubernetesObjectAttributes, error) {
-	panic("implement me")
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForApiContainer() (KubernetesApiContainerObjectAttributesProvider, error) {
+	enclaveId := enclave.EnclaveID(provider.enclaveId)
+	return GetKubernetesApiContainerObjectAttributesProvider(enclaveId), nil
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl)ForUserServiceContainer(serviceID service.ServiceID, serviceGUID service.ServiceGUID, privateIpAddr net.IP, privatePorts map[string]*port_spec.PortSpec) (KubernetesObjectAttributes, error) {
@@ -186,7 +174,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEncla
 		return nil, stacktrace.Propagate(err, "Failed to create Kubernetes label value from enclaveId '%v'", provider.enclaveId)
 	}
 	return map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.EnclaveResourceTypeLabelValue,
+		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.EnclaveKurtosisResourceTypeLabelValue,
 		label_key_consts.EnclaveIDLabelKey: enclaveIdLabelValue,
 	}, nil
 }

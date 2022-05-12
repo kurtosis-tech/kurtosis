@@ -35,11 +35,15 @@ const (
 	// The ID of the GRPC port for Kurtosis-internal containers (e.g. API container, engine, modules, etc.) which will
 	//  be stored in the port spec label
 	kurtosisInternalContainerGrpcPortSpecId = "grpc"
+	// The GRPC port protocol for Kurtosis-internal containers
+	kurtosisInternalContainerGrpcPortProtocol = apiv1.ProtocolTCP
 
 	// The ID of the GRPC proxy port for Kurtosis-internal containers. This is necessary because
 	// Typescript's grpc-web cannot communicate directly with GRPC ports, so Kurtosis-internal containers
 	// need a proxy  that will translate grpc-web requests before they hit the main GRPC server
 	kurtosisInternalContainerGrpcProxyPortSpecId = "grpcProxy"
+	// The GRPC proxy port protocol for Kurtosis-internal containers
+	kurtosisInternalContainerGrpcProxyPortProtocol = apiv1.ProtocolTCP
 
 	// Port number string parsing constants
 	publicPortNumStrParsingBase = 10
@@ -239,12 +243,12 @@ func getStringMapFromAnnotationMap(labelMap map[*kubernetes_annotation_key.Kuber
 
 // getPublicPortSpecFromServicePort returns a port_spec representing a kurtosis port spec for a service port in Kubernetes
 func getPublicPortSpecFromServicePort(servicePort apiv1.ServicePort, portProtocol port_spec.PortProtocol) (*port_spec.PortSpec, error) {
-	publicPortNumStr := strconv.FormatInt(int64(servicePort.Port), 10)
+	publicPortNumStr := strconv.FormatInt(int64(servicePort.Port), publicPortNumStrParsingBase)
 	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, publicPortNumStrParsingBase, publicPortNumStrParsingBits)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred parsing engine server public port string '%v' using base '%v' and uint bits '%v'",
+			"An error occurred parsing public port string '%v' using base '%v' and uint bits '%v'",
 			publicPortNumStr,
 			publicPortNumStrParsingBase,
 			publicPortNumStrParsingBits,
@@ -355,7 +359,7 @@ func (backend *KubernetesKurtosisBackend) getEnclaveDataPersistentVolumeClaim(ct
 func getEnclaveMatchLabels() map[string]string {
 	matchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString():                label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.KurtosisResourceTypeLabelKey.GetString(): label_value_consts.EnclaveResourceTypeLabelValue.GetString(),
+		label_key_consts.KurtosisResourceTypeLabelKey.GetString(): label_value_consts.EnclaveKurtosisResourceTypeLabelValue.GetString(),
 	}
 	return matchLabels
 }

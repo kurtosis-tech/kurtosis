@@ -609,7 +609,7 @@ func getEngineContainers(containerImageAndTag string, engineEnvVars map[string]s
 func getEngineMatchLabels() map[string]string {
 	engineMatchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString():        label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.KurtosisResourceTypeLabelKey.GetString(): label_value_consts.EngineResourceTypeLabelValue.GetString(),
+		label_key_consts.KurtosisResourceTypeLabelKey.GetString(): label_value_consts.EngineKurtosisResourceTypeLabelValue.GetString(),
 	}
 	return engineMatchLabels
 }
@@ -763,7 +763,11 @@ func (backend *KubernetesKurtosisBackend) createEngineService(
 	privateGrpcPortSpec *port_spec.PortSpec,
 	privateGrpcProxyPortSpec *port_spec.PortSpec,
 ) (*apiv1.Service, error) {
-	engineServiceAttributes, err := engineAttributesProvider.ForEngineService(kurtosisInternalContainerGrpcPortSpecId, privateGrpcPortSpec, kurtosisInternalContainerGrpcProxyPortSpecId, privateGrpcProxyPortSpec)
+	engineServiceAttributes, err := engineAttributesProvider.ForEngineService(
+		kurtosisInternalContainerGrpcPortSpecId,
+		privateGrpcPortSpec,
+		kurtosisInternalContainerGrpcProxyPortSpecId,
+		privateGrpcProxyPortSpec)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -784,13 +788,13 @@ func (backend *KubernetesKurtosisBackend) createEngineService(
 		{
 			Name:     object_name_constants.KurtosisInternalContainerGrpcPortName.GetString(),
 			// TODO MAKE THIS DYNAMIC FROM THE PORTSPEC!!
-			Protocol: apiv1.ProtocolTCP,
+			Protocol: kurtosisInternalContainerGrpcPortProtocol,
 			Port:     grpcPortInt32,
 		},
 		{
 			Name:     object_name_constants.KurtosisInternalContainerGrpcProxyPortName.GetString(),
 			// TODO MAKE THIS DYNAMIC FROM THE PORTSPEC!!
-			Protocol: apiv1.ProtocolTCP,
+			Protocol: kurtosisInternalContainerGrpcProxyPortProtocol,
 			Port:     grpcProxyPortInt32,
 		},
 	}

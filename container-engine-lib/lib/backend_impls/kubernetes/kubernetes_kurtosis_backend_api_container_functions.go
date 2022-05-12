@@ -77,7 +77,12 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		)
 	}
 
-	apiContainerAttributesProvider, err := backend.objAttrsProvider.ForApiContainer(enclaveId)
+	enclaveAttributesProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,"An error occurred getting the enclave attributes provider using enclave ID '%v'", enclaveId)
+	}
+
+	apiContainerAttributesProvider, err := enclaveAttributesProvider.ForApiContainer()
 	if err != nil {
 		return nil, stacktrace.Propagate(err,"An error occurred getting the api container attributes provider using enclave ID '%v'", enclaveId)
 	}
@@ -124,7 +129,23 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data persistent volume claim for enclave '%v' in namespace '%v'", enclaveId, enclaveNamespaceName)
 	}
 
-	apiContainerContainers, apiContainerVolumes := getApiContainerContainersAndVolumes(image, envVars, enclaveDataPersistentVolumeClaim, enclaveDataVolumeDirpath)
+	grpcPortInt32 := int32(grpcPortNum)
+	grpcProxyPortInt32 := int32(grpcProxyPortNum)
+
+	containerPorts := []apiv1.ContainerPort{
+		{
+			Name:          object_name_constants.KurtosisInternalContainerGrpcPortName.GetString(),
+			Protocol:      kurtosisInternalContainerGrpcPortProtocol,
+			ContainerPort: grpcPortInt32,
+		},
+		{
+			Name:          object_name_constants.KurtosisInternalContainerGrpcProxyPortName.GetString(),
+			Protocol:      kurtosisInternalContainerGrpcProxyPortProtocol,
+			ContainerPort: grpcProxyPortInt32,
+		},
+	}
+
+	apiContainerContainers, apiContainerVolumes := getApiContainerContainersAndVolumes(image, containerPorts, envVars, enclaveDataPersistentVolumeClaim, enclaveDataVolumeDirpath)
 
 	// Create pods with api container containers and volumes in Kubernetes
 	if _, err = backend.kubernetesManager.CreatePod(ctx, enclaveNamespaceName, apiContainerPodName, apiContainerPodLabels, apiContainerPodAnnotations, apiContainerContainers, apiContainerVolumes, apiContainerServiceAccountName); err != nil {
@@ -141,12 +162,16 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	}()
 
 	// Get Service Attributes
-	apiContainerServiceAttributes, err := apiContainerAttributesProvider.ForApiContainerService(object_name_constants.KurtosisInternalContainerGrpcPortName.GetString(), privateGrpcPortSpec, object_name_constants.KurtosisInternalContainerGrpcProxyPortName.GetString(), privateGrpcProxyPortSpec)
+	apiContainerServiceAttributes, err := apiContainerAttributesProvider.ForApiContainerService(
+		kurtosisInternalContainerGrpcPortSpecId,
+		privateGrpcPortSpec,
+		kurtosisInternalContainerGrpcProxyPortSpecId,
+		privateGrpcProxyPortSpec)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred getting the api container service attributes using private grpc port spec '%+v', and "+
-				"private grpc proxy port spec '%v'",
+				"private grpc proxy port spec '%+v'",
 			privateGrpcPortSpec,
 			privateGrpcProxyPortSpec,
 		)
@@ -154,25 +179,25 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	apiContainerServiceName := apiContainerServiceAttributes.GetName().GetString()
 	apiContainerServiceLabels := getStringMapFromLabelMap(apiContainerServiceAttributes.GetLabels())
 	apiContainerServiceAnnotations := getStringMapFromAnnotationMap(apiContainerServiceAttributes.GetAnnotations())
-	grpcPortInt32 := int32(grpcPortNum)
-	grpcProxyPortInt32 := int32(grpcProxyPortNum)
+
 	// Define service ports. These hook up to ports on the containers running in the api container pod
 	// Kubernetes will assign a public port number to them
 	servicePorts := []apiv1.ServicePort{
 		{
 			Name:     object_name_constants.KurtosisInternalContainerGrpcPortName.GetString(),
-			Protocol: apiv1.ProtocolTCP,
+			Protocol: kurtosisInternalContainerGrpcPortProtocol,
 			Port:     grpcPortInt32,
 		},
 		{
 			Name:     object_name_constants.KurtosisInternalContainerGrpcProxyPortName.GetString(),
-			Protocol: apiv1.ProtocolTCP,
+			Protocol: kurtosisInternalContainerGrpcProxyPortProtocol,
 			Port:     grpcProxyPortInt32,
 		},
 	}
 
 	// Create Service
-	if _, err = backend.kubernetesManager.CreateService(ctx, enclaveNamespaceName, apiContainerServiceName, apiContainerServiceLabels, apiContainerServiceAnnotations, apiContainerPodLabels, externalServiceType, servicePorts); err != nil {
+	service, err := backend.kubernetesManager.CreateService(ctx, enclaveNamespaceName, apiContainerServiceName, apiContainerServiceLabels, apiContainerServiceAnnotations, apiContainerPodLabels, externalServiceType, servicePorts)
+	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the service with name '%s' in namespace '%s' with ports '%v' and '%v'", apiContainerServiceName, enclaveNamespaceName, grpcPortInt32, grpcProxyPortInt32)
 	}
 	var shouldRemoveService = true
@@ -184,12 +209,6 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 			}
 		}
 	}()
-
-	//
-	service, err := backend.kubernetesManager.GetServiceByName(ctx, enclaveNamespaceName, apiContainerServiceName)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the service with name '%v' in namespace '%v'", service.Name, enclaveNamespaceName)
-	}
 
 	resultApiContainer, err := getApiContainerObjectFromKubernetesService(service)
 	if err != nil {
@@ -251,7 +270,7 @@ func (backend *KubernetesKurtosisBackend) StopAPIContainers(
 				return nil, nil, stacktrace.Propagate(err, "An error occurred getting the api container pod for enclave with ID '%v' in namespace '%v'", apiContainerObj.GetEnclaveID(), enclaveNamespace)
 			}
 			if _, found := apiContainerServicesToApiContainerPodsMap[apiContainerServiceName]; found {
-				return nil, nil, stacktrace.NewError("Api container service name '%v' already exist in the api container services to api container pod map '%+v'; it should never happens; this is a bug in Kurtosis", apiContainerServiceName, apiContainerServicesToApiContainerPodsMap)
+				return nil, nil, stacktrace.NewError("Api container service name '%v' already exist in the api container services to api container pod map '%+v'; this should never happen and is a bug", apiContainerServiceName, apiContainerServicesToApiContainerPodsMap)
 			}
 			apiContainerServicesToApiContainerPodsMap[apiContainerServiceName] = apiContainerPod.GetName()
 		}
@@ -830,6 +849,7 @@ func getApiContainerObjectFromKubernetesService(service *apiv1.Service) (*api_co
 
 func getApiContainerContainersAndVolumes(
 	containerImageAndTag string,
+	containerPorts []apiv1.ContainerPort,
 	envVars map[string]string,
 	enclaveDataPersistentVolumeClaim *apiv1.PersistentVolumeClaim,
 	enclaveDataVolumeDirpath string,
@@ -851,6 +871,7 @@ func getApiContainerContainersAndVolumes(
 			Name:  kurtosisApiContainerContainerName,
 			Image: containerImageAndTag,
 			Env:   containerEnvVars,
+			Ports: containerPorts,
 			VolumeMounts: []apiv1.VolumeMount{
 				{
 					Name:      enclaveDataPersistentVolumeClaim.Spec.VolumeName,
@@ -886,7 +907,7 @@ func getContainerStatusFromKubernetesService(service *apiv1.Service) container_s
 func getApiContainerMatchLabels() map[string]string {
 	engineMatchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString():                label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.KurtosisResourceTypeLabelKey.GetString(): label_value_consts.APIContainerContainerTypeLabelValue.GetString(),
+		label_key_consts.KurtosisResourceTypeLabelKey.GetString(): label_value_consts.APIContainerKurtosisResourceTypeLabelValue.GetString(),
 	}
 	return engineMatchLabels
 }

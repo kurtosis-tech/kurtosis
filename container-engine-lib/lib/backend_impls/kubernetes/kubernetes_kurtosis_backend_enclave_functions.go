@@ -117,7 +117,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		}
 	}()
 
-	enclaveObj := newEnclave(enclaveId, enclave.EnclaveStatus_Empty)
+	enclaveObj := newEnclave_TODO_REMOVE(enclaveId, enclave.EnclaveStatus_Empty)
 
 	shouldDeleteVolume = false
 	shouldDeleteNamespace = false
@@ -183,7 +183,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaves(
 
 		enclaveIdStr, found := enclaveNamespaceLabels[label_key_consts.EnclaveIDLabelKey.GetString()]
 		if !found {
-			return nil, stacktrace.NewError("Expected to find a label with name '%v' in Kubernetes namespace '%v', instead no such label was found", label_key_consts.EnclaveIDLabelKey.GetString(), enclaveNamespaceName)
+			return nil, stacktrace.NewError("Expected to find a label with name '%v' in Kubernetes namespace '%v', but no such label was found", label_key_consts.EnclaveIDLabelKey.GetString(), enclaveNamespaceName)
 		}
 		enclaveId := enclave.EnclaveID(enclaveIdStr)
 		// If the IDs filter is specified, drop enclaves not matching it
@@ -210,7 +210,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaves(
 			}
 		}
 
-		enclaveObj := newEnclave(enclaveId, enclaveStatus)
+		enclaveObj := newEnclave_TODO_REMOVE(enclaveId, enclaveStatus)
 
 		matchingEnclaves[enclaveNamespaceName] = enclaveObj
 	}
@@ -256,7 +256,7 @@ func getEnclaveStatusFromEnclavePods(enclavePods []apiv1.Pod) (enclave.EnclaveSt
 	return resultEnclaveStatus, nil
 }
 
-func newEnclave(id enclave.EnclaveID, status enclave.EnclaveStatus) *enclave.Enclave {
+func newEnclave_TODO_REMOVE(id enclave.EnclaveID, status enclave.EnclaveStatus) *enclave.Enclave {
 	//We don't need to establish these values for Kubernetes Backend
 	//TODO these values will be removed when we finish the Kubernetes implementation
 	networkID := ""
