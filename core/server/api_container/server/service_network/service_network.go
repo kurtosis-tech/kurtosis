@@ -107,7 +107,6 @@ func NewServiceNetworkImpl(
 			defaultPartitionId,
 			defaultPartitionConnection,
 		),
-		serviceRegistrationsByRegistrationGuid: map[user_service_registration.UserServiceRegistrationGUID]*user_service_registration.UserServiceRegistration{},
 		serviceRunInfo:                         map[user_service_registration.ServiceID]serviceRunInfo{},
 		networkingSidecars:                     map[user_service_registration.ServiceID]networking_sidecar.NetworkingSidecarWrapper{},
 		networkingSidecarManager:               networkingSidecarManager,
@@ -142,7 +141,27 @@ func (network *ServiceNetwork) Repartition(
 			" after repartition, meaning that no partitions are actually being enforced!")
 	}
 
-	if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, network.serviceRegistrationsByRegistrationGuid, network.networkingSidecars); err != nil {
+	allInvolvedServiceIds := map[user_service_registration.ServiceID]bool{}
+	for serviceIdA, allServiceIdBs := range servicePacketLossConfigurationsByServiceID {
+		allInvolvedServiceIds[serviceIdA] = true
+		for serviceIdB := range allServiceIdBs {
+			allInvolvedServiceIds[serviceIdB] = true
+		}
+	}
+
+	allInvolvedRegistrations, err := network.kurtosisBackend.GetUserServiceRegistrations(
+		ctx,
+		&user_service_registration.UserServiceRegistrationFilters{
+			ServiceIDs: allInvolvedServiceIds,
+		},
+	)
+
+	registrationsByServiceId := map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration{}
+	for _, registration := range allInvolvedRegistrations {
+		registrationsByServiceId[registration.GetServiceID()] = registration
+	}
+
+	if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, registrationsByServiceId, network.networkingSidecars); err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating the traffic control configuration to match the target service packet loss configurations after repartitioning")
 	}
 	return nil
@@ -642,9 +661,9 @@ NOTE: This is not thread-safe, so it must be within a function that locks mutex!
 */
 func updateTrafficControlConfiguration(
 	ctx context.Context,
-	kurtosisBackend backend_interface.KurtosisBackend,
-	targetServicePacketLossConfigs map[user_service_registration.UserServiceRegistrationGUID]map[user_service_registration.UserServiceRegistrationGUID]float32,
-	networkingSidecars map[user_service_registration.UserServiceRegistrationGUID]networking_sidecar.NetworkingSidecarWrapper,
+	targetServicePacketLossConfigs map[user_service_registration.ServiceID]map[user_service_registration.ServiceID]float32,
+	registrationsByServiceId map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration,
+	networkingSidecars map[user_service_registration.ServiceID]networking_sidecar.NetworkingSidecarWrapper,
 ) error {
 
 	// TODO PERF: Run the container updates in parallel, with the container being modified being the most important
@@ -652,8 +671,7 @@ func updateTrafficControlConfiguration(
 	for serviceId, allOtherServicesPacketLossConfigurations := range targetServicePacketLossConfigs {
 		allPacketLossPercentageForIpAddresses := map[string]float32{}
 		for otherServiceId, otherServicePacketLossPercentage := range allOtherServicesPacketLossConfigurations {
-
-			infoForService, found := serviceRegistrationInfo[otherServiceId]
+			registration, found := registrationsByServiceId[otherServiceId]
 			if !found {
 				return stacktrace.NewError(
 					"Service with ID '%v' needs to add packet loss configuration for service with ID '%v', but the latter "+
@@ -662,7 +680,7 @@ func updateTrafficControlConfiguration(
 					otherServiceId)
 			}
 
-			allPacketLossPercentageForIpAddresses[infoForService.privateIpAddr.String()] = otherServicePacketLossPercentage
+			allPacketLossPercentageForIpAddresses[registration.GetIPAddress().String()] = otherServicePacketLossPercentage
 		}
 
 		sidecar, found := networkingSidecars[serviceId]
