@@ -7,17 +7,16 @@ import (
 const (
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// If these value change, it will lead to the Kurtosis engine losing track of old containers
-	//  which will cause a resource leak on the user's system!
+	// which will cause a resource leak on the user's system!
 	//
-	//   If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
-	//
+	// If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
+	// These immutable values track resources between kurtosis versions.
 	labelKeyPrefixStr       	= "kurtosistech.com/"
 	appIdLabelKeyStr        	= labelKeyPrefixStr + "app-id"
 	resourceTypeLabelKeyStr 	= labelKeyPrefixStr + "resource-type"
-	volumeTypeLabelKeyStr 		= labelKeyPrefixStr + "volume-type"
-	containerTypeLabelKeyStr 	= labelKeyPrefixStr + "container-type"
-	podTypeLabelKeyStr 			= labelKeyPrefixStr + "pod-type"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+	volumeTypeLabelKeyStr 		= labelKeyPrefixStr + "volume-type"
 
 	// A label to identify a Kurtosis resource (e.g. network, container, etc.) by its id
 	idLabelKeyStr = labelKeyPrefixStr + "id"
@@ -44,8 +43,6 @@ const (
 var AppIDLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(appIdLabelKeyStr)
 var KurtosisResourceTypeLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(resourceTypeLabelKeyStr)
 var KurtosisVolumeTypeLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(volumeTypeLabelKeyStr)
-var KurtosisContainerTypeLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(containerTypeLabelKeyStr)
-var KurtosisPodTypeLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(podTypeLabelKeyStr)
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 var IDLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(idLabelKeyStr)
