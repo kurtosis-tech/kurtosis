@@ -3,7 +3,6 @@ package kubernetes
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager/consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/object_name_constants"
@@ -93,20 +92,103 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	}
 	enclaveNamespaceName := enclaveNamespace.GetName()
 
-	//Create api container role based resources and get the api container service account name that was created in the enclave namespace
-	apiContainerServiceAccountName, err := backend.createApiContainerRoleBasedResources(ctx, enclaveNamespaceName, apiContainerAttributesProvider)
+	//Create the service account
+	serviceAccountAttributes, err := apiContainerAttributesProvider.ForApiContainerServiceAccount()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating api container service account, roles and role bindings for api container for enclave with ID '%v' in namespace '%v'", enclaveId, enclaveNamespaceName)
+		return nil, stacktrace.Propagate(
+			err,
+			"Expected to be able to get api container attributes for a Kubernetes service account, " +
+				"instead got a non-nil error",
+		)
 	}
-	shouldRemoveAllApiContainerRoleBasedResources := true
-	defer func(){
-		if shouldRemoveAllApiContainerRoleBasedResources {
-			enclaveIds := map[enclave.EnclaveID]bool {
-				enclaveId: true,
+
+	serviceAccountName := serviceAccountAttributes.GetName().GetString()
+	serviceAccountLabels := getStringMapFromLabelMap(serviceAccountAttributes.GetLabels())
+	apiContainerServiceAccount, err := backend.kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, enclaveNamespaceName, serviceAccountLabels);
+	if err != nil {
+		return nil,  stacktrace.Propagate(err, "An error occurred creating service account '%v' with labels '%+v' in namespace '%v'", serviceAccountName, serviceAccountLabels, enclaveNamespaceName)
+	}
+	apiContainerServiceAccountName := apiContainerServiceAccount.GetName()
+	shouldRemoveServiceAccount := true
+	defer func() {
+		if shouldRemoveServiceAccount {
+			if err := backend.kubernetesManager.RemoveServiceAccount(ctx, apiContainerServiceAccountName, enclaveNamespaceName); err != nil {
+				logrus.Errorf("Creating the api container didn't complete successfully, so we tried to delete service account '%v' in namespace '%v' that we created but an error was thrown:\n%v", apiContainerServiceAccountName, enclaveNamespaceName, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove service account with name '%v'!!!!!!!", apiContainerServiceAccountName)
 			}
-			if _, resultErroredApiContainerIds := backend.removeApiContainerRoleBasedResources(ctx, enclaveNamespaceName, enclaveIds); len(resultErroredApiContainerIds) > 0{
-				logrus.Errorf("Creating the api container didn't complete successfully, so we tried to delete the api container Kubernetes role based resources that we created for enclave with ID '%v' but an error was thrown:\n%v", enclaveId, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes role based resources for api container in enclave with ID '%v' and namespace '%v'!!!!!!!", enclaveId, enclaveNamespaceName)
+		}
+	}()
+
+	//Create the role
+	rolesAttributes, err := apiContainerAttributesProvider.ForApiContainerRole()
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"Expected to be able to get api container attributes for a Kubernetes role, " +
+				"instead got a non-nil error",
+		)
+	}
+
+	roleName := rolesAttributes.GetName().GetString()
+	roleLabels := getStringMapFromLabelMap(rolesAttributes.GetLabels())
+	rolePolicyRules := []rbacv1.PolicyRule{
+		{
+			Verbs: []string{consts.CreateKubernetesVerb, consts.UpdateKubernetesVerb, consts.PatchKubernetesVerb, consts.DeleteKubernetesVerb, consts.GetKubernetesVerb, consts.ListKubernetesVerb, consts.WatchKubernetesVerb},
+			APIGroups: []string{rbacv1.APIGroupAll},
+			Resources: []string{consts.PodsKubernetesResource, consts.ServicesKubernetesResource, consts.PersistentVolumeClaimsKubernetesResource},
+		},
+	}
+
+	if _, err = backend.kubernetesManager.CreateRole(ctx, roleName, enclaveNamespaceName, rolePolicyRules, roleLabels); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating role '%v' with policy rules '%+v' " +
+			"and labels '%+v' in namespace '%v'", roleName, rolePolicyRules, roleLabels, enclaveNamespaceName)
+	}
+	shouldRemoveRole := true
+	defer func() {
+		if shouldRemoveRole {
+			if err := backend.kubernetesManager.RemoveRole(ctx, roleName, enclaveNamespaceName); err != nil {
+				logrus.Errorf("Creating the api container didn't complete successfully, so we tried to delete role '%v' in namespace '%v' that we created but an error was thrown:\n%v", roleName, enclaveNamespaceName, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove role with name '%v'!!!!!!!", roleName)
+			}
+		}
+	}()
+
+	//Create the role binding to join the service account with the role
+	roleBindingsAttributes, err := apiContainerAttributesProvider.ForApiContainerRoleBindings()
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"Expected to be able to get api container attributes for a Kubernetes role bindings, " +
+				"instead got a non-nil error",
+		)
+	}
+
+	roleBindingName := roleBindingsAttributes.GetName().GetString()
+	roleBindingsLabels := getStringMapFromLabelMap(roleBindingsAttributes.GetLabels())
+	roleBindingsSubjects := []rbacv1.Subject{
+		{
+			Kind:      rbacv1.ServiceAccountKind,
+			Name:      serviceAccountName,
+			Namespace: enclaveNamespaceName,
+		},
+	}
+
+	roleBindingsRoleRef := rbacv1.RoleRef{
+		APIGroup: consts.RbacAuthorizationApiGroup,
+		Kind:     consts.RoleKubernetesResourceType,
+		Name:     roleName,
+	}
+
+	if _, err := backend.kubernetesManager.CreateRoleBindings(ctx, roleBindingName, enclaveNamespaceName, roleBindingsSubjects, roleBindingsRoleRef, roleBindingsLabels); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating role bindings '%v' with subjects " +
+			"'%+v' and role ref '%+v' in namespace '%v'", roleBindingName, roleBindingsSubjects, roleBindingsRoleRef, enclaveNamespaceName)
+	}
+	shouldRemoveRoleBinding := true
+	defer func() {
+		if shouldRemoveRoleBinding {
+			if err := backend.kubernetesManager.RemoveRoleBindings(ctx, roleBindingName, enclaveNamespaceName); err != nil {
+				logrus.Errorf("Creating the api container didn't complete successfully, so we tried to delete role binding '%v' in namespace '%v' that we created but an error was thrown:\n%v", roleBindingName, enclaveNamespaceName, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove role binding with name '%v'!!!!!!!", roleBindingName)
 			}
 		}
 	}()
@@ -215,9 +297,11 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred getting api container object from Kubernetes service '%+v'", service)
 	}
 
+	shouldRemoveRoleBinding = false
+	shouldRemoveRole = false
+	shouldRemoveServiceAccount = false
 	shouldRemovePod = false
 	shouldRemoveService = false
-	shouldRemoveAllApiContainerRoleBasedResources = false
 	return resultApiContainer, nil
 }
 
@@ -491,88 +575,6 @@ func (backend *KubernetesKurtosisBackend) removeApiContainerServicesAndApiContai
 	}
 
 	return successfulServices, failedServices
-}
-
-func (backend *KubernetesKurtosisBackend) createApiContainerRoleBasedResources(
-	ctx context.Context,
-	namespace string,
-	apiContainerAttributesProvider object_attributes_provider.KubernetesApiContainerObjectAttributesProvider,
-) (
-	resultApiContainerServiceAccountName string,
-	resultErr error,
-) {
-
-	//First create the service account
-	serviceAccountAttributes, err := apiContainerAttributesProvider.ForApiContainerServiceAccount()
-	if err != nil {
-		return "", stacktrace.Propagate(
-			err,
-			"Expected to be able to get api container attributes for a Kubernetes service account, instead got a non-nil error",
-		)
-	}
-
-	serviceAccountName := serviceAccountAttributes.GetName().GetString()
-	serviceAccountLabels := getStringMapFromLabelMap(serviceAccountAttributes.GetLabels())
-
-	if _, err = backend.kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, namespace, serviceAccountLabels); err != nil {
-		return "",  stacktrace.Propagate(err, "An error occurred creating service account '%v' with labels '%+v' in namespace '%v'", serviceAccountName, serviceAccountLabels, namespace)
-	}
-
-	//Then the role
-	rolesAttributes, err := apiContainerAttributesProvider.ForApiContainerRole()
-	if err != nil {
-		return "", stacktrace.Propagate(
-			err,
-			"Expected to be able to get api container attributes for a Kubernetes role, instead got a non-nil error",
-		)
-	}
-
-	roleName := rolesAttributes.GetName().GetString()
-	roleLabels := getStringMapFromLabelMap(rolesAttributes.GetLabels())
-
-	rolePolicyRules := []rbacv1.PolicyRule{
-		{
-			Verbs: []string{consts.CreateKubernetesVerb, consts.UpdateKubernetesVerb, consts.PatchKubernetesVerb, consts.DeleteKubernetesVerb, consts.GetKubernetesVerb, consts.ListKubernetesVerb, consts.WatchKubernetesVerb},
-			APIGroups: []string{rbacv1.APIGroupAll},
-			Resources: []string{consts.PodsKubernetesResource, consts.ServicesKubernetesResource, consts.PersistentVolumeClaimsKubernetesResource},
-		},
-	}
-
-	if _, err = backend.kubernetesManager.CreateRole(ctx, roleName, namespace, rolePolicyRules, roleLabels); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred creating role '%v' with policy rules '%+v' and labels '%+v' in namespace '%v'", roleName, rolePolicyRules, roleLabels, namespace)
-	}
-
-	//And finally, the role binding
-	roleBindingsAttributes, err := apiContainerAttributesProvider.ForApiContainerRoleBindings()
-	if err != nil {
-		return "", stacktrace.Propagate(
-			err,
-			"Expected to be able to get api container attributes for a Kubernetes role bindings, instead got a non-nil error",
-		)
-	}
-
-	roleBindingsName := roleBindingsAttributes.GetName().GetString()
-	roleBindingsLabels := getStringMapFromLabelMap(roleBindingsAttributes.GetLabels())
-
-	roleBindingsSubjects := []rbacv1.Subject{
-		{
-			Kind:      rbacv1.ServiceAccountKind,
-			Name:      serviceAccountName,
-			Namespace: namespace,
-		},
-	}
-
-	roleBindingsRoleRef := rbacv1.RoleRef{
-		APIGroup: consts.RbacAuthorizationApiGroup,
-		Kind:     consts.RoleKubernetesResourceType,
-		Name:     roleName,
-	}
-
-	if _, err := backend.kubernetesManager.CreateRoleBindings(ctx, roleBindingsName, namespace, roleBindingsSubjects, roleBindingsRoleRef, roleBindingsLabels); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred creating role bindings '%v' with subjects '%+v' and role ref '%+v' in namespace '%v'", roleBindingsName, roleBindingsSubjects, roleBindingsRoleRef, namespace)
-	}
-
-	return serviceAccountName, nil
 }
 
 // TODO parallelize to improve performance
