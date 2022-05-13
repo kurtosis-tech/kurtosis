@@ -1,5 +1,9 @@
 # TBD
 
+# 1.46.2
+### Changes
+* Upgraded to container-engine-lib 0.20.2
+
 # 1.46.1
 ### Features
 * Upgrade to container-engine-lib 0.20.0, which provides a bunch of new Kubernetes features
