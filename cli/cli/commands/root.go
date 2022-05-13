@@ -22,6 +22,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_send_metrics_election"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -315,7 +316,7 @@ func getLatestCLIReleaseVersionFromCacheFile(filepath string) (string, error) {
 	return latestReleaseVersion, nil
 }
 
-func getKurtosisConfig() (*kurtosis_config.KurtosisConfig, error) {
+func getKurtosisConfig() (*resolved_config.KurtosisConfig, error) {
 	configStore := kurtosis_config.GetKurtosisConfigStore()
 	configProvider := kurtosis_config.NewKurtosisConfigProvider(configStore)
 

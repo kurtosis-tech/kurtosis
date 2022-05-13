@@ -1,6 +1,7 @@
 package kurtosis_config
 
 import (
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -13,10 +14,10 @@ func NewKurtosisConfigProvider(configStore *kurtosisConfigStore) *KurtosisConfig
 	return &KurtosisConfigProvider{configStore: configStore}
 }
 
-func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*KurtosisConfig, error){
+func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*resolved_config.KurtosisConfig, error){
 
 	var (
-		kurtosisConfig *KurtosisConfig
+		kurtosisConfig *resolved_config.KurtosisConfig
 		err            error
 	)
 

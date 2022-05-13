@@ -192,4 +192,3 @@ func getDefaultMinikubeKubernetesClusterConfig() *KubernetesClusterConfigV1 {
 	return &clusterConfig
 }
 
-

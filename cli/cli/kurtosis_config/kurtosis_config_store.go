@@ -4,6 +4,7 @@ import (
 	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/config_version"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/v0"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/v1"
 	"github.com/kurtosis-tech/stacktrace"
@@ -63,7 +64,7 @@ func (configStore *kurtosisConfigStore) HasConfig() (bool, error) {
 }
 
 //TDOD if this process tends to be slow we could improve performance applying "Write Through and Write Back in Cache"
-func (configStore *kurtosisConfigStore) GetConfig() (*KurtosisConfig, error) {
+func (configStore *kurtosisConfigStore) GetConfig() (*resolved_config.KurtosisConfig, error) {
 	configStore.mutex.RLock()
 	defer configStore.mutex.RUnlock()
 
@@ -75,7 +76,7 @@ func (configStore *kurtosisConfigStore) GetConfig() (*KurtosisConfig, error) {
 	return kurtosisConfig, nil
 }
 
-func (configStore *kurtosisConfigStore) SetConfig(kurtosisConfig *KurtosisConfig) error {
+func (configStore *kurtosisConfigStore) SetConfig(kurtosisConfig *resolved_config.KurtosisConfig) error {
 	configStore.mutex.Lock()
 	defer configStore.mutex.Unlock()
 
@@ -89,11 +90,7 @@ func (configStore *kurtosisConfigStore) SetConfig(kurtosisConfig *KurtosisConfig
 //                                     Private Helper Functions
 // ====================================================================================================
 
-type kurtosisConfigVersionDetector struct {
-	ConfigVersion config_version.ConfigVersion `yaml:"config-version"`
-}
-
-func (configStore *kurtosisConfigStore) saveKurtosisConfigYAMLFile(kurtosisConfig *KurtosisConfig) error {
+func (configStore *kurtosisConfigStore) saveKurtosisConfigYAMLFile(kurtosisConfig *resolved_config.KurtosisConfig) error {
 	err := kurtosisConfig.Validate()
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to validate configuration before saving to file.")
@@ -117,9 +114,9 @@ func (configStore *kurtosisConfigStore) saveKurtosisConfigYAMLFile(kurtosisConfi
 	return nil
 }
 
-func (configStore *kurtosisConfigStore) getKurtosisConfigFromYAMLFile() (*KurtosisConfig, error) {
+func (configStore *kurtosisConfigStore) getKurtosisConfigFromYAMLFile() (*resolved_config.KurtosisConfig, error) {
 	// Initialize default configuration for the latest version available
-	kurtosisConfig := NewDefaultKurtosisConfig()
+	kurtosisConfig := resolved_config.NewDefaultKurtosisConfig()
 	// Overlay overrides that are now stored in the latest versions' override struct
 	// kurtosisConfig.OverlayOverrides(v1ConfigOverrides)
 	kurtosisConfigOverrides, err := configStore.migrateOverridesAcrossYAMLVersions()
