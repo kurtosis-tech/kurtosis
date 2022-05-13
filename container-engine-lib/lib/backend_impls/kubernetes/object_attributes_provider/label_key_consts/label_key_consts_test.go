@@ -14,6 +14,8 @@ const (
 )
 
 //When Kurtosis versions change, these particular label key strings must be equal.
+//If these change between versions, Kurtosis will not be able to find and manage resources with these label keys.
+//They will effectively be lost to Kurtosis and the user will have to clean up any mess.
 var crossVersionLabelKeyStringsToEnsure = map[string]string{
 	labelKeyPrefixStr:       	expectedLabelKeyPrefixStr,
 	appIdLabelKeyStr:        	expectedAppIdLabelKeyStr,
