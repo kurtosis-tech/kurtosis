@@ -3,6 +3,13 @@
 * `RegisterService` endpoint now returns a service registration GUID
 * `StartService` endpoint now requires a service registration GUID
 
+### Breaking Changes
+* Removed the following fields from the `APIContainerLauncher.Launch` methods:
+    * `subnetCidr`
+    * `networkIp`
+    * `gatewayIp`
+    * `apiContainerIp`
+
 # 1.46.1
 ### Features
 * Upgrade to container-engine-lib 0.20.0, which provides a bunch of new Kubernetes features
