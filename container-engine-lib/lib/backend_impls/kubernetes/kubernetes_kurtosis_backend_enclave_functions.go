@@ -2,11 +2,14 @@ package kubernetes
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
+	"io/ioutil"
 	apiv1 "k8s.io/api/core/v1"
 	"os"
 	"path"
@@ -15,8 +18,8 @@ import (
 
 const (
 	// Name to give the file that we'll write for storing specs of pods, containers, etc.
-	kubernetesObjectSpecFilename = "spec.json"
-	containerLogsFilename        = "output.log"
+	podSpecFilename             = "spec.json"
+	containerLogsFilenameSuffix = ".log"
 
 	shouldFetchStoppedContainersWhenDumpingEnclave = true
 
@@ -218,22 +221,36 @@ func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, encla
 			)
 		}
 
-		// TODO DUMP POD SPEC
+		jsonSerializedPodSpecBytes, err := json.MarshalIndent(pod.Spec, enclaveDumpJsonSerializationPrefix, enclaveDumpJsonSerializationIndent)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred serializing the spec of pod '%v' to JSON", podName)
+		}
+		podSpecOutputFilepath := path.Join(podOutputDirpath, podSpecFilename)
+		if err := ioutil.WriteFile(podSpecOutputFilepath, jsonSerializedPodSpecBytes, createdFilePerms); err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred writing the spec of pod '%v' to file '%v'",
+				podName,
+				podSpecOutputFilepath,
+			)
+		}
 
 		for _, container := range pod.Spec.Containers {
 			containerName := container.Name
 
 			// Make container output directory
-			containerOutputDirpath := path.Join(outputDirpath, containerName)
-			if err := os.Mkdir(podOutputDirpath, createdDirPerms); err != nil {
+			containerLogsFilepath := path.Join(podOutputDirpath, containerName + containerLogsFilenameSuffix)
+			containerLogsOutputFp, err := os.Create(containerLogsFilepath)
+			if err != nil {
 				return stacktrace.Propagate(
 					err,
-					"An error occurred creating directory '%v' to hold the output of container with name '%v' in pod '%v'",
-					containerOutputDirpath,
+					"An error occurred creating file '%v' to hold the logs of container with name '%v' in pod '%v'"),
+					containerLogsFilepath,
 					containerName,
 					podName,
 				)
 			}
+			defer containerLogsOutputFp.Close()
 
 			containerLogReadCloser, err := backend.kubernetesManager.GetContainerLogs(
 				ctx,
@@ -254,18 +271,15 @@ func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, encla
 			}
 			defer containerLogReadCloser.Close()
 
-			logsOutputFilepath := path.Join(podOutputDirpath, containerLogsFilename)
-			logsOutputFp, err := os.Create(logsOutputFilepath)
-			if err != nil {
+			if _, err := io.Copy(containerLogsOutputFp, containerLogReadCloser); err != nil {
 				return stacktrace.Propagate(
 					err,
-					"An error occurred creating file '%v' to hold the logs of container with name '%v' and ID '%v'",
-					logsOutputFilepath,
+					"An error occurred writing logs of container '%v' in pod '%v' to file '%v'",
 					containerName,
-					containerId,
+					podName,
+					containerLogsFilepath,
 				)
 			}
-
 		}
 	}
 }

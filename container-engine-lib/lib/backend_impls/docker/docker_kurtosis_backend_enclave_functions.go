@@ -610,6 +610,7 @@ func dumpContainerInfo(
 		return stacktrace.Propagate(err, "An error occurred getting the logs for container with ID '%v'", containerId)
 	}
 	defer containerLogsReadCloser.Close()
+
 	logsOutputFilepath := path.Join(containerOutputDirpath, containerLogsFilename)
 	logsOutputFp, err := os.Create(logsOutputFilepath)
 	if err != nil {
@@ -621,6 +622,7 @@ func dumpContainerInfo(
 			containerId,
 		)
 	}
+	defer logsOutputFp.Close()
 
 	// TODO Figure out a way to abstract this!!! This check-if-the-container-is-TTY-and-use-io.Copy-if-so-and-stdcopy-if-not
 	//  is copied straight from the Docker CLI, but it REALLY sucks that a Kurtosis dev magically needs to know that that's what
