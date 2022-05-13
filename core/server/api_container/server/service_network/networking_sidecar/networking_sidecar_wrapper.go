@@ -103,7 +103,6 @@ type StandardNetworkingSidecarWrapper struct {
 func NewStandardNetworkingSidecarWrapper(
 	networkingSidecar *networking_sidecar.NetworkingSidecar,
 	execCmdExecutor sidecarExecCmdExecutor,
-	sidecarIpAddr net.IP,
 )(
 	*StandardNetworkingSidecarWrapper,
 	error,
@@ -117,7 +116,6 @@ func NewStandardNetworkingSidecarWrapper(
 		networkingSidecar: networkingSidecar,
 		qdiscInUse: undefinedQdiscId,
 		execCmdExecutor: execCmdExecutor,
-		sidecarIpAddr: sidecarIpAddr,
 	}, nil
 }
 
