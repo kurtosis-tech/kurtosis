@@ -30,6 +30,9 @@
     * `GetNetworkGatewayIp`
     * `GetNetworkIpAddrTracker`
 
+### Changes
+* Updated Kurtosis Kubernetes `label_key_consts` and tests.
+
 # 0.20.1
 ### Features
 * Added `KubernetesKurtosisBackend.GetEnclaves` functionality to kubernetes backend

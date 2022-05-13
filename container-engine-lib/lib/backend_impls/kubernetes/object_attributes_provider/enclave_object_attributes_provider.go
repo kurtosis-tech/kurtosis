@@ -88,7 +88,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataVol
 	}
 
 	labels, err := provider.getLabelsForEnclaveObject()
-	labels[label_key_consts.VolumeTypeLabelKey] = label_value_consts.EnclaveDataVolumeTypeLabelValue
+	labels[label_key_consts.KurtosisVolumeTypeLabelKey] = label_value_consts.EnclaveDataVolumeTypeLabelValue
 
 	// No custom annotations for enclave data volume
 	customAnnotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
