@@ -4,6 +4,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/config_version"
 	v1 "github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/v1"
 	"github.com/stretchr/testify/require"
+	"sort"
 	"testing"
 )
 
@@ -57,5 +58,18 @@ func TestNewKurtosisConfigJustMetrics(t *testing.T) {
 
 	overrides := config.GetOverrides()
 	require.NotNil(t, overrides.ShouldSendMetrics)
+}
+
+func TestNewKurtosisConfigOverridesAreLatestVersion(t *testing.T) {
+	config, err := NewKurtosisConfigFromRequiredFields(false)
+	require.NoError(t, err)
+
+	configValues := config_version.ConfigVersionStrings()
+	sort.Strings(configValues)
+	latestVersion := configValues[len(configValues)-1]
+
+	overrides := config.GetOverrides()
+	// check that overrides are actually the latest version
+	require.Equal(t, latestVersion, overrides.ConfigVersion.String())
 }
 
