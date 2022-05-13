@@ -164,7 +164,17 @@ func (manager *EnclaveManager) CreateEnclave(
 		}
 	}()
 
-	apiContainerHostMachineInfo := newApiContainerHostMachineInfo(apiContainer)
+	var apiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo
+	if apiContainer.GetPublicIPAddress() != nil &&
+		apiContainer.GetPublicGRPCPort() != nil &&
+		apiContainer.GetPublicGRPCProxyPort() != nil {
+
+		apiContainerHostMachineInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
+			IpOnHostMachine:            apiContainer.GetPublicIPAddress().String(),
+			GrpcPortOnHostMachine:      uint32(apiContainer.GetPublicGRPCPort().GetNumber()),
+			GrpcProxyPortOnHostMachine: uint32(apiContainer.GetPublicGRPCProxyPort().GetNumber()),
+		}
+	}
 
 	result := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
 		EnclaveId:          enclaveIdStr,
@@ -184,31 +194,6 @@ func (manager *EnclaveManager) CreateEnclave(
 	shouldDestroyEnclave = false
 	shouldStopApiContainer = false
 	return result, nil
-}
-
-func newApiContainerHostMachineInfo(apiContainer *api_container.APIContainer) *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo {
-	var ipOnHostMachine string
-	if apiContainer.GetPublicIPAddress() != nil {
-		ipOnHostMachine = apiContainer.GetPublicIPAddress().String()
-	}
-
-	var grpcPortOnHostMachine uint32
-	if apiContainer.GetPublicGRPCPort() != nil {
-		grpcPortOnHostMachine = uint32(apiContainer.GetPublicGRPCPort().GetNumber())
-	}
-
-	var grpcProxyPortOnHostMachine uint32
-	if apiContainer.GetPublicGRPCProxyPort() != nil {
-		grpcProxyPortOnHostMachine = uint32(apiContainer.GetPublicGRPCProxyPort().GetNumber())
-	}
-
-	apiContainerHostMachineInfo := &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
-		IpOnHostMachine:            ipOnHostMachine,
-		GrpcPortOnHostMachine:      grpcPortOnHostMachine,
-		GrpcProxyPortOnHostMachine: grpcProxyPortOnHostMachine,
-	}
-
-	return apiContainerHostMachineInfo
 }
 
 // It's a liiiitle weird that we return an EnclaveInfo object (which is a Protobuf object), but as of 2021-10-21 this class
@@ -363,7 +348,20 @@ func (manager *EnclaveManager) getEnclaveApiContainerInformation(
 	}
 	var resultApiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo
 	if resultApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING {
-		resultApiContainerHostMachineInfo = newApiContainerHostMachineInfo(apiContainer)
+
+		var apiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo
+		if apiContainer.GetPublicIPAddress() != nil &&
+			apiContainer.GetPublicGRPCPort() != nil &&
+			apiContainer.GetPublicGRPCProxyPort() != nil {
+
+			apiContainerHostMachineInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
+				IpOnHostMachine:            apiContainer.GetPublicIPAddress().String(),
+				GrpcPortOnHostMachine:      uint32(apiContainer.GetPublicGRPCPort().GetNumber()),
+				GrpcProxyPortOnHostMachine: uint32(apiContainer.GetPublicGRPCProxyPort().GetNumber()),
+			}
+		}
+
+		resultApiContainerHostMachineInfo = apiContainerHostMachineInfo
 	}
 
 	return resultApiContainerStatus, resultApiContainerInfo, resultApiContainerHostMachineInfo, nil
