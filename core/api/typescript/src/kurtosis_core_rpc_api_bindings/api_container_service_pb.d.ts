@@ -231,6 +231,9 @@ export class RegisterServiceResponse extends jspb.Message {
   getPrivateIpAddr(): string;
   setPrivateIpAddr(value: string): RegisterServiceResponse;
 
+  getServiceRegistrationGuid(): string;
+  setServiceRegistrationGuid(value: string): RegisterServiceResponse;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RegisterServiceResponse.AsObject;
   static toObject(includeInstance: boolean, msg: RegisterServiceResponse): RegisterServiceResponse.AsObject;
@@ -242,12 +245,13 @@ export class RegisterServiceResponse extends jspb.Message {
 export namespace RegisterServiceResponse {
   export type AsObject = {
     privateIpAddr: string,
+    serviceRegistrationGuid: string,
   }
 }
 
 export class StartServiceArgs extends jspb.Message {
-  getServiceId(): string;
-  setServiceId(value: string): StartServiceArgs;
+  getServiceRegistrationGuid(): string;
+  setServiceRegistrationGuid(value: string): StartServiceArgs;
 
   getDockerImage(): string;
   setDockerImage(value: string): StartServiceArgs;
@@ -281,7 +285,7 @@ export class StartServiceArgs extends jspb.Message {
 
 export namespace StartServiceArgs {
   export type AsObject = {
-    serviceId: string,
+    serviceRegistrationGuid: string,
     dockerImage: string,
     privatePortsMap: Array<[string, Port.AsObject]>,
     entrypointArgsList: Array<string>,

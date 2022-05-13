@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	kurtosis_backend_service "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store"
@@ -167,7 +168,7 @@ func (apicService ApiContainerService) GetModuleInfo(ctx context.Context, args *
 }
 
 func (apicService ApiContainerService) RegisterService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServiceArgs) (*kurtosis_core_rpc_api_bindings.RegisterServiceResponse, error) {
-	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
+	serviceId := user_service_registration.ServiceID(args.ServiceId)
 	partitionId := service_network_types.PartitionID(args.PartitionId)
 
 	privateIpAddr, err := apicService.serviceNetwork.RegisterService(serviceId, partitionId)
@@ -183,7 +184,7 @@ func (apicService ApiContainerService) RegisterService(ctx context.Context, args
 
 func (apicService ApiContainerService) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
 	logrus.Debugf("Received request to start apicService with the following args: %+v", args)
-	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
+	serviceId := user_service_registration.ServiceID(args.ServiceId)
 	privateApiPorts := args.PrivatePorts
 	privateServicePortSpecs := map[string]*port_spec.PortSpec{}
 	for portId, privateApiPort := range privateApiPorts {

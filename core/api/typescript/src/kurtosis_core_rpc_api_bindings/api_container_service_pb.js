@@ -2399,7 +2399,8 @@ proto.api_container_api.RegisterServiceResponse.prototype.toObject = function(op
  */
 proto.api_container_api.RegisterServiceResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    privateIpAddr: jspb.Message.getFieldWithDefault(msg, 1, "")
+    privateIpAddr: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    serviceRegistrationGuid: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -2440,6 +2441,10 @@ proto.api_container_api.RegisterServiceResponse.deserializeBinaryFromReader = fu
       var value = /** @type {string} */ (reader.readString());
       msg.setPrivateIpAddr(value);
       break;
+    case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setServiceRegistrationGuid(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -2476,6 +2481,13 @@ proto.api_container_api.RegisterServiceResponse.serializeBinaryToWriter = functi
       f
     );
   }
+  f = message.getServiceRegistrationGuid();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
+      f
+    );
+  }
 };
 
 
@@ -2494,6 +2506,24 @@ proto.api_container_api.RegisterServiceResponse.prototype.getPrivateIpAddr = fun
  */
 proto.api_container_api.RegisterServiceResponse.prototype.setPrivateIpAddr = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
+};
+
+
+/**
+ * optional string service_registration_guid = 2;
+ * @return {string}
+ */
+proto.api_container_api.RegisterServiceResponse.prototype.getServiceRegistrationGuid = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.RegisterServiceResponse} returns this
+ */
+proto.api_container_api.RegisterServiceResponse.prototype.setServiceRegistrationGuid = function(value) {
+  return jspb.Message.setProto3StringField(this, 2, value);
 };
 
 
@@ -2536,7 +2566,7 @@ proto.api_container_api.StartServiceArgs.prototype.toObject = function(opt_inclu
  */
 proto.api_container_api.StartServiceArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    serviceId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    serviceRegistrationGuid: jspb.Message.getFieldWithDefault(msg, 1, ""),
     dockerImage: jspb.Message.getFieldWithDefault(msg, 2, ""),
     privatePortsMap: (f = msg.getPrivatePortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : [],
     entrypointArgsList: (f = jspb.Message.getRepeatedField(msg, 4)) == null ? undefined : f,
@@ -2581,7 +2611,7 @@ proto.api_container_api.StartServiceArgs.deserializeBinaryFromReader = function(
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setServiceId(value);
+      msg.setServiceRegistrationGuid(value);
       break;
     case 2:
       var value = /** @type {string} */ (reader.readString());
@@ -2642,7 +2672,7 @@ proto.api_container_api.StartServiceArgs.prototype.serializeBinary = function() 
  */
 proto.api_container_api.StartServiceArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getServiceId();
+  f = message.getServiceRegistrationGuid();
   if (f.length > 0) {
     writer.writeString(
       1,
@@ -2686,10 +2716,10 @@ proto.api_container_api.StartServiceArgs.serializeBinaryToWriter = function(mess
 
 
 /**
- * optional string service_id = 1;
+ * optional string service_registration_guid = 1;
  * @return {string}
  */
-proto.api_container_api.StartServiceArgs.prototype.getServiceId = function() {
+proto.api_container_api.StartServiceArgs.prototype.getServiceRegistrationGuid = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
@@ -2698,7 +2728,7 @@ proto.api_container_api.StartServiceArgs.prototype.getServiceId = function() {
  * @param {string} value
  * @return {!proto.api_container_api.StartServiceArgs} returns this
  */
-proto.api_container_api.StartServiceArgs.prototype.setServiceId = function(value) {
+proto.api_container_api.StartServiceArgs.prototype.setServiceRegistrationGuid = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
 };
 
