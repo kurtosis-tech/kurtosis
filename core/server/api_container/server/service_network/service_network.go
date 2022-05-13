@@ -69,9 +69,8 @@ type ServiceNetwork struct {
 
 
 	// ----------------------------- Indexes to make common operations quick --------------------------------
-	// service_id -> service_guid is such a common operation that it doesn't make sense to hit the backend for this
-	serviceIdToServiceGuidIndex map[user_service_registration.ServiceID]service.ServiceGUID
 	registrationsByServiceId map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration
+	servicesByServiceId map[user_service_registration.ServiceID]*service.Service
 }
 
 func NewServiceNetworkImpl(
@@ -99,9 +98,10 @@ func NewServiceNetworkImpl(
 			defaultPartitionId,
 			defaultPartitionConnection,
 		),
-		networkingSidecars:          map[user_service_registration.ServiceID]networking_sidecar.NetworkingSidecarWrapper{},
-		networkingSidecarManager:    networkingSidecarManager,
-		serviceIdToServiceGuidIndex: map[user_service_registration.ServiceID]service.ServiceGUID{},
+		networkingSidecars:       map[user_service_registration.ServiceID]networking_sidecar.NetworkingSidecarWrapper{},
+		networkingSidecarManager: networkingSidecarManager,
+		registrationsByServiceId: map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration{},
+		servicesByServiceId: map[user_service_registration.ServiceID]*service.Service{},
 	}
 }
 
@@ -205,6 +205,14 @@ func (network ServiceNetwork) RegisterService(
 		}
 	}()
 
+	network.registrationsByServiceId[serviceId] = serviceRegistration
+	shouldRemoveRegistrationFromIndex := true
+	defer func() {
+		if shouldRemoveRegistrationFromIndex {
+			delete(network.registrationsByServiceId, serviceId)
+		}
+	}()
+
 	if err := network.topology.AddService(serviceId, partitionId); err != nil {
 		return nil, "", stacktrace.Propagate(
 			err,
@@ -221,6 +229,7 @@ func (network ServiceNetwork) RegisterService(
 	}()
 
 	shouldDestroyRegistration = false
+	shouldRemoveRegistrationFromIndex = false
 	shouldRemoveTopologyAddition = false
 	return serviceRegistration.GetIPAddress(), serviceRegistration.GetGUID(), nil
 }

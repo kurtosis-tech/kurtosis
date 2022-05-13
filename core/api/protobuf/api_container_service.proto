@@ -171,17 +171,14 @@ message RegisterServiceArgs {
 message RegisterServiceResponse {
   // The IP address *inside* the enclave that the service will receive when it starts
   string private_ip_addr = 1;
-
-  // Unique GUID that will need to be passed back to complete the registration
-  string service_registration_guid = 2;
 }
 
 // ==============================================================================================
 //                                        Start Service
 // ==============================================================================================
 message StartServiceArgs {
-  // GUID of a previously-declared service registration that this service should consume
-  string service_registration_guid = 1;
+  // ID of the previously-registered service that should be started
+  string service_id = 1;
 
   string docker_image = 2;
 
