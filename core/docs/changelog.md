@@ -1,4 +1,6 @@
 # TBD
+
+# 1.47.0
 ### Changes
 * `RegisterService` endpoint now returns a service registration GUID
 * `StartService` endpoint now requires a service registration GUID
