@@ -1,5 +1,15 @@
 # TBD
 
+# 1.19.0
+### Changes
+* Upgraded to container-engine-lib 0.21.0 and core 1.47.0
+
+### Breaking Changes
+* Remove all the following fields from the `EnclaveInfo` object returned by the API:
+    * `network_id`
+    * `network_cidr`
+    * Users should remove these fields
+
 # 1.18.2
 ### Fixes
 * Added conditions to handle not having api container's public IP and ports when getting enclave response from the backend

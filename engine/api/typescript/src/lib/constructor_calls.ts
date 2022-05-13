@@ -14,14 +14,12 @@ export function newCreateEnclaveArgs(
         enclaveId: string,
         apiContainerImageVersionTag: string,
         apiContainerLogLevel: string,
-        isPartitioningEnabled: boolean,
-        shouldPublishPorts: boolean): CreateEnclaveArgs {
+        isPartitioningEnabled: boolean): CreateEnclaveArgs {
     const result: CreateEnclaveArgs = new CreateEnclaveArgs();
     result.setEnclaveId(enclaveId);
     result.setApiContainerVersionTag(apiContainerImageVersionTag);
     result.setApiContainerLogLevel(apiContainerLogLevel);
     result.setIsPartitioningEnabled(isPartitioningEnabled);
-    result.setShouldPublishAllPorts(shouldPublishPorts);
 
     return result;
 }

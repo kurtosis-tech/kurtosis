@@ -27,8 +27,6 @@ import { newCleanArgs, newCreateEnclaveArgs, newDestroyEnclaveArgs, newStopEncla
 
 const LOCAL_HOSTNAME: string = "localhost";
 
-const SHOULD_PUBLISH_ALL_PORTS: boolean = true;
-
 const API_CONTAINER_LOG_LEVEL: string = "debug";
 
 export const DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM: number = 9711;
@@ -96,7 +94,6 @@ export class KurtosisContext {
             DEFAULT_API_CONTAINER_VERSION_TAG,
             API_CONTAINER_LOG_LEVEL,
             isPartitioningEnabled,
-            SHOULD_PUBLISH_ALL_PORTS,
         );
 
         const getEnclaveResponseResult = await this.client.createEnclaveResponse(enclaveArgs)

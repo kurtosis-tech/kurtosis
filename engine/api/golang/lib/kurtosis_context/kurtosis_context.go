@@ -21,8 +21,6 @@ const (
 	// NOTE: This needs to be 127.0.0.1 rather than 0.0.0.0, because Windows machines don't translate 0.0.0.0 -> 127.0.0.1
 	localHostIPAddressStr = "127.0.0.1"
 
-	shouldPublishAllPorts = true
-
 	DefaultKurtosisEngineServerGrpcPortNum = uint16(9710)
 
 	DefaultKurtosisEngineServerGrpcProxyPortNum = uint16(9711)
@@ -78,7 +76,6 @@ func (kurtosisCtx *KurtosisContext) CreateEnclave(
 		ApiContainerVersionTag: defaultApiContainerVersionTag,
 		ApiContainerLogLevel:   apiContainerLogLevel.String(),
 		IsPartitioningEnabled:  isPartitioningEnabled,
-		ShouldPublishAllPorts:  shouldPublishAllPorts,
 	}
 
 	response, err := kurtosisCtx.client.CreateEnclave(ctx, createEnclaveArgs)
