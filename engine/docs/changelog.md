@@ -1,5 +1,13 @@
 # TBD
 
+# 1.20.0
+### Fixes
+* Fixed a null pointer exception bug in launcher when backend returns an engine with no public GRPC port
+
+### Breaking Changes
+* The engine server launchers now return a public `PortSpec` rather than just a port number
+    * Users should consume the port spec instead
+
 # 1.19.0
 ### Changes
 * Upgraded to container-engine-lib 0.21.0 and core 1.47.0

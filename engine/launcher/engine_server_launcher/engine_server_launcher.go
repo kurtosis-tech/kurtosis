@@ -8,6 +8,7 @@ package engine_server_launcher
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -16,7 +17,7 @@ import (
 
 const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-	KurtosisEngineVersion = "1.19.0"
+	KurtosisEngineVersion = "1.20.0"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
 	// TODO This should come from the same logic that builds the server image!!!!!
@@ -40,11 +41,11 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	didUserAcceptSendingMetrics bool,
 ) (
 	resultPublicIpAddr net.IP,
-	resultPublicGrpcPortNum uint16,
+	resultPublicGrpcPortSpec *port_spec.PortSpec,
 	// NOTE: We can return a resultPublicGrpcProxyPortNum here if we ever need it
 	resultErr error,
 ) {
-	publicIpAddr, publicGrpcPortNum, err := launcher.LaunchWithCustomVersion(
+	publicIpAddr, publicGrpcPortSpec, err := launcher.LaunchWithCustomVersion(
 		ctx,
 		KurtosisEngineVersion,
 		logLevel,
@@ -54,9 +55,9 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		didUserAcceptSendingMetrics,
 	)
 	if err != nil {
-		return nil, 0, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", KurtosisEngineVersion)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", KurtosisEngineVersion)
 	}
-	return publicIpAddr, publicGrpcPortNum, nil
+	return publicIpAddr, publicGrpcPortSpec, nil
 }
 
 func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
@@ -69,7 +70,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	didUserAcceptSendingMetrics bool,
 ) (
 	resultPublicIpAddr net.IP,
-	resultPublicGrpcPortNum uint16,
+	resultPublicGrpcPortSpec *port_spec.PortSpec,
 	resultErr error,
 ) {
 	argsObj, err := args.NewEngineServerArgs(
@@ -81,12 +82,12 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		didUserAcceptSendingMetrics,
 	)
 	if err != nil {
-		return nil, 0, stacktrace.Propagate(err, "An error occurred creating the engine server args")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the engine server args")
 	}
 
 	envVars, err := args.GetEnvFromArgs(argsObj)
 	if err != nil {
-		return nil, 0, stacktrace.Propagate(err, "An error occurred generating the engine server's environment variables")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred generating the engine server's environment variables")
 	}
 
 	engine, err := launcher.kurtosisBackend.CreateEngine(
@@ -98,7 +99,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		envVars,
 	)
 	if err != nil {
-		return nil, 0, stacktrace.Propagate(err, "An error occurred launching the engine server container with environment variables '%+v'", envVars)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with environment variables '%+v'", envVars)
 	}
-	return engine.GetPublicIPAddress(), engine.GetPublicGRPCPort().GetNumber(), nil
+	return engine.GetPublicIPAddress(), engine.GetPublicGRPCPort(), nil
 }
