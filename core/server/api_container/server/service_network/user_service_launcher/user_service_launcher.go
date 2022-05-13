@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/stacktrace"
@@ -39,8 +40,7 @@ Returns:
 */
 func (launcher UserServiceLauncher) Launch(
 	ctx context.Context,
-	serviceGUID service.ServiceGUID,
-	serviceId service.ServiceID,
+	registrationGuid user_service_registration.UserServiceRegistrationGUID,
 	enclaveId enclave.EnclaveID,
 	ipAddr net.IP,
 	imageName string,
@@ -84,8 +84,7 @@ func (launcher UserServiceLauncher) Launch(
 
 	launchedUserService, err := launcher.kurtosisBackend.CreateUserService(
 		ctx,
-		serviceId,
-		serviceGUID,
+		registrationGuid,
 		imageName,
 		enclaveId,
 		ipAddr,

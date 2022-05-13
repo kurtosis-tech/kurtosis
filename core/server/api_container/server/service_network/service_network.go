@@ -36,18 +36,6 @@ const (
 	startingDefaultConnectionPacketLossValue                                   = 0
 )
 
-// Information that gets created when a container is started for a service
-type serviceRunInfo struct {
-	// Service's container ID
-	serviceGUID service.ServiceGUID
-
-	// NOTE: When we want to make restart-able enclaves, we'll need to read these values from the container every time
-	//  we need them (rather than storing them in-memory on the API container, which means the API container can't be restarted)
-	privatePorts      map[string]*port_spec.PortSpec
-	maybePublicIpAddr net.IP                         // Can be nil if the service doesn't declare any private ports
-	maybePublicPorts  map[string]*port_spec.PortSpec // Will be nil if the service doesn't declare any private ports
-}
-
 /*
 This is the in-memory representation of the service network that the API container will manipulate. To make
 	any changes to the test network, this struct must be used.
@@ -74,8 +62,6 @@ type ServiceNetwork struct {
 	userServiceLauncher *user_service_launcher.UserServiceLauncher
 
 	topology *partition_topology.PartitionTopology
-
-	serviceRunInfo          map[user_service_registration.ServiceID]serviceRunInfo
 
 	networkingSidecars map[user_service_registration.ServiceID]networking_sidecar.NetworkingSidecarWrapper
 
@@ -153,6 +139,9 @@ func (network *ServiceNetwork) Repartition(
 		ctx,
 		&user_service_registration.UserServiceRegistrationFilters{
 			ServiceIDs: allInvolvedServiceIds,
+			EnclaveIDs: map[enclave.EnclaveID]bool{
+				network.enclaveId: true,
+			},
 		},
 	)
 
@@ -255,12 +244,6 @@ func (network *ServiceNetwork) StartService(
 		return nil, nil, stacktrace.NewError("Cannot start container for service; the service network has been destroyed")
 	}
 
-	registrationInfo, registrationInfoFound := network.serviceRegistrationsByRegistrationGuid[registrationGuid]
-	if !registrationInfoFound {
-		return nil, nil, stacktrace.NewError("Cannot start container for service using registration GUID '%v' because no such registration GUID exists", registrationGuid)
-	}
-	serviceId := registrationInfo.GetServiceID()
-	serviceIpAddr := registrationInfo.GetIPAddress()
 
 	// When partitioning is enabled, there's a race condition where:
 	//   a) we need to start the service before we can launch the sidecar but
@@ -268,8 +251,24 @@ func (network *ServiceNetwork) StartService(
 	// This means that there's a period of time at startup where the container might not be partitioned. We solve
 	//  this by setting the packet loss config of the new service in the already-existing services' qdisc.
 	// This means that when the new service is launched, even if its own qdisc isn't yet updated, all the services
-	//  it would communicate are already dropping traffic to it.
+	//  it would communicate are already dropping traffic to it before it even starts.
+	var registrationsByServiceId map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration
 	if network.isPartitioningEnabled {
+		getAllRegistrationsFilter := &user_service_registration.UserServiceRegistrationFilters{
+			EnclaveIDs: map[enclave.EnclaveID]bool{
+				network.enclaveId: true,
+			},
+		}
+		allRegistrations, err := network.kurtosisBackend.GetUserServiceRegistrations(
+			ctx,
+			getAllRegistrationsFilter,
+		)
+
+		registrationsByServiceId = map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration{}
+		for _, registration := range allRegistrations {
+			registrationsByServiceId[registration.GetServiceID()] = registration
+		}
+
 		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
@@ -293,7 +292,6 @@ func (network *ServiceNetwork) StartService(
 	userService, err := network.userServiceLauncher.Launch(
 		ctx,
 		serviceGuid,
-		serviceId,
 		network.enclaveId,
 		serviceIpAddr,
 		imageName,
