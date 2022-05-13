@@ -700,7 +700,16 @@ func (manager *KubernetesManager) RemoveClusterRoleBindings(ctx context.Context,
 func (manager *KubernetesManager) int32Ptr(i int32) *int32 { return &i }
 
 // Pods
-func (manager *KubernetesManager) CreatePod(ctx context.Context, namespace string, name string, podLabels map[string]string, podAnnotations map[string]string, podContainers []apiv1.Container, podVolumes []apiv1.Volume, podServiceAccountName string) (*apiv1.Pod, error) {
+func (manager *KubernetesManager) CreatePod(
+	ctx context.Context,
+	namespace string,
+	name string,
+	podLabels map[string]string,
+	podAnnotations map[string]string,
+	podContainers []apiv1.Container,
+	podVolumes []apiv1.Volume,
+	podServiceAccountName string,
+) (*apiv1.Pod, error) {
 	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
 
 	podMeta := metav1.ObjectMeta{

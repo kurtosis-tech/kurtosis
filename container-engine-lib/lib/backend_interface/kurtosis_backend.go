@@ -1,5 +1,4 @@
 package backend_interface
-
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
@@ -12,10 +11,18 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
 	"io"
 	"net"
 )
+
+// TODO This mega-backend should really have its individual functionalities split up into
+//  the appropriate places it's used - e.g. APIContainerBackend, EngineBackend, etc.
+//  The reason we don't do this right now is because the CLI uses some KurtosisBackend methods
+//  (e.g. GetUserServices to power 'enclave inspect', GetUserServiceLogs) because the Kurtosis
+//  APIs don't yet support them. Once the Kurtosis APIs support everything, we'll have the CLI
+//  use purely the Kurtosis SDK (as it should)
 
 // KurtosisBackend abstracts a Kurtosis backend, which will be a container engine (Docker or Kubernetes).
 // The heuristic for "do I need a method in KurtosisBackend?" here is "will I make one or more calls to
@@ -112,11 +119,13 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		image string,
 		enclaveId enclave.EnclaveID,
-		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 		grpcPortNum uint16,
 		grpcProxyPortNum uint16,
 		enclaveDataVolumeDirpath string,
-		envVars map[string]string,
+		// The environment variable that the user is requesting to populate with the container's own IP address
+		// Must not conflict with the custom environment variables
+		ownIpAddressEnvVar string,
+		customEnvVars map[string]string,
 	) (
 		*api_container.APIContainer,
 		error,
@@ -160,7 +169,6 @@ type KurtosisBackend interface {
 		enclaveId enclave.EnclaveID,
 		id module.ModuleID,
 		guid module.ModuleGUID,
-		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 		grpcPortNum uint16,
 		envVars map[string]string,
 	) (
@@ -209,14 +217,45 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the modules
 	)
 
-	// Creates a user service inside an enclave with the given configuration
+	// CreateUserServiceRegistration registers the intent to start a service at a future point in time, which:
+	// - In Docker means allocating a static IP address
+	// - In Kubernetes means creating a Kubernetes service with an IP address
+	// A service registration is required to start a service
+	CreateUserServiceRegistration(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		serviceId user_service_registration.ServiceID,
+	) (
+		*user_service_registration.UserServiceRegistration,
+		error,
+	)
+
+	// GetUserServiceRegistrations gets the existing user service registrations
+	GetUserServiceRegistrations(
+		ctx context.Context,
+		filters *user_service_registration.UserServiceRegistrationFilters,
+	) (
+		map[user_service_registration.UserServiceRegistrationGUID]*user_service_registration.UserServiceRegistration,
+		error,
+	)
+
+	// DestroyUserServiceRegistration removes a previously-created user service registration object
+	// This will fail if a service is currently consuming the registration
+	DestroyUserServiceRegistrations(
+		ctx context.Context,
+		filters *user_service_registration.UserServiceRegistrationFilters,
+	) (
+		resultSuccessfulServiceIds map[user_service_registration.UserServiceRegistrationGUID]bool,
+		resultErroredServiceIds map[user_service_registration.UserServiceRegistrationGUID]error,
+		resultErr error,
+	)
+
+	// CreateUserService consumes a service registration to create a user service with the given parameters
 	CreateUserService(
 		ctx context.Context,
-		id service.ServiceID,
-		guid service.ServiceGUID,
+		registrationGuid user_service_registration.UserServiceRegistrationGUID,
 		containerImageName string,
 		enclaveId enclave.EnclaveID,
-		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 		privatePorts map[string]*port_spec.PortSpec,
 		entrypointArgs []string,
 		cmdArgs []string,
@@ -340,7 +379,6 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
 		serviceGuid service.ServiceGUID,
-		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 	) (
 		*networking_sidecar.NetworkingSidecar,
 		error,
@@ -390,7 +428,7 @@ type KurtosisBackend interface {
 	CreateFilesArtifactExpansionVolume(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		serviceGuid service.ServiceGUID,
+		registrationGuid user_service_registration.UserServiceRegistrationGUID,
 		filesArtifactId service.FilesArtifactID,
 	) (
 		*files_artifact_expansion_volume.FilesArtifactExpansionVolume,
@@ -415,7 +453,6 @@ type KurtosisBackend interface {
 		filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
 		destVolMntDirpathOnExpander string,
 		filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
-		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 	) (
 		*files_artifact_expander.FilesArtifactExpander,
 		error,

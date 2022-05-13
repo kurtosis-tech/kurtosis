@@ -31,15 +31,17 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
 	image string,
 	enclaveId enclave.EnclaveID,
-	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 	grpcPortNum uint16,
-	grpcProxyPortNum uint16, // TODO remove when we switch fully to enclave data volume
+	grpcProxyPortNum uint16,
 	enclaveDataVolumeDirpath string,
-	envVars map[string]string,
+	ownIpAddressEnvVar string,
+	customEnvVars map[string]string,
 ) (
 	*api_container.APIContainer,
 	error,
 ) {
+	grpcPortInt32 := int32(grpcPortNum)
+	grpcProxyPortInt32 := int32(grpcProxyPortNum)
 
 	//TODO This validation is the same for Docker and for Kubernetes because we are using kurtBackend
 	//TODO we could move this to a top layer for validations, perhaps
@@ -111,7 +113,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		}
 	}()
 
-	// Get Pod Attributes
+	// Get Pod Attributes so that we can select them with the Service
 	apiContainerPodAttributes, err := apiContainerAttributesProvider.ForApiContainerPod()
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -123,43 +125,6 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	apiContainerPodName := apiContainerPodAttributes.GetName().GetString()
 	apiContainerPodLabels := getStringMapFromLabelMap(apiContainerPodAttributes.GetLabels())
 	apiContainerPodAnnotations := getStringMapFromAnnotationMap(apiContainerPodAttributes.GetAnnotations())
-
-	enclaveDataPersistentVolumeClaim, err := backend.getEnclaveDataPersistentVolumeClaim(ctx, enclaveNamespaceName, enclaveId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data persistent volume claim for enclave '%v' in namespace '%v'", enclaveId, enclaveNamespaceName)
-	}
-
-	grpcPortInt32 := int32(grpcPortNum)
-	grpcProxyPortInt32 := int32(grpcProxyPortNum)
-
-	containerPorts := []apiv1.ContainerPort{
-		{
-			Name:          object_name_constants.KurtosisInternalContainerGrpcPortName.GetString(),
-			Protocol:      kurtosisInternalContainerGrpcPortProtocol,
-			ContainerPort: grpcPortInt32,
-		},
-		{
-			Name:          object_name_constants.KurtosisInternalContainerGrpcProxyPortName.GetString(),
-			Protocol:      kurtosisInternalContainerGrpcProxyPortProtocol,
-			ContainerPort: grpcProxyPortInt32,
-		},
-	}
-
-	apiContainerContainers, apiContainerVolumes := getApiContainerContainersAndVolumes(image, containerPorts, envVars, enclaveDataPersistentVolumeClaim, enclaveDataVolumeDirpath)
-
-	// Create pods with api container containers and volumes in Kubernetes
-	if _, err = backend.kubernetesManager.CreatePod(ctx, enclaveNamespaceName, apiContainerPodName, apiContainerPodLabels, apiContainerPodAnnotations, apiContainerContainers, apiContainerVolumes, apiContainerServiceAccountName); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", apiContainerPodName, enclaveNamespaceName, image)
-	}
-	var shouldRemovePod = true
-	defer func() {
-		if shouldRemovePod {
-			if err := backend.kubernetesManager.RemovePod(ctx, enclaveNamespaceName, apiContainerPodName); err != nil {
-				logrus.Errorf("Creating the api container didn't complete successfully, so we tried to delete Kubernetes pod '%v' that we created but an error was thrown:\n%v", apiContainerPodName, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes pod with name '%v'!!!!!!!", apiContainerPodName)
-			}
-		}
-	}()
 
 	// Get Service Attributes
 	apiContainerServiceAttributes, err := apiContainerAttributesProvider.ForApiContainerService(
@@ -195,7 +160,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		},
 	}
 
-	// Create Service
+	// Create Service BEFORE the pod so that the pod will know its own IP address
 	service, err := backend.kubernetesManager.CreateService(ctx, enclaveNamespaceName, apiContainerServiceName, apiContainerServiceLabels, apiContainerServiceAnnotations, apiContainerPodLabels, externalServiceType, servicePorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the service with name '%s' in namespace '%s' with ports '%v' and '%v'", apiContainerServiceName, enclaveNamespaceName, grpcPortInt32, grpcProxyPortInt32)
@@ -206,6 +171,51 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 			if err := backend.kubernetesManager.RemoveService(ctx, enclaveNamespaceName, apiContainerServiceName); err != nil {
 				logrus.Errorf("Creating the api container didn't complete successfully, so we tried to delete Kubernetes service '%v' that we created but an error was thrown:\n%v", apiContainerServiceName, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes service with name '%v'!!!!!!!", apiContainerServiceName)
+			}
+		}
+	}()
+
+	if _, found := customEnvVars[ownIpAddressEnvVar]; found {
+		return nil, stacktrace.NewError("Requested own IP environment variable '%v' conflicts with a custom environment variable", ownIpAddressEnvVar)
+	}
+	envVarsWithOwnIp := map[string]string{
+		ownIpAddressEnvVar: service.Spec.ClusterIP,
+	}
+	for key, value := range customEnvVars {
+		envVarsWithOwnIp[key] = value
+	}
+
+	// Create the Pod
+	enclaveDataPersistentVolumeClaim, err := backend.getEnclaveDataPersistentVolumeClaim(ctx, enclaveNamespaceName, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data persistent volume claim for enclave '%v' in namespace '%v'", enclaveId, enclaveNamespaceName)
+	}
+
+	containerPorts := []apiv1.ContainerPort{
+		{
+			Name:          object_name_constants.KurtosisInternalContainerGrpcPortName.GetString(),
+			Protocol:      kurtosisInternalContainerGrpcPortProtocol,
+			ContainerPort: grpcPortInt32,
+		},
+		{
+			Name:          object_name_constants.KurtosisInternalContainerGrpcProxyPortName.GetString(),
+			Protocol:      kurtosisInternalContainerGrpcProxyPortProtocol,
+			ContainerPort: grpcProxyPortInt32,
+		},
+	}
+
+	apiContainerContainers, apiContainerVolumes := getApiContainerContainersAndVolumes(image, containerPorts, envVarsWithOwnIp, enclaveDataPersistentVolumeClaim, enclaveDataVolumeDirpath)
+
+	// Create pods with api container containers and volumes in Kubernetes
+	if _, err = backend.kubernetesManager.CreatePod(ctx, enclaveNamespaceName, apiContainerPodName, apiContainerPodLabels, apiContainerPodAnnotations, apiContainerContainers, apiContainerVolumes, apiContainerServiceAccountName); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", apiContainerPodName, enclaveNamespaceName, image)
+	}
+	var shouldRemovePod = true
+	defer func() {
+		if shouldRemovePod {
+			if err := backend.kubernetesManager.RemovePod(ctx, enclaveNamespaceName, apiContainerPodName); err != nil {
+				logrus.Errorf("Creating the api container didn't complete successfully, so we tried to delete Kubernetes pod '%v' that we created but an error was thrown:\n%v", apiContainerPodName, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes pod with name '%v'!!!!!!!", apiContainerPodName)
 			}
 		}
 	}()

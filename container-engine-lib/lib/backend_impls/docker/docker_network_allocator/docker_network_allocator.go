@@ -1,17 +1,17 @@
 package docker_network_allocator
 
 import (
-"context"
-"encoding/binary"
-"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
-"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
-"github.com/kurtosis-tech/stacktrace"
-"github.com/sirupsen/logrus"
-"math"
-"math/rand"
-"net"
-"strings"
-"time"
+	"context"
+	"encoding/binary"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
+	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
+	"math"
+	"math/rand"
+	"net"
+	"strings"
+	"time"
 )
 
 const (
@@ -132,16 +132,17 @@ func NewDockerNetworkAllocator(dockerManager *docker_manager.DockerManager) *Doc
 func (provider *DockerNetworkAllocator) CreateNewNetwork(
 	ctx context.Context,
 	networkName string,
-	labels map[string]string) (newNetworkId string, newNetwork *net.IPNet, newNetworkGatewayIp net.IP, newNetworkIpAddrTracker *lib.FreeIpAddrTracker, resultErr error) {
+	labels map[string]string,
+) (resultNetworkId string, resultErr error) {
 	if !provider.isConstructedViaConstructor {
-		return "", nil, nil, nil, stacktrace.NewError("This instance of Docker network allocator was constructed without the constructor, which means that the rand.Seed won't have been initialized!")
+		return "", stacktrace.NewError("This instance of Docker network allocator was constructed without the constructor, which means that the rand.Seed won't have been initialized!")
 	}
 
 	numRetries := 0
 	for numRetries < maxNumNetworkAllocationRetries {
 		networks, err := provider.dockerManager.ListNetworks(ctx)
 		if err != nil {
-			return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred listing the Docker networks")
+			return "", stacktrace.Propagate(err, "An error occurred listing the Docker networks")
 		}
 
 		usedSubnets := []*net.IPNet{}
@@ -150,7 +151,7 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 				subnetCidrStr := ipamConfig.Subnet
 				_, parsedSubnet, err := net.ParseCIDR(subnetCidrStr)
 				if err != nil {
-					return "", nil, nil, nil, stacktrace.Propagate(
+					return "", stacktrace.Propagate(
 						err,
 						"An error occurred parsing CIDR string '%v' associated with network '%v'",
 						subnetCidrStr,
@@ -163,25 +164,25 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 
 		freeNetworkIpAndMask, err := findRandomFreeNetwork(usedSubnets)
 		if err != nil {
-			return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred finding a free network")
+			return "", stacktrace.Propagate(err, "An error occurred finding a free network")
 		}
 
 		freeIpAddrTracker := lib.NewFreeIpAddrTracker(logrus.StandardLogger(), freeNetworkIpAndMask, map[string]bool{})
 		gatewayIp, err := freeIpAddrTracker.GetFreeIpAddr()
 		if err != nil {
-			return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting a free IP for the network gateway")
+			return "", stacktrace.Propagate(err, "An error occurred getting a free IP for the network gateway")
 		}
 
 		networkId, err := provider.dockerManager.CreateNetwork(ctx, networkName, freeNetworkIpAndMask.String(), gatewayIp, labels)
 		if err == nil {
-			return networkId, freeNetworkIpAndMask, gatewayIp, freeIpAddrTracker, nil
+			return networkId, nil
 		}
 
 		// Docker does this weird thing where a newly-deleted network won't show up in DockerClient.ListNetworks, but its IPs
 		//  will still be counted as used for several seconds after deletion. The best we can do here is catch the "overlapping
 		//  IP pool" error and retry with a new random network
 		if !strings.Contains(err.Error(), overlappingAddressSpaceErrStr) {
-			return "", nil, nil, nil, stacktrace.Propagate(
+			return "", stacktrace.Propagate(
 				err,
 				"A non-recoverable error occurred creating network '%v' with CIDR '%v'",
 				networkName,
@@ -207,7 +208,7 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 		time.Sleep(timeBetweenNetworkCreationRetries)
 	}
 
-	return "", nil, nil, nil, stacktrace.NewError(
+	return "", stacktrace.NewError(
 		"We couldn't allocate a new network even after retrying %v times with %v between retries",
 		maxNumNetworkAllocationRetries,
 		timeBetweenNetworkCreationRetries,

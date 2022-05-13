@@ -14,11 +14,14 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -69,20 +72,54 @@ var portSpecProtosToDockerPortProtos = map[port_spec.PortProtocol]string{
 	port_spec.PortProtocol_UDP:  "udp",
 }
 
+
 type DockerKurtosisBackend struct {
 	dockerManager *docker_manager.DockerManager
 
 	dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator
 
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider
+
+	// TODO This is ONLY relevant to internal-to-enclave functions, meaning that we now have a DockerKurtosisBackend
+	//  which takes in some values which are only useful for certain functions. What we should really do is split all
+	//  KurtosisBackend functions into API container, engine server, and CLI functions, and move the functionality there
+	//  (in essence creating APIContainerKurtosisBackend, EngineKurtosisBackend, CLIKurtosisBackend). That way, everything
+	//  will be cleaner. HOWEVER, the reason it's not done this way as of 2022-05-12 is because the CLI still uses some
+	//  KurtosisBackend functionality that it shouldn't (e.g. GetUserServiceLogs). This should all flow through the API
+	//  container API instaed.
+	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker
+
+	// TODO Migrate this to an on-disk database, so that the API container can be shut down & restarted!
+	// Canonical store of the registrations being tracked by this DockerKurtosisBackend instance
+	// NOTE: Unlike Kubernetes, Docker doesn't have a concrete object representing a service registration/IP address
+	//  allocation. We use this in-memory store to accomplish the same thing.
+	serviceRegistrations map[user_service_registration.UserServiceRegistrationGUID]*user_service_registration.UserServiceRegistration
+
+	// Index of enclave_id -> service_id -> registration, for responding to "GetUserServiceRegistrations" calls
+	// This will have exactly as many enclaves as were provided via enclaveFreeIpProviders
+	serviceRegistrationsIndex map[enclave.EnclaveID]map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration
+
+	// Control concurrent access to serviceRegistrations
+	serviceRegistrationMutex *sync.Mutex
 }
 
-func NewDockerKurtosisBackend(dockerManager *docker_manager.DockerManager) *DockerKurtosisBackend {
+func NewDockerKurtosisBackend(
+	dockerManager *docker_manager.DockerManager,
+	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker,
+) *DockerKurtosisBackend {
 	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator(dockerManager)
+	serviceRegistrationsIndex := map[enclave.EnclaveID]map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration{}
+	for enclaveId := range enclaveFreeIpProviders {
+		serviceRegistrationsIndex[enclaveId] = map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration{}
+	}
 	return &DockerKurtosisBackend{
-		dockerManager:          dockerManager,
-		dockerNetworkAllocator: dockerNetworkAllocator,
-		objAttrsProvider:       object_attributes_provider.GetDockerObjectAttributesProvider(),
+		dockerManager:             dockerManager,
+		dockerNetworkAllocator:    dockerNetworkAllocator,
+		objAttrsProvider:          object_attributes_provider.GetDockerObjectAttributesProvider(),
+		enclaveFreeIpProviders:    enclaveFreeIpProviders,
+		serviceRegistrations:      map[user_service_registration.UserServiceRegistrationGUID]*user_service_registration.UserServiceRegistration{},
+		serviceRegistrationsIndex: serviceRegistrationsIndex,
+		serviceRegistrationMutex:  &sync.Mutex{},
 	}
 }
 
@@ -371,3 +408,4 @@ func (backend *DockerKurtosisBackend) getEnclaveDataVolumeByEnclaveId(ctx contex
 	volume := foundVolumes[0]
 	return volume.Name, nil
 }
+
