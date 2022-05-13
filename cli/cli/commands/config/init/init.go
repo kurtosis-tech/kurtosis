@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/interactive_terminal_decider"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -108,7 +109,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 		}
 	}
 
-	kurtosisConfig, err := kurtosis_config.InitializeKurtosisConfigFromUserInput(didUserAcceptSendingMetrics)
+	kurtosisConfig, err := resolved_config.NewKurtosisConfigFromRequiredFields(didUserAcceptSendingMetrics)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to initialize Kurtosis configuration from user input %t", didUserAcceptSendingMetrics)
 	}

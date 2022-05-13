@@ -1,8 +1,10 @@
 package config_version
 
-type ConfigVersion uint
 
+//go:generate go run github.com/dmarkham/enumer -type=ConfigVersion
+type ConfigVersion uint
 const (
+	// To add new values, just add a new version to the end WITHOUT WHITESPACE
 	ConfigVersion_v0 ConfigVersion = iota
-	ConfigVersion_v1 ConfigVersion = 1
+	ConfigVersion_v1
 )
