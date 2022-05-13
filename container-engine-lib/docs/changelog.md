@@ -6,6 +6,8 @@
 ### Breaking Changes
 * Renamed `service.ServiceID` to `user_service_registration.UserServiceID`
     * Users should update their imports/packages accordingly
+* Removed the `ServiceID` filter of `ServiceFilters`
+    * Users should filter look up registration by service ID, then get services by registration GUID
 * `KurtosisBackend.CreateUserService` now takes in a service registration GUID, rather than a static IP
     * Users should make sure to call `CreateUserServiceRegistration` and pass in the returned GUID to the user service
 * `GetLocalDockerKurtosisBackend` now takes in an optional argument for providing the enclave ID, if running inside an enclave
