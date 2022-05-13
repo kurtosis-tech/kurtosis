@@ -46,8 +46,6 @@ message CreateEnclaveArgs {
   string api_container_log_level = 3;
   // Whether network partitioning will be enabled or not on the new Kurtosis Enclave
   bool is_partitioning_enabled = 4;
-  // If true, when a container is started in the enclave then all its used ports will also be made available on the host machine
-  bool should_publish_all_ports = 5;
 }
 
 message CreateEnclaveResponse {
@@ -113,23 +111,17 @@ message EnclaveInfo {
   // ID of the enclave
   string enclave_id = 1;
 
-  // The ID of the enclave's network in the container engine
-  string network_id = 2;
-
-  //The CIDR of the enclave's network in the container engine
-  string network_cidr = 3;
-
   // State of all containers in the enclave
-  EnclaveContainersStatus containers_status = 4;
+  EnclaveContainersStatus containers_status = 2;
 
   // State specifically of the API container
-  EnclaveAPIContainerStatus api_container_status = 5;
+  EnclaveAPIContainerStatus api_container_status = 3;
 
   // NOTE: Will not be present if the API container status is "NONEXISTENT"!!
-  EnclaveAPIContainerInfo api_container_info = 6;
+  EnclaveAPIContainerInfo api_container_info = 4;
 
   // NOTE: Will not be present if the API container status is not "RUNNING"!!
-  EnclaveAPIContainerHostMachineInfo api_container_host_machine_info = 7;
+  EnclaveAPIContainerHostMachineInfo api_container_host_machine_info = 5;
 }
 
 message GetEnclavesResponse {

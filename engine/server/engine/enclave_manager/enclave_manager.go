@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"net"
 	"sort"
 	"strings"
 	"sync"
@@ -72,10 +71,8 @@ func (manager *EnclaveManager) CreateEnclave(
 	// If blank, will use the default
 	apiContainerImageVersionTag string,
 	apiContainerLogLevel logrus.Level,
-	// TODO put in coreApiVersion as a param here!
 	enclaveIdStr string,
 	isPartitioningEnabled bool,
-	shouldPublishAllPorts bool,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
@@ -94,8 +91,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	// Create Enclave with kurtosisBackend
-	createdEnclave, err := manager.kurtosisBackend.CreateEnclave(setupCtx, enclaveId, isPartitioningEnabled)
-	if err != nil {
+	if _, err := manager.kurtosisBackend.CreateEnclave(setupCtx, enclaveId, isPartitioningEnabled); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occured creating enclave with id `%v`", enclaveId)
 	}
 	shouldDestroyEnclave := true
@@ -115,26 +111,12 @@ func (manager *EnclaveManager) CreateEnclave(
 		}
 	}()
 
-	enclaveNetworkId := createdEnclave.GetNetworkID()
-	enclaveNetworkGatewayIp := createdEnclave.GetNetworkGatewayIp()
-	enclaveNetworkCidr := createdEnclave.GetNetworkCIDR()
-
-	enclaveNetworkIpAddrTracker := createdEnclave.GetNetworkIpAddrTracker()
-	apiContainerPrivateIpAddr, err := enclaveNetworkIpAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get an interal IP address for enclave '%v', but an error occurred", enclaveId)
-	}
-
 	apiContainer, err := manager.launchApiContainer(setupCtx,
 		apiContainerImageVersionTag,
 		apiContainerLogLevel,
 		enclaveId,
-		enclaveNetworkId,
-		enclaveNetworkCidr,
 		apiContainerListenGrpcPortNumInsideNetwork,
 		apiContainerListenGrpcProxyPortNumInsideNetwork,
-		enclaveNetworkGatewayIp,
-		apiContainerPrivateIpAddr,
 		isPartitioningEnabled,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
@@ -162,12 +144,10 @@ func (manager *EnclaveManager) CreateEnclave(
 
 	result := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
 		EnclaveId:          enclaveIdStr,
-		NetworkId:          enclaveNetworkId,
-		NetworkCidr:        enclaveNetworkCidr,
 		ContainersStatus:   kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING,
 		ApiContainerStatus: kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING,
 		ApiContainerInfo: &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
-			IpInsideEnclave:            apiContainerPrivateIpAddr.String(),
+			IpInsideEnclave:            apiContainer.GetPrivateIPAddress().String(),
 			GrpcPortInsideEnclave:      uint32(apiContainerListenGrpcPortNumInsideNetwork),
 			GrpcProxyPortInsideEnclave: uint32(apiContainerListenGrpcProxyPortNumInsideNetwork),
 		},
@@ -453,12 +433,8 @@ func (manager *EnclaveManager) launchApiContainer(
 	apiContainerImageVersionTag string,
 	logLevel logrus.Level,
 	enclaveId enclave.EnclaveID,
-	networkId string,
-	subnetMask string,
 	grpcListenPort uint16,
 	grpcProxyListenPort uint16,
-	gatewayIpAddr net.IP,
-	apiContainerIpAddr net.IP,
 	isPartitioningEnabled bool,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
@@ -475,12 +451,8 @@ func (manager *EnclaveManager) launchApiContainer(
 			apiContainerImageVersionTag,
 			logLevel,
 			enclaveId,
-			networkId,
-			subnetMask,
 			grpcListenPort,
 			grpcProxyListenPort,
-			gatewayIpAddr,
-			apiContainerIpAddr,
 			isPartitioningEnabled,
 			metricsUserID,
 			didUserAcceptSendingMetrics,
@@ -494,12 +466,8 @@ func (manager *EnclaveManager) launchApiContainer(
 		ctx,
 		logLevel,
 		enclaveId,
-		networkId,
-		subnetMask,
 		grpcListenPort,
 		grpcProxyListenPort,
-		gatewayIpAddr,
-		apiContainerIpAddr,
 		isPartitioningEnabled,
 		metricsUserID,
 		didUserAcceptSendingMetrics,

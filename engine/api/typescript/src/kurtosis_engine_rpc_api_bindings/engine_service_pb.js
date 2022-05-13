@@ -426,8 +426,7 @@ proto.engine_api.CreateEnclaveArgs.toObject = function(includeInstance, msg) {
     enclaveId: jspb.Message.getFieldWithDefault(msg, 1, ""),
     apiContainerVersionTag: jspb.Message.getFieldWithDefault(msg, 2, ""),
     apiContainerLogLevel: jspb.Message.getFieldWithDefault(msg, 3, ""),
-    isPartitioningEnabled: jspb.Message.getBooleanFieldWithDefault(msg, 4, false),
-    shouldPublishAllPorts: jspb.Message.getBooleanFieldWithDefault(msg, 5, false)
+    isPartitioningEnabled: jspb.Message.getBooleanFieldWithDefault(msg, 4, false)
   };
 
   if (includeInstance) {
@@ -479,10 +478,6 @@ proto.engine_api.CreateEnclaveArgs.deserializeBinaryFromReader = function(msg, r
     case 4:
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setIsPartitioningEnabled(value);
-      break;
-    case 5:
-      var value = /** @type {boolean} */ (reader.readBool());
-      msg.setShouldPublishAllPorts(value);
       break;
     default:
       reader.skipField();
@@ -538,13 +533,6 @@ proto.engine_api.CreateEnclaveArgs.serializeBinaryToWriter = function(message, w
   if (f) {
     writer.writeBool(
       4,
-      f
-    );
-  }
-  f = message.getShouldPublishAllPorts();
-  if (f) {
-    writer.writeBool(
-      5,
       f
     );
   }
@@ -620,24 +608,6 @@ proto.engine_api.CreateEnclaveArgs.prototype.getIsPartitioningEnabled = function
  */
 proto.engine_api.CreateEnclaveArgs.prototype.setIsPartitioningEnabled = function(value) {
   return jspb.Message.setProto3BooleanField(this, 4, value);
-};
-
-
-/**
- * optional bool should_publish_all_ports = 5;
- * @return {boolean}
- */
-proto.engine_api.CreateEnclaveArgs.prototype.getShouldPublishAllPorts = function() {
-  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 5, false));
-};
-
-
-/**
- * @param {boolean} value
- * @return {!proto.engine_api.CreateEnclaveArgs} returns this
- */
-proto.engine_api.CreateEnclaveArgs.prototype.setShouldPublishAllPorts = function(value) {
-  return jspb.Message.setProto3BooleanField(this, 5, value);
 };
 
 
@@ -1235,10 +1205,8 @@ proto.engine_api.EnclaveInfo.prototype.toObject = function(opt_includeInstance) 
 proto.engine_api.EnclaveInfo.toObject = function(includeInstance, msg) {
   var f, obj = {
     enclaveId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    networkId: jspb.Message.getFieldWithDefault(msg, 2, ""),
-    networkCidr: jspb.Message.getFieldWithDefault(msg, 3, ""),
-    containersStatus: jspb.Message.getFieldWithDefault(msg, 4, 0),
-    apiContainerStatus: jspb.Message.getFieldWithDefault(msg, 5, 0),
+    containersStatus: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    apiContainerStatus: jspb.Message.getFieldWithDefault(msg, 3, 0),
     apiContainerInfo: (f = msg.getApiContainerInfo()) && proto.engine_api.EnclaveAPIContainerInfo.toObject(includeInstance, f),
     apiContainerHostMachineInfo: (f = msg.getApiContainerHostMachineInfo()) && proto.engine_api.EnclaveAPIContainerHostMachineInfo.toObject(includeInstance, f)
   };
@@ -1282,27 +1250,19 @@ proto.engine_api.EnclaveInfo.deserializeBinaryFromReader = function(msg, reader)
       msg.setEnclaveId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setNetworkId(value);
-      break;
-    case 3:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setNetworkCidr(value);
-      break;
-    case 4:
       var value = /** @type {!proto.engine_api.EnclaveContainersStatus} */ (reader.readEnum());
       msg.setContainersStatus(value);
       break;
-    case 5:
+    case 3:
       var value = /** @type {!proto.engine_api.EnclaveAPIContainerStatus} */ (reader.readEnum());
       msg.setApiContainerStatus(value);
       break;
-    case 6:
+    case 4:
       var value = new proto.engine_api.EnclaveAPIContainerInfo;
       reader.readMessage(value,proto.engine_api.EnclaveAPIContainerInfo.deserializeBinaryFromReader);
       msg.setApiContainerInfo(value);
       break;
-    case 7:
+    case 5:
       var value = new proto.engine_api.EnclaveAPIContainerHostMachineInfo;
       reader.readMessage(value,proto.engine_api.EnclaveAPIContainerHostMachineInfo.deserializeBinaryFromReader);
       msg.setApiContainerHostMachineInfo(value);
@@ -1343,38 +1303,24 @@ proto.engine_api.EnclaveInfo.serializeBinaryToWriter = function(message, writer)
       f
     );
   }
-  f = message.getNetworkId();
-  if (f.length > 0) {
-    writer.writeString(
-      2,
-      f
-    );
-  }
-  f = message.getNetworkCidr();
-  if (f.length > 0) {
-    writer.writeString(
-      3,
-      f
-    );
-  }
   f = message.getContainersStatus();
   if (f !== 0.0) {
     writer.writeEnum(
-      4,
+      2,
       f
     );
   }
   f = message.getApiContainerStatus();
   if (f !== 0.0) {
     writer.writeEnum(
-      5,
+      3,
       f
     );
   }
   f = message.getApiContainerInfo();
   if (f != null) {
     writer.writeMessage(
-      6,
+      4,
       f,
       proto.engine_api.EnclaveAPIContainerInfo.serializeBinaryToWriter
     );
@@ -1382,7 +1328,7 @@ proto.engine_api.EnclaveInfo.serializeBinaryToWriter = function(message, writer)
   f = message.getApiContainerHostMachineInfo();
   if (f != null) {
     writer.writeMessage(
-      7,
+      5,
       f,
       proto.engine_api.EnclaveAPIContainerHostMachineInfo.serializeBinaryToWriter
     );
@@ -1409,47 +1355,11 @@ proto.engine_api.EnclaveInfo.prototype.setEnclaveId = function(value) {
 
 
 /**
- * optional string network_id = 2;
- * @return {string}
- */
-proto.engine_api.EnclaveInfo.prototype.getNetworkId = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
-};
-
-
-/**
- * @param {string} value
- * @return {!proto.engine_api.EnclaveInfo} returns this
- */
-proto.engine_api.EnclaveInfo.prototype.setNetworkId = function(value) {
-  return jspb.Message.setProto3StringField(this, 2, value);
-};
-
-
-/**
- * optional string network_cidr = 3;
- * @return {string}
- */
-proto.engine_api.EnclaveInfo.prototype.getNetworkCidr = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
-};
-
-
-/**
- * @param {string} value
- * @return {!proto.engine_api.EnclaveInfo} returns this
- */
-proto.engine_api.EnclaveInfo.prototype.setNetworkCidr = function(value) {
-  return jspb.Message.setProto3StringField(this, 3, value);
-};
-
-
-/**
- * optional EnclaveContainersStatus containers_status = 4;
+ * optional EnclaveContainersStatus containers_status = 2;
  * @return {!proto.engine_api.EnclaveContainersStatus}
  */
 proto.engine_api.EnclaveInfo.prototype.getContainersStatus = function() {
-  return /** @type {!proto.engine_api.EnclaveContainersStatus} */ (jspb.Message.getFieldWithDefault(this, 4, 0));
+  return /** @type {!proto.engine_api.EnclaveContainersStatus} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
 };
 
 
@@ -1458,16 +1368,16 @@ proto.engine_api.EnclaveInfo.prototype.getContainersStatus = function() {
  * @return {!proto.engine_api.EnclaveInfo} returns this
  */
 proto.engine_api.EnclaveInfo.prototype.setContainersStatus = function(value) {
-  return jspb.Message.setProto3EnumField(this, 4, value);
+  return jspb.Message.setProto3EnumField(this, 2, value);
 };
 
 
 /**
- * optional EnclaveAPIContainerStatus api_container_status = 5;
+ * optional EnclaveAPIContainerStatus api_container_status = 3;
  * @return {!proto.engine_api.EnclaveAPIContainerStatus}
  */
 proto.engine_api.EnclaveInfo.prototype.getApiContainerStatus = function() {
-  return /** @type {!proto.engine_api.EnclaveAPIContainerStatus} */ (jspb.Message.getFieldWithDefault(this, 5, 0));
+  return /** @type {!proto.engine_api.EnclaveAPIContainerStatus} */ (jspb.Message.getFieldWithDefault(this, 3, 0));
 };
 
 
@@ -1476,17 +1386,17 @@ proto.engine_api.EnclaveInfo.prototype.getApiContainerStatus = function() {
  * @return {!proto.engine_api.EnclaveInfo} returns this
  */
 proto.engine_api.EnclaveInfo.prototype.setApiContainerStatus = function(value) {
-  return jspb.Message.setProto3EnumField(this, 5, value);
+  return jspb.Message.setProto3EnumField(this, 3, value);
 };
 
 
 /**
- * optional EnclaveAPIContainerInfo api_container_info = 6;
+ * optional EnclaveAPIContainerInfo api_container_info = 4;
  * @return {?proto.engine_api.EnclaveAPIContainerInfo}
  */
 proto.engine_api.EnclaveInfo.prototype.getApiContainerInfo = function() {
   return /** @type{?proto.engine_api.EnclaveAPIContainerInfo} */ (
-    jspb.Message.getWrapperField(this, proto.engine_api.EnclaveAPIContainerInfo, 6));
+    jspb.Message.getWrapperField(this, proto.engine_api.EnclaveAPIContainerInfo, 4));
 };
 
 
@@ -1495,7 +1405,7 @@ proto.engine_api.EnclaveInfo.prototype.getApiContainerInfo = function() {
  * @return {!proto.engine_api.EnclaveInfo} returns this
 */
 proto.engine_api.EnclaveInfo.prototype.setApiContainerInfo = function(value) {
-  return jspb.Message.setWrapperField(this, 6, value);
+  return jspb.Message.setWrapperField(this, 4, value);
 };
 
 
@@ -1513,17 +1423,17 @@ proto.engine_api.EnclaveInfo.prototype.clearApiContainerInfo = function() {
  * @return {boolean}
  */
 proto.engine_api.EnclaveInfo.prototype.hasApiContainerInfo = function() {
-  return jspb.Message.getField(this, 6) != null;
+  return jspb.Message.getField(this, 4) != null;
 };
 
 
 /**
- * optional EnclaveAPIContainerHostMachineInfo api_container_host_machine_info = 7;
+ * optional EnclaveAPIContainerHostMachineInfo api_container_host_machine_info = 5;
  * @return {?proto.engine_api.EnclaveAPIContainerHostMachineInfo}
  */
 proto.engine_api.EnclaveInfo.prototype.getApiContainerHostMachineInfo = function() {
   return /** @type{?proto.engine_api.EnclaveAPIContainerHostMachineInfo} */ (
-    jspb.Message.getWrapperField(this, proto.engine_api.EnclaveAPIContainerHostMachineInfo, 7));
+    jspb.Message.getWrapperField(this, proto.engine_api.EnclaveAPIContainerHostMachineInfo, 5));
 };
 
 
@@ -1532,7 +1442,7 @@ proto.engine_api.EnclaveInfo.prototype.getApiContainerHostMachineInfo = function
  * @return {!proto.engine_api.EnclaveInfo} returns this
 */
 proto.engine_api.EnclaveInfo.prototype.setApiContainerHostMachineInfo = function(value) {
-  return jspb.Message.setWrapperField(this, 7, value);
+  return jspb.Message.setWrapperField(this, 5, value);
 };
 
 
@@ -1550,7 +1460,7 @@ proto.engine_api.EnclaveInfo.prototype.clearApiContainerHostMachineInfo = functi
  * @return {boolean}
  */
 proto.engine_api.EnclaveInfo.prototype.hasApiContainerHostMachineInfo = function() {
-  return jspb.Message.getField(this, 7) != null;
+  return jspb.Message.getField(this, 5) != null;
 };
 
 
