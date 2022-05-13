@@ -2,12 +2,15 @@
 ### Changes
 * The `DockerKurtosisBackend` will now track the free IPs of networks
 * `KurtosisBackend` now has `UserServiceRegistration` CRUD methods
+* Service containers in Docker no longer get tagged with a service ID (this is now on the service registration object)
 
 ### Breaking Changes
 * Renamed `service.ServiceID` to `user_service_registration.UserServiceID`
     * Users should update their imports/packages accordingly
 * Removed the `ServiceID` filter of `ServiceFilters`
     * Users should filter look up registration by service ID, then get services by registration GUID
+* Removed the `ServiceID` field of the `Service` object
+    * Users should query for the `UserServiceRegistration` associated with the service to find service ID
 * `KurtosisBackend.CreateUserService` now takes in a service registration GUID, rather than a static IP
     * Users should make sure to call `CreateUserServiceRegistration` and pass in the returned GUID to the user service
 * `GetLocalDockerKurtosisBackend` now takes in an optional argument for providing the enclave ID, if running inside an enclave

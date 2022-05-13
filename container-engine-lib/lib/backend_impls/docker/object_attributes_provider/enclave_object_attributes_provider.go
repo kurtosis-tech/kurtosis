@@ -42,9 +42,6 @@ type DockerEnclaveObjectAttributesProvider interface {
 	) (DockerObjectAttributes, error)
 	ForUserServiceContainer(
 		registrationGuid user_service_registration.UserServiceRegistrationGUID,
-		// TODO Remove this completely - user services shouldn't get tagged with their Service ID anymore (this
-		//  should be on the user service registration)
-		serviceId user_service_registration.ServiceID,
 		serviceGuid service.ServiceGUID,
 		privateIpAddr net.IP,
 		privatePorts map[string]*port_spec.PortSpec,
@@ -187,9 +184,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContainer(
 	registrationGUID user_service_registration.UserServiceRegistrationGUID,
-	// TODO Remove this param - user services shouldn't get tagged with their service ID anymore, adn this should
-	//  be done via service registration lookups now!
-	serviceID user_service_registration.ServiceID,
 	serviceGUID service.ServiceGUID,
 	privateIpAddr net.IP,
 	privatePorts map[string]*port_spec.PortSpec,
@@ -227,14 +221,11 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 		)
 	}
 
-	// TODO Remove this - services should no longer be lookup-able by ID because you should need to go through a registration
-	//  for this
-	serviceIdStr := string(serviceID)
 	serviceGuidStr := string(serviceGUID)
 
-	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(serviceIdStr, serviceGuidStr)
+	labels, err := provider.getLabelsForEnclaveObjectWithGUID(serviceGuidStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with ID '%v' and GUID '%v'", serviceID, serviceGUID)
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", serviceGUID)
 	}
 	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.UserServiceContainerTypeLabelValue
 	labels[label_key_consts.PortSpecsLabelKey] = serializedPortsSpec

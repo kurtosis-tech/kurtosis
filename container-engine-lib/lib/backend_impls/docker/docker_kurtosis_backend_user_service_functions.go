@@ -704,11 +704,6 @@ func getUserServiceObjectFromContainerInfo(
 		return nil, stacktrace.NewError("Expected the user service's registration GUID to be found under label '%v' but the label wasn't present", label_key_consts.UserServiceRegistrationGUIDLabelKey.GetString())
 	}
 
-	id, found := labels[label_key_consts.IDLabelKey.GetString()]
-	if !found {
-		return nil, stacktrace.NewError("Expected to find user service ID label key '%v' but none was found", label_key_consts.IDLabelKey.GetString())
-	}
-
 	guid, found := labels[label_key_consts.GUIDLabelKey.GetString()]
 	if !found {
 		return nil, stacktrace.NewError("Expected to find user service GUID label key '%v' but none was found", label_key_consts.GUIDLabelKey.GetString())
@@ -768,7 +763,6 @@ func getUserServiceObjectFromContainerInfo(
 
 	newObject := service.NewService(
 		user_service_registration.UserServiceRegistrationGUID(registrationGuid),
-		user_service_registration.ServiceID(id),
 		service.ServiceGUID(guid),
 		status,
 		enclave.EnclaveID(enclaveId),
