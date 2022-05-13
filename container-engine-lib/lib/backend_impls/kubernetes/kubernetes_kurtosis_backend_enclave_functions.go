@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
 	"os"
+	"path"
 	"strconv"
 )
 
@@ -185,6 +186,7 @@ func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, encla
 		return stacktrace.NewError("Expected one enclave matching ID '%v' but found '%v'", enclaveId, len(namespaces))
 	}
 	namespace := namespaces[0]
+	namespaceName := namespace.Name
 
 	// Create output directory
 	if _, err := os.Stat(outputDirpath); !os.IsNotExist(err) {
@@ -203,12 +205,68 @@ func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, encla
 	enclavePods := enclavePodsList.Items
 
 	for _, pod := range enclavePods {
-		for _, container := range pod.Spec.Containers {
+		podName := pod.Name
 
+		// Make pod output directory
+		podOutputDirpath := path.Join(outputDirpath, podName)
+		if err := os.Mkdir(podOutputDirpath, createdDirPerms); err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred creating directory '%v' to hold the output of pod with name '%v'",
+				podOutputDirpath,
+				podName,
+			)
 		}
 
-		backend.kubernetesManager.
+		// TODO DUMP POD SPEC
 
+		for _, container := range pod.Spec.Containers {
+			containerName := container.Name
+
+			// Make container output directory
+			containerOutputDirpath := path.Join(outputDirpath, containerName)
+			if err := os.Mkdir(podOutputDirpath, createdDirPerms); err != nil {
+				return stacktrace.Propagate(
+					err,
+					"An error occurred creating directory '%v' to hold the output of container with name '%v' in pod '%v'",
+					containerOutputDirpath,
+					containerName,
+					podName,
+				)
+			}
+
+			containerLogReadCloser, err := backend.kubernetesManager.GetContainerLogs(
+				ctx,
+				namespaceName,
+				podName,
+				containerName,
+				shouldFollowPodLogsWhenDumping,
+				shouldAddTimestampsWhenDumpingPodLogs,
+			)
+			if err != nil {
+				return stacktrace.Propagate(
+					err,
+					"An error occurred dumping logs of container '%v' in pod '%v' in namespace '%v'",
+					containerName,
+					podName,
+					namespaceName,
+				)
+			}
+			defer containerLogReadCloser.Close()
+
+			logsOutputFilepath := path.Join(podOutputDirpath, containerLogsFilename)
+			logsOutputFp, err := os.Create(logsOutputFilepath)
+			if err != nil {
+				return stacktrace.Propagate(
+					err,
+					"An error occurred creating file '%v' to hold the logs of container with name '%v' and ID '%v'",
+					logsOutputFilepath,
+					containerName,
+					containerId,
+				)
+			}
+
+		}
 	}
 }
 
