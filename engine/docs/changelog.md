@@ -6,6 +6,7 @@
 * Remove all the following fields from the `EnclaveInfo` object returned by the API:
     * `network_id`
     * `network_cidr`
+    * Users should remove these fields
 
 # 1.18.2
 ### Fixes
