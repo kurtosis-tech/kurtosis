@@ -3,7 +3,6 @@ package resolved_config
 import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/config_version"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/v1"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/versioned_config"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -61,16 +60,28 @@ func NewKurtosisConfigFromOverrides(overrides *v1.KurtosisConfigV1) (*KurtosisCo
 	}
 	shouldSendMetrics := *overrides.ShouldSendMetrics
 
+	allClusterOverrides := getDefaultKurtosisClusterConfigOverrides()
+	if overrides.KurtosisClusters != nil {
+		allClusterOverrides = *overrides.KurtosisClusters
+	}
 
+	if len(allClusterOverrides) == 0 {
+		return nil, stacktrace.NewError("At least one Kurtosis cluster must be specified")
+	}
 
-	for clusterId, clusterConfig := range overrides.KurtosisClusters {
-
+	allClusterConfigs := map[string]*KurtosisClusterConfig{}
+	for clusterId, overridesForCluster := range allClusterOverrides {
+		clusterConfig, err := NewKurtosisClusterConfigFromOverrides(overridesForCluster)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating a Kurtosis cluster config object from overrides: %+v", overridesForCluster)
+		}
+		allClusterConfigs[clusterId] = clusterConfig
 	}
 
 	return &KurtosisConfig{
 		overrides:         nil,
-		shouldSendMetrics: config.overrides.,
-		clusters:          nil,
+		shouldSendMetrics: shouldSendMetrics,
+		clusters:          allClusterConfigs,
 	}, nil
 }
 
@@ -86,32 +97,6 @@ func NewKurtosisConfigFromRequiredFields(didUserAcceptSendingMetrics bool) (*Kur
 	return result, nil
 }
 
-/*
-func (kurtosisConfig *KurtosisConfig) WithOverrides(overrides *v1.KurtosisConfigV1) (*KurtosisConfig, error) {
-	renderedKurtosisConfig, err := kurtosisConfig.renderedConfig.OverlayOverrides(overrides)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to overlay configuration overrides on default Kurtosis configuration.")
-	}
-	return &KurtosisConfig{
-		renderedConfig: renderedKurtosisConfig,
-		overrides:      overrides,
-	}, nil
-}
- */
-
-func (kurtosisConfig *KurtosisConfig) GetOverrides() *v1.KurtosisConfigV1 {
-	return kurtosisConfig.overrides
-}
-
-func (kurtosisConfig *KurtosisConfig) GetConfigVersion() config_version.ConfigVersion {
-	return kurtosisConfig
-	if kurtosisConfig.overrides.ConfigVersion == nil {
-		// This is a required field, and our validation should force that this is non-nil
-		panic("The config overrides did not specify a config version; this should never happen")
-	}
-	return *kurtosisConfig.overrides.ConfigVersion
-}
-
 func (kurtosisConfig *KurtosisConfig) GetShouldSendMetrics() bool {
 	return kurtosisConfig.shouldSendMetrics
 }
@@ -120,30 +105,21 @@ func (kurtosisConfig *KurtosisConfig) GetKurtosisClusters() map[string]*Kurtosis
 	return kurtosisConfig.clusters
 }
 
-func (kurtosisConfig *KurtosisConfig) Validate() error {
-	overrides := kurtosisConfig.overrides
-
-	// ------------------------------- Check required fields --------------------------------------
-	if overrides.ConfigVersion == nil {
-		// Should never happen
-		return stacktrace.NewError("The Kurtosis config doesn't have a version; this is a bug in Kurtosis and should " +
-			"never happen because we set the config version at construction time")
-	}
-
-	// ------------------------------- Check rest of state --------------------------------------
-
-
-	return nil
+func (kurtosisConfig *KurtosisConfig) GetOverrides() *v1.KurtosisConfigV1 {
+	return kurtosisConfig.overrides
 }
 
-func getDefaultKurtosisClusterConfigOverrides() map[string]*v1.KurtosisClusterV1 {
+// ====================================================================================================
+//                                      Private Helpers
+// ====================================================================================================
+func getDefaultKurtosisClusterConfigOverrides() map[string]*v1.KurtosisClusterConfigV1 {
 	dockerClusterType := KurtosisClusterType_Docker.String()
 	minikubeClusterType := KurtosisClusterType_Kubernetes.String()
 	minikubeKubernetesClusterName := defaultMinikubeClusterKubernetesClusterNameStr
 	minikubeStorageClass := defaultMinikubeStorageClass
 	minikubeEnclaveDataVolSizeGb := defaultMinikubeEnclaveDataVolumeGb
 
-	result := map[string]*v1.KurtosisClusterV1{
+	result := map[string]*v1.KurtosisClusterConfigV1{
 		defaultDockerClusterName: {
 			Type:   &dockerClusterType,
 			Config: nil, // Must be nil for Docker

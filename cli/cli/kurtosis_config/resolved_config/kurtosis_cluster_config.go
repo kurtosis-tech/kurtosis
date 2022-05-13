@@ -5,7 +5,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	v1 "github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/v1"
 	"github.com/kurtosis-tech/stacktrace"
-	"golang.org/x/image/colornames"
 )
 
 type kurtosisBackendSupplier func() (backend_interface.KurtosisBackend, error)
@@ -14,7 +13,7 @@ type KurtosisClusterConfig struct {
 	kurtosisBackendSupplier kurtosisBackendSupplier
 }
 
-func NewKurtosisClusterConfigFromOverrides(overrides *v1.KurtosisClusterV1) (*KurtosisClusterConfig, error) {
+func NewKurtosisClusterConfigFromOverrides(overrides *v1.KurtosisClusterConfigV1) (*KurtosisClusterConfig, error) {
 	if overrides.Type == nil {
 		return nil, stacktrace.NewError("Kurtosis cluster must have a defined type")
 	}
@@ -39,6 +38,10 @@ func NewKurtosisClusterConfigFromOverrides(overrides *v1.KurtosisClusterV1) (*Ku
 	}, nil
 }
 
+
+// ====================================================================================================
+//                                      Private Helpers
+// ====================================================================================================
 func getKurtosisBackendSupplier(clusterType KurtosisClusterType, kubernetesConfig *v1.KubernetesClusterConfigV1) (
 	kurtosisBackendSupplier,
 	error,
@@ -83,7 +86,9 @@ func getKurtosisBackendSupplier(clusterType KurtosisClusterType, kubernetesConfi
 
 		result = func() (backend_interface.KurtosisBackend, error) {
 			// TODO
-			return nil, stacktrace.NewError(fmt.Sprintf("TODO IMPLEMENT THIS: %v %v %v", kubernetesClusterName, storageClass, enclaveDataVolSizeGb)
+			return nil, stacktrace.NewError(fmt.Sprintf(
+				"TODO IMPLEMENT THIS: %v %v %v", kubernetesClusterName, storageClass, enclaveDataVolSizeGb,
+			))
 		}
 	default:
 		// This should never happen because we enforce this via unit tests
