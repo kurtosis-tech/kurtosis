@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -38,7 +39,6 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
 	image string,
 	enclaveId enclave.EnclaveID,
-	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
 	// The dirpath on the API container where the enclave data volume should be mounted
@@ -68,6 +68,25 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
+	}
+
+	networkCidr := enclaveNetwork.GetIpAndMask()
+	alreadyTakenIps := map[string]bool{
+		networkCidr.IP.String(): true,
+		enclaveNetwork.GetGatewayIp(): true,
+	}
+	for containerIp := range enclaveNetwork.GetContainerIps() {
+		alreadyTakenIps[containerIp] = true
+	}
+	// TODO migrate FreeIPAddrTracker inside this repo
+	freeIpAddrProvider := lib.NewFreeIpAddrTracker(
+		logrus.StandardLogger(),
+		networkCidr,
+		alreadyTakenIps,
+	)
+	ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting an IP address for the API container")
 	}
 
 	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, apiContainerPortProtocol)

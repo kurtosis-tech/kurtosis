@@ -119,7 +119,6 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		image string,
 		enclaveId enclave.EnclaveID,
-		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 		grpcPortNum uint16,
 		grpcProxyPortNum uint16,
 		enclaveDataVolumeDirpath string,
@@ -167,7 +166,6 @@ type KurtosisBackend interface {
 		enclaveId enclave.EnclaveID,
 		id module.ModuleID,
 		guid module.ModuleGUID,
-		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 		grpcPortNum uint16,
 		envVars map[string]string,
 	) (
@@ -378,7 +376,6 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
 		serviceGuid service.ServiceGUID,
-		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 	) (
 		*networking_sidecar.NetworkingSidecar,
 		error,
@@ -453,7 +450,6 @@ type KurtosisBackend interface {
 		filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
 		destVolMntDirpathOnExpander string,
 		filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
-		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 	) (
 		*files_artifact_expander.FilesArtifactExpander,
 		error,
