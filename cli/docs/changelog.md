@@ -1,5 +1,9 @@
 # TBD
 
+# 0.16.2
+### Features
+* Can use Kurtosis Core YAML config file format V1 to specify metrics preferences
+
 # 0.16.1
 ### Features
 * Can use kubernetes backend for engine commands through the `--with-kubernetes` flag
