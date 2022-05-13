@@ -244,7 +244,7 @@ Returns:
 */
 func (network *ServiceNetwork) StartService(
 	ctx context.Context,
-	registrationGuid user_service_registration.UserServiceRegistrationGUID,
+	serviceId user_service_registration.ServiceID,
 	imageName string,
 	privatePorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
@@ -263,29 +263,11 @@ func (network *ServiceNetwork) StartService(
 		return nil, nil, stacktrace.NewError("Cannot start container for service; the service network has been destroyed")
 	}
 
-	// Getting all registrations is as expensive as getting only a few registrations
-	// We definitely need this the ID of the service getting added, and we may need all
-	//  registrations in case we're doing network partitioning
-	getAllRegistrationsFilter := &user_service_registration.UserServiceRegistrationFilters{
-		EnclaveIDs: map[enclave.EnclaveID]bool{
-			network.enclaveId: true,
-		},
-	}
-	allRegistrations, err := network.kurtosisBackend.GetUserServiceRegistrations(
-		ctx,
-		getAllRegistrationsFilter,
-	)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting all user service registrations in the enclave")
-	}
-	newServiceRegistration, found := allRegistrations[registrationGuid]
+	serviceRegistration, found := network.registrationsByServiceId[serviceId]
 	if !found {
-		return nil, nil, stacktrace.Propagate(err, "Cannot add service; registration '%v' does not exist", registrationGuid)
+		return nil, nil, stacktrace.NewError("Cannot start service; no registration exists for service with ID '%v'", serviceId)
 	}
-	serviceId := newServiceRegistration.GetServiceID()
-
-	// NOTE: This will only be used, and populated, if network-partitioning is true
-	var registrationsByServiceId map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration
+	registrationGuid := serviceRegistration.GetGUID()
 
 	// When partitioning is enabled, there's a race condition where:
 	//   a) we need to start the service before we can launch the sidecar but
@@ -295,11 +277,6 @@ func (network *ServiceNetwork) StartService(
 	// This means that when the new service is launched, even if its own qdisc isn't yet updated, all the services
 	//  it would communicate are already dropping traffic to it before it even starts.
 	if network.isPartitioningEnabled {
-		registrationsByServiceId = map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration{}
-		for _, registration := range allRegistrations {
-			registrationsByServiceId[registration.GetServiceID()] = registration
-		}
-
 		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
@@ -308,7 +285,7 @@ func (network *ServiceNetwork) StartService(
 
 		servicesPacketLossConfigurationsWithoutNewNode := map[user_service_registration.ServiceID]map[user_service_registration.ServiceID]float32{}
 		for serviceIdInTopology, otherServicesPacketLossConfigs := range servicePacketLossConfigurationsByServiceID {
-			if newServiceRegistration.GetServiceID() == serviceIdInTopology {
+			if serviceId == serviceIdInTopology {
 				continue
 			}
 			servicesPacketLossConfigurationsWithoutNewNode[serviceIdInTopology] = otherServicesPacketLossConfigs
@@ -317,7 +294,7 @@ func (network *ServiceNetwork) StartService(
 		if err := updateTrafficControlConfiguration(
 			ctx,
 			servicesPacketLossConfigurationsWithoutNewNode,
-			registrationsByServiceId,
+			network.registrationsByServiceId,
 			network.networkingSidecars,
 		); err != nil {
 			return nil, nil, stacktrace.Propagate(
@@ -343,45 +320,21 @@ func (network *ServiceNetwork) StartService(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating user service with image '%v' for registration '%v'",
-			imageName,
-			registrationGuid,
+			"An error occurred creating service '%v'",
+			serviceId,
 		)
 	}
 	// TODO defer-undo the launch if a failure occurs?
 
-	network.serviceIdToServiceGuidIndex[serviceId] = userService.GetGUID()
+	network.servicesByServiceId[serviceId] = userService
 	shouldUndoServiceIdIndexAddition := true
 	defer func() {
 		if shouldUndoServiceIdIndexAddition {
-			delete(network.serviceIdToServiceGuidIndex, serviceId)
+			delete(network.servicesByServiceId, serviceId)
 		}
 	}()
 
-	/*
-	// TODO Restart-able enclaves: Don't store any service information in memory; instead, get it all from the KurtosisBackend when required
-	serviceGUID := userService.GetGUID()
-	maybeServicePublicIpAddr := userService.GetMaybePublicIP()
-	maybeServicePublicPorts := userService.GetMaybePublicPorts()
-
-	runInfo := serviceRunInfo{
-		serviceGUID:              serviceGUID,
-		privatePorts:             privatePorts,
-		maybePublicIpAddr:        maybeServicePublicIpAddr,
-		maybePublicPorts:         maybeServicePublicPorts,
-	}
-	network.serviceRunInfo[serviceId] = runInfo
-
-	 */
-
 	if network.isPartitioningEnabled {
-		registration, found := allRegistrations[registrationGuid]
-		if !found {
-			// Not sure how this would ever happen
-			return nil, nil, stacktrace.NewError("After successfully adding a service to registration '%v', we couldn't find the registration - this is very strange!", registration)
-		}
-		serviceId := registration.GetServiceID()
-
 		sidecar, err := network.networkingSidecarManager.Add(ctx, userService.GetGUID())
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred adding the networking sidecar")
@@ -403,7 +356,7 @@ func (network *ServiceNetwork) StartService(
 		updatesToApply := map[user_service_registration.ServiceID]map[user_service_registration.ServiceID]float32{
 			serviceId: newNodeServicePacketLossConfiguration,
 		}
-		if err := updateTrafficControlConfiguration(ctx, updatesToApply, registrationsByServiceId, network.networkingSidecars); err != nil {
+		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.registrationsByServiceId, network.networkingSidecars); err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration on the new node to partition it "+
 				"off from other nodes")
 		}
