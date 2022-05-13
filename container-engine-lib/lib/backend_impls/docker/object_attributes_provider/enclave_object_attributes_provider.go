@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 	"strings"
@@ -40,8 +41,8 @@ type DockerEnclaveObjectAttributesProvider interface {
 		privateGrpcProxyPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
 	ForUserServiceContainer(
-		serviceID service.ServiceID,
-		serviceGUID service.ServiceGUID,
+		registrationGuid user_service_registration.UserServiceRegistrationGUID,
+		serviceGuid service.ServiceGUID,
 		privateIpAddr net.IP,
 		privatePorts map[string]*port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
@@ -52,7 +53,7 @@ type DockerEnclaveObjectAttributesProvider interface {
 		guid files_artifact_expander.FilesArtifactExpanderGUID,
 	) (DockerObjectAttributes, error)
 	ForFilesArtifactExpansionVolume(
-		serviceGUID service.ServiceGUID,
+		registrationGuid user_service_registration.UserServiceRegistrationGUID,
 		fileArtifactID service.FilesArtifactID,
 	) (DockerObjectAttributes, error)
 	ForModuleContainer(
@@ -181,7 +182,12 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 	return objectAttributes, nil
 }
 
-func (provider *dockerEnclaveObjectAttributesProviderImpl)ForUserServiceContainer(serviceID service.ServiceID, serviceGUID service.ServiceGUID, privateIpAddr net.IP, privatePorts map[string]*port_spec.PortSpec) (DockerObjectAttributes, error) {
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContainer(
+	registrationGUID user_service_registration.UserServiceRegistrationGUID,
+	serviceGUID service.ServiceGUID,
+	privateIpAddr net.IP,
+	privatePorts map[string]*port_spec.PortSpec,
+) (DockerObjectAttributes, error) {
 	name, err := provider.getNameForEnclaveObject(
 		[]string{
 			userServiceContainerNameFragment,
@@ -206,16 +212,25 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl)ForUserServiceContaine
 		)
 	}
 
-	serviceIdStr := string(serviceID)
+	registrationGuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(string(registrationGUID))
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating a Docker label value object from user service registration GUID '%v'",
+			registrationGUID,
+		)
+	}
+
 	serviceGuidStr := string(serviceGUID)
 
-	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(serviceIdStr, serviceGuidStr)
+	labels, err := provider.getLabelsForEnclaveObjectWithGUID(serviceGuidStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with ID '%v' and GUID '%v'", serviceID, serviceGUID)
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", serviceGUID)
 	}
 	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.UserServiceContainerTypeLabelValue
 	labels[label_key_consts.PortSpecsLabelKey] = serializedPortsSpec
 	labels[label_key_consts.PrivateIPLabelKey] = privateIpLabelValue
+	labels[label_key_consts.UserServiceRegistrationGUIDLabelKey] = registrationGuidLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -312,17 +327,17 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForModuleContainer(
 }
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpansionVolume(
-	serviceGUID service.ServiceGUID,
+	registrationGuid user_service_registration.UserServiceRegistrationGUID,
 	fileArtifactID service.FilesArtifactID,
 )(
 	DockerObjectAttributes,
 	error,
 ){
-	serviceGUIDStr := string(serviceGUID)
+	registrationGuidStr := string(registrationGuid)
 
 	name, err := provider.getNameForEnclaveObject([]string{
 		artifactExpansionVolumeNameFragment,
-		serviceGUIDStr,
+		registrationGuidStr,
 		string(fileArtifactID),
 	})
 	if err != nil {
