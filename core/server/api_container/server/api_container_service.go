@@ -178,7 +178,8 @@ func (apicService ApiContainerService) RegisterService(ctx context.Context, args
 	}
 
 	return &kurtosis_core_rpc_api_bindings.RegisterServiceResponse{
-		PrivateIpAddr:          privateIpAddr.String(),
+		PrivateIpAddr:           privateIpAddr.String(),
+		ServiceRegistrationGuid: "",
 	}, nil
 }
 
