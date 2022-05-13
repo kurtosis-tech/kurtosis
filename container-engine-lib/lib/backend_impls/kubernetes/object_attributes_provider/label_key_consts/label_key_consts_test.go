@@ -6,15 +6,26 @@ import (
 	"testing"
 )
 
-var labelKeyStrsToEnsure = map[string]string{
-	labelKeyPrefixStr:       "kurtosistech.com/",
-	appIdLabelKeyStr:        "kurtosistech.com/app-id",
-	resourceTypeLabelKeyStr: "kurtosistech.com/resource-type",
+//We expect these strings to be reliable between versions.
+const (
+	expectedLabelKeyPrefixStr 		= "kurtosistech.com/"
+	expectedAppIdLabelKeyStr 		= "kurtosistech.com/app-id"
+	expectedResourceTypeLabelKeyStr = "kurtosistech.com/resource-type"
+)
+
+//When Kurtosis versions change, these particular label key strings must be equal.
+//If these change between versions, Kurtosis will not be able to find and manage resources with these label keys.
+//They will effectively be lost to Kurtosis and the user will have to clean up any mess.
+var crossVersionLabelKeyStringsToEnsure = map[string]string{
+	labelKeyPrefixStr:       	expectedLabelKeyPrefixStr,
+	appIdLabelKeyStr:        	expectedAppIdLabelKeyStr,
+	resourceTypeLabelKeyStr: 	expectedResourceTypeLabelKeyStr,
 }
 
-var labelKeysToEnsure = map[*kubernetes_label_key.KubernetesLabelKey]string{
-	AppIDLabelKey:                "kurtosistech.com/app-id",
-	KurtosisResourceTypeLabelKey: "kurtosistech.com/resource-type",
+//These are the publicly accessible keys that correspond to the private string constants. They need to stay the same.
+var crossVersionLabelKeysToEnsure = map[*kubernetes_label_key.KubernetesLabelKey]string{
+	AppIDLabelKey:                	expectedAppIdLabelKeyStr,
+	KurtosisResourceTypeLabelKey: 	expectedResourceTypeLabelKeyStr,
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -23,11 +34,11 @@ var labelKeysToEnsure = map[*kubernetes_label_key.KubernetesLabelKey]string{
 // are never modified.
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 func TestImmutableConstantsArentModified(t *testing.T) {
-	for actualValue, expectedValue := range labelKeyStrsToEnsure {
+	for actualValue, expectedValue := range crossVersionLabelKeyStringsToEnsure {
 		require.Equal(t, expectedValue, actualValue, "An immutable label key string was modified! Got '%v' but should be '%v'", actualValue, expectedValue)
 	}
 
-	for labelKey, expectedValueStr := range labelKeysToEnsure {
+	for labelKey, expectedValueStr := range crossVersionLabelKeysToEnsure {
 		labelKeyStr := labelKey.GetString()
 		require.Equal(t, expectedValueStr, labelKeyStr, "An immutable label key was modified! Got '%v' but should be '%v'", labelKeyStr, expectedValueStr)
 	}
