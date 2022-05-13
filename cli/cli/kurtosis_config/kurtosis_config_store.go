@@ -213,7 +213,11 @@ func  (configStore *kurtosisConfigStore) migrateOverridesAcrossYAMLVersions() (*
 			// cast "uncastedConfig" to current version we're upgrading from
 			castedOldConfig, ok := uncastedConfig.(*v0.KurtosisConfigV0)
 			if !ok {
-				return nil, stacktrace.NewError("Failed to cast configuration '%+v' to expected configuration version v0.", uncastedConfig)
+				return nil, stacktrace.NewError(
+					"Failed to cast configuration '%+v' to expected configuration version v%d",
+					uncastedConfig,
+					versionToUpgradeFrom,
+				)
 			}
 			// create a new configuration object to represent the migrated work
 			newConfig := &v1.KurtosisConfigV1{}

@@ -60,7 +60,7 @@ func initInteractiveConfig() (*resolved_config.KurtosisConfig, error) {
 		}
 	}
 
-	kurtosisConfig, err := resolved_config.InitializeKurtosisConfigFromUserInput(didUserAcceptSendingMetrics)
+	kurtosisConfig, err := resolved_config.NewKurtosisConfigFromRequiredFields(didUserAcceptSendingMetrics)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to initialize Kurtosis configuration from user input %t.", didUserAcceptSendingMetrics)
 	}
