@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_send_metrics_election"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_send_metrics_election/user_metrics_election_event_backlog"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -19,7 +20,7 @@ const (
 	shouldSendMetricsOptOutEventDefaultValue = true
 )
 
-func initInteractiveConfig() (*KurtosisConfig, error) {
+func initInteractiveConfig() (*resolved_config.KurtosisConfig, error) {
 	// Check if we're actually running in interactive mode (i.e. STDOUT is a terminal)
 	if !interactive_terminal_decider.IsInteractiveTerminal() {
 		return nil, stacktrace.NewError(
@@ -59,7 +60,10 @@ func initInteractiveConfig() (*KurtosisConfig, error) {
 		}
 	}
 
-	kurtosisConfig := NewKurtosisConfig(didUserAcceptSendingMetrics)
+	kurtosisConfig, err := resolved_config.NewKurtosisConfigFromRequiredFields(didUserAcceptSendingMetrics)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to initialize Kurtosis configuration from user input %t.", didUserAcceptSendingMetrics)
+	}
 	return kurtosisConfig, nil
 }
 

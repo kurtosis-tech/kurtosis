@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/stacktrace"
@@ -121,7 +122,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			kurtosis_context.DefaultKurtosisEngineServerGrpcPortNum,
 			kurtosis_context.DefaultKurtosisEngineServerGrpcProxyPortNum,
 			metricsUserId,
-			kurtosisConfig.ShouldSendMetrics,
+			kurtosisConfig.GetShouldSendMetrics(),
 		)
 	} else {
 		hostMachineIpAddr, hostMachinePortNum, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -131,7 +132,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			kurtosis_context.DefaultKurtosisEngineServerGrpcPortNum,
 			kurtosis_context.DefaultKurtosisEngineServerGrpcProxyPortNum,
 			metricsUserId,
-			kurtosisConfig.ShouldSendMetrics,
+			kurtosisConfig.GetShouldSendMetrics(),
 		)
 	}
 	if engineLaunchErr != nil {
@@ -230,7 +231,7 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 	return runningEngineSemver, launcherEngineSemver, nil
 }
 
-func getKurtosisConfig() (*kurtosis_config.KurtosisConfig, error) {
+func getKurtosisConfig() (*resolved_config.KurtosisConfig, error) {
 	configStore := kurtosis_config.GetKurtosisConfigStore()
 	configProvider := kurtosis_config.NewKurtosisConfigProvider(configStore)
 

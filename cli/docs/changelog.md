@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Can use Kurtosis Core YAML config file format V1 to specify metrics preferences
 
 # 0.16.1
 ### Features
