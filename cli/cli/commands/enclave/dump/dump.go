@@ -2,7 +2,7 @@ package dump
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/backend_creator"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
@@ -42,7 +42,9 @@ func run(cmd *cobra.Command, args []string) error {
 	enclaveId := parsedPositionalArgs[enclaveIdArg]
 	enclaveOutputDirpath := parsedPositionalArgs[outputDirpathArg]
 
-	kurtosisBackend, err := lib.GetLocalDockerKurtosisBackend()
+	// TODO REFACTOR: we should get this backend from the config!!
+	var apiContainerModeArgs *backend_creator.APIContainerModeArgs = nil  // Not an API container
+	kurtosisBackend, err := backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgs)
 	if err := kurtosisBackend.DumpEnclave(ctx, enclave.EnclaveID(enclaveId), enclaveOutputDirpath); err != nil {
 		return stacktrace.Propagate(err, "An error occurred dumping enclave '%v' to '%v'", enclaveId, enclaveOutputDirpath)
 	}

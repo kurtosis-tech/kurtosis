@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/stacktrace"
 	"sort"
@@ -19,6 +20,9 @@ const (
 	userServicePortsColHeader = "Ports"
 
 	missingPortPlaceholder = "<none>"
+
+	// Placeholder that will be used for services which aren't attached to a registration (should never happen)
+	missingServiceIdPlaceholder = "<none>"
 )
 
 func printUserServices(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveId enclave.EnclaveID) error {
@@ -29,9 +33,21 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 		},
 	}
 
+	// TODO Switch to using the API container API once it can show *all* services (not just running ones)
 	userServices, err := kurtosisBackend.GetUserServices(ctx, userServiceFilters)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting user services using filters '%+v'", userServiceFilters)
+	}
+
+	userServiceRegistrationFilters := &user_service_registration.UserServiceRegistrationFilters{
+		EnclaveIDs:        map[enclave.EnclaveID]bool{
+			enclaveId: true,
+		},
+	}
+	// TODO Switch to using the API container API once it can show *all* services (not just running ones)
+	registrations, err := kurtosisBackend.GetUserServiceRegistrations(ctx, userServiceRegistrationFilters)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting user service registrations using filters '%+v'", userServiceRegistrationFilters)
 	}
 
 	tablePrinter := output_printers.NewTablePrinter(
@@ -41,9 +57,15 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 	)
 	sortedUserServices:= getSortedUserServiceSliceFromUserServiceMap(userServices)
 	for _, userService := range sortedUserServices {
-
 		guidStr := string(userService.GetGUID())
-		idStr := string(userService.GetID())
+
+		registrationGuid := userService.GetRegistrationGUID()
+
+		idStr := missingServiceIdPlaceholder
+		if registration, found := registrations[registrationGuid]; found {
+			idStr = string(registration.GetServiceID())
+		}
+
 		portBindingLines, err := getPortBindingStrings(userService)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting the port binding strings")
