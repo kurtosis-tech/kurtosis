@@ -66,6 +66,12 @@ type ServiceNetwork struct {
 	networkingSidecars map[user_service_registration.ServiceID]networking_sidecar.NetworkingSidecarWrapper
 
 	networkingSidecarManager networking_sidecar.NetworkingSidecarManager
+
+
+	// ----------------------------- Indexes to make common operations quick --------------------------------
+	// service_id -> service_guid is such a common operation that it doesn't make sense to hit the backend for this
+	serviceIdToServiceGuidIndex map[user_service_registration.ServiceID]service.ServiceGUID
+	registrationsByServiceId map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration
 }
 
 func NewServiceNetworkImpl(
@@ -93,8 +99,9 @@ func NewServiceNetworkImpl(
 			defaultPartitionId,
 			defaultPartitionConnection,
 		),
-		networkingSidecars:                     map[user_service_registration.ServiceID]networking_sidecar.NetworkingSidecarWrapper{},
-		networkingSidecarManager:               networkingSidecarManager,
+		networkingSidecars:          map[user_service_registration.ServiceID]networking_sidecar.NetworkingSidecarWrapper{},
+		networkingSidecarManager:    networkingSidecarManager,
+		serviceIdToServiceGuidIndex: map[user_service_registration.ServiceID]service.ServiceGUID{},
 	}
 }
 
@@ -105,7 +112,8 @@ func (network *ServiceNetwork) Repartition(
 	ctx context.Context,
 	newPartitionServices map[service_network_types.PartitionID]map[user_service_registration.ServiceID]bool,
 	newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection,
-	newDefaultConnection partition_topology.PartitionConnection) error {
+	newDefaultConnection partition_topology.PartitionConnection,
+) error {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
@@ -126,6 +134,7 @@ func (network *ServiceNetwork) Repartition(
 			" after repartition, meaning that no partitions are actually being enforced!")
 	}
 
+	/*
 	allInvolvedServiceIds := map[user_service_registration.ServiceID]bool{}
 	for serviceIdA, allServiceIdBs := range servicePacketLossConfigurationsByServiceID {
 		allInvolvedServiceIds[serviceIdA] = true
@@ -149,7 +158,9 @@ func (network *ServiceNetwork) Repartition(
 		registrationsByServiceId[registration.GetServiceID()] = registration
 	}
 
-	if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, registrationsByServiceId, network.networkingSidecars); err != nil {
+	 */
+
+	if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, network.registrationsByServiceId, network.networkingSidecars); err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating the traffic control configuration to match the target service packet loss configurations after repartitioning")
 	}
 	return nil
@@ -243,6 +254,29 @@ func (network *ServiceNetwork) StartService(
 		return nil, nil, stacktrace.NewError("Cannot start container for service; the service network has been destroyed")
 	}
 
+	// Getting all registrations is as expensive as getting only a few registrations
+	// We definitely need this the ID of the service getting added, and we may need all
+	//  registrations in case we're doing network partitioning
+	getAllRegistrationsFilter := &user_service_registration.UserServiceRegistrationFilters{
+		EnclaveIDs: map[enclave.EnclaveID]bool{
+			network.enclaveId: true,
+		},
+	}
+	allRegistrations, err := network.kurtosisBackend.GetUserServiceRegistrations(
+		ctx,
+		getAllRegistrationsFilter,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting all user service registrations in the enclave")
+	}
+	newServiceRegistration, found := allRegistrations[registrationGuid]
+	if !found {
+		return nil, nil, stacktrace.Propagate(err, "Cannot add service; registration '%v' does not exist", registrationGuid)
+	}
+	serviceId := newServiceRegistration.GetServiceID()
+
+	// NOTE: This will only be used, and populated, if network-partitioning is true
+	var registrationsByServiceId map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration
 
 	// When partitioning is enabled, there's a race condition where:
 	//   a) we need to start the service before we can launch the sidecar but
@@ -251,28 +285,7 @@ func (network *ServiceNetwork) StartService(
 	//  this by setting the packet loss config of the new service in the already-existing services' qdisc.
 	// This means that when the new service is launched, even if its own qdisc isn't yet updated, all the services
 	//  it would communicate are already dropping traffic to it before it even starts.
-	var registrationsByRegistrationGuid map[user_service_registration.UserServiceRegistrationGUID]*user_service_registration.UserServiceRegistration
-	var registrationsByServiceId map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration
 	if network.isPartitioningEnabled {
-		getAllRegistrationsFilter := &user_service_registration.UserServiceRegistrationFilters{
-			EnclaveIDs: map[enclave.EnclaveID]bool{
-				network.enclaveId: true,
-			},
-		}
-		allRegistrations, err := network.kurtosisBackend.GetUserServiceRegistrations(
-			ctx,
-			getAllRegistrationsFilter,
-		)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred getting all user service registrations in the enclave")
-		}
-		registrationsByRegistrationGuid = allRegistrations
-
-		newServiceRegistration, found := allRegistrations[registrationGuid]
-		if !found {
-			return nil, nil, stacktrace.Propagate(err, "Registration '%v' does not exist", registrationGuid)
-		}
-
 		registrationsByServiceId = map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration{}
 		for _, registration := range allRegistrations {
 			registrationsByServiceId[registration.GetServiceID()] = registration
@@ -326,6 +339,15 @@ func (network *ServiceNetwork) StartService(
 			registrationGuid,
 		)
 	}
+	// TODO defer-undo the launch if a failure occurs?
+
+	network.serviceIdToServiceGuidIndex[serviceId] = userService.GetGUID()
+	shouldUndoServiceIdIndexAddition := true
+	defer func() {
+		if shouldUndoServiceIdIndexAddition {
+			delete(network.serviceIdToServiceGuidIndex, serviceId)
+		}
+	}()
 
 	/*
 	// TODO Restart-able enclaves: Don't store any service information in memory; instead, get it all from the KurtosisBackend when required
@@ -344,7 +366,14 @@ func (network *ServiceNetwork) StartService(
 	 */
 
 	if network.isPartitioningEnabled {
-		sidecar, err := network.networkingSidecarManager.Add(ctx, serviceGuid)
+		registration, found := allRegistrations[registrationGuid]
+		if !found {
+			// Not sure how this would ever happen
+			return nil, nil, stacktrace.NewError("After successfully adding a service to registration '%v', we couldn't find the registration - this is very strange!", registration)
+		}
+		serviceId := registration.GetServiceID()
+
+		sidecar, err := network.networkingSidecarManager.Add(ctx, userService.GetGUID())
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred adding the networking sidecar")
 		}
@@ -365,13 +394,14 @@ func (network *ServiceNetwork) StartService(
 		updatesToApply := map[user_service_registration.ServiceID]map[user_service_registration.ServiceID]float32{
 			serviceId: newNodeServicePacketLossConfiguration,
 		}
-		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.serviceRegistrationsByRegistrationGuid, network.networkingSidecars); err != nil {
+		if err := updateTrafficControlConfiguration(ctx, updatesToApply, registrationsByServiceId, network.networkingSidecars); err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration on the new node to partition it "+
 				"off from other nodes")
 		}
 	}
 
-	return maybeServicePublicIpAddr, maybeServicePublicPorts, nil
+	shouldUndoServiceIdIndexAddition = false
+	return userService.GetMaybePublicIP(), userService.GetMaybePublicPorts(), nil
 }
 
 func (network *ServiceNetwork) RemoveService(
@@ -392,6 +422,7 @@ func (network *ServiceNetwork) RemoveService(
 	return nil
 }
 
+// TODO we could switch this to be a bulk command; the backend would support it
 func (network *ServiceNetwork) PauseService(
 	ctx context.Context,
 	serviceId user_service_registration.ServiceID,
@@ -401,6 +432,40 @@ func (network *ServiceNetwork) PauseService(
 	if network.isDestroyed {
 		return stacktrace.NewError("Cannot run pause service; the service network has been destroyed")
 	}
+
+	// TODO We could cache some of this information to speed things up
+	getRegistrationByServiceIdFilter := &user_service_registration.UserServiceRegistrationFilters{
+		EnclaveIDs: map[enclave.EnclaveID]bool{
+			network.enclaveId: true,
+		},
+		ServiceIDs: map[user_service_registration.ServiceID]bool{
+			serviceId: true,
+		},
+	}
+	registrations, err := network.kurtosisBackend.GetUserServiceRegistrations(ctx, getRegistrationByServiceIdFilter)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting user service registrations for service ID '%v'", serviceId)
+	}
+	if len(registrations) == 0 {
+		return stacktrace.NewError("No service registration for service ID '%v' was found", serviceId)
+	}
+	if len(registrations) > 1 {
+		return stacktrace.NewError("Found more than one registration for service ID '%v'", serviceId)
+	}
+
+	// Get only element
+	var registrationGuid user_service_registration.UserServiceRegistrationGUID
+	for registrationGuid = range registrations {}
+
+	getServicesByRegistrationGuidFilter = &service.ServiceFilters{
+		RegistrationGUIDs: nil,
+		EnclaveIDs:        nil,
+		GUIDs:             nil,
+		Statuses:          nil,
+	}
+	services, err := network.kurtosisBackend.
+
+
 	runInfo, found := network.serviceRunInfo[serviceId]
 	if !found {
 		return stacktrace.NewError(
@@ -612,7 +677,8 @@ func (network *ServiceNetwork) CopyFromService(ctx context.Context, serviceId us
 func (network *ServiceNetwork) removeServiceWithoutMutex(
 	ctx context.Context,
 	serviceId user_service_registration.ServiceID,
-	containerStopTimeout time.Duration) error {
+	containerStopTimeout time.Duration,
+) error {
 
 	registrationInfo, foundRegistrationInfo := network.serviceRegistrationsByRegistrationGuid[serviceId]
 	if !foundRegistrationInfo {
