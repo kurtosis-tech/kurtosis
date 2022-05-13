@@ -38,7 +38,6 @@ func (backend *DockerKurtosisBackend) CreateModule(
 	enclaveId enclave.EnclaveID,
 	id module.ModuleID,
 	guid module.ModuleGUID,
-	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 	grpcPortNum uint16,
 	envVars map[string]string,
 ) (
@@ -62,7 +61,18 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		return nil, stacktrace.NewError("Found existing module container(s) in enclave '%v' with GUID '%v'; cannot start a new one", enclaveId, guid)
 	}
 
-	// Get the Docker network ID where we'll start the new API container
+	freeIpAddrProvider, found := backend.enclaveFreeIpProviders[enclaveId]
+	if !found {
+		return nil, stacktrace.NewError(
+			"Received a request to create module with ID '%v' in enclave '%v', but no free IP address provider was " +
+				"defined for this enclave; this likely means that the user registration request is being called where it shouldn't " +
+				"be (i.e. outside the API container)",
+			id,
+			enclaveId,
+		)
+	}
+
+	// Get the Docker network ID where we'll start the new module
 	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
@@ -87,6 +97,17 @@ func (backend *DockerKurtosisBackend) CreateModule(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
+
+	ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting a free IP address")
+	}
+	shouldReleaseIp := true
+	defer func() {
+		if shouldReleaseIp {
+			freeIpAddrProvider.ReleaseIpAddr(ipAddr)
+		}
+	}()
 
 	moduleContainerAttrs, err := enclaveObjAttrProvider.ForModuleContainer(
 		ipAddr,
@@ -176,6 +197,7 @@ func (backend *DockerKurtosisBackend) CreateModule(
 	}
 
 	shouldKillContainer = false
+	shouldReleaseIp = false
 	return result, nil
 }
 

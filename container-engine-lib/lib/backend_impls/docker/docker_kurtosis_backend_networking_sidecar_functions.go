@@ -15,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"net"
 )
 
 const (
@@ -33,7 +32,6 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
-	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 )(
 	*networking_sidecar.NetworkingSidecar,
 	error,
@@ -42,6 +40,17 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
+	}
+
+	freeIpAddrProvider, found := backend.enclaveFreeIpProviders[enclaveId]
+	if !found {
+		return nil, stacktrace.NewError(
+			"Received a request to create networking sidecar for service with GUID '%v' in enclave '%v', but no free IP address provider was " +
+				"defined for this enclave; this likely means that the user registration request is being called where it shouldn't " +
+				"be (i.e. outside the API container)",
+			serviceGuid,
+			enclaveId,
+		)
 	}
 
 	userServiceFilters := &service.ServiceFilters{
@@ -86,6 +95,18 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 	for dockerLabelKey, dockerLabelValue := range containerDockerLabels {
 		containerLabels[dockerLabelKey.GetString()] = dockerLabelValue.GetString()
 	}
+
+	ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting a free IP address")
+	}
+	shouldReleaseIp := true
+	defer func() {
+		if shouldReleaseIp {
+			freeIpAddrProvider.ReleaseIpAddr(ipAddr)
+		}
+	}()
+
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		networkingSidecarImageName,
 		containerName.GetString(),
@@ -136,6 +157,7 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 	}
 
 	shouldKillContainer = false
+	shouldReleaseIp = false
 	return networkingSidecar, nil
 
 }

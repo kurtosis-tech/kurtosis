@@ -87,7 +87,7 @@ func (backend *KubernetesKurtosisBackend) PullImage(image string) error {
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateModule(ctx context.Context, image string, enclaveId enclave.EnclaveID, id module.ModuleID, guid module.ModuleGUID, ipAddr net.IP, grpcPortNum uint16, envVars map[string]string) (newModule *module.Module, resultErr error) {
+func (backend *KubernetesKurtosisBackend) CreateModule(ctx context.Context, image string, enclaveId enclave.EnclaveID, id module.ModuleID, guid module.ModuleGUID, grpcPortNum uint16, envVars map[string]string) (newModule *module.Module, resultErr error) {
 	//TODO implement me
 	panic("implement me")
 }

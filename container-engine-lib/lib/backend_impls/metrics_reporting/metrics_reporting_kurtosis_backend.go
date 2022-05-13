@@ -211,7 +211,6 @@ func (backend *MetricsReportingKurtosisBackend) CreateModule(
 	enclaveId enclave.EnclaveID,
 	id module.ModuleID,
 	guid module.ModuleGUID,
-	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 	grpcPortNum uint16,
 	envVars map[string]string,
 ) (
@@ -224,7 +223,6 @@ func (backend *MetricsReportingKurtosisBackend) CreateModule(
 		enclaveId,
 		id,
 		guid,
-		ipAddr,
 		grpcPortNum,
 		envVars,
 	)
@@ -551,12 +549,11 @@ func (backend *MetricsReportingKurtosisBackend) CreateNetworkingSidecar(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
-	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 ) (
 	*networking_sidecar.NetworkingSidecar,
 	error,
 ) {
-	networkingSidecar, err := backend.underlying.CreateNetworkingSidecar(ctx, enclaveId, serviceGuid, ipAddr)
+	networkingSidecar, err := backend.underlying.CreateNetworkingSidecar(ctx, enclaveId, serviceGuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating networking sidecar for user service with GUID '%v' in enclave with ID '%v'", serviceGuid, enclaveId)
 	}

@@ -31,9 +31,8 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
 	image string,
 	enclaveId enclave.EnclaveID,
-	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 	grpcPortNum uint16,
-	grpcProxyPortNum uint16, // TODO remove when we switch fully to enclave data volume
+	grpcProxyPortNum uint16,
 	enclaveDataVolumeDirpath string,
 	envVars map[string]string,
 ) (
