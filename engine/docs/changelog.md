@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added conditions to handle not having api container's public IP and ports when getting enclave response from the backend
 
 # 1.18.1
 ### Features

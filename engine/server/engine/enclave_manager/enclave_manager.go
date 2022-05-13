@@ -101,7 +101,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	shouldDestroyEnclave := true
 	defer func() {
 		if shouldDestroyEnclave {
-			_, destroyEnclaveErrs, err := manager.kurtosisBackend.DestroyEnclaves(teardownCtx, getEnclaveByEnclaveIdFilter(enclaveId));
+			_, destroyEnclaveErrs, err := manager.kurtosisBackend.DestroyEnclaves(teardownCtx, getEnclaveByEnclaveIdFilter(enclaveId))
 			manualActionRequiredStrFmt := "ACTION REQUIRED: You'll need to manually destroy the enclave '%v'!!!!!!"
 			if err != nil {
 				logrus.Errorf("Expected to be able to call the kackend and destroy enclave '%v', but an error occurred:\n%v", enclaveId, err)
@@ -117,12 +117,16 @@ func (manager *EnclaveManager) CreateEnclave(
 
 	enclaveNetworkId := createdEnclave.GetNetworkID()
 	enclaveNetworkGatewayIp := createdEnclave.GetNetworkGatewayIp()
+
 	enclaveNetworkCidr := createdEnclave.GetNetworkCIDR()
 
 	enclaveNetworkIpAddrTracker := createdEnclave.GetNetworkIpAddrTracker()
-	apiContainerPrivateIpAddr, err := enclaveNetworkIpAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get an interal IP address for enclave '%v', but an error occurred", enclaveId)
+	apiContainerPrivateIpAddr := net.IP{}
+	if enclaveNetworkIpAddrTracker != nil {
+		apiContainerPrivateIpAddr, err = enclaveNetworkIpAddrTracker.GetFreeIpAddr()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Expected to be able to get an interal IP address for enclave '%v', but an error occurred", enclaveId)
+		}
 	}
 
 	apiContainer, err := manager.launchApiContainer(setupCtx,
@@ -160,6 +164,8 @@ func (manager *EnclaveManager) CreateEnclave(
 		}
 	}()
 
+	apiContainerHostMachineInfo := newApiContainerHostMachineInfo(apiContainer)
+
 	result := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
 		EnclaveId:          enclaveIdStr,
 		NetworkId:          enclaveNetworkId,
@@ -171,17 +177,38 @@ func (manager *EnclaveManager) CreateEnclave(
 			GrpcPortInsideEnclave:      uint32(apiContainerListenGrpcPortNumInsideNetwork),
 			GrpcProxyPortInsideEnclave: uint32(apiContainerListenGrpcProxyPortNumInsideNetwork),
 		},
-		ApiContainerHostMachineInfo: &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
-			IpOnHostMachine:            apiContainer.GetPublicIPAddress().String(),
-			GrpcPortOnHostMachine:      uint32(apiContainer.GetPublicGRPCPort().GetNumber()),
-			GrpcProxyPortOnHostMachine: uint32(apiContainer.GetPublicGRPCProxyPort().GetNumber()),
-		},
+		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
 	}
 
 	// Everything started successfully, so the responsibility of deleting the enclave is now transferred to the caller
 	shouldDestroyEnclave = false
 	shouldStopApiContainer = false
 	return result, nil
+}
+
+func newApiContainerHostMachineInfo(apiContainer *api_container.APIContainer) *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo {
+	var ipOnHostMachine string
+	if apiContainer.GetPublicIPAddress() != nil {
+		ipOnHostMachine = apiContainer.GetPublicIPAddress().String()
+	}
+
+	var grpcPortOnHostMachine uint32
+	if apiContainer.GetPublicGRPCPort() != nil {
+		grpcPortOnHostMachine = uint32(apiContainer.GetPublicGRPCPort().GetNumber())
+	}
+
+	var grpcProxyPortOnHostMachine uint32
+	if apiContainer.GetPublicGRPCProxyPort() != nil {
+		grpcProxyPortOnHostMachine = uint32(apiContainer.GetPublicGRPCProxyPort().GetNumber())
+	}
+
+	apiContainerHostMachineInfo := &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
+		IpOnHostMachine:            ipOnHostMachine,
+		GrpcPortOnHostMachine:      grpcPortOnHostMachine,
+		GrpcProxyPortOnHostMachine: grpcProxyPortOnHostMachine,
+	}
+
+	return apiContainerHostMachineInfo
 }
 
 // It's a liiiitle weird that we return an EnclaveInfo object (which is a Protobuf object), but as of 2021-10-21 this class
@@ -308,7 +335,7 @@ func (manager *EnclaveManager) getEnclaveApiContainerInformation(
 	*kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo,
 	error,
 ) {
-	apiContainerByEnclaveIdFilter := getApiContainerByEnclaveIdFilter(enclaveId);
+	apiContainerByEnclaveIdFilter := getApiContainerByEnclaveIdFilter(enclaveId)
 	enclaveApiContainers, err := manager.kurtosisBackend.GetAPIContainers(ctx, apiContainerByEnclaveIdFilter)
 	if err != nil {
 		return 0, nil, nil, stacktrace.Propagate(err, "An error occurred getting the containers for enclave '%v'", enclaveId)
@@ -322,7 +349,9 @@ func (manager *EnclaveManager) getEnclaveApiContainerInformation(
 		return 0, nil, nil, stacktrace.NewError("Expected to be able to find only one API container associated with enclave '%v', instead found '%v'",
 			enclaveId, numOfFoundApiContainers)
 	}
+
 	apiContainer := getFirstApiContainerFromMap(enclaveApiContainers)
+
 	resultApiContainerStatus, err := getApiContainerStatusFromContainerStatus(apiContainer.GetStatus())
 	if err != nil {
 		return 0, nil, nil, stacktrace.Propagate(err, "An error occurred getting the API container status for enclave '%v'", enclaveId)
@@ -334,13 +363,7 @@ func (manager *EnclaveManager) getEnclaveApiContainerInformation(
 	}
 	var resultApiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo
 	if resultApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING {
-		publicGRPCPort := apiContainer.GetPublicGRPCPort()
-		publicGRPCProxyPort := apiContainer.GetPublicGRPCProxyPort()
-		resultApiContainerHostMachineInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
-			IpOnHostMachine:            apiContainer.GetPublicIPAddress().String(),
-			GrpcPortOnHostMachine:      uint32(publicGRPCPort.GetNumber()),
-			GrpcProxyPortOnHostMachine: uint32(publicGRPCProxyPort.GetNumber()),
-		}
+		resultApiContainerHostMachineInfo = newApiContainerHostMachineInfo(apiContainer)
 	}
 
 	return resultApiContainerStatus, resultApiContainerInfo, resultApiContainerHostMachineInfo, nil
@@ -415,8 +438,8 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 	}
 
 	result := map[enclave.EnclaveID]*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
-	for enclaveId, enclave := range enclaves {
-		enclaveInfo, err := manager.getEnclaveInfoForEnclave(ctx, enclave)
+	for enclaveId, enclaveObj := range enclaves {
+		enclaveInfo, err := manager.getEnclaveInfoForEnclave(ctx, enclaveObj)
 		if err != nil {
 			return nil, stacktrace.Propagate(err,"An error occurred getting information about enclave '%v'", enclaveId)
 		}
