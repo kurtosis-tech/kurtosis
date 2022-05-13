@@ -10,7 +10,7 @@ const (
 	// which will cause a resource leak on the user's system!
 	//
 	// If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
-	// These immutable values track resources between kurtosis versions.
+	// These immutable values track resources between Kurtosis versions.
 	labelKeyPrefixStr       	= "kurtosistech.com/"
 	appIdLabelKeyStr        	= labelKeyPrefixStr + "app-id"
 	resourceTypeLabelKeyStr 	= labelKeyPrefixStr + "resource-type"
