@@ -89,6 +89,12 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting an IP address for the API container")
 	}
+	shouldFreeIpAddr := true
+	defer func() {
+		if shouldFreeIpAddr {
+			freeIpAddrProvider.ReleaseIpAddr(ipAddr)
+		}
+	}()
 
 	// Set the own-IP environment variable
 	if _, found := customEnvVars[ownIpAddressEnvVar]; found {
