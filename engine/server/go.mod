@@ -10,7 +10,6 @@ replace (
 require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220513203407-c2be8a6282e2
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220513222440-561469a0ca13 // indirect
 	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220513222421-005d3ab37c76
 	github.com/kurtosis-tech/kurtosis-engine-server/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0

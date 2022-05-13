@@ -7,6 +7,13 @@
     * `network_id`
     * `network_cidr`
 
+# 1.18.2
+### Fixes
+* Added conditions to handle not having api container's public IP and ports when getting enclave response from the backend
+
+### Changes
+* Upgraded to container-engine-lib 0.20.2, which add some backend methods
+
 # 1.18.1
 ### Features
 * Upgrade to Core 1.46.1 and container-engine-lib 0.20.0, which allow for more Kubernetes functionality
