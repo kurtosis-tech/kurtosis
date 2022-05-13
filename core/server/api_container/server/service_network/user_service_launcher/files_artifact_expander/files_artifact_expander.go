@@ -112,7 +112,7 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 func (expander *FilesArtifactExpander) runFilesArtifactExpander(
 	ctx context.Context,
 	filesArtifactId service.FilesArtifactID,
-	serviceGuid service.ServiceGUID,
+	registrationGuid user_service_registration.UserServiceRegistrationGUID,
 	filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
 	artifactFilepathRelativeToEnclaveDataVolRoot string,
 ) error {
@@ -127,7 +127,7 @@ func (expander *FilesArtifactExpander) runFilesArtifactExpander(
 	}
 	defer expander.freeIpAddrTracker.ReleaseIpAddr(expanderIpAddr)
 
-	guid := newFilesArtifactExpanderGUID(filesArtifactId, serviceGuid)
+	guid := newFilesArtifactExpanderGUID(filesArtifactId, registrationGuid)
 
 	if _, err := expander.kurtosisBackend.RunFilesArtifactExpander(
 		ctx,
@@ -178,11 +178,11 @@ func (expander *FilesArtifactExpander) destroyFilesArtifactExpansionVolumes(ctx 
 	}
 }
 
-func newFilesArtifactExpanderGUID(filesArtifactId service.FilesArtifactID, userServiceGuid service.ServiceGUID) files_artifact_expander.FilesArtifactExpanderGUID {
-	userServiceGuidStr := string(userServiceGuid)
+func newFilesArtifactExpanderGUID(filesArtifactId service.FilesArtifactID, serviceRegistrationGuid user_service_registration.UserServiceRegistrationGUID) files_artifact_expander.FilesArtifactExpanderGUID {
+	serviceRegistrationGuidStr := string(serviceRegistrationGuid)
 	filesArtifactIdStr := string(filesArtifactId)
 	suffix := current_time_str_provider.GetCurrentTimeStr()
-	guidStr := strings.Join([]string{userServiceGuidStr, filesArtifactIdStr, suffix}, guidElementSeparator)
+	guidStr := strings.Join([]string{serviceRegistrationGuidStr, filesArtifactIdStr, suffix}, guidElementSeparator)
 	guid := files_artifact_expander.FilesArtifactExpanderGUID(guidStr)
 	return guid
 }

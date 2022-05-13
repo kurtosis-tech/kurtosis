@@ -167,19 +167,19 @@ func (network ServiceNetwork) RegisterService(
 	ctx context.Context,
 	serviceId user_service_registration.ServiceID,
 	partitionId service_network_types.PartitionID,
-) (net.IP, user_service_registration.UserServiceRegistrationGUID, error) {
+) (net.IP, error) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
-		return nil, "", stacktrace.NewError("Cannot register service with ID '%v'; the service network has been destroyed", serviceId)
+		return nil, stacktrace.NewError("Cannot register service with ID '%v'; the service network has been destroyed", serviceId)
 	}
 
 	if partitionId == "" {
 		partitionId = defaultPartitionId
 	}
 	if _, found := network.topology.GetPartitionServices()[partitionId]; !found {
-		return nil, "", stacktrace.NewError(
+		return nil, stacktrace.NewError(
 			"No partition with ID '%v' exists in the current partition topology",
 			partitionId,
 		)
@@ -191,7 +191,7 @@ func (network ServiceNetwork) RegisterService(
 		serviceId,
 	)
 	if err != nil {
-		return nil, "", stacktrace.Propagate(err, "An error occurred creating service registration for service ID '%v'", serviceId)
+		return nil, stacktrace.Propagate(err, "An error occurred creating service registration for service ID '%v'", serviceId)
 	}
 	shouldDestroyRegistration := true
 	defer func() {
@@ -209,7 +209,7 @@ func (network ServiceNetwork) RegisterService(
 	}()
 
 	if err := network.topology.AddService(serviceId, partitionId); err != nil {
-		return nil, "", stacktrace.Propagate(
+		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred adding service with ID '%v' to partition '%v' in the topology",
 			serviceId,
@@ -226,7 +226,7 @@ func (network ServiceNetwork) RegisterService(
 	shouldDestroyRegistration = false
 	shouldRemoveRegistrationFromIndex = false
 	shouldRemoveTopologyAddition = false
-	return serviceRegistration.GetIPAddress(), serviceRegistration.GetGUID(), nil
+	return serviceRegistration.GetIPAddress(), nil
 }
 
 // TODO add tests for this

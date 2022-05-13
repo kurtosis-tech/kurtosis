@@ -171,7 +171,7 @@ func (apicService ApiContainerService) RegisterService(ctx context.Context, args
 	serviceId := user_service_registration.ServiceID(args.ServiceId)
 	partitionId := service_network_types.PartitionID(args.PartitionId)
 
-	privateIpAddr, registrationGuid, err := apicService.serviceNetwork.RegisterService(serviceId, partitionId)
+	privateIpAddr, err := apicService.serviceNetwork.RegisterService(ctx, serviceId, partitionId)
 	if err != nil {
 		// TODO IP: Leaks internal information about API container
 		return nil, stacktrace.Propagate(err, "An error occurred registering apicService '%v' in the apicService network", serviceId)
@@ -179,14 +179,13 @@ func (apicService ApiContainerService) RegisterService(ctx context.Context, args
 
 	return &kurtosis_core_rpc_api_bindings.RegisterServiceResponse{
 		PrivateIpAddr:           privateIpAddr.String(),
-		ServiceRegistrationGuid: string(registrationGuid),
 	}, nil
 }
 
 func (apicService ApiContainerService) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
 	logrus.Debugf("Received request to start apicService with the following args: %+v", args)
+	serviceId := user_service_registration.ServiceID(args.ServiceId)
 	privateApiPorts := args.PrivatePorts
-	registrationGuid := user_service_registration.UserServiceRegistrationGUID(args.ServiceRegistrationGuid)
 	privateServicePortSpecs := map[string]*port_spec.PortSpec{}
 	for portId, privateApiPort := range privateApiPorts {
 		privateServicePortSpec, err := transformApiPortToPortSpec(privateApiPort)
@@ -201,7 +200,7 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 	}
 	maybePublicIpAddr, publicServicePortSpecs, err := apicService.serviceNetwork.StartService(
 		ctx,
-		registrationGuid,
+		serviceId,
 		args.DockerImage,
 		privateServicePortSpecs,
 		args.EntrypointArgs,
@@ -230,7 +229,7 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 			publicServicePortSpecs,
 		)
 	}
-	logrus.Infof("Started service using registration '%v'%v", registrationGuid, serviceStartLoglineSuffix)
+	logrus.Infof("Started service '%v'%v", serviceId, serviceStartLoglineSuffix)
 
 	return response, nil
 }
