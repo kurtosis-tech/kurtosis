@@ -14,7 +14,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"net"
 )
 
 const (
@@ -42,8 +41,6 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	enclaveId enclave.EnclaveID,
 	grpcListenPort uint16,
 	grpcProxyListenPort uint16,
-	gatewayIpAddr net.IP,
-	apiContainerIpAddr net.IP,
 	isPartitioningEnabled bool,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
