@@ -44,7 +44,6 @@ var commandToRunWhenCreatingUserServiceShell = []string{
 func (backend *DockerKurtosisBackend) CreateUserService(
 	ctx context.Context,
 	registrationGuid user_service_registration.UserServiceRegistrationGUID,
-	guid service.ServiceGUID,	// TDOO autogenerate?
 	containerImageName string,
 	enclaveId enclave.EnclaveID,
 	privatePorts map[string]*port_spec.PortSpec,
@@ -98,9 +97,16 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
 
+	// TODO Switch to UUIDs, here and everywhere!! There's a small, but possible, chance of race condition here!
+	guidStr := fmt.Sprintf(
+		"%v-%v-%v",
+		enclaveId,
+		serviceId,
+		time.Now().Unix(),
+	)
+	guid := service.ServiceGUID(guidStr)
 	containerAttrs, err := enclaveObjAttrsProvider.ForUserServiceContainer(
 		registrationGuid,
-		serviceId,
 		guid,
 		serviceIpAddress,
 		privatePorts,
@@ -663,6 +669,12 @@ func (backend *DockerKurtosisBackend) getMatchingUserServices(
 			}
 		}
 
+		if filters.RegistrationGUIDs != nil && len(filters.RegistrationGUIDs) > 0 {
+			if _, found := filters.RegistrationGUIDs[object.GetRegistrationGUID()]; !found {
+				continue
+			}
+		}
+
 		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
 			if _, found := filters.GUIDs[object.GetGUID()]; !found {
 				continue
@@ -696,11 +708,6 @@ func getUserServiceObjectFromContainerInfo(
 	registrationGuid, found := labels[label_key_consts.UserServiceRegistrationGUIDLabelKey.GetString()]
 	if !found {
 		return nil, stacktrace.NewError("Expected the user service's registration GUID to be found under label '%v' but the label wasn't present", label_key_consts.UserServiceRegistrationGUIDLabelKey.GetString())
-	}
-
-	id, found := labels[label_key_consts.IDLabelKey.GetString()]
-	if !found {
-		return nil, stacktrace.NewError("Expected to find user service ID label key '%v' but none was found", label_key_consts.IDLabelKey.GetString())
 	}
 
 	guid, found := labels[label_key_consts.GUIDLabelKey.GetString()]
@@ -762,7 +769,6 @@ func getUserServiceObjectFromContainerInfo(
 
 	newObject := service.NewService(
 		user_service_registration.UserServiceRegistrationGUID(registrationGuid),
-		user_service_registration.ServiceID(id),
 		service.ServiceGUID(guid),
 		status,
 		enclave.EnclaveID(enclaveId),

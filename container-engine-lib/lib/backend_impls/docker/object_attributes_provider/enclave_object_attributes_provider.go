@@ -42,7 +42,6 @@ type DockerEnclaveObjectAttributesProvider interface {
 	) (DockerObjectAttributes, error)
 	ForUserServiceContainer(
 		registrationGuid user_service_registration.UserServiceRegistrationGUID,
-		serviceId user_service_registration.ServiceID,
 		serviceGuid service.ServiceGUID,
 		privateIpAddr net.IP,
 		privatePorts map[string]*port_spec.PortSpec,
@@ -54,7 +53,7 @@ type DockerEnclaveObjectAttributesProvider interface {
 		guid files_artifact_expander.FilesArtifactExpanderGUID,
 	) (DockerObjectAttributes, error)
 	ForFilesArtifactExpansionVolume(
-		serviceGUID service.ServiceGUID,
+		registrationGuid user_service_registration.UserServiceRegistrationGUID,
 		fileArtifactID service.FilesArtifactID,
 	) (DockerObjectAttributes, error)
 	ForModuleContainer(
@@ -185,7 +184,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContainer(
 	registrationGUID user_service_registration.UserServiceRegistrationGUID,
-	serviceID user_service_registration.ServiceID,
 	serviceGUID service.ServiceGUID,
 	privateIpAddr net.IP,
 	privatePorts map[string]*port_spec.PortSpec,
@@ -223,12 +221,11 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 		)
 	}
 
-	serviceIdStr := string(serviceID)
 	serviceGuidStr := string(serviceGUID)
 
-	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(serviceIdStr, serviceGuidStr)
+	labels, err := provider.getLabelsForEnclaveObjectWithGUID(serviceGuidStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with ID '%v' and GUID '%v'", serviceID, serviceGUID)
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", serviceGUID)
 	}
 	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.UserServiceContainerTypeLabelValue
 	labels[label_key_consts.PortSpecsLabelKey] = serializedPortsSpec
@@ -330,17 +327,17 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForModuleContainer(
 }
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpansionVolume(
-	serviceGUID service.ServiceGUID,
+	registrationGuid user_service_registration.UserServiceRegistrationGUID,
 	fileArtifactID service.FilesArtifactID,
 )(
 	DockerObjectAttributes,
 	error,
 ){
-	serviceGUIDStr := string(serviceGUID)
+	registrationGuidStr := string(registrationGuid)
 
 	name, err := provider.getNameForEnclaveObject([]string{
 		artifactExpansionVolumeNameFragment,
-		serviceGUIDStr,
+		registrationGuidStr,
 		string(fileArtifactID),
 	})
 	if err != nil {

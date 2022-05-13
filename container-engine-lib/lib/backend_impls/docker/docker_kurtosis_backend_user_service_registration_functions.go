@@ -59,7 +59,7 @@ func (backend *DockerKurtosisBackend) CreateUserServiceRegistration(
 
 	// TODO Switch this, and all other GUIDs, to a UUID!
 	guid := user_service_registration.UserServiceRegistrationGUID(fmt.Sprintf(
-		"%v--%v--%v",
+		"%v-%v-%v",
 		enclaveId,
 		serviceId,
 		time.Now().Unix(),
@@ -100,7 +100,7 @@ func (backend *DockerKurtosisBackend) GetUserServiceRegistrations(
 	return result, nil
 }
 
-func (backend *DockerKurtosisBackend) DestroyUserServiceRegistration(
+func (backend *DockerKurtosisBackend) DestroyUserServiceRegistrations(
 	ctx context.Context,
 	filters *user_service_registration.UserServiceRegistrationFilters,
 ) (
