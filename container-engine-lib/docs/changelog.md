@@ -24,6 +24,11 @@
     * `CreateNetworkingSidecar`
     * `RunFilesArtifactExpander`
 * `CreateAPIContainer` now takes in an extra `ownIpAddressEnvVar` environment variable, which is the environment variable the `KurtosisBackend` should populate with the API container's IP address
+* Removed the following from the `Enclave` object:
+    * `GetNetworkCIDR`
+    * `GetNetworkID`
+    * `GetNetworkGatewayIp`
+    * `GetNetworkIpAddrTracker`
 
 # 0.20.1
 ### Features
