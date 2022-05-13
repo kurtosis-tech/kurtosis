@@ -8,7 +8,28 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
+	"os"
 	"strconv"
+)
+
+const (
+	// Name to give the file that we'll write for storing specs of pods, containers, etc.
+	kubernetesObjectSpecFilename = "spec.json"
+	containerLogsFilename        = "output.log"
+
+	shouldFetchStoppedContainersWhenDumpingEnclave = true
+
+	// Permissions for the files & directories we create as a result of the dump
+	createdDirPerms  = 0755
+	createdFilePerms = 0644
+
+	numPodsToDumpAtOnce                      = 20
+
+	shouldFollowPodLogsWhenDumping = false
+	shouldAddTimestampsWhenDumpingPodLogs = true
+
+	enclaveDumpJsonSerializationIndent = "  "
+	enclaveDumpJsonSerializationPrefix = ""
 )
 
 func (backend *KubernetesKurtosisBackend) CreateEnclave(
@@ -148,8 +169,47 @@ func (backend *KubernetesKurtosisBackend) StopEnclaves(ctx context.Context, filt
 }
 
 func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, enclaveId enclave.EnclaveID, outputDirpath string) error {
-	//TODO implement me
-	panic("implement me")
+	searchLabels := map[string]string{
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.IDLabelKey.GetString(): string(enclaveId),
+	}
+	namespacesList, err := backend.kubernetesManager.GetNamespacesByLabels(ctx, searchLabels)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting namespaces matching labels: %+v", searchLabels)
+	}
+	namespaces := namespacesList.Items
+	if len(namespaces) == 0 {
+		return stacktrace.NewError("No enclave found with ID '%v'", enclaveId)
+	}
+	if len(namespaces) > 1 {
+		return stacktrace.NewError("Expected one enclave matching ID '%v' but found '%v'", enclaveId, len(namespaces))
+	}
+	namespace := namespaces[0]
+
+	// Create output directory
+	if _, err := os.Stat(outputDirpath); !os.IsNotExist(err) {
+		return stacktrace.NewError("Cannot create output directory at '%v'; directory already exists", outputDirpath)
+	}
+	if err := os.Mkdir(outputDirpath, createdDirPerms); err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating output directory at '%v'", outputDirpath)
+	}
+
+	// TODO MOVE INTO HELPER FUNCTION
+	// TODO PARALLELIZE
+	enclavePodsList, err := backend.kubernetesManager.GetPodsByLabels(ctx, namespace.Name, searchLabels)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting pods in enclave '%v'", enclaveId)
+	}
+	enclavePods := enclavePodsList.Items
+
+	for _, pod := range enclavePods {
+		for _, container := range pod.Spec.Containers {
+
+		}
+
+		backend.kubernetesManager.
+
+	}
 }
 
 func (backend *KubernetesKurtosisBackend) DestroyEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (successfulEnclaveIds map[enclave.EnclaveID]bool, erroredEnclaveIds map[enclave.EnclaveID]error, resultErr error) {

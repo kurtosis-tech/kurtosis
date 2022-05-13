@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Build out `KubernetesKurtosisBackend.DumpEnclave`
+
 ### Changes
 * The `DockerKurtosisBackend` will now track the free IPs of networks
 * `KurtosisBackend` now has `UserServiceRegistration` CRUD methods
