@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed a null pointer exception bug in launcher when backend returns an engine with no public GRPC port
 
 # 1.18.1
 ### Features

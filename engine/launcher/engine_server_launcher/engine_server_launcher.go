@@ -100,5 +100,10 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred launching the engine server container with environment variables '%+v'", envVars)
 	}
-	return engine.GetPublicIPAddress(), engine.GetPublicGRPCPort().GetNumber(), nil
+	var grpcPortNum uint16
+	// If the engine is running in Kubernetes, then the public grpc port-spec will be nil, so calling
+	if engine.GetPublicGRPCPort() != nil {
+		grpcPortNum = engine.GetPublicGRPCPort().GetNumber()
+	}
+	return engine.GetPublicIPAddress(), grpcPortNum, nil
 }
