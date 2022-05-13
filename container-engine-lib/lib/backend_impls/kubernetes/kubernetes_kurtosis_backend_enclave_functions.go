@@ -3,6 +3,10 @@ package kubernetes
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"github.com/gammazero/workerpool"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -14,6 +18,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -199,89 +204,61 @@ func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, encla
 		return stacktrace.Propagate(err, "An error occurred creating output directory at '%v'", outputDirpath)
 	}
 
-	// TODO MOVE INTO HELPER FUNCTION
-	// TODO PARALLELIZE
 	enclavePodsList, err := backend.kubernetesManager.GetPodsByLabels(ctx, namespace.Name, searchLabels)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting pods in enclave '%v'", enclaveId)
 	}
 	enclavePods := enclavePodsList.Items
 
+	workerPool := workerpool.New(numPodsToDumpAtOnce)
+	resultErrsChan := make(chan error, len(enclavePods))
 	for _, pod := range enclavePods {
-		podName := pod.Name
+		/*
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			It's VERY important that the actual `func()` job function get created inside a helper function!!
+			This is because variables declared inside for-loops are created BY REFERENCE rather than by-value, which
+				means that if we inline the `func() {....}` creation here then all the job functions would get a REFERENCE to
+				any variables they'd use.
+			This means that by the time the job functions were run in the worker pool (long after the for-loop finished)
+				then all the job functions would be using a reference from the last iteration of the for-loop.
 
-		// Make pod output directory
-		podOutputDirpath := path.Join(outputDirpath, podName)
-		if err := os.Mkdir(podOutputDirpath, createdDirPerms); err != nil {
-			return stacktrace.Propagate(
-				err,
-				"An error occurred creating directory '%v' to hold the output of pod with name '%v'",
-				podOutputDirpath,
-				podName,
-			)
-		}
-
-		jsonSerializedPodSpecBytes, err := json.MarshalIndent(pod.Spec, enclaveDumpJsonSerializationPrefix, enclaveDumpJsonSerializationIndent)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred serializing the spec of pod '%v' to JSON", podName)
-		}
-		podSpecOutputFilepath := path.Join(podOutputDirpath, podSpecFilename)
-		if err := ioutil.WriteFile(podSpecOutputFilepath, jsonSerializedPodSpecBytes, createdFilePerms); err != nil {
-			return stacktrace.Propagate(
-				err,
-				"An error occurred writing the spec of pod '%v' to file '%v'",
-				podName,
-				podSpecOutputFilepath,
-			)
-		}
-
-		for _, container := range pod.Spec.Containers {
-			containerName := container.Name
-
-			// Make container output directory
-			containerLogsFilepath := path.Join(podOutputDirpath, containerName + containerLogsFilenameSuffix)
-			containerLogsOutputFp, err := os.Create(containerLogsFilepath)
-			if err != nil {
-				return stacktrace.Propagate(
-					err,
-					"An error occurred creating file '%v' to hold the logs of container with name '%v' in pod '%v'"),
-					containerLogsFilepath,
-					containerName,
-					podName,
-				)
-			}
-			defer containerLogsOutputFp.Close()
-
-			containerLogReadCloser, err := backend.kubernetesManager.GetContainerLogs(
-				ctx,
-				namespaceName,
-				podName,
-				containerName,
-				shouldFollowPodLogsWhenDumping,
-				shouldAddTimestampsWhenDumpingPodLogs,
-			)
-			if err != nil {
-				return stacktrace.Propagate(
-					err,
-					"An error occurred dumping logs of container '%v' in pod '%v' in namespace '%v'",
-					containerName,
-					podName,
-					namespaceName,
-				)
-			}
-			defer containerLogReadCloser.Close()
-
-			if _, err := io.Copy(containerLogsOutputFp, containerLogReadCloser); err != nil {
-				return stacktrace.Propagate(
-					err,
-					"An error occurred writing logs of container '%v' in pod '%v' to file '%v'",
-					containerName,
-					podName,
-					containerLogsFilepath,
-				)
-			}
-		}
+			For more info, see the "Variables declared in for loops are passed by reference" section of:
+				https://www.calhoun.io/gotchas-and-common-mistakes-with-closures-in-go/ for more details
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		*/
+		jobToSubmit := createDumpPodJob(
+			ctx,
+			backend.kubernetesManager,
+			namespaceName,
+			pod,
+			outputDirpath,
+			resultErrsChan,
+		)
+		workerPool.Submit(jobToSubmit)
 	}
+	workerPool.StopWait()
+	close(resultErrsChan)
+
+	allResultErrStrs := []string{}
+	for resultErr := range resultErrsChan {
+		allResultErrStrs = append(allResultErrStrs, resultErr.Error())
+	}
+
+	if len(allResultErrStrs) > 0 {
+		allIndexedResultErrStrs := []string{}
+		for idx, resultErrStr := range allResultErrStrs {
+			indexedResultErrStr := fmt.Sprintf(">>>>>>>>>>>>>>>>> ERROR %v <<<<<<<<<<<<<<<<<\n%v", idx, resultErrStr)
+			allIndexedResultErrStrs = append(allIndexedResultErrStrs, indexedResultErrStr)
+		}
+
+		// NOTE: We don't use stacktrace here because the actual stacktraces we care about are the ones from the threads!
+		return errors.New(fmt.Sprintf(
+			"The following errors occurred when trying to dump information about enclave '%v':\n%v",
+			enclaveId,
+			strings.Join(allIndexedResultErrStrs, "\n\n"),
+		))
+	}
+	return nil
 }
 
 func (backend *KubernetesKurtosisBackend) DestroyEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (successfulEnclaveIds map[enclave.EnclaveID]bool, erroredEnclaveIds map[enclave.EnclaveID]error, resultErr error) {
@@ -384,4 +361,107 @@ func getEnclaveStatusFromEnclavePods(enclavePods []apiv1.Pod) (enclave.EnclaveSt
 		}
 	}
 	return resultEnclaveStatus, nil
+}
+
+func createDumpPodJob(
+	ctx context.Context,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	namespaceName string,
+	pod apiv1.Pod,
+	enclaveOutputDirpath string,
+	resultErrsChan chan error,
+) func() {
+	return func() {
+		if err := dumpPodInfo(ctx, kubernetesManager, namespaceName, pod, enclaveOutputDirpath); err != nil {
+			resultErrsChan <- stacktrace.Propagate(
+				err,
+				"An error occurred dumping info for pod '%v'",
+				pod.Name,
+			)
+		}
+	}
+}
+
+func dumpPodInfo(
+	ctx context.Context,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	namespaceName string,
+	pod apiv1.Pod,
+	enclaveOutputDirpath string,
+) error {
+	podName := pod.Name
+
+	// Make pod output directory
+	podOutputDirpath := path.Join(enclaveOutputDirpath, podName)
+	if err := os.Mkdir(podOutputDirpath, createdDirPerms); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred creating directory '%v' to hold the output of pod with name '%v'",
+			podOutputDirpath,
+			podName,
+		)
+	}
+
+	jsonSerializedPodSpecBytes, err := json.MarshalIndent(pod.Spec, enclaveDumpJsonSerializationPrefix, enclaveDumpJsonSerializationIndent)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred serializing the spec of pod '%v' to JSON", podName)
+	}
+	podSpecOutputFilepath := path.Join(podOutputDirpath, podSpecFilename)
+	if err := ioutil.WriteFile(podSpecOutputFilepath, jsonSerializedPodSpecBytes, createdFilePerms); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred writing the spec of pod '%v' to file '%v'",
+			podName,
+			podSpecOutputFilepath,
+		)
+	}
+
+	for _, container := range pod.Spec.Containers {
+		containerName := container.Name
+
+		// Make container output directory
+		containerLogsFilepath := path.Join(podOutputDirpath, containerName + containerLogsFilenameSuffix)
+		containerLogsOutputFp, err := os.Create(containerLogsFilepath)
+		if err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred creating file '%v' to hold the logs of container with name '%v' in pod '%v'",
+				containerLogsFilepath,
+				containerName,
+				podName,
+			)
+		}
+		defer containerLogsOutputFp.Close()
+
+		containerLogReadCloser, err := kubernetesManager.GetContainerLogs(
+			ctx,
+			namespaceName,
+			podName,
+			containerName,
+			shouldFollowPodLogsWhenDumping,
+			shouldAddTimestampsWhenDumpingPodLogs,
+		)
+		if err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred dumping logs of container '%v' in pod '%v' in namespace '%v'",
+				containerName,
+				podName,
+				namespaceName,
+			)
+		}
+		defer containerLogReadCloser.Close()
+
+		if _, err := io.Copy(containerLogsOutputFp, containerLogReadCloser); err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred writing logs of container '%v' in pod '%v' to file '%v'",
+				containerName,
+				podName,
+				containerLogsFilepath,
+			)
+		}
+	}
+
+	return nil
 }
