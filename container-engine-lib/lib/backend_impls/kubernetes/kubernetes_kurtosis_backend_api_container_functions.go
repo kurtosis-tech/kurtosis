@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager/consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/object_name_constants"
@@ -488,6 +489,50 @@ func (backend *KubernetesKurtosisBackend) DestroyAPIContainers(
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
+func (backend *KubernetesKurtosisBackend) getMatchingApiContainersAndKubernetesResources(
+	ctx context.Context,
+	filters *api_container.APIContainerFilters,
+) (
+	map[enclave.EnclaveID]*api_container.APIContainer,
+	map[enclave.EnclaveID]*apiContainerKubernetesResources,
+	error,
+) {
+	matchingResources, err := backend.getMatchingApiContainerKubernetesResources(ctx, filters.EnclaveIDs)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting api container Kubernetes resources matching enclave IDs: %+v", filters.EnclaveIDs)
+	}
+
+	apiContainerObjects, err := getApiContainerObjectsFromKubernetesResources(matchingResources)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting api container objects from Kubernetes resources")
+	}
+
+	// Finally, apply the filters
+	resultApiContainerObjs := map[enclave.EnclaveID]*api_container.APIContainer{}
+	resultKubernetesResources := map[enclave.EnclaveID]*apiContainerKubernetesResources{}
+	for enclaveId, apiContainerObj := range apiContainerObjects {
+		if filters.EnclaveIDs != nil && len(filters.EnclaveIDs) > 0 {
+			if _, found := filters.EnclaveIDs[apiContainerObj.GetEnclaveID()]; !found {
+				continue
+			}
+		}
+
+		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+			if _, found := filters.Statuses[apiContainerObj.GetStatus()]; !found {
+				continue
+			}
+		}
+
+		resultApiContainerObjs[enclaveId] = apiContainerObj
+		// Okay to do because we're guaranteed a 1:1 mapping between api_container_obj:api_container_resources
+		resultKubernetesResources[enclaveId] = matchingResources[enclaveId]
+	}
+
+	return resultApiContainerObjs, resultKubernetesResources, nil
+}
+
+
+
 // Gets api containers matching the search filters, indexed by their [namespace][service name]
 func (backend *KubernetesKurtosisBackend) getMatchingApiContainers(
 	ctx context.Context,
@@ -939,6 +984,211 @@ func getContainerStatusFromKubernetesService(service *apiv1.Service) container_s
 		return container_status.ContainerStatus_Stopped
 	}
 	return container_status.ContainerStatus_Running
+}
+
+// Get back any and all api container's Kubernetes resources matching the given enclave IDs, where a nil or empty map == "match all enclave IDs"
+func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResources(ctx context.Context, enclaveIds map[enclave.EnclaveID]bool) (
+	map[enclave.EnclaveID]*apiContainerKubernetesResources,
+	error,
+) {
+
+	enclaveMatchLabels := getEnclaveMatchLabels()
+
+	result := map[enclave.EnclaveID]*apiContainerKubernetesResources{}
+
+	enclaveIdsStrSet := map[string]bool{}
+	for enclaveId, booleanValue := range enclaveIds {
+		enclaveIdStr := string(enclaveId)
+		enclaveIdsStrSet[enclaveIdStr] = booleanValue
+	}
+
+	// Namespaces
+	namespaces, err := kubernetes_resource_collectors.CollectMatchingNamespaces(
+		ctx,
+		backend.kubernetesManager,
+		enclaveMatchLabels,
+		label_key_consts.EnclaveIDLabelKey.GetString(),
+		enclaveIdsStrSet,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave namespaces matching IDs '%+v'", enclaveIdsStrSet)
+	}
+	for enclaveIdStr, namespacesForEnclaveId := range namespaces {
+		if len(namespacesForEnclaveId) > 1 {
+			return nil, stacktrace.NewError(
+				"Expected at most one namespace to match enclave ID '%v', but got '%v'",
+				len(namespacesForEnclaveId),
+				enclaveIdStr,
+			)
+		}
+		enclaveId := enclave.EnclaveID(enclaveIdStr)
+		apiContainerResources, found := result[enclaveId]
+		if !found {
+			apiContainerResources = &apiContainerKubernetesResources{}
+		}
+		apiContainerResources.enclaveNamespace = namespacesForEnclaveId[0]
+		result[enclaveId] = apiContainerResources
+	}
+
+	apiContainerMatchLabels := getApiContainerMatchLabels()
+
+	// Per-namespace objects
+	for enclaveId, apiContainerResources := range result {
+		if apiContainerResources.enclaveNamespace == nil {
+			continue
+		}
+		namespaceName := apiContainerResources.enclaveNamespace.Name
+
+		enclaveIdStr := string(enclaveId)
+
+		//Role Bindings
+		roleBindings, err := kubernetes_resource_collectors.CollectMatchingRoleBindings(
+			ctx,
+			backend.kubernetesManager,
+			namespaceName,
+			apiContainerMatchLabels,
+			label_key_consts.EnclaveIDLabelKey.GetString(),
+			map[string]bool{
+				enclaveIdStr: true,
+			},
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting role bindings matching enclave ID '%v' in namespace '%v'", enclaveId, namespaceName)
+		}
+		var roleBinding *rbacv1.RoleBinding
+		if roleBindingsForEnclaveId, found := roleBindings[enclaveIdStr]; found {
+			if len(roleBindingsForEnclaveId) > 1 {
+				return nil, stacktrace.NewError(
+					"Expected at most one api container role binding in namespace '%v' for enclave with ID '%v' " +
+						"but found '%v'",
+					namespaceName,
+					enclaveId,
+					len(roleBindings),
+				)
+			}
+			roleBinding = roleBindingsForEnclaveId[0]
+		}
+
+		//Roles
+		roles, err := kubernetes_resource_collectors.CollectMatchingRoles(
+			ctx,
+			backend.kubernetesManager,
+			namespaceName,
+			apiContainerMatchLabels,
+			label_key_consts.EnclaveIDLabelKey.GetString(),
+			map[string]bool{
+				enclaveIdStr: true,
+			},
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting roles matching enclave ID '%v' in namespace '%v'", enclaveId, namespaceName)
+		}
+		var role *rbacv1.Role
+		if rolesForEnclaveId, found := roles[enclaveIdStr]; found {
+			if len(rolesForEnclaveId) > 1 {
+				return nil, stacktrace.NewError(
+					"Expected at most one api container role in namespace '%v' for enclave with ID '%v' " +
+						"but found '%v'",
+					namespaceName,
+					enclaveId,
+					len(roles),
+				)
+			}
+			role = rolesForEnclaveId[0]
+		}
+
+		// Service accounts
+		serviceAccounts, err := kubernetes_resource_collectors.CollectMatchingServiceAccounts(
+			ctx,
+			backend.kubernetesManager,
+			namespaceName,
+			apiContainerMatchLabels,
+			label_key_consts.EnclaveIDLabelKey.GetString(),
+			map[string]bool{
+				enclaveIdStr: true,
+			},
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting service accounts matching enclave ID '%v' in namespace '%v'", enclaveId, namespaceName)
+		}
+		var serviceAccount *apiv1.ServiceAccount
+		if serviceAccountsForEnclaveId, found := serviceAccounts[enclaveIdStr]; found {
+			if len(serviceAccountsForEnclaveId) > 1 {
+				return nil, stacktrace.NewError(
+					"Expected at most one api container service account in namespace '%v' for enclave with ID '%v' " +
+						"but found '%v'",
+					namespaceName,
+					enclaveId,
+					len(serviceAccounts),
+				)
+			}
+			serviceAccount = serviceAccountsForEnclaveId[0]
+		}
+
+		// Services
+		services, err := kubernetes_resource_collectors.CollectMatchingServices(
+			ctx,
+			backend.kubernetesManager,
+			namespaceName,
+			apiContainerMatchLabels,
+			label_key_consts.EnclaveIDLabelKey.GetString(),
+			map[string]bool{
+				enclaveIdStr: true,
+			},
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting services matching enclave ID '%v' in namespace '%v'", enclaveId, namespaceName)
+		}
+		var service *apiv1.Service
+		if servicesForEnclaveId, found := services[enclaveIdStr]; found {
+			if len(servicesForEnclaveId) > 1 {
+				return nil, stacktrace.NewError(
+					"Expected at most one api container service in namespace '%v' for enclave with ID '%v' " +
+						"but found '%v'",
+					namespaceName,
+					enclaveId,
+					len(services),
+				)
+			}
+			service = servicesForEnclaveId[0]
+		}
+
+		// Pods
+		pods, err := kubernetes_resource_collectors.CollectMatchingPods(
+			ctx,
+			backend.kubernetesManager,
+			namespaceName,
+			apiContainerMatchLabels,
+			label_key_consts.EnclaveIDLabelKey.GetString(),
+			map[string]bool{
+				enclaveIdStr: true,
+			},
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting pods matching enclave ID '%v' in namespace '%v'", enclaveId, namespaceName)
+		}
+		var pod *apiv1.Pod
+		if podsForEnclaveId, found := pods[enclaveIdStr]; found {
+			if len(podsForEnclaveId) > 1 {
+				return nil, stacktrace.NewError(
+					"Expected at most one api container pod in namespace '%v' for enclave with ID '%v' " +
+						"but found '%v'",
+					namespaceName,
+					enclaveId,
+					len(pods),
+				)
+			}
+			pod = podsForEnclaveId[0]
+		}
+
+		apiContainerResources.service = service
+		apiContainerResources.pod = pod
+		apiContainerResources.serviceAccount = serviceAccount
+		apiContainerResources.role = role
+		apiContainerResources.roleBinding = roleBinding
+	}
+
+	return result, nil
 }
 
 func getApiContainerObjectsFromKubernetesResources(

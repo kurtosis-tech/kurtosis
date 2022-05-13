@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added `CollectMatchingRoles` and `CollectMatchingRoleBindings` in `kubernetes_resource_collectors` package
 
 # 0.20.1
 ### Features
