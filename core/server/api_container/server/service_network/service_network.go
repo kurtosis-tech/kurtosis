@@ -13,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
-	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
@@ -53,8 +52,6 @@ type ServiceNetwork struct {
 	// Whether partitioning has been enabled for this particular test
 	isPartitioningEnabled bool
 
-	freeIpAddrTracker *lib.FreeIpAddrTracker
-
 	kurtosisBackend backend_interface.KurtosisBackend
 
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory
@@ -76,7 +73,6 @@ type ServiceNetwork struct {
 func NewServiceNetworkImpl(
 	enclaveId enclave.EnclaveID,
 	isPartitioningEnabled bool,
-	freeIpAddrTracker *lib.FreeIpAddrTracker,
 	kurtosisBackend backend_interface.KurtosisBackend,
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 	userServiceLauncher *user_service_launcher.UserServiceLauncher,
@@ -90,7 +86,6 @@ func NewServiceNetworkImpl(
 		isDestroyed:           false,
 		mutex:                 &sync.Mutex{},
 		isPartitioningEnabled: isPartitioningEnabled,
-		freeIpAddrTracker:     freeIpAddrTracker,
 		kurtosisBackend:       kurtosisBackend,
 		enclaveDataDir:        enclaveDataDir,
 		userServiceLauncher:   userServiceLauncher,
@@ -395,54 +390,14 @@ func (network *ServiceNetwork) PauseService(
 		return stacktrace.NewError("Cannot run pause service; the service network has been destroyed")
 	}
 
-	// TODO We could cache some of this information to speed things up
-	getRegistrationByServiceIdFilter := &user_service_registration.UserServiceRegistrationFilters{
-		EnclaveIDs: map[enclave.EnclaveID]bool{
-			network.enclaveId: true,
-		},
-		ServiceIDs: map[user_service_registration.ServiceID]bool{
-			serviceId: true,
-		},
-	}
-	registrations, err := network.kurtosisBackend.GetUserServiceRegistrations(ctx, getRegistrationByServiceIdFilter)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting user service registrations for service ID '%v'", serviceId)
-	}
-	if len(registrations) == 0 {
-		return stacktrace.NewError("No service registration for service ID '%v' was found", serviceId)
-	}
-	if len(registrations) > 1 {
-		return stacktrace.NewError("Found more than one registration for service ID '%v'", serviceId)
-	}
-
-	// Get only element
-	var registrationGuid user_service_registration.UserServiceRegistrationGUID
-	for registrationGuid = range registrations {}
-
-	getServicesByRegistrationGuidFilter = &service.ServiceFilters{
-		RegistrationGUIDs: nil,
-		EnclaveIDs:        nil,
-		GUIDs:             nil,
-		Statuses:          nil,
-	}
-	services, err := network.kurtosisBackend.
-
-
-	runInfo, found := network.serviceRunInfo[serviceId]
+	serviceObj, found := network.servicesByServiceId[serviceId]
 	if !found {
-		return stacktrace.NewError(
-			"Could not run pause service on service '%v'; service with this ID does not exist.",
-			serviceId)
+		return stacktrace.NewError("No service with ID '%v' exists in the network", serviceId)
 	}
-	if network.pausedServices[serviceId] {
-		return stacktrace.NewError("Can not pause service '%v', service already paused.",
-			serviceId)
-	}
-	err := network.kurtosisBackend.PauseService(ctx, network.enclaveId, runInfo.serviceGUID)
-	if err != nil {
+
+	if err := network.kurtosisBackend.PauseService(ctx, network.enclaveId, serviceObj.GetGUID()); err != nil {
 		return stacktrace.Propagate(err,"Failed to pause service '%v'", serviceId)
 	}
-	network.pausedServices[serviceId] = true
 	return nil
 }
 
@@ -455,21 +410,16 @@ func (network *ServiceNetwork) UnpauseService(
 	if network.isDestroyed {
 		return stacktrace.NewError("Cannot run unpause service; the service network has been destroyed")
 	}
-	runInfo, found := network.serviceRunInfo[serviceId]
+
+
+	serviceObj, found := network.servicesByServiceId[serviceId]
 	if !found {
-		return stacktrace.NewError(
-			"Could not run unpause service on service '%v'; service with this ID does not exist.",
-			serviceId)
+		return stacktrace.NewError("No service with ID '%v' exists in the network", serviceId)
 	}
-	if !network.pausedServices[serviceId] {
-		return stacktrace.NewError("Can not unpause service '%v', service is not paused.",
-			serviceId)
+
+	if err := network.kurtosisBackend.UnpauseService(ctx, network.enclaveId, serviceObj.GetGUID()); err != nil {
+		return stacktrace.Propagate(err,"Failed to unpause service '%v'", serviceId)
 	}
-	err := network.kurtosisBackend.UnpauseService(ctx, network.enclaveId, runInfo.serviceGUID)
-	if err != nil {
-		return stacktrace.Propagate(err,"Failed to pause service '%v'", serviceId)
-	}
-	network.pausedServices[serviceId] = false
 	return nil
 }
 
@@ -486,7 +436,7 @@ func (network *ServiceNetwork) ExecCommand(
 		return 0, "", stacktrace.NewError("Cannot run exec command; the service network has been destroyed")
 	}
 
-	runInfo, found := network.serviceRunInfo[serviceId]
+	serviceObj, found := network.servicesByServiceId[serviceId]
 	if !found {
 		return 0, "", stacktrace.NewError(
 			"Could not run exec command '%v' against service '%v'; no container has been created for the service yet",
@@ -497,7 +447,7 @@ func (network *ServiceNetwork) ExecCommand(
 	// NOTE: This is a SYNCHRONOUS command, meaning that the entire network will be blocked until the command finishes
 	// In the future, this will likely be insufficient
 
-	serviceGuid := runInfo.serviceGUID
+	serviceGuid := serviceObj.GetGUID()
 	userServiceCommand := map[service.ServiceGUID][]string{
 		serviceGuid: command,
 	}
@@ -553,12 +503,12 @@ func (network *ServiceNetwork) GetServiceRegistrationInfo(serviceId user_service
 		return nil, stacktrace.NewError("Cannot get registration info for service '%v'; the service network has been destroyed", serviceId)
 	}
 
-	registrationInfo, found := network.serviceRegistrationsByRegistrationGuid[serviceId]
+	registrationObj, found := network.registrationsByServiceId[serviceId]
 	if !found {
 		return nil, stacktrace.NewError("No registration information found for service with ID '%v'", serviceId)
 	}
 
-	return registrationInfo.privateIpAddr, nil
+	return registrationObj.GetIPAddress(), nil
 }
 
 
@@ -574,18 +524,18 @@ func (network *ServiceNetwork) GetServiceRunInfo(serviceId user_service_registra
 		return nil, nil, nil, stacktrace.NewError("Cannot get run info for service '%v'; the service network has been destroyed", serviceId)
 	}
 
-	runInfo, found := network.serviceRunInfo[serviceId]
+	serviceObj, found := network.servicesByServiceId[serviceId]
 	if !found {
 		return nil, nil, nil, stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
 	}
-	return runInfo.privatePorts, runInfo.maybePublicIpAddr, runInfo.maybePublicPorts, nil
+	return serviceObj.GetPrivatePorts(), serviceObj.GetMaybePublicIP(), serviceObj.GetMaybePublicPorts(), nil
 }
 
 func (network *ServiceNetwork) GetServiceIDs() map[user_service_registration.ServiceID]bool {
 
-	serviceIDs := make(map[user_service_registration.ServiceID]bool, len(network.serviceRunInfo))
+	serviceIDs := make(map[user_service_registration.ServiceID]bool, len(network.servicesByServiceId))
 
-	for serviceId := range network.serviceRunInfo {
+	for serviceId := range network.servicesByServiceId {
 		if _, ok := serviceIDs[serviceId]; !ok {
 			serviceIDs[serviceId] = true
 		}
@@ -594,11 +544,11 @@ func (network *ServiceNetwork) GetServiceIDs() map[user_service_registration.Ser
 }
 
 func (network *ServiceNetwork) CopyFromService(ctx context.Context, serviceId user_service_registration.ServiceID, srcPath string) (string, error) {
-	runInfo, foundRunInfo := network.serviceRunInfo[serviceId]
+	serviceObj, foundRunInfo := network.servicesByServiceId[serviceId]
 	if !foundRunInfo {
 		return "", stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
 	}
-	serviceGuid := runInfo.serviceGUID
+	serviceGuid := serviceObj.GetGUID()
 
 	readCloser, err := network.kurtosisBackend.CopyFromUserService(ctx, network.enclaveId, serviceGuid, srcPath)
 	if err != nil {
@@ -641,18 +591,26 @@ func (network *ServiceNetwork) removeServiceWithoutMutex(
 	serviceId user_service_registration.ServiceID,
 	containerStopTimeout time.Duration,
 ) error {
-
-	registrationInfo, foundRegistrationInfo := network.serviceRegistrationsByRegistrationGuid[serviceId]
+	registrationInfo, foundRegistrationInfo := network.registrationsByServiceId[serviceId]
 	if !foundRegistrationInfo {
 		return stacktrace.NewError("No registration info found for service '%v'", serviceId)
 	}
 	network.topology.RemoveService(serviceId)
-	delete(network.serviceRegistrationsByRegistrationGuid, serviceId)
+	// TODO defer-undo
+
+	delete(network.registrationsByServiceId, serviceId)
+	shouldUndoRegistrationIndexRemoval := true
+	defer func() {
+		if shouldUndoRegistrationIndexRemoval {
+			network.registrationsByServiceId[serviceId] = registrationInfo
+		}
+	}()
 
 	// TODO PERF: Parallelize the shutdown of the service container and the sidecar container
-	runInfo, foundRunInfo := network.serviceRunInfo[serviceId]
-	if foundRunInfo {
-		serviceGUID := runInfo.serviceGUID
+	userService, foundUserServiceInfo := network.servicesByServiceId[serviceId]
+	if foundUserServiceInfo {
+		serviceGUID := userService.GetGUID()
+
 		// Make a best-effort attempt to stop the service container
 		logrus.Debugf("Stopping service with GUID '%v' for service ID '%v'...", serviceGUID, serviceId)
 		_, failedToStopServiceErrs, err := network.kurtosisBackend.StopUserServices(
@@ -664,11 +622,11 @@ func (network *ServiceNetwork) removeServiceWithoutMutex(
 		}
 		if len(failedToStopServiceErrs) > 0 {
 			serviceStopErrs := []string{}
-			for serviceGUID, err := range failedToStopServiceErrs {
+			for failedToStopGuid, err := range failedToStopServiceErrs {
 				wrappedErr := stacktrace.Propagate(
 					err,
 					"An error occurred stopping service with GUID `%v'",
-					serviceGUID,
+					failedToStopGuid,
 				)
 				serviceStopErrs = append(serviceStopErrs, wrappedErr.Error())
 			}
@@ -680,10 +638,12 @@ func (network *ServiceNetwork) removeServiceWithoutMutex(
 				),
 			)
 		}
-		delete(network.serviceRunInfo, serviceId)
+
+		delete(network.servicesByServiceId, serviceId)
+		// TODO defer-undo
+
 		logrus.Debugf("Successfully stopped service GUID '%v'", serviceGUID)
 	}
-	network.freeIpAddrTracker.ReleaseIpAddr(registrationInfo.privateIpAddr)
 
 	sidecar, foundSidecar := network.networkingSidecars[serviceId]
 	if network.isPartitioningEnabled && foundSidecar {
@@ -699,6 +659,7 @@ func (network *ServiceNetwork) removeServiceWithoutMutex(
 		logrus.Debugf("Successfully removed sidecar attached to service with ID '%v'", serviceId)
 	}
 
+	shouldUndoRegistrationIndexRemoval = true
 	return nil
 }
 
