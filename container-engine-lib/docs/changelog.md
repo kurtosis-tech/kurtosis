@@ -1,4 +1,6 @@
 # TBD
+
+# 0.21.0
 ### Changes
 * The `DockerKurtosisBackend` will now track the free IPs of networks
 * `KurtosisBackend` now has `UserServiceRegistration` CRUD methods
