@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
-	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/module_launch_api"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/current_time_str_provider"
@@ -36,17 +35,10 @@ type ModuleLauncher struct {
 
 	// Modules have a connection to the API container, so the launcher must know what socket to pass to modules
 	apiContainerSocketInsideNetwork string
-
-	freeIpAddrTracker  *lib.FreeIpAddrTracker
 }
 
-func NewModuleLauncher(enclaveId enclave.EnclaveID, kurtosisBackend backend_interface.KurtosisBackend, apiContainerSocketInsideNetwork string, freeIpAddrTracker *lib.FreeIpAddrTracker) *ModuleLauncher {
-	return &ModuleLauncher{
-		enclaveId:                       enclaveId,
-		kurtosisBackend:                 kurtosisBackend,
-		apiContainerSocketInsideNetwork: apiContainerSocketInsideNetwork,
-		freeIpAddrTracker:               freeIpAddrTracker,
-	}
+func NewModuleLauncher(enclaveId enclave.EnclaveID, kurtosisBackend backend_interface.KurtosisBackend, apiContainerSocketInsideNetwork string) *ModuleLauncher {
+	return &ModuleLauncher{enclaveId: enclaveId, kurtosisBackend: kurtosisBackend, apiContainerSocketInsideNetwork: apiContainerSocketInsideNetwork}
 }
 
 func (launcher ModuleLauncher) Launch(
@@ -61,11 +53,6 @@ func (launcher ModuleLauncher) Launch(
 ) {
 	suffix := current_time_str_provider.GetCurrentTimeStr()
 	moduleGUID := module.ModuleGUID(string(moduleID) + "-" + suffix)
-
-	privateIpAddr, err := launcher.freeIpAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting a free IP address for new module")
-	}
 
 	args := module_launch_api.NewModuleContainerArgs(
 		string(launcher.enclaveId),
@@ -84,7 +71,6 @@ func (launcher ModuleLauncher) Launch(
 		launcher.enclaveId,
 		moduleID,
 		moduleGUID,
-		privateIpAddr,
 		modulePortNum,
 		envVars,
 	)
@@ -111,7 +97,7 @@ func (launcher ModuleLauncher) Launch(
 		}
 	}()
 
-	moduleSocket := fmt.Sprintf("%v:%v", privateIpAddr, modulePortNum)
+	moduleSocket := fmt.Sprintf("%v:%v", createdModule.GetPrivateIp(), modulePortNum)
 	conn, err := grpc.Dial(
 		moduleSocket,
 		grpc.WithInsecure(), // TODO SECURITY: Use HTTPS to verify we're connecting to the correct module

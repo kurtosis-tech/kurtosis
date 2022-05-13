@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 )
@@ -37,13 +36,11 @@ type StandardNetworkingSidecarManager struct {
 
 	enclaveObjAttrProvider schema.EnclaveObjectAttributesProvider
 
-	freeIpAddrTracker *lib.FreeIpAddrTracker
-
 	enclaveId enclave.EnclaveID
 }
 
-func NewStandardNetworkingSidecarManager(kurtosisBackend backend_interface.KurtosisBackend, enclaveObjAttrProvider schema.EnclaveObjectAttributesProvider, freeIpAddrTracker *lib.FreeIpAddrTracker, enclaveId enclave.EnclaveID) *StandardNetworkingSidecarManager {
-	return &StandardNetworkingSidecarManager{kurtosisBackend: kurtosisBackend, enclaveObjAttrProvider: enclaveObjAttrProvider, freeIpAddrTracker: freeIpAddrTracker, enclaveId: enclaveId}
+func NewStandardNetworkingSidecarManager(kurtosisBackend backend_interface.KurtosisBackend, enclaveObjAttrProvider schema.EnclaveObjectAttributesProvider, enclaveId enclave.EnclaveID) *StandardNetworkingSidecarManager {
+	return &StandardNetworkingSidecarManager{kurtosisBackend: kurtosisBackend, enclaveObjAttrProvider: enclaveObjAttrProvider, enclaveId: enclaveId}
 }
 
 // Adds a sidecar container attached to the given service ID
@@ -52,15 +49,7 @@ func (manager *StandardNetworkingSidecarManager) Add(
 	serviceGUID service.ServiceGUID,
 ) (NetworkingSidecarWrapper, error) {
 
-	sidecarIp, err := manager.freeIpAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred getting a free IP address for the sidecar container attached to service with GUID '%v'",
-			serviceGUID)
-	}
-
-	networkingSidecar, err := manager.kurtosisBackend.CreateNetworkingSidecar(ctx, manager.enclaveId, serviceGUID, sidecarIp)
+	networkingSidecar, err := manager.kurtosisBackend.CreateNetworkingSidecar(ctx, manager.enclaveId, serviceGUID)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating networking sidecar for service with GUID '%v' in enclave with ID '%v'", serviceGUID, manager.enclaveId)
 	}
@@ -70,7 +59,7 @@ func (manager *StandardNetworkingSidecarManager) Add(
 		networkingSidecar.GetServiceGUID(),
 		networkingSidecar.GetEnclaveID())
 
-	networkingSidecarWrapper, err := NewStandardNetworkingSidecarWrapper(networkingSidecar, execCmdExecutor, sidecarIp)
+	networkingSidecarWrapper, err := NewStandardNetworkingSidecarWrapper(networkingSidecar, execCmdExecutor)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating networking sidecar wrapper for networking sidecar with service GUID '%v'", networkingSidecar.GetServiceGUID())
 	}
@@ -101,6 +90,5 @@ func (manager *StandardNetworkingSidecarManager) Remove(
 		return stacktrace.Propagate(sidecarError, "An error occurred stopping networking sidecar with GUID '%v'", networkingSidecarServiceGUID)
 	}
 
-	manager.freeIpAddrTracker.ReleaseIpAddr(networkingSidecarWrapper.GetIPAddr())
 	return nil
 }

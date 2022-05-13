@@ -14,7 +14,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
-	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/current_time_str_provider"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
@@ -43,13 +42,11 @@ type FilesArtifactExpander struct {
 
 	enclaveId enclave.EnclaveID
 
-	freeIpAddrTracker *lib.FreeIpAddrTracker
-
 	filesArtifactStore *enclave_data_directory.FilesArtifactStore
 }
 
-func NewFilesArtifactExpander(kurtosisBackend backend_interface.KurtosisBackend, enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider, enclaveId enclave.EnclaveID, freeIpAddrTracker *lib.FreeIpAddrTracker, filesArtifactStore *enclave_data_directory.FilesArtifactStore) *FilesArtifactExpander {
-	return &FilesArtifactExpander{kurtosisBackend: kurtosisBackend, enclaveObjAttrsProvider: enclaveObjAttrsProvider, enclaveId: enclaveId, freeIpAddrTracker: freeIpAddrTracker, filesArtifactStore: filesArtifactStore}
+func NewFilesArtifactExpander(kurtosisBackend backend_interface.KurtosisBackend, enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider, enclaveId enclave.EnclaveID, filesArtifactStore *enclave_data_directory.FilesArtifactStore) *FilesArtifactExpander {
+	return &FilesArtifactExpander{kurtosisBackend: kurtosisBackend, enclaveObjAttrsProvider: enclaveObjAttrsProvider, enclaveId: enclaveId, filesArtifactStore: filesArtifactStore}
 }
 
 func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
@@ -116,19 +113,7 @@ func (expander *FilesArtifactExpander) runFilesArtifactExpander(
 	filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
 	artifactFilepathRelativeToEnclaveDataVolRoot string,
 ) error {
-	// NOTE: This silently (temporarily) uses up one of the user's requested IP addresses with a node
-	//  that's not one of their services! This could get confusing if the user requests exactly a wide enough
-	//  subnet to fit all _their_ services, but we hit the limit because we have these admin containers too
-	//  If this becomes problematic, create a special "admin" network, one per suite execution, for doing thinks like this?
-	// TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
-	expanderIpAddr, err := expander.freeIpAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting a free IP for the files artifact expander")
-	}
-	defer expander.freeIpAddrTracker.ReleaseIpAddr(expanderIpAddr)
-
 	guid := newFilesArtifactExpanderGUID(filesArtifactId, registrationGuid)
-
 	if _, err := expander.kurtosisBackend.RunFilesArtifactExpander(
 		ctx,
 		guid,
@@ -136,7 +121,6 @@ func (expander *FilesArtifactExpander) runFilesArtifactExpander(
 		filesArtifactExpansionVolumeName,
 		destVolMntDirpathOnExpander,
 		artifactFilepathRelativeToEnclaveDataVolRoot,
-		expanderIpAddr,
 	); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running files artifact expander with GUID '%v' for files artifact expansion volume '%v' in enclave with ID '%v'", guid, filesArtifactExpansionVolumeName, expander.enclaveId)
 	}
