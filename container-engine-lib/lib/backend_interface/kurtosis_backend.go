@@ -122,7 +122,10 @@ type KurtosisBackend interface {
 		grpcPortNum uint16,
 		grpcProxyPortNum uint16,
 		enclaveDataVolumeDirpath string,
-		envVars map[string]string,
+		// The environment variable that the user is requesting to populate with the container's own IP address
+		// Must not conflict with the custom environment variables
+		ownIpAddressEnvVar string,
+		customEnvVars map[string]string,
 	) (
 		*api_container.APIContainer,
 		error,

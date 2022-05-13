@@ -159,8 +159,13 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
 	enclaveDataVolumeDirpath string,
-	envVars map[string]string,
+	ownIpEnvVar string,
+	customEnvVars map[string]string,
 ) (*api_container.APIContainer, error) {
+	if _, found := customEnvVars[ownIpEnvVar]; found {
+		return nil, stacktrace.NewError("Requested own IP environment variable '%v' conflicts with custom environment variable", ownIpEnvVar)
+	}
+
 	result, err := backend.underlying.CreateAPIContainer(
 		ctx,
 		image,
@@ -168,14 +173,15 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 		grpcPortNum,
 		grpcProxyPortNum,
 		enclaveDataVolumeDirpath,
-		envVars,
+		ownIpEnvVar,
+		customEnvVars,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating an API container from image '%v' with envvars: %+v",
 			image,
-			envVars,
+			customEnvVars,
 		)
 	}
 	return result, nil

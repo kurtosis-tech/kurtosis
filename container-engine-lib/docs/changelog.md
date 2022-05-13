@@ -23,6 +23,7 @@
     * `CreateService`
     * `CreateNetworkingSidecar`
     * `RunFilesArtifactExpander`
+* `CreateAPIContainer` now takes in an extra `ownIpAddressEnvVar` environment variable, which is the environment variable the `KurtosisBackend` should populate with the API container's IP address
 
 # 0.20.1
 ### Features

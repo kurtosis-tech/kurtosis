@@ -43,7 +43,8 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	grpcProxyPortNum uint16,
 	// The dirpath on the API container where the enclave data volume should be mounted
 	enclaveDataVolumeDirpath string,
-	envVars map[string]string,
+	ownIpAddressEnvVar string,
+	customEnvVars map[string]string,
 ) (*api_container.APIContainer, error) {
 	// Verify no API container already exists in the enclave
 	apiContainersInEnclaveFilters := &api_container.APIContainerFilters{
@@ -87,6 +88,17 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting an IP address for the API container")
+	}
+
+	// Set the own-IP environment variable
+	if _, found := customEnvVars[ownIpAddressEnvVar]; found {
+		return nil, stacktrace.NewError("Requested own IP environment variable '%v' conflicts with custom environment variable", ownIpAddressEnvVar)
+	}
+	envVarsWithOwnIp := map[string]string{
+		ownIpAddressEnvVar: ipAddr.String(),
+	}
+	for key, value := range customEnvVars {
+		envVarsWithOwnIp[key] = value
 	}
 
 	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, apiContainerPortProtocol)
@@ -156,7 +168,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		apiContainerAttrs.GetName().GetString(),
 		enclaveNetwork.GetId(),
 	).WithEnvironmentVariables(
-		envVars,
+		envVarsWithOwnIp,
 	).WithBindMounts(
 		bindMounts,
 	).WithVolumeMounts(
