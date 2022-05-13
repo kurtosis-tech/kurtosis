@@ -36,3 +36,10 @@ func TestNewKurtosisConfigFromRequiredFields_MetricsElectionIsSent(t *testing.T)
 	overrides := config.GetOverrides()
 	require.NotNil(t, overrides.ShouldSendMetrics)
 }
+
+func TestNewKurtosisConfigEmptyOverrides(t *testing.T) {
+	_, err := NewKurtosisConfigFromOverrides(&v1.KurtosisConfigV1{})
+	// You can not initialize a Kurtosis config with empty overrides - it needs at least `ShouldSendMetrics`
+	require.Error(t, err)
+}
+
