@@ -38,6 +38,14 @@ func NewKurtosisClusterConfigFromOverrides(overrides *v1.KurtosisClusterConfigV1
 	}, nil
 }
 
+func (clusterConfig *KurtosisClusterConfig) GetKurtosisBackend() (backend_interface.KurtosisBackend, error) {
+	backend, err := clusterConfig.kurtosisBackendSupplier()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend")
+	}
+	return backend, nil
+}
+
 
 // ====================================================================================================
 //                                      Private Helpers
