@@ -6,11 +6,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	kurtosis_backend "github.com/kurtosis-tech/container-engine-lib/lib"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/backend_creator"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server"
@@ -65,7 +65,7 @@ func main() {
 }
 
 func runMain() error {
-	serverArgs, err := args.GetArgsFromEnv()
+	serverArgs, ownIpAddress, err := args.GetArgsFromEnv()
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't retrieve API container args from the environment")
 	}
@@ -76,24 +76,19 @@ func runMain() error {
 	}
 	logrus.SetLevel(logLevel)
 
-	_, parsedSubnetMask, err := net.ParseCIDR(serverArgs.SubnetMask)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing subnet CIDR string '%v'", serverArgs.SubnetMask)
-	}
-	freeIpAddrTracker := lib.NewFreeIpAddrTracker(
-		logrus.StandardLogger(),
-		parsedSubnetMask,
-		serverArgs.TakenIpAddrs,
-	)
-
 	enclaveDataDir := enclave_data_directory.NewEnclaveDataDirectory(serverArgs.EnclaveDataVolumeDirpath)
 
-	kurtosisBackend, err := kurtosis_backend.GetLocalDockerKurtosisBackend()
+	//
+	apiContainerModeArgs := &backend_creator.APIContainerModeArgs{
+		Context:   context.Background(),
+		EnclaveID: enclave.EnclaveID(serverArgs.EnclaveId),
+	}
+	kurtosisBackend, err := backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 	}
 
-	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(kurtosisBackend, enclaveDataDir, freeIpAddrTracker, serverArgs)
+	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(kurtosisBackend, enclaveDataDir, serverArgs, ownIpAddress)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the service network & module store")
 	}
@@ -148,8 +143,9 @@ func runMain() error {
 func createServiceNetworkAndModuleStore(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
-	freeIpAddrTracker *lib.FreeIpAddrTracker,
-	args *args.APIContainerArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
+	args *args.APIContainerArgs,
+	ownIpAddress net.IP,
+) (*service_network.ServiceNetwork, *module_store.ModuleStore, error) {
 	enclaveIdStr := args.EnclaveId
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
 
@@ -165,7 +161,7 @@ func createServiceNetworkAndModuleStore(
 
 	apiContainerSocketInsideNetwork := fmt.Sprintf(
 		"%v:%v",
-		args.ApiContainerIpAddr,
+		ownIpAddress.String(),
 		args.GrpcListenPortNum,
 	)
 
@@ -173,26 +169,22 @@ func createServiceNetworkAndModuleStore(
 		kurtosisBackend,
 		enclaveObjAttrsProvider,
 		enclaveId,
-		freeIpAddrTracker,
 		filesArtifactStore,
 	)
 
 	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
 		kurtosisBackend,
 		filesArtifactExpander,
-		freeIpAddrTracker,
 	)
 
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
 		kurtosisBackend,
 		enclaveObjAttrsProvider,
-		freeIpAddrTracker,
 		enclaveId)
 
 	serviceNetwork := service_network.NewServiceNetworkImpl(
 		enclaveId,
 		isPartitioningEnabled,
-		freeIpAddrTracker,
 		kurtosisBackend,
 		enclaveDataDir,
 		userServiceLauncher,
@@ -203,7 +195,6 @@ func createServiceNetworkAndModuleStore(
 		enclaveId,
 		kurtosisBackend,
 		apiContainerSocketInsideNetwork,
-		freeIpAddrTracker,
 	)
 
 	moduleStore := module_store.NewModuleStore(kurtosisBackend, moduleLauncher)

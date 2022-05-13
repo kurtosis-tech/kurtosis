@@ -21,14 +21,6 @@ type APIContainerArgs struct {
 	GrpcProxyListenPortNum uint16 `json:"grpcProxyListenPortNum"`
 
 	EnclaveId  string `json:"enclaveId"`
-	NetworkId  string `json:"networkId"`
-	SubnetMask string `json:"subnetMask"`
-
-	// Necessary so that when the API container starts modules, it knows which IP addr to give them
-	ApiContainerIpAddr string `json:"apiContainerIpAddr"`
-
-	// Instructs the API container that these IP addrs are already taken and shouldn't be used
-	TakenIpAddrs map[string]bool `json:"takenIpAddrsSet"`
 
 	IsPartitioningEnabled bool `json:"isPartitioningEnabled"`
 
@@ -50,10 +42,6 @@ func NewAPIContainerArgs(
 	grpcListenPortNum uint16,
 	grpcProxyListenPortNum uint16,
 	enclaveId string,
-	networkId string,
-	subnetMask string,
-	apiContainerIpAddr string,
-	takenIpAddrs map[string]bool,
 	isPartitioningEnabled bool,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
@@ -65,10 +53,6 @@ func NewAPIContainerArgs(
 		GrpcListenPortNum:                grpcListenPortNum,
 		GrpcProxyListenPortNum:           grpcProxyListenPortNum,
 		EnclaveId:                        enclaveId,
-		NetworkId:                        networkId,
-		SubnetMask:                       subnetMask,
-		ApiContainerIpAddr:               apiContainerIpAddr,
-		TakenIpAddrs:                     takenIpAddrs,
 		IsPartitioningEnabled:            isPartitioningEnabled,
 		MetricsUserID:                    metricsUserID,
 		DidUserAcceptSendingMetrics:      didUserAcceptSendingMetrics,
