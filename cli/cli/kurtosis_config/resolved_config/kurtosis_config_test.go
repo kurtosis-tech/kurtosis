@@ -28,3 +28,11 @@ func TestGetKurtosisBackendSupplier(t *testing.T) {
 		require.NoError(t, err)
 	}
 }
+
+func TestNewKurtosisConfigFromRequiredFields_MetricsElectionIsSent(t *testing.T) {
+	config, err := NewKurtosisConfigFromRequiredFields(false)
+	require.NoError(t, err)
+
+	overrides := config.GetOverrides()
+	require.NotNil(t, overrides.ShouldSendMetrics)
+}

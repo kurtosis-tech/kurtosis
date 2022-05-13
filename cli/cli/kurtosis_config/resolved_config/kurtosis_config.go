@@ -79,7 +79,7 @@ func NewKurtosisConfigFromOverrides(overrides *v1.KurtosisConfigV1) (*KurtosisCo
 	}
 
 	return &KurtosisConfig{
-		overrides:         nil,
+		overrides:         overrides,
 		shouldSendMetrics: shouldSendMetrics,
 		clusters:          allClusterConfigs,
 	}, nil
