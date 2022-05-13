@@ -53,7 +53,7 @@ type DockerEnclaveObjectAttributesProvider interface {
 		guid files_artifact_expander.FilesArtifactExpanderGUID,
 	) (DockerObjectAttributes, error)
 	ForFilesArtifactExpansionVolume(
-		serviceGUID service.ServiceGUID,
+		registrationGuid user_service_registration.UserServiceRegistrationGUID,
 		fileArtifactID service.FilesArtifactID,
 	) (DockerObjectAttributes, error)
 	ForModuleContainer(
@@ -327,17 +327,17 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForModuleContainer(
 }
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpansionVolume(
-	serviceGUID service.ServiceGUID,
+	registrationGuid user_service_registration.UserServiceRegistrationGUID,
 	fileArtifactID service.FilesArtifactID,
 )(
 	DockerObjectAttributes,
 	error,
 ){
-	serviceGUIDStr := string(serviceGUID)
+	registrationGuidStr := string(registrationGuid)
 
 	name, err := provider.getNameForEnclaveObject([]string{
 		artifactExpansionVolumeNameFragment,
-		serviceGUIDStr,
+		registrationGuidStr,
 		string(fileArtifactID),
 	})
 	if err != nil {

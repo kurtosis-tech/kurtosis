@@ -628,15 +628,15 @@ func (backend *MetricsReportingKurtosisBackend) DestroyNetworkingSidecars(
 func (backend *MetricsReportingKurtosisBackend) CreateFilesArtifactExpansionVolume(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	serviceGuid service.ServiceGUID,
+	registrationGuid user_service_registration.UserServiceRegistrationGUID,
 	filesArtifactId service.FilesArtifactID,
 ) (
 	*files_artifact_expansion_volume.FilesArtifactExpansionVolume,
 	error,
 ) {
-	newFileArtifactExpansionVolume, err := backend.underlying.CreateFilesArtifactExpansionVolume(ctx, enclaveId, serviceGuid, filesArtifactId)
+	newFileArtifactExpansionVolume, err := backend.underlying.CreateFilesArtifactExpansionVolume(ctx, enclaveId, registrationGuid, filesArtifactId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for user service with registration '%v' and files artifact ID '%v' in enclave with ID '%v'", registrationGuid, filesArtifactId, enclaveId)
 	}
 
 	return newFileArtifactExpansionVolume, nil

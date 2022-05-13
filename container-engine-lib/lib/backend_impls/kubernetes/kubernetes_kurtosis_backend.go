@@ -211,7 +211,7 @@ func (backend *KubernetesKurtosisBackend) DestroyNetworkingSidecars(ctx context.
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansionVolume(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID, filesArtifactId service.FilesArtifactID) (*files_artifact_expansion_volume.FilesArtifactExpansionVolume, error) {
+func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansionVolume(ctx context.Context, enclaveId enclave.EnclaveID, registrationGuid user_service_registration.UserServiceRegistrationGUID, filesArtifactId service.FilesArtifactID) (*files_artifact_expansion_volume.FilesArtifactExpansionVolume, error) {
 	//TODO implement me
 	panic("implement me")
 }

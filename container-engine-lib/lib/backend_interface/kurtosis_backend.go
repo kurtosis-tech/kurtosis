@@ -428,7 +428,7 @@ type KurtosisBackend interface {
 	CreateFilesArtifactExpansionVolume(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		serviceGuid service.ServiceGUID,
+		registrationGuid user_service_registration.UserServiceRegistrationGUID,
 		filesArtifactId service.FilesArtifactID,
 	) (
 		*files_artifact_expansion_volume.FilesArtifactExpansionVolume,
