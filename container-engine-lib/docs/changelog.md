@@ -2,6 +2,7 @@
 
 ### Changes
 * Updated Kurtosis Kubernetes `label_key_consts` and tests.
+* Added `GetPodPortforwardEndpointUrl` method to kubernetes_manager
 
 # 0.20.1
 ### Features
