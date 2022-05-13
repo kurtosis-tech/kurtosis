@@ -64,7 +64,6 @@ func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kur
 		apiContainerLogLevel,
 		args.EnclaveId,
 		args.IsPartitioningEnabled,
-		args.ShouldPublishAllPorts,
 		service.metricsUserID,
 		service.didUserAcceptSendingMetrics,
 	)

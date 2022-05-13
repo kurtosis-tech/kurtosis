@@ -34,9 +34,6 @@ export class CreateEnclaveArgs extends jspb.Message {
   getIsPartitioningEnabled(): boolean;
   setIsPartitioningEnabled(value: boolean): CreateEnclaveArgs;
 
-  getShouldPublishAllPorts(): boolean;
-  setShouldPublishAllPorts(value: boolean): CreateEnclaveArgs;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CreateEnclaveArgs.AsObject;
   static toObject(includeInstance: boolean, msg: CreateEnclaveArgs): CreateEnclaveArgs.AsObject;
@@ -51,7 +48,6 @@ export namespace CreateEnclaveArgs {
     apiContainerVersionTag: string,
     apiContainerLogLevel: string,
     isPartitioningEnabled: boolean,
-    shouldPublishAllPorts: boolean,
   }
 }
 
@@ -135,12 +131,6 @@ export class EnclaveInfo extends jspb.Message {
   getEnclaveId(): string;
   setEnclaveId(value: string): EnclaveInfo;
 
-  getNetworkId(): string;
-  setNetworkId(value: string): EnclaveInfo;
-
-  getNetworkCidr(): string;
-  setNetworkCidr(value: string): EnclaveInfo;
-
   getContainersStatus(): EnclaveContainersStatus;
   setContainersStatus(value: EnclaveContainersStatus): EnclaveInfo;
 
@@ -168,8 +158,6 @@ export class EnclaveInfo extends jspb.Message {
 export namespace EnclaveInfo {
   export type AsObject = {
     enclaveId: string,
-    networkId: string,
-    networkCidr: string,
     containersStatus: EnclaveContainersStatus,
     apiContainerStatus: EnclaveAPIContainerStatus,
     apiContainerInfo?: EnclaveAPIContainerInfo.AsObject,
