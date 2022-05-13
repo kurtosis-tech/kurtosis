@@ -2,6 +2,10 @@
 ### Fixes
 * Fixed a null pointer exception bug in launcher when backend returns an engine with no public GRPC port
 
+### Breaking Changes
+* The engine server launchers now return a public `PortSpec` rather than just a port number
+    * Users should consume the port spec instead
+
 # 1.18.1
 ### Features
 * Upgrade to Core 1.46.1 and container-engine-lib 0.20.0, which allow for more Kubernetes functionality
