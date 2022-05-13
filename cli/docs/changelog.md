@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Upgraded to container-engine-lib 0.21.0, core 1.47.0, and engine 1.19.0 which use the new method of registering services
 
 # 0.16.2
 ### Features
