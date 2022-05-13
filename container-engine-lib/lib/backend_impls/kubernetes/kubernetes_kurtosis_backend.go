@@ -122,7 +122,7 @@ func (backend *KubernetesKurtosisBackend) GetUserServiceRegistrations(ctx contex
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) DestroyUserServiceRegistration(ctx context.Context, filters *user_service_registration.UserServiceRegistrationFilters) (resultSuccessfulServiceIds map[user_service_registration.UserServiceRegistrationGUID]bool, resultErroredServiceIds map[user_service_registration.UserServiceRegistrationGUID]error, resultErr error) {
+func (backend *KubernetesKurtosisBackend) DestroyUserServiceRegistrations(ctx context.Context, filters *user_service_registration.UserServiceRegistrationFilters) (resultSuccessfulServiceIds map[user_service_registration.UserServiceRegistrationGUID]bool, resultErroredServiceIds map[user_service_registration.UserServiceRegistrationGUID]error, resultErr error) {
 	//TODO implement me
 	panic("implement me")
 }

@@ -18,6 +18,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	"net"
+	"strings"
 )
 
 // TODO CALL THE METRICS LIBRARY EVENT-REGISTRATION FUNCTIONS HERE!!!!
@@ -297,6 +298,11 @@ func (backend *MetricsReportingKurtosisBackend) DestroyModules(
 }
 
 func (backend *MetricsReportingKurtosisBackend) CreateUserServiceRegistration(ctx context.Context, enclaveId enclave.EnclaveID, serviceId user_service_registration.ServiceID) (*user_service_registration.UserServiceRegistration, error) {
+	serviceIdStr := string(serviceId)
+	if len(strings.TrimSpace(serviceIdStr)) == 0 {
+		return nil, stacktrace.NewError("Service ID cannot be whitespace or empty")
+	}
+
 	result, err := backend.underlying.CreateUserServiceRegistration(ctx, enclaveId, serviceId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service registration in enclave '%v' for service ID '%v'", enclaveId, serviceId)
@@ -312,8 +318,8 @@ func (backend *MetricsReportingKurtosisBackend) GetUserServiceRegistrations(ctx 
 	return result, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) DestroyUserServiceRegistration(ctx context.Context, filters *user_service_registration.UserServiceRegistrationFilters) (resultSuccessfulServiceIds map[user_service_registration.UserServiceRegistrationGUID]bool, resultErroredServiceIds map[user_service_registration.UserServiceRegistrationGUID]error, resultErr error) {
-	successes, failures, err := backend.underlying.DestroyUserServiceRegistration(ctx, filters)
+func (backend *MetricsReportingKurtosisBackend) DestroyUserServiceRegistrations(ctx context.Context, filters *user_service_registration.UserServiceRegistrationFilters) (resultSuccessfulServiceIds map[user_service_registration.UserServiceRegistrationGUID]bool, resultErroredServiceIds map[user_service_registration.UserServiceRegistrationGUID]error, resultErr error) {
+	successes, failures, err := backend.underlying.DestroyUserServiceRegistrations(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying user service registrations matching filters: %+v", filters)
 	}

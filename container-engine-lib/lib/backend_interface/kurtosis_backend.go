@@ -240,7 +240,7 @@ type KurtosisBackend interface {
 
 	// DestroyUserServiceRegistration removes a previously-created user service registration object
 	// This will fail if a service is currently consuming the registration
-	DestroyUserServiceRegistration(
+	DestroyUserServiceRegistrations(
 		ctx context.Context,
 		filters *user_service_registration.UserServiceRegistrationFilters,
 	) (

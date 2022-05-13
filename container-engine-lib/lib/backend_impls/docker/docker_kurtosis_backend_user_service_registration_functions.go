@@ -100,7 +100,7 @@ func (backend *DockerKurtosisBackend) GetUserServiceRegistrations(
 	return result, nil
 }
 
-func (backend *DockerKurtosisBackend) DestroyUserServiceRegistration(
+func (backend *DockerKurtosisBackend) DestroyUserServiceRegistrations(
 	ctx context.Context,
 	filters *user_service_registration.UserServiceRegistrationFilters,
 ) (
