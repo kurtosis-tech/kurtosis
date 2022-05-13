@@ -15,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/stacktrace"
-	"net"
 )
 
 /*
@@ -42,7 +41,6 @@ func (launcher UserServiceLauncher) Launch(
 	ctx context.Context,
 	registrationGuid user_service_registration.UserServiceRegistrationGUID,
 	enclaveId enclave.EnclaveID,
-	ipAddr net.IP,
 	imageName string,
 	privatePorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
@@ -87,7 +85,6 @@ func (launcher UserServiceLauncher) Launch(
 		registrationGuid,
 		imageName,
 		enclaveId,
-		ipAddr,
 		privatePorts,
 		entrypointArgs,
 		cmdArgs,
