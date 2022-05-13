@@ -39,8 +39,6 @@ type KubernetesManager struct {
 
 	// The underlying K8s client that will be used to modify the K8s environment
 	kubernetesClientSet *kubernetes.Clientset
-
-	// Underlying Kubernetes Rest client
 }
 
 /*
