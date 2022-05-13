@@ -42,6 +42,8 @@ type DockerEnclaveObjectAttributesProvider interface {
 	) (DockerObjectAttributes, error)
 	ForUserServiceContainer(
 		registrationGuid user_service_registration.UserServiceRegistrationGUID,
+		// TODO Remove this completely - user services shouldn't get tagged with their Service ID anymore (this
+		//  should be on the user service registration)
 		serviceId user_service_registration.ServiceID,
 		serviceGuid service.ServiceGUID,
 		privateIpAddr net.IP,
@@ -185,6 +187,8 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContainer(
 	registrationGUID user_service_registration.UserServiceRegistrationGUID,
+	// TODO Remove this param - user services shouldn't get tagged with their service ID anymore, adn this should
+	//  be done via service registration lookups now!
 	serviceID user_service_registration.ServiceID,
 	serviceGUID service.ServiceGUID,
 	privateIpAddr net.IP,
@@ -223,6 +227,8 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 		)
 	}
 
+	// TODO Remove this - services should no longer be lookup-able by ID because you should need to go through a registration
+	//  for this
 	serviceIdStr := string(serviceID)
 	serviceGuidStr := string(serviceGUID)
 

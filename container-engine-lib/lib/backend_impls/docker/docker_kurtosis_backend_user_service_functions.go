@@ -663,6 +663,12 @@ func (backend *DockerKurtosisBackend) getMatchingUserServices(
 			}
 		}
 
+		if filters.RegistrationGUIDs != nil && len(filters.RegistrationGUIDs) > 0 {
+			if _, found := filters.RegistrationGUIDs[object.GetRegistrationGUID()]; !found {
+				continue
+			}
+		}
+
 		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
 			if _, found := filters.GUIDs[object.GetGUID()]; !found {
 				continue
