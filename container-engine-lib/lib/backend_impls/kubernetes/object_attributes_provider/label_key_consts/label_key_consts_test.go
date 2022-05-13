@@ -13,7 +13,7 @@ const (
 	expectedResourceTypeLabelKeyStr = "kurtosistech.com/resource-type"
 )
 
-//When Kurtosis versions change, these particular label keys must be equal.
+//When Kurtosis versions change, these particular label key strings must be equal.
 var crossVersionLabelKeyStringsToEnsure = map[string]string{
 	labelKeyPrefixStr:       	expectedLabelKeyPrefixStr,
 	appIdLabelKeyStr:        	expectedAppIdLabelKeyStr,
