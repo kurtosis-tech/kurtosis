@@ -660,7 +660,6 @@ func (backend *MetricsReportingKurtosisBackend) RunFilesArtifactExpander(
 	filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
 	destVolMntDirpathOnExpander string,
 	filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
-	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 ) (*files_artifact_expander.FilesArtifactExpander, error) {
 	newFilesArtifactExpander, err := backend.underlying.RunFilesArtifactExpander(
 		ctx,
@@ -669,7 +668,7 @@ func (backend *MetricsReportingKurtosisBackend) RunFilesArtifactExpander(
 		filesArtifactExpansionVolumeName,
 		destVolMntDirpathOnExpander,
 		filesArtifactFilepathRelativeToEnclaveDatadirRoot,
-		ipAddr)
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expander with GUID '%v' with files artifact expansion volume name '%v' in enclave with ID '%v'", guid, filesArtifactExpansionVolumeName, enclaveId)
 	}

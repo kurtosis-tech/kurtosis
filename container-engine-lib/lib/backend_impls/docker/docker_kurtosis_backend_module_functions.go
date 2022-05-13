@@ -65,7 +65,7 @@ func (backend *DockerKurtosisBackend) CreateModule(
 	if !found {
 		return nil, stacktrace.NewError(
 			"Received a request to create module with ID '%v' in enclave '%v', but no free IP address provider was " +
-				"defined for this enclave; this likely means that the user registration request is being called where it shouldn't " +
+				"defined for this enclave; this likely means that the request is being called where it shouldn't " +
 				"be (i.e. outside the API container)",
 			id,
 			enclaveId,
