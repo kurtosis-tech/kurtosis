@@ -335,7 +335,7 @@ func (backend *KubernetesKurtosisBackend) getEnclaveNamespace(ctx context.Contex
 
 func (backend *KubernetesKurtosisBackend) getEnclaveDataPersistentVolumeClaim(ctx context.Context, enclaveNamespaceName string, enclaveId enclave.EnclaveID) (*apiv1.PersistentVolumeClaim, error) {
 	matchLabels := getEnclaveMatchLabels()
-	matchLabels[label_key_consts.VolumeTypeLabelKey.GetString()] = label_value_consts.EnclaveDataVolumeTypeLabelValue.GetString()
+	matchLabels[label_key_consts.KurtosisVolumeTypeLabelKey.GetString()] = label_value_consts.EnclaveDataVolumeTypeLabelValue.GetString()
 	matchLabels[label_key_consts.EnclaveIDLabelKey.GetString()] = string(enclaveId)
 
 	persistentVolumeClaims, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, enclaveNamespaceName, matchLabels)
