@@ -19,8 +19,8 @@ import (
 // Struct encapsulating information needed to prep the DockerKurtosisBackend for extended API container functionality
 type APIContainerModeArgs struct {
 	// Normally storing a context in a struct is bad, but we only do this to package it together as part of "optional" args
-	ctx context.Context
-	enclaveId enclave.EnclaveID
+	Context   context.Context
+	EnclaveID enclave.EnclaveID
 }
 
 // GetLocalDockerKurtosisBackend is the entrypoint method we expect users of container-engine-lib to call
@@ -40,8 +40,8 @@ func GetLocalDockerKurtosisBackend(
 	// so we can create the free IP address trackers
 	enclaveFreeIpAddrTrackers := map[enclave.EnclaveID]*lib.FreeIpAddrTracker{}
 	if optionalApiContainerModeArgs != nil {
-		ctx := optionalApiContainerModeArgs.ctx
-		enclaveId := optionalApiContainerModeArgs.enclaveId
+		ctx := optionalApiContainerModeArgs.Context
+		enclaveId := optionalApiContainerModeArgs.EnclaveID
 
 		enclaveNetworkSearchLabels := map[string]string{
 			label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
