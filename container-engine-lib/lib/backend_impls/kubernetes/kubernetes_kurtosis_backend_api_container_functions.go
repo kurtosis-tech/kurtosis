@@ -16,7 +16,6 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"net"
-	"strings"
 )
 
 const (
@@ -348,19 +347,11 @@ func (backend *KubernetesKurtosisBackend) GetAPIContainers(
 	map[enclave.EnclaveID]*api_container.APIContainer,
 	error,
 ) {
-	matchingApiContainersByNamespaceAndServiceName, err := backend.getMatchingApiContainers(ctx, filters)
+	matchingApiContainers, _, err := backend.getMatchingApiContainerObjectsAndKubernetesResources(ctx, filters)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting API containers matching the following filters: %+v", filters)
+		return nil, stacktrace.Propagate(err, "An error occurred getting api containers matching the following filters: %+v", filters)
 	}
-
-	matchingApiContainersByEnclaveID := map[enclave.EnclaveID]*api_container.APIContainer{}
-	for _, apiContainerServices := range matchingApiContainersByNamespaceAndServiceName {
-		for _, apiContainerObj := range apiContainerServices {
-			matchingApiContainersByEnclaveID[apiContainerObj.GetEnclaveID()] = apiContainerObj
-		}
-	}
-
-	return matchingApiContainersByEnclaveID, nil
+	return matchingApiContainers, nil
 }
 
 func (backend *KubernetesKurtosisBackend) StopAPIContainers(
@@ -371,50 +362,50 @@ func (backend *KubernetesKurtosisBackend) StopAPIContainers(
 	map[enclave.EnclaveID]error,
 	error,
 ) {
-	matchingApiContainersByNamespaceAndServiceName, err := backend.getMatchingApiContainers(ctx, filters)
+	_, matchingKubernetesResources, err := backend.getMatchingApiContainerObjectsAndKubernetesResources(ctx, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting api containers matching filters '%+v'", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting api containers and Kubernetes resources matching filters '%+v'", filters)
 	}
 
-	successfulEnclaveIds :=map[enclave.EnclaveID]bool{}
+	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
 	erroredEnclaveIds := map[enclave.EnclaveID]error{}
-
-	//First iterate over namespaces
-	for enclaveNamespace, apiContainerServices := range matchingApiContainersByNamespaceAndServiceName {
-		apiContainerServicesToApiContainerPodsMap := map[string]string{}
-
-		//Then over services
-		for apiContainerServiceName, apiContainerObj := range apiContainerServices {
-			apiContainerPod, err := backend.getApiContainerPod(ctx, apiContainerObj.GetEnclaveID(), enclaveNamespace)
-			if err != nil {
-				return nil, nil, stacktrace.Propagate(err, "An error occurred getting the api container pod for enclave with ID '%v' in namespace '%v'", apiContainerObj.GetEnclaveID(), enclaveNamespace)
-			}
-			if _, found := apiContainerServicesToApiContainerPodsMap[apiContainerServiceName]; found {
-				return nil, nil, stacktrace.NewError("Api container service name '%v' already exist in the api container services to api container pod map '%+v'; this should never happen and is a bug", apiContainerServiceName, apiContainerServicesToApiContainerPodsMap)
-			}
-			apiContainerServicesToApiContainerPodsMap[apiContainerServiceName] = apiContainerPod.GetName()
+	for enclaveId, resources := range matchingKubernetesResources {
+		if resources.enclaveNamespace == nil {
+			// No namespace means nothing needs stopping
+			successfulEnclaveIds[enclaveId] = true
+			continue
 		}
-		successfulServiceNames, erroredServiceNames := backend.removeApiContainerServiceSelectorsAndApiContainerPods(ctx, enclaveNamespace, apiContainerServicesToApiContainerPodsMap)
+		namespaceName := resources.enclaveNamespace.GetName()
 
-		removeApiContainerServiceSelectorsAndApiContainerPodsSuccessfulEnclaveIds := map[enclave.EnclaveID]bool{}
-		for serviceName := range successfulServiceNames {
-			apiContainerObj, found := apiContainerServices[serviceName]
-			if !found {
-				return nil, nil, stacktrace.NewError("Expected to find service name '%v' in the api container service list '%+v' but it was not found; this is a bug in Kurtosis!", serviceName, apiContainerServices)
+		if resources.service != nil {
+			serviceName := resources.service.GetName()
+			if err := backend.kubernetesManager.RemoveSelectorsFromService(ctx, namespaceName, serviceName); err != nil {
+				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
+					err,
+					"An error occurred removing selectors from service '%v' in namespace '%v' for api container in enclave with ID '%v'",
+					serviceName,
+					namespaceName,
+					enclaveId,
+				)
+				continue
 			}
-			removeApiContainerServiceSelectorsAndApiContainerPodsSuccessfulEnclaveIds[apiContainerObj.GetEnclaveID()] = true
 		}
 
-		for serviceName, err := range erroredServiceNames {
-			apiContainerObj, found := apiContainerServices[serviceName]
-			if !found {
-				return nil, nil, stacktrace.NewError("Expected to find service name '%v' in the api container service list '%+v' but it was not found; this is a bug in Kurtosis!", serviceName, apiContainerServices)
+		if resources.pod != nil {
+			podName := resources.pod.GetName()
+			if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, podName); err != nil {
+				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
+					err,
+					"An error occurred removing pod '%v' in namespace '%v' for api container in enclave with ID '%v'",
+					podName,
+					namespaceName,
+					enclaveId,
+				)
+				continue
 			}
-			wrappedErr := stacktrace.Propagate(err, "An error occurred removing api container selectors and pods from Kubernetes service for Kurtosis api container in enclave with ID '%v' and Kubernetes service name '%v'", apiContainerObj.GetEnclaveID(), serviceName)
-			erroredEnclaveIds[apiContainerObj.GetEnclaveID()] = wrappedErr
 		}
 
-		successfulEnclaveIds = removeApiContainerServiceSelectorsAndApiContainerPodsSuccessfulEnclaveIds
+		successfulEnclaveIds[enclaveId] = true
 	}
 
 	return successfulEnclaveIds, erroredEnclaveIds, nil
@@ -429,67 +420,96 @@ func (backend *KubernetesKurtosisBackend) DestroyAPIContainers(
 	error,
 ) {
 
-	matchingApiContainersByNamespaceAndServiceName, err := backend.getMatchingApiContainers(ctx, filters)
+	_, matchingResources, err := backend.getMatchingApiContainerObjectsAndKubernetesResources(ctx, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Failed to get api container matching filters '%+v'", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting api container Kubernetes resources matching filters: %+v", filters)
 	}
 
-	successfulEnclaveIds :=map[enclave.EnclaveID]bool{}
+	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
 	erroredEnclaveIds := map[enclave.EnclaveID]error{}
+	for enclaveId, resources := range matchingResources {
+		namespaceName := resources.enclaveNamespace.GetName()
 
-	//First iterate over namespaces
-	for enclaveNamespace, apiContainerServices := range matchingApiContainersByNamespaceAndServiceName {
-		apiContainerServicesToApiContainerPodsMap := map[string]string{}
-
-		//Then over services
-		for apiContainerServiceName, apiContainerObj := range apiContainerServices {
-			apiContainerPod, err := backend.getApiContainerPod(ctx, apiContainerObj.GetEnclaveID(), enclaveNamespace)
-			if err != nil {
-				return nil, nil, stacktrace.Propagate(err, "An error occurred getting the api container pod for enclave with ID '%v' in namespace '%v'", apiContainerObj.GetEnclaveID(), enclaveNamespace)
+		// Remove Service
+		if resources.service != nil {
+			serviceName := resources.service.GetName()
+			if err := backend.kubernetesManager.RemoveService(ctx, serviceName, namespaceName); err != nil {
+				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
+					err,
+					"An error occurred removing service '%v' for api container in enclave with ID '%v'",
+					serviceName,
+					enclaveId,
+				)
+				continue
 			}
-			if _, found := apiContainerServicesToApiContainerPodsMap[apiContainerServiceName]; found {
-				return nil, nil, stacktrace.NewError("Api container service name '%v' already exist in the api container services to api container pod map '%+v'; it should never happens; this is a bug in Kurtosis", apiContainerServiceName, apiContainerServicesToApiContainerPodsMap)
-			}
-			apiContainerServicesToApiContainerPodsMap[apiContainerServiceName] = apiContainerPod.GetName()
 		}
 
-		successfulServiceNames, erroredServiceNames := backend.removeApiContainerServicesAndApiContainerPods(ctx, enclaveNamespace, apiContainerServicesToApiContainerPodsMap)
-
-		removeApiContainerServicesAndApiContainerPodsSuccessfulEnclaveIds := map[enclave.EnclaveID]bool{}
-		for serviceName := range successfulServiceNames {
-			apiContainerObj, found := apiContainerServices[serviceName]
-			if !found {
-				return nil, nil, stacktrace.NewError("Expected to find service name '%v' in the api container service list '%+v' but it was not found; this is a bug in Kurtosis!", serviceName, apiContainerServices)
+		// Remove Pod
+		if resources.pod != nil {
+			podName := resources.pod.GetName()
+			if err := backend.kubernetesManager.RemovePod(ctx, podName, namespaceName); err != nil {
+				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
+					err,
+					"An error occurred removing pod '%v' for api container in enclave with ID '%v'",
+					podName,
+					enclaveId,
+				)
+				continue
 			}
-			removeApiContainerServicesAndApiContainerPodsSuccessfulEnclaveIds[apiContainerObj.GetEnclaveID()] = true
 		}
 
-		for serviceName, err := range erroredServiceNames {
-			apiContainerObj, found := apiContainerServices[serviceName]
-			if !found {
-				return nil, nil, stacktrace.NewError("Expected to find service name '%v' in the api container service list '%+v' but it was not found; this is a bug in Kurtosis!", serviceName, apiContainerServices)
+		// Remove RoleBinding
+		if resources.roleBinding != nil {
+			roleBindingName := resources.roleBinding.GetName()
+			if err := backend.kubernetesManager.RemoveRoleBindings(ctx, roleBindingName, namespaceName); err != nil {
+				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
+					err,
+					"An error occurred removing role binding '%v' for api container in enclave with ID '%v'",
+					roleBindingName,
+					enclaveId,
+				)
+				continue
 			}
-			wrappedErr := stacktrace.Propagate(err, "An error occurred removing api container service and pod for enclave with ID '%v' and Kubernetes service name '%v'", apiContainerObj.GetEnclaveID(), serviceName)
-			erroredEnclaveIds[apiContainerObj.GetEnclaveID()] = wrappedErr
 		}
-		
-		removeRoleBasedResourcesSuccessfulEnclaveIds, removeRoleBasedResourcesErroredEnclaveIds := backend.removeApiContainerRoleBasedResources(ctx, enclaveNamespace, removeApiContainerServicesAndApiContainerPodsSuccessfulEnclaveIds)
 
-		for erroredEnclaveId, removeRoleBasedResourcesErr := range removeRoleBasedResourcesErroredEnclaveIds {
-			wrappedErr := stacktrace.Propagate(removeRoleBasedResourcesErr, "An error occurred removing api container role based resources for enclave with ID '%v' ", erroredEnclaveId)
-			erroredEnclaveIds[erroredEnclaveId] = wrappedErr
+		// Remove Role
+		if resources.role != nil {
+			roleName := resources.role.GetName()
+			if err := backend.kubernetesManager.RemoveRole(ctx, roleName, namespaceName); err != nil {
+				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
+					err,
+					"An error occurred removing role '%v' for api container in enclave with ID '%v'",
+					roleName,
+					enclaveId,
+				)
+				continue
+			}
 		}
-		
-		successfulEnclaveIds = removeRoleBasedResourcesSuccessfulEnclaveIds
+
+		// Remove Service Account
+		if resources.serviceAccount != nil {
+			serviceAccountName := resources.serviceAccount.GetName()
+			if err := backend.kubernetesManager.RemoveServiceAccount(ctx, serviceAccountName, namespaceName); err != nil {
+				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
+					err,
+					"An error occurred removing service account '%v' for api container in enclave with ID '%v'",
+					serviceAccountName,
+					enclaveId,
+				)
+				continue
+			}
+		}
+
+		successfulEnclaveIds[enclaveId] = true
 	}
-	
 	return successfulEnclaveIds, erroredEnclaveIds, nil
+
 }
 
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
-func (backend *KubernetesKurtosisBackend) getMatchingApiContainersAndKubernetesResources(
+func (backend *KubernetesKurtosisBackend) getMatchingApiContainerObjectsAndKubernetesResources(
 	ctx context.Context,
 	filters *api_container.APIContainerFilters,
 ) (
@@ -529,461 +549,6 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainersAndKubernetesR
 	}
 
 	return resultApiContainerObjs, resultKubernetesResources, nil
-}
-
-
-
-// Gets api containers matching the search filters, indexed by their [namespace][service name]
-func (backend *KubernetesKurtosisBackend) getMatchingApiContainers(
-	ctx context.Context,
-	filters *api_container.APIContainerFilters,
-) (
-	map[string]map[string]*api_container.APIContainer,
-	error,
-) {
-	matchingApiContainers := map[string]map[string]*api_container.APIContainer{}
-
-	apiContainersMatchLabels := getApiContainerMatchLabels()
-
-	enclaveNamespaces, err := backend.getAllEnclaveNamespaces(ctx)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting all enclave namespaces")
-	}
-
-	for _, enclaveNamespace := range enclaveNamespaces {
-		enclaveNamespaceName := enclaveNamespace.GetName()
-		enclaveNamespaceLabels := enclaveNamespace.GetLabels()
-
-		enclaveIdStr, found := enclaveNamespaceLabels[label_key_consts.EnclaveIDLabelKey.GetString()]
-		if !found {
-			return nil, stacktrace.NewError("Expected to find a label with name '%v' in Kubernetes namespace '%v', instead no such label was found", label_key_consts.EnclaveIDLabelKey.GetString(), enclaveNamespaceName)
-		}
-		enclaveId := enclave.EnclaveID(enclaveIdStr)
-		// If the EnclaveIDs filter is specified, drop api containers not matching it
-		if filters.EnclaveIDs != nil && len(filters.EnclaveIDs) > 0 {
-			if _, found := filters.EnclaveIDs[enclaveId]; !found {
-				continue
-			}
-		}
-
-		serviceList, err := backend.kubernetesManager.GetServicesByLabels(ctx, enclaveNamespaceName, apiContainersMatchLabels)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting api container services using labels: %+v in namespace '%v'", apiContainersMatchLabels, enclaveNamespaceName)
-		}
-
-		// Instantiate an empty map for this namespace
-		matchingApiContainers[enclaveNamespaceName] = map[string]*api_container.APIContainer{}
-		for _, service := range serviceList.Items {
-			apiContainerObj, err := getApiContainerObjectFromKubernetesService(&service)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "Expected to be able to get a Kurtosis api container object service from Kubernetes service '%v', instead a non-nil error was returned", service.Name)
-			}
-
-			// If status filter is specified, drop api containers not matching it
-			if filters.Statuses != nil && len(filters.Statuses) > 0 {
-				if _, found := filters.Statuses[apiContainerObj.GetStatus()]; !found {
-					continue
-				}
-			}
-			matchingApiContainers[enclaveNamespaceName][service.Name] = apiContainerObj
-		}
-	}
-
-	return matchingApiContainers, nil
-}
-
-// TODO parallelize to improve performance
-func (backend *KubernetesKurtosisBackend) removeApiContainerServiceSelectorsAndApiContainerPods(
-	ctx context.Context,
-	enclaveNamespace string,
-	serviceNameToPodNameMap map[string]string,
-) (
-	map[string]bool,
-	map[string]error,
-) {
-	successfulServices := map[string]bool{}
-	failedServices := map[string]error{}
-	for serviceName, podName := range serviceNameToPodNameMap {
-		if err := backend.kubernetesManager.RemoveSelectorsFromService(ctx, enclaveNamespace, serviceName); err != nil {
-			wrapperErr := stacktrace.Propagate(err, "An error occurred removing selectors from service '%v' in namespace '%v'", serviceName, enclaveNamespace)
-			failedServices[serviceName] = wrapperErr
-		} else {
-			if err := backend.kubernetesManager.RemovePod(ctx, enclaveNamespace, podName); err != nil {
-				wrapperErr := stacktrace.Propagate(err, "An error occurred removing pod '%v' associated with service '%v' in namespace '%v'", podName, serviceName, enclaveNamespace)
-				failedServices[serviceName] = wrapperErr
-				continue
-			}
-			successfulServices[serviceName] = true
-		}
-	}
-
-	return successfulServices, failedServices
-}
-
-func (backend *KubernetesKurtosisBackend) removeApiContainerServicesAndApiContainerPods(
-	ctx context.Context,
-	enclaveNamespace string,
-	serviceNameToPodNameMap map[string]string,
-) (
-	map[string]bool,
-	map[string]error,
-) {
-	successfulServices := map[string]bool{}
-	failedServices := map[string]error{}
-	for serviceName, podName := range serviceNameToPodNameMap {
-		if err := backend.kubernetesManager.RemoveService(ctx, enclaveNamespace, serviceName); err != nil {
-			wrapperErr := stacktrace.Propagate(err, "An error occurred removing service '%v' in namespace '%v'", serviceName, enclaveNamespace)
-			failedServices[serviceName] = wrapperErr
-		} else {
-			//First checks if Api Container Pod exist because it could have been destroyed with StopEngines
-			pod, err := backend.kubernetesManager.GetPod(ctx, enclaveNamespace, podName)
-			if err != nil {
-				wrapperErr := stacktrace.Propagate(err, "An error occurred getting pod '%v' in namespace '%v'", podName, enclaveNamespace)
-				failedServices[serviceName] = wrapperErr
-				continue
-			}
-			//Remove pod if it exists
-			if pod != nil {
-				if err := backend.kubernetesManager.RemovePod(ctx, enclaveNamespace, podName); err != nil {
-					wrapperErr := stacktrace.Propagate(err, "An error occurred removing pod '%v' associated with service '%v' in namespace '%v'", podName, serviceName, enclaveNamespace)
-					failedServices[serviceName] = wrapperErr
-					continue
-				}
-			}
-			successfulServices[serviceName] = true
-		}
-	}
-
-	return successfulServices, failedServices
-}
-
-// TODO parallelize to improve performance
-func (backend *KubernetesKurtosisBackend) removeApiContainerRoleBasedResources(
-	ctx context.Context,
-	enclaveNamespaceName string,
-	enclaveIds map[enclave.EnclaveID]bool,
-) (
-	resultSuccessfulEnclaveIds map[enclave.EnclaveID]bool,
-	resultErroredEnclaveIds map[enclave.EnclaveID]error,
-) {
-
-	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
-	erroredEnclaveIds := map[enclave.EnclaveID]error{}
-	for enclaveId := range enclaveIds {
-
-		//First remove role bindings
-		roleBindings, err := backend.getAllApiContainerRoleBindings(ctx, enclaveNamespaceName, enclaveId)
-		if err != nil {
-			wrapErr := stacktrace.Propagate(err, "An error occurred getting all api container role bindings in enclave with ID '%v' and namespace '%v'", enclaveId, enclaveNamespaceName)
-			erroredEnclaveIds[enclaveId] = wrapErr
-			continue
-		}
-
-		errRoleBindingNames := []string{}
-		errRoleBindingErrMsgs := []string{}
-		for _, roleBinding := range roleBindings {
-			roleBindingName := roleBinding.GetName()
-			if err := backend.kubernetesManager.RemoveRoleBindings(ctx, roleBindingName, enclaveNamespaceName); err != nil {
-				wrapErr := stacktrace.Propagate(err, "An error occurred removing api container role binding '%v' in namespace '%v'", roleBindingName, enclaveNamespaceName)
-				errRoleBindingNames = append(errRoleBindingNames, roleBindingName)
-				errRoleBindingErrMsgs = append(errRoleBindingErrMsgs, wrapErr.Error())
-			}
-		}
-
-		if len(errRoleBindingNames) > 0 {
-			errRoleBindingNamesStr := strings.Join(errRoleBindingNames, sentencesSeparator)
-			errRoleBindingErrMsgsStr := strings.Join(errRoleBindingErrMsgs, sentencesSeparator)
-			wrapErr := stacktrace.NewError("An error occurred removing role bindings '%v' error: %v ", errRoleBindingNames, errRoleBindingErrMsgsStr)
-			erroredEnclaveIds[enclaveId] = wrapErr
-			logrus.Errorf("Removing the api container role-based resources didn't complete successfully, so we tried to delete Kubernetes role bindings '%v' that we created but an error was thrown:\n%v", errRoleBindingNamesStr, errRoleBindingErrMsgsStr)
-			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes role bindings with name '%v'!!!!!!!", errRoleBindingNamesStr)
-			continue
-		}
-
-		//Then roles
-		roles, err := backend.getAllApiContainerRoles(ctx, enclaveNamespaceName, enclaveId)
-		if err != nil {
-			wrapErr := stacktrace.Propagate(err, "An error occurred getting all api container roles in enclave with ID '%v' and namespace '%v'", enclaveId, enclaveNamespaceName)
-			erroredEnclaveIds[enclaveId] = wrapErr
-			continue
-		}
-
-		errRoleNames := []string{}
-		errRoleErrMsgs := []string{}
-		for _, role := range roles {
-			roleName := role.GetName()
-			if err := backend.kubernetesManager.RemoveRole(ctx, roleName, enclaveNamespaceName); err != nil {
-				wrapErr := stacktrace.Propagate(err, "An error occurred removing api container role '%v' in namespace '%v'", roleName, enclaveNamespaceName)
-				errRoleNames = append(errRoleNames, roleName)
-				errRoleErrMsgs = append(errRoleErrMsgs, wrapErr.Error())
-			}
-		}
-
-		if len(errRoleNames) > 0 {
-			errRoleNamesStr := strings.Join(errRoleNames, sentencesSeparator)
-			errRoleErrMsgsStr := strings.Join(errRoleErrMsgs, sentencesSeparator)
-			wrapErr := stacktrace.NewError("An error occurred removing roles '%v' error: %v ", errRoleNamesStr, errRoleErrMsgsStr)
-			erroredEnclaveIds[enclaveId] = wrapErr
-			logrus.Errorf("Removing the api container role-based resources didn't complete successfully, so we tried to delete Kubernetes roles '%v' that we created but an error was thrown:\n%v", errRoleNamesStr, errRoleErrMsgsStr)
-			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes roles with name '%v'!!!!!!!", errRoleNamesStr)
-			continue
-		}
-
-		//And finally, the service accounts
-		serviceAccounts, err := backend.getAllApiContainerServiceAccounts(ctx, enclaveNamespaceName, enclaveId)
-		if err != nil {
-			wrapErr := stacktrace.Propagate(err, "An error occurred getting all api container service accounts in enclave with ID '%v' and namespace '%v'", enclaveId, enclaveNamespaceName)
-			erroredEnclaveIds[enclaveId] = wrapErr
-			continue
-		}
-
-		errServiceAccountNames := []string{}
-		errServiceAccountErrMsgs := []string{}
-		for _, serviceAccount := range serviceAccounts {
-			serviceAccountName := serviceAccount.GetName()
-			if err := backend.kubernetesManager.RemoveServiceAccount(ctx, serviceAccountName, enclaveNamespaceName); err != nil {
-				wrapErr := stacktrace.Propagate(err, "An error occurred removing api container service account '%v' in namespace '%v'", serviceAccountName, enclaveNamespaceName)
-				errServiceAccountNames = append(errServiceAccountNames, serviceAccountName)
-				errServiceAccountErrMsgs = append(errServiceAccountErrMsgs, wrapErr.Error())
-			}
-		}
-
-		if len(errServiceAccountNames) > 0 {
-			errServiceAccountNamesStr := strings.Join(errServiceAccountNames, sentencesSeparator)
-			errServiceAccountErrMsgsStr := strings.Join(errServiceAccountErrMsgs, sentencesSeparator)
-			wrapErr := stacktrace.NewError("An error occurred removing service accounts '%v' error: %v ", errServiceAccountNamesStr, errServiceAccountErrMsgsStr)
-			erroredEnclaveIds[enclaveId] = wrapErr
-			logrus.Errorf("Removing the api container role-based resources didn't complete successfully, so we tried to delete Kubernetes service accounts '%v' that we created but an error was thrown:\n%v", errServiceAccountNamesStr, errServiceAccountErrMsgsStr)
-			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes service accounts with name '%v' in namespace '%v'!!!!!!!", errServiceAccountNamesStr, enclaveNamespaceName)
-			continue
-		}
-
-		successfulEnclaveIds[enclaveId] = true
-	}
-
-	return successfulEnclaveIds, erroredEnclaveIds
-}
-
-func (backend *KubernetesKurtosisBackend) getAllApiContainerServiceAccounts(ctx context.Context, namespace string, enclaveId enclave.EnclaveID) ([]*apiv1.ServiceAccount, error) {
-	enclaveIdStr := string(enclaveId)
-
-	apiContainerMatchLabels := getApiContainerMatchLabels()
-
-	serviceAccounts, err := backend.kubernetesManager.GetServiceAccountsByLabels(ctx, namespace, apiContainerMatchLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting api container service accounts using labels '%+v' ", apiContainerMatchLabels)
-	}
-
-	filteredServiceAccounts := []*apiv1.ServiceAccount{}
-
-	for _, foundServiceAccount := range serviceAccounts.Items {
-		foundServiceAccountLabels := foundServiceAccount.GetLabels()
-
-		foundEnclaveId, found := foundServiceAccountLabels[label_key_consts.EnclaveIDLabelKey.GetString()]
-		if !found {
-			return nil, stacktrace.NewError("Expected to find enclave ID label key '%v' but none was found", label_key_consts.EnclaveIDLabelKey.GetString())
-		}
-
-		if enclaveIdStr == foundEnclaveId {
-			filteredServiceAccounts = append(filteredServiceAccounts, &foundServiceAccount)
-		}
-	}
-
-	return filteredServiceAccounts, nil
-}
-
-func (backend *KubernetesKurtosisBackend) getAllApiContainerRoles(ctx context.Context, namespace string, enclaveId enclave.EnclaveID) ([]*rbacv1.Role, error) {
-	enclaveIdStr := string(enclaveId)
-
-	apiContainerMatchLabels := getApiContainerMatchLabels()
-
-	roles, err := backend.kubernetesManager.GetRolesByLabels(ctx, namespace, apiContainerMatchLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting api container roles using labels '%+v' ", apiContainerMatchLabels)
-	}
-
-	filteredRoles := []*rbacv1.Role{}
-
-	for _, foundRole := range roles.Items {
-		foundRoleLabels := foundRole.GetLabels()
-
-		foundEnclaveId, found := foundRoleLabels[label_key_consts.EnclaveIDLabelKey.GetString()]
-		if !found {
-			return nil, stacktrace.NewError("Expected to find enclave ID label key '%v' but none was found", label_key_consts.EnclaveIDLabelKey.GetString())
-		}
-
-		if enclaveIdStr == foundEnclaveId {
-			filteredRoles = append(filteredRoles, &foundRole)
-		}
-	}
-
-	return filteredRoles, nil
-}
-
-func (backend *KubernetesKurtosisBackend) getAllApiContainerRoleBindings(ctx context.Context, namespace string, enclaveId enclave.EnclaveID) ([]*rbacv1.RoleBinding, error) {
-	enclaveIdStr := string(enclaveId)
-
-	apiContainerMatchLabels := getApiContainerMatchLabels()
-
-	roleBindings, err := backend.kubernetesManager.GetRoleBindingsByLabels(ctx, namespace, apiContainerMatchLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting api container role bindings using labels '%+v' ", apiContainerMatchLabels)
-	}
-
-	filteredRoleBindings := []*rbacv1.RoleBinding{}
-
-	for _, foundRoleBinding := range roleBindings.Items {
-		foundRoleBindingLabels := foundRoleBinding.GetLabels()
-
-		foundEnclaveId, found := foundRoleBindingLabels[label_key_consts.EnclaveIDLabelKey.GetString()]
-		if !found {
-			return nil, stacktrace.NewError("Expected to find enclave ID label key '%v' but none was found", label_key_consts.EnclaveIDLabelKey.GetString())
-		}
-
-		if enclaveIdStr == foundEnclaveId {
-			filteredRoleBindings = append(filteredRoleBindings, &foundRoleBinding)
-		}
-	}
-
-	return filteredRoleBindings, nil
-}
-
-// The current Kurtosis Kubernetes architecture defines only one pod for Api Container
-// This method should be refactored if the architecture changes, and we decide to use replicas for Api Containers
-func (backend *KubernetesKurtosisBackend) getApiContainerPod(ctx context.Context, enclaveId enclave.EnclaveID, namespace string) (*apiv1.Pod, error) {
-	enclaveIdStr := string(enclaveId)
-
-	apiContainerMatchLabels := getApiContainerMatchLabels()
-
-	pods, err := backend.kubernetesManager.GetPodsByLabels(ctx, namespace, apiContainerMatchLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the api container pod in namespace '%v' using labels '%+v' ", namespace, apiContainerMatchLabels)
-	}
-
-	filteredPods := []*apiv1.Pod{}
-
-	for _, foundPod := range pods.Items {
-		foundPodLabels := foundPod.GetLabels()
-
-		foundEnclaveId, found := foundPodLabels[label_key_consts.EnclaveIDLabelKey.GetString()]
-		if !found {
-			return nil, stacktrace.NewError("Expected to find enclave ID label key '%v' but none was found", label_key_consts.EnclaveIDLabelKey.GetString())
-		}
-
-		if enclaveIdStr == foundEnclaveId {
-			filteredPods = append(filteredPods, &foundPod)
-		}
-	}
-	numOfPods := len(filteredPods)
-	if numOfPods == 0 {
-		return nil, stacktrace.NewError("No pods matching labels '%+v' was found", apiContainerMatchLabels)
-	}
-	//We are not using replicas for Kurtosis api containers
-	if numOfPods > 1 {
-		return nil, stacktrace.NewError("Expected to find only one api container pod in enclave with ID '%v', but '%v' was found; this is a bug in Kurtosis", enclaveId, numOfPods)
-	}
-
-	resultPod := filteredPods[0]
-
-	return resultPod, nil
-}
-
-func getApiContainerObjectFromKubernetesService(service *apiv1.Service) (*api_container.APIContainer, error) {
-	enclaveId, found := service.Labels[label_key_consts.EnclaveIDLabelKey.GetString()]
-	if !found {
-		return nil, stacktrace.NewError("Expected to be able to find label describing the enclave ID on service '%v' with label key '%v', but was unable to", service.Name, label_key_consts.EnclaveIDLabelKey.GetString())
-	}
-
-	status := getContainerStatusFromKubernetesService(service)
-	var privateIpAddr net.IP
-	var privateGrpcPortSpec *port_spec.PortSpec
-	var privateGrpcProxyPortSpec *port_spec.PortSpec
-	if status == container_status.ContainerStatus_Running {
-		privateIpAddr = net.ParseIP(service.Spec.ClusterIP)
-		if privateIpAddr == nil {
-			return nil, stacktrace.NewError("Expected to be able to get the cluster ip of the api container service, instead parsing the cluster ip of service '%v' returned nil", service.Name)
-		}
-		var portSpecError error
-		privateGrpcPortSpec, privateGrpcProxyPortSpec, portSpecError = getGrpcAndGrpcProxyPortSpecsFromServicePorts(service.Spec.Ports)
-		if portSpecError != nil {
-			return nil, stacktrace.Propagate(portSpecError, "Expected to be able to determine api container grpc port specs from Kubernetes service ports for api container in enclave with ID '%v', instead a non-nil error was returned", enclaveId)
-		}
-	}
-
-	// NOTE: We set these to nil because in Kubernetes we have no way of knowing what the public info is!
-	var publicIpAddr net.IP = nil
-	var publicGrpcPortSpec *port_spec.PortSpec = nil
-	var publicGrpcProxyPortSpec *port_spec.PortSpec = nil
-
-	resultApiContainer := api_container.NewAPIContainer(
-		enclave.EnclaveID(enclaveId),
-		status,
-		privateIpAddr,
-		privateGrpcPortSpec,
-		privateGrpcProxyPortSpec,
-		publicIpAddr,
-		publicGrpcPortSpec,
-		publicGrpcProxyPortSpec,
-	)
-
-	return resultApiContainer, nil
-}
-
-func getApiContainerContainersAndVolumes(
-	containerImageAndTag string,
-	containerPorts []apiv1.ContainerPort,
-	envVars map[string]string,
-	enclaveDataPersistentVolumeClaim *apiv1.PersistentVolumeClaim,
-	enclaveDataVolumeDirpath string,
-) (
-	resultContainers []apiv1.Container,
-	resultVolumes []apiv1.Volume,
-) {
-
-	var containerEnvVars []apiv1.EnvVar
-	for varName, varValue := range envVars {
-		envVar := apiv1.EnvVar{
-			Name:  varName,
-			Value: varValue,
-		}
-		containerEnvVars = append(containerEnvVars, envVar)
-	}
-	containers := []apiv1.Container{
-		{
-			Name:  kurtosisApiContainerContainerName,
-			Image: containerImageAndTag,
-			Env:   containerEnvVars,
-			Ports: containerPorts,
-			VolumeMounts: []apiv1.VolumeMount{
-				{
-					Name:      enclaveDataPersistentVolumeClaim.Spec.VolumeName,
-					MountPath: enclaveDataVolumeDirpath,
-				},
-			},
-		},
-	}
-
-	volumes := []apiv1.Volume{
-		{
-			Name: enclaveDataPersistentVolumeClaim.Spec.VolumeName,
-			VolumeSource: apiv1.VolumeSource{
-				PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
-					ClaimName: enclaveDataPersistentVolumeClaim.GetName(),
-				},
-			},
-		},
-	}
-
-	return containers, volumes
-}
-
-func getContainerStatusFromKubernetesService(service *apiv1.Service) container_status.ContainerStatus {
-	// If a Kubernetes Service has selectors, then we assume the container is reachable, and thus not stopped
-	serviceSelectors := service.Spec.Selector
-	if len(serviceSelectors) == 0 {
-		return container_status.ContainerStatus_Stopped
-	}
-	return container_status.ContainerStatus_Running
 }
 
 // Get back any and all api container's Kubernetes resources matching the given enclave IDs, where a nil or empty map == "match all enclave IDs"
@@ -1243,6 +808,54 @@ func getApiContainerObjectsFromKubernetesResources(
 		result[enclaveId] = apiContainerObj
 	}
 	return result, nil
+}
+
+func getApiContainerContainersAndVolumes(
+	containerImageAndTag string,
+	containerPorts []apiv1.ContainerPort,
+	envVars map[string]string,
+	enclaveDataPersistentVolumeClaim *apiv1.PersistentVolumeClaim,
+	enclaveDataVolumeDirpath string,
+) (
+	resultContainers []apiv1.Container,
+	resultVolumes []apiv1.Volume,
+) {
+
+	var containerEnvVars []apiv1.EnvVar
+	for varName, varValue := range envVars {
+		envVar := apiv1.EnvVar{
+			Name:  varName,
+			Value: varValue,
+		}
+		containerEnvVars = append(containerEnvVars, envVar)
+	}
+	containers := []apiv1.Container{
+		{
+			Name:  kurtosisApiContainerContainerName,
+			Image: containerImageAndTag,
+			Env:   containerEnvVars,
+			Ports: containerPorts,
+			VolumeMounts: []apiv1.VolumeMount{
+				{
+					Name:      enclaveDataPersistentVolumeClaim.Spec.VolumeName,
+					MountPath: enclaveDataVolumeDirpath,
+				},
+			},
+		},
+	}
+
+	volumes := []apiv1.Volume{
+		{
+			Name: enclaveDataPersistentVolumeClaim.Spec.VolumeName,
+			VolumeSource: apiv1.VolumeSource{
+				PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
+					ClaimName: enclaveDataPersistentVolumeClaim.GetName(),
+				},
+			},
+		},
+	}
+
+	return containers, volumes
 }
 
 func getApiContainerMatchLabels() map[string]string {

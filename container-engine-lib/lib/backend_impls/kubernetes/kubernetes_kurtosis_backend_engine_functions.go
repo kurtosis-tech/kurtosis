@@ -198,7 +198,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 }
 
 func (backend *KubernetesKurtosisBackend) GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[string]*engine.Engine, error) {
-	matchingEngines, _, err := backend.getMatchingEnginesAndKubernetesResources(ctx, filters)
+	matchingEngines, _, err := backend.getMatchingEngineObjectsAndKubernetesResources(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
 	}
@@ -213,7 +213,7 @@ func (backend *KubernetesKurtosisBackend) StopEngines(
 	resultErroredEngineIds map[string]error,
 	resultErr error,
 ) {
-	_, matchingKubernetesResources, err := backend.getMatchingEnginesAndKubernetesResources(ctx, filters)
+	_, matchingKubernetesResources, err := backend.getMatchingEngineObjectsAndKubernetesResources(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engines and Kubernetes resources matching filters '%+v'", filters)
 	}
@@ -270,7 +270,7 @@ func (backend *KubernetesKurtosisBackend) DestroyEngines(
 	resultErroredEngineIds map[string]error,
 	resultErr error,
 ) {
-	_, matchingResources, err := backend.getMatchingEnginesAndKubernetesResources(ctx, filters)
+	_, matchingResources, err := backend.getMatchingEngineObjectsAndKubernetesResources(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engine Kubernetes resources matching filters: %+v", filters)
 	}
@@ -328,7 +328,7 @@ func (backend *KubernetesKurtosisBackend) DestroyEngines(
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
-func (backend *KubernetesKurtosisBackend) getMatchingEnginesAndKubernetesResources(
+func (backend *KubernetesKurtosisBackend) getMatchingEngineObjectsAndKubernetesResources(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 ) (
