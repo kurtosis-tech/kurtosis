@@ -44,7 +44,6 @@ var commandToRunWhenCreatingUserServiceShell = []string{
 func (backend *DockerKurtosisBackend) CreateUserService(
 	ctx context.Context,
 	registrationGuid user_service_registration.UserServiceRegistrationGUID,
-	guid service.ServiceGUID,	// TDOO autogenerate?
 	containerImageName string,
 	enclaveId enclave.EnclaveID,
 	privatePorts map[string]*port_spec.PortSpec,
@@ -98,6 +97,9 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
 
+	// TODO Switch to UUIDs, here and everywhere!! There's a small, but possible, chance of race condition here!
+	guidStr := fmt.Sprintf("%v-%v", serviceId, time.Now().Unix())
+	guid := service.ServiceGUID(guidStr)
 	containerAttrs, err := enclaveObjAttrsProvider.ForUserServiceContainer(
 		registrationGuid,
 		guid,

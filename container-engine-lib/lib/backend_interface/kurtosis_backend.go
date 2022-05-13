@@ -253,7 +253,6 @@ type KurtosisBackend interface {
 	CreateUserService(
 		ctx context.Context,
 		registrationGuid user_service_registration.UserServiceRegistrationGUID,
-		guid service.ServiceGUID, // TODO autogenerate this?
 		containerImageName string,
 		enclaveId enclave.EnclaveID,
 		privatePorts map[string]*port_spec.PortSpec,

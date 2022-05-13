@@ -329,7 +329,6 @@ func (backend *MetricsReportingKurtosisBackend) DestroyUserServiceRegistrations(
 func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 	ctx context.Context,
 	registrationGuid user_service_registration.UserServiceRegistrationGUID,
-	guid service.ServiceGUID,
 	containerImageName string,
 	enclaveId enclave.EnclaveID,
 	privatePorts map[string]*port_spec.PortSpec,
@@ -344,7 +343,6 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 	userService, err := backend.underlying.CreateUserService(
 		ctx,
 		registrationGuid,
-		guid,
 		containerImageName,
 		enclaveId,
 		privatePorts,
@@ -356,11 +354,10 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating the user service bound to registration '%v' and GUID '%v' using image '%v' " +
+			"An error occurred creating the user service bound to registration '%v' and using image '%v' " +
 				"with private ports '%+v' with entry point args '%+v', command args '%+v', environment " +
 				"vars '%+v', and file artifacts mount dirpath '%v'",
 			registrationGuid,
-			guid,
 			containerImageName,
 			privatePorts,
 			entrypointArgs,

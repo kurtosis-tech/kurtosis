@@ -127,7 +127,7 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServiceRegistrations(ctx co
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateUserService(ctx context.Context, registrationGuid user_service_registration.UserServiceRegistrationGUID, guid service.ServiceGUID, containerImageName string, enclaveId enclave.EnclaveID, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactMountDirpaths map[string]string) (newUserService *service.Service, resultErr error) {
+func (backend *KubernetesKurtosisBackend) CreateUserService(ctx context.Context, registrationGuid user_service_registration.UserServiceRegistrationGUID, containerImageName string, enclaveId enclave.EnclaveID, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactMountDirpaths map[string]string) (newUserService *service.Service, resultErr error) {
 	//TODO implement me
 	panic("implement me")
 }
