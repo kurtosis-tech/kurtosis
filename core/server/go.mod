@@ -9,8 +9,8 @@ replace (
 
 require (
 	github.com/google/uuid v1.3.0
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220513060127-20aecd1b68e1 // TODO RELEASE VERSION!!!!!!!
-	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220513063955-9908c51a3b5f // TODO RELEASE VERSION!!!!!!!
+	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e // indirect
 	github.com/kurtosis-tech/kurtosis-core/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739

@@ -73,8 +73,6 @@ const (
 )
 
 var (
-	testNetworkinSidecarIP = []byte{1, 2, 3, 4}
-
 	userServiceTest1IPAddress     = net.ParseIP("1.1.1.1")
 	userServiceTest2IPAddress     = net.ParseIP("2.2.2.2")
 	userServiceTest3IPAddress     = net.ParseIP("3.3.3.3")
@@ -384,7 +382,6 @@ func createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t *testing.T) (*
 	sidecarWrapper, err := NewStandardNetworkingSidecarWrapper(
 		networkingSidecar,
 		execCmdExecutor,
-		testNetworkinSidecarIP,
 	)
 
 	require.NoErrorf(t, err, "An error occurred creating standard networking sidecar wrapper with mocked exec command executor")

@@ -28,6 +28,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"net"
 	"os"
 	"time"
 )
@@ -64,7 +65,7 @@ func main() {
 }
 
 func runMain() error {
-	serverArgs, err := args.GetArgsFromEnv()
+	serverArgs, ownIpAddress, err := args.GetArgsFromEnv()
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't retrieve API container args from the environment")
 	}
@@ -87,7 +88,7 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 	}
 
-	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(kurtosisBackend, enclaveDataDir, serverArgs)
+	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(kurtosisBackend, enclaveDataDir, serverArgs, ownIpAddress)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the service network & module store")
 	}
@@ -143,6 +144,7 @@ func createServiceNetworkAndModuleStore(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 	args *args.APIContainerArgs,
+	ownIpAddress net.IP,
 ) (*service_network.ServiceNetwork, *module_store.ModuleStore, error) {
 	enclaveIdStr := args.EnclaveId
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
@@ -159,7 +161,7 @@ func createServiceNetworkAndModuleStore(
 
 	apiContainerSocketInsideNetwork := fmt.Sprintf(
 		"%v:%v",
-		args.ApiContainerIpAddr,
+		ownIpAddress.String(),
 		args.GrpcListenPortNum,
 	)
 

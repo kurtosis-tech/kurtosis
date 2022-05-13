@@ -40,8 +40,6 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	ctx context.Context,
 	logLevel logrus.Level,
 	enclaveId enclave.EnclaveID,
-	networkId string,
-	subnetMask string,
 	grpcListenPort uint16,
 	grpcProxyListenPort uint16,
 	gatewayIpAddr net.IP,
@@ -58,12 +56,8 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		DefaultVersion,
 		logLevel,
 		enclaveId,
-		networkId,
-		subnetMask,
 		grpcListenPort,
 		grpcProxyListenPort,
-		gatewayIpAddr,
-		apiContainerIpAddr,
 		isPartitioningEnabled,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
@@ -88,21 +82,12 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
 ) {
-
-	takenIpAddrStrSet := map[string]bool{
-		gatewayIpAddr.String():      true,
-		apiContainerIpAddr.String(): true,
-	}
 	argsObj, err := args.NewAPIContainerArgs(
 		imageVersionTag,
 		logLevel.String(),
 		grpcPortNum,
 		grpcProxyPortNum,
 		string(enclaveId),
-		networkId,
-		subnetMask,
-		apiContainerIpAddr.String(),
-		takenIpAddrStrSet,
 		isPartitioningEnabled,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
@@ -112,7 +97,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		return nil, stacktrace.Propagate(err, "An error occurred creating the API container args")
 	}
 
-	envVars, err := args.GetEnvFromArgs(argsObj)
+	envVars, ownIpAddressEnvvar, err := args.GetEnvFromArgs(argsObj)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred generating the API container's environment variables")
 	}
@@ -128,10 +113,10 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		ctx,
 		containerImageAndTag,
 		enclaveId,
-		apiContainerIpAddr,
 		grpcPortNum,
 		grpcProxyPortNum,
 		enclaveDataVolumeDirpath,
+		ownIpAddressEnvvar,
 		envVars,
 	)
 	if err != nil {

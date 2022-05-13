@@ -22,9 +22,6 @@ type APIContainerArgs struct {
 
 	EnclaveId  string `json:"enclaveId"`
 
-	// Necessary so that when the API container starts modules, it knows which IP addr to give them
-	ApiContainerIpAddr string `json:"apiContainerIpAddr"`
-
 	IsPartitioningEnabled bool `json:"isPartitioningEnabled"`
 
 	//The anonymized user ID for metrics analytics purpose
@@ -45,7 +42,6 @@ func NewAPIContainerArgs(
 	grpcListenPortNum uint16,
 	grpcProxyListenPortNum uint16,
 	enclaveId string,
-	apiContainerIpAddr string,
 	isPartitioningEnabled bool,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
@@ -57,7 +53,6 @@ func NewAPIContainerArgs(
 		GrpcListenPortNum:                grpcListenPortNum,
 		GrpcProxyListenPortNum:           grpcProxyListenPortNum,
 		EnclaveId:                        enclaveId,
-		ApiContainerIpAddr:               apiContainerIpAddr,
 		IsPartitioningEnabled:            isPartitioningEnabled,
 		MetricsUserID:                    metricsUserID,
 		DidUserAcceptSendingMetrics:      didUserAcceptSendingMetrics,

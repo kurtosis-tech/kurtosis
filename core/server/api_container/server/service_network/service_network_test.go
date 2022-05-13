@@ -7,6 +7,7 @@ package service_network
 
 import (
 	"context"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/stretchr/testify/require"
@@ -23,6 +24,8 @@ func TestUpdateTrafficControl(t *testing.T) {
 	numServices := 10
 	ctx := context.Background()
 
+	enclaveId := enclave.EnclaveID("test")
+
 	sidecars := map[user_service_registration.ServiceID]networking_sidecar.NetworkingSidecarWrapper{}
 	mockSidecars := map[user_service_registration.ServiceID]*networking_sidecar.MockNetworkingSidecarWrapper{}
 	for i := 0; i < numServices; i++ {
@@ -32,12 +35,17 @@ func TestUpdateTrafficControl(t *testing.T) {
 		mockSidecars[serviceId] = sidecar
 	}
 
-	registrationInfo := map[user_service_registration.ServiceID]serviceRegistrationInfo{}
+	serviceRegistrationByServiceId := map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration{}
 	for i := 0; i < numServices; i++ {
+		registrationGuid := testServiceRegistrationGuidFromInt(i)
 		serviceId := testServiceIdFromInt(i)
-		serviceGUID := newServiceGUID(serviceId)
 		ip := testIpFromInt(i)
-		registrationInfo[serviceId] = serviceRegistrationInfo{serviceGUID: serviceGUID, privateIpAddr: ip}
+		serviceRegistrationByServiceId[serviceId] = user_service_registration.NewUserServiceRegistration(
+			registrationGuid,
+			enclaveId,
+			serviceId,
+			ip,
+		)
 	}
 
 	// Creates the pathological "line" of connections, where each service can only see the services adjacent
@@ -54,7 +62,7 @@ func TestUpdateTrafficControl(t *testing.T) {
 		targetServicePacketLossConfigs[serviceId] = otherServicesPacketLossConfig
 	}
 
-	require.Nil(t, updateTrafficControlConfiguration(ctx, targetServicePacketLossConfigs, registrationInfo, sidecars))
+	require.Nil(t, updateTrafficControlConfiguration(ctx, targetServicePacketLossConfigs, serviceRegistrationByServiceId, sidecars))
 
 	// Verify that each service got told to block exactly the right things
 	for i := 0; i < numServices; i++ {
@@ -84,4 +92,8 @@ func testIpFromInt(i int) net.IP {
 
 func testServiceIdFromInt(i int) user_service_registration.ServiceID {
 	return user_service_registration.ServiceID("service-" + strconv.Itoa(i))
+}
+
+func testServiceRegistrationGuidFromInt(i int) user_service_registration.UserServiceRegistrationGUID {
+	return user_service_registration.UserServiceRegistrationGUID("registration-" + strconv.Itoa(i))
 }
