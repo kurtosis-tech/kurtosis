@@ -100,7 +100,6 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 
 	containerAttrs, err := enclaveObjAttrsProvider.ForUserServiceContainer(
 		registrationGuid,
-		serviceId,
 		guid,
 		serviceIpAddress,
 		privatePorts,
