@@ -75,15 +75,7 @@ type ServiceNetwork struct {
 
 	topology *partition_topology.PartitionTopology
 
-	// TODO Delete this map entirely, and just get the info from the backend!
-	serviceRegistrationInfo map[user_service_registration.UserServiceRegistrationGUID]*user_service_registration.UserServiceRegistration
-
 	serviceRunInfo          map[user_service_registration.ServiceID]serviceRunInfo
-
-	// TODO TODO TODO Transfer this to KurtosisBackend so that we can read directly from
-	// the underlying orchestration system whether a service is paused or not
-	// This is necessary for restartable enclaves (so container engine doesn't store enclave state in memory)
-	pausedServices	map[user_service_registration.ServiceID]bool
 
 	networkingSidecars map[user_service_registration.ServiceID]networking_sidecar.NetworkingSidecarWrapper
 
@@ -105,21 +97,20 @@ func NewServiceNetworkImpl(
 	return &ServiceNetwork{
 		enclaveId:             enclaveId,
 		isDestroyed:           false,
+		mutex:                 &sync.Mutex{},
 		isPartitioningEnabled: isPartitioningEnabled,
 		freeIpAddrTracker:     freeIpAddrTracker,
 		kurtosisBackend:       kurtosisBackend,
 		enclaveDataDir:        enclaveDataDir,
 		userServiceLauncher:   userServiceLauncher,
-		mutex:                 &sync.Mutex{},
 		topology: partition_topology.NewPartitionTopology(
 			defaultPartitionId,
 			defaultPartitionConnection,
 		),
-		serviceRegistrationInfo:  map[user_service_registration.ServiceID]serviceRegistrationInfo{},
-		serviceRunInfo:           map[user_service_registration.ServiceID]serviceRunInfo{},
-		pausedServices:			  map[user_service_registration.ServiceID]bool{},
-		networkingSidecars:       map[user_service_registration.ServiceID]networking_sidecar.NetworkingSidecarWrapper{},
-		networkingSidecarManager: networkingSidecarManager,
+		serviceRegistrationsByRegistrationGuid: map[user_service_registration.UserServiceRegistrationGUID]*user_service_registration.UserServiceRegistration{},
+		serviceRunInfo:                         map[user_service_registration.ServiceID]serviceRunInfo{},
+		networkingSidecars:                     map[user_service_registration.ServiceID]networking_sidecar.NetworkingSidecarWrapper{},
+		networkingSidecarManager:               networkingSidecarManager,
 	}
 }
 
@@ -151,7 +142,7 @@ func (network *ServiceNetwork) Repartition(
 			" after repartition, meaning that no partitions are actually being enforced!")
 	}
 
-	if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
+	if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, network.serviceRegistrationsByRegistrationGuid, network.networkingSidecars); err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating the traffic control configuration to match the target service packet loss configurations after repartitioning")
 	}
 	return nil
@@ -245,7 +236,7 @@ func (network *ServiceNetwork) StartService(
 		return nil, nil, stacktrace.NewError("Cannot start container for service; the service network has been destroyed")
 	}
 
-	registrationInfo, registrationInfoFound := network.serviceRegistrationInfo[registrationGuid]
+	registrationInfo, registrationInfoFound := network.serviceRegistrationsByRegistrationGuid[registrationGuid]
 	if !registrationInfoFound {
 		return nil, nil, stacktrace.NewError("Cannot start container for service using registration GUID '%v' because no such registration GUID exists", registrationGuid)
 	}
@@ -274,7 +265,7 @@ func (network *ServiceNetwork) StartService(
 			servicesPacketLossConfigurationsWithoutNewNode[serviceIdInTopology] = otherServicesPacketLossConfigs
 		}
 
-		if err := updateTrafficControlConfiguration(ctx, servicesPacketLossConfigurationsWithoutNewNode, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
+		if err := updateTrafficControlConfiguration(ctx, servicesPacketLossConfigurationsWithoutNewNode, network.serviceRegistrationsByRegistrationGuid, network.networkingSidecars); err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred updating the traffic control configuration of all the other services "+
 				"before adding the node, meaning that the node wouldn't actually start in a partition")
 		}
@@ -335,7 +326,7 @@ func (network *ServiceNetwork) StartService(
 		updatesToApply := map[user_service_registration.ServiceID]map[user_service_registration.ServiceID]float32{
 			serviceId: newNodeServicePacketLossConfiguration,
 		}
-		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
+		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.serviceRegistrationsByRegistrationGuid, network.networkingSidecars); err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration on the new node to partition it "+
 				"off from other nodes")
 		}
@@ -496,7 +487,7 @@ func (network *ServiceNetwork) GetServiceRegistrationInfo(serviceId user_service
 		return nil, stacktrace.NewError("Cannot get registration info for service '%v'; the service network has been destroyed", serviceId)
 	}
 
-	registrationInfo, found := network.serviceRegistrationInfo[serviceId]
+	registrationInfo, found := network.serviceRegistrationsByRegistrationGuid[serviceId]
 	if !found {
 		return nil, stacktrace.NewError("No registration information found for service with ID '%v'", serviceId)
 	}
@@ -584,12 +575,12 @@ func (network *ServiceNetwork) removeServiceWithoutMutex(
 	serviceId user_service_registration.ServiceID,
 	containerStopTimeout time.Duration) error {
 
-	registrationInfo, foundRegistrationInfo := network.serviceRegistrationInfo[serviceId]
+	registrationInfo, foundRegistrationInfo := network.serviceRegistrationsByRegistrationGuid[serviceId]
 	if !foundRegistrationInfo {
 		return stacktrace.NewError("No registration info found for service '%v'", serviceId)
 	}
 	network.topology.RemoveService(serviceId)
-	delete(network.serviceRegistrationInfo, serviceId)
+	delete(network.serviceRegistrationsByRegistrationGuid, serviceId)
 
 	// TODO PERF: Parallelize the shutdown of the service container and the sidecar container
 	runInfo, foundRunInfo := network.serviceRunInfo[serviceId]
@@ -651,9 +642,9 @@ NOTE: This is not thread-safe, so it must be within a function that locks mutex!
 */
 func updateTrafficControlConfiguration(
 	ctx context.Context,
-	targetServicePacketLossConfigs map[user_service_registration.ServiceID]map[user_service_registration.ServiceID]float32,
-	serviceRegistrationInfo map[user_service_registration.ServiceID]serviceRegistrationInfo,
-	networkingSidecars map[user_service_registration.ServiceID]networking_sidecar.NetworkingSidecarWrapper,
+	kurtosisBackend backend_interface.KurtosisBackend,
+	targetServicePacketLossConfigs map[user_service_registration.UserServiceRegistrationGUID]map[user_service_registration.UserServiceRegistrationGUID]float32,
+	networkingSidecars map[user_service_registration.UserServiceRegistrationGUID]networking_sidecar.NetworkingSidecarWrapper,
 ) error {
 
 	// TODO PERF: Run the container updates in parallel, with the container being modified being the most important
