@@ -98,7 +98,12 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 	}
 
 	// TODO Switch to UUIDs, here and everywhere!! There's a small, but possible, chance of race condition here!
-	guidStr := fmt.Sprintf("%v-%v", serviceId, time.Now().Unix())
+	guidStr := fmt.Sprintf(
+		"%v-%v-%v",
+		enclaveId,
+		serviceId,
+		time.Now().Unix(),
+	)
 	guid := service.ServiceGUID(guidStr)
 	containerAttrs, err := enclaveObjAttrsProvider.ForUserServiceContainer(
 		registrationGuid,
