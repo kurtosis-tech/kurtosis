@@ -9,8 +9,7 @@ replace (
 
 require (
 	github.com/google/uuid v1.3.0
-	github.com/gorilla/mux v1.8.0 // indirect
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220513020819-c510cc464f94 // TODO RELEASE VERSION!!!!!!!
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220513023355-05d898ac1a1c // TODO RELEASE VERSION!!!!!!!
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e
 	github.com/kurtosis-tech/kurtosis-core/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0
@@ -18,7 +17,6 @@ require (
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220225193403-74da3f3b98ce
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
-	github.com/moby/term v0.0.0-20200507201656-73f35e472e8f // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect

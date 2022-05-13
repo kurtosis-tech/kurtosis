@@ -36,12 +36,6 @@ const (
 	startingDefaultConnectionPacketLossValue                                   = 0
 )
 
-// Information that gets created with a service's registration
-type serviceRegistrationInfo struct {
-	serviceGUID      service.ServiceGUID
-	privateIpAddr    net.IP
-}
-
 // Information that gets created when a container is started for a service
 type serviceRunInfo struct {
 	// Service's container ID
@@ -81,9 +75,9 @@ type ServiceNetwork struct {
 
 	topology *partition_topology.PartitionTopology
 
-	// These are separate maps, rather than being bundled into a single containerInfo-valued map, because
-	//  they're registered at different times (rather than in one atomic operation)
-	serviceRegistrationInfo map[user_service_registration.ServiceID]serviceRegistrationInfo
+	// TODO Delete this map entirely, and just get the info from the backend!
+	serviceRegistrationInfo map[user_service_registration.UserServiceRegistrationGUID]*user_service_registration.UserServiceRegistration
+
 	serviceRunInfo          map[user_service_registration.ServiceID]serviceRunInfo
 
 	// TODO TODO TODO Transfer this to KurtosisBackend so that we can read directly from
@@ -166,6 +160,7 @@ func (network *ServiceNetwork) Repartition(
 // Registers a service for use with the network (creating the IPs and so forth), but doesn't start it
 // If the partition ID is empty, registers the service with the default partition
 func (network ServiceNetwork) RegisterService(
+	ctx context.Context,
 	serviceId user_service_registration.ServiceID,
 	partitionId service_network_types.PartitionID,
 ) (net.IP, user_service_registration.UserServiceRegistrationGUID, error) {
@@ -173,68 +168,52 @@ func (network ServiceNetwork) RegisterService(
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
-		return nil, stacktrace.NewError("Cannot register service with ID '%v'; the service network has been destroyed", serviceId)
-	}
-
-	if strings.TrimSpace(string(serviceId)) == "" {
-		return nil, stacktrace.NewError("Service ID cannot be empty or whitespace")
-	}
-
-	if _, found := network.serviceRegistrationInfo[serviceId]; found {
-		return nil, stacktrace.NewError("Cannot register service with ID '%v'; a service with that ID already exists", serviceId)
+		return nil, "", stacktrace.NewError("Cannot register service with ID '%v'; the service network has been destroyed", serviceId)
 	}
 
 	if partitionId == "" {
 		partitionId = defaultPartitionId
 	}
 	if _, found := network.topology.GetPartitionServices()[partitionId]; !found {
-		return nil, stacktrace.NewError(
+		return nil, "", stacktrace.NewError(
 			"No partition with ID '%v' exists in the current partition topology",
 			partitionId,
 		)
 	}
 
-	ip, err := network.freeIpAddrTracker.GetFreeIpAddr()
+	serviceRegistration, err := network.kurtosisBackend.CreateUserServiceRegistration(
+		ctx,
+		network.enclaveId,
+		serviceId,
+	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting an IP for service with ID '%v'", serviceId)
+		return nil, "", stacktrace.Propagate(err, "An error occurred creating service registration for service ID '%v'", serviceId)
 	}
-	shouldFreeIpAddr := true
+	shouldDestroyRegistration := true
 	defer func() {
-		// To keep our bookkeeping correct, if an error occurs later we need to back out the IP-adding that we do now
-		if shouldFreeIpAddr {
-			network.freeIpAddrTracker.ReleaseIpAddr(ip)
-		}
-	}()
-	logrus.Debugf("Giving service '%v' IP '%v'", serviceId, ip.String())
-
-	serviceGuid := newServiceGUID(serviceId)
-
-	newServiceRegistrationInfo := serviceRegistrationInfo{
-		serviceGUID:      serviceGuid,
-		privateIpAddr:    ip,
-	}
-
-	network.serviceRegistrationInfo[serviceId] = newServiceRegistrationInfo
-	shouldUndoRegistrationInfoAdd := true
-	defer func() {
-		// If an error occurs, the service ID won't be used so we need to delete it from the map
-		if shouldUndoRegistrationInfoAdd {
-			delete(network.serviceRegistrationInfo, serviceId)
+		if shouldDestroyRegistration {
+			network.destroyServiceRegistrationBestEffort(serviceRegistration)
 		}
 	}()
 
 	if err := network.topology.AddService(serviceId, partitionId); err != nil {
-		return nil, stacktrace.Propagate(
+		return nil, "", stacktrace.Propagate(
 			err,
 			"An error occurred adding service with ID '%v' to partition '%v' in the topology",
 			serviceId,
 			partitionId,
 		)
 	}
+	shouldRemoveTopologyAddition := true
+	defer func() {
+		if shouldRemoveTopologyAddition {
+			network.topology.RemoveService(serviceId)
+		}
+	}()
 
-	shouldFreeIpAddr = false
-	shouldUndoRegistrationInfoAdd = false
-	return ip, nil
+	shouldDestroyRegistration = false
+	shouldRemoveTopologyAddition = false
+	return serviceRegistration.GetIPAddress(), serviceRegistration.GetGUID(), nil
 }
 
 // TODO add tests for this
@@ -263,18 +242,15 @@ func (network *ServiceNetwork) StartService(
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
-		return nil, nil, stacktrace.NewError("Cannot start container for service with ID '%v'; the service network has been destroyed", serviceId)
+		return nil, nil, stacktrace.NewError("Cannot start container for service; the service network has been destroyed")
 	}
 
-	registrationInfo, registrationInfoFound := network.serviceRegistrationInfo[serviceId]
+	registrationInfo, registrationInfoFound := network.serviceRegistrationInfo[registrationGuid]
 	if !registrationInfoFound {
-		return nil, nil, stacktrace.NewError("Cannot start container for service with ID '%v'; no service with that ID has been registered", serviceId)
+		return nil, nil, stacktrace.NewError("Cannot start container for service using registration GUID '%v' because no such registration GUID exists", registrationGuid)
 	}
-	if _, found := network.serviceRunInfo[serviceId]; found {
-		return nil, nil, stacktrace.NewError("Cannot start container for service with ID '%v'; that service ID already has run information associated with it", serviceId)
-	}
-	serviceGuid := registrationInfo.serviceGUID
-	serviceIpAddr := registrationInfo.privateIpAddr
+	serviceId := registrationInfo.GetServiceID()
+	serviceIpAddr := registrationInfo.GetIPAddress()
 
 	// When partitioning is enabled, there's a race condition where:
 	//   a) we need to start the service before we can launch the sidecar but
@@ -747,4 +723,37 @@ func gzipCompressFile(readCloser io.Reader) (resultFilepath string, resultErr er
 	}
 
 	return tarGzipFileFilepath, nil
+}
+
+func (network *ServiceNetwork) destroyServiceRegistrationBestEffort(
+	registration *user_service_registration.UserServiceRegistration,
+) {
+	serviceId := registration.GetServiceID()
+	registrationGuid := registration.GetGUID()
+
+	destroyRegistrationFilters := &user_service_registration.UserServiceRegistrationFilters{
+		GUIDs: map[user_service_registration.UserServiceRegistrationGUID]bool{
+			registrationGuid: true,
+		},
+	}
+	// Use background context in case the input one is cancelled
+	_, erroredRegistrations, err := network.kurtosisBackend.DestroyUserServiceRegistrations(context.Background(), destroyRegistrationFilters)
+	var errToPrint error
+	if err != nil {
+		errToPrint = err
+	} else if destroyErr, found := erroredRegistrations[registrationGuid]; found {
+		errToPrint = destroyErr
+	}
+	if errToPrint != nil {
+		logrus.Warnf(
+			"Registering service with ID '%v' didn't complete successfully so we tried to destroy the " +
+				"service registration object that we created, but doing so threw an error:\n%v",
+			serviceId,
+			errToPrint,
+		)
+		logrus.Warnf(
+			"!!! ACTION REQUIRED !!! You'll need to manually destroy service registration object with GUID '%v'!!!",
+			registrationGuid,
+		)
+	}
 }
