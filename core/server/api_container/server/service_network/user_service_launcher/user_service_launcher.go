@@ -61,7 +61,7 @@ func (launcher UserServiceLauncher) Launch(
 	// First expand the files artifacts into volumes, so that any errors get caught early
 	// NOTE: if users don't need to investigate the volume contents, we could keep track of the volumes we create
 	//  and delete them at the end of the test to keep things cleaner
-	artifactUuidsToVolumes, err := launcher.filesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, serviceGUID, usedArtifactUuidSet)
+	artifactUuidsToVolumes, err := launcher.filesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, registrationGuid, usedArtifactUuidSet)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred expanding the requested files artifacts into volumes")
 	}

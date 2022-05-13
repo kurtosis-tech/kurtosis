@@ -93,7 +93,6 @@ func NewServiceNetworkImpl(
 			defaultPartitionId,
 			defaultPartitionConnection,
 		),
-		serviceRunInfo:                         map[user_service_registration.ServiceID]serviceRunInfo{},
 		networkingSidecars:                     map[user_service_registration.ServiceID]networking_sidecar.NetworkingSidecarWrapper{},
 		networkingSidecarManager:               networkingSidecarManager,
 	}
@@ -252,6 +251,7 @@ func (network *ServiceNetwork) StartService(
 	//  this by setting the packet loss config of the new service in the already-existing services' qdisc.
 	// This means that when the new service is launched, even if its own qdisc isn't yet updated, all the services
 	//  it would communicate are already dropping traffic to it before it even starts.
+	var registrationsByRegistrationGuid map[user_service_registration.UserServiceRegistrationGUID]*user_service_registration.UserServiceRegistration
 	var registrationsByServiceId map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration
 	if network.isPartitioningEnabled {
 		getAllRegistrationsFilter := &user_service_registration.UserServiceRegistrationFilters{
@@ -263,6 +263,15 @@ func (network *ServiceNetwork) StartService(
 			ctx,
 			getAllRegistrationsFilter,
 		)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting all user service registrations in the enclave")
+		}
+		registrationsByRegistrationGuid = allRegistrations
+
+		newServiceRegistration, found := allRegistrations[registrationGuid]
+		if !found {
+			return nil, nil, stacktrace.Propagate(err, "Registration '%v' does not exist", registrationGuid)
+		}
 
 		registrationsByServiceId = map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration{}
 		for _, registration := range allRegistrations {
@@ -277,23 +286,31 @@ func (network *ServiceNetwork) StartService(
 
 		servicesPacketLossConfigurationsWithoutNewNode := map[user_service_registration.ServiceID]map[user_service_registration.ServiceID]float32{}
 		for serviceIdInTopology, otherServicesPacketLossConfigs := range servicePacketLossConfigurationsByServiceID {
-			if serviceId == serviceIdInTopology {
+			if newServiceRegistration.GetServiceID() == serviceIdInTopology {
 				continue
 			}
 			servicesPacketLossConfigurationsWithoutNewNode[serviceIdInTopology] = otherServicesPacketLossConfigs
 		}
 
-		if err := updateTrafficControlConfiguration(ctx, servicesPacketLossConfigurationsWithoutNewNode, network.serviceRegistrationsByRegistrationGuid, network.networkingSidecars); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred updating the traffic control configuration of all the other services "+
-				"before adding the node, meaning that the node wouldn't actually start in a partition")
+		if err := updateTrafficControlConfiguration(
+			ctx,
+			servicesPacketLossConfigurationsWithoutNewNode,
+			registrationsByServiceId,
+			network.networkingSidecars,
+		); err != nil {
+			return nil, nil, stacktrace.Propagate(
+				err,
+				"An error occurred updating the traffic control configuration of all the other services "+
+					 "before adding the new service, meaning that the service wouldn't actually start in a partition",
+			)
 		}
+		// TODO defer an undo somehow???
 	}
 
 	userService, err := network.userServiceLauncher.Launch(
 		ctx,
-		serviceGuid,
+		registrationGuid,
 		network.enclaveId,
-		serviceIpAddr,
 		imageName,
 		privatePorts,
 		entrypointArgs,
@@ -304,10 +321,13 @@ func (network *ServiceNetwork) StartService(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating the user service",
+			"An error occurred creating user service with image '%v' for registration '%v'",
+			imageName,
+			registrationGuid,
 		)
 	}
 
+	/*
 	// TODO Restart-able enclaves: Don't store any service information in memory; instead, get it all from the KurtosisBackend when required
 	serviceGUID := userService.GetGUID()
 	maybeServicePublicIpAddr := userService.GetMaybePublicIP()
@@ -320,6 +340,8 @@ func (network *ServiceNetwork) StartService(
 		maybePublicPorts:         maybeServicePublicPorts,
 	}
 	network.serviceRunInfo[serviceId] = runInfo
+
+	 */
 
 	if network.isPartitioningEnabled {
 		sidecar, err := network.networkingSidecarManager.Add(ctx, serviceGuid)
