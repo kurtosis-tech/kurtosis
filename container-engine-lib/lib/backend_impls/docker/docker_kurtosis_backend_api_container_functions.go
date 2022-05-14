@@ -221,8 +221,6 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		maxWaitForApiContainerAvailabilityRetries,
 		timeBetweenWaitForApiContainerAvailabilityRetries,
 	); err != nil {
-		// Use background context
-		backend.dockerManager.GetContainerLogs(context.Background(), )
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container's grpc port to become available")
 	}
 
