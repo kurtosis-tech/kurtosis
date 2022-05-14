@@ -22,7 +22,7 @@ import (
 
 const (
 	artifactExpansionObjectTimestampFormat = "2006-01-02T15.04.05.000"
-	userServiceRegistrationSuffix = "kurtosis-user-service-registration"
+	userServiceServiceSuffix = "kurtosis-user-service-service"
 
 )
 
@@ -30,7 +30,7 @@ type KubernetesEnclaveObjectAttributesProvider interface {
 	ForEnclaveNamespace(isPartitioningEnabled bool) (KubernetesObjectAttributes, error)
 	ForEnclaveDataVolume() (KubernetesObjectAttributes, error)
 	ForApiContainer() (KubernetesApiContainerObjectAttributesProvider, error)
-	ForUserServiceRegistration() (KubernetesObjectAttributes, error)
+	ForUserServiceService(id string, guid string) (KubernetesObjectAttributes, error)
 }
 
 // Private so it can't be instantiated
@@ -159,21 +159,28 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactE
 	panic("implement me")
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceRegistration (
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceService (
+	id string,
+	guid string,
 ) (
 	KubernetesObjectAttributes,
 	error,
 ) {
-	name, err := provider.getNameForEnclaveObject([]string{userServiceRegistrationSuffix})
+	name, err := provider.getNameForEnclaveObject([]string{userServiceServiceSuffix})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get name for user service registration.")
 	}
 
-	labels, err := provider.getLabelsForEnclaveObject()
+	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(id, guid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get labels for user service registration.")
+		return nil, stacktrace.Propagate(
+			err,
+			"Failed to get labels for user service registration with ID '%s' and GUID '%s'.",
+			id,
+			guid,
+		)
 	}
-	labels[label_key_consts.KurtosisUserServiceRegistrationTypeLabel] = label_value_consts.UserServiceRegistrationKurtosisResourceTypeLabelValue
+	labels[label_key_consts.KurtosisUserServiceServiceTypeLabel] = label_value_consts.UserServiceServiceKurtosisResourceTypeLabelValue
 
 	//No userServiceRegistration annotations.
 	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
