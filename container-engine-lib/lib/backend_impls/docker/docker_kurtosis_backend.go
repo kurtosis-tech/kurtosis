@@ -104,7 +104,7 @@ type DockerKurtosisBackend struct {
 	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*registeredServiceInfo
 
 	// Control concurrent access to serviceRegistrations
-	serviceRegistrationMutex *sync.Mutex
+	serviceRegistrationMutex *sync.RWMutex
 }
 
 func NewDockerKurtosisBackend(
@@ -122,7 +122,7 @@ func NewDockerKurtosisBackend(
 		objAttrsProvider:         object_attributes_provider.GetDockerObjectAttributesProvider(),
 		enclaveFreeIpProviders:   enclaveFreeIpProviders,
 		serviceRegistrations:     serviceRegistrations,
-		serviceRegistrationMutex: &sync.Mutex{},
+		serviceRegistrationMutex: &sync.RWMutex{},
 	}
 }
 

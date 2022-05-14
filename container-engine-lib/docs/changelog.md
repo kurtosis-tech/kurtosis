@@ -18,6 +18,7 @@
 * `CreateUserService` has been renamed to `StartUserService`
     * TODO
 * TODO scoping down the service requests to be per-enclave
+* TODO remove wait-for-availability because it doesn't need to be there
 
 # 0.21.1
 ### Fixes

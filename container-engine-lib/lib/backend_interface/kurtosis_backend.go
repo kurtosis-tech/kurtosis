@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
 	"io"
 	"net"
 )
@@ -293,6 +292,7 @@ type KurtosisBackend interface {
 	)
 
 	// Wait for succesful http endpoint response which can be used to check if the service is available
+	/*
 	WaitForUserServiceHttpEndpointAvailability(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
@@ -308,6 +308,7 @@ type KurtosisBackend interface {
 	) (
 		resultErr error,
 	)
+	 */
 
 	// Get a connection with user service to execute commands in
 	GetConnectionWithUserService(
