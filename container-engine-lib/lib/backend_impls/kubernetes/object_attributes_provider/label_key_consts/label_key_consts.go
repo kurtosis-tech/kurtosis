@@ -16,8 +16,9 @@ const (
 	resourceTypeLabelKeyStr 	= labelKeyPrefixStr + "resource-type"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	containerTypeLabelKeyStr 	= labelKeyPrefixStr + "container-type"
-	volumeTypeLabelKeyStr 		= labelKeyPrefixStr + "volume-type"
+	containerTypeLabelKeyStr				= labelKeyPrefixStr + "container-type"
+	volumeTypeLabelKeyStr					= labelKeyPrefixStr + "volume-type"
+	userServiceRegistrationTypeLabelKeyStr	= labelKeyPrefixStr + "user-registration-type"
 
 	// A label to identify a Kurtosis resource (e.g. network, container, etc.) by its id
 	idLabelKeyStr = labelKeyPrefixStr + "id"
@@ -47,6 +48,7 @@ var KurtosisResourceTypeLabelKey = kubernetes_label_key.MustCreateNewKubernetesL
 
 var KurtosisContainerTypeLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(containerTypeLabelKeyStr)
 var KurtosisVolumeTypeLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(volumeTypeLabelKeyStr)
+var KurtosisUserServiceRegistrationTypeLabel = kubernetes_label_key.MustCreateNewKubernetesLabelKey(userServiceRegistrationTypeLabelKeyStr)
 var IDLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(idLabelKeyStr)
 var GUIDLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(guidLabelKeyStr)
 var PortSpecsLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(portSpecsLabelKeyStr)

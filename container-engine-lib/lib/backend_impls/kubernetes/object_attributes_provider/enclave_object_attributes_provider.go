@@ -21,12 +21,15 @@ import (
 
 const (
 	artifactExpansionObjectTimestampFormat = "2006-01-02T15.04.05.000"
+	userServiceRegistrationSuffix = "kurtosis-user-service-registration"
+
 )
 
 type KubernetesEnclaveObjectAttributesProvider interface {
 	ForEnclaveNamespace(isPartitioningEnabled bool) (KubernetesObjectAttributes, error)
 	ForEnclaveDataVolume() (KubernetesObjectAttributes, error)
 	ForApiContainer() (KubernetesApiContainerObjectAttributesProvider, error)
+	ForUserServiceRegistration() (KubernetesObjectAttributes, error)
 }
 
 // Private so it can't be instantiated
@@ -145,6 +148,33 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactE
 	error,
 ) {
 	panic("implement me")
+}
+
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceRegistration (
+) (
+	KubernetesObjectAttributes,
+	error,
+) {
+	name, err := provider.getNameForEnclaveObject([]string{userServiceRegistrationSuffix})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get name for user service registration.")
+	}
+
+	labels, err := provider.getLabelsForEnclaveObject()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get labels for user service registration.")
+	}
+	labels[label_key_consts.KurtosisUserServiceRegistrationTypeLabel] = label_value_consts.UserServiceRegistrationKurtosisResourceTypeLabelValue
+
+	//No userServiceRegistration annotations.
+	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
+
+	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create user service registration object attributes.")
+	}
+
+	return objectAttributes, nil
 }
 
 // ====================================================================================================
