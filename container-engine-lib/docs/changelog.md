@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+* Added `ForUserServiceService` for `KubernetesEngineObjectAttributesProvider`
+
 # 0.21.1
 
 # 0.21.0
