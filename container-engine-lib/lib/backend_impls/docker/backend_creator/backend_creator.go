@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"net"
 )
 
 // TODO Delete this when we split up KurtosisBackend into various parts
@@ -65,12 +66,36 @@ func GetLocalDockerKurtosisBackend(
 		network := matchingNetworks[0]
 		networkIp := network.GetIpAndMask().IP
 
+		// We have to do a network inspect because for some insane reason Docker doesn't fill out the Network.Containers
+		//  field when listing networks
+		inspectNetworkResults, err := dockerManager.InspectNetwork(ctx, network.GetId())
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred inspecting network with ID '%v' to get the " +
+					 "containers on the network, which is necessary to create a free IP address tracker for the network",
+				enclaveId,
+			)
+		}
+
 		alreadyTakenIps := map[string]bool{
 			networkIp.String(): true,
 			network.GetGatewayIp(): true,
 		}
-		for containerIp := range network.GetContainerIps() {
-			alreadyTakenIps[containerIp] = true
+		for _, containerInfo := range inspectNetworkResults.Containers {
+			// Even though Docker *calls* this the IP, it's actually the IP + the subnet mask >:(
+			containerIpCidrStr := containerInfo.IPv4Address
+			ip, _, err := net.ParseCIDR(containerIpCidrStr)
+			if err != nil {
+				return nil, stacktrace.Propagate(
+					err,
+					"An error occurred parsing container IP CIDR string '%v' for container with name '%v'",
+					containerIpCidrStr,
+					containerInfo.Name,
+				)
+			}
+
+			alreadyTakenIps[ip.String()] = true
 		}
 
 		freeIpAddrProvider := lib.NewFreeIpAddrTracker(

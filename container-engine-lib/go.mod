@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/containerd/containerd v1.5.5 // indirect
 	github.com/dmarkham/enumer v1.5.3
-	github.com/docker/docker v17.12.0-ce-rc1.0.20200514193020-5da88705cccc+incompatible
+	github.com/docker/docker v20.10.16+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/gammazero/workerpool v1.1.2
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d

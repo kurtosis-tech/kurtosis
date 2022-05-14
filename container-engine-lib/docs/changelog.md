@@ -1,4 +1,9 @@
 # TBD
+### Changes
+* Upgrade to Docker SDK v20.10 to try and fix a bug where Docker network containers wouldn't be populated
+
+### Fixes
+* Fix an issue with network container IPs not being correctly made available when starting a DockerKurtosisBackend in API container mode
 
 # 0.21.1
 ### Fixes

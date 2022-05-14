@@ -141,6 +141,7 @@ Returns:
 	id: The Docker-managed ID of the network
 */
 func (manager DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP net.IP, labels map[string]string) (id string, err error) {
+	// TODO remove this error-checking - Docker itself should fail
 	networkIds, err := manager.GetNetworksByName(context, name)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred checking for existence of network with name %v", name)
@@ -174,6 +175,17 @@ func (manager DockerManager) ListNetworks(ctx context.Context) ([]types.NetworkR
 		return nil, stacktrace.Propagate(err, "An error occurred listing the Docker networks")
 	}
 	return networks, nil
+}
+
+// Ostensibly, this *shouldn't* be necessary - we should be able to just use the NetworkList - but Docker, for some insane
+// reason, leaves the Network.Containers field empty when you use NetworkList.
+func (manager *DockerManager) InspectNetwork(ctx context.Context, networkId string) (*types.NetworkResource, error) {
+	networkInspectOptions := types.NetworkInspectOptions{}
+	result, err := manager.dockerClient.NetworkInspect(ctx, networkId, networkInspectOptions)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred inspecting network with ID '%v'", networkId)
+	}
+	return &result, nil
 }
 
 /*
@@ -433,7 +445,7 @@ func (manager DockerManager) CreateAndStartContainer(
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
-	containerCreateResp, err := manager.dockerClient.ContainerCreate(ctx, containerConfigPtr, containerHostConfigPtr, nil, args.name)
+	containerCreateResp, err := manager.dockerClient.ContainerCreate(ctx, containerConfigPtr, containerHostConfigPtr, nil, nil, args.name)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Could not create Docker container '%v' from image '%v'", args.name, dockerImage)
 	}
@@ -951,6 +963,9 @@ func (manager DockerManager) isImageAvailableLocally(ctx context.Context, imageN
 }
 
 func (manager *DockerManager) getNetworksByFilterArgs(ctx context.Context, args filters.Args) ([]types.NetworkResource, error) {
+	// NOTE: Even though this returns a `NetworkResource` object which has a Containers field on it, this is a lie!!
+	// For whatever insane reason, Docker doesn't fill this field out when NetworkList is used and there doesn't seem to
+	// be a way to get it to do so
 	networks, err := manager.dockerClient.NetworkList(
 		ctx,
 		types.NetworkListOptions{
@@ -1264,27 +1279,15 @@ func newNetworkFromDockerNetwork(dockerNetwork types.NetworkResource) (*docker_m
 
 	gatewayIp := firstIpamConfig.Gateway
 
-	containerIps := map[string]bool{}
-	for _, endpointResource := range dockerNetwork.Containers {
-		// Even though Docker *calls* this IPv4Address, it's actually in CIDR notation!
-		containerIpCidrStr := endpointResource.IPv4Address
-		containerIp, _, err := net.ParseCIDR(containerIpCidrStr)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred parsing container IP CIDR string '%v' to an IP address", containerIpCidrStr)
-		}
-		containerIps[containerIp.String()] = true
-	}
-
-	network := docker_manager_types.NewNetwork(
+	networkWrapper := docker_manager_types.NewNetwork(
 		dockerNetwork.Name,
 		dockerNetwork.ID,
 		ipAndMask,
 		gatewayIp,
-		containerIps,
 		dockerNetwork.Labels,
 	)
 
-	return network, nil
+	return networkWrapper, nil
 }
 
 func (manager DockerManager) getFailedContainerLogsOrErrorString(ctx context.Context, containerId string) string {
