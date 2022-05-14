@@ -49,6 +49,9 @@ type APIContainerArgs struct {
 
 	// The directory on the API container where the enclave data directory will have been mounted
 	EnclaveDataVolumeDirpath string `json:"enclaveDataVolume"`
+
+	// KurtosisBackend Configuration
+	KurtosisBackendType string `json:"backendType"`
 }
 
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that

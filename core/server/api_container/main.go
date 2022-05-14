@@ -65,6 +65,7 @@ func main() {
 }
 
 func runMain() error {
+	// TODO TODO TODO PUT ARGS IN THE ENV PROCESS
 	serverArgs, err := args.GetArgsFromEnv()
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't retrieve API container args from the environment")
@@ -88,10 +89,28 @@ func runMain() error {
 
 	enclaveDataDir := enclave_data_directory.NewEnclaveDataDirectory(serverArgs.EnclaveDataVolumeDirpath)
 
-	kurtosisBackend, err := kurtosis_backend.GetLocalDockerKurtosisBackend()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
+	// TODO TODO TODO Parse parameters from main.go to pick the backend
+	// TODO TODO TODO TEMP SCRATCH CODE
+	backendType := "docker"
+	var kurtosisBackend backend_interface.KurtosisBackend
+	switch backendType {
+	case backendType == "docker":
+		kurtosisBackend, err = kurtosis_backend.GetLocalDockerKurtosisBackend()
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
+		}
+	case backendType == "kubernetes":
+		kurtosisBackend, err = kurtosis_backend.GetLocalKubernetesKurtosisBackend()
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
+		}
 	}
+	if backendType == "docker" {
+		kurtosisBackend, err = kurtosis_backend.GetLocalDockerKurtosisBackend()
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
+		}
+	} else if
 
 	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(kurtosisBackend, enclaveDataDir, freeIpAddrTracker, serverArgs)
 	if err != nil {

@@ -28,6 +28,7 @@ func GetEnvFromArgs(args *APIContainerArgs) (map[string]string, error) {
 
 // Intended to be used in the container main.go function - gets args from the environment
 func GetArgsFromEnv() (*APIContainerArgs, error) {
+	// TODO TODO TODO MAKE SURE POLYMORPHIC DESERIALIZATION WORKS FOR K8S VS DOCKER BACKENDS
 	serializedParamsStr, found := os.LookupEnv(serializedArgsEnvVar)
 	if !found {
 		return nil, stacktrace.NewError("No serialized args variable '%v' defined", serializedArgsEnvVar)
