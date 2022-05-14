@@ -6,8 +6,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	kurtosis_backend "github.com/kurtosis-tech/container-engine-lib/lib"
+	docker_backend_creator "github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/backend_creator"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
@@ -89,28 +91,30 @@ func runMain() error {
 
 	enclaveDataDir := enclave_data_directory.NewEnclaveDataDirectory(serverArgs.EnclaveDataVolumeDirpath)
 
+	apiContainerModeArgs := docker_backend_creator.APIContainerModeArgs{
+		// TODO TODO TODO Verify background context makes sense
+		Context:   context.Background(),
+		EnclaveID: enclave.EnclaveID(serverArgs.EnclaveId),
+	}
+
 	// TODO TODO TODO Parse parameters from main.go to pick the backend
 	// TODO TODO TODO TEMP SCRATCH CODE
 	backendType := "docker"
 	var kurtosisBackend backend_interface.KurtosisBackend
 	switch backendType {
-	case backendType == "docker":
-		kurtosisBackend, err = kurtosis_backend.GetLocalDockerKurtosisBackend()
+	case "docker":
+		kurtosisBackend, err = docker_backend_creator.GetLocalDockerKurtosisBackend(&apiContainerModeArgs)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 		}
-	case backendType == "kubernetes":
+	case "kubernetes":
 		kurtosisBackend, err = kurtosis_backend.GetLocalKubernetesKurtosisBackend()
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 		}
+	default:
+		return stacktrace.NewError("Backend type in API container '%v' is not an expected backend type.", backendType)
 	}
-	if backendType == "docker" {
-		kurtosisBackend, err = kurtosis_backend.GetLocalDockerKurtosisBackend()
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
-		}
-	} else if
 
 	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(kurtosisBackend, enclaveDataDir, freeIpAddrTracker, serverArgs)
 	if err != nil {
