@@ -21,25 +21,8 @@ type APIContainerArgs struct {
 	GrpcProxyListenPortNum uint16 `json:"grpcProxyListenPortNum"`
 
 	EnclaveId  string `json:"enclaveId"`
-	NetworkId  string `json:"networkId"`
-	SubnetMask string `json:"subnetMask"`
-
-	// Necessary so that when the API container starts modules, it knows which IP addr to give them
-	ApiContainerIpAddr string `json:"apiContainerIpAddr"`
-
-	// Instructs the API container that these IP addrs are already taken and shouldn't be used
-	TakenIpAddrs map[string]bool `json:"takenIpAddrsSet"`
 
 	IsPartitioningEnabled bool `json:"isPartitioningEnabled"`
-
-	// TODO Remove when we've verified enclave data volume is working
-	// The location on the API container where the enclave data directory will have been bind-mounted
-	EnclaveDataDirpathOnAPIContainer string `json:"enclaveDataDirpathOnAPIContainer"`
-
-	// TODO Remove when we've verified enclave data volume is working
-	// The dirpath on the Docker host machine where enclave data is stored, which the API container
-	//  will use to bind-mount the directory into the services that it starts
-	EnclaveDataDirpathOnHostMachine string `json:"enclaveDataDirpathOnHostMachine"`
 
 	//The anonymized user ID for metrics analytics purpose
 	MetricsUserID string `json:"metricsUserID"`
@@ -62,13 +45,7 @@ func NewAPIContainerArgs(
 	grpcListenPortNum uint16,
 	grpcProxyListenPortNum uint16,
 	enclaveId string,
-	networkId string,
-	subnetMask string,
-	apiContainerIpAddr string,
-	takenIpAddrs map[string]bool,
 	isPartitioningEnabled bool,
-	enclaveDataDirpathOnAPIContainer string,
-	enclaveDataDirpathOnHostMachine string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	enclaveDataVolumeDirpath string,
@@ -80,13 +57,7 @@ func NewAPIContainerArgs(
 		GrpcListenPortNum:                grpcListenPortNum,
 		GrpcProxyListenPortNum:           grpcProxyListenPortNum,
 		EnclaveId:                        enclaveId,
-		NetworkId:                        networkId,
-		SubnetMask:                       subnetMask,
-		ApiContainerIpAddr:               apiContainerIpAddr,
-		TakenIpAddrs:                     takenIpAddrs,
 		IsPartitioningEnabled:            isPartitioningEnabled,
-		EnclaveDataDirpathOnAPIContainer: enclaveDataDirpathOnAPIContainer,
-		EnclaveDataDirpathOnHostMachine:  enclaveDataDirpathOnHostMachine,
 		MetricsUserID:                    metricsUserID,
 		DidUserAcceptSendingMetrics:      didUserAcceptSendingMetrics,
 		EnclaveDataVolumeDirpath:         enclaveDataVolumeDirpath,

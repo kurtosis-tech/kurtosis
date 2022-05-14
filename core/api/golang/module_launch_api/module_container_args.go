@@ -19,11 +19,8 @@ type ModuleContainerArgs struct {
 	// Arbitrary serialized data that the module can consume at startup to modify its behaviour
 	// Analogous to the "constructor"
 	SerializedCustomParams string	`json:"serializedCustomParams"`
-
-	// The location on the module container where the enclave data directory has been mounted during launch
-	EnclaveDataDirMountpoint string	`json:"enclaveDataDirMountpoint"`
 }
 
-func NewModuleContainerArgs(enclaveID string, listenPortNum uint16, apiContainerSocket string, serializedCustomParams string, enclaveDataDirMountpoint string) *ModuleContainerArgs {
-	return &ModuleContainerArgs{EnclaveID: enclaveID, ListenPortNum: listenPortNum, ApiContainerSocket: apiContainerSocket, SerializedCustomParams: serializedCustomParams, EnclaveDataDirMountpoint: enclaveDataDirMountpoint}
+func NewModuleContainerArgs(enclaveID string, listenPortNum uint16, apiContainerSocket string, serializedCustomParams string) *ModuleContainerArgs {
+	return &ModuleContainerArgs{EnclaveID: enclaveID, ListenPortNum: listenPortNum, ApiContainerSocket: apiContainerSocket, SerializedCustomParams: serializedCustomParams}
 }

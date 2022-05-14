@@ -1,4 +1,32 @@
 # TBD
+### Fixes
+* Updated to container-engine-lib 0.20.1 which fixes a bug with getting DockerKurtosisBackend in the API container
+
+# 1.47.0
+### Changes
+* `RegisterService` endpoint now returns a service registration GUID
+* `StartService` endpoint now requires a service registration GUID
+* Upgraded to container-engine-lib 0.21.0, which contains the `RegisterService` function
+
+### Breaking Changes
+* Removed the following fields from the `APIContainerLauncher.Launch` methods:
+    * `subnetCidr`
+    * `networkIp`
+    * `gatewayIp`
+    * `apiContainerIp`
+
+# 1.46.2
+### Changes
+* Upgraded to container-engine-lib 0.20.2
+
+# 1.46.1
+### Features
+* Upgrade to container-engine-lib 0.20.0, which provides a bunch of new Kubernetes features
+
+# 1.46.0
+### Breaking Changes
+* The APIContainerLauncher no longer takes in `enclaveDataDirpathOnHostMachine`
+    * Users no longer need to pass in this argument
 
 # 1.45.5
 ### Fixes
