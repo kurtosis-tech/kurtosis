@@ -108,7 +108,8 @@ func runMain() error {
 			return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 		}
 	case "kubernetes":
-		kurtosisBackend, err = kurtosis_backend.GetLocalKubernetesKurtosisBackend()
+		panic("todo todo todo fix this")
+		kurtosisBackend, err = kurtosis_backend.GetLocalKubernetesKurtosisBackend("standard", 10)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 		}

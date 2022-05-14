@@ -72,6 +72,7 @@ func NewAPIContainerArgs(
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	enclaveDataVolumeDirpath string,
+	kurtosisBackendType string,
 ) (*APIContainerArgs, error) {
 	result := &APIContainerArgs{
 		Version:                          version,
@@ -89,6 +90,7 @@ func NewAPIContainerArgs(
 		MetricsUserID:                    metricsUserID,
 		DidUserAcceptSendingMetrics:      didUserAcceptSendingMetrics,
 		EnclaveDataVolumeDirpath:         enclaveDataVolumeDirpath,
+		KurtosisBackendType: 			  kurtosisBackendType,
 	}
 
 	if err := result.validate(); err != nil {
