@@ -85,7 +85,14 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(isP
 		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", enclaveIdStr)
 	}
 
-	labels := provider.getLabelsForEnclaveObject()
+	// Enclave ID and GUID are the same for an enclave network
+	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(
+		provider.enclaveId.GetString(),
+		provider.enclaveId.GetString(),
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave network using ID '%v'")
+	}
 
 	isPartitioningEnabledLabelValue := label_value_consts.NetworkPartitioningDisabledLabelValue
 	if isPartitioningEnabled {

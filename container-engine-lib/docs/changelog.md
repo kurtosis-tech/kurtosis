@@ -6,6 +6,9 @@
 * `KurtosisBackend` now has `UserServiceRegistration` CRUD methods
 * Service containers in Docker no longer get tagged with a service ID (this is now on the service registration object)
 
+### Fixes
+* Add ID & GUID labels to enclave networks & namespaces
+
 ### Breaking Changes
 * Renamed `service.ServiceID` to `user_service_registration.UserServiceID`
     * Users should update their imports/packages accordingly
