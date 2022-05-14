@@ -18,7 +18,6 @@ const (
 	enclaveKurtosisResourceTypeLabelValueStr           			= "enclave"
 	apiContainerKurtosisResourceTypeLabelValueStr      			= "api-container"
 	userServiceKurtosisResourceTypeLabelValueStr       			= "user-service"
-	userServiceServicenKurtosisResourceTypeLabelValueStr		= "user-service-service"
 	networkingSidecarKurtosisResourceTypeLabelValueStr 			= "networking-sidecar"
 	moduleKurtosisResourceTypeLabelValueStr            			= "module"
 	filesArtifactExpanderKurtosisResourceLabelValueStr 			= "files-artifact-expander"
@@ -43,7 +42,6 @@ var ModuleKurtosisResourceTypeLabelValue = kubernetes_label_value.MustCreateNewK
 var EnclaveKurtosisResourceTypeLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(enclaveKurtosisResourceTypeLabelValueStr)
 var APIContainerKurtosisResourceTypeLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(apiContainerKurtosisResourceTypeLabelValueStr)
 var UserServiceKurtosisResourceTypeLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(userServiceKurtosisResourceTypeLabelValueStr)
-var UserServiceServiceKurtosisResourceTypeLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(userServiceServicenKurtosisResourceTypeLabelValueStr)
 var FilesArtifactExpanderKurtosisResourceTypeLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(filesArtifactExpanderKurtosisResourceLabelValueStr)
 var NetworkingSidecarKurtosisResourceTypeLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(networkingSidecarKurtosisResourceTypeLabelValueStr)
 var EnclaveDataVolumeTypeLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(enclaveDataVolumeTypeLabelValueStr)

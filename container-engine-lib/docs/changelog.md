@@ -1,7 +1,7 @@
 # TBD
 
 ### Features
-* Added `ForUserServiceRegistration` for `KubernetesEngineObjectAttributesProvider`
+* Added `ForUserServiceService` for `KubernetesEngineObjectAttributesProvider`
 
 # 0.21.1
 
