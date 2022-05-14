@@ -839,84 +839,15 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 		dockerManager *docker_manager.DockerManager,
 		dockerObjectId string,
 	) error {
-		if err := dockerManager.KillContainer(ctx, dockerObjectId); err != nil {
-			return stacktrace.Propagate(err, "An error occurred killing user service container with ID '%v'", dockerObjectId)
-		}
-		return nil
-	}
-
-	successfulContainerStopGuidStrs, erroredContainerStopGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
-		ctx,
-		servicesToContainerRemoveBeforeDeregistrationByContainerId,
-		backend.dockerManager,
-		extractServiceGUIDFromServiceObj,
-		dockerOperation,
-	)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred killing user service containers matching filters '%+v'", filters)
-	}
-
-	for guid, err := range erroredContainerStopGuidStrs {
-		// Stacktrace doesn't add any new information here so we leave it out
-		erroredServiceGuids[service.ServiceGUID(guid)] = err
-	}
-	for guid := range successfulContainerStopGuidStrs {
-		serviceGuidsToDeregister[service.ServiceGUID(guid)] = true
-	}
-
-	// Finalize deactivation
-	for guid := range serviceGuidsToDeregister {
-		registrationInfo, found := serviceRegistrationInfoForEnclave[guid]
-		if !found {
-			// This should never happen because we should have explicitly selected GUIDs that already have registration info
-			return nil, nil, stacktrace.NewError("Couldn't find any registration info for service '%v'; this is a bug in Kurtosis", guid)
-		}
-		freeIpAddrTrackerForEnclave.ReleaseIpAddr(registrationInfo.ip)
-		registrationInfo.isDeactivated = true
-		successfulServiceGuids[guid] = true
-	}
-
-	return successfulServiceGuids, erroredServiceGuids, nil
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/*
-	userServices, err := backend.getMatchingUserServices(ctx, filters)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
-	}
-
-	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
-	matchingUncastedObjectsByContainerId := map[string]interface{}{}
-	for containerId, object := range userServices {
-		matchingUncastedObjectsByContainerId[containerId] = interface{}(object)
-	}
-
-	var dockerOperation docker_operation_parallelizer.DockerOperation = func(
-		ctx context.Context,
-		dockerManager *docker_manager.DockerManager,
-		dockerObjectId string,
-	) error {
 		if err := dockerManager.RemoveContainer(ctx, dockerObjectId); err != nil {
 			return stacktrace.Propagate(err, "An error occurred removing user service container with ID '%v'", dockerObjectId)
 		}
 		return nil
 	}
 
-	successfulServiceGuidStrs, erroredServiceGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+	successfulContainerRemoveGuidStrs, erroredContainerRemoveGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
-		matchingUncastedObjectsByContainerId,
+		servicesToContainerRemoveBeforeDeregistrationByContainerId,
 		backend.dockerManager,
 		extractServiceGUIDFromServiceObj,
 		dockerOperation,
@@ -925,18 +856,32 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred removing user service containers matching filters '%+v'", filters)
 	}
 
-	successfulServiceGuids := map[service.ServiceGUID]bool{}
-	for serviceGuidStr := range successfulServiceGuidStrs {
-		successfulServiceGuids[service.ServiceGUID(serviceGuidStr)] = true
+	for guid, err := range erroredContainerRemoveGuidStrs {
+		// Stacktrace doesn't add any new information here so we leave it out
+		erroredServiceGuids[service.ServiceGUID(guid)] = err
 	}
-	erroredGuids := map[service.ServiceGUID]error{}
-	for serviceGuidStr, removalErr := range erroredServiceGuidStrs {
-		erroredGuids[service.ServiceGUID(serviceGuidStr)] = removalErr
+	for guid := range successfulContainerRemoveGuidStrs {
+		serviceGuidsToDeregister[service.ServiceGUID(guid)] = true
 	}
 
-	return successfulServiceGuids, erroredGuids, nil
+	// Finalize deregistration
+	for guid := range serviceGuidsToDeregister {
+		registrationInfo, found := serviceRegistrationInfoForEnclave[guid]
+		if !found {
+			// This should never happen because we should have explicitly selected GUIDs that already have registration info
+			return nil, nil, stacktrace.NewError("Couldn't find any registration info for service '%v'; this is a bug in Kurtosis", guid)
+		}
 
-	 */
+		// If the service was previously deactivated, the IP address is already free and we don't need to re-free it (else we might
+		//  accidentally free the same IP that's in use somewhere else)
+		if !registrationInfo.isDeactivated {
+			freeIpAddrTrackerForEnclave.ReleaseIpAddr(registrationInfo.ip)
+		}
+		delete(serviceRegistrationInfoForEnclave, guid)
+		successfulServiceGuids[guid] = true
+	}
+
+	return successfulServiceGuids, erroredServiceGuids, nil
 }
 
 // ====================================================================================================
