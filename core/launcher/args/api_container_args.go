@@ -1,6 +1,7 @@
 package args
 
 import (
+	"github.com/kurtosis-tech/kurtosis-core/launcher/args/kurtosis_backend_type"
 	"reflect"
 	"strings"
 
@@ -33,8 +34,10 @@ type APIContainerArgs struct {
 	// The directory on the API container where the enclave data directory will have been mounted
 	EnclaveDataVolumeDirpath string `json:"enclaveDataVolume"`
 
-	// KurtosisBackend configuration
-	KurtosisBackendType string `json:"backendType"`
+	KurtosisBackendType kurtosis_backend_type.KurtosisBackendType `json:"kurtosisBackendType"`
+
+	// Optional, and should be deserialized differently depending on value of KurtosisBackendType
+	KurtosisClusterConfig *interface{} `json:"kurtosisClusterConfig"`
 }
 
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
@@ -49,7 +52,7 @@ func NewAPIContainerArgs(
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	enclaveDataVolumeDirpath string,
-	kurtosisBackendType string,
+	kurtosisBackendType kurtosis_backend_type.KurtosisBackendType,
 ) (*APIContainerArgs, error) {
 	result := &APIContainerArgs{
 		Version:                          version,
