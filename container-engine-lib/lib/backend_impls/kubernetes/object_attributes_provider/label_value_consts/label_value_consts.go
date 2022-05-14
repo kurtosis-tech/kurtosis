@@ -18,7 +18,7 @@ const (
 	enclaveKurtosisResourceTypeLabelValueStr           			= "enclave"
 	apiContainerKurtosisResourceTypeLabelValueStr      			= "api-container"
 	userServiceKurtosisResourceTypeLabelValueStr       			= "user-service"
-	userServiceRegistrationKurtosisResourceTypeLabelValueStr	= "user-service"
+	userServiceRegistrationKurtosisResourceTypeLabelValueStr	= "user-service-registration"
 	networkingSidecarKurtosisResourceTypeLabelValueStr 			= "networking-sidecar"
 	moduleKurtosisResourceTypeLabelValueStr            			= "module"
 	filesArtifactExpanderKurtosisResourceLabelValueStr 			= "files-artifact-expander"

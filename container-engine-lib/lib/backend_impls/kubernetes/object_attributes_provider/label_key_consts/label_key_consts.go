@@ -18,7 +18,7 @@ const (
 
 	containerTypeLabelKeyStr				= labelKeyPrefixStr + "container-type"
 	volumeTypeLabelKeyStr					= labelKeyPrefixStr + "volume-type"
-	userServiceRegistrationTypeLabelKeyStr	= labelKeyPrefixStr + "user-registration-type"
+	userServiceRegistrationTypeLabelKeyStr	= labelKeyPrefixStr + "user-service-registration-type"
 
 	// A label to identify a Kurtosis resource (e.g. network, container, etc.) by its id
 	idLabelKeyStr = labelKeyPrefixStr + "id"
