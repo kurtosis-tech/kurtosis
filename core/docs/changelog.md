@@ -2,6 +2,12 @@
 ### Fixes
 * Updated to container-engine-lib 0.20.1 which fixes a bug with getting DockerKurtosisBackend in the API container
 
+### Breaking Changes
+* API container now requires a "KurtosisBackendType" to be defined as an input in order to launch.
+
+### Changes
+* API container can choose the correct KurtosisBackend depending on input arguments (docker, kubernetes cluster)
+
 # 1.47.0
 ### Changes
 * `RegisterService` endpoint now returns a service registration GUID
