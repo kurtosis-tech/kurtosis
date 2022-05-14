@@ -952,41 +952,34 @@ func (backend *DockerKurtosisBackend) getSingleUserService(
 	enclaveId enclave.EnclaveID,
 	userServiceGuid service.ServiceGUID,
 ) (
-	containerId string,
-	userService *service.Service,
-	error error,
+	*service.Service,
+	*userServiceDockerResources,
+	error,
 ) {
-
 	filters := &service.ServiceFilters{
-		EnclaveIDs: map[enclave.EnclaveID]bool{
-			enclaveId: true,
-		},
 		GUIDs: map[service.ServiceGUID]bool{
 			userServiceGuid: true,
 		},
 	}
-
-	userServices, err := backend.getMatchingUserServices(ctx, filters)
+	userServices, dockerResources, err := backend.getMatchingServiceObjsAndDockerResources(ctx, enclaveId, filters)
 	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred getting user services using filters '%v'", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services using filters '%v'", filters)
 	}
 	numOfUserServices := len(userServices)
 	if numOfUserServices == 0 {
-		return "", nil, stacktrace.NewError("No user service with GUID '%v' in enclave with ID '%v' was found", userServiceGuid, enclaveId)
+		return nil, nil, stacktrace.NewError("No user service with GUID '%v' in enclave with ID '%v' was found", userServiceGuid, enclaveId)
 	}
 	if numOfUserServices > 1 {
-		return "", nil, stacktrace.NewError("Expected to find only one user service with GUID '%v' in enclave with ID '%v', but '%v' was found", userServiceGuid, enclaveId, numOfUserServices)
+		return nil, nil, stacktrace.NewError("Expected to find only one user service with GUID '%v' in enclave with ID '%v', but '%v' was found", userServiceGuid, enclaveId, numOfUserServices)
 	}
 
-	var resultUserServiceContainerId string
-	var resultUserService *service.Service
+	var resultService *service.Service
+	for _, resultService = range userServices {}
 
-	for containerId, userService := range userServices {
-		resultUserServiceContainerId = containerId
-		resultUserService = userService
-	}
+	var resultDockerResources *userServiceDockerResources
+	for _, resultDockerResources = range dockerResources {}
 
-	return resultUserServiceContainerId, resultUserService, nil
+	return resultService, resultDockerResources, nil
 }
 
 /*
