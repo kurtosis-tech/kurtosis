@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
+	"github.com/kurtosis-tech/kurtosis-core/launcher/args/kurtosis_backend_type"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -44,6 +45,8 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	isPartitioningEnabled bool,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
+	kurtosisBackendType kurtosis_backend_type.KurtosisBackendType,
+	kurtosisClusterConfig *interface{},
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -58,6 +61,8 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		isPartitioningEnabled,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
+		kurtosisBackendType,
+		kurtosisClusterConfig,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", DefaultVersion)
@@ -75,6 +80,8 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	isPartitioningEnabled bool,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
+	kurtosisBackendType kurtosis_backend_type.KurtosisBackendType,
+	kurtosisClusterConfig *interface{},
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -89,6 +96,8 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 		enclaveDataVolumeDirpath,
+		kurtosisBackendType,
+		kurtosisClusterConfig,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the API container args")
