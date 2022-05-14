@@ -3,8 +3,8 @@ package docker
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
+	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
@@ -15,11 +15,9 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"time"
@@ -175,7 +173,8 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	filesArtifactMountDirpaths map[service.FilesArtifactID]string,
+	// Volume -> mountpoint on container
+	filesArtifactVolumeMountDirpaths map[string]string,
 ) (
 	*service.Service,
 	error,
@@ -184,14 +183,17 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	backend.serviceRegistrationMutex.RLock()
 	defer backend.serviceRegistrationMutex.RUnlock()
 
-
-	serviceObj, _, err := backend.getSingleServiceObjWithResourcesWithoutMutex(ctx, enclaveId, guid)
+	serviceBeforeStartingContainer, _, err := backend.getSingleServiceObjWithResourcesWithoutMutex(ctx, enclaveId, guid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the service with GUID '%v' that should exist when starting the service", guid)
 	}
-	currentServiceStatus := serviceObj.GetStatus()
+	serviceId := serviceBeforeStartingContainer.GetID()
+	serviceGuid := serviceBeforeStartingContainer.GetGUID()
+	privateIp := serviceBeforeStartingContainer.GetPrivateIP()
+
+	currentServiceStatus := serviceBeforeStartingContainer.GetStatus()
 	if currentServiceStatus != service.UserServiceStatus_Registered {
-		return nil, errors.As(stacktrace.NewError(
+		return nil, stacktrace.NewError(
 			"Cannot start service '%v'; expected it to be in status '%v' but was '%v'",
 			guid,
 			service.UserServiceStatus_Registered.String(),
@@ -199,43 +201,15 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		)
 	}
 
-
-
-
-	// Ensure no other services are using the registration
-	preexistingRegistrationConsumersFilters := &service.ServiceFilters{
-		RegistrationGUIDs:      map[user_service_registration.UserServiceRegistrationGUID]bool{
-			registrationGuid: true,
-		},
-		EnclaveIDs: map[enclave.EnclaveID]bool{
-			enclaveId: true,
-		},
-	}
-	preexistingRegistrationConsumers, err := backend.GetUserServices(ctx, preexistingRegistrationConsumersFilters)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting preexisting services consuming registration '%v' in enclave '%v'", registrationGuid, enclaveId)
-	}
-	if len(preexistingRegistrationConsumers) > 0 {
-		return nil, stacktrace.NewError("Cannot start service using service registration '%v' because existing service(s) in enclave '%v' are already using it", registrationGuid, enclaveId)
-	}
-
 	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
 
-	// TODO Switch to UUIDs, here and everywhere!! There's a small, but possible, chance of race condition here!
-	guidStr := fmt.Sprintf(
-		"%v-%v-%v",
-		enclaveId,
-		serviceId,
-		time.Now().Unix(),
-	)
-	guid := service.ServiceGUID(guidStr)
 	containerAttrs, err := enclaveObjAttrsProvider.ForUserServiceContainer(
-		registrationGuid,
-		guid,
-		serviceIpAddress,
+		serviceId,
+		serviceGuid,
+		privateIp,
 		privatePorts,
 	)
 	if err != nil {
@@ -258,10 +232,13 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveId)
 	}
 
-	// TODO Replace with the (simpler) way that's currently done when creating API container/engine container
-	usedPorts, _, err := getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting used port from private port spec '%+v'", privatePorts)
+	dockerUsedPorts := map[nat.Port]docker_manager.PortPublishSpec{}
+	for portId, portSpec := range privatePorts {
+		dockerPort, err := transformPortSpecToDockerPort(portSpec)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred converting private port spec '%v' to a Docker port", portId)
+		}
+		dockerUsedPorts[dockerPort] = docker_manager.NewAutomaticPublishingSpec()
 	}
 
 	volumeMounts := map[string]string{
@@ -273,9 +250,9 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		containerName.GetString(),
 		enclaveNetwork.GetId(),
 	).WithStaticIP(
-		serviceIpAddress,
+		serviceBeforeStartingContainer.GetPrivateIP(),
 	).WithUsedPorts(
-		usedPorts,
+		dockerUsedPorts,
 	).WithEnvironmentVariables(
 		envVars,
 	).WithVolumeMounts(
@@ -283,7 +260,7 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	).WithLabels(
 		labelStrs,
 	).WithAlias(
-		string(serviceId),
+		string(serviceBeforeStartingContainer.GetID()),
 	)
 	if entrypointArgs != nil {
 		createAndStartArgsBuilder.WithEntrypointArgs(entrypointArgs)
@@ -291,8 +268,8 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	if cmdArgs != nil {
 		createAndStartArgsBuilder.WithCmdArgs(cmdArgs)
 	}
-	if filesArtifactMountDirpaths != nil {
-		createAndStartArgsBuilder.WithVolumeMounts(filesArtifactMountDirpaths)
+	if filesArtifactVolumeMountDirpaths != nil {
+		createAndStartArgsBuilder.WithVolumeMounts(filesArtifactVolumeMountDirpaths)
 	}
 	createAndStartArgs := createAndStartArgsBuilder.Build()
 
@@ -322,13 +299,25 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		}
 	}()
 
-	userService, err := getUserServiceObjectFromContainerInfo(containerId, labelStrs, types.ContainerStatus_Running, hostMachinePortBindings)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user service object from container info, using container ID '%v' and labels '%+v'", containerId, labelStrs)
-	}
+	_, maybePublicIp, maybePublicPortSpecs, err := getIpAndPortInfoFromContainer(
+		containerName.GetString(),
+		labelStrs,
+		hostMachinePortBindings,
+	)
+
+	result := service.NewService(
+		serviceId,
+		serviceGuid,
+		service.UserServiceStatus_Running,
+		enclaveId,
+		privateIp,
+		privatePorts,
+		maybePublicIp,
+		maybePublicPortSpecs,
+	)
 
 	shouldKillContainer = false
-	return userService, nil
+	return result, nil
 }
 
 func (backend *DockerKurtosisBackend) GetUserServices(
@@ -343,16 +332,11 @@ func (backend *DockerKurtosisBackend) GetUserServices(
 	backend.serviceRegistrationMutex.RLock()
 	defer backend.serviceRegistrationMutex.RUnlock()
 
-	userServices, err := backend.getMatchingUserServices(ctx, filters)
+	userServices, _, err := backend.getMatchingUserServiceObjsAndDockerResourcesWithoutMutex(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
-
-	successfulUserServices := map[service.ServiceGUID]*service.Service{}
-	for _, userService := range userServices {
-		successfulUserServices[userService.GetGUID()] = userService
-	}
-	return successfulUserServices, nil
+	return userServices, nil
 }
 
 func (backend *DockerKurtosisBackend) GetUserServiceLogs(
@@ -728,7 +712,7 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 // ====================================================================================================
 // Gets the service objects & Docker resources for services matching the given filters
 // !!!!!!!!!! It's VERY important that the service registration mutex is locked before this is called !!!!!!!!
-func (backend *DockerKurtosisBackend) getMatchingServiceObjsAndDockerResourcesWithoutMutex(
+func (backend *DockerKurtosisBackend) getMatchingUserServiceObjsAndDockerResourcesWithoutMutex(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
@@ -864,7 +848,11 @@ func getServiceObjectsFromRegistrationsAndDockerResources(
 			}
 			status = serviceStatus
 
-			parsedPrivatePorts, maybeParsedPublicIp, maybeParsedPublicPorts, err := getIpAndPortInfoFromContainer(container)
+			parsedPrivatePorts, maybeParsedPublicIp, maybeParsedPublicPorts, err := getIpAndPortInfoFromContainer(
+				container.GetName(),
+				container.GetLabels(),
+				container.GetHostPortBindings(),
+			)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred getting IP & port info from container '%v'", container.GetName())
 			}
@@ -890,16 +878,16 @@ func getServiceObjectsFromRegistrationsAndDockerResources(
 
 // TODO Extract this to DockerKurtosisBackend and use it everywhere, for Engines, Modules, and API containers?
 func getIpAndPortInfoFromContainer(
-	container *types.Container,
+	containerName string,
+	labels map[string]string,
+	hostMachinePortBindings map[nat.Port]*nat.PortBinding,
 ) (
 	resultPrivatePortSpecs map[string]*port_spec.PortSpec,
 	resultPublicIp net.IP,
 	resultPublicPortSpecs map[string]*port_spec.PortSpec,
 	resultErr error,
 ){
-	containerName := container.GetName()
-	containerLabels := container.GetLabels()
-	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsLabelKey.GetString()]
+	serializedPortSpecs, found := labels[label_key_consts.PortSpecsLabelKey.GetString()]
 	if !found {
 		return nil, nil, nil, stacktrace.NewError(
 			"Expected to find port specs label '%v' on container '%v' but none was found",
@@ -915,7 +903,6 @@ func getIpAndPortInfoFromContainer(
 		}
 	}
 
-	hostMachinePortBindings := container.GetHostPortBindings()
 	var containerPublicIp net.IP
 	var publicPortSpecs map[string]*port_spec.PortSpec
 	for portId, privatePortSpec := range privatePortSpecs {
@@ -927,7 +914,7 @@ func getIpAndPortInfoFromContainer(
 				portId,
 				privatePortSpec.GetNumber(),
 				privatePortSpec.GetProtocol().String(),
-				container.GetName(),
+				containerName,
 			)
 		}
 
@@ -939,7 +926,7 @@ func getIpAndPortInfoFromContainer(
 					"Private port '%v' on container '%v' yielded a public IP '%v', which doesn't agree with " +
 						"previously-seen public IPs",
 					portId,
-					container.GetName(),
+					containerName,
 					portPublicIp.String(),
 					containerPublicIp.String(),
 				)
@@ -999,7 +986,7 @@ func (backend *DockerKurtosisBackend) getSingleServiceObjWithResourcesWithoutMut
 			userServiceGuid: true,
 		},
 	}
-	userServices, dockerResources, err := backend.getMatchingServiceObjsAndDockerResourcesWithoutMutex(ctx, enclaveId, filters)
+	userServices, dockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesWithoutMutex(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services using filters '%v'", filters)
 	}
@@ -1294,6 +1281,7 @@ func condensePublicNetworkInfoFromHostMachineBindings(
 }
  */
 
+/*
 func doesHttpResponseMatchExpected(
 	expectedResponseBody string,
 	responseBody io.ReadCloser,
@@ -1317,6 +1305,7 @@ func doesHttpResponseMatchExpected(
 	}
 	return true
 }
+ */
 
 func extractServiceGUIDFromServiceObj(uncastedObj interface{}) (string, error) {
 	castedObj, ok := uncastedObj.(*service.Service)
