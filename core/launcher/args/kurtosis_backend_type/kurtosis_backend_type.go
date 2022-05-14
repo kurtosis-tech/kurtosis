@@ -5,7 +5,7 @@
 
 package kurtosis_backend_type
 
-//go:generate go run github.com/dmarkham/enumer -type=KurtosisBackendType -transform=lower
+//go:generate go run github.com/dmarkham/enumer -type=KurtosisBackendType -transform=lower -json
 type KurtosisBackendType uint
 const (
 	// To add new values, just add a new version to the end WITHOUT WHITESPACE

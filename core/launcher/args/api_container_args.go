@@ -50,7 +50,7 @@ type APIContainerArgs struct {
 	// The directory on the API container where the enclave data directory will have been mounted
 	EnclaveDataVolumeDirpath string `json:"enclaveDataVolume"`
 
-	// KurtosisBackend Configuration
+	// KurtosisBackend configuration
 	KurtosisBackendType string `json:"backendType"`
 }
 
