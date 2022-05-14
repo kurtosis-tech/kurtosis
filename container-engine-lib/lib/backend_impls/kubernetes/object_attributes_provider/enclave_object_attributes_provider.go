@@ -23,7 +23,6 @@ import (
 const (
 	artifactExpansionObjectTimestampFormat = "2006-01-02T15.04.05.000"
 	userServiceSuffix = "user-service"
-
 )
 
 type KubernetesEnclaveObjectAttributesProvider interface {
@@ -212,7 +211,6 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getNameForEnclave
 	}
 	return name, nil
 }
-
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObject() (map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
 	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.enclaveId)

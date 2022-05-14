@@ -16,8 +16,8 @@ const (
 	resourceTypeLabelKeyStr 	= labelKeyPrefixStr + "resource-type"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	containerTypeLabelKeyStr			= labelKeyPrefixStr + "container-type"
-	volumeTypeLabelKeyStr				= labelKeyPrefixStr + "volume-type"
+	containerTypeLabelKeyStr	= labelKeyPrefixStr + "container-type"
+	volumeTypeLabelKeyStr		= labelKeyPrefixStr + "volume-type"
 
 	// A label to identify a Kurtosis resource (e.g. network, container, etc.) by its id
 	idLabelKeyStr = labelKeyPrefixStr + "id"
