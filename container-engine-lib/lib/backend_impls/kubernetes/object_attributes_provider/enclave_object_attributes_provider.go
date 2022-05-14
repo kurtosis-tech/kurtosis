@@ -53,9 +53,12 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespa
 		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", provider.enclaveId)
 	}
 
-	labels, err := provider.getLabelsForEnclaveObject()
+	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(
+		provider.enclaveId,
+		provider.enclaveId,
+	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get labels for enclave object '%v'", provider.enclaveId)
+		return nil, stacktrace.Propagate(err, "Failed to get labels for enclave namespace using ID '%v'", provider.enclaveId)
 	}
 
 	isPartitioningEnabledLabelValue := label_value_consts.NetworkPartitioningDisabledLabelValue
