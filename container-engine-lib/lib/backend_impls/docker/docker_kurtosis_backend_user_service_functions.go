@@ -583,14 +583,18 @@ func (backend *DockerKurtosisBackend) GetConnectionWithUserService(
 	backend.serviceRegistrationMutex.RLock()
 	defer backend.serviceRegistrationMutex.RUnlock()
 
-	containerId, _, err := backend.getSingleServiceObjWithResourcesWithoutMutex(ctx, enclaveId, serviceGUID)
+	_, serviceDockerResources, err := backend.getSingleServiceObjWithResourcesWithoutMutex(ctx, enclaveId, serviceGUID)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting container ID and user service object for enclave ID '%v' and user service GUID '%v'", enclaveId, serviceGUID)
+		return nil, stacktrace.Propagate(err, "An error occurred getting service object and Docker resources for service '%v' in enclave '%v'", serviceGUID, enclaveId)
+	}
+	container := serviceDockerResources.container
+	if container == nil {
+		return nil, stacktrace.NewError("Cannot get a connection to user service '%v' in enclave '%v' because no container exists for the service", serviceGUID, enclaveId)
 	}
 
-	hijackedResponse, err := backend.dockerManager.CreateContainerExec(ctx, containerId, commandToRunWhenCreatingUserServiceShell)
+	hijackedResponse, err := backend.dockerManager.CreateContainerExec(ctx, container.GetId(), commandToRunWhenCreatingUserServiceShell)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred executing container exec create on user service with GUID '%v'", serviceGUID)
+		return nil, stacktrace.Propagate(err, "An error occurred getting a shell on user service with GUID '%v' in enclave '%v'", serviceGUID, enclaveId)
 	}
 
 	newConnection := hijackedResponse.Conn
@@ -612,14 +616,25 @@ func (backend *DockerKurtosisBackend) CopyFromUserService(
 	backend.serviceRegistrationMutex.RLock()
 	defer backend.serviceRegistrationMutex.RUnlock()
 
-	userServiceContainerId, _, err := backend.getSingleServiceObjWithResourcesWithoutMutex(ctx, enclaveId, serviceGuid)
+	_, serviceDockerResources, err := backend.getSingleServiceObjWithResourcesWithoutMutex(ctx, enclaveId, serviceGuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting user service with GUID '%v' in enclave with ID '%v'", serviceGuid, enclaveId)
 	}
+	container := serviceDockerResources.container
+	if container == nil {
+		return nil, stacktrace.NewError("Cannot copy files from user service '%v' in enclave '%v' because it doesn't have a container", serviceGuid, enclaveId)
+	}
 
-	tarStreamReadCloser, err := backend.dockerManager.CopyFromContainer(ctx, userServiceContainerId, srcPath)
+	tarStreamReadCloser, err := backend.dockerManager.CopyFromContainer(ctx, container.GetId(), srcPath)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred copying content from sourcepath '%v' in user service with GUID '%v' and container ID '%v' ", srcPath, serviceGuid, userServiceContainerId)
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred copying content from sourcepath '%v' in container '%v' for user service '%v' in enclave '%v'",
+			srcPath,
+			container.GetName(),
+			serviceGuid,
+			enclaveId,
+		)
 	}
 
 	return tarStreamReadCloser, nil
