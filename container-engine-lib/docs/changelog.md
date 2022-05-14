@@ -1,7 +1,7 @@
 # TBD
 
 ### Features
-* Added `ObjectAttributesProvider` for `UserServiceRegistration`.
+* Added `ForUserServiceRegistration` for `KubernetesEngineObjectAttributesProvider`
 
 ### Changes
 * Updated Kurtosis Kubernetes `label_key_consts` and tests.
