@@ -32,6 +32,8 @@ const (
 	// The location where the enclave data volume will be mounted
 	//  on the user service container
 	enclaveDataVolumeDirpathOnServiceContainer = "/kurtosis-data"
+
+	shouldGetStoppedContainersWhenGettingServiceInfo = true
 )
 
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
@@ -41,8 +43,18 @@ var commandToRunWhenCreatingUserServiceShell = []string{
 	"if command -v 'bash' > /dev/null; then echo \"Found bash on container; creating bash shell...\"; bash; else echo \"No bash found on container; dropping down to sh shell...\"; sh; fi",
 }
 
+type userServiceDockerResources struct {
+	// Nil if the service is purely registered
+	container *types.Container
+}
+
+// TODO enforce by unit test
+var containerStatusToUserStatusTranslator map[types.ContainerStatus]service.UserServiceStatus{
+
+}
+
 func (backend *DockerKurtosisBackend) RegisterService(
-	ctx context.Context,
+	_ context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceId service.ServiceID,
 ) (*service.Service, error) {
@@ -80,10 +92,9 @@ func (backend *DockerKurtosisBackend) RegisterService(
 		}
 	}()
 
-	// TODO Switch this, and all other GUIDs, to a UUID!
+	// TODO Switch this, and all other GUIDs, to a UUID??
 	guid := service.ServiceGUID(fmt.Sprintf(
-		"%v-%v-%v",
-		enclaveId,
+		"%v-%v",
 		serviceId,
 		time.Now().Unix(),
 	))
@@ -124,9 +135,9 @@ func (backend *DockerKurtosisBackend) RegisterService(
 
 func (backend *DockerKurtosisBackend) CreateUserService(
 	ctx context.Context,
-	registrationGuid user_service_registration.UserServiceRegistrationGUID,
-	containerImageName string,
 	enclaveId enclave.EnclaveID,
+	guid service.ServiceGUID,
+	containerImageName string,
 	privatePorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
 	cmdArgs []string,
@@ -287,6 +298,7 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 
 func (backend *DockerKurtosisBackend) GetUserServices(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 ) (
 	map[service.ServiceGUID]*service.Service,
@@ -645,6 +657,64 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
+func (backend *DockerKurtosisBackend) getMatchingServiceObjsAndDockerResources(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *service.ServiceFilters,
+) (
+	map[service.ServiceGUID]*service.Service,
+	map[service.ServiceGUID]*userServiceDockerResources,
+	error,
+) {
+	allEnclaveServices, found := backend.serviceRegistrations[enclaveId]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"Received a request to find services in enclave '%v', but this enclave isn't listed as being tracked " +
+				"by the backend; this likely means that the request is originating from somewhere it shouldn't (i.e. " +
+				"outside the API container)",
+			enclaveId,
+		)
+	}
+
+	// Filter on GUID & ID
+	matchingServiceRegistrations := map[service.ServiceGUID]*registeredServiceInfo{}
+	for serviceGuid, registrationInfo := range allEnclaveServices {
+		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
+			if _, found := filters.GUIDs[serviceGuid]; !found {
+				continue
+			}
+			matchingServiceRegistrations[serviceGuid] = registrationInfo
+		}
+
+		if filters.IDs != nil && len(filters.IDs) > 0 {
+			if _, found := filters.IDs[registrationInfo.id]; !found {
+				continue
+			}
+		}
+	}
+
+	// For the matching values, get the containers to check the status
+	userServiceContainerSearchLabels := map[string]string{
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
+		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.UserServiceContainerTypeLabelValue.GetString(),
+	}
+	userServiceContainers, err := backend.dockerManager.GetContainersByLabels(ctx, userServiceContainerSearchLabels, shouldGetStoppedContainersWhenGettingServiceInfo)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user service containers in enclave '%v' by labels: %+v", enclaveId, userServiceContainerSearchLabels)
+	}
+	for _, container := range userServiceContainers {
+		container.GetStatus()
+
+	}
+
+
+
+}
+
+
+
+
 func makeHttpRequest(httpMethod string, url string, body string) (*http.Response, error) {
 	var (
 		resp *http.Response

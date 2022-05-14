@@ -17,6 +17,7 @@
     * Users should use `DestroyUserServices`
 * `CreateUserService` has been renamed to `StartUserService`
     * TODO
+* TODO scoping down the service requests to be per-enclave
 
 # 0.21.1
 ### Fixes
