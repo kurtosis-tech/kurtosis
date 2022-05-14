@@ -91,7 +91,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(isP
 		provider.enclaveId.GetString(),
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave network using ID '%v'")
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave network using ID '%v'", provider.enclaveId)
 	}
 
 	isPartitioningEnabledLabelValue := label_value_consts.NetworkPartitioningDisabledLabelValue
