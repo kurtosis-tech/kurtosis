@@ -18,6 +18,8 @@ type Service struct {
 	enclaveId        enclave.EnclaveID
 
 	privateIp        net.IP
+
+	// Will be nil if the service is in UserServiceStatus_Registered state
 	privatePorts     map[string]*port_spec.PortSpec // Keyed by user-provided port ID
 
 	// These will only be non-nil if all of the following are true:

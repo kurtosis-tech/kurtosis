@@ -15,6 +15,8 @@
     * Users should use `RegisterUserService`
 * `DestroyUserServiceRegistration` has been removed
     * Users should use `DestroyUserServices`
+* `CreateUserService` has been renamed to `StartUserService`
+    * TODO
 
 # 0.21.1
 ### Fixes

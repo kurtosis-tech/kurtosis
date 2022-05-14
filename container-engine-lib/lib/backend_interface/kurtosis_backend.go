@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
 	"io"
 	"net"
@@ -217,51 +216,22 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the modules
 	)
 
-	// CreateUserServiceRegistration registers the intent to start a service at a future point in time, which:
-	// - In Docker means allocating a static IP address
-	// - In Kubernetes means creating a Kubernetes service with an IP address
-	// A service registration is required to start a service
-	CreateUserServiceRegistration(
-		ctx context.Context,
-		enclaveId enclave.EnclaveID,
-		serviceId service.ServiceID,
-	) (
-		*user_service_registration.UserServiceRegistration,
-		error,
-	)
-
-	// GetUserServiceRegistrations gets the existing user service registrations
-	GetUserServiceRegistrations(
-		ctx context.Context,
-		filters *user_service_registration.UserServiceRegistrationFilters,
-	) (
-		map[user_service_registration.UserServiceRegistrationGUID]*user_service_registration.UserServiceRegistration,
-		error,
-	)
-
-	// DestroyUserServiceRegistration removes a previously-created user service registration object
-	// If a service exists that is consuming the service, it is the user's responsibility to deal with it
-	DestroyUserServiceRegistrations(
-		ctx context.Context,
-		filters *user_service_registration.UserServiceRegistrationFilters,
-	) (
-		resultSuccessfulServiceIds map[user_service_registration.UserServiceRegistrationGUID]bool,
-		resultErroredServiceIds map[user_service_registration.UserServiceRegistrationGUID]error,
-		resultErr error,
-	)
-
+	// Registers a user service, allocating it an IP and ServiceGUID
 	RegisterUserService(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
 		serviceId service.ServiceID,
+	) (
+		*service.Service,
+		error,
 	)
 
-	// CreateUserService consumes a service registration to create a user service with the given parameters
-	CreateUserService(
+	// StartUserService consumes a service registration to create a user service with the given parameters
+	StartUserService(
 		ctx context.Context,
-		registrationGuid user_service_registration.UserServiceRegistrationGUID,
-		containerImageName string,
 		enclaveId enclave.EnclaveID,
+		guid service.ServiceGUID,
+		containerImageName string,
 		privatePorts map[string]*port_spec.PortSpec,
 		entrypointArgs []string,
 		cmdArgs []string,
@@ -360,7 +330,8 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-	// Stop user services using the given filters,
+	// StopUserServices stops user services matching the given filters
+	// A stopped service cannot be started again as of 2022-05-14
 	StopUserServices(
 		ctx context.Context,
 		filters *service.ServiceFilters,
@@ -370,7 +341,7 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
-	// Destroy user services using the given filters,
+	// DestroyUserServices destroys user services matching the given filters, removing all resources associated with it
 	DestroyUserServices(
 		ctx context.Context,
 		filters *service.ServiceFilters,
@@ -434,7 +405,7 @@ type KurtosisBackend interface {
 	CreateFilesArtifactExpansionVolume(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		registrationGuid user_service_registration.UserServiceRegistrationGUID,
+		serviceGuid service.ServiceGUID,
 		filesArtifactId service.FilesArtifactID,
 	) (
 		*files_artifact_expansion_volume.FilesArtifactExpansionVolume,

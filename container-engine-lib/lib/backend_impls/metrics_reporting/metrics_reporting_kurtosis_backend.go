@@ -342,7 +342,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 	newUserService *service.Service,
 	resultErr error,
 ) {
-	userService, err := backend.underlying.CreateUserService(
+	userService, err := backend.underlying.StartUserService(
 		ctx,
 		registrationGuid,
 		containerImageName,
