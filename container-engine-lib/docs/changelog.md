@@ -11,7 +11,10 @@
     * Users should update their code
 * `UserServiceRegistration` objects have been removed
     * Users should migrate to using the new migration flow
-* 
+* `CreateUserServiceRegistration` has been replaced with `RegisterUserService`
+    * Users should use `RegisterUserService`
+* `DestroyUserServiceRegistration` has been removed
+    * Users should use `DestroyUserServices`
 
 # 0.21.1
 ### Fixes

@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
@@ -97,7 +98,7 @@ type DockerKurtosisBackend struct {
 
 	// Index of enclave_id -> service_id -> registration, for responding to "GetUserServiceRegistrations" calls
 	// This will have exactly as many enclaves as were provided via enclaveFreeIpProviders
-	serviceRegistrationsIndex map[enclave.EnclaveID]map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration
+	serviceRegistrationsIndex map[enclave.EnclaveID]map[service.ServiceID]*user_service_registration.UserServiceRegistration
 
 	// Control concurrent access to serviceRegistrations
 	serviceRegistrationMutex *sync.Mutex
@@ -108,9 +109,9 @@ func NewDockerKurtosisBackend(
 	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker,
 ) *DockerKurtosisBackend {
 	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator(dockerManager)
-	serviceRegistrationsIndex := map[enclave.EnclaveID]map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration{}
+	serviceRegistrationsIndex := map[enclave.EnclaveID]map[service.ServiceID]*user_service_registration.UserServiceRegistration{}
 	for enclaveId := range enclaveFreeIpProviders {
-		serviceRegistrationsIndex[enclaveId] = map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration{}
+		serviceRegistrationsIndex[enclaveId] = map[service.ServiceID]*user_service_registration.UserServiceRegistration{}
 	}
 	return &DockerKurtosisBackend{
 		dockerManager:             dockerManager,

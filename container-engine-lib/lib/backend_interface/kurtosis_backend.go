@@ -224,7 +224,7 @@ type KurtosisBackend interface {
 	CreateUserServiceRegistration(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		serviceId user_service_registration.ServiceID,
+		serviceId service.ServiceID,
 	) (
 		*user_service_registration.UserServiceRegistration,
 		error,
@@ -253,7 +253,7 @@ type KurtosisBackend interface {
 	RegisterUserService(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		serviceId user_service_registration.ServiceID,
+		serviceId service.ServiceID,
 	)
 
 	// CreateUserService consumes a service registration to create a user service with the given parameters

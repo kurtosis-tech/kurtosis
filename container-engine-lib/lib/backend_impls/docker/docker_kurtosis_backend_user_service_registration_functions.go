@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/stacktrace"
 	"time"
@@ -12,7 +13,7 @@ import (
 func (backend *DockerKurtosisBackend) CreateUserServiceRegistration(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	serviceId user_service_registration.ServiceID,
+	serviceId service.ServiceID,
 ) (*user_service_registration.UserServiceRegistration, error) {
 	backend.serviceRegistrationMutex.Lock()
 	defer backend.serviceRegistrationMutex.Unlock()

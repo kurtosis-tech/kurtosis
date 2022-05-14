@@ -58,4 +58,3 @@ func (service *Service) GetMaybePublicIP() net.IP {
 func (service *Service) GetMaybePublicPorts() map[string]*port_spec.PortSpec {
 	return service.maybePublicPorts
 }
-

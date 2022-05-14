@@ -112,7 +112,7 @@ func (backend *KubernetesKurtosisBackend) DestroyModules(ctx context.Context, fi
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateUserServiceRegistration(ctx context.Context, enclaveId enclave.EnclaveID, serviceId user_service_registration.ServiceID) (*user_service_registration.UserServiceRegistration, error) {
+func (backend *KubernetesKurtosisBackend) CreateUserServiceRegistration(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*user_service_registration.UserServiceRegistration, error) {
 	//TODO implement me
 	panic("implement me")
 }

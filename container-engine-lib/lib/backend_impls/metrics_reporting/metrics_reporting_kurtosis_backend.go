@@ -299,7 +299,7 @@ func (backend *MetricsReportingKurtosisBackend) DestroyModules(
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) CreateUserServiceRegistration(ctx context.Context, enclaveId enclave.EnclaveID, serviceId user_service_registration.ServiceID) (*user_service_registration.UserServiceRegistration, error) {
+func (backend *MetricsReportingKurtosisBackend) CreateUserServiceRegistration(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*user_service_registration.UserServiceRegistration, error) {
 	serviceIdStr := string(serviceId)
 	if len(strings.TrimSpace(serviceIdStr)) == 0 {
 		return nil, stacktrace.NewError("Service ID cannot be whitespace or empty")
