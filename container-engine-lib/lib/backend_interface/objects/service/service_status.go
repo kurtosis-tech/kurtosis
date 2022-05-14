@@ -3,9 +3,18 @@ package service
 //go:generate go run github.com/dmarkham/enumer -trimprefix=UserServiceStatus_ -transform=snake-upper -type=UserServiceStatus
 type UserServiceStatus int
 const (
-	UserServiceStatus_Registered UserServiceStatus = iota
-	UserServiceStatus_Running
-	UserServiceStatus_Paused	// Indicates that the service has been paused, and all processes frozen
-	UserServiceStatus_Stopped	// Indicates that the Service has been stopped and can no longer be used
+
+	/*
+	Kurtosis service state diagram:
+
+	REGISTERED ------------------------> DEACTIVATED
+	             \                  /
+	              '--> ACTIVATED --'
+
+	 */
+
+	UserServiceStatus_Registered UserServiceStatus = iota	// A service does not have a container running
+	UserServiceStatus_Activated			// Indicates that a service has a container started
+	UserServiceStatus_Deactivated 		// Indicates that the Service can no longer be used (it may or may not have a container)
 )
 

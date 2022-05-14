@@ -225,8 +225,8 @@ type KurtosisBackend interface {
 		error,
 	)
 
-	// StartUserService consumes a service registration to create a user service with the given parameters
-	StartUserService(
+	// ActivateUserService consumes a service registration to create a user container with the given parameters
+	ActivateUserService(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
 		guid service.ServiceGUID,
@@ -331,9 +331,9 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-	// StopUserServices stops user services matching the given filters
-	// A stopped service cannot be started again as of 2022-05-14
-	StopUserServices(
+	// DeactivateUserServices stops the user containers for the services matching the given filters
+	// A deactivated service cannot be activated again as of 2022-05-14
+	DeactivateUserServices(
 		ctx context.Context,
 		filters *service.ServiceFilters,
 	) (

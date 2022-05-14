@@ -79,6 +79,9 @@ type registeredServiceInfo struct {
 	id service.ServiceID
 	guid service.ServiceGUID
 	ip net.IP
+
+	// Will get flipped to true if the service gets deactivated (indicating the service should be unusable)
+	isDeactivated bool
 }
 
 type DockerKurtosisBackend struct {

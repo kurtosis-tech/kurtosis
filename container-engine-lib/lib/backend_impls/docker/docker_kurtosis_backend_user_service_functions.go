@@ -34,21 +34,19 @@ const (
 /*
 DOCKER SERVICE LIFECYCLE EXPLANATION:
 
-Kurtosis services are uniquely identified by a ServiceGUID and can have four states:
-1. Registered = a GUID and an IP address in the enclave has been allocated for the service, but no user container is running
-1. Running = user's container is running
-1. Paused = user's container is paused
-1. Stopped = user's container is stopped *and will not run again*
-1. Destroyed = the service no longer exists
+Kurtosis services are uniquely identified by a ServiceGUID and can have five states:
+1. REGISTERED = a GUID and an IP address in the enclave has been allocated for the service, but no user container is running
+1. ACTIVATED = user's container should be running (though may not be if they have an error)
+1. DEACTIVATED = user's container has been killed *and will not run again*
+1. DESTROYED = not technically a state because the service no longer exists
 
 In Docker, we implement this like so:
 - Registration: the DockerKurtosisBackend will keep an in-memory map of the registration info (IP & ServiceGUID), because there's no Docker
 	object that corresponds to a registration
-- Running: the user's container is running with the IP that was generated during registration
-- Paused: the user's container is paused
-- Stopped: the user's container is stopped (rather than deleted) so that logs are still accessible, and the IP that was
+- Activated: the user's container is started with the IP that was generated during registration
+- Deactivated: the user's container is killed (rather than deleted) so that logs are still accessible, and the IP that was
 	allocated to the container has been freed (so that we don't consume the entire IP pool if a bunch of services are started
-	and stopped). Because stopped Kurtosis services can never be restarted as of 2022-05-14, the releasing of the IP is fine
+	and stopped). Because deactivated Kurtosis services can never be restarted as of 2022-05-14, the releasing of the IP is fine
 	to do because the container will never be restarted unless the user starts messing around with Docker directly.
 - Destroyed: any container that was started is destroyed, and the IP address is freed (if not already freed because the
 	service was previously stopped).
@@ -69,17 +67,6 @@ var commandToRunWhenCreatingUserServiceShell = []string{
 type userServiceDockerResources struct {
 	// Nil if the service is purely registered and has no container started
 	container *types.Container
-}
-
-// Its completeness is enforced via unit test
-var userServiceStatusDeterminer = map[types.ContainerStatus]service.UserServiceStatus{
-	types.ContainerStatus_Paused:     service.UserServiceStatus_Paused,
-	types.ContainerStatus_Restarting: service.UserServiceStatus_Running,
-	types.ContainerStatus_Running:    service.UserServiceStatus_Running,
-	types.ContainerStatus_Removing:   service.UserServiceStatus_Stopped,
-	types.ContainerStatus_Dead:       service.UserServiceStatus_Stopped,
-	types.ContainerStatus_Created:    service.UserServiceStatus_Stopped,
-	types.ContainerStatus_Exited:     service.UserServiceStatus_Stopped,
 }
 
 func (backend *DockerKurtosisBackend) RegisterService(
@@ -129,10 +116,11 @@ func (backend *DockerKurtosisBackend) RegisterService(
 		time.Now().Unix(),
 	))
 	registrationInfo := &registeredServiceInfo{
-		enclaveId: enclaveId,
-		id:        serviceId,
-		guid:      guid,
-		ip:        ipAddr,
+		enclaveId:     enclaveId,
+		id:            serviceId,
+		guid:          guid,
+		ip:            ipAddr,
+		isDeactivated: false,
 	}
 
 	enclaveServices[guid] = registrationInfo
@@ -164,7 +152,7 @@ func (backend *DockerKurtosisBackend) RegisterService(
 	return result, nil
 }
 
-func (backend *DockerKurtosisBackend) StartUserService(
+func (backend *DockerKurtosisBackend) ActivateUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	guid service.ServiceGUID,
@@ -183,7 +171,7 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	backend.serviceRegistrationMutex.RLock()
 	defer backend.serviceRegistrationMutex.RUnlock()
 
-	serviceBeforeStartingContainer, _, err := backend.getSingleServiceObjWithResourcesWithoutMutex(ctx, enclaveId, guid)
+	serviceBeforeStartingContainer, _, err := backend.getSingleUserServiceObjAndResourcesWithoutMutex(ctx, enclaveId, guid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the service with GUID '%v' that should exist when starting the service", guid)
 	}
@@ -308,7 +296,7 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	result := service.NewService(
 		serviceId,
 		serviceGuid,
-		service.UserServiceStatus_Running,
+		service.UserServiceStatus_Activated,
 		enclaveId,
 		privateIp,
 		privatePorts,
@@ -389,12 +377,17 @@ func (backend *DockerKurtosisBackend) PauseService(
 	backend.serviceRegistrationMutex.RLock()
 	defer backend.serviceRegistrationMutex.RUnlock()
 
-	serviceObj, dockerResources, err := backend.getSingleServiceObjWithResourcesWithoutMutex(ctx, enclaveId, serviceGuid)
+	serviceObj, dockerResources, err := backend.getSingleUserServiceObjAndResourcesWithoutMutex(ctx, enclaveId, serviceGuid)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get information about service '%v' from Kurtosis backend.", serviceGuid)
 	}
-	if serviceObj.GetStatus() != service.UserServiceStatus_Running {
-		return stacktrace.NewError("Cannot pause service '%v' because it is not in state '%v'", service.UserServiceStatus_Running.String())
+	if serviceObj.GetStatus() != service.UserServiceStatus_Activated {
+		return stacktrace.NewError(
+			"Cannot pause service '%v'; expected it to be in state '%v' but was '%v'",
+			serviceObj.GetStatus(),
+			service.UserServiceStatus_Activated.String(),
+			serviceObj.GetStatus(),
+		)
 	}
 	container := dockerResources.container
 	if container == nil {
@@ -415,12 +408,17 @@ func (backend *DockerKurtosisBackend) UnpauseService(
 	backend.serviceRegistrationMutex.RLock()
 	defer backend.serviceRegistrationMutex.RUnlock()
 
-	serviceObj, dockerResources, err := backend.getSingleServiceObjWithResourcesWithoutMutex(ctx, enclaveId, serviceGuid)
+	serviceObj, dockerResources, err := backend.getSingleUserServiceObjAndResourcesWithoutMutex(ctx, enclaveId, serviceGuid)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get information about service '%v' from Kurtosis backend.", serviceGuid)
 	}
-	if serviceObj.GetStatus() != service.UserServiceStatus_Paused {
-		return stacktrace.NewError("Cannot unpause service '%v' because it is not in state '%v'", service.UserServiceStatus_Paused.String())
+	if serviceObj.GetStatus() != service.UserServiceStatus_Activated {
+		return stacktrace.NewError(
+			"Cannot unpause service '%v'; expected it to be in state '%v' but was '%v'",
+			serviceObj.GetStatus(),
+			service.UserServiceStatus_Activated.String(),
+			serviceObj.GetStatus(),
+		)
 	}
 	container := dockerResources.container
 	if container == nil {
@@ -454,27 +452,38 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	filters := &service.ServiceFilters{
 		GUIDs: userServiceGuids,
 	}
-	_, dockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesWithoutMutex(ctx, enclaveId, filters)
+	allServiceObjs, allDockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesWithoutMutex(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
-	}
-
-	if len(userServiceCommands) != len(dockerResources) {
-		return nil, nil, stacktrace.NewError(
-			"The number of user services found '%v' is not equal to the number of user service to run exec commands on, '%v'",
-			len(dockerResources),
-			len(userServiceCommands),
-		)
 	}
 
 	// TODO Parallelize to increase perf
 	succesfulUserServiceExecResults := map[service.ServiceGUID]*exec_result.ExecResult{}
 	erroredUserServiceGuids := map[service.ServiceGUID]error{}
 	for guid, commandArgs := range userServiceCommands {
-		dockerResources, found := dockerResources[guid]
+		serviceObj, found := allServiceObjs[guid]
 		if !found {
-			// Should never happen if our logic for pulling back resources is correct because we always return a Docker resources object, even if
-			// no container exists
+			erroredUserServiceGuids[guid] = stacktrace.NewError(
+				"Cannot execute command '%+v' on service '%v' because no service with that GUID exists",
+				commandArgs,
+				guid,
+			)
+			continue
+		}
+
+		if serviceObj.GetStatus() != service.UserServiceStatus_Activated {
+			erroredUserServiceGuids[guid] = stacktrace.NewError(
+				"Cannot execute command '%+v' on service '%v'; expected the service to be in state '%v' but was '%v'",
+				commandArgs,
+				guid,
+				service.UserServiceStatus_Activated.String(),
+				serviceObj.GetStatus().String(),
+			)
+			continue
+		}
+
+		dockerResources, found := allDockerResources[guid]
+		if !found {
 			erroredUserServiceGuids[guid] = stacktrace.NewError(
 				"Cannot execute command '%+v' on service '%v' because no Docker resources were found for it",
 				commandArgs,
@@ -583,10 +592,19 @@ func (backend *DockerKurtosisBackend) GetConnectionWithUserService(
 	backend.serviceRegistrationMutex.RLock()
 	defer backend.serviceRegistrationMutex.RUnlock()
 
-	_, serviceDockerResources, err := backend.getSingleServiceObjWithResourcesWithoutMutex(ctx, enclaveId, serviceGUID)
+	serviceObj, serviceDockerResources, err := backend.getSingleUserServiceObjAndResourcesWithoutMutex(ctx, enclaveId, serviceGUID)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting service object and Docker resources for service '%v' in enclave '%v'", serviceGUID, enclaveId)
 	}
+	if serviceObj.GetStatus() != service.UserServiceStatus_Activated {
+		return nil, stacktrace.NewError(
+			"Cannot get a connection to service '%v'; expected it to be in state '%v' but was '%v'",
+			serviceObj.GetStatus(),
+			service.UserServiceStatus_Activated.String(),
+			serviceObj.GetStatus(),
+		)
+	}
+
 	container := serviceDockerResources.container
 	if container == nil {
 		return nil, stacktrace.NewError("Cannot get a connection to user service '%v' in enclave '%v' because no container exists for the service", serviceGUID, enclaveId)
@@ -616,7 +634,7 @@ func (backend *DockerKurtosisBackend) CopyFromUserService(
 	backend.serviceRegistrationMutex.RLock()
 	defer backend.serviceRegistrationMutex.RUnlock()
 
-	_, serviceDockerResources, err := backend.getSingleServiceObjWithResourcesWithoutMutex(ctx, enclaveId, serviceGuid)
+	_, serviceDockerResources, err := backend.getSingleUserServiceObjAndResourcesWithoutMutex(ctx, enclaveId, serviceGuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting user service with GUID '%v' in enclave with ID '%v'", serviceGuid, enclaveId)
 	}
@@ -640,25 +658,72 @@ func (backend *DockerKurtosisBackend) CopyFromUserService(
 	return tarStreamReadCloser, nil
 }
 
-func (backend *DockerKurtosisBackend) StopUserServices(
+func (backend *DockerKurtosisBackend) DeactivateUserServices(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 ) (
 	resultSuccessfulServiceGUIDs map[service.ServiceGUID]bool,
 	resultErroredServiceGUIDs map[service.ServiceGUID]error,
 	resultErr error,
 ) {
-	matchingUserServicesByContainerId, err := backend.getMatchingUserServices(ctx, filters)
+	// Write lock, because we'll be modifying the service registration info
+	backend.serviceRegistrationMutex.Lock()
+	defer backend.serviceRegistrationMutex.Unlock()
+
+	allServiceObjs, allDockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesWithoutMutex(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
 
-	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
-	matchingUncastedObjectsByContainerId := map[string]interface{}{}
-	for containerId, object := range matchingUserServicesByContainerId {
-		matchingUncastedObjectsByContainerId[containerId] = interface{}(object)
+	serviceRegistrationInfoForEnclave, found := backend.serviceRegistrations[enclaveId]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"Cannot deactivate services in enclave '%v' because no service registration info is being tracked for it; this likely " +
+				"means that the deactivate user services call is being made from somewhere it shouldn't be (i.e. outside the API contianer)",
+			enclaveId,
+		)
+	}
+	freeIpAddrTrackerForEnclave, found := backend.enclaveFreeIpProviders[enclaveId]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"Cannot deactivate services in enclave '%v' because no free IP address tracker is registered for it; this likely " +
+				"means that the deactivate user services call is being made from somewhere it shouldn't be (i.e. outside the API contianer)",
+			enclaveId,
+		)
 	}
 
+	successfulServiceGuids := map[service.ServiceGUID]bool{}
+	erroredServiceGuids := map[service.ServiceGUID]error{}
+
+	serviceGuidsToDeactivate := map[service.ServiceGUID]bool{}
+	servicesToStopBeforeDeactivationByContainerId := map[string]interface{}{}
+	for guid, serviceObj := range allServiceObjs {
+		status := serviceObj.GetStatus()
+		switch status {
+		case service.UserServiceStatus_Registered:
+			// Registered services don't need containers stopped; they can just be deactivated
+			serviceGuidsToDeactivate[guid] = true
+		case service.UserServiceStatus_Activated:
+			resourcesForService, found := allDockerResources[guid]
+			if !found {
+				// This should never happen, where we have a service object but not a Docker resources object
+				return nil, nil, stacktrace.NewError("Have object for service '%v' but no corresponding Docker resources; this is a bug in Kurtosis", guid)
+			}
+			container := resourcesForService.container
+			if container == nil {
+				// Should never happen; a service that's activated should always have a container
+				return nil, nil, stacktrace.NewError("Service '%v' is activated but doesn't have a container; this is a bug in Kurtosis", guid)
+			}
+			servicesToStopBeforeDeactivationByContainerId[container.GetId()] = serviceObj
+		case service.UserServiceStatus_Deactivated:
+			successfulServiceGuids[guid] = true
+		default:
+			return nil, nil, stacktrace.NewError("Unrecognized service status '%v'; this is a bug in Kurtosis", status.String())
+		}
+	}
+
+	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
 	var dockerOperation docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
@@ -670,9 +735,9 @@ func (backend *DockerKurtosisBackend) StopUserServices(
 		return nil
 	}
 
-	successfulServiceGuidStrs, erroredServiceGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+	successfulContainerStopGuidStrs, erroredContainerStopGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
-		matchingUncastedObjectsByContainerId,
+		servicesToStopBeforeDeactivationByContainerId,
 		backend.dockerManager,
 		extractServiceGUIDFromServiceObj,
 		dockerOperation,
@@ -681,26 +746,152 @@ func (backend *DockerKurtosisBackend) StopUserServices(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred killing user service containers matching filters '%+v'", filters)
 	}
 
-	successfulServiceGuids := map[service.ServiceGUID]bool{}
-	for serviceGuidStr := range successfulServiceGuidStrs {
-		successfulServiceGuids[service.ServiceGUID(serviceGuidStr)] = true
+	for guid, err := range erroredContainerStopGuidStrs {
+		// Stacktrace doesn't add any new information here so we leave it out
+		erroredServiceGuids[service.ServiceGUID(guid)] = err
 	}
-	erroredGuids := map[service.ServiceGUID]error{}
-	for serviceGuidStr, removalErr := range erroredServiceGuidStrs {
-		erroredGuids[service.ServiceGUID(serviceGuidStr)] = removalErr
+	for guid := range successfulContainerStopGuidStrs {
+		serviceGuidsToDeactivate[service.ServiceGUID(guid)] = true
 	}
 
-	return successfulServiceGuids, erroredGuids, nil
+	// Finalize deactivation
+	for guid := range serviceGuidsToDeactivate {
+		registrationInfo, found := serviceRegistrationInfoForEnclave[guid]
+		if !found {
+			// This should never happen because we should have explicitly selected GUIDs that already have registration info
+			return nil, nil, stacktrace.NewError("Couldn't find any registration info for service '%v'; this is a bug in Kurtosis", guid)
+		}
+		freeIpAddrTrackerForEnclave.ReleaseIpAddr(registrationInfo.ip)
+		registrationInfo.isDeactivated = true
+		successfulServiceGuids[guid] = true
+	}
+
+	return successfulServiceGuids, erroredServiceGuids, nil
 }
 
 func (backend *DockerKurtosisBackend) DestroyUserServices(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 ) (
-	map[service.ServiceGUID]bool,
-	map[service.ServiceGUID]error,
-	error,
+	resultSuccessfulGuids map[service.ServiceGUID]bool,
+	resultErroredGuids map[service.ServiceGUID]error,
+	resultErr error,
 ) {
+	// Write lock, because we'll be modifying the service registration info
+	backend.serviceRegistrationMutex.Lock()
+	defer backend.serviceRegistrationMutex.Unlock()
+
+	allServiceObjs, allDockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesWithoutMutex(ctx, enclaveId, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
+	}
+
+	serviceRegistrationInfoForEnclave, found := backend.serviceRegistrations[enclaveId]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"Cannot destroy services in enclave '%v' because no service registration info is being tracked for it; this likely " +
+				"means that the deactivate user services call is being made from somewhere it shouldn't be (i.e. outside the API contianer)",
+			enclaveId,
+		)
+	}
+	freeIpAddrTrackerForEnclave, found := backend.enclaveFreeIpProviders[enclaveId]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"Cannot destroy services in enclave '%v' because no free IP address tracker is registered for it; this likely " +
+				"means that the deactivate user services call is being made from somewhere it shouldn't be (i.e. outside the API contianer)",
+			enclaveId,
+		)
+	}
+
+	successfulServiceGuids := map[service.ServiceGUID]bool{}
+	erroredServiceGuids := map[service.ServiceGUID]error{}
+
+	serviceGuidsToDeregister := map[service.ServiceGUID]bool{}
+	servicesToContainerRemoveBeforeDeregistrationByContainerId := map[string]interface{}{}
+	for guid, serviceObj := range allServiceObjs {
+		status := serviceObj.GetStatus()
+		switch status {
+		case service.UserServiceStatus_Registered:
+			// Registered services don't need any containers deleted because they don't have any; they can just be deregistered
+			serviceGuidsToDeregister[guid] = true
+		case service.UserServiceStatus_Activated:
+		case service.UserServiceStatus_Deactivated:
+			resourcesForService, found := allDockerResources[guid]
+			if !found {
+				// This should never happen, where we have a service object but not a Docker resources object
+				return nil, nil, stacktrace.NewError("Have object for service '%v' but no corresponding Docker resources; this is a bug in Kurtosis", guid)
+			}
+			container := resourcesForService.container
+			if container == nil {
+				// A service without a container doesn't need that container destroyed before deregistration
+				serviceGuidsToDeregister[guid] = true
+			}
+			servicesToContainerRemoveBeforeDeregistrationByContainerId[container.GetId()] = serviceObj
+		default:
+			return nil, nil, stacktrace.NewError("Unrecognized service status '%v'; this is a bug in Kurtosis", status.String())
+		}
+	}
+
+	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
+	var dockerOperation docker_operation_parallelizer.DockerOperation = func(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		dockerObjectId string,
+	) error {
+		if err := dockerManager.KillContainer(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred killing user service container with ID '%v'", dockerObjectId)
+		}
+		return nil
+	}
+
+	successfulContainerStopGuidStrs, erroredContainerStopGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+		ctx,
+		servicesToContainerRemoveBeforeDeregistrationByContainerId,
+		backend.dockerManager,
+		extractServiceGUIDFromServiceObj,
+		dockerOperation,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred killing user service containers matching filters '%+v'", filters)
+	}
+
+	for guid, err := range erroredContainerStopGuidStrs {
+		// Stacktrace doesn't add any new information here so we leave it out
+		erroredServiceGuids[service.ServiceGUID(guid)] = err
+	}
+	for guid := range successfulContainerStopGuidStrs {
+		serviceGuidsToDeregister[service.ServiceGUID(guid)] = true
+	}
+
+	// Finalize deactivation
+	for guid := range serviceGuidsToDeregister {
+		registrationInfo, found := serviceRegistrationInfoForEnclave[guid]
+		if !found {
+			// This should never happen because we should have explicitly selected GUIDs that already have registration info
+			return nil, nil, stacktrace.NewError("Couldn't find any registration info for service '%v'; this is a bug in Kurtosis", guid)
+		}
+		freeIpAddrTrackerForEnclave.ReleaseIpAddr(registrationInfo.ip)
+		registrationInfo.isDeactivated = true
+		successfulServiceGuids[guid] = true
+	}
+
+	return successfulServiceGuids, erroredServiceGuids, nil
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/*
 	userServices, err := backend.getMatchingUserServices(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
@@ -744,6 +935,8 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 	}
 
 	return successfulServiceGuids, erroredGuids, nil
+
+	 */
 }
 
 // ====================================================================================================
@@ -878,14 +1071,6 @@ func getServiceObjectsFromRegistrationsAndDockerResources(
 		dockerResourcesForService, found := allDockerResources[guid]
 		if found && dockerResourcesForService.container != nil {
 			container := dockerResourcesForService.container
-			containerStatus := container.GetStatus()
-
-			serviceStatus, found := userServiceStatusDeterminer[containerStatus]
-			if !found {
-				// This should never happen because we enforce the completeness in a unit test
-				return nil, stacktrace.NewError("Expected to find a user service status for container status '%v'; this is a bug in Kurtosis", containerStatus.String())
-			}
-			status = serviceStatus
 
 			parsedPrivatePorts, maybeParsedPublicIp, maybeParsedPublicPorts, err := getIpAndPortInfoFromContainer(
 				container.GetName(),
@@ -899,6 +1084,10 @@ func getServiceObjectsFromRegistrationsAndDockerResources(
 			maybePrivatePortsSpecs = parsedPrivatePorts
 			maybePublicIpAddr = maybeParsedPublicIp
 			maybePublicPortsSpecs = maybeParsedPublicPorts
+		}
+
+		if registration.isDeactivated {
+			status = service.UserServiceStatus_Deactivated
 		}
 
 		result[guid] = service.NewService(
@@ -1011,7 +1200,7 @@ func makeHttpRequest(httpMethod string, url string, body string) (*http.Response
 	return resp, nil
 }
 
-func (backend *DockerKurtosisBackend) getSingleServiceObjWithResourcesWithoutMutex(
+func (backend *DockerKurtosisBackend) getSingleUserServiceObjAndResourcesWithoutMutex(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	userServiceGuid service.ServiceGUID,

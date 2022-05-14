@@ -25,22 +25,22 @@ func (i UserServiceStatus) String() string {
 func _UserServiceStatusNoOp() {
 	var x [1]struct{}
 	_ = x[UserServiceStatus_Registered-(0)]
-	_ = x[UserServiceStatus_Running-(1)]
+	_ = x[UserServiceStatus_Activated-(1)]
 	_ = x[UserServiceStatus_Paused-(2)]
-	_ = x[UserServiceStatus_Stopped-(3)]
+	_ = x[UserServiceStatus_Deactivated-(3)]
 }
 
-var _UserServiceStatusValues = []UserServiceStatus{UserServiceStatus_Registered, UserServiceStatus_Running, UserServiceStatus_Paused, UserServiceStatus_Stopped}
+var _UserServiceStatusValues = []UserServiceStatus{UserServiceStatus_Registered, UserServiceStatus_Activated, UserServiceStatus_Paused, UserServiceStatus_Deactivated}
 
 var _UserServiceStatusNameToValueMap = map[string]UserServiceStatus{
 	_UserServiceStatusName[0:10]:       UserServiceStatus_Registered,
 	_UserServiceStatusLowerName[0:10]:  UserServiceStatus_Registered,
-	_UserServiceStatusName[10:17]:      UserServiceStatus_Running,
-	_UserServiceStatusLowerName[10:17]: UserServiceStatus_Running,
+	_UserServiceStatusName[10:17]:      UserServiceStatus_Activated,
+	_UserServiceStatusLowerName[10:17]: UserServiceStatus_Activated,
 	_UserServiceStatusName[17:23]:      UserServiceStatus_Paused,
 	_UserServiceStatusLowerName[17:23]: UserServiceStatus_Paused,
-	_UserServiceStatusName[23:30]:      UserServiceStatus_Stopped,
-	_UserServiceStatusLowerName[23:30]: UserServiceStatus_Stopped,
+	_UserServiceStatusName[23:30]:      UserServiceStatus_Deactivated,
+	_UserServiceStatusLowerName[23:30]: UserServiceStatus_Deactivated,
 }
 
 var _UserServiceStatusNames = []string{

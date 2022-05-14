@@ -19,6 +19,7 @@
     * TODO
 * TODO scoping down all Service functions to be per-enclave
 * TODO remove wait-for-availability because it doesn't need to be there
+* TODO renaming StartUserService -> ActivateUserService and StopService -> DeactivateUserService
 
 # 0.21.1
 ### Fixes
