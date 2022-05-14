@@ -240,7 +240,7 @@ type KurtosisBackend interface {
 	)
 
 	// DestroyUserServiceRegistration removes a previously-created user service registration object
-	// This will fail if a service is currently consuming the registration
+	// If a service exists that is consuming the service, it is the user's responsibility to deal with it
 	DestroyUserServiceRegistrations(
 		ctx context.Context,
 		filters *user_service_registration.UserServiceRegistrationFilters,
@@ -248,6 +248,12 @@ type KurtosisBackend interface {
 		resultSuccessfulServiceIds map[user_service_registration.UserServiceRegistrationGUID]bool,
 		resultErroredServiceIds map[user_service_registration.UserServiceRegistrationGUID]error,
 		resultErr error,
+	)
+
+	RegisterUserService(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		serviceId user_service_registration.ServiceID,
 	)
 
 	// CreateUserService consumes a service registration to create a user service with the given parameters

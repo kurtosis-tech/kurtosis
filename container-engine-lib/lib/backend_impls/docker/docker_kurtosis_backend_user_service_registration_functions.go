@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/stacktrace"
 	"time"
@@ -117,39 +116,9 @@ func (backend *DockerKurtosisBackend) DestroyUserServiceRegistrations(
 		registrationGuidsToDestroy[registrationGuid] = true
 	}
 
-	findConsumingServicesFilters := &service.ServiceFilters{
-		RegistrationGUIDs: registrationGuidsToDestroy,
-	}
-	allConsumingServices, err := backend.GetUserServices(ctx, findConsumingServicesFilters)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting services matching the following registration GUIDs: %+v", registrationGuidsToDestroy)
-	}
-
-	consumingServiceGuidsByRegistrationGuid := map[user_service_registration.UserServiceRegistrationGUID][]service.ServiceGUID{}
-	for _, consumingService := range allConsumingServices {
-		registrationGuid := consumingService.GetRegistrationGUID()
-		serviceGuidsForRegistrationGuid, found := consumingServiceGuidsByRegistrationGuid[registrationGuid]
-		if !found {
-			serviceGuidsForRegistrationGuid = []service.ServiceGUID{}
-		}
-		serviceGuidsForRegistrationGuid = append(serviceGuidsForRegistrationGuid, consumingService.GetGUID())
-		consumingServiceGuidsByRegistrationGuid[registrationGuid] = serviceGuidsForRegistrationGuid
-	}
-
 	successfulGuids := map[user_service_registration.UserServiceRegistrationGUID]bool{}
 	erroredGuids := map[user_service_registration.UserServiceRegistrationGUID]error{}
 	for registrationGuid, registration := range registrationsToDestroy {
-		consumingServiceGuids, found := consumingServiceGuidsByRegistrationGuid[registrationGuid]
-		if found {
-			erroredGuids[registrationGuid] = stacktrace.NewError(
-				"Can't destroy user service registration with GUID '%v' and service ID '%v' because the following service(s) consume it: %+v",
-				registrationGuid,
-				registration.GetServiceID(),
-				consumingServiceGuids,
-			)
-			continue
-		}
-
 		if err := backend.destroyServiceRegistration(registration); err != nil {
 			erroredGuids[registrationGuid] = stacktrace.Propagate(
 				err,

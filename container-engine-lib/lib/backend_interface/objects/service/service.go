@@ -1,42 +1,41 @@
 package service
 
 import (
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"net"
 )
 
+type ServiceID string
 type ServiceGUID string
 
 // Object that represents POINT-IN-TIME information about an user service
 // Store this object and continue to reference it at your own risk!!!
 type Service struct {
-	// The GUID of the registration that the service consumed to start
-	registrationGuid user_service_registration.UserServiceRegistrationGUID
+	id				 ServiceID
 	guid             ServiceGUID
-	status           container_status.ContainerStatus
+	status           UserServiceStatus
 	enclaveId        enclave.EnclaveID
+
 	privateIp        net.IP
 	privatePorts     map[string]*port_spec.PortSpec // Keyed by user-provided port ID
+
+	// These will only be non-nil if all of the following are true:
+	//  - The backend is Docker
+	//  - The service is in UserServiceStatus_Running state
 	maybePublicIp    net.IP                         // The ip exposed in the host machine. Will be nil if the service doesn't declare any private ports
 	maybePublicPorts map[string]*port_spec.PortSpec //Mapping of port-used-by-service -> port-on-the-host-machine where the user can make requests to the port to access the port. If a used port doesn't have a host port bound, then the value will be nil.
 }
 
-func NewService(registrationGuid user_service_registration.UserServiceRegistrationGUID, guid ServiceGUID, status container_status.ContainerStatus, enclaveId enclave.EnclaveID, privateIp net.IP, privatePorts map[string]*port_spec.PortSpec, maybePublicIp net.IP, maybePublicPorts map[string]*port_spec.PortSpec) *Service {
-	return &Service{registrationGuid: registrationGuid, guid: guid, status: status, enclaveId: enclaveId, privateIp: privateIp, privatePorts: privatePorts, maybePublicIp: maybePublicIp, maybePublicPorts: maybePublicPorts}
-}
-
-func (service *Service) GetRegistrationGUID() user_service_registration.UserServiceRegistrationGUID {
-	return service.registrationGuid
+func (service *Service) GetID() ServiceID {
+	return service.id
 }
 
 func (service *Service) GetGUID() ServiceGUID {
 	return service.guid
 }
 
-func (service *Service) GetStatus() container_status.ContainerStatus {
+func (service *Service) GetStatus() UserServiceStatus {
 	return service.status
 }
 
