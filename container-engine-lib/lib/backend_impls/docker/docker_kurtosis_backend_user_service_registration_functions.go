@@ -18,7 +18,7 @@ func (backend *DockerKurtosisBackend) CreateUserServiceRegistration(
 	backend.serviceRegistrationMutex.Lock()
 	defer backend.serviceRegistrationMutex.Unlock()
 
-	registrationsForEnclave, found := backend.serviceRegistrationsIndex[enclaveId]
+	registrationsForEnclave, found := backend.serviceIdIndex[enclaveId]
 	if !found {
 		return nil, stacktrace.NewError(
 			"Service registration information isn't being tracked for enclave '%v', which indicates that no free IP address provider was " +
@@ -142,7 +142,7 @@ func (backend *DockerKurtosisBackend) getMatchingRegistrations(filters *user_ser
 	map[user_service_registration.UserServiceRegistrationGUID]*user_service_registration.UserServiceRegistration,
 ){
 	result := map[user_service_registration.UserServiceRegistrationGUID]*user_service_registration.UserServiceRegistration{}
-	for enclaveId, serviceRegistrationsForEnclave := range backend.serviceRegistrationsIndex {
+	for enclaveId, serviceRegistrationsForEnclave := range backend.serviceIdIndex {
 		if filters.EnclaveIDs != nil && len(filters.EnclaveIDs) > 0 {
 			if _, found := filters.EnclaveIDs[enclaveId]; !found {
 				continue
@@ -184,7 +184,7 @@ func (backend *DockerKurtosisBackend) destroyServiceRegistration(registration *u
 		)
 	}
 
-	registrationsForEnclave, found := backend.serviceRegistrationsIndex[enclaveId]
+	registrationsForEnclave, found := backend.serviceIdIndex[enclaveId]
 	if !found {
 		return stacktrace.NewError(
 			"Got asked to destroy registration '%v' in enclave '%v' but no registrations are being tracked for the enclave; this should never happen and is a bug in Kurtosis",

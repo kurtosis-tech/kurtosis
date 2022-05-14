@@ -41,6 +41,87 @@ var commandToRunWhenCreatingUserServiceShell = []string{
 	"if command -v 'bash' > /dev/null; then echo \"Found bash on container; creating bash shell...\"; bash; else echo \"No bash found on container; dropping down to sh shell...\"; sh; fi",
 }
 
+func (backend *DockerKurtosisBackend) RegisterService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceId service.ServiceID,
+) (*service.Service, error) {
+	backend.serviceRegistrationMutex.Lock()
+	defer backend.serviceRegistrationMutex.Unlock()
+
+	freeIpAddrProvider, found := backend.enclaveFreeIpProviders[enclaveId]
+	if !found {
+		return nil, stacktrace.NewError(
+			"Received a request to register service with ID '%v' in enclave '%v', but no free IP address provider was " +
+				"defined for this enclave; this likely means that the registration request is being called where it shouldn't " +
+				"be (i.e. outside the API container)",
+			serviceId,
+			enclaveId,
+		)
+	}
+
+	enclaveServices, found := backend.serviceRegistrations[enclaveId]
+	if !found {
+		return nil, stacktrace.NewError(
+			"No services are being tracked for enclave '%v'; this likely means that the registration request is being called where it shouldn't " +
+				"be (i.e. outside the API container)",
+			enclaveId,
+		)
+	}
+
+	ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting a free IP address to give to service '%v' in enclave '%v'", serviceId, enclaveId)
+	}
+	shouldFreeIp := true
+	defer func() {
+		if shouldFreeIp {
+			freeIpAddrProvider.ReleaseIpAddr(ipAddr)
+		}
+	}()
+
+	// TODO Switch this, and all other GUIDs, to a UUID!
+	guid := service.ServiceGUID(fmt.Sprintf(
+		"%v-%v-%v",
+		enclaveId,
+		serviceId,
+		time.Now().Unix(),
+	))
+	registrationInfo := &registeredServiceInfo{
+		id:   serviceId,
+		guid: guid,
+		ip:   ipAddr,
+	}
+
+	enclaveServices[guid] = registrationInfo
+	shouldRemoveRegistration := true
+	defer func() {
+		if shouldRemoveRegistration {
+			delete(enclaveServices, guid)
+		}
+	}()
+
+	// Registered-but-not-started services don't have any private ports
+	var privatePorts map[string]*port_spec.PortSpec = nil
+	// Registered-but-not-started services don't have public info
+	var publicIp net.IP = nil
+	var publicPorts map[string]*port_spec.PortSpec = nil
+	result := service.NewService(
+		serviceId,
+		guid,
+		service.UserServiceStatus_Registered,
+		enclaveId,
+		ipAddr,
+		privatePorts,
+		publicIp,
+		publicPorts,
+	)
+
+	shouldFreeIp = false
+	shouldRemoveRegistration = false
+	return result, nil
+}
+
 func (backend *DockerKurtosisBackend) CreateUserService(
 	ctx context.Context,
 	registrationGuid user_service_registration.UserServiceRegistrationGUID,
