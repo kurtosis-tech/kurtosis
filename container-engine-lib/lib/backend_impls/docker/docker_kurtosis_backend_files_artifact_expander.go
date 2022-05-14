@@ -12,7 +12,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/stacktrace"
-	"net"
 	"path"
 )
 
@@ -35,12 +34,22 @@ func (backend *DockerKurtosisBackend) RunFilesArtifactExpander(
 	filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
 	destVolMntDirpathOnExpander string,
 	filesArtifactFilepathRelativeToEnclaveDataVolumeRoot string,
-	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 )(*files_artifact_expander.FilesArtifactExpander, error){
 
 	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
+	}
+
+	freeIpAddrProvider, found := backend.enclaveFreeIpProviders[enclaveId]
+	if !found {
+		return nil, stacktrace.NewError(
+			"Received a request to run a files artifact expander attached to service with GUID '%v' in enclave '%v', but no free IP address provider was " +
+				"defined for this enclave; this likely means that the request is being called where it shouldn't " +
+				"be (i.e. outside the API container)",
+			guid,
+			enclaveId,
+		)
 	}
 
 	enclaveDataVolumeName, err := backend.getEnclaveDataVolumeByEnclaveId(ctx, enclaveId)
@@ -72,6 +81,17 @@ func (backend *DockerKurtosisBackend) RunFilesArtifactExpander(
 
 	artifactFilepath := path.Join(enclaveDataVolumeDirpathOnExpanderContainer, filesArtifactFilepathRelativeToEnclaveDataVolumeRoot)
 	containerCmd := getExtractionCommand(artifactFilepath, destVolMntDirpathOnExpander)
+
+	ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting a free IP address")
+	}
+	shouldReleaseIp := true
+	defer func() {
+		if shouldReleaseIp {
+			freeIpAddrProvider.ReleaseIpAddr(ipAddr)
+		}
+	}()
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		dockerImage,
@@ -107,6 +127,7 @@ func (backend *DockerKurtosisBackend) RunFilesArtifactExpander(
 
 	newFilesArtifactExpander, err := getFilesArtifactExpanderObjectFromContainerInfo(containerLabels, containerStatus)
 
+	shouldReleaseIp = true
 	return newFilesArtifactExpander, nil
 }
 

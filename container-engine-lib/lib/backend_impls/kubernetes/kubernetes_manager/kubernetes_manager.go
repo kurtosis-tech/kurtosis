@@ -17,6 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
+	"net/url"
 )
 
 const (
@@ -699,7 +700,16 @@ func (manager *KubernetesManager) RemoveClusterRoleBindings(ctx context.Context,
 func (manager *KubernetesManager) int32Ptr(i int32) *int32 { return &i }
 
 // Pods
-func (manager *KubernetesManager) CreatePod(ctx context.Context, namespace string, name string, podLabels map[string]string, podAnnotations map[string]string, podContainers []apiv1.Container, podVolumes []apiv1.Volume, podServiceAccountName string) (*apiv1.Pod, error) {
+func (manager *KubernetesManager) CreatePod(
+	ctx context.Context,
+	namespace string,
+	name string,
+	podLabels map[string]string,
+	podAnnotations map[string]string,
+	podContainers []apiv1.Container,
+	podVolumes []apiv1.Volume,
+	podServiceAccountName string,
+) (*apiv1.Pod, error) {
 	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
 
 	podMeta := metav1.ObjectMeta{
@@ -762,20 +772,7 @@ func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace
 	return pods, nil
 }
 
-// Returns the node a pod with name 'podName' runs on
-func (manager *KubernetesManager) GetNodePodRunsOn(ctx context.Context, namespace string, podName string) (*apiv1.Node, error) {
-	namespacePodClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
-	nodeClient := manager.kubernetesClientSet.CoreV1().Nodes()
 
-	pod, err := namespacePodClient.Get(ctx, podName, metav1.GetOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get a pod with name '%v' from Kubernetes, instead a non-nil error was returned", podName)
-	}
-	nodeName := pod.Spec.NodeName
-	node, err := nodeClient.Get(ctx, nodeName, metav1.GetOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get a pod with name '%v' from Kubernetes, instead a non-nil error was returned", nodeName)
-	}
-
-	return node, nil
+func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string, podName string) *url.URL {
+	return manager.kubernetesClientSet.RESTClient().Post().Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
 }

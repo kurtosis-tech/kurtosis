@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 	"strings"
@@ -55,9 +56,12 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespa
 		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", provider.enclaveId)
 	}
 
-	labels, err := provider.getLabelsForEnclaveObject()
+	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(
+		provider.enclaveId,
+		provider.enclaveId,
+	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get labels for enclave object '%v'", provider.enclaveId)
+		return nil, stacktrace.Propagate(err, "Failed to get labels for enclave namespace using ID '%v'", provider.enclaveId)
 	}
 
 	isPartitioningEnabledLabelValue := label_value_consts.NetworkPartitioningDisabledLabelValue
@@ -113,7 +117,12 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForApiContainer()
 	return GetKubernetesApiContainerObjectAttributesProvider(enclaveId), nil
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl)ForUserServiceContainer(serviceID service.ServiceID, serviceGUID service.ServiceGUID, privateIpAddr net.IP, privatePorts map[string]*port_spec.PortSpec) (KubernetesObjectAttributes, error) {
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl)ForUserServiceContainer(
+	serviceID user_service_registration.ServiceID,
+	serviceGUID service.ServiceGUID,
+	privateIpAddr net.IP,
+	privatePorts map[string]*port_spec.PortSpec,
+) (KubernetesObjectAttributes, error) {
 	panic("implement me")
 }
 
