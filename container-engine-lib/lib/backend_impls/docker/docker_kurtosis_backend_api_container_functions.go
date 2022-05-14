@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -38,12 +39,12 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
 	image string,
 	enclaveId enclave.EnclaveID,
-	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
 	// The dirpath on the API container where the enclave data volume should be mounted
 	enclaveDataVolumeDirpath string,
-	envVars map[string]string,
+	ownIpAddressEnvVar string,
+	customEnvVars map[string]string,
 ) (*api_container.APIContainer, error) {
 	// Verify no API container already exists in the enclave
 	apiContainersInEnclaveFilters := &api_container.APIContainerFilters{
@@ -68,6 +69,42 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
+	}
+
+	networkCidr := enclaveNetwork.GetIpAndMask()
+	alreadyTakenIps := map[string]bool{
+		networkCidr.IP.String(): true,
+		enclaveNetwork.GetGatewayIp(): true,
+	}
+	for containerIp := range enclaveNetwork.GetContainerIps() {
+		alreadyTakenIps[containerIp] = true
+	}
+	// TODO migrate FreeIPAddrTracker inside this repo
+	freeIpAddrProvider := lib.NewFreeIpAddrTracker(
+		logrus.StandardLogger(),
+		networkCidr,
+		alreadyTakenIps,
+	)
+	ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting an IP address for the API container")
+	}
+	shouldFreeIpAddr := true
+	defer func() {
+		if shouldFreeIpAddr {
+			freeIpAddrProvider.ReleaseIpAddr(ipAddr)
+		}
+	}()
+
+	// Set the own-IP environment variable
+	if _, found := customEnvVars[ownIpAddressEnvVar]; found {
+		return nil, stacktrace.NewError("Requested own IP environment variable '%v' conflicts with custom environment variable", ownIpAddressEnvVar)
+	}
+	envVarsWithOwnIp := map[string]string{
+		ownIpAddressEnvVar: ipAddr.String(),
+	}
+	for key, value := range customEnvVars {
+		envVarsWithOwnIp[key] = value
 	}
 
 	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, apiContainerPortProtocol)
@@ -137,7 +174,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		apiContainerAttrs.GetName().GetString(),
 		enclaveNetwork.GetId(),
 	).WithEnvironmentVariables(
-		envVars,
+		envVarsWithOwnIp,
 	).WithBindMounts(
 		bindMounts,
 	).WithVolumeMounts(
