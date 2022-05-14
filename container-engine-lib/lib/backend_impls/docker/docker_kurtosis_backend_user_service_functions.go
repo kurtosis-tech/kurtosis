@@ -4,14 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -24,7 +22,6 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -36,6 +33,34 @@ const (
 	shouldGetStoppedContainersWhenGettingServiceInfo = true
 )
 
+/*
+DOCKER SERVICE LIFECYCLE EXPLANATION:
+
+Kurtosis services are uniquely identified by a ServiceGUID and can have four states:
+1. Registered = a GUID and an IP address in the enclave has been allocated for the service, but no user container is running
+1. Running = user's container is running
+1. Paused = user's container is paused
+1. Stopped = user's container is stopped *and will not run again*
+1. Destroyed = the service no longer exists
+
+In Docker, we implement this like so:
+- Registration: the DockerKurtosisBackend will keep an in-memory map of the registration info (IP & ServiceGUID), because there's no Docker
+	object that corresponds to a registration
+- Running: the user's container is running with the IP that was generated during registration
+- Paused: the user's container is paused
+- Stopped: the user's container is stopped (rather than deleted) so that logs are still accessible, and the IP that was
+	allocated to the container has been freed (so that we don't consume the entire IP pool if a bunch of services are started
+	and stopped). Because stopped Kurtosis services can never be restarted as of 2022-05-14, the releasing of the IP is fine
+	to do because the container will never be restarted unless the user starts messing around with Docker directly.
+- Destroyed: any container that was started is destroyed, and the IP address is freed (if not already freed because the
+	service was previously stopped).
+
+The benefits of this implementation:
+- We can get the IP address before the service is started, which is crucial because certain user containers actually need
+	to know their own IP when they start (e.g. Ethereum and Avalanche nodes require a flag to be passed in with their own IP)
+- We can stop a service and free its memory/CPU resources while still preserving the logs for users
+ */
+
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
 var commandToRunWhenCreatingUserServiceShell = []string{
 	"sh",
@@ -44,13 +69,19 @@ var commandToRunWhenCreatingUserServiceShell = []string{
 }
 
 type userServiceDockerResources struct {
-	// Nil if the service is purely registered
+	// Nil if the service is purely registered and has no container started
 	container *types.Container
 }
 
-// TODO enforce by unit test
-var containerStatusToUserStatusTranslator map[types.ContainerStatus]service.UserServiceStatus{
-
+// Its completeness is enforced via unit test
+var userServiceStatusDeterminer = map[types.ContainerStatus]service.UserServiceStatus{
+	types.ContainerStatus_Paused:     service.UserServiceStatus_Paused,
+	types.ContainerStatus_Restarting: service.UserServiceStatus_Running,
+	types.ContainerStatus_Running:    service.UserServiceStatus_Running,
+	types.ContainerStatus_Removing:   service.UserServiceStatus_Stopped,
+	types.ContainerStatus_Dead:       service.UserServiceStatus_Stopped,
+	types.ContainerStatus_Created:    service.UserServiceStatus_Stopped,
+	types.ContainerStatus_Exited:     service.UserServiceStatus_Stopped,
 }
 
 func (backend *DockerKurtosisBackend) RegisterService(
@@ -99,9 +130,10 @@ func (backend *DockerKurtosisBackend) RegisterService(
 		time.Now().Unix(),
 	))
 	registrationInfo := &registeredServiceInfo{
-		id:   serviceId,
-		guid: guid,
-		ip:   ipAddr,
+		enclaveId: enclaveId,
+		id:        serviceId,
+		guid:      guid,
+		ip:        ipAddr,
 	}
 
 	enclaveServices[guid] = registrationInfo
@@ -657,6 +689,7 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
+// Gets the service objects & Docker resources for services matching the given filters
 func (backend *DockerKurtosisBackend) getMatchingServiceObjsAndDockerResources(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
@@ -676,8 +709,9 @@ func (backend *DockerKurtosisBackend) getMatchingServiceObjsAndDockerResources(
 		)
 	}
 
-	// Filter on GUID & ID
+	// Filter on GUID & ID first, so that we don't pull back unnecessary containers from Docker
 	matchingServiceRegistrations := map[service.ServiceGUID]*registeredServiceInfo{}
+	serviceGuidsToGetContainersFor := map[service.ServiceGUID]bool{}
 	for serviceGuid, registrationInfo := range allEnclaveServices {
 		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
 			if _, found := filters.GUIDs[serviceGuid]; !found {
@@ -691,8 +725,48 @@ func (backend *DockerKurtosisBackend) getMatchingServiceObjsAndDockerResources(
 				continue
 			}
 		}
+
+		matchingServiceRegistrations[serviceGuid] = registrationInfo
+		serviceGuidsToGetContainersFor[serviceGuid] = true
 	}
 
+	matchingDockerResources, err := backend.getMatchingUserServiceDockerResources(ctx, enclaveId, serviceGuidsToGetContainersFor)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting matching user service resources")
+	}
+
+	matchingServiceObjs, err := getServiceObjectsFromRegistrationsAndDockerResources(matchingServiceRegistrations, matchingDockerResources)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting Kurtosis service objects from user service registrations & Docker resources")
+	}
+
+	// We've already filtered by service ID & GUID, so all that remains is by status
+	resultServiceObjs := map[service.ServiceGUID]*service.Service{}
+	resultDockerResources := map[service.ServiceGUID]*userServiceDockerResources{}
+	for guid, serviceObj := range matchingServiceObjs {
+		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+			if _, found := filters.Statuses[serviceObj.GetStatus()]; !found {
+				continue
+			}
+		}
+
+		dockerResources, found := matchingDockerResources[guid]
+		if !found {
+			// This should never happen; the Services map and the Docker resources maps should have the same GUIDs
+			return nil, nil, stacktrace.Propagate(err, "Needed to return Docker resources for service with GUID '%v', but none was found; this is a bug in Kurtosis")
+		}
+
+		resultServiceObjs[guid] = serviceObj
+		resultDockerResources[guid] = dockerResources
+	}
+	return resultServiceObjs, resultDockerResources, nil
+}
+
+func (backend *DockerKurtosisBackend) getMatchingUserServiceDockerResources(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuidsToFind map[service.ServiceGUID]bool,
+) (map[service.ServiceGUID]*userServiceDockerResources, error) {
 	// For the matching values, get the containers to check the status
 	userServiceContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
@@ -701,19 +775,147 @@ func (backend *DockerKurtosisBackend) getMatchingServiceObjsAndDockerResources(
 	}
 	userServiceContainers, err := backend.dockerManager.GetContainersByLabels(ctx, userServiceContainerSearchLabels, shouldGetStoppedContainersWhenGettingServiceInfo)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user service containers in enclave '%v' by labels: %+v", enclaveId, userServiceContainerSearchLabels)
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service containers in enclave '%v' by labels: %+v", enclaveId, userServiceContainerSearchLabels)
 	}
+	containersByServiceGuid := map[service.ServiceGUID]*types.Container{}
 	for _, container := range userServiceContainers {
-		container.GetStatus()
-
+		containerGuidStr, found := container.GetLabels()[label_key_consts.GUIDLabelKey.GetString()]
+		if !found {
+			return nil, stacktrace.NewError("Found user service container '%v' that didn't have expected GUID label '%v'", container.GetId(), label_key_consts.GUIDLabelKey.GetString())
+		}
+		containersByServiceGuid[service.ServiceGUID(containerGuidStr)] = container
 	}
 
+	result := map[service.ServiceGUID]*userServiceDockerResources{}
+	for guid := range serviceGuidsToFind {
+		var serviceContainer *types.Container = nil
+		if container, found := containersByServiceGuid[guid]; found {
+			serviceContainer = container
+		}
 
+		result[guid] = &userServiceDockerResources{container: serviceContainer}
+	}
 
+	return result, nil
 }
 
+func getServiceObjectsFromRegistrationsAndDockerResources(
+	registrationInfo map[service.ServiceGUID]*registeredServiceInfo,
+	allDockerResources map[service.ServiceGUID]*userServiceDockerResources,
+) (map[service.ServiceGUID]*service.Service, error) {
+	result := map[service.ServiceGUID]*service.Service{}
+	for guid, registration := range registrationInfo {
+		enclaveId := registration.enclaveId
+		serviceId := registration.id
+		serviceGuid := registration.guid
+		status := service.UserServiceStatus_Registered
+		privateIpAddr := registration.ip
+		var maybePrivatePortsSpecs map[string]*port_spec.PortSpec
+		var maybePublicIpAddr net.IP
+		var maybePublicPortsSpecs map[string]*port_spec.PortSpec
 
+		dockerResourcesForService, found := allDockerResources[guid]
+		if found && dockerResourcesForService.container != nil {
+			container := dockerResourcesForService.container
+			containerStatus := container.GetStatus()
 
+			serviceStatus, found := userServiceStatusDeterminer[containerStatus]
+			if !found {
+				// This should never happen because we enforce the completeness in a unit test
+				return nil, stacktrace.NewError("Expected to find a user service status for container status '%v'; this is a bug in Kurtosis", containerStatus.String())
+			}
+			status = serviceStatus
+
+			parsedPrivatePorts, maybeParsedPublicIp, maybeParsedPublicPorts, err := getIpAndPortInfoFromContainer(container)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred getting IP & port info from container '%v'", container.GetName())
+			}
+
+			maybePrivatePortsSpecs = parsedPrivatePorts
+			maybePublicIpAddr = maybeParsedPublicIp
+			maybePublicPortsSpecs = maybeParsedPublicPorts
+		}
+
+		result[guid] = service.NewService(
+			serviceId,
+			serviceGuid,
+			status,
+			enclaveId,
+			privateIpAddr,
+			maybePrivatePortsSpecs,
+			maybePublicIpAddr,
+			maybePublicPortsSpecs,
+		)
+	}
+	return result, nil
+}
+
+// TODO Extract this to DockerKurtosisBackend and use it everywhere, for Engines, Modules, and API containers?
+func getIpAndPortInfoFromContainer(
+	container *types.Container,
+) (
+	resultPrivatePortSpecs map[string]*port_spec.PortSpec,
+	resultPublicIp net.IP,
+	resultPublicPortSpecs map[string]*port_spec.PortSpec,
+	resultErr error,
+){
+	containerName := container.GetName()
+	containerLabels := container.GetLabels()
+	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsLabelKey.GetString()]
+	if !found {
+		return nil, nil, nil, stacktrace.NewError(
+			"Expected to find port specs label '%v' on container '%v' but none was found",
+			containerName,
+			label_key_consts.PortSpecsLabelKey.GetString(),
+		)
+	}
+
+	privatePortSpecs, err := port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
+	if err != nil {
+		if err != nil {
+			return nil, nil, nil, stacktrace.Propagate(err, "Couldn't deserialize port spec string '%v'", serializedPortSpecs)
+		}
+	}
+
+	hostMachinePortBindings := container.GetHostPortBindings()
+	var containerPublicIp net.IP
+	var publicPortSpecs map[string]*port_spec.PortSpec
+	for portId, privatePortSpec := range privatePortSpecs {
+		portPublicIp, publicPortSpec, err := getPublicPortBindingFromPrivatePortSpec(privatePortSpec, hostMachinePortBindings)
+		if err != nil {
+			return nil, nil, nil, stacktrace.Propagate(
+				err,
+				"An error occurred getting public port spec for private port '%v' with spec '%v/%v' on container '%v'",
+				portId,
+				privatePortSpec.GetNumber(),
+				privatePortSpec.GetProtocol().String(),
+				container.GetName(),
+			)
+		}
+
+		if containerPublicIp == nil {
+			containerPublicIp = portPublicIp
+		} else {
+			if !containerPublicIp.Equal(portPublicIp) {
+				return nil, nil, nil, stacktrace.NewError(
+					"Private port '%v' on container '%v' yielded a public IP '%v', which doesn't agree with " +
+						"previously-seen public IPs",
+					portId,
+					container.GetName(),
+					portPublicIp.String(),
+					containerPublicIp.String(),
+				)
+			}
+		}
+
+		if publicPortSpecs == nil {
+			publicPortSpecs = map[string]*port_spec.PortSpec{}
+		}
+		publicPortSpecs[portId] = publicPortSpec
+	}
+
+	return privatePortSpecs, containerPublicIp, publicPortSpecs, nil
+}
 
 func makeHttpRequest(httpMethod string, url string, body string) (*http.Response, error) {
 	var (
@@ -787,6 +989,7 @@ func (backend *DockerKurtosisBackend) getSingleUserService(
 	return resultUserServiceContainerId, resultUserService, nil
 }
 
+/*
 func (backend *DockerKurtosisBackend) getMatchingUserServices(
 	ctx context.Context,
 	filters *service.ServiceFilters,
@@ -844,6 +1047,9 @@ func (backend *DockerKurtosisBackend) getMatchingUserServices(
 	return matchingObjects, nil
 }
 
+ */
+
+/*
 func getUserServiceObjectFromContainerInfo(
 	containerId string,
 	labels map[string]string,
@@ -904,18 +1110,8 @@ func getUserServiceObjectFromContainerInfo(
 
 	var privateIpAddr net.IP
 	privateIpAddrStr, found := labels[label_key_consts.PrivateIPLabelKey.GetString()]
-	// UNCOMMENT THIS AFTER 2022-06-30 WHEN NOBODY HAS USER SERVICES WITHOUT THE PRIVATE IP ADDRESS LABEL
-	/*
-		if !found {
-			return nil, stacktrace.NewError("Expected to find user service private IP label key '%v' but none was found", label_key_consts.PrivateIPLabelKey.GetString())
-		}
-	*/
-	if found {
-		candidatePrivateIpAddr := net.ParseIP(privateIpAddrStr)
-		if candidatePrivateIpAddr == nil {
-			return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
-		}
-		privateIpAddr = candidatePrivateIpAddr
+	if !found {
+		 return nil, stacktrace.NewError("Expected to find user service private IP label key '%v' but none was found", label_key_consts.PrivateIPLabelKey.GetString())
 	}
 
 	newObject := service.NewService(
@@ -931,7 +1127,9 @@ func getUserServiceObjectFromContainerInfo(
 
 	return newObject, nil
 }
+*/
 
+/*
 func getUserServicePrivatePortsFromContainerLabels(containerLabels map[string]string) (map[string]*port_spec.PortSpec, error) {
 	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsLabelKey.GetString()]
 	if !found {
@@ -948,6 +1146,9 @@ func getUserServicePrivatePortsFromContainerLabels(containerLabels map[string]st
 	return portSpecs, nil
 }
 
+ */
+
+/*
 // TODO Replace with the method that the API containers use for getting & retrieving port specs
 func getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts map[string]*port_spec.PortSpec) (map[nat.Port]docker_manager.PortPublishSpec, map[nat.Port]string, error) {
 	publishSpecs := map[nat.Port]docker_manager.PortPublishSpec{}
@@ -973,6 +1174,9 @@ func getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts 
 	return publishSpecs, portIdsForDockerPortObjs, nil
 }
 
+ */
+
+/*
 // TODO Replace with the simpler method that the API container uses for getting public port specs using private port specs
 // condensePublicNetworkInfoFromHostMachineBindings
 // Condenses declared private port bindings and the host machine port bindings returned by the container engine lib into:
@@ -1057,6 +1261,7 @@ func condensePublicNetworkInfoFromHostMachineBindings(
 	}
 	return publicIpAddr, publicPorts, nil
 }
+ */
 
 func doesHttpResponseMatchExpected(
 	expectedResponseBody string,

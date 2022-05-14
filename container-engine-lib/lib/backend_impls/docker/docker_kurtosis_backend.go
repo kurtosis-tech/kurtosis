@@ -75,6 +75,7 @@ var portSpecProtosToDockerPortProtos = map[port_spec.PortProtocol]string{
 // Docker doesn't have any sort of object that would allow us to track a registered, but not started, service so we
 // use this in-memory struct to accomplish the same purpose
 type registeredServiceInfo struct {
+	enclaveId enclave.EnclaveID
 	id service.ServiceID
 	guid service.ServiceGUID
 	ip net.IP
