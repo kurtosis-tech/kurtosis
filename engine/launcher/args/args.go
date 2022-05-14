@@ -30,7 +30,7 @@ type EngineServerArgs struct {
 
 	KurtosisBackendType kurtosis_backend_type.KurtosisBackendType `json:"kurtosisBackendType"`
 
-	// Optional, and should be deserialized differently depending on value of KurtosisBackendType
+	// Should be deserialized differently depending on value of KurtosisBackendType
 	KurtosisClusterConfig *interface{} `json:"kurtosisClusterConfig"`
 }
 
@@ -43,6 +43,8 @@ func NewEngineServerArgs(
 	imageVersionTag string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
+	kurtosisBackendType kurtosis_backend_type.KurtosisBackendType,
+	kurtosisClusterConfig *interface{},
 ) (*EngineServerArgs, error) {
 	result := &EngineServerArgs{
 		GrpcListenPortNum:           grpcListenPortNum,
@@ -51,8 +53,9 @@ func NewEngineServerArgs(
 		ImageVersionTag:             imageVersionTag,
 		MetricsUserID:               metricsUserID,
 		DidUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
+		KurtosisBackendType:         kurtosisBackendType,
+		KurtosisClusterConfig:       kurtosisClusterConfig,
 	}
-
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating engine server args")
 	}
