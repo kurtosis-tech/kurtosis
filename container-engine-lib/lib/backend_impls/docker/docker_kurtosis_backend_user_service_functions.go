@@ -341,6 +341,7 @@ func (backend *DockerKurtosisBackend) GetUserServices(
 
 func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 	shouldFollowLogs bool,
 ) (
@@ -352,23 +353,28 @@ func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 	backend.serviceRegistrationMutex.RLock()
 	defer backend.serviceRegistrationMutex.RUnlock()
 
-	userServices, err := backend.getMatchingUserServices(ctx, filters)
+	_, allDockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesWithoutMutex(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
 
+	//TODO use concurrency to improve perf
 	successfulUserServicesLogs := map[service.ServiceGUID]io.ReadCloser{}
 	erroredUserServices := map[service.ServiceGUID]error{}
-
-	//TODO use concurrency to improve perf
-	for containerId, userService := range userServices {
-		readCloserLogs, err := backend.dockerManager.GetContainerLogs(ctx, containerId, shouldFollowLogs)
-		if err != nil {
-			serviceError := stacktrace.Propagate(err, "An error occurred getting logs for user service with GUID '%v' and container ID '%v'", userService.GetGUID(), containerId)
-			erroredUserServices[userService.GetGUID()] = serviceError
+	for guid, resourcesForService := range allDockerResources {
+		container := resourcesForService.container
+		if container == nil {
+			erroredUserServices[guid] = stacktrace.NewError("Cannot get logs for service '%v' as it has no container")
 			continue
 		}
-		successfulUserServicesLogs[userService.GetGUID()] = readCloserLogs
+
+		readCloserLogs, err := backend.dockerManager.GetContainerLogs(ctx, container.GetId(), shouldFollowLogs)
+		if err != nil {
+			serviceError := stacktrace.Propagate(err, "An error occurred getting logs for container '%v' for user service with GUID '%v'", container.GetName(), guid)
+			erroredUserServices[guid] = serviceError
+			continue
+		}
+		successfulUserServicesLogs[guid] = readCloserLogs
 	}
 
 	return successfulUserServicesLogs, erroredUserServices, nil
@@ -377,19 +383,25 @@ func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 func (backend *DockerKurtosisBackend) PauseService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	serviceId service.ServiceGUID,
+	serviceGuid service.ServiceGUID,
 ) error {
 	// !!!!! THIS IS JUST A READ LOCK; YOU MAY NOT WRITE TO REGISTRATION INFO IN THIS METHOD !!!!!!!!!!
 	backend.serviceRegistrationMutex.RLock()
 	defer backend.serviceRegistrationMutex.RUnlock()
 
-	containerId, _, err := backend.getSingleServiceObjWithResourcesWithoutMutex(ctx, enclaveId, serviceId)
+	serviceObj, dockerResources, err := backend.getSingleServiceObjWithResourcesWithoutMutex(ctx, enclaveId, serviceGuid)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to get information about service '%v' from Kurtosis backend.", serviceId)
+		return stacktrace.Propagate(err, "Failed to get information about service '%v' from Kurtosis backend.", serviceGuid)
 	}
-	err = backend.dockerManager.PauseContainer(ctx, containerId)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to pause service' %v' running in container '%v'", serviceId, containerId)
+	if serviceObj.GetStatus() != service.UserServiceStatus_Running {
+		return stacktrace.NewError("Cannot pause service '%v' because it is not in state '%v'", service.UserServiceStatus_Running.String())
+	}
+	container := dockerResources.container
+	if container == nil {
+		return stacktrace.NewError("Cannot pause service '%v' as it doesn't have a container to pause", serviceGuid)
+	}
+	if err = backend.dockerManager.PauseContainer(ctx, container.GetId()); err != nil {
+		return stacktrace.Propagate(err, "Failed to pause container '%v' for service '%v' ", container.GetName(), serviceGuid)
 	}
 	return nil
 }
@@ -397,19 +409,25 @@ func (backend *DockerKurtosisBackend) PauseService(
 func (backend *DockerKurtosisBackend) UnpauseService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	serviceId service.ServiceGUID,
+	serviceGuid service.ServiceGUID,
 ) error {
 	// !!!!! THIS IS JUST A READ LOCK; YOU MAY NOT WRITE TO REGISTRATION INFO IN THIS METHOD !!!!!!!!!!
 	backend.serviceRegistrationMutex.RLock()
 	defer backend.serviceRegistrationMutex.RUnlock()
 
-	containerId, _, err := backend.getSingleServiceObjWithResourcesWithoutMutex(ctx, enclaveId, serviceId)
+	serviceObj, dockerResources, err := backend.getSingleServiceObjWithResourcesWithoutMutex(ctx, enclaveId, serviceGuid)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to get information about service '%v' from Kurtosis backend.", serviceId)
+		return stacktrace.Propagate(err, "Failed to get information about service '%v' from Kurtosis backend.", serviceGuid)
 	}
-	err = backend.dockerManager.UnpauseContainer(ctx, containerId)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to unpause service '%v' running in container '%v'", serviceId, containerId)
+	if serviceObj.GetStatus() != service.UserServiceStatus_Paused {
+		return stacktrace.NewError("Cannot unpause service '%v' because it is not in state '%v'", service.UserServiceStatus_Paused.String())
+	}
+	container := dockerResources.container
+	if container == nil {
+		return stacktrace.NewError("Cannot unpause service '%v' as it doesn't have a container to pause", serviceGuid)
+	}
+	if err = backend.dockerManager.PauseContainer(ctx, container.GetId()); err != nil {
+		return stacktrace.Propagate(err, "Failed to pause container '%v' for service '%v' ", container.GetName(), serviceGuid)
 	}
 	return nil
 }
@@ -428,67 +446,73 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	backend.serviceRegistrationMutex.RLock()
 	defer backend.serviceRegistrationMutex.RUnlock()
 
-	succesfulUserServiceExecResults := map[service.ServiceGUID]*exec_result.ExecResult{}
-	erroredUserServiceGuids := map[service.ServiceGUID]error{}
-
 	userServiceGuids := map[service.ServiceGUID]bool{}
 	for userServiceGuid := range userServiceCommands {
 		userServiceGuids[userServiceGuid] = true
 	}
 
 	filters := &service.ServiceFilters{
-		EnclaveIDs: map[enclave.EnclaveID]bool{
-			enclaveId: true,
-		},
 		GUIDs: userServiceGuids,
 	}
-
-	userServices, err := backend.getMatchingUserServices(ctx, filters)
+	_, dockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesWithoutMutex(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
 
-	if len(userServiceCommands) != len(userServices) {
-		return nil, nil, stacktrace.NewError("The amount of user services found '%v' are not equal to the amount of user service to run exec commands '%v'", len(userServices), len(userServiceCommands))
-	}
-	for _, userService := range userServices {
-		if _, found := userServiceCommands[userService.GetGUID()]; !found {
-			return nil,
-				nil,
-				stacktrace.NewError(
-					"User service with GUID '%v' was found when getting matching "+
-						"user services with filters '%+v' but it was not declared in the user "+
-						"service exec commands list '%+v'",
-					userService.GetGUID(),
-					filters,
-					userServiceCommands,
-				)
-		}
+	if len(userServiceCommands) != len(dockerResources) {
+		return nil, nil, stacktrace.NewError(
+			"The number of user services found '%v' is not equal to the number of user service to run exec commands on, '%v'",
+			len(dockerResources),
+			len(userServiceCommands),
+		)
 	}
 
 	// TODO Parallelize to increase perf
-	for containerId, userService := range userServices {
-		userServiceCommand := userServiceCommands[userService.GetGUID()]
+	succesfulUserServiceExecResults := map[service.ServiceGUID]*exec_result.ExecResult{}
+	erroredUserServiceGuids := map[service.ServiceGUID]error{}
+	for guid, commandArgs := range userServiceCommands {
+		dockerResources, found := dockerResources[guid]
+		if !found {
+			// Should never happen if our logic for pulling back resources is correct because we always return a Docker resources object, even if
+			// no container exists
+			erroredUserServiceGuids[guid] = stacktrace.NewError(
+				"Cannot execute command '%+v' on service '%v' because no Docker resources were found for it",
+				commandArgs,
+				guid,
+			)
+			continue
+		}
+
+		container := dockerResources.container
+		if container == nil {
+			erroredUserServiceGuids[guid] = stacktrace.NewError(
+				"Cannot execute command '%+v' on service '%v' because it doesn't have a Docker container",
+				commandArgs,
+				guid,
+			)
+			continue
+		}
 
 		execOutputBuf := &bytes.Buffer{}
 		exitCode, err := backend.dockerManager.RunExecCommand(
 			ctx,
-			containerId,
-			userServiceCommand,
-			execOutputBuf)
+			container.GetId(),
+			commandArgs,
+			execOutputBuf,
+		)
 		if err != nil {
 			wrappedErr := stacktrace.Propagate(
 				err,
-				"An error occurred executing command '%+v' on user service with GUID '%v' and container ID '%v'",
-				userServiceCommand,
-				userService.GetGUID(),
-				containerId,
+				"An error occurred executing command '%+v' on container '%v' for user service '%v'",
+				commandArgs,
+				container.GetName(),
+				guid,
 			)
-			erroredUserServiceGuids[userService.GetGUID()] = wrappedErr
+			erroredUserServiceGuids[guid] = wrappedErr
 			continue
 		}
 		newExecResult := exec_result.NewExecResult(exitCode, execOutputBuf.String())
-		succesfulUserServiceExecResults[userService.GetGUID()] = newExecResult
+		succesfulUserServiceExecResults[guid] = newExecResult
 	}
 
 	return succesfulUserServiceExecResults, erroredUserServiceGuids, nil
