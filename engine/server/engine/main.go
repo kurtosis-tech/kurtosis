@@ -81,13 +81,13 @@ func runMain() error {
 			return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
 		}
 	case kurtosis_backend_type.Kubernetes:
-		clusterConfig := serverArgs.KurtosisClusterConfig
+		clusterConfig := serverArgs.KurtosisBackendConfig
 		if clusterConfig == nil {
 			return stacktrace.NewError("Kurtosis backend type is '%v' but cluster configuration parameters are null.", kurtosis_backend_type.Kubernetes.String())
 		}
 		kubernetesClusterConfig, ok := (*clusterConfig).(kurtosis_cluster_config.KurtosisClusterConfig)
 		if !ok {
-			return stacktrace.NewError("Failed to cast cluster configuration interface to KurtosisClusterConfig, even though Kurtosis backend type is '%v'", kurtosis_backend_type.Kubernetes.String())
+			return stacktrace.NewError("Failed to cast cluster configuration interface to KurtosisBackendConfig, even though Kurtosis backend type is '%v'", kurtosis_backend_type.Kubernetes.String())
 		}
 		kurtosisBackend, err = lib.GetLocalKubernetesKurtosisBackend(kubernetesClusterConfig.StorageClass, kubernetesClusterConfig.EnclaveSizeInGigabytes)
 		if err != nil {

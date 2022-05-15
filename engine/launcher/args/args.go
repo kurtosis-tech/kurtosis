@@ -1,7 +1,6 @@
 package args
 
 import (
-	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args/kurtosis_backend_type"
 	"reflect"
 	"strings"
 
@@ -28,10 +27,10 @@ type EngineServerArgs struct {
 	//User consent to send metrics
 	DidUserAcceptSendingMetrics bool `json:"didUserAcceptSendingMetrics"`
 
-	KurtosisBackendType kurtosis_backend_type.KurtosisBackendType `json:"kurtosisBackendType"`
+	KurtosisBackendType KurtosisBackendType `json:"kurtosisBackendType"`
 
 	// Should be deserialized differently depending on value of KurtosisBackendType
-	KurtosisClusterConfig *interface{} `json:"kurtosisClusterConfig"`
+	KurtosisBackendConfig interface{} `json:"kurtosisClusterConfig"`
 }
 
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
@@ -43,8 +42,8 @@ func NewEngineServerArgs(
 	imageVersionTag string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
-	kurtosisBackendType kurtosis_backend_type.KurtosisBackendType,
-	kurtosisClusterConfig *interface{},
+	kurtosisBackendType KurtosisBackendType,
+	kurtosisBackendConfig interface{},
 ) (*EngineServerArgs, error) {
 	result := &EngineServerArgs{
 		GrpcListenPortNum:           grpcListenPortNum,
@@ -54,7 +53,7 @@ func NewEngineServerArgs(
 		MetricsUserID:               metricsUserID,
 		DidUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
 		KurtosisBackendType:         kurtosisBackendType,
-		KurtosisClusterConfig:       kurtosisClusterConfig,
+		KurtosisBackendConfig:       kurtosisBackendConfig,
 	}
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating engine server args")
