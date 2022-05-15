@@ -78,8 +78,9 @@ type KubernetesKurtosisBackend struct {
 	/*
 		Enclave availability must be set and defined by a cluster administrator.
 		The user passes this in when starting Kurtosis with Kubernetes.
+		This is a string parsed by Kubernetes (i.e. 10Gi)
 	 */
-	volumeSizePerEnclaveInGigabytes int
+	volumeSizePerEnclaveQuantityStr string
 }
 
 func (backend *KubernetesKurtosisBackend) PullImage(image string) error {
@@ -231,13 +232,13 @@ func (backend *KubernetesKurtosisBackend) DestroyFilesArtifactExpanders(ctx cont
 	panic("implement me")
 }
 
-func NewKubernetesKurtosisBackend(kubernetesManager *kubernetes_manager.KubernetesManager, volumeStorageClassName string, volumeSizePerEnclaveInGigabytes int) *KubernetesKurtosisBackend {
+func NewKubernetesKurtosisBackend(kubernetesManager *kubernetes_manager.KubernetesManager, volumeStorageClassName string, volumeSizePerEnclaveQuantityStr string) *KubernetesKurtosisBackend {
 	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	return &KubernetesKurtosisBackend{
-		kubernetesManager: kubernetesManager,
-		objAttrsProvider:  objAttrsProvider,
-		volumeStorageClassName: volumeStorageClassName,
-		volumeSizePerEnclaveInGigabytes: volumeSizePerEnclaveInGigabytes,
+		kubernetesManager:               kubernetesManager,
+		objAttrsProvider:                objAttrsProvider,
+		volumeStorageClassName:          volumeStorageClassName,
+		volumeSizePerEnclaveQuantityStr: volumeSizePerEnclaveQuantityStr,
 	}
 }
 

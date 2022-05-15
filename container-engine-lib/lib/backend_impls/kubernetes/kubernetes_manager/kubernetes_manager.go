@@ -277,15 +277,15 @@ func (manager *KubernetesManager) GetPersistentVolumesByLabels(ctx context.Conte
 	return persistentVolumesResult, nil
 }
 
-func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Context, namespace string, persistentVolumeClaimName string, persistentVolumeClaimLabels map[string]string, quantityInGigabytes string, storageClassName string) (*apiv1.PersistentVolumeClaim, error) {
+func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Context, namespace string, persistentVolumeClaimName string, persistentVolumeClaimLabels map[string]string, enclaveQuantityStr string, storageClassName string) (*apiv1.PersistentVolumeClaim, error) {
 	volumeClaimsClient := manager.kubernetesClientSet.CoreV1().PersistentVolumeClaims(namespace)
 
 	//storageClassName := "my-local-storage"
 	//quantity := "10Gi"
 
-	quantity, err := resource.ParseQuantity(quantityInGigabytes)
+	quantity, err := resource.ParseQuantity(enclaveQuantityStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to parse quantityInGigabytes '%s'", quantityInGigabytes)
+		return nil, stacktrace.Propagate(err, "Failed to parse enclaveQuantityStr '%s'", enclaveQuantityStr)
 	}
 
 	persistentVolumeClaim := &apiv1.PersistentVolumeClaim{
