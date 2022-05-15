@@ -45,7 +45,7 @@ func GetInClusterKubernetesKurtosisBackend(volumeStorageClassName string, volume
 	return wrappedBackend, nil
 }
 
-func newWrappedKubernetesKurtosisBackend(kubernetesConfig *rest.Config, volumeStorageClassName string, volumeSizeInGigabytes int) (*metrics_reporting.MetricsReportingKurtosisBackend, error){
+func newWrappedKubernetesKurtosisBackend(kubernetesConfig *rest.Config, volumeStorageClassName string, enclaveVolumeSizeQuantityStr string) (*metrics_reporting.MetricsReportingKurtosisBackend, error){
 	clientSet, err := kubernetes.NewForConfig(kubernetesConfig)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to create kubernetes client set using Kubernetes config '%+v', instead a non nil error was returned", kubernetesConfig)
@@ -53,7 +53,7 @@ func newWrappedKubernetesKurtosisBackend(kubernetesConfig *rest.Config, volumeSt
 
 	kubernetesManager := kubernetes_manager.NewKubernetesManager(clientSet)
 
-	kurtosisBackend := kb.NewKubernetesKurtosisBackend(kubernetesManager, volumeStorageClassName, volumeSizeInGigabytes)
+	kurtosisBackend := kb.NewKubernetesKurtosisBackend(kubernetesManager, volumeStorageClassName, enclaveVolumeSizeQuantityStr)
 
 	wrappedBackend := metrics_reporting.NewMetricsReportingKurtosisBackend(kurtosisBackend)
 
