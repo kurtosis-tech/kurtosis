@@ -141,16 +141,6 @@ Returns:
 	id: The Docker-managed ID of the network
 */
 func (manager DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP net.IP, labels map[string]string) (id string, err error) {
-	// TODO remove this error-checking - Docker itself should fail
-	networkIds, err := manager.GetNetworksByName(context, name)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred checking for existence of network with name %v", name)
-	}
-	if len(networkIds) != 0 {
-		// We throw an error if the network already exists because we don't know what settings that network was created
-		//  with - likely a completely different subnetMask and gatewayIP
-		return "", stacktrace.NewError("Network with name %v cannot be created because one or more networks with that name already exist", name)
-	}
 	ipamConfig := []network.IPAMConfig{{
 		Subnet:  subnetMask,
 		Gateway: gatewayIP.String(),
@@ -174,18 +164,10 @@ func (manager DockerManager) ListNetworks(ctx context.Context) ([]types.NetworkR
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred listing the Docker networks")
 	}
+	// The Network objects that come back ostensibly, *should*  have the Containers field filled out... but they don't
+	// If we ever need that field, we have to call an InspectNetwork, and even then it seems to have some amount of
+	// nondeterminism (i.e. brand-new containers won't show up)
 	return networks, nil
-}
-
-// Ostensibly, this *shouldn't* be necessary - we should be able to just use the NetworkList - but Docker, for some insane
-// reason, leaves the Network.Containers field empty when you use NetworkList.
-func (manager *DockerManager) InspectNetwork(ctx context.Context, networkId string) (*types.NetworkResource, error) {
-	networkInspectOptions := types.NetworkInspectOptions{}
-	result, err := manager.dockerClient.NetworkInspect(ctx, networkId, networkInspectOptions)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred inspecting network with ID '%v'", networkId)
-	}
-	return &result, nil
 }
 
 /*
@@ -965,7 +947,7 @@ func (manager DockerManager) isImageAvailableLocally(ctx context.Context, imageN
 func (manager *DockerManager) getNetworksByFilterArgs(ctx context.Context, args filters.Args) ([]types.NetworkResource, error) {
 	// NOTE: Even though this returns a `NetworkResource` object which has a Containers field on it, this is a lie!!
 	// For whatever insane reason, Docker doesn't fill this field out when NetworkList is used and there doesn't seem to
-	// be a way to get it to do so
+	// be a way to get it to do so. Instead we'd have to do an InspectNetwork call.
 	networks, err := manager.dockerClient.NetworkList(
 		ctx,
 		types.NetworkListOptions{

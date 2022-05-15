@@ -71,39 +71,12 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
 
-	// We have to do a network inspect because for some insane reason Docker doesn't fill out the Network.Containers
-	//  field when listing networks
-	inspectNetworkResults, err := backend.dockerManager.InspectNetwork(ctx, enclaveNetwork.GetId())
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred inspecting network with ID '%v' to get the " +
-				"containers on the network, which is necessary to create a free IP address tracker for the network",
-			enclaveId,
-		)
-	}
-
 	networkCidr := enclaveNetwork.GetIpAndMask()
 	alreadyTakenIps := map[string]bool{
 		networkCidr.IP.String(): true,
 		enclaveNetwork.GetGatewayIp(): true,
 	}
-	for _, containerInfo := range inspectNetworkResults.Containers {
-		// Even though Docker *calls* this the IP, it's actually the IP + the subnet mask >:(
-		containerIpCidrStr := containerInfo.IPv4Address
-		ip, _, err := net.ParseCIDR(containerIpCidrStr)
-		if err != nil {
-			return nil, stacktrace.Propagate(
-				err,
-				"An error occurred parsing container IP CIDR string '%v' for container with name '%v'",
-				containerIpCidrStr,
-				containerInfo.Name,
-			)
-		}
 
-		alreadyTakenIps[ip.String()] = true
-	}
-	// TODO migrate FreeIPAddrTracker inside this repo
 	freeIpAddrProvider := lib.NewFreeIpAddrTracker(
 		logrus.StandardLogger(),
 		networkCidr,

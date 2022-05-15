@@ -12,17 +12,16 @@
 ### Breaking Changes
 * `user_service_registration.ServiceID` is now once again `service.ServiceID`
     * Users should update their code
-* `UserServiceRegistration` objects have been removed
-    * Users should migrate to using the new migration flow
+* `user_service_registration.UserServiceRegistration` objects have been removed and replaced with `service.ServiceRegistration`
+    * Users should use the new objects
 * `CreateUserServiceRegistration` has been replaced with `RegisterUserService`
     * Users should use `RegisterUserService`
 * `DestroyUserServiceRegistration` has been removed
     * Users should use `DestroyUserServices`
 * `CreateUserService` has been renamed to `StartUserService`
-    * TODO
-* TODO scoping down all Service functions to be per-enclave
-* TODO remove wait-for-availability because it doesn't need to be there
-* TODO renaming StartUserService -> ActivateUserService and StopService -> DeactivateUserService
+    * Users should call `RegisterUserService` first, then `StartUserService`
+* All user service functions now take in an `enclaveId` parameter
+    * Users should provide the new parameter
 
 # 0.21.1
 ### Fixes

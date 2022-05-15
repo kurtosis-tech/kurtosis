@@ -32,43 +32,43 @@ const (
 )
 
 /*
-        Kurtosis Service State Diagram
 
-REGISTERED ------------------------> STOPPED
-			 \                  /
-			  '--> RUNNING --'
+      *************************************************************************************************
+      * See the documentation on the KurtosisBackend interface for the Kurtosis service state diagram *
+      *************************************************************************************************
 
+                                      DOCKER SERVICES IMPLEMENTATION
+States:
+- REGISTERED: a ServiceGUID has been allocated in an in-memory map of DockerKurtosisBackend, allocating it to a
+	ServiceGUID and an IP. No container for the service yet exists. We need to store the IP address in memory because
+	there's no Docker object representing a registered, but not yet started, service.
+- RUNNING: a user container is running using the previously-allocated IP address
+- STOPPED: a user container was running, but is now stopped
+- DESTROYED: the in-memory ServiceGUID registration no longer exists, and the container (if one was ever started) has
+	been removed. The IP address that was allocated has been returned to the pool.
 
-            DOCKER IMPLEMENTATION
-
-Kurtosis services are uniquely identified by a ServiceGUID and can have the following states:
-1. REGISTERED = a GUID and an IP address in the enclave has been allocated for the service, but no user container is running
-1. RUNNING = user's container should be running (though may not be if they have an error)
-1. STOPPED = user's container has been killed *and will not run again*
-1. DESTROYED = not technically a state because the service no longer exists
-
-In Docker, we implement this like so:
-- Registration: the DockerKurtosisBackend will keep an in-memory map of the registration info (IP & ServiceGUID), because there's no Docker
-	object that corresponds to a registration
-- Starting: the user's container is started with the IP that was generated during registration
-- Stopping: the user's container is killed, rather than deleted, so that logs are still accessible. A user service container
-	running or not running is the difference between these.
-- Destroyed: any container that was started is destroyed, and the IP address is freed.
+State transitions:
+- RegisterService: an IP address is allocated, a ServiceGUID is generated, and both are stored in the in-memory map of
+	DockerKurtosisBackend.
+- StartService: the previously-allocated IP address of the registration is consumed to start a user container.
+- StopServices: the containers of the matching services are killed (rather than deleted) so that logs are still accessible.
+- DestroyServices: any container that was started is destroyed, the registration is removed from the in-memory map, and
+	the IP address is freed.
 
 Implementation notes:
-- Because we're keeping an in-memory map, a mutex was important to keep it thread-safe. IT IS VERY IMPORTANT THAT ALL METHODS
+- Because we're keeping an in-memory map, a mutex is important to keep it thread-safe. IT IS VERY IMPORTANT THAT ALL METHODS
 	WHICH USE THE IN-MEMORY SERVICE REGISTRATION MAP LOCK THE MUTEX!
 - Because an in-memory map is being kept, it means that any operation that requires that map will ONLY be doable via the API
 	container (because if the CLI were to do the same operation, it wouldn't have the in-memory map and things would be weird).
-- Naturally we'd think "cool, just push everything through the API container", but certain operations should still work even
+- We might think "let's just push everything through the API container", but certain operations should still work even
 	when the API container is stopped (e.g. 'enclave inspect' in the CLI). This means that KurtosisBackend code powering
 	'enclave inspect' needs to a) not flow through the API container and b) not use the in-memory map
 - Thus, we had to make it such that things like GetServices *don't* use the in-memory map. This led to some restrictions (e.g.
 	we can't actually return a Service object with a status indicating if it's registered or not because doing so requires
 	the in-memory map which means it must be done through the API container).
-- The implementation we settled on is that, ServiceRegistrations are these sort of proto-services returned by RegisterService,
+- The implementation we settled on is that, ServiceRegistrations are like service "stubs" returned by RegisterService,
 	but they're identified by a ServiceGUID just like a full service. StartService "upgrades" a ServiceRegistration into a full
-	Service.
+	Service object.
 
 The benefits of this implementation:
 - We can get the IP address before the service is started, which is crucial because certain user containers actually need

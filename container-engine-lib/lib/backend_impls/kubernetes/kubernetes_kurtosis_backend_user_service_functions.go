@@ -11,32 +11,34 @@ import (
 )
 
 /*
-        Kurtosis Service State Diagram
+      *************************************************************************************************
+      * See the documentation on the KurtosisBackend interface for the Kurtosis service state diagram *
+      *************************************************************************************************
 
-REGISTERED ------------------------> STOPPED
-			 \                  /
-			  '--> RUNNING --'
+                                  KUBERNETES SERVICES IMPLEMENTATION
 
-         KUBERNETES IMPLEMENTATION
+States:
+- REGISTERED: a ServiceGUID has been generated, a Kubernetes Service has been created with that ServiceGUID as a label,
+	the Kubernetes Service gets it selector set to look for pods with that ServiceGUID (of which there will be none at
+	first), and the ClusterIP of the Service is returned to the caller.
+- RUNNING: one or more Pods match the ServiceGUID selector of the Service.
+- STOPPED = the Service's selectors are set to empty (this is to distinguish between "no Pods exist because they haven't
+	been started yet", i.e. REGISTERED, and "no Pods exist because they were stopped", i.e. STOPPED).
+- DESTROYED = no Service or Pod for the ServiceGUID exists.
 
-Kurtosis services are uniquely identified by a ServiceGUID and can have the following states:
-1. REGISTERED = a GUID and an IP address in the enclave has been allocated for the service, but no user container is running
-1. RUNNING = user's container should be running (though may not be if they have an error)
-1. STOPPED = user's container has been killed *and will not run again*
-1. DESTROYED = not technically a state because the service no longer exists
+State transitions:
+- RegisterService: a Service is created with the ServiceGUID label (for finding later), the Service's selectors are set
+	to look for Pods with the ServiceGUID, and the Service's ClusterIP is returned to the caller.
+- StartService: a Pod is created with the ServiceGUID, which will hook up the Service to the Pod.
+- StopServices: The Pod is destroyed (because Kubernetes doesn't have a way to stop Pods - only remove them) and the Service's
+	selectors are set to empty. If we want to keep Kubernetes logs around after a Pod is destroyed, we'll need to implement
+	our own logstore.
+- DestroyServices: the Service is destroyed, as is any Pod that may have been started.
 
-In Kubernetes, we implement this like so:
-- Registration: we:
-	- Generate a ServiceGUID
-	- Create a Kubernetes Service that has the ServiceGUID as a label (so we can find it again)
-	- Add selectors on the Service to select for Pods matching the ServiceGUID
-	- Use the Service's IP address
-- Starting: a pod with the ServiceGUID is created
-- Stopping:
-	- The Pod is deleted (Kubernetes has no way of stopping the pod while leaving its logs around; we'll have to implement
- 	  our own log store to catch these
-	- The Service's selectors are set to nil, indicating that the Service is forever unusable
-- Destroyed: both the Service and the Pod are destroyed
+Implementation notes:
+- Kubernetes has no concept of stopping a pod without removing it; if we want Pod logs we'll need to implement our own logstore.
+- The IP that the container gets as its "own IP" is technically the IP of the Service. This *should* be fine, but we'll need
+	to keep an eye out for it.
 */
 
 func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID, ) (*service.ServiceRegistration, error, ) {
