@@ -1,4 +1,6 @@
 # TBD
+
+# 1.48.0
 ### Fixes
 * Updated to container-engine-lib 0.20.1 which fixes a bug with getting DockerKurtosisBackend in the API container
 
