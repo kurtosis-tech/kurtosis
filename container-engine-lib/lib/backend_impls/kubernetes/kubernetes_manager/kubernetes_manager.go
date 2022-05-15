@@ -24,6 +24,7 @@ const (
 	defaultServiceProtocol                 = "TCP"
 	defaultPersistentVolumeAccessMode      = apiv1.ReadWriteMany
 	defaultPersistentVolumeClaimAccessMode = apiv1.ReadWriteMany
+	binaryByteMultiplier				   = 1024
 )
 
 var (
@@ -202,10 +203,6 @@ func (manager *KubernetesManager) GetStorageClass(ctx context.Context, name stri
 func (manager *KubernetesManager) CreatePersistentVolume(ctx context.Context, volumeName string, volumeLabels map[string]string, volumeAnnotations map[string]string, quantityInGigabytes string, pathInSingleNodeCluster string, storageClassName string) (*apiv1.PersistentVolume, error) {
 	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
 
-	//quantity := "100Gi"
-	//storageClassName := "my-local-storage"
-	//pathInSingleNodeCluster := "/Users/mariofernandez/Library/Application Support/kurtosis/engine-data"
-
 	quantity, err := resource.ParseQuantity(quantityInGigabytes)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to parse quantityInGigabytes '%s'", quantityInGigabytes)
@@ -277,16 +274,10 @@ func (manager *KubernetesManager) GetPersistentVolumesByLabels(ctx context.Conte
 	return persistentVolumesResult, nil
 }
 
-func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Context, namespace string, persistentVolumeClaimName string, persistentVolumeClaimLabels map[string]string, enclaveQuantityStr string, storageClassName string) (*apiv1.PersistentVolumeClaim, error) {
+func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Context, namespace string, persistentVolumeClaimName string, persistentVolumeClaimLabels map[string]string, volumeSizeInMb uint, storageClassName string) (*apiv1.PersistentVolumeClaim, error) {
 	volumeClaimsClient := manager.kubernetesClientSet.CoreV1().PersistentVolumeClaims(namespace)
 
-	//storageClassName := "my-local-storage"
-	//quantity := "10Gi"
-
-	quantity, err := resource.ParseQuantity(enclaveQuantityStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to parse enclaveQuantityStr '%s'", enclaveQuantityStr)
-	}
+	quantity := resource.NewQuantity(int64(volumeSizeInMb* binaryByteMultiplier * binaryByteMultiplier), resource.BinarySI)
 
 	persistentVolumeClaim := &apiv1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
@@ -300,7 +291,7 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Contex
 			StorageClassName: &storageClassName,
 			Resources: apiv1.ResourceRequirements{
 				Requests: map[apiv1.ResourceName]resource.Quantity{
-					apiv1.ResourceStorage: quantity,
+					apiv1.ResourceStorage: *quantity,
 				},
 			},
 		},
