@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Update comment in KurtosisBackendType enum
 
 # 1.48.0
 ### Fixes
