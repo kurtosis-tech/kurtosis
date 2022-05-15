@@ -10,6 +10,6 @@ import (
 )
 
 type KurtosisBackendConfigSupplier interface {
-	// Public because both the launcher and the enclave manager need to call this
-	GetKurtosisBackendConfig() (args.KurtosisBackendType, interface{})
+	// Private because only the launcher needs to call this
+	getKurtosisBackendConfig() (args.KurtosisBackendType, interface{})
 }
