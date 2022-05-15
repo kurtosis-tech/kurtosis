@@ -338,7 +338,7 @@ func (backend *MetricsReportingKurtosisBackend) StartUserService(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred activating user service '%v' using image '%v' " +
+			"An error occurred starting user service '%v' using image '%v' " +
 				"with private ports '%+v' and entry point args '%+v', command args '%+v', environment " +
 				"vars '%+v', and file artifacts mount dirpath '%v'",
 			guid,
@@ -472,7 +472,7 @@ func (backend *MetricsReportingKurtosisBackend) StopUserServices(
 ) {
 	successes, failures, err := backend.underlying.StopUserServices(ctx, enclaveId, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred deactivating user services in enclave '%v' using filters: %+v", enclaveId, filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping user services in enclave '%v' using filters: %+v", enclaveId, filters)
 	}
 	return successes, failures, nil
 }

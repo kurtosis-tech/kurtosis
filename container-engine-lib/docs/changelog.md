@@ -14,6 +14,8 @@
     * Users should update their code
 * `user_service_registration.UserServiceRegistration` objects have been removed and replaced with `service.ServiceRegistration`
     * Users should use the new objects
+* `user_service_registration.UserServiceRegistrationGUID` no longer exists
+    * Users should switch to using `ServiceGUID`
 * `CreateUserServiceRegistration` has been replaced with `RegisterUserService`
     * Users should use `RegisterUserService`
 * `DestroyUserServiceRegistration` has been removed
@@ -22,6 +24,8 @@
     * Users should call `RegisterUserService` first, then `StartUserService`
 * All user service functions now take in an `enclaveId` parameter
     * Users should provide the new parameter
+* `CreateFilesArtifactExpansionVolume` now takes in a `ServiceGUID` once more
+    * Users should switch back to providing a `ServiceGUID`
 
 # 0.21.1
 ### Fixes

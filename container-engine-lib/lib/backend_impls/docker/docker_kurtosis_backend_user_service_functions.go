@@ -24,10 +24,6 @@ import (
 )
 
 const (
-	// The location where the enclave data volume will be mounted
-	//  on the user service container
-	enclaveDataVolumeDirpathOnServiceContainer = "/kurtosis-data"
-
 	shouldGetStoppedContainersWhenGettingServiceInfo = true
 )
 
@@ -90,7 +86,6 @@ type userServiceDockerResources struct {
 }
 
 func (backend *DockerKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID, ) (*service.ServiceRegistration, error, ) {
-	// Write mutex locked; modification of the service registration map is allowed
 	backend.serviceRegistrationMutex.Lock()
 	defer backend.serviceRegistrationMutex.Unlock()
 
@@ -166,7 +161,6 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	*service.Service,
 	error,
 ) {
-	// Write mutex locked; modification of the service registration map is allowed
 	backend.serviceRegistrationMutex.Lock()
 	defer backend.serviceRegistrationMutex.Unlock()
 
@@ -229,12 +223,6 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
 
-	// TODO REMOVE THIS - Services no longer need the enclave data volume mounted!
-	enclaveDataVolumeName, err := backend.getEnclaveDataVolumeByEnclaveId(ctx, enclaveId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveId)
-	}
-
 	dockerUsedPorts := map[nat.Port]docker_manager.PortPublishSpec{}
 	for portId, portSpec := range privatePorts {
 		dockerPort, err := transformPortSpecToDockerPort(portSpec)
@@ -242,10 +230,6 @@ func (backend *DockerKurtosisBackend) StartUserService(
 			return nil, stacktrace.Propagate(err, "An error occurred converting private port spec '%v' to a Docker port", portId)
 		}
 		dockerUsedPorts[dockerPort] = docker_manager.NewAutomaticPublishingSpec()
-	}
-
-	volumeMounts := map[string]string{
-		enclaveDataVolumeName: enclaveDataVolumeDirpathOnServiceContainer,
 	}
 
 	createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
@@ -258,8 +242,6 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		dockerUsedPorts,
 	).WithEnvironmentVariables(
 		envVars,
-	).WithVolumeMounts(
-		volumeMounts,
 	).WithLabels(
 		labelStrs,
 	).WithAlias(
@@ -411,7 +393,7 @@ func (backend *DockerKurtosisBackend) UnpauseService(
 	return nil
 }
 
-// NOTE: This is a blocking task!!!! If we need more perf we can make it async
+// NOTE: This function will block while the exec is ongoing; if we need more perf we can make it async
 func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
@@ -447,16 +429,7 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 			)
 			continue
 		}
-
 		container := dockerResources.container
-		if container == nil {
-			erroredUserServiceGuids[guid] = stacktrace.NewError(
-				"Cannot execute command '%+v' on service '%v' because it doesn't have a Docker container",
-				commandArgs,
-				guid,
-			)
-			continue
-		}
 
 		execOutputBuf := &bytes.Buffer{}
 		exitCode, err := backend.dockerManager.RunExecCommand(
@@ -495,11 +468,7 @@ func (backend *DockerKurtosisBackend) GetConnectionWithUserService(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting service object and Docker resources for service '%v' in enclave '%v'", serviceGuid, enclaveId)
 	}
-
 	container := serviceDockerResources.container
-	if container == nil {
-		return nil, stacktrace.NewError("Cannot get a connection to user service '%v' in enclave '%v' because no container exists for the service", serviceGuid, enclaveId)
-	}
 
 	hijackedResponse, err := backend.dockerManager.CreateContainerExec(ctx, container.GetId(), commandToRunWhenCreatingUserServiceShell)
 	if err != nil {
@@ -526,9 +495,6 @@ func (backend *DockerKurtosisBackend) CopyFromUserService(
 		return nil, stacktrace.Propagate(err, "An error occurred getting user service with GUID '%v' in enclave with ID '%v'", serviceGuid, enclaveId)
 	}
 	container := serviceDockerResources.container
-	if container == nil {
-		return nil, stacktrace.NewError("Cannot copy files from user service '%v' in enclave '%v' because it doesn't have a container", serviceGuid, enclaveId)
-	}
 
 	tarStreamReadCloser, err := backend.dockerManager.CopyFromContainer(ctx, container.GetId(), srcPath)
 	if err != nil {
@@ -626,7 +592,7 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 	if !found {
 		return nil, nil, stacktrace.NewError(
 			"Cannot destroy services in enclave '%v' because no free IP address tracker is registered for it; this likely " +
-				"means that the deactivate user services call is being made from somewhere it shouldn't be (i.e. outside the API contianer)",
+				"means that the destroy user services call is being made from somewhere it shouldn't be (i.e. outside the API contianer)",
 			enclaveId,
 		)
 	}
