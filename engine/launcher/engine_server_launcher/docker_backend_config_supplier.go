@@ -11,15 +11,14 @@ import (
 )
 
 type DockerBackendConfigSupplier struct {
-	dockerBackendConfig kurtosis_backend_config.DockerBackendConfig
 }
 
 func NewDockerKurtosisBackendConfigSupplier() DockerBackendConfigSupplier {
-	dockerBackendConfig := kurtosis_backend_config.DockerBackendConfig{}
-	return DockerBackendConfigSupplier{dockerBackendConfig: dockerBackendConfig}
+	return DockerBackendConfigSupplier{}
 }
 
-func (backendConfigSupplier *DockerBackendConfigSupplier) GetKurtosisBackendConfig() (args.KurtosisBackendType, interface{}) {
-	return args.KurtosisBackendType_Docker, backendConfigSupplier.dockerBackendConfig
+func (backendConfigSupplier DockerBackendConfigSupplier) getKurtosisBackendConfig () (args.KurtosisBackendType, interface{}) {
+	dockerBackendConfig := kurtosis_backend_config.DockerBackendConfig{}
+	return args.KurtosisBackendType_Docker, dockerBackendConfig
 }
 
