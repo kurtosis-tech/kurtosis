@@ -31,15 +31,15 @@ func GetLocalKubernetesKurtosisBackend(volumeStorageClassName string, enclaveVol
 	return wrappedBackend, nil
 }
 
-func GetInClusterKubernetesKurtosisBackend(volumeStorageClassName string, volumeSizeInGigabytes int) (backend_interface.KurtosisBackend, error) {
+func GetInClusterKubernetesKurtosisBackend(volumeStorageClassName string, enclaveVolumeSizeQuantityStr string) (backend_interface.KurtosisBackend, error) {
 	kubernetesConfig, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting in cluster Kubernetes config")
 	}
 
-	wrappedBackend, err:= newWrappedKubernetesKurtosisBackend(kubernetesConfig, volumeStorageClassName, volumeSizeInGigabytes)
+	wrappedBackend, err:= newWrappedKubernetesKurtosisBackend(kubernetesConfig, volumeStorageClassName, enclaveVolumeSizeQuantityStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating new wrapped Kubernetes Kurtosis Backend using Kubernetes config '%+v', volume storage class name '%v' and size '%v'", kubernetesConfig, volumeStorageClassName, volumeSizeInGigabytes)
+		return nil, stacktrace.Propagate(err, "An error occurred creating new wrapped Kubernetes Kurtosis Backend using Kubernetes config '%+v', volume storage class name '%v' and size '%v'", kubernetesConfig, volumeStorageClassName, enclaveVolumeSizeQuantityStr)
 	}
 
 	return wrappedBackend, nil
