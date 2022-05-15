@@ -6,6 +6,9 @@
 * Fix an issue with network container IPs not being correctly made available when starting a DockerKurtosisBackend in API container mode
 * Allowed removal of user service registrations independent of the underlying service registration (which is necessary for deregistering services in the API container)
 
+### Removals
+* Removed unneeded & unused `KurtosisBackend.WaitForEndpointAvailability` function
+
 ### Breaking Changes
 * `user_service_registration.ServiceID` is now once again `service.ServiceID`
     * Users should update their code

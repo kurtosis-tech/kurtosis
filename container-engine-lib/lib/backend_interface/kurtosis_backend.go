@@ -294,26 +294,6 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-
-	// Wait for succesful http endpoint response which can be used to check if the service is available
-	/*
-	WaitForUserServiceHttpEndpointAvailability(
-		ctx context.Context,
-		enclaveId enclave.EnclaveID,
-		serviceGUID service.ServiceGUID,
-		httpMethod wait_for_availability_http_methods.WaitForAvailabilityHttpMethod, //The httpMethod used to execute the request.
-		port uint32, //The port of the service to check. For instance 8080
-		path string, //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
-		requestBody string, //The content of the request body. Only valid when the httpMethod is POST
-		expectedResponseBody string, //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
-		initialDelayMilliseconds uint32, //The number of milliseconds to wait until executing the first HTTP call
-		retries uint32, //Max number of HTTP call attempts that this will execute until giving up and returning an error
-		retriesDelayMilliseconds uint32, //Number of milliseconds to wait between retries
-	) (
-		resultErr error,
-	)
-	 */
-
 	// Get a connection with user service to execute commands in
 	GetConnectionWithUserService(
 		ctx context.Context,

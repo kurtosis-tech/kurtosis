@@ -19,7 +19,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"net"
-	"net/http"
 	"time"
 )
 
@@ -526,59 +525,6 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 
 	return succesfulUserServiceExecResults, erroredUserServiceGuids, nil
 }
-
-/*
-func (backend *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailability(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceGUID service.ServiceGUID,
-	httpMethod wait_for_availability_http_methods.WaitForAvailabilityHttpMethod,
-	port uint32,
-	path string,
-	requestBody string,
-	expectedResponseBody string,
-	initialDelayMilliseconds uint32,
-	retries uint32,
-	retriesDelayMilliseconds uint32,
-) (
-	resultErr error,
-) {
-	// !!!!! THIS IS JUST A READ LOCK; YOU MAY NOT WRITE TO REGISTRATION INFO IN THIS METHOD !!!!!!!!!!
-	backend.serviceRegistrationMutex.RLock()
-	defer backend.serviceRegistrationMutex.RUnlock()
-
-	_, userService, err := backend.getSingleUserService(ctx, enclaveId, serviceGUID)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting container ID and user service object for enclave ID '%v' and user service GUID '%v'", enclaveId, serviceGUID)
-	}
-
-	url := fmt.Sprintf("http://%v:%v/%v", userService.GetPrivateIP(), port, path)
-
-	time.Sleep(time.Duration(initialDelayMilliseconds) * time.Millisecond)
-
-	httpMethodStr := httpMethod.String()
-	for i := uint32(0); i < retries; i++ {
-		resp, err := makeHttpRequest(httpMethodStr, url, requestBody)
-		if err == nil && doesHttpResponseMatchExpected(expectedResponseBody, resp.Body, url) {
-			break
-		}
-		time.Sleep(time.Duration(retriesDelayMilliseconds) * time.Millisecond)
-	}
-
-	if err != nil {
-		return stacktrace.Propagate(
-			err,
-			"The HTTP endpoint '%v' didn't return a success code, even after %v retries with %v milliseconds in between retries",
-			url,
-			retries,
-			retriesDelayMilliseconds,
-		)
-	}
-
-	return nil
-}
-
- */
 
 func (backend *DockerKurtosisBackend) GetConnectionWithUserService(
 	ctx context.Context,
@@ -1118,36 +1064,6 @@ func getIpAndPortInfoFromContainer(
 	}
 
 	return privatePortSpecs, containerPublicIp, publicPortSpecs, nil
-}
-
-func makeHttpRequest(httpMethod string, url string, body string) (*http.Response, error) {
-	var (
-		resp *http.Response
-		err  error
-	)
-
-	if body != "" && httpMethod != http.MethodPost {
-		return nil, stacktrace.NewError("Is not possible to execute the http request with body '%v' using the http '%v' method", body, httpMethod)
-	}
-
-	if httpMethod == http.MethodPost {
-		var bodyByte = []byte(body)
-		resp, err = http.Post(url, "application/json", bytes.NewBuffer(bodyByte))
-	} else if httpMethod == http.MethodGet {
-		resp, err = http.Get(url)
-	} else if httpMethod == http.MethodHead {
-		resp, err = http.Head(url)
-	} else {
-		return nil, stacktrace.NewError("HTTP method '%v' not allowed", httpMethod)
-	}
-
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An HTTP error occurred sending a request to endpoint '%v' using http method '%v'", url, httpMethod)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, stacktrace.NewError("Received non-OK status code: '%v' when calling http url '%v'", resp.StatusCode, url)
-	}
-	return resp, nil
 }
 
 func (backend *DockerKurtosisBackend) getSingleUserServiceObjAndResourcesWithoutMutex(

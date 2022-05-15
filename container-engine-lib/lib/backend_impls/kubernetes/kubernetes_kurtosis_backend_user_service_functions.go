@@ -99,14 +99,6 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 	panic("implement me")
 }
 
-/*
-func (backend *KubernetesKurtosisBackend) WaitForUserServiceHttpEndpointAvailability(ctx context.Context, enclaveId enclave.EnclaveID, serviceGUID service.ServiceGUID, httpMethod wait_for_availability_http_methods.WaitForAvailabilityHttpMethod, port uint32, path string, requestBody string, expectedResponseBody string, initialDelayMilliseconds uint32, retries uint32, retriesDelayMilliseconds uint32) (resultErr error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-*/
-
 func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGUID service.ServiceGUID) (resultConn net.Conn, resultErr error) {
 	//TODO implement me
 	panic("implement me")
