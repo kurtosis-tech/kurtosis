@@ -22,6 +22,7 @@ type APIContainerModeArgs struct {
 	// Normally storing a context in a struct is bad, but we only do this to package it together as part of "optional" args
 	Context   context.Context
 	EnclaveID enclave.EnclaveID
+	APIContainerIP net.IP
 }
 
 // GetLocalDockerKurtosisBackend is the entrypoint method we expect users of container-engine-lib to call
@@ -65,37 +66,12 @@ func GetLocalDockerKurtosisBackend(
 		}
 		network := matchingNetworks[0]
 		networkIp := network.GetIpAndMask().IP
-
-		// We have to do a network inspect because for some insane reason Docker doesn't fill out the Network.Containers
-		//  field when listing networks
-		inspectNetworkResults, err := dockerManager.InspectNetwork(ctx, network.GetId())
-		if err != nil {
-			return nil, stacktrace.Propagate(
-				err,
-				"An error occurred inspecting network with ID '%v' to get the " +
-					 "containers on the network, which is necessary to create a free IP address tracker for the network",
-				enclaveId,
-			)
-		}
+		apiContainerIp := optionalApiContainerModeArgs.APIContainerIP
 
 		alreadyTakenIps := map[string]bool{
 			networkIp.String(): true,
 			network.GetGatewayIp(): true,
-		}
-		for _, containerInfo := range inspectNetworkResults.Containers {
-			// Even though Docker *calls* this the IP, it's actually the IP + the subnet mask >:(
-			containerIpCidrStr := containerInfo.IPv4Address
-			ip, _, err := net.ParseCIDR(containerIpCidrStr)
-			if err != nil {
-				return nil, stacktrace.Propagate(
-					err,
-					"An error occurred parsing container IP CIDR string '%v' for container with name '%v'",
-					containerIpCidrStr,
-					containerInfo.Name,
-				)
-			}
-
-			alreadyTakenIps[ip.String()] = true
+			apiContainerIp.String(): true,
 		}
 
 		freeIpAddrProvider := lib.NewFreeIpAddrTracker(
