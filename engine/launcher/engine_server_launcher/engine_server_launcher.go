@@ -10,7 +10,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args"
-	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args/kurtosis_backend_type"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -40,7 +39,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	grpcProxyListenPortNum uint16, // Envoy proxy port that will forward grpc-web calls to the engine
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
-	kurtosisBackendType kurtosis_backend_type.KurtosisBackendType,
+	kurtosisBackendType args.KurtosisBackendType,
 	kurtosisClusterConfig *interface{},
 ) (
 	resultPublicIpAddr net.IP,
@@ -73,7 +72,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	grpcProxyListenPortNum uint16, // Envoy proxy port that will forward grpc-web calls to the engine
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
-	kurtosisBackendType kurtosis_backend_type.KurtosisBackendType,
+	kurtosisBackendType args.KurtosisBackendType,
 	kurtosisClusterConfig *interface{},
 ) (
 	resultPublicIpAddr net.IP,
