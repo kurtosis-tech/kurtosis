@@ -39,7 +39,6 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	grpcProxyListenPortNum uint16, // Envoy proxy port that will forward grpc-web calls to the engine
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
-	kurtosisBackendType args.KurtosisBackendType,
 	backendConfigSupplier KurtosisBackendConfigSupplier,
 ) (
 	resultPublicIpAddr net.IP,
