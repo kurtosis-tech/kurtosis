@@ -72,6 +72,11 @@ func runMain() error {
 	}
 	logrus.SetLevel(logLevel)
 
+	backendConfig := serverArgs.KurtosisBackendConfig
+	if backendConfig == nil {
+		return stacktrace.NewError("Backend configuration parameters are null - there must be backend configuration parameters.")
+	}
+
 	var kurtosisBackend backend_interface.KurtosisBackend
 	var apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
 	switch serverArgs.KurtosisBackendType {
@@ -84,11 +89,7 @@ func runMain() error {
 		}
 		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewDockerKurtosisBackendConfigSupplier()
 	case args.KurtosisBackendType_Kubernetes:
-		clusterConfig := serverArgs.KurtosisBackendConfig
-		if clusterConfig == nil {
-			return stacktrace.NewError("Kurtosis backend type is '%v' but cluster configuration parameters are null.", args.KurtosisBackendType_Kubernetes.String())
-		}
-		kubernetesBackendConfig, ok := (clusterConfig).(kurtosis_backend_config.KubernetesBackendConfig)
+		kubernetesBackendConfig, ok := (backendConfig).(kurtosis_backend_config.KubernetesBackendConfig)
 		if !ok {
 			return stacktrace.NewError("Failed to cast cluster configuration interface to the appropriate type, even though Kurtosis backend type is '%v'", args.KurtosisBackendType_Kubernetes.String())
 		}
