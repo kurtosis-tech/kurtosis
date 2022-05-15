@@ -15,7 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher"
+	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/current_time_str_provider"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
@@ -41,11 +41,6 @@ This is the in-memory representation of the service network that the API contain
 type ServiceNetwork struct {
 	enclaveId enclave.EnclaveID
 
-	// When the network is destroyed, all requests will fail
-	// This ensures that when the initializer tells the API container to destroy everything, the still-running
-	//  testsuite can't create more work
-	isDestroyed bool // VERY IMPORTANT TO CHECK AT THE START OF EVERY METHOD!
-
 	mutex *sync.Mutex // VERY IMPORTANT TO CHECK AT THE START OF EVERY METHOD!
 
 	// Whether partitioning has been enabled for this particular test
@@ -55,7 +50,7 @@ type ServiceNetwork struct {
 
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory
 
-	userServiceLauncher *user_service_launcher.UserServiceLauncher
+	filesArtifactExpander    *files_artifact_expander.FilesArtifactExpander
 
 	topology *partition_topology.PartitionTopology
 
@@ -63,10 +58,9 @@ type ServiceNetwork struct {
 
 	networkingSidecarManager networking_sidecar.NetworkingSidecarManager
 
-
-	// ----------------------------- Indexes to make common operations quick --------------------------------
-	registrationsByServiceId map[service.ServiceID]*user_service_registration.UserServiceRegistration
-	servicesByServiceId map[service.ServiceID]*service.Service
+	// Technically we SHOULD query the backend rather than ever storing any of this information, but we're able to get away with
+	// this because the API container is the only client that modifies service state
+	services map[service.ServiceID]*service.Service
 }
 
 func NewServiceNetworkImpl(
@@ -74,7 +68,6 @@ func NewServiceNetworkImpl(
 	isPartitioningEnabled bool,
 	kurtosisBackend backend_interface.KurtosisBackend,
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
-	userServiceLauncher *user_service_launcher.UserServiceLauncher,
 	networkingSidecarManager networking_sidecar.NetworkingSidecarManager,
 ) *ServiceNetwork {
 	defaultPartitionConnection := partition_topology.PartitionConnection{
@@ -82,20 +75,17 @@ func NewServiceNetworkImpl(
 	}
 	return &ServiceNetwork{
 		enclaveId:             enclaveId,
-		isDestroyed:           false,
 		mutex:                 &sync.Mutex{},
 		isPartitioningEnabled: isPartitioningEnabled,
 		kurtosisBackend:       kurtosisBackend,
 		enclaveDataDir:        enclaveDataDir,
-		userServiceLauncher:   userServiceLauncher,
 		topology: partition_topology.NewPartitionTopology(
 			defaultPartitionId,
 			defaultPartitionConnection,
 		),
 		networkingSidecars:       map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper{},
 		networkingSidecarManager: networkingSidecarManager,
-		registrationsByServiceId: map[service.ServiceID]*user_service_registration.UserServiceRegistration{},
-		servicesByServiceId: map[service.ServiceID]*service.Service{},
+		services:                 map[service.ServiceID]*service.Service{},
 	}
 }
 
@@ -110,9 +100,6 @@ func (network *ServiceNetwork) Repartition(
 ) error {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
-	if network.isDestroyed {
-		return stacktrace.NewError("Cannot repartition; the service network has been destroyed")
-	}
 
 	if !network.isPartitioningEnabled {
 		return stacktrace.NewError("Cannot repartition; partitioning is not enabled")
@@ -154,7 +141,7 @@ func (network *ServiceNetwork) Repartition(
 
 	 */
 
-	if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, network.registrationsByServiceId, network.networkingSidecars); err != nil {
+	if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, network.services, network.networkingSidecars); err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating the traffic control configuration to match the target service packet loss configurations after repartitioning")
 	}
 	return nil
@@ -170,9 +157,6 @@ func (network ServiceNetwork) RegisterService(
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
-	if network.isDestroyed {
-		return nil, stacktrace.NewError("Cannot register service with ID '%v'; the service network has been destroyed", serviceId)
-	}
 
 	if partitionId == "" {
 		partitionId = defaultPartitionId
@@ -184,26 +168,26 @@ func (network ServiceNetwork) RegisterService(
 		)
 	}
 
-	serviceRegistration, err := network.kurtosisBackend.CreateUserServiceRegistration(
+	userService, err := network.kurtosisBackend.RegisterUserService(
 		ctx,
 		network.enclaveId,
 		serviceId,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating service registration for service ID '%v'", serviceId)
+		return nil, stacktrace.Propagate(err, "An error occurred registering service with ID '%v'", serviceId)
 	}
-	shouldDestroyRegistration := true
+	shouldDestroyService := true
 	defer func() {
-		if shouldDestroyRegistration {
-			network.destroyServiceRegistrationBestEffort(serviceRegistration)
+		if shouldDestroyService {
+			network.destroyServiceBestEffortAfterRegistrationFailure(userService.GetGUID())
 		}
 	}()
 
-	network.registrationsByServiceId[serviceId] = serviceRegistration
-	shouldRemoveRegistrationFromIndex := true
+	network.services[serviceId] = userService
+	shouldRemoveFromServiceMap := true
 	defer func() {
-		if shouldRemoveRegistrationFromIndex {
-			delete(network.registrationsByServiceId, serviceId)
+		if shouldRemoveFromServiceMap {
+			delete(network.services, serviceId)
 		}
 	}()
 
@@ -222,10 +206,10 @@ func (network ServiceNetwork) RegisterService(
 		}
 	}()
 
-	shouldDestroyRegistration = false
-	shouldRemoveRegistrationFromIndex = false
+	shouldDestroyService = false
+	shouldRemoveFromServiceMap = false
 	shouldRemoveTopologyAddition = false
-	return serviceRegistration.GetIPAddress(), nil
+	return userService.GetPrivateIP(), nil
 }
 
 // TODO add tests for this
@@ -253,15 +237,21 @@ func (network *ServiceNetwork) StartService(
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
-	if network.isDestroyed {
-		return nil, nil, stacktrace.NewError("Cannot start container for service; the service network has been destroyed")
-	}
 
-	serviceRegistration, found := network.registrationsByServiceId[serviceId]
+	userServiceBeforeActivation, found := network.services[serviceId]
 	if !found {
 		return nil, nil, stacktrace.NewError("Cannot start service; no registration exists for service with ID '%v'", serviceId)
 	}
-	registrationGuid := serviceRegistration.GetGUID()
+	// Even though the backend will do this same check, we do it here so we don't do any topology modification erroneously
+	if userServiceBeforeActivation.GetStatus() != service.UserServiceStatus_Registered {
+		return nil, nil, stacktrace.NewError(
+			"Cannot start service; expected service to be in state '%v' but was '%v'",
+			serviceId,
+			service.UserServiceStatus_Registered,
+			userServiceBeforeActivation.GetStatus(),
+		)
+	}
+	serviceGuid := userServiceBeforeActivation.GetGUID()
 
 	// When partitioning is enabled, there's a race condition where:
 	//   a) we need to start the service before we can launch the sidecar but
@@ -288,7 +278,7 @@ func (network *ServiceNetwork) StartService(
 		if err := updateTrafficControlConfiguration(
 			ctx,
 			servicesPacketLossConfigurationsWithoutNewNode,
-			network.registrationsByServiceId,
+			network.services,
 			network.networkingSidecars,
 		); err != nil {
 			return nil, nil, stacktrace.Propagate(
@@ -300,10 +290,9 @@ func (network *ServiceNetwork) StartService(
 		// TODO defer an undo somehow???
 	}
 
-	userService, err := network.userServiceLauncher.Launch(
+	userServiceAfterActivation, err := network.activateService(
 		ctx,
-		registrationGuid,
-		network.enclaveId,
+		serviceGuid,
 		imageName,
 		privatePorts,
 		entrypointArgs,
@@ -318,18 +307,11 @@ func (network *ServiceNetwork) StartService(
 			serviceId,
 		)
 	}
-	// TODO defer-undo the launch if a failure occurs?
-
-	network.servicesByServiceId[serviceId] = userService
-	shouldUndoServiceIdIndexAddition := true
-	defer func() {
-		if shouldUndoServiceIdIndexAddition {
-			delete(network.servicesByServiceId, serviceId)
-		}
-	}()
+	// NOTE: There's no real way to defer-undo the activation
+	network.services[serviceId] = userServiceAfterActivation
 
 	if network.isPartitioningEnabled {
-		sidecar, err := network.networkingSidecarManager.Add(ctx, userService.GetGUID())
+		sidecar, err := network.networkingSidecarManager.Add(ctx, userServiceAfterActivation.GetGUID())
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred adding the networking sidecar")
 		}
@@ -350,14 +332,13 @@ func (network *ServiceNetwork) StartService(
 		updatesToApply := map[service.ServiceID]map[service.ServiceID]float32{
 			serviceId: newNodeServicePacketLossConfiguration,
 		}
-		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.registrationsByServiceId, network.networkingSidecars); err != nil {
+		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.services, network.networkingSidecars); err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration on the new node to partition it "+
 				"off from other nodes")
 		}
 	}
 
-	shouldUndoServiceIdIndexAddition = false
-	return userService.GetMaybePublicIP(), userService.GetMaybePublicPorts(), nil
+	return userServiceAfterActivation.GetMaybePublicIP(), userServiceAfterActivation.GetMaybePublicPorts(), nil
 }
 
 func (network *ServiceNetwork) RemoveService(
@@ -365,16 +346,47 @@ func (network *ServiceNetwork) RemoveService(
 	serviceId service.ServiceID,
 	containerStopTimeout time.Duration,
 ) error {
-	// TODO switch to a wrapper function
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
-	if network.isDestroyed {
-		return stacktrace.NewError("Cannot remove service; the service network has been destroyed")
+
+	serviceToRemove, found := network.services[serviceId]
+	if !found {
+		return stacktrace.NewError("No service found with ID '%v'", serviceId)
+	}
+	serviceGuid := serviceToRemove.GetGUID()
+
+	network.topology.RemoveService(serviceId)
+
+	delete(network.services, serviceId)
+
+	// We deactivate the service, rather than destroying it, so that we can keep logs around
+	deactivateServiceFilters := &service.ServiceFilters{
+		GUIDs:    map[service.ServiceGUID]bool{
+			serviceGuid: true,
+		},
+	}
+	_, erroredGuids, err := network.kurtosisBackend.DeactivateUserServices(ctx, network.enclaveId, deactivateServiceFilters)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred during the call to deactivate service '%v'", serviceGuid)
+	}
+	if err, found := erroredGuids[serviceGuid]; found {
+		return stacktrace.Propagate(err, "An error occurred deactivating service '%v'", serviceGuid)
 	}
 
-	if err := network.removeServiceWithoutMutex(ctx, serviceId, containerStopTimeout); err != nil {
-		return stacktrace.Propagate(err, "An error occurred removing service with ID '%v'", serviceId)
+	sidecar, foundSidecar := network.networkingSidecars[serviceId]
+	if network.isPartitioningEnabled && foundSidecar {
+		// NOTE: As of 2020-12-31, we don't need to update the iptables of the other services in the network to
+		//  clear the now-removed service's IP because:
+		// 	 a) nothing is using it so it doesn't do anything and
+		//	 b) all service's iptables get overwritten on the next Add/Repartition call
+		// If we ever do incremental iptables though, we'll need to fix all the other service's iptables here!
+		if err := network.networkingSidecarManager.Remove(ctx, sidecar); err != nil {
+			return stacktrace.Propagate(err, "An error occurred destroying the sidecar for service with ID '%v'", serviceId)
+		}
+		delete(network.networkingSidecars, serviceId)
+		logrus.Debugf("Successfully removed sidecar attached to service with ID '%v'", serviceId)
 	}
+
 	return nil
 }
 
@@ -385,11 +397,8 @@ func (network *ServiceNetwork) PauseService(
 ) error {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
-	if network.isDestroyed {
-		return stacktrace.NewError("Cannot run pause service; the service network has been destroyed")
-	}
 
-	serviceObj, found := network.servicesByServiceId[serviceId]
+	serviceObj, found := network.services[serviceId]
 	if !found {
 		return stacktrace.NewError("No service with ID '%v' exists in the network", serviceId)
 	}
@@ -400,18 +409,15 @@ func (network *ServiceNetwork) PauseService(
 	return nil
 }
 
+// TODO we could switch this to be a bulk command; the backend would support it
 func (network *ServiceNetwork) UnpauseService(
 	ctx context.Context,
 	serviceId service.ServiceID,
 ) error {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
-	if network.isDestroyed {
-		return stacktrace.NewError("Cannot run unpause service; the service network has been destroyed")
-	}
 
-
-	serviceObj, found := network.servicesByServiceId[serviceId]
+	serviceObj, found := network.services[serviceId]
 	if !found {
 		return stacktrace.NewError("No service with ID '%v' exists in the network", serviceId)
 	}
@@ -431,11 +437,8 @@ func (network *ServiceNetwork) ExecCommand(
 	// asynchronous
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
-	if network.isDestroyed {
-		return 0, "", stacktrace.NewError("Cannot run exec command; the service network has been destroyed")
-	}
 
-	serviceObj, found := network.servicesByServiceId[serviceId]
+	serviceObj, found := network.services[serviceId]
 	if !found {
 		return 0, "", stacktrace.NewError(
 			"Could not run exec command '%v' against service '%v'; no container has been created for the service yet",
@@ -492,6 +495,22 @@ func (network *ServiceNetwork) ExecCommand(
 	return execResult.GetExitCode(), execResult.GetOutput(), nil
 }
 
+func (network *ServiceNetwork) GetServiceInfo(serviceId service.ServiceID) (
+	*service.Service,
+	error,
+) {
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+
+	serviceObj, found := network.services[serviceId]
+	if !found {
+		return nil, stacktrace.NewError("No service with ID '%v' exists", serviceId)
+	}
+
+	return serviceObj, nil
+}
+
+/*
 func (network *ServiceNetwork) GetServiceRegistrationInfo(serviceId service.ServiceID) (
 	privateIpAddr net.IP,
 	resultErr error,
@@ -529,12 +548,13 @@ func (network *ServiceNetwork) GetServiceRunInfo(serviceId service.ServiceID) (
 	}
 	return serviceObj.GetPrivatePorts(), serviceObj.GetMaybePublicIP(), serviceObj.GetMaybePublicPorts(), nil
 }
+ */
 
 func (network *ServiceNetwork) GetServiceIDs() map[service.ServiceID]bool {
 
-	serviceIDs := make(map[service.ServiceID]bool, len(network.servicesByServiceId))
+	serviceIDs := make(map[service.ServiceID]bool, len(network.services))
 
-	for serviceId := range network.servicesByServiceId {
+	for serviceId := range network.services {
 		if _, ok := serviceIDs[serviceId]; !ok {
 			serviceIDs[serviceId] = true
 		}
@@ -542,8 +562,8 @@ func (network *ServiceNetwork) GetServiceIDs() map[service.ServiceID]bool {
 	return serviceIDs
 }
 
-func (network *ServiceNetwork) CopyFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (string, error) {
-	serviceObj, foundRunInfo := network.servicesByServiceId[serviceId]
+func (network *ServiceNetwork) CopyFilesFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (string, error) {
+	serviceObj, foundRunInfo := network.services[serviceId]
 	if !foundRunInfo {
 		return "", stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
 	}
@@ -585,83 +605,6 @@ func (network *ServiceNetwork) CopyFromService(ctx context.Context, serviceId se
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func (network *ServiceNetwork) removeServiceWithoutMutex(
-	ctx context.Context,
-	serviceId service.ServiceID,
-	containerStopTimeout time.Duration,
-) error {
-	registrationInfo, foundRegistrationInfo := network.registrationsByServiceId[serviceId]
-	if !foundRegistrationInfo {
-		return stacktrace.NewError("No registration info found for service '%v'", serviceId)
-	}
-	network.topology.RemoveService(serviceId)
-	// TODO defer-undo
-
-	delete(network.registrationsByServiceId, serviceId)
-	shouldUndoRegistrationIndexRemoval := true
-	defer func() {
-		if shouldUndoRegistrationIndexRemoval {
-			network.registrationsByServiceId[serviceId] = registrationInfo
-		}
-	}()
-
-	// TODO PERF: Parallelize the shutdown of the service container and the sidecar container
-	userService, foundUserServiceInfo := network.servicesByServiceId[serviceId]
-	if foundUserServiceInfo {
-		serviceGUID := userService.GetGUID()
-
-		// Make a best-effort attempt to stop the service container
-		logrus.Debugf("Stopping service with GUID '%v' for service ID '%v'...", serviceGUID, serviceId)
-		_, failedToStopServiceErrs, err := network.kurtosisBackend.StopUserServices(
-			ctx,
-			getServiceByServiceGUIDFilter(serviceGUID),
-		)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred calling the backend to stop service with GUID '%v'", serviceGUID)
-		}
-		if len(failedToStopServiceErrs) > 0 {
-			serviceStopErrs := []string{}
-			for failedToStopGuid, err := range failedToStopServiceErrs {
-				wrappedErr := stacktrace.Propagate(
-					err,
-					"An error occurred stopping service with GUID `%v'",
-					failedToStopGuid,
-				)
-				serviceStopErrs = append(serviceStopErrs, wrappedErr.Error())
-			}
-			return stacktrace.NewError(
-				"One or more errors occurred stopping the service(s): \n%v",
-				strings.Join(
-					serviceStopErrs,
-					"\n\n",
-				),
-			)
-		}
-
-		delete(network.servicesByServiceId, serviceId)
-		// TODO defer-undo
-
-		logrus.Debugf("Successfully stopped service GUID '%v'", serviceGUID)
-	}
-
-	sidecar, foundSidecar := network.networkingSidecars[serviceId]
-	if network.isPartitioningEnabled && foundSidecar {
-		// NOTE: As of 2020-12-31, we don't need to update the iptables of the other services in the network to
-		//  clear the now-removed service's IP because:
-		// 	 a) nothing is using it so it doesn't do anything and
-		//	 b) all service's iptables get overwritten on the next Add/Repartition call
-		// If we ever do incremental iptables though, we'll need to fix all the other service's iptables here!
-		if err := network.networkingSidecarManager.Remove(ctx, sidecar); err != nil {
-			return stacktrace.Propagate(err, "An error occurred destroying the sidecar for service with ID '%v'", serviceId)
-		}
-		delete(network.networkingSidecars, serviceId)
-		logrus.Debugf("Successfully removed sidecar attached to service with ID '%v'", serviceId)
-	}
-
-	shouldUndoRegistrationIndexRemoval = true
-	return nil
-}
-
 /*
 Updates the traffic control configuration of the services with the given IDs to match the target services packet loss configuration
 
@@ -670,7 +613,7 @@ NOTE: This is not thread-safe, so it must be within a function that locks mutex!
 func updateTrafficControlConfiguration(
 	ctx context.Context,
 	targetServicePacketLossConfigs map[service.ServiceID]map[service.ServiceID]float32,
-	registrationsByServiceId map[service.ServiceID]*user_service_registration.UserServiceRegistration,
+	services map[service.ServiceID]*service.Service,
 	networkingSidecars map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper,
 ) error {
 
@@ -679,7 +622,7 @@ func updateTrafficControlConfiguration(
 	for serviceId, allOtherServicesPacketLossConfigurations := range targetServicePacketLossConfigs {
 		allPacketLossPercentageForIpAddresses := map[string]float32{}
 		for otherServiceId, otherServicePacketLossPercentage := range allOtherServicesPacketLossConfigurations {
-			registration, found := registrationsByServiceId[otherServiceId]
+			otherService, found := services[otherServiceId]
 			if !found {
 				return stacktrace.NewError(
 					"Service with ID '%v' needs to add packet loss configuration for service with ID '%v', but the latter "+
@@ -688,7 +631,7 @@ func updateTrafficControlConfiguration(
 					otherServiceId)
 			}
 
-			allPacketLossPercentageForIpAddresses[registration.GetIPAddress().String()] = otherServicePacketLossPercentage
+			allPacketLossPercentageForIpAddresses[otherService.GetPrivateIP().String()] = otherServicePacketLossPercentage
 		}
 
 		sidecar, found := networkingSidecars[serviceId]
@@ -742,35 +685,91 @@ func gzipCompressFile(readCloser io.Reader) (resultFilepath string, resultErr er
 	return tarGzipFileFilepath, nil
 }
 
-func (network *ServiceNetwork) destroyServiceRegistrationBestEffort(
-	registration *user_service_registration.UserServiceRegistration,
+func (network *ServiceNetwork) destroyServiceBestEffortAfterRegistrationFailure(
+	serviceGuid service.ServiceGUID,
 ) {
-	serviceId := registration.GetServiceID()
-	registrationGuid := registration.GetGUID()
-
-	destroyRegistrationFilters := &user_service_registration.UserServiceRegistrationFilters{
-		GUIDs: map[user_service_registration.UserServiceRegistrationGUID]bool{
-			registrationGuid: true,
+	destroyServiceFilters := &service.ServiceFilters{
+		GUIDs: map[service.ServiceGUID]bool{
+			serviceGuid: true,
 		},
 	}
 	// Use background context in case the input one is cancelled
-	_, erroredRegistrations, err := network.kurtosisBackend.DestroyUserServiceRegistrations(context.Background(), destroyRegistrationFilters)
+	_, erroredRegistrations, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveId, destroyServiceFilters)
 	var errToPrint error
 	if err != nil {
 		errToPrint = err
-	} else if destroyErr, found := erroredRegistrations[registrationGuid]; found {
+	} else if destroyErr, found := erroredRegistrations[serviceGuid]; found {
 		errToPrint = destroyErr
 	}
 	if errToPrint != nil {
 		logrus.Warnf(
 			"Registering service with ID '%v' didn't complete successfully so we tried to destroy the " +
-				"service registration object that we created, but doing so threw an error:\n%v",
-			serviceId,
+				"service that we created, but doing so threw an error:\n%v",
+			serviceGuid,
 			errToPrint,
 		)
 		logrus.Warnf(
-			"!!! ACTION REQUIRED !!! You'll need to manually destroy service registration object with GUID '%v'!!!",
-			registrationGuid,
+			"!!! ACTION REQUIRED !!! You'll need to manually destroy service with GUID '%v'!!!",
+			serviceGuid,
 		)
 	}
+}
+
+func (network *ServiceNetwork) activateService(
+	ctx context.Context,
+	serviceGuid service.ServiceGUID,
+	imageName string,
+	privatePorts map[string]*port_spec.PortSpec,
+	entrypointArgs []string,
+	cmdArgs []string,
+	envVars map[string]string,
+	// Mapping of UUIDs of previously-registered files artifacts -> mountpoints on the container
+	// being launched
+	filesArtifactUuidsToMountpoints map[service.FilesArtifactID]string,
+) (
+	resultUserService *service.Service,
+	resultErr error,
+) {
+	usedArtifactUuidSet := map[service.FilesArtifactID]bool{}
+	for artifactUuid := range filesArtifactUuidsToMountpoints {
+		usedArtifactUuidSet[artifactUuid] = true
+	}
+
+	// First expand the files artifacts into volumes, so that any errors get caught early
+	// NOTE: if users don't need to investigate the volume contents, we could keep track of the volumes we create
+	//  and delete them at the end of the test to keep things cleaner
+	artifactUuidsToVolumes, err := network.filesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, serviceGuid, usedArtifactUuidSet)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred expanding the requested files artifacts into volumes")
+	}
+
+
+	artifactVolumeMounts := map[string]string{}
+	for artifactUuid, mountpoint := range filesArtifactUuidsToMountpoints {
+		artifactVolume, found := artifactUuidsToVolumes[artifactUuid]
+		if !found {
+			return nil, stacktrace.NewError(
+				"Even though we declared that we need files artifact '%v' to be expanded, no volume containing the "+
+					"expanded contents was found; this is a bug in Kurtosis",
+				artifactUuid,
+			)
+		}
+		artifactVolumeMounts[string(artifactVolume)] = mountpoint
+	}
+
+	launchedUserService, err := network.kurtosisBackend.ActivateUserService(
+		ctx,
+		network.enclaveId,
+		serviceGuid,
+		imageName,
+		privatePorts,
+		entrypointArgs,
+		cmdArgs,
+		envVars,
+		artifactVolumeMounts,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred activating service '%v' with image '%v'", serviceGuid, imageName)
+	}
+	return launchedUserService, nil
 }

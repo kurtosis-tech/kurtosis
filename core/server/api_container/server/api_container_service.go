@@ -506,7 +506,7 @@ func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context
 	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
 	srcPath := args.SourcePath
 
-	fileArtifactUUID, err := apicService.serviceNetwork.CopyFromService(ctx, serviceId, srcPath)
+	fileArtifactUUID, err := apicService.serviceNetwork.CopyFilesFromService(ctx, serviceId, srcPath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred copying source '%v' from service with ID '%v'", srcPath, serviceId)
 	}
