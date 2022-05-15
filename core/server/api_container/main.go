@@ -79,8 +79,9 @@ func runMain() error {
 
 	//
 	apiContainerModeArgs := &backend_creator.APIContainerModeArgs{
-		Context:   context.Background(),
-		EnclaveID: enclave.EnclaveID(serverArgs.EnclaveId),
+		Context:        context.Background(),
+		EnclaveID:      enclave.EnclaveID(serverArgs.EnclaveId),
+		APIContainerIP: ownIpAddress,
 	}
 	kurtosisBackend, err := backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgs)
 	if err != nil {

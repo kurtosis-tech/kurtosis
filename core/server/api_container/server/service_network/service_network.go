@@ -134,6 +134,13 @@ func (network ServiceNetwork) RegisterService(
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
+	if _, found := network.registeredServiceInfo[serviceId]; found {
+		return nil, stacktrace.NewError(
+			"Cannot register service '%v' because it already exists in the network",
+			serviceId,
+		)
+	}
+
 	if partitionId == "" {
 		partitionId = defaultPartitionId
 	}
@@ -407,9 +414,10 @@ func (network *ServiceNetwork) ExecCommand(
 	serviceObj, found := network.registeredServiceInfo[serviceId]
 	if !found {
 		return 0, "", stacktrace.NewError(
-			"Could not run exec command '%v' against service '%v'; no container has been created for the service yet",
+			"Service '%v does not exist in the network",
 			command,
-			serviceId)
+			serviceId,
+		)
 	}
 
 	// NOTE: This is a SYNCHRONOUS command, meaning that the entire network will be blocked until the command finishes
@@ -515,9 +523,9 @@ func (network *ServiceNetwork) GetServiceIDs() map[service.ServiceID]bool {
 }
 
 func (network *ServiceNetwork) CopyFilesFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (string, error) {
-	serviceObj, foundRunInfo := network.registeredServiceInfo[serviceId]
-	if !foundRunInfo {
-		return "", stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
+	serviceObj, found := network.registeredServiceInfo[serviceId]
+	if !found {
+		return "", stacktrace.NewError("Cannot copy files from service '%v' because it does not exist in the network", serviceId)
 	}
 	serviceGuid := serviceObj.GetGUID()
 
