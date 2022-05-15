@@ -36,8 +36,8 @@ type APIContainerArgs struct {
 
 	KurtosisBackendType kurtosis_backend_type.KurtosisBackendType `json:"kurtosisBackendType"`
 
-	// Optional, and should be deserialized differently depending on value of KurtosisBackendType
-	KurtosisClusterConfig *interface{} `json:"kurtosisClusterConfig"`
+	// Should be deserialized differently depending on value of KurtosisBackendType
+	KurtosisBackendConfig interface{} `json:"kurtosisBackendConfig"`
 }
 
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
@@ -53,20 +53,20 @@ func NewAPIContainerArgs(
 	didUserAcceptSendingMetrics bool,
 	enclaveDataVolumeDirpath string,
 	kurtosisBackendType kurtosis_backend_type.KurtosisBackendType,
-	kurtosisClusterConfig *interface{},
+	kurtosisBackendConfig interface{},
 ) (*APIContainerArgs, error) {
 	result := &APIContainerArgs{
-		Version:                          version,
-		LogLevel:                         logLevel,
-		GrpcListenPortNum:                grpcListenPortNum,
-		GrpcProxyListenPortNum:           grpcProxyListenPortNum,
-		EnclaveId:                        enclaveId,
-		IsPartitioningEnabled:            isPartitioningEnabled,
-		MetricsUserID:                    metricsUserID,
-		DidUserAcceptSendingMetrics:      didUserAcceptSendingMetrics,
-		EnclaveDataVolumeDirpath:         enclaveDataVolumeDirpath,
-		KurtosisBackendType: 			  kurtosisBackendType,
-		KurtosisClusterConfig: 			  kurtosisClusterConfig,
+		Version:                     version,
+		LogLevel:                    logLevel,
+		GrpcListenPortNum:           grpcListenPortNum,
+		GrpcProxyListenPortNum:      grpcProxyListenPortNum,
+		EnclaveId:                   enclaveId,
+		IsPartitioningEnabled:       isPartitioningEnabled,
+		MetricsUserID:               metricsUserID,
+		DidUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
+		EnclaveDataVolumeDirpath:    enclaveDataVolumeDirpath,
+		KurtosisBackendType:         kurtosisBackendType,
+		KurtosisBackendConfig:       kurtosisBackendConfig,
 	}
 
 	if err := result.validate(); err != nil {

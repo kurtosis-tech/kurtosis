@@ -93,7 +93,7 @@ func runMain() error {
 			return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 		}
 	case kurtosis_backend_type.Kubernetes:
-		clusterConfig := serverArgs.KurtosisClusterConfig
+		clusterConfig := serverArgs.KurtosisBackendConfig
 		if clusterConfig == nil {
 			return stacktrace.NewError("Kurtosis backend type is '%v' but cluster configuration parameters are null.", kurtosis_backend_type.Kubernetes.String())
 		}

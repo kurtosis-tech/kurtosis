@@ -46,7 +46,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	kurtosisBackendType kurtosis_backend_type.KurtosisBackendType,
-	kurtosisClusterConfig *interface{},
+	kurtosisBackendConfig interface{},
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -62,7 +62,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 		kurtosisBackendType,
-		kurtosisClusterConfig,
+		kurtosisBackendConfig,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", DefaultVersion)
@@ -81,7 +81,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	kurtosisBackendType kurtosis_backend_type.KurtosisBackendType,
-	kurtosisClusterConfig *interface{},
+	kurtosisBackendConfig interface{},
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -97,7 +97,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		didUserAcceptSendingMetrics,
 		enclaveDataVolumeDirpath,
 		kurtosisBackendType,
-		kurtosisClusterConfig,
+		kurtosisBackendConfig,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the API container args")
