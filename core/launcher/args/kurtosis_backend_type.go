@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package kurtosis_backend_type
+package args
 
 //go:generate go run github.com/dmarkham/enumer -trimprefix "KurtosisBackendType_" -type=KurtosisBackendType -transform=lower -json
 type KurtosisBackendType uint

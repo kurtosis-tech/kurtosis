@@ -12,7 +12,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
-	"github.com/kurtosis-tech/kurtosis-core/launcher/args/kurtosis_backend_type"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -45,7 +44,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	isPartitioningEnabled bool,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
-	kurtosisBackendType kurtosis_backend_type.KurtosisBackendType,
+	kurtosisBackendType args.KurtosisBackendType,
 	kurtosisBackendConfig interface{},
 ) (
 	resultApiContainer *api_container.APIContainer,
@@ -80,7 +79,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	isPartitioningEnabled bool,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
-	kurtosisBackendType kurtosis_backend_type.KurtosisBackendType,
+	kurtosisBackendType args.KurtosisBackendType,
 	kurtosisBackendConfig interface{},
 ) (
 	resultApiContainer *api_container.APIContainer,
@@ -134,7 +133,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 
 type KurtosisBackendConfigSupplier interface {
 	// Private because only the launcher should call it
-	getKurtosisBackendConfig() (kurtosis_backend_type.KurtosisBackendType, interface{})
+	getKurtosisBackendConfig() (args.KurtosisBackendType, interface{})
 }
 /*
 func NewKubernetesKurtosisBackendConfigSupplier(storageClass string, enclaveVolumeSizeInGB int) {
