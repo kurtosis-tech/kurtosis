@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Bumped to container-engine-lib 0.21.1 which has a bugfix for instantiating the DockerKurtosisBackend inside the API container
 
 # 1.20.0
 ### Fixes
