@@ -14,6 +14,7 @@ type DockerBackendConfigSupplier struct {
 }
 
 func NewDockerKurtosisBackendConfigSupplier() DockerBackendConfigSupplier {
+	return DockerBackendConfigSupplier{}
 }
 
 func (backendConfigSupplier DockerBackendConfigSupplier) getKurtosisBackendConfig () (args.KurtosisBackendType, interface{}) {
