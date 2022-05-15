@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 )
 
-func GetLocalKubernetesKurtosisBackend(volumeStorageClassName string, volumeSizeInGigabytes int) (backend_interface.KurtosisBackend, error) {
+func GetLocalKubernetesKurtosisBackend(volumeStorageClassName string, enclaveVolumeSizeQuantityStr string) (backend_interface.KurtosisBackend, error) {
 	// TODO Implement GetLocalKubernetesProxyKurtosisBackend?
 	kubeConfigFileFilepath := filepath.Join(
 		os.Getenv("HOME"), ".kube", "config",
@@ -23,9 +23,9 @@ func GetLocalKubernetesKurtosisBackend(volumeStorageClassName string, volumeSize
 		return nil, stacktrace.Propagate(err, "An error occurred creating kubernetes configuration from flags in file '%v'", kubeConfigFileFilepath)
 	}
 
-	wrappedBackend, err:= newWrappedKubernetesKurtosisBackend(kubernetesConfig, volumeStorageClassName, volumeSizeInGigabytes)
+	wrappedBackend, err:= newWrappedKubernetesKurtosisBackend(kubernetesConfig, volumeStorageClassName, enclaveVolumeSizeQuantityStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating new wrapped Kubernetes Kurtosis Backend using Kubernetes config '%+v', volume storage class name '%v' and size '%v'", kubernetesConfig, volumeStorageClassName, volumeSizeInGigabytes)
+		return nil, stacktrace.Propagate(err, "An error occurred creating new wrapped Kubernetes Kurtosis Backend using Kubernetes config '%+v', volume storage class name '%v' and size '%v'", kubernetesConfig, volumeStorageClassName, enclaveVolumeSizeQuantityStr)
 	}
 
 	return wrappedBackend, nil
