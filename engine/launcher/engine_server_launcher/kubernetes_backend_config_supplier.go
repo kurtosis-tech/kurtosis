@@ -22,7 +22,7 @@ func NewKubernetesKurtosisBackendConfigSupplier(storageClass string, enclaveVolu
 	return KubernetesBackendConfigSupplier{kubernetesBackendConfig: kubernetesBackendConfig}
 }
 
-func (backendConfigSupplier *KubernetesBackendConfigSupplier) getKurtosisBackendConfig() (args.KurtosisBackendType, interface{}) {
+func (backendConfigSupplier *KubernetesBackendConfigSupplier) GetKurtosisBackendConfig() (args.KurtosisBackendType, interface{}) {
 	return args.KurtosisBackendType_Kubernetes, backendConfigSupplier.kubernetesBackendConfig
 }
 

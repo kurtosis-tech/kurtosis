@@ -7,6 +7,9 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args"
+	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args/kurtosis_backend_config"
+	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
 	"sort"
 	"strings"
 	"sync"
@@ -52,15 +55,18 @@ type EnclaveManager struct {
 	//  enclave modifications are atomic
 	mutex *sync.Mutex
 
-	kurtosisBackend backend_interface.KurtosisBackend
+	kurtosisBackend                           backend_interface.KurtosisBackend
+	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 }
 
 func NewEnclaveManager(
 	kurtosisBackend backend_interface.KurtosisBackend,
+	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier,
 ) *EnclaveManager {
 	return &EnclaveManager{
-		mutex:                              &sync.Mutex{},
-		kurtosisBackend:					kurtosisBackend,
+		mutex:                               &sync.Mutex{},
+		kurtosisBackend:                     kurtosisBackend,
+		engineServerKurtosisBackendConfigSupplier: engineServerKurtosisBackendConfigSupplier,
 	}
 }
 
@@ -111,9 +117,20 @@ func (manager *EnclaveManager) CreateEnclave(
 		}
 	}()
 
-	// TODO TODO TODO implement right config supplier
-	panic("actually implement right backend config supplier")
-	kurtosisBackendSupplier := api_container_launcher.NewDockerKurtosisBackendConfigSupplier()
+	var apiContainerKurtosisBackendSupplier api_container_launcher.KurtosisBackendConfigSupplier
+	kurtosisBackendType, engineServerKurtosisBackendConfig := manager.engineServerKurtosisBackendConfigSupplier.GetKurtosisBackendConfig()
+	switch kurtosisBackendType {
+	case args.KurtosisBackendType_Docker:
+		apiContainerKurtosisBackendSupplier = api_container_launcher.NewDockerKurtosisBackendConfigSupplier()
+	case args.KurtosisBackendType_Kubernetes:
+		kubernetesBackendConfig, ok := engineServerKurtosisBackendConfig.(kurtosis_backend_config.KubernetesBackendConfig)
+		if !ok {
+			return nil, stacktrace.NewError("Failed to cast backend configuration to the appropriate type with backend type '%v'", args.KurtosisBackendType_Kubernetes.String())
+		}
+		apiContainerKurtosisBackendSupplier = api_container_launcher.NewKubernetesKurtosisBackendConfigSupplier(kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInGigabytes)
+	default:
+		return nil, stacktrace.NewError("Unexpected Kurtosis backend type '%v'", kurtosisBackendType.String())
+	}
 
 	apiContainer, err := manager.launchApiContainer(setupCtx,
 		apiContainerImageVersionTag,
@@ -124,7 +141,7 @@ func (manager *EnclaveManager) CreateEnclave(
 		isPartitioningEnabled,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
-		&kurtosisBackendSupplier,
+		apiContainerKurtosisBackendSupplier,
 	)
 
 	if err != nil {

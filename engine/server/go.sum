@@ -443,6 +443,8 @@ github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220513222421-005d3ab37c
 github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220513222421-005d3ab37c76/go.mod h1:nKg5+ZaI474muz0ktn4y9g/WIKiqpKvnizuV8fUiJhQ=
 github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220515145043-aeb36bba9157 h1:TnHl29wMwLNbpXUqiNJvsGJX/Mvo/Bzw2SxiqQcauJo=
 github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220515145043-aeb36bba9157/go.mod h1:iCiSLf448SbJc12gU207K5DI8xdRmR9ZbvGLNIo/9K4=
+github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220515154625-ac3761e42643 h1:aoI/QqKNdolzae3SfgPyZMB9/OBzno1Wy0FB5J5Rv2M=
+github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220515154625-ac3761e42643/go.mod h1:iCiSLf448SbJc12gU207K5DI8xdRmR9ZbvGLNIo/9K4=
 github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739 h1:iRUB05IfjPxizmRwsyjZ+jXaFRQ7atj3E+/aiK1nLcE=
 github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739/go.mod h1:tteWV+M47xMHxqCIPQmdmgPW80rhN8YfzrgRRWbQhOw=
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3 h1:Begoh17x/9rLWQLM64A8oINjoQk1DFKN2iwhQf1i0Rc=

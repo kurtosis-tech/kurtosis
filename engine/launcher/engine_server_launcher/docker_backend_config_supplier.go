@@ -19,7 +19,7 @@ func NewDockerKurtosisBackendConfigSupplier() DockerBackendConfigSupplier {
 	return DockerBackendConfigSupplier{dockerBackendConfig: dockerBackendConfig}
 }
 
-func (backendConfigSupplier *DockerBackendConfigSupplier) getKurtosisBackendConfig () (args.KurtosisBackendType, interface{}) {
+func (backendConfigSupplier *DockerBackendConfigSupplier) GetKurtosisBackendConfig() (args.KurtosisBackendType, interface{}) {
 	return args.KurtosisBackendType_Docker, backendConfigSupplier.dockerBackendConfig
 }
 
