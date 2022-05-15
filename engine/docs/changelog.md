@@ -1,4 +1,9 @@
 # TBD
+### Breaking Changes
+* Engine server now requires a "KurtosisBackendType" to be defined as an input in order to launch.
+
+### Changes
+* Engine server can choose the correct KurtosisBackend depending on input arguments (docker, kubernetes cluster)
 
 # 1.20.0
 ### Fixes
