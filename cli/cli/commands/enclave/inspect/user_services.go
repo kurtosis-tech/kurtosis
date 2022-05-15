@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/stacktrace"
 	"sort"
@@ -20,34 +18,16 @@ const (
 	userServicePortsColHeader = "Ports"
 
 	missingPortPlaceholder = "<none>"
-
-	// Placeholder that will be used for services which aren't attached to a registration (should never happen)
-	missingServiceIdPlaceholder = "<none>"
 )
 
 func printUserServices(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveId enclave.EnclaveID) error {
 
-	userServiceFilters := &service.ServiceFilters{
-		EnclaveIDs: map[enclave.EnclaveID]bool{
-			enclaveId: true,
-		},
-	}
+	userServiceFilters := &service.ServiceFilters{}
 
 	// TODO Switch to using the API container API once it can show *all* services (not just running ones)
-	userServices, err := kurtosisBackend.GetUserServices(ctx, userServiceFilters)
+	userServices, err := kurtosisBackend.GetUserServices(ctx, enclaveId, userServiceFilters)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting user services using filters '%+v'", userServiceFilters)
-	}
-
-	userServiceRegistrationFilters := &user_service_registration.UserServiceRegistrationFilters{
-		EnclaveIDs:        map[enclave.EnclaveID]bool{
-			enclaveId: true,
-		},
-	}
-	// TODO Switch to using the API container API once it can show *all* services (not just running ones)
-	registrations, err := kurtosisBackend.GetUserServiceRegistrations(ctx, userServiceRegistrationFilters)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting user service registrations using filters '%+v'", userServiceRegistrationFilters)
+		return stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' using filters '%+v'", enclaveId, userServiceFilters)
 	}
 
 	tablePrinter := output_printers.NewTablePrinter(
@@ -57,14 +37,8 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 	)
 	sortedUserServices:= getSortedUserServiceSliceFromUserServiceMap(userServices)
 	for _, userService := range sortedUserServices {
+		idStr := string(userService.GetID())
 		guidStr := string(userService.GetGUID())
-
-		registrationGuid := userService.GetRegistrationGUID()
-
-		idStr := missingServiceIdPlaceholder
-		if registration, found := registrations[registrationGuid]; found {
-			idStr = string(registration.GetServiceID())
-		}
 
 		portBindingLines, err := getPortBindingStrings(userService)
 		if err != nil {
@@ -112,8 +86,8 @@ func getSortedUserServiceSliceFromUserServiceMap(userServices map[service.Servic
 
 // Guaranteed to have at least one entry
 func getPortBindingStrings(userService *service.Service) ([]string, error) {
-	privatePorts := userService.GetPrivatePorts()
-	if len(privatePorts) == 0 {
+	privatePorts := userService.GetMaybePrivatePorts()
+	if privatePorts == nil || len(privatePorts) == 0 {
 		return []string{missingPortPlaceholder}, nil
 	}
 
@@ -131,7 +105,7 @@ func getPortBindingStrings(userService *service.Service) ([]string, error) {
 	}
 
 	// If the container is running, add host machine port binding information
-	if userService.GetStatus() == container_status.ContainerStatus_Running {
+	if userService.GetStatus() == service.UserServiceStatus_Activated {
 		publicIpAddr := userService.GetMaybePublicIP()
 		publicPorts := userService.GetMaybePublicPorts()
 		for portId := range privatePorts {

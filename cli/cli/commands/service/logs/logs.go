@@ -76,12 +76,9 @@ func run(cmd *cobra.Command, args []string) error {
 		GUIDs: map[service.ServiceGUID]bool{
 			guid: true,
 		},
-		EnclaveIDs: map[enclave.EnclaveID]bool{
-			enclaveId: true,
-		},
 	}
 
-	successfulUserServiceLogs, erroredUserServiceGuids, err := kurtosisBackend.GetUserServiceLogs(ctx, userServiceFilters, shouldFollowLogs)
+	successfulUserServiceLogs, erroredUserServiceGuids, err := kurtosisBackend.GetUserServiceLogs(ctx, enclaveId, userServiceFilters, shouldFollowLogs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting user service logs using filters '%+v'", userServiceFilters)
 	}
