@@ -1,5 +1,9 @@
 package service
 
+import (
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
+)
+
 // Selector for matching services inside an enclave
 type ServiceFilters struct {
 	IDs map[ServiceID]bool
@@ -10,5 +14,5 @@ type ServiceFilters struct {
 
 	// Disjunctive set of statuses that returned user services must conform to
 	// If nil or empty, will match all statuses
-	Statuses map[UserServiceStatus]bool
+	Statuses map[container_status.ContainerStatus]bool
 }

@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"net"
 )
@@ -9,54 +9,35 @@ import (
 type ServiceID string
 type ServiceGUID string
 
-// Object that represents POINT-IN-TIME information about an user service
-// Store this object and continue to reference it at your own risk!!!
+// Object that represents a ServiceRegistration that has had a container bonded
+// to it (in essence, Service is a "full" service where ServiceRegistration is a service stub)
 type Service struct {
-	id				 ServiceID
-	guid             ServiceGUID
-	status           UserServiceStatus
-	enclaveId        enclave.EnclaveID
+	registration *ServiceRegistration
 
-	// TODO add back in a ContainerStatus (need to handle the case where the service has no container)
+	status           container_status.ContainerStatus
 
-	privateIp        net.IP
+	// Keyed by user-provided port ID
+	privatePorts map[string]*port_spec.PortSpec
 
-	// Will be nil if the service was never activated
-	maybePrivatePorts map[string]*port_spec.PortSpec // Keyed by user-provided port ID
-
-	// These will only be non-nil if all of the following are true:
-	//  - The backend is Docker
-	//  - The service is in UserServiceStatus_Activated state
+	// These will only be non-nil if the service's status is running
 	maybePublicIp    net.IP                         // The ip exposed in the host machine. Will be nil if the service doesn't declare any private ports
 	maybePublicPorts map[string]*port_spec.PortSpec //Mapping of port-used-by-service -> port-on-the-host-machine where the user can make requests to the port to access the port. If a used port doesn't have a host port bound, then the value will be nil.
 }
 
-func NewService(id ServiceID, guid ServiceGUID, status UserServiceStatus, enclaveId enclave.EnclaveID, privateIp net.IP, maybePrivatePorts map[string]*port_spec.PortSpec, maybePublicIp net.IP, maybePublicPorts map[string]*port_spec.PortSpec) *Service {
-	return &Service{id: id, guid: guid, status: status, enclaveId: enclaveId, privateIp: privateIp, maybePrivatePorts: maybePrivatePorts, maybePublicIp: maybePublicIp, maybePublicPorts: maybePublicPorts}
+func NewService(registration *ServiceRegistration, status container_status.ContainerStatus, privatePorts map[string]*port_spec.PortSpec, maybePublicIp net.IP, maybePublicPorts map[string]*port_spec.PortSpec) *Service {
+	return &Service{registration: registration, status: status, privatePorts: privatePorts, maybePublicIp: maybePublicIp, maybePublicPorts: maybePublicPorts}
 }
 
-func (service *Service) GetID() ServiceID {
-	return service.id
+func (service *Service) GetRegistration() *ServiceRegistration {
+	return service.registration
 }
 
-func (service *Service) GetGUID() ServiceGUID {
-	return service.guid
-}
-
-func (service *Service) GetStatus() UserServiceStatus {
+func (service *Service) GetStatus() container_status.ContainerStatus {
 	return service.status
 }
 
-func (service *Service) GetEnclaveID() enclave.EnclaveID {
-	return service.enclaveId
-}
-
-func (service *Service) GetPrivateIP() net.IP {
-	return service.privateIp
-}
-
-func (service *Service) GetMaybePrivatePorts() map[string]*port_spec.PortSpec {
-	return service.maybePrivatePorts
+func (service *Service) GetPrivatePorts() map[string]*port_spec.PortSpec {
+	return service.privatePorts
 }
 
 func (service *Service) GetMaybePublicIP() net.IP {
