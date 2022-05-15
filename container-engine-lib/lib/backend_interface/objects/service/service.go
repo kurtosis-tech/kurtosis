@@ -21,8 +21,8 @@ type Service struct {
 
 	privateIp        net.IP
 
-	// Will be nil if the service is in UserServiceStatus_Registered state
-	privatePorts     map[string]*port_spec.PortSpec // Keyed by user-provided port ID
+	// Will be nil if the service was never activated
+	maybePrivatePorts map[string]*port_spec.PortSpec // Keyed by user-provided port ID
 
 	// These will only be non-nil if all of the following are true:
 	//  - The backend is Docker
@@ -31,8 +31,8 @@ type Service struct {
 	maybePublicPorts map[string]*port_spec.PortSpec //Mapping of port-used-by-service -> port-on-the-host-machine where the user can make requests to the port to access the port. If a used port doesn't have a host port bound, then the value will be nil.
 }
 
-func NewService(id ServiceID, guid ServiceGUID, status UserServiceStatus, enclaveId enclave.EnclaveID, privateIp net.IP, privatePorts map[string]*port_spec.PortSpec, maybePublicIp net.IP, maybePublicPorts map[string]*port_spec.PortSpec) *Service {
-	return &Service{id: id, guid: guid, status: status, enclaveId: enclaveId, privateIp: privateIp, privatePorts: privatePorts, maybePublicIp: maybePublicIp, maybePublicPorts: maybePublicPorts}
+func NewService(id ServiceID, guid ServiceGUID, status UserServiceStatus, enclaveId enclave.EnclaveID, privateIp net.IP, maybePrivatePorts map[string]*port_spec.PortSpec, maybePublicIp net.IP, maybePublicPorts map[string]*port_spec.PortSpec) *Service {
+	return &Service{id: id, guid: guid, status: status, enclaveId: enclaveId, privateIp: privateIp, maybePrivatePorts: maybePrivatePorts, maybePublicIp: maybePublicIp, maybePublicPorts: maybePublicPorts}
 }
 
 func (service *Service) GetID() ServiceID {
@@ -55,8 +55,8 @@ func (service *Service) GetPrivateIP() net.IP {
 	return service.privateIp
 }
 
-func (service *Service) GetPrivatePorts() map[string]*port_spec.PortSpec {
-	return service.privatePorts
+func (service *Service) GetMaybePrivatePorts() map[string]*port_spec.PortSpec {
+	return service.maybePrivatePorts
 }
 
 func (service *Service) GetMaybePublicIP() net.IP {
