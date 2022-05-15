@@ -76,7 +76,9 @@ func runMain() error {
 	var apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
 	switch serverArgs.KurtosisBackendType {
 	case args.KurtosisBackendType_Docker:
-		kurtosisBackend, err = backend_creator.GetLocalDockerKurtosisBackend(nil)
+		var apiContainerModeArgsWhenEngine *backend_creator.APIContainerModeArgs
+		apiContainerModeArgsWhenEngine = nil
+		kurtosisBackend, err = backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgsWhenEngine)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 		}
