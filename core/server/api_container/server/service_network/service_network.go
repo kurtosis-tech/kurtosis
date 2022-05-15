@@ -248,7 +248,7 @@ func (network *ServiceNetwork) StartService(
 			"Cannot start service; expected service to be in state '%v' but was '%v'",
 			serviceId,
 			service.UserServiceStatus_Registered,
-			userServiceBeforeActivation.GetStatus(),
+			userServiceBeforeActivation.GetStatus().String(),
 		)
 	}
 	serviceGuid := userServiceBeforeActivation.GetGUID()
@@ -496,18 +496,26 @@ func (network *ServiceNetwork) ExecCommand(
 }
 
 func (network *ServiceNetwork) GetServiceInfo(serviceId service.ServiceID) (
-	*service.Service,
-	error,
+	resultPrivateIpAddr net.IP,
+	resultPrivatePorts map[string]*port_spec.PortSpec,
+	resultMaybePublicIpAddr net.IP,
+	resultMaybePublicPorts map[string]*port_spec.PortSpec,
+	resultErr error,
 ) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
 	serviceObj, found := network.services[serviceId]
 	if !found {
-		return nil, stacktrace.NewError("No service with ID '%v' exists", serviceId)
+		return nil, nil, nil, nil, stacktrace.NewError("No service with ID '%v' exists", serviceId)
+	}
+	// We can error on non-activated services (thereby guaranteeing we have private ports) because a service that's in
+	// the 'services' map but NOT activated is very weird
+	if serviceObj.GetStatus() != service.UserServiceStatus_Activated {
+		return nil, nil, nil, nil, stacktrace.NewError("Cannot get service info; service with ID '%v' is in strange state '%v'", serviceObj.GetStatus().String())
 	}
 
-	return serviceObj, nil
+	return serviceObj.GetPrivateIP(), serviceObj.GetPrivatePorts(), serviceObj.GetMaybePublicIP(), serviceObj.GetMaybePublicPorts()
 }
 
 /*

@@ -236,9 +236,9 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 func (apicService ApiContainerService) GetServiceInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServiceInfoArgs) (*kurtosis_core_rpc_api_bindings.GetServiceInfoResponse, error) {
 	serviceIdStr := args.GetServiceId()
 	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
-	privateIpAddr, err := apicService.serviceNetwork.GetServiceRegistrationInfo(serviceId)
+	serviceObj, err := apicService.serviceNetwork.GetServiceInfo(serviceId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the registration info for apicService '%v'", serviceIdStr)
+		return nil, stacktrace.Propagate(err, "An error occurred getting info for service '%v'", serviceIdStr)
 	}
 
 	privateServicePortSpecs, maybePublicIpAddr, maybePublicServicePortSpecs, err := apicService.serviceNetwork.GetServiceRunInfo(serviceId)
