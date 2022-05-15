@@ -1,6 +1,6 @@
 # TBD
 ### Breaking Changes
-* For KubernetesBackends, `EnclaveVolumeSizeInGigabytes` has been changed from an int to a Kubernetes-parseable quantity string called `EnclaveVolumeSizeQuantityStr`
+* For KubernetesBackends, `EnclaveVolumeSizeInGigabytes` has been changed from an int to a uint `EnclaveVolumeSizeInMb`
 
 # 0.21.0
 ### Changes
