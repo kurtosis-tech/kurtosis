@@ -39,12 +39,12 @@ In Kubernetes, we implement this like so:
 - Destroyed: both the Service and the Pod are destroyed
 */
 
-func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.Service, error) {
+func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID, ) (*service.ServiceRegistration, error, ) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) ActivateUserService(
+func (backend *KubernetesKurtosisBackend) StartUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	guid service.ServiceGUID,
@@ -115,7 +115,7 @@ func (backend *KubernetesKurtosisBackend) CopyFromUserService(ctx context.Contex
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) DeactivateUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (successfulUserServiceGuids map[service.ServiceGUID]bool, erroredUserServiceGuids map[service.ServiceGUID]error, resultErr error) {
+func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (successfulUserServiceGuids map[service.ServiceGUID]bool, erroredUserServiceGuids map[service.ServiceGUID]error, resultErr error) {
 	//TODO implement me
 	panic("implement me")
 }

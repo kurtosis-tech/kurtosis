@@ -297,7 +297,7 @@ func (backend *MetricsReportingKurtosisBackend) DestroyModules(
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.Service, error) {
+func (backend *MetricsReportingKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID, ) (*service.ServiceRegistration, error, ) {
 	serviceIdStr := string(serviceId)
 	if len(strings.TrimSpace(serviceIdStr)) == 0 {
 		return nil, stacktrace.NewError("Service ID cannot be whitespace or empty")
@@ -310,7 +310,7 @@ func (backend *MetricsReportingKurtosisBackend) RegisterUserService(ctx context.
 	return result, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) ActivateUserService(
+func (backend *MetricsReportingKurtosisBackend) StartUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	guid service.ServiceGUID,
@@ -324,7 +324,7 @@ func (backend *MetricsReportingKurtosisBackend) ActivateUserService(
 	newUserService *service.Service,
 	resultErr error,
 ) {
-	userService, err := backend.underlying.ActivateUserService(
+	userService, err := backend.underlying.StartUserService(
 		ctx,
 		enclaveId,
 		guid,
@@ -461,7 +461,7 @@ func (backend *MetricsReportingKurtosisBackend) CopyFromUserService(
 	return tarStreamReadCloser, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) DeactivateUserServices(
+func (backend *MetricsReportingKurtosisBackend) StopUserServices(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
@@ -470,7 +470,7 @@ func (backend *MetricsReportingKurtosisBackend) DeactivateUserServices(
 	erroredUserServiceGuids map[service.ServiceGUID]error,
 	resultErr error,
 ) {
-	successes, failures, err := backend.underlying.DeactivateUserServices(ctx, enclaveId, filters)
+	successes, failures, err := backend.underlying.StopUserServices(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred deactivating user services in enclave '%v' using filters: %+v", enclaveId, filters)
 	}

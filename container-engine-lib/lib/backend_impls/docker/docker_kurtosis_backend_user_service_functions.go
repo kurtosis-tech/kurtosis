@@ -88,11 +88,7 @@ type userServiceDockerResources struct {
 	container *types.Container
 }
 
-func (backend *DockerKurtosisBackend) RegisterUserService(
-	_ context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceId service.ServiceID,
-) (*service.Service, error) {
+func (backend *DockerKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID, ) (*service.ServiceRegistration, error, ) {
 	// Write mutex locked; modification of the service registration map is allowed
 	backend.serviceRegistrationMutex.Lock()
 	defer backend.serviceRegistrationMutex.Unlock()
@@ -100,8 +96,8 @@ func (backend *DockerKurtosisBackend) RegisterUserService(
 	freeIpAddrProvider, found := backend.enclaveFreeIpProviders[enclaveId]
 	if !found {
 		return nil, stacktrace.NewError(
-			"Received a request to register service with ID '%v' in enclave '%v', but no free IP address provider was " +
-				"defined for this enclave; this likely means that the registration request is being called where it shouldn't " +
+			"Received a request to register service with ID '%v' in enclave '%v', but no free IP address provider was "+
+				"defined for this enclave; this likely means that the registration request is being called where it shouldn't "+
 				"be (i.e. outside the API container)",
 			serviceId,
 			enclaveId,
@@ -111,7 +107,7 @@ func (backend *DockerKurtosisBackend) RegisterUserService(
 	enclaveServices, found := backend.serviceRegistrations[enclaveId]
 	if !found {
 		return nil, stacktrace.NewError(
-			"No services are being tracked for enclave '%v'; this likely means that the registration request is being called where it shouldn't " +
+			"No services are being tracked for enclave '%v'; this likely means that the registration request is being called where it shouldn't "+
 				"be (i.e. outside the API container)",
 			enclaveId,
 		)
@@ -171,7 +167,7 @@ func (backend *DockerKurtosisBackend) RegisterUserService(
 	return result, nil
 }
 
-func (backend *DockerKurtosisBackend) ActivateUserService(
+func (backend *DockerKurtosisBackend) StartUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	guid service.ServiceGUID,
@@ -624,7 +620,7 @@ func (backend *DockerKurtosisBackend) CopyFromUserService(
 	return tarStreamReadCloser, nil
 }
 
-func (backend *DockerKurtosisBackend) DeactivateUserServices(
+func (backend *DockerKurtosisBackend) StopUserServices(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
