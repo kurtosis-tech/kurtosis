@@ -123,7 +123,6 @@ func (manager *EnclaveManager) CreateEnclave(
 		isPartitioningEnabled,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
-		manager.apiContainerKurtosisBackendConfigSupplier,
 	)
 
 	if err != nil {
@@ -459,7 +458,6 @@ func (manager *EnclaveManager) launchApiContainer(
 	isPartitioningEnabled bool,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
-	backendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -478,7 +476,7 @@ func (manager *EnclaveManager) launchApiContainer(
 			isPartitioningEnabled,
 			metricsUserID,
 			didUserAcceptSendingMetrics,
-			backendConfigSupplier,
+			manager.apiContainerKurtosisBackendConfigSupplier,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with custom version '%v', but an error occurred", enclaveId, apiContainerImageVersionTag)
@@ -494,7 +492,7 @@ func (manager *EnclaveManager) launchApiContainer(
 		isPartitioningEnabled,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
-		backendConfigSupplier,
+		manager.apiContainerKurtosisBackendConfigSupplier,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with the default version, but an error occurred", enclaveId)
