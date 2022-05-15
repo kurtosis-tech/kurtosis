@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -104,10 +105,10 @@ func (backend *DockerKurtosisBackend) RegisterUserService(ctx context.Context, e
 		)
 	}
 
-	enclaveServices, found := backend.serviceRegistrations[enclaveId]
+	registrationsForEnclave, found := backend.serviceRegistrations[enclaveId]
 	if !found {
 		return nil, stacktrace.NewError(
-			"No services are being tracked for enclave '%v'; this likely means that the registration request is being called where it shouldn't "+
+			"No service registrations are being tracked for enclave '%v'; this likely means that the registration request is being called where it shouldn't "+
 				"be (i.e. outside the API container)",
 			enclaveId,
 		)
@@ -130,47 +131,30 @@ func (backend *DockerKurtosisBackend) RegisterUserService(ctx context.Context, e
 		serviceId,
 		time.Now().Unix(),
 	))
-	registrationInfo := &registeredServiceInfo{
-		enclaveId:     enclaveId,
-		id:            serviceId,
-		guid:          guid,
-		ip:            ipAddr,
-		isDeactivated: false,
-	}
+	registration := service.NewServiceRegistration(
+		serviceId,
+		guid,
+		enclaveId,
+		ipAddr,
+	)
 
-	enclaveServices[guid] = registrationInfo
+	registrationsForEnclave[guid] = registration
 	shouldRemoveRegistration := true
 	defer func() {
 		if shouldRemoveRegistration {
-			delete(enclaveServices, guid)
+			delete(registrationsForEnclave, guid)
 		}
 	}()
 
-	// Registered-but-not-started services don't have any private ports
-	var privatePorts map[string]*port_spec.PortSpec = nil
-	// Registered-but-not-started services don't have public info
-	var publicIp net.IP = nil
-	var publicPorts map[string]*port_spec.PortSpec = nil
-	result := service.NewService(
-		serviceId,
-		guid,
-		service.UserServiceStatus_Registered,
-		enclaveId,
-		ipAddr,
-		privatePorts,
-		publicIp,
-		publicPorts,
-	)
-
 	shouldFreeIp = false
 	shouldRemoveRegistration = false
-	return result, nil
+	return registration, nil
 }
 
 func (backend *DockerKurtosisBackend) StartUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	guid service.ServiceGUID,
+	serviceGuid service.ServiceGUID,
 	containerImageName string,
 	privatePorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
@@ -182,26 +166,41 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	*service.Service,
 	error,
 ) {
-	// !!!!! THIS IS JUST A READ LOCK; YOU MAY NOT WRITE TO REGISTRATION INFO IN THIS METHOD !!!!!!!!!!
-	backend.serviceRegistrationMutex.RLock()
-	defer backend.serviceRegistrationMutex.RUnlock()
+	// Write mutex locked; modification of the service registration map is allowed
+	backend.serviceRegistrationMutex.Lock()
+	defer backend.serviceRegistrationMutex.Unlock()
 
-	serviceBeforeStartingContainer, _, err := backend.getSingleUserServiceObjAndResourcesWithoutMutex(ctx, enclaveId, guid)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the service with GUID '%v' that should exist when starting the service", guid)
-	}
-	serviceId := serviceBeforeStartingContainer.GetID()
-	serviceGuid := serviceBeforeStartingContainer.GetGUID()
-	privateIp := serviceBeforeStartingContainer.GetPrivateIP()
-
-	currentServiceStatus := serviceBeforeStartingContainer.GetStatus()
-	if currentServiceStatus != service.UserServiceStatus_Registered {
+	// Find the registration
+	registrationsForEnclave, found := backend.serviceRegistrations[enclaveId]
+	if !found {
 		return nil, stacktrace.NewError(
-			"Cannot start service '%v'; expected it to be in status '%v' but was '%v'",
-			guid,
-			service.UserServiceStatus_Registered.String(),
-			currentServiceStatus.String(),
+			"No service registrations are being tracked for enclave '%v'; this likely means that the start service request is being called where it shouldn't "+
+				"be (i.e. outside the API container)",
+			enclaveId,
 		)
+	}
+	serviceRegistration, found := registrationsForEnclave[serviceGuid]
+	if !found {
+		return nil, stacktrace.NewError(
+			"Cannot start service '%v' because no preexisting registration has been made for the service",
+			serviceGuid,
+		)
+	}
+	serviceId := serviceRegistration.GetID()
+	privateIpAddr := serviceRegistration.GetPrivateIP()
+
+	// Find if a container has been associated with the registration yet
+	preexistingServicesFilters := &service.ServiceFilters{
+		GUIDs:    map[service.ServiceGUID]bool{
+			serviceGuid: true,
+		},
+	}
+	preexistingServices, _, err := backend.getMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, preexistingServicesFilters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting preexisting containers for service '%v'", serviceGuid)
+	}
+	if len(preexistingServices) > 0 {
+		return nil, stacktrace.Propagate(err, "Cannot start service '%v'; a container already exists for the service", serviceGuid)
 	}
 
 	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
@@ -212,11 +211,11 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	containerAttrs, err := enclaveObjAttrsProvider.ForUserServiceContainer(
 		serviceId,
 		serviceGuid,
-		privateIp,
+		privateIpAddr,
 		privatePorts,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the user service container attributes for user service with GUID '%v'", guid)
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the user service container attributes for user service with GUID '%v'", serviceGuid)
 	}
 	containerName := containerAttrs.GetName()
 
@@ -230,6 +229,7 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
 
+	// TODO REMOVE THIS - Services no longer need the enclave data volume mounted!
 	enclaveDataVolumeName, err := backend.getEnclaveDataVolumeByEnclaveId(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveId)
@@ -253,7 +253,7 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		containerName.GetString(),
 		enclaveNetwork.GetId(),
 	).WithStaticIP(
-		serviceBeforeStartingContainer.GetPrivateIP(),
+		privateIpAddr,
 	).WithUsedPorts(
 		dockerUsedPorts,
 	).WithEnvironmentVariables(
@@ -263,7 +263,7 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	).WithLabels(
 		labelStrs,
 	).WithAlias(
-		string(serviceBeforeStartingContainer.GetID()),
+		string(serviceId),
 	)
 	if entrypointArgs != nil {
 		createAndStartArgsBuilder.WithEntrypointArgs(entrypointArgs)
@@ -283,11 +283,12 @@ func (backend *DockerKurtosisBackend) StartUserService(
 
 	containerId, hostMachinePortBindings, err := backend.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred starting the user service container for user service with GUID '%v'", guid)
+		return nil, stacktrace.Propagate(err, "An error occurred starting the user service container for user service with GUID '%v'", serviceGuid)
 	}
 	shouldKillContainer := true
 	defer func() {
 		if shouldKillContainer {
+			// TODO switch to removing the container, so that the service registration is still viable?
 			// NOTE: We use the background context here so that the kill will still go off even if the reason for
 			// the failure was the original context being cancelled
 			if err := backend.dockerManager.KillContainer(context.Background(), containerId); err != nil {
@@ -309,11 +310,8 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	)
 
 	result := service.NewService(
-		serviceId,
-		serviceGuid,
-		service.UserServiceStatus_Activated,
-		enclaveId,
-		privateIp,
+		serviceRegistration,
+		container_status.ContainerStatus_Running,
 		privatePorts,
 		maybePublicIp,
 		maybePublicPortSpecs,
@@ -331,11 +329,7 @@ func (backend *DockerKurtosisBackend) GetUserServices(
 	map[service.ServiceGUID]*service.Service,
 	error,
 ) {
-	// !!!!! THIS IS JUST A READ LOCK; YOU MAY NOT WRITE TO REGISTRATION INFO IN THIS METHOD !!!!!!!!!!
-	backend.serviceRegistrationMutex.RLock()
-	defer backend.serviceRegistrationMutex.RUnlock()
-
-	userServices, _, err := backend.getMatchingUserServiceObjsAndDockerResourcesWithoutMutex(ctx, enclaveId, filters)
+	userServices, _, err := backend.getMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
@@ -352,11 +346,7 @@ func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 	map[service.ServiceGUID]error,
 	error,
 ) {
-	// !!!!! THIS IS JUST A READ LOCK; YOU MAY NOT WRITE TO REGISTRATION INFO IN THIS METHOD !!!!!!!!!!
-	backend.serviceRegistrationMutex.RLock()
-	defer backend.serviceRegistrationMutex.RUnlock()
-
-	_, allDockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesWithoutMutex(ctx, enclaveId, filters)
+	_, allDockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
@@ -388,11 +378,7 @@ func (backend *DockerKurtosisBackend) PauseService(
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
 ) error {
-	// !!!!! THIS IS JUST A READ LOCK; YOU MAY NOT WRITE TO REGISTRATION INFO IN THIS METHOD !!!!!!!!!!
-	backend.serviceRegistrationMutex.RLock()
-	defer backend.serviceRegistrationMutex.RUnlock()
-
-	serviceObj, dockerResources, err := backend.getSingleUserServiceObjAndResourcesWithoutMutex(ctx, enclaveId, serviceGuid)
+	serviceObj, dockerResources, err := backend.getSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get information about service '%v' from Kurtosis backend.", serviceGuid)
 	}
@@ -419,11 +405,7 @@ func (backend *DockerKurtosisBackend) UnpauseService(
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
 ) error {
-	// !!!!! THIS IS JUST A READ LOCK; YOU MAY NOT WRITE TO REGISTRATION INFO IN THIS METHOD !!!!!!!!!!
-	backend.serviceRegistrationMutex.RLock()
-	defer backend.serviceRegistrationMutex.RUnlock()
-
-	serviceObj, dockerResources, err := backend.getSingleUserServiceObjAndResourcesWithoutMutex(ctx, enclaveId, serviceGuid)
+	serviceObj, dockerResources, err := backend.getSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get information about service '%v' from Kurtosis backend.", serviceGuid)
 	}
@@ -455,10 +437,6 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	map[service.ServiceGUID]error,
 	error,
 ) {
-	// !!!!! THIS IS JUST A READ LOCK; YOU MAY NOT WRITE TO REGISTRATION INFO IN THIS METHOD !!!!!!!!!!
-	backend.serviceRegistrationMutex.RLock()
-	defer backend.serviceRegistrationMutex.RUnlock()
-
 	userServiceGuids := map[service.ServiceGUID]bool{}
 	for userServiceGuid := range userServiceCommands {
 		userServiceGuids[userServiceGuid] = true
@@ -467,7 +445,7 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	filters := &service.ServiceFilters{
 		GUIDs: userServiceGuids,
 	}
-	allServiceObjs, allDockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesWithoutMutex(ctx, enclaveId, filters)
+	allServiceObjs, allDockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
@@ -550,11 +528,7 @@ func (backend *DockerKurtosisBackend) GetConnectionWithUserService(
 	net.Conn,
 	error,
 ) {
-	// !!!!! THIS IS JUST A READ LOCK; YOU MAY NOT WRITE TO REGISTRATION INFO IN THIS METHOD !!!!!!!!!!
-	backend.serviceRegistrationMutex.RLock()
-	defer backend.serviceRegistrationMutex.RUnlock()
-
-	serviceObj, serviceDockerResources, err := backend.getSingleUserServiceObjAndResourcesWithoutMutex(ctx, enclaveId, serviceGuid)
+	serviceObj, serviceDockerResources, err := backend.getSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting service object and Docker resources for service '%v' in enclave '%v'", serviceGuid, enclaveId)
 	}
@@ -592,11 +566,7 @@ func (backend *DockerKurtosisBackend) CopyFromUserService(
 	io.ReadCloser,
 	error,
 ) {
-	// !!!!! THIS IS JUST A READ LOCK; YOU MAY NOT WRITE TO REGISTRATION INFO IN THIS METHOD !!!!!!!!!!
-	backend.serviceRegistrationMutex.RLock()
-	defer backend.serviceRegistrationMutex.RUnlock()
-
-	_, serviceDockerResources, err := backend.getSingleUserServiceObjAndResourcesWithoutMutex(ctx, enclaveId, serviceGuid)
+	_, serviceDockerResources, err := backend.getSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting user service with GUID '%v' in enclave with ID '%v'", serviceGuid, enclaveId)
 	}
@@ -629,11 +599,7 @@ func (backend *DockerKurtosisBackend) StopUserServices(
 	resultErroredServiceGUIDs map[service.ServiceGUID]error,
 	resultErr error,
 ) {
-	// Write lock, because we'll be modifying the service registration info
-	backend.serviceRegistrationMutex.Lock()
-	defer backend.serviceRegistrationMutex.Unlock()
-
-	allServiceObjs, allDockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesWithoutMutex(ctx, enclaveId, filters)
+	allServiceObjs, allDockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
@@ -744,7 +710,7 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 	backend.serviceRegistrationMutex.Lock()
 	defer backend.serviceRegistrationMutex.Unlock()
 
-	allServiceObjs, allDockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesWithoutMutex(ctx, enclaveId, filters)
+	allServiceObjs, allDockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
@@ -850,8 +816,8 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 //                                     Private Helper Methods
 // ====================================================================================================
 // Gets the service objects & Docker resources for services matching the given filters
-// !!!!!!!!!! It's VERY important that the service registration mutex is locked before this is called !!!!!!!!
-func (backend *DockerKurtosisBackend) getMatchingUserServiceObjsAndDockerResourcesWithoutMutex(
+// NOTE: Does not use registration information so does not need the mutex!
+func (backend *DockerKurtosisBackend) getMatchingUserServiceObjsAndDockerResourcesNoMutex(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
@@ -1082,7 +1048,8 @@ func getIpAndPortInfoFromContainer(
 	return privatePortSpecs, containerPublicIp, publicPortSpecs, nil
 }
 
-func (backend *DockerKurtosisBackend) getSingleUserServiceObjAndResourcesWithoutMutex(
+// NOTE: Does not use registration information so does not need the mutex!
+func (backend *DockerKurtosisBackend) getSingleUserServiceObjAndResourcesNoMutex(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	userServiceGuid service.ServiceGUID,
@@ -1096,7 +1063,7 @@ func (backend *DockerKurtosisBackend) getSingleUserServiceObjAndResourcesWithout
 			userServiceGuid: true,
 		},
 	}
-	userServices, dockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesWithoutMutex(ctx, enclaveId, filters)
+	userServices, dockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services using filters '%v'", filters)
 	}

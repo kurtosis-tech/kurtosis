@@ -14,3 +14,23 @@ type ServiceRegistration struct {
 	enclaveId        enclave.EnclaveID
 	privateIp        net.IP
 }
+
+func NewServiceRegistration(id ServiceID, guid ServiceGUID, enclaveId enclave.EnclaveID, privateIp net.IP) *ServiceRegistration {
+	return &ServiceRegistration{id: id, guid: guid, enclaveId: enclaveId, privateIp: privateIp}
+}
+
+func (registration *ServiceRegistration) GetID() ServiceID {
+	return registration.id
+}
+
+func (registration *ServiceRegistration) GetGUID() ServiceGUID {
+	return registration.guid
+}
+
+func (registration *ServiceRegistration) GetEnclaveID() enclave.EnclaveID {
+	return registration.enclaveId
+}
+
+func (registration *ServiceRegistration) GetPrivateIP() net.IP {
+	return registration.privateIp
+}

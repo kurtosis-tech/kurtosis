@@ -72,18 +72,6 @@ var portSpecProtosToDockerPortProtos = map[port_spec.PortProtocol]string{
 	port_spec.PortProtocol_UDP:  "udp",
 }
 
-// Docker doesn't have any sort of object that would allow us to track a registered, but not started, service so we
-// use this in-memory struct to accomplish the same purpose
-type registeredServiceInfo struct {
-	enclaveId enclave.EnclaveID
-	id service.ServiceID
-	guid service.ServiceGUID
-	ip net.IP
-
-	// Will get flipped to true if the service gets deactivated (indicating the service should be unusable)
-	isDeactivated bool
-}
-
 type DockerKurtosisBackend struct {
 	dockerManager *docker_manager.DockerManager
 
@@ -104,10 +92,10 @@ type DockerKurtosisBackend struct {
 	// Canonical store of the registrations being tracked by this DockerKurtosisBackend instance
 	// NOTE: Unlike Kubernetes, Docker doesn't have a concrete object representing a service registration/IP address
 	//  allocation. We use this in-memory store to accomplish the same thing.
-	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*registeredServiceInfo
+	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration
 
 	// Control concurrent access to serviceRegistrations
-	serviceRegistrationMutex *sync.RWMutex
+	serviceRegistrationMutex *sync.Mutex
 }
 
 func NewDockerKurtosisBackend(
@@ -115,9 +103,9 @@ func NewDockerKurtosisBackend(
 	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker,
 ) *DockerKurtosisBackend {
 	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator(dockerManager)
-	serviceRegistrations := map[enclave.EnclaveID]map[service.ServiceGUID]*registeredServiceInfo{}
+	serviceRegistrations := map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration{}
 	for enclaveId := range enclaveFreeIpProviders {
-		serviceRegistrations[enclaveId] = map[service.ServiceGUID]*registeredServiceInfo{}
+		serviceRegistrations[enclaveId] = map[service.ServiceGUID]*service.ServiceRegistration{}
 	}
 	return &DockerKurtosisBackend{
 		dockerManager:            dockerManager,
@@ -125,7 +113,7 @@ func NewDockerKurtosisBackend(
 		objAttrsProvider:         object_attributes_provider.GetDockerObjectAttributesProvider(),
 		enclaveFreeIpProviders:   enclaveFreeIpProviders,
 		serviceRegistrations:     serviceRegistrations,
-		serviceRegistrationMutex: &sync.RWMutex{},
+		serviceRegistrationMutex: &sync.Mutex{},
 	}
 }
 

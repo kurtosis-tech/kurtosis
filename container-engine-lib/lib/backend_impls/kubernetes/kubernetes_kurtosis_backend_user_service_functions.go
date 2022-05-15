@@ -13,16 +13,16 @@ import (
 /*
         Kurtosis Service State Diagram
 
-REGISTERED ------------------------> DEACTIVATED
+REGISTERED ------------------------> STOPPED
 			 \                  /
-			  '--> ACTIVATED --'
+			  '--> RUNNING --'
 
          KUBERNETES IMPLEMENTATION
 
 Kurtosis services are uniquely identified by a ServiceGUID and can have the following states:
 1. REGISTERED = a GUID and an IP address in the enclave has been allocated for the service, but no user container is running
-1. ACTIVATED = user's container should be running (though may not be if they have an error)
-1. DEACTIVATED = user's container has been killed *and will not run again*
+1. RUNNING = user's container should be running (though may not be if they have an error)
+1. STOPPED = user's container has been killed *and will not run again*
 1. DESTROYED = not technically a state because the service no longer exists
 
 In Kubernetes, we implement this like so:
@@ -31,8 +31,8 @@ In Kubernetes, we implement this like so:
 	- Create a Kubernetes Service that has the ServiceGUID as a label (so we can find it again)
 	- Add selectors on the Service to select for Pods matching the ServiceGUID
 	- Use the Service's IP address
-- Activated: a pod with the ServiceGUID is created
-- Deactivated:
+- Starting: a pod with the ServiceGUID is created
+- Stopping:
 	- The Pod is deleted (Kubernetes has no way of stopping the pod while leaving its logs around; we'll have to implement
  	  our own log store to catch these
 	- The Service's selectors are set to nil, indicating that the Service is forever unusable

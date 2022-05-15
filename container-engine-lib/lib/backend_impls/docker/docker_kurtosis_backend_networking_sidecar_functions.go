@@ -53,7 +53,7 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 		)
 	}
 
-	_, dockerResources, err := backend.getSingleUserServiceObjAndResourcesWithoutMutex(ctx, enclaveId, serviceGuid)
+	_, dockerResources, err := backend.getSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting network sidecar's user service '%v'", serviceGuid)
 	}
