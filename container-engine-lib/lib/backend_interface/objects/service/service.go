@@ -17,6 +17,8 @@ type Service struct {
 	status           UserServiceStatus
 	enclaveId        enclave.EnclaveID
 
+	// TODO add back in a ContainerStatus (need to handle the case where the service has no container)
+
 	privateIp        net.IP
 
 	// Will be nil if the service is in UserServiceStatus_Registered state
