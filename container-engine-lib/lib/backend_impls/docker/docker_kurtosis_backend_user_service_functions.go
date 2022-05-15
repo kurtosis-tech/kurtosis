@@ -352,7 +352,7 @@ func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 	for guid, resourcesForService := range allDockerResources {
 		container := resourcesForService.container
 		if container == nil {
-			erroredUserServices[guid] = stacktrace.NewError("Cannot get logs for service '%v' as it has no container")
+			erroredUserServices[guid] = stacktrace.NewError("Cannot get logs for service '%v' as it has no container", guid)
 			continue
 		}
 
@@ -952,7 +952,12 @@ func (backend *DockerKurtosisBackend) getMatchingUserServiceObjsAndDockerResourc
 		dockerResources, found := matchingDockerResources[guid]
 		if !found {
 			// This should never happen; the Services map and the Docker resources maps should have the same GUIDs
-			return nil, nil, stacktrace.Propagate(err, "Needed to return Docker resources for service with GUID '%v', but none was found; this is a bug in Kurtosis")
+			return nil, nil, stacktrace.Propagate(
+				err,
+				"Needed to return Docker resources for service with GUID '%v', but none was " +
+					"found; this is a bug in Kurtosis",
+				guid,
+			)
 		}
 
 		resultServiceObjs[guid] = serviceObj
@@ -1097,7 +1102,7 @@ func getIpAndPortInfoFromContainer(
 			if !containerPublicIp.Equal(portPublicIp) {
 				return nil, nil, nil, stacktrace.NewError(
 					"Private port '%v' on container '%v' yielded a public IP '%v', which doesn't agree with " +
-						"previously-seen public IPs",
+						"previously-seen public IP '%v'",
 					portId,
 					containerName,
 					portPublicIp.String(),

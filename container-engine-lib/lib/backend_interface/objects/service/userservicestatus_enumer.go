@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-const _UserServiceStatusName = "REGISTEREDRUNNINGPAUSEDSTOPPED"
+const _UserServiceStatusName = "REGISTEREDACTIVATEDDEACTIVATED"
 
-var _UserServiceStatusIndex = [...]uint8{0, 10, 17, 23, 30}
+var _UserServiceStatusIndex = [...]uint8{0, 10, 19, 30}
 
-const _UserServiceStatusLowerName = "registeredrunningpausedstopped"
+const _UserServiceStatusLowerName = "registeredactivateddeactivated"
 
 func (i UserServiceStatus) String() string {
 	if i < 0 || i >= UserServiceStatus(len(_UserServiceStatusIndex)-1) {
@@ -26,28 +26,24 @@ func _UserServiceStatusNoOp() {
 	var x [1]struct{}
 	_ = x[UserServiceStatus_Registered-(0)]
 	_ = x[UserServiceStatus_Activated-(1)]
-	_ = x[UserServiceStatus_Paused-(2)]
-	_ = x[UserServiceStatus_Deactivated-(3)]
+	_ = x[UserServiceStatus_Deactivated-(2)]
 }
 
-var _UserServiceStatusValues = []UserServiceStatus{UserServiceStatus_Registered, UserServiceStatus_Activated, UserServiceStatus_Paused, UserServiceStatus_Deactivated}
+var _UserServiceStatusValues = []UserServiceStatus{UserServiceStatus_Registered, UserServiceStatus_Activated, UserServiceStatus_Deactivated}
 
 var _UserServiceStatusNameToValueMap = map[string]UserServiceStatus{
 	_UserServiceStatusName[0:10]:       UserServiceStatus_Registered,
 	_UserServiceStatusLowerName[0:10]:  UserServiceStatus_Registered,
-	_UserServiceStatusName[10:17]:      UserServiceStatus_Activated,
-	_UserServiceStatusLowerName[10:17]: UserServiceStatus_Activated,
-	_UserServiceStatusName[17:23]:      UserServiceStatus_Paused,
-	_UserServiceStatusLowerName[17:23]: UserServiceStatus_Paused,
-	_UserServiceStatusName[23:30]:      UserServiceStatus_Deactivated,
-	_UserServiceStatusLowerName[23:30]: UserServiceStatus_Deactivated,
+	_UserServiceStatusName[10:19]:      UserServiceStatus_Activated,
+	_UserServiceStatusLowerName[10:19]: UserServiceStatus_Activated,
+	_UserServiceStatusName[19:30]:      UserServiceStatus_Deactivated,
+	_UserServiceStatusLowerName[19:30]: UserServiceStatus_Deactivated,
 }
 
 var _UserServiceStatusNames = []string{
 	_UserServiceStatusName[0:10],
-	_UserServiceStatusName[10:17],
-	_UserServiceStatusName[17:23],
-	_UserServiceStatusName[23:30],
+	_UserServiceStatusName[10:19],
+	_UserServiceStatusName[19:30],
 }
 
 // UserServiceStatusString retrieves an enum value from the enum constants string name.

@@ -358,6 +358,7 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
+	// TODO Move this logic inside the user service, so that we have tighter controls on what can happen and what can't
 	//Create a user service's  networking sidecar inside enclave
 	CreateNetworkingSidecar(
 		ctx context.Context,
