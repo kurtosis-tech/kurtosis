@@ -44,8 +44,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	isPartitioningEnabled bool,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
-	kurtosisBackendType args.KurtosisBackendType,
-	kurtosisBackendConfig interface{},
+	backendConfigSupplier KurtosisBackendConfigSupplier,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -60,8 +59,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		isPartitioningEnabled,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
-		kurtosisBackendType,
-		kurtosisBackendConfig,
+		backendConfigSupplier,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", DefaultVersion)
@@ -79,12 +77,12 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	isPartitioningEnabled bool,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
-	kurtosisBackendType args.KurtosisBackendType,
-	kurtosisBackendConfig interface{},
+	backendConfigSupplier KurtosisBackendConfigSupplier,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
 ) {
+	kurtosisBackendType, kurtosisBackendConfig := backendConfigSupplier.getKurtosisBackendConfig()
 	argsObj, err := args.NewAPIContainerArgs(
 		imageVersionTag,
 		logLevel.String(),
@@ -130,19 +128,3 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 
 	return apiContainer, nil
 }
-
-type KurtosisBackendConfigSupplier interface {
-	// Private because only the launcher should call it
-	getKurtosisBackendConfig() (args.KurtosisBackendType, interface{})
-}
-/*
-func NewKubernetesKurtosisBackendConfigSupplier(storageClass string, enclaveVolumeSizeInGB int) {
-	kubernetesClusterConfig := kurtosis_backend_config.KubernetesClusterConfig{
-		storageClass,
-		enclaveVolumeSizeInGB,
-	}
-
-	}
-	// Create the Kubernetes config
-	// return Kubernetes config type, plus the config
-}*/
