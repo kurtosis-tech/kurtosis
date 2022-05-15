@@ -14,8 +14,8 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
+	"github.com/kurtosis-tech/kurtosis-core/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args/kurtosis_backend_type"
-	"github.com/kurtosis-tech/kurtosis-core/launcher/args/kurtosis_cluster_config"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_launcher"
@@ -97,9 +97,9 @@ func runMain() error {
 		if clusterConfig == nil {
 			return stacktrace.NewError("Kurtosis backend type is '%v' but cluster configuration parameters are null.", kurtosis_backend_type.Kubernetes.String())
 		}
-		kubernetesClusterConfig, ok := (*clusterConfig).(kurtosis_cluster_config.KurtosisClusterConfig)
+		kubernetesClusterConfig, ok := (*clusterConfig).(kurtosis_backend_config.KubernetesBackendConfig)
 		if !ok {
-			return stacktrace.NewError("Failed to cast cluster configuration interface to KurtosisClusterConfig, even though Kurtosis backend type is '%v'", kurtosis_backend_type.Kubernetes.String())
+			return stacktrace.NewError("Failed to cast cluster configuration interface to KubernetesBackendConfig, even though Kurtosis backend type is '%v'", kurtosis_backend_type.Kubernetes.String())
 		}
 		kurtosisBackend, err = lib.GetLocalKubernetesKurtosisBackend(kubernetesClusterConfig.StorageClass, kubernetesClusterConfig.EnclaveSizeInGigabytes)
 		if err != nil {

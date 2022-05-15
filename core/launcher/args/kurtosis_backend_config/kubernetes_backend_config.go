@@ -3,9 +3,9 @@
  * All Rights Reserved.
  */
 
-package kurtosis_cluster_config
+package kurtosis_backend_config
 
-type KurtosisClusterConfig struct {
+type KubernetesBackendConfig struct {
 	StorageClass string
 	EnclaveSizeInGigabytes int
 }

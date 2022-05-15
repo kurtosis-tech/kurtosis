@@ -131,3 +131,19 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 
 	return apiContainer, nil
 }
+
+type KurtosisBackendConfigSupplier interface {
+	// Private because only the launcher should call it
+	getKurtosisBackendConfig() (kurtosis_backend_type.KurtosisBackendType, interface{})
+}
+/*
+func NewKubernetesKurtosisBackendConfigSupplier(storageClass string, enclaveVolumeSizeInGB int) {
+	kubernetesClusterConfig := kurtosis_backend_config.KubernetesClusterConfig{
+		storageClass,
+		enclaveVolumeSizeInGB,
+	}
+
+	}
+	// Create the Kubernetes config
+	// return Kubernetes config type, plus the config
+}*/
