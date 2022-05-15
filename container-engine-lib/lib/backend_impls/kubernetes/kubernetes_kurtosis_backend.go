@@ -78,7 +78,8 @@ type KubernetesKurtosisBackend struct {
 	/*
 		Enclave availability must be set and defined by a cluster administrator.
 		The user passes this in when starting Kurtosis with Kubernetes.
-		This is a string parsed by Kubernetes (i.e. 10Gi)
+		This is a "quantity" string parsed by Kubernetes (i.e. 10Gi)
+		See: https://pkg.go.dev/k8s.io/apimachinery/pkg/api/resource#Quantity
 	 */
 	volumeSizePerEnclaveQuantityStr string
 }
