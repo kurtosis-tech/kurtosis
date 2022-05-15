@@ -34,7 +34,7 @@ const (
 /*
 DOCKER SERVICE LIFECYCLE EXPLANATION:
 
-Kurtosis services are uniquely identified by a ServiceGUID and can have five states:
+Kurtosis services are uniquely identified by a ServiceGUID and can have the following states:
 1. REGISTERED = a GUID and an IP address in the enclave has been allocated for the service, but no user container is running
 1. ACTIVATED = user's container should be running (though may not be if they have an error)
 1. DEACTIVATED = user's container has been killed *and will not run again*
