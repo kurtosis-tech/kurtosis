@@ -19,7 +19,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
@@ -172,23 +171,18 @@ func createServiceNetworkAndModuleStore(
 		filesArtifactStore,
 	)
 
-	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
-		kurtosisBackend,
-		filesArtifactExpander,
-	)
-
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
 		kurtosisBackend,
 		enclaveObjAttrsProvider,
 		enclaveId)
 
-	serviceNetwork := service_network.NewServiceNetworkImpl(
+	serviceNetwork := service_network.NewServiceNetwork(
 		enclaveId,
 		isPartitioningEnabled,
 		kurtosisBackend,
 		enclaveDataDir,
-		userServiceLauncher,
 		networkingSidecarManager,
+		filesArtifactExpander,
 	)
 
 	moduleLauncher := module_launcher.NewModuleLauncher(

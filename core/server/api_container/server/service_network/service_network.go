@@ -63,12 +63,13 @@ type ServiceNetwork struct {
 	services map[service.ServiceID]*service.Service
 }
 
-func NewServiceNetworkImpl(
+func NewServiceNetwork(
 	enclaveId enclave.EnclaveID,
 	isPartitioningEnabled bool,
 	kurtosisBackend backend_interface.KurtosisBackend,
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 	networkingSidecarManager networking_sidecar.NetworkingSidecarManager,
+	filesArtifactExpander *files_artifact_expander.FilesArtifactExpander,
 ) *ServiceNetwork {
 	defaultPartitionConnection := partition_topology.PartitionConnection{
 		PacketLossPercentage: startingDefaultConnectionPacketLossValue,
@@ -79,6 +80,7 @@ func NewServiceNetworkImpl(
 		isPartitioningEnabled: isPartitioningEnabled,
 		kurtosisBackend:       kurtosisBackend,
 		enclaveDataDir:        enclaveDataDir,
+		filesArtifactExpander: filesArtifactExpander,
 		topology: partition_topology.NewPartitionTopology(
 			defaultPartitionId,
 			defaultPartitionConnection,
@@ -515,7 +517,7 @@ func (network *ServiceNetwork) GetServiceInfo(serviceId service.ServiceID) (
 		return nil, nil, nil, nil, stacktrace.NewError("Cannot get service info; service with ID '%v' is in strange state '%v'", serviceObj.GetStatus().String())
 	}
 
-	return serviceObj.GetPrivateIP(), serviceObj.GetPrivatePorts(), serviceObj.GetMaybePublicIP(), serviceObj.GetMaybePublicPorts()
+	return serviceObj.GetPrivateIP(), serviceObj.GetMaybePrivatePorts(), serviceObj.GetMaybePublicIP(), serviceObj.GetMaybePublicPorts()
 }
 
 /*
