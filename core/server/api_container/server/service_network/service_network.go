@@ -415,7 +415,6 @@ func (network *ServiceNetwork) ExecCommand(
 	if !found {
 		return 0, "", stacktrace.NewError(
 			"Service '%v does not exist in the network",
-			command,
 			serviceId,
 		)
 	}
