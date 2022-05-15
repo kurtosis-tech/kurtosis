@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/backend_creator"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis-core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args/kurtosis_backend_config"
@@ -72,12 +73,14 @@ func runMain() error {
 	logrus.SetLevel(logLevel)
 
 	var kurtosisBackend backend_interface.KurtosisBackend
+	var apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
 	switch serverArgs.KurtosisBackendType {
 	case args.KurtosisBackendType_Docker:
 		kurtosisBackend, err = backend_creator.GetLocalDockerKurtosisBackend(nil)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 		}
+		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewDockerKurtosisBackendConfigSupplier()
 	case args.KurtosisBackendType_Kubernetes:
 		clusterConfig := serverArgs.KurtosisBackendConfig
 		if clusterConfig == nil {
@@ -92,11 +95,12 @@ func runMain() error {
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to get a Kubernetes backend with storage class '%v' and enclave size (in GB) %d", kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInGigabytes)
 		}
+		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewKubernetesKurtosisBackendConfigSupplier(kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInGigabytes)
 	default:
 		return stacktrace.NewError("Backend type '%v' was not recognized by API container.", serverArgs.KurtosisBackendType.String())
 	}
 
-	enclaveManager := enclave_manager.NewEnclaveManager(kurtosisBackend)
+	enclaveManager := enclave_manager.NewEnclaveManager(kurtosisBackend, apiContainerKurtosisBackendConfigSupplier)
 
 	metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
 		source.KurtosisEngineSource,
