@@ -97,13 +97,14 @@ func runMain() error {
 		if clusterConfig == nil {
 			return stacktrace.NewError("Kurtosis backend type is '%v' but cluster configuration parameters are null.", kurtosis_backend_type.KurtosisBackendType_Kubernetes.String())
 		}
-		kubernetesClusterConfig, ok := (clusterConfig).(kurtosis_backend_config.KubernetesBackendConfig)
+		kubernetesBackendConfig, ok := (clusterConfig).(kurtosis_backend_config.KubernetesBackendConfig)
 		if !ok {
-			return stacktrace.NewError("Failed to cast cluster configuration interface to KubernetesBackendConfig, even though Kurtosis backend type is '%v'", kurtosis_backend_type.KurtosisBackendType_Kubernetes.String())
+			return stacktrace.NewError("Failed to cast cluster configuration interface to the appropriate type, even though Kurtosis backend type is '%v'", kurtosis_backend_type.KurtosisBackendType_Kubernetes.String())
 		}
-		kurtosisBackend, err = lib.GetLocalKubernetesKurtosisBackend(kubernetesClusterConfig.StorageClass, kubernetesClusterConfig.EnclaveSizeInGigabytes)
+		// TODO TODO TODO Refactor container-engine-lib functions to take uints instead of ints for enclaveSizeInGB
+		kurtosisBackend, err = lib.GetLocalKubernetesKurtosisBackend(kubernetesBackendConfig.StorageClass, int(kubernetesBackendConfig.EnclaveSizeInGigabytes))
 		if err != nil {
-			return stacktrace.Propagate(err, "Failed to build a Kubernetes backend with storage class '%v' and enclave size (in GB) %d", kubernetesClusterConfig.StorageClass, kubernetesClusterConfig.EnclaveSizeInGigabytes)
+			return stacktrace.Propagate(err, "Failed to get a Kubernetes backend with storage class '%v' and enclave size (in GB) %d", kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInGigabytes)
 		}
 	default:
 		return stacktrace.NewError("Backend type '%+v' was not recognized by API container.", serverArgs.KurtosisBackendType)
