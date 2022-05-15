@@ -81,9 +81,7 @@ func runMain() error {
 	var apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
 	switch serverArgs.KurtosisBackendType {
 	case args.KurtosisBackendType_Docker:
-		var apiContainerModeArgsWhenEngine *backend_creator.APIContainerModeArgs
-		apiContainerModeArgsWhenEngine = nil
-		kurtosisBackend, err = backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgsWhenEngine)
+		kurtosisBackend, err = backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgsForKurtosisBackend)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 		}
@@ -100,7 +98,7 @@ func runMain() error {
 		}
 		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewKubernetesKurtosisBackendConfigSupplier(kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInGigabytes)
 	default:
-		return stacktrace.NewError("Backend type '%v' was not recognized by API container.", serverArgs.KurtosisBackendType.String())
+		return stacktrace.NewError("Backend type '%v' was not recognized by engine server.", serverArgs.KurtosisBackendType.String())
 	}
 
 	enclaveManager := enclave_manager.NewEnclaveManager(kurtosisBackend, apiContainerKurtosisBackendConfigSupplier)
