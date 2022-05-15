@@ -111,6 +111,10 @@ func (manager *EnclaveManager) CreateEnclave(
 		}
 	}()
 
+	// TODO TODO TODO implement right config supplier
+	panic("actually implement right backend config supplier")
+	kurtosisBackendSupplier := api_container_launcher.NewDockerKurtosisBackendConfigSupplier()
+
 	apiContainer, err := manager.launchApiContainer(setupCtx,
 		apiContainerImageVersionTag,
 		apiContainerLogLevel,
@@ -120,6 +124,7 @@ func (manager *EnclaveManager) CreateEnclave(
 		isPartitioningEnabled,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
+		&kurtosisBackendSupplier,
 	)
 
 	if err != nil {
@@ -455,6 +460,7 @@ func (manager *EnclaveManager) launchApiContainer(
 	isPartitioningEnabled bool,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
+	backendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -473,6 +479,7 @@ func (manager *EnclaveManager) launchApiContainer(
 			isPartitioningEnabled,
 			metricsUserID,
 			didUserAcceptSendingMetrics,
+			backendConfigSupplier,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with custom version '%v', but an error occurred", enclaveId, apiContainerImageVersionTag)
@@ -488,6 +495,7 @@ func (manager *EnclaveManager) launchApiContainer(
 		isPartitioningEnabled,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
+		backendConfigSupplier,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with the default version, but an error occurred", enclaveId)
