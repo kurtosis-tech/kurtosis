@@ -85,7 +85,7 @@ var commandToRunWhenCreatingUserServiceShell = []string{
 }
 
 type userServiceDockerResources struct {
-	// Nil if the service is purely registered and has no container started
+	// This will never be nil because a user services is represented ONLY by a container in Docker
 	container *types.Container
 }
 
@@ -826,51 +826,31 @@ func (backend *DockerKurtosisBackend) getMatchingUserServiceObjsAndDockerResourc
 	map[service.ServiceGUID]*userServiceDockerResources,
 	error,
 ) {
-	allEnclaveServices, found := backend.serviceRegistrations[enclaveId]
-	if !found {
-		return nil, nil, stacktrace.NewError(
-			"Received a request to find services in enclave '%v', but this enclave isn't listed as being tracked " +
-				"by the backend; this likely means that the request is originating from somewhere it shouldn't (i.e. " +
-				"outside the API container)",
-			enclaveId,
-		)
-	}
-
-	// Filter on GUID & ID first, so that we don't pull back unnecessary containers from Docker
-	matchingServiceRegistrations := map[service.ServiceGUID]*registeredServiceInfo{}
-	serviceGuidsToGetContainersFor := map[service.ServiceGUID]bool{}
-	for serviceGuid, registrationInfo := range allEnclaveServices {
-		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
-			if _, found := filters.GUIDs[serviceGuid]; !found {
-				continue
-			}
-			matchingServiceRegistrations[serviceGuid] = registrationInfo
-		}
-
-		if filters.IDs != nil && len(filters.IDs) > 0 {
-			if _, found := filters.IDs[registrationInfo.id]; !found {
-				continue
-			}
-		}
-
-		matchingServiceRegistrations[serviceGuid] = registrationInfo
-		serviceGuidsToGetContainersFor[serviceGuid] = true
-	}
-
-	matchingDockerResources, err := backend.getMatchingUserServiceDockerResources(ctx, enclaveId, serviceGuidsToGetContainersFor)
+	matchingDockerResources, err := backend.getMatchingUserServiceDockerResources(ctx, enclaveId, filters.GUIDs)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting matching user service resources")
 	}
 
-	matchingServiceObjs, err := getServiceObjectsFromRegistrationsAndDockerResources(matchingServiceRegistrations, matchingDockerResources)
+	matchingServiceObjs, err := getUserServiceObjsFromDockerResources(enclaveId, matchingDockerResources)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting Kurtosis service objects from user service registrations & Docker resources")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting Kurtosis service objects from user service Docker resources")
 	}
 
-	// We've already filtered by service ID & GUID, so all that remains is by status
 	resultServiceObjs := map[service.ServiceGUID]*service.Service{}
 	resultDockerResources := map[service.ServiceGUID]*userServiceDockerResources{}
 	for guid, serviceObj := range matchingServiceObjs {
+		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
+			if _, found := filters.GUIDs[serviceObj.GetRegistration().GetGUID()]; !found {
+				continue
+			}
+		}
+
+		if filters.IDs != nil && len(filters.IDs) > 0 {
+			if _, found := filters.IDs[serviceObj.GetRegistration().GetID()]; !found {
+				continue
+			}
+		}
+
 		if filters.Statuses != nil && len(filters.Statuses) > 0 {
 			if _, found := filters.Statuses[serviceObj.GetStatus()]; !found {
 				continue
@@ -897,7 +877,7 @@ func (backend *DockerKurtosisBackend) getMatchingUserServiceObjsAndDockerResourc
 func (backend *DockerKurtosisBackend) getMatchingUserServiceDockerResources(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	serviceGuidsToFind map[service.ServiceGUID]bool,
+	maybeGuidsToMatch map[service.ServiceGUID]bool,
 ) (map[service.ServiceGUID]*userServiceDockerResources, error) {
 	// For the matching values, get the containers to check the status
 	userServiceContainerSearchLabels := map[string]string{
@@ -909,74 +889,73 @@ func (backend *DockerKurtosisBackend) getMatchingUserServiceDockerResources(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting user service containers in enclave '%v' by labels: %+v", enclaveId, userServiceContainerSearchLabels)
 	}
-	containersByServiceGuid := map[service.ServiceGUID]*types.Container{}
+	resourcesByServiceGuid := map[service.ServiceGUID]*userServiceDockerResources{}
 	for _, container := range userServiceContainers {
-		containerGuidStr, found := container.GetLabels()[label_key_consts.GUIDLabelKey.GetString()]
+		serviceGuidStr, found := container.GetLabels()[label_key_consts.GUIDLabelKey.GetString()]
 		if !found {
 			return nil, stacktrace.NewError("Found user service container '%v' that didn't have expected GUID label '%v'", container.GetId(), label_key_consts.GUIDLabelKey.GetString())
 		}
-		containersByServiceGuid[service.ServiceGUID(containerGuidStr)] = container
-	}
+		serviceGuid := service.ServiceGUID(serviceGuidStr)
 
-	result := map[service.ServiceGUID]*userServiceDockerResources{}
-	for guid := range serviceGuidsToFind {
-		var serviceContainer *types.Container = nil
-		if container, found := containersByServiceGuid[guid]; found {
-			serviceContainer = container
+		if maybeGuidsToMatch != nil && len(maybeGuidsToMatch) > 0 {
+			if _, found := maybeGuidsToMatch[serviceGuid]; !found {
+				continue
+			}
 		}
 
-		result[guid] = &userServiceDockerResources{container: serviceContainer}
+		resourcesByServiceGuid[serviceGuid] = &userServiceDockerResources{container: container}
 	}
-
-	return result, nil
+	return resourcesByServiceGuid, nil
 }
 
-func getServiceObjectsFromRegistrationsAndDockerResources(
-	registrationInfo map[service.ServiceGUID]*registeredServiceInfo,
+func getUserServiceObjsFromDockerResources(
+	enclaveId enclave.EnclaveID,
 	allDockerResources map[service.ServiceGUID]*userServiceDockerResources,
 ) (map[service.ServiceGUID]*service.Service, error) {
 	result := map[service.ServiceGUID]*service.Service{}
-	for guid, registration := range registrationInfo {
-		enclaveId := registration.enclaveId
-		serviceId := registration.id
-		serviceGuid := registration.guid
-		status := service.UserServiceStatus_Registered
-		privateIpAddr := registration.ip
-		var maybePrivatePortsSpecs map[string]*port_spec.PortSpec
-		var maybePublicIpAddr net.IP
-		var maybePublicPortsSpecs map[string]*port_spec.PortSpec
+	for serviceGuid, resources := range allDockerResources {
+		container := resources.container
+		containerName := container.GetName()
+		containerLabels := container.GetLabels()
 
-		dockerResourcesForService, found := allDockerResources[guid]
-		if found && dockerResourcesForService.container != nil {
-			container := dockerResourcesForService.container
+		serviceIdStr, found := containerLabels[label_key_consts.IDLabelKey.GetString()]
+		if !found {
+			return nil, stacktrace.NewError("Expected to find label '%v' on container '%v' but label was missing", label_key_consts.IDLabelKey.GetString(), containerName)
+		}
+		serviceId := service.ServiceID(serviceIdStr)
 
-			parsedPrivatePorts, maybeParsedPublicIp, maybeParsedPublicPorts, err := getIpAndPortInfoFromContainer(
-				container.GetName(),
-				container.GetLabels(),
-				container.GetHostPortBindings(),
-			)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred getting IP & port info from container '%v'", container.GetName())
-			}
-
-			maybePrivatePortsSpecs = parsedPrivatePorts
-			maybePublicIpAddr = maybeParsedPublicIp
-			maybePublicPortsSpecs = maybeParsedPublicPorts
+		privateIp, privatePorts, maybePublicIp, maybePublicPorts, err := getIpAndPortInfoFromContainer(
+			containerName,
+			containerLabels,
+			container.GetHostPortBindings(),
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting IP & port info from container '%v'", container.GetName())
 		}
 
-		if registration.isDeactivated {
-			status = service.UserServiceStatus_Deactivated
-		}
-
-		result[guid] = service.NewService(
+		registration := service.NewServiceRegistration(
 			serviceId,
 			serviceGuid,
-			status,
 			enclaveId,
-			privateIpAddr,
-			maybePrivatePortsSpecs,
-			maybePublicIpAddr,
-			maybePublicPortsSpecs,
+			privateIp,
+		)
+
+		containerStatus := container.GetStatus()
+		isContainerRunning, found := isContainerRunningDeterminer[containerStatus]
+		if !found {
+			return nil, stacktrace.NewError("No is-running determination found for status '%v' for container '%v'", containerStatus.String(), containerName)
+		}
+		serviceStatus := container_status.ContainerStatus_Stopped
+		if isContainerRunning {
+			serviceStatus = container_status.ContainerStatus_Running
+		}
+
+		result[serviceGuid] = service.NewService(
+			registration,
+			serviceStatus,
+			privatePorts,
+			maybePublicIp,
+			maybePublicPorts,
 		)
 	}
 	return result, nil
@@ -988,14 +967,24 @@ func getIpAndPortInfoFromContainer(
 	labels map[string]string,
 	hostMachinePortBindings map[nat.Port]*nat.PortBinding,
 ) (
+	resultPrivateIp net.IP,
 	resultPrivatePortSpecs map[string]*port_spec.PortSpec,
 	resultPublicIp net.IP,
 	resultPublicPortSpecs map[string]*port_spec.PortSpec,
 	resultErr error,
 ){
+	privateIpAddrStr, found := labels[label_key_consts.PrivateIPLabelKey.GetString()]
+	if !found {
+		return nil, nil, nil, nil, stacktrace.NewError("Expected to find label '%v' on container '%v' but label was missing", label_key_consts.PrivateIPLabelKey.GetString(), containerName)
+	}
+	privateIp := net.ParseIP(privateIpAddrStr)
+	if privateIp == nil {
+		return nil, nil, nil, nil, stacktrace.NewError("Couldn't parse private IP string '%v' on container '%v' to an IP address", privateIpAddrStr, containerName)
+	}
+
 	serializedPortSpecs, found := labels[label_key_consts.PortSpecsLabelKey.GetString()]
 	if !found {
-		return nil, nil, nil, stacktrace.NewError(
+		return nil, nil, nil, nil, stacktrace.NewError(
 			"Expected to find port specs label '%v' on container '%v' but none was found",
 			containerName,
 			label_key_consts.PortSpecsLabelKey.GetString(),
@@ -1005,7 +994,7 @@ func getIpAndPortInfoFromContainer(
 	privatePortSpecs, err := port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
 	if err != nil {
 		if err != nil {
-			return nil, nil, nil, stacktrace.Propagate(err, "Couldn't deserialize port spec string '%v'", serializedPortSpecs)
+			return nil, nil, nil, nil, stacktrace.Propagate(err, "Couldn't deserialize port spec string '%v'", serializedPortSpecs)
 		}
 	}
 
@@ -1014,7 +1003,7 @@ func getIpAndPortInfoFromContainer(
 	for portId, privatePortSpec := range privatePortSpecs {
 		portPublicIp, publicPortSpec, err := getPublicPortBindingFromPrivatePortSpec(privatePortSpec, hostMachinePortBindings)
 		if err != nil {
-			return nil, nil, nil, stacktrace.Propagate(
+			return nil, nil, nil, nil, stacktrace.Propagate(
 				err,
 				"An error occurred getting public port spec for private port '%v' with spec '%v/%v' on container '%v'",
 				portId,
@@ -1028,7 +1017,7 @@ func getIpAndPortInfoFromContainer(
 			containerPublicIp = portPublicIp
 		} else {
 			if !containerPublicIp.Equal(portPublicIp) {
-				return nil, nil, nil, stacktrace.NewError(
+				return nil, nil, nil, nil, stacktrace.NewError(
 					"Private port '%v' on container '%v' yielded a public IP '%v', which doesn't agree with " +
 						"previously-seen public IP '%v'",
 					portId,
@@ -1045,7 +1034,7 @@ func getIpAndPortInfoFromContainer(
 		publicPortSpecs[portId] = publicPortSpec
 	}
 
-	return privatePortSpecs, containerPublicIp, publicPortSpecs, nil
+	return privateIp, privatePortSpecs, containerPublicIp, publicPortSpecs, nil
 }
 
 // NOTE: Does not use registration information so does not need the mutex!
