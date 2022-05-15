@@ -622,19 +622,6 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 	backend.serviceRegistrationMutex.Lock()
 	defer backend.serviceRegistrationMutex.Unlock()
 
-	allServiceObjs, allDockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
-	}
-
-	serviceRegistrationInfoForEnclave, found := backend.serviceRegistrations[enclaveId]
-	if !found {
-		return nil, nil, stacktrace.NewError(
-			"Cannot destroy services in enclave '%v' because no service registration info is being tracked for it; this likely " +
-				"means that the deactivate user services call is being made from somewhere it shouldn't be (i.e. outside the API contianer)",
-			enclaveId,
-		)
-	}
 	freeIpAddrTrackerForEnclave, found := backend.enclaveFreeIpProviders[enclaveId]
 	if !found {
 		return nil, nil, stacktrace.NewError(
@@ -644,33 +631,64 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 		)
 	}
 
-	successfulServiceGuids := map[service.ServiceGUID]bool{}
-	erroredServiceGuids := map[service.ServiceGUID]error{}
+	registrationsForEnclave, found := backend.serviceRegistrations[enclaveId]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"No service registrations are being tracked for enclave '%v', so we cannot get service registrations matching filters: %+v",
+			enclaveId,
+			filters,
+		)
+	}
 
-	serviceGuidsToDeregister := map[service.ServiceGUID]bool{}
-	servicesToContainerRemoveBeforeDeregistrationByContainerId := map[string]interface{}{}
-	for guid, serviceObj := range allServiceObjs {
-		status := serviceObj.GetStatus()
-		switch status {
-		case service.UserServiceStatus_Registered:
-			// Registered services don't need any containers deleted because they don't have any; they can just be deregistered
-			serviceGuidsToDeregister[guid] = true
-		case service.UserServiceStatus_Activated:
-		case service.UserServiceStatus_Deactivated:
-			resourcesForService, found := allDockerResources[guid]
-			if !found {
-				// This should never happen, where we have a service object but not a Docker resources object
-				return nil, nil, stacktrace.NewError("Have object for service '%v' but no corresponding Docker resources; this is a bug in Kurtosis", guid)
+	matchingRegistrations := map[service.ServiceGUID]*service.ServiceRegistration{}
+	for guid, registration := range registrationsForEnclave {
+		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
+			if _, found := filters.GUIDs[registration.GetGUID()]; !found {
+				continue
 			}
-			container := resourcesForService.container
-			if container == nil {
-				// A service without a container doesn't need that container destroyed before deregistration
-				serviceGuidsToDeregister[guid] = true
-			}
-			servicesToContainerRemoveBeforeDeregistrationByContainerId[container.GetId()] = serviceObj
-		default:
-			return nil, nil, stacktrace.NewError("Unrecognized service status '%v'; this is a bug in Kurtosis", status.String())
 		}
+
+		if filters.IDs != nil && len(filters.IDs) > 0 {
+			if _, found := filters.IDs[registration.GetID()]; !found {
+				continue
+			}
+		}
+
+		matchingRegistrations[guid] = registration
+	}
+
+	allServiceObjs, allDockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
+	}
+
+	// Sanity check
+	for guid := range allDockerResources {
+		if _, found := matchingRegistrations[guid]; !found {
+			// Should never happen
+			return nil, nil, stacktrace.NewError("Service '%v' has Docker resources but no container registration; this is a bug in Kurtosis", guid)
+		}
+	}
+
+	registrationsToDeregister := map[service.ServiceGUID]*service.ServiceRegistration{}
+	servicesToDestroyByContainerIdBeforeDeregistration := map[string]interface{}{}
+	for guid, registration := range matchingRegistrations {
+		dockerResources, found := allDockerResources[guid]
+		if !found {
+			// For registrations-without-containers, only add them to the deregistration list if the status filter wasn't specified
+			if filters.Statuses == nil || len(filters.Statuses) == 0 {
+				registrationsToDeregister[guid] = registration
+			}
+			continue
+		}
+		containerId := dockerResources.container.GetId()
+
+		serviceObj, found := allServiceObjs[guid]
+		if !found {
+			// Should never happen
+			return nil, nil, stacktrace.NewError("Service '%v' has Docker resources but no service object; this is a bug in Kurtosis", guid)
+		}
+		servicesToDestroyByContainerIdBeforeDeregistration[containerId] = serviceObj
 	}
 
 	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
@@ -687,7 +705,7 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 
 	successfulContainerRemoveGuidStrs, erroredContainerRemoveGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
-		servicesToContainerRemoveBeforeDeregistrationByContainerId,
+		servicesToDestroyByContainerIdBeforeDeregistration,
 		backend.dockerManager,
 		extractServiceGUIDFromServiceObj,
 		dockerOperation,
@@ -696,32 +714,29 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred removing user service containers matching filters '%+v'", filters)
 	}
 
-	for guid, err := range erroredContainerRemoveGuidStrs {
-		// Stacktrace doesn't add any new information here so we leave it out
-		erroredServiceGuids[service.ServiceGUID(guid)] = err
+	erroredGuids := map[service.ServiceGUID]error{}
+	for guidStr, err := range erroredContainerRemoveGuidStrs {
+		erroredGuids[service.ServiceGUID(guidStr)] = stacktrace.Propagate(
+			err,
+			"An error occurred destroying container for service '%v'",
+			guidStr,
+		)
 	}
-	for guid := range successfulContainerRemoveGuidStrs {
-		serviceGuidsToDeregister[service.ServiceGUID(guid)] = true
+
+	for guidStr := range successfulContainerRemoveGuidStrs {
+		guid := service.ServiceGUID(guidStr)
+		// Safe because earlier we verified that all the services that have containers also have GUIDs in the registration map
+		registrationsToDeregister[guid] = matchingRegistrations[guid]
 	}
 
 	// Finalize deregistration
-	for guid := range serviceGuidsToDeregister {
-		registrationInfo, found := serviceRegistrationInfoForEnclave[guid]
-		if !found {
-			// This should never happen because we should have explicitly selected GUIDs that already have registration info
-			return nil, nil, stacktrace.NewError("Couldn't find any registration info for service '%v'; this is a bug in Kurtosis", guid)
-		}
-
-		// If the service was previously deactivated, the IP address is already free and we don't need to re-free it (else we might
-		//  accidentally free the same IP that's in use somewhere else)
-		if !registrationInfo.isDeactivated {
-			freeIpAddrTrackerForEnclave.ReleaseIpAddr(registrationInfo.ip)
-		}
-		delete(serviceRegistrationInfoForEnclave, guid)
-		successfulServiceGuids[guid] = true
+	successfulGuids := map[service.ServiceGUID]bool{}
+	for guid, registration := range registrationsToDeregister {
+		freeIpAddrTrackerForEnclave.ReleaseIpAddr(registration.GetPrivateIP())
+		delete(registrationsForEnclave, guid)
 	}
 
-	return successfulServiceGuids, erroredServiceGuids, nil
+	return successfulGuids, erroredGuids, nil
 }
 
 // ====================================================================================================
@@ -985,310 +1000,10 @@ func (backend *DockerKurtosisBackend) getSingleUserServiceObjAndResourcesNoMutex
 	return resultService, resultDockerResources, nil
 }
 
-/*
-func (backend *DockerKurtosisBackend) getMatchingUserServices(
-	ctx context.Context,
-	filters *service.ServiceFilters,
-) (map[string]*service.Service, error) {
-
-	searchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.UserServiceContainerTypeLabelValue.GetString(),
-	}
-	matchingContainers, err := backend.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchAllContainersWhenRetrievingContainers)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred fetching containers using labels: %+v", searchLabels)
-	}
-
-	matchingObjects := map[string]*service.Service{}
-	for _, container := range matchingContainers {
-		containerId := container.GetId()
-		object, err := getUserServiceObjectFromContainerInfo(
-			containerId,
-			container.GetLabels(),
-			container.GetStatus(),
-			container.GetHostPortBindings(),
-		)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred converting container with ID '%v' into a user service object", container.GetId())
-		}
-
-		if filters.EnclaveIDs != nil && len(filters.EnclaveIDs) > 0 {
-			if _, found := filters.EnclaveIDs[object.GetEnclaveID()]; !found {
-				continue
-			}
-		}
-
-		if filters.RegistrationGUIDs != nil && len(filters.RegistrationGUIDs) > 0 {
-			if _, found := filters.RegistrationGUIDs[object.GetRegistrationGUID()]; !found {
-				continue
-			}
-		}
-
-		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
-			if _, found := filters.GUIDs[object.GetGUID()]; !found {
-				continue
-			}
-		}
-
-		if filters.Statuses != nil && len(filters.Statuses) > 0 {
-			if _, found := filters.Statuses[object.GetStatus()]; !found {
-				continue
-			}
-		}
-
-		matchingObjects[containerId] = object
-	}
-
-	return matchingObjects, nil
-}
-
- */
-
-/*
-func getUserServiceObjectFromContainerInfo(
-	containerId string,
-	labels map[string]string,
-	containerStatus types.ContainerStatus,
-	allHostMachinePortBindings map[nat.Port]*nat.PortBinding,
-) (*service.Service, error) {
-
-	enclaveId, found := labels[label_key_consts.EnclaveIDLabelKey.GetString()]
-	if !found {
-		return nil, stacktrace.NewError("Expected the user service's enclave ID to be found under label '%v' but the label wasn't present", label_key_consts.EnclaveIDLabelKey.GetString())
-	}
-
-	registrationGuid, found := labels[label_key_consts.UserServiceRegistrationGUIDLabelKey.GetString()]
-	if !found {
-		return nil, stacktrace.NewError("Expected the user service's registration GUID to be found under label '%v' but the label wasn't present", label_key_consts.UserServiceRegistrationGUIDLabelKey.GetString())
-	}
-
-	guid, found := labels[label_key_consts.GUIDLabelKey.GetString()]
-	if !found {
-		return nil, stacktrace.NewError("Expected to find user service GUID label key '%v' but none was found", label_key_consts.GUIDLabelKey.GetString())
-	}
-
-	privatePorts, err := getUserServicePrivatePortsFromContainerLabels(labels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting port specs from container '%v' with labels '%+v'", containerId, labels)
-	}
-
-	isContainerRunning, found := isContainerRunningDeterminer[containerStatus]
-	if !found {
-		// This should never happen because we enforce completeness in a unit test
-		return nil, stacktrace.NewError("No is-running designation found for user service container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
-	}
-	var status container_status.ContainerStatus
-	if isContainerRunning {
-		status = container_status.ContainerStatus_Running
-	} else {
-		status = container_status.ContainerStatus_Stopped
-	}
-
-	// TODO Replace with the (simpler) way that's currently done when creating API container/engine container
-	_, portIdsForDockerPortObjs, err := getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting used ports from private ports spec '%+v'", privatePorts)
-	}
-
-	var maybePublicIpAddr net.IP = nil
-	var maybePublicPorts map[string]*port_spec.PortSpec
-	if status == container_status.ContainerStatus_Running && len(privatePorts) > 0 {
-		maybePublicIpAddr, maybePublicPorts, err = condensePublicNetworkInfoFromHostMachineBindings(
-			allHostMachinePortBindings,
-			privatePorts,
-			portIdsForDockerPortObjs,
-		)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred extracting public IP addr & ports from the host machine ports returned by the container engine")
-		}
-	}
-
-	var privateIpAddr net.IP
-	privateIpAddrStr, found := labels[label_key_consts.PrivateIPLabelKey.GetString()]
-	if !found {
-		 return nil, stacktrace.NewError("Expected to find user service private IP label key '%v' but none was found", label_key_consts.PrivateIPLabelKey.GetString())
-	}
-
-	newObject := service.NewService(
-		user_service_registration.UserServiceRegistrationGUID(registrationGuid),
-		service.ServiceGUID(guid),
-		status,
-		enclave.EnclaveID(enclaveId),
-		privateIpAddr,
-		privatePorts,
-		maybePublicIpAddr,
-		maybePublicPorts,
-	)
-
-	return newObject, nil
-}
-*/
-
-/*
-func getUserServicePrivatePortsFromContainerLabels(containerLabels map[string]string) (map[string]*port_spec.PortSpec, error) {
-	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsLabelKey.GetString()]
-	if !found {
-		return nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsLabelKey.GetString())
-	}
-
-	portSpecs, err := port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
-	if err != nil {
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Couldn't deserialize port spec string '%v'", serializedPortSpecs)
-		}
-	}
-
-	return portSpecs, nil
-}
-
- */
-
-/*
-// TODO Replace with the method that the API containers use for getting & retrieving port specs
-func getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts map[string]*port_spec.PortSpec) (map[nat.Port]docker_manager.PortPublishSpec, map[nat.Port]string, error) {
-	publishSpecs := map[nat.Port]docker_manager.PortPublishSpec{}
-	portIdsForDockerPortObjs := map[nat.Port]string{}
-	for portId, portSpec := range privatePorts {
-		dockerPort, err := transformPortSpecToDockerPort(portSpec)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred transforming the '%+v' port spec to a Docker port", portSpec)
-		}
-		publishSpecs[dockerPort] = docker_manager.NewAutomaticPublishingSpec()
-
-		if preexistingPortId, found := portIdsForDockerPortObjs[dockerPort]; found {
-			return nil, nil, stacktrace.NewError(
-				"Port '%v' declares Docker port spec '%v', but this port spec is already in use by port '%v'",
-				portId,
-				dockerPort,
-				preexistingPortId,
-			)
-		}
-		portIdsForDockerPortObjs[dockerPort] = portId
-
-	}
-	return publishSpecs, portIdsForDockerPortObjs, nil
-}
-
- */
-
-/*
-// TODO Replace with the simpler method that the API container uses for getting public port specs using private port specs
-// condensePublicNetworkInfoFromHostMachineBindings
-// Condenses declared private port bindings and the host machine port bindings returned by the container engine lib into:
-//  1) a single host machine IP address
-//  2) a map of private port binding IDs -> public ports
-// An error is thrown if there are multiple host machine IP addresses
-func condensePublicNetworkInfoFromHostMachineBindings(
-	hostMachinePortBindings map[nat.Port]*nat.PortBinding,
-	privatePorts map[string]*port_spec.PortSpec,
-	portIdsForDockerPortObjs map[nat.Port]string,
-) (
-	resultPublicIpAddr net.IP,
-	resultPublicPorts map[string]*port_spec.PortSpec,
-	resultErr error,
-) {
-	if len(hostMachinePortBindings) == 0 {
-		return nil, nil, stacktrace.NewError("Cannot condense public network info if no host machine port bindings are provided")
-	}
-
-	publicIpAddrStr := uninitializedPublicIpAddrStrValue
-	publicPorts := map[string]*port_spec.PortSpec{}
-	for dockerPortObj, hostPortBinding := range hostMachinePortBindings {
-		portId, found := portIdsForDockerPortObjs[dockerPortObj]
-		if !found {
-			// If the container engine reports a host port binding that wasn't declared in the input used-ports object, ignore it
-			// This could happen if a port is declared in the Dockerfile
-			continue
-		}
-
-		privatePort, found := privatePorts[portId]
-		if !found {
-			return nil, nil, stacktrace.NewError(
-				"The container engine returned a host machine port binding for Docker port spec '%v', but this port spec didn't correspond to any port ID; this is very likely a bug in Kurtosis",
-				dockerPortObj,
-			)
-		}
-
-		hostIpAddr := hostPortBinding.HostIP
-		if publicIpAddrStr == uninitializedPublicIpAddrStrValue {
-			publicIpAddrStr = hostIpAddr
-		} else if publicIpAddrStr != hostIpAddr {
-			return nil, nil, stacktrace.NewError(
-				"A public IP address '%v' was already declared for the service, but Docker port object '%v' declares a different public IP address '%v'",
-				publicIpAddrStr,
-				dockerPortObj,
-				hostIpAddr,
-			)
-		}
-
-		hostPortStr := hostPortBinding.HostPort
-		hostPortUint64, err := strconv.ParseUint(hostPortStr, dockerContainerPortNumUintBase, dockerContainerPortNumUintBits)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(
-				err,
-				"An error occurred parsing host machine port string '%v' into a uint with %v bits and base %v",
-				hostPortStr,
-				dockerContainerPortNumUintBits,
-				dockerContainerPortNumUintBase,
-			)
-		}
-		hostPortUint16 := uint16(hostPortUint64) // Safe to do because our ParseUint declares the expected number of bits
-		portProtocol := privatePort.GetProtocol()
-
-		portSpec, err := port_spec.NewPortSpec(hostPortUint16, portProtocol)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(
-				err,
-				"An error occurred creating a new public port spec object using number '%v' and protocol '%v'",
-				hostPortUint16,
-				portProtocol,
-			)
-		}
-
-		publicPorts[portId] = portSpec
-	}
-	if publicIpAddrStr == uninitializedPublicIpAddrStrValue {
-		return nil, nil, stacktrace.NewError("No public IP address string was retrieved from host port bindings: %+v", hostMachinePortBindings)
-	}
-	publicIpAddr := net.ParseIP(publicIpAddrStr)
-	if publicIpAddr == nil {
-		return nil, nil, stacktrace.NewError("Couldn't parse service's public IP address string '%v' to an IP object", publicIpAddrStr)
-	}
-	return publicIpAddr, publicPorts, nil
-}
- */
-
-/*
-func doesHttpResponseMatchExpected(
-	expectedResponseBody string,
-	responseBody io.ReadCloser,
-	url string) bool {
-
-	defer responseBody.Close()
-	if expectedResponseBody != "" {
-
-		bodyBytes, err := ioutil.ReadAll(responseBody)
-		if err != nil {
-			logrus.Errorf("An error occurred reading the response body from endpoint '%v':\n%v", url, err)
-			return false
-		}
-
-		bodyStr := string(bodyBytes)
-
-		if bodyStr != expectedResponseBody {
-			logrus.Errorf("Expected response body text '%v' from endpoint '%v' but got '%v' instead", expectedResponseBody, url, bodyStr)
-			return false
-		}
-	}
-	return true
-}
- */
-
 func extractServiceGUIDFromServiceObj(uncastedObj interface{}) (string, error) {
 	castedObj, ok := uncastedObj.(*service.Service)
 	if !ok {
 		return "", stacktrace.NewError("An error occurred downcasting the user service object")
 	}
-	return string(castedObj.GetGUID()), nil
+	return string(castedObj.GetRegistration().GetGUID()), nil
 }
