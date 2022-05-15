@@ -12,7 +12,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
@@ -60,14 +59,14 @@ type ServiceNetwork struct {
 
 	topology *partition_topology.PartitionTopology
 
-	networkingSidecars map[user_service_registration.ServiceID]networking_sidecar.NetworkingSidecarWrapper
+	networkingSidecars map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper
 
 	networkingSidecarManager networking_sidecar.NetworkingSidecarManager
 
 
 	// ----------------------------- Indexes to make common operations quick --------------------------------
-	registrationsByServiceId map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration
-	servicesByServiceId map[user_service_registration.ServiceID]*service.Service
+	registrationsByServiceId map[service.ServiceID]*user_service_registration.UserServiceRegistration
+	servicesByServiceId map[service.ServiceID]*service.Service
 }
 
 func NewServiceNetworkImpl(
@@ -93,10 +92,10 @@ func NewServiceNetworkImpl(
 			defaultPartitionId,
 			defaultPartitionConnection,
 		),
-		networkingSidecars:       map[user_service_registration.ServiceID]networking_sidecar.NetworkingSidecarWrapper{},
+		networkingSidecars:       map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper{},
 		networkingSidecarManager: networkingSidecarManager,
-		registrationsByServiceId: map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration{},
-		servicesByServiceId: map[user_service_registration.ServiceID]*service.Service{},
+		registrationsByServiceId: map[service.ServiceID]*user_service_registration.UserServiceRegistration{},
+		servicesByServiceId: map[service.ServiceID]*service.Service{},
 	}
 }
 
@@ -105,7 +104,7 @@ Completely repartitions the network, throwing away the old topology
 */
 func (network *ServiceNetwork) Repartition(
 	ctx context.Context,
-	newPartitionServices map[service_network_types.PartitionID]map[user_service_registration.ServiceID]bool,
+	newPartitionServices map[service_network_types.PartitionID]map[service.ServiceID]bool,
 	newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection,
 	newDefaultConnection partition_topology.PartitionConnection,
 ) error {
@@ -130,7 +129,7 @@ func (network *ServiceNetwork) Repartition(
 	}
 
 	/*
-	allInvolvedServiceIds := map[user_service_registration.ServiceID]bool{}
+	allInvolvedServiceIds := map[service.ServiceID]bool{}
 	for serviceIdA, allServiceIdBs := range servicePacketLossConfigurationsByServiceID {
 		allInvolvedServiceIds[serviceIdA] = true
 		for serviceIdB := range allServiceIdBs {
@@ -148,7 +147,7 @@ func (network *ServiceNetwork) Repartition(
 		},
 	)
 
-	registrationsByServiceId := map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration{}
+	registrationsByServiceId := map[service.ServiceID]*user_service_registration.UserServiceRegistration{}
 	for _, registration := range allInvolvedRegistrations {
 		registrationsByServiceId[registration.GetServiceID()] = registration
 	}
@@ -165,7 +164,7 @@ func (network *ServiceNetwork) Repartition(
 // If the partition ID is empty, registers the service with the default partition
 func (network ServiceNetwork) RegisterService(
 	ctx context.Context,
-	serviceId user_service_registration.ServiceID,
+	serviceId service.ServiceID,
 	partitionId service_network_types.PartitionID,
 ) (net.IP, error) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
@@ -239,7 +238,7 @@ Returns:
 */
 func (network *ServiceNetwork) StartService(
 	ctx context.Context,
-	serviceId user_service_registration.ServiceID,
+	serviceId service.ServiceID,
 	imageName string,
 	privatePorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
@@ -278,7 +277,7 @@ func (network *ServiceNetwork) StartService(
 				" to know what packet loss updates to apply on the new node")
 		}
 
-		servicesPacketLossConfigurationsWithoutNewNode := map[user_service_registration.ServiceID]map[user_service_registration.ServiceID]float32{}
+		servicesPacketLossConfigurationsWithoutNewNode := map[service.ServiceID]map[service.ServiceID]float32{}
 		for serviceIdInTopology, otherServicesPacketLossConfigs := range servicePacketLossConfigurationsByServiceID {
 			if serviceId == serviceIdInTopology {
 				continue
@@ -348,7 +347,7 @@ func (network *ServiceNetwork) StartService(
 				" to know what packet loss updates to apply on the new node")
 		}
 		newNodeServicePacketLossConfiguration := servicePacketLossConfigurationsByServiceID[serviceId]
-		updatesToApply := map[user_service_registration.ServiceID]map[user_service_registration.ServiceID]float32{
+		updatesToApply := map[service.ServiceID]map[service.ServiceID]float32{
 			serviceId: newNodeServicePacketLossConfiguration,
 		}
 		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.registrationsByServiceId, network.networkingSidecars); err != nil {
@@ -363,7 +362,7 @@ func (network *ServiceNetwork) StartService(
 
 func (network *ServiceNetwork) RemoveService(
 	ctx context.Context,
-	serviceId user_service_registration.ServiceID,
+	serviceId service.ServiceID,
 	containerStopTimeout time.Duration,
 ) error {
 	// TODO switch to a wrapper function
@@ -382,7 +381,7 @@ func (network *ServiceNetwork) RemoveService(
 // TODO we could switch this to be a bulk command; the backend would support it
 func (network *ServiceNetwork) PauseService(
 	ctx context.Context,
-	serviceId user_service_registration.ServiceID,
+	serviceId service.ServiceID,
 ) error {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
@@ -403,7 +402,7 @@ func (network *ServiceNetwork) PauseService(
 
 func (network *ServiceNetwork) UnpauseService(
 	ctx context.Context,
-	serviceId user_service_registration.ServiceID,
+	serviceId service.ServiceID,
 ) error {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
@@ -425,7 +424,7 @@ func (network *ServiceNetwork) UnpauseService(
 
 func (network *ServiceNetwork) ExecCommand(
 	ctx context.Context,
-	serviceId user_service_registration.ServiceID,
+	serviceId service.ServiceID,
 	command []string,
 ) (int32, string, error) {
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
@@ -493,7 +492,7 @@ func (network *ServiceNetwork) ExecCommand(
 	return execResult.GetExitCode(), execResult.GetOutput(), nil
 }
 
-func (network *ServiceNetwork) GetServiceRegistrationInfo(serviceId user_service_registration.ServiceID) (
+func (network *ServiceNetwork) GetServiceRegistrationInfo(serviceId service.ServiceID) (
 	privateIpAddr net.IP,
 	resultErr error,
 ) {
@@ -512,7 +511,7 @@ func (network *ServiceNetwork) GetServiceRegistrationInfo(serviceId user_service
 }
 
 
-func (network *ServiceNetwork) GetServiceRunInfo(serviceId user_service_registration.ServiceID) (
+func (network *ServiceNetwork) GetServiceRunInfo(serviceId service.ServiceID) (
 	privatePorts map[string]*port_spec.PortSpec,
 	publicIpAddr net.IP,
 	publicPorts map[string]*port_spec.PortSpec,
@@ -531,9 +530,9 @@ func (network *ServiceNetwork) GetServiceRunInfo(serviceId user_service_registra
 	return serviceObj.GetPrivatePorts(), serviceObj.GetMaybePublicIP(), serviceObj.GetMaybePublicPorts(), nil
 }
 
-func (network *ServiceNetwork) GetServiceIDs() map[user_service_registration.ServiceID]bool {
+func (network *ServiceNetwork) GetServiceIDs() map[service.ServiceID]bool {
 
-	serviceIDs := make(map[user_service_registration.ServiceID]bool, len(network.servicesByServiceId))
+	serviceIDs := make(map[service.ServiceID]bool, len(network.servicesByServiceId))
 
 	for serviceId := range network.servicesByServiceId {
 		if _, ok := serviceIDs[serviceId]; !ok {
@@ -543,7 +542,7 @@ func (network *ServiceNetwork) GetServiceIDs() map[user_service_registration.Ser
 	return serviceIDs
 }
 
-func (network *ServiceNetwork) CopyFromService(ctx context.Context, serviceId user_service_registration.ServiceID, srcPath string) (string, error) {
+func (network *ServiceNetwork) CopyFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (string, error) {
 	serviceObj, foundRunInfo := network.servicesByServiceId[serviceId]
 	if !foundRunInfo {
 		return "", stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
@@ -588,7 +587,7 @@ func (network *ServiceNetwork) CopyFromService(ctx context.Context, serviceId us
 // ====================================================================================================
 func (network *ServiceNetwork) removeServiceWithoutMutex(
 	ctx context.Context,
-	serviceId user_service_registration.ServiceID,
+	serviceId service.ServiceID,
 	containerStopTimeout time.Duration,
 ) error {
 	registrationInfo, foundRegistrationInfo := network.registrationsByServiceId[serviceId]
@@ -670,9 +669,9 @@ NOTE: This is not thread-safe, so it must be within a function that locks mutex!
 */
 func updateTrafficControlConfiguration(
 	ctx context.Context,
-	targetServicePacketLossConfigs map[user_service_registration.ServiceID]map[user_service_registration.ServiceID]float32,
-	registrationsByServiceId map[user_service_registration.ServiceID]*user_service_registration.UserServiceRegistration,
-	networkingSidecars map[user_service_registration.ServiceID]networking_sidecar.NetworkingSidecarWrapper,
+	targetServicePacketLossConfigs map[service.ServiceID]map[service.ServiceID]float32,
+	registrationsByServiceId map[service.ServiceID]*user_service_registration.UserServiceRegistration,
+	networkingSidecars map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper,
 ) error {
 
 	// TODO PERF: Run the container updates in parallel, with the container being modified being the most important
@@ -709,7 +708,7 @@ func updateTrafficControlConfiguration(
 	return nil
 }
 
-func newServiceGUID(serviceID user_service_registration.ServiceID) service.ServiceGUID {
+func newServiceGUID(serviceID service.ServiceID) service.ServiceGUID {
 	suffix := current_time_str_provider.GetCurrentTimeStr()
 	return service.ServiceGUID(string(serviceID) + "-" + suffix)
 }
