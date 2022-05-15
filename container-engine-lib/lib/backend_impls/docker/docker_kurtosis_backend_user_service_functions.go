@@ -31,29 +31,49 @@ const (
 )
 
 /*
-DOCKER SERVICE LIFECYCLE EXPLANATION:
+        Kurtosis Service State Diagram
+
+REGISTERED ------------------------> STOPPED
+			 \                  /
+			  '--> RUNNING --'
+
+
+            DOCKER IMPLEMENTATION
 
 Kurtosis services are uniquely identified by a ServiceGUID and can have the following states:
 1. REGISTERED = a GUID and an IP address in the enclave has been allocated for the service, but no user container is running
-1. ACTIVATED = user's container should be running (though may not be if they have an error)
-1. DEACTIVATED = user's container has been killed *and will not run again*
+1. RUNNING = user's container should be running (though may not be if they have an error)
+1. STOPPED = user's container has been killed *and will not run again*
 1. DESTROYED = not technically a state because the service no longer exists
 
 In Docker, we implement this like so:
 - Registration: the DockerKurtosisBackend will keep an in-memory map of the registration info (IP & ServiceGUID), because there's no Docker
 	object that corresponds to a registration
-- Activated: the user's container is started with the IP that was generated during registration
-- Deactivated: the user's container is killed (rather than deleted) so that logs are still accessible, and the IP that was
-	allocated to the container has been freed (so that we don't consume the entire IP pool if a bunch of services are started
-	and stopped). Because deactivated Kurtosis services can never be restarted as of 2022-05-14, the releasing of the IP is fine
-	to do because the container will never be restarted unless the user starts messing around with Docker directly.
-- Destroyed: any container that was started is destroyed, and the IP address is freed (if not already freed because the
-	service was previously stopped).
+- Starting: the user's container is started with the IP that was generated during registration
+- Stopping: the user's container is killed, rather than deleted, so that logs are still accessible. A user service container
+	running or not running is the difference between these.
+- Destroyed: any container that was started is destroyed, and the IP address is freed.
+
+Implementation notes:
+- Because we're keeping an in-memory map, a mutex was important to keep it thread-safe. IT IS VERY IMPORTANT THAT ALL METHODS
+	WHICH USE THE IN-MEMORY SERVICE REGISTRATION MAP LOCK THE MUTEX!
+- Because an in-memory map is being kept, it means that any operation that requires that map will ONLY be doable via the API
+	container (because if the CLI were to do the same operation, it wouldn't have the in-memory map and things would be weird).
+- Naturally we'd think "cool, just push everything through the API container", but certain operations should still work even
+	when the API container is stopped (e.g. 'enclave inspect' in the CLI). This means that KurtosisBackend code powering
+	'enclave inspect' needs to a) not flow through the API container and b) not use the in-memory map
+- Thus, we had to make it such that things like GetServices *don't* use the in-memory map. This led to some restrictions (e.g.
+	we can't actually return a Service object with a status indicating if it's registered or not because doing so requires
+	the in-memory map which means it must be done through the API container).
+- The implementation we settled on is that, ServiceRegistrations are these sort of proto-services returned by RegisterService,
+	but they're identified by a ServiceGUID just like a full service. StartService "upgrades" a ServiceRegistration into a full
+	Service.
 
 The benefits of this implementation:
 - We can get the IP address before the service is started, which is crucial because certain user containers actually need
 	to know their own IP when they start (e.g. Ethereum and Avalanche nodes require a flag to be passed in with their own IP)
 - We can stop a service and free its memory/CPU resources while still preserving the logs for users
+- We can call the GetServices method (that the CLI needs) without the API container running
  */
 
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells

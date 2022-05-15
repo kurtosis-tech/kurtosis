@@ -11,7 +11,13 @@ import (
 )
 
 /*
-KUBERNETES SERVICE LIFECYCLE EXPLANATION:
+        Kurtosis Service State Diagram
+
+REGISTERED ------------------------> DEACTIVATED
+			 \                  /
+			  '--> ACTIVATED --'
+
+         KUBERNETES IMPLEMENTATION
 
 Kurtosis services are uniquely identified by a ServiceGUID and can have the following states:
 1. REGISTERED = a GUID and an IP address in the enclave has been allocated for the service, but no user container is running
