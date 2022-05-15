@@ -29,7 +29,7 @@ func TestUpdateTrafficControl(t *testing.T) {
 	enclaveId := enclave.EnclaveID("test")
 
 	sidecars := map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper{}
-	services := map[service.ServiceID]*service.Service{}
+	registrations := map[service.ServiceID]*service.ServiceRegistration{}
 	mockSidecars := map[service.ServiceID]*networking_sidecar.MockNetworkingSidecarWrapper{}
 	for i := 0; i < numServices; i++ {
 		serviceId := testServiceIdFromInt(i)
@@ -40,15 +40,11 @@ func TestUpdateTrafficControl(t *testing.T) {
 
 		ip := testIpFromInt(i)
 		serviceGuid := testServiceGuidFromInt(i)
-		services[serviceId] = service.NewService(
+		registrations[serviceId] = service.NewServiceRegistration(
 			serviceId,
 			serviceGuid,
-			service.UserServiceStatus_Activated,
 			enclaveId,
 			ip,
-			nil,
-			nil,
-			nil,
 		)
 	}
 
@@ -66,7 +62,7 @@ func TestUpdateTrafficControl(t *testing.T) {
 		targetServicePacketLossConfigs[serviceId] = otherServicesPacketLossConfig
 	}
 
-	require.Nil(t, updateTrafficControlConfiguration(ctx, targetServicePacketLossConfigs, services, sidecars))
+	require.Nil(t, updateTrafficControlConfiguration(ctx, targetServicePacketLossConfigs, registrations, sidecars))
 
 	// Verify that each service got told to block exactly the right things
 	for i := 0; i < numServices; i++ {

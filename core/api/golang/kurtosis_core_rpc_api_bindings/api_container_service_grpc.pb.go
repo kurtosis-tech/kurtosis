@@ -127,7 +127,7 @@ func (c *apiContainerServiceClient) StartService(ctx context.Context, in *StartS
 
 func (c *apiContainerServiceClient) GetServiceInfo(ctx context.Context, in *GetServiceInfoArgs, opts ...grpc.CallOption) (*GetServiceInfoResponse, error) {
 	out := new(GetServiceInfoResponse)
-	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/GetServiceInfo", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/GetService", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -310,7 +310,7 @@ func (UnimplementedApiContainerServiceServer) StartService(context.Context, *Sta
 	return nil, status.Errorf(codes.Unimplemented, "method StartService not implemented")
 }
 func (UnimplementedApiContainerServiceServer) GetServiceInfo(context.Context, *GetServiceInfoArgs) (*GetServiceInfoResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetServiceInfo not implemented")
+	return nil, status.Errorf(codes.Unimplemented, "method GetService not implemented")
 }
 func (UnimplementedApiContainerServiceServer) RemoveService(context.Context, *RemoveServiceArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveService not implemented")
@@ -479,7 +479,7 @@ func _ApiContainerService_GetServiceInfo_Handler(srv interface{}, ctx context.Co
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api_container_api.ApiContainerService/GetServiceInfo",
+		FullMethod: "/api_container_api.ApiContainerService/GetService",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ApiContainerServiceServer).GetServiceInfo(ctx, req.(*GetServiceInfoArgs))
@@ -735,7 +735,7 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ApiContainerService_StartService_Handler,
 		},
 		{
-			MethodName: "GetServiceInfo",
+			MethodName: "GetService",
 			Handler:    _ApiContainerService_GetServiceInfo_Handler,
 		},
 		{

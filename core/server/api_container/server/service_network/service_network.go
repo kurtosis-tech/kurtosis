@@ -60,7 +60,7 @@ type ServiceNetwork struct {
 
 	// Technically we SHOULD query the backend rather than ever storing any of this information, but we're able to get away with
 	// this because the API container is the only client that modifies service state
-	services map[service.ServiceID]*service.Service
+	registeredServiceInfo map[service.ServiceID]*service.ServiceRegistration
 }
 
 func NewServiceNetwork(
@@ -87,7 +87,7 @@ func NewServiceNetwork(
 		),
 		networkingSidecars:       map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper{},
 		networkingSidecarManager: networkingSidecarManager,
-		services:                 map[service.ServiceID]*service.Service{},
+		registeredServiceInfo:    map[service.ServiceID]*service.ServiceRegistration{},
 	}
 }
 
@@ -117,33 +117,7 @@ func (network *ServiceNetwork) Repartition(
 			" after repartition, meaning that no partitions are actually being enforced!")
 	}
 
-	/*
-	allInvolvedServiceIds := map[service.ServiceID]bool{}
-	for serviceIdA, allServiceIdBs := range servicePacketLossConfigurationsByServiceID {
-		allInvolvedServiceIds[serviceIdA] = true
-		for serviceIdB := range allServiceIdBs {
-			allInvolvedServiceIds[serviceIdB] = true
-		}
-	}
-
-	allInvolvedRegistrations, err := network.kurtosisBackend.GetUserServiceRegistrations(
-		ctx,
-		&user_service_registration.UserServiceRegistrationFilters{
-			ServiceIDs: allInvolvedServiceIds,
-			EnclaveIDs: map[enclave.EnclaveID]bool{
-				network.enclaveId: true,
-			},
-		},
-	)
-
-	registrationsByServiceId := map[service.ServiceID]*user_service_registration.UserServiceRegistration{}
-	for _, registration := range allInvolvedRegistrations {
-		registrationsByServiceId[registration.GetServiceID()] = registration
-	}
-
-	 */
-
-	if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, network.services, network.networkingSidecars); err != nil {
+	if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, network.registeredServiceInfo, network.networkingSidecars); err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating the traffic control configuration to match the target service packet loss configurations after repartitioning")
 	}
 	return nil
@@ -185,11 +159,11 @@ func (network ServiceNetwork) RegisterService(
 		}
 	}()
 
-	network.services[serviceId] = userService
+	network.registeredServiceInfo[serviceId] = userService
 	shouldRemoveFromServiceMap := true
 	defer func() {
 		if shouldRemoveFromServiceMap {
-			delete(network.services, serviceId)
+			delete(network.registeredServiceInfo, serviceId)
 		}
 	}()
 
@@ -240,20 +214,11 @@ func (network *ServiceNetwork) StartService(
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	userServiceBeforeActivation, found := network.services[serviceId]
+	registration, found := network.registeredServiceInfo[serviceId]
 	if !found {
 		return nil, nil, stacktrace.NewError("Cannot start service; no registration exists for service with ID '%v'", serviceId)
 	}
-	// Even though the backend will do this same check, we do it here so we don't do any topology modification erroneously
-	if userServiceBeforeActivation.GetStatus() != service.UserServiceStatus_Registered {
-		return nil, nil, stacktrace.NewError(
-			"Cannot start service '%v'; expected service to be in state '%v' but was '%v'",
-			serviceId,
-			service.UserServiceStatus_Registered,
-			userServiceBeforeActivation.GetStatus().String(),
-		)
-	}
-	serviceGuid := userServiceBeforeActivation.GetGUID()
+	serviceGuid := registration.GetGUID()
 
 	// When partitioning is enabled, there's a race condition where:
 	//   a) we need to start the service before we can launch the sidecar but
@@ -280,7 +245,7 @@ func (network *ServiceNetwork) StartService(
 		if err := updateTrafficControlConfiguration(
 			ctx,
 			servicesPacketLossConfigurationsWithoutNewNode,
-			network.services,
+			network.registeredServiceInfo,
 			network.networkingSidecars,
 		); err != nil {
 			return nil, nil, stacktrace.Propagate(
@@ -292,7 +257,7 @@ func (network *ServiceNetwork) StartService(
 		// TODO defer an undo somehow???
 	}
 
-	userServiceAfterActivation, err := network.activateService(
+	userService, err := network.startService(
 		ctx,
 		serviceGuid,
 		imageName,
@@ -305,15 +270,14 @@ func (network *ServiceNetwork) StartService(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating service '%v'",
+			"An error occurred starting service '%v'",
 			serviceId,
 		)
 	}
-	// NOTE: There's no real way to defer-undo the activation
-	network.services[serviceId] = userServiceAfterActivation
+	// NOTE: There's no real way to defer-undo the service start
 
 	if network.isPartitioningEnabled {
-		sidecar, err := network.networkingSidecarManager.Add(ctx, userServiceAfterActivation.GetGUID())
+		sidecar, err := network.networkingSidecarManager.Add(ctx, registration.GetGUID())
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred adding the networking sidecar")
 		}
@@ -334,13 +298,13 @@ func (network *ServiceNetwork) StartService(
 		updatesToApply := map[service.ServiceID]map[service.ServiceID]float32{
 			serviceId: newNodeServicePacketLossConfiguration,
 		}
-		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.services, network.networkingSidecars); err != nil {
+		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.registeredServiceInfo, network.networkingSidecars); err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration on the new node to partition it "+
 				"off from other nodes")
 		}
 	}
 
-	return userServiceAfterActivation.GetMaybePublicIP(), userServiceAfterActivation.GetMaybePublicPorts(), nil
+	return userService.GetMaybePublicIP(), userService.GetMaybePublicPorts(), nil
 }
 
 func (network *ServiceNetwork) RemoveService(
@@ -351,7 +315,7 @@ func (network *ServiceNetwork) RemoveService(
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	serviceToRemove, found := network.services[serviceId]
+	serviceToRemove, found := network.registeredServiceInfo[serviceId]
 	if !found {
 		return stacktrace.NewError("No service found with ID '%v'", serviceId)
 	}
@@ -359,20 +323,20 @@ func (network *ServiceNetwork) RemoveService(
 
 	network.topology.RemoveService(serviceId)
 
-	delete(network.services, serviceId)
+	delete(network.registeredServiceInfo, serviceId)
 
-	// We deactivate the service, rather than destroying it, so that we can keep logs around
-	deactivateServiceFilters := &service.ServiceFilters{
+	// We stop the service, rather than destroying it, so that we can keep logs around
+	stopServiceFilters := &service.ServiceFilters{
 		GUIDs:    map[service.ServiceGUID]bool{
 			serviceGuid: true,
 		},
 	}
-	_, erroredGuids, err := network.kurtosisBackend.DeactivateUserServices(ctx, network.enclaveId, deactivateServiceFilters)
+	_, erroredGuids, err := network.kurtosisBackend.StopUserServices(ctx, network.enclaveId, stopServiceFilters)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred during the call to deactivate service '%v'", serviceGuid)
+		return stacktrace.Propagate(err, "An error occurred during the call to stop service '%v'", serviceGuid)
 	}
 	if err, found := erroredGuids[serviceGuid]; found {
-		return stacktrace.Propagate(err, "An error occurred deactivating service '%v'", serviceGuid)
+		return stacktrace.Propagate(err, "An error occurred stopping service '%v'", serviceGuid)
 	}
 
 	sidecar, foundSidecar := network.networkingSidecars[serviceId]
@@ -400,7 +364,7 @@ func (network *ServiceNetwork) PauseService(
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	serviceObj, found := network.services[serviceId]
+	serviceObj, found := network.registeredServiceInfo[serviceId]
 	if !found {
 		return stacktrace.NewError("No service with ID '%v' exists in the network", serviceId)
 	}
@@ -419,7 +383,7 @@ func (network *ServiceNetwork) UnpauseService(
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	serviceObj, found := network.services[serviceId]
+	serviceObj, found := network.registeredServiceInfo[serviceId]
 	if !found {
 		return stacktrace.NewError("No service with ID '%v' exists in the network", serviceId)
 	}
@@ -440,7 +404,7 @@ func (network *ServiceNetwork) ExecCommand(
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	serviceObj, found := network.services[serviceId]
+	serviceObj, found := network.registeredServiceInfo[serviceId]
 	if !found {
 		return 0, "", stacktrace.NewError(
 			"Could not run exec command '%v' against service '%v'; no container has been created for the service yet",
@@ -497,74 +461,52 @@ func (network *ServiceNetwork) ExecCommand(
 	return execResult.GetExitCode(), execResult.GetOutput(), nil
 }
 
-func (network *ServiceNetwork) GetServiceInfo(serviceId service.ServiceID) (
-	resultPrivateIpAddr net.IP,
-	resultPrivatePorts map[string]*port_spec.PortSpec,
-	resultMaybePublicIpAddr net.IP,
-	resultMaybePublicPorts map[string]*port_spec.PortSpec,
-	resultErr error,
+func (network *ServiceNetwork) GetService(ctx context.Context, serviceId service.ServiceID) (
+	*service.Service,
+	error,
 ) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	serviceObj, found := network.services[serviceId]
+	registration, found := network.registeredServiceInfo[serviceId]
 	if !found {
-		return nil, nil, nil, nil, stacktrace.NewError("No service with ID '%v' exists", serviceId)
+		return nil, stacktrace.NewError("No service with ID '%v' exists", serviceId)
 	}
-	// We can error on non-activated services (thereby guaranteeing we have private ports) because a service that's in
-	// the 'services' map but NOT activated is very weird
-	if serviceObj.GetStatus() != service.UserServiceStatus_Activated {
-		return nil, nil, nil, nil, stacktrace.NewError("Cannot get service info; service with ID '%v' is in strange state '%v'", serviceId, serviceObj.GetStatus().String())
+	serviceGuid := registration.GetGUID()
+
+	getServiceFilters := &service.ServiceFilters{
+		GUIDs:    map[service.ServiceGUID]bool{
+			registration.GetGUID(): true,
+		},
 	}
-
-	return serviceObj.GetPrivateIP(), serviceObj.GetMaybePrivatePorts(), serviceObj.GetMaybePublicIP(), serviceObj.GetMaybePublicPorts(), nil
-}
-
-/*
-func (network *ServiceNetwork) GetServiceRegistrationInfo(serviceId service.ServiceID) (
-	privateIpAddr net.IP,
-	resultErr error,
-) {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-	if network.isDestroyed {
-		return nil, stacktrace.NewError("Cannot get registration info for service '%v'; the service network has been destroyed", serviceId)
+	matchingServices, err := network.kurtosisBackend.GetUserServices(ctx, network.enclaveId, getServiceFilters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting service '%v'", serviceGuid)
 	}
-
-	registrationObj, found := network.registrationsByServiceId[serviceId]
+	if len(matchingServices) == 0 {
+		return nil, stacktrace.Propagate(
+			err,
+			"A registration exists for service GUID '%v' but no service objects were found; this indicates that the service was " +
+				"registered but not started",
+			serviceGuid,
+		)
+	}
+	if len(matchingServices) > 0 {
+		return nil, stacktrace.NewError("Found multiple service objects matching GUID '%v'", serviceGuid)
+	}
+	serviceObj, found := matchingServices[serviceGuid]
 	if !found {
-		return nil, stacktrace.NewError("No registration information found for service with ID '%v'", serviceId)
+		return nil, stacktrace.NewError("Found exactly one service object, but it didn't match expected GUID '%v'", serviceGuid)
 	}
 
-	return registrationObj.GetIPAddress(), nil
+	return serviceObj, nil
 }
-
-
-func (network *ServiceNetwork) GetServiceRunInfo(serviceId service.ServiceID) (
-	privatePorts map[string]*port_spec.PortSpec,
-	publicIpAddr net.IP,
-	publicPorts map[string]*port_spec.PortSpec,
-	resultErr error,
-) {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-	if network.isDestroyed {
-		return nil, nil, nil, stacktrace.NewError("Cannot get run info for service '%v'; the service network has been destroyed", serviceId)
-	}
-
-	serviceObj, found := network.servicesByServiceId[serviceId]
-	if !found {
-		return nil, nil, nil, stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
-	}
-	return serviceObj.GetPrivatePorts(), serviceObj.GetMaybePublicIP(), serviceObj.GetMaybePublicPorts(), nil
-}
- */
 
 func (network *ServiceNetwork) GetServiceIDs() map[service.ServiceID]bool {
 
-	serviceIDs := make(map[service.ServiceID]bool, len(network.services))
+	serviceIDs := make(map[service.ServiceID]bool, len(network.registeredServiceInfo))
 
-	for serviceId := range network.services {
+	for serviceId := range network.registeredServiceInfo {
 		if _, ok := serviceIDs[serviceId]; !ok {
 			serviceIDs[serviceId] = true
 		}
@@ -573,7 +515,7 @@ func (network *ServiceNetwork) GetServiceIDs() map[service.ServiceID]bool {
 }
 
 func (network *ServiceNetwork) CopyFilesFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (string, error) {
-	serviceObj, foundRunInfo := network.services[serviceId]
+	serviceObj, foundRunInfo := network.registeredServiceInfo[serviceId]
 	if !foundRunInfo {
 		return "", stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
 	}
@@ -623,7 +565,7 @@ NOTE: This is not thread-safe, so it must be within a function that locks mutex!
 func updateTrafficControlConfiguration(
 	ctx context.Context,
 	targetServicePacketLossConfigs map[service.ServiceID]map[service.ServiceID]float32,
-	services map[service.ServiceID]*service.Service,
+	services map[service.ServiceID]*service.ServiceRegistration,
 	networkingSidecars map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper,
 ) error {
 
@@ -725,7 +667,7 @@ func (network *ServiceNetwork) destroyServiceBestEffortAfterRegistrationFailure(
 	}
 }
 
-func (network *ServiceNetwork) activateService(
+func (network *ServiceNetwork) startService(
 	ctx context.Context,
 	serviceGuid service.ServiceGUID,
 	imageName string,
@@ -767,7 +709,7 @@ func (network *ServiceNetwork) activateService(
 		artifactVolumeMounts[string(artifactVolume)] = mountpoint
 	}
 
-	launchedUserService, err := network.kurtosisBackend.ActivateUserService(
+	launchedUserService, err := network.kurtosisBackend.StartUserService(
 		ctx,
 		network.enclaveId,
 		serviceGuid,
@@ -779,7 +721,7 @@ func (network *ServiceNetwork) activateService(
 		artifactVolumeMounts,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred activating service '%v' with image '%v'", serviceGuid, imageName)
+		return nil, stacktrace.Propagate(err, "An error occurred starting service '%v' with image '%v'", serviceGuid, imageName)
 	}
 	return launchedUserService, nil
 }

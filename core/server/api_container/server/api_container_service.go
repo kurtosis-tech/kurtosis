@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	kurtosis_backend_service "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
@@ -173,7 +174,7 @@ func (apicService ApiContainerService) RegisterService(ctx context.Context, args
 	privateIpAddr, err := apicService.serviceNetwork.RegisterService(ctx, serviceId, partitionId)
 	if err != nil {
 		// TODO IP: Leaks internal information about API container
-		return nil, stacktrace.Propagate(err, "An error occurred registering apicService '%v' in the apicService network", serviceId)
+		return nil, stacktrace.Propagate(err, "An error occurred registering service '%v' in the service network", serviceId)
 	}
 
 	return &kurtosis_core_rpc_api_bindings.RegisterServiceResponse{
@@ -182,7 +183,7 @@ func (apicService ApiContainerService) RegisterService(ctx context.Context, args
 }
 
 func (apicService ApiContainerService) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
-	logrus.Debugf("Received request to start apicService with the following args: %+v", args)
+	logrus.Debugf("Received request to start service with the following args: %+v", args)
 	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
 	privateApiPorts := args.PrivatePorts
 	privateServicePortSpecs := map[string]*port_spec.PortSpec{}
@@ -209,11 +210,11 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 	)
 	if err != nil {
 		// TODO IP: Leaks internal information about the API container
-		return nil, stacktrace.Propagate(err, "An error occurred starting the apicService in the apicService network")
+		return nil, stacktrace.Propagate(err, "An error occurred starting the service in the service network")
 	}
 	publicApiPorts, err := transformPortSpecMapToApiPortsMap(publicServicePortSpecs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the apicService's public port specs to API ports")
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public port specs to API ports")
 	}
 	publicIpAddrStr := missingPublicIpAddrStr
 	if maybePublicIpAddr != nil {
@@ -236,30 +237,31 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 func (apicService ApiContainerService) GetServiceInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServiceInfoArgs) (*kurtosis_core_rpc_api_bindings.GetServiceInfoResponse, error) {
 	serviceIdStr := args.GetServiceId()
 	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
-	privateIp, privatePortSpecs, maybePublicIp, maybePublicPortSpecs, err := apicService.serviceNetwork.GetServiceInfo(serviceId)
+	serviceObj, err := apicService.serviceNetwork.GetService(
+		ctx,
+		serviceId,
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for service '%v'", serviceIdStr)
 	}
+	privatePorts := serviceObj.GetPrivatePorts()
+	privateIp := serviceObj.GetRegistration().GetPrivateIP()
+	maybePublicIp := serviceObj.GetMaybePublicIP()
+	maybePublicPorts := serviceObj.GetMaybePublicPorts()
 
-	/*
-	privateServicePortSpecs, maybePublicIpAddr, maybePublicServicePortSpecs, err := apicService.serviceNetwork.GetServiceRunInfo(serviceId)
+	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privatePorts)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the run info for apicService '%v'", serviceIdStr)
-	}
-	 */
-	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privatePortSpecs)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the apicService's private port spec ports to API ports")
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's private port specs to API ports")
 	}
 	publicIpAddrStr := missingPublicIpAddrStr
 	if maybePublicIp != nil {
 		publicIpAddrStr = maybePublicIp.String()
 	}
 	publicApiPorts := map[string]*kurtosis_core_rpc_api_bindings.Port{}
-	if maybePublicPortSpecs != nil {
-		publicApiPorts, err = transformPortSpecMapToApiPortsMap(maybePublicPortSpecs)
+	if maybePublicPorts != nil {
+		publicApiPorts, err = transformPortSpecMapToApiPortsMap(maybePublicPorts)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred transforming the apicService's public port spec ports to API ports")
+			return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public port spec ports to API ports")
 		}
 	}
 
@@ -280,7 +282,7 @@ func (apicService ApiContainerService) RemoveService(ctx context.Context, args *
 
 	if err := apicService.serviceNetwork.RemoveService(ctx, serviceId, containerStopTimeout); err != nil {
 		// TODO IP: Leaks internal information about the API container
-		return nil, stacktrace.Propagate(err, "An error occurred removing apicService with ID '%v'", serviceId)
+		return nil, stacktrace.Propagate(err, "An error occurred removing service with ID '%v'", serviceId)
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -360,7 +362,7 @@ func (apicService ApiContainerService) ExecCommand(ctx context.Context, args *ku
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred running exec command '%v' against apicService '%v' in the apicService network",
+			"An error occurred running exec command '%v' against service '%v' in the service network",
 			command,
 			serviceId)
 	}
@@ -385,6 +387,7 @@ func (apicService ApiContainerService) WaitForHttpGetEndpointAvailability(ctx co
 	serviceIdStr := args.ServiceId
 
 	if err := apicService.waitForEndpointAvailability(
+		ctx,
 		serviceIdStr,
 		http.MethodGet,
 		args.Port,
@@ -409,6 +412,7 @@ func (apicService ApiContainerService) WaitForHttpPostEndpointAvailability(ctx c
 	serviceIdStr := args.ServiceId
 
 	if err := apicService.waitForEndpointAvailability(
+		ctx,
 		serviceIdStr,
 		http.MethodPost,
 		args.Port,
@@ -580,6 +584,7 @@ func transformPortSpecMapToApiPortsMap(apiPorts map[string]*port_spec.PortSpec) 
 }
 
 func (apicService ApiContainerService) waitForEndpointAvailability(
+	ctx context.Context,
 	serviceIdStr string,
 	httpMethod string,
 	port uint32,
@@ -595,12 +600,19 @@ func (apicService ApiContainerService) waitForEndpointAvailability(
 		err  error
 	)
 
-	privateServiceIp, _, _, _, err := apicService.serviceNetwork.GetServiceInfo(kurtosis_backend_service.ServiceID(serviceIdStr))
+	serviceObj, err := apicService.serviceNetwork.GetService(
+		ctx,
+		kurtosis_backend_service.ServiceID(serviceIdStr),
+	)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the registration info for apicService '%v'", serviceIdStr)
+		return stacktrace.Propagate(err, "An error occurred getting service '%v'", serviceIdStr)
 	}
+	if serviceObj.GetStatus() != container_status.ContainerStatus_Running {
+		return stacktrace.NewError("Service '%v' isn't running so can never become available", serviceIdStr)
+	}
+	privateIp := serviceObj.GetRegistration().GetPrivateIP()
 
-	url := fmt.Sprintf("http://%v:%v/%v", privateServiceIp, port, path)
+	url := fmt.Sprintf("http://%v:%v/%v", privateIp.String(), port, path)
 
 	time.Sleep(time.Duration(initialDelayMilliseconds) * time.Millisecond)
 
