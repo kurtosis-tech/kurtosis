@@ -32,6 +32,11 @@ type APIContainerArgs struct {
 
 	// The directory on the API container where the enclave data directory will have been mounted
 	EnclaveDataVolumeDirpath string `json:"enclaveDataVolume"`
+
+	KurtosisBackendType KurtosisBackendType `json:"kurtosisBackendType"`
+
+	// Should be deserialized differently depending on value of KurtosisBackendType
+	KurtosisBackendConfig interface{} `json:"kurtosisBackendConfig"`
 }
 
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
@@ -46,17 +51,21 @@ func NewAPIContainerArgs(
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	enclaveDataVolumeDirpath string,
+	kurtosisBackendType KurtosisBackendType,
+	kurtosisBackendConfig interface{},
 ) (*APIContainerArgs, error) {
 	result := &APIContainerArgs{
-		Version:                          version,
-		LogLevel:                         logLevel,
-		GrpcListenPortNum:                grpcListenPortNum,
-		GrpcProxyListenPortNum:           grpcProxyListenPortNum,
-		EnclaveId:                        enclaveId,
-		IsPartitioningEnabled:            isPartitioningEnabled,
-		MetricsUserID:                    metricsUserID,
-		DidUserAcceptSendingMetrics:      didUserAcceptSendingMetrics,
-		EnclaveDataVolumeDirpath:         enclaveDataVolumeDirpath,
+		Version:                     version,
+		LogLevel:                    logLevel,
+		GrpcListenPortNum:           grpcListenPortNum,
+		GrpcProxyListenPortNum:      grpcProxyListenPortNum,
+		EnclaveId:                   enclaveId,
+		IsPartitioningEnabled:       isPartitioningEnabled,
+		MetricsUserID:               metricsUserID,
+		DidUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
+		EnclaveDataVolumeDirpath:    enclaveDataVolumeDirpath,
+		KurtosisBackendType:         kurtosisBackendType,
+		KurtosisBackendConfig:       kurtosisBackendConfig,
 	}
 
 	if err := result.validate(); err != nil {

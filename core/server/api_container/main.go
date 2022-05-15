@@ -8,11 +8,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/container-engine-lib/lib"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/backend_creator"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
+	"github.com/kurtosis-tech/kurtosis-core/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_launcher"
@@ -78,14 +80,33 @@ func runMain() error {
 
 	enclaveDataDir := enclave_data_directory.NewEnclaveDataDirectory(serverArgs.EnclaveDataVolumeDirpath)
 
-	//
-	apiContainerModeArgs := &backend_creator.APIContainerModeArgs{
-		Context:   context.Background(),
-		EnclaveID: enclave.EnclaveID(serverArgs.EnclaveId),
-	}
-	kurtosisBackend, err := backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgs)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
+	var kurtosisBackend backend_interface.KurtosisBackend
+	switch serverArgs.KurtosisBackendType {
+	case args.KurtosisBackendType_Docker:
+		apiContainerModeArgs := &backend_creator.APIContainerModeArgs{
+			Context:   context.Background(),
+			EnclaveID: enclave.EnclaveID(serverArgs.EnclaveId),
+		}
+		kurtosisBackend, err = backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgs)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
+		}
+	case args.KurtosisBackendType_Kubernetes:
+		clusterConfig := serverArgs.KurtosisBackendConfig
+		if clusterConfig == nil {
+			return stacktrace.NewError("Kurtosis backend type is '%v' but cluster configuration parameters are null.", args.KurtosisBackendType_Kubernetes.String())
+		}
+		kubernetesBackendConfig, ok := (clusterConfig).(kurtosis_backend_config.KubernetesBackendConfig)
+		if !ok {
+			return stacktrace.NewError("Failed to cast cluster configuration interface to the appropriate type, even though Kurtosis backend type is '%v'", args.KurtosisBackendType_Kubernetes.String())
+		}
+		// TODO TODO TODO Refactor container-engine-lib functions to take uints instead of ints for enclaveSizeInGB
+		kurtosisBackend, err = lib.GetLocalKubernetesKurtosisBackend(kubernetesBackendConfig.StorageClass, int(kubernetesBackendConfig.EnclaveSizeInGigabytes))
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to get a Kubernetes backend with storage class '%v' and enclave size (in GB) %d", kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInGigabytes)
+		}
+	default:
+		return stacktrace.NewError("Backend type '%v' was not recognized by API container.", serverArgs.KurtosisBackendType.String())
 	}
 
 	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(kurtosisBackend, enclaveDataDir, serverArgs, ownIpAddress)
