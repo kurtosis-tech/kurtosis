@@ -236,33 +236,35 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 func (apicService ApiContainerService) GetServiceInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServiceInfoArgs) (*kurtosis_core_rpc_api_bindings.GetServiceInfoResponse, error) {
 	serviceIdStr := args.GetServiceId()
 	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
-	serviceObj, err := apicService.serviceNetwork.GetServiceInfo(serviceId)
+	privateIp, privatePortSpecs, maybePublicIp, maybePublicPortSpecs, err := apicService.serviceNetwork.GetServiceInfo(serviceId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for service '%v'", serviceIdStr)
 	}
 
+	/*
 	privateServicePortSpecs, maybePublicIpAddr, maybePublicServicePortSpecs, err := apicService.serviceNetwork.GetServiceRunInfo(serviceId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the run info for apicService '%v'", serviceIdStr)
 	}
-	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privateServicePortSpecs)
+	 */
+	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privatePortSpecs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the apicService's private port spec ports to API ports")
 	}
 	publicIpAddrStr := missingPublicIpAddrStr
-	if maybePublicIpAddr != nil {
-		publicIpAddrStr = maybePublicIpAddr.String()
+	if maybePublicIp != nil {
+		publicIpAddrStr = maybePublicIp.String()
 	}
 	publicApiPorts := map[string]*kurtosis_core_rpc_api_bindings.Port{}
-	if maybePublicServicePortSpecs != nil {
-		publicApiPorts, err = transformPortSpecMapToApiPortsMap(maybePublicServicePortSpecs)
+	if maybePublicPortSpecs != nil {
+		publicApiPorts, err = transformPortSpecMapToApiPortsMap(maybePublicPortSpecs)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred transforming the apicService's public port spec ports to API ports")
 		}
 	}
 
 	serviceInfoResponse := binding_constructors.NewGetServiceInfoResponse(
-		privateIpAddr.String(),
+		privateIp.String(),
 		privateApiPorts,
 		publicIpAddrStr,
 		publicApiPorts,
@@ -593,7 +595,7 @@ func (apicService ApiContainerService) waitForEndpointAvailability(
 		err  error
 	)
 
-	privateServiceIp, err := apicService.serviceNetwork.GetServiceRegistrationInfo(kurtosis_backend_service.ServiceID(serviceIdStr))
+	privateServiceIp, _, _, _, err := apicService.serviceNetwork.GetServiceInfo(kurtosis_backend_service.ServiceID(serviceIdStr))
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the registration info for apicService '%v'", serviceIdStr)
 	}

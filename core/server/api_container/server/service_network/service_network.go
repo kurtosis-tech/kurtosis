@@ -247,7 +247,7 @@ func (network *ServiceNetwork) StartService(
 	// Even though the backend will do this same check, we do it here so we don't do any topology modification erroneously
 	if userServiceBeforeActivation.GetStatus() != service.UserServiceStatus_Registered {
 		return nil, nil, stacktrace.NewError(
-			"Cannot start service; expected service to be in state '%v' but was '%v'",
+			"Cannot start service '%v'; expected service to be in state '%v' but was '%v'",
 			serviceId,
 			service.UserServiceStatus_Registered,
 			userServiceBeforeActivation.GetStatus().String(),
@@ -514,10 +514,10 @@ func (network *ServiceNetwork) GetServiceInfo(serviceId service.ServiceID) (
 	// We can error on non-activated services (thereby guaranteeing we have private ports) because a service that's in
 	// the 'services' map but NOT activated is very weird
 	if serviceObj.GetStatus() != service.UserServiceStatus_Activated {
-		return nil, nil, nil, nil, stacktrace.NewError("Cannot get service info; service with ID '%v' is in strange state '%v'", serviceObj.GetStatus().String())
+		return nil, nil, nil, nil, stacktrace.NewError("Cannot get service info; service with ID '%v' is in strange state '%v'", serviceId, serviceObj.GetStatus().String())
 	}
 
-	return serviceObj.GetPrivateIP(), serviceObj.GetMaybePrivatePorts(), serviceObj.GetMaybePublicIP(), serviceObj.GetMaybePublicPorts()
+	return serviceObj.GetPrivateIP(), serviceObj.GetMaybePrivatePorts(), serviceObj.GetMaybePublicIP(), serviceObj.GetMaybePublicPorts(), nil
 }
 
 /*
