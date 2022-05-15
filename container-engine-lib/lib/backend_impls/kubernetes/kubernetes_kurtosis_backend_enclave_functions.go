@@ -90,7 +90,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		enclaveNamespaceName,
 		persistentVolumeClaimName.GetString(),
 		enclaveVolumeLabelMap,
-		backend.volumeSizePerEnclaveInMb,
+		backend.volumeSizePerEnclaveInMegabytes,
 		backend.volumeStorageClassName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,

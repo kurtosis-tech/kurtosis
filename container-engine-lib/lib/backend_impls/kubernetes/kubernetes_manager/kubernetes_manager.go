@@ -274,10 +274,10 @@ func (manager *KubernetesManager) GetPersistentVolumesByLabels(ctx context.Conte
 	return persistentVolumesResult, nil
 }
 
-func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Context, namespace string, persistentVolumeClaimName string, persistentVolumeClaimLabels map[string]string, volumeSizeInMb uint, storageClassName string) (*apiv1.PersistentVolumeClaim, error) {
+func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Context, namespace string, persistentVolumeClaimName string, persistentVolumeClaimLabels map[string]string, volumeSizeInMegabytes uint, storageClassName string) (*apiv1.PersistentVolumeClaim, error) {
 	volumeClaimsClient := manager.kubernetesClientSet.CoreV1().PersistentVolumeClaims(namespace)
 
-	quantity := resource.NewQuantity(int64(volumeSizeInMb* binaryByteMultiplier * binaryByteMultiplier), resource.BinarySI)
+	quantity := resource.NewQuantity(int64(volumeSizeInMegabytes* binaryByteMultiplier * binaryByteMultiplier), resource.BinarySI)
 
 	persistentVolumeClaim := &apiv1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
