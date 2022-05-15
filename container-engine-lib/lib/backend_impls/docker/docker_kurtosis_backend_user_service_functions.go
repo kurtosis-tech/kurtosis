@@ -69,7 +69,7 @@ type userServiceDockerResources struct {
 	container *types.Container
 }
 
-func (backend *DockerKurtosisBackend) RegisterService(
+func (backend *DockerKurtosisBackend) RegisterUserService(
 	_ context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceId service.ServiceID,
@@ -161,7 +161,7 @@ func (backend *DockerKurtosisBackend) ActivateUserService(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	// Volume -> mountpoint on container
+	// volume_name -> mountpoint_on_container
 	filesArtifactVolumeMountDirpaths map[string]string,
 ) (
 	*service.Service,
@@ -583,7 +583,7 @@ func (backend *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailability
 func (backend *DockerKurtosisBackend) GetConnectionWithUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	serviceGUID service.ServiceGUID,
+	serviceGuid service.ServiceGUID,
 ) (
 	net.Conn,
 	error,
@@ -592,9 +592,9 @@ func (backend *DockerKurtosisBackend) GetConnectionWithUserService(
 	backend.serviceRegistrationMutex.RLock()
 	defer backend.serviceRegistrationMutex.RUnlock()
 
-	serviceObj, serviceDockerResources, err := backend.getSingleUserServiceObjAndResourcesWithoutMutex(ctx, enclaveId, serviceGUID)
+	serviceObj, serviceDockerResources, err := backend.getSingleUserServiceObjAndResourcesWithoutMutex(ctx, enclaveId, serviceGuid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting service object and Docker resources for service '%v' in enclave '%v'", serviceGUID, enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting service object and Docker resources for service '%v' in enclave '%v'", serviceGuid, enclaveId)
 	}
 	if serviceObj.GetStatus() != service.UserServiceStatus_Activated {
 		return nil, stacktrace.NewError(
@@ -607,12 +607,12 @@ func (backend *DockerKurtosisBackend) GetConnectionWithUserService(
 
 	container := serviceDockerResources.container
 	if container == nil {
-		return nil, stacktrace.NewError("Cannot get a connection to user service '%v' in enclave '%v' because no container exists for the service", serviceGUID, enclaveId)
+		return nil, stacktrace.NewError("Cannot get a connection to user service '%v' in enclave '%v' because no container exists for the service", serviceGuid, enclaveId)
 	}
 
 	hijackedResponse, err := backend.dockerManager.CreateContainerExec(ctx, container.GetId(), commandToRunWhenCreatingUserServiceShell)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting a shell on user service with GUID '%v' in enclave '%v'", serviceGUID, enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting a shell on user service with GUID '%v' in enclave '%v'", serviceGuid, enclaveId)
 	}
 
 	newConnection := hijackedResponse.Conn

@@ -235,42 +235,34 @@ type KurtosisBackend interface {
 		entrypointArgs []string,
 		cmdArgs []string,
 		envVars map[string]string,
-		filesArtifactMountDirpaths map[string]string,
+		// volume_name -> mountpoint_on_container
+		filesArtifactVolumeMountDirpaths map[string]string,
 	) (
-		newUserService *service.Service,
-		resultErr error,
+		*service.Service,
+		error,
 	)
 
 	// Gets user services using the given filters, returning a map of matched user services identified by their GUID
 	GetUserServices(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *service.ServiceFilters,
 	) (
-		successfulUserServices map[service.ServiceGUID]*service.Service,
-		resultError error,
+		map[service.ServiceGUID]*service.Service,
+		error,
 	)
 
 	// Get user service logs using the given filters, returning a map of matched user services identified by their GUID and a readCloser object for each one
 	// User is responsible for closing the 'ReadCloser' object returned in the successfulUserServiceLogs map
 	GetUserServiceLogs(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *service.ServiceFilters,
 		shouldFollowLogs bool,
 	) (
 		successfulUserServiceLogs map[service.ServiceGUID]io.ReadCloser,
 		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultError error,
-	)
-
-	// Executes a shell command inside an user service instance indenfified by its ID
-	RunUserServiceExecCommands(
-		ctx context.Context,
-		enclaveId enclave.EnclaveID,
-		userServiceCommands map[service.ServiceGUID][]string,
-	) (
-		succesfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult,
-		erroredUserServiceGuids map[service.ServiceGUID]error,
-		resultErr error,
 	)
 
 	// Pauses execution of all processes on a service, but does not shut down the service (memory state is preserved)
@@ -290,6 +282,18 @@ type KurtosisBackend interface {
 	) (
 		resultErr error,
 	)
+
+	// Executes a shell command inside an user service instance indenfified by its ID
+	RunUserServiceExecCommands(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		userServiceCommands map[service.ServiceGUID][]string,
+	) (
+		succesfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult,
+		erroredUserServiceGuids map[service.ServiceGUID]error,
+		resultErr error,
+	)
+
 
 	// Wait for succesful http endpoint response which can be used to check if the service is available
 	/*
@@ -314,7 +318,7 @@ type KurtosisBackend interface {
 	GetConnectionWithUserService(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		serviceGUID service.ServiceGUID,
+		serviceGuid service.ServiceGUID,
 	) (
 		resultConn net.Conn,
 		resultErr error,
@@ -335,6 +339,7 @@ type KurtosisBackend interface {
 	// A deactivated service cannot be activated again as of 2022-05-14
 	DeactivateUserServices(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *service.ServiceFilters,
 	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully stopped
@@ -345,6 +350,7 @@ type KurtosisBackend interface {
 	// DestroyUserServices destroys user services matching the given filters, removing all resources associated with it
 	DestroyUserServices(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *service.ServiceFilters,
 	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully destroyed
