@@ -30,7 +30,7 @@ type EngineServerArgs struct {
 	KurtosisBackendType KurtosisBackendType `json:"kurtosisBackendType"`
 
 	// Should be deserialized differently depending on value of KurtosisBackendType
-	KurtosisBackendConfig interface{} `json:"kurtosisClusterConfig"`
+	KurtosisBackendConfig interface{} `json:"kurtosisBackendConfig"`
 }
 
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
