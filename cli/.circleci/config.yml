@@ -71,6 +71,7 @@ jobs:
           key: cli-go-mod-v1-{{ checksum "cli/go.sum" }}
           paths:
             - "/go/pkg/mod"
+            - "/root/.cache/go-build"
 
       - persist_to_workspace:
           root: .
