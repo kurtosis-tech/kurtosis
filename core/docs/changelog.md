@@ -1,5 +1,10 @@
 # TBD
 
+# 1.49.1
+### Fixes
+* Upgraded to container-engine-lib 0.23.1 with some bugfixes
+* Fix bug with incorrect number-of-preexisting-services bounds check
+
 # 1.49.0
 ### Fixes
 * Update comment in KurtosisBackendType enum
