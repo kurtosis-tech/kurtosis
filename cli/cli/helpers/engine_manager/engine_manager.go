@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	waitForEngineResponseTimeout = 5 * time.Second
+	waitForEngineResponseTimeout = 15 * time.Second
 	defaultClusterName = "docker"
 
 	// --------------------------- Old port parsing constants ------------------------------------
@@ -122,9 +122,14 @@ func (manager *EngineManager) GetEngineStatus(
 	}
 	engineContainer := getFirstEngineFromMap(runningEngineContainers)
 
+	enginePublicGRPCPort := engineContainer.GetPublicGRPCPort()
+	if enginePublicGRPCPort == nil {
+		return "", nil, "", stacktrace.NewError("Engine container has no public GRPC port.")
+	}
+
 	runningEngineIpAndPort := &hostMachineIpAndPort{
 		ipAddr:  engineContainer.GetPublicIPAddress(),
-		portNum: engineContainer.GetPublicGRPCPort().GetNumber(),
+		portNum: enginePublicGRPCPort.GetNumber(),
 	}
 
 	engineClient, clientCloseFunc, err := getEngineClientFromHostMachineIpAndPort(runningEngineIpAndPort)
