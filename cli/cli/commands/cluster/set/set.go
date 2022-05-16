@@ -14,8 +14,8 @@ const clusterNameKey = "cluster-name"
 
 var SetCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:               command_str_consts.ClusterSetCmdStr,
-	ShortDescription:         "Sets the Kurtosis cluster to use.",
-	LongDescription:          "Sets the Kurtosis cluster to use based on cluster names in the Kurtosis CLI configuration file.",
+	ShortDescription:         "Sets cluster",
+	LongDescription:          "Sets the Kurtosis cluster to use based on cluster names in the Kurtosis CLI configuration file",
 	RunFunc:                  run,
 	Args: []*args.ArgConfig{
 		{

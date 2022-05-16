@@ -9,12 +9,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
+	"sort"
 )
 
 var LsCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:               command_str_consts.ClusterLsCmdStr,
-	ShortDescription:         "Lists valid clusters.",
-	LongDescription:          "Lists valid clusters based on defaults and the users' configuration file.",
+	ShortDescription:         "List valid clusters",
+	LongDescription:          "List valid clusters based on defaults and the user's configuration file",
 	RunFunc:                  run,
 }
 
@@ -25,8 +27,13 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get or initialize Kurtosis configuration")
 	}
+	var clusterList []string
 	for clusterName, _ := range kurtosisConfig.GetKurtosisClusters() {
-		fmt.Println(clusterName)
+		clusterList = append(clusterList, clusterName)
+	}
+	sort.Strings(clusterList)
+	for clusterName := range clusterList {
+		fmt.Fprint(logrus.StandardLogger().Out, clusterName)
 	}
 	return nil
 }

@@ -9,12 +9,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 )
 
 var GetCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:               command_str_consts.ClusterGetCmdStr,
-	ShortDescription:         "Gets current Kurtosis cluster setting.",
-	LongDescription:          "Gets current Kurtosis cluster setting.",
+	ShortDescription:         "Get current cluster",
+	LongDescription:          "Get current Kurtosis cluster setting",
 	RunFunc:                  run,
 }
 
@@ -24,7 +25,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get cluster setting.")
 	}
-	fmt.Println(clusterName)
+	fmt.Fprint(logrus.StandardLogger().Out, clusterName)
 	return nil
 }
 

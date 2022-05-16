@@ -10,7 +10,7 @@ import (
 
 var ClusterCmd = &cobra.Command{
 	Use:   command_str_consts.ClusterCmdStr,
-	Short: "Manage Kurtosis cluster setting.",
+	Short: "Manage Kurtosis cluster setting",
 	RunE:  nil,
 }
 
