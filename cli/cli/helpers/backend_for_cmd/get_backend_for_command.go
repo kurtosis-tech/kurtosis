@@ -9,19 +9,19 @@ import (
 const (
 	// TODO Remove this in favor of actual Kubernetes info in the config file
 	storageClassName = "standard"
-	volumeSizeInGigabytes = 1
+	volumeSizeInMegabytes = 1
 )
 
 func GetBackendForCmd(useKubernetes bool) (backend_interface.KurtosisBackend, error) {
 	if useKubernetes {
-		kubernetesBackend, err := lib.GetLocalKubernetesKurtosisBackend(storageClassName, volumeSizeInGigabytes)
+		kubernetesBackend, err := lib.GetLocalKubernetesKurtosisBackend(storageClassName, volumeSizeInMegabytes)
 		if err != nil {
 			return nil, stacktrace.Propagate(
 				err,
 				"Expected to be able to get a Kubernetes backend with storage class '%v' and " +
-					"volume size of '%v' GB, instead a non-nil error was returned",
+					"volume size of '%v' MB, instead a non-nil error was returned",
 				storageClassName,
-				volumeSizeInGigabytes,
+				volumeSizeInMegabytes,
 			)
 		}
 		return kubernetesBackend, nil

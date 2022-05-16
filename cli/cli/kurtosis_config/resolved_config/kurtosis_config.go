@@ -13,7 +13,7 @@ const (
 
 	defaultMinikubeClusterKubernetesClusterNameStr = "minikube"
 	defaultMinikubeStorageClass = "standard"
-	defaultMinikubeEnclaveDataVolumeGb = uint(2)
+	defaultMinikubeEnclaveDataVolumeMB = uint(2)
 )
 
 /*
@@ -117,7 +117,7 @@ func getDefaultKurtosisClusterConfigOverrides() map[string]*v1.KurtosisClusterCo
 	minikubeClusterType := KurtosisClusterType_Kubernetes.String()
 	minikubeKubernetesClusterName := defaultMinikubeClusterKubernetesClusterNameStr
 	minikubeStorageClass := defaultMinikubeStorageClass
-	minikubeEnclaveDataVolSizeGb := defaultMinikubeEnclaveDataVolumeGb
+	minikubeEnclaveDataVolSizeMB := defaultMinikubeEnclaveDataVolumeMB
 
 	result := map[string]*v1.KurtosisClusterConfigV1{
 		defaultDockerClusterName: {
@@ -129,7 +129,7 @@ func getDefaultKurtosisClusterConfigOverrides() map[string]*v1.KurtosisClusterCo
 			Config: &v1.KubernetesClusterConfigV1{
 				KubernetesClusterName:  &minikubeKubernetesClusterName,
 				StorageClass:           &minikubeStorageClass,
-				EnclaveSizeInGigabytes: &minikubeEnclaveDataVolSizeGb,
+				EnclaveSizeInMegabytes: &minikubeEnclaveDataVolSizeMB,
 			},
 		},
 	}
