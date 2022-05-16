@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Upped the CircleCI resource class to 'large' since builds are 1m30s and CircleCI showed that we're maxing out the CPU
+* Added a build cache to each build
 
 # 0.23.2
 ### Fixes
