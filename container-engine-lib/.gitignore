@@ -53,3 +53,5 @@ doc/tags
 
 .gradle
 build
+
+main.go

@@ -1,18 +1,44 @@
 # TBD
+### Changes
+* Upgrade to Docker SDK v20.10 to try and fix a bug where Docker network containers wouldn't be populated
+
+### Fixes
+* Fix an issue with network container IPs not being correctly made available when starting a DockerKurtosisBackend in API container mode
+* Allowed removal of user service registrations independent of the underlying service registration (which is necessary for deregistering services in the API container)
+
+### Removals
+* Removed unneeded & unused `KurtosisBackend.WaitForEndpointAvailability` function
+
+### Breaking Changes
+* `user_service_registration.ServiceID` is now once again `service.ServiceID`
+    * Users should update their code
+* `user_service_registration.UserServiceRegistration` objects have been removed and replaced with `service.ServiceRegistration`
+    * Users should use the new objects
+* `user_service_registration.UserServiceRegistrationGUID` no longer exists
+    * Users should switch to using `ServiceGUID`
+* `CreateUserServiceRegistration` has been replaced with `RegisterUserService`
+    * Users should use `RegisterUserService`
+* `DestroyUserServiceRegistration` has been removed
+    * Users should use `DestroyUserServices`
+* `CreateUserService` has been renamed to `StartUserService`
+    * Users should call `RegisterUserService` first, then `StartUserService`
+* All user service functions now take in an `enclaveId` parameter
+    * Users should provide the new parameter
+* `CreateFilesArtifactExpansionVolume` now takes in a `ServiceGUID` once more
+    * Users should switch back to providing a `ServiceGUID`
 
 ### Features
 * Added `ForUserServiceService` for `KubernetesEngineObjectAttributesProvider`
 
 # 0.21.1
+### Fixes
+* Add ID & GUID labels to enclave networks & namespaces
 
 # 0.21.0
 ### Changes
 * The `DockerKurtosisBackend` will now track the free IPs of networks
 * `KurtosisBackend` now has `UserServiceRegistration` CRUD methods
 * Service containers in Docker no longer get tagged with a service ID (this is now on the service registration object)
-
-### Fixes
-* Add ID & GUID labels to enclave networks & namespaces
 
 ### Breaking Changes
 * Renamed `service.ServiceID` to `user_service_registration.UserServiceID`

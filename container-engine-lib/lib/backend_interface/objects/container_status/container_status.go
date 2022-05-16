@@ -5,6 +5,5 @@ package container_status
 type ContainerStatus int
 const (
 	ContainerStatus_Stopped ContainerStatus = iota
-
 	ContainerStatus_Running
 )
