@@ -1,4 +1,6 @@
 # TBD
+
+# 0.23.0
 ### Breaking Changes
 * For KubernetesBackends, `EnclaveVolumeSizeInGigabytes` has been changed from an int to a uint `EnclaveVolumeSizeInMegabytes`
   * Remediation: change all calls to KubernetesBackend factory methods to use megabytes (not gigabytes)
