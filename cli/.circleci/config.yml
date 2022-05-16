@@ -34,6 +34,11 @@ parameters:
   cli-linux-amd-64-binary-relative-filepath:
     type: string
     default: "cli_linux_amd64/kurtosis"
+  # The key that the CLI build cache will get
+  # We can bump the version here if we ever need to bust the cache
+  cli-build-cache-key-prefix:
+    type: string
+    default: "cli-go-mod-v1"
 
 
 # NOTE: Because CircleCI jobs run on separate machines from each other, we duplicate steps (like checkout) between jobs. This is because doing the "correct" DRY
@@ -46,14 +51,28 @@ jobs:
   build_cli:
     docker:
       - image: "goreleaser/goreleaser:<< pipeline.parameters.goreleaser-version >>"
+    resource_class: large
     steps:
       - checkout
       # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
+
+      # Cache our dependencies
+      - restore_cache:
+          keys:
+            - << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/go.sum" }}
+
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           cli/scripts/build.sh
+
+      - save_cache:
+          key: << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/go.sum" }}
+          paths:
+            - "/go/pkg/mod"   # Go module cache for the Goreleaser image, as reported by "go env GOMODCACHE"
+            - "/root/.cache/go-build"    # Go build cache for the Goreleaser image, as reported by "go env GOCACHE"
+
       - persist_to_workspace:
           root: .
           paths: 
@@ -171,10 +190,67 @@ jobs:
       - run: "${KURTOSIS_BINPATH} enclave inspect stopped-old-enclave" 
 
       # Ensure modules & enclaves still work
-      - run: "${KURTOSIS_BINPATH} module exec --enclave-id new-enclave kurtosistech/datastore-army-module --execute-params '{\"numDatastores\":2}'"
-      - run: "${KURTOSIS_BINPATH} service add new-enclave test-service httpd --ports http=80"
+      - run: "${KURTOSIS_BINPATH} clean -a"
+      - run: "${KURTOSIS_BINPATH} engine stop"
+
+      # Ensure everything got cleaned up successfully
+      - run:
+          name: "Verify only the engine container remains after the clean"
+          command: |
+            if ! [ "$(docker container ls -a | tail -n+2 | wc -l)" -eq 1 ]; then
+              docker container ls -a
+              false
+            fi
+      - run: 
+          name: "Verify Kurtosis cleaned up all its volumes"
+          command: |
+            if ! [ $(docker volume ls | tail -n+2 | wc -l) -eq 0 ]; then
+              docker volume ls
+              false
+            fi
+      - run: 
+          name: "Verify Kurtosis cleaned up all its networks"
+          command: |
+            builtin_network_ids=(
+              "$(docker network ls --quiet --filter "name=host")"
+              "$(docker network ls --quiet --filter "name=bridge")"
+              "$(docker network ls --quiet --filter "name=none")"
+            )
+            if ! [ $(docker network ls | grep -v -f <(printf "%s\n" "${builtin_network_ids[@]}") | tail -n+2 | wc -l) -eq 0 ]; then
+              docker network ls
+              false
+            fi
+
+  test_basic_cli_functionality:
+    executor: ubuntu_vm
+    steps:
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+
+      # Set up Kurtosis
+      - attach_workspace:
+          at: "<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>"
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kurtosis-cli
+      # We don't send metrics to avoid polluting our logs
+      - run: kurtosis config init dont-send-metrics
+      - run: |
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+
+      # Basic service add & rm
+      - run: "${KURTOSIS_BINPATH} enclave new --id test-enclave"
+      - run: "${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=80"
+      - run: "${KURTOSIS_BINPATH} service rm test-enclave test1"
+      - run: "${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=80"
+      - run: "${KURTOSIS_BINPATH} service add test-enclave test2 httpd --ports http=80"
+
+      # Module inside an enclave
+      - run: "${KURTOSIS_BINPATH} module exec --enclave-id test-enclave kurtosistech/datastore-army-module --execute-params '{\"numDatastores\":2}'"
       - run: "${KURTOSIS_BINPATH} enclave ls"
-      - run: "${KURTOSIS_BINPATH} enclave rm -f new-enclave"
+      - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"
+      - run: "${KURTOSIS_BINPATH} enclave stop test-enclave"
+      - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"   # Ensure we can still inspect stopped enclaves
       - run: "${KURTOSIS_BINPATH} clean -a"
       - run: "${KURTOSIS_BINPATH} engine stop"
 
@@ -299,6 +375,16 @@ workflows:
                 - develop
                 - master
       - build_typescript_testsuite:
+          context:
+            - docker-user
+          requires:
+            - build_cli
+          filters:
+            branches:
+              ignore:
+                - develop
+                - master
+      - test_basic_cli_functionality:
           context:
             - docker-user
           requires:

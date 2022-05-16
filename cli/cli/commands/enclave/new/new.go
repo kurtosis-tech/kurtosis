@@ -3,7 +3,7 @@ package new
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/backend_creator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
@@ -23,7 +23,6 @@ const (
 	enclaveIdArg = "id"
 
 	defaultIsPartitioningEnabled = false
-	shouldPublishPorts           = true
 
 	// Signifies that an enclave ID should be auto-generated
 	autogenerateEnclaveIdKeyword = ""
@@ -79,7 +78,9 @@ func run(cmd *cobra.Command, args []string) error {
 
 	ctx := context.Background()
 
-	kurtosisBackend, err := lib.GetLocalDockerKurtosisBackend()
+	// TODO REFACTOR: we should get this backend from the config!!
+	var apiContainerModeArgs *backend_creator.APIContainerModeArgs = nil  // Not an API container
+	kurtosisBackend, err := backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
 	}
@@ -102,7 +103,6 @@ func run(cmd *cobra.Command, args []string) error {
 		ApiContainerVersionTag: apiContainerVersion,
 		ApiContainerLogLevel:   kurtosisLogLevelStr,
 		IsPartitioningEnabled:  isPartitioningEnabled,
-		ShouldPublishAllPorts:  shouldPublishPorts,
 	}
 	_, err = engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {

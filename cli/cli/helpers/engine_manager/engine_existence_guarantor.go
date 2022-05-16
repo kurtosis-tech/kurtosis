@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
@@ -41,6 +42,8 @@ type engineExistenceGuarantor struct {
 
 	kurtosisBackend backend_interface.KurtosisBackend
 
+	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
+
 	engineServerLauncher *engine_server_launcher.EngineServerLauncher
 
 	imageVersionTag string
@@ -60,6 +63,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	ctx context.Context,
 	preVisitingMaybeHostMachineIpAndPort *hostMachineIpAndPort,
 	kurtosisBackend backend_interface.KurtosisBackend,
+	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier,
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
 ) *engineExistenceGuarantor {
@@ -67,6 +71,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		ctx,
 		preVisitingMaybeHostMachineIpAndPort,
 		kurtosisBackend,
+		engineServerKurtosisBackendConfigSupplier,
 		defaultEngineImageVersionTag,
 		logLevel,
 		maybeCurrentlyRunningEngineVersionTag,
@@ -77,6 +82,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	ctx context.Context,
 	preVisitingMaybeHostMachineIpAndPort *hostMachineIpAndPort,
 	kurtosisBackend backend_interface.KurtosisBackend,
+	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier,
 	imageVersionTag string,
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
@@ -85,6 +91,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		ctx:                                   ctx,
 		preVisitingMaybeHostMachineIpAndPort:  preVisitingMaybeHostMachineIpAndPort,
 		kurtosisBackend:                       kurtosisBackend,
+		engineServerKurtosisBackendConfigSupplier:	engineServerKurtosisBackendConfigSupplier,
 		engineServerLauncher:                  engine_server_launcher.NewEngineServerLauncher(kurtosisBackend),
 		imageVersionTag:                       imageVersionTag,
 		logLevel:                              logLevel,
@@ -113,19 +120,20 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 	}
 
 	var hostMachineIpAddr net.IP
-	var hostMachinePortNum uint16
+	var hostMachinePortSpec *port_spec.PortSpec
 	var engineLaunchErr error
 	if guarantor.imageVersionTag == defaultEngineImageVersionTag {
-		hostMachineIpAddr, hostMachinePortNum, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithDefaultVersion(
+		hostMachineIpAddr, hostMachinePortSpec, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithDefaultVersion(
 			guarantor.ctx,
 			guarantor.logLevel,
 			kurtosis_context.DefaultKurtosisEngineServerGrpcPortNum,
 			kurtosis_context.DefaultKurtosisEngineServerGrpcProxyPortNum,
 			metricsUserId,
 			kurtosisConfig.GetShouldSendMetrics(),
+			guarantor.engineServerKurtosisBackendConfigSupplier,
 		)
 	} else {
-		hostMachineIpAddr, hostMachinePortNum, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
+		hostMachineIpAddr, hostMachinePortSpec, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
 			guarantor.ctx,
 			guarantor.imageVersionTag,
 			guarantor.logLevel,
@@ -133,12 +141,17 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			kurtosis_context.DefaultKurtosisEngineServerGrpcProxyPortNum,
 			metricsUserId,
 			kurtosisConfig.GetShouldSendMetrics(),
+			guarantor.engineServerKurtosisBackendConfigSupplier,
 		)
 	}
 	if engineLaunchErr != nil {
 		return stacktrace.Propagate(engineLaunchErr, "An error occurred launching the engine server container")
 	}
 
+	var hostMachinePortNum uint16
+	if hostMachinePortSpec != nil {
+		hostMachinePortNum = hostMachinePortSpec.GetNumber()
+	}
 	guarantor.postVisitingHostMachineIpAndPort = &hostMachineIpAndPort{
 		ipAddr:  hostMachineIpAddr,
 		portNum: hostMachinePortNum,

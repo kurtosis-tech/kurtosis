@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -44,11 +45,17 @@ var objAttrsSchemaPortProtosToDockerPortProtos = map[schema.PortProtocol]string{
 
 type EngineManager struct {
 	kurtosisBackend backend_interface.KurtosisBackend
+	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 	// Make engine IP, port, and protocol configurable in the future
 }
 
 func NewEngineManager(kurtosisBackend backend_interface.KurtosisBackend) *EngineManager {
-	return &EngineManager{kurtosisBackend: kurtosisBackend}
+	// TODO TODO TODO MAKE THIS CONFIGURABLE BETWEEN DOCKER AND KUBERNETES
+	engineServerKurtosisBackendConfigSupplier := engine_server_launcher.NewDockerKurtosisBackendConfigSupplier()
+	return &EngineManager{
+		kurtosisBackend: kurtosisBackend,
+		engineServerKurtosisBackendConfigSupplier: engineServerKurtosisBackendConfigSupplier,
+	}
 }
 
 /*
@@ -102,6 +109,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 		ctx,
 		maybeHostMachinePortBinding,
 		manager.kurtosisBackend,
+		manager.engineServerKurtosisBackendConfigSupplier,
 		logLevel,
 		engineVersion,
 	)
@@ -122,6 +130,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		ctx,
 		maybeHostMachinePortBinding,
 		manager.kurtosisBackend,
+		manager.engineServerKurtosisBackendConfigSupplier,
 		engineImageVersionTag,
 		logLevel,
 		engineVersion,
