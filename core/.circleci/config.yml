@@ -18,6 +18,9 @@ parameters:
   source-repo-name:
     type: string
     default: kurtosis-core-api-lib
+  server-build-cache-key-prefix:
+    type: string
+    default: "server-go-mod-v1"   # Can bump this version to bust the cache
 
 # NOTE: Because CircleCI jobs run on separate machines from each other, we duplicate steps (like checkout) between jobs. This is because doing the "correct" DRY
 #  refactoring of, "one job for checkout, one job for build Docker image, etc." would require a) persisting files between jobs and b) persisting Docker images between
@@ -38,7 +41,6 @@ jobs:
           if git --no-pager diff --exit-code origin/develop...HEAD -- . ':!docs'; then
             circleci-agent step halt
           fi
-
 
       # !!!!!!!!!! NOTE: We should NOT use our private Go repos here, because this API code will get published publicly !!!!!!!!
       - run: api/golang/scripts/build.sh
@@ -95,12 +97,23 @@ jobs:
           version: "<< pipeline.parameters.docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
+      # Cache our dependencies
+      - restore_cache:
+          keys:
+            - << pipeline.parameters.server-build-cache-key-prefix>>-{{ checksum "server/go.sum" }}
+
       # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           server/scripts/build.sh
+
+      - save_cache:
+          key: << pipeline.parameters.server-build-cache-key-prefix>>-{{ checksum "server/go.sum" }}
+          paths:
+            - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
+            - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
   # -- End PR check jobs ---------------------------------------
 
   # -- Publish jobs --------------------------------------------
