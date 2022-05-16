@@ -1,5 +1,6 @@
 # TBD
 ### Features
+* Added `KubernetesKurtosisBackend.StopEnclaves` functionality to kubernetes backend
 * Added `KubernetesManager.IsPersistentVolumeClaimBound` to check when a Persistent Volume has been bound to a Persistent Volume Claim
 * Updated `KubernetesManager.CreatePersistentVolumeClaim` now it waits for the Persistent Volume Claim get bound or thrown an error until return
 * Added `CollectMatchingRoles` and `CollectMatchingRoleBindings` in `kubernetes_resource_collectors` package
