@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fix bug where, for whatever reason, the Typescript gRPC bindings were calling the wrong method
 
 # 1.49.2
 ### Fixes
