@@ -238,13 +238,13 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Contex
 	}
 
 	if err = manager.waitForPersistentVolumeClaimBound(ctx, persistentVolumeClaimResult); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for persistent volume claim '%v' bound in namespace '%v'", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for persistent volume claim '%v' get bound in namespace '%v'", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
 	}
 
 	return persistentVolumeClaimResult, nil
 }
 
-func (manager *KubernetesManager) IsPersisteVolumeClaimBound(ctx context.Context, name string, namespace string) (bool, error)  {
+func (manager *KubernetesManager) IsPersistentVolumeClaimBound(ctx context.Context, name string, namespace string) (bool, error)  {
 	claim, err := manager.GetPersistentVolumeClaim(ctx, name, namespace)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting persistent volume claim '%v' in namespace '%v", name, namespace)
@@ -254,9 +254,9 @@ func (manager *KubernetesManager) IsPersisteVolumeClaimBound(ctx context.Context
 	//Success phase, the Persisten Volume got bound
 	case apiv1.ClaimBound:
 		return true, nil
-	//Errored phase unrecoverable state
+	//Lost the Persistent Volume phase, unrecoverable state
 	case apiv1.ClaimLost:
-		return false, stacktrace.NewError("The persistent volume claim '%v' has phase status '%v' that means it lost the persistent volume, it's an unrecoverable state", claim.GetName(), claimPhase)
+		return false, stacktrace.NewError("The persistent volume claim '%v' has phase '%v' that means it lost the persistent volume, it's an unrecoverable state", claim.GetName(), claimPhase)
 	}
 
 	return false, nil
@@ -732,7 +732,7 @@ func (manager *KubernetesManager) waitForPersistentVolumeClaimBound(ctx context.
 	time.Sleep(time.Duration(waitForPersistentVolumeBoundInitialDelayMilliSeconds) * time.Millisecond)
 
 	for i := uint32(0); i < waitForPersistentVolumeBoundRetries; i++ {
-		isBound, err := manager.IsPersisteVolumeClaimBound(ctx, persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
+		isBound, err := manager.IsPersistentVolumeClaimBound(ctx, persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
 		if isBound {
 			return nil
 		}
