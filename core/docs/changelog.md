@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fix bug with incorrect number-of-preexisting-services bounds check
 
 # 1.49.0
 ### Fixes
