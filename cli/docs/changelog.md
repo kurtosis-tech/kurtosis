@@ -5,6 +5,8 @@
 ### Breaking Changes
 * Upgraded the engine to version 1.21.0
     * Users should run `kurtosis engine restart` after upgrading
+* CLI now requires Kubernetes enclave sizes to be specified in megabytes, not gigabytes
+  * Remediation: change all CLI yaml input parameters specifying enclave sizes in gigabytes to megabytes
 
 # 0.16.2
 ### Features
