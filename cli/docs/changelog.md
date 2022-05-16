@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Added `test_cli_functionality` CircleCI test
+
 ### Changes
 * Upgraded to container-engine-lib 0.23.2, core 1.49.2, and engine 1.21.2 which use the new method of registering services
 
