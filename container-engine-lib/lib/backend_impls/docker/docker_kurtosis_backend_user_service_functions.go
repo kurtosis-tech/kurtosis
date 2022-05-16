@@ -290,6 +290,9 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		labelStrs,
 		hostMachinePortBindings,
 	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the public IP and ports from container '%v'", containerName)
+	}
 
 	result := service.NewService(
 		serviceRegistration,
@@ -387,8 +390,8 @@ func (backend *DockerKurtosisBackend) UnpauseService(
 	if container == nil {
 		return stacktrace.NewError("Cannot unpause service '%v' as it doesn't have a container to pause", serviceGuid)
 	}
-	if err = backend.dockerManager.PauseContainer(ctx, container.GetId()); err != nil {
-		return stacktrace.Propagate(err, "Failed to pause container '%v' for service '%v' ", container.GetName(), serviceGuid)
+	if err = backend.dockerManager.UnpauseContainer(ctx, container.GetId()); err != nil {
+		return stacktrace.Propagate(err, "Failed to unppause container '%v' for service '%v' ", container.GetName(), serviceGuid)
 	}
 	return nil
 }

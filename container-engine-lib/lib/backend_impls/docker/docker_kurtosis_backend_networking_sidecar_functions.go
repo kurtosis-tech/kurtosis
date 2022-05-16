@@ -58,9 +58,6 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 		return nil, stacktrace.Propagate(err, "An error occurred getting network sidecar's user service '%v'", serviceGuid)
 	}
 	container := dockerResources.container
-	if container != nil {
-		return nil, stacktrace.NewError("No container was found for service '%v', which is necessary for starting the networking sidecar", serviceGuid)
-	}
 
 	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
 	if err != nil {

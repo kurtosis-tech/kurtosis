@@ -1,4 +1,8 @@
 # TBD
+### Fixes
+* Fix accidentally calling pause when we should be unpausing
+* Fix error-checking not getting checked after creating a service
+* Fix bug with improper `nil` check in creating networking sidecar
 
 # 0.23.0
 ### Breaking Changes
