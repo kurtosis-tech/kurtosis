@@ -1,5 +1,10 @@
 # TBD
 
+# 0.23.0
+### Breaking Changes
+* For KubernetesBackends, `EnclaveVolumeSizeInGigabytes` has been changed from an int to a uint `EnclaveVolumeSizeInMegabytes`
+  * Remediation: change all calls to KubernetesBackend factory methods to use megabytes (not gigabytes)
+
 # 0.22.0
 ### Changes
 * Upgrade to Docker SDK v20.10 to try and fix a bug where Docker network containers wouldn't be populated
