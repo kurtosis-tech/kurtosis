@@ -66,7 +66,7 @@ func (settingStore *kurtosisClusterSettingStore) GetClusterSetting() (string, er
 
 // ======================================== Private Helpers ===========================================
 func (settingStore *kurtosisClusterSettingStore)  doesClusterSettingFilepathExist() (bool, error){
-	filepath, err := host_machine_directories.GetKurtosisClusterSettingYAMLFilepath()
+	filepath, err := host_machine_directories.GetKurtosisClusterSettingFilepath()
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting the cluster setting filepath")
 	}
@@ -82,7 +82,7 @@ func (settingStore *kurtosisClusterSettingStore)  doesClusterSettingFilepathExis
 }
 
 func (settingStore *kurtosisClusterSettingStore) getClusterSettingFromFile() (string, error) {
-	filepath, err := host_machine_directories.GetKurtosisClusterSettingYAMLFilepath()
+	filepath, err := host_machine_directories.GetKurtosisClusterSettingFilepath()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting the cluster setting filepath")
 	}
@@ -112,7 +112,7 @@ func (settingStore *kurtosisClusterSettingStore) saveClusterSettingFile(clusterN
 
 	logrus.Debugf("Saving cluster setting in file...")
 
-	filepath, err := host_machine_directories.GetKurtosisClusterSettingYAMLFilepath()
+	filepath, err := host_machine_directories.GetKurtosisClusterSettingFilepath()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the cluster setting filepath")
 	}

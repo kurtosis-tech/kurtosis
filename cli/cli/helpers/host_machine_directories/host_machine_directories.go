@@ -11,7 +11,7 @@ const (
 
 	kurtosisConfigYAMLFilename = "kurtosis-config.yml"
 
-	kurtosisClusterSettingYAMLFilename = "cluster-setting.yml"
+	kurtosisClusterSettingFilename = "cluster-setting"
 
 	latestCLIReleaseVersionCacheFilename = "latest-cli-release-version-cache"
 
@@ -46,8 +46,8 @@ func GetKurtosisConfigYAMLFilepath() (string, error) {
 }
 
 // Get the yaml filepath where the users' cluster selection setting is saved
-func GetKurtosisClusterSettingYAMLFilepath() (string, error) {
-	xdgRelFilepath := getRelativeFilepathForXDG(kurtosisClusterSettingYAMLFilename)
+func GetKurtosisClusterSettingFilepath() (string, error) {
+	xdgRelFilepath := getRelativeFilepathForXDG(kurtosisClusterSettingFilename)
 	kurtosisClusterSettingYAMLFilepath, err := xdg.DataFile(xdgRelFilepath)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting the Kurtosis config YAML filepath from relative path '%v'", xdgRelFilepath)
