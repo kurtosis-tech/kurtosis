@@ -105,7 +105,7 @@ func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) 
 	return func(ctx context.Context) (context.Context, error) {
 		result := ctx
 
-		engineManager, err := engine_manager.NewEngineManager(clusterName)
+		engineManager, err := engine_manager.NewEngineManager()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting an engine manager connected to cluster '%v'", clusterName)
 		}

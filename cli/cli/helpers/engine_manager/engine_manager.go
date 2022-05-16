@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
@@ -22,7 +23,7 @@ import (
 
 const (
 	waitForEngineResponseTimeout = 5 * time.Second
-
+	defaultClusterName = "docker"
 
 	// --------------------------- Old port parsing constants ------------------------------------
 	// These are the old labels that the API container used to use before 2021-11-15 for declaring its port num protocol
@@ -53,8 +54,23 @@ type EngineManager struct {
 	// Make engine IP, port, and protocol configurable in the future
 }
 
-// TODO the fact that this takes in a clusterName is a temporary hack, until we have proper used-cluster data storage
-func NewEngineManager(clusterName string) (*EngineManager, error) {
+func NewEngineManager() (*EngineManager, error) {
+	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
+
+	clusterSet, err := clusterSettingStore.HasClusterSetting()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to check if cluster setting has been set.")
+	}
+	var clusterName string
+	if !clusterSet {
+		// If the user has not yet set a cluster, use default
+		clusterName = defaultClusterName
+	} else {
+		clusterName, err = clusterSettingStore.GetClusterSetting()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to get cluster setting.")
+		}
+	}
 	kurtosisConfig, err := getKurtosisConfig()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the Kurtosis config")

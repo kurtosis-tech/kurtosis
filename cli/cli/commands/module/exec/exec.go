@@ -160,7 +160,7 @@ func run(cmd *cobra.Command, args []string) error {
 		)
 	}
 
-	engineManager, err := engine_manager.NewEngineManager(clusterName)
+	engineManager, err := engine_manager.NewEngineManager()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager connected to cluster '%v'", clusterName)
 	}
