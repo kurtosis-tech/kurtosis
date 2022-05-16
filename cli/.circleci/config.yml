@@ -60,7 +60,7 @@ jobs:
       # Cache our dependencies
       - restore_cache:
           keys:
-            - go-mod-v1-{{ checksum "go.sum" }}
+            - cli-go-mod-v1-{{ checksum "cli/go.sum" }}
 
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
@@ -68,7 +68,7 @@ jobs:
           cli/scripts/build.sh
 
       - save_cache:
-          key: go-mod-v1-{{ checksum "go.sum" }}
+          key: cli-go-mod-v1-{{ checksum "cli/go.sum" }}
           paths:
             - "/go/pkg/mod"
 
