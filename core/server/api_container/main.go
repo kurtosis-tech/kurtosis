@@ -102,8 +102,7 @@ func runMain() error {
 		if !ok {
 			return stacktrace.NewError("Failed to cast cluster configuration interface to the appropriate type, even though Kurtosis backend type is '%v'", args.KurtosisBackendType_Kubernetes.String())
 		}
-		// TODO TODO TODO Refactor container-engine-lib functions to take uints instead of ints for enclaveSizeInGB
-		kurtosisBackend, err = lib.GetLocalKubernetesKurtosisBackend(kubernetesBackendConfig.StorageClass, int(kubernetesBackendConfig.EnclaveSizeInGigabytes))
+		kurtosisBackend, err = lib.GetLocalKubernetesKurtosisBackend(kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInGigabytes)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to get a Kubernetes backend with storage class '%v' and enclave size (in GB) %d", kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInGigabytes)
 		}
