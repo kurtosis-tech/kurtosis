@@ -1,4 +1,6 @@
 # TBD
+
+# 0.17.0
 ### Features
 * Added `test_cli_functionality` CircleCI test
 * Bump CircleCI resource class to `large` when building the CLI to speed build times
