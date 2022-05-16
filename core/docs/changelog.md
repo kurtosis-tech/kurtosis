@@ -5,6 +5,10 @@
     * Service registration
     * A bug with getting DockerKurtosisBackend in the API container
 
+### Breaking Changes
+* API container now takes enclaveVolumeSize in megabytes, not gigabytes
+  * Remediation: change all gigabyte-based volume size specs to megabytes
+
 # 1.48.0
 ### Fixes
 * Updated to container-engine-lib 0.20.1 which fixes a bug with getting DockerKurtosisBackend in the API container
