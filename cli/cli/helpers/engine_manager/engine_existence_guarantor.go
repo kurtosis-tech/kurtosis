@@ -42,6 +42,8 @@ type engineExistenceGuarantor struct {
 
 	kurtosisBackend backend_interface.KurtosisBackend
 
+	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
+
 	engineServerLauncher *engine_server_launcher.EngineServerLauncher
 
 	imageVersionTag string
@@ -61,6 +63,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	ctx context.Context,
 	preVisitingMaybeHostMachineIpAndPort *hostMachineIpAndPort,
 	kurtosisBackend backend_interface.KurtosisBackend,
+	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier,
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
 ) *engineExistenceGuarantor {
@@ -68,6 +71,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		ctx,
 		preVisitingMaybeHostMachineIpAndPort,
 		kurtosisBackend,
+		engineServerKurtosisBackendConfigSupplier,
 		defaultEngineImageVersionTag,
 		logLevel,
 		maybeCurrentlyRunningEngineVersionTag,
@@ -78,6 +82,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	ctx context.Context,
 	preVisitingMaybeHostMachineIpAndPort *hostMachineIpAndPort,
 	kurtosisBackend backend_interface.KurtosisBackend,
+	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier,
 	imageVersionTag string,
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
@@ -86,6 +91,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		ctx:                                   ctx,
 		preVisitingMaybeHostMachineIpAndPort:  preVisitingMaybeHostMachineIpAndPort,
 		kurtosisBackend:                       kurtosisBackend,
+		engineServerKurtosisBackendConfigSupplier:	engineServerKurtosisBackendConfigSupplier,
 		engineServerLauncher:                  engine_server_launcher.NewEngineServerLauncher(kurtosisBackend),
 		imageVersionTag:                       imageVersionTag,
 		logLevel:                              logLevel,
@@ -114,19 +120,20 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 	}
 
 	var hostMachineIpAddr net.IP
-	var hostMachinePortSpec *port_spec.PortSpec
+	var hostMachinePortNum *port_spec.PortSpec
 	var engineLaunchErr error
 	if guarantor.imageVersionTag == defaultEngineImageVersionTag {
-		hostMachineIpAddr, hostMachinePortSpec, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithDefaultVersion(
+		hostMachineIpAddr, hostMachinePortNum, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithDefaultVersion(
 			guarantor.ctx,
 			guarantor.logLevel,
 			kurtosis_context.DefaultKurtosisEngineServerGrpcPortNum,
 			kurtosis_context.DefaultKurtosisEngineServerGrpcProxyPortNum,
 			metricsUserId,
 			kurtosisConfig.GetShouldSendMetrics(),
+			guarantor.engineServerKurtosisBackendConfigSupplier,
 		)
 	} else {
-		hostMachineIpAddr, hostMachinePortSpec, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
+		hostMachineIpAddr, hostMachinePortNum, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
 			guarantor.ctx,
 			guarantor.imageVersionTag,
 			guarantor.logLevel,
@@ -134,19 +141,16 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			kurtosis_context.DefaultKurtosisEngineServerGrpcProxyPortNum,
 			metricsUserId,
 			kurtosisConfig.GetShouldSendMetrics(),
+			guarantor.engineServerKurtosisBackendConfigSupplier,
 		)
 	}
 	if engineLaunchErr != nil {
 		return stacktrace.Propagate(engineLaunchErr, "An error occurred launching the engine server container")
 	}
 
-	var hostMachinePortNum uint16
-	if hostMachinePortSpec != nil {
-		hostMachinePortNum = hostMachinePortSpec.GetNumber()
-	}
 	guarantor.postVisitingHostMachineIpAndPort = &hostMachineIpAndPort{
 		ipAddr:  hostMachineIpAddr,
-		portNum: hostMachinePortNum,
+		portNum: hostMachinePortNum.GetNumber(),
 	}
 	logrus.Info("Successfully started Kurtosis engine")
 	return nil

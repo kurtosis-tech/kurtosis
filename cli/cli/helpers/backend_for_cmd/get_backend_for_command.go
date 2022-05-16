@@ -10,7 +10,7 @@ import (
 const (
 	// TODO Remove this in favor of actual Kubernetes info in the config file
 	storageClassName = "standard"
-	volumeSizeInMegabytes = 1
+	volumeSizeInMegabytes = 100
 )
 
 func GetBackendForCmd(useKubernetes bool) (backend_interface.KurtosisBackend, error) {
