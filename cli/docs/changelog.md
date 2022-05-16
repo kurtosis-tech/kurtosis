@@ -8,6 +8,7 @@
     * `enclave ls`
     * `enclave rm` 
     * `service logs`
+    * `service shell`
 
 ### Changes
 * The `enclave-size-in-Megabytes` field in Kubernetes cluster field now is optional, and defaults to 10 MB

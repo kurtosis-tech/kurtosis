@@ -59,6 +59,10 @@ var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
 		),
+		// TODO Create a NewServiceIDArg that adds autocomplete
+		{
+			Key:             serviceGuidArgKey,
+		},
 	},
 	RunFunc:                   run,
 }
