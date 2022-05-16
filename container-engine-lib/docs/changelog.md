@@ -1,4 +1,6 @@
 # TBD
+
+# 0.23.2
 ### Fixes
 * Don't error when parsing public ports on stopped containers
 
