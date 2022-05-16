@@ -1,4 +1,9 @@
 # TBD
+### Breaking Changes
+* Engine server now requires a "KurtosisBackendType" to be defined as an input in order to launch.
+* Engine server now requires Kubernetes enclave sizes to be specified in megabytes, not gigabytes
+  * Remediation: change all engine input parameters specifying enclave sizes in gigabytes to megabytes
+
 ### Fixes
 * Bumped to container-engine-lib 0.23.0 which has:
     * A bugfix for instantiating the DockerKurtosisBackend inside the API container
