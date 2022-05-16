@@ -1,6 +1,6 @@
 # TBD
 ### Fixes
-* Updated to container-engine-lib TODOOOOOO which fixes:
+* Updated to container-engine-lib 0.22.0 which fixes:
     * Service registration
     * A bug with getting DockerKurtosisBackend in the API container
 
