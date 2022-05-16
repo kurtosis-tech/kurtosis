@@ -1,5 +1,6 @@
 # TBD
 ### Features
+* Added `CollectMatchingRoles` and `CollectMatchingRoleBindings` in `kubernetes_resource_collectors` package
 * Upped the CircleCI resource class to 'large' since builds are 1m30s and CircleCI showed that we're maxing out the CPU
 * Added a build cache to each build
 

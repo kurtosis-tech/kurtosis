@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/object_name_constants"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
@@ -237,6 +238,23 @@ func getGrpcAndGrpcProxyPortSpecsFromServicePorts(servicePorts []apiv1.ServicePo
 	return publicGrpcPort, publicGrpcProxyPort, nil
 }
 
+func getContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus, error) {
+	status := container_status.ContainerStatus_Stopped
+
+	if pod != nil {
+		podPhase := pod.Status.Phase
+		isPodRunning, found := isPodRunningDeterminer[podPhase]
+		if !found {
+			// This should never happen because we enforce completeness in a unit test
+			return status, stacktrace.NewError("No is-running designation found for pod phase '%v'; this is a bug in Kurtosis!", podPhase)
+		}
+		if isPodRunning {
+			status = container_status.ContainerStatus_Running
+		}
+	}
+	return status, nil
+}
+
 func (backend *KubernetesKurtosisBackend) getAllEnclaveNamespaces(ctx context.Context) ([]apiv1.Namespace, error) {
 
 	matchLabels := getEnclaveMatchLabels()
@@ -264,7 +282,7 @@ func (backend *KubernetesKurtosisBackend) getEnclaveNamespace(ctx context.Contex
 		return nil, stacktrace.NewError("No namespace matching labels '%+v' was found", matchLabels)
 	}
 	if numOfNamespaces > 1 {
-		return nil, stacktrace.NewError("Expected to find only one api container namespace for api container in enclave ID '%v', but '%v' was found; this is a bug in Kurtosis", enclaveId, numOfNamespaces)
+		return nil, stacktrace.NewError("Expected to find only one API container namespace for API container in enclave ID '%v', but '%v' was found; this is a bug in Kurtosis", enclaveId, numOfNamespaces)
 	}
 
 	resultNamespace := &namespaces.Items[0]
