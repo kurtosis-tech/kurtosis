@@ -13,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/current_time_str_provider"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
@@ -51,7 +50,7 @@ func NewFilesArtifactExpander(kurtosisBackend backend_interface.KurtosisBackend,
 
 func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 	ctx context.Context,
-	registrationGuid user_service_registration.UserServiceRegistrationGUID, // Registration GUID of the service for whom the artifacts are being expanded into volumes
+	serviceGuid service.ServiceGUID, // GUID of the service for whom the artifacts are being expanded into volumes
 	artifactUuidsToExpand map[service.FilesArtifactID]bool,
 ) (map[service.FilesArtifactID]files_artifact_expansion_volume.FilesArtifactExpansionVolumeName, error) {
 
@@ -67,11 +66,11 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 		filesArtifactExpansionVolume, err := expander.kurtosisBackend.CreateFilesArtifactExpansionVolume(
 			ctx,
 			expander.enclaveId,
-			registrationGuid,
+			serviceGuid,
 			filesArtifactId,
 		)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", registrationGuid, filesArtifactId, expander.enclaveId)
+			return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, expander.enclaveId)
 		}
 		volumeName := filesArtifactExpansionVolume.GetName()
 		volumesToDestroyIfSomethingFails[volumeName] = true
@@ -86,11 +85,11 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 		if err := expander.runFilesArtifactExpander(
 			ctx,
 			filesArtifactId,
-			registrationGuid,
+			serviceGuid,
 			volumeName,
 			artifactFile.GetFilepathRelativeToDataDirRoot(),
 		); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred running files artifact expander for user service with GUID '%v' and files artifact ID '%v' and files artifact expansion volume '%v' in enclave with ID '%v'", registrationGuid, filesArtifactId, volumeName, expander.enclaveId)
+			return nil, stacktrace.Propagate(err, "An error occurred running files artifact expander for user service with GUID '%v' and files artifact ID '%v' and files artifact expansion volume '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, volumeName, expander.enclaveId)
 		}
 
 		artifactIdsToVolNames[filesArtifactId] = volumeName
@@ -109,11 +108,11 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 func (expander *FilesArtifactExpander) runFilesArtifactExpander(
 	ctx context.Context,
 	filesArtifactId service.FilesArtifactID,
-	registrationGuid user_service_registration.UserServiceRegistrationGUID,
+	serviceGuid service.ServiceGUID,
 	filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
 	artifactFilepathRelativeToEnclaveDataVolRoot string,
 ) error {
-	guid := newFilesArtifactExpanderGUID(filesArtifactId, registrationGuid)
+	guid := newFilesArtifactExpanderGUID(filesArtifactId, serviceGuid)
 	if _, err := expander.kurtosisBackend.RunFilesArtifactExpander(
 		ctx,
 		guid,
@@ -162,8 +161,8 @@ func (expander *FilesArtifactExpander) destroyFilesArtifactExpansionVolumes(ctx 
 	}
 }
 
-func newFilesArtifactExpanderGUID(filesArtifactId service.FilesArtifactID, serviceRegistrationGuid user_service_registration.UserServiceRegistrationGUID) files_artifact_expander.FilesArtifactExpanderGUID {
-	serviceRegistrationGuidStr := string(serviceRegistrationGuid)
+func newFilesArtifactExpanderGUID(filesArtifactId service.FilesArtifactID, serviceGuid service.ServiceGUID) files_artifact_expander.FilesArtifactExpanderGUID {
+	serviceRegistrationGuidStr := string(serviceGuid)
 	filesArtifactIdStr := string(filesArtifactId)
 	suffix := current_time_str_provider.GetCurrentTimeStr()
 	guidStr := strings.Join([]string{serviceRegistrationGuidStr, filesArtifactIdStr, suffix}, guidElementSeparator)

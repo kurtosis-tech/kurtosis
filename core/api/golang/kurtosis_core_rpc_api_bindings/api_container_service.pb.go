@@ -2645,7 +2645,7 @@ var file_api_container_service_proto_depIdxs = []int32{
 	7,  // 28: api_container_api.ApiContainerService.GetModuleInfo:input_type -> api_container_api.GetModuleInfoArgs
 	9,  // 29: api_container_api.ApiContainerService.RegisterService:input_type -> api_container_api.RegisterServiceArgs
 	11, // 30: api_container_api.ApiContainerService.StartService:input_type -> api_container_api.StartServiceArgs
-	13, // 31: api_container_api.ApiContainerService.GetServiceInfo:input_type -> api_container_api.GetServiceInfoArgs
+	13, // 31: api_container_api.ApiContainerService.GetService:input_type -> api_container_api.GetServiceInfoArgs
 	15, // 32: api_container_api.ApiContainerService.RemoveService:input_type -> api_container_api.RemoveServiceArgs
 	16, // 33: api_container_api.ApiContainerService.Repartition:input_type -> api_container_api.RepartitionArgs
 	20, // 34: api_container_api.ApiContainerService.ExecCommand:input_type -> api_container_api.ExecCommandArgs
@@ -2664,7 +2664,7 @@ var file_api_container_service_proto_depIdxs = []int32{
 	8,  // 47: api_container_api.ApiContainerService.GetModuleInfo:output_type -> api_container_api.GetModuleInfoResponse
 	10, // 48: api_container_api.ApiContainerService.RegisterService:output_type -> api_container_api.RegisterServiceResponse
 	12, // 49: api_container_api.ApiContainerService.StartService:output_type -> api_container_api.StartServiceResponse
-	14, // 50: api_container_api.ApiContainerService.GetServiceInfo:output_type -> api_container_api.GetServiceInfoResponse
+	14, // 50: api_container_api.ApiContainerService.GetService:output_type -> api_container_api.GetServiceInfoResponse
 	46, // 51: api_container_api.ApiContainerService.RemoveService:output_type -> google.protobuf.Empty
 	46, // 52: api_container_api.ApiContainerService.Repartition:output_type -> google.protobuf.Empty
 	23, // 53: api_container_api.ApiContainerService.ExecCommand:output_type -> api_container_api.ExecCommandResponse
