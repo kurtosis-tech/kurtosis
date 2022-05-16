@@ -6,6 +6,8 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
@@ -20,6 +22,7 @@ import (
 
 const (
 	waitForEngineResponseTimeout = 5 * time.Second
+
 
 	// --------------------------- Old port parsing constants ------------------------------------
 	// These are the old labels that the API container used to use before 2021-11-15 for declaring its port num protocol
@@ -45,17 +48,40 @@ var objAttrsSchemaPortProtosToDockerPortProtos = map[schema.PortProtocol]string{
 
 type EngineManager struct {
 	kurtosisBackend backend_interface.KurtosisBackend
+	shouldSendMetrics bool
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 	// Make engine IP, port, and protocol configurable in the future
 }
 
-func NewEngineManager(kurtosisBackend backend_interface.KurtosisBackend) *EngineManager {
-	// TODO TODO TODO MAKE THIS CONFIGURABLE BETWEEN DOCKER AND KUBERNETES
-	engineServerKurtosisBackendConfigSupplier := engine_server_launcher.NewDockerKurtosisBackendConfigSupplier()
-	return &EngineManager{
-		kurtosisBackend: kurtosisBackend,
-		engineServerKurtosisBackendConfigSupplier: engineServerKurtosisBackendConfigSupplier,
+// TODO the fact that this takes in a clusterName is a temporary hack, until we have proper used-cluster data storage
+func NewEngineManager(clusterName string) (*EngineManager, error) {
+	kurtosisConfig, err := getKurtosisConfig()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the Kurtosis config")
 	}
+	clusterConfig, found := kurtosisConfig.GetKurtosisClusters()[clusterName]
+	if !found {
+		return nil, stacktrace.NewError("No cluster exists with name '%v'", clusterName)
+	}
+
+	kurtosisBackend, err := clusterConfig.GetKurtosisBackend()
+	if err != nil {
+		return nil, stacktrace.NewError("An error occurred getting the Kurtosis backend for cluster '%v'", clusterName)
+	}
+	engineBackendConfigSupplier := clusterConfig.GetEngineBackendConfigSupplier()
+
+	return &EngineManager{
+		kurtosisBackend:   kurtosisBackend,
+		shouldSendMetrics: kurtosisConfig.GetShouldSendMetrics(),
+		engineServerKurtosisBackendConfigSupplier: engineBackendConfigSupplier,
+	}, nil
+}
+
+// TODO This is a huge hack, that's only here temporarily because we have commands that use KurtosisBackend directly (they
+//  should not), and EngineConsumingKurtosisCommand therefore needs to provide them with a KurtosisBackend. Once all our
+//  commands only access the Kurtosis APIs, we can remove this.
+func (manager *EngineManager) GetKurtosisBackend() backend_interface.KurtosisBackend {
+	return manager.kurtosisBackend
 }
 
 /*
@@ -109,6 +135,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 		ctx,
 		maybeHostMachinePortBinding,
 		manager.kurtosisBackend,
+		manager.shouldSendMetrics,
 		manager.engineServerKurtosisBackendConfigSupplier,
 		logLevel,
 		engineVersion,
@@ -130,6 +157,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		ctx,
 		maybeHostMachinePortBinding,
 		manager.kurtosisBackend,
+		manager.shouldSendMetrics,
 		manager.engineServerKurtosisBackendConfigSupplier,
 		engineImageVersionTag,
 		logLevel,
@@ -298,4 +326,14 @@ func getFirstEngineFromMap(engineMap map[string]*engine.Engine) *engine.Engine {
 		break
 	}
 	return firstEngineInMap
+}
+
+func getKurtosisConfig() (*resolved_config.KurtosisConfig, error) {
+	configStore := kurtosis_config.GetKurtosisConfigStore()
+	configProvider := kurtosis_config.NewKurtosisConfigProvider(configStore)
+	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting or initializing the Kurtosis config")
+	}
+	return kurtosisConfig, nil
 }

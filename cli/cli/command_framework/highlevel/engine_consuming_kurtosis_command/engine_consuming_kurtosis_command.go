@@ -2,7 +2,6 @@ package engine_consuming_kurtosis_command
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/backend_creator"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
@@ -17,6 +16,9 @@ import (
 
 const (
 	engineClientCloseFuncCtxKey = "engine-client-close-func"
+
+	// TODO Delete this and instead replace with reading cluster name from disk!
+	clusterName = "docker"
 )
 
 // This is a convenience KurtosisCommand for commands that interact with the engine
@@ -47,6 +49,9 @@ type EngineConsumingKurtosisCommand struct {
 
 	RunFunc func(
 		ctx context.Context,
+		// TODO This is a hack that's only here temporarily because we have commands that use KurtosisBackend directly (they
+		//  should not), and EngineConsumingKurtosisCommand therefore needs to provide them with a KurtosisBackend. Once all our
+		//  commands only access the Kurtosis APIs, we can remove this.
 		kurtosisBackend backend_interface.KurtosisBackend,
 		engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 		flags *flags.ParsedFlags,
@@ -100,13 +105,15 @@ func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) 
 	return func(ctx context.Context) (context.Context, error) {
 		result := ctx
 
-		// TODO REFACTOR: we should get this backend from the config!!
-		var apiContainerModeArgs *backend_creator.APIContainerModeArgs = nil  // Not an API container
-		kurtosisBackend, err := backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgs)
+		engineManager, err := engine_manager.NewEngineManager(clusterName)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
+			return nil, stacktrace.Propagate(err, "An error occurred getting an engine manager connected to cluster '%v'", clusterName)
 		}
-		engineManager := engine_manager.NewEngineManager(kurtosisBackend)
+
+		// TODO This is a hack that's only here temporarily because we have commands that use KurtosisBackend directly (they
+		//  should not), and EngineConsumingKurtosisCommand therefore needs to provide them with a KurtosisBackend. Once all our
+		//  commands only access the Kurtosis APIs, we can remove this.
+		kurtosisBackend := engineManager.GetKurtosisBackend()
 
 		engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel)
 		if err != nil {

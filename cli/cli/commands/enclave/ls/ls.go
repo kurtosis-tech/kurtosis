@@ -7,13 +7,14 @@ package ls
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/backend_creator"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"sort"
 )
@@ -21,35 +22,27 @@ import (
 const (
 	enclaveIdColumnHeader     = "EnclaveID"
 	enclaveStatusColumnHeader = "Status"
+
+	kurtosisBackendCtxKey = "kurtosis-backend"
+	engineClientCtxKey  = "engine-client"
 )
 
-// TODO SWITCH TO BE AN ENGINE-CONSUMING COMAMND
-var LsCmd = &cobra.Command{
-	Use:   command_str_consts.EnclaveLsCmdStr,
-	Short: "List Kurtosis enclaves",
-	RunE:  run,
+var EnclaveLsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
+	CommandStr:                command_str_consts.EnclaveLsCmdStr,
+	ShortDescription:          "Lists enclaves",
+	LongDescription:           "Lists the enclaves running in the Kurtosis engine",
+	KurtosisBackendContextKey: kurtosisBackendCtxKey,
+	EngineClientContextKey:    engineClientCtxKey,
+	RunFunc:                   run,
 }
 
-func init() {
-}
-
-func run(cmd *cobra.Command, args []string) error {
-	ctx := context.Background()
-
-	// TODO REFACTOR: we should get this backend from the config!!
-	var apiContainerModeArgs *backend_creator.APIContainerModeArgs = nil  // Not an API container
-	kurtosisBackend, err := backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgs)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
-	}
-	engineManager := engine_manager.NewEngineManager(kurtosisBackend)
-
-	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
-	}
-	defer closeClientFunc()
-
+func run(
+	ctx context.Context,
+	kurtosisBackend backend_interface.KurtosisBackend,
+	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	_ *flags.ParsedFlags,
+	_ *args.ParsedArgs,
+) error {
 	response, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting enclaves")

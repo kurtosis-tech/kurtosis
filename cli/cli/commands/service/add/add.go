@@ -155,7 +155,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 
 func run(
 	ctx context.Context,
-	kurtosisBackend backend_interface.KurtosisBackend,
+	_ backend_interface.KurtosisBackend,
 	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
