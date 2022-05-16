@@ -1,4 +1,7 @@
 # TBD
+### Fixes
+* Fix accidentally calling pause when we should be unpausing
+* Fix error-checking not getting checked after creating a service
 
 # 0.23.0
 ### Breaking Changes
