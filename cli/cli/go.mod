@@ -13,11 +13,11 @@ require (
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/docker v20.10.16+incompatible
 	github.com/go-yaml/yaml v2.1.0+incompatible
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220516025347-10fa2badb2d7
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220516032526-2f7b0c5d22c3
 	github.com/kurtosis-tech/kurtosis-cli/commons v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220516025634-08b3e63ca8ef
-	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220516030025-7e4858f537d6
-	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220516030004-426f3baec2a1
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220516032834-7c229a65c4fd
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220516033213-e16e20fad2b5
+	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220516033134-4f52c60a2485
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220225193403-74da3f3b98ce
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
