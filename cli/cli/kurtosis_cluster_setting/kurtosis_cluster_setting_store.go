@@ -2,6 +2,7 @@ package kurtosis_cluster_setting
 
 import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -23,10 +24,6 @@ type kurtosisClusterSettingStore struct {
 	mutex *sync.RWMutex
 }
 
-type kurtosisClusterSetting struct {
-	CurrentKurtosisCluster string `yaml:"current-kurtosis-cluster"`
-}
-
 func GetKurtosisClusterSettingStore() *kurtosisClusterSettingStore {
 	// NOTE: We use a 'once' to initialize the kurtosisClusterSettingStore because it contains a mutex to guard
 	//the setting file, and we don't ever want multiple kurtosisClusterSettingStore instances in existence
@@ -40,37 +37,77 @@ func (settingStore *kurtosisClusterSettingStore) HasClusterSetting() (bool, erro
 	settingStore.mutex.RLock()
 	defer settingStore.mutex.RUnlock()
 
-	kurtosisClusterSettingFileYAMLPath, err := host_machine_directories.GetKurtosisClusterSettingYAMLFilepath()
+	fileExists, err := settingStore.doesClusterSettingFilepathExist()
 	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred getting the Kurtosis cluster setting YAML filepath")
+		return false, stacktrace.Propagate(err, "Failed to discover if cluster setting filepath exists.")
 	}
-
-	kurtosisClusterSettingFileInfo, err := os.Stat(kurtosisClusterSettingFileYAMLPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		} else {
-			return false, stacktrace.Propagate(err, "An error occurred getting Kurtosis cluster setting YAML file info")
-		}
-	}
-
-	if kurtosisClusterSettingFileInfo != nil {
-		return true, nil
-	}
-
-	return false, nil
+	return fileExists, nil
 }
 
-func (settingStore *kurtosisClusterSettingStore) SetConfigClusterSetting(clusterName string) error {
+func (settingStore *kurtosisClusterSettingStore) SetClusterSetting(clusterName string) error {
 	settingStore.mutex.Lock()
 	defer settingStore.mutex.Unlock()
 
-	return nil
+	err := settingStore.saveClusterSettingFile(clusterName)
+	return err
 }
 
-// ======================================== Private Helpers ===========================================
+func (settingStore *kurtosisClusterSettingStore) GetClusterSetting() (string, error) {
+	settingStore.mutex.Lock()
+	defer settingStore.mutex.Unlock()
 
-func (settingStore *kurtosisClusterSettingStore) saveConfigClusterFile(clusterName string) error {
+	name, err := settingStore.getClusterSettingFromFile()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to get cluster setting from setting file.")
+	}
+	return name, nil
+}
+
+
+// ======================================== Private Helpers ===========================================
+func (settingStore *kurtosisClusterSettingStore)  doesClusterSettingFilepathExist() (bool, error){
+	filepath, err := host_machine_directories.GetKurtosisClusterSettingYAMLFilepath()
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred getting the cluster setting filepath")
+	}
+
+	_, err = os.Stat(filepath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, stacktrace.Propagate(err, "An error occurred checking if filepath '%v' exists", filepath)
+	}
+	return true, nil
+}
+
+func (settingStore *kurtosisClusterSettingStore) getClusterSettingFromFile() (string, error) {
+	filepath, err := host_machine_directories.GetKurtosisClusterSettingYAMLFilepath()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the cluster setting filepath")
+	}
+	logrus.Debugf("Cluster setting filepath: '%v'", filepath)
+
+	fileContentBytes, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred reading cluster setting file")
+	}
+
+	fileContentStr := string(fileContentBytes)
+
+	return fileContentStr, nil
+}
+
+
+func (settingStore *kurtosisClusterSettingStore) saveClusterSettingFile(clusterName string) error {
+	validClusterName, err := settingStore.validateClusterName(clusterName)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to validate cluster setting.")
+	}
+	if !validClusterName {
+		return stacktrace.NewError("Cluster name '%v' is not a valid Kurtosis cluster name - check your Kurtosis configuration for valid names.", clusterName)
+	}
+
 	fileContent := []byte(clusterName)
 
 	logrus.Debugf("Saving cluster setting in file...")
@@ -86,4 +123,17 @@ func (settingStore *kurtosisClusterSettingStore) saveConfigClusterFile(clusterNa
 	}
 	logrus.Debugf("Cluster setting file saved")
 	return nil
+}
+
+func (settingStore *kurtosisClusterSettingStore) validateClusterName(clusterName string) (bool, error) {
+	configStore := kurtosis_config.GetKurtosisConfigStore()
+	configProvider := kurtosis_config.NewKurtosisConfigProvider(configStore)
+	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
+	if err != nil {
+		return false, stacktrace.Propagate(err, "Failed to get or initialize Kurtosis configuration when validating cluster name '%v'.", clusterName)
+	}
+	if _, ok := kurtosisConfig.GetKurtosisClusters()[clusterName]; ok {
+		return true, nil
+	}
+	return false, nil
 }
