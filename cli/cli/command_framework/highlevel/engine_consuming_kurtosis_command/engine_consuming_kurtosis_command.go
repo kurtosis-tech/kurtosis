@@ -2,7 +2,7 @@ package engine_consuming_kurtosis_command
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/backend_creator"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
@@ -100,7 +100,9 @@ func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) 
 	return func(ctx context.Context) (context.Context, error) {
 		result := ctx
 
-		kurtosisBackend, err := lib.GetLocalDockerKurtosisBackend()
+		// TODO REFACTOR: we should get this backend from the config!!
+		var apiContainerModeArgs *backend_creator.APIContainerModeArgs = nil  // Not an API container
+		kurtosisBackend, err := backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgs)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
 		}

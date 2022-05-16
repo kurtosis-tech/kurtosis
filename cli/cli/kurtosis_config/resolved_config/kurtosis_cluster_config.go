@@ -84,18 +84,18 @@ func getKurtosisBackendSupplier(clusterType KurtosisClusterType, kubernetesConfi
 		}
 		storageClass := *kubernetesConfig.StorageClass
 
-		if kubernetesConfig.EnclaveSizeInGigabytes == nil {
+		if kubernetesConfig.EnclaveSizeInMegabytes == nil {
 			return nil, stacktrace.NewError(
-				"Cluster type is '%v' but has no enclave data volume size (in GB) specified in its config map",
+				"Cluster type is '%v' but has no enclave data volume size (in MB) specified in its config map",
 				clusterType,
 			)
 		}
-		enclaveDataVolSizeGb := *kubernetesConfig.EnclaveSizeInGigabytes
+		enclaveDataVolSizeMB := *kubernetesConfig.EnclaveSizeInMegabytes
 
 		result = func() (backend_interface.KurtosisBackend, error) {
 			// TODO
 			return nil, stacktrace.NewError(fmt.Sprintf(
-				"TODO IMPLEMENT THIS: %v %v %v", kubernetesClusterName, storageClass, enclaveDataVolSizeGb,
+				"TODO IMPLEMENT THIS: %v %v %v", kubernetesClusterName, storageClass, enclaveDataVolSizeMB,
 			))
 		}
 	default:

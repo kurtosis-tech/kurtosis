@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
@@ -23,15 +22,12 @@ const (
 
 func printUserServices(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveId enclave.EnclaveID) error {
 
-	userServiceFilters := &service.ServiceFilters{
-		EnclaveIDs: map[enclave.EnclaveID]bool{
-			enclaveId: true,
-		},
-	}
+	userServiceFilters := &service.ServiceFilters{}
 
-	userServices, err := kurtosisBackend.GetUserServices(ctx, userServiceFilters)
+	// TODO Switch to using the API container API once it can show *all* services (not just running ones)
+	userServices, err := kurtosisBackend.GetUserServices(ctx, enclaveId, userServiceFilters)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting user services using filters '%+v'", userServiceFilters)
+		return stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' using filters '%+v'", enclaveId, userServiceFilters)
 	}
 
 	tablePrinter := output_printers.NewTablePrinter(
@@ -41,9 +37,9 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 	)
 	sortedUserServices:= getSortedUserServiceSliceFromUserServiceMap(userServices)
 	for _, userService := range sortedUserServices {
+		idStr := string(userService.GetRegistration().GetID())
+		guidStr := string(userService.GetRegistration().GetGUID())
 
-		guidStr := string(userService.GetGUID())
-		idStr := string(userService.GetID())
 		portBindingLines, err := getPortBindingStrings(userService)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting the port binding strings")
@@ -82,7 +78,9 @@ func getSortedUserServiceSliceFromUserServiceMap(userServices map[service.Servic
 	}
 
 	sort.Slice(userServicesResult, func(i, j int) bool {
-		return userServicesResult[i].GetGUID() < userServicesResult[j].GetGUID()
+		firstService := userServicesResult[i]
+		secondService := userServicesResult[j]
+		return firstService.GetRegistration().GetGUID() < secondService.GetRegistration().GetGUID()
 	})
 
 	return userServicesResult
@@ -91,7 +89,7 @@ func getSortedUserServiceSliceFromUserServiceMap(userServices map[service.Servic
 // Guaranteed to have at least one entry
 func getPortBindingStrings(userService *service.Service) ([]string, error) {
 	privatePorts := userService.GetPrivatePorts()
-	if len(privatePorts) == 0 {
+	if privatePorts == nil || len(privatePorts) == 0 {
 		return []string{missingPortPlaceholder}, nil
 	}
 
@@ -109,7 +107,7 @@ func getPortBindingStrings(userService *service.Service) ([]string, error) {
 	}
 
 	// If the container is running, add host machine port binding information
-	if userService.GetStatus() == container_status.ContainerStatus_Running {
+	if userService.GetMaybePublicIP() != nil && userService.GetMaybePublicPorts() != nil {
 		publicIpAddr := userService.GetMaybePublicIP()
 		publicPorts := userService.GetMaybePublicPorts()
 		for portId := range privatePorts {
@@ -119,7 +117,7 @@ func getPortBindingStrings(userService *service.Service) ([]string, error) {
 					"Private port '%v' was declared on service '%v' and the container is running, but no corresponding public port " +
 						"was found; this is very strange!",
 					portId,
-					userService.GetGUID(),
+					userService.GetRegistration().GetGUID(),
 				)
 			}
 			currentPortLine := resultLines[portId]
