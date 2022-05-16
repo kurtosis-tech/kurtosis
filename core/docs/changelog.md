@@ -1,5 +1,9 @@
 # TBD
 
+# 1.49.2
+### Fixes
+* Upgrade to container-engine-lib 0.23.2, with a fix for getting public host ports on stopped containers
+
 # 1.49.1
 ### Fixes
 * Upgraded to container-engine-lib 0.23.1 with some bugfixes
