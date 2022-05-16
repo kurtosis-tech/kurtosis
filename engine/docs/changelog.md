@@ -1,6 +1,8 @@
 # TBD
 ### Breaking Changes
 * Engine server now requires a "KurtosisBackendType" to be defined as an input in order to launch.
+* Engine server now requires Kubernetes enclave sizes to be specified in megabytes, not gigabytes
+  * Remediation: change all engine input parameters specifying enclave sizes in gigabytes to megabytes
 
 ### Changes
 * Engine server can choose the correct KurtosisBackend depending on input arguments (docker, kubernetes cluster)
