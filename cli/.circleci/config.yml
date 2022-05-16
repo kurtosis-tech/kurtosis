@@ -46,6 +46,7 @@ jobs:
   build_cli:
     docker:
       - image: "goreleaser/goreleaser:<< pipeline.parameters.goreleaser-version >>"
+    resource_class: large
     steps:
       - checkout
       # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
