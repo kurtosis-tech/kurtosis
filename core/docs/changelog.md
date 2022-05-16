@@ -1,5 +1,12 @@
 # TBD
 
+# 1.49.3
+### Features
+* Added CircleCI caching to the server build step
+
+### Fixes
+* Fix bug where, for whatever reason, the Typescript gRPC bindings were calling the wrong method
+
 # 1.49.2
 ### Fixes
 * Upgrade to container-engine-lib 0.23.2, with a fix for getting public host ports on stopped containers
