@@ -34,6 +34,11 @@ parameters:
   cli-linux-amd-64-binary-relative-filepath:
     type: string
     default: "cli_linux_amd64/kurtosis"
+  # The key that the CLI build cache will get
+  # We can bump the version here if we ever need to bust the cache
+  cli-build-cache-key-prefix:
+    type: string
+    default: "go-mod-v1"
 
 
 # NOTE: Because CircleCI jobs run on separate machines from each other, we duplicate steps (like checkout) between jobs. This is because doing the "correct" DRY
@@ -51,10 +56,22 @@ jobs:
       - checkout
       # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
+
+      # Cache our dependencies
+      - restore_cache:
+          keys:
+            - go-mod-v1-{{ checksum "go.sum" }}
+
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           cli/scripts/build.sh
+
+      - save_cache:
+          key: go-mod-v1-{{ checksum "go.sum" }}
+          paths:
+            - "/go/pkg/mod"
+
       - persist_to_workspace:
           root: .
           paths: 
