@@ -47,7 +47,7 @@ var EnclaveDumpCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Key:             outputDirpathArg,
 		},
 	},
-	RunFunc:                   nil,
+	RunFunc:                   run,
 }
 func run(
 	ctx context.Context,
