@@ -112,7 +112,7 @@ jobs:
       - save_cache:
           key: << pipeline.parameters.server-build-cache-key-prefix>>-{{ checksum "server/go.sum" }}
           paths:
-            - "/go/pkg/mod"  # Go module cache
+            - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
             - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
   # -- End PR check jobs ---------------------------------------
 
