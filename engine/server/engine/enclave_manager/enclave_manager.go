@@ -52,15 +52,18 @@ type EnclaveManager struct {
 	//  enclave modifications are atomic
 	mutex *sync.Mutex
 
-	kurtosisBackend backend_interface.KurtosisBackend
+	kurtosisBackend                           backend_interface.KurtosisBackend
+	apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
 }
 
 func NewEnclaveManager(
 	kurtosisBackend backend_interface.KurtosisBackend,
+	apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier,
 ) *EnclaveManager {
 	return &EnclaveManager{
-		mutex:                              &sync.Mutex{},
-		kurtosisBackend:					kurtosisBackend,
+		mutex:                               &sync.Mutex{},
+		kurtosisBackend:                     kurtosisBackend,
+		apiContainerKurtosisBackendConfigSupplier: apiContainerKurtosisBackendConfigSupplier,
 	}
 }
 
@@ -473,6 +476,7 @@ func (manager *EnclaveManager) launchApiContainer(
 			isPartitioningEnabled,
 			metricsUserID,
 			didUserAcceptSendingMetrics,
+			manager.apiContainerKurtosisBackendConfigSupplier,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with custom version '%v', but an error occurred", enclaveId, apiContainerImageVersionTag)
@@ -488,6 +492,7 @@ func (manager *EnclaveManager) launchApiContainer(
 		isPartitioningEnabled,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
+		manager.apiContainerKurtosisBackendConfigSupplier,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with the default version, but an error occurred", enclaveId)

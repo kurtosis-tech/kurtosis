@@ -4,6 +4,14 @@
     * A bugfix for instantiating the DockerKurtosisBackend inside the API container
     * Actually working register-service stuff
 
+### Changes
+* Engine server can choose the correct KurtosisBackend depending on input arguments (docker, kubernetes cluster)
+
+### Breaking Changes
+* Engine server now requires a "KurtosisBackendType" to be defined as an input in order to launch.
+* Upgraded to kurtosis-core 1.49.0
+    * Users will need to run `kurtosis engine restart`
+
 # 1.20.0
 ### Fixes
 * Fixed a null pointer exception bug in launcher when backend returns an engine with no public GRPC port

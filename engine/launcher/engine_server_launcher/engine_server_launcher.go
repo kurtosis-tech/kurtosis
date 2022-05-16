@@ -39,6 +39,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	grpcProxyListenPortNum uint16, // Envoy proxy port that will forward grpc-web calls to the engine
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
+	backendConfigSupplier KurtosisBackendConfigSupplier,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
@@ -53,6 +54,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		grpcProxyListenPortNum,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
+		backendConfigSupplier,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", KurtosisEngineVersion)
@@ -68,11 +70,13 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	grpcProxyListenPortNum uint16, // Envoy proxy port that will forward grpc-web calls to the engine
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
+	backendConfigSupplier KurtosisBackendConfigSupplier,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
 	resultErr error,
 ) {
+	kurtosisBackendType, kurtosisBackendConfig := backendConfigSupplier.getKurtosisBackendConfig()
 	argsObj, err := args.NewEngineServerArgs(
 		grpcListenPortNum,
 		grpcProxyListenPortNum,
@@ -80,6 +84,8 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		imageVersionTag,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
+		kurtosisBackendType,
+		kurtosisBackendConfig,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the engine server args")
