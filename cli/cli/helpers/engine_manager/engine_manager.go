@@ -6,8 +6,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/resolved_config"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/kurtosis_config_supplier"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
@@ -55,7 +54,7 @@ type EngineManager struct {
 
 // TODO the fact that this takes in a clusterName is a temporary hack, until we have proper used-cluster data storage
 func NewEngineManager(clusterName string) (*EngineManager, error) {
-	kurtosisConfig, err := getKurtosisConfig()
+	kurtosisConfig, err := kurtosis_config_supplier.GetKurtosisConfig()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the Kurtosis config")
 	}
@@ -326,15 +325,4 @@ func getFirstEngineFromMap(engineMap map[string]*engine.Engine) *engine.Engine {
 		break
 	}
 	return firstEngineInMap
-}
-
-func getKurtosisConfig() (*resolved_config.KurtosisConfig, error) {
-	configStore := kurtosis_config.GetKurtosisConfigStore()
-	configProvider := kurtosis_config.NewKurtosisConfigProvider(configStore)
-
-	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting or initializing the Kurtosis config")
-	}
-	return kurtosisConfig, nil
 }
