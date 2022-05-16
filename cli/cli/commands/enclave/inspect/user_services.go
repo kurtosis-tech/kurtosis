@@ -37,8 +37,8 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 	)
 	sortedUserServices:= getSortedUserServiceSliceFromUserServiceMap(userServices)
 	for _, userService := range sortedUserServices {
-		idStr := string(userService.GetID())
-		guidStr := string(userService.GetGUID())
+		idStr := string(userService.GetRegistration().GetID())
+		guidStr := string(userService.GetRegistration().GetGUID())
 
 		portBindingLines, err := getPortBindingStrings(userService)
 		if err != nil {
@@ -78,7 +78,9 @@ func getSortedUserServiceSliceFromUserServiceMap(userServices map[service.Servic
 	}
 
 	sort.Slice(userServicesResult, func(i, j int) bool {
-		return userServicesResult[i].GetGUID() < userServicesResult[j].GetGUID()
+		firstService := userServicesResult[i]
+		secondService := userServicesResult[j]
+		return firstService.GetRegistration().GetGUID() < secondService.GetRegistration().GetGUID()
 	})
 
 	return userServicesResult
@@ -86,7 +88,7 @@ func getSortedUserServiceSliceFromUserServiceMap(userServices map[service.Servic
 
 // Guaranteed to have at least one entry
 func getPortBindingStrings(userService *service.Service) ([]string, error) {
-	privatePorts := userService.GetMaybePrivatePorts()
+	privatePorts := userService.GetPrivatePorts()
 	if privatePorts == nil || len(privatePorts) == 0 {
 		return []string{missingPortPlaceholder}, nil
 	}
@@ -105,7 +107,7 @@ func getPortBindingStrings(userService *service.Service) ([]string, error) {
 	}
 
 	// If the container is running, add host machine port binding information
-	if userService.GetStatus() == service.UserServiceStatus_Activated {
+	if userService.GetMaybePublicIP() != nil && userService.GetMaybePublicPorts() != nil {
 		publicIpAddr := userService.GetMaybePublicIP()
 		publicPorts := userService.GetMaybePublicPorts()
 		for portId := range privatePorts {
@@ -115,7 +117,7 @@ func getPortBindingStrings(userService *service.Service) ([]string, error) {
 					"Private port '%v' was declared on service '%v' and the container is running, but no corresponding public port " +
 						"was found; this is very strange!",
 					portId,
-					userService.GetGUID(),
+					userService.GetRegistration().GetGUID(),
 				)
 			}
 			currentPortLine := resultLines[portId]
