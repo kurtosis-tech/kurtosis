@@ -1,4 +1,6 @@
 # TBD
+
+# 1.49.0
 ### Fixes
 * Update comment in KurtosisBackendType enum
 * Updated to container-engine-lib 0.23.0 which fixes:
