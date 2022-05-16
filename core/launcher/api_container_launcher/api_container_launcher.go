@@ -18,7 +18,7 @@ import (
 
 const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-	DefaultVersion = "1.47.0"
+	DefaultVersion = "1.48.0"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
 	enclaveDataVolumeDirpath = "/kurtosis-data"
@@ -44,6 +44,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	isPartitioningEnabled bool,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
+	backendConfigSupplier KurtosisBackendConfigSupplier,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -58,6 +59,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		isPartitioningEnabled,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
+		backendConfigSupplier,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", DefaultVersion)
@@ -75,10 +77,12 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	isPartitioningEnabled bool,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
+	backendConfigSupplier KurtosisBackendConfigSupplier,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
 ) {
+	kurtosisBackendType, kurtosisBackendConfig := backendConfigSupplier.getKurtosisBackendConfig()
 	argsObj, err := args.NewAPIContainerArgs(
 		imageVersionTag,
 		logLevel.String(),
@@ -89,6 +93,8 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 		enclaveDataVolumeDirpath,
+		kurtosisBackendType,
+		kurtosisBackendConfig,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the API container args")
