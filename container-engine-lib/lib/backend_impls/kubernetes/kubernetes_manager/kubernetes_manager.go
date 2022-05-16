@@ -28,8 +28,8 @@ const (
 	uintToIntStringConversionBase		   = 10
 
 	waitForPersistentVolumeBoundInitialDelayMilliSeconds = 100
-	waitForPersistentVolumeBoundRetries = uint32(20)
-	waitForPersistentVolumeBoundRetriesDelayMilliSeconds = 10
+	waitForPersistentVolumeBoundRetries = uint32(120)
+	waitForPersistentVolumeBoundRetriesDelayMilliSeconds = 500
 )
 
 var (
@@ -242,24 +242,6 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Contex
 	}
 
 	return persistentVolumeClaimResult, nil
-}
-
-func (manager *KubernetesManager) IsPersistentVolumeClaimBound(ctx context.Context, name string, namespace string) (bool, error)  {
-	claim, err := manager.GetPersistentVolumeClaim(ctx, name, namespace)
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred getting persistent volume claim '%v' in namespace '%v", name, namespace)
-	}
-
-	switch claimPhase := claim.Status.Phase; claimPhase {
-	//Success phase, the Persisten Volume got bound
-	case apiv1.ClaimBound:
-		return true, nil
-	//Lost the Persistent Volume phase, unrecoverable state
-	case apiv1.ClaimLost:
-		return false, stacktrace.NewError("The persistent volume claim '%v' has phase '%v' that means it lost the persistent volume, it's an unrecoverable state", claim.GetName(), claimPhase)
-	}
-
-	return false, nil
 }
 
 func (manager *KubernetesManager) RemovePersistentVolumeClaim(ctx context.Context, namespace string, persistentVolumeClaimName string) error {
@@ -725,20 +707,25 @@ func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string,
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
-func (manager *KubernetesManager) int32Ptr(i int32) *int32 { return &i }
-
 func (manager *KubernetesManager) waitForPersistentVolumeClaimBound(ctx context.Context, persistentVolumeClaim *apiv1.PersistentVolumeClaim) error {
 
 	time.Sleep(time.Duration(waitForPersistentVolumeBoundInitialDelayMilliSeconds) * time.Millisecond)
 
 	for i := uint32(0); i < waitForPersistentVolumeBoundRetries; i++ {
-		isBound, err := manager.IsPersistentVolumeClaimBound(ctx, persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
-		if isBound {
-			return nil
-		}
+		claim, err := manager.GetPersistentVolumeClaim(ctx, persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred checking if persistent volume claim '%v' is bound in namespace '%v'", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
+			return stacktrace.Propagate(err, "An error occurred getting persistent volume claim '%v' in namespace '%v", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
 		}
+
+		switch claimPhase := claim.Status.Phase; claimPhase {
+		//Success phase, the Persisten Volume got bound
+		case apiv1.ClaimBound:
+			return nil
+		//Lost the Persistent Volume phase, unrecoverable state
+		case apiv1.ClaimLost:
+			return stacktrace.NewError("The persistent volume claim '%v' has phase '%v' that means it lost the persistent volume, it's an unrecoverable state", claim.GetName(), claimPhase)
+		}
+
 		time.Sleep(time.Duration(waitForPersistentVolumeBoundRetriesDelayMilliSeconds) * time.Millisecond)
 	}
 
