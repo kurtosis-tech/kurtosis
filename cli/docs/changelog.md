@@ -3,6 +3,7 @@
 * `KurtosisClusterConfig` now creates engine container config suppliers
 * Added a config version migration test
 * Connected the config file to use by the commands
+* Added tab-complete to `enclave dump`, `enclave ls`, and `enclave rm`
 
 ### Changes
 * The `enclave-size-in-Megabytes` field in Kubernetes cluster field now is optional, and defaults to 10 MB

@@ -25,11 +25,6 @@ const (
 	engineClientCtxKey  = "engine-client"
 )
 
-var positionalArgs = []string{
-	enclaveIdArg,
-	outputDirpathArg,
-}
-
 var EnclaveDumpCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.EnclaveDumpCmdStr,
 	ShortDescription:          "Dumps information about an enclave to disk",
@@ -49,6 +44,7 @@ var EnclaveDumpCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 	},
 	RunFunc:                   run,
 }
+
 func run(
 	ctx context.Context,
 	kurtosisBackend backend_interface.KurtosisBackend,
