@@ -1,4 +1,6 @@
 # TBD
+
+# 0.22.0
 ### Changes
 * Upgrade to Docker SDK v20.10 to try and fix a bug where Docker network containers wouldn't be populated
 
