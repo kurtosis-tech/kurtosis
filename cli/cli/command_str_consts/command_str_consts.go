@@ -12,6 +12,7 @@ const (
 	CleanCmdStr = "clean"
 	ClusterCmdStr = "cluster"
 		ClusterSetCmdStr = "set"
+		ClusterGetCmdStr = "get"
 		ClusterLsCmdStr = "ls"
 	EnclaveCmdStr = "enclave"
 		EnclaveInspectCmdStr = "inspect"
