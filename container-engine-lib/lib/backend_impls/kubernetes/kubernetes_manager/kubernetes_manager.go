@@ -30,6 +30,8 @@ const (
 	waitForPersistentVolumeBoundInitialDelayMilliSeconds = 100
 	waitForPersistentVolumeBoundRetries = uint32(120)
 	waitForPersistentVolumeBoundRetriesDelayMilliSeconds = 500
+
+	apiv1Prefix = "api/v1"
 )
 
 var (
@@ -701,7 +703,7 @@ func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace
 }
 
 func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string, podName string) *url.URL {
-	return manager.kubernetesClientSet.RESTClient().Post().Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
+	return manager.kubernetesClientSet.RESTClient().Post().Prefix(apiv1Prefix).Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
 }
 
 // ====================================================================================================
