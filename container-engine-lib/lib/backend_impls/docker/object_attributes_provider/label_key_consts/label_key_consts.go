@@ -31,9 +31,6 @@ const (
 	isNetworkPartitioningEnabledKeyStr = labelNamespaceStr + "is-network-partitioning-enabled"
 
 	privateIpAddrLabelKeyStr = labelNamespaceStr + "private-ip"
-
-	// The GUID of the user service registration that a user service consumes
-	userServiceRegistrationGuidLabelKeyStr = labelNamespaceStr + "service-registration-guid"
 )
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // If these value change, it will lead to the Kurtosis engine losing track of old containers
@@ -52,4 +49,3 @@ var PortSpecsLabelKey = docker_label_key.MustCreateNewDockerLabelKey(portSpecsLa
 var EnclaveIDLabelKey = docker_label_key.MustCreateNewDockerLabelKey(enclaveIdLabelKeyStr)
 var IsNetworkPartitioningEnabledLabelKey = docker_label_key.MustCreateNewDockerLabelKey(isNetworkPartitioningEnabledKeyStr)
 var PrivateIPLabelKey = docker_label_key.MustCreateNewDockerLabelKey(privateIpAddrLabelKeyStr)
-var UserServiceRegistrationGUIDLabelKey = docker_label_key.MustCreateNewDockerLabelKey(userServiceRegistrationGuidLabelKeyStr)
