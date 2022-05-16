@@ -325,7 +325,7 @@ func (backend *KubernetesKurtosisBackend) getEnclaveNamespace(ctx context.Contex
 		return nil, stacktrace.NewError("No namespace matching labels '%+v' was found", matchLabels)
 	}
 	if numOfNamespaces > 1 {
-		return nil, stacktrace.NewError("Expected to find only one api container namespace for api container in enclave ID '%v', but '%v' was found; this is a bug in Kurtosis", enclaveId, numOfNamespaces)
+		return nil, stacktrace.NewError("Expected to find only one API container namespace for API container in enclave ID '%v', but '%v' was found; this is a bug in Kurtosis", enclaveId, numOfNamespaces)
 	}
 
 	resultNamespace := &namespaces.Items[0]
