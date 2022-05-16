@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Take container-engine-lib 0.23.2 and core 1.49.2 with a bugfix for public host port bindings on stopped containers
 
 # 1.21.1
 ### Fixes
