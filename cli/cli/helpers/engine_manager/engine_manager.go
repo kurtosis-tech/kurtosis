@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	waitForEngineResponseTimeout = 15 * time.Second
-	defaultClusterName = "docker"
+	waitForEngineResponseTimeout = 5 * time.Second
+	defaultClusterName = resolved_config.DefaultDockerClusterName
 
 	// --------------------------- Old port parsing constants ------------------------------------
 	// These are the old labels that the API container used to use before 2021-11-15 for declaring its port num protocol
@@ -57,12 +57,12 @@ type EngineManager struct {
 func NewEngineManager() (*EngineManager, error) {
 	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
 
-	clusterSet, err := clusterSettingStore.HasClusterSetting()
+	isClusterSet, err := clusterSettingStore.HasClusterSetting()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to check if cluster setting has been set.")
 	}
 	var clusterName string
-	if !clusterSet {
+	if !isClusterSet {
 		// If the user has not yet set a cluster, use default
 		clusterName = defaultClusterName
 	} else {

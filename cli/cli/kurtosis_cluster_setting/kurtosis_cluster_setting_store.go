@@ -53,8 +53,8 @@ func (settingStore *kurtosisClusterSettingStore) SetClusterSetting(clusterName s
 }
 
 func (settingStore *kurtosisClusterSettingStore) GetClusterSetting() (string, error) {
-	settingStore.mutex.Lock()
-	defer settingStore.mutex.Unlock()
+	settingStore.mutex.RLock()
+	defer settingStore.mutex.RUnlock()
 
 	name, err := settingStore.getClusterSettingFromFile()
 	if err != nil {

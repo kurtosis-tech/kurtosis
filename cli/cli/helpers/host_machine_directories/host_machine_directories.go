@@ -45,14 +45,14 @@ func GetKurtosisConfigYAMLFilepath() (string, error) {
 	return kurtosisConfigYAMLFilepath, nil
 }
 
-// Get the yaml filepath where the users' cluster selection setting is saved
+// Get the cluster setting filepath where the users' cluster selection setting is saved
 func GetKurtosisClusterSettingFilepath() (string, error) {
 	xdgRelFilepath := getRelativeFilepathForXDG(kurtosisClusterSettingFilename)
-	kurtosisClusterSettingYAMLFilepath, err := xdg.DataFile(xdgRelFilepath)
+	kurtosisClusterSettingFilepath, err := xdg.DataFile(xdgRelFilepath)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the Kurtosis config YAML filepath from relative path '%v'", xdgRelFilepath)
+		return "", stacktrace.Propagate(err, "An error occurred getting the Kurtosis cluster setting filepath from relative path '%v'", xdgRelFilepath)
 	}
-	return kurtosisClusterSettingYAMLFilepath, nil
+	return kurtosisClusterSettingFilepath, nil
 }
 
 func GetMetricsUserIdFilepath() (string, error) {

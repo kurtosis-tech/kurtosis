@@ -18,6 +18,7 @@ var StopCmd = &cobra.Command{
 
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
+	logrus.Infof("Stopping Kurtosis engine...")
 
 	engineManager, err := engine_manager.NewEngineManager()
 	if err != nil {

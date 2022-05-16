@@ -10,24 +10,24 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-const clusterNameKey = "cluster-name"
+const clusterNameArgKey = "cluster-name"
 
 var SetCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:               command_str_consts.ClusterSetCmdStr,
-	ShortDescription:         "Sets cluster",
+	ShortDescription:         "Sets cluster to use",
 	LongDescription:          "Sets the Kurtosis cluster to use based on cluster names in the Kurtosis CLI configuration file",
 	RunFunc:                  run,
 	Args: []*args.ArgConfig{
 		{
-			Key: clusterNameKey,
+			Key: clusterNameArgKey,
 		},
 	},
 }
 
 func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
-	clusterName, err := args.GetNonGreedyArg(clusterNameKey)
+	clusterName, err := args.GetNonGreedyArg(clusterNameArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to read user input from command cluster set.")
+		return stacktrace.Propagate(err, "Failed to read user input.")
 	}
 	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
 	err = clusterSettingStore.SetClusterSetting(clusterName)
