@@ -60,7 +60,7 @@ jobs:
       # Cache our dependencies
       - restore_cache:
           keys:
-            - << pipeline.parameters.goreleaser-version >>-{{ checksum "cli/go.sum" }}
+            - << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/go.sum" }}
 
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
@@ -68,7 +68,7 @@ jobs:
           cli/scripts/build.sh
 
       - save_cache:
-          key: << pipeline.parameters.goreleaser-version >>-{{ checksum "cli/go.sum" }}
+          key: << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/go.sum" }}
           paths:
             - "/go/pkg/mod"
             - "/root/.cache/go-build"
