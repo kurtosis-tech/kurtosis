@@ -38,7 +38,7 @@ parameters:
   # We can bump the version here if we ever need to bust the cache
   cli-build-cache-key-prefix:
     type: string
-    default: "go-mod-v1"
+    default: "cli-go-mod-v1"
 
 
 # NOTE: Because CircleCI jobs run on separate machines from each other, we duplicate steps (like checkout) between jobs. This is because doing the "correct" DRY
@@ -60,7 +60,7 @@ jobs:
       # Cache our dependencies
       - restore_cache:
           keys:
-            - cli-go-mod-v1-{{ checksum "cli/go.sum" }}
+            - << pipeline.parameters.goreleaser-version >>-{{ checksum "cli/go.sum" }}
 
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
@@ -68,7 +68,7 @@ jobs:
           cli/scripts/build.sh
 
       - save_cache:
-          key: cli-go-mod-v1-{{ checksum "cli/go.sum" }}
+          key: << pipeline.parameters.goreleaser-version >>-{{ checksum "cli/go.sum" }}
           paths:
             - "/go/pkg/mod"
             - "/root/.cache/go-build"
