@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
@@ -113,10 +114,10 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 	}
 
 	var hostMachineIpAddr net.IP
-	var hostMachinePortNum uint16
+	var hostMachinePortSpec *port_spec.PortSpec
 	var engineLaunchErr error
 	if guarantor.imageVersionTag == defaultEngineImageVersionTag {
-		hostMachineIpAddr, hostMachinePortNum, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithDefaultVersion(
+		hostMachineIpAddr, hostMachinePortSpec, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithDefaultVersion(
 			guarantor.ctx,
 			guarantor.logLevel,
 			kurtosis_context.DefaultKurtosisEngineServerGrpcPortNum,
@@ -125,7 +126,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			kurtosisConfig.GetShouldSendMetrics(),
 		)
 	} else {
-		hostMachineIpAddr, hostMachinePortNum, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
+		hostMachineIpAddr, hostMachinePortSpec, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
 			guarantor.ctx,
 			guarantor.imageVersionTag,
 			guarantor.logLevel,
@@ -139,6 +140,10 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 		return stacktrace.Propagate(engineLaunchErr, "An error occurred launching the engine server container")
 	}
 
+	var hostMachinePortNum uint16
+	if hostMachinePortSpec != nil {
+		hostMachinePortNum = hostMachinePortSpec.GetNumber()
+	}
 	guarantor.postVisitingHostMachineIpAndPort = &hostMachineIpAndPort{
 		ipAddr:  hostMachineIpAddr,
 		portNum: hostMachinePortNum,

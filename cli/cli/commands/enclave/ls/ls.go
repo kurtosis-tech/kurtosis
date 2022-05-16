@@ -7,7 +7,7 @@ package ls
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/backend_creator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
@@ -23,6 +23,7 @@ const (
 	enclaveStatusColumnHeader = "Status"
 )
 
+// TODO SWITCH TO BE AN ENGINE-CONSUMING COMAMND
 var LsCmd = &cobra.Command{
 	Use:   command_str_consts.EnclaveLsCmdStr,
 	Short: "List Kurtosis enclaves",
@@ -35,7 +36,9 @@ func init() {
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
-	kurtosisBackend, err := lib.GetLocalDockerKurtosisBackend()
+	// TODO REFACTOR: we should get this backend from the config!!
+	var apiContainerModeArgs *backend_creator.APIContainerModeArgs = nil  // Not an API container
+	kurtosisBackend, err := backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
 	}
