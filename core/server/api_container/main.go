@@ -19,9 +19,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
@@ -80,18 +79,21 @@ func runMain() error {
 
 	enclaveDataDir := enclave_data_directory.NewEnclaveDataDirectory(serverArgs.EnclaveDataVolumeDirpath)
 
+	// TODO Extract into own function
 	var kurtosisBackend backend_interface.KurtosisBackend
 	switch serverArgs.KurtosisBackendType {
 	case args.KurtosisBackendType_Docker:
 		apiContainerModeArgs := &backend_creator.APIContainerModeArgs{
 			Context:   context.Background(),
 			EnclaveID: enclave.EnclaveID(serverArgs.EnclaveId),
+			APIContainerIP: ownIpAddress,
 		}
 		kurtosisBackend, err = backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgs)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 		}
 	case args.KurtosisBackendType_Kubernetes:
+		// TODO apply this is-nil error-checking to all cluster types, because none should be nil!
 		clusterConfig := serverArgs.KurtosisBackendConfig
 		if clusterConfig == nil {
 			return stacktrace.NewError("Kurtosis backend type is '%v' but cluster configuration parameters are null.", args.KurtosisBackendType_Kubernetes.String())
@@ -100,10 +102,9 @@ func runMain() error {
 		if !ok {
 			return stacktrace.NewError("Failed to cast cluster configuration interface to the appropriate type, even though Kurtosis backend type is '%v'", args.KurtosisBackendType_Kubernetes.String())
 		}
-		// TODO TODO TODO Refactor container-engine-lib functions to take uints instead of ints for enclaveSizeInGB
-		kurtosisBackend, err = lib.GetLocalKubernetesKurtosisBackend(kubernetesBackendConfig.StorageClass, int(kubernetesBackendConfig.EnclaveSizeInGigabytes))
+		kurtosisBackend, err = lib.GetLocalKubernetesKurtosisBackend(kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInMegabytes)
 		if err != nil {
-			return stacktrace.Propagate(err, "Failed to get a Kubernetes backend with storage class '%v' and enclave size (in GB) %d", kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInGigabytes)
+			return stacktrace.Propagate(err, "Failed to get a Kubernetes backend with storage class '%v' and enclave size (in MB) %d", kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInMegabytes)
 		}
 	default:
 		return stacktrace.NewError("Backend type '%v' was not recognized by API container.", serverArgs.KurtosisBackendType.String())
@@ -193,23 +194,18 @@ func createServiceNetworkAndModuleStore(
 		filesArtifactStore,
 	)
 
-	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
-		kurtosisBackend,
-		filesArtifactExpander,
-	)
-
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
 		kurtosisBackend,
 		enclaveObjAttrsProvider,
 		enclaveId)
 
-	serviceNetwork := service_network.NewServiceNetworkImpl(
+	serviceNetwork := service_network.NewServiceNetwork(
 		enclaveId,
 		isPartitioningEnabled,
 		kurtosisBackend,
 		enclaveDataDir,
-		userServiceLauncher,
 		networkingSidecarManager,
+		filesArtifactExpander,
 	)
 
 	moduleLauncher := module_launcher.NewModuleLauncher(
