@@ -76,10 +76,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		networkCidr.IP.String(): true,
 		enclaveNetwork.GetGatewayIp(): true,
 	}
-	for containerIp := range enclaveNetwork.GetContainerIps() {
-		alreadyTakenIps[containerIp] = true
-	}
-	// TODO migrate FreeIPAddrTracker inside this repo
+
 	freeIpAddrProvider := lib.NewFreeIpAddrTracker(
 		logrus.StandardLogger(),
 		networkCidr,

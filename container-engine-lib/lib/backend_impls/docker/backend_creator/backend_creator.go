@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"net"
 )
 
 // TODO Delete this when we split up KurtosisBackend into various parts
@@ -21,6 +22,7 @@ type APIContainerModeArgs struct {
 	// Normally storing a context in a struct is bad, but we only do this to package it together as part of "optional" args
 	Context   context.Context
 	EnclaveID enclave.EnclaveID
+	APIContainerIP net.IP
 }
 
 // GetLocalDockerKurtosisBackend is the entrypoint method we expect users of container-engine-lib to call
@@ -64,13 +66,12 @@ func GetLocalDockerKurtosisBackend(
 		}
 		network := matchingNetworks[0]
 		networkIp := network.GetIpAndMask().IP
+		apiContainerIp := optionalApiContainerModeArgs.APIContainerIP
 
 		alreadyTakenIps := map[string]bool{
 			networkIp.String(): true,
 			network.GetGatewayIp(): true,
-		}
-		for containerIp := range network.GetContainerIps() {
-			alreadyTakenIps[containerIp] = true
+			apiContainerIp.String(): true,
 		}
 
 		freeIpAddrProvider := lib.NewFreeIpAddrTracker(

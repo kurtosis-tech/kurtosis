@@ -11,8 +11,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
 	"io"
 	"net"
 )
@@ -217,85 +215,73 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the modules
 	)
 
-	// CreateUserServiceRegistration registers the intent to start a service at a future point in time, which:
-	// - In Docker means allocating a static IP address
-	// - In Kubernetes means creating a Kubernetes service with an IP address
-	// A service registration is required to start a service
-	CreateUserServiceRegistration(
+
+
+
+
+	/*
+	                           KURTOSIS SERVICE STATE DIAGRAM
+
+                                .-----------------DestroyServices--------------------.
+                               /                                                      \
+	  RegisterService--> REGISTERED ---StopServices---> STOPPED ---DestroyServices---> DESTROYED
+	                           \                          /                           /
+	                      StartService              StopServices                     /
+	                             \                      /                           /
+	                              '---------------> RUNNING ---DestroyServices-----'
+
+	Considerations:
+	- We have REGISTERED as a state separate from RUNNING because some user containers need to know their own
+		IP address when they start, which means we need to know the IP address of the container BEFORE it starts.
+	- As of 2022-05-15, Kurtosis services can never be restarted once stopped.
+	*/
+
+
+	// Registers a user service, allocating it an IP and ServiceGUID
+	RegisterUserService(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		serviceId user_service_registration.ServiceID,
-	) (
-		*user_service_registration.UserServiceRegistration,
-		error,
-	)
+		serviceId service.ServiceID,
+	) (*service.ServiceRegistration, error, )
 
-	// GetUserServiceRegistrations gets the existing user service registrations
-	GetUserServiceRegistrations(
+	// StartUserService consumes a service registration to create a user container with the given parameters
+	StartUserService(
 		ctx context.Context,
-		filters *user_service_registration.UserServiceRegistrationFilters,
-	) (
-		map[user_service_registration.UserServiceRegistrationGUID]*user_service_registration.UserServiceRegistration,
-		error,
-	)
-
-	// DestroyUserServiceRegistration removes a previously-created user service registration object
-	// This will fail if a service is currently consuming the registration
-	DestroyUserServiceRegistrations(
-		ctx context.Context,
-		filters *user_service_registration.UserServiceRegistrationFilters,
-	) (
-		resultSuccessfulServiceIds map[user_service_registration.UserServiceRegistrationGUID]bool,
-		resultErroredServiceIds map[user_service_registration.UserServiceRegistrationGUID]error,
-		resultErr error,
-	)
-
-	// CreateUserService consumes a service registration to create a user service with the given parameters
-	CreateUserService(
-		ctx context.Context,
-		registrationGuid user_service_registration.UserServiceRegistrationGUID,
+		enclaveId enclave.EnclaveID,
+		guid service.ServiceGUID,
 		containerImageName string,
-		enclaveId enclave.EnclaveID,
 		privatePorts map[string]*port_spec.PortSpec,
 		entrypointArgs []string,
 		cmdArgs []string,
 		envVars map[string]string,
-		filesArtifactMountDirpaths map[string]string,
+		// volume_name -> mountpoint_on_container
+		filesArtifactVolumeMountDirpaths map[string]string,
 	) (
-		newUserService *service.Service,
-		resultErr error,
+		*service.Service,
+		error,
 	)
 
 	// Gets user services using the given filters, returning a map of matched user services identified by their GUID
 	GetUserServices(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *service.ServiceFilters,
 	) (
-		successfulUserServices map[service.ServiceGUID]*service.Service,
-		resultError error,
+		map[service.ServiceGUID]*service.Service,
+		error,
 	)
 
 	// Get user service logs using the given filters, returning a map of matched user services identified by their GUID and a readCloser object for each one
 	// User is responsible for closing the 'ReadCloser' object returned in the successfulUserServiceLogs map
 	GetUserServiceLogs(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *service.ServiceFilters,
 		shouldFollowLogs bool,
 	) (
 		successfulUserServiceLogs map[service.ServiceGUID]io.ReadCloser,
 		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultError error,
-	)
-
-	// Executes a shell command inside an user service instance indenfified by its ID
-	RunUserServiceExecCommands(
-		ctx context.Context,
-		enclaveId enclave.EnclaveID,
-		userServiceCommands map[service.ServiceGUID][]string,
-	) (
-		succesfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult,
-		erroredUserServiceGuids map[service.ServiceGUID]error,
-		resultErr error,
 	)
 
 	// Pauses execution of all processes on a service, but does not shut down the service (memory state is preserved)
@@ -316,20 +302,14 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-	// Wait for succesful http endpoint response which can be used to check if the service is available
-	WaitForUserServiceHttpEndpointAvailability(
+	// Executes a shell command inside an user service instance indenfified by its ID
+	RunUserServiceExecCommands(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		serviceGUID service.ServiceGUID,
-		httpMethod wait_for_availability_http_methods.WaitForAvailabilityHttpMethod, //The httpMethod used to execute the request.
-		port uint32, //The port of the service to check. For instance 8080
-		path string, //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
-		requestBody string, //The content of the request body. Only valid when the httpMethod is POST
-		expectedResponseBody string, //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
-		initialDelayMilliseconds uint32, //The number of milliseconds to wait until executing the first HTTP call
-		retries uint32, //Max number of HTTP call attempts that this will execute until giving up and returning an error
-		retriesDelayMilliseconds uint32, //Number of milliseconds to wait between retries
+		userServiceCommands map[service.ServiceGUID][]string,
 	) (
+		succesfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult,
+		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultErr error,
 	)
 
@@ -337,7 +317,7 @@ type KurtosisBackend interface {
 	GetConnectionWithUserService(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		serviceGUID service.ServiceGUID,
+		serviceGuid service.ServiceGUID,
 	) (
 		resultConn net.Conn,
 		resultErr error,
@@ -354,9 +334,11 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-	// Stop user services using the given filters,
+	// StopUserServices stops the user containers for the services matching the given filters
+	// A stopped service cannot be activated again as of 2022-05-14
 	StopUserServices(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *service.ServiceFilters,
 	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully stopped
@@ -364,9 +346,10 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
-	// Destroy user services using the given filters,
+	// DestroyUserServices destroys user services matching the given filters, removing all resources associated with it
 	DestroyUserServices(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *service.ServiceFilters,
 	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully destroyed
@@ -374,6 +357,7 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
+	// TODO Move this logic inside the user service, so that we have tighter controls on what can happen and what can't
 	//Create a user service's  networking sidecar inside enclave
 	CreateNetworkingSidecar(
 		ctx context.Context,
@@ -428,7 +412,7 @@ type KurtosisBackend interface {
 	CreateFilesArtifactExpansionVolume(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		registrationGuid user_service_registration.UserServiceRegistrationGUID,
+		serviceGuid service.ServiceGUID,
 		filesArtifactId service.FilesArtifactID,
 	) (
 		*files_artifact_expansion_volume.FilesArtifactExpansionVolume,
