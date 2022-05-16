@@ -861,7 +861,6 @@ func getUserServiceObjsFromDockerResources(
 func getIpAndPortInfoFromContainer(
 	containerName string,
 	labels map[string]string,
-	status container_status.ContainerStatus,
 	hostMachinePortBindings map[nat.Port]*nat.PortBinding,
 ) (
 	resultPrivateIp net.IP,
@@ -897,7 +896,7 @@ func getIpAndPortInfoFromContainer(
 
 	var containerPublicIp net.IP
 	var publicPortSpecs map[string]*port_spec.PortSpec
-	if status != container_status.ContainerStatus_Running {
+	if hostMachinePortBindings == nil || len(hostMachinePortBindings) == 0 {
 		return privateIp, privatePortSpecs, containerPublicIp, publicPortSpecs, nil
 	}
 
