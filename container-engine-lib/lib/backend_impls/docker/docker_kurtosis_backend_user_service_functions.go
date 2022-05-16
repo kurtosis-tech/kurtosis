@@ -896,38 +896,42 @@ func getIpAndPortInfoFromContainer(
 
 	var containerPublicIp net.IP
 	var publicPortSpecs map[string]*port_spec.PortSpec
+	if hostMachinePortBindings == nil || len(hostMachinePortBindings) == 0 {
+		return privateIp, privatePortSpecs, containerPublicIp, publicPortSpecs, nil
+	}
+
 	for portId, privatePortSpec := range privatePortSpecs {
-		portPublicIp, publicPortSpec, err := getPublicPortBindingFromPrivatePortSpec(privatePortSpec, hostMachinePortBindings)
-		if err != nil {
-			return nil, nil, nil, nil, stacktrace.Propagate(
-				err,
-				"An error occurred getting public port spec for private port '%v' with spec '%v/%v' on container '%v'",
-				portId,
-				privatePortSpec.GetNumber(),
-				privatePortSpec.GetProtocol().String(),
-				containerName,
-			)
-		}
+		 portPublicIp, publicPortSpec, err := getPublicPortBindingFromPrivatePortSpec(privatePortSpec, hostMachinePortBindings)
+		 if err != nil {
+			 return nil, nil, nil, nil, stacktrace.Propagate(
+				 err,
+				 "An error occurred getting public port spec for private port '%v' with spec '%v/%v' on container '%v'",
+				 portId,
+				 privatePortSpec.GetNumber(),
+				 privatePortSpec.GetProtocol().String(),
+				 containerName,
+			 )
+		 }
 
-		if containerPublicIp == nil {
-			containerPublicIp = portPublicIp
-		} else {
-			if !containerPublicIp.Equal(portPublicIp) {
-				return nil, nil, nil, nil, stacktrace.NewError(
-					"Private port '%v' on container '%v' yielded a public IP '%v', which doesn't agree with " +
-						"previously-seen public IP '%v'",
-					portId,
-					containerName,
-					portPublicIp.String(),
-					containerPublicIp.String(),
-				)
-			}
-		}
+		 if containerPublicIp == nil {
+			 containerPublicIp = portPublicIp
+		 } else {
+			 if !containerPublicIp.Equal(portPublicIp) {
+				 return nil, nil, nil, nil, stacktrace.NewError(
+					  "Private port '%v' on container '%v' yielded a public IP '%v', which doesn't agree with "+
+						  "previously-seen public IP '%v'",
+					  portId,
+					  containerName,
+					  portPublicIp.String(),
+					  containerPublicIp.String(),
+				 )
+			 }
+		 }
 
-		if publicPortSpecs == nil {
-			publicPortSpecs = map[string]*port_spec.PortSpec{}
-		}
-		publicPortSpecs[portId] = publicPortSpec
+		 if publicPortSpecs == nil {
+			 publicPortSpecs = map[string]*port_spec.PortSpec{}
+		 }
+		 publicPortSpecs[portId] = publicPortSpec
 	}
 
 	return privateIp, privatePortSpecs, containerPublicIp, publicPortSpecs, nil

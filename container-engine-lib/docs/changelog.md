@@ -1,5 +1,9 @@
 # TBD
 
+# 0.23.2
+### Fixes
+* Don't error when parsing public ports on stopped containers
+
 # 0.23.1
 ### Fixes
 * Fix accidentally calling pause when we should be unpausing
