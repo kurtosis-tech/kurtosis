@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Replaced `GetLocalKubernetesKurtosisBackend` call with `GetInClusterKubernetesKurtosisBackend` because the engine server runs inside a K8s cluster
 
 # 1.21.3
 ### Features
