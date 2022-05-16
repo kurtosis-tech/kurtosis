@@ -18,13 +18,15 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"net/url"
+	"strconv"
 )
 
 const (
 	defaultServiceProtocol                 = "TCP"
 	defaultPersistentVolumeAccessMode      = apiv1.ReadWriteMany
 	defaultPersistentVolumeClaimAccessMode = apiv1.ReadWriteMany
-	binaryByteMultiplier				   = 1024
+	binaryMegabytesSuffix         		   = "Mi"
+	uintToIntStringConversionBase		   = 10
 )
 
 var (
@@ -200,84 +202,14 @@ func (manager *KubernetesManager) GetStorageClass(ctx context.Context, name stri
 	return storageClassResult, nil
 }
 
-func (manager *KubernetesManager) CreatePersistentVolume(ctx context.Context, volumeName string, volumeLabels map[string]string, volumeAnnotations map[string]string, quantityInGigabytes string, pathInSingleNodeCluster string, storageClassName string) (*apiv1.PersistentVolume, error) {
-	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
-
-	quantity, err := resource.ParseQuantity(quantityInGigabytes)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to parse quantityInGigabytes '%s'", quantityInGigabytes)
-	}
-
-	persistentVolume := &apiv1.PersistentVolume{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        volumeName,
-			Labels:      volumeLabels,
-			Annotations: volumeAnnotations,
-		},
-		Spec: apiv1.PersistentVolumeSpec{
-			Capacity: map[apiv1.ResourceName]resource.Quantity{
-				apiv1.ResourceStorage: quantity,
-			},
-			PersistentVolumeSource: apiv1.PersistentVolumeSource{
-				HostPath: &apiv1.HostPathVolumeSource{
-					Path: pathInSingleNodeCluster,
-				},
-			},
-			AccessModes: []apiv1.PersistentVolumeAccessMode{
-				defaultPersistentVolumeAccessMode,
-			},
-			StorageClassName: storageClassName,
-		},
-	}
-
-	persistentVolumeResult, err := volumesClient.Create(ctx, persistentVolume, metav1.CreateOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create persistent volume with name '%s'", volumeName)
-	}
-
-	return persistentVolumeResult, nil
-}
-
-func (manager *KubernetesManager) RemovePersistentVolume(ctx context.Context, volumeName string) error {
-	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
-
-	if err := volumesClient.Delete(ctx, volumeName, removeObjectDeleteOptions); err != nil {
-		return stacktrace.Propagate(err, "Failed to delete persistent volume with name '%s' and deleteOptions '%+v'", volumeName, removeObjectDeleteOptions)
-	}
-
-	return nil
-}
-
-func (manager *KubernetesManager) GetPersistentVolume(ctx context.Context, volumeName string) (*apiv1.PersistentVolume, error) {
-	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
-
-	persistentVolumeResult, err := volumesClient.Get(ctx, volumeName, metav1.GetOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get persistent volume with name '%s'", volumeName)
-	}
-
-	return persistentVolumeResult, nil
-}
-
-func (manager *KubernetesManager) GetPersistentVolumesByLabels(ctx context.Context, persistentVolumeLabels map[string]string) (*apiv1.PersistentVolumeList, error) {
-	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
-
-	listOptions := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(persistentVolumeLabels).String(),
-	}
-
-	persistentVolumesResult, err := volumesClient.List(ctx, listOptions)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get persistent volumes by labels '%+v'", persistentVolumeLabels)
-	}
-
-	return persistentVolumesResult, nil
-}
-
 func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Context, namespace string, persistentVolumeClaimName string, persistentVolumeClaimLabels map[string]string, volumeSizeInMegabytes uint, storageClassName string) (*apiv1.PersistentVolumeClaim, error) {
 	volumeClaimsClient := manager.kubernetesClientSet.CoreV1().PersistentVolumeClaims(namespace)
 
-	quantity := resource.NewQuantity(int64(volumeSizeInMegabytes* binaryByteMultiplier * binaryByteMultiplier), resource.BinarySI)
+	volumeSizeInMegabytesStr := strconv.FormatUint(uint64(volumeSizeInMegabytes), uintToIntStringConversionBase)
+	quantity, err := resource.ParseQuantity(volumeSizeInMegabytesStr + binaryMegabytesSuffix)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to parse volume size in megabytes %d", volumeSizeInMegabytes)
+	}
 
 	persistentVolumeClaim := &apiv1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
@@ -291,7 +223,7 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Contex
 			StorageClassName: &storageClassName,
 			Resources: apiv1.ResourceRequirements{
 				Requests: map[apiv1.ResourceName]resource.Quantity{
-					apiv1.ResourceStorage: *quantity,
+					apiv1.ResourceStorage: quantity,
 				},
 			},
 		},
