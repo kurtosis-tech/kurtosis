@@ -28,7 +28,7 @@ type KubernetesEnclaveObjectAttributesProvider interface {
 	ForEnclaveNamespace(isPartitioningEnabled bool) (KubernetesObjectAttributes, error)
 	ForEnclaveDataVolume() (KubernetesObjectAttributes, error)
 	ForApiContainer() (KubernetesApiContainerObjectAttributesProvider, error)
-	ForUserServiceService(id user_service_registration.ServiceID, guid service.ServiceGUID) (KubernetesObjectAttributes, error)
+	ForUserServiceService(id service.ServiceID, guid service.ServiceGUID) (KubernetesObjectAttributes, error)
 }
 
 // Private so it can't be instantiated
@@ -158,7 +158,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactE
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceService (
-	serviceID user_service_registration.ServiceID,
+	serviceID service.ServiceID,
 	serviceGUID service.ServiceGUID,
 ) (
 	KubernetesObjectAttributes,

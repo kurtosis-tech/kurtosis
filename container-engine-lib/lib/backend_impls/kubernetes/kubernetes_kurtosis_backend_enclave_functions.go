@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
-	"strconv"
 )
 
 func (backend *KubernetesKurtosisBackend) CreateEnclave(
@@ -91,7 +90,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		enclaveNamespaceName,
 		persistentVolumeClaimName.GetString(),
 		enclaveVolumeLabelMap,
-		strconv.Itoa(backend.volumeSizePerEnclaveInGigabytes),
+		backend.volumeSizePerEnclaveInMegabytes,
 		backend.volumeStorageClassName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,
