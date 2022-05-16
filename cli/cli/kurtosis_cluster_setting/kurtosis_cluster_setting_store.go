@@ -105,7 +105,7 @@ func (settingStore *kurtosisClusterSettingStore) saveClusterSettingFile(clusterN
 		return stacktrace.Propagate(err, "Failed to validate cluster setting.")
 	}
 	if !validClusterName {
-		return stacktrace.NewError("Cluster name '%v' is not a valid Kurtosis cluster name - check your Kurtosis configuration for valid names.", clusterName)
+		return stacktrace.NewError("Cluster name '%v' is not a valid Kurtosis cluster name.", clusterName)
 	}
 
 	fileContent := []byte(clusterName)
