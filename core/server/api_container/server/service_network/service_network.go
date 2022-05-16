@@ -498,7 +498,7 @@ func (network *ServiceNetwork) GetService(ctx context.Context, serviceId service
 			serviceGuid,
 		)
 	}
-	if len(matchingServices) > 0 {
+	if len(matchingServices) > 1 {
 		return nil, stacktrace.NewError("Found multiple service objects matching GUID '%v'", serviceGuid)
 	}
 	serviceObj, found := matchingServices[serviceGuid]
