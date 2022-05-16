@@ -220,7 +220,7 @@ jobs:
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
 
       # Basic service add & rm
-      - run: "${KURTOSIS_BINPATH} enclave new --enclave-id test-enclave"
+      - run: "${KURTOSIS_BINPATH} enclave new --id test-enclave"
       - run: "${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=80"
       - run: "${KURTOSIS_BINPATH} service rm test-enclave test1"
       - run: "${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=80"
