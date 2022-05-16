@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Added CircleCI caching to the server build step
+
 ### Fixes
 * Fix bug where, for whatever reason, the Typescript gRPC bindings were calling the wrong method
 
