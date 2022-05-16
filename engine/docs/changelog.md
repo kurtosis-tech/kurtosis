@@ -1,4 +1,9 @@
 # TBD
+### Features
+* Added build caching to significantly speed up builds
+
+### Fixes
+* Upgraded to core 1.49.3 to fix a bug with the Typescript EnclaveContext
 
 # 1.21.2
 ### Fixes
