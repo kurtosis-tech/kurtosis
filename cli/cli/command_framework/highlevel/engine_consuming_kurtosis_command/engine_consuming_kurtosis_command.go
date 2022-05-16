@@ -16,9 +16,6 @@ import (
 
 const (
 	engineClientCloseFuncCtxKey = "engine-client-close-func"
-
-	// TODO Delete this and instead replace with reading cluster name from disk!
-	clusterName = "docker"
 )
 
 // This is a convenience KurtosisCommand for commands that interact with the engine
@@ -107,7 +104,7 @@ func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) 
 
 		engineManager, err := engine_manager.NewEngineManager()
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting an engine manager connected to cluster '%v'", clusterName)
+			return nil, stacktrace.Propagate(err, "An error occurred getting an engine manager.")
 		}
 
 		// TODO This is a hack that's only here temporarily because we have commands that use KurtosisBackend directly (they

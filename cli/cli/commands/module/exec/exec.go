@@ -55,9 +55,6 @@ const (
 	netReadOpt = "read"
 
 	netReadOptFailBecauseSourceIsUsedOrClosedErrorText = "use of closed network connection"
-
-	// TODO remove when we read cluster state from disk
-	clusterName = "docker"
 )
 
 var positionalArgs = []string{
@@ -162,7 +159,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	engineManager, err := engine_manager.NewEngineManager()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an engine manager connected to cluster '%v'", clusterName)
+		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 	}
 	// TODO THIS IS A BIG JANKY HACK. We should instead migrate this commmand to be an EngineConsumingKurtosisCommand instead
 	kurtosisBackend := engineManager.GetKurtosisBackend()

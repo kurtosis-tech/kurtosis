@@ -30,8 +30,6 @@ var RestartCmd = &cobra.Command{
 	RunE:  run,
 }
 
-var WithKubernetes bool
-
 func init() {
 	RestartCmd.Flags().StringVar(
 		&engineVersion,
@@ -51,8 +49,6 @@ func init() {
 			),
 		),
 	)
-	// TODO Remove this in favor of actual Kubernetes info in the config file
-	RestartCmd.Flags().BoolVarP(&WithKubernetes, "with-kubernetes", "k", false, "Operate on the engine in kubernetes")
 }
 
 func run(cmd *cobra.Command, args []string) error {
@@ -65,14 +61,9 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred parsing log level string '%v'", logLevelStr)
 	}
 
-	// TODO Hack; remove when we read cluster state from disk
-	var clusterName = "docker"
-	if WithKubernetes {
-		clusterName = "minikube"
-	}
 	engineManager, err := engine_manager.NewEngineManager()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an engine manager connected to cluster '%v'", clusterName)
+		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 	}
 
 	if err := engineManager.StopEngineIdempotently(ctx); err != nil {
