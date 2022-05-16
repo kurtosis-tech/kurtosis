@@ -13,7 +13,7 @@ const (
 
 	defaultMinikubeClusterKubernetesClusterNameStr = "minikube"
 	defaultMinikubeStorageClass = "standard"
-	defaultMinikubeEnclaveDataVolumeMB = uint(2)
+	defaultMinikubeEnclaveDataVolumeMB = uint(10)
 )
 
 /*

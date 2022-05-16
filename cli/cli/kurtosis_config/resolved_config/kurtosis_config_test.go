@@ -18,7 +18,7 @@ func TestGetKurtosisBackendSupplier(t *testing.T) {
 		case KurtosisClusterType_Kubernetes:
 			clusterName := "test"
 			storageClass := "standard"
-			enclaveSizeInMB := uint(2)
+			enclaveSizeInMB := uint(10)
 			config = &v1.KubernetesClusterConfigV1{
 				KubernetesClusterName:  &clusterName,
 				StorageClass:           &storageClass,
