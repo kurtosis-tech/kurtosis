@@ -6,6 +6,9 @@
 * Upped the CircleCI resource class to 'large' since builds are 1m30s and CircleCI showed that we're maxing out the CPU
 * Added a build cache to each build
 
+### Fixes
+* Added apiv1 prefix to `KubernetesManager.GetPodPortforwardEndpointUrl`
+
 # 0.23.2
 ### Fixes
 * Don't error when parsing public ports on stopped containers
