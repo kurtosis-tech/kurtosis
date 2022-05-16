@@ -1,5 +1,12 @@
 # TBD
 
+# 1.21.3
+### Features
+* Added build caching to significantly speed up builds
+
+### Fixes
+* Upgraded to core 1.49.3 to fix a bug with the Typescript EnclaveContext
+
 # 1.21.2
 ### Fixes
 * Take container-engine-lib 0.23.2 and core 1.49.2 with a bugfix for public host port bindings on stopped containers
