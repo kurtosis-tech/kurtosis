@@ -12,6 +12,9 @@ type ServiceRegistration struct {
 	id				 ServiceID
 	guid             ServiceGUID
 	enclaveId        enclave.EnclaveID
+
+	// The private IP is the IP of the service within the enclave, meaning other services can use this IP to communicate
+	// with the service
 	privateIp        net.IP
 }
 
