@@ -38,6 +38,7 @@ var EnclaveDumpCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
 		),
+		// TODO Create a NewFilepathArg that has filepath tab-completion & validation set up
 		{
 			Key:             outputDirpathArg,
 		},

@@ -19,7 +19,7 @@ import (
 const (
 	enclaveIdArg     = "enclave-id"
 	isEnclaveIdArgOptional = false
-	isEnclaveIdArgGreedy = true // The user can specify multiple enclaves to remove
+	isEnclaveIdArgGreedy = true // The user can specify multiple enclaves to stop
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey  = "engine-client"
