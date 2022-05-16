@@ -102,9 +102,9 @@ func runMain() error {
 		if !ok {
 			return stacktrace.NewError("Failed to cast cluster configuration interface to the appropriate type, even though Kurtosis backend type is '%v'", args.KurtosisBackendType_Kubernetes.String())
 		}
-		kurtosisBackend, err = lib.GetLocalKubernetesKurtosisBackend(kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInGigabytes)
+		kurtosisBackend, err = lib.GetLocalKubernetesKurtosisBackend(kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInMegabytes)
 		if err != nil {
-			return stacktrace.Propagate(err, "Failed to get a Kubernetes backend with storage class '%v' and enclave size (in GB) %d", kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInGigabytes)
+			return stacktrace.Propagate(err, "Failed to get a Kubernetes backend with storage class '%v' and enclave size (in MB) %d", kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInMegabytes)
 		}
 	default:
 		return stacktrace.NewError("Backend type '%v' was not recognized by API container.", serverArgs.KurtosisBackendType.String())
