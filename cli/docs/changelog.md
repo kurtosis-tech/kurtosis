@@ -13,6 +13,8 @@
 * CLI now requires Kubernetes enclave sizes to be specified in megabytes, not gigabytes
   * Remediation: change all CLI yaml input parameters specifying enclave sizes in gigabytes to megabytes
 
+# 0.16.3
+
 # 0.16.2
 ### Features
 * Can use Kurtosis Core YAML config file format V1 to specify metrics preferences
