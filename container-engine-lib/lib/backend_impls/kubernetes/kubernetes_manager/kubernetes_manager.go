@@ -19,14 +19,17 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"net/url"
 	"strconv"
+	"time"
 )
 
 const (
-	defaultServiceProtocol                 = "TCP"
-	defaultPersistentVolumeAccessMode      = apiv1.ReadWriteMany
 	defaultPersistentVolumeClaimAccessMode = apiv1.ReadWriteMany
 	binaryMegabytesSuffix         		   = "Mi"
 	uintToIntStringConversionBase		   = 10
+
+	waitForPersistentVolumeBoundInitialDelayMilliSeconds = 100
+	waitForPersistentVolumeBoundRetries = uint32(20)
+	waitForPersistentVolumeBoundRetriesDelayMilliSeconds = 10
 )
 
 var (
@@ -234,7 +237,29 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Contex
 		return nil, stacktrace.Propagate(err, "Failed to create persistent volume claim with name '%s' in namespace '%s'", persistentVolumeClaimName, namespace)
 	}
 
+	if err = manager.waitForPersistentVolumeClaimBound(ctx, persistentVolumeClaimResult); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for persistent volume claim '%v' bound in namespace '%v'", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
+	}
+
 	return persistentVolumeClaimResult, nil
+}
+
+func (manager *KubernetesManager) IsPersisteVolumeClaimBound(ctx context.Context, name string, namespace string) (bool, error)  {
+	claim, err := manager.GetPersistentVolumeClaim(ctx, name, namespace)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred getting persistent volume claim '%v' in namespace '%v", name, namespace)
+	}
+
+	switch claimPhase := claim.Status.Phase; claimPhase {
+	//Success phase, the Persisten Volume got bound
+	case apiv1.ClaimBound:
+		return true, nil
+	//Errored phase unrecoverable state
+	case apiv1.ClaimLost:
+		return false, stacktrace.NewError("The persistent volume claim '%v' has phase status '%v' that means it lost the persistent volume, it's an unrecoverable state", claim.GetName(), claimPhase)
+	}
+
+	return false, nil
 }
 
 func (manager *KubernetesManager) RemovePersistentVolumeClaim(ctx context.Context, namespace string, persistentVolumeClaimName string) error {
@@ -619,10 +644,8 @@ func (manager *KubernetesManager) RemoveClusterRoleBindings(ctx context.Context,
 	return nil
 }
 
-// Private functions
-func (manager *KubernetesManager) int32Ptr(i int32) *int32 { return &i }
+// ---------------------------pods---------------------------------------------------------------------------------------
 
-// Pods
 func (manager *KubernetesManager) CreatePod(
 	ctx context.Context,
 	namespace string,
@@ -695,7 +718,29 @@ func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace
 	return pods, nil
 }
 
-
 func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string, podName string) *url.URL {
 	return manager.kubernetesClientSet.RESTClient().Post().Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
+}
+
+// ====================================================================================================
+//                                     Private Helper Methods
+// ====================================================================================================
+func (manager *KubernetesManager) int32Ptr(i int32) *int32 { return &i }
+
+func (manager *KubernetesManager) waitForPersistentVolumeClaimBound(ctx context.Context, persistentVolumeClaim *apiv1.PersistentVolumeClaim) error {
+
+	time.Sleep(time.Duration(waitForPersistentVolumeBoundInitialDelayMilliSeconds) * time.Millisecond)
+
+	for i := uint32(0); i < waitForPersistentVolumeBoundRetries; i++ {
+		isBound, err := manager.IsPersisteVolumeClaimBound(ctx, persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
+		if isBound {
+			return nil
+		}
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred checking if persistent volume claim '%v' is bound in namespace '%v'", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
+		}
+		time.Sleep(time.Duration(waitForPersistentVolumeBoundRetriesDelayMilliSeconds) * time.Millisecond)
+	}
+
+	return stacktrace.NewError("Persistent volume claim '%v' in namespace '%v' did not become bound despite polling %v times with %v between polls", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace(), waitForPersistentVolumeBoundRetries, waitForPersistentVolumeBoundRetriesDelayMilliSeconds)
 }
