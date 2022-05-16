@@ -70,8 +70,8 @@ jobs:
       - save_cache:
           key: << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/go.sum" }}
           paths:
-            - "/go/pkg/mod"
-            - "/root/.cache/go-build"
+            - "/go/pkg/mod"   # Go module cache for the Goreleaser image, as reported by "go env GOMODCACHE"
+            - "/root/.cache/go-build"    # Go build cache for the Goreleaser image, as reported by "go env GOCACHE"
 
       - persist_to_workspace:
           root: .
