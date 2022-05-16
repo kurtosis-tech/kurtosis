@@ -7,7 +7,7 @@ orbs:
 parameters:
   go-version:
     type: string
-    default: 1.16
+    default: "1.16"
   build-cache-key-prefix:
     type: string
     default: "go-mod-v1"   # Can bump this version to bust the cache
@@ -20,7 +20,7 @@ parameters:
 jobs:
   check_code:
     docker:
-      - image: cimg/go:1.16
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
 
     # Done on 2022-05-15, when the job was 1m30s and CircleCI insights showed that we were maxing out the 'medium' class CPUs
     resource_class: large
@@ -38,7 +38,7 @@ jobs:
       # Cache our dependencies
       - restore_cache:
           keys:
-            - << pipeline.parameters.build-cache-key-prefix>>-{{ checksum "go.sum" }}
+            - << pipeline.parameters.build-cache-key-prefix >>-{{ checksum "go.sum" }}
 
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
@@ -46,7 +46,7 @@ jobs:
           scripts/build.sh
 
       - save_cache:
-          key: << pipeline.parameters.build-cache-key-prefix>>-{{ checksum "go.sum" }}
+          key: << pipeline.parameters.build-cache-key-prefix >>-{{ checksum "go.sum" }}
           paths:
             - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
             - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
