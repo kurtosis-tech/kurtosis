@@ -793,25 +793,23 @@ func getApiContainerObjectsFromKubernetesResources(
 
 	for enclaveId, resourcesForEnclaveId := range allResources {
 
-		status, err := getContainerStatusFromKurtosisObjectServiceAndPod(resourcesForEnclaveId.service, resourcesForEnclaveId.pod)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting container status from service '%+v' and pod '%+v'", resourcesForEnclaveId.service, resourcesForEnclaveId.pod)
+		if resourcesForEnclaveId.service == nil {
+			return nil, stacktrace.NewError("Can not create an API container object if there is not an API container's Kubernetes service in enclave '%v'", enclaveId)
 		}
 
-		var privateIpAddr net.IP
-		var privateGrpcPortSpec *port_spec.PortSpec
-		var privateGrpcProxyPortSpec *port_spec.PortSpec
+		status, err := getContainerStatusFromPod(resourcesForEnclaveId.pod)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting container status from Kubernetes pod '%+v'", resourcesForEnclaveId.pod)
+		}
 
-		if resourcesForEnclaveId.service != nil {
-			privateIpAddr = net.ParseIP(resourcesForEnclaveId.service.Spec.ClusterIP)
-			if privateIpAddr == nil {
-				return nil, stacktrace.NewError("Expected to be able to get the cluster ip of the API container service, instead parsing the cluster ip of service '%v' returned nil", resourcesForEnclaveId.service.Name)
-			}
-			var portSpecError error
-			privateGrpcPortSpec, privateGrpcProxyPortSpec, portSpecError = getGrpcAndGrpcProxyPortSpecsFromServicePorts(resourcesForEnclaveId.service.Spec.Ports)
-			if portSpecError != nil {
-				return nil, stacktrace.Propagate(portSpecError, "Expected to be able to determine API container grpc port specs from Kubernetes service ports for API container in enclave with ID '%v', instead a non-nil error was returned", enclaveId)
-			}
+		privateIpAddr := net.ParseIP(resourcesForEnclaveId.service.Spec.ClusterIP)
+		if privateIpAddr == nil {
+			return nil, stacktrace.NewError("Expected to be able to get the cluster ip of the API container service, instead parsing the cluster ip of service '%v' returned nil", resourcesForEnclaveId.service.Name)
+		}
+		var portSpecError error
+		privateGrpcPortSpec, privateGrpcProxyPortSpec, portSpecError := getGrpcAndGrpcProxyPortSpecsFromServicePorts(resourcesForEnclaveId.service.Spec.Ports)
+		if portSpecError != nil {
+			return nil, stacktrace.Propagate(portSpecError, "Expected to be able to determine API container grpc port specs from Kubernetes service ports for API container in enclave with ID '%v', instead a non-nil error was returned", enclaveId)
 		}
 
 		// NOTE: We set these to nil because in Kubernetes we have no way of knowing what the public info is!
@@ -829,6 +827,7 @@ func getApiContainerObjectsFromKubernetesResources(
 			publicGrpcPortSpec,
 			publicGrpcProxyPortSpec,
 		)
+
 		result[enclaveId] = apiContainerObj
 	}
 	return result, nil

@@ -299,14 +299,8 @@ func getGrpcAndGrpcProxyPortSpecsFromServicePorts(servicePorts []apiv1.ServicePo
 	return publicGrpcPort, publicGrpcProxyPort, nil
 }
 
-
-func getContainerStatusFromKurtosisObjectServiceAndPod(service *apiv1.Service, pod *apiv1.Pod) (container_status.ContainerStatus, error) {
+func getContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus, error) {
 	status := container_status.ContainerStatus_Stopped
-
-	if service != nil && len(service.Spec.Selector) > 0 {
-		status = container_status.ContainerStatus_Running
-		return status, nil
-	}
 
 	if pod != nil {
 		podPhase := pod.Status.Phase
@@ -319,10 +313,8 @@ func getContainerStatusFromKurtosisObjectServiceAndPod(service *apiv1.Service, p
 			status = container_status.ContainerStatus_Running
 		}
 	}
-
 	return status, nil
 }
-
 
 func (backend *KubernetesKurtosisBackend) getAllEnclaveNamespaces(ctx context.Context) ([]apiv1.Namespace, error) {
 
