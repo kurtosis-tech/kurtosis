@@ -8,84 +8,75 @@ package shell
 import (
 	"bufio"
 	"context"
-	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/enclave_id_arg"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
 	"io"
 	"os"
-	"strings"
 )
 
 const (
-	kurtosisLogLevelArg                    = "kurtosis-log-level"
-	enclaveIDArg                           = "enclave-id"
-	guidArg                                = "guid"
+	enclaveIdArgKey   = "enclave-id"
+	isEnclaveIdArgOptional = false
+	isEnclaveIdArgGreedy = false
+
+	serviceGuidArgKey = "service-guid"
+
+	kurtosisBackendCtxKey = "kurtosis-backend"
+	engineClientCtxKey  = "engine-client"
 )
 
-var defaultKurtosisLogLevel = logrus.InfoLevel.String()
-var positionalArgs = []string{
-	enclaveIDArg,
-	guidArg,
-}
-
-// We'll try to use the nicer-to-use shells first before we drop down to the lower shells
-var commandToRun = []string{
-	"sh",
-	"-c",
-	"if command -v 'bash' > /dev/null; then echo \"Found bash on container; creating bash shell...\"; bash; else echo \"No bash found on container; dropping down to sh shell...\"; sh; fi",
-}
-
-var ShellCmd = &cobra.Command{
-	Use:                   command_str_consts.ShellCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
-	DisableFlagsInUseLine: true,
-	Short:                 "Start a shell on the specified service",
-	RunE:                  run,
-}
-
-var kurtosisLogLevelStr string
-
-func init() {
-	ShellCmd.Flags().StringVarP(
-		&kurtosisLogLevelStr,
-		kurtosisLogLevelArg,
-		"l",
-		defaultKurtosisLogLevel,
-		fmt.Sprintf(
-			"The log level that Kurtosis itself should log at (%v)",
-			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
+var ServiceShellCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
+	CommandStr:                command_str_consts.ServiceShellCmdStr,
+	ShortDescription:          "Gets a shell on a service",
+	LongDescription:           "Starts a shell on the specified service",
+	KurtosisBackendContextKey: kurtosisBackendCtxKey,
+	EngineClientContextKey:    engineClientCtxKey,
+	Args: []*args.ArgConfig{
+		enclave_id_arg.NewEnclaveIDArg(
+			enclaveIdArgKey,
+			engineClientCtxKey,
+			isEnclaveIdArgOptional,
+			isEnclaveIdArgGreedy,
 		),
-	)
-
+		// TODO Create a NewServiceIDArg that adds autocomplete
+		{
+			Key:             serviceGuidArgKey,
+		},
+	},
+	RunFunc:                   run,
 }
 
-func run(cmd *cobra.Command, args []string) error {
-	ctx := context.Background()
-
-	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
+func run(
+	ctx context.Context,
+	kurtosisBackend backend_interface.KurtosisBackend,
+	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	flags *flags.ParsedFlags,
+	args *args.ParsedArgs,
+) error {
+	enclaveIdStr, err := args.GetNonGreedyArg(enclaveIdArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
+		return stacktrace.Propagate(err, "An error occurred getting the enclave ID using arg key '%v'", enclaveIdArgKey)
 	}
-	enclaveIdStr := parsedPositionalArgs[enclaveIDArg]
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
-	guidStr := parsedPositionalArgs[guidArg]
-	guid := service.ServiceGUID(guidStr)
 
-	kurtosisBackend, err := lib.GetLocalDockerKurtosisBackend()
+	serviceGuidStr, err := args.GetNonGreedyArg(serviceGuidArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
+		return stacktrace.Propagate(err, "An error occurred getting the service GUID using arg key '%v'", serviceGuidArgKey)
 	}
+	serviceGuid := service.ServiceGUID(serviceGuidStr)
 
-	conn, err := kurtosisBackend.GetConnectionWithUserService(ctx, enclaveId, guid)
+	conn, err := kurtosisBackend.GetConnectionWithUserService(ctx, enclaveId, serviceGuid)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting connection with user service with GUID '%v' in enclave '%v'", guid, enclaveId)
+		return stacktrace.Propagate(err, "An error occurred getting connection with user service with GUID '%v' in enclave '%v'", serviceGuid, enclaveId)
 	}
 	defer conn.Close()
 

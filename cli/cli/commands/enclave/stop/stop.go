@@ -4,53 +4,62 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/enclave_id_arg"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
 	"strings"
 )
 
 const (
-	enclaveIdArg = "enclave-id"
+	enclaveIdArg     = "enclave-id"
+	isEnclaveIdArgOptional = false
+	isEnclaveIdArgGreedy = true // The user can specify multiple enclaves to stop
+
+	kurtosisBackendCtxKey = "kurtosis-backend"
+	engineClientCtxKey  = "engine-client"
 )
 
-var StopCmd = &cobra.Command{
-	Use:                   command_str_consts.EnclaveStopCmdStr + " [flags] " + enclaveIdArg + " [" + enclaveIdArg + "...]",
-	DisableFlagsInUseLine: true,
-	Short:                 "Stops the specified enclaves",
-	RunE:                  run,
+var EnclaveStopCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
+	CommandStr:                command_str_consts.EnclaveStopCmdStr,
+	ShortDescription:          "Stops enclaves",
+	LongDescription:           "Stops the enclaves with the given IDs",
+	KurtosisBackendContextKey: kurtosisBackendCtxKey,
+	EngineClientContextKey:    engineClientCtxKey,
+	Args:                      []*args.ArgConfig{
+		enclave_id_arg.NewEnclaveIDArg(
+			enclaveIdArg,
+			engineClientCtxKey,
+			isEnclaveIdArgOptional,
+			isEnclaveIdArgGreedy,
+		),
+	},
+	RunFunc:                   run,
 }
 
 func init() {
 }
 
-func run(cmd *cobra.Command, args []string) error {
-	ctx := context.Background()
-
-	if len(args) == 0 {
-		return stacktrace.NewError("At least one enclave ID to stop must be provided")
+func run(
+	ctx context.Context,
+	kurtosisBackend backend_interface.KurtosisBackend,
+	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	_ *flags.ParsedFlags,
+	args *args.ParsedArgs,
+) error {
+	enclaveIds, err := args.GetGreedyArg(enclaveIdArg)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the enclave IDs arg using key '%v'", enclaveIdArg)
 	}
 
 	logrus.Info("Stopping enclaves...")
-
-	kurtosisBackend, err := lib.GetLocalDockerKurtosisBackend()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
-	}
-	engineManager := engine_manager.NewEngineManager(kurtosisBackend)
-	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
-	}
-	defer closeClientFunc()
-
 	stopEnclaveErrorStrs := []string{}
-	for _, enclaveId := range args {
+	for _, enclaveId := range enclaveIds {
 		stopArgs := &kurtosis_engine_rpc_api_bindings.StopEnclaveArgs{EnclaveId: enclaveId}
 		if _, err := engineClient.StopEnclave(ctx, stopArgs); err != nil {
 			wrappedErr := stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveId)

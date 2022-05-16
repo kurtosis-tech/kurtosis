@@ -3,7 +3,6 @@ package new
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
@@ -23,10 +22,12 @@ const (
 	enclaveIdArg = "id"
 
 	defaultIsPartitioningEnabled = false
-	shouldPublishPorts           = true
 
 	// Signifies that an enclave ID should be auto-generated
 	autogenerateEnclaveIdKeyword = ""
+
+	// TODO DElete when this comes from disk
+	clusterName = "docker"
 )
 
 var apiContainerVersion string
@@ -79,11 +80,11 @@ func run(cmd *cobra.Command, args []string) error {
 
 	ctx := context.Background()
 
-	kurtosisBackend, err := lib.GetLocalDockerKurtosisBackend()
+
+	engineManager, err := engine_manager.NewEngineManager(clusterName)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
+		return stacktrace.Propagate(err, "An error occurred creating an engine manager using cluster '%v'", clusterName)
 	}
-	engineManager := engine_manager.NewEngineManager(kurtosisBackend)
 	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
@@ -102,7 +103,6 @@ func run(cmd *cobra.Command, args []string) error {
 		ApiContainerVersionTag: apiContainerVersion,
 		ApiContainerLogLevel:   kurtosisLogLevelStr,
 		IsPartitioningEnabled:  isPartitioningEnabled,
-		ShouldPublishAllPorts:  shouldPublishPorts,
 	}
 	_, err = engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {

@@ -10,6 +10,7 @@ root_dirpath="$(dirname "${script_dirpath}")"
 #                                             Main Logic
 # ==================================================================================================
 cd "${root_dirpath}"
+rm -rf build
 yarn install
 yarn build
 yarn test

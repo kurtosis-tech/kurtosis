@@ -22,6 +22,7 @@ type FlagConfig struct {
 	// Long-form name of the flag
 	Key string
 
+	// TODO Rename this to "description"
 	// Usage string
 	Usage string
 

@@ -53,11 +53,11 @@ func TestNewKurtosisClusterConfigKubernetesFullConfig(t *testing.T) {
 	kubernetesType := KurtosisClusterType_Kubernetes.String()
 	kubernetesClusterName := "some-name"
 	kubernetesStorageClass := "some-storage-class"
-	kubernetesEnclaveSizeInGB := uint(5)
+	kubernetesEnclaveSizeInMB := uint(5)
 	kubernetesFullConfig := v1.KubernetesClusterConfigV1{
 		KubernetesClusterName: &kubernetesClusterName,
 		StorageClass: &kubernetesStorageClass,
-		EnclaveSizeInGigabytes: &kubernetesEnclaveSizeInGB,
+		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
 	}
 	kurtosisClusterConfigOverrides := v1.KurtosisClusterConfigV1{
 		Type: &kubernetesType,

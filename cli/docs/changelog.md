@@ -1,6 +1,35 @@
 # TBD
+### Features
+* `KurtosisClusterConfig` now creates engine container config suppliers
+* Added a config version migration test
+* Connected the config file to use by the commands
+* Added tab-complete to the following commands:
+    * `enclave dump`
+    * `enclave ls`
+    * `enclave rm` 
+    * `service logs`
+    * `service shell`
+
+### Changes
+* The `enclave-size-in-Megabytes` field in Kubernetes cluster field now is optional, and defaults to 10 MB
+
+# 0.17.0
+### Features
+* Added `test_cli_functionality` CircleCI test
+* Bump CircleCI resource class to `large` when building the CLI to speed build times
+* Added a build cache to the CLI build step
+
+### Changes
+* Upgraded to container-engine-lib 0.23.2, core 1.49.2, and engine 1.21.2 which use the new method of registering services
+
+### Breaking Changes
+* Upgraded the engine to version 1.21.0
+    * Users should run `kurtosis engine restart` after upgrading
+* CLI now requires Kubernetes enclave sizes to be specified in megabytes, not gigabytes
+  * Remediation: change all CLI yaml input parameters specifying enclave sizes in gigabytes to megabytes
 
 # 0.16.3
+Accidentally-released empty release; no changes
 
 # 0.16.2
 ### Features

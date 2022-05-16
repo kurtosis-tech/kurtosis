@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/kurtosis-tech/container-engine-lib/lib"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
@@ -49,8 +48,6 @@ const (
 	defaultEnclaveId             = ""
 	defaultIsPartitioningEnabled = false
 
-	shouldPublishAllPorts = true
-
 	allowedEnclaveIdCharsRegexStr = `^[-A-Za-z0-9.]{1,63}$`
 
 	shouldFollowModuleLogs            = true
@@ -58,6 +55,9 @@ const (
 	netReadOpt = "read"
 
 	netReadOptFailBecauseSourceIsUsedOrClosedErrorText = "use of closed network connection"
+
+	// TODO remove when we read cluster state from disk
+	clusterName = "docker"
 )
 
 var positionalArgs = []string{
@@ -160,11 +160,12 @@ func run(cmd *cobra.Command, args []string) error {
 		)
 	}
 
-	kurtosisBackend, err := lib.GetLocalDockerKurtosisBackend()
+	engineManager, err := engine_manager.NewEngineManager(clusterName)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
+		return stacktrace.Propagate(err, "An error occurred creating an engine manager connected to cluster '%v'", clusterName)
 	}
-	engineManager := engine_manager.NewEngineManager(kurtosisBackend)
+	// TODO THIS IS A BIG JANKY HACK. We should instead migrate this commmand to be an EngineConsumingKurtosisCommand instead
+	kurtosisBackend := engineManager.GetKurtosisBackend()
 	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
@@ -186,7 +187,6 @@ func run(cmd *cobra.Command, args []string) error {
 			ApiContainerVersionTag: apiContainerVersion,
 			ApiContainerLogLevel:   apiContainerLogLevelStr,
 			IsPartitioningEnabled:  isPartitioningEnabled,
-			ShouldPublishAllPorts:  shouldPublishAllPorts,
 		}
 
 		response, err := engineClient.CreateEnclave(ctx, createEnclaveArgs)

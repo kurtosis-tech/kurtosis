@@ -24,9 +24,9 @@ var ServiceCmd = &cobra.Command{
 
 func init() {
 	ServiceCmd.AddCommand(add.ServiceAddCmd.MustGetCobraCommand())
-	ServiceCmd.AddCommand(logs.LogsCmd)
+	ServiceCmd.AddCommand(logs.ServiceLogsCmd.MustGetCobraCommand())
 	ServiceCmd.AddCommand(rm.ServiceRmCmd.MustGetCobraCommand())
-	ServiceCmd.AddCommand(shell.ShellCmd)
+	ServiceCmd.AddCommand(shell.ServiceShellCmd.MustGetCobraCommand())
 	ServiceCmd.AddCommand(pause.PauseCmd.MustGetCobraCommand())
 	ServiceCmd.AddCommand(unpause.UnpauseCmd.MustGetCobraCommand())
 }
