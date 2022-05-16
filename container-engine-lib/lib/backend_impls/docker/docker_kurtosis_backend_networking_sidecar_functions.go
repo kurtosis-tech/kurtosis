@@ -15,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"net"
 )
 
 const (
@@ -33,7 +32,6 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
-	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 )(
 	*networking_sidecar.NetworkingSidecar,
 	error,
@@ -44,31 +42,22 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
 
-	userServiceFilters := &service.ServiceFilters{
-		EnclaveIDs: map[enclave.EnclaveID]bool{
-			enclaveId: true,
-		},
-		GUIDs: map[service.ServiceGUID]bool{
-			serviceGuid: true,
-		},
+	freeIpAddrProvider, found := backend.enclaveFreeIpProviders[enclaveId]
+	if !found {
+		return nil, stacktrace.NewError(
+			"Received a request to create networking sidecar for service with GUID '%v' in enclave '%v', but no free IP address provider was " +
+				"defined for this enclave; this likely means that the request is being called where it shouldn't " +
+				"be (i.e. outside the API container)",
+			serviceGuid,
+			enclaveId,
+		)
 	}
 
-	userServices, err := backend.getMatchingUserServices(ctx, userServiceFilters)
+	_, dockerResources, err := backend.getSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting matching user services using filters '%+v'", userServiceFilters)
+		return nil, stacktrace.Propagate(err, "An error occurred getting network sidecar's user service '%v'", serviceGuid)
 	}
-	numOfUserServices := len(userServices)
-	if numOfUserServices == 0 {
-		return nil, stacktrace.NewError("No user service with GUID '%v' in enclave with ID '%v' was found", serviceGuid, enclaveId)
-	}
-	if numOfUserServices > 1 {
-		return nil, stacktrace.NewError("Expected to find only one user service with GUID '%v' in enclave with ID '%v', but '%v' was found", serviceGuid, enclaveId, numOfUserServices)
-	}
-
-	var userServiceContainerId string
-	for containerId := range userServices {
-		userServiceContainerId = containerId
-	}
+	container := dockerResources.container
 
 	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
 	if err != nil {
@@ -86,6 +75,18 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 	for dockerLabelKey, dockerLabelValue := range containerDockerLabels {
 		containerLabels[dockerLabelKey.GetString()] = dockerLabelValue.GetString()
 	}
+
+	ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting a free IP address")
+	}
+	shouldReleaseIp := true
+	defer func() {
+		if shouldReleaseIp {
+			freeIpAddrProvider.ReleaseIpAddr(ipAddr)
+		}
+	}()
+
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		networkingSidecarImageName,
 		containerName.GetString(),
@@ -97,7 +98,7 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 	).WithAddedCapabilities(map[docker_manager.ContainerCapability]bool{
 		docker_manager.NetAdmin: true,
 	}).WithNetworkMode(
-		docker_manager.NewContainerNetworkMode(userServiceContainerId),
+		docker_manager.NewContainerNetworkMode(container.GetId()),
 	).WithCmdArgs(
 		sidecarContainerCommand,
 	).WithLabels(
@@ -136,6 +137,7 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 	}
 
 	shouldKillContainer = false
+	shouldReleaseIp = false
 	return networkingSidecar, nil
 
 }

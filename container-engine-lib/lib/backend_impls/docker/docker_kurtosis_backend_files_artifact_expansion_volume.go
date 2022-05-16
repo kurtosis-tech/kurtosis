@@ -29,7 +29,13 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansionVolume(
 
 	volumeAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpansionVolume(serviceGuid, filesArtifactId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the files artifact expansion volume attributes for user service with GUID '%v' and files artifact ID '%v'", serviceGuid, filesArtifactId)
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred while trying to get the files artifact expansion " +
+				 "volume attributes for service with GUID '%v' and files artifact ID '%v'",
+			serviceGuid,
+			filesArtifactId,
+		)
 	}
 	volumeName := volumeAttrs.GetName().GetString()
 	volumeLabels := map[string]string{}

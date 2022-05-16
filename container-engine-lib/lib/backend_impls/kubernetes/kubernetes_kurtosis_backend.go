@@ -20,11 +20,9 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	apiv1 "k8s.io/api/core/v1"
-	"net"
 	"strconv"
 )
 
@@ -79,7 +77,7 @@ type KubernetesKurtosisBackend struct {
 		Enclave availability must be set and defined by a cluster administrator.
 		The user passes this in when starting Kurtosis with Kubernetes.
 	 */
-	volumeSizePerEnclaveInGigabytes int
+	volumeSizePerEnclaveInMegabytes uint
 }
 
 func (backend *KubernetesKurtosisBackend) PullImage(image string) error {
@@ -87,7 +85,7 @@ func (backend *KubernetesKurtosisBackend) PullImage(image string) error {
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateModule(ctx context.Context, image string, enclaveId enclave.EnclaveID, id module.ModuleID, guid module.ModuleGUID, ipAddr net.IP, grpcPortNum uint16, envVars map[string]string) (newModule *module.Module, resultErr error) {
+func (backend *KubernetesKurtosisBackend) CreateModule(ctx context.Context, image string, enclaveId enclave.EnclaveID, id module.ModuleID, guid module.ModuleGUID, grpcPortNum uint16, envVars map[string]string) (newModule *module.Module, resultErr error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -112,66 +110,7 @@ func (backend *KubernetesKurtosisBackend) DestroyModules(ctx context.Context, fi
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateUserService(ctx context.Context, id service.ServiceID, guid service.ServiceGUID, containerImageName string, enclaveId enclave.EnclaveID, ipAddr net.IP, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactMountDirpaths map[string]string) (newUserService *service.Service, resultErr error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) GetUserServices(ctx context.Context, filters *service.ServiceFilters) (successfulUserServices map[service.ServiceGUID]*service.Service, resultError error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(ctx context.Context, filters *service.ServiceFilters, shouldFollowLogs bool) (successfulUserServiceLogs map[service.ServiceGUID]io.ReadCloser, erroredUserServiceGuids map[service.ServiceGUID]error, resultError error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) PauseService(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceId service.ServiceGUID) error {
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) UnpauseService(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceId service.ServiceGUID) error {
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(ctx context.Context, enclaveId enclave.EnclaveID, userServiceCommands map[service.ServiceGUID][]string) (succesfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult, erroredUserServiceGuids map[service.ServiceGUID]error, resultErr error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) WaitForUserServiceHttpEndpointAvailability(ctx context.Context, enclaveId enclave.EnclaveID, serviceGUID service.ServiceGUID, httpMethod wait_for_availability_http_methods.WaitForAvailabilityHttpMethod, port uint32, path string, requestBody string, expectedResponseBody string, initialDelayMilliseconds uint32, retries uint32, retriesDelayMilliseconds uint32) (resultErr error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGUID service.ServiceGUID) (resultConn net.Conn, resultErr error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) CopyFromUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID, srcPath string) (resultReadCloser io.ReadCloser, resultErr error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, filters *service.ServiceFilters) (successfulUserServiceGuids map[service.ServiceGUID]bool, erroredUserServiceGuids map[service.ServiceGUID]error, resultErr error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Context, filters *service.ServiceFilters) (successfulUserServiceGuids map[service.ServiceGUID]bool, erroredUserServiceGuids map[service.ServiceGUID]error, resultErr error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) CreateNetworkingSidecar(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID, ipAddr net.IP) (*networking_sidecar.NetworkingSidecar, error) {
+func (backend *KubernetesKurtosisBackend) CreateNetworkingSidecar(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID) (*networking_sidecar.NetworkingSidecar, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -206,7 +145,7 @@ func (backend *KubernetesKurtosisBackend) DestroyFilesArtifactExpansionVolumes(c
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) RunFilesArtifactExpander(ctx context.Context, guid files_artifact_expander.FilesArtifactExpanderGUID, enclaveId enclave.EnclaveID, filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName, destVolMntDirpathOnExpander string, filesArtifactFilepathRelativeToEnclaveDatadirRoot string, ipAddr net.IP) (*files_artifact_expander.FilesArtifactExpander, error) {
+func (backend *KubernetesKurtosisBackend) RunFilesArtifactExpander(ctx context.Context, guid files_artifact_expander.FilesArtifactExpanderGUID, enclaveId enclave.EnclaveID, filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName, destVolMntDirpathOnExpander string, filesArtifactFilepathRelativeToEnclaveDatadirRoot string) (*files_artifact_expander.FilesArtifactExpander, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -216,13 +155,13 @@ func (backend *KubernetesKurtosisBackend) DestroyFilesArtifactExpanders(ctx cont
 	panic("implement me")
 }
 
-func NewKubernetesKurtosisBackend(kubernetesManager *kubernetes_manager.KubernetesManager, volumeStorageClassName string, volumeSizePerEnclaveInGigabytes int) *KubernetesKurtosisBackend {
+func NewKubernetesKurtosisBackend(kubernetesManager *kubernetes_manager.KubernetesManager, volumeStorageClassName string, volumeSizePerEnclaveInMegabytes uint) *KubernetesKurtosisBackend {
 	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	return &KubernetesKurtosisBackend{
-		kubernetesManager: kubernetesManager,
-		objAttrsProvider:  objAttrsProvider,
-		volumeStorageClassName: volumeStorageClassName,
-		volumeSizePerEnclaveInGigabytes: volumeSizePerEnclaveInGigabytes,
+		kubernetesManager:               kubernetesManager,
+		objAttrsProvider:                objAttrsProvider,
+		volumeStorageClassName:          volumeStorageClassName,
+		volumeSizePerEnclaveInMegabytes: volumeSizePerEnclaveInMegabytes,
 	}
 }
 
@@ -353,7 +292,7 @@ func (backend *KubernetesKurtosisBackend) getEnclaveNamespace(ctx context.Contex
 
 func (backend *KubernetesKurtosisBackend) getEnclaveDataPersistentVolumeClaim(ctx context.Context, enclaveNamespaceName string, enclaveId enclave.EnclaveID) (*apiv1.PersistentVolumeClaim, error) {
 	matchLabels := getEnclaveMatchLabels()
-	matchLabels[label_key_consts.VolumeTypeLabelKey.GetString()] = label_value_consts.EnclaveDataVolumeTypeLabelValue.GetString()
+	matchLabels[label_key_consts.KurtosisVolumeTypeLabelKey.GetString()] = label_value_consts.EnclaveDataVolumeTypeLabelValue.GetString()
 	matchLabels[label_key_consts.EnclaveIDLabelKey.GetString()] = string(enclaveId)
 
 	persistentVolumeClaims, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, enclaveNamespaceName, matchLabels)

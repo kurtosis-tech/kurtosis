@@ -111,7 +111,7 @@ func (backend *DockerKurtosisBackend) CreateEnclave(
 	}
 
 	logrus.Debugf("Creating Docker network for enclave '%v'...", enclaveId)
-	networkId, networkIpAndMask, gatewayIp, freeIpAddrTracker, err := backend.dockerNetworkAllocator.CreateNewNetwork(
+	networkId, err := backend.dockerNetworkAllocator.CreateNewNetwork(
 		ctx,
 		enclaveNetworkName.GetString(),
 		enclaveNetworkLabels,
@@ -132,7 +132,7 @@ func (backend *DockerKurtosisBackend) CreateEnclave(
 			}
 		}
 	}()
-	logrus.Debugf("Docker network '%v' created successfully with ID '%v' and subnet CIDR '%v'", enclaveId, networkId, networkIpAndMask.String())
+	logrus.Debugf("Docker network '%v' created successfully with ID '%v'", enclaveId, networkId)
 
 	enclaveDataVolumeNameStr := enclaveDataVolumeAttrs.GetName().GetString()
 	enclaveDataVolumeLabelStrs := map[string]string{}
@@ -162,7 +162,7 @@ func (backend *DockerKurtosisBackend) CreateEnclave(
 		}
 	}()
 
-	newEnclave := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty, networkId, networkIpAndMask.String(), gatewayIp, freeIpAddrTracker)
+	newEnclave := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty)
 
 	shouldDeleteNetwork = false
 	shouldDeleteVolume = false
@@ -188,11 +188,6 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 		result[enclaveId] = enclave.NewEnclave(
 			enclaveId,
 			matchingNetworkInfo.enclaveStatus,
-			matchingNetworkInfo.dockerNetwork.GetId(),
-			matchingNetworkInfo.dockerNetwork.GetIpAndMask().String(),
-			// TODO We're returning nil here for gatewayIp and freeIpAddrProvider as a temporary hack, until we can fully push all Docker stuff under the KurtosisBackend
-			nil,
-			nil,
 		)
 	}
 
@@ -370,6 +365,25 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	matchingNetworkInfo, err := backend.getMatchingEnclaveNetworkInfo(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave network info using filters '%+v'", filters)
+	}
+
+	// TODO Remove this check once the KurtosisBackend functions have been divvied up to the places that use them (e.g.
+	//  API container gets service stuff, engine gets enclave stuff, etc.)
+	for enclaveId := range matchingNetworkInfo {
+		if _, found := backend.enclaveFreeIpProviders[enclaveId]; found {
+			return nil, nil, stacktrace.NewError(
+				"Received a request to destroy enclave '%v' for which a free IP address tracker is registered; this likely " +
+					"means that destroy enclave is being called where it shouldn't be (i.e. inside the API container)",
+				enclaveId,
+			)
+		}
+		if _, found := backend.serviceRegistrations[enclaveId]; found {
+			return nil, nil, stacktrace.NewError(
+				"Received a request to destroy enclave '%v' for which services are being tracked; this likely " +
+					"means that destroy enclave is being called where it shouldn't be (i.e. inside the API container)",
+				enclaveId,
+			)
+		}
 	}
 
 	erroredEnclaveIds := map[enclave.EnclaveID]error{}

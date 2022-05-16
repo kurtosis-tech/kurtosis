@@ -40,8 +40,8 @@ type DockerEnclaveObjectAttributesProvider interface {
 		privateGrpcProxyPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
 	ForUserServiceContainer(
-		serviceID service.ServiceID,
-		serviceGUID service.ServiceGUID,
+		serviceId service.ServiceID,
+		serviceGuid service.ServiceGUID,
 		privateIpAddr net.IP,
 		privatePorts map[string]*port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
@@ -52,7 +52,7 @@ type DockerEnclaveObjectAttributesProvider interface {
 		guid files_artifact_expander.FilesArtifactExpanderGUID,
 	) (DockerObjectAttributes, error)
 	ForFilesArtifactExpansionVolume(
-		serviceGUID service.ServiceGUID,
+		serviceGuid service.ServiceGUID,
 		fileArtifactID service.FilesArtifactID,
 	) (DockerObjectAttributes, error)
 	ForModuleContainer(
@@ -84,7 +84,14 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(isP
 		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", enclaveIdStr)
 	}
 
-	labels := provider.getLabelsForEnclaveObject()
+	// Enclave ID and GUID are the same for an enclave network
+	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(
+		provider.enclaveId.GetString(),
+		provider.enclaveId.GetString(),
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave network using ID '%v'", provider.enclaveId)
+	}
 
 	isPartitioningEnabledLabelValue := label_value_consts.NetworkPartitioningDisabledLabelValue
 	if isPartitioningEnabled {
@@ -181,11 +188,16 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 	return objectAttributes, nil
 }
 
-func (provider *dockerEnclaveObjectAttributesProviderImpl)ForUserServiceContainer(serviceID service.ServiceID, serviceGUID service.ServiceGUID, privateIpAddr net.IP, privatePorts map[string]*port_spec.PortSpec) (DockerObjectAttributes, error) {
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContainer(
+	serviceId service.ServiceID,
+	serviceGuid service.ServiceGUID,
+	privateIpAddr net.IP,
+	privatePorts map[string]*port_spec.PortSpec,
+) (DockerObjectAttributes, error) {
 	name, err := provider.getNameForEnclaveObject(
 		[]string{
 			userServiceContainerNameFragment,
-			string(serviceGUID),
+			string(serviceGuid),
 		},
 	)
 	if err != nil {
@@ -206,12 +218,12 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl)ForUserServiceContaine
 		)
 	}
 
-	serviceIdStr := string(serviceID)
-	serviceGuidStr := string(serviceGUID)
+	serviceIdStr := string(serviceId)
+	serviceGuidStr := string(serviceGuid)
 
 	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(serviceIdStr, serviceGuidStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with ID '%v' and GUID '%v'", serviceID, serviceGUID)
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", serviceGuid)
 	}
 	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.UserServiceContainerTypeLabelValue
 	labels[label_key_consts.PortSpecsLabelKey] = serializedPortsSpec
@@ -312,21 +324,27 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForModuleContainer(
 }
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpansionVolume(
-	serviceGUID service.ServiceGUID,
+	serviceGuid service.ServiceGUID,
 	fileArtifactID service.FilesArtifactID,
 )(
 	DockerObjectAttributes,
 	error,
 ){
-	serviceGUIDStr := string(serviceGUID)
+	serviceGuidStr := string(serviceGuid)
+	filesArtifactIdStr := string(fileArtifactID)
 
 	name, err := provider.getNameForEnclaveObject([]string{
 		artifactExpansionVolumeNameFragment,
-		serviceGUIDStr,
-		string(fileArtifactID),
+		serviceGuidStr,
+		filesArtifactIdStr,
 	})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the files artifact expansion volume name object")
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the files artifact expansion volume name object using service GUID '%v' and files artifact ID '%v'",
+			serviceGuidStr,
+			filesArtifactIdStr,
+		)
 	}
 
 	labels := provider.getLabelsForEnclaveObject()

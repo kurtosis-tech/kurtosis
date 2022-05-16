@@ -5,12 +5,9 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
-	"net"
-	"strconv"
 )
 
 func (backend *KubernetesKurtosisBackend) CreateEnclave(
@@ -93,7 +90,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		enclaveNamespaceName,
 		persistentVolumeClaimName.GetString(),
 		enclaveVolumeLabelMap,
-		strconv.Itoa(backend.volumeSizePerEnclaveInGigabytes),
+		backend.volumeSizePerEnclaveInMegabytes,
 		backend.volumeStorageClassName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,
@@ -117,7 +114,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		}
 	}()
 
-	enclaveObj := newEnclave_TODO_REMOVE(enclaveId, enclave.EnclaveStatus_Empty)
+	enclaveObj := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty)
 
 	shouldDeleteVolume = false
 	shouldDeleteNamespace = false
@@ -210,7 +207,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaves(
 			}
 		}
 
-		enclaveObj := newEnclave_TODO_REMOVE(enclaveId, enclaveStatus)
+		enclaveObj := enclave.NewEnclave(enclaveId, enclaveStatus)
 
 		matchingEnclaves[enclaveNamespaceName] = enclaveObj
 	}
@@ -254,23 +251,4 @@ func getEnclaveStatusFromEnclavePods(enclavePods []apiv1.Pod) (enclave.EnclaveSt
 		}
 	}
 	return resultEnclaveStatus, nil
-}
-
-func newEnclave_TODO_REMOVE(id enclave.EnclaveID, status enclave.EnclaveStatus) *enclave.Enclave {
-	//We don't need to establish these values for Kubernetes Backend
-	//TODO these values will be removed when we finish the Kubernetes implementation
-	networkID := ""
-	networkCIDR := ""
-	networkGatewayIP := net.IP{}
-	var networkIpAddrTracker *lib.FreeIpAddrTracker
-
-	enclave := enclave.NewEnclave(
-		id,
-		status,
-		networkID,
-		networkCIDR,
-		networkGatewayIP,
-		networkIpAddrTracker,
-		)
-	return enclave
 }

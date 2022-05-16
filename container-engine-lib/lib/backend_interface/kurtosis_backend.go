@@ -1,5 +1,4 @@
 package backend_interface
-
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
@@ -12,10 +11,16 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
 	"io"
 	"net"
 )
+
+// TODO This mega-backend should really have its individual functionalities split up into
+//  the appropriate places it's used - e.g. APIContainerBackend, EngineBackend, etc.
+//  The reason we don't do this right now is because the CLI uses some KurtosisBackend methods
+//  (e.g. GetUserServices to power 'enclave inspect', GetUserServiceLogs) because the Kurtosis
+//  APIs don't yet support them. Once the Kurtosis APIs support everything, we'll have the CLI
+//  use purely the Kurtosis SDK (as it should)
 
 // KurtosisBackend abstracts a Kurtosis backend, which will be a container engine (Docker or Kubernetes).
 // The heuristic for "do I need a method in KurtosisBackend?" here is "will I make one or more calls to
@@ -112,11 +117,13 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		image string,
 		enclaveId enclave.EnclaveID,
-		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 		grpcPortNum uint16,
 		grpcProxyPortNum uint16,
 		enclaveDataVolumeDirpath string,
-		envVars map[string]string,
+		// The environment variable that the user is requesting to populate with the container's own IP address
+		// Must not conflict with the custom environment variables
+		ownIpAddressEnvVar string,
+		customEnvVars map[string]string,
 	) (
 		*api_container.APIContainer,
 		error,
@@ -160,7 +167,6 @@ type KurtosisBackend interface {
 		enclaveId enclave.EnclaveID,
 		id module.ModuleID,
 		guid module.ModuleGUID,
-		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 		grpcPortNum uint16,
 		envVars map[string]string,
 	) (
@@ -209,54 +215,73 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the modules
 	)
 
-	// Creates a user service inside an enclave with the given configuration
-	CreateUserService(
+
+
+
+
+	/*
+	                           KURTOSIS SERVICE STATE DIAGRAM
+
+                                .-----------------DestroyServices--------------------.
+                               /                                                      \
+	  RegisterService--> REGISTERED ---StopServices---> STOPPED ---DestroyServices---> DESTROYED
+	                           \                          /                           /
+	                      StartService              StopServices                     /
+	                             \                      /                           /
+	                              '---------------> RUNNING ---DestroyServices-----'
+
+	Considerations:
+	- We have REGISTERED as a state separate from RUNNING because some user containers need to know their own
+		IP address when they start, which means we need to know the IP address of the container BEFORE it starts.
+	- As of 2022-05-15, Kurtosis services can never be restarted once stopped.
+	*/
+
+
+	// Registers a user service, allocating it an IP and ServiceGUID
+	RegisterUserService(
 		ctx context.Context,
-		id service.ServiceID,
+		enclaveId enclave.EnclaveID,
+		serviceId service.ServiceID,
+	) (*service.ServiceRegistration, error, )
+
+	// StartUserService consumes a service registration to create a user container with the given parameters
+	StartUserService(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		guid service.ServiceGUID,
 		containerImageName string,
-		enclaveId enclave.EnclaveID,
-		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 		privatePorts map[string]*port_spec.PortSpec,
 		entrypointArgs []string,
 		cmdArgs []string,
 		envVars map[string]string,
-		filesArtifactMountDirpaths map[string]string,
+		// volume_name -> mountpoint_on_container
+		filesArtifactVolumeMountDirpaths map[string]string,
 	) (
-		newUserService *service.Service,
-		resultErr error,
+		*service.Service,
+		error,
 	)
 
 	// Gets user services using the given filters, returning a map of matched user services identified by their GUID
 	GetUserServices(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *service.ServiceFilters,
 	) (
-		successfulUserServices map[service.ServiceGUID]*service.Service,
-		resultError error,
+		map[service.ServiceGUID]*service.Service,
+		error,
 	)
 
 	// Get user service logs using the given filters, returning a map of matched user services identified by their GUID and a readCloser object for each one
 	// User is responsible for closing the 'ReadCloser' object returned in the successfulUserServiceLogs map
 	GetUserServiceLogs(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *service.ServiceFilters,
 		shouldFollowLogs bool,
 	) (
 		successfulUserServiceLogs map[service.ServiceGUID]io.ReadCloser,
 		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultError error,
-	)
-
-	// Executes a shell command inside an user service instance indenfified by its ID
-	RunUserServiceExecCommands(
-		ctx context.Context,
-		enclaveId enclave.EnclaveID,
-		userServiceCommands map[service.ServiceGUID][]string,
-	) (
-		succesfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult,
-		erroredUserServiceGuids map[service.ServiceGUID]error,
-		resultErr error,
 	)
 
 	// Pauses execution of all processes on a service, but does not shut down the service (memory state is preserved)
@@ -277,20 +302,14 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-	// Wait for succesful http endpoint response which can be used to check if the service is available
-	WaitForUserServiceHttpEndpointAvailability(
+	// Executes a shell command inside an user service instance indenfified by its ID
+	RunUserServiceExecCommands(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		serviceGUID service.ServiceGUID,
-		httpMethod wait_for_availability_http_methods.WaitForAvailabilityHttpMethod, //The httpMethod used to execute the request.
-		port uint32, //The port of the service to check. For instance 8080
-		path string, //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
-		requestBody string, //The content of the request body. Only valid when the httpMethod is POST
-		expectedResponseBody string, //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
-		initialDelayMilliseconds uint32, //The number of milliseconds to wait until executing the first HTTP call
-		retries uint32, //Max number of HTTP call attempts that this will execute until giving up and returning an error
-		retriesDelayMilliseconds uint32, //Number of milliseconds to wait between retries
+		userServiceCommands map[service.ServiceGUID][]string,
 	) (
+		succesfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult,
+		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultErr error,
 	)
 
@@ -298,7 +317,7 @@ type KurtosisBackend interface {
 	GetConnectionWithUserService(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		serviceGUID service.ServiceGUID,
+		serviceGuid service.ServiceGUID,
 	) (
 		resultConn net.Conn,
 		resultErr error,
@@ -315,9 +334,11 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-	// Stop user services using the given filters,
+	// StopUserServices stops the user containers for the services matching the given filters
+	// A stopped service cannot be activated again as of 2022-05-14
 	StopUserServices(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *service.ServiceFilters,
 	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully stopped
@@ -325,9 +346,10 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
-	// Destroy user services using the given filters,
+	// DestroyUserServices destroys user services matching the given filters, removing all resources associated with it
 	DestroyUserServices(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *service.ServiceFilters,
 	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully destroyed
@@ -335,12 +357,12 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
+	// TODO Move this logic inside the user service, so that we have tighter controls on what can happen and what can't
 	//Create a user service's  networking sidecar inside enclave
 	CreateNetworkingSidecar(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
 		serviceGuid service.ServiceGUID,
-		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 	) (
 		*networking_sidecar.NetworkingSidecar,
 		error,
@@ -415,7 +437,6 @@ type KurtosisBackend interface {
 		filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
 		destVolMntDirpathOnExpander string,
 		filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
-		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 	) (
 		*files_artifact_expander.FilesArtifactExpander,
 		error,

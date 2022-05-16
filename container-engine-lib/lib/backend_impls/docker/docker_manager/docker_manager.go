@@ -141,15 +141,6 @@ Returns:
 	id: The Docker-managed ID of the network
 */
 func (manager DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP net.IP, labels map[string]string) (id string, err error) {
-	networkIds, err := manager.GetNetworksByName(context, name)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred checking for existence of network with name %v", name)
-	}
-	if len(networkIds) != 0 {
-		// We throw an error if the network already exists because we don't know what settings that network was created
-		//  with - likely a completely different subnetMask and gatewayIP
-		return "", stacktrace.NewError("Network with name %v cannot be created because one or more networks with that name already exist", name)
-	}
 	ipamConfig := []network.IPAMConfig{{
 		Subnet:  subnetMask,
 		Gateway: gatewayIP.String(),
@@ -173,6 +164,9 @@ func (manager DockerManager) ListNetworks(ctx context.Context) ([]types.NetworkR
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred listing the Docker networks")
 	}
+	// The Network objects that come back ostensibly, *should*  have the Containers field filled out... but they don't
+	// If we ever need that field, we have to call an InspectNetwork, and even then it seems to have some amount of
+	// nondeterminism (i.e. brand-new containers won't show up)
 	return networks, nil
 }
 
@@ -433,7 +427,7 @@ func (manager DockerManager) CreateAndStartContainer(
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
-	containerCreateResp, err := manager.dockerClient.ContainerCreate(ctx, containerConfigPtr, containerHostConfigPtr, nil, args.name)
+	containerCreateResp, err := manager.dockerClient.ContainerCreate(ctx, containerConfigPtr, containerHostConfigPtr, nil, nil, args.name)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Could not create Docker container '%v' from image '%v'", args.name, dockerImage)
 	}
@@ -951,6 +945,9 @@ func (manager DockerManager) isImageAvailableLocally(ctx context.Context, imageN
 }
 
 func (manager *DockerManager) getNetworksByFilterArgs(ctx context.Context, args filters.Args) ([]types.NetworkResource, error) {
+	// NOTE: Even though this returns a `NetworkResource` object which has a Containers field on it, this is a lie!!
+	// For whatever insane reason, Docker doesn't fill this field out when NetworkList is used and there doesn't seem to
+	// be a way to get it to do so. Instead we'd have to do an InspectNetwork call.
 	networks, err := manager.dockerClient.NetworkList(
 		ctx,
 		types.NetworkListOptions{
@@ -1264,27 +1261,15 @@ func newNetworkFromDockerNetwork(dockerNetwork types.NetworkResource) (*docker_m
 
 	gatewayIp := firstIpamConfig.Gateway
 
-	containerIps := map[string]bool{}
-	for _, endpointResource := range dockerNetwork.Containers {
-		// Even though Docker *calls* this IPv4Address, it's actually in CIDR notation!
-		containerIpCidrStr := endpointResource.IPv4Address
-		containerIp, _, err := net.ParseCIDR(containerIpCidrStr)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred parsing container IP CIDR string '%v' to an IP address", containerIpCidrStr)
-		}
-		containerIps[containerIp.String()] = true
-	}
-
-	network := docker_manager_types.NewNetwork(
+	networkWrapper := docker_manager_types.NewNetwork(
 		dockerNetwork.Name,
 		dockerNetwork.ID,
 		ipAndMask,
 		gatewayIp,
-		containerIps,
 		dockerNetwork.Labels,
 	)
 
-	return network, nil
+	return networkWrapper, nil
 }
 
 func (manager DockerManager) getFailedContainerLogsOrErrorString(ctx context.Context, containerId string) string {
