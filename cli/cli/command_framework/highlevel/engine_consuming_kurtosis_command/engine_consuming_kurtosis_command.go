@@ -49,6 +49,9 @@ type EngineConsumingKurtosisCommand struct {
 
 	RunFunc func(
 		ctx context.Context,
+		// TODO This is a hack that's only here temporarily because we have commands that use KurtosisBackend directly (they
+		//  should not), and EngineConsumingKurtosisCommand therefore needs to provide them with a KurtosisBackend. Once all our
+		//  commands only access the Kurtosis APIs, we can remove this.
 		kurtosisBackend backend_interface.KurtosisBackend,
 		engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 		flags *flags.ParsedFlags,
@@ -106,6 +109,10 @@ func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) 
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting an engine manager connected to cluster '%v'", clusterName)
 		}
+
+		// TODO This is a hack that's only here temporarily because we have commands that use KurtosisBackend directly (they
+		//  should not), and EngineConsumingKurtosisCommand therefore needs to provide them with a KurtosisBackend. Once all our
+		//  commands only access the Kurtosis APIs, we can remove this.
 		kurtosisBackend := engineManager.GetKurtosisBackend()
 
 		engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel)

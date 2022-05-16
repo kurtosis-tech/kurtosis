@@ -3,7 +3,6 @@ package status
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/backend_for_cmd"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/spf13/cobra"
@@ -27,11 +26,16 @@ func init() {
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
-	kurtosisBackend, err := backend_for_cmd.GetBackendForCmd(WithKubernetes)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend")
+	// TODO Hack; remove when we read cluster state from disk
+	var clusterName = "docker"
+	if WithKubernetes {
+		clusterName = "minikube"
 	}
-	engineManager := engine_manager.NewEngineManager(kurtosisBackend)
+	engineManager, err := engine_manager.NewEngineManager(clusterName)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating an engine manager connected to cluster '%v'", clusterName)
+	}
+
 	status, _, maybeApiVersion, err := engineManager.GetEngineStatus(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis engine status")

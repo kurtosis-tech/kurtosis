@@ -3,7 +3,6 @@ package stop
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/backend_for_cmd"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -30,11 +29,15 @@ func run(cmd *cobra.Command, args []string) error {
 	cmd.Flags().GetBool("with-kubernetes")
 	logrus.Infof("Stopping Kurtosis engine...")
 
-	kurtosisBackend, err := backend_for_cmd.GetBackendForCmd(WithKubernetes)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected")
+	// TODO Hack; remove when we read cluster state from disk
+	var clusterName = "docker"
+	if WithKubernetes {
+		clusterName = "minikube"
 	}
-	engineManager := engine_manager.NewEngineManager(kurtosisBackend)
+	engineManager, err := engine_manager.NewEngineManager(clusterName)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating an engine manager connected to cluster '%v'", clusterName)
+	}
 
 	if err := engineManager.StopEngineIdempotently(ctx); err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping the Kurtosis engine")

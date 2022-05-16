@@ -55,10 +55,6 @@ type EngineManager struct {
 
 // TODO the fact that this takes in a clusterName is a temporary hack, until we have proper used-cluster data storage
 func NewEngineManager(clusterName string) (*EngineManager, error) {
-	// TODO This is a huge hack!!!! EngineManager should really have all its fields passed in to the constructor,
-	//  and EngineConsumingKurtosisCommand should be the only one who actually reads the config and instantiates
-	//  an EngineManager. Unfortunately, we still have many commands who aren't yet EngineConsumingKurtosisCommands
-	//  and instantiate EngineManagers directly, so we have to do thi shere for now
 	kurtosisConfig, err := getKurtosisConfig()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the Kurtosis config")
@@ -81,7 +77,9 @@ func NewEngineManager(clusterName string) (*EngineManager, error) {
 	}, nil
 }
 
-// TODO This is a huge hack, that's only here temporarily because not all our commands are migrated to EngineConsumingKurtosisCommand!
+// TODO This is a huge hack, that's only here temporarily because we have commands that use KurtosisBackend directly (they
+//  should not), and EngineConsumingKurtosisCommand therefore needs to provide them with a KurtosisBackend. Once all our
+//  commands only access the Kurtosis APIs, we can remove this.
 func (manager *EngineManager) GetKurtosisBackend() backend_interface.KurtosisBackend {
 	return manager.kurtosisBackend
 }
