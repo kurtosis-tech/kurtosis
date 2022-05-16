@@ -9,6 +9,11 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
+	"strings"
+)
+
+const (
+	errorMessagesSeparator = ", "
 )
 
 // Any of these values being nil indicates that the resource doesn't exist
@@ -16,6 +21,8 @@ type enclaveKubernetesResources struct {
 	namespace *apiv1.Namespace
 
 	pods []*apiv1.Pod
+
+	services []*apiv1.Service
 }
 
 
@@ -154,9 +161,87 @@ func (backend *KubernetesKurtosisBackend) GetEnclaves(
 	return matchingEnclaves, nil
 }
 
-func (backend *KubernetesKurtosisBackend) StopEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (successfulEnclaveIds map[enclave.EnclaveID]bool, erroredEnclaveIds map[enclave.EnclaveID]error, resultErr error) {
-	//TODO implement me
-	panic("implement me")
+func (backend *KubernetesKurtosisBackend) StopEnclaves(
+	ctx context.Context,
+	filters *enclave.EnclaveFilters,
+) (
+	map[enclave.EnclaveID]bool,
+	map[enclave.EnclaveID]error,
+	error,
+) {
+
+	_, matchingKubernetesResources, err := backend.getMatchingEnclaveObjectsAndKubernetesResources(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclaves and Kubernetes resources matching filters '%+v'", filters)
+	}
+
+	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
+	erroredEnclaveIds := map[enclave.EnclaveID]error{}
+	for enclaveId, resources := range matchingKubernetesResources {
+		namespaceName := resources.namespace.GetName()
+
+		if resources.services != nil {
+			removeServiceErrorMsgs := []string{}
+			for _, service := range resources.services {
+				serviceName :=service.GetName()
+				if err := backend.kubernetesManager.RemoveSelectorsFromService(ctx, namespaceName, serviceName); err != nil {
+					wrapperErr := stacktrace.Propagate(
+						err,
+						"An error occurred removing selectors from service '%v' in namespace '%v' for enclave with ID '%v'",
+						serviceName,
+						namespaceName,
+						enclaveId,
+					)
+					removeServiceErrorMsgs = append(removeServiceErrorMsgs, wrapperErr.Error())
+				}
+			}
+
+			if len(removeServiceErrorMsgs) > 0 {
+				removeServiceErrorMsgsStr := strings.Join(removeServiceErrorMsgs, errorMessagesSeparator)
+				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
+					err,
+					"An error occurred removing one or more service's selectors in namespace '%v' for enclave with ID '%v'. Errors:\n%v",
+					namespaceName,
+					enclaveId,
+					removeServiceErrorMsgsStr,
+				)
+				continue
+			}
+		}
+
+		if resources.pods != nil {
+			removePodErrorMsgs := []string{}
+			for _, pod := range resources.pods {
+				podName := pod.GetName()
+				if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, podName); err != nil {
+					wrapperErr := stacktrace.Propagate(
+						err,
+						"An error occurred removing pod '%v' in namespace '%v' for enclave with ID '%v'",
+						podName,
+						namespaceName,
+						enclaveId,
+					)
+					removePodErrorMsgs = append(removePodErrorMsgs, wrapperErr.Error())
+				}
+			}
+
+			if len(removePodErrorMsgs) > 0 {
+				removePodErrorMsgsStr := strings.Join(removePodErrorMsgs, errorMessagesSeparator)
+				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
+					err,
+					"An error occurred removing one or more pods in namespace '%v' for enclave with ID '%v'. Errors:\n%v",
+					namespaceName,
+					enclaveId,
+					removePodErrorMsgsStr,
+				)
+				continue
+			}
+		}
+
+		successfulEnclaveIds[enclaveId] = true
+	}
+
+	return successfulEnclaveIds, erroredEnclaveIds, nil
 }
 
 func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, enclaveId enclave.EnclaveID, outputDirpath string) error {
@@ -261,7 +346,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 
 		namespace := namespacesForEnclaveId[0]
 
-		enclavePodsMatchLabels := map[string]string{
+		enclaveWithIDMatchLabels := map[string]string{
 			label_key_consts.AppIDLabelKey.GetString():     label_value_consts.AppIDLabelValue.GetString(),
 			label_key_consts.EnclaveIDLabelKey.GetString(): enclaveIdStr,
 		}
@@ -271,7 +356,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 			ctx,
 			backend.kubernetesManager,
 			namespace.GetName(),
-			enclavePodsMatchLabels,
+			enclaveWithIDMatchLabels,
 			label_key_consts.EnclaveIDLabelKey.GetString(),
 			map[string]bool{
 				enclaveIdStr: true,
@@ -279,6 +364,21 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting pods matching enclave ID '%v' in namespace '%v'", enclaveIdStr, namespace.GetName())
+		}
+
+		// Services
+		services, err := kubernetes_resource_collectors.CollectMatchingServices(
+			ctx,
+			backend.kubernetesManager,
+			namespace.GetName(),
+			enclaveWithIDMatchLabels,
+			label_key_consts.EnclaveIDLabelKey.GetString(),
+			map[string]bool{
+				enclaveIdStr: true,
+			},
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting services matching enclave ID '%v' in namespace '%v'", enclaveIdStr, namespace.GetName())
 		}
 
 		enclaveId := enclave.EnclaveID(enclaveIdStr)
@@ -289,6 +389,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 		}
 		enclaveResources.namespace = namespace
 		enclaveResources.pods = pods[enclaveIdStr]
+		enclaveResources.services = services[enclaveIdStr]
 
 		result[enclaveId] = enclaveResources
 	}
