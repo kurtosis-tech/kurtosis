@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/object_name_constants"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
@@ -794,12 +793,9 @@ func getApiContainerObjectsFromKubernetesResources(
 
 	for enclaveId, resourcesForEnclaveId := range allResources {
 
-		status := container_status.ContainerStatus_Stopped
-		if resourcesForEnclaveId.pod != nil {
-			status = container_status.ContainerStatus_Running
-		}
-		if resourcesForEnclaveId.service != nil && len(resourcesForEnclaveId.service.Spec.Selector) > 0 {
-			status = container_status.ContainerStatus_Running
+		status, err := getContainerStatusFromKurtosisObjectServiceAndPod(resourcesForEnclaveId.service, resourcesForEnclaveId.pod)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting container status from service '%+v' and pod '%+v'", resourcesForEnclaveId.service, resourcesForEnclaveId.pod)
 		}
 
 		var privateIpAddr net.IP
