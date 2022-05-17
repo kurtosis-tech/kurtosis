@@ -196,7 +196,7 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) getApiContai
 func (provider *kubernetesApiContainerObjectAttributesProviderImpl) getLabelsForApiContainerObject() (map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
 	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.enclaveId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create kubernetes label value from enclaveId '%v'", provider.enclaveId)
+		return nil, stacktrace.Propagate(err, "Failed to create Kubernetes label value from enclaveId '%v'", provider.enclaveId)
 	}
 	return map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
 		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.APIContainerKurtosisResourceTypeLabelValue,

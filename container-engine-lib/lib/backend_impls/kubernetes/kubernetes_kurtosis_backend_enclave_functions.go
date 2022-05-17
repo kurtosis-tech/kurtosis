@@ -356,9 +356,39 @@ func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, encla
 	return nil
 }
 
-func (backend *KubernetesKurtosisBackend) DestroyEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (successfulEnclaveIds map[enclave.EnclaveID]bool, erroredEnclaveIds map[enclave.EnclaveID]error, resultErr error) {
-	//TODO implement me
-	panic("implement me")
+func (backend *KubernetesKurtosisBackend) DestroyEnclaves(
+	ctx context.Context,
+	filters *enclave.EnclaveFilters,
+) (
+	map[enclave.EnclaveID]bool,
+	map[enclave.EnclaveID]error,
+	error,
+) {
+	_, matchingResources, err := backend.getMatchingEnclaveObjectsAndKubernetesResources(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave Kubernetes resources matching filters: %+v", filters)
+	}
+
+	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
+	erroredEnclaveIds := map[enclave.EnclaveID]error{}
+	for enclaveId, resources := range matchingResources {
+		// Remove the namespace
+		if resources.namespace != nil {
+			namespaceName := resources.namespace.Name
+			if err := backend.kubernetesManager.RemoveNamespace(ctx, namespaceName); err != nil {
+				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
+					err,
+					"An error occurred removing namespace '%v' for enclave '%v'",
+					namespaceName,
+					enclaveId,
+				)
+				continue
+			}
+		}
+
+		successfulEnclaveIds[enclaveId] = true
+	}
+	return successfulEnclaveIds, erroredEnclaveIds, nil
 }
 
 // ====================================================================================================
