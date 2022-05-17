@@ -3,7 +3,6 @@ package kubernetes
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/gammazero/workerpool"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
@@ -18,7 +17,6 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	"os"
 	"path"
-	"strings"
 )
 
 const (
@@ -39,6 +37,8 @@ const (
 
 	enclaveDumpJsonSerializationIndent = "  "
 	enclaveDumpJsonSerializationPrefix = ""
+
+	dumpPodErrorTitle = "Pod"
 )
 
 // Any of these values being nil indicates that the resource doesn't exist
@@ -50,6 +50,10 @@ type enclaveKubernetesResources struct {
 	pods []*apiv1.Pod
 }
 
+type dumpPodResult struct {
+	podName string
+	err error
+}
 
 // ====================================================================================================
 //                                     		Enclave CRUD Methods
@@ -309,7 +313,7 @@ func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, encla
 	}
 
 	workerPool := workerpool.New(numPodsToDumpAtOnce)
-	resultErrsChan := make(chan error, len(podsToDump))
+	resultErrsChan := make(chan dumpPodResult, len(podsToDump))
 	for _, pod := range podsToDump {
 		/*
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -337,24 +341,14 @@ func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, encla
 	workerPool.StopWait()
 	close(resultErrsChan)
 
-	allResultErrStrs := []string{}
-	for resultErr := range resultErrsChan {
-		allResultErrStrs = append(allResultErrStrs, resultErr.Error())
+	resultErrorsByPodName := map[string]error{}
+	for podResult := range resultErrsChan {
+		resultErrorsByPodName[podResult.podName] = podResult.err
 	}
 
-	if len(allResultErrStrs) > 0 {
-		allIndexedResultErrStrs := []string{}
-		for idx, resultErrStr := range allResultErrStrs {
-			indexedResultErrStr := fmt.Sprintf(">>>>>>>>>>>>>>>>> ERROR %v <<<<<<<<<<<<<<<<<\n%v", idx, resultErrStr)
-			allIndexedResultErrStrs = append(allIndexedResultErrStrs, indexedResultErrStr)
-		}
-
-		// NOTE: We don't use stacktrace here because the actual stacktraces we care about are the ones from the threads!
-		return errors.New(fmt.Sprintf(
-			"The following errors occurred when trying to dump information about enclave '%v':\n%v",
-			enclaveId,
-			strings.Join(allIndexedResultErrStrs, "\n\n"),
-		))
+	if len(resultErrorsByPodName) > 0 {
+		combinedErr := buildCombinedError(resultErrorsByPodName, dumpPodErrorTitle)
+		return combinedErr
 	}
 	return nil
 }
@@ -581,15 +575,15 @@ func createDumpPodJob(
 	namespaceName string,
 	pod *apiv1.Pod,
 	enclaveOutputDirpath string,
-	resultErrsChan chan error,
+	resultChan chan dumpPodResult,
 ) func() {
 	return func() {
 		if err := dumpPodInfo(ctx, kubernetesManager, namespaceName, pod, enclaveOutputDirpath); err != nil {
-			resultErrsChan <- stacktrace.Propagate(
-				err,
-				"An error occurred dumping info for pod '%v'",
-				pod.Name,
-			)
+			result := dumpPodResult{
+				podName: pod.Name,
+				err:     err,
+			}
+			resultChan <- result
 		}
 	}
 }
