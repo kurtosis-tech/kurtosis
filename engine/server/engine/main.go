@@ -146,5 +146,5 @@ func getEnclaveManager(kurtosisBackendType args.KurtosisBackendType, backendConf
 
 	enclaveManager := enclave_manager.NewEnclaveManager(kurtosisBackend, apiContainerKurtosisBackendConfigSupplier)
 
-	return enclaveManager, nil;
+	return enclaveManager, nil
 }
