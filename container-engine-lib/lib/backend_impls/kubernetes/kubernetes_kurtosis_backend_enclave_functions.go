@@ -28,8 +28,8 @@ const (
 	shouldFetchStoppedContainersWhenDumpingEnclave = true
 
 	// Permissions for the files & directories we create as a result of the dump
-	createdDirPerms  = 0755
-	createdFilePerms = 0644
+	createdDirPerms  os.FileMode = 0755
+	createdFilePerms os.FileMode = 0644
 
 	numPodsToDumpAtOnce                      = 20
 
@@ -177,22 +177,10 @@ func (backend *KubernetesKurtosisBackend) StopEnclaves(ctx context.Context, filt
 }
 
 func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, enclaveId enclave.EnclaveID, outputDirpath string) error {
-	searchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.IDLabelKey.GetString(): string(enclaveId),
-	}
-	namespacesList, err := backend.kubernetesManager.GetNamespacesByLabels(ctx, searchLabels)
+	namespace, err := backend.getEnclaveNamespace(ctx, enclaveId)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting namespaces matching labels: %+v", searchLabels)
+		return stacktrace.Propagate(err, "An error occurred getting enclave namespace for enclave ID '%v'", enclaveId)
 	}
-	namespaces := namespacesList.Items
-	if len(namespaces) == 0 {
-		return stacktrace.NewError("No enclave found with ID '%v'", enclaveId)
-	}
-	if len(namespaces) > 1 {
-		return stacktrace.NewError("Expected one enclave matching ID '%v' but found '%v'", enclaveId, len(namespaces))
-	}
-	namespace := namespaces[0]
 	namespaceName := namespace.Name
 
 	// Create output directory
@@ -203,11 +191,10 @@ func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, encla
 		return stacktrace.Propagate(err, "An error occurred creating output directory at '%v'", outputDirpath)
 	}
 
-	enclavePodsList, err := backend.kubernetesManager.GetPodsByLabels(ctx, namespace.Name, searchLabels)
+	enclavePods, err := backend.getAllEnclavePods(ctx, namespaceName, enclaveId)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting pods in enclave '%v'", enclaveId)
 	}
-	enclavePods := enclavePodsList.Items
 
 	workerPool := workerpool.New(numPodsToDumpAtOnce)
 	resultErrsChan := make(chan error, len(enclavePods))
