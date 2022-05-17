@@ -186,3 +186,20 @@ func (service *ApiContainerGatewayServiceServer) StoreFilesArtifactFromService(c
 
 	return remoteApiContainerResponse, nil
 }
+
+func (service *ApiContainerGatewayServiceServer) PauseService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.PauseServiceArgs) (*emptypb.Empty, error) {
+	remoteApiContainerResponse, err := service.remoteApiContainerClient.PauseService(ctx, args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container method from the gateway, instead a non nil err was returned")
+	}
+
+	return remoteApiContainerResponse, nil
+}
+func (service *ApiContainerGatewayServiceServer) UnpauseService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnpauseServiceArgs) (*emptypb.Empty, error) {
+	remoteApiContainerResponse, err := service.remoteApiContainerClient.UnpauseService(ctx, args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+	}
+
+	return remoteApiContainerResponse, nil
+}
