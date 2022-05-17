@@ -7,7 +7,8 @@ import (
 )
 
 const (
-	defaultDockerClusterName = "docker"
+	// public so it can be used as default in CLI engine manager
+	DefaultDockerClusterName = "docker"
 
 	defaultMinikubeClusterName = "minikube"
 
@@ -120,7 +121,7 @@ func getDefaultKurtosisClusterConfigOverrides() map[string]*v1.KurtosisClusterCo
 	minikubeEnclaveDataVolSizeMB := defaultMinikubeEnclaveDataVolumeMB
 
 	result := map[string]*v1.KurtosisClusterConfigV1{
-		defaultDockerClusterName: {
+		DefaultDockerClusterName: {
 			Type:   &dockerClusterType,
 			Config: nil, // Must be nil for Docker
 		},
