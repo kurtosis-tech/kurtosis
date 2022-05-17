@@ -9,6 +9,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -19,14 +20,19 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"net/url"
 	"strconv"
+	"time"
 )
 
 const (
-	defaultServiceProtocol                 = "TCP"
-	defaultPersistentVolumeAccessMode      = apiv1.ReadWriteMany
 	defaultPersistentVolumeClaimAccessMode = apiv1.ReadWriteMany
 	binaryMegabytesSuffix         		   = "Mi"
 	uintToIntStringConversionBase		   = 10
+
+	waitForPersistentVolumeBoundInitialDelayMilliSeconds = 100
+	waitForPersistentVolumeBoundRetries = uint32(120)
+	waitForPersistentVolumeBoundRetriesDelayMilliSeconds = 500
+
+	apiv1Prefix = "api/v1"
 )
 
 var (
@@ -232,6 +238,10 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Contex
 	persistentVolumeClaimResult, err := volumeClaimsClient.Create(ctx, persistentVolumeClaim, metav1.CreateOptions{})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create persistent volume claim with name '%s' in namespace '%s'", persistentVolumeClaimName, namespace)
+	}
+
+	if err = manager.waitForPersistentVolumeClaimBound(ctx, persistentVolumeClaimResult); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for persistent volume claim '%v' get bound in namespace '%v'", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
 	}
 
 	return persistentVolumeClaimResult, nil
@@ -619,10 +629,8 @@ func (manager *KubernetesManager) RemoveClusterRoleBindings(ctx context.Context,
 	return nil
 }
 
-// Private functions
-func (manager *KubernetesManager) int32Ptr(i int32) *int32 { return &i }
+// ---------------------------pods---------------------------------------------------------------------------------------
 
-// Pods
 func (manager *KubernetesManager) CreatePod(
 	ctx context.Context,
 	namespace string,
@@ -695,7 +703,69 @@ func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace
 	return pods, nil
 }
 
-
 func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string, podName string) *url.URL {
-	return manager.kubernetesClientSet.RESTClient().Post().Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
+	return manager.kubernetesClientSet.RESTClient().Post().Prefix(apiv1Prefix).Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
 }
+
+// ====================================================================================================
+//                                     Private Helper Methods
+// ====================================================================================================
+func (manager *KubernetesManager) waitForPersistentVolumeClaimBound(ctx context.Context, persistentVolumeClaim *apiv1.PersistentVolumeClaim) error {
+
+	time.Sleep(time.Duration(waitForPersistentVolumeBoundInitialDelayMilliSeconds) * time.Millisecond)
+
+	for i := uint32(0); i < waitForPersistentVolumeBoundRetries; i++ {
+		claim, err := manager.GetPersistentVolumeClaim(ctx, persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting persistent volume claim '%v' in namespace '%v", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
+		}
+
+		switch claimPhase := claim.Status.Phase; claimPhase {
+		//Success phase, the Persisten Volume got bound
+		case apiv1.ClaimBound:
+			return nil
+		//Lost the Persistent Volume phase, unrecoverable state
+		case apiv1.ClaimLost:
+			return stacktrace.NewError("The persistent volume claim '%v' has phase '%v' that means it lost the persistent volume, it's an unrecoverable state", claim.GetName(), claimPhase)
+		}
+
+		time.Sleep(time.Duration(waitForPersistentVolumeBoundRetriesDelayMilliSeconds) * time.Millisecond)
+	}
+
+	return stacktrace.NewError("Persistent volume claim '%v' in namespace '%v' did not become bound despite polling %v times with %v between polls", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace(), waitForPersistentVolumeBoundRetries, waitForPersistentVolumeBoundRetriesDelayMilliSeconds)
+}
+
+// GetContainerLogs gets the logs for a given container running inside the given pod in the give namespace
+// TODO We could upgrade this to get the logs of many containers at once just like kubectl does, see:
+//  https://github.com/kubernetes/kubectl/blob/master/pkg/cmd/logs/logs.go#L345
+func (manager *KubernetesManager) GetContainerLogs(
+	ctx context.Context,
+	namespaceName string,
+	podName string,
+	containerName string,
+	shouldFollowLogs bool,
+	shouldAddTimestamps bool,
+) (
+	io.ReadCloser,
+	error,
+){
+	options := &apiv1.PodLogOptions{
+		Container: containerName,
+		Follow: shouldFollowLogs,
+		Timestamps: shouldAddTimestamps,
+	}
+
+	getLogsRequest := manager.kubernetesClientSet.CoreV1().Pods(namespaceName).GetLogs(podName, options)
+	result, err := getLogsRequest.Stream(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting logs for container '%v' in pod '%v' in namespace '%v'",
+			containerName,
+			podName,
+			namespaceName,
+		)
+	}
+	return result, nil
+}
+

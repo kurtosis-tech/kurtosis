@@ -6,7 +6,7 @@ import "github.com/kurtosis-tech/stacktrace"
 func postfilterKubernetesResources(
 	resources []kubernetesResource,
 	postFilterLabelKey string,
-// A nil or empty map will match all values
+	// A nil or empty map will match all values
 	postFilterLabelValues map[string]bool,
 ) (
 	map[string][]kubernetesResource,

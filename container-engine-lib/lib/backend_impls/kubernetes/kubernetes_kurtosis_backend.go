@@ -2,6 +2,8 @@ package kubernetes
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
@@ -11,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/object_name_constants"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
@@ -23,6 +26,7 @@ import (
 	"io"
 	apiv1 "k8s.io/api/core/v1"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -180,7 +184,7 @@ func getStringMapFromAnnotationMap(labelMap map[*kubernetes_annotation_key.Kuber
 	return strMap
 }
 
-// getPublicPortSpecFromServicePort returns a port_spec representing a kurtosis port spec for a service port in Kubernetes
+// getPublicPortSpecFromServicePort returns a port_spec representing a Kurtosis port spec for a service port in Kubernetes
 func getPublicPortSpecFromServicePort(servicePort apiv1.ServicePort, portProtocol port_spec.PortProtocol) (*port_spec.PortSpec, error) {
 	publicPortNumStr := strconv.FormatInt(int64(servicePort.Port), publicPortNumStrParsingBase)
 	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, publicPortNumStrParsingBase, publicPortNumStrParsingBits)
@@ -237,6 +241,23 @@ func getGrpcAndGrpcProxyPortSpecsFromServicePorts(servicePorts []apiv1.ServicePo
 	return publicGrpcPort, publicGrpcProxyPort, nil
 }
 
+func getContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus, error) {
+	status := container_status.ContainerStatus_Stopped
+
+	if pod != nil {
+		podPhase := pod.Status.Phase
+		isPodRunning, found := isPodRunningDeterminer[podPhase]
+		if !found {
+			// This should never happen because we enforce completeness in a unit test
+			return status, stacktrace.NewError("No is-running designation found for pod phase '%v'; this is a bug in Kurtosis!", podPhase)
+		}
+		if isPodRunning {
+			status = container_status.ContainerStatus_Running
+		}
+	}
+	return status, nil
+}
+
 func (backend *KubernetesKurtosisBackend) getAllEnclaveNamespaces(ctx context.Context) ([]apiv1.Namespace, error) {
 
 	matchLabels := getEnclaveMatchLabels()
@@ -264,7 +285,7 @@ func (backend *KubernetesKurtosisBackend) getEnclaveNamespace(ctx context.Contex
 		return nil, stacktrace.NewError("No namespace matching labels '%+v' was found", matchLabels)
 	}
 	if numOfNamespaces > 1 {
-		return nil, stacktrace.NewError("Expected to find only one api container namespace for api container in enclave ID '%v', but '%v' was found; this is a bug in Kurtosis", enclaveId, numOfNamespaces)
+		return nil, stacktrace.NewError("Expected to find only one API container namespace for API container in enclave ID '%v', but '%v' was found; this is a bug in Kurtosis", enclaveId, numOfNamespaces)
 	}
 
 	resultNamespace := &namespaces.Items[0]
@@ -301,4 +322,36 @@ func getEnclaveMatchLabels() map[string]string {
 		label_key_consts.KurtosisResourceTypeLabelKey.GetString(): label_value_consts.EnclaveKurtosisResourceTypeLabelValue.GetString(),
 	}
 	return matchLabels
+}
+
+// This is a helper function that will take multiple errors, each identified by an ID, and format them together
+// If no errors are returned, this function returns nil
+func buildCombinedError(errorsById map[string]error, titleStr string) error {
+	allErrorStrs := []string{}
+	for errorId, stopErr := range errorsById {
+		errorFormatStr := ">>>>>>>>>>>>> %v %v <<<<<<<<<<<<<\n" +
+			"%v\n" +
+			">>>>>>>>>>>>> END %v %v <<<<<<<<<<<<<"
+		errorStr := fmt.Sprintf(
+			errorFormatStr,
+			strings.ToUpper(titleStr),
+			errorId,
+			stopErr.Error(),
+			strings.ToUpper(titleStr),
+			errorId,
+		)
+		allErrorStrs = append(allErrorStrs, errorStr)
+	}
+
+	if len(allErrorStrs) > 0 {
+		// NOTE: This is one of the VERY rare cases where we don't want to use stacktrace.Propagate, because
+		// attaching stack information for this method (which simply combines errors) just isn't useful. The
+		// expected behaviour is that the caller of this function will use stacktrace.Propagate
+		return errors.New(strings.Join(
+			allErrorStrs,
+			"\n\n",
+		))
+	}
+
+	return nil
 }

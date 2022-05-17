@@ -1,5 +1,21 @@
 # TBD
 
+# 0.23.3
+### Features
+* Added `KubernetesKurtosisBackend.StopEnclaves` and `KubernetesKurtosisBackend.DestroyEnclaves`
+* Added `KubernetesManager.IsPersistentVolumeClaimBound` to check when a Persistent Volume has been bound to a Persistent Volume Claim
+* Updated `KubernetesManager.CreatePersistentVolumeClaim` to wait for the PersistentVolumeClaim to get bound
+* Added `CollectMatchingRoles` and `CollectMatchingRoleBindings` in `kubernetes_resource_collectors` package
+* Upped the CircleCI resource class to 'large' since builds are 1m30s and CircleCI showed that we're maxing out the CPU
+* Added a build cache to each build
+* Build out `KubernetesKurtosisBackend.DumpEnclave`
+
+### Fixes
+* Added apiv1 prefix to `KubernetesManager.GetPodPortforwardEndpointUrl`
+
+### Fixes
+* Added apiv1 prefix to `KubernetesManager.GetPodPortforwardEndpointUrl`
+
 # 0.23.2
 ### Fixes
 * Don't error when parsing public ports on stopped containers
