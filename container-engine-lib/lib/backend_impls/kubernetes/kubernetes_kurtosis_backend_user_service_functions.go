@@ -49,6 +49,10 @@ Implementation notes:
 	to keep an eye out for it.
 */
 
+type userServiceRegistrationKubernetesResources struct {
+	service *service.Service
+}
+
 // Any of these fields can be nil if they don't exist in Kubernetes, though at least
 // one field will be present (else this struct won't exist)
 type userServiceKubernetesResources struct {
@@ -134,7 +138,7 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 func (backend *KubernetesKurtosisBackend) StartUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	guid service.ServiceGUID,
+	serviceGuid service.ServiceGUID,
 	containerImageName string,
 	privatePorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
@@ -142,13 +146,29 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	envVars map[string]string,
 	filesArtifactMountDirpaths map[string]string,
 ) (newUserService *service.Service, resultErr error) {
-	/*
-	preexistingServiceFilters := &service.ServiceFilters{
-		GUIDs:    ,
+	get
+
+	serviceSearchLabels := map[string]string{
+		label_key_consts.GUIDKubernetesLabelKey.GetString(): string(serviceGuid),
+		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): string(enclaveId),
 	}
-	preexistingServiceObjs, preexistingServiceKubernetesResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, preexistingServiceFilters)
-	if err != nil {}
-	 */
+	preexistingServiceKubernetesResources, err := backend.kubernetesManager.GetServicesByLabels(ctx, )
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting preexisting service registrations matching GUID '%v'", serviceGuid)
+	}
+	if len(preexistingServiceKubernetesResources) == 0 {
+		return nil, stacktrace.NewError("Couldn't find any service registrations matching GUID '%v'", serviceGuid)
+	}
+	if len(preexistingServiceKubernetesResources) > 0 {
+		return nil, stacktrace.NewError("Found multiple service registrations matching GUID '%v'", serviceGuid)
+	}
+	foundKubernetesResources, found := preexistingServiceKubernetesResources[serviceGuid]
+	if !found {
+
+	}
+
+
+
 	return nil, stacktrace.NewError("TODO IMPLEMENT!")
 }
 
