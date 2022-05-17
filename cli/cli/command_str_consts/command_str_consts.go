@@ -10,6 +10,10 @@ import (
 var KurtosisCmdStr = path.Base(os.Args[0])
 const (
 	CleanCmdStr = "clean"
+	ClusterCmdStr = "cluster"
+		ClusterSetCmdStr = "set"
+		ClusterGetCmdStr = "get"
+		ClusterLsCmdStr = "ls"
 	EnclaveCmdStr = "enclave"
 		EnclaveInspectCmdStr = "inspect"
 		EnclaveLsCmdStr = "ls"

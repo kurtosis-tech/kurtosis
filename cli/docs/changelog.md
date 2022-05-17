@@ -9,6 +9,7 @@
     * `enclave rm` 
     * `service logs`
     * `service shell`
+* Added `kurtosis cluster get|set|ls`, which define which backend cluster (defined in config) that the CLI will access for all engine-related commands.
 * Added 'gateway' command to open a local gateway to kurtosis objects running in Kubernetes
 
 ### Changes

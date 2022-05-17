@@ -16,27 +16,13 @@ var StopCmd = &cobra.Command{
 	RunE:  run,
 }
 
-var WithKubernetes bool
-
-func init() {
-	// TODO Remove this in favor of actual Kubernetes info in the config file
-	StopCmd.Flags().BoolVarP(&WithKubernetes, "with-kubernetes", "k", false, "Operate on the engine in kubernetes")
-}
-
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
-
-	cmd.Flags().GetBool("with-kubernetes")
 	logrus.Infof("Stopping Kurtosis engine...")
 
-	// TODO Hack; remove when we read cluster state from disk
-	var clusterName = "docker"
-	if WithKubernetes {
-		clusterName = "minikube"
-	}
-	engineManager, err := engine_manager.NewEngineManager(clusterName)
+	engineManager, err := engine_manager.NewEngineManager()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an engine manager connected to cluster '%v'", clusterName)
+		return stacktrace.Propagate(err, "An error occurred creating an engine manager")
 	}
 
 	if err := engineManager.StopEngineIdempotently(ctx); err != nil {

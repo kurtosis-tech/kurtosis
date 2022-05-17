@@ -25,9 +25,6 @@ const (
 
 	// Signifies that an enclave ID should be auto-generated
 	autogenerateEnclaveIdKeyword = ""
-
-	// TODO DElete when this comes from disk
-	clusterName = "docker"
 )
 
 var apiContainerVersion string
@@ -80,10 +77,9 @@ func run(cmd *cobra.Command, args []string) error {
 
 	ctx := context.Background()
 
-
-	engineManager, err := engine_manager.NewEngineManager(clusterName)
+	engineManager, err := engine_manager.NewEngineManager()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an engine manager using cluster '%v'", clusterName)
+		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 	}
 	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel)
 	if err != nil {
