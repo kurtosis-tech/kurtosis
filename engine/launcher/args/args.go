@@ -42,15 +42,19 @@ func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &engineServerArgsMirror); err != nil {
 		return stacktrace.Propagate(err, "Failed to unmarshal engine server args")
 	}
+	byteArray, err := json.Marshal(engineServerArgsMirror.KurtosisBackendConfig)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to re-marshal interface ")
+	}
 	switch engineServerArgsMirror.KurtosisBackendType {
 	case KurtosisBackendType_Docker:
-		// Do nothing here - Docker requires no extra parsing because it has no extra config.
+		var dockerConfig kurtosis_backend_config.DockerBackendConfig
+		if err := json.Unmarshal(byteArray, &dockerConfig); err != nil {
+			return stacktrace.Propagate(err, "Failed to unmarshal backend config '%+v' with type '%v'", engineServerArgsMirror.KurtosisBackendConfig, engineServerArgsMirror.KurtosisBackendType.String())
+		}
+		engineServerArgsMirror.KurtosisBackendConfig = dockerConfig
 	case KurtosisBackendType_Kubernetes:
 		var kubernetesConfig kurtosis_backend_config.KubernetesBackendConfig
-		byteArray, err := json.Marshal(engineServerArgsMirror.KurtosisBackendConfig)
-		if err != nil {
-			return stacktrace.Propagate(err, "Failed to re-marshal interface ")
-		}
 		if err := json.Unmarshal(byteArray, &kubernetesConfig); err != nil {
 			return stacktrace.Propagate(err, "Failed to unmarshal backend config '%+v' with type '%v'", engineServerArgsMirror.KurtosisBackendConfig, engineServerArgsMirror.KurtosisBackendType.String())
 		}
