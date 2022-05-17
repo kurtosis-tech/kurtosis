@@ -2,7 +2,6 @@ package kurtosis_cluster_setting
 
 import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -100,14 +99,6 @@ func (settingStore *kurtosisClusterSettingStore) getClusterSettingFromFile() (st
 
 
 func (settingStore *kurtosisClusterSettingStore) saveClusterSettingFile(clusterName string) error {
-	validClusterName, err := settingStore.validateClusterName(clusterName)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to validate cluster setting.")
-	}
-	if !validClusterName {
-		return stacktrace.NewError("Cluster name '%v' is not a valid Kurtosis cluster name.", clusterName)
-	}
-
 	fileContent := []byte(clusterName)
 
 	logrus.Debugf("Saving cluster setting in file...")
@@ -123,17 +114,4 @@ func (settingStore *kurtosisClusterSettingStore) saveClusterSettingFile(clusterN
 	}
 	logrus.Debugf("Cluster setting file saved")
 	return nil
-}
-
-func (settingStore *kurtosisClusterSettingStore) validateClusterName(clusterName string) (bool, error) {
-	configStore := kurtosis_config.GetKurtosisConfigStore()
-	configProvider := kurtosis_config.NewKurtosisConfigProvider(configStore)
-	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
-	if err != nil {
-		return false, stacktrace.Propagate(err, "Failed to get or initialize Kurtosis configuration when validating cluster name '%v'.", clusterName)
-	}
-	if _, ok := kurtosisConfig.GetKurtosisClusters()[clusterName]; ok {
-		return true, nil
-	}
-	return false, nil
 }
