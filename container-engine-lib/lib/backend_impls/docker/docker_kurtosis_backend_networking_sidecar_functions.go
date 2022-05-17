@@ -352,8 +352,8 @@ func (backend *DockerKurtosisBackend) getMatchingNetworkingSidecars(
 ) (map[string]*networking_sidecar.NetworkingSidecar, error) {
 
 	searchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDKubernetesLabelValue.GetString(),
-		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.NetworkingSidecarContainerTypeKubernetesLabelValue.GetString(),
+		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.NetworkingSidecarContainerTypeDockerLabelValue.GetString(),
 	}
 	matchingContainers, err := backend.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchAllContainersWhenRetrievingContainers)
 	if err != nil {
@@ -400,14 +400,14 @@ func getNetworkingSidecarObjectFromContainerInfo(
 	containerStatus types.ContainerStatus,
 ) (*networking_sidecar.NetworkingSidecar, error) {
 
-	enclaveId, found := labels[label_key_consts.EnclaveIDLabelKey.GetString()]
+	enclaveId, found := labels[label_key_consts.EnclaveIDDockerLabelKey.GetString()]
 	if !found {
-		return nil, stacktrace.NewError("Expected the networking sidecar's enclave ID to be found under label '%v' but the label wasn't present", label_key_consts.EnclaveIDLabelKey.GetString())
+		return nil, stacktrace.NewError("Expected the networking sidecar's enclave ID to be found under label '%v' but the label wasn't present", label_key_consts.EnclaveIDDockerLabelKey.GetString())
 	}
 
-	guid, found := labels[label_key_consts.GUIDLabelKey.GetString()]
+	guid, found := labels[label_key_consts.GUIDDockerLabelKey.GetString()]
 	if !found {
-		return nil, stacktrace.NewError("Expected to find GUID label key '%v' but none was found", label_key_consts.GUIDLabelKey.GetString())
+		return nil, stacktrace.NewError("Expected to find GUID label key '%v' but none was found", label_key_consts.GUIDDockerLabelKey.GetString())
 	}
 
 	isContainerRunning, found := isContainerRunningDeterminer[containerStatus]

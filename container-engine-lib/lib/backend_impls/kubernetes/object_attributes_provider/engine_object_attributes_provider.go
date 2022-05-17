@@ -66,7 +66,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEnginePod() (Ku
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue,
 		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
 	}
 
@@ -98,7 +98,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue,
 		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
 	}
 
@@ -137,7 +137,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineNamespace
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue,
 		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
 	}
 
@@ -165,7 +165,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineServiceAc
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue,
 		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
 	}
 
@@ -193,7 +193,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRo
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue,
 		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
 	}
 
@@ -222,7 +222,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRo
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue,
 		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
 	}
 
@@ -245,7 +245,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) GetEngineSelectorL
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue,
 		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
 	}
 

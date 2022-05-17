@@ -34,18 +34,18 @@ const (
 //
 //   If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
 //
-var AppIDKubernetesLabelValue = docker_label_value.MustCreateNewDockerLabelValue(appIdLabelValueStr)
-var EngineContainerTypeKubernetesLabelValue = docker_label_value.MustCreateNewDockerLabelValue(engineContainerTypeLabelValueStr)
-var ModuleContainerTypeKubernetesLabelValue = docker_label_value.MustCreateNewDockerLabelValue(moduleContainerTypeLabelValueStr)
+var AppIDDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(appIdLabelValueStr)
+var EngineContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(engineContainerTypeLabelValueStr)
+var ModuleContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(moduleContainerTypeLabelValueStr)
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-var APIContainerContainerTypeKubernetesLabelValue = docker_label_value.MustCreateNewDockerLabelValue(apiContainerContainerTypeLabelValueStr)
-var UserServiceContainerTypeKubernetesLabelValue = docker_label_value.MustCreateNewDockerLabelValue(userServiceContainerTypeLabelValueStr)
-var NetworkingSidecarContainerTypeKubernetesLabelValue = docker_label_value.MustCreateNewDockerLabelValue(networkingSidecarContainerTypeLabelValueStr)
-var NetworkPartitioningEnabledKubernetesLabelValue = docker_label_value.MustCreateNewDockerLabelValue(trueValueStr)
-var NetworkPartitioningDisabledKubernetesLabelValue = docker_label_value.MustCreateNewDockerLabelValue(falseValueStr)
-var FilesArtifactExpanderContainerTypeKuberenetesLabelValue = docker_label_value.MustCreateNewDockerLabelValue(filesArtifactExpanderContainerTypeLabelValueStr)
+var APIContainerContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(apiContainerContainerTypeLabelValueStr)
+var UserServiceContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(userServiceContainerTypeLabelValueStr)
+var NetworkingSidecarContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(networkingSidecarContainerTypeLabelValueStr)
+var NetworkPartitioningEnabledDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(trueValueStr)
+var NetworkPartitioningDisabledDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(falseValueStr)
+var FilesArtifactExpanderContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(filesArtifactExpanderContainerTypeLabelValueStr)
 
-var EnclaveDataVolumeTypeKubernetesLabelValue = docker_label_value.MustCreateNewDockerLabelValue(enclaveDataVolumeTypeLabelValueStr)
-var FilesArtifactExpansionVolumeTypeKubernetesLabelValue = docker_label_value.MustCreateNewDockerLabelValue(filesArtifactExpansionVolumeTypeLabelValueStr)
+var EnclaveDataVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(enclaveDataVolumeTypeLabelValueStr)
+var FilesArtifactExpansionVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(filesArtifactExpansionVolumeTypeLabelValueStr)

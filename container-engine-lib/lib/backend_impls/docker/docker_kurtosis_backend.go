@@ -349,9 +349,9 @@ func waitForPortAvailabilityUsingNetstat(
 // TODO Move to _enclave_functions file
 func getEnclaveIdFromNetwork(network *types.Network) (enclave.EnclaveID, error) {
 	labels := network.GetLabels()
-	enclaveIdLabelValue, found := labels[label_key_consts.EnclaveIDLabelKey.GetString()]
+	enclaveIdLabelValue, found := labels[label_key_consts.EnclaveIDDockerLabelKey.GetString()]
 	if !found {
-		return "", stacktrace.NewError("Expected to find network's label with key '%v' but none was found", label_key_consts.EnclaveIDLabelKey.GetString())
+		return "", stacktrace.NewError("Expected to find network's label with key '%v' but none was found", label_key_consts.EnclaveIDDockerLabelKey.GetString())
 	}
 	enclaveId := enclave.EnclaveID(enclaveIdLabelValue)
 	return enclaveId, nil
@@ -360,8 +360,8 @@ func getEnclaveIdFromNetwork(network *types.Network) (enclave.EnclaveID, error) 
 
 func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID) (*types.Network, error) {
 	networkSearchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDKubernetesLabelValue.GetString(),
-		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
+		label_key_consts.AppIDDockerLabelKey.GetString():     label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.EnclaveIDDockerLabelKey.GetString(): string(enclaveId),
 	}
 
 	enclaveNetworksFound, err := backend.dockerManager.GetNetworksByLabels(ctx, networkSearchLabels)
@@ -385,9 +385,9 @@ func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.C
 // Guaranteed to either return an enclave data volume name or throw an error
 func (backend *DockerKurtosisBackend) getEnclaveDataVolumeByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID) (string, error) {
 	volumeSearchLabels :=  map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDKubernetesLabelValue.GetString(),
-		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
-		label_key_consts.VolumeTypeLabelKey.GetString(): label_value_consts.EnclaveDataVolumeTypeKubernetesLabelValue.GetString(),
+		label_key_consts.AppIDDockerLabelKey.GetString():      label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.EnclaveIDDockerLabelKey.GetString():  string(enclaveId),
+		label_key_consts.VolumeTypeDockerLabelKey.GetString(): label_value_consts.EnclaveDataVolumeTypeDockerLabelValue.GetString(),
 	}
 	foundVolumes, err := backend.dockerManager.GetVolumesByLabels(ctx, volumeSearchLabels)
 	if err != nil {

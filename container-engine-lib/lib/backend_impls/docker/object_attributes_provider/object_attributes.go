@@ -11,7 +11,7 @@ import (
 
 // Labels that get attached to EVERY Kurtosis object
 var globalLabels = map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
-	label_key_consts.AppIDLabelKey: label_value_consts.AppIDKubernetesLabelValue,
+	label_key_consts.AppIDDockerLabelKey: label_value_consts.AppIDDockerLabelValue,
 	// TODO container engine lib version??
 }
 

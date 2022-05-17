@@ -5,6 +5,8 @@
 ### Changes
 * Renamed all Kubernetes constants that were `XXXXXLabelKey` to be `XXXXXKubernetesLabelKey` to make it more visually obvious that we're using the Kubernetes constants rather than Docker
 * Renamed all constants that were `XXXXXLabelValue` to be `XXXXXKubernetesLabelValue` to make it more visually obvious that we're using the Kubernetes constants rather than Docker
+* Renamed all Docker constants that were `XXXXXLabelKey` to be `XXXXXDockerLabelKey` to make it more visually obvious that we're using the Docker constants rather than Kubernetes
+* Renamed all constants that were `XXXXXLabelValue` to be `XXXXXDockerLabelValue` to make it more visually obvious that we're using the Docker constants rather than Kubernetes
 
 # 0.23.3
 ### Features

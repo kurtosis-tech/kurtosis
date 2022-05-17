@@ -46,8 +46,8 @@ func GetLocalDockerKurtosisBackend(
 		enclaveId := optionalApiContainerModeArgs.EnclaveID
 
 		enclaveNetworkSearchLabels := map[string]string{
-			label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDKubernetesLabelValue.GetString(),
-			label_key_consts.IDLabelKey.GetString(): string(enclaveId),
+			label_key_consts.AppIDDockerLabelKey.GetString(): label_value_consts.AppIDDockerLabelValue.GetString(),
+			label_key_consts.IDDockerLabelKey.GetString():    string(enclaveId),
 		}
 		matchingNetworks, err := dockerManager.GetNetworksByLabels(ctx, enclaveNetworkSearchLabels)
 		if err != nil {

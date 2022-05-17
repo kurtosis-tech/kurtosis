@@ -22,7 +22,7 @@ var crossVersionLabelKeyStringsToEnsure = map[string]string{
 
 //These are the publicly accessible keys that correspond to the private string constants. They need to stay the same.
 var crossVersionLabelKeysToEnsure = map[*docker_label_key.DockerLabelKey]string{
-	AppIDLabelKey:	expectedAppIdLabelKeyStr,
+	AppIDDockerLabelKey: expectedAppIdLabelKeyStr,
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

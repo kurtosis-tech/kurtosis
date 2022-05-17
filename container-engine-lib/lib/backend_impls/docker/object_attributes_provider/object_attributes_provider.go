@@ -77,10 +77,10 @@ func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(
 	}
 
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
-		label_key_consts.ContainerTypeLabelKey: label_value_consts.EngineContainerTypeKubernetesLabelValue,
-		label_key_consts.PortSpecsLabelKey:     serializedPortsSpec,
-		label_key_consts.IDLabelKey:            idLabelValue,
-		label_key_consts.GUIDLabelKey:          guidLabelValue,
+		label_key_consts.ContainerTypeDockerLabelKey: label_value_consts.EngineContainerTypeDockerLabelValue,
+		label_key_consts.PortSpecsDockerLabelKey:     serializedPortsSpec,
+		label_key_consts.IDDockerLabelKey:            idLabelValue,
+		label_key_consts.GUIDDockerLabelKey:          guidLabelValue,
 	}
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)

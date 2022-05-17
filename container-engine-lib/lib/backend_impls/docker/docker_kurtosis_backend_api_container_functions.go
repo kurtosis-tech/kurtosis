@@ -361,8 +361,8 @@ func (backend *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, 
 func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[string]*api_container.APIContainer, error) {
 
 	apiContainerSearchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDKubernetesLabelValue.GetString(),
-		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.APIContainerContainerTypeKubernetesLabelValue.GetString(),
+		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.APIContainerContainerTypeDockerLabelValue.GetString(),
 		// NOTE: we do NOT use the enclave ID label here, and instead do postfiltering, because Docker has no way to do disjunctive search!
 	}
 	allApiContainers, err := backend.dockerManager.GetContainersByLabels(ctx, apiContainerSearchLabels, shouldFetchAllContainersWhenRetrievingContainers)
@@ -409,19 +409,19 @@ func getApiContainerObjectFromContainerInfo(
 	containerStatus types.ContainerStatus,
 	allHostMachinePortBindings map[nat.Port]*nat.PortBinding,
 ) (*api_container.APIContainer, error) {
-	enclaveId, found := labels[label_key_consts.EnclaveIDLabelKey.GetString()]
+	enclaveId, found := labels[label_key_consts.EnclaveIDDockerLabelKey.GetString()]
 	if !found {
-		return nil, stacktrace.NewError("Expected the API container's enclave ID to be found under label '%v' but the label wasn't present", label_key_consts.EnclaveIDLabelKey.GetString())
+		return nil, stacktrace.NewError("Expected the API container's enclave ID to be found under label '%v' but the label wasn't present", label_key_consts.EnclaveIDDockerLabelKey.GetString())
 	}
 
-	privateIpAddrStr, found := labels[label_key_consts.PrivateIPLabelKey.GetString()]
+	privateIpAddrStr, found := labels[label_key_consts.PrivateIPDockerLabelKey.GetString()]
 	if !found {
 		// TODO DELETE THIS AFTER 2022-05-28 WHEN NO API CONTAINERS WON'T HAVE A PRIVATE IP
 		candidateIpAddrStr, found := labels[pre_2022_03_28_IpAddrLabel]
 		if !found {
 			return nil, stacktrace.NewError(
 				"Couldn't find the API container's private IP using label '%v' nor '%v'",
-				label_key_consts.PrivateIPLabelKey.GetString(),
+				label_key_consts.PrivateIPDockerLabelKey.GetString(),
 				pre_2022_03_28_IpAddrLabel,
 			)
 		}
@@ -494,9 +494,9 @@ func getPrivateApiContainerPorts(containerLabels map[string]string) (
 	resultGrpcProxyPortSpec *port_spec.PortSpec,
 	resultErr error,
 ) {
-	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsLabelKey.GetString()]
+	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsDockerLabelKey.GetString()]
 	if !found {
-		return nil, nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsLabelKey.GetString())
+		return nil, nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsDockerLabelKey.GetString())
 	}
 
 	portSpecs, err := port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)

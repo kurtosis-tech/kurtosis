@@ -319,8 +319,8 @@ func (backend *DockerKurtosisBackend) DestroyEngines(
 // Gets engines matching the search filters, indexed by their container ID
 func (backend *DockerKurtosisBackend) getMatchingEngines(ctx context.Context, filters *engine.EngineFilters) (map[string]*engine.Engine, error) {
 	engineContainerSearchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDKubernetesLabelValue.GetString(),
-		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.EngineContainerTypeKubernetesLabelValue.GetString(),
+		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.EngineContainerTypeDockerLabelValue.GetString(),
 		// NOTE: we do NOT use the engine ID label here, and instead do postfiltering, because Docker has no way to do disjunctive search!
 	}
 	allEngineContainers, err := backend.dockerManager.GetContainersByLabels(ctx, engineContainerSearchLabels, shouldFetchAllContainersWhenRetrievingContainers)
@@ -367,7 +367,7 @@ func getEngineObjectFromContainerInfo(
 	containerStatus types.ContainerStatus,
 	allHostMachinePortBindings map[nat.Port]*nat.PortBinding,
 ) (*engine.Engine, error) {
-	engineGuid, found := labels[label_key_consts.GUIDLabelKey.GetString()]
+	engineGuid, found := labels[label_key_consts.GUIDDockerLabelKey.GetString()]
 	if !found {
 		// TODO Delete this after 2022-05-02 when we're confident there won't be any engines running
 		//  without the engine ID label!
@@ -378,7 +378,7 @@ func getEngineObjectFromContainerInfo(
 		/*
 		return nil, stacktrace.NewError(
 			"Expected a '%v' label on engine container with ID '%v', but none was found",
-			object_attributes_provider.GUIDKubernetesLabelKey.GetString(),
+			object_attributes_provider.GUIDDockerLabelKey.GetString(),
 			containerId,
 		)
 		 */
@@ -447,9 +447,9 @@ func getEnginePrivatePorts(containerLabels map[string]string) (
 	resultErr error,
 ) {
 
-	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsLabelKey.GetString()]
+	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsDockerLabelKey.GetString()]
 	if !found {
-		return  nil, nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsLabelKey.GetString())
+		return  nil, nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsDockerLabelKey.GetString())
 	}
 
 	portSpecs, err := port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)

@@ -76,7 +76,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	teardownContext := context.Background()
 
 	searchNamespaceLabels := map[string]string{
-		label_key_consts.AppIDKubernetesLabelKey.GetString():     label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.AppIDKubernetesLabelKey.GetString():     label_value_consts.AppIDKubernetesLabelValue.GetString(),
 		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): string(enclaveId),
 	}
 	namespaceList, err := backend.kubernetesManager.GetNamespacesByLabels(ctx, searchNamespaceLabels)
@@ -215,7 +215,7 @@ func (backend *KubernetesKurtosisBackend) StopEnclaves(
 			namespaceName := resources.namespace.GetName()
 
 			enclaveWithIDMatchLabels := map[string]string{
-				label_key_consts.AppIDKubernetesLabelKey.GetString():     label_value_consts.AppIDLabelValue.GetString(),
+				label_key_consts.AppIDKubernetesLabelKey.GetString():     label_value_consts.AppIDKubernetesLabelValue.GetString(),
 				label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): enclaveIdStr,
 			}
 
@@ -516,7 +516,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 		namespace := namespacesForEnclaveId[0]
 
 		enclaveWithIDMatchLabels := map[string]string{
-			label_key_consts.AppIDKubernetesLabelKey.GetString():     label_value_consts.AppIDLabelValue.GetString(),
+			label_key_consts.AppIDKubernetesLabelKey.GetString():     label_value_consts.AppIDKubernetesLabelValue.GetString(),
 			label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): enclaveIdStr,
 		}
 

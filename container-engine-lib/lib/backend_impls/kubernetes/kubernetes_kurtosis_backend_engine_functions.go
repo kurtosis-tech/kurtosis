@@ -79,10 +79,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 			kurtosisServersPortProtocol.String(),
 		)
 	}
-	engineAttributesProvider, err := backend.objAttrsProvider.ForEngine(engineIdStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the engine attributes provider using id '%v'", engineIdStr)
-	}
+	engineAttributesProvider := backend.objAttrsProvider.ForEngine(engineIdStr)
 
 	namespace, err := backend.createEngineNamespace(ctx, engineAttributesProvider)
 	if err != nil {
@@ -607,8 +604,8 @@ func getEngineContainers(containerImageAndTag string, engineEnvVars map[string]s
 
 func getEngineMatchLabels() map[string]string {
 	engineMatchLabels := map[string]string{
-		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EngineKurtosisResourceTypeLabelValue.GetString(),
+		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue.GetString(),
 	}
 	return engineMatchLabels
 }

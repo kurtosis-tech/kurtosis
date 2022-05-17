@@ -93,12 +93,12 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(isP
 		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave network using ID '%v'", provider.enclaveId)
 	}
 
-	isPartitioningEnabledLabelValue := label_value_consts.NetworkPartitioningDisabledKubernetesLabelValue
+	isPartitioningEnabledLabelValue := label_value_consts.NetworkPartitioningDisabledDockerLabelValue
 	if isPartitioningEnabled {
-		isPartitioningEnabledLabelValue = label_value_consts.NetworkPartitioningEnabledKubernetesLabelValue
+		isPartitioningEnabledLabelValue = label_value_consts.NetworkPartitioningEnabledDockerLabelValue
 	}
 
-	labels[label_key_consts.IsNetworkPartitioningEnabledLabelKey] = isPartitioningEnabledLabelValue
+	labels[label_key_consts.IsNetworkPartitioningEnabledDockerLabelKey] = isPartitioningEnabledLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -121,7 +121,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveDataVolume(
 	}
 
 	labels := provider.getLabelsForEnclaveObject()
-	labels[label_key_consts.VolumeTypeLabelKey] = label_value_consts.EnclaveDataVolumeTypeKubernetesLabelValue
+	labels[label_key_consts.VolumeTypeDockerLabelKey] = label_value_consts.EnclaveDataVolumeTypeDockerLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -162,8 +162,8 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 	}
 
 	labels := provider.getLabelsForEnclaveObject()
-	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.APIContainerContainerTypeKubernetesLabelValue
-	labels[label_key_consts.PrivateIPLabelKey] = privateIpLabelValue
+	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.APIContainerContainerTypeDockerLabelValue
+	labels[label_key_consts.PrivateIPDockerLabelKey] = privateIpLabelValue
 
 	usedPorts := map[string]*port_spec.PortSpec{
 		privateGrpcPortId:      privateGrpcPortSpec,
@@ -173,7 +173,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred serializing the following API container ports object to a string for storing in the ports label: %+v", usedPorts)
 	}
-	labels[label_key_consts.PortSpecsLabelKey] = serializedPortsSpec
+	labels[label_key_consts.PortSpecsDockerLabelKey] = serializedPortsSpec
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -225,9 +225,9 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", serviceGuid)
 	}
-	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.UserServiceContainerTypeKubernetesLabelValue
-	labels[label_key_consts.PortSpecsLabelKey] = serializedPortsSpec
-	labels[label_key_consts.PrivateIPLabelKey] = privateIpLabelValue
+	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.UserServiceContainerTypeDockerLabelValue
+	labels[label_key_consts.PortSpecsDockerLabelKey] = serializedPortsSpec
+	labels[label_key_consts.PrivateIPDockerLabelKey] = privateIpLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -257,7 +257,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarC
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", serviceGUIDSidecarAttachedTo)
 	}
-	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.NetworkingSidecarContainerTypeKubernetesLabelValue
+	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.NetworkingSidecarContainerTypeDockerLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -311,9 +311,9 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForModuleContainer(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the module labels using ID '%v' and GUID '%v'", moduleID, moduleGUID)
 	}
-	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.ModuleContainerTypeKubernetesLabelValue
-	labels[label_key_consts.PortSpecsLabelKey] = serializedPortsSpec
-	labels[label_key_consts.PrivateIPLabelKey] = privateIpLabelValue
+	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.ModuleContainerTypeDockerLabelValue
+	labels[label_key_consts.PortSpecsDockerLabelKey] = serializedPortsSpec
+	labels[label_key_consts.PrivateIPDockerLabelKey] = privateIpLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -348,7 +348,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpan
 	}
 
 	labels := provider.getLabelsForEnclaveObject()
-	labels[label_key_consts.VolumeTypeLabelKey] = label_value_consts.FilesArtifactExpansionVolumeTypeKubernetesLabelValue
+	labels[label_key_consts.VolumeTypeDockerLabelKey] = label_value_consts.FilesArtifactExpansionVolumeTypeDockerLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -377,7 +377,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpan
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", guid)
 	}
-	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.FilesArtifactExpanderContainerTypeKuberenetesLabelValue
+	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.FilesArtifactExpanderContainerTypeDockerLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -410,7 +410,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getNameForEnclaveObje
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObject() map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue {
 	return map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
-		label_key_consts.EnclaveIDLabelKey: provider.enclaveId,
+		label_key_consts.EnclaveIDDockerLabelKey: provider.enclaveId,
 	}
 }
 
@@ -420,7 +420,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from GUID string '%v'", guid)
 	}
-	labels[label_key_consts.GUIDLabelKey] = guidLabelValue
+	labels[label_key_consts.GUIDDockerLabelKey] = guidLabelValue
 	return labels, nil
 }
 
@@ -433,7 +433,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from ID string '%v'", id)
 	}
-	labels[label_key_consts.IDLabelKey] = idLabelValue
+	labels[label_key_consts.IDDockerLabelKey] = idLabelValue
 	return labels, nil
 }
 
