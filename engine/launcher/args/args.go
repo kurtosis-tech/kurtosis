@@ -42,7 +42,10 @@ func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &engineServerArgsMirror); err != nil {
 		return stacktrace.Propagate(err, "Failed to unmarshal engine server args")
 	}
-	if engineServerArgsMirror.KurtosisBackendType == KurtosisBackendType_Kubernetes {
+	switch engineServerArgsMirror.KurtosisBackendType {
+	case KurtosisBackendType_Docker:
+		// Do nothing here - Docker requires no extra parsing because it has no extra config.
+	case KurtosisBackendType_Kubernetes:
 		var kubernetesConfig kurtosis_backend_config.KubernetesBackendConfig
 		byteArray, err := json.Marshal(engineServerArgsMirror.KurtosisBackendConfig)
 		if err != nil {
@@ -52,6 +55,8 @@ func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
 			return stacktrace.Propagate(err, "Failed to unmarshal backend config '%+v' with type '%v'", engineServerArgsMirror.KurtosisBackendConfig, engineServerArgsMirror.KurtosisBackendType.String())
 		}
 		engineServerArgsMirror.KurtosisBackendConfig = kubernetesConfig
+	default:
+		return stacktrace.NewError("Unmarshalled an unrecognized Kurtosis backend type: '%v'", engineServerArgsMirror.KurtosisBackendType.String())
 	}
 	*args = EngineServerArgs(engineServerArgsMirror)
 	return nil
