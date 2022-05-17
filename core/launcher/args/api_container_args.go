@@ -1,6 +1,8 @@
 package args
 
 import (
+	"encoding/json"
+	"github.com/kurtosis-tech/kurtosis-core/launcher/args/kurtosis_backend_config"
 	"reflect"
 	"strings"
 
@@ -37,6 +39,37 @@ type APIContainerArgs struct {
 
 	// Should be deserialized differently depending on value of KurtosisBackendType
 	KurtosisBackendConfig interface{} `json:"kurtosisBackendConfig"`
+}
+
+func (args *APIContainerArgs) UnmarshalJSON(data []byte) error {
+	// create a mirror type to avoid unmarshalling infinitely https://stackoverflow.com/questions/52433467/how-to-call-json-unmarshal-inside-unmarshaljson-without-causing-stack-overflow
+	type APIContainerArgsMirror APIContainerArgs
+	var apiContainerArgsMirror APIContainerArgsMirror
+	if err := json.Unmarshal(data, &apiContainerArgsMirror); err != nil {
+		return stacktrace.Propagate(err, "Failed to unmarshal api container args")
+	}
+	byteArray, err := json.Marshal(apiContainerArgsMirror.KurtosisBackendConfig)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to re-marshal Kurtosis backend interface ")
+	}
+	switch apiContainerArgsMirror.KurtosisBackendType {
+	case KurtosisBackendType_Docker:
+		var dockerConfig kurtosis_backend_config.DockerBackendConfig
+		if err := json.Unmarshal(byteArray, &dockerConfig); err != nil {
+			return stacktrace.Propagate(err, "Failed to unmarshal backend config '%+v' with type '%v'", apiContainerArgsMirror.KurtosisBackendConfig, apiContainerArgsMirror.KurtosisBackendType.String())
+		}
+		apiContainerArgsMirror.KurtosisBackendConfig = dockerConfig
+	case KurtosisBackendType_Kubernetes:
+		var kubernetesConfig kurtosis_backend_config.KubernetesBackendConfig
+		if err := json.Unmarshal(byteArray, &kubernetesConfig); err != nil {
+			return stacktrace.Propagate(err, "Failed to unmarshal backend config '%+v' with type '%v'", apiContainerArgsMirror.KurtosisBackendConfig, apiContainerArgsMirror.KurtosisBackendType.String())
+		}
+		apiContainerArgsMirror.KurtosisBackendConfig = kubernetesConfig
+	default:
+		return stacktrace.NewError("Unmarshalled an unrecognized Kurtosis backend type: '%v'", apiContainerArgsMirror.KurtosisBackendType.String())
+	}
+	*args = APIContainerArgs(apiContainerArgsMirror)
+	return nil
 }
 
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
