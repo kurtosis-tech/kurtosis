@@ -13,6 +13,8 @@ import (
 	"sort"
 )
 
+const newLineChar = "\n"
+
 var LsCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:               command_str_consts.ClusterLsCmdStr,
 	ShortDescription:         "List valid clusters",
@@ -32,8 +34,8 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 		clusterList = append(clusterList, clusterName)
 	}
 	sort.Strings(clusterList)
-	for clusterName := range clusterList {
-		fmt.Fprint(logrus.StandardLogger().Out, clusterName)
+	for _, clusterName := range clusterList {
+		fmt.Fprint(logrus.StandardLogger().Out, clusterName + newLineChar)
 	}
 	return nil
 }
