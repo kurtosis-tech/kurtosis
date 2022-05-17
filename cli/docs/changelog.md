@@ -13,6 +13,10 @@
 ### Changes
 * The `enclave-size-in-Megabytes` field in Kubernetes cluster field now is optional, and defaults to 10 MB
 
+### Fixes
+* Bumped the number of retry polls in the module tests up to 20 to try and remediate a timeout while waiting for the datastore service to come up that we were seeing
+* Fixed the config getting serialized strangely
+
 # 0.17.0
 ### Features
 * Added `test_cli_functionality` CircleCI test
