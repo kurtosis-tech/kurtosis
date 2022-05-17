@@ -6,7 +6,9 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/stacktrace"
 	"io"
+	apiv1 "k8s.io/api/core/v1"
 	"net"
 )
 
@@ -40,6 +42,14 @@ Implementation notes:
 - The IP that the container gets as its "own IP" is technically the IP of the Service. This *should* be fine, but we'll need
 	to keep an eye out for it.
 */
+
+// Any of these fields can be nil if they don't exist in Kubernetes, though at least
+// one field will be present (else this struct won't exist)
+type userServiceKubernetesResources struct {
+	service *apiv1.Service
+
+	pod *apiv1.Pod
+}
 
 func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID, ) (*service.ServiceRegistration, error, ) {
 	//TODO implement me
@@ -125,4 +135,42 @@ func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, 
 func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (successfulUserServiceGuids map[service.ServiceGUID]bool, erroredUserServiceGuids map[service.ServiceGUID]error, resultErr error) {
 	//TODO implement me
 	panic("implement me")
+}
+
+
+// ====================================================================================================
+//                                     Private Helper Methods
+// ====================================================================================================
+func (backend *KubernetesKurtosisBackend) getMatchingUserServiceObjectsAndKubernetesResources(
+	ctx context.Context,
+	filters *service.ServiceFilters,
+) (
+	map[service.ServiceGUID]*service.Service,
+	map[service.ServiceGUID]*userServiceKubernetesResources,
+	error,
+) {
+	matchingResources, err := backend.getMatchingUserServiceKubernetesResources(ctx, filters.IDs)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engine Kubernetes resources matching IDs: %+v", filters.IDs)
+	}
+
+
+}
+
+func (backend *KubernetesKurtosisBackend) getMatchingUserServiceKubernetesResources(
+	ctx context.Context,
+	filters *service.ServiceFilters,
+) (
+	map[service.ServiceGUID]*userServiceKubernetesResources,
+	error,
+) {
+
+}
+
+func (backend *KubernetesKurtosisBackend) getUserServiceObjectsFromKubernetesResources(
+	map[service.ServiceGUID]*userServiceKubernetesResources,
+) (
+	map[service.ServiceGUID]*service.Service,
+){
+
 }
