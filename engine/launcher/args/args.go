@@ -36,19 +36,24 @@ type EngineServerArgs struct {
 }
 
 func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
-	var engineServerArgs EngineServerArgs
-	if err := json.Unmarshal(data, &engineServerArgs); err != nil {
+	// create a mirror type to avoid unmarshalling infinitely https://stackoverflow.com/questions/52433467/how-to-call-json-unmarshal-inside-unmarshaljson-without-causing-stack-overflow
+	type EngineServerArgsMirror EngineServerArgs
+	var engineServerArgsMirror EngineServerArgsMirror
+	if err := json.Unmarshal(data, &engineServerArgsMirror); err != nil {
 		return stacktrace.Propagate(err, "Failed to unmarshal engine server args")
 	}
-	if engineServerArgs.KurtosisBackendType == KurtosisBackendType_Kubernetes {
+	if engineServerArgsMirror.KurtosisBackendType == KurtosisBackendType_Kubernetes {
 		var kubernetesConfig kurtosis_backend_config.KubernetesBackendConfig
-		byteArray := []byte(engineServerArgs.KurtosisBackendConfig.(string))
-		if err := json.Unmarshal(byteArray, &kubernetesConfig); err != nil {
-			return stacktrace.Propagate(err, "Failed to unmarshal backend config '%+v' with type '%v'", engineServerArgs.KurtosisBackendConfig, engineServerArgs.KurtosisBackendType.String())
+		byteArray, err := json.Marshal(engineServerArgsMirror.KurtosisBackendConfig)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to re-marshal interface ")
 		}
-		engineServerArgs.KurtosisBackendConfig = kubernetesConfig
+		if err := json.Unmarshal(byteArray, &kubernetesConfig); err != nil {
+			return stacktrace.Propagate(err, "Failed to unmarshal backend config '%+v' with type '%v'", engineServerArgsMirror.KurtosisBackendConfig, engineServerArgsMirror.KurtosisBackendType.String())
+		}
+		engineServerArgsMirror.KurtosisBackendConfig = kubernetesConfig
 	}
-	*args = engineServerArgs
+	*args = EngineServerArgs(engineServerArgsMirror)
 	return nil
 }
 
