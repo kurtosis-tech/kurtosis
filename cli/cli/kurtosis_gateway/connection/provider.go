@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/lib/kurtosis_context"
 	"github.com/kurtosis-tech/stacktrace"
@@ -92,11 +91,12 @@ func (provider *GatewayConnectionProvider) ForEnclaveApiContainer(enclaveInfo *k
 	return apiContainerConnection, nil
 }
 
-func (provider *GatewayConnectionProvider) ForUserService(userService *service.Service) (GatewayConnectionToKurtosis, error) {
-	portSpecsToForward := userService.GetMaybePublicPorts()
-	serviceId := string(userService.GetRegistration().GetID())
-	podPortforwardEndpoint := provider.getUserServicePodPortforwardEndpoint(serviceId)
-	userServiceConnection, err := newLocalPortToPodPortConnection(provider.config, podPortforwardEndpoint, portSpecsToForward)
+func (provider *GatewayConnectionProvider) ForUserService(enclaveId string, serviceId string, servicePortSpecs map[string]*port_spec.PortSpec) (GatewayConnectionToKurtosis, error) {
+	podPortforwardEndpoint, err := provider.getUserServicePodPortforwardEndpoint(enclaveId, serviceId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to find an api endpoint for Kubernetes portforward to a Kurtosis user service with id '%v' in enclave '%v', instead a non-nil error was returned", enclaveId, serviceId)
+	}
+	userServiceConnection, err := newLocalPortToPodPortConnection(provider.config, podPortforwardEndpoint, servicePortSpecs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to connect to user service with id '%v', instead a non-nil error was returned", serviceId)
 	}
@@ -162,12 +162,14 @@ func (provider *GatewayConnectionProvider) getApiContainerPodPortforwardEndpoint
 	return provider.kubernetesManager.GetPodPortforwardEndpointUrl(enclaveNamespaceName, apiContainerPodName), nil
 }
 
-// TODO Update to call Kubernetes api
-func (provider *GatewayConnectionProvider) getUserServicePodPortforwardEndpoint(serviceId string) *url.URL {
-	// TODO naming conventions for pods with user services and enclave namespaces
-	userServiceNamespace := "enclave-namespace"
+func (provider *GatewayConnectionProvider) getUserServicePodPortforwardEndpoint(enclaveId string, serviceId string) (*url.URL, error) {
+	userServiceNamespace, err := provider.getEnclaveNamespaceNameForEnclaveId(enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get a Kubernetes namespace corresponding to a Kurtosis enclave with id '%v', instead a non-nil error was returned", enclaveId)
+	}
+	// TODO labels for user service pods
 	userServicePodName := fmt.Sprintf("kurtosis-user-service--%v--pod", serviceId)
-	return provider.kubernetesManager.GetPodPortforwardEndpointUrl(userServiceNamespace, userServicePodName)
+	return provider.kubernetesManager.GetPodPortforwardEndpointUrl(userServiceNamespace, userServicePodName), nil
 }
 
 func (provider *GatewayConnectionProvider) getRunningPodNamesByLabels(namespace string, podLabels map[string]string) ([]string, error) {
@@ -185,4 +187,20 @@ func (provider *GatewayConnectionProvider) getRunningPodNamesByLabels(namespace 
 		}
 	}
 	return runningPodNames, nil
+}
+
+func (provider *GatewayConnectionProvider) getEnclaveNamespaceNameForEnclaveId(enclaveId string) (string, error) {
+	enclaveLabels := map[string]string{
+		label_key_consts.EnclaveIDLabelKey.GetString():            enclaveId,
+		label_key_consts.KurtosisResourceTypeLabelKey.GetString(): label_value_consts.EnclaveKurtosisResourceTypeLabelValue.GetString(),
+		label_key_consts.AppIDLabelKey.GetString():                label_value_consts.AppIDLabelValue.GetString(),
+	}
+	enclaveNamespaceList, err := provider.kubernetesManager.GetNamespacesByLabels(provider.providerContext, enclaveLabels)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Expected to be able to get enclaves namespaces with labels '%+v`, instead a non-nil error was returned", enclaveLabels)
+	}
+	if len(enclaveNamespaceList.Items) != 1 {
+		return "", stacktrace.NewError("Expected to find exactly 1 enclave namespace with enclaveId '%v', instead found '%v'", enclaveId, len(enclaveNamespaceList.Items))
+	}
+	return enclaveNamespaceList.Items[0].Name, nil
 }

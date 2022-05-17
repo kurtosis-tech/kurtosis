@@ -2,7 +2,6 @@ package api_container_gateway
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/connection"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
@@ -14,18 +13,20 @@ type ApiContainerGatewayServiceServer struct {
 	// This embedding is required by gRPC
 	kurtosis_core_rpc_api_bindings.UnimplementedApiContainerServiceServer
 
+	// Id of enclave the API container is running in
+	enclaveId string
 	// Client for the api container we'll be connecting too
 	remoteApiContainerClient kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
 
 	// Provides connections to Kurtosis objectis in cluster
 	connectionProvider *connection.GatewayConnectionProvider
 
-	// ServiceMap
+	// ServiceMap and mutex to protect it
 	mutex                           *sync.Mutex
 	userServiceToLocalConnectionMap map[string]connection.GatewayConnectionToKurtosis
 }
 
-func NewEnclaveApiContainerGatewayServer(connectionProvider *connection.GatewayConnectionProvider, remoteApiContainerClient kurtosis_core_rpc_api_bindings.ApiContainerServiceClient) (resultCoreGatewayServerService *ApiContainerGatewayServiceServer, resultGatewayCloseFunc func()) {
+func NewEnclaveApiContainerGatewayServer(connectionProvider *connection.GatewayConnectionProvider, remoteApiContainerClient kurtosis_core_rpc_api_bindings.ApiContainerServiceClient, enclaveId string) (resultCoreGatewayServerService *ApiContainerGatewayServiceServer, resultGatewayCloseFunc func()) {
 	// Start out with 0 connections to user services
 	userServiceToLocalConnectionMap := map[string]connection.GatewayConnectionToKurtosis{}
 
@@ -41,6 +42,7 @@ func NewEnclaveApiContainerGatewayServer(connectionProvider *connection.GatewayC
 		connectionProvider:              connectionProvider,
 		mutex:                           &sync.Mutex{},
 		userServiceToLocalConnectionMap: userServiceToLocalConnectionMap,
+		enclaveId:                       enclaveId,
 	}, closeGatewayFunc
 }
 
@@ -90,10 +92,6 @@ func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Contex
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
 	}
-	serviceId := args.GetServiceId()
-	servicePrivatePorts := args.PrivatePorts
-	servicePrivatePortSpecs := getPortSpecsFromRpcPortBinding()
-	service.connectionProvider.ForUserService(serviceId)
 
 	return remoteApiContainerResponse, nil
 }
@@ -187,23 +185,4 @@ func (service *ApiContainerGatewayServiceServer) StoreFilesArtifactFromService(c
 	}
 
 	return remoteApiContainerResponse, nil
-}
-
-// Private methods
-func getPortSpecsFromRpcPortBinding(rpcPortBindings map[string]*kurtosis_core_rpc_api_bindings.Port) map[string]*port_spec.PortSpec {
-	portSpecs := map[string]*port_spec.PortSpec{}
-	for portId, port := range rpcPortBindings {
-		portSpec, err := getPortSpecFromRpcPortBinding(port)
-		if err != nil {
-			// handle error
-		}
-		portSpecs[portId] = portSpec
-	}
-	return portSpecs
-}
-
-func getPortSpecFromRpcPortBinding(port *kurtosis_core_rpc_api_bindings.Port) (*port_spec.PortSpec, error) {
-	portProtocol := port.GetProtocol()
-
-	portSpecNumber := uint16(port.GetNumber())
 }

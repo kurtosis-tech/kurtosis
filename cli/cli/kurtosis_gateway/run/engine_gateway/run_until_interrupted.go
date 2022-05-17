@@ -15,7 +15,6 @@ import (
 const (
 	localHostIpStr            = "127.0.0.1"
 	engineGatewayPort         = 9710
-	apiContainerGatewayPort   = 33000
 	grpcServerStopGracePeriod = 5 * time.Second
 )
 

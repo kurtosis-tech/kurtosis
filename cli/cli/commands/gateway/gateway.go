@@ -15,18 +15,15 @@ import (
 )
 
 const (
-	gatewayPortArg = "port"
-	// Same port used by a kurtosis engine running in docker
-	defaultGatewayPort = 9710
-
+	// TODO Get this info from Kurtosis Cluster config
 	minikubeVolumeStorageClassName = "default"
-	enclaveVolumeSizeInGigabytes   = 2
+	enclaveVolumeSizeInMegabytes   = 1024
 	emptyConfigMasterUrl           = ""
 )
 
 var GatewayCmd = &cobra.Command{
 	Use:   command_str_consts.GatewayCmdStr,
-	Short: "Starts a kurtosis gateway to the Kubernetes cluster configured in $HOME/.kube/config",
+	Short: "Starts a local gateway to a Kurtosis cluster running in Kubernetes",
 	RunE:  run,
 }
 
@@ -34,7 +31,7 @@ func init() {
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	kurtosisBackend, err := lib.GetLocalKubernetesKurtosisBackend(minikubeVolumeStorageClassName, enclaveVolumeSizeInGigabytes)
+	kurtosisBackend, err := lib.GetLocalKubernetesKurtosisBackend(minikubeVolumeStorageClassName, enclaveVolumeSizeInMegabytes)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to Kubernetes")
 	}
