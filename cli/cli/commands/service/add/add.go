@@ -35,23 +35,23 @@ const (
 
 	entrypointBinaryFlagKey = "entrypoint"
 
-	envvarsFlagKey          = "env"
+	envvarsFlagKey              = "env"
 	envvarKeyValueDelimiter     = "="
 	envvarDeclarationsDelimiter = ","
 
-	portsFlagKey = "ports"
-	portIdSpecDelimiter     = "="
+	portsFlagKey                = "ports"
+	portIdSpecDelimiter         = "="
 	portNumberProtocolDelimiter = "/"
-	portDeclarationsDelimiter = ","
-	portNumberUintParsingBase = 10
-	portNumberUintParsingBits = 16
+	portDeclarationsDelimiter   = ","
+	portNumberUintParsingBase   = 10
+	portNumberUintParsingBits   = 16
 
 	filesFlagKey                       = "files"
 	filesArtifactMountsDelimiter       = ","
 	filesArtifactIdMountpointDelimiter = ":"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
-	engineClientCtxKey  = "engine-client"
+	engineClientCtxKey    = "engine-client"
 
 	// Magic key that, when found in CMD, ENTRYPOINT, or envvars, will be replaced with the service's IP address
 	serviceIpAddrReplaceKeyword = "IPADDR"
@@ -63,15 +63,15 @@ const (
 var defaultPortProtocolStr = strings.ToLower(kurtosis_core_rpc_api_bindings.Port_TCP.String())
 
 var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
-	CommandStr:              command_str_consts.ServiceAddCmdStr,
-	ShortDescription:        "Adds a service to an enclave",
-	LongDescription:         fmt.Sprintf(
-		"Adds a new service with the given parameters to the given enclave (NOTE: any instances of " +
+	CommandStr:       command_str_consts.ServiceAddCmdStr,
+	ShortDescription: "Adds a service to an enclave",
+	LongDescription: fmt.Sprintf(
+		"Adds a new service with the given parameters to the given enclave (NOTE: any instances of "+
 			"the string '%v' in the CMD args will be replaced with the container's IP address inside the enclave)",
 		serviceIpAddrReplaceKeyword,
 	),
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
-	EngineClientContextKey:  engineClientCtxKey,
+	EngineClientContextKey:    engineClientCtxKey,
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIDArg(
 			enclaveIdArgKey,
@@ -86,37 +86,37 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Key: serviceImageArgKey,
 		},
 		{
-			Key:             cmdArgsArgKey,
-			IsOptional:      true,
-			IsGreedy:        true,
+			Key:          cmdArgsArgKey,
+			IsOptional:   true,
+			IsGreedy:     true,
 			DefaultValue: []string{},
 		},
 	},
 	Flags: []*flags.FlagConfig{
 		{
 			Key: entrypointBinaryFlagKey,
-			Usage:     fmt.Sprintf(
-				"ENTRYPOINT binary that will be used when running the container, overriding the " +
-					"image's default ENTRYPOINT (NOTE: any instances of the string '%v' will be " +
+			Usage: fmt.Sprintf(
+				"ENTRYPOINT binary that will be used when running the container, overriding the "+
+					"image's default ENTRYPOINT (NOTE: any instances of the string '%v' will be "+
 					"replaced with the container's IP address inside the enclave)",
 				serviceIpAddrReplaceKeyword,
 			),
 			// TODO Make this a string list
-			Type:      flags.FlagType_String,
+			Type: flags.FlagType_String,
 		},
 		{
 			// TODO We currently can't handle commas, so allow users to set the flag multiple times to set multiple envvars
-			Key:       envvarsFlagKey,
-			Usage:     fmt.Sprintf(
-				"String containing environment variables that will be set when running the container, in " +
-					"the form \"KEY1%vVALUE1%vKEY2%vVALUE2\" (NOTE: any instances of the string '%v' in values " +
+			Key: envvarsFlagKey,
+			Usage: fmt.Sprintf(
+				"String containing environment variables that will be set when running the container, in "+
+					"the form \"KEY1%vVALUE1%vKEY2%vVALUE2\" (NOTE: any instances of the string '%v' in values "+
 					"will be replaced with the container's IP address inside the enclave)",
 				envvarKeyValueDelimiter,
 				envvarDeclarationsDelimiter,
 				envvarKeyValueDelimiter,
 				serviceIpAddrReplaceKeyword,
 			),
-			Type:      flags.FlagType_String,
+			Type: flags.FlagType_String,
 		},
 		{
 			Key: portsFlagKey,
@@ -133,13 +133,13 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 				strings.ToLower(kurtosis_core_rpc_api_bindings.Port_UDP.String()),
 				defaultPortProtocolStr,
 			),
-			Type:      flags.FlagType_String,
+			Type: flags.FlagType_String,
 		},
 		{
-			Key:       filesFlagKey,
-			Usage:     fmt.Sprintf(
-				"String containing declarations of files artifact IDs -> paths on the container where the contents of those " +
-					"files artifacts should be mounted, in the form \"ARTIFACTID1%vMOUNTPATH1%vARTIFACTID2%vMOUNTPATH2\" where " +
+			Key: filesFlagKey,
+			Usage: fmt.Sprintf(
+				"String containing declarations of files artifact IDs -> paths on the container where the contents of those "+
+					"files artifacts should be mounted, in the form \"ARTIFACTID1%vMOUNTPATH1%vARTIFACTID2%vMOUNTPATH2\" where "+
 					"ARTIFACTID is the ID returned by Kurtosis when uploading files to the enclave (e.g. via the '%v %v' command)",
 				filesArtifactIdMountpointDelimiter,
 				filesArtifactMountsDelimiter,
@@ -147,7 +147,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 				command_str_consts.FilesCmdStr,
 				command_str_consts.FilesUploadCmdStr,
 			),
-			Type:      flags.FlagType_String,
+			Type: flags.FlagType_String,
 		},
 	},
 	RunFunc: run,
@@ -278,7 +278,7 @@ func getEnclaveContextFromEnclaveInfo(infoForEnclave *kurtosis_engine_rpc_api_bi
 
 	apiContainerHostMachineIpAddr, apiContainerHostMachineGrpcPortNum, err := enclave_liveness_validator.ValidateEnclaveLiveness(infoForEnclave)
 	if err != nil {
-		return nil, stacktrace.NewError("Cannot add service because the API container in enclave '%v' is not running", enclaveId)
+		return nil, stacktrace.Propagate(err, "Cannot add service because the API container in enclave '%v' is not running", enclaveId)
 	}
 
 	apiContainerHostMachineUrl := fmt.Sprintf(

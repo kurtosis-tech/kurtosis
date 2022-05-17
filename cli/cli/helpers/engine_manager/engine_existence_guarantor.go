@@ -5,14 +5,12 @@ import (
 	"fmt"
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"net"
 )
 
 const (
@@ -92,16 +90,16 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	maybeCurrentlyRunningEngineVersionTag string,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
-		ctx:                                   ctx,
-		preVisitingMaybeHostMachineIpAndPort:  preVisitingMaybeHostMachineIpAndPort,
-		kurtosisBackend:                       kurtosisBackend,
-		engineServerKurtosisBackendConfigSupplier:	engineServerKurtosisBackendConfigSupplier,
-		engineServerLauncher:                  engine_server_launcher.NewEngineServerLauncher(kurtosisBackend),
-		imageVersionTag:                       imageVersionTag,
-		logLevel:                              logLevel,
-		maybeCurrentlyRunningEngineVersionTag: maybeCurrentlyRunningEngineVersionTag,
-		postVisitingHostMachineIpAndPort:      nil, // Will be filled in upon successful visitation
-		shouldSendMetrics: shouldSendMetrics,
+		ctx:                                  ctx,
+		preVisitingMaybeHostMachineIpAndPort: preVisitingMaybeHostMachineIpAndPort,
+		kurtosisBackend:                      kurtosisBackend,
+		engineServerKurtosisBackendConfigSupplier: engineServerKurtosisBackendConfigSupplier,
+		engineServerLauncher:                      engine_server_launcher.NewEngineServerLauncher(kurtosisBackend),
+		imageVersionTag:                           imageVersionTag,
+		logLevel:                                  logLevel,
+		maybeCurrentlyRunningEngineVersionTag:     maybeCurrentlyRunningEngineVersionTag,
+		postVisitingHostMachineIpAndPort:          nil, // Will be filled in upon successful visitation
+		shouldSendMetrics:                         shouldSendMetrics,
 	}
 }
 
@@ -119,11 +117,9 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 		return stacktrace.Propagate(err, "An error occurred getting metrics user id")
 	}
 
-	var hostMachineIpAddr net.IP
-	var hostMachinePortSpec *port_spec.PortSpec
 	var engineLaunchErr error
 	if guarantor.imageVersionTag == defaultEngineImageVersionTag {
-		hostMachineIpAddr, hostMachinePortSpec, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithDefaultVersion(
+		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithDefaultVersion(
 			guarantor.ctx,
 			guarantor.logLevel,
 			kurtosis_context.DefaultKurtosisEngineServerGrpcPortNum,
@@ -133,7 +129,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.engineServerKurtosisBackendConfigSupplier,
 		)
 	} else {
-		hostMachineIpAddr, hostMachinePortSpec, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
+		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
 			guarantor.ctx,
 			guarantor.imageVersionTag,
 			guarantor.logLevel,
@@ -148,14 +144,8 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 		return stacktrace.Propagate(engineLaunchErr, "An error occurred launching the engine server container")
 	}
 
-	var hostMachinePortNum uint16
-	if hostMachinePortSpec != nil {
-		hostMachinePortNum = hostMachinePortSpec.GetNumber()
-	}
-	guarantor.postVisitingHostMachineIpAndPort = &hostMachineIpAndPort{
-		ipAddr:  hostMachineIpAddr,
-		portNum: hostMachinePortNum,
-	}
+	// TODO Replace hacky method of defaulting engine connection to localhost on predetermined port
+	guarantor.postVisitingHostMachineIpAndPort = getDefaultKurtosisEngineLocalhostMachineIpAndPort()
 	logrus.Info("Successfully started Kurtosis engine")
 	return nil
 }

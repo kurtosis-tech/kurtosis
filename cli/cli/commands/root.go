@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/engine"
 	files "github.com/kurtosis-tech/kurtosis-cli/cli/commands/files"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/gateway"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/module"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/version"
@@ -48,12 +49,12 @@ const (
 
 	upgradeCLIInstructionsDocsPageURL = "https://docs.kurtosistech.com/installation.html#upgrading-kurtosis-cli"
 
-	latestCLIReleaseCacheFileContentSeparator               = ";"
-	latestCLIReleaseCacheFileExpirationHours                = 24
-	latestCLIReleaseCacheFileContentColumnsAmount           = 2
-	latestCLIReleaseCacheFileContentDateIndex               = 0
-	latestCLIReleaseCacheFileContentVersionIndex            = 1
-	latestCLIReleaseCacheFileCreationDateTimeFormat         = time.RFC3339
+	latestCLIReleaseCacheFileContentSeparator       = ";"
+	latestCLIReleaseCacheFileExpirationHours        = 24
+	latestCLIReleaseCacheFileContentColumnsAmount   = 2
+	latestCLIReleaseCacheFileContentDateIndex       = 0
+	latestCLIReleaseCacheFileContentVersionIndex    = 1
+	latestCLIReleaseCacheFileCreationDateTimeFormat = time.RFC3339
 
 	getLatestCLIReleaseCacheFilePermissions os.FileMode = 0644
 )
@@ -88,6 +89,7 @@ func init() {
 	RootCmd.AddCommand(module.ModuleCmd)
 	RootCmd.AddCommand(engine.EngineCmd)
 	RootCmd.AddCommand(version.VersionCmd)
+	RootCmd.AddCommand(gateway.GatewayCmd)
 	RootCmd.AddCommand(clean.CleanCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(config.ConfigCmd)
 	RootCmd.AddCommand(files.FilesCmd)
@@ -106,7 +108,7 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 	//It is necessary to try track this metric on every execution to have at least one successful deliver
 	if err := user_send_metrics_election.SendAnyBackloggedUserMetricsElectionEvent(); err != nil {
 		//We don't want to interrupt users flow if something fails when tracking metrics
-		logrus.Debugf("An error occurred tracking user consent to send metrics election\n%v",err)
+		logrus.Debugf("An error occurred tracking user consent to send metrics election\n%v", err)
 	}
 
 	return nil

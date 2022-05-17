@@ -9,6 +9,7 @@
     * `enclave rm` 
     * `service logs`
     * `service shell`
+* Added 'gateway' command to open a local gateway to kurtosis objects running in Kubernetes
 
 ### Changes
 * The `enclave-size-in-Megabytes` field in Kubernetes cluster field now is optional, and defaults to 10 MB
