@@ -22,6 +22,8 @@ func GetEnvFromArgs(args *EngineServerArgs) (map[string]string, error) {
 
 	argsStr := string(argsBytes)
 
+	logrus.Infof("ArgsStr: '%v'", argsStr)
+
 	return map[string]string{
 		serializedArgsEnvVar: argsStr,
 	}, nil
