@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/kurtosis_config_getter"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/resolved_config"
@@ -23,7 +24,7 @@ import (
 
 const (
 	waitForEngineResponseTimeout = 5 * time.Second
-	defaultClusterName = resolved_config.DefaultDockerClusterName
+	defaultClusterName           = resolved_config.DefaultDockerClusterName
 
 	// --------------------------- Old port parsing constants ------------------------------------
 	// These are the old labels that the API container used to use before 2021-11-15 for declaring its port num protocol
@@ -75,9 +76,9 @@ func NewEngineManager() (*EngineManager, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the Kurtosis config")
 	}
-	clusterConfig, found := kurtosisConfig.GetKurtosisClusters()[clusterName]
-	if !found {
-		return nil, stacktrace.NewError("No cluster exists with name '%v'", clusterName)
+	clusterConfig, err := kurtosis_config_getter.GetKurtosisClusterConfig()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "E")
 	}
 
 	kurtosisBackend, err := clusterConfig.GetKurtosisBackend()
