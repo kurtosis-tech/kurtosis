@@ -2,6 +2,10 @@
 ### Changes
 * Replaced `GetLocalKubernetesKurtosisBackend` call with `GetInClusterKubernetesKurtosisBackend` because API container runs inside a K8s cluster
 
+### Fixes
+* Replaced poor casting with actual polymorphic deserialization of arguments to launch API container
+
+
 # 1.49.3
 ### Features
 * Added CircleCI caching to the server build step
