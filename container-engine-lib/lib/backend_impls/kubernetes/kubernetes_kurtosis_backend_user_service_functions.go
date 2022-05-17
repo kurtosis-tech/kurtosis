@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	apiv1 "k8s.io/api/core/v1"
 	"net"
@@ -141,6 +140,7 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
+/*
 func (backend *KubernetesKurtosisBackend) getMatchingUserServiceObjectsAndKubernetesResources(
 	ctx context.Context,
 	filters *service.ServiceFilters,
@@ -174,3 +174,5 @@ func (backend *KubernetesKurtosisBackend) getUserServiceObjectsFromKubernetesRes
 ){
 
 }
+
+ */
