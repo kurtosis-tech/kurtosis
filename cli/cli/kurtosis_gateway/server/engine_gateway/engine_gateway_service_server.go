@@ -199,7 +199,6 @@ func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclave
 	cleanUpGateway := true
 	defer func() {
 		if cleanUpGateway {
-			delete(service.enclaveIdToRunningGatewayMap, enclaveId)
 			gatewayStopFunc()
 		}
 	}()
@@ -211,7 +210,14 @@ func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclave
 
 	// Store information about our running gateway
 	service.enclaveIdToRunningGatewayMap[enclaveId] = runningGatewayInfo
+	cleanUpMapEntry := true
+	defer func() {
+		if cleanUpMapEntry {
+			delete(service.enclaveIdToRunningGatewayMap, enclaveId)
+		}
+	}()
 
+	cleanUpMapEntry = false
 	cleanUpGateway = false
 	return runningGatewayInfo, nil
 }
