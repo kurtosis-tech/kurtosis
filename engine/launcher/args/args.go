@@ -1,6 +1,8 @@
 package args
 
 import (
+	"encoding/json"
+	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args/kurtosis_backend_config"
 	"reflect"
 	"strings"
 
@@ -31,6 +33,23 @@ type EngineServerArgs struct {
 
 	// Should be deserialized differently depending on value of KurtosisBackendType
 	KurtosisBackendConfig interface{} `json:"kurtosisBackendConfig"`
+}
+
+func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
+	var engineServerArgs EngineServerArgs
+	if err := json.Unmarshal(data, &engineServerArgs); err != nil {
+		return stacktrace.Propagate(err, "Failed to unmarshal engine server args")
+	}
+	if engineServerArgs.KurtosisBackendType == KurtosisBackendType_Kubernetes {
+		var kubernetesConfig kurtosis_backend_config.KubernetesBackendConfig
+		byteArray := []byte(engineServerArgs.KurtosisBackendConfig.(string))
+		if err := json.Unmarshal(byteArray, &kubernetesConfig); err != nil {
+			return stacktrace.Propagate(err, "Failed to unmarshal backend config '%+v' with type '%v'", engineServerArgs.KurtosisBackendConfig, engineServerArgs.KurtosisBackendType.String())
+		}
+		engineServerArgs.KurtosisBackendConfig = kubernetesConfig
+	}
+	*args = engineServerArgs
+	return nil
 }
 
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
