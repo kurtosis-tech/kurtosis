@@ -1,4 +1,6 @@
 # TBD
+
+# 0.23.3
 ### Features
 * Added `KubernetesKurtosisBackend.StopEnclaves` and `KubernetesKurtosisBackend.DestroyEnclaves`
 * Added `KubernetesManager.IsPersistentVolumeClaimBound` to check when a Persistent Volume has been bound to a Persistent Volume Claim
