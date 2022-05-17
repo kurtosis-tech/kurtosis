@@ -1,5 +1,12 @@
 # TBD
 
+# 1.21.4
+### Changes
+* Replaced `GetLocalKubernetesKurtosisBackend` call with `GetInClusterKubernetesKurtosisBackend` because the engine server runs inside a K8s cluster
+
+### Fixes
+* Replacing poor casting with actual polymorphic deserialization of arguments to launch engine server, solving bug in starting engine from CLI
+
 # 1.21.3
 ### Features
 * Added build caching to significantly speed up builds

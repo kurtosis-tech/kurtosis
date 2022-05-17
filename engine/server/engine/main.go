@@ -135,7 +135,7 @@ func getEnclaveManager(kurtosisBackendType args.KurtosisBackendType, backendConf
 		if !ok {
 			return nil, stacktrace.NewError("Failed to cast cluster configuration interface to the appropriate type, even though Kurtosis backend type is '%v'", args.KurtosisBackendType_Kubernetes.String())
 		}
-		kurtosisBackend, err = lib.GetLocalKubernetesKurtosisBackend(kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInMegabytes)
+		kurtosisBackend, err = lib.GetInClusterKubernetesKurtosisBackend(kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInMegabytes)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to get a Kubernetes backend with storage class '%v' and enclave size (in MB) %d", kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInMegabytes)
 		}
@@ -146,5 +146,5 @@ func getEnclaveManager(kurtosisBackendType args.KurtosisBackendType, backendConf
 
 	enclaveManager := enclave_manager.NewEnclaveManager(kurtosisBackend, apiContainerKurtosisBackendConfigSupplier)
 
-	return enclaveManager, nil;
+	return enclaveManager, nil
 }

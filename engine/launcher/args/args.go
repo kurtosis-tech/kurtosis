@@ -1,6 +1,8 @@
 package args
 
 import (
+	"encoding/json"
+	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args/kurtosis_backend_config"
 	"reflect"
 	"strings"
 
@@ -31,6 +33,37 @@ type EngineServerArgs struct {
 
 	// Should be deserialized differently depending on value of KurtosisBackendType
 	KurtosisBackendConfig interface{} `json:"kurtosisBackendConfig"`
+}
+
+func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
+	// create a mirror type to avoid unmarshalling infinitely https://stackoverflow.com/questions/52433467/how-to-call-json-unmarshal-inside-unmarshaljson-without-causing-stack-overflow
+	type EngineServerArgsMirror EngineServerArgs
+	var engineServerArgsMirror EngineServerArgsMirror
+	if err := json.Unmarshal(data, &engineServerArgsMirror); err != nil {
+		return stacktrace.Propagate(err, "Failed to unmarshal engine server args")
+	}
+	byteArray, err := json.Marshal(engineServerArgsMirror.KurtosisBackendConfig)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to re-marshal interface ")
+	}
+	switch engineServerArgsMirror.KurtosisBackendType {
+	case KurtosisBackendType_Docker:
+		var dockerConfig kurtosis_backend_config.DockerBackendConfig
+		if err := json.Unmarshal(byteArray, &dockerConfig); err != nil {
+			return stacktrace.Propagate(err, "Failed to unmarshal backend config '%+v' with type '%v'", engineServerArgsMirror.KurtosisBackendConfig, engineServerArgsMirror.KurtosisBackendType.String())
+		}
+		engineServerArgsMirror.KurtosisBackendConfig = dockerConfig
+	case KurtosisBackendType_Kubernetes:
+		var kubernetesConfig kurtosis_backend_config.KubernetesBackendConfig
+		if err := json.Unmarshal(byteArray, &kubernetesConfig); err != nil {
+			return stacktrace.Propagate(err, "Failed to unmarshal backend config '%+v' with type '%v'", engineServerArgsMirror.KurtosisBackendConfig, engineServerArgsMirror.KurtosisBackendType.String())
+		}
+		engineServerArgsMirror.KurtosisBackendConfig = kubernetesConfig
+	default:
+		return stacktrace.NewError("Unmarshalled an unrecognized Kurtosis backend type: '%v'", engineServerArgsMirror.KurtosisBackendType.String())
+	}
+	*args = EngineServerArgs(engineServerArgsMirror)
+	return nil
 }
 
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
