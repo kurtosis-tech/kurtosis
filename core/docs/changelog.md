@@ -1,4 +1,6 @@
 # TBD
+
+# 1.49.4
 ### Changes
 * Replaced `GetLocalKubernetesKurtosisBackend` call with `GetInClusterKubernetesKurtosisBackend` because API container runs inside a K8s cluster
 
