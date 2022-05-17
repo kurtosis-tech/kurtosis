@@ -53,31 +53,11 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 		)
 	}
 
-	userServiceFilters := &service.ServiceFilters{
-		EnclaveIDs: map[enclave.EnclaveID]bool{
-			enclaveId: true,
-		},
-		GUIDs: map[service.ServiceGUID]bool{
-			serviceGuid: true,
-		},
-	}
-
-	userServices, err := backend.getMatchingUserServices(ctx, userServiceFilters)
+	_, dockerResources, err := backend.getSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting matching user services using filters '%+v'", userServiceFilters)
+		return nil, stacktrace.Propagate(err, "An error occurred getting network sidecar's user service '%v'", serviceGuid)
 	}
-	numOfUserServices := len(userServices)
-	if numOfUserServices == 0 {
-		return nil, stacktrace.NewError("No user service with GUID '%v' in enclave with ID '%v' was found", serviceGuid, enclaveId)
-	}
-	if numOfUserServices > 1 {
-		return nil, stacktrace.NewError("Expected to find only one user service with GUID '%v' in enclave with ID '%v', but '%v' was found", serviceGuid, enclaveId, numOfUserServices)
-	}
-
-	var userServiceContainerId string
-	for containerId := range userServices {
-		userServiceContainerId = containerId
-	}
+	container := dockerResources.container
 
 	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
 	if err != nil {
@@ -118,7 +98,7 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 	).WithAddedCapabilities(map[docker_manager.ContainerCapability]bool{
 		docker_manager.NetAdmin: true,
 	}).WithNetworkMode(
-		docker_manager.NewContainerNetworkMode(userServiceContainerId),
+		docker_manager.NewContainerNetworkMode(container.GetId()),
 	).WithCmdArgs(
 		sidecarContainerCommand,
 	).WithLabels(

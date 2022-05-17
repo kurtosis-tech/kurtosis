@@ -13,8 +13,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	"net"
@@ -299,40 +297,24 @@ func (backend *MetricsReportingKurtosisBackend) DestroyModules(
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) CreateUserServiceRegistration(ctx context.Context, enclaveId enclave.EnclaveID, serviceId user_service_registration.ServiceID) (*user_service_registration.UserServiceRegistration, error) {
+func (backend *MetricsReportingKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID, ) (*service.ServiceRegistration, error, ) {
 	serviceIdStr := string(serviceId)
 	if len(strings.TrimSpace(serviceIdStr)) == 0 {
 		return nil, stacktrace.NewError("Service ID cannot be whitespace or empty")
 	}
 
-	result, err := backend.underlying.CreateUserServiceRegistration(ctx, enclaveId, serviceId)
+	result, err := backend.underlying.RegisterUserService(ctx, enclaveId, serviceId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating service registration in enclave '%v' for service ID '%v'", enclaveId, serviceId)
+		return nil, stacktrace.Propagate(err, "An error occurred registering user service '%v' in enclave '%v'", serviceId, enclaveId)
 	}
 	return result, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) GetUserServiceRegistrations(ctx context.Context, filters *user_service_registration.UserServiceRegistrationFilters) (map[user_service_registration.UserServiceRegistrationGUID]*user_service_registration.UserServiceRegistration, error) {
-	result, err := backend.underlying.GetUserServiceRegistrations(ctx, filters)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user service registrations using filters: %+v", filters)
-	}
-	return result, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) DestroyUserServiceRegistrations(ctx context.Context, filters *user_service_registration.UserServiceRegistrationFilters) (resultSuccessfulServiceIds map[user_service_registration.UserServiceRegistrationGUID]bool, resultErroredServiceIds map[user_service_registration.UserServiceRegistrationGUID]error, resultErr error) {
-	successes, failures, err := backend.underlying.DestroyUserServiceRegistrations(ctx, filters)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying user service registrations matching filters: %+v", filters)
-	}
-	return successes, failures, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) CreateUserService(
+func (backend *MetricsReportingKurtosisBackend) StartUserService(
 	ctx context.Context,
-	registrationGuid user_service_registration.UserServiceRegistrationGUID,
-	containerImageName string,
 	enclaveId enclave.EnclaveID,
+	guid service.ServiceGUID,
+	containerImageName string,
 	privatePorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
 	cmdArgs []string,
@@ -342,11 +324,11 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 	newUserService *service.Service,
 	resultErr error,
 ) {
-	userService, err := backend.underlying.CreateUserService(
+	userService, err := backend.underlying.StartUserService(
 		ctx,
-		registrationGuid,
-		containerImageName,
 		enclaveId,
+		guid,
+		containerImageName,
 		privatePorts,
 		entrypointArgs,
 		cmdArgs,
@@ -356,10 +338,10 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating the user service bound to registration '%v' and using image '%v' " +
-				"with private ports '%+v' with entry point args '%+v', command args '%+v', environment " +
+			"An error occurred starting user service '%v' using image '%v' " +
+				"with private ports '%+v' and entry point args '%+v', command args '%+v', environment " +
 				"vars '%+v', and file artifacts mount dirpath '%v'",
-			registrationGuid,
+			guid,
 			containerImageName,
 			privatePorts,
 			entrypointArgs,
@@ -373,20 +355,22 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 
 func (backend *MetricsReportingKurtosisBackend) GetUserServices(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 ) (
 	map[service.ServiceGUID]*service.Service,
 	error,
 ) {
-	services, err := backend.underlying.GetUserServices(ctx, filters)
+	services, err := backend.underlying.GetUserServices(ctx, enclaveId, filters)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user services using filters '%+v'", filters)
+		return nil, stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' using filters '%+v'", enclaveId, filters)
 	}
 	return services, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 	shouldFollowLogs bool,
 ) (
@@ -394,9 +378,9 @@ func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
 	map[service.ServiceGUID]error,
 	error,
 ) {
-	userServiceLogs, erroredUserServices, err := backend.underlying.GetUserServiceLogs(ctx, filters, shouldFollowLogs)
+	userServiceLogs, erroredUserServices, err := backend.underlying.GetUserServiceLogs(ctx, enclaveId, filters, shouldFollowLogs)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user service logs using filters '%+v'", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user service logs in enclave '%v' using filters '%+v'", enclaveId, filters)
 	}
 	return userServiceLogs, erroredUserServices, nil
 }
@@ -408,7 +392,7 @@ func (backend *MetricsReportingKurtosisBackend) PauseService(
 ) error {
 	err := backend.underlying.PauseService(ctx, enclaveId, serviceId)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to pause service '%v'", serviceId)
+		return stacktrace.Propagate(err, "Failed to pause service '%v' in enclave '%v'", serviceId, enclaveId)
 	}
 	return nil
 }
@@ -420,7 +404,7 @@ func (backend *MetricsReportingKurtosisBackend) UnpauseService(
 ) error {
 	err := backend.underlying.UnpauseService(ctx, enclaveId, serviceId)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to unpause service '%v'", serviceId)
+		return stacktrace.Propagate(err, "Failed to unpause service '%v' in enclave '%v'", serviceId, enclaveId)
 	}
 	return nil
 }
@@ -444,50 +428,6 @@ func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands(
 		)
 	}
 	return succesfulUserServiceExecResults, erroredUserServiceGuids, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) WaitForUserServiceHttpEndpointAvailability(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceGUID service.ServiceGUID,
-	httpMethod wait_for_availability_http_methods.WaitForAvailabilityHttpMethod,
-	port uint32,
-	path string,
-	requestBody string,
-	expectedResponseBody string,
-	initialDelayMilliseconds uint32,
-	retries uint32,
-	retriesDelayMilliseconds uint32,
-) (
-	resultErr error,
-) {
-	if err := backend.underlying.WaitForUserServiceHttpEndpointAvailability(
-		ctx,
-		enclaveId,
-		serviceGUID,
-		httpMethod,
-		port,
-		path,
-		requestBody,
-		expectedResponseBody,
-		initialDelayMilliseconds,
-		retries,
-		retriesDelayMilliseconds,
-	); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred waiting for http endpoint with path '%v', port '%v', request body '%v', expected response body '%v' from service with GUID '%v' in enclave with ID '%v' to become available after '%v' retries and '%v' milliseconds between retries,",
-			path,
-			port,
-			requestBody,
-			expectedResponseBody,
-			serviceGUID,
-			enclaveId,
-			retries,
-			retriesDelayMilliseconds,
-		)
-	}
-	return nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) GetConnectionWithUserService(
@@ -523,28 +463,30 @@ func (backend *MetricsReportingKurtosisBackend) CopyFromUserService(
 
 func (backend *MetricsReportingKurtosisBackend) StopUserServices(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 ) (
 	successfulUserServiceGuids map[service.ServiceGUID]bool,
 	erroredUserServiceGuids map[service.ServiceGUID]error,
 	resultErr error,
 ) {
-	successes, failures, err := backend.underlying.StopUserServices(ctx, filters)
+	successes, failures, err := backend.underlying.StopUserServices(ctx, enclaveId, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping user services using filters: %+v", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping user services in enclave '%v' using filters: %+v", enclaveId, filters)
 	}
 	return successes, failures, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) DestroyUserServices(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 ) (
 	successfulUserServiceGuids map[service.ServiceGUID]bool,
 	erroredUserServiceGuids map[service.ServiceGUID]error,
 	resultErr error,
 ) {
-	successes, failures, err := backend.underlying.DestroyUserServices(ctx, filters)
+	successes, failures, err := backend.underlying.DestroyUserServices(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying user services using filters: %+v", filters)
 	}
@@ -629,15 +571,15 @@ func (backend *MetricsReportingKurtosisBackend) DestroyNetworkingSidecars(
 func (backend *MetricsReportingKurtosisBackend) CreateFilesArtifactExpansionVolume(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	registrationGuid user_service_registration.UserServiceRegistrationGUID,
+	serviceGuid service.ServiceGUID,
 	filesArtifactId service.FilesArtifactID,
 ) (
 	*files_artifact_expansion_volume.FilesArtifactExpansionVolume,
 	error,
 ) {
-	newFileArtifactExpansionVolume, err := backend.underlying.CreateFilesArtifactExpansionVolume(ctx, enclaveId, registrationGuid, filesArtifactId)
+	newFileArtifactExpansionVolume, err := backend.underlying.CreateFilesArtifactExpansionVolume(ctx, enclaveId, serviceGuid, filesArtifactId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for user service with registration '%v' and files artifact ID '%v' in enclave with ID '%v'", registrationGuid, filesArtifactId, enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, enclaveId)
 	}
 
 	return newFileArtifactExpansionVolume, nil

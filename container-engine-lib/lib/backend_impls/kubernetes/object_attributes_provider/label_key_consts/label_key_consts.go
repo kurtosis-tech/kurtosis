@@ -7,15 +7,17 @@ import (
 const (
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// If these value change, it will lead to the Kurtosis engine losing track of old containers
-	//  which will cause a resource leak on the user's system!
+	// which will cause a resource leak on the user's system!
 	//
-	//   If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
-	//
-	labelKeyPrefixStr       = "kurtosistech.com/"
-	appIdLabelKeyStr        = labelKeyPrefixStr + "app-id"
-	resourceTypeLabelKeyStr = labelKeyPrefixStr + "resource-type"
-	volumeTypeLabelKeyStr = labelKeyPrefixStr + "volume-type"
+	// If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
+	// These immutable values track resources between Kurtosis versions.
+	labelKeyPrefixStr       	= "kurtosistech.com/"
+	appIdLabelKeyStr        	= labelKeyPrefixStr + "app-id"
+	resourceTypeLabelKeyStr 	= labelKeyPrefixStr + "resource-type"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+	containerTypeLabelKeyStr	= labelKeyPrefixStr + "container-type"
+	volumeTypeLabelKeyStr		= labelKeyPrefixStr + "volume-type"
 
 	// A label to identify a Kurtosis resource (e.g. network, container, etc.) by its id
 	idLabelKeyStr = labelKeyPrefixStr + "id"
@@ -41,10 +43,10 @@ const (
 //
 var AppIDLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(appIdLabelKeyStr)
 var KurtosisResourceTypeLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(resourceTypeLabelKeyStr)
-var VolumeTypeLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(volumeTypeLabelKeyStr)
-
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+var KurtosisContainerTypeLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(containerTypeLabelKeyStr)
+var KurtosisVolumeTypeLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(volumeTypeLabelKeyStr)
 var IDLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(idLabelKeyStr)
 var GUIDLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(guidLabelKeyStr)
 var PortSpecsLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(portSpecsLabelKeyStr)

@@ -2,6 +2,68 @@
 ### Features
 * Build out `KubernetesKurtosisBackend.DumpEnclave`
 
+### Features
+* Added `KubernetesManager.IsPersistentVolumeClaimBound` to check when a Persistent Volume has been bound to a Persistent Volume Claim
+* Updated `KubernetesManager.CreatePersistentVolumeClaim` to wait for the PersistentVolumeClaim to get bound
+* Added `CollectMatchingRoles` and `CollectMatchingRoleBindings` in `kubernetes_resource_collectors` package
+* Upped the CircleCI resource class to 'large' since builds are 1m30s and CircleCI showed that we're maxing out the CPU
+* Added a build cache to each build
+
+### Fixes
+* Added apiv1 prefix to `KubernetesManager.GetPodPortforwardEndpointUrl`
+
+# 0.23.2
+### Fixes
+* Don't error when parsing public ports on stopped containers
+
+# 0.23.1
+### Fixes
+* Fix accidentally calling pause when we should be unpausing
+* Fix error-checking not getting checked after creating a service
+* Fix bug with improper `nil` check in creating networking sidecar
+
+# 0.23.0
+### Breaking Changes
+* For KubernetesBackends, `EnclaveVolumeSizeInGigabytes` has been changed from an int to a uint `EnclaveVolumeSizeInMegabytes`
+  * Remediation: change all calls to KubernetesBackend factory methods to use megabytes (not gigabytes)
+
+# 0.22.0
+### Changes
+* Upgrade to Docker SDK v20.10 to try and fix a bug where Docker network containers wouldn't be populated
+
+### Fixes
+* Fix an issue with network container IPs not being correctly made available when starting a DockerKurtosisBackend in API container mode
+* Allowed removal of user service registrations independent of the underlying service registration (which is necessary for deregistering services in the API container)
+
+### Removals
+* Removed unneeded & unused `KurtosisBackend.WaitForEndpointAvailability` function
+
+### Breaking Changes
+* `user_service_registration.ServiceID` is now once again `service.ServiceID`
+    * Users should update their code
+* `user_service_registration.UserServiceRegistration` objects have been removed and replaced with `service.ServiceRegistration`
+    * Users should use the new objects
+* `user_service_registration.UserServiceRegistrationGUID` no longer exists
+    * Users should switch to using `ServiceGUID`
+* `CreateUserServiceRegistration` has been replaced with `RegisterUserService`
+    * Users should use `RegisterUserService`
+* `DestroyUserServiceRegistration` has been removed
+    * Users should use `DestroyUserServices`
+* `CreateUserService` has been renamed to `StartUserService`
+    * Users should call `RegisterUserService` first, then `StartUserService`
+* All user service functions now take in an `enclaveId` parameter
+    * Users should provide the new parameter
+* `CreateFilesArtifactExpansionVolume` now takes in a `ServiceGUID` once more
+    * Users should switch back to providing a `ServiceGUID`
+
+### Features
+* Added `ForUserServiceService` for `KubernetesEngineObjectAttributesProvider`
+
+# 0.21.1
+### Fixes
+* Add ID & GUID labels to enclave networks & namespaces
+
+# 0.21.0
 ### Changes
 * The `DockerKurtosisBackend` will now track the free IPs of networks
 * `KurtosisBackend` now has `UserServiceRegistration` CRUD methods
@@ -32,6 +94,12 @@
     * `GetNetworkID`
     * `GetNetworkGatewayIp`
     * `GetNetworkIpAddrTracker`
+
+# 0.20.2
+
+### Changes
+* Updated Kurtosis Kubernetes `label_key_consts` and tests.
+* Added `GetPodPortforwardEndpointUrl` method to kubernetes_manager
 
 # 0.20.1
 ### Features

@@ -198,7 +198,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 }
 
 func (backend *KubernetesKurtosisBackend) GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[string]*engine.Engine, error) {
-	matchingEngines, _, err := backend.getMatchingEnginesAndKubernetesResources(ctx, filters)
+	matchingEngines, _, err := backend.getMatchingEngineObjectsAndKubernetesResources(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
 	}
@@ -213,7 +213,7 @@ func (backend *KubernetesKurtosisBackend) StopEngines(
 	resultErroredEngineIds map[string]error,
 	resultErr error,
 ) {
-	_, matchingKubernetesResources, err := backend.getMatchingEnginesAndKubernetesResources(ctx, filters)
+	_, matchingKubernetesResources, err := backend.getMatchingEngineObjectsAndKubernetesResources(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engines and Kubernetes resources matching filters '%+v'", filters)
 	}
@@ -270,7 +270,7 @@ func (backend *KubernetesKurtosisBackend) DestroyEngines(
 	resultErroredEngineIds map[string]error,
 	resultErr error,
 ) {
-	_, matchingResources, err := backend.getMatchingEnginesAndKubernetesResources(ctx, filters)
+	_, matchingResources, err := backend.getMatchingEngineObjectsAndKubernetesResources(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engine Kubernetes resources matching filters: %+v", filters)
 	}
@@ -328,7 +328,7 @@ func (backend *KubernetesKurtosisBackend) DestroyEngines(
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
-func (backend *KubernetesKurtosisBackend) getMatchingEnginesAndKubernetesResources(
+func (backend *KubernetesKurtosisBackend) getMatchingEngineObjectsAndKubernetesResources(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 ) (
@@ -336,7 +336,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnginesAndKubernetesResourc
 	map[string]*engineKubernetesResources,
 	error,
 ) {
-	matchingResources, err := backend.getMatchingKubernetesResources(ctx, filters.IDs)
+	matchingResources, err := backend.getMatchingEngineKubernetesResources(ctx, filters.IDs)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engine Kubernetes resources matching IDs: %+v", filters.IDs)
 	}
@@ -356,7 +356,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnginesAndKubernetesResourc
 			}
 		}
 
-		if filters.Statuses != nil && len(filters.IDs) > 0 {
+		if filters.Statuses != nil && len(filters.Statuses) > 0 {
 			if _, found := filters.Statuses[engineObj.GetStatus()]; !found {
 				continue
 			}
@@ -370,8 +370,8 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnginesAndKubernetesResourc
 	return resultEngineObjs, resultKubernetesResources, nil
 }
 
-// Get back any and all Kubernetes resources matching the given IDs, where a nil or empty map == "match all IDs"
-func (backend *KubernetesKurtosisBackend) getMatchingKubernetesResources(ctx context.Context, engineIds map[string]bool) (
+// Get back any and all engine's Kubernetes resources matching the given IDs, where a nil or empty map == "match all IDs"
+func (backend *KubernetesKurtosisBackend) getMatchingEngineKubernetesResources(ctx context.Context, engineIds map[string]bool) (
 	map[string]*engineKubernetesResources,
 	error,
 ) {

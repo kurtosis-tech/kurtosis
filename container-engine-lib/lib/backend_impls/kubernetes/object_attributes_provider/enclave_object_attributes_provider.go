@@ -13,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 	"strings"
@@ -22,12 +21,14 @@ import (
 
 const (
 	artifactExpansionObjectTimestampFormat = "2006-01-02T15.04.05.000"
+	userServiceSuffix = "user-service"
 )
 
 type KubernetesEnclaveObjectAttributesProvider interface {
 	ForEnclaveNamespace(isPartitioningEnabled bool) (KubernetesObjectAttributes, error)
 	ForEnclaveDataVolume() (KubernetesObjectAttributes, error)
 	ForApiContainer() (KubernetesApiContainerObjectAttributesProvider, error)
+	ForUserServiceService(id service.ServiceID, guid service.ServiceGUID) (KubernetesObjectAttributes, error)
 }
 
 // Private so it can't be instantiated
@@ -53,9 +54,12 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespa
 		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", provider.enclaveId)
 	}
 
-	labels, err := provider.getLabelsForEnclaveObject()
+	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(
+		provider.enclaveId,
+		provider.enclaveId,
+	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get labels for enclave object '%v'", provider.enclaveId)
+		return nil, stacktrace.Propagate(err, "Failed to get labels for enclave namespace using ID '%v'", provider.enclaveId)
 	}
 
 	isPartitioningEnabledLabelValue := label_value_consts.NetworkPartitioningDisabledLabelValue
@@ -88,7 +92,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataVol
 	}
 
 	labels, err := provider.getLabelsForEnclaveObject()
-	labels[label_key_consts.VolumeTypeLabelKey] = label_value_consts.EnclaveDataVolumeTypeLabelValue
+	labels[label_key_consts.KurtosisVolumeTypeLabelKey] = label_value_consts.EnclaveDataVolumeTypeLabelValue
 
 	// No custom annotations for enclave data volume
 	customAnnotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
@@ -112,7 +116,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForApiContainer()
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl)ForUserServiceContainer(
-	serviceID user_service_registration.ServiceID,
+	serviceID service.ServiceID,
 	serviceGUID service.ServiceGUID,
 	privateIpAddr net.IP,
 	privatePorts map[string]*port_spec.PortSpec,
@@ -153,6 +157,40 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactE
 	panic("implement me")
 }
 
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceService (
+	serviceID service.ServiceID,
+	serviceGUID service.ServiceGUID,
+) (
+	KubernetesObjectAttributes,
+	error,
+) {
+	name, err := provider.getNameForEnclaveObject([]string{userServiceSuffix})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get name for user service service.")
+	}
+
+	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(string(serviceID), string(serviceGUID))
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"Failed to get labels for user service service with ID '%s' and GUID '%s'.",
+			string(serviceID),
+			string(serviceGUID),
+		)
+	}
+	labels[label_key_consts.KurtosisResourceTypeLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeLabelValue
+
+	//No userServiceService annotations.
+	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
+
+	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create user service service object attributes.")
+	}
+
+	return objectAttributes, nil
+}
+
 // ====================================================================================================
 //                                      Private Helper Functions
 // ====================================================================================================
@@ -172,7 +210,6 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getNameForEnclave
 	}
 	return name, nil
 }
-
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObject() (map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
 	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.enclaveId)

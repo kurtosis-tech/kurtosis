@@ -367,6 +367,25 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave network info using filters '%+v'", filters)
 	}
 
+	// TODO Remove this check once the KurtosisBackend functions have been divvied up to the places that use them (e.g.
+	//  API container gets service stuff, engine gets enclave stuff, etc.)
+	for enclaveId := range matchingNetworkInfo {
+		if _, found := backend.enclaveFreeIpProviders[enclaveId]; found {
+			return nil, nil, stacktrace.NewError(
+				"Received a request to destroy enclave '%v' for which a free IP address tracker is registered; this likely " +
+					"means that destroy enclave is being called where it shouldn't be (i.e. inside the API container)",
+				enclaveId,
+			)
+		}
+		if _, found := backend.serviceRegistrations[enclaveId]; found {
+			return nil, nil, stacktrace.NewError(
+				"Received a request to destroy enclave '%v' for which services are being tracked; this likely " +
+					"means that destroy enclave is being called where it shouldn't be (i.e. inside the API container)",
+				enclaveId,
+			)
+		}
+	}
+
 	erroredEnclaveIds := map[enclave.EnclaveID]error{}
 
 	successfulContainerRemovalEnclaveIds, erroredContainerRemovalEnclaveIds, err := destroyContainersInEnclaves(ctx, backend.dockerManager, matchingNetworkInfo)

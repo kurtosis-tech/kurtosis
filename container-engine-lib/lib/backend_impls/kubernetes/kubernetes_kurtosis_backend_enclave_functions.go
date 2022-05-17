@@ -17,7 +17,6 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 )
 
@@ -121,7 +120,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		enclaveNamespaceName,
 		persistentVolumeClaimName.GetString(),
 		enclaveVolumeLabelMap,
-		strconv.Itoa(backend.volumeSizePerEnclaveInGigabytes),
+		backend.volumeSizePerEnclaveInMegabytes,
 		backend.volumeStorageClassName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,

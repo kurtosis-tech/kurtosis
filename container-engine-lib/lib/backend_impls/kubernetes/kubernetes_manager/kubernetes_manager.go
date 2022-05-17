@@ -18,12 +18,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
+	"net/url"
+	"strconv"
+	"time"
 )
 
 const (
-	defaultServiceProtocol                 = "TCP"
-	defaultPersistentVolumeAccessMode      = apiv1.ReadWriteMany
 	defaultPersistentVolumeClaimAccessMode = apiv1.ReadWriteMany
+	binaryMegabytesSuffix         		   = "Mi"
+	uintToIntStringConversionBase		   = 10
+
+	waitForPersistentVolumeBoundInitialDelayMilliSeconds = 100
+	waitForPersistentVolumeBoundRetries = uint32(120)
+	waitForPersistentVolumeBoundRetriesDelayMilliSeconds = 500
+
+	apiv1Prefix = "api/v1"
 )
 
 var (
@@ -199,93 +208,13 @@ func (manager *KubernetesManager) GetStorageClass(ctx context.Context, name stri
 	return storageClassResult, nil
 }
 
-func (manager *KubernetesManager) CreatePersistentVolume(ctx context.Context, volumeName string, volumeLabels map[string]string, volumeAnnotations map[string]string, quantityInGigabytes string, pathInSingleNodeCluster string, storageClassName string) (*apiv1.PersistentVolume, error) {
-	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
-
-	//quantity := "100Gi"
-	//storageClassName := "my-local-storage"
-	//pathInSingleNodeCluster := "/Users/mariofernandez/Library/Application Support/kurtosis/engine-data"
-
-	quantity, err := resource.ParseQuantity(quantityInGigabytes)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to parse quantityInGigabytes '%s'", quantityInGigabytes)
-	}
-
-	persistentVolume := &apiv1.PersistentVolume{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        volumeName,
-			Labels:      volumeLabels,
-			Annotations: volumeAnnotations,
-		},
-		Spec: apiv1.PersistentVolumeSpec{
-			Capacity: map[apiv1.ResourceName]resource.Quantity{
-				apiv1.ResourceStorage: quantity,
-			},
-			PersistentVolumeSource: apiv1.PersistentVolumeSource{
-				HostPath: &apiv1.HostPathVolumeSource{
-					Path: pathInSingleNodeCluster,
-				},
-			},
-			AccessModes: []apiv1.PersistentVolumeAccessMode{
-				defaultPersistentVolumeAccessMode,
-			},
-			StorageClassName: storageClassName,
-		},
-	}
-
-	persistentVolumeResult, err := volumesClient.Create(ctx, persistentVolume, metav1.CreateOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create persistent volume with name '%s'", volumeName)
-	}
-
-	return persistentVolumeResult, nil
-}
-
-func (manager *KubernetesManager) RemovePersistentVolume(ctx context.Context, volumeName string) error {
-	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
-
-	if err := volumesClient.Delete(ctx, volumeName, removeObjectDeleteOptions); err != nil {
-		return stacktrace.Propagate(err, "Failed to delete persistent volume with name '%s' and deleteOptions '%+v'", volumeName, removeObjectDeleteOptions)
-	}
-
-	return nil
-}
-
-func (manager *KubernetesManager) GetPersistentVolume(ctx context.Context, volumeName string) (*apiv1.PersistentVolume, error) {
-	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
-
-	persistentVolumeResult, err := volumesClient.Get(ctx, volumeName, metav1.GetOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get persistent volume with name '%s'", volumeName)
-	}
-
-	return persistentVolumeResult, nil
-}
-
-func (manager *KubernetesManager) GetPersistentVolumesByLabels(ctx context.Context, persistentVolumeLabels map[string]string) (*apiv1.PersistentVolumeList, error) {
-	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
-
-	listOptions := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(persistentVolumeLabels).String(),
-	}
-
-	persistentVolumesResult, err := volumesClient.List(ctx, listOptions)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get persistent volumes by labels '%+v'", persistentVolumeLabels)
-	}
-
-	return persistentVolumesResult, nil
-}
-
-func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Context, namespace string, persistentVolumeClaimName string, persistentVolumeClaimLabels map[string]string, quantityInGigabytes string, storageClassName string) (*apiv1.PersistentVolumeClaim, error) {
+func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Context, namespace string, persistentVolumeClaimName string, persistentVolumeClaimLabels map[string]string, volumeSizeInMegabytes uint, storageClassName string) (*apiv1.PersistentVolumeClaim, error) {
 	volumeClaimsClient := manager.kubernetesClientSet.CoreV1().PersistentVolumeClaims(namespace)
 
-	//storageClassName := "my-local-storage"
-	//quantity := "10Gi"
-
-	quantity, err := resource.ParseQuantity(quantityInGigabytes)
+	volumeSizeInMegabytesStr := strconv.FormatUint(uint64(volumeSizeInMegabytes), uintToIntStringConversionBase)
+	quantity, err := resource.ParseQuantity(volumeSizeInMegabytesStr + binaryMegabytesSuffix)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to parse quantityInGigabytes '%s'", quantityInGigabytes)
+		return nil, stacktrace.Propagate(err, "Failed to parse volume size in megabytes %d", volumeSizeInMegabytes)
 	}
 
 	persistentVolumeClaim := &apiv1.PersistentVolumeClaim{
@@ -309,6 +238,10 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Contex
 	persistentVolumeClaimResult, err := volumeClaimsClient.Create(ctx, persistentVolumeClaim, metav1.CreateOptions{})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create persistent volume claim with name '%s' in namespace '%s'", persistentVolumeClaimName, namespace)
+	}
+
+	if err = manager.waitForPersistentVolumeClaimBound(ctx, persistentVolumeClaimResult); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for persistent volume claim '%v' get bound in namespace '%v'", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
 	}
 
 	return persistentVolumeClaimResult, nil
@@ -696,10 +629,8 @@ func (manager *KubernetesManager) RemoveClusterRoleBindings(ctx context.Context,
 	return nil
 }
 
-// Private functions
-func (manager *KubernetesManager) int32Ptr(i int32) *int32 { return &i }
+// ---------------------------pods---------------------------------------------------------------------------------------
 
-// Pods
 func (manager *KubernetesManager) CreatePod(
 	ctx context.Context,
 	namespace string,
@@ -772,22 +703,36 @@ func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace
 	return pods, nil
 }
 
-// Returns the node a pod with name 'podName' runs on
-func (manager *KubernetesManager) GetNodePodRunsOn(ctx context.Context, namespace string, podName string) (*apiv1.Node, error) {
-	namespacePodClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
-	nodeClient := manager.kubernetesClientSet.CoreV1().Nodes()
+func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string, podName string) *url.URL {
+	return manager.kubernetesClientSet.RESTClient().Post().Prefix(apiv1Prefix).Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
+}
 
-	pod, err := namespacePodClient.Get(ctx, podName, metav1.GetOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get a pod with name '%v' from Kubernetes, instead a non-nil error was returned", podName)
-	}
-	nodeName := pod.Spec.NodeName
-	node, err := nodeClient.Get(ctx, nodeName, metav1.GetOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get a pod with name '%v' from Kubernetes, instead a non-nil error was returned", nodeName)
+// ====================================================================================================
+//                                     Private Helper Methods
+// ====================================================================================================
+func (manager *KubernetesManager) waitForPersistentVolumeClaimBound(ctx context.Context, persistentVolumeClaim *apiv1.PersistentVolumeClaim) error {
+
+	time.Sleep(time.Duration(waitForPersistentVolumeBoundInitialDelayMilliSeconds) * time.Millisecond)
+
+	for i := uint32(0); i < waitForPersistentVolumeBoundRetries; i++ {
+		claim, err := manager.GetPersistentVolumeClaim(ctx, persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting persistent volume claim '%v' in namespace '%v", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
+		}
+
+		switch claimPhase := claim.Status.Phase; claimPhase {
+		//Success phase, the Persisten Volume got bound
+		case apiv1.ClaimBound:
+			return nil
+		//Lost the Persistent Volume phase, unrecoverable state
+		case apiv1.ClaimLost:
+			return stacktrace.NewError("The persistent volume claim '%v' has phase '%v' that means it lost the persistent volume, it's an unrecoverable state", claim.GetName(), claimPhase)
+		}
+
+		time.Sleep(time.Duration(waitForPersistentVolumeBoundRetriesDelayMilliSeconds) * time.Millisecond)
 	}
 
-	return node, nil
+	return stacktrace.NewError("Persistent volume claim '%v' in namespace '%v' did not become bound despite polling %v times with %v between polls", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace(), waitForPersistentVolumeBoundRetries, waitForPersistentVolumeBoundRetriesDelayMilliSeconds)
 }
 
 // GetContainerLogs gets the logs for a given container running inside the given pod in the give namespace

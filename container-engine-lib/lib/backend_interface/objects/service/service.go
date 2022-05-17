@@ -2,50 +2,47 @@ package service
 
 import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/user_service_registration"
 	"net"
 )
 
+type ServiceID string
 type ServiceGUID string
 
-// Object that represents POINT-IN-TIME information about an user service
-// Store this object and continue to reference it at your own risk!!!
+// Service represents a ServiceRegistration that has had a container bonded
+// to it (in essence, Service is a "full" service where ServiceRegistration is a service stub)
 type Service struct {
-	// The GUID of the registration that the service consumed to start
-	registrationGuid user_service_registration.UserServiceRegistrationGUID
-	guid             ServiceGUID
+	registration *ServiceRegistration
+
 	status           container_status.ContainerStatus
-	enclaveId        enclave.EnclaveID
-	privateIp        net.IP
-	privatePorts     map[string]*port_spec.PortSpec // Keyed by user-provided port ID
-	maybePublicIp    net.IP                         // The ip exposed in the host machine. Will be nil if the service doesn't declare any private ports
-	maybePublicPorts map[string]*port_spec.PortSpec //Mapping of port-used-by-service -> port-on-the-host-machine where the user can make requests to the port to access the port. If a used port doesn't have a host port bound, then the value will be nil.
+
+	// Keyed by user-provided port ID
+	privatePorts map[string]*port_spec.PortSpec
+
+	// When running in Docker, the IP on the user's machine (outside the Docker VM) where this service can be reached
+	// This will only be non-nil if both:
+	// - The service's status is running
+	// - The backend type is Docker
+	maybePublicIp    net.IP
+
+	// When running in Docker, a mapping of service_port_id -> port_on_host_machine where the user can make requests to
+	//  access the service (where host machine == outside the Docker VM)
+	// This will only be non-nil if both:
+	// - The service's status is running
+	// - The backend type is Docker
+	maybePublicPorts map[string]*port_spec.PortSpec
 }
 
-func NewService(registrationGuid user_service_registration.UserServiceRegistrationGUID, guid ServiceGUID, status container_status.ContainerStatus, enclaveId enclave.EnclaveID, privateIp net.IP, privatePorts map[string]*port_spec.PortSpec, maybePublicIp net.IP, maybePublicPorts map[string]*port_spec.PortSpec) *Service {
-	return &Service{registrationGuid: registrationGuid, guid: guid, status: status, enclaveId: enclaveId, privateIp: privateIp, privatePorts: privatePorts, maybePublicIp: maybePublicIp, maybePublicPorts: maybePublicPorts}
+func NewService(registration *ServiceRegistration, status container_status.ContainerStatus, privatePorts map[string]*port_spec.PortSpec, maybePublicIp net.IP, maybePublicPorts map[string]*port_spec.PortSpec) *Service {
+	return &Service{registration: registration, status: status, privatePorts: privatePorts, maybePublicIp: maybePublicIp, maybePublicPorts: maybePublicPorts}
 }
 
-func (service *Service) GetRegistrationGUID() user_service_registration.UserServiceRegistrationGUID {
-	return service.registrationGuid
-}
-
-func (service *Service) GetGUID() ServiceGUID {
-	return service.guid
+func (service *Service) GetRegistration() *ServiceRegistration {
+	return service.registration
 }
 
 func (service *Service) GetStatus() container_status.ContainerStatus {
 	return service.status
-}
-
-func (service *Service) GetEnclaveID() enclave.EnclaveID {
-	return service.enclaveId
-}
-
-func (service *Service) GetPrivateIP() net.IP {
-	return service.privateIp
 }
 
 func (service *Service) GetPrivatePorts() map[string]*port_spec.PortSpec {
@@ -59,4 +56,3 @@ func (service *Service) GetMaybePublicIP() net.IP {
 func (service *Service) GetMaybePublicPorts() map[string]*port_spec.PortSpec {
 	return service.maybePublicPorts
 }
-
