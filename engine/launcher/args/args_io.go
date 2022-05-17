@@ -3,6 +3,7 @@ package args
 import (
 	"encoding/json"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"os"
 )
 
@@ -40,5 +41,6 @@ func GetArgsFromEnv() (*EngineServerArgs, error) {
 	if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
 		return nil, stacktrace.Propagate(err,"An error occurred deserializing the args JSON '%v'", serializedParamsStr)
 	}
+	logrus.Infof("Args: %+v", args)
 	return &args, nil
 }
