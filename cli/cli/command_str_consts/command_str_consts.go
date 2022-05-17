@@ -43,5 +43,6 @@ const (
 		InitCmdStr = "init"
 		PathCmdStr = "path"
 	VersionCmdStr = "version"
+	GatewayCmdStr = "gateway"
 )
 
