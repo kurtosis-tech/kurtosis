@@ -2,7 +2,6 @@ package engine_manager
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
@@ -44,8 +43,7 @@ var objAttrsSchemaPortProtosToDockerPortProtos = map[schema.PortProtocol]string{
 }
 
 type EngineManager struct {
-	kurtosisBackend backend_interface.KurtosisBackend
-	shouldSendMetrics bool
+	kurtosisBackend                           backend_interface.KurtosisBackend
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 	// Make engine IP, port, and protocol configurable in the future
 }
@@ -79,12 +77,9 @@ func (manager *EngineManager) GetEngineStatus(
 	} else if numRunningEngineContainers == 0 {
 		return EngineStatus_Stopped, nil, "", nil
 	}
-	engineContainer := getFirstEngineFromMap(runningEngineContainers)
 
-	runningEngineIpAndPort := &hostMachineIpAndPort{
-		ipAddr:  engineContainer.GetPublicIPAddress(),
-		portNum: engineContainer.GetPublicGRPCPort().GetNumber(),
-	}
+	// TODO Replace this hacky method of defaulting to localhost:DefaultGrpcPort to get connected to the engine
+	runningEngineIpAndPort := getDefaultKurtosisEngineLocalhostMachineIpAndPort()
 
 	engineClient, clientCloseFunc, err := getEngineClientFromHostMachineIpAndPort(runningEngineIpAndPort)
 	if err != nil {
@@ -194,18 +189,17 @@ func startEngineWithGuarantor(ctx context.Context, currentStatus EngineStatus, e
 	}
 
 	// Final verification to ensure that the engine server is responding
+
 	if _, err := getEngineInfoWithTimeout(ctx, engineClient); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to the engine server; this is very strange and likely indicates a bug in the engine itself")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to the engine server after starting it; "+
+			"if you are running Kurtosis in a Kubernetes cluster, consider running '%v %v' to open a local gateway to the engine running in the cluster", command_str_consts.KurtosisCmdStr, command_str_consts.GatewayCmdStr)
 	}
+
 	return engineClient, clientCloseFunc, nil
 }
 
 func getEngineClientFromHostMachineIpAndPort(hostMachineIpAndPort *hostMachineIpAndPort) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
-	url := fmt.Sprintf(
-		"%v:%v",
-		hostMachineIpAndPort.ipAddr.String(),
-		hostMachineIpAndPort.portNum,
-	)
+	url := hostMachineIpAndPort.GetURL()
 	conn, err := grpc.Dial(url, grpc.WithInsecure())
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred dialling Kurtosis engine at URL '%v'", url)

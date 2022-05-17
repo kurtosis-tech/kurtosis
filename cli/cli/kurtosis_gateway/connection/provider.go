@@ -52,7 +52,7 @@ func (provider *GatewayConnectionProvider) ForEngine(engine *engine.Engine) (Gat
 	// Forward public GRPC ports of engine
 	enginePublicGrpcPortSpec, err := port_spec.NewPortSpec(kurtosis_context.DefaultKurtosisEngineServerGrpcPortNum, port_spec.PortProtocol_TCP)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get a port-spec describing the public GRPC port of a Kurotsis engine, instead a non-nil error was returned")
+		return nil, stacktrace.Propagate(err, "Expected to be able to get a port-spec describing the public GRPC port of a Kurtosis engine, instead a non-nil error was returned")
 	}
 	enginePorts := map[string]*port_spec.PortSpec{
 		grpcPortIdStr: enginePublicGrpcPortSpec,

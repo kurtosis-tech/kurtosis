@@ -28,7 +28,7 @@ func (p *prettyPrintingEngineStatusVisitor) VisitStopped() error {
 
 func (p *prettyPrintingEngineStatusVisitor) VisitContainerRunningButServerNotResponding() error {
 	formattedStr := fmt.Sprintf("A Kurtosis engine container is running, but the server inside couldn't be reached.\n"+
-		"If you are running kurtosis in a Kubernetes cluster, and attempting to access kurtosis from outside the cluster, consider running `%v %v` to open up a local gateway kurtosis in Kubernetes", command_str_consts.KurtosisCmdStr, command_str_consts.GatewayCmdStr)
+		"If you are running Kurtosis in a Kubernetes cluster, and attempting to access Kurtosis from outside the cluster, consider running `%v %v` to open up a local gateway Kurtosis in Kubernetes", command_str_consts.KurtosisCmdStr, command_str_consts.GatewayCmdStr)
 	fmt.Fprintln(logrus.StandardLogger().Out, formattedStr)
 	return nil
 }

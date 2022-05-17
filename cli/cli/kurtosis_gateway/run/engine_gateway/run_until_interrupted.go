@@ -3,9 +3,7 @@ package engine_gateway
 import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/connection"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/server/api_container_gateway"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/server/engine_gateway"
-	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
@@ -61,38 +59,4 @@ func RunEngineGatewayUntilInterrupted(engine *engine.Engine, connectionProvider 
 
 	return nil
 
-}
-
-func RunApiContainerGatewayUntilStopped(connectionProvider *connection.GatewayConnectionProvider, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, gatewayStopper chan interface{}) error {
-	apiContainerConnection, err := connectionProvider.ForEnclaveApiContainer(enclaveInfo)
-	if err != nil {
-		return stacktrace.Propagate(err, "Expected to be able to start forwarding ports to an enclave api, instead a non nil error was returned")
-	}
-
-	// Dial in to our locally forwarded port
-	apiContainerGrpcClientConn, err := apiContainerConnection.GetGrpcClientConn()
-	if err != nil {
-		return stacktrace.Propagate(err, "Expected to be able to create a grpc client connection to the forwarded api container port, instead a non nil error was returned")
-	}
-	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(apiContainerGrpcClientConn)
-
-	// TODO minimal_grpc_server
-	apiContainerGatewayServer, gatewayCloseFunc := api_container_gateway.NewEnclaveApiContainerGatewayServer(connectionProvider, apiContainerClient)
-	defer gatewayCloseFunc()
-	apiContainerGatewayServiceRegistrationFunc := func(grpcServer *grpc.Server) {
-		kurtosis_core_rpc_api_bindings.RegisterApiContainerServiceServer(grpcServer, apiContainerGatewayServer)
-	}
-	apiContainerGatewayGrpccServer := minimal_grpc_server.NewMinimalGRPCServer(
-		apiContainerGatewayPort,
-		grpcServerStopGracePeriod,
-		[]func(*grpc.Server){
-			apiContainerGatewayServiceRegistrationFunc,
-		},
-	)
-
-	if err := apiContainerGatewayGrpccServer.RunUntilStopped(gatewayStopper); err != nil {
-		return stacktrace.Propagate(err, "Expected to run Api Container gateway server until stopped, but the server exitted with a non-nil error")
-	}
-
-	return nil
 }

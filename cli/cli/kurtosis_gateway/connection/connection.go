@@ -23,8 +23,6 @@ const (
 
 //GatewayConnectionToKurtosis represents a connection on localhost that can be used by the gateway to communicate with Kurtosis in the cluster
 type GatewayConnectionToKurtosis interface {
-	// GetConnectionAddresses returns an array of strings describing addresses that the connection is listening on
-	GetConnectionAddresses() []string
 	// GetLocalPorts returns a map keyed with an identifier string describing local ports being forwarded
 	GetLocalPorts() map[string]*port_spec.PortSpec
 	GetGrpcClientConn() (*grpc.ClientConn, error)
@@ -122,7 +120,6 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 			return nil, stacktrace.Propagate(err, "Expected to be able to create port-spec describing local port '%v', instead a non-nil err was returned", localPort)
 		}
 
-		// TODO Log to stdout at certain level
 		logrus.Infof("Forwarding requests to local port number '%v' to remote port with id '%v'", localPortSpec.GetNumber(), portSpecId)
 
 		localPortSpecs[portSpecId] = localPortSpec
@@ -142,10 +139,6 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 	return connection, nil
 }
 
-func (connection *gatewayConnectionToKurtosisImpl) GetConnectionAddresses() []string {
-	return connection.localAddresses
-}
-
 func (connection *gatewayConnectionToKurtosisImpl) Stop() {
 	connection.portforwarder.Close()
 	// stopping the channel is necessary to close the connection
@@ -156,7 +149,9 @@ func (connection *gatewayConnectionToKurtosisImpl) GetLocalPorts() map[string]*p
 	return connection.localPorts
 }
 
-func (connection *gatewayConnectionToKurtosisImpl) GetGrpcClientConn() (*grpc.ClientConn, error) {
+// GetGrpcClientConn returns a client conn dialed in to the local port
+// It is the caller's responsibility to call resultClientConn.close()
+func (connection *gatewayConnectionToKurtosisImpl) GetGrpcClientConn() (resultClientConn *grpc.ClientConn, resultErr error) {
 	localPorts := connection.GetLocalPorts()
 	localGrpcPort, isFound := localPorts[grpcPortId]
 	if !isFound {

@@ -1,21 +1,22 @@
 package port_utils
 
 import (
+	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 )
 
 const (
-	tcpProtocolStr              = "tcp"
-	localHostZeroPortBindingStr = "localhost:0"
+	tcpProtocolStr = "tcp"
 )
 
 // GetFreePort asks the kernel for a free open port that is ready to use.
-func GetFreeTcpPort() (resultFreePortSpec *port_spec.PortSpec, err error) {
-	localHostPortAddress, err := net.ResolveTCPAddr(tcpProtocolStr, localHostZeroPortBindingStr)
+func GetFreeTcpPort(networkInterface string) (resultFreePortSpec *port_spec.PortSpec, err error) {
+	zeroPortOnNetworkInterfaceAddress := fmt.Sprintf("%v:0", networkInterface)
+	localHostPortAddress, err := net.ResolveTCPAddr(tcpProtocolStr, zeroPortOnNetworkInterfaceAddress)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to resolve a tcp address for '%v', instead a non-nil error was returned", localHostZeroPortBindingStr)
+		return nil, stacktrace.Propagate(err, "Expected to be able to resolve a tcp address for '%v', instead a non-nil error was returned", zeroPortOnNetworkInterfaceAddress)
 	}
 
 	localHostPortListener, err := net.ListenTCP(tcpProtocolStr, localHostPortAddress)

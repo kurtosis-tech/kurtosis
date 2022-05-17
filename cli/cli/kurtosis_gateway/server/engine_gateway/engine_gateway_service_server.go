@@ -12,16 +12,11 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	restclient "k8s.io/client-go/rest"
 	"sync"
-	"time"
 )
 
 const (
-	gatewayPortRangeStart     = 33000
-	grpcServerStopGracePeriod = 5 * time.Second
-	localHostIpStr            = "127.0.0.1"
-
-	tcpProtocolStr              = "tcp"
-	localHostZeroPortBindingStr = "localhost:0"
+	// API Container gateways spun up by this engine gateway run on localhost
+	localHostIpStr = "127.0.0.1"
 )
 
 type EngineGatewayServiceServer struct {
@@ -38,10 +33,6 @@ type EngineGatewayServiceServer struct {
 
 	mutex                        *sync.Mutex
 	enclaveIdToRunningGatewayMap map[string]*runningApiContainerGateway
-
-	// Used to assign ports for gateway GRPC servers to run on
-	// Incremented each time an api container gateway server is starts
-	portForEnclaveGateway uint16
 }
 
 type runningApiContainerGateway struct {
@@ -62,8 +53,6 @@ func NewEngineGatewayServiceServer(connectionProvider *connection.GatewayConnect
 		connectionProvider:           connectionProvider,
 		enclaveIdToRunningGatewayMap: runningApiContainers,
 		mutex:                        &sync.Mutex{},
-		// local port
-		portForEnclaveGateway: gatewayPortRangeStart,
 	}
 	closeFunc := func() {
 		// Kill the running enclave gateways
@@ -179,21 +168,15 @@ func (service *EngineGatewayServiceServer) GetEngineInfo(ctx context.Context, em
 func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo) (*runningApiContainerGateway, error) {
 	service.mutex.Lock()
 	defer service.mutex.Unlock()
-	var isGatewayRunning = false
 	enclaveId := enclaveInfo.GetEnclaveId()
 	// Ask the kernel for a free open TCP port
-	gatewayPortSpec, err := port_utils.GetFreeTcpPort()
+	gatewayPortSpec, err := port_utils.GetFreeTcpPort(localHostIpStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get a free, open TCP port on host, instead a non-nil error was returned")
 	}
 	// Channel for messages to stop the running server
 	gatewayServerStopper := make(chan interface{}, 1)
-	// Stop the running gateway
-	gatewayStopFunc := func() {
-		// Send message to stop the gateway server
-		gatewayServerStopper <- nil
-	}
-	defer gatewayStopFunc()
+
 	// Info for how to connect to the api container through the gateway running on host machine
 	apiContainerHostMachineInfo := &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
 		IpOnHostMachine:       localHostIpStr,
@@ -203,10 +186,21 @@ func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclave
 	}
 
 	// Start the server in a goroutine
+	// Stop the running gateway
+	gatewayStopFunc := func() {
+		// Send message to stop the gateway server
+		gatewayServerStopper <- nil
+	}
 	go func() {
-		defer gatewayStopFunc()
-		if err := api_container_gateway.RunApiContainerGatewayUntilStopped(service.connectionProvider, enclaveInfo, gatewayServerStopper); err != nil {
+		if err := api_container_gateway.RunApiContainerGatewayUntilStopped(service.connectionProvider, enclaveInfo, gatewayPortSpec.GetNumber(), gatewayServerStopper); err != nil {
 			logrus.Warnf("Expected to run api container gateway until stopped, but the server exited prematurely with a non-nil error: '%v'", err)
+		}
+	}()
+	cleanUpGateway := true
+	defer func() {
+		if cleanUpGateway {
+			delete(service.enclaveIdToRunningGatewayMap, enclaveId)
+			gatewayStopFunc()
 		}
 	}()
 
@@ -217,15 +211,8 @@ func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclave
 
 	// Store information about our running gateway
 	service.enclaveIdToRunningGatewayMap[enclaveId] = runningGatewayInfo
-	defer func() {
-		if !isGatewayRunning {
-			delete(service.enclaveIdToRunningGatewayMap, enclaveId)
-		}
-	}()
-	isGatewayRunning = true
-	// Increment the port number for the next gateway server we start
-	// Ideally, we would rely on the host to assign us a port, but minimal_grpc_server does not support this atm
-	service.portForEnclaveGateway = service.portForEnclaveGateway + 1
+
+	cleanUpGateway = false
 	return runningGatewayInfo, nil
 }
 
