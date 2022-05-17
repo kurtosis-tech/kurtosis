@@ -584,7 +584,6 @@ func getEngineObjectsFromKubernetesResources(allResources map[string]*engineKube
 }
 
 func getEngineContainers(containerImageAndTag string, engineEnvVars map[string]string) (resultContainers []apiv1.Container, resultVolumes []apiv1.Volume) {
-	containerName := "kurtosis-engine-container"
 
 	var engineContainerEnvVars []apiv1.EnvVar
 	for varName, varValue := range engineEnvVars {
@@ -597,7 +596,7 @@ func getEngineContainers(containerImageAndTag string, engineEnvVars map[string]s
 	containers := []apiv1.Container{
 		{
 			// TODO SPECIFY PORTS!!!!!
-			Name:  containerName,
+			Name:  kurtosisEngineContainerName,
 			Image: containerImageAndTag,
 			Env:   engineContainerEnvVars,
 		},
