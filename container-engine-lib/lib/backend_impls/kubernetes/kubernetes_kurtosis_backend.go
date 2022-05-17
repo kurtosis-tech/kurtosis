@@ -184,7 +184,7 @@ func getStringMapFromAnnotationMap(labelMap map[*kubernetes_annotation_key.Kuber
 	return strMap
 }
 
-// getPublicPortSpecFromServicePort returns a port_spec representing a kurtosis port spec for a service port in Kubernetes
+// getPublicPortSpecFromServicePort returns a port_spec representing a Kurtosis port spec for a service port in Kubernetes
 func getPublicPortSpecFromServicePort(servicePort apiv1.ServicePort, portProtocol port_spec.PortProtocol) (*port_spec.PortSpec, error) {
 	publicPortNumStr := strconv.FormatInt(int64(servicePort.Port), publicPortNumStrParsingBase)
 	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, publicPortNumStrParsingBase, publicPortNumStrParsingBits)
