@@ -1,10 +1,10 @@
 package gateway
 
 import (
-	"github.com/kurtosis-tech/container-engine-lib/lib"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/kurtosis_config_getter"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/connection"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/run/engine_gateway"
 	"github.com/kurtosis-tech/stacktrace"
@@ -15,10 +15,7 @@ import (
 )
 
 const (
-	// TODO Get this info from Kurtosis Cluster config
-	minikubeVolumeStorageClassName = "default"
-	enclaveVolumeSizeInMegabytes   = 1024
-	emptyConfigMasterUrl           = ""
+	emptyConfigMasterUrl = ""
 )
 
 var GatewayCmd = &cobra.Command{
@@ -31,9 +28,14 @@ func init() {
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	kurtosisBackend, err := lib.GetLocalKubernetesKurtosisBackend(minikubeVolumeStorageClassName, enclaveVolumeSizeInMegabytes)
+	clusterConfig, err := kurtosis_config_getter.GetKurtosisClusterConfig()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to Kubernetes")
+		return stacktrace.Propagate(err, "Expected to be able to get Kurtosis cluster configuration, instead a non-nil error was returned")
+	}
+
+	kurtosisBackend, err := clusterConfig.GetKurtosisBackend()
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to get a Kurtosis backend connected to the cluster, instead a non-nil error was returned")
 	}
 
 	// TODO Store kube config path in configuration and read from there
