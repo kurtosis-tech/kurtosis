@@ -41,15 +41,15 @@ const (
 //
 //   If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
 //
-var AppIDLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(appIdLabelKeyStr)
-var KurtosisResourceTypeLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(resourceTypeLabelKeyStr)
+var AppIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(appIdLabelKeyStr)
+var KurtosisResourceTypeKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(resourceTypeLabelKeyStr)
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-var KurtosisContainerTypeLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(containerTypeLabelKeyStr)
-var KurtosisVolumeTypeLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(volumeTypeLabelKeyStr)
-var IDLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(idLabelKeyStr)
-var GUIDLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(guidLabelKeyStr)
-var PortSpecsLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(portSpecsLabelKeyStr)
-var EnclaveIDLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(enclaveIdLabelKeyStr)
-var IsNetworkPartitioningEnabledLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(isNetworkPartitioningEnabledKeyStr)
-var PrivateIPLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(privateIpAddrLabelKeyStr)
+var KurtosisContainerTypeKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(containerTypeLabelKeyStr)
+var KurtosisVolumeTypeKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(volumeTypeLabelKeyStr)
+var IDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(idLabelKeyStr)
+var GUIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(guidLabelKeyStr)
+var PortSpecsKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(portSpecsLabelKeyStr)
+var EnclaveIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(enclaveIdLabelKeyStr)
+var IsNetworkPartitioningEnabledKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(isNetworkPartitioningEnabledKeyStr)
+var PrivateIPKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(privateIpAddrLabelKeyStr)

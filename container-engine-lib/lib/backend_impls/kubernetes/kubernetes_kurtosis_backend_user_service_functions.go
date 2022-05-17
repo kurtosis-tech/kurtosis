@@ -2,13 +2,20 @@ package kubernetes
 
 import (
 	"context"
+	"fmt"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	apiv1 "k8s.io/api/core/v1"
 	"net"
+	"time"
 )
 
 /*
@@ -50,9 +57,78 @@ type userServiceKubernetesResources struct {
 	pod *apiv1.Pod
 }
 
-func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID, ) (*service.ServiceRegistration, error, ) {
-	//TODO implement me
-	panic("implement me")
+func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID, ) (*service.ServiceRegistration, error) {
+	enclaveNamespace, err := backend.getEnclaveNamespace(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting namespace matching enclave ID '%v'", enclaveId)
+	}
+
+	preexistingServiceFilters := &service.ServiceFilters{
+		IDs: map[service.ServiceID]bool{
+			serviceId: true,
+		},
+	}
+	preexistingUserServices, _, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, preexistingServiceFilters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred checking for preexisting services in enclave '%v' matching service ID '%v'", enclaveId, serviceId)
+	}
+	if len(preexistingUserServices) > 0 {
+		return nil, stacktrace.NewError("Found preexisting services in enclave '%v' with ID '%v'", enclaveId, serviceId)
+	}
+
+	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
+	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
+
+	// TODO Switch this, and all other GUIDs, to a UUID??
+	serviceGuid := service.ServiceGUID(fmt.Sprintf(
+		"%v-%v",
+		serviceId,
+		time.Now().Unix(),
+	))
+
+	serviceAttributes, err := enclaveObjAttributesProvider.ForUserServiceService(serviceId, serviceGuid)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting attributes for the Kubernetes service for user service '%v'", serviceId)
+	}
+
+	serviceNameStr := serviceAttributes.GetName().GetString()
+
+	serviceLabelsStrs := getStringMapFromLabelMap(serviceAttributes.GetLabels())
+	serviceAnnoationsStrs := getStringMapFromAnnotationMap(serviceAttributes.GetAnnotations())
+
+	// We use the same labels as the Service for the Pods to match becuase
+	serviceGuidLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(string(serviceGuid))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes label value for the service GUID '%v'", serviceGuid)
+	}
+	matchedPodLabels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
+		label_key_consts.GUIDKubernetesLabelKey: serviceGuidLabelValue,
+	}
+	matchedPodLabelStrs := getStringMapFromLabelMap(matchedPodLabels)
+
+	createdService, err := backend.kubernetesManager.CreateService(
+		ctx,
+		enclaveNamespace.Name,
+		serviceNameStr,
+		serviceLabelsStrs,
+		serviceAnnoationsStrs,
+		matchedPodLabelStrs,
+		apiv1.ServiceTypeClusterIP,
+		[]apiv1.ServicePort{},	// This will be filled out when the user starts a pod
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating Kubernetes service in enclave '%v' with ID '%v'", enclaveId, serviceId)
+	}
+
+	serviceIpStr := createdService.Spec.ClusterIP
+	serviceIp := net.ParseIP(serviceIpStr)
+	if serviceIp == nil {
+		return nil, stacktrace.NewError("An error occurred parsing new service's IP string '%v' to an IP address object", serviceIpStr)
+	}
+
+	result := service.NewServiceRegistration(serviceId, serviceGuid, enclaveId, serviceIp)
+
+	return result, nil
 }
 
 func (backend *KubernetesKurtosisBackend) StartUserService(
@@ -66,8 +142,14 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	envVars map[string]string,
 	filesArtifactMountDirpaths map[string]string,
 ) (newUserService *service.Service, resultErr error) {
-	//TODO implement me
-	panic("implement me")
+	/*
+	preexistingServiceFilters := &service.ServiceFilters{
+		GUIDs:    ,
+	}
+	preexistingServiceObjs, preexistingServiceKubernetesResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, preexistingServiceFilters)
+	if err != nil {}
+	 */
+	return nil, stacktrace.NewError("TODO IMPLEMENT!")
 }
 
 func (backend *KubernetesKurtosisBackend) GetUserServices(
@@ -92,15 +174,17 @@ func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
 func (backend *KubernetesKurtosisBackend) PauseService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	serviceId service.ServiceGUID) error {
-	panic("implement me")
+	serviceId service.ServiceGUID,
+) error {
+	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because pausing is not supported by Kubernetes")
 }
 
 func (backend *KubernetesKurtosisBackend) UnpauseService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	serviceId service.ServiceGUID) error {
-	panic("implement me")
+	serviceId service.ServiceGUID,
+) error {
+	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because unpausing is not supported by Kubernetes")
 }
 
 func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
@@ -117,8 +201,8 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 }
 
 func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGUID service.ServiceGUID) (resultConn net.Conn, resultErr error) {
-	//TODO implement me
-	panic("implement me")
+	// TODO IMPLEMENT
+	return nil, stacktrace.NewError("Getting a connection with a user service isn't yet implemented on Kubernetes")
 }
 
 func (backend *KubernetesKurtosisBackend) CopyFromUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID, srcPath string) (resultReadCloser io.ReadCloser, resultErr error) {
@@ -140,21 +224,23 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
-/*
 func (backend *KubernetesKurtosisBackend) getMatchingUserServiceObjectsAndKubernetesResources(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 ) (
 	map[service.ServiceGUID]*service.Service,
 	map[service.ServiceGUID]*userServiceKubernetesResources,
 	error,
 ) {
-	matchingResources, err := backend.getMatchingUserServiceKubernetesResources(ctx, filters.IDs)
+	_, err := backend.getMatchingUserServiceKubernetesResources(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engine Kubernetes resources matching IDs: %+v", filters.IDs)
 	}
 
 
+	// TODO TODO CHANGE
+	return nil, nil, stacktrace.NewError("TODO IMPLEMENT!!")
 }
 
 func (backend *KubernetesKurtosisBackend) getMatchingUserServiceKubernetesResources(
@@ -165,14 +251,17 @@ func (backend *KubernetesKurtosisBackend) getMatchingUserServiceKubernetesResour
 	error,
 ) {
 
+	// TODO TODO CHANGE
+	return nil, stacktrace.NewError("TODO IMPLEMENT!!")
 }
 
 func (backend *KubernetesKurtosisBackend) getUserServiceObjectsFromKubernetesResources(
 	map[service.ServiceGUID]*userServiceKubernetesResources,
 ) (
 	map[service.ServiceGUID]*service.Service,
+	error,
 ){
 
+	// TODO TODO CHANGE
+	return nil, stacktrace.NewError("TODO IMPLEMENT!!")
 }
-
- */

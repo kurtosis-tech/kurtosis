@@ -777,9 +777,9 @@ func (backend *DockerKurtosisBackend) getMatchingUserServiceDockerResources(
 ) (map[service.ServiceGUID]*userServiceDockerResources, error) {
 	// For the matching values, get the containers to check the status
 	userServiceContainerSearchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDKubernetesLabelValue.GetString(),
 		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
-		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.UserServiceContainerTypeLabelValue.GetString(),
+		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.UserServiceContainerTypeKubernetesLabelValue.GetString(),
 	}
 	userServiceContainers, err := backend.dockerManager.GetContainersByLabels(ctx, userServiceContainerSearchLabels, shouldGetStoppedContainersWhenGettingServiceInfo)
 	if err != nil {

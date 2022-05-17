@@ -384,7 +384,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEngineKubernetesResources(c
 		ctx,
 		backend.kubernetesManager,
 		engineMatchLabels,
-		label_key_consts.IDLabelKey.GetString(),
+		label_key_consts.IDKubernetesLabelKey.GetString(),
 		engineIds,
 	)
 	if err != nil {
@@ -411,7 +411,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEngineKubernetesResources(c
 		ctx,
 		backend.kubernetesManager,
 		engineMatchLabels,
-		label_key_consts.IDLabelKey.GetString(),
+		label_key_consts.IDKubernetesLabelKey.GetString(),
 		engineIds,
 	)
 	for engineId, clusterRolesForId := range clusterRoles {
@@ -435,7 +435,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEngineKubernetesResources(c
 		ctx,
 		backend.kubernetesManager,
 		engineMatchLabels,
-		label_key_consts.IDLabelKey.GetString(),
+		label_key_consts.IDKubernetesLabelKey.GetString(),
 		engineIds,
 	)
 	for engineId, clusterRoleBindingsForId := range clusterRoleBindings {
@@ -467,7 +467,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEngineKubernetesResources(c
 			backend.kubernetesManager,
 			namespaceName,
 			engineMatchLabels,
-			label_key_consts.IDLabelKey.GetString(),
+			label_key_consts.IDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				engineId: true,
 			},
@@ -495,7 +495,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEngineKubernetesResources(c
 			backend.kubernetesManager,
 			namespaceName,
 			engineMatchLabels,
-			label_key_consts.IDLabelKey.GetString(),
+			label_key_consts.IDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				engineId: true,
 			},
@@ -523,7 +523,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEngineKubernetesResources(c
 			backend.kubernetesManager,
 			namespaceName,
 			engineMatchLabels,
-			label_key_consts.IDLabelKey.GetString(),
+			label_key_consts.IDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				engineId: true,
 			},
@@ -607,8 +607,8 @@ func getEngineContainers(containerImageAndTag string, engineEnvVars map[string]s
 
 func getEngineMatchLabels() map[string]string {
 	engineMatchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString():        label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.KurtosisResourceTypeLabelKey.GetString(): label_value_consts.EngineKurtosisResourceTypeLabelValue.GetString(),
+		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EngineKurtosisResourceTypeLabelValue.GetString(),
 	}
 	return engineMatchLabels
 }

@@ -1,4 +1,10 @@
 # TBD
+### Features
+* Build out Kubernetes `RegisterService`
+
+### Changes
+* Renamed all Kubernetes constants that were `XXXXXLabelKey` to be `XXXXXKubernetesLabelKey` to make it more visually obvious that we're using the Kubernetes constants rather than Docker
+* Renamed all constants that were `XXXXXLabelValue` to be `XXXXXKubernetesLabelValue` to make it more visually obvious that we're using the Kubernetes constants rather than Docker
 
 # 0.23.3
 ### Features

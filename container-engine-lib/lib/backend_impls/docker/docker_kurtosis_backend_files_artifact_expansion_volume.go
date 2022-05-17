@@ -129,7 +129,7 @@ func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionVolumes(
 	filters *files_artifact_expansion_volume.FilesArtifactExpansionVolumeFilters,
 ) (map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]*files_artifact_expansion_volume.FilesArtifactExpansionVolume, error) {
 	searchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDKubernetesLabelValue.GetString(),
 	}
 	matchingVolumes, err := backend.dockerManager.GetVolumesByLabels(ctx, searchLabels)
 	if err != nil {

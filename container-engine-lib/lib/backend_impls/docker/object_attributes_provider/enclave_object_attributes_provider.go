@@ -93,9 +93,9 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(isP
 		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave network using ID '%v'", provider.enclaveId)
 	}
 
-	isPartitioningEnabledLabelValue := label_value_consts.NetworkPartitioningDisabledLabelValue
+	isPartitioningEnabledLabelValue := label_value_consts.NetworkPartitioningDisabledKubernetesLabelValue
 	if isPartitioningEnabled {
-		isPartitioningEnabledLabelValue = label_value_consts.NetworkPartitioningEnabledLabelValue
+		isPartitioningEnabledLabelValue = label_value_consts.NetworkPartitioningEnabledKubernetesLabelValue
 	}
 
 	labels[label_key_consts.IsNetworkPartitioningEnabledLabelKey] = isPartitioningEnabledLabelValue
@@ -121,7 +121,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveDataVolume(
 	}
 
 	labels := provider.getLabelsForEnclaveObject()
-	labels[label_key_consts.VolumeTypeLabelKey] = label_value_consts.EnclaveDataVolumeTypeLabelValue
+	labels[label_key_consts.VolumeTypeLabelKey] = label_value_consts.EnclaveDataVolumeTypeKubernetesLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -162,7 +162,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 	}
 
 	labels := provider.getLabelsForEnclaveObject()
-	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.APIContainerContainerTypeLabelValue
+	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.APIContainerContainerTypeKubernetesLabelValue
 	labels[label_key_consts.PrivateIPLabelKey] = privateIpLabelValue
 
 	usedPorts := map[string]*port_spec.PortSpec{
@@ -225,7 +225,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", serviceGuid)
 	}
-	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.UserServiceContainerTypeLabelValue
+	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.UserServiceContainerTypeKubernetesLabelValue
 	labels[label_key_consts.PortSpecsLabelKey] = serializedPortsSpec
 	labels[label_key_consts.PrivateIPLabelKey] = privateIpLabelValue
 
@@ -257,7 +257,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarC
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", serviceGUIDSidecarAttachedTo)
 	}
-	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.NetworkingSidecarContainerTypeLabelValue
+	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.NetworkingSidecarContainerTypeKubernetesLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -311,7 +311,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForModuleContainer(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the module labels using ID '%v' and GUID '%v'", moduleID, moduleGUID)
 	}
-	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.ModuleContainerTypeLabelValue
+	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.ModuleContainerTypeKubernetesLabelValue
 	labels[label_key_consts.PortSpecsLabelKey] = serializedPortsSpec
 	labels[label_key_consts.PrivateIPLabelKey] = privateIpLabelValue
 
@@ -348,7 +348,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpan
 	}
 
 	labels := provider.getLabelsForEnclaveObject()
-	labels[label_key_consts.VolumeTypeLabelKey] = label_value_consts.FilesArtifactExpansionVolumeTypeLabelValue
+	labels[label_key_consts.VolumeTypeLabelKey] = label_value_consts.FilesArtifactExpansionVolumeTypeKubernetesLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -377,7 +377,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpan
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", guid)
 	}
-	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.FilesArtifactExpanderContainerTypeLabelValue
+	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.FilesArtifactExpanderContainerTypeKuberenetesLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {

@@ -204,8 +204,8 @@ func (backend *DockerKurtosisBackend) getMatchingFilesArtifactExpanders(
 	filters *files_artifact_expander.FilesArtifactExpanderFilters,
 )(map[string]*files_artifact_expander.FilesArtifactExpander, error) {
 	searchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.FilesArtifactExpanderContainerTypeLabelValue.GetString(),
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.FilesArtifactExpanderContainerTypeKuberenetesLabelValue.GetString(),
 	}
 	matchingContainers, err := backend.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchAllContainersWhenRetrievingContainers)
 	if err != nil {

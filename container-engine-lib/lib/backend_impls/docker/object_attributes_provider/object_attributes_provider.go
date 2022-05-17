@@ -77,7 +77,7 @@ func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(
 	}
 
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
-		label_key_consts.ContainerTypeLabelKey: label_value_consts.EngineContainerTypeLabelValue,
+		label_key_consts.ContainerTypeLabelKey: label_value_consts.EngineContainerTypeKubernetesLabelValue,
 		label_key_consts.PortSpecsLabelKey:     serializedPortsSpec,
 		label_key_consts.IDLabelKey:            idLabelValue,
 		label_key_consts.GUIDLabelKey:          guidLabelValue,

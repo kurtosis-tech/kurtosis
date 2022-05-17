@@ -1,10 +1,12 @@
 package object_attributes_provider
 
-import "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+import (
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+)
 
 type KubernetesObjectAttributesProvider interface {
-	ForEngine(id string) (KubernetesEngineObjectAttributesProvider, error)
-	ForEnclave(enclaveId enclave.EnclaveID) (KubernetesEnclaveObjectAttributesProvider, error)
+	ForEngine(id string) KubernetesEngineObjectAttributesProvider
+	ForEnclave(enclaveId enclave.EnclaveID) KubernetesEnclaveObjectAttributesProvider
 }
 
 func GetKubernetesObjectAttributesProvider() KubernetesObjectAttributesProvider {
@@ -18,11 +20,11 @@ func newKubernetesObjectAttributesProviderImpl() *kubernetesObjectAttributesProv
 	return &kubernetesObjectAttributesProviderImpl{}
 }
 
-func (provider *kubernetesObjectAttributesProviderImpl) ForEngine(engineId string) (KubernetesEngineObjectAttributesProvider, error) {
-	return GetKubernetesEngineObjectAttributesProvider(engineId), nil
+func (provider *kubernetesObjectAttributesProviderImpl) ForEngine(engineId string) KubernetesEngineObjectAttributesProvider {
+	return GetKubernetesEngineObjectAttributesProvider(engineId)
 }
 
-func (provider *kubernetesObjectAttributesProviderImpl) ForEnclave(enclaveId enclave.EnclaveID) (KubernetesEnclaveObjectAttributesProvider, error) {
-	return GetKubernetesEnclaveObjectAttributesProvider(enclaveId), nil
+func (provider *kubernetesObjectAttributesProviderImpl) ForEnclave(enclaveId enclave.EnclaveID) KubernetesEnclaveObjectAttributesProvider {
+	return GetKubernetesEnclaveObjectAttributesProvider(enclaveId)
 }
 

@@ -360,7 +360,7 @@ func getEnclaveIdFromNetwork(network *types.Network) (enclave.EnclaveID, error) 
 
 func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID) (*types.Network, error) {
 	networkSearchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDKubernetesLabelValue.GetString(),
 		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
 	}
 
@@ -385,9 +385,9 @@ func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.C
 // Guaranteed to either return an enclave data volume name or throw an error
 func (backend *DockerKurtosisBackend) getEnclaveDataVolumeByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID) (string, error) {
 	volumeSearchLabels :=  map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDKubernetesLabelValue.GetString(),
 		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
-		label_key_consts.VolumeTypeLabelKey.GetString(): label_value_consts.EnclaveDataVolumeTypeLabelValue.GetString(),
+		label_key_consts.VolumeTypeLabelKey.GetString(): label_value_consts.EnclaveDataVolumeTypeKubernetesLabelValue.GetString(),
 	}
 	foundVolumes, err := backend.dockerManager.GetVolumesByLabels(ctx, volumeSearchLabels)
 	if err != nil {

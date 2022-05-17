@@ -319,8 +319,8 @@ func (backend *DockerKurtosisBackend) DestroyEngines(
 // Gets engines matching the search filters, indexed by their container ID
 func (backend *DockerKurtosisBackend) getMatchingEngines(ctx context.Context, filters *engine.EngineFilters) (map[string]*engine.Engine, error) {
 	engineContainerSearchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.EngineContainerTypeLabelValue.GetString(),
+		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.EngineContainerTypeKubernetesLabelValue.GetString(),
 		// NOTE: we do NOT use the engine ID label here, and instead do postfiltering, because Docker has no way to do disjunctive search!
 	}
 	allEngineContainers, err := backend.dockerManager.GetContainersByLabels(ctx, engineContainerSearchLabels, shouldFetchAllContainersWhenRetrievingContainers)
@@ -378,7 +378,7 @@ func getEngineObjectFromContainerInfo(
 		/*
 		return nil, stacktrace.NewError(
 			"Expected a '%v' label on engine container with ID '%v', but none was found",
-			object_attributes_provider.GUIDLabelKey.GetString(),
+			object_attributes_provider.GUIDKubernetesLabelKey.GetString(),
 			containerId,
 		)
 		 */

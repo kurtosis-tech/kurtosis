@@ -66,8 +66,8 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEnginePod() (Ku
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
-		label_key_consts.IDLabelKey:                   idLabelValue,
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
+		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
 	}
 
 	// No custom annotations for engine pod
@@ -98,8 +98,8 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
-		label_key_consts.IDLabelKey:                   idLabelValue,
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
+		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
 	}
 
 	usedPorts := map[string]*port_spec.PortSpec{
@@ -137,8 +137,8 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineNamespace
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
-		label_key_consts.IDLabelKey:                   idLabelValue,
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
+		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
 	}
 
 	// No custom annotations for engine namespace
@@ -165,8 +165,8 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineServiceAc
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
-		label_key_consts.IDLabelKey:                   idLabelValue,
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
+		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
 	}
 
 	// No custom annotations for engine service account
@@ -193,8 +193,8 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRo
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
-		label_key_consts.IDLabelKey:                   idLabelValue,
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
+		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
 	}
 
 	// No custom annotations for engine cluster role
@@ -222,8 +222,8 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRo
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
-		label_key_consts.IDLabelKey:                   idLabelValue,
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
+		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
 	}
 
 	// No custom annotations for engine cluster role bindings
@@ -245,8 +245,8 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) GetEngineSelectorL
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
-		label_key_consts.IDLabelKey:                   idLabelValue,
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeLabelValue,
+		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
 	}
 
 	return labels, nil

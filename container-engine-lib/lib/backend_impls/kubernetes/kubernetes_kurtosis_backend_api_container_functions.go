@@ -575,7 +575,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 		ctx,
 		backend.kubernetesManager,
 		enclaveMatchLabels,
-		label_key_consts.EnclaveIDLabelKey.GetString(),
+		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(),
 		enclaveIdsStrSet,
 	)
 	if err != nil {
@@ -601,7 +601,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 			backend.kubernetesManager,
 			namespaceName,
 			apiContainerMatchLabels,
-			label_key_consts.EnclaveIDLabelKey.GetString(),
+			label_key_consts.EnclaveIDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				enclaveIdStr: true,
 			},
@@ -637,7 +637,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 			backend.kubernetesManager,
 			namespaceName,
 			apiContainerMatchLabels,
-			label_key_consts.EnclaveIDLabelKey.GetString(),
+			label_key_consts.EnclaveIDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				enclaveIdStr: true,
 			},
@@ -673,7 +673,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 			backend.kubernetesManager,
 			namespaceName,
 			apiContainerMatchLabels,
-			label_key_consts.EnclaveIDLabelKey.GetString(),
+			label_key_consts.EnclaveIDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				enclaveIdStr: true,
 			},
@@ -709,7 +709,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 			backend.kubernetesManager,
 			namespaceName,
 			apiContainerMatchLabels,
-			label_key_consts.EnclaveIDLabelKey.GetString(),
+			label_key_consts.EnclaveIDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				enclaveIdStr: true,
 			},
@@ -745,7 +745,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 			backend.kubernetesManager,
 			namespaceName,
 			apiContainerMatchLabels,
-			label_key_consts.EnclaveIDLabelKey.GetString(),
+			label_key_consts.EnclaveIDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				enclaveIdStr: true,
 			},
@@ -893,8 +893,8 @@ func getApiContainerContainersAndVolumes(
 
 func getApiContainerMatchLabels() map[string]string {
 	engineMatchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString():                label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.KurtosisResourceTypeLabelKey.GetString(): label_value_consts.APIContainerKurtosisResourceTypeLabelValue.GetString(),
+		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.APIContainerKurtosisResourceTypeLabelValue.GetString(),
 	}
 	return engineMatchLabels
 }

@@ -352,8 +352,8 @@ func (backend *DockerKurtosisBackend) getMatchingNetworkingSidecars(
 ) (map[string]*networking_sidecar.NetworkingSidecar, error) {
 
 	searchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.NetworkingSidecarContainerTypeLabelValue.GetString(),
+		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.NetworkingSidecarContainerTypeKubernetesLabelValue.GetString(),
 	}
 	matchingContainers, err := backend.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchAllContainersWhenRetrievingContainers)
 	if err != nil {

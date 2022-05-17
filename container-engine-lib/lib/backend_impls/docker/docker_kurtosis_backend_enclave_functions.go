@@ -60,7 +60,7 @@ func (backend *DockerKurtosisBackend) CreateEnclave(
 	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
 
 	searchNetworkLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDKubernetesLabelValue.GetString(),
 		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
 	}
 
@@ -73,9 +73,9 @@ func (backend *DockerKurtosisBackend) CreateEnclave(
 	}
 
 	volumeSearchLabels :=  map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDKubernetesLabelValue.GetString(),
 		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
-		label_key_consts.VolumeTypeLabelKey.GetString(): label_value_consts.EnclaveDataVolumeTypeLabelValue.GetString(),
+		label_key_consts.VolumeTypeLabelKey.GetString(): label_value_consts.EnclaveDataVolumeTypeKubernetesLabelValue.GetString(),
 	}
 	foundVolumes, err := backend.dockerManager.GetVolumesByLabels(ctx, volumeSearchLabels)
 	if err != nil {
@@ -276,7 +276,7 @@ func (backend *DockerKurtosisBackend) DumpEnclave(
 	outputDirpath string,
 ) error {
 	enclaveContainerSearchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString():     label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.AppIDLabelKey.GetString():     label_value_consts.AppIDKubernetesLabelValue.GetString(),
 		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
 	}
 
@@ -436,7 +436,7 @@ func (backend *DockerKurtosisBackend) getMatchingEnclaveNetworkInfo(
 	error,
 ) {
 	kurtosisNetworkLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDKubernetesLabelValue.GetString(),
 		// NOTE: we don't search by enclave ID here because Docker has no way to do disjunctive search
 	}
 
@@ -530,7 +530,7 @@ func (backend *DockerKurtosisBackend) getAllEnclaveContainers(
 	containers := []*types.Container{}
 
 	searchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDKubernetesLabelValue.GetString(),
 		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
 	}
 	containers, err := backend.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchStoppedContainersWhenGettingEnclaveStatus)
@@ -549,7 +549,7 @@ func getAllEnclaveVolumes(
 	volumes := []*docker_types.Volume{}
 
 	searchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDKubernetesLabelValue.GetString(),
 		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
 	}
 

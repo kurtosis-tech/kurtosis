@@ -365,8 +365,8 @@ func (backend *DockerKurtosisBackend) DestroyModules(
 func (backend *DockerKurtosisBackend) getMatchingModules(ctx context.Context, filters *module.ModuleFilters) (map[string]*module.Module, error) {
 
 	moduleContainerSearchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.ModuleContainerTypeLabelValue.GetString(),
+		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.ModuleContainerTypeKubernetesLabelValue.GetString(),
 	}
 	matchingModuleContainers, err := backend.dockerManager.GetContainersByLabels(ctx, moduleContainerSearchLabels, shouldFetchAllContainersWhenRetrievingContainers)
 	if err != nil {
@@ -438,7 +438,7 @@ func getModuleObjectFromContainerInfo(
 	// UNCOMMENT THIS AFTER 2022-06-30 WHEN NOBODY HAS MODULES WITHOUT THE PRIVATE IP ADDRESS LABEL
 	/*
 		if !found {
-			return nil, stacktrace.NewError("Expected to find module private IP label key '%v' but none was found", label_key_consts.PrivateIPLabelKey.GetString())
+			return nil, stacktrace.NewError("Expected to find module private IP label key '%v' but none was found", label_key_consts.PrivateIPKubernetesLabelKey.GetString())
 		}
 	*/
 	if found {
