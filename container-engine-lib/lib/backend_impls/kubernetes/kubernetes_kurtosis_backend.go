@@ -2,6 +2,8 @@ package kubernetes
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
@@ -24,6 +26,7 @@ import (
 	"io"
 	apiv1 "k8s.io/api/core/v1"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -319,4 +322,36 @@ func getEnclaveMatchLabels() map[string]string {
 		label_key_consts.KurtosisResourceTypeLabelKey.GetString(): label_value_consts.EnclaveKurtosisResourceTypeLabelValue.GetString(),
 	}
 	return matchLabels
+}
+
+// This is a helper function that will take multiple errors, each identified by an ID, and format them together
+// If no errors are returned, this function returns nil
+func buildCombinedError(errorsById map[string]error, titleStr string) error {
+	allErrorStrs := []string{}
+	for errorId, stopErr := range errorsById {
+		errorFormatStr := ">>>>>>>>>>>>> %v %v <<<<<<<<<<<<<\n" +
+			"%v\n" +
+			">>>>>>>>>>>>> END %v %v <<<<<<<<<<<<<"
+		errorStr := fmt.Sprintf(
+			errorFormatStr,
+			strings.ToUpper(titleStr),
+			errorId,
+			stopErr.Error(),
+			strings.ToUpper(titleStr),
+			errorId,
+		)
+		allErrorStrs = append(allErrorStrs, errorStr)
+	}
+
+	if len(allErrorStrs) > 0 {
+		// NOTE: This is one of the VERY rare cases where we don't want to use stacktrace.Propagate, because
+		// attaching stack information for this method (which simply combines errors) just isn't useful. The
+		// expected behaviour is that the caller of this function will use stacktrace.Propagate
+		return errors.New(strings.Join(
+			allErrorStrs,
+			"\n\n",
+		))
+	}
+
+	return nil
 }
