@@ -9,6 +9,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -733,3 +734,38 @@ func (manager *KubernetesManager) waitForPersistentVolumeClaimBound(ctx context.
 
 	return stacktrace.NewError("Persistent volume claim '%v' in namespace '%v' did not become bound despite polling %v times with %v between polls", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace(), waitForPersistentVolumeBoundRetries, waitForPersistentVolumeBoundRetriesDelayMilliSeconds)
 }
+
+// GetContainerLogs gets the logs for a given container running inside the given pod in the give namespace
+// TODO We could upgrade this to get the logs of many containers at once just like kubectl does, see:
+//  https://github.com/kubernetes/kubectl/blob/master/pkg/cmd/logs/logs.go#L345
+func (manager *KubernetesManager) GetContainerLogs(
+	ctx context.Context,
+	namespaceName string,
+	podName string,
+	containerName string,
+	shouldFollowLogs bool,
+	shouldAddTimestamps bool,
+) (
+	io.ReadCloser,
+	error,
+){
+	options := &apiv1.PodLogOptions{
+		Container: containerName,
+		Follow: shouldFollowLogs,
+		Timestamps: shouldAddTimestamps,
+	}
+
+	getLogsRequest := manager.kubernetesClientSet.CoreV1().Pods(namespaceName).GetLogs(podName, options)
+	result, err := getLogsRequest.Stream(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting logs for container '%v' in pod '%v' in namespace '%v'",
+			containerName,
+			podName,
+			namespaceName,
+		)
+	}
+	return result, nil
+}
+
