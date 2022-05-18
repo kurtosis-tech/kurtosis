@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/object_name_constants"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -79,6 +78,11 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 			kurtosisServersPortProtocol.String(),
 		)
 	}
+	privatePortSpecs := map[string]*port_spec.PortSpec{
+		kurtosisInternalContainerGrpcPortSpecId: privateGrpcPortSpec,
+		kurtosisInternalContainerGrpcProxyPortSpecId: privateGrpcProxyPortSpec,
+	}
+
 	engineAttributesProvider := backend.objAttrsProvider.ForEngine(engineIdStr)
 
 	namespace, err := backend.createEngineNamespace(ctx, engineAttributesProvider)
@@ -138,7 +142,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 		}
 	}()
 
-	enginePod, err := backend.createEnginePod(ctx, namespaceName, engineAttributesProvider, imageOrgAndRepo, imageVersionTag, envVars, serviceAccount.Name)
+	enginePod, err := backend.createEnginePod(ctx, namespaceName, engineAttributesProvider, imageOrgAndRepo, imageVersionTag, envVars, privatePortSpecs, serviceAccount.Name)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the engine pod")
 	}
@@ -581,28 +585,6 @@ func getEngineObjectsFromKubernetesResources(allResources map[string]*engineKube
 	return result, nil
 }
 
-func getEngineContainers(containerImageAndTag string, engineEnvVars map[string]string) (resultContainers []apiv1.Container, resultVolumes []apiv1.Volume) {
-
-	var engineContainerEnvVars []apiv1.EnvVar
-	for varName, varValue := range engineEnvVars {
-		envVar := apiv1.EnvVar{
-			Name:  varName,
-			Value: varValue,
-		}
-		engineContainerEnvVars = append(engineContainerEnvVars, envVar)
-	}
-	containers := []apiv1.Container{
-		{
-			// TODO SPECIFY PORTS!!!!!
-			Name:  kurtosisEngineContainerName,
-			Image: containerImageAndTag,
-			Env:   engineContainerEnvVars,
-		},
-	}
-
-	return containers, nil
-}
-
 func getEngineMatchLabels() map[string]string {
 	engineMatchLabels := map[string]string{
 		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
@@ -724,6 +706,7 @@ func (backend *KubernetesKurtosisBackend) createEnginePod(
 	imageOrgAndRepo string,
 	imageVersionTag string,
 	envVars map[string]string,
+	privatePorts map[string]*port_spec.PortSpec,
 	serviceAccountName string,
 ) (*apiv1.Pod, error) {
 	// Get Pod Attributes
@@ -744,9 +727,43 @@ func (backend *KubernetesKurtosisBackend) createEnginePod(
 		imageOrgAndRepo,
 		imageVersionTag,
 	)
-	engineContainers, engineVolumes := getEngineContainers(containerImageAndTag, envVars)
+
+	containerPorts, err := getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the engine container ports from the private port specs")
+	}
+
+	var engineContainerEnvVars []apiv1.EnvVar
+	for varName, varValue := range envVars {
+		envVar := apiv1.EnvVar{
+			Name:  varName,
+			Value: varValue,
+		}
+		engineContainerEnvVars = append(engineContainerEnvVars, envVar)
+	}
+	engineContainers := []apiv1.Container{
+		{
+			// TODO SPECIFY PORTS!!!!!
+			Name:  kurtosisEngineContainerName,
+			Image: containerImageAndTag,
+			Env:   engineContainerEnvVars,
+			Ports: containerPorts,
+		},
+	}
+
+	engineVolumes := []apiv1.Volume{}
+
 	// Create pods with engine containers and volumes in kubernetes
-	pod, err := backend.kubernetesManager.CreatePod(ctx, namespace, enginePodName, enginePodLabels, enginePodAnnotations, engineContainers, engineVolumes, serviceAccountName)
+	pod, err := backend.kubernetesManager.CreatePod(
+		ctx,
+		namespace,
+		enginePodName,
+		enginePodLabels,
+		enginePodAnnotations,
+		engineContainers,
+		engineVolumes,
+		serviceAccountName,
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", enginePodName, namespace, containerImageAndTag)
 	}
@@ -777,23 +794,14 @@ func (backend *KubernetesKurtosisBackend) createEngineService(
 	engineServiceName := engineServiceAttributes.GetName().GetString()
 	engineServiceLabels := getStringMapFromLabelMap(engineServiceAttributes.GetLabels())
 	engineServiceAnnotations := getStringMapFromAnnotationMap(engineServiceAttributes.GetAnnotations())
-	grpcPortInt32 := int32(privateGrpcPortSpec.GetNumber())
-	grpcProxyPortInt32 := int32(privateGrpcProxyPortSpec.GetNumber())
 
 	// Define service ports. These hook up to ports on the containers running in the engine pod
-	servicePorts := []apiv1.ServicePort{
-		{
-			Name:     object_name_constants.KurtosisInternalContainerGrpcPortName.GetString(),
-			// TODO MAKE THIS DYNAMIC FROM THE PORTSPEC!!
-			Protocol: kurtosisInternalContainerGrpcPortProtocol,
-			Port:     grpcPortInt32,
-		},
-		{
-			Name:     object_name_constants.KurtosisInternalContainerGrpcProxyPortName.GetString(),
-			// TODO MAKE THIS DYNAMIC FROM THE PORTSPEC!!
-			Protocol: kurtosisInternalContainerGrpcProxyPortProtocol,
-			Port:     grpcProxyPortInt32,
-		},
+	servicePorts, err := getKubernetesServicePortsFromPrivatePortSpecs(map[string]*port_spec.PortSpec{
+		kurtosisInternalContainerGrpcPortSpecId: privateGrpcPortSpec,
+		kurtosisInternalContainerGrpcProxyPortSpecId: privateGrpcProxyPortSpec,
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the engine service's ports using the engine private port specs")
 	}
 
 	// Create Service
@@ -808,7 +816,14 @@ func (backend *KubernetesKurtosisBackend) createEngineService(
 		servicePorts,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating the service with name '%s' in namespace '%s' with ports '%v' and '%v'", engineServiceName, namespace, grpcPortInt32, grpcProxyPortInt32)
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred while creating the service with name '%s' in namespace '%s' with ports '%v' and '%v'",
+			engineServiceName,
+			namespace,
+			privateGrpcPortSpec.GetNumber(),
+			privateGrpcProxyPortSpec.GetNumber(),
+		)
 	}
 	return service, nil
 }
