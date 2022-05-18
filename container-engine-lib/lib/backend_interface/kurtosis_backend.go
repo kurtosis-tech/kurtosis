@@ -245,7 +245,20 @@ type KurtosisBackend interface {
 	) (*service.ServiceRegistration, error, )
 
 	// StartUserService consumes a service registration to create a user container with the given parameters
-	StartUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID, containerImageName string, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactVolumeMountDirpaths map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string, ) (*service.Service, error, )
+	StartUserService(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		serviceGuid service.ServiceGUID,
+		containerImageName string,
+		privatePorts map[string]*port_spec.PortSpec,
+		entrypointArgs []string,
+		cmdArgs []string,
+		envVars map[string]string,
+		filesArtifactVolumeMountDirpaths map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string,
+	) (
+		*service.Service,
+		error,
+	)
 
 	// Gets user services using the given filters, returning a map of matched user services identified by their GUID
 	GetUserServices(

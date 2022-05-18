@@ -485,11 +485,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 				len(namespacesForEnclaveId),
 			)
 		}
-
-		enclaveResources := &enclaveKubernetesResources{}
-
 		namespace := namespacesForEnclaveId[0]
-		enclaveResources.namespace = namespace
 
 		namespaceName := namespace.GetName()
 		enclaveWithIDMatchLabels := map[string]string{
@@ -515,7 +511,6 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 		if !found {
 			return nil, stacktrace.NewError("Expected to find pods for enclave ID '%v' but none were found", enclaveIdStr)
 		}
-		enclaveResources.pods = pods
 
 		// Services
 		servicesByEnclaveId, err := kubernetes_resource_collectors.CollectMatchingServices(
@@ -535,8 +530,12 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 		if !found {
 			return nil, stacktrace.NewError("Expected to find services for enclave ID '%v' but none were found", enclaveIdStr)
 		}
-		enclaveResources.services = services
 
+		enclaveResources := &enclaveKubernetesResources{
+			namespace: namespace,
+			pods:      pods,
+			services:  services,
+		}
 		result[enclave.EnclaveID(enclaveIdStr)] = enclaveResources
 	}
 

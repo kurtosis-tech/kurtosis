@@ -249,7 +249,16 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	}
 
 	// Create Service BEFORE the pod so that the pod will know its own IP address
-	apiContainerService, err := backend.kubernetesManager.CreateService(ctx, enclaveNamespaceName, apiContainerServiceName, apiContainerServiceLabels, apiContainerServiceAnnotations, apiContainerPodLabels, externalServiceType, servicePorts)
+	apiContainerService, err := backend.kubernetesManager.CreateService(
+		ctx,
+		enclaveNamespaceName,
+		apiContainerServiceName,
+		apiContainerServiceLabels,
+		apiContainerServiceAnnotations,
+		apiContainerPodLabels,
+		apiv1.ServiceTypeClusterIP,
+		servicePorts,
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the service with name '%s' in namespace '%s' with ports '%v' and '%v'", apiContainerServiceName, enclaveNamespaceName, grpcPortInt32, grpcProxyPortInt32)
 	}
@@ -279,7 +288,6 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data persistent volume claim for enclave '%v' in namespace '%v'", enclaveId, enclaveNamespaceName)
 	}
 
-	// TODO Replace with getKubernetesContainerPortsFromPrivatePortSpecs
 	containerPorts, err := getKubernetesContainerPortsFromPrivatePortSpecs(privatePortSpecs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting container ports from the API container's private port specs")

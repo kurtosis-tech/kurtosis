@@ -46,9 +46,6 @@ const (
 	// Port number string parsing constants
 	publicPortNumStrParsingBase = 10
 	publicPortNumStrParsingBits = 16
-
-	// TODO remove?
-	externalServiceType = "ClusterIP"
 )
 
 // This maps a Kubernetes pod's phase to a binary "is the pod considered running?" determiner

@@ -220,7 +220,6 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod
 	}
 	labels[label_key_consts.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
 
-	//No userServiceService annotations.
 	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{
 		kubernetes_annotation_key.PortSpecsKubernetesAnnotationKey: serializedPortSpecsAnnotationValue,
 	}

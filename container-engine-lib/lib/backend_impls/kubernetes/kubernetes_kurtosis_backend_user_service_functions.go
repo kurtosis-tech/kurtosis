@@ -84,7 +84,7 @@ type userServiceObjectsAndKubernetesResources struct {
 // Any of these fields can be nil if they don't exist in Kubernetes, though at least
 // one field will be present (else this struct won't exist)
 type userServiceKubernetesResources struct {
-	// This can be nil if the service has a pod and the user manually deleted the
+	// This can be nil if the user manually deleted the Kubernetes service (e.g. using the Kubernetes dashboard)
 	service *apiv1.Service
 
 	// This can be nil if the user hasn't started a pod for the service yet, or if the pod was deleted
@@ -119,6 +119,8 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 	serviceAnnotationsStrs := getStringMapFromAnnotationMap(serviceAttributes.GetAnnotations())
 
 	// Set up the labels that the pod will match (i.e. the labels of the pod-to-be)
+	// WARNING: We *cannot* use the labels of the Service itself because we're not guaranteed that the labels
+	//  between the two will be identical!
 	serviceGuidLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(string(serviceGuid))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes pod match label value for the service GUID '%v'", serviceGuid)
