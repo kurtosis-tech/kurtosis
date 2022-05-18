@@ -4,10 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/annotation_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
@@ -175,6 +178,9 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	}
 	namespaceName := namespace.Name
 
+	preexistingRegistrations,
+
+	/*
 	serviceSearchLabels := map[string]string{
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
 		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): string(enclaveId),
@@ -192,6 +198,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		return nil, stacktrace.NewError("Found multiple service registrations matching GUID '%v'", serviceGuid)
 	}
 	kubernetesService := matchingServices[0]
+	 */
 
 	if len(kubernetesService.Spec.Selector) == 0 {
 		return nil, stacktrace.NewError("Cannot start service with GUID '%v' because the service has already been stopped")
@@ -379,6 +386,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingUserServiceObjectsAndKubern
 	filters *service.ServiceFilters,
 ) (
 	map[service.ServiceGUID]*service.ServiceRegistration,
+	// Entries may be missing from this map based on whether a pod is running or not
 	map[service.ServiceGUID]*service.Service,
 	map[service.ServiceGUID]*userServiceKubernetesResources,
 	error,
@@ -393,7 +401,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingUserServiceObjectsAndKubern
 	return nil, nil, stacktrace.NewError("TODO IMPLEMENT!!")
 }
 
-func (backend *KubernetesKurtosisBackend) getServiceRegistrationObjectFromKubernetesService(kubernetesService *apiv1.Service) (*service.ServiceRegistration, error) {
+func getServiceRegistrationObjectFromKubernetesService(kubernetesService *apiv1.Service) (*service.ServiceRegistration, error) {
 	labels := kubernetesService.Labels
 	guidLabelStr, found := labels[label_key_consts.GUIDKubernetesLabelKey.GetString()]
 	if !found {
@@ -420,6 +428,37 @@ func (backend *KubernetesKurtosisBackend) getServiceRegistrationObjectFromKubern
 	}
 
 	return service.NewServiceRegistration(id, guid, enclaveId, serviceIp), nil
+}
+
+// The Service result object may come back nil if it's not possible to create from the given resources
+func getServiceObjectFromKubernetesServiceAndPod(serviceRegistration *service.ServiceRegistration, kubernetesPod *apiv1.Pod) (*service.Service, error) {
+	annotations := kubernetesPod.Annotations
+	portSpecsStr, found := annotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()]
+	if !found {
+		return nil, stacktrace.NewError("Expected to find annotation key '%v' on the Kubernetes pod but none was found", annotation_key_consts.PortSpecsAnnotationKey.GetString())
+	}
+	privatePorts, err := kubernetes_port_spec_serializer.DeserializePortSpecs(portSpecsStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred deserializing port specs string '%v'", portSpecsStr)
+	}
+
+	podPhase := kubernetesPod.Status.Phase
+	isPodRunning, found := isPodRunningDeterminer[podPhase]
+	if !found {
+		// Should never happen because we enforce completeness of the determiner via unit test
+		return nil, stacktrace.NewError("No is-pod-running determination found for pod phase '%v'; this is a bug in Kurtosis", podPhase)
+	}
+	// TODO Rename
+	containerStatus := container_status.ContainerStatus_Stopped
+	if isPodRunning {
+		containerStatus = container_status.ContainerStatus_Running
+	}
+
+	// Public information for Kubernetes pods will be provided via the gateway
+	var publicIp net.IP = nil
+	var publicPorts map[string]*port_spec.PortSpec = nil
+
+	return service.NewService(serviceRegistration, containerStatus, privatePorts, publicIp, publicPorts), nil
 }
 
 func getUserServicePodContainerSpecs(
