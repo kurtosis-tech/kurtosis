@@ -777,9 +777,9 @@ func (backend *DockerKurtosisBackend) getMatchingUserServiceDockerResources(
 ) (map[service.ServiceGUID]*userServiceDockerResources, error) {
 	// For the matching values, get the containers to check the status
 	userServiceContainerSearchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
-		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.UserServiceContainerTypeLabelValue.GetString(),
+		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.EnclaveIDDockerLabelKey.GetString():     string(enclaveId),
+		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.UserServiceContainerTypeDockerLabelValue.GetString(),
 	}
 	userServiceContainers, err := backend.dockerManager.GetContainersByLabels(ctx, userServiceContainerSearchLabels, shouldGetStoppedContainersWhenGettingServiceInfo)
 	if err != nil {
@@ -787,9 +787,9 @@ func (backend *DockerKurtosisBackend) getMatchingUserServiceDockerResources(
 	}
 	resourcesByServiceGuid := map[service.ServiceGUID]*userServiceDockerResources{}
 	for _, container := range userServiceContainers {
-		serviceGuidStr, found := container.GetLabels()[label_key_consts.GUIDLabelKey.GetString()]
+		serviceGuidStr, found := container.GetLabels()[label_key_consts.GUIDDockerLabelKey.GetString()]
 		if !found {
-			return nil, stacktrace.NewError("Found user service container '%v' that didn't have expected GUID label '%v'", container.GetId(), label_key_consts.GUIDLabelKey.GetString())
+			return nil, stacktrace.NewError("Found user service container '%v' that didn't have expected GUID label '%v'", container.GetId(), label_key_consts.GUIDDockerLabelKey.GetString())
 		}
 		serviceGuid := service.ServiceGUID(serviceGuidStr)
 
@@ -814,9 +814,9 @@ func getUserServiceObjsFromDockerResources(
 		containerName := container.GetName()
 		containerLabels := container.GetLabels()
 
-		serviceIdStr, found := containerLabels[label_key_consts.IDLabelKey.GetString()]
+		serviceIdStr, found := containerLabels[label_key_consts.IDDockerLabelKey.GetString()]
 		if !found {
-			return nil, stacktrace.NewError("Expected to find label '%v' on container '%v' but label was missing", label_key_consts.IDLabelKey.GetString(), containerName)
+			return nil, stacktrace.NewError("Expected to find label '%v' on container '%v' but label was missing", label_key_consts.IDDockerLabelKey.GetString(), containerName)
 		}
 		serviceId := service.ServiceID(serviceIdStr)
 
@@ -869,21 +869,21 @@ func getIpAndPortInfoFromContainer(
 	resultPublicPortSpecs map[string]*port_spec.PortSpec,
 	resultErr error,
 ){
-	privateIpAddrStr, found := labels[label_key_consts.PrivateIPLabelKey.GetString()]
+	privateIpAddrStr, found := labels[label_key_consts.PrivateIPDockerLabelKey.GetString()]
 	if !found {
-		return nil, nil, nil, nil, stacktrace.NewError("Expected to find label '%v' on container '%v' but label was missing", label_key_consts.PrivateIPLabelKey.GetString(), containerName)
+		return nil, nil, nil, nil, stacktrace.NewError("Expected to find label '%v' on container '%v' but label was missing", label_key_consts.PrivateIPDockerLabelKey.GetString(), containerName)
 	}
 	privateIp := net.ParseIP(privateIpAddrStr)
 	if privateIp == nil {
 		return nil, nil, nil, nil, stacktrace.NewError("Couldn't parse private IP string '%v' on container '%v' to an IP address", privateIpAddrStr, containerName)
 	}
 
-	serializedPortSpecs, found := labels[label_key_consts.PortSpecsLabelKey.GetString()]
+	serializedPortSpecs, found := labels[label_key_consts.PortSpecsDockerLabelKey.GetString()]
 	if !found {
 		return nil, nil, nil, nil, stacktrace.NewError(
 			"Expected to find port specs label '%v' on container '%v' but none was found",
 			containerName,
-			label_key_consts.PortSpecsLabelKey.GetString(),
+			label_key_consts.PortSpecsDockerLabelKey.GetString(),
 		)
 	}
 

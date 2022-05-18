@@ -365,8 +365,8 @@ func (backend *DockerKurtosisBackend) DestroyModules(
 func (backend *DockerKurtosisBackend) getMatchingModules(ctx context.Context, filters *module.ModuleFilters) (map[string]*module.Module, error) {
 
 	moduleContainerSearchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.ModuleContainerTypeLabelValue.GetString(),
+		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.ModuleContainerTypeDockerLabelValue.GetString(),
 	}
 	matchingModuleContainers, err := backend.dockerManager.GetContainersByLabels(ctx, moduleContainerSearchLabels, shouldFetchAllContainersWhenRetrievingContainers)
 	if err != nil {
@@ -418,27 +418,27 @@ func getModuleObjectFromContainerInfo(
 	containerStatus types.ContainerStatus,
 	allHostMachinePortBindings map[nat.Port]*nat.PortBinding,
 ) (*module.Module, error) {
-	enclaveId, found := labels[label_key_consts.EnclaveIDLabelKey.GetString()]
+	enclaveId, found := labels[label_key_consts.EnclaveIDDockerLabelKey.GetString()]
 	if !found {
-		return nil, stacktrace.NewError("Expected the module's enclave ID to be found under label '%v' but the label wasn't present", label_key_consts.EnclaveIDLabelKey.GetString())
+		return nil, stacktrace.NewError("Expected the module's enclave ID to be found under label '%v' but the label wasn't present", label_key_consts.EnclaveIDDockerLabelKey.GetString())
 	}
 
-	id, found := labels[label_key_consts.IDLabelKey.GetString()]
+	id, found := labels[label_key_consts.IDDockerLabelKey.GetString()]
 	if !found {
-		return nil, stacktrace.NewError("Expected to find module ID label key '%v' but none was found", label_key_consts.IDLabelKey.GetString())
+		return nil, stacktrace.NewError("Expected to find module ID label key '%v' but none was found", label_key_consts.IDDockerLabelKey.GetString())
 	}
 
-	guid, found := labels[label_key_consts.GUIDLabelKey.GetString()]
+	guid, found := labels[label_key_consts.GUIDDockerLabelKey.GetString()]
 	if !found {
-		return nil, stacktrace.NewError("Expected to find module GUID label key '%v' but none was found", label_key_consts.GUIDLabelKey.GetString())
+		return nil, stacktrace.NewError("Expected to find module GUID label key '%v' but none was found", label_key_consts.GUIDDockerLabelKey.GetString())
 	}
 
 	var privateIpAddr net.IP
-	privateIpAddrStr, found := labels[label_key_consts.PrivateIPLabelKey.GetString()]
+	privateIpAddrStr, found := labels[label_key_consts.PrivateIPDockerLabelKey.GetString()]
 	// UNCOMMENT THIS AFTER 2022-06-30 WHEN NOBODY HAS MODULES WITHOUT THE PRIVATE IP ADDRESS LABEL
 	/*
 		if !found {
-			return nil, stacktrace.NewError("Expected to find module private IP label key '%v' but none was found", label_key_consts.PrivateIPLabelKey.GetString())
+			return nil, stacktrace.NewError("Expected to find module private IP label key '%v' but none was found", label_key_consts.PrivateIPDockerLabelKey.GetString())
 		}
 	*/
 	if found {
@@ -495,9 +495,9 @@ func getPrivateModulePorts(containerLabels map[string]string) (
 	resultGrpcPortSpec *port_spec.PortSpec,
 	resultErr error,
 ) {
-	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsLabelKey.GetString()]
+	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsDockerLabelKey.GetString()]
 	if !found {
-		return nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsLabelKey.GetString())
+		return nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsDockerLabelKey.GetString())
 	}
 
 	portSpecs, err := port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)

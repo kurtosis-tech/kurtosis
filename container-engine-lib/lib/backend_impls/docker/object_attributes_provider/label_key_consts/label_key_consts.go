@@ -38,14 +38,14 @@ const (
 //
 //   If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
 //
-var AppIDLabelKey = docker_label_key.MustCreateNewDockerLabelKey(appIdLabelKeyStr)
+var AppIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(appIdLabelKeyStr)
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-var ContainerTypeLabelKey = docker_label_key.MustCreateNewDockerLabelKey(containerTypeLabelKeyStr)
-var VolumeTypeLabelKey = docker_label_key.MustCreateNewDockerLabelKey(volumeTypeLabelKeyStr)
-var IDLabelKey = docker_label_key.MustCreateNewDockerLabelKey(idLabelKeyStr)
-var GUIDLabelKey = docker_label_key.MustCreateNewDockerLabelKey(guidLabelKeyStr)
-var PortSpecsLabelKey = docker_label_key.MustCreateNewDockerLabelKey(portSpecsLabelKeyStr)
-var EnclaveIDLabelKey = docker_label_key.MustCreateNewDockerLabelKey(enclaveIdLabelKeyStr)
-var IsNetworkPartitioningEnabledLabelKey = docker_label_key.MustCreateNewDockerLabelKey(isNetworkPartitioningEnabledKeyStr)
-var PrivateIPLabelKey = docker_label_key.MustCreateNewDockerLabelKey(privateIpAddrLabelKeyStr)
+var ContainerTypeDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(containerTypeLabelKeyStr)
+var VolumeTypeDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(volumeTypeLabelKeyStr)
+var IDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(idLabelKeyStr)
+var GUIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(guidLabelKeyStr)
+var PortSpecsDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(portSpecsLabelKeyStr)
+var EnclaveIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(enclaveIdLabelKeyStr)
+var IsNetworkPartitioningEnabledDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(isNetworkPartitioningEnabledKeyStr)
+var PrivateIPDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(privateIpAddrLabelKeyStr)
