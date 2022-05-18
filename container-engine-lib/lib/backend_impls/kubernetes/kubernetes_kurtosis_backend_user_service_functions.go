@@ -61,39 +61,22 @@ const (
 	userServiceServiceAccountName = ""
 )
 
-type userServiceRegistrationKubernetesResources struct {
-	service *service.Service
-}
-
 // Any of these fields can be nil if they don't exist in Kubernetes, though at least
 // one field will be present (else this struct won't exist)
 type userServiceKubernetesResources struct {
+	// This can be nil if the service has a pod and the user manually deleted the
 	service *apiv1.Service
 
+	// This can be nil if the user hasn't started a pod for the service yet, or if the pod was deleted
 	pod *apiv1.Pod
 }
 
-func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID, ) (*service.ServiceRegistration, error) {
+func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
 	enclaveNamespace, err := backend.getEnclaveNamespace(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting namespace matching enclave ID '%v'", enclaveId)
 	}
-
-	preexistingServiceFilters := &service.ServiceFilters{
-		IDs: map[service.ServiceID]bool{
-			serviceId: true,
-		},
-	}
-	preexistingUserServices, _, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, preexistingServiceFilters)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred checking for preexisting services in enclave '%v' matching service ID '%v'", enclaveId, serviceId)
-	}
-	if len(preexistingUserServices) > 0 {
-		return nil, stacktrace.NewError("Found preexisting services in enclave '%v' with ID '%v'", enclaveId, serviceId)
-	}
-
-	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
-	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
+	namespaceName := enclaveNamespace.Name
 
 	// TODO Switch this, and all other GUIDs, to a UUID??
 	serviceGuid := service.ServiceGUID(fmt.Sprintf(
@@ -101,6 +84,24 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 		serviceId,
 		time.Now().Unix(),
 	))
+
+	/*
+	preexistingServiceFilters := &service.ServiceFilters{
+		IDs: map[service.ServiceID]bool{
+			serviceId: true,
+		},
+	}
+	preexistingRegistrations, _, preexistingResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, preexistingServiceFilters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred checking for preexisting services in enclave '%v' matching service ID '%v'", enclaveId, serviceId)
+	}
+	if len(preexistingRegistrations) > 0 {
+		return nil, stacktrace.NewError("Found preexisting registration in enclave '%v' with ID '%v'", enclaveId, serviceId)
+	}
+	 */
+
+	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
+	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
 
 	serviceAttributes, err := enclaveObjAttributesProvider.ForUserServiceService(serviceGuid, serviceId)
 	if err != nil {
@@ -134,12 +135,22 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating Kubernetes service in enclave '%v' with ID '%v'", enclaveId, serviceId)
 	}
+	shouldDeleteService := true
+	defer func() {
+		if shouldDeleteService {
+			if err := backend.kubernetesManager.RemoveService(ctx, namespaceName, createdService.Name); err != nil {
+				logrus.Errorf("Registering service '%v' didn't complete successfully so we tried to remove the Kubernetes service we created but doing so threw an error:\n%v", serviceId, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to remove service '%v' in namespace '%v' manually!!!", createdService.Name, namespaceName)
+			}
+		}
+	}()
 
 	serviceRegistration, err := backend.getServiceRegistrationObjectFromKubernetesService(createdService)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting a service registration object from the Kubernetes service")
+		return nil, stacktrace.Propagate(err, "An error occurred getting a service registration object from Kubernetes service")
 	}
 
+	shouldDeleteService = false
 	return serviceRegistration, nil
 }
 
@@ -338,25 +349,6 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
-func (backend *KubernetesKurtosisBackend) getMatchingUserServiceObjectsAndKubernetesResources(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	filters *service.ServiceFilters,
-) (
-	map[service.ServiceGUID]*service.Service,
-	map[service.ServiceGUID]*userServiceKubernetesResources,
-	error,
-) {
-	_, err := backend.getMatchingUserServiceKubernetesResources(ctx, filters)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engine Kubernetes resources matching IDs: %+v", filters.IDs)
-	}
-
-
-	// TODO TODO CHANGE
-	return nil, nil, stacktrace.NewError("TODO IMPLEMENT!!")
-}
-
 func (backend *KubernetesKurtosisBackend) getMatchingUserServiceKubernetesResources(
 	ctx context.Context,
 	filters *service.ServiceFilters,
@@ -370,14 +362,35 @@ func (backend *KubernetesKurtosisBackend) getMatchingUserServiceKubernetesResour
 }
 
 func (backend *KubernetesKurtosisBackend) getUserServiceObjectsFromKubernetesResources(
-	map[service.ServiceGUID]*userServiceKubernetesResources,
+	resources map[service.ServiceGUID]*userServiceKubernetesResources,
 ) (
+	map[service.ServiceGUID]*service.ServiceRegistration,
 	map[service.ServiceGUID]*service.Service,
 	error,
 ){
 
 	// TODO TODO CHANGE
 	return nil, stacktrace.NewError("TODO IMPLEMENT!!")
+}
+
+func (backend *KubernetesKurtosisBackend) getMatchingUserServiceObjectsAndKubernetesResources(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *service.ServiceFilters,
+) (
+	map[service.ServiceGUID]*service.ServiceRegistration,
+	map[service.ServiceGUID]*service.Service,
+	map[service.ServiceGUID]*userServiceKubernetesResources,
+	error,
+) {
+	_, err := backend.getMatchingUserServiceKubernetesResources(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engine Kubernetes resources matching IDs: %+v", filters.IDs)
+	}
+
+
+	// TODO TODO CHANGE
+	return nil, nil, stacktrace.NewError("TODO IMPLEMENT!!")
 }
 
 func (backend *KubernetesKurtosisBackend) getServiceRegistrationObjectFromKubernetesService(kubernetesService *apiv1.Service) (*service.ServiceRegistration, error) {
