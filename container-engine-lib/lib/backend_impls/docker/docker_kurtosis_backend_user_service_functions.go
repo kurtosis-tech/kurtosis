@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
@@ -146,21 +147,7 @@ func (backend *DockerKurtosisBackend) RegisterUserService(ctx context.Context, e
 	return registration, nil
 }
 
-func (backend *DockerKurtosisBackend) StartUserService(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceGuid service.ServiceGUID,
-	containerImageName string,
-	privatePorts map[string]*port_spec.PortSpec,
-	entrypointArgs []string,
-	cmdArgs []string,
-	envVars map[string]string,
-	// volume_name -> mountpoint_on_container
-	filesArtifactVolumeMountDirpaths map[string]string,
-) (
-	*service.Service,
-	error,
-) {
+func (backend *DockerKurtosisBackend) StartUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID, containerImageName string, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactVolumeMountDirpaths map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string, ) (*service.Service, error, ) {
 	backend.serviceRegistrationMutex.Lock()
 	defer backend.serviceRegistrationMutex.Unlock()
 

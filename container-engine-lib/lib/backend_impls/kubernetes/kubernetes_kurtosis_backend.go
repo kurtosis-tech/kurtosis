@@ -65,6 +65,13 @@ var isPodRunningDeterminer = map[apiv1.PodPhase]bool{
 	apiv1.PodUnknown: true, //We can not say that a pod is not running if we don't know the real state
 }
 
+// Completeness enforced via unit test
+var kurtosisPortProtocolToKubernetesPortProtocolTranslator = map[port_spec.PortProtocol]apiv1.Protocol{
+	port_spec.PortProtocol_TCP: apiv1.ProtocolTCP,
+	port_spec.PortProtocol_UDP: apiv1.ProtocolUDP,
+	port_spec.PortProtocol_SCTP: apiv1.ProtocolSCTP,
+}
+
 type KubernetesKurtosisBackend struct {
 	kubernetesManager *kubernetes_manager.KubernetesManager
 
@@ -258,18 +265,6 @@ func getContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus
 	return status, nil
 }
 
-func (backend *KubernetesKurtosisBackend) getAllEnclaveNamespaces(ctx context.Context) ([]apiv1.Namespace, error) {
-
-	matchLabels := getEnclaveMatchLabels()
-
-	namespaces, err := backend.kubernetesManager.GetNamespacesByLabels(ctx, matchLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave namespace using labels '%+v'", matchLabels)
-	}
-
-	return namespaces.Items, nil
-}
-
 func (backend *KubernetesKurtosisBackend) getEnclaveNamespace(ctx context.Context, enclaveId enclave.EnclaveID) (*apiv1.Namespace, error) {
 
 	matchLabels := getEnclaveMatchLabels()
@@ -322,6 +317,26 @@ func getEnclaveMatchLabels() map[string]string {
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue.GetString(),
 	}
 	return matchLabels
+}
+
+func getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts map[string]*port_spec.PortSpec) ([]apiv1.ContainerPort, error) {
+	result := []apiv1.ContainerPort{}
+	for portId, portSpec := range privatePorts {
+		kurtosisProtocol := portSpec.GetProtocol()
+		kubernetesProtocol, found := kurtosisPortProtocolToKubernetesPortProtocolTranslator[kurtosisProtocol]
+		if !found {
+			// Should never happen because we enforce completeness via unit test
+			return nil, stacktrace.NewError("No Kubernetes port protocol was defined for Kurtosis port protocol '%v'; this is a bug in Kurtosis", kurtosisProtocol)
+		}
+
+		kubernetesPortObj := apiv1.ContainerPort{
+			Name:          portId,
+			ContainerPort: portSpec.GetNumber(),
+			Protocol:      kubernetesProtocol,
+		}
+		result = append(result, kubernetesPortObj)
+	}
+	return result, nil
 }
 
 // This is a helper function that will take multiple errors, each identified by an ID, and format them together

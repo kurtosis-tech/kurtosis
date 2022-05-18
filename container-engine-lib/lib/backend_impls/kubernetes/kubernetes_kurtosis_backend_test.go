@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/stretchr/testify/require"
 	apiv1 "k8s.io/api/core/v1"
 	"testing"
@@ -19,3 +20,9 @@ func TestIsPodRunningDeterminerCompleteness(t *testing.T) {
 	}
 }
 
+func TestKubernetesPortProtocolLookupCompleteness(t *testing.T) {
+	for _, kurtosisPortProtocol := range port_spec.PortProtocolValues() {
+		_, found := kurtosisPortProtocolToKubernetesPortProtocolTranslator[kurtosisPortProtocol]
+		require.True(t, found, "No Kubernetes port protocol defined for Kurtosis port protocol '%v'", kurtosisPortProtocol.String())
+	}
+}

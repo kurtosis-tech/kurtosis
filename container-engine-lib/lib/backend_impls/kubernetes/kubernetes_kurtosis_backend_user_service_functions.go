@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
@@ -49,6 +50,12 @@ Implementation notes:
 - The IP that the container gets as its "own IP" is technically the IP of the Service. This *should* be fine, but we'll need
 	to keep an eye out for it.
 */
+
+const (
+	userServiceContainerName = "user-service-container"
+
+	shouldMountVolumesAsReadOnly = false
+)
 
 type userServiceRegistrationKubernetesResources struct {
 	service *service.Service
@@ -141,8 +148,11 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	filesArtifactMountDirpaths map[string]string,
-) (newUserService *service.Service, resultErr error) {
+	filesArtifactVolumeMountDirpaths map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string,
+) (
+	newUserService *service.Service,
+	resultErr error,
+) {
 	namespace, err := backend.getEnclaveNamespace(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting namespace for enclave '%v'", enclaveId)
@@ -166,17 +176,55 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	}
 	kubernetesService := matchingServices[0]
 
+	serviceRegistration, err := backend.getServiceRegistrationObjectFromKubernetesService(&kubernetesService)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting a service registration object from the Kubernetes service")
+	}
+
 	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
-	podAttributes, err := enclaveObjAttributesProvider.ForUser
+	podAttributes, err := enclaveObjAttributesProvider.ForUserServicePod(
+		serviceRegistration.GetGUID(),
+		serviceRegistration.GetID(),
+		privatePorts,
+	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting attributes for the Kubernetes service for user service '%v'", serviceId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting attributes for the Kubernetes service for user service '%v'", serviceRegistration.GetGUID())
+	}
+
+
+
+	podLabelsStrs := getStringMapFromLabelMap(podAttributes.GetLabels())
+	podAnnotationsStrs := getStringMapFromAnnotationMap(podAttributes.GetAnnotations())
+
+	podContainers, err := getUserServicePodContainerSpecs(
+		containerImageName,
+		entrypointArgs,
+		cmdArgs,
+		envVars,
+		privatePorts,
+		filesArtifactVolumeMountDirpaths,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the container specs for the user service pod with image '%v'", containerImageName)
+	}
+
+	podVolumes := []apiv1.Volume{}
+	for volumeName, mountpoint := range filesArtifactVolumeMountDirpaths {
+		volumeObj := apiv1.Volume{
+			Name:         "",
+			VolumeSource: apiv1.VolumeSource{},
+		}
 	}
 
 	backend.kubernetesManager.CreatePod(
 		ctx,
 		namespace.Name,
-		podAttributes.
+		podAttributes.GetName().GetString(),
+		podLabelsStrs,
+		podAnnotationsStrs,
+		podContainers,
+
 
 
 	)
@@ -184,10 +232,6 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 
 
 
-	serviceRegistration, err := backend.getServiceRegistrationObjectFromKubernetesService(&kubernetesService)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting a service registration object from the Kubernetes service")
-	}
 
 	return nil, stacktrace.NewError("TODO IMPLEMENT!")
 }
@@ -333,4 +377,59 @@ func (backend *KubernetesKurtosisBackend) getServiceRegistrationObjectFromKubern
 	}
 
 	return service.NewServiceRegistration(id, guid, enclaveId, serviceIp), nil
+}
+
+func getUserServicePodContainerSpecs(
+	image string,
+	entrypointArgs []string,
+	cmdArgs []string,
+	envVarStrs map[string]string,
+	privatePorts map[string]*port_spec.PortSpec,
+	filesArtifactMountpoints map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string,
+) (
+	[]apiv1.Container,
+	error,
+){
+	var containerEnvVars []apiv1.EnvVar
+	for varName, varValue := range envVarStrs {
+		envVar := apiv1.EnvVar{
+			Name:  varName,
+			Value: varValue,
+		}
+		containerEnvVars = append(containerEnvVars, envVar)
+	}
+
+	kubernetesContainerPorts, err := getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes container ports from the private port specs map")
+	}
+
+	volumeMountsList := []apiv1.VolumeMount{}
+	for volumeName, mountpoint := range filesArtifactMountpoints {
+		volumeMountObj := apiv1.VolumeMount{
+			Name:             string(volumeName),
+			ReadOnly:         shouldMountVolumesAsReadOnly,
+			MountPath:        mountpoint,
+		}
+		volumeMountsList = append(volumeMountsList, volumeMountObj)
+	}
+
+	// TODO create networking sidecars here
+	containers := []apiv1.Container{
+		{
+			Name:                     userServiceContainerName,
+			Image:                    image,
+			// Yes, even though this is called "command" it actually corresponds to the Docker ENTRYPOINT
+			Command:                  entrypointArgs,
+			Args:                     cmdArgs,
+			Ports:                    kubernetesContainerPorts,
+			Env:                      containerEnvVars,
+			VolumeMounts:             volumeMountsList,
+
+			// NOTE: There are a bunch of other interesting Container options that we omitted for now but might
+			// want to specify in the future
+		},
+	}
+
+	return containers, nil
 }
