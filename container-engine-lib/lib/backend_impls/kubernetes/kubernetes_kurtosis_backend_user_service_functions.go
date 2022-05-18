@@ -98,9 +98,8 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 	serviceNameStr := serviceAttributes.GetName().GetString()
 
 	serviceLabelsStrs := getStringMapFromLabelMap(serviceAttributes.GetLabels())
-	serviceAnnoationsStrs := getStringMapFromAnnotationMap(serviceAttributes.GetAnnotations())
+	serviceAnnotationsStrs := getStringMapFromAnnotationMap(serviceAttributes.GetAnnotations())
 
-	// We use the same labels as the Service for the Pods to match becuase
 	serviceGuidLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(string(serviceGuid))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes label value for the service GUID '%v'", serviceGuid)
@@ -115,7 +114,7 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 		enclaveNamespace.Name,
 		serviceNameStr,
 		serviceLabelsStrs,
-		serviceAnnoationsStrs,
+		serviceAnnotationsStrs,
 		matchedPodLabelStrs,
 		apiv1.ServiceTypeClusterIP,
 		[]apiv1.ServicePort{},	// This will be filled out when the user starts a pod
@@ -202,7 +201,7 @@ func (backend *KubernetesKurtosisBackend) PauseService(
 	enclaveId enclave.EnclaveID,
 	serviceId service.ServiceGUID,
 ) error {
-	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because pausing is not supported by Kubernetes")
+	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because pausing is not supported by Kubernetes", serviceId, enclaveId)
 }
 
 func (backend *KubernetesKurtosisBackend) UnpauseService(
@@ -210,7 +209,7 @@ func (backend *KubernetesKurtosisBackend) UnpauseService(
 	enclaveId enclave.EnclaveID,
 	serviceId service.ServiceGUID,
 ) error {
-	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because unpausing is not supported by Kubernetes")
+	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because unpausing is not supported by Kubernetes", serviceId, enclaveId)
 }
 
 func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
