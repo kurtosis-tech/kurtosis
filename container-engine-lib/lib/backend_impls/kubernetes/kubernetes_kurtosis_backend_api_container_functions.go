@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/object_name_constants"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -88,6 +87,10 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 			grpcProxyPortNum,
 			kurtosisServersPortProtocol.String(),
 		)
+	}
+	privatePortSpecs := map[string]*port_spec.PortSpec{
+		kurtosisInternalContainerGrpcPortSpecId: privateGrpcPortSpec,
+		kurtosisInternalContainerGrpcProxyPortSpecId: privateGrpcProxyPortSpec,
 	}
 
 	enclaveAttributesProvider := backend.objAttrsProvider.ForEnclave(enclaveId)
@@ -239,17 +242,10 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	// Define service ports. These hook up to ports on the containers running in the API container pod
 	// Kubernetes will assign a public port number to them
-	servicePorts := []apiv1.ServicePort{
-		{
-			Name:     object_name_constants.KurtosisInternalContainerGrpcPortName.GetString(),
-			Protocol: kurtosisInternalContainerGrpcPortProtocol,
-			Port:     grpcPortInt32,
-		},
-		{
-			Name:     object_name_constants.KurtosisInternalContainerGrpcProxyPortName.GetString(),
-			Protocol: kurtosisInternalContainerGrpcProxyPortProtocol,
-			Port:     grpcProxyPortInt32,
-		},
+
+	servicePorts, err := getKubernetesServicePortsFromPrivatePortSpecs(privatePortSpecs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating Kubernetes service ports from the API container's private port specs")
 	}
 
 	// Create Service BEFORE the pod so that the pod will know its own IP address
@@ -284,17 +280,9 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	}
 
 	// TODO Replace with getKubernetesContainerPortsFromPrivatePortSpecs
-	containerPorts := []apiv1.ContainerPort{
-		{
-			Name:          object_name_constants.KurtosisInternalContainerGrpcPortName.GetString(),
-			Protocol:      kurtosisInternalContainerGrpcPortProtocol,
-			ContainerPort: grpcPortInt32,
-		},
-		{
-			Name:          object_name_constants.KurtosisInternalContainerGrpcProxyPortName.GetString(),
-			Protocol:      kurtosisInternalContainerGrpcProxyPortProtocol,
-			ContainerPort: grpcProxyPortInt32,
-		},
+	containerPorts, err := getKubernetesContainerPortsFromPrivatePortSpecs(privatePortSpecs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting container ports from the API container's private port specs")
 	}
 
 	apiContainerContainers, apiContainerVolumes := getApiContainerContainersAndVolumes(image, containerPorts, envVarsWithOwnIp, enclaveDataPersistentVolumeClaim, enclaveDataVolumeDirpath)

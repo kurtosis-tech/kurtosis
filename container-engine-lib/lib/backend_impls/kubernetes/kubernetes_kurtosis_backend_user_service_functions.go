@@ -451,6 +451,29 @@ func (backend *KubernetesKurtosisBackend) getMatchingUserServiceObjectsAndKubern
 	return results, nil
 }
 
+func (backend *KubernetesKurtosisBackend) getSingleUserServiceObjectsAndResources(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID) (*userServiceObjectsAndKubernetesResources, error) {
+	searchFilters := &service.ServiceFilters{
+		GUIDs: map[service.ServiceGUID]bool{
+			serviceGuid: true,
+		},
+	}
+	searchResults, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, searchFilters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred finding services matching GUID '%v'", serviceGuid)
+	}
+	if len(searchResults) == 0 {
+		return nil, stacktrace.NewError("No services matched GUID '%v'", serviceGuid)
+	}
+	if len(searchResults) > 0 {
+		return nil, stacktrace.NewError("Expected one service to match GUID '%v' but found %v", serviceGuid, len(searchResults))
+	}
+	result, found := searchResults[serviceGuid]
+	if !found {
+		return nil, stacktrace.NewError("Got results from searching for service with GUID '%v', but no results by the GUID we searched for; this is a bug in Kurtosis", serviceGuid)
+	}
+	return result, nil
+}
+
 func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatchingGuids(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
