@@ -243,27 +243,30 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	podLabelsStrs := getStringMapFromLabelMap(podAttributes.GetLabels())
 	podAnnotationsStrs := getStringMapFromAnnotationMap(podAttributes.GetAnnotations())
 
+	// TODO TODO THIS WON'T WORK AND IS BROKEN FOR NOW
+	temporaryHackyFilesArtifactMountDirpaths := map[files_artifact_expansion_volume.FilesArtifactExpansionGUID]string{}
+
+	podVolumes, containerMounts, err := backend.getUserServiceVolumeInfoFromFilesArtifactMountpoints(
+		ctx,
+		namespaceName,
+		enclaveId,
+		serviceGuid,
+		temporaryHackyFilesArtifactMountDirpaths,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting pod volumes from files artifact mountpoints: %+v", filesArtifactVolumeMountDirpaths)
+	}
+
 	podContainers, err := getUserServicePodContainerSpecs(
 		containerImageName,
 		entrypointArgs,
 		cmdArgs,
 		envVars,
 		privatePorts,
-		filesArtifactVolumeMountDirpaths,
+		containerMounts,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the container specs for the user service pod with image '%v'", containerImageName)
-	}
-
-	podVolumes, err := backend.getUserServiceVolumeInfoFromFilesArtifactMountpoints(
-		ctx,
-		namespaceName,
-		enclaveId,
-		serviceGuid,
-		filesArtifactVolumeMountDirpaths,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting pod volumes from files artifact mountpoints: %+v", filesArtifactVolumeMountDirpaths)
 	}
 
 	podName := podAttributes.GetName().GetString()
