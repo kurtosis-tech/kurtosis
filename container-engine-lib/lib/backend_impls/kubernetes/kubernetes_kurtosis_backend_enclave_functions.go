@@ -76,8 +76,8 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	teardownContext := context.Background()
 
 	searchNamespaceLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
-		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
+		label_key_consts.AppIDKubernetesLabelKey.GetString():     label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): string(enclaveId),
 	}
 	namespaceList, err := backend.kubernetesManager.GetNamespacesByLabels(ctx, searchNamespaceLabels)
 	if err != nil {
@@ -88,11 +88,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	}
 
 	// Make Enclave attributes provider
-	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while trying to generate an object attributes provider for the enclave with ID '%v'", enclaveId)
-	}
-
+	enclaveObjAttrsProvider := backend.objAttrsProvider.ForEnclave(enclaveId)
 	enclaveNamespaceAttrs, err := enclaveObjAttrsProvider.ForEnclaveNamespace(isPartitioningEnabled)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave network attributes for the enclave with ID '%v'", enclaveId)
@@ -215,8 +211,8 @@ func (backend *KubernetesKurtosisBackend) StopEnclaves(
 			namespaceName := resources.namespace.GetName()
 
 			enclaveWithIDMatchLabels := map[string]string{
-				label_key_consts.AppIDLabelKey.GetString():     label_value_consts.AppIDLabelValue.GetString(),
-				label_key_consts.EnclaveIDLabelKey.GetString(): enclaveIdStr,
+				label_key_consts.AppIDKubernetesLabelKey.GetString():     label_value_consts.AppIDKubernetesLabelValue.GetString(),
+				label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): enclaveIdStr,
 			}
 
 			// Services
@@ -225,7 +221,7 @@ func (backend *KubernetesKurtosisBackend) StopEnclaves(
 				backend.kubernetesManager,
 				namespaceName,
 				enclaveWithIDMatchLabels,
-				label_key_consts.EnclaveIDLabelKey.GetString(),
+				label_key_consts.EnclaveIDKubernetesLabelKey.GetString(),
 				map[string]bool{
 					enclaveIdStr: true,
 				},
@@ -490,7 +486,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 		ctx,
 		backend.kubernetesManager,
 		enclaveMatchLabels,
-		label_key_consts.EnclaveIDLabelKey.GetString(),
+		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(),
 		enclaveIdsStrSet,
 	)
 	if err != nil {
@@ -516,8 +512,8 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 		namespace := namespacesForEnclaveId[0]
 
 		enclaveWithIDMatchLabels := map[string]string{
-			label_key_consts.AppIDLabelKey.GetString():     label_value_consts.AppIDLabelValue.GetString(),
-			label_key_consts.EnclaveIDLabelKey.GetString(): enclaveIdStr,
+			label_key_consts.AppIDKubernetesLabelKey.GetString():     label_value_consts.AppIDKubernetesLabelValue.GetString(),
+			label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): enclaveIdStr,
 		}
 
 		// Pods
@@ -526,7 +522,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 			backend.kubernetesManager,
 			namespace.GetName(),
 			enclaveWithIDMatchLabels,
-			label_key_consts.EnclaveIDLabelKey.GetString(),
+			label_key_consts.EnclaveIDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				enclaveIdStr: true,
 			},
