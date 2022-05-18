@@ -14,6 +14,7 @@
 
 ### Changes
 * The `enclave-size-in-Megabytes` field in Kubernetes cluster field now is optional, and defaults to 10 MB
+* Execution Ids now serialize timestamp as `YYYY-MM-DDTHH-MM-SS-sss`
 
 # 0.17.0
 ### Features
