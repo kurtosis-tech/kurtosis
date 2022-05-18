@@ -90,11 +90,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		)
 	}
 
-	enclaveAttributesProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err,"An error occurred getting the enclave attributes provider using enclave ID '%v'", enclaveId)
-	}
-
+	enclaveAttributesProvider := backend.objAttrsProvider.ForEnclave(enclaveId)
 	apiContainerAttributesProvider, err := enclaveAttributesProvider.ForApiContainer()
 	if err != nil {
 		return nil, stacktrace.Propagate(err,"An error occurred getting the API container attributes provider using enclave ID '%v'", enclaveId)

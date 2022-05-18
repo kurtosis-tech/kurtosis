@@ -88,11 +88,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	}
 
 	// Make Enclave attributes provider
-	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while trying to generate an object attributes provider for the enclave with ID '%v'", enclaveId)
-	}
-
+	enclaveObjAttrsProvider := backend.objAttrsProvider.ForEnclave(enclaveId)
 	enclaveNamespaceAttrs, err := enclaveObjAttrsProvider.ForEnclaveNamespace(isPartitioningEnabled)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave network attributes for the enclave with ID '%v'", enclaveId)
