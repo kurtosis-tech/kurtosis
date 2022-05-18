@@ -372,9 +372,10 @@ func (backend *KubernetesKurtosisBackend) StopAPIContainers(
 	for enclaveId, resources := range matchingKubernetesResources {
 
 		if resources.service != nil {
-			serviceName := resources.service.GetName()
 			namespaceName := resources.service.GetNamespace()
-			if err := backend.kubernetesManager.RemoveSelectorsFromService(ctx, namespaceName, serviceName); err != nil {
+			kubernetesService := resources.service
+
+			if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, serviceName); err != nil {
 				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
 					err,
 					"An error occurred removing selectors from service '%v' in namespace '%v' for API container in enclave with ID '%v'",

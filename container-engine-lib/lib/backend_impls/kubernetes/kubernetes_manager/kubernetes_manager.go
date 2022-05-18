@@ -108,18 +108,11 @@ func (manager *KubernetesManager) RemoveService(ctx context.Context, namespace s
 	return nil
 }
 
-func (manager *KubernetesManager) RemoveSelectorsFromService(ctx context.Context, namespace string, name string) error {
+func (manager *KubernetesManager) UpdateService(ctx context.Context, namespace string, service *apiv1.Service) error {
 	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
-	service, err := manager.GetServiceByName(ctx, namespace, name)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to find service with name '%v' in namespace '%v'", name, namespace)
-	}
-	service.Spec.Selector = make(map[string]string)
-
 	updateOpts := metav1.UpdateOptions{}
-
 	if _, err := servicesClient.Update(ctx, service, updateOpts); err != nil {
-		return stacktrace.Propagate(err, "Failed to remove selectors from service '%v' in namespace '%v'", name, namespace)
+		return stacktrace.Propagate(err, "Failed to remove selectors from service '%v' in namespace '%v'", service.Name, namespace)
 	}
 
 	return nil

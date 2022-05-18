@@ -238,7 +238,7 @@ func (backend *KubernetesKurtosisBackend) StopEnclaves(
 				errorsByServiceName := map[string]error{}
 				for _, service := range services {
 					serviceName := service.GetName()
-					if err := backend.kubernetesManager.RemoveSelectorsFromService(ctx, namespaceName, serviceName); err != nil {
+					if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, serviceName); err != nil {
 						errorsByServiceName[serviceName] = err
 						continue
 					}

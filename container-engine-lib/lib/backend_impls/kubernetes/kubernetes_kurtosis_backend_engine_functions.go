@@ -227,7 +227,7 @@ func (backend *KubernetesKurtosisBackend) StopEngines(
 
 		if resources.service != nil {
 			serviceName := resources.service.Name
-			if err := backend.kubernetesManager.RemoveSelectorsFromService(ctx, namespaceName, serviceName); err != nil {
+			if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, serviceName); err != nil {
 				erroredEngineIds[engineId] = stacktrace.Propagate(
 					err,
 					"An error occurred removing selectors from service '%v' in namespace '%v' for engine '%v'",

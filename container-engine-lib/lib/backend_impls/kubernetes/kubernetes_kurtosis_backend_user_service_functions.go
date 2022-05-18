@@ -111,21 +111,6 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 		time.Now().Unix(),
 	))
 
-	/*
-	preexistingServiceFilters := &service.ServiceFilters{
-		IDs: map[service.ServiceID]bool{
-			serviceId: true,
-		},
-	}
-	preexistingRegistrations, _, preexistingResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, preexistingServiceFilters)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred checking for preexisting services in enclave '%v' matching service ID '%v'", enclaveId, serviceId)
-	}
-	if len(preexistingRegistrations) > 0 {
-		return nil, stacktrace.NewError("Found preexisting registration in enclave '%v' with ID '%v'", enclaveId, serviceId)
-	}
-	 */
-
 	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
 
@@ -139,11 +124,18 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 	serviceLabelsStrs := getStringMapFromLabelMap(serviceAttributes.GetLabels())
 	serviceAnnotationsStrs := getStringMapFromAnnotationMap(serviceAttributes.GetAnnotations())
 
+	// Set up the labels that the pod will match (i.e. the labels of the pod-to-be)
 	serviceGuidLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(string(serviceGuid))
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes label value for the service GUID '%v'", serviceGuid)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes pod match label value for the service GUID '%v'", serviceGuid)
+	}
+	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(string(enclaveId))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes pod match label value for the enclave ID '%v'", enclaveId)
 	}
 	matchedPodLabels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
+		label_key_consts.AppIDKubernetesLabelKey: label_value_consts.AppIDKubernetesLabelValue,
+		label_key_consts.EnclaveIDKubernetesLabelKey: enclaveIdLabelValue,
 		label_key_consts.GUIDKubernetesLabelKey: serviceGuidLabelValue,
 	}
 	matchedPodLabelStrs := getStringMapFromLabelMap(matchedPodLabels)
@@ -171,10 +163,28 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 		}
 	}()
 
-	serviceRegistration, err := getServiceRegistrationObjectFromKubernetesService(createdService)
+	kubernetesResources := map[service.ServiceGUID]*userServiceKubernetesResources{
+		serviceGuid: {
+			service:   createdService,
+			pod: nil,	// No pod yet
+			namespace: enclaveNamespace,
+		},
+	}
+
+	convertedObjects, err := getUserServiceObjectsFromKubernetesResources(kubernetesResources)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting a service registration object from Kubernetes service")
 	}
+	objectsAndResources, found := convertedObjects[serviceGuid]
+	if !found {
+		return nil, stacktrace.NewError(
+			"Successfully converted the Kubernetes service representing registered service with GUID '%v' to a " +
+				"Kurtosis object, but couldn't find that key in the resulting map; this is a bug in Kurtosis",
+			serviceGuid,
+		)
+	}
+	serviceRegistration := objectsAndResources.serviceRegistration
+
 
 	shouldDeleteService = false
 	return serviceRegistration, nil
@@ -195,18 +205,12 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	newUserService *service.Service,
 	resultErr error,
 ) {
-	namespace, err := backend.getEnclaveNamespace(ctx, enclaveId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting namespace for enclave '%v'", enclaveId)
-	}
-	namespaceName := namespace.Name
-
 	preexistingServiceFilters := &service.ServiceFilters{
 		GUIDs:    map[service.ServiceGUID]bool{
 			serviceGuid: true,
 		},
 	}
-	preexistingRegistrations, preexistingServices, preexistingKubernetesResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(
+	preexistingObjectsAndResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(
 		ctx,
 		enclaveId,
 		preexistingServiceFilters,
@@ -214,40 +218,24 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting user service objects and Kubernetes resources matching service GUID '%v'", serviceGuid)
 	}
-	if len(preexistingRegistrations) == 0 || len(preexistingKubernetesResources) == 0 {
-		return nil, stacktrace.NewError("Couldn't find a service registration or Kubernetes resources for service GUID '%v'", serviceGuid)
+	if len(preexistingObjectsAndResources) == 0 {
+		return nil, stacktrace.NewError("Couldn't find any services registrations matching service GUID '%v'", serviceGuid)
 	}
-	if len(preexistingRegistrations) > 1 || len(preexistingKubernetesResources) > 1 {
+	if len(preexistingObjectsAndResources) > 1 {
 		// Should never happen because service GUIDs should be unique
-		return nil, stacktrace.NewError("Found more than one service registration or Kubernetes resources matching service GUID '%v'; this is a bug in Kurtosis", serviceGuid)
+		return nil, stacktrace.NewError("Found more than one service registration matching service GUID '%v'; this is a bug in Kurtosis", serviceGuid)
 	}
-	matchingRegistrationObj, found := preexi
-	matchingRegistrationResources, found := preexistingKubernetesResources[serviceGuid]
+	matchingObjectAndResources, found := preexistingObjectsAndResources[serviceGuid]
 	if !found {
 		return nil, stacktrace.NewError("Even though we pulled back some Kubernetes resources, no Kubernetes resources were available for requested service GUID '%v'; this is a bug in Kurtosis", serviceGuid)
 	}
+	serviceRegistrationObj := matchingObjectAndResources.serviceRegistration
+	serviceObj := matchingObjectAndResources.service
+	if serviceObj != nil {
+		return nil, stacktrace.NewError("Cannot start service with GUID '%v' because the service has already been started previously")
+	}
 
-
-
-	/*
-	serviceSearchLabels := map[string]string{
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
-		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): string(enclaveId),
-		label_key_consts.GUIDKubernetesLabelKey.GetString(): string(serviceGuid),
-	}
-	matchingServicesList, err := backend.kubernetesManager.GetServicesByLabels(ctx, namespaceName, serviceSearchLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting preexisting service registrations matching GUID '%v'", serviceGuid)
-	}
-	matchingServices := matchingServicesList.Items
-	if len(matchingServices) == 0 {
-		return nil, stacktrace.NewError("Couldn't find any service registrations matching GUID '%v'", serviceGuid)
-	}
-	if len(matchingServices) > 1 {
-		return nil, stacktrace.NewError("Found multiple service registrations matching GUID '%v'", serviceGuid)
-	}
-	kubernetesService := matchingServices[0]
-	 */
+	// Create the pod
 
 	if len(kubernetesService.Spec.Selector) == 0 {
 		return nil, stacktrace.NewError("Cannot start service with GUID '%v' because the service has already been stopped")
@@ -562,7 +550,6 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 }
 
 func getUserServiceObjectsFromKubernetesResources(
-	enclaveId enclave.EnclaveID,
 	allKubernetesResources map[service.ServiceGUID]*userServiceKubernetesResources,
 ) (map[service.ServiceGUID]*userServiceObjectsAndKubernetesResources, error) {
 	results := map[service.ServiceGUID]*userServiceObjectsAndKubernetesResources{}
@@ -575,6 +562,18 @@ func getUserServiceObjectsFromKubernetesResources(
 
 	for serviceGuid, resultObj := range results {
 		resources := resultObj.kubernetesResources
+
+		namespace := resources.namespace
+		if namespace != nil {
+			// Services should always have a namespace
+			return nil, stacktrace.NewError("Service '%v' didn't have a namespace object associated with it; this is a bug in Kurtosis", serviceGuid)
+		}
+		enclaveIdStr, found := namespace.Labels[label_key_consts.IDKubernetesLabelKey.GetString()]
+		if !found {
+			// Services should always have a namespace
+			return nil, stacktrace.NewError("Namespace '%v' for service with GUID '%v' didn't have expected ID label '%v'", namespace.Name, serviceGuid, label_key_consts.IDKubernetesLabelKey.GetString())
+		}
+		enclaveId := enclave.EnclaveID(enclaveIdStr)
 
 		kubernetesService := resources.service
 		if kubernetesService == nil {
