@@ -146,22 +146,28 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	envVars map[string]string,
 	filesArtifactMountDirpaths map[string]string,
 ) (newUserService *service.Service, resultErr error) {
-	get
+	namespace, err := backend.getEnclaveNamespace(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting namespace for enclave '%v'", enclaveId)
+	}
 
 	serviceSearchLabels := map[string]string{
 		label_key_consts.GUIDKubernetesLabelKey.GetString(): string(serviceGuid),
 		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): string(enclaveId),
 	}
-	preexistingServiceKubernetesResources, err := backend.kubernetesManager.GetServicesByLabels(ctx, )
+	matchingServicesList, err := backend.kubernetesManager.GetServicesByLabels(ctx, namespace.Name, serviceSearchLabels)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting preexisting service registrations matching GUID '%v'", serviceGuid)
 	}
-	if len(preexistingServiceKubernetesResources) == 0 {
+	matchingServices := matchingServicesList.Items
+	if len(matchingServices) == 0 {
 		return nil, stacktrace.NewError("Couldn't find any service registrations matching GUID '%v'", serviceGuid)
 	}
-	if len(preexistingServiceKubernetesResources) > 0 {
+	if len(matchingServices) > 1 {
 		return nil, stacktrace.NewError("Found multiple service registrations matching GUID '%v'", serviceGuid)
 	}
+	serviceRegistration := matchingServices[0]
+
 	foundKubernetesResources, found := preexistingServiceKubernetesResources[serviceGuid]
 	if !found {
 
