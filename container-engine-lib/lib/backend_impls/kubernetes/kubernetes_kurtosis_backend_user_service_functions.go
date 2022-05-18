@@ -90,6 +90,11 @@ type userServiceKubernetesResources struct {
 
 	// This can be nil if the user hasn't started a pod for the service yet, or if the pod was deleted
 	pod *apiv1.Pod
+
+	// NOTE: This is actually not a resource representing a user service (i.e. isn't created when we create a user service, nor
+	// destroyed when we destroy a user service)!! It's included purely for convenience.
+	// This will never be nil, because a service must have a namespace
+	namespace *apiv1.Namespace
 }
 
 func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
@@ -409,16 +414,54 @@ func (backend *KubernetesKurtosisBackend) getMatchingUserServiceObjectsAndKubern
 	map[service.ServiceGUID]*userServiceObjectsAndKubernetesResources,
 	error,
 ) {
-	allKubernetesResources, err := backend.getMatchingUserServiceKubernetesResources(ctx, filters)
+	allResources, err := backend.getUserServiceKubernetesResourcesMatchingGuids(ctx, enclaveId, filters.GUIDs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting engine Kubernetes resources matching IDs: %+v", filters.IDs)
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service Kubernetes resources matching GUIDs: %+v", filters.GUIDs)
 	}
 
+	allObjectsAndResources, err := getUserServiceObjectsFromKubernetesResources(enclaveId, allResources)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service objects from Kubernetes resources")
+	}
 
+	// Filter to match
+	results := map[service.ServiceGUID]*userServiceObjectsAndKubernetesResources{}
+	for serviceGuid, objectsAndResources := range allObjectsAndResources {
+		// Can't return a service if there's no service
+		if objectsAndResources.service == nil {
+			continue
+		}
 
+		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
+			if _, found := filters.GUIDs[serviceGuid]; !found {
+				continue
+			}
+		}
 
-	// TODO TODO CHANGE
-	return nil, nil, stacktrace.NewError("TODO IMPLEMENT!!")
+		registration := objectsAndResources.serviceRegistration
+		if filters.IDs != nil && len(filters.GUIDs) > 0 {
+			if _, found := filters.IDs[registration.GetID()]; !found {
+				continue
+			}
+		}
+
+		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+			kubernetesService := objectsAndResources.service
+
+			// If status isn't specified, return registered-only objects; if not, remove them all
+			if kubernetesService == nil {
+				continue
+			}
+
+			if _, found := filters.Statuses[kubernetesService.GetStatus()]; !found {
+				continue
+			}
+		}
+
+		results[serviceGuid] = objectsAndResources
+	}
+
+	return results, nil
 }
 
 func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatchingGuids(
@@ -475,7 +518,9 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 
 		resultObj, found := results[serviceGuid]
 		if !found {
-			resultObj = &userServiceKubernetesResources{}
+			resultObj = &userServiceKubernetesResources{
+				namespace: enclaveNamespace,
+			}
 		}
 		resultObj.service = kubernetesService
 	}
@@ -506,7 +551,9 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 
 		resultObj, found := results[serviceGuid]
 		if !found {
-			resultObj = &userServiceKubernetesResources{}
+			resultObj = &userServiceKubernetesResources{
+				namespace: enclaveNamespace,
+			}
 		}
 		resultObj.pod = kubernetesPod
 	}
