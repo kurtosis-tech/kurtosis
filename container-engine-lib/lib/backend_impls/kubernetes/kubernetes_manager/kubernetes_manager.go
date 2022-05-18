@@ -268,6 +268,7 @@ func (manager *KubernetesManager) GetPersistentVolumeClaim(ctx context.Context, 
 	return volumeClaim, nil
 }
 
+// TODO Make return type an actual list
 func (manager *KubernetesManager) ListPersistentVolumeClaims(ctx context.Context, namespace string) (*apiv1.PersistentVolumeClaimList, error) {
 	persistentVolumeClaimsClient := manager.kubernetesClientSet.CoreV1().PersistentVolumeClaims(namespace)
 
@@ -279,6 +280,7 @@ func (manager *KubernetesManager) ListPersistentVolumeClaims(ctx context.Context
 	return persistentVolumeClaimsResult, nil
 }
 
+// TODO Make return type an actual list
 func (manager *KubernetesManager) GetPersistentVolumeClaimsByLabels(ctx context.Context, namespace string, persistentVolumeClaimLabels map[string]string) (*apiv1.PersistentVolumeClaimList, error) {
 	persistentVolumeClaimsClient := manager.kubernetesClientSet.CoreV1().PersistentVolumeClaims(namespace)
 

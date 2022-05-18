@@ -111,7 +111,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		}
 	}()
 
-	enclaveDataVolumeAttrs, err := enclaveObjAttrsProvider.ForEnclaveDataVolume()
+	enclaveDataVolumeAttrs, err := enclaveObjAttrsProvider.ForEnclaveDataPersistentVolumeClaim()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave data volume attributes for the enclave with ID '%v'", enclaveId)
 	}

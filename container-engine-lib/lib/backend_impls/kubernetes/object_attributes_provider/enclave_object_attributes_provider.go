@@ -27,7 +27,7 @@ const (
 
 type KubernetesEnclaveObjectAttributesProvider interface {
 	ForEnclaveNamespace(isPartitioningEnabled bool) (KubernetesObjectAttributes, error)
-	ForEnclaveDataVolume() (KubernetesObjectAttributes, error)
+	ForEnclaveDataPersistentVolumeClaim() (KubernetesObjectAttributes, error)
 	ForApiContainer() (KubernetesApiContainerObjectAttributesProvider, error)
 	ForUserServiceService(guid service.ServiceGUID, id service.ServiceID) (KubernetesObjectAttributes, error)
 	ForUserServicePod(guid service.ServiceGUID, id service.ServiceID, privatePorts map[string]*port_spec.PortSpec) (KubernetesObjectAttributes, error)
@@ -88,7 +88,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespa
 	return objectAttributes, nil
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataVolume() (KubernetesObjectAttributes, error) {
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataPersistentVolumeClaim() (KubernetesObjectAttributes, error) {
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(provider.enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", provider.enclaveId)

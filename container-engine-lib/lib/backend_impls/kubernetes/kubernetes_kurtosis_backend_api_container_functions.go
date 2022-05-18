@@ -283,6 +283,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data persistent volume claim for enclave '%v' in namespace '%v'", enclaveId, enclaveNamespaceName)
 	}
 
+	// TODO Replace with getKubernetesContainerPortsFromPrivatePortSpecs
 	containerPorts := []apiv1.ContainerPort{
 		{
 			Name:          object_name_constants.KurtosisInternalContainerGrpcPortName.GetString(),
@@ -893,4 +894,27 @@ func getApiContainerMatchLabels() map[string]string {
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.APIContainerKurtosisResourceTypeKubernetesLabelValue.GetString(),
 	}
 	return engineMatchLabels
+}
+
+func (backend *KubernetesKurtosisBackend) getEnclaveDataPersistentVolumeClaim(ctx context.Context, enclaveNamespaceName string, enclaveId enclave.EnclaveID) (*apiv1.PersistentVolumeClaim, error) {
+	matchLabels := getEnclaveMatchLabels()
+	matchLabels[label_key_consts.KurtosisVolumeTypeKubernetesLabelKey.GetString()] = label_value_consts.EnclaveDataVolumeTypeKubernetesLabelValue.GetString()
+	matchLabels[label_key_consts.EnclaveIDKubernetesLabelKey.GetString()] = string(enclaveId)
+
+	persistentVolumeClaims, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, enclaveNamespaceName, matchLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave persistent volume claim using labels '%+v'", matchLabels)
+	}
+
+	numOfPersistentVolumeClaims := len(persistentVolumeClaims.Items)
+	if numOfPersistentVolumeClaims == 0 {
+		return nil, stacktrace.NewError("No persistent volume claim matching labels '%+v' was found", matchLabels)
+	}
+	if numOfPersistentVolumeClaims > 1 {
+		return nil, stacktrace.NewError("Expected to find only one enclave data persistent volume claim for enclave ID '%v', but '%v' was found; this is a bug in Kurtosis", enclaveId, numOfPersistentVolumeClaims)
+	}
+
+	resultPersistentVolumeClaim := &persistentVolumeClaims.Items[0]
+
+	return resultPersistentVolumeClaim, nil
 }

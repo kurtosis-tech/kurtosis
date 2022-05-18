@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"io"
 	apiv1 "k8s.io/api/core/v1"
 	"net"
@@ -55,6 +56,9 @@ const (
 	userServiceContainerName = "user-service-container"
 
 	shouldMountVolumesAsReadOnly = false
+
+	// Our user services don't need service accounts
+	userServiceServiceAccountName = ""
 )
 
 type userServiceRegistrationKubernetesResources struct {
@@ -148,6 +152,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
+	// TODO This needs a redo - at minimum it should be by files_artifact_expansion_volume_guid
 	filesArtifactVolumeMountDirpaths map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string,
 ) (
 	newUserService *service.Service,
@@ -157,13 +162,14 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting namespace for enclave '%v'", enclaveId)
 	}
+	namespaceName := namespace.Name
 
 	serviceSearchLabels := map[string]string{
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
 		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): string(enclaveId),
 		label_key_consts.GUIDKubernetesLabelKey.GetString(): string(serviceGuid),
 	}
-	matchingServicesList, err := backend.kubernetesManager.GetServicesByLabels(ctx, namespace.Name, serviceSearchLabels)
+	matchingServicesList, err := backend.kubernetesManager.GetServicesByLabels(ctx, namespaceName, serviceSearchLabels)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting preexisting service registrations matching GUID '%v'", serviceGuid)
 	}
@@ -176,10 +182,16 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	}
 	kubernetesService := matchingServices[0]
 
+	if len(kubernetesService.Spec.Selector) == 0 {
+		return nil, stacktrace.NewError("Cannot start service with GUID '%v' because the service has already been stopped")
+	}
+
 	serviceRegistration, err := backend.getServiceRegistrationObjectFromKubernetesService(&kubernetesService)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting a service registration object from the Kubernetes service")
 	}
+
+	// TODO Validate that no pods are attached to the Service already!!!
 
 	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
@@ -191,8 +203,6 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting attributes for the Kubernetes service for user service '%v'", serviceRegistration.GetGUID())
 	}
-
-
 
 	podLabelsStrs := getStringMapFromLabelMap(podAttributes.GetLabels())
 	podAnnotationsStrs := getStringMapFromAnnotationMap(podAttributes.GetAnnotations())
@@ -209,30 +219,48 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		return nil, stacktrace.Propagate(err, "An error occurred creating the container specs for the user service pod with image '%v'", containerImageName)
 	}
 
-	podVolumes := []apiv1.Volume{}
-	for volumeName, mountpoint := range filesArtifactVolumeMountDirpaths {
-		volumeObj := apiv1.Volume{
-			Name:         "",
-			VolumeSource: apiv1.VolumeSource{},
-		}
+	podVolumes, err := backend.getUserServicePodVolumesFromFilesArtifactMountpoints(
+		ctx,
+		namespaceName,
+		enclaveId,
+		serviceGuid,
+		filesArtifactVolumeMountDirpaths,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting pod volumes from files artifact mountpoints: %+v", filesArtifactVolumeMountDirpaths)
 	}
 
-	backend.kubernetesManager.CreatePod(
+	podName := podAttributes.GetName().GetString()
+	pod, err := backend.kubernetesManager.CreatePod(
 		ctx,
-		namespace.Name,
-		podAttributes.GetName().GetString(),
+		namespaceName,
+		podName,
 		podLabelsStrs,
 		podAnnotationsStrs,
 		podContainers,
-
-
-
+		podVolumes,
+		userServiceServiceAccountName,
 	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating pod '%v' using image '%v'", podName, containerImageName)
+	}
+	shouldDestroyPod := true
+	defer func() {
+		if shouldDestroyPod {
+			if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, podName); err != nil {
+				logrus.Errorf("Starting service didn't complete successfully so we tried to remove the pod we created but doing so threw an error:\n%v", err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to remove pod '%v' in '%v' manually!!!", podName, namespaceName)
+			}
+		}
+	}()
+
+
+	// TODO update service
 
 
 
 
-
+	shouldDestroyPod = false
 	return nil, stacktrace.NewError("TODO IMPLEMENT!")
 }
 
@@ -300,6 +328,8 @@ func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, 
 }
 
 func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (successfulUserServiceGuids map[service.ServiceGUID]bool, erroredUserServiceGuids map[service.ServiceGUID]error, resultErr error) {
+	// TODO Destroy persistent volume claims (???)
+
 	//TODO implement me
 	panic("implement me")
 }
@@ -432,4 +462,51 @@ func getUserServicePodContainerSpecs(
 	}
 
 	return containers, nil
+}
+
+func (backend *KubernetesKurtosisBackend) getUserServicePodVolumesFromFilesArtifactMountpoints(
+	ctx context.Context,
+	namespaceName string,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	filesArtifactVolumeMountpoints map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string,
+) ([]apiv1.Volume, error) {
+	filesArtifactExpansionVolumeSearchLabels := map[string]string{
+		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): string(enclaveId),
+		label_key_consts.KurtosisVolumeTypeKubernetesLabelKey.GetString(): label_value_consts.FilesArtifactExpansionVolumeTypeKubernetesLabelValue.GetString(),
+		label_key_consts.UserServiceGUIDKubernetesLabelKey.GetString(): string(serviceGuid),
+	}
+	persistentVolumeClaimsList, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, namespaceName, filesArtifactExpansionVolumeSearchLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact expansion volumes for service '%v' matching labels: %+v", filesArtifactExpansionVolumeSearchLabels)
+	}
+	persistentVolumeClaims := persistentVolumeClaimsList.Items
+
+	if len(persistentVolumeClaims) != len(filesArtifactVolumeMountpoints) {
+		return nil, stacktrace.Propagate(
+			err,
+			"Received request to start service with %v files artifact mountpoints '%+v', but only found %v persistent volume claims prepared for the service",
+			len(filesArtifactVolumeMountpoints),
+			filesArtifactVolumeMountpoints,
+			len(persistentVolumeClaims),
+		)
+	}
+
+	result := []apiv1.Volume{}
+	for _, claim := range persistentVolumeClaims {
+		claimName := claim.Name
+
+		volumeObj := apiv1.Volume{
+			Name:         claim.Spec.VolumeName,
+			VolumeSource: apiv1.VolumeSource{
+				PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
+					ClaimName: claimName,
+				},
+			},
+		}
+
+		result = append(result, volumeObj)
+	}
+
+	return result, nil
 }
