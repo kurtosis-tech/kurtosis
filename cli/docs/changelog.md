@@ -15,6 +15,7 @@
 
 ### Changes
 * The `enclave-size-in-Megabytes` field in Kubernetes cluster field now is optional, and defaults to 10 MB
+* Upgrade to engine 1.21.4 which understands Kubernetes cluster definitions
 
 # 0.17.0
 ### Features

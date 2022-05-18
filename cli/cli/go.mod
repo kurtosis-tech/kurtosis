@@ -16,8 +16,8 @@ require (
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220516202311-1ea5e3537576
 	github.com/kurtosis-tech/kurtosis-cli/commons v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220516050748-e7c9c95a0b50
-	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220516051749-b322340e37ee
-	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220516051734-f9f61ce000f9
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220517191913-70dbb44cf2aa
+	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220517191804-22a38d640b6b
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211205213337-f5088fc26465
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220225193403-74da3f3b98ce

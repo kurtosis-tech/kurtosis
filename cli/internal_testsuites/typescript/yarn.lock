@@ -2009,10 +2009,10 @@ kurtosis-core-api-lib@1.49.3:
     path-browserify "^1.0.1"
     tar "^6.1.11"
 
-kurtosis-engine-api-lib@1.21.3:
-  version "1.21.3"
-  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.21.3.tgz#0ec847feaf21f5614a1440acafe2c68a7b87bf31"
-  integrity sha512-KIQ3gyDu28OLmQjntFVCskyTurrx//juAlAR9XsLuGJ+JjXGgL6kYx1d9+CjZXERQBT5iUpcpIcVUuxtvCBdFQ==
+kurtosis-engine-api-lib@1.21.4:
+  version "1.21.4"
+  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.21.4.tgz#ad127e22b1e5432422a275b1d5f1ce84b19d9af5"
+  integrity sha512-WN6bUmYiFcS26E5vxXRU28YbM0JqdShPwzW93X2qOEVLxLQkt90ag5ayCZjlMxVZ1ed5mt2ScaSrHZJdOsHpYg==
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
     "@types/semver" "^7.3.9"
