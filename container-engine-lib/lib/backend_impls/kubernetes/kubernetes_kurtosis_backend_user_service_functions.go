@@ -175,7 +175,7 @@ func (backend *KubernetesKurtosisBackend) PauseService(
 	enclaveId enclave.EnclaveID,
 	serviceId service.ServiceGUID,
 ) error {
-	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because pausing is not supported by Kubernetes")
+	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because pausing is not supported by Kubernetes", serviceId, enclaveId)
 }
 
 func (backend *KubernetesKurtosisBackend) UnpauseService(
@@ -183,7 +183,7 @@ func (backend *KubernetesKurtosisBackend) UnpauseService(
 	enclaveId enclave.EnclaveID,
 	serviceId service.ServiceGUID,
 ) error {
-	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because unpausing is not supported by Kubernetes")
+	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because unpausing is not supported by Kubernetes", serviceId, enclaveId)
 }
 
 func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
