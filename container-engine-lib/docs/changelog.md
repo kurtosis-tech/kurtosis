@@ -1,6 +1,9 @@
 # TBD
 ### Features
-* Build out Kubernetes `RegisterService`
+* Build out the following user service functions in Kubernetes:
+    * `RegisterService`
+    * `StartService`
+    * All the pipeline for transforming Kubernetes objects into user services
 
 ### Changes
 * Renamed all Kubernetes constants that were `XXXXXLabelKey` to be `XXXXXKubernetesLabelKey` to make it more visually obvious that we're using the Kubernetes constants rather than Docker
