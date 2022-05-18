@@ -60,7 +60,7 @@ const (
 	userServiceContainerName = "user-service-container"
 
 	shouldMountVolumesAsReadOnly = false
-
+	shouldAddTimestampsToLogs = false
 	// Our user services don't need service accounts
 	userServiceServiceAccountName = ""
 )
@@ -359,8 +359,27 @@ func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
 	filters *service.ServiceFilters,
 	shouldFollowLogs bool,
 ) (successfulUserServiceLogs map[service.ServiceGUID]io.ReadCloser, erroredUserServiceGuids map[service.ServiceGUID]error, resultError error) {
+	serviceObjectsAndResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "Expected to be able to get user services and Kubernetes resources, instead a non nil error was returned")
+	}
+	userServiceLogs := map[service.ServiceGUID]io.ReadCloser{}
+	erredServiceLogs := map[service.ServiceGUID]error{}
+	for _, serviceObjectAndResource := range serviceObjectsAndResources {
+		// Is there a way to get the container name of a service GUID
+		serviceGuid := serviceObjectAndResource.service.GetRegistration().GetGUID()
+		servicePod := serviceObjectAndResource.kubernetesResources.pod
+		serviceNamespaceName := serviceObjectAndResource.kubernetesResources.service.GetNamespace()
+		// Get logs
+		logReadCloser, err := backend.kubernetesManager.GetContainerLogs(ctx, serviceNamespaceName, servicePod.Name, userServiceContainerName, shouldFollowLogs, shouldAddTimestampsToLogs)
+		if err != nil {
+			erredServiceLogs[serviceGuid] = stacktrace.Propagate(err, "Expected to be able to call Kubernetes to get logs service with GUID '%v', instead a non-nil error was returned", serviceGuid)
+			continue
+		}
+		userServiceLogs[serviceGuid] = logReadCloser
+	}
 	//TODO implement me
-	panic("implement me")
+	return userServiceLogs, erredServiceLogs, nil
 }
 
 func (backend *KubernetesKurtosisBackend) PauseService(
