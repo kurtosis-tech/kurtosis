@@ -310,7 +310,20 @@ func (backend *MetricsReportingKurtosisBackend) RegisterUserService(ctx context.
 	return result, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) StartUserService(ctx context.Context, enclaveId enclave.EnclaveID, guid service.ServiceGUID, containerImageName string, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactVolumeMountDirpaths map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string, ) (newUserService *service.Service, resultErr error, ) {
+func (backend *MetricsReportingKurtosisBackend) StartUserService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	guid service.ServiceGUID,
+	containerImageName string,
+	privatePorts map[string]*port_spec.PortSpec,
+	entrypointArgs []string,
+	cmdArgs []string,
+	envVars map[string]string,
+	filesArtifactVolumeMountDirpaths map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string,
+) (
+	newUserService *service.Service,
+	resultErr error,
+) {
 	userService, err := backend.underlying.StartUserService(
 		ctx,
 		enclaveId,
@@ -320,7 +333,7 @@ func (backend *MetricsReportingKurtosisBackend) StartUserService(ctx context.Con
 		entrypointArgs,
 		cmdArgs,
 		envVars,
-		filesArtifactMountDirpaths,
+		filesArtifactVolumeMountDirpaths,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -334,7 +347,7 @@ func (backend *MetricsReportingKurtosisBackend) StartUserService(ctx context.Con
 			entrypointArgs,
 			cmdArgs,
 			envVars,
-			filesArtifactMountDirpaths,
+			filesArtifactVolumeMountDirpaths,
 		)
 	}
 	return userService, nil

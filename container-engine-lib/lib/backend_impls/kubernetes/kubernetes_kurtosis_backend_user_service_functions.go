@@ -1,5 +1,4 @@
 package kubernetes
-
 import (
 	"context"
 	"fmt"
@@ -222,6 +221,8 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	if !found {
 		return nil, stacktrace.NewError("Even though we pulled back some Kubernetes resources, no Kubernetes resources were available for requested service GUID '%v'; this is a bug in Kurtosis", serviceGuid)
 	}
+	kubernetesService := matchingObjectAndResources.kubernetesResources.service
+	namespaceName := kubernetesService.GetNamespace()
 	serviceRegistrationObj := matchingObjectAndResources.serviceRegistration
 	serviceObj := matchingObjectAndResources.service
 	if serviceObj != nil {
@@ -229,27 +230,11 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	}
 
 	// Create the pod
-
-	if len(kubernetesService.Spec.Selector) == 0 {
-		return nil, stacktrace.NewError("Cannot start service with GUID '%v' because the service has already been stopped")
-	}
-
-	serviceRegistration, err := backend.getServiceRegistrationObjectFromKubernetesService(&kubernetesService)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting a service registration object from the Kubernetes service")
-	}
-
-	// TODO Validate that no pods are attached to the Service already!!!
-
 	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
-	podAttributes, err := enclaveObjAttributesProvider.ForUserServicePod(
-		serviceRegistration.GetGUID(),
-		serviceRegistration.GetID(),
-		privatePorts,
-	)
+	podAttributes, err := enclaveObjAttributesProvider.ForUserServicePod(serviceGuid, serviceRegistrationObj.GetID(), privatePorts)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting attributes for the Kubernetes service for user service '%v'", serviceRegistration.GetGUID())
+		return nil, stacktrace.Propagate(err, "An error occurred getting attributes for new pod for service with GUID '%v'", serviceGuid)
 	}
 
 	podLabelsStrs := getStringMapFromLabelMap(podAttributes.GetLabels())
@@ -279,7 +264,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	}
 
 	podName := podAttributes.GetName().GetString()
-	pod, err := backend.kubernetesManager.CreatePod(
+	if _, err := backend.kubernetesManager.CreatePod(
 		ctx,
 		namespaceName,
 		podName,
@@ -288,8 +273,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		podContainers,
 		podVolumes,
 		userServiceServiceAccountName,
-	)
-	if err != nil {
+	); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating pod '%v' using image '%v'", podName, containerImageName)
 	}
 	shouldDestroyPod := true
@@ -302,14 +286,34 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		}
 	}()
 
+	serializedPortSpecs, err := kubernetes_port_spec_serializer.SerializePortSpecs(privatePorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred serializing the following private port specs: %+v", privatePorts)
+	}
 
-	// TODO update service ports
-	// TODO update service labels with private ports
+	kubernetesServicePorts, err := getKubernetesServicePortsFromPrivatePortSpecs(privatePorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes service ports for the following private port specs: %+v", privatePorts)
+	}
 
-
-
+	updatedService := kubernetesService.DeepCopy()
+	updatedService.Annotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()] = serializedPortSpecs.GetString()
+	updatedService.Spec.Ports = kubernetesServicePorts
+	if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, updatedService); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred updating the user service to add the serialized private port specs annotation")
+	}
+	shouldUndoServiceUpdate := true
+	defer func() {
+		if shouldUndoServiceUpdate {
+			if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, kubernetesService); err != nil {
+				logrus.Errorf("Starting service didn't complete successfully so we tried to undo the changes we made to the Kubernetes service but doing so threw an error:\n%v", err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually correct service '%v' in namespace '%v'!!!", kubernetesService.GetName(), namespaceName)
+			}
+		}
+	}()
 
 	shouldDestroyPod = false
+	shouldUndoServiceUpdate = false
 	return nil, stacktrace.NewError("TODO IMPLEMENT!")
 }
 
@@ -624,7 +628,6 @@ func getUserServiceObjectsFromKubernetesResources(
 
 	return results, nil
 }
-
 
 func getUserServicePodContainerSpecs(
 	image string,

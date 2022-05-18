@@ -241,7 +241,11 @@ func (backend *DockerKurtosisBackend) StartUserService(ctx context.Context, encl
 		createAndStartArgsBuilder.WithCmdArgs(cmdArgs)
 	}
 	if filesArtifactVolumeMountDirpaths != nil {
-		createAndStartArgsBuilder.WithVolumeMounts(filesArtifactVolumeMountDirpaths)
+		filesArtifactVolumeMountDirpathStrs := map[string]string{}
+		for filesArtifactVolumeName, mountDirpath := range filesArtifactVolumeMountDirpaths {
+			filesArtifactVolumeMountDirpathStrs[string(filesArtifactVolumeName)] = mountDirpath
+		}
+		createAndStartArgsBuilder.WithVolumeMounts(filesArtifactVolumeMountDirpathStrs)
 	}
 	createAndStartArgs := createAndStartArgsBuilder.Build()
 

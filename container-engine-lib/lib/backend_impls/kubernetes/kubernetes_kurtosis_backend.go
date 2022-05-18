@@ -296,6 +296,29 @@ func getEnclaveMatchLabels() map[string]string {
 	return matchLabels
 }
 
+func getKubernetesServicePortsFromPrivatePortSpecs(privatePorts map[string]*port_spec.PortSpec) ([]apiv1.ServicePort, error) {
+	result := []apiv1.ServicePort{}
+	for portId, portSpec := range privatePorts {
+		kurtosisProtocol := portSpec.GetProtocol()
+		kubernetesProtocol, found := kurtosisPortProtocolToKubernetesPortProtocolTranslator[kurtosisProtocol]
+		if !found {
+			// Should never happen because we enforce completeness via unit test
+			return nil, stacktrace.NewError("No Kubernetes port protocol was defined for Kurtosis port protocol '%v'; this is a bug in Kurtosis", kurtosisProtocol)
+		}
+
+		kubernetesPortObj := apiv1.ServicePort{
+			Name:        portId,
+			Protocol:    kubernetesProtocol,
+			// TODO Specify this!!! Will make for a really nice user interface (e.g. "https")
+			AppProtocol: nil,
+			// Safe to cast because max uint16 < int32
+			Port:        int32(portSpec.GetNumber()),
+		}
+		result = append(result, kubernetesPortObj)
+	}
+	return result, nil
+}
+
 func getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts map[string]*port_spec.PortSpec) ([]apiv1.ContainerPort, error) {
 	result := []apiv1.ContainerPort{}
 	for portId, portSpec := range privatePorts {
@@ -308,7 +331,8 @@ func getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts map[string]*po
 
 		kubernetesPortObj := apiv1.ContainerPort{
 			Name:          portId,
-			ContainerPort: portSpec.GetNumber(),
+			// Safe to do because max uint16 < int32
+			ContainerPort: int32(portSpec.GetNumber()),
 			Protocol:      kubernetesProtocol,
 		}
 		result = append(result, kubernetesPortObj)
