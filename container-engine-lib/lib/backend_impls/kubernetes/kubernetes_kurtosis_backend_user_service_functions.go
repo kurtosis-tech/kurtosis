@@ -43,7 +43,8 @@ States:
 State transitions:
 - RegisterService: a Service is created with the ServiceGUID label (for finding later), the Service's selectors are set
 	to look for Pods with the ServiceGUID, and the Service's ClusterIP is returned to the caller.
-- StartService: a Pod is created with the ServiceGUID, which will hook up the Service to the Pod.
+- StartService: a Pod is created with the ServiceGUID, the Kubernetes Service gets its ports updated with the requested
+	ports, and the ServiceGUID selector will mean that the Service will automatically connect to the Pod.
 - StopServices: The Pod is destroyed (because Kubernetes doesn't have a way to stop Pods - only remove them) and the Service's
 	selectors are set to empty. If we want to keep Kubernetes logs around after a Pod is destroyed, we'll need to implement
 	our own logstore.
@@ -63,6 +64,22 @@ const (
 	// Our user services don't need service accounts
 	userServiceServiceAccountName = ""
 )
+
+// Kubernetes doesn't provide public IP or port information; this is instead handled by the Kurtosis gateway that the user uses
+// to connect to Kubernetes
+var servicePublicIp net.IP = nil
+var servicePublicPorts map[string]*port_spec.PortSpec = nil
+
+type userServiceObjectsAndKubernetesResources struct {
+	// Should never be nil because 1 Kubernetes service = 1 Kurtosis service registration
+	serviceRegistration *service.ServiceRegistration
+
+	// May be nil if no pod has been started yet
+	service *service.Service
+
+	// Will never be nil
+	kubernetesResources *userServiceKubernetesResources
+}
 
 // Any of these fields can be nil if they don't exist in Kubernetes, though at least
 // one field will be present (else this struct won't exist)
@@ -148,7 +165,7 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 		}
 	}()
 
-	serviceRegistration, err := backend.getServiceRegistrationObjectFromKubernetesService(createdService)
+	serviceRegistration, err := getServiceRegistrationObjectFromKubernetesService(createdService)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting a service registration object from Kubernetes service")
 	}
@@ -178,7 +195,33 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	}
 	namespaceName := namespace.Name
 
-	preexistingRegistrations,
+	preexistingServiceFilters := &service.ServiceFilters{
+		GUIDs:    map[service.ServiceGUID]bool{
+			serviceGuid: true,
+		},
+	}
+	preexistingRegistrations, preexistingServices, preexistingKubernetesResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(
+		ctx,
+		enclaveId,
+		preexistingServiceFilters,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service objects and Kubernetes resources matching service GUID '%v'", serviceGuid)
+	}
+	if len(preexistingRegistrations) == 0 || len(preexistingKubernetesResources) == 0 {
+		return nil, stacktrace.NewError("Couldn't find a service registration or Kubernetes resources for service GUID '%v'", serviceGuid)
+	}
+	if len(preexistingRegistrations) > 1 || len(preexistingKubernetesResources) > 1 {
+		// Should never happen because service GUIDs should be unique
+		return nil, stacktrace.NewError("Found more than one service registration or Kubernetes resources matching service GUID '%v'; this is a bug in Kurtosis", serviceGuid)
+	}
+	matchingRegistrationObj, found := preexi
+	matchingRegistrationResources, found := preexistingKubernetesResources[serviceGuid]
+	if !found {
+		return nil, stacktrace.NewError("Even though we pulled back some Kubernetes resources, no Kubernetes resources were available for requested service GUID '%v'; this is a bug in Kurtosis", serviceGuid)
+	}
+
+
 
 	/*
 	serviceSearchLabels := map[string]string{
@@ -273,7 +316,8 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	}()
 
 
-	// TODO update service
+	// TODO update service ports
+	// TODO update service labels with private ports
 
 
 
@@ -356,110 +400,124 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
-func (backend *KubernetesKurtosisBackend) getMatchingUserServiceKubernetesResources(
-	ctx context.Context,
-	filters *service.ServiceFilters,
-) (
-	map[service.ServiceGUID]*userServiceKubernetesResources,
-	error,
-) {
-
-	// TODO TODO CHANGE
-	return nil, stacktrace.NewError("TODO IMPLEMENT!!")
-}
-
-func (backend *KubernetesKurtosisBackend) getUserServiceObjectsFromKubernetesResources(
-	resources map[service.ServiceGUID]*userServiceKubernetesResources,
-) (
-	map[service.ServiceGUID]*service.ServiceRegistration,
-	map[service.ServiceGUID]*service.Service,
-	error,
-){
-
-	// TODO TODO CHANGE
-	return nil, stacktrace.NewError("TODO IMPLEMENT!!")
-}
-
 func (backend *KubernetesKurtosisBackend) getMatchingUserServiceObjectsAndKubernetesResources(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 ) (
-	map[service.ServiceGUID]*service.ServiceRegistration,
-	// Entries may be missing from this map based on whether a pod is running or not
-	map[service.ServiceGUID]*service.Service,
-	map[service.ServiceGUID]*userServiceKubernetesResources,
+	map[service.ServiceGUID]*userServiceObjectsAndKubernetesResources,
 	error,
 ) {
-	_, err := backend.getMatchingUserServiceKubernetesResources(ctx, filters)
+	allKubernetesResources, err := backend.getMatchingUserServiceKubernetesResources(ctx, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engine Kubernetes resources matching IDs: %+v", filters.IDs)
+		return nil, stacktrace.Propagate(err, "An error occurred getting engine Kubernetes resources matching IDs: %+v", filters.IDs)
 	}
+
+
 
 
 	// TODO TODO CHANGE
 	return nil, nil, stacktrace.NewError("TODO IMPLEMENT!!")
 }
 
-func getServiceRegistrationObjectFromKubernetesService(kubernetesService *apiv1.Service) (*service.ServiceRegistration, error) {
-	labels := kubernetesService.Labels
-	guidLabelStr, found := labels[label_key_consts.GUIDKubernetesLabelKey.GetString()]
-	if !found {
-		return nil, stacktrace.NewError("Expected to find label '%v' on the Kubernetes service but none was found", label_key_consts.GUIDKubernetesLabelKey.GetString())
-	}
-	guid := service.ServiceGUID(guidLabelStr)
-
-	idLabelStr, found := labels[label_key_consts.IDKubernetesLabelKey.GetString()]
-	if !found {
-		return nil, stacktrace.NewError("Expected to find label '%v' on the Kubernetes service but none was found", label_key_consts.IDKubernetesLabelKey.GetString())
-	}
-	id := service.ServiceID(idLabelStr)
-
-	enclaveIdLabelStr, found := labels[label_key_consts.EnclaveIDKubernetesLabelKey.GetString()]
-	if !found {
-		return nil, stacktrace.NewError("Expected to find label '%v' on the Kubernetes service but none was found", label_key_consts.EnclaveIDKubernetesLabelKey.GetString())
-	}
-	enclaveId := enclave.EnclaveID(enclaveIdLabelStr)
-
-	serviceIpStr := kubernetesService.Spec.ClusterIP
-	serviceIp := net.ParseIP(serviceIpStr)
-	if serviceIp == nil {
-		return nil, stacktrace.NewError("An error occurred parsing service IP string '%v' to an IP address object", serviceIpStr)
-	}
-
-	return service.NewServiceRegistration(id, guid, enclaveId, serviceIp), nil
+func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResources(
+	ctx context.Context,
+	filters *service.ServiceFilters,
+) (
+	map[service.ServiceGUID]*userServiceKubernetesResources,
+	error,
+) {
+	// TODO TODO CHANGE
+	return nil, stacktrace.NewError("TODO IMPLEMENT!!")
 }
 
-// The Service result object may come back nil if it's not possible to create from the given resources
-func getServiceObjectFromKubernetesServiceAndPod(serviceRegistration *service.ServiceRegistration, kubernetesPod *apiv1.Pod) (*service.Service, error) {
-	annotations := kubernetesPod.Annotations
-	portSpecsStr, found := annotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()]
-	if !found {
-		return nil, stacktrace.NewError("Expected to find annotation key '%v' on the Kubernetes pod but none was found", annotation_key_consts.PortSpecsAnnotationKey.GetString())
-	}
-	privatePorts, err := kubernetes_port_spec_serializer.DeserializePortSpecs(portSpecsStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred deserializing port specs string '%v'", portSpecsStr)
-	}
-
-	podPhase := kubernetesPod.Status.Phase
-	isPodRunning, found := isPodRunningDeterminer[podPhase]
-	if !found {
-		// Should never happen because we enforce completeness of the determiner via unit test
-		return nil, stacktrace.NewError("No is-pod-running determination found for pod phase '%v'; this is a bug in Kurtosis", podPhase)
-	}
-	// TODO Rename
-	containerStatus := container_status.ContainerStatus_Stopped
-	if isPodRunning {
-		containerStatus = container_status.ContainerStatus_Running
+func getUserServiceObjectsFromKubernetesResources(
+	enclaveId enclave.EnclaveID,
+	allKubernetesResources map[service.ServiceGUID]*userServiceKubernetesResources,
+) (map[service.ServiceGUID]*userServiceObjectsAndKubernetesResources, error) {
+	results := map[service.ServiceGUID]*userServiceObjectsAndKubernetesResources{}
+	for serviceGuid, resources := range allKubernetesResources {
+		results[serviceGuid] = &userServiceObjectsAndKubernetesResources{
+			kubernetesResources: resources,
+			// The other fields will get filled in below
+		}
 	}
 
-	// Public information for Kubernetes pods will be provided via the gateway
-	var publicIp net.IP = nil
-	var publicPorts map[string]*port_spec.PortSpec = nil
+	for serviceGuid, resultObj := range results {
+		resources := resultObj.kubernetesResources
 
-	return service.NewService(serviceRegistration, containerStatus, privatePorts, publicIp, publicPorts), nil
+		kubernetesService := resources.service
+		if kubernetesService == nil {
+			return nil, stacktrace.NewError(
+				"Service with GUID '%v' doesn't have a Kubernetes service; this indicates either a bug in Kurtosis or that the user manually deleted the Kubernetes service",
+				serviceGuid,
+			)
+		}
+
+		serviceLabels := kubernetesService.Labels
+		idLabelStr, found := serviceLabels[label_key_consts.IDKubernetesLabelKey.GetString()]
+		if !found {
+			return nil, stacktrace.NewError("Expected to find label '%v' on the Kubernetes service but none was found", label_key_consts.IDKubernetesLabelKey.GetString())
+		}
+		serviceId := service.ServiceID(idLabelStr)
+
+		serviceIpStr := kubernetesService.Spec.ClusterIP
+		serviceIp := net.ParseIP(serviceIpStr)
+		if serviceIp == nil {
+			return nil, stacktrace.NewError("An error occurred parsing service IP string '%v' to an IP address object", serviceIpStr)
+		}
+
+		serviceRegistrationObj := service.NewServiceRegistration(serviceId, serviceGuid, enclaveId, serviceIp)
+		resultObj.serviceRegistration = serviceRegistrationObj
+
+		serviceAnnotations := kubernetesService.Annotations
+		portSpecsStr, found := serviceAnnotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()]
+		if !found {
+			// If the service doesn't have a private port specs annotation, it means a pod was never started so there's nothing more to do
+			continue
+		}
+		privatePorts, err := kubernetes_port_spec_serializer.DeserializePortSpecs(portSpecsStr)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred deserializing port specs string '%v'", portSpecsStr)
+		}
+
+		kubernetesPod := resources.pod
+		if kubernetesPod == nil {
+			// No pod here means that a) a Service had private ports but b) now has no Pod, which means that the pod was stopped
+			resultObj.service = service.NewService(
+				serviceRegistrationObj,
+				container_status.ContainerStatus_Stopped,
+				privatePorts,
+				servicePublicIp,
+				servicePublicPorts,
+			)
+			continue
+		}
+
+		podPhase := kubernetesPod.Status.Phase
+		isPodRunning, found := isPodRunningDeterminer[podPhase]
+		if !found {
+			// Should never happen because we enforce completeness of the determiner via unit test
+			return nil, stacktrace.NewError("No is-pod-running determination found for pod phase '%v' on pod '%v'; this is a bug in Kurtosis", podPhase, kubernetesPod.Name)
+		}
+		// TODO Rename
+		containerStatus := container_status.ContainerStatus_Stopped
+		if isPodRunning {
+			containerStatus = container_status.ContainerStatus_Running
+		}
+
+		resultObj.service = service.NewService(
+			serviceRegistrationObj,
+			containerStatus,
+			privatePorts,
+			servicePublicIp,
+			servicePublicPorts,
+		)
+	}
+
+	return results, nil
 }
+
 
 func getUserServicePodContainerSpecs(
 	image string,
