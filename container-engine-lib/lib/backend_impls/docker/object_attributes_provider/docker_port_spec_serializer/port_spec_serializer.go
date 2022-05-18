@@ -1,8 +1,8 @@
-package port_spec_serializer
+package docker_port_spec_serializer
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"strconv"
@@ -14,6 +14,11 @@ const (
 	portNumAndProtocolSeparator = "/"
 	portSpecsSeparator          = ","
 
+	// TODO DELETE TEHSE AFTER JUNE 20, 2022 WHEN WE'RE CONFIDENT NOBODY'S USING THE OLD PORT SPECS!
+	oldPortIdAndInfoSeparator      = "."
+	oldPortNumAndProtocolSeparator = "-"
+	oldPortSpecsSeparator          = "_"
+
 	expectedNumPortIdAndSpecFragments      = 2
 	expectedNumPortNumAndProtocolFragments = 2
 	portUintBase                           = 10
@@ -21,9 +26,7 @@ const (
 
 	// The maximum number of bytes that a label value can be
 	// See https://github.com/docker/for-mac/issues/2208
-	// This is copied over from our Docker serializer
-	// TODO: share port_spec serialization logic between Kubernetes and Docker?
-	maxAnnotationBytes = 65518
+	maxLabelValueBytes = 65518
 )
 
 // "Set" of the disallowed characters for a port ID
@@ -35,7 +38,7 @@ var disallowedPortIdChars = map[string]bool{
 
 // NOTE: We use a custom serialization format here (rather than, e.g., JSON) because there's a max label value size
 //  so brevity is important here
-func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*kubernetes_annotation_value.KubernetesAnnotationValue, error) {
+func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*docker_label_value.DockerLabelValue, error) {
 	portIdAndSpecStrs := []string{}
 	usedPortSpecStrs := map[string]string{}
 	for portId, portSpec := range ports {
@@ -85,25 +88,63 @@ func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*kubernetes_annot
 	}
 	resultStr := strings.Join(portIdAndSpecStrs, portSpecsSeparator)
 	numResultBytes := len([]byte(resultStr))
-	if numResultBytes > maxAnnotationBytes {
+	if numResultBytes > maxLabelValueBytes {
 		return nil, stacktrace.NewError(
 			"The port specs label value string is %v bytes long, but the max number of label value bytes is %v; the number of ports this container is listening on must be reduced",
 			numResultBytes,
-			maxAnnotationBytes,
+			maxLabelValueBytes,
 		)
 	}
-	result, err := kubernetes_annotation_value.CreateNewKubernetesAnnotationValue(resultStr)
+	result, err := docker_label_value.CreateNewDockerLabelValue(resultStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating Kubernetes annotation value from string '%v'", resultStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating Docker label value from string '%v'", resultStr)
 	}
 	return result, nil
 }
 
 func DeserializePortSpecs(specsStr string) (map[string]*port_spec.PortSpec, error) {
+	resultUsingNewDelimiters, err := deserializePortSpecStrUsingDelimiters(
+		specsStr,
+		portSpecsSeparator,
+		portIdAndInfoSeparator,
+		portNumAndProtocolSeparator,
+	)
+	if err == nil {
+		return resultUsingNewDelimiters, nil
+	}
+
+	// TODO DELETE THIS CHECK AFTER JUNE 20, 2022 WHEN WE'RE CONFIDENT NOBODY WILL HAVE THE OLD PORT SPEC!!!
+	resultUsingOldDelimiters, err := deserializePortSpecStrUsingDelimiters(
+		specsStr,
+		oldPortSpecsSeparator,
+		oldPortIdAndInfoSeparator,
+		oldPortNumAndProtocolSeparator,
+	)
+	if err == nil {
+		return resultUsingOldDelimiters, nil
+	}
+
+	return nil, stacktrace.Propagate(
+		err,
+		"Failed to deserialize port spec string '%v' after trying both current and old port spec delimiters",
+		specsStr,
+	)
+}
+
+func deserializePortSpecStrUsingDelimiters(
+	specsStr string,
+	portSpecsSeparator string,
+	portIdAndInfoSeparator string,
+	portNumAndProtocolSeparator string,
+) (
+	map[string]*port_spec.PortSpec,
+	error,
+) {
 	result := map[string]*port_spec.PortSpec{}
 	if specsStr == "" {
 		return result, nil
 	}
+
 	portIdAndSpecStrs := strings.Split(specsStr, portSpecsSeparator)
 	for _, portIdAndSpecStr := range portIdAndSpecStrs {
 		portIdAndSpecFragments := strings.Split(portIdAndSpecStr, portIdAndInfoSeparator)

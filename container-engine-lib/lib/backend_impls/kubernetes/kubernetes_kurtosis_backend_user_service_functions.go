@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -90,7 +91,7 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 		time.Now().Unix(),
 	))
 
-	serviceAttributes, err := enclaveObjAttributesProvider.ForUserServiceService(serviceId, serviceGuid)
+	serviceAttributes, err := enclaveObjAttributesProvider.ForUserServiceService(serviceGuid, serviceId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting attributes for the Kubernetes service for user service '%v'", serviceId)
 	}
@@ -123,15 +124,12 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 		return nil, stacktrace.Propagate(err, "An error occurred creating Kubernetes service in enclave '%v' with ID '%v'", enclaveId, serviceId)
 	}
 
-	serviceIpStr := createdService.Spec.ClusterIP
-	serviceIp := net.ParseIP(serviceIpStr)
-	if serviceIp == nil {
-		return nil, stacktrace.NewError("An error occurred parsing new service's IP string '%v' to an IP address object", serviceIpStr)
+	serviceRegistration, err := backend.getServiceRegistrationObjectFromKubernetesService(createdService)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting a service registration object from the Kubernetes service")
 	}
 
-	result := service.NewServiceRegistration(serviceId, serviceGuid, enclaveId, serviceIp)
-
-	return result, nil
+	return serviceRegistration, nil
 }
 
 func (backend *KubernetesKurtosisBackend) StartUserService(
@@ -151,8 +149,9 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	}
 
 	serviceSearchLabels := map[string]string{
-		label_key_consts.GUIDKubernetesLabelKey.GetString(): string(serviceGuid),
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
 		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): string(enclaveId),
+		label_key_consts.GUIDKubernetesLabelKey.GetString(): string(serviceGuid),
 	}
 	matchingServicesList, err := backend.kubernetesManager.GetServicesByLabels(ctx, namespace.Name, serviceSearchLabels)
 	if err != nil {
@@ -165,14 +164,30 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	if len(matchingServices) > 1 {
 		return nil, stacktrace.NewError("Found multiple service registrations matching GUID '%v'", serviceGuid)
 	}
-	serviceRegistration := matchingServices[0]
+	kubernetesService := matchingServices[0]
 
-	foundKubernetesResources, found := preexistingServiceKubernetesResources[serviceGuid]
-	if !found {
-
+	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
+	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
+	podAttributes, err := enclaveObjAttributesProvider.ForUser
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting attributes for the Kubernetes service for user service '%v'", serviceId)
 	}
 
+	backend.kubernetesManager.CreatePod(
+		ctx,
+		namespace.Name,
+		podAttributes.
 
+
+	)
+
+
+
+
+	serviceRegistration, err := backend.getServiceRegistrationObjectFromKubernetesService(&kubernetesService)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting a service registration object from the Kubernetes service")
+	}
 
 	return nil, stacktrace.NewError("TODO IMPLEMENT!")
 }
@@ -289,4 +304,33 @@ func (backend *KubernetesKurtosisBackend) getUserServiceObjectsFromKubernetesRes
 
 	// TODO TODO CHANGE
 	return nil, stacktrace.NewError("TODO IMPLEMENT!!")
+}
+
+func (backend *KubernetesKurtosisBackend) getServiceRegistrationObjectFromKubernetesService(kubernetesService *apiv1.Service) (*service.ServiceRegistration, error) {
+	labels := kubernetesService.Labels
+	guidLabelStr, found := labels[label_key_consts.GUIDKubernetesLabelKey.GetString()]
+	if !found {
+		return nil, stacktrace.NewError("Expected to find label '%v' on the Kubernetes service but none was found", label_key_consts.GUIDKubernetesLabelKey.GetString())
+	}
+	guid := service.ServiceGUID(guidLabelStr)
+
+	idLabelStr, found := labels[label_key_consts.IDKubernetesLabelKey.GetString()]
+	if !found {
+		return nil, stacktrace.NewError("Expected to find label '%v' on the Kubernetes service but none was found", label_key_consts.IDKubernetesLabelKey.GetString())
+	}
+	id := service.ServiceID(idLabelStr)
+
+	enclaveIdLabelStr, found := labels[label_key_consts.EnclaveIDKubernetesLabelKey.GetString()]
+	if !found {
+		return nil, stacktrace.NewError("Expected to find label '%v' on the Kubernetes service but none was found", label_key_consts.EnclaveIDKubernetesLabelKey.GetString())
+	}
+	enclaveId := enclave.EnclaveID(enclaveIdLabelStr)
+
+	serviceIpStr := kubernetesService.Spec.ClusterIP
+	serviceIp := net.ParseIP(serviceIpStr)
+	if serviceIp == nil {
+		return nil, stacktrace.NewError("An error occurred parsing service IP string '%v' to an IP address object", serviceIpStr)
+	}
+
+	return service.NewServiceRegistration(id, guid, enclaveId, serviceIp), nil
 }
