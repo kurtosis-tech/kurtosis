@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/annotation_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
@@ -420,15 +421,97 @@ func (backend *KubernetesKurtosisBackend) getMatchingUserServiceObjectsAndKubern
 	return nil, nil, stacktrace.NewError("TODO IMPLEMENT!!")
 }
 
-func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResources(
+func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatchingGuids(
 	ctx context.Context,
-	filters *service.ServiceFilters,
+	enclaveId enclave.EnclaveID,
+	serviceGuids map[service.ServiceGUID]bool,
 ) (
 	map[service.ServiceGUID]*userServiceKubernetesResources,
 	error,
 ) {
-	// TODO TODO CHANGE
-	return nil, stacktrace.NewError("TODO IMPLEMENT!!")
+	enclaveNamespace, err := backend.getEnclaveNamespace(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes namespace for enclave '%v'", enclaveId)
+	}
+	namespaceName := enclaveNamespace.Name
+
+	// TODO switch to properly-typed KubernetesLabelValue object!!!
+	postFilterLabelValues := map[string]bool{}
+	for serviceGuid := range serviceGuids {
+		postFilterLabelValues[string(serviceGuid)] = true
+	}
+
+	kubernetesResourceSearchLabels := map[string]string{
+		label_key_consts.AppIDKubernetesLabelKey.GetString(): label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): string(enclaveId),
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
+	}
+
+	results := map[service.ServiceGUID]*userServiceKubernetesResources{}
+
+	// Get k8s services
+	matchingKubernetesServices, err := kubernetes_resource_collectors.CollectMatchingServices(
+		ctx,
+		backend.kubernetesManager,
+		namespaceName,
+		kubernetesResourceSearchLabels,
+		label_key_consts.GUIDKubernetesLabelKey.GetString(),
+		postFilterLabelValues,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes services matching service GUIDs: %+v", serviceGuids)
+	}
+	for serviceGuidStr, kubernetesServicesForGuid := range matchingKubernetesServices {
+		serviceGuid := service.ServiceGUID(serviceGuidStr)
+
+		if len(kubernetesServicesForGuid) == 0 {
+			// This would indicate a bug in our service collection
+			return nil, stacktrace.NewError("Got entry of result services for service GUID '%v', but no Kubernetes services were returned; this is a bug in Kurtosis", serviceGuid)
+		}
+		if len(kubernetesServicesForGuid) > 1 {
+			return nil, stacktrace.NewError("Found %v Kubernetes services associated with service GUID '%v'; this is a bug in Kurtosis", serviceGuid)
+		}
+		kubernetesService := kubernetesServicesForGuid[0]
+
+		resultObj, found := results[serviceGuid]
+		if !found {
+			resultObj = &userServiceKubernetesResources{}
+		}
+		resultObj.service = kubernetesService
+	}
+
+	// Get k8s pods
+	matchingKubernetesPods, err := kubernetes_resource_collectors.CollectMatchingPods(
+		ctx,
+		backend.kubernetesManager,
+		namespaceName,
+		kubernetesResourceSearchLabels,
+		label_key_consts.GUIDKubernetesLabelKey.GetString(),
+		postFilterLabelValues,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes pods matching service GUIDs: %+v", serviceGuids)
+	}
+	for serviceGuidStr, kubernetesPodsForGuid := range matchingKubernetesPods {
+		serviceGuid := service.ServiceGUID(serviceGuidStr)
+
+		if len(kubernetesPodsForGuid) == 0 {
+			// This would indicate a bug in our service collection
+			return nil, stacktrace.NewError("Got entry of result pods for service GUID '%v', but no Kubernetes pods were returned; this is a bug in Kurtosis", serviceGuid)
+		}
+		if len(kubernetesPodsForGuid) > 1 {
+			return nil, stacktrace.NewError("Found %v Kubernetes pods associated with service GUID '%v'; this is a bug in Kurtosis", serviceGuid)
+		}
+		kubernetesPod := kubernetesPodsForGuid[0]
+
+		resultObj, found := results[serviceGuid]
+		if !found {
+			resultObj = &userServiceKubernetesResources{}
+		}
+		resultObj.pod = kubernetesPod
+	}
+
+	return results, nil
 }
 
 func getUserServiceObjectsFromKubernetesResources(
