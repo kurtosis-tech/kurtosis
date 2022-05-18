@@ -226,7 +226,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	serviceRegistrationObj := matchingObjectAndResources.serviceRegistration
 	serviceObj := matchingObjectAndResources.service
 	if serviceObj != nil {
-		return nil, stacktrace.NewError("Cannot start service with GUID '%v' because the service has already been started previously")
+		return nil, stacktrace.NewError("Cannot start service with GUID '%v' because the service has already been started previously", serviceGuid)
 	}
 
 	// Create the pod
@@ -376,6 +376,8 @@ func (backend *KubernetesKurtosisBackend) CopyFromUserService(ctx context.Contex
 }
 
 func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (successfulUserServiceGuids map[service.ServiceGUID]bool, erroredUserServiceGuids map[service.ServiceGUID]error, resultErr error) {
+	// TODO remove the service's selectors
+
 	//TODO implement me
 	panic("implement me")
 }
@@ -492,12 +494,13 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 	for serviceGuidStr, kubernetesServicesForGuid := range matchingKubernetesServices {
 		serviceGuid := service.ServiceGUID(serviceGuidStr)
 
-		if len(kubernetesServicesForGuid) == 0 {
+		numServicesForGuid := len(kubernetesServicesForGuid)
+		if numServicesForGuid == 0 {
 			// This would indicate a bug in our service collection
 			return nil, stacktrace.NewError("Got entry of result services for service GUID '%v', but no Kubernetes services were returned; this is a bug in Kurtosis", serviceGuid)
 		}
-		if len(kubernetesServicesForGuid) > 1 {
-			return nil, stacktrace.NewError("Found %v Kubernetes services associated with service GUID '%v'; this is a bug in Kurtosis", serviceGuid)
+		if numServicesForGuid > 1 {
+			return nil, stacktrace.NewError("Found %v Kubernetes services associated with service GUID '%v'; this is a bug in Kurtosis", numServicesForGuid, serviceGuid)
 		}
 		kubernetesService := kubernetesServicesForGuid[0]
 
@@ -523,12 +526,13 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 	for serviceGuidStr, kubernetesPodsForGuid := range matchingKubernetesPods {
 		serviceGuid := service.ServiceGUID(serviceGuidStr)
 
-		if len(kubernetesPodsForGuid) == 0 {
+		numPodsForGuid := len(kubernetesPodsForGuid)
+		if numPodsForGuid == 0 {
 			// This would indicate a bug in our service collection
 			return nil, stacktrace.NewError("Got entry of result pods for service GUID '%v', but no Kubernetes pods were returned; this is a bug in Kurtosis", serviceGuid)
 		}
-		if len(kubernetesPodsForGuid) > 1 {
-			return nil, stacktrace.NewError("Found %v Kubernetes pods associated with service GUID '%v'; this is a bug in Kurtosis", serviceGuid)
+		if numPodsForGuid > 1 {
+			return nil, stacktrace.NewError("Found %v Kubernetes pods associated with service GUID '%v'; this is a bug in Kurtosis", numPodsForGuid, serviceGuid)
 		}
 		kubernetesPod := kubernetesPodsForGuid[0]
 
@@ -698,7 +702,7 @@ func (backend *KubernetesKurtosisBackend) getUserServicePodVolumesFromFilesArtif
 	}
 	persistentVolumeClaimsList, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, namespaceName, filesArtifactExpansionVolumeSearchLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact expansion volumes for service '%v' matching labels: %+v", filesArtifactExpansionVolumeSearchLabels)
+		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact expansion volumes for service '%v' matching labels: %+v", serviceGuid, filesArtifactExpansionVolumeSearchLabels)
 	}
 	persistentVolumeClaims := persistentVolumeClaimsList.Items
 
