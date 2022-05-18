@@ -90,11 +90,6 @@ type userServiceKubernetesResources struct {
 
 	// This can be nil if the user hasn't started a pod for the service yet, or if the pod was deleted
 	pod *apiv1.Pod
-
-	// NOTE: This is actually not a resource representing a user service (i.e. isn't created when we create a user service, nor
-	// destroyed when we destroy a user service)!! It's included purely for convenience.
-	// This will never be nil, because a service must have a namespace
-	namespace *apiv1.Namespace
 }
 
 func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
@@ -167,11 +162,10 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 		serviceGuid: {
 			service:   createdService,
 			pod: nil,	// No pod yet
-			namespace: enclaveNamespace,
 		},
 	}
 
-	convertedObjects, err := getUserServiceObjectsFromKubernetesResources(kubernetesResources)
+	convertedObjects, err := getUserServiceObjectsFromKubernetesResources(enclaveId, kubernetesResources)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting a service registration object from Kubernetes service")
 	}
@@ -184,7 +178,6 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 		)
 	}
 	serviceRegistration := objectsAndResources.serviceRegistration
-
 
 	shouldDeleteService = false
 	return serviceRegistration, nil
@@ -506,9 +499,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 
 		resultObj, found := results[serviceGuid]
 		if !found {
-			resultObj = &userServiceKubernetesResources{
-				namespace: enclaveNamespace,
-			}
+			resultObj = &userServiceKubernetesResources{}
 		}
 		resultObj.service = kubernetesService
 	}
@@ -539,9 +530,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 
 		resultObj, found := results[serviceGuid]
 		if !found {
-			resultObj = &userServiceKubernetesResources{
-				namespace: enclaveNamespace,
-			}
+			resultObj = &userServiceKubernetesResources{}
 		}
 		resultObj.pod = kubernetesPod
 	}
@@ -550,6 +539,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 }
 
 func getUserServiceObjectsFromKubernetesResources(
+	enclaveId enclave.EnclaveID,
 	allKubernetesResources map[service.ServiceGUID]*userServiceKubernetesResources,
 ) (map[service.ServiceGUID]*userServiceObjectsAndKubernetesResources, error) {
 	results := map[service.ServiceGUID]*userServiceObjectsAndKubernetesResources{}
@@ -562,18 +552,6 @@ func getUserServiceObjectsFromKubernetesResources(
 
 	for serviceGuid, resultObj := range results {
 		resources := resultObj.kubernetesResources
-
-		namespace := resources.namespace
-		if namespace != nil {
-			// Services should always have a namespace
-			return nil, stacktrace.NewError("Service '%v' didn't have a namespace object associated with it; this is a bug in Kurtosis", serviceGuid)
-		}
-		enclaveIdStr, found := namespace.Labels[label_key_consts.IDKubernetesLabelKey.GetString()]
-		if !found {
-			// Services should always have a namespace
-			return nil, stacktrace.NewError("Namespace '%v' for service with GUID '%v' didn't have expected ID label '%v'", namespace.Name, serviceGuid, label_key_consts.IDKubernetesLabelKey.GetString())
-		}
-		enclaveId := enclave.EnclaveID(enclaveIdStr)
 
 		kubernetesService := resources.service
 		if kubernetesService == nil {
