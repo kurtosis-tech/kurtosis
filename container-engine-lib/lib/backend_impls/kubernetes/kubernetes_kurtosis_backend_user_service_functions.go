@@ -224,12 +224,13 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		return nil, stacktrace.NewError("Even though we pulled back some Kubernetes resources, no Kubernetes resources were available for requested service GUID '%v'; this is a bug in Kurtosis", serviceGuid)
 	}
 	kubernetesService := matchingObjectAndResources.kubernetesResources.service
-	namespaceName := kubernetesService.GetNamespace()
-	serviceRegistrationObj := matchingObjectAndResources.serviceRegistration
 	serviceObj := matchingObjectAndResources.service
 	if serviceObj != nil {
 		return nil, stacktrace.NewError("Cannot start service with GUID '%v' because the service has already been started previously", serviceGuid)
 	}
+
+	namespaceName := kubernetesService.GetNamespace()
+	serviceRegistrationObj := matchingObjectAndResources.serviceRegistration
 
 	// Create the pod
 	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
@@ -254,7 +255,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		return nil, stacktrace.Propagate(err, "An error occurred creating the container specs for the user service pod with image '%v'", containerImageName)
 	}
 
-	podVolumes, err := backend.getUserServicePodVolumesFromFilesArtifactMountpoints(
+	podVolumes, err := backend.getUserServiceVolumeInfoFromFilesArtifactMountpoints(
 		ctx,
 		namespaceName,
 		enclaveId,
@@ -266,7 +267,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	}
 
 	podName := podAttributes.GetName().GetString()
-	if _, err := backend.kubernetesManager.CreatePod(
+	createdPod, err := backend.kubernetesManager.CreatePod(
 		ctx,
 		namespaceName,
 		podName,
@@ -275,7 +276,8 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		podContainers,
 		podVolumes,
 		userServiceServiceAccountName,
-	); err != nil {
+	)
+	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating pod '%v' using image '%v'", podName, containerImageName)
 	}
 	shouldDestroyPod := true
@@ -288,21 +290,23 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		}
 	}()
 
+	// Update the service to:
+	// - Set the service ports appropriately
+	// - Irrevocably record that a pod is bound to the service (so that even if the pod is deleted, the service won't
+	// 	 be usable again
 	serializedPortSpecs, err := kubernetes_port_spec_serializer.SerializePortSpecs(privatePorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred serializing the following private port specs: %+v", privatePorts)
 	}
-
 	kubernetesServicePorts, err := getKubernetesServicePortsFromPrivatePortSpecs(privatePorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes service ports for the following private port specs: %+v", privatePorts)
 	}
-
 	updatedService := kubernetesService.DeepCopy()
 	updatedService.Annotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()] = serializedPortSpecs.GetString()
 	updatedService.Spec.Ports = kubernetesServicePorts
 	if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, updatedService); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred updating the user service to add the serialized private port specs annotation")
+		return nil, stacktrace.Propagate(err, "An error occurred updating the user service to open the service ports and add the serialized private port specs annotation")
 	}
 	shouldUndoServiceUpdate := true
 	defer func() {
@@ -314,9 +318,28 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		}
 	}()
 
+	kubernetesResources := map[service.ServiceGUID]*userServiceKubernetesResources{
+		serviceGuid: {
+			service: updatedService,
+			pod:     createdPod,
+		},
+	}
+	convertedObjects, err := getUserServiceObjectsFromKubernetesResources(enclaveId, kubernetesResources)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting a service object from the Kubernetes service and newly-created pod")
+	}
+	objectsAndResources, found := convertedObjects[serviceGuid]
+	if !found {
+		return nil, stacktrace.NewError(
+			"Successfully converted the Kubernetes service + pod representing a running service with GUID '%v' to a " +
+				"Kurtosis object, but couldn't find that key in the resulting map; this is a bug in Kurtosis",
+			serviceGuid,
+		)
+	}
+
 	shouldDestroyPod = false
 	shouldUndoServiceUpdate = false
-	return nil, stacktrace.NewError("TODO IMPLEMENT!")
+	return objectsAndResources.service, nil
 }
 
 func (backend *KubernetesKurtosisBackend) GetUserServices(
@@ -378,6 +401,7 @@ func (backend *KubernetesKurtosisBackend) CopyFromUserService(ctx context.Contex
 }
 
 func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (successfulUserServiceGuids map[service.ServiceGUID]bool, erroredUserServiceGuids map[service.ServiceGUID]error, resultErr error) {
+	// TODO kill the pod
 	// TODO remove the service's selectors
 
 	//TODO implement me
@@ -413,14 +437,18 @@ func (backend *KubernetesKurtosisBackend) getMatchingUserServiceObjectsAndKubern
 		return nil, stacktrace.Propagate(err, "An error occurred getting user service objects from Kubernetes resources")
 	}
 
-	// Filter to match
+	// Sanity check
+	if len(allResources) != len(allObjectsAndResources) {
+		return nil, stacktrace.NewError(
+			"Transformed %v Kubernetes resource objects into %v Kurtosis objects; this is a bug in Kurtosis",
+			len(allResources),
+			len(allObjectsAndResources),
+		)
+	}
+
+	// Filter the results down to the requested filters
 	results := map[service.ServiceGUID]*userServiceObjectsAndKubernetesResources{}
 	for serviceGuid, objectsAndResources := range allObjectsAndResources {
-		// Can't return a service if there's no service
-		if objectsAndResources.service == nil {
-			continue
-		}
-
 		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
 			if _, found := filters.GUIDs[serviceGuid]; !found {
 				continue
@@ -428,7 +456,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingUserServiceObjectsAndKubern
 		}
 
 		registration := objectsAndResources.serviceRegistration
-		if filters.IDs != nil && len(filters.GUIDs) > 0 {
+		if filters.IDs != nil && len(filters.IDs) > 0 {
 			if _, found := filters.IDs[registration.GetID()]; !found {
 				continue
 			}
@@ -521,7 +549,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 
 		numServicesForGuid := len(kubernetesServicesForGuid)
 		if numServicesForGuid == 0 {
-			// This would indicate a bug in our service collection
+			// This would indicate a bug in our service retrieval logic because we shouldn't even have a map entry if there's nothing matching it
 			return nil, stacktrace.NewError("Got entry of result services for service GUID '%v', but no Kubernetes services were returned; this is a bug in Kurtosis", serviceGuid)
 		}
 		if numServicesForGuid > 1 {
@@ -553,7 +581,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 
 		numPodsForGuid := len(kubernetesPodsForGuid)
 		if numPodsForGuid == 0 {
-			// This would indicate a bug in our service collection
+			// This would indicate a bug in our pod retrieval logic because we shouldn't even have a map entry if there's nothing matching it
 			return nil, stacktrace.NewError("Got entry of result pods for service GUID '%v', but no Kubernetes pods were returned; this is a bug in Kurtosis", serviceGuid)
 		}
 		if numPodsForGuid > 1 {
@@ -584,9 +612,9 @@ func getUserServiceObjectsFromKubernetesResources(
 	}
 
 	for serviceGuid, resultObj := range results {
-		resources := resultObj.kubernetesResources
+		resourcesToParse := resultObj.kubernetesResources
 
-		kubernetesService := resources.service
+		kubernetesService := resourcesToParse.service
 		if kubernetesService == nil {
 			return nil, stacktrace.NewError(
 				"Service with GUID '%v' doesn't have a Kubernetes service; this indicates either a bug in Kurtosis or that the user manually deleted the Kubernetes service",
@@ -602,12 +630,12 @@ func getUserServiceObjectsFromKubernetesResources(
 		serviceId := service.ServiceID(idLabelStr)
 
 		serviceIpStr := kubernetesService.Spec.ClusterIP
-		serviceIp := net.ParseIP(serviceIpStr)
-		if serviceIp == nil {
-			return nil, stacktrace.NewError("An error occurred parsing service IP string '%v' to an IP address object", serviceIpStr)
+		privateIp := net.ParseIP(serviceIpStr)
+		if privateIp == nil {
+			return nil, stacktrace.NewError("An error occurred parsing service private IP string '%v' to an IP address object", serviceIpStr)
 		}
 
-		serviceRegistrationObj := service.NewServiceRegistration(serviceId, serviceGuid, enclaveId, serviceIp)
+		serviceRegistrationObj := service.NewServiceRegistration(serviceId, serviceGuid, enclaveId, privateIp)
 		resultObj.serviceRegistration = serviceRegistrationObj
 
 		serviceAnnotations := kubernetesService.Annotations
@@ -621,9 +649,10 @@ func getUserServiceObjectsFromKubernetesResources(
 			return nil, stacktrace.Propagate(err, "An error occurred deserializing port specs string '%v'", portSpecsStr)
 		}
 
-		kubernetesPod := resources.pod
+		kubernetesPod := resourcesToParse.pod
 		if kubernetesPod == nil {
-			// No pod here means that a) a Service had private ports but b) now has no Pod, which means that the pod was stopped
+			// No pod here means that a) a Service had private ports but b) now has no Pod
+			// This means that there  used to be a Pod but it was stopped/removed
 			resultObj.service = service.NewService(
 				serviceRegistrationObj,
 				container_status.ContainerStatus_Stopped,
@@ -640,7 +669,7 @@ func getUserServiceObjectsFromKubernetesResources(
 			// Should never happen because we enforce completeness of the determiner via unit test
 			return nil, stacktrace.NewError("No is-pod-running determination found for pod phase '%v' on pod '%v'; this is a bug in Kurtosis", podPhase, kubernetesPod.Name)
 		}
-		// TODO Rename
+		// TODO Rename this; this shouldn't be called "ContainerStatus" since there's no longer a 1:1 mapping between container:kurtosis_object
 		containerStatus := container_status.ContainerStatus_Stopped
 		if isPodRunning {
 			containerStatus = container_status.ContainerStatus_Running
@@ -664,7 +693,7 @@ func getUserServicePodContainerSpecs(
 	cmdArgs []string,
 	envVarStrs map[string]string,
 	privatePorts map[string]*port_spec.PortSpec,
-	filesArtifactMountpoints map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string,
+	containerMounts []apiv1.VolumeMount,
 ) (
 	[]apiv1.Container,
 	error,
@@ -683,16 +712,6 @@ func getUserServicePodContainerSpecs(
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes container ports from the private port specs map")
 	}
 
-	volumeMountsList := []apiv1.VolumeMount{}
-	for volumeName, mountpoint := range filesArtifactMountpoints {
-		volumeMountObj := apiv1.VolumeMount{
-			Name:             string(volumeName),
-			ReadOnly:         shouldMountVolumesAsReadOnly,
-			MountPath:        mountpoint,
-		}
-		volumeMountsList = append(volumeMountsList, volumeMountObj)
-	}
-
 	// TODO create networking sidecars here
 	containers := []apiv1.Container{
 		{
@@ -703,7 +722,7 @@ func getUserServicePodContainerSpecs(
 			Args:                     cmdArgs,
 			Ports:                    kubernetesContainerPorts,
 			Env:                      containerEnvVars,
-			VolumeMounts:             volumeMountsList,
+			VolumeMounts:             containerMounts,
 
 			// NOTE: There are a bunch of other interesting Container options that we omitted for now but might
 			// want to specify in the future
@@ -713,49 +732,93 @@ func getUserServicePodContainerSpecs(
 	return containers, nil
 }
 
-func (backend *KubernetesKurtosisBackend) getUserServicePodVolumesFromFilesArtifactMountpoints(
+func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtifactMountpoints(
 	ctx context.Context,
 	namespaceName string,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
-	filesArtifactVolumeMountpoints map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string,
-) ([]apiv1.Volume, error) {
-	filesArtifactExpansionVolumeSearchLabels := map[string]string{
+	filesArtifactMountpoints map[files_artifact_expansion_volume.FilesArtifactExpansionGUID]string,
+) (
+	resultPodVolumes []apiv1.Volume,
+	resultContainerVolumeMountsOnPod []apiv1.VolumeMount,
+	resultErr error,
+) {
+	filesArtifactExpansionPvcSearchLabels := map[string]string{
 		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): string(enclaveId),
 		label_key_consts.KurtosisVolumeTypeKubernetesLabelKey.GetString(): label_value_consts.FilesArtifactExpansionVolumeTypeKubernetesLabelValue.GetString(),
 		label_key_consts.UserServiceGUIDKubernetesLabelKey.GetString(): string(serviceGuid),
 	}
-	persistentVolumeClaimsList, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, namespaceName, filesArtifactExpansionVolumeSearchLabels)
+	persistentVolumeClaimsList, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, namespaceName, filesArtifactExpansionPvcSearchLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact expansion volumes for service '%v' matching labels: %+v", serviceGuid, filesArtifactExpansionVolumeSearchLabels)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting files artifact expansion persistent volume claims for service '%v' matching labels: %+v", serviceGuid, filesArtifactExpansionPvcSearchLabels)
 	}
 	persistentVolumeClaims := persistentVolumeClaimsList.Items
 
-	if len(persistentVolumeClaims) != len(filesArtifactVolumeMountpoints) {
-		return nil, stacktrace.Propagate(
+	if len(persistentVolumeClaims) != len(filesArtifactMountpoints) {
+		return nil, nil, stacktrace.Propagate(
 			err,
 			"Received request to start service with %v files artifact mountpoints '%+v', but only found %v persistent volume claims prepared for the service",
-			len(filesArtifactVolumeMountpoints),
-			filesArtifactVolumeMountpoints,
+			len(filesArtifactMountpoints),
+			filesArtifactMountpoints,
 			len(persistentVolumeClaims),
 		)
 	}
 
-	result := []apiv1.Volume{}
+	// Index PVCs by files artifact expansion GUID
+	persistentVolumeClaimsByExpansionGuid := map[files_artifact_expansion_volume.FilesArtifactExpansionGUID]*apiv1.PersistentVolumeClaim{}
 	for _, claim := range persistentVolumeClaims {
+		expansionGuidStr, found := claim.Labels[label_key_consts.GUIDKubernetesLabelKey.GetString()]
+		if !found {
+			return nil, nil, stacktrace.NewError(
+				"Files artifact expansion persistent volume claim is missing required label '%v'",
+				label_key_consts.GUIDKubernetesLabelKey.GetString(),
+			)
+		}
+		expansionGuid := files_artifact_expansion_volume.FilesArtifactExpansionGUID(expansionGuidStr)
+		persistentVolumeClaimsByExpansionGuid[expansionGuid] = &claim
+	}
+
+	podVolumes := []apiv1.Volume{}
+	containerMounts := []apiv1.VolumeMount{}
+	for expansionGuid, mountpoint := range filesArtifactMountpoints {
+		claim, found := persistentVolumeClaimsByExpansionGuid[expansionGuid]
+		if !found {
+			return nil, nil, stacktrace.NewError("Expected a persistent volume claim for files artifact expansion '%v' but none was found", expansionGuid)
+		}
+		claimName := claim.Name
+		volumeName := claim.Spec.VolumeName
+
+		/*
 		claimName := claim.Name
 
+		filesArtifactId, found := claim.Labels[label_key_consts.FilesArtifactIDKubernetesLabelKey.GetString()]
+		if !found {
+			return nil, nil, stacktrace.NewError(
+				"Files artifact expansion persistent volume claim '%v' didn't have expected label '%v'",
+				claimName,
+				label_key_consts.FilesArtifactIDKubernetesLabelKey.GetString(),
+			)
+		}
+		 */
+
+
 		volumeObj := apiv1.Volume{
-			Name:         claim.Spec.VolumeName,
+			Name:         volumeName,
 			VolumeSource: apiv1.VolumeSource{
 				PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
 					ClaimName: claimName,
 				},
 			},
 		}
+		podVolumes = append(podVolumes, volumeObj)
 
-		result = append(result, volumeObj)
+		containerMountObj := apiv1.VolumeMount{
+			Name:             volumeName,
+			ReadOnly:         shouldMountVolumesAsReadOnly,
+			MountPath:        mountpoint,
+		}
+		containerMounts = append(containerMounts, containerMountObj)
 	}
 
-	return result, nil
+	return podVolumes, containerMounts, nil
 }

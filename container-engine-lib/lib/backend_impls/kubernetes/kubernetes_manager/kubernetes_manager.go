@@ -112,7 +112,7 @@ func (manager *KubernetesManager) UpdateService(ctx context.Context, namespace s
 	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
 	updateOpts := metav1.UpdateOptions{}
 	if _, err := servicesClient.Update(ctx, service, updateOpts); err != nil {
-		return stacktrace.Propagate(err, "Failed to remove selectors from service '%v' in namespace '%v'", service.Name, namespace)
+		return stacktrace.Propagate(err, "Failed to update service '%v' in namespace '%v'", service.Name, namespace)
 	}
 
 	return nil
