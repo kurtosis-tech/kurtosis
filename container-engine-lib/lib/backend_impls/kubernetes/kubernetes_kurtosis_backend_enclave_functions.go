@@ -503,41 +503,31 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 		}
 
 		// Pods
-		podsByEnclaveId, err := kubernetes_resource_collectors.CollectMatchingPods(
+		podsList, err := backend.kubernetesManager.GetPodsByLabels(
 			ctx,
-			backend.kubernetesManager,
-			namespace.GetName(),
+			namespaceName,
 			enclaveWithIDMatchLabels,
-			label_key_consts.EnclaveIDKubernetesLabelKey.GetString(),
-			map[string]bool{
-				enclaveIdStr: true,
-			},
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting pods matching enclave ID '%v' in namespace '%v'", enclaveIdStr, namespace.GetName())
 		}
-		pods, found := podsByEnclaveId[enclaveIdStr]
-		if !found {
-			return nil, stacktrace.NewError("Expected to find pods for enclave ID '%v' but none were found", enclaveIdStr)
+		pods := []*apiv1.Pod{}
+		for _, pod := range podsList.Items {
+			pods = append(pods, &pod)
 		}
 
 		// Services
-		servicesByEnclaveId, err := kubernetes_resource_collectors.CollectMatchingServices(
+		servicesList, err := backend.kubernetesManager.GetServicesByLabels(
 			ctx,
-			backend.kubernetesManager,
-			namespace.GetName(),
+			namespaceName,
 			enclaveWithIDMatchLabels,
-			label_key_consts.EnclaveIDKubernetesLabelKey.GetString(),
-			map[string]bool{
-				enclaveIdStr: true,
-			},
 		)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting services matching enclave ID '%v' in namespace '%v'", enclaveIdStr, namespaceName)
+			return nil, stacktrace.Propagate(err, "An error occurred getting services matching enclave ID '%v' in namespace '%v'", enclaveIdStr, namespace.GetName())
 		}
-		services, found := servicesByEnclaveId[enclaveIdStr]
-		if !found {
-			return nil, stacktrace.NewError("Expected to find services for enclave ID '%v' but none were found", enclaveIdStr)
+		services := []*apiv1.Service{}
+		for _, service := range servicesList.Items {
+			services = append(services, &service)
 		}
 
 		enclaveResources := &enclaveKubernetesResources{
