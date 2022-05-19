@@ -6,7 +6,6 @@
 package kubernetes_manager
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/stacktrace"
@@ -22,6 +21,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -44,6 +44,13 @@ const (
 
 	containerStatusLineBulletPoint = " - "
 	expectedTerminationMessage				= "command terminated with exit code"
+
+	shouldAllocateStdinOnPodExec = false
+	shouldAllocatedStdoutOnPodExec = true
+	shouldAllocatedStderrOnPodExec = true
+	shouldAllocateTtyOnPodExec = false
+
+	successExecCommandExitCode = 0
 )
 
 var (
@@ -726,24 +733,23 @@ func (manager *KubernetesManager) GetContainerLogs(
 	return result, nil
 }
 
-func (manager *KubernetesManager)RunExecCommand(
+func (manager *KubernetesManager) RunExecCommand(
 	namespaceName string,
 	podName string,
 	containerName string,
 	command []string,
+	logOutput io.Writer,
 ) (
-	execStdOut *bytes.Buffer,
-	execStdErr *bytes.Buffer,
-	exitCode int32,
-	err error,
+	resultExitCode int32,
+	resultErr error,
 ) {
 	execOptions := &apiv1.PodExecOptions{
 		Container: containerName,
 		Command: command,
-		Stdin:   false,
-		Stdout:  true,
-		Stderr:  true,
-		TTY:     true,
+		Stdin:   shouldAllocateStdinOnPodExec,
+		Stdout:  shouldAllocatedStdoutOnPodExec,
+		Stderr:  shouldAllocatedStderrOnPodExec,
+		TTY:     shouldAllocateTtyOnPodExec,
 	}
 
 	//Create a RESTful command request.
@@ -756,49 +762,42 @@ func (manager *KubernetesManager)RunExecCommand(
 		SubResource("exec").
 		VersionedParams(execOptions, scheme.ParameterCodec)
 	if request == nil {
-		return nil, nil, -1, stacktrace.NewError(
+		return -1, stacktrace.NewError(
 			"Failed to build a working RESTful request for the command '%s'.",
 			execOptions.Command,
 		)
 	}
 
 	//Exec request.
-	stdOutBuff := &bytes.Buffer{}
-	stdErrBuff := &bytes.Buffer{}
-	exec, err := remotecommand.NewSPDYExecutor(manager.kuberneteRestConfig, "POST", request.URL())
+	outputWriter := newConcurrentWriter(logOutput)
+	exec, err := remotecommand.NewSPDYExecutor(manager.kuberneteRestConfig, http.MethodPost, request.URL())
 	if err != nil {
-		return nil, nil, -1, stacktrace.Propagate(
+		return -1, stacktrace.Propagate(
 			err,
 			"Failed to build an executor for the command '%s' with the RESTful endpoint '%s'.",
 			execOptions.Command,
 			request.URL().String(),
 		)
 	}
-	err = exec.Stream(remotecommand.StreamOptions{
-		Stdout: stdOutBuff,
-		Stderr: stdErrBuff,
-	})
-	if err != nil {
+	if err = exec.Stream(remotecommand.StreamOptions{
+		Stdout: outputWriter,
+		Stderr: outputWriter,
+	}); err != nil {
+		// Kubernetes returns the exit code of the command via a string in the error message, so we have to extract it
 		statusError := err.Error()
 		exitCode, err := getExitCodeFromStatusMessage(statusError)
 		if err != nil {
-			return nil, nil, exitCode, stacktrace.Propagate(
+			return exitCode, stacktrace.Propagate(
 				err,
 				"There was an error trying to parse the message '%s' to an exit code.",
 				statusError,
 			)
 		}
 
-		return stdOutBuff, stdErrBuff, exitCode,nil
+		return exitCode, nil
 	}
 
-	if stdErrBuff.String() != "" {
-		return nil, nil, 0, stacktrace.NewError(
-			"The command exited with exit code 0, but there was still an error message. This should not happen.",
-		)
-	}
-
-	return stdOutBuff, stdErrBuff, 0, nil
+	return successExecCommandExitCode, nil
 }
 
 
@@ -959,6 +958,8 @@ func renderContainerStatuses(containerStatuses []apiv1.ContainerStatus, prefixSt
 }
 
 
+// Kubernetes doesn't seem to have a nice API for getting back the exit code of a command (though this seems strange??),
+// so we have to parse it out of a status message
 func getExitCodeFromStatusMessage(statusMessage string) (int32, error){
 	messageSlice := strings.Split(statusMessage, " ")
 	if len(messageSlice) != 6 {
