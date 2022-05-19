@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed a bug where the API container resources map would have entries even if the enclave was empty of API containers
 
 # 0.23.4
 ### Features

@@ -206,6 +206,8 @@ func getPublicPortSpecFromServicePort(servicePort apiv1.ServicePort, portProtoco
 	return publicGrpcPort, nil
 }
 
+
+// TODO Replace with pulling the serialized port specs off the Service
 func getGrpcAndGrpcProxyPortSpecsFromServicePorts(servicePorts []apiv1.ServicePort) (resultGrpcPortSpec *port_spec.PortSpec, resultGrpcProxyPortSpec *port_spec.PortSpec, resultErr error) {
 	var publicGrpcPort *port_spec.PortSpec
 	var publicGrpcProxyPort *port_spec.PortSpec
