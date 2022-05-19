@@ -31,7 +31,7 @@ const (
 	uintToIntStringConversionBase		   = 10
 
 	waitForPersistentVolumeBoundInitialDelayMilliSeconds = 100
-	waitForPersistentVolumeBoundRetries = uint32(120)
+	waitForPersistentVolumeBoundTimeout = 60 * time.Second
 	waitForPersistentVolumeBoundRetriesDelayMilliSeconds = 500
 
 	apiv1Prefix = "api/v1"
@@ -759,28 +759,40 @@ func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string,
 //                                     Private Helper Methods
 // ====================================================================================================
 func (manager *KubernetesManager) waitForPersistentVolumeClaimBound(ctx context.Context, persistentVolumeClaim *apiv1.PersistentVolumeClaim) error {
-
+	deadline := time.Now().Add(waitForPersistentVolumeBoundTimeout)
 	time.Sleep(time.Duration(waitForPersistentVolumeBoundInitialDelayMilliSeconds) * time.Millisecond)
-
-	for i := uint32(0); i < waitForPersistentVolumeBoundRetries; i++ {
+	for time.Now().Before(deadline) {
 		claim, err := manager.GetPersistentVolumeClaim(ctx, persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting persistent volume claim '%v' in namespace '%v", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
 		}
+		claimStatus := claim.Status
+		claimPhase := claimStatus.Phase
 
-		switch claimPhase := claim.Status.Phase; claimPhase {
-		//Success phase, the Persisten Volume got bound
+		switch claimPhase {
+		//Success phase, the Persistent Volume got bound
 		case apiv1.ClaimBound:
 			return nil
 		//Lost the Persistent Volume phase, unrecoverable state
 		case apiv1.ClaimLost:
-			return stacktrace.NewError("The persistent volume claim '%v' has phase '%v' that means it lost the persistent volume, it's an unrecoverable state", claim.GetName(), claimPhase)
+			return stacktrace.NewError(
+				"The persistent volume claim '%v' ended up in unrecoverable state '%v'",
+				claim.GetName(),
+				claimPhase,
+			)
 		}
 
 		time.Sleep(time.Duration(waitForPersistentVolumeBoundRetriesDelayMilliSeconds) * time.Millisecond)
 	}
 
-	return stacktrace.NewError("Persistent volume claim '%v' in namespace '%v' did not become bound despite polling %v times with %v between polls", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace(), waitForPersistentVolumeBoundRetries, waitForPersistentVolumeBoundRetriesDelayMilliSeconds)
+	return stacktrace.NewError(
+		"Persistent volume claim '%v' in namespace '%v' did not become bound despite waiting for %v with %v " +
+			"between polls",
+		persistentVolumeClaim.GetName(),
+		persistentVolumeClaim.GetNamespace(),
+		waitForPersistentVolumeBoundTimeout,
+		waitForPersistentVolumeBoundRetriesDelayMilliSeconds,
+	)
 }
 
 // GetContainerLogs gets the logs for a given container running inside the given pod in the give namespace
