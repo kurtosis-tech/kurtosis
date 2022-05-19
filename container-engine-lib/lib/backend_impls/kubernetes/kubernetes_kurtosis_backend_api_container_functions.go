@@ -582,6 +582,8 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave namespaces matching IDs '%+v'", enclaveIdsStrSet)
 	}
 
+	logrus.Debugf("Searching for API container resources in the following namespaces: %+v", namespaces)
+
 	apiContainerMatchLabels := getApiContainerMatchLabels()
 
 	// Per-namespace objects
@@ -717,6 +719,13 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting services matching enclave ID '%v' in namespace '%v'", enclaveIdStr, namespaceName)
 		}
+		logrus.Debugf(
+			"Collected services '%+v' using search labels '%+v', filter label '%v', and enclaveIdStr '%v'",
+			services,
+			apiContainerMatchLabels,
+			label_key_consts.EnclaveIDKubernetesLabelKey.GetString(),
+			enclaveIdStr,
+		)
 		var service *apiv1.Service
 		if servicesForEnclaveId, found := services[enclaveIdStr]; found {
 			if len(servicesForEnclaveId) == 0 {
