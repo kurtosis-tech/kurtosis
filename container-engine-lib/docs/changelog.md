@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Built out Kubernetes `GetUserServiceLogs`
 
 # 0.24.0
 ### Fixes
