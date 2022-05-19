@@ -52,26 +52,21 @@ func (backend *KubernetesKurtosisBackend) CreateModule(
 	newModule *module.Module,
 	resultErr error,
 ) {
-	grpcPortInt32 := int32(grpcPortNum)
-
 	//TODO This validation is the same for Docker and for Kubernetes because we are using kurtBackend
 	//TODO we could move this to a top layer for validations, perhaps
 
 	// Verify no module container with the given GUID already exists in the enclave
 	preexistingModuleFilters := &module.ModuleFilters{
-		EnclaveIDs: map[enclave.EnclaveID]bool{
-			enclaveId: true,
-		},
 		GUIDs: map[module.ModuleGUID]bool{
 			guid: true,
 		},
 	}
 	preexistingModules, err := backend.GetModules(ctx, preexistingModuleFilters)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting preexisting modules in enclave '%v' with GUID '%v'", enclaveId, guid)
+		return nil, stacktrace.Propagate(err, "An error occurred getting preexisting modules with GUID '%v'", guid)
 	}
 	if len(preexistingModules) > 0 {
-		return nil, stacktrace.NewError("Found existing module container(s) in enclave '%v' with GUID '%v'; cannot start a new one", enclaveId, guid)
+		return nil, stacktrace.NewError("Found existing module container(s) in with GUID '%v'; cannot start a new one", guid)
 	}
 
 	enclaveAttributesProvider:= backend.objAttrsProvider.ForEnclave(enclaveId)
@@ -116,17 +111,19 @@ func (backend *KubernetesKurtosisBackend) CreateModule(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data persistent volume claim for enclave '%v' in namespace '%v'", enclaveId, enclaveNamespaceName)
 	}
 
+	grpcPortInt32 := int32(grpcPortNum)
+
 	containerPorts := []apiv1.ContainerPort{
 		{
 			Name:          object_name_constants.KurtosisInternalContainerGrpcPortName.GetString(),
-			Protocol:      kurtosisInternalContainerGrpcPortProtocol,
+			Protocol:      apiv1.ProtocolTCP,
 			ContainerPort: grpcPortInt32,
 		},
 	}
 
 	moduleContainers, moduleVolumes := getModuleContainersAndVolumes(guid, image, containerPorts, envVars, enclaveDataPersistentVolumeClaim)
 
-	// Create pods with module containers and volumes in Kubernetes
+	// Create pod with module containers and volumes in Kubernetes
 	modulePod, err := backend.kubernetesManager.CreatePod(
 		ctx,
 		enclaveNamespaceName,
@@ -138,7 +135,18 @@ func (backend *KubernetesKurtosisBackend) CreateModule(
 		moduleServiceAccountName,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", modulePodName, enclaveNamespaceName, image)
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred while creating the pod with name '%s', labels '%+v', annotations '%+v'," +
+				" containers '%v' and volumes '%+v' in namespace '%s' using image '%s'",
+			modulePodName,
+			modulePodLabels,
+			modulePodAnnotations,
+			moduleContainers,
+			moduleVolumes,
+			enclaveNamespaceName,
+			image,
+		)
 	}
 	var shouldRemovePod = true
 	defer func() {
@@ -172,14 +180,11 @@ func (backend *KubernetesKurtosisBackend) CreateModule(
 	servicePorts := []apiv1.ServicePort{
 		{
 			Name:     object_name_constants.KurtosisInternalContainerGrpcPortName.GetString(),
-			Protocol: kurtosisInternalContainerGrpcPortProtocol,
+			Protocol: apiv1.ProtocolTCP,
 			Port:     grpcPortInt32,
-			// TODO Specify this!!! Will make for a really nice user interface (e.g. "https")
-			AppProtocol: nil,
 		},
 	}
 
-	// Create Service BEFORE the pod so that the pod will know its own IP address
 	moduleService, err := backend.kubernetesManager.CreateService(
 		ctx,
 		enclaveNamespaceName,
@@ -191,7 +196,17 @@ func (backend *KubernetesKurtosisBackend) CreateModule(
 		servicePorts,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating the service with name '%s', labels '%+v', annotations '%+v' and ports '%+v' in namespace '%s'", moduleServiceName, moduleServiceLabels, moduleServiceAnnotations, servicePorts, enclaveNamespaceName)
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred while creating the service with name '%s', labels '%+v', annotations '%+v' " +
+				", ports '%+v' and pod labels '%+v' in namespace '%s'",
+			moduleServiceName,
+			moduleServiceLabels,
+			moduleServiceAnnotations,
+			servicePorts,
+			modulePodLabels,
+			enclaveNamespaceName,
+		)
 	}
 	var shouldRemoveService = true
 	defer func() {

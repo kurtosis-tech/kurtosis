@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Added `KubernetesKurtosisBackend.CreateModule`
+* Added `ForModulePod` and `ForModuleService` to `KubernetesEnclaveObjectAttributesProvider`
 
 # 0.24.0
 ### Fixes

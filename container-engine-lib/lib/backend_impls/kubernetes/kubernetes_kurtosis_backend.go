@@ -30,22 +30,18 @@ import (
 )
 
 const (
-	// The Kurtosis servers (Engine and API Container) uses gRPC so MUST listen on TCP (no other protocols are supported), which also
+	// The Kurtosis servers (Engine and API Container) use gRPC so MUST listen on TCP (no other protocols are supported), which also
 	// means that its grpc-proxy must listen on TCP
 	kurtosisServersPortProtocol = port_spec.PortProtocol_TCP
 
 	// The ID of the GRPC port for Kurtosis-internal containers (e.g. API container, engine, modules, etc.) which will
 	//  be stored in the port spec label
 	kurtosisInternalContainerGrpcPortSpecId = "grpc"
-	// The GRPC port protocol for Kurtosis-internal containers
-	kurtosisInternalContainerGrpcPortProtocol = apiv1.ProtocolTCP
 
 	// The ID of the GRPC proxy port for Kurtosis-internal containers. This is necessary because
 	// Typescript's grpc-web cannot communicate directly with GRPC ports, so Kurtosis-internal containers
 	// need a proxy  that will translate grpc-web requests before they hit the main GRPC server
 	kurtosisInternalContainerGrpcProxyPortSpecId = "grpcProxy"
-	// The GRPC proxy port protocol for Kurtosis-internal containers
-	kurtosisInternalContainerGrpcProxyPortProtocol = apiv1.ProtocolTCP
 
 	// Port number string parsing constants
 	portNumStrParsingBase = 10
