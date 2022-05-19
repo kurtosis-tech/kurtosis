@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"io"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
@@ -50,25 +49,12 @@ var (
 )
 
 type KubernetesManager struct {
-	// The logger that all log messages will be written to
-	log *logrus.Logger // NOTE: This log should be used for all log statements - the system-wide logger should NOT be used!
-
 	// The underlying K8s client that will be used to modify the K8s environment
 	kubernetesClientSet *kubernetes.Clientset
 }
 
-/*
-NewKubernetesManager
-Creates a new K8s manager for manipulating the k8s cluster using the given client.
-
-Args:
-	log: The logger that this K8s manager will write all its log messages to.
-	kubernetesClientSet: The k8s client that will be used when interacting with the underlying k8s cluster.
-*/
 func NewKubernetesManager(kubernetesClientSet *kubernetes.Clientset) *KubernetesManager {
-	return &KubernetesManager{
-		kubernetesClientSet: kubernetesClientSet,
-	}
+	return &KubernetesManager{kubernetesClientSet: kubernetesClientSet}
 }
 
 // ---------------------------Services------------------------------------------------------------------------------
@@ -115,18 +101,11 @@ func (manager *KubernetesManager) RemoveService(ctx context.Context, namespace s
 	return nil
 }
 
-func (manager *KubernetesManager) RemoveSelectorsFromService(ctx context.Context, namespace string, name string) error {
+func (manager *KubernetesManager) UpdateService(ctx context.Context, namespace string, service *apiv1.Service) error {
 	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
-	service, err := manager.GetServiceByName(ctx, namespace, name)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to find service with name '%v' in namespace '%v'", name, namespace)
-	}
-	service.Spec.Selector = make(map[string]string)
-
 	updateOpts := metav1.UpdateOptions{}
-
 	if _, err := servicesClient.Update(ctx, service, updateOpts); err != nil {
-		return stacktrace.Propagate(err, "Failed to remove selectors from service '%v' in namespace '%v'", name, namespace)
+		return stacktrace.Propagate(err, "Failed to update service '%v' in namespace '%v'", service.Name, namespace)
 	}
 
 	return nil
@@ -276,6 +255,7 @@ func (manager *KubernetesManager) GetPersistentVolumeClaim(ctx context.Context, 
 	return volumeClaim, nil
 }
 
+// TODO Make return type an actual list
 func (manager *KubernetesManager) ListPersistentVolumeClaims(ctx context.Context, namespace string) (*apiv1.PersistentVolumeClaimList, error) {
 	persistentVolumeClaimsClient := manager.kubernetesClientSet.CoreV1().PersistentVolumeClaims(namespace)
 
@@ -287,6 +267,7 @@ func (manager *KubernetesManager) ListPersistentVolumeClaims(ctx context.Context
 	return persistentVolumeClaimsResult, nil
 }
 
+// TODO Make return type an actual list
 func (manager *KubernetesManager) GetPersistentVolumeClaimsByLabels(ctx context.Context, namespace string, persistentVolumeClaimLabels map[string]string) (*apiv1.PersistentVolumeClaimList, error) {
 	persistentVolumeClaimsClient := manager.kubernetesClientSet.CoreV1().PersistentVolumeClaims(namespace)
 

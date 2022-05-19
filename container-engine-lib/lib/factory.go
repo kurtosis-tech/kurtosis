@@ -1,10 +1,13 @@
 package lib
 
 import (
-	kb "github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes"
+	"context"
+	kubernetes_backend "github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/metrics_reporting"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/stacktrace"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -13,8 +16,7 @@ import (
 	"path/filepath"
 )
 
-func GetLocalKubernetesKurtosisBackend(volumeStorageClassName string, enclaveVolumeSizeInMegabytes uint) (backend_interface.KurtosisBackend, error) {
-	// TODO Implement GetLocalKubernetesProxyKurtosisBackend?
+func GetCLIKubernetesKurtosisBackend(ctx context.Context) (backend_interface.KurtosisBackend, error) {
 	kubeConfigFileFilepath := filepath.Join(
 		os.Getenv("HOME"), ".kube", "config",
 	)
@@ -23,29 +25,114 @@ func GetLocalKubernetesKurtosisBackend(volumeStorageClassName string, enclaveVol
 		return nil, stacktrace.Propagate(err, "An error occurred creating kubernetes configuration from flags in file '%v'", kubeConfigFileFilepath)
 	}
 
-	wrappedBackend, err:= newWrappedKubernetesKurtosisBackend(kubernetesConfig, volumeStorageClassName, enclaveVolumeSizeInMegabytes)
+	backendSupplier := func(_ context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*kubernetes_backend.KubernetesKurtosisBackend, error) {
+		return kubernetes_backend.NewCLIModeKubernetesKurtosisBackend(kubernetesManager), nil
+	}
+
+	wrappedBackend, err:= getWrappedKubernetesKurtosisBackend(
+		ctx,
+		kubernetesConfig,
+		backendSupplier,
+	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating new wrapped Kubernetes Kurtosis Backend using Kubernetes config '%+v', volume storage class name '%v' and size '%v'", kubernetesConfig, volumeStorageClassName, enclaveVolumeSizeInMegabytes)
+		return nil, stacktrace.Propagate(err, "An error occurred wrapping the CLI Kubernetes backend")
 	}
 
 	return wrappedBackend, nil
 }
 
-func GetInClusterKubernetesKurtosisBackend(volumeStorageClassName string, enclaveVolumeSizeInMegabytes uint) (backend_interface.KurtosisBackend, error) {
+func GetEngineServerKubernetesKurtosisBackend(
+	ctx context.Context,
+	volumeStorageClassName string,
+	enclaveDataVolumeSizeInMegabytes uint,
+) (backend_interface.KurtosisBackend, error) {
 	kubernetesConfig, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting in cluster Kubernetes config")
 	}
 
-	wrappedBackend, err:= newWrappedKubernetesKurtosisBackend(kubernetesConfig, volumeStorageClassName, enclaveVolumeSizeInMegabytes)
+	backendSupplier := func(_ context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*kubernetes_backend.KubernetesKurtosisBackend, error) {
+		return kubernetes_backend.NewEngineServerKubernetesKurtosisBackend(
+			kubernetesManager,
+			volumeStorageClassName,
+			enclaveDataVolumeSizeInMegabytes,
+		), nil
+	}
+
+	wrappedBackend, err:= getWrappedKubernetesKurtosisBackend(
+		ctx,
+		kubernetesConfig,
+		backendSupplier,
+	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating new wrapped Kubernetes Kurtosis Backend using Kubernetes config '%+v', volume storage class name '%v' and size '%v'", kubernetesConfig, volumeStorageClassName, enclaveVolumeSizeInMegabytes)
+		return nil, stacktrace.Propagate(err, "An error occurred wrapping the CLI Kubernetes backend")
 	}
 
 	return wrappedBackend, nil
 }
 
-func newWrappedKubernetesKurtosisBackend(kubernetesConfig *rest.Config, volumeStorageClassName string, enclaveVolumeSizeInMegabytes uint) (*metrics_reporting.MetricsReportingKurtosisBackend, error){
+func GetApiContainerKubernetesKurtosisBackend(
+	ctx context.Context,
+	volumeStorageClassName string,
+	filesArtifactExpansionVolumeSizeInMegabytes uint,
+) (backend_interface.KurtosisBackend, error) {
+	kubernetesConfig, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting in cluster Kubernetes config")
+	}
+
+	namespaceName := os.Getenv(kubernetes_backend.ApiContainerOwnNamespaceNameEnvVar)
+	if namespaceName == "" {
+		return nil, stacktrace.NewError("Expected to find environment variable '%v' containing own namespace information when instantiating an API container Kurtosis backend, but none was found", kubernetes_backend.ApiContainerOwnNamespaceNameEnvVar)
+	}
+
+	backendSupplier := func(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*kubernetes_backend.KubernetesKurtosisBackend, error) {
+		namespace, err := kubernetesManager.GetNamespace(ctx, namespaceName)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the API container's own namespace '%v'", namespaceName)
+		}
+
+		namespaceLabels := namespace.GetLabels()
+		enclaveIdStr, found := namespaceLabels[label_key_consts.IDKubernetesLabelKey.GetString()]
+		if !found {
+			return nil, stacktrace.NewError(
+				"Expected to find enclave ID label '%v' on namespace '%v' but none was found",
+				label_key_consts.IDKubernetesLabelKey.GetString(),
+				namespaceName,
+			)
+		}
+		enclaveId := enclave.EnclaveID(enclaveIdStr)
+
+		return kubernetes_backend.NewAPIContainerKubernetesKurtosisBackend(
+			kubernetesManager,
+			enclaveId,
+			namespaceName,
+			volumeStorageClassName,
+			filesArtifactExpansionVolumeSizeInMegabytes,
+		), nil
+	}
+
+	wrappedBackend, err:= getWrappedKubernetesKurtosisBackend(
+		ctx,
+		kubernetesConfig,
+		backendSupplier,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred wrapping the CLI Kubernetes backend")
+	}
+
+	return wrappedBackend, nil
+}
+
+
+// ====================================================================================================
+//                                      Private Helper Functions
+// ====================================================================================================
+func getWrappedKubernetesKurtosisBackend(
+	ctx context.Context,
+	kubernetesConfig *rest.Config,
+	kurtosisBackendSupplier func(context.Context, *kubernetes_manager.KubernetesManager) (*kubernetes_backend.KubernetesKurtosisBackend, error),
+) (*metrics_reporting.MetricsReportingKurtosisBackend, error){
 	clientSet, err := kubernetes.NewForConfig(kubernetesConfig)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to create kubernetes client set using Kubernetes config '%+v', instead a non nil error was returned", kubernetesConfig)
@@ -53,9 +140,11 @@ func newWrappedKubernetesKurtosisBackend(kubernetesConfig *rest.Config, volumeSt
 
 	kubernetesManager := kubernetes_manager.NewKubernetesManager(clientSet)
 
-	kurtosisBackend := kb.NewKubernetesKurtosisBackend(kubernetesManager, volumeStorageClassName, enclaveVolumeSizeInMegabytes)
+	kubernetesBackend, err := kurtosisBackendSupplier(ctx, kubernetesManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the Kurtosis backend")
+	}
 
-	wrappedBackend := metrics_reporting.NewMetricsReportingKurtosisBackend(kurtosisBackend)
-
+	wrappedBackend := metrics_reporting.NewMetricsReportingKurtosisBackend(kubernetesBackend)
 	return wrappedBackend, nil
 }
