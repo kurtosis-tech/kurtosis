@@ -100,7 +100,12 @@ func runMain() error {
 		}
 		kubernetesBackendConfig, ok := (clusterConfig).(kurtosis_backend_config.KubernetesBackendConfig)
 		if !ok {
-			return stacktrace.NewError("Failed to cast cluster configuration interface to the appropriate type, even though Kurtosis backend type is '%v'", args.KurtosisBackendType_Kubernetes.String())
+			return stacktrace.NewError(
+				"Failed to cast untyped cluster configuration object '%+v' to the appropriate type, even though " +
+					"Kurtosis backend type is '%v'",
+				clusterConfig,
+				args.KurtosisBackendType_Kubernetes.String(),
+			)
 		}
 		kurtosisBackend, err = lib.GetInClusterKubernetesKurtosisBackend(kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInMegabytes)
 		if err != nil {

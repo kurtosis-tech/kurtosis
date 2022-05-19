@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Upgrade to container-engine-lib 0.23.4, which waits for pods to become available
 
 # 1.49.4
 ### Changes
