@@ -521,6 +521,10 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerObjectsAndKuber
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API container Kubernetes resources matching enclave IDs: %+v", filters.EnclaveIDs)
 	}
 
+	for enclaveId, resources := range matchingResources {
+		logrus.Debugf("Found API container Kubernetes resources for enclave '%v': %+v", enclaveId, resources)
+	}
+
 	apiContainerObjects, err := getApiContainerObjectsFromKubernetesResources(matchingResources)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API container objects from Kubernetes resources")
@@ -800,7 +804,7 @@ func getApiContainerObjectsFromKubernetesResources(
 	for enclaveId, resourcesForEnclaveId := range allResources {
 
 		if resourcesForEnclaveId.service == nil {
-			return nil, stacktrace.NewError("Can not create an API container object if there is not an API container's Kubernetes service in enclave '%v'", enclaveId)
+			return nil, stacktrace.NewError("Expected a Kubernetes service for API container in enclave '%v'", enclaveId)
 		}
 
 		status, err := getContainerStatusFromPod(resourcesForEnclaveId.pod)
