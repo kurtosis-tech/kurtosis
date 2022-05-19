@@ -1,5 +1,6 @@
 package kubernetes
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
@@ -409,23 +410,77 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 	erroredUserServiceGuids map[service.ServiceGUID]error,
 	resultErr error,
 ) {
+	namespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
+	}
+
+	requestedGuids := map[service.ServiceGUID]bool{}
+	for guid := range userServiceCommands {
+		requestedGuids[guid] = true
+	}
+	matchingServicesFilters := &service.ServiceFilters{
+		GUIDs: requestedGuids,
+	}
+	matchingObjectsAndResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, matchingServicesFilters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching the requested GUIDs: %+v", requestedGuids)
+	}
+
+	for guid, commandArgs := range userServiceCommands {
+		objectsAndResources, found := matchingObjectsAndResources[guid]
+		if !found {
+			return nil, nil, stacktrace.NewError(
+				"Requested to execute command '%+v' on service '%v', but the service does not exist",
+				commandArgs,
+				guid,
+			)
+		}
+		serviceObj := objectsAndResources.service
+		if serviceObj == nil {
+			return nil, nil, stacktrace.NewError(
+				"Cannot execute command '%+v' on service '%v' because the service is not started yet",
+				commandArgs,
+				guid,
+			)
+		}
+		if serviceObj.GetStatus() != container_status.ContainerStatus_Running {
+			return nil, nil, stacktrace.NewError(
+				"Cannot execute command '%+v' on service '%v' because the service status is '%v'",
+				commandArgs,
+				guid,
+				serviceObj.GetStatus().String(),
+			)
+		}
+	}
+
 	userServiceExecSuccess := map[service.ServiceGUID]*exec_result.ExecResult{}
 	userServiceExecErr := map[service.ServiceGUID]error{}
 	for serviceGuid, serviceCommand := range userServiceCommands {
-		userServiceObjectAndResources, err := backend.getSingleUserServiceObjectsAndResources(ctx, enclaveId, serviceGuid)
+		userServiceObjectAndResources, found := matchingObjectsAndResources[serviceGuid]
+		if !found {
+			// Should never happen because we validate that the object exists earlier
+			return nil, nil, stacktrace.NewError("Validated that service '%v' has Kubernetes resources, but couldn't find them when we need to run the exec", serviceGuid)
+		}
+		// Don't need to validate that this is non-nil because we did so before we started executing
 		userServicePod := userServiceObjectAndResources.kubernetesResources.pod
-		if userServicePod == nil {
-			userServiceExecErr[serviceGuid] = stacktrace.NewError("Expected to find a pod for Kurtosis service with GUID '%v', instead no pod was found", serviceGuid)
-			continue
-		}
-		userServiceNamespaceName := userServicePod.Namespace
 		userServicePodName := userServicePod.Name
-		stdOut, _, exitCode, err := backend.kubernetesManager.RunExecCommand(userServiceNamespaceName, userServicePodName, userServiceContainerName, serviceCommand)
+
+		outputBuffer := &bytes.Buffer{}
+		exitCode, err := backend.kubernetesManager.RunExecCommand(namespaceName, userServicePodName, userServiceContainerName, serviceCommand, outputBuffer)
 		if err != nil {
-			userServiceExecErr[serviceGuid] = stacktrace.Propagate(err, "Expected to be able to execute command in container in Kubernetes pod for Kurtosis service with guid '%v', instead a non-nil error was returned", serviceGuid)
+			userServiceExecErr[serviceGuid] = stacktrace.Propagate(
+				err,
+				"Expected to be able to execute command '%+v' in user service container '%v' in Kubernetes pod '%v' " +
+					"for Kurtosis service with guid '%v', instead a non-nil error was returned",
+				serviceCommand,
+				userServiceContainerName,
+				userServicePodName,
+				serviceGuid,
+			)
 			continue
 		}
-		userServiceExecSuccess[serviceGuid] = exec_result.NewExecResult(exitCode, stdOut.String())
+		userServiceExecSuccess[serviceGuid] = exec_result.NewExecResult(exitCode, outputBuffer.String())
 	}
 	return userServiceExecSuccess, userServiceExecErr, nil
 }
