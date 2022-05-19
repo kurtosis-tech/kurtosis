@@ -753,7 +753,6 @@ func (backend *KubernetesKurtosisBackend) createEnginePod(
 	}
 	engineContainers := []apiv1.Container{
 		{
-			// TODO SPECIFY PORTS!!!!!
 			Name:  kurtosisEngineContainerName,
 			Image: containerImageAndTag,
 			Env:   engineContainerEnvVars,
