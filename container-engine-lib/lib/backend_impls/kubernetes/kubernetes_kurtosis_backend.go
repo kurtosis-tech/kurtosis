@@ -393,7 +393,7 @@ func (backend *KubernetesKurtosisBackend) getEnclaveNamespaceName(ctx context.Co
 				"Received a request to get namespace for enclave '%v', but the Kubernetes Kurtosis backend is running in an API " +
 					"container in a different enclave '%v' (so Kubernetes would throw a permission error)",
 				enclaveId,
-				backend.apiContainerModeArgs.ownEnclaveId
+				backend.apiContainerModeArgs.ownEnclaveId,
 			)
 		}
 		namespaceName = backend.apiContainerModeArgs.ownNamespaceName

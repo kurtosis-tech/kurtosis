@@ -92,11 +92,10 @@ type userServiceKubernetesResources struct {
 }
 
 func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
-	enclaveNamespace, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
+	namespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting namespace matching enclave ID '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
 	}
-	namespaceName := enclaveNamespace.Name
 
 	// TODO Switch this, and all other GUIDs, to a UUID??
 	serviceGuid := service.ServiceGUID(fmt.Sprintf(
@@ -138,7 +137,7 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 
 	createdService, err := backend.kubernetesManager.CreateService(
 		ctx,
-		enclaveNamespace.Name,
+		namespaceName,
 		serviceNameStr,
 		serviceLabelsStrs,
 		serviceAnnotationsStrs,
@@ -515,11 +514,10 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 	map[service.ServiceGUID]*userServiceKubernetesResources,
 	error,
 ) {
-	enclaveNamespace, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
+	namespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes namespace for enclave '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
 	}
-	namespaceName := enclaveNamespace.Name
 
 	// TODO switch to properly-typed KubernetesLabelValue object!!!
 	postFilterLabelValues := map[string]bool{}
