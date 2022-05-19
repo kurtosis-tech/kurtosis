@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed `grpcProxy` port ID not being acceptable to Kubernetes
 
 # 0.24.0
 ### Fixes

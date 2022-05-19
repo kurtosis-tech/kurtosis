@@ -41,7 +41,7 @@ const (
 	// The ID of the GRPC proxy port for Kurtosis-internal containers. This is necessary because
 	// Typescript's grpc-web cannot communicate directly with GRPC ports, so Kurtosis-internal containers
 	// need a proxy  that will translate grpc-web requests before they hit the main GRPC server
-	kurtosisInternalContainerGrpcProxyPortSpecId = "grpcProxy"
+	kurtosisInternalContainerGrpcProxyPortSpecId = "grpc-proxy"
 
 	// Port number string parsing constants
 	publicPortNumStrParsingBase = 10
