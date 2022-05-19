@@ -832,6 +832,7 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 		"Pod '%v' did not become available after %v; its latest state is '%v' and status message is: %v\n" +
 			"The pod's container states are as follows:\n%v",
 		podName,
+		podWaitForAvailabilityTimeout,
 		latestPodStatus.Phase,
 		latestPodStatus.Message,
 		strings.Join(containerStatusStrs, "\n"),
