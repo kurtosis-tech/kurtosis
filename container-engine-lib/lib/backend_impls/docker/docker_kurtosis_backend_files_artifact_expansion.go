@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 	"time"
@@ -38,25 +39,33 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, enclaveId)
 	}
-	volumeName := filesArtifactExpansionVolume.GetName()
+	filesArtifactExpansionFilters := files_artifact_expansion.FilesArtifactExpansionFilters{
+		GUIDs: map[files_artifact_expansion.FilesArtifactExpansionGUID]bool{
+			filesArtifactExpansion.GetGUID(): true,
+		},
+	}
 	defer func() {
-		// TODO TODO TODO Destroy the expansion volume
-		panic("implement me")
-		//backend.destroyFilesArtifactExpansionVolume(ctx, volumeName)
+		_, erroredVolumeNames, err := backend.DestroyFilesArtifactExpansion(ctx, filesArtifactExpansionFilters)
+		if err != nil {
+			logrus.Errorf("Failed to destroy expansion volumes for files artifact expansion '%v' - got error: \n'%v'", filesArtifactExpansion.GetGUID(), err)
+		}
+		for name, err := range erroredVolumeNames {
+			logrus.Errorf("Failed to destroy expansion volume '%v' for files artifact expansion '%v' - get error: \n'%v'", name, filesArtifactExpansion.GetGUID(), err)
+		}
 	}()
 
 	_, err = backend.runFilesArtifactExpander(
 		ctx,
-		newFilesArtifactExpanderGUID(filesArtifactId, serviceGuid),
+		filesArtifactExpansion,
 		enclaveId,
-		volumeName,
+		filesArtifactExpansionVolume.GetName(),
 		destVolMntDirpathOnExpander,
 		filesArtifactFilepathRelativeToEnclaveDatadirRoot,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred running files artifact expander for user service with GUID '%v' and files artifact ID '%v' and files artifact expansion volume '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, volumeName, enclaveId)
 	}
-	return nil, nil
+	return filesArtifactExpansion, nil
 }
 
 //Destroy files artifact expansion volume and expander using the given filters
@@ -127,15 +136,6 @@ func newFilesArtifactExpansionGUID(filesArtifactId service.FilesArtifactID, serv
 	suffix := getCurrentTimeStr()
 	guidStr := strings.Join([]string{serviceRegistrationGuidStr, filesArtifactIdStr, suffix}, guidElementSeparator)
 	guid := files_artifact_expansion.FilesArtifactExpansionGUID(guidStr)
-	return guid
-}
-
-func newFilesArtifactExpanderGUID(filesArtifactId service.FilesArtifactID, serviceGuid service.ServiceGUID) files_artifact_expander.FilesArtifactExpanderGUID {
-	serviceRegistrationGuidStr := string(serviceGuid)
-	filesArtifactIdStr := string(filesArtifactId)
-	suffix := getCurrentTimeStr()
-	guidStr := strings.Join([]string{serviceRegistrationGuidStr, filesArtifactIdStr, suffix}, guidElementSeparator)
-	guid := files_artifact_expander.FilesArtifactExpanderGUID(guidStr)
 	return guid
 }
 
