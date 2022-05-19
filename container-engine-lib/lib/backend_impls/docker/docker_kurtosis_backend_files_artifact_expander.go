@@ -24,6 +24,9 @@ const (
 	//  will be mounted
 	enclaveDataVolumeDirpathOnExpanderContainer = "/enclave-data"
 
+	// Dirpath on the artifact expander container where the destination volume containing expanded files will be mounted
+	destVolMntDirpathOnExpander = "/dest"
+
 	expanderContainerSuccessExitCode = 0
 )
 

@@ -410,25 +410,23 @@ type KurtosisBackend interface {
 	)
 
 	//Create a files artifact exansion volume for user service and file artifact id and runs a file artifact expander
-	RunFilesArtifactExpansion(
+	CreateFilesArtifactExpansion(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
 		serviceGuid service.ServiceGUID,
 		filesArtifactId service.FilesArtifactID,
-		destVolMntDirpathOnExpander string,
-		filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
-	) (
+		filesArtifactFilepathRelativeToEnclaveDatadirRoot string, ) (
 		*files_artifact_expansion.FilesArtifactExpansionGUID,
 		error,
 	)
 
-	////Destroy files artifact expansion volume and expander using the given filters
+	//Destroy files artifact expansion volume and expander using the given filters
 	DestroyFilesArtifactExpansion(
 		ctx context.Context,
 		filters  files_artifact_expansion.FilesArtifactExpansionFilters,
 	) (
-		successfulFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]bool,
-		erroredFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]error,
+		resultSuccessfulFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]bool,
+		resultErroredFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]error,
 		resultErr error,
 	)
 

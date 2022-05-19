@@ -8,17 +8,7 @@ import (
 )
 
 //Create a files artifact exansion volume for user service and file artifact id and runs a file artifact expander
-func (backend *KubernetesKurtosisBackend) RunFilesArtifactExpansion(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceGuid service.ServiceGUID,
-	filesArtifactId service.FilesArtifactID,
-	destVolMntDirpathOnExpander string,
-	filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
-)(
-	*files_artifact_expansion.FilesArtifactExpansionGUID,
-	error,
-) {
+func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID, filesArtifactId service.FilesArtifactID, filesArtifactFilepathRelativeToEnclaveDatadirRoot string, ) (*files_artifact_expansion.FilesArtifactExpansionGUID, error, ) {
 	panic("IMPLEMENT ME")
 }
 
