@@ -4,9 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
@@ -132,59 +130,6 @@ func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 	return newFilesArtifactExpander, nil
 }
 
-func (backend *DockerKurtosisBackend) destroyFilesArtifactExpanders(
-	ctx context.Context,
-	filters *files_artifact_expander.FilesArtifactExpanderFilters,
-) (
-	map[files_artifact_expander.FilesArtifactExpanderGUID]bool,
-	map[files_artifact_expander.FilesArtifactExpanderGUID]error,
-	error,
-) {
-	matchedExpanders, err := backend.getMatchingFilesArtifactExpanders(ctx, filters)
-	if err != nil {
-		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting files artifact expanders matching filters '%+v'", filters)
-	}
-
-	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
-	matchingUncastedExpandersByContainerId := map[string]interface{}{}
-	for containerId, expanderObj := range matchedExpanders {
-		matchingUncastedExpandersByContainerId[containerId] = interface{}(expanderObj)
-	}
-
-	var removeExpanderOperation docker_operation_parallelizer.DockerOperation = func(
-		ctx context.Context,
-		dockerManager *docker_manager.DockerManager,
-		dockerObjectId string,
-	) error {
-		if err := dockerManager.RemoveContainer(ctx, dockerObjectId); err != nil {
-			return stacktrace.Propagate(err, "An error occurred removing files artifact expander container with ID '%v'", dockerObjectId)
-		}
-		return nil
-	}
-
-	successfulExpanderGUIDStrs, erroredExpanderGUIDStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
-		ctx,
-		matchingUncastedExpandersByContainerId,
-		backend.dockerManager,
-		extractExpanderGUIDFromExpanderObj,
-		removeExpanderOperation,
-	)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred removing files artifact expander containers matching filters '%+v'", filters)
-	}
-
-	successfulExpanderGUIDs := map[files_artifact_expander.FilesArtifactExpanderGUID]bool{}
-	for expanderGuidStr := range successfulExpanderGUIDStrs {
-		successfulExpanderGUIDs[files_artifact_expander.FilesArtifactExpanderGUID(expanderGuidStr)] = true
-	}
-	erroredExpanderGUIDs := map[files_artifact_expander.FilesArtifactExpanderGUID]error{}
-	for expanderGuidStr, removalErr := range erroredExpanderGUIDStrs {
-		erroredExpanderGUIDs[files_artifact_expander.FilesArtifactExpanderGUID(expanderGuidStr)] = removalErr
-	}
-
-	return successfulExpanderGUIDs, erroredExpanderGUIDs, nil
-}
-
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
@@ -198,54 +143,6 @@ func getExtractionCommand(artifactFilepath string, destVolMntDirpathOnExpander s
 		"-C",
 		destVolMntDirpathOnExpander,
 	}
-}
-
-func (backend *DockerKurtosisBackend) getMatchingFilesArtifactExpanders(
-	ctx context.Context,
-	filters *files_artifact_expander.FilesArtifactExpanderFilters,
-)(map[string]*files_artifact_expander.FilesArtifactExpander, error) {
-	searchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.FilesArtifactExpanderContainerTypeDockerLabelValue.GetString(),
-	}
-	matchingContainers, err := backend.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchAllContainersWhenRetrievingContainers)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred fetching containers using labels: %+v", searchLabels)
-	}
-
-	matchingObjects := map[string]*files_artifact_expander.FilesArtifactExpander{}
-	for _, container := range matchingContainers {
-		containerId := container.GetId()
-		object, err := getFilesArtifactExpanderObjectFromContainerInfo(
-			container.GetLabels(),
-			container.GetStatus(),
-		)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred converting container '%v' into a files artifact expander object", container.GetId())
-		}
-
-		if filters.EnclaveIDs != nil && len(filters.EnclaveIDs) > 0 {
-			if _, found := filters.EnclaveIDs[object.GetEnclaveID()]; !found {
-				continue
-			}
-		}
-
-		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
-			if _, found := filters.GUIDs[object.GetGUID()]; !found {
-				continue
-			}
-		}
-
-		if filters.Statuses != nil && len(filters.Statuses) > 0 {
-			if _, found := filters.Statuses[object.GetStatus()]; !found {
-				continue
-			}
-		}
-
-		matchingObjects[containerId] = object
-	}
-
-	return matchingObjects, nil
 }
 
 func getFilesArtifactExpanderObjectFromContainerInfo(
@@ -282,12 +179,4 @@ func getFilesArtifactExpanderObjectFromContainerInfo(
 	)
 
 	return newObject, nil
-}
-
-func extractExpanderGUIDFromExpanderObj(uncastedObj interface{}) (string, error) {
-	castedObj, ok := uncastedObj.(*files_artifact_expander.FilesArtifactExpander)
-	if !ok {
-		return "", stacktrace.NewError("An error occurred downcasting the files artifact expander object")
-	}
-	return string(castedObj.GetGUID()), nil
 }
