@@ -80,6 +80,12 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	}
 	teardownContext := context.Background()
 
+	if backend.engineServerModeArgs == nil {
+		return nil, stacktrace.NewError("Enclave creation cannot be done unless the Kubernetes Kurtosis backend is in engine mode")
+	}
+	enclaveDataVolumeStorageClass := backend.engineServerModeArgs.storageClassName
+	enclaveDataVolumeSizeInMegabytes := backend.engineServerModeArgs.enclaveDataVolumeSizeInMegabytes
+
 	searchNamespaceLabels := map[string]string{
 		label_key_consts.AppIDKubernetesLabelKey.GetString():     label_value_consts.AppIDKubernetesLabelValue.GetString(),
 		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): string(enclaveId),
@@ -136,14 +142,17 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		enclaveNamespaceName,
 		persistentVolumeClaimName,
 		persistentVolumeClaimLabels,
-		backend.volumeSizePerEnclaveInMegabytes,
-		backend.volumeStorageClassName)
+		enclaveDataVolumeSizeInMegabytes,
+		enclaveDataVolumeStorageClass,
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,
-			"Failed to create persistent volume claim in enclave '%v' with name '%v' and storage class name '%v'",
+			"Failed to create persistent volume claim in enclave '%v' with name '%v', size '%v', and storage class name '%v'",
 			enclaveNamespaceName,
 			persistentVolumeClaimName,
-			backend.volumeStorageClassName)
+			enclaveDataVolumeSizeInMegabytes,
+			enclaveDataVolumeStorageClass,
+		)
 	}
 	shouldDeleteVolume := true
 	defer func() {
