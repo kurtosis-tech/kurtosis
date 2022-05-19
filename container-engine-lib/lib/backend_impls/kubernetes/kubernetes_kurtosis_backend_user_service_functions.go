@@ -366,19 +366,21 @@ func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
 	userServiceLogs := map[service.ServiceGUID]io.ReadCloser{}
 	erredServiceLogs := map[service.ServiceGUID]error{}
 	for _, serviceObjectAndResource := range serviceObjectsAndResources {
-		// Is there a way to get the container name of a service GUID
 		serviceGuid := serviceObjectAndResource.service.GetRegistration().GetGUID()
 		servicePod := serviceObjectAndResource.kubernetesResources.pod
+		if servicePod == nil {
+			erredServiceLogs[serviceGuid] = stacktrace.NewError("Expected to find a pod for Kurtosis service with GUID '%v', instead no pod was found", serviceGuid)
+			continue
+		}
 		serviceNamespaceName := serviceObjectAndResource.kubernetesResources.service.GetNamespace()
 		// Get logs
 		logReadCloser, err := backend.kubernetesManager.GetContainerLogs(ctx, serviceNamespaceName, servicePod.Name, userServiceContainerName, shouldFollowLogs, shouldAddTimestampsToLogs)
 		if err != nil {
-			erredServiceLogs[serviceGuid] = stacktrace.Propagate(err, "Expected to be able to call Kubernetes to get logs service with GUID '%v', instead a non-nil error was returned", serviceGuid)
+			erredServiceLogs[serviceGuid] = stacktrace.Propagate(err, "Expected to be able to call Kubernetes to get logs for service with GUID '%v', instead a non-nil error was returned", serviceGuid)
 			continue
 		}
 		userServiceLogs[serviceGuid] = logReadCloser
 	}
-	//TODO implement me
 	return userServiceLogs, erredServiceLogs, nil
 }
 
