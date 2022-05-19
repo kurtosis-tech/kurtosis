@@ -519,10 +519,6 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerObjectsAndKuber
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API container Kubernetes resources matching enclave IDs: %+v", filters.EnclaveIDs)
 	}
 
-	for enclaveId, resources := range matchingResources {
-		logrus.Debugf("Found API container Kubernetes resources for enclave '%v': %+v", enclaveId, resources)
-	}
-
 	apiContainerObjects, err := getApiContainerObjectsFromKubernetesResources(matchingResources)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API container objects from Kubernetes resources")
@@ -577,8 +573,6 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave namespaces matching IDs '%+v'", enclaveIdsStrSet)
 	}
 
-	logrus.Debugf("Searching for API container resources in the following namespaces: %+v", namespaces)
-
 	apiContainerMatchLabels := getApiContainerMatchLabels()
 
 	// Per-namespace objects
@@ -607,13 +601,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting services matching enclave ID '%v' in namespace '%v'", enclaveIdStr, namespaceName)
 		}
-		logrus.Debugf(
-			"Collected services '%+v' using search labels '%+v', filter label '%v', and enclaveIdStr '%v'",
-			services,
-			apiContainerMatchLabels,
-			label_key_consts.EnclaveIDKubernetesLabelKey.GetString(),
-			enclaveIdStr,
-		)
+
 		servicesForEnclaveId, found := services[enclaveIdStr]
 		if !found {
 			// No API container services in the enclave means that the enclave doesn't have an API container
