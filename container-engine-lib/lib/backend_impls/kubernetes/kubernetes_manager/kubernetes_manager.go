@@ -800,7 +800,7 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 		pod, err := manager.GetPod(ctx, namespaceName, podName)
 		if err != nil {
 			// We shouldn't get an error on getting the pod, even if it's not ready
-			return stacktrace.Propagate(err, "An error occurred getting the just-created pod '%v'", name)
+			return stacktrace.Propagate(err, "An error occurred getting the just-created pod '%v'", podName)
 		}
 		latestPodStatus = &pod.Status
 		switch latestPodStatus.Phase {
