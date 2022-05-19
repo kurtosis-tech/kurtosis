@@ -2,10 +2,7 @@ package docker
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
@@ -66,101 +63,10 @@ func (backend *DockerKurtosisBackend) createFilesArtifactExpansionVolume(
 	return newFileArtifactExpansionVolume, nil
 }
 
-func (backend *DockerKurtosisBackend) destroyFilesArtifactExpansionVolumes(
-	ctx context.Context,
-	filters *files_artifact_expansion_volume.FilesArtifactExpansionVolumeFilters,
-) (
-	map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool,
-	map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]error,
-	error,
-) {
-	expansionVolumes, err := backend.getMatchingFileArtifactExpansionVolumes(ctx, filters)
-	if err != nil {
-		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting files artifact expansion volumes matching filters '%+v'", filters)
-	}
-
-	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
-	matchingUncastedExpansionVolumesByVolumeId := map[string]interface{}{}
-	for volumeId, expansionVolume := range expansionVolumes {
-		matchingUncastedExpansionVolumesByVolumeId[string(volumeId)] = interface{}(expansionVolume)
-	}
-
-	var removeExpansionVolume docker_operation_parallelizer.DockerOperation = func(
-		ctx context.Context,
-		dockerManager *docker_manager.DockerManager,
-		dockerObjectId string,
-	) error {
-		if err := dockerManager.RemoveVolume(ctx, dockerObjectId); err != nil {
-			return stacktrace.Propagate(err, "An error occurred removing files artifact expansion volume with ID '%v'", dockerObjectId)
-		}
-		return nil
-	}
-
-	successfulExpansionVolumeNameStrs, erroredExpansionVolumeNameStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
-		ctx,
-		matchingUncastedExpansionVolumesByVolumeId,
-		backend.dockerManager,
-		extractExpansionVolumeNameFromObj,
-		removeExpansionVolume,
-	)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred removing files artifact expansion volumes matching filters '%+v'", filters)
-	}
-
-	successfulExpansionGUIDs := map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool{}
-	for expansionVolumeNameStr := range successfulExpansionVolumeNameStrs {
-		successfulExpansionGUIDs[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName(expansionVolumeNameStr)] = true
-	}
-	erroredExpansionGUIDs := map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]error{}
-	for expansionVolumeNameStr, removalErr := range erroredExpansionVolumeNameStrs {
-		erroredExpansionGUIDs[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName(expansionVolumeNameStr)] = removalErr
-	}
-
-	return successfulExpansionGUIDs, erroredExpansionGUIDs, nil
-}
 
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
-func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionVolumes(
-	ctx context.Context,
-	filters *files_artifact_expansion_volume.FilesArtifactExpansionVolumeFilters,
-) (map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]*files_artifact_expansion_volume.FilesArtifactExpansionVolume, error) {
-	searchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString(): label_value_consts.AppIDDockerLabelValue.GetString(),
-	}
-	matchingVolumes, err := backend.dockerManager.GetVolumesByLabels(ctx, searchLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred fetching volumes using labels: %+v", searchLabels)
-	}
-
-	matchingObjects := map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]*files_artifact_expansion_volume.FilesArtifactExpansionVolume{}
-	for _, volume := range matchingVolumes {
-		object, err := getFileArtifactExpansionVolumeFromDockerVolumeInfo(
-			volume.Name,
-			volume.Labels,
-		)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred converting volume with name '%v' into a files artifact expansion volume object", volume.Name)
-		}
-
-		if filters.Names != nil && len(filters.Names) > 0 {
-			if _, found := filters.Names[object.GetName()]; !found {
-				continue
-			}
-		}
-
-		if filters.EnclaveIDs != nil && len(filters.EnclaveIDs) > 0 {
-			if _, found := filters.EnclaveIDs[object.GetEnclaveID()]; !found {
-				continue
-			}
-		}
-
-		matchingObjects[object.GetName()] = object
-	}
-
-	return matchingObjects, nil
-}
 
 func getFileArtifactExpansionVolumeFromDockerVolumeInfo(
 	name string,
@@ -177,12 +83,4 @@ func getFileArtifactExpansionVolumeFromDockerVolumeInfo(
 	)
 
 	return newObject, nil
-}
-
-func extractExpansionVolumeNameFromObj(uncastedObj interface{}) (string, error) {
-	castedObj, ok := uncastedObj.(*files_artifact_expansion_volume.FilesArtifactExpansionVolume)
-	if !ok {
-		return "", stacktrace.NewError("An error occurred downcasting the files artifact expansion volume object")
-	}
-	return string(castedObj.GetName()), nil
 }
