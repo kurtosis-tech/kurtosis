@@ -409,8 +409,25 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 	erroredUserServiceGuids map[service.ServiceGUID]error,
 	resultErr error,
 ) {
-	//TODO implement me
-	panic("implement me")
+	userServiceExecSuccess := map[service.ServiceGUID]*exec_result.ExecResult{}
+	userServiceExecErr := map[service.ServiceGUID]error{}
+	for serviceGuid, serviceCommand := range userServiceCommands {
+		userServiceObjectAndResources, err := backend.getSingleUserServiceObjectsAndResources(ctx, enclaveId, serviceGuid)
+		userServicePod := userServiceObjectAndResources.kubernetesResources.pod
+		if userServicePod == nil {
+			userServiceExecErr[serviceGuid] = stacktrace.NewError("Expected to find a pod for Kurtosis service with GUID '%v', instead no pod was found", serviceGuid)
+			continue
+		}
+		userServiceNamespaceName := userServicePod.Namespace
+		userServicePodName := userServicePod.Name
+		stdOut, _, exitCode, err := backend.kubernetesManager.RunExecCommand(userServiceNamespaceName, userServicePodName, userServiceContainerName, serviceCommand)
+		if err != nil {
+			userServiceExecErr[serviceGuid] = stacktrace.Propagate(err, "Expected to be able to execute command in container in Kubernetes pod for Kurtosis service with guid '%v', instead a non-nil error was returned", serviceGuid)
+			continue
+		}
+		userServiceExecSuccess[serviceGuid] = exec_result.NewExecResult(exitCode, stdOut.String())
+	}
+	return userServiceExecSuccess, userServiceExecErr, nil
 }
 
 func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGUID service.ServiceGUID) (resultConn net.Conn, resultErr error) {
