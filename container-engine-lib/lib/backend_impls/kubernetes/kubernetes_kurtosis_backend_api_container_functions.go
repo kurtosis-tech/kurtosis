@@ -219,6 +219,12 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 			APIGroups: []string{rbacv1.APIGroupAll},
 			Resources: []string{consts.PodsKubernetesResource, consts.ServicesKubernetesResource, consts.PersistentVolumeClaimsKubernetesResource},
 		},
+		// Necessary for the API container to find its own namespace
+		{
+			Verbs: []string{consts.ListKubernetesVerb},
+			APIGroups: []string{rbacv1.APIGroupAll},
+			Resources: []string{consts.NamespacesKubernetesResource},
+		},
 	}
 
 	apiContainerRole, err := backend.kubernetesManager.CreateRole(ctx, roleName, enclaveNamespaceName, rolePolicyRules, roleLabels)
