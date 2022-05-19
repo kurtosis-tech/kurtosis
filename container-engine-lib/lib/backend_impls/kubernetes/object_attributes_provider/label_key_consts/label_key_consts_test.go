@@ -24,8 +24,8 @@ var crossVersionLabelKeyStringsToEnsure = map[string]string{
 
 //These are the publicly accessible keys that correspond to the private string constants. They need to stay the same.
 var crossVersionLabelKeysToEnsure = map[*kubernetes_label_key.KubernetesLabelKey]string{
-	AppIDLabelKey:                	expectedAppIdLabelKeyStr,
-	KurtosisResourceTypeLabelKey: 	expectedResourceTypeLabelKeyStr,
+	AppIDKubernetesLabelKey:                expectedAppIdLabelKeyStr,
+	KurtosisResourceTypeKubernetesLabelKey: expectedResourceTypeLabelKeyStr,
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

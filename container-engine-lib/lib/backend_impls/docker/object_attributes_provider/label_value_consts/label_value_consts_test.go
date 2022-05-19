@@ -12,8 +12,8 @@ var labelValueStrsToEnsure = map[string]string{
 }
 
 var labelValuesToEnsure = map[*docker_label_value.DockerLabelValue]string{
-	AppIDLabelValue:               "kurtosis",
-	EngineContainerTypeLabelValue: "kurtosis-engine",
+	AppIDDockerLabelValue:               "kurtosis",
+	EngineContainerTypeDockerLabelValue: "kurtosis-engine",
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

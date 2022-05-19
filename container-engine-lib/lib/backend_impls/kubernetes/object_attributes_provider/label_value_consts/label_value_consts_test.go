@@ -12,8 +12,8 @@ var labelValueStrsToEnsure = map[string]string{
 }
 
 var labelValuesToEnsure = map[*kubernetes_label_value.KubernetesLabelValue]string{
-	AppIDLabelValue:                      "kurtosis",
-	EngineKurtosisResourceTypeLabelValue: "kurtosis-engine",
+	AppIDKubernetesLabelValue:                      "kurtosis",
+	EngineKurtosisResourceTypeKubernetesLabelValue: "kurtosis-engine",
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

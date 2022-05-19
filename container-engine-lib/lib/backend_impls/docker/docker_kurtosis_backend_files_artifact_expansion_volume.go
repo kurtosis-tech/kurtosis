@@ -129,7 +129,7 @@ func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionVolumes(
 	filters *files_artifact_expansion_volume.FilesArtifactExpansionVolumeFilters,
 ) (map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]*files_artifact_expansion_volume.FilesArtifactExpansionVolume, error) {
 	searchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.AppIDDockerLabelKey.GetString(): label_value_consts.AppIDDockerLabelValue.GetString(),
 	}
 	matchingVolumes, err := backend.dockerManager.GetVolumesByLabels(ctx, searchLabels)
 	if err != nil {
@@ -168,9 +168,9 @@ func getFileArtifactExpansionVolumeFromDockerVolumeInfo(
 	name string,
 	labels map[string]string,
 ) (*files_artifact_expansion_volume.FilesArtifactExpansionVolume, error) {
-	enclaveId, found := labels[label_key_consts.EnclaveIDLabelKey.GetString()]
+	enclaveId, found := labels[label_key_consts.EnclaveIDDockerLabelKey.GetString()]
 	if !found {
-		return nil, stacktrace.NewError("Expected the volume's enclave ID to be found under label '%v' but the label wasn't present", label_key_consts.EnclaveIDLabelKey.GetString())
+		return nil, stacktrace.NewError("Expected the volume's enclave ID to be found under label '%v' but the label wasn't present", label_key_consts.EnclaveIDDockerLabelKey.GetString())
 	}
 
 	newObject := files_artifact_expansion_volume.NewFilesArtifactExpansionVolume(

@@ -7,6 +7,7 @@ package kubernetes_manager
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -20,6 +21,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -29,10 +31,15 @@ const (
 	uintToIntStringConversionBase		   = 10
 
 	waitForPersistentVolumeBoundInitialDelayMilliSeconds = 100
-	waitForPersistentVolumeBoundRetries = uint32(120)
+	waitForPersistentVolumeBoundTimeout = 60 * time.Second
 	waitForPersistentVolumeBoundRetriesDelayMilliSeconds = 500
 
 	apiv1Prefix = "api/v1"
+
+	podWaitForAvailabilityTimeout = 15 * time.Second
+	podWaitForAvailabilityTimeBetweenPolls = 500 * time.Millisecond
+
+	containerStatusLineBulletPoint = " - "
 )
 
 var (
@@ -221,6 +228,7 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Contex
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   persistentVolumeClaimName,
 			Labels: persistentVolumeClaimLabels,
+			Namespace: namespace,
 		},
 		Spec: apiv1.PersistentVolumeClaimSpec{
 			AccessModes: []apiv1.PersistentVolumeAccessMode{
@@ -633,18 +641,18 @@ func (manager *KubernetesManager) RemoveClusterRoleBindings(ctx context.Context,
 
 func (manager *KubernetesManager) CreatePod(
 	ctx context.Context,
-	namespace string,
-	name string,
+	namespaceName string,
+	podName string,
 	podLabels map[string]string,
 	podAnnotations map[string]string,
 	podContainers []apiv1.Container,
 	podVolumes []apiv1.Volume,
 	podServiceAccountName string,
 ) (*apiv1.Pod, error) {
-	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
+	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespaceName)
 
 	podMeta := metav1.ObjectMeta{
-		Name:        name,
+		Name:        podName,
 		Labels:      podLabels,
 		Annotations: podAnnotations,
 	}
@@ -661,7 +669,11 @@ func (manager *KubernetesManager) CreatePod(
 
 	createdPod, err := podClient.Create(ctx, podToCreate, metav1.CreateOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to create pod with name '%v' and labels '%+v', instead a non-nil error was returned", name, podLabels)
+		return nil, stacktrace.Propagate(err, "Expected to be able to create pod with name '%v' and labels '%+v', instead a non-nil error was returned", podName, podLabels)
+	}
+
+	if err := manager.waitForPodAvailability(ctx, namespaceName, podName); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for pod '%v' to become available", podName)
 	}
 
 	return createdPod, nil
@@ -686,53 +698,6 @@ func (manager *KubernetesManager) GetPod(ctx context.Context, namespace string, 
 	}
 
 	return pod, nil
-}
-
-func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace string, podLabels map[string]string) (*apiv1.PodList, error) {
-	namespacePodClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
-
-	opts := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(podLabels).String(),
-	}
-
-	pods, err := namespacePodClient.List(ctx, opts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get pods with labels '%+v', instead a non-nil error was returned", podLabels)
-	}
-
-	return pods, nil
-}
-
-func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string, podName string) *url.URL {
-	return manager.kubernetesClientSet.RESTClient().Post().Prefix(apiv1Prefix).Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
-}
-
-// ====================================================================================================
-//                                     Private Helper Methods
-// ====================================================================================================
-func (manager *KubernetesManager) waitForPersistentVolumeClaimBound(ctx context.Context, persistentVolumeClaim *apiv1.PersistentVolumeClaim) error {
-
-	time.Sleep(time.Duration(waitForPersistentVolumeBoundInitialDelayMilliSeconds) * time.Millisecond)
-
-	for i := uint32(0); i < waitForPersistentVolumeBoundRetries; i++ {
-		claim, err := manager.GetPersistentVolumeClaim(ctx, persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting persistent volume claim '%v' in namespace '%v", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
-		}
-
-		switch claimPhase := claim.Status.Phase; claimPhase {
-		//Success phase, the Persisten Volume got bound
-		case apiv1.ClaimBound:
-			return nil
-		//Lost the Persistent Volume phase, unrecoverable state
-		case apiv1.ClaimLost:
-			return stacktrace.NewError("The persistent volume claim '%v' has phase '%v' that means it lost the persistent volume, it's an unrecoverable state", claim.GetName(), claimPhase)
-		}
-
-		time.Sleep(time.Duration(waitForPersistentVolumeBoundRetriesDelayMilliSeconds) * time.Millisecond)
-	}
-
-	return stacktrace.NewError("Persistent volume claim '%v' in namespace '%v' did not become bound despite polling %v times with %v between polls", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace(), waitForPersistentVolumeBoundRetries, waitForPersistentVolumeBoundRetriesDelayMilliSeconds)
 }
 
 // GetContainerLogs gets the logs for a given container running inside the given pod in the give namespace
@@ -767,5 +732,161 @@ func (manager *KubernetesManager) GetContainerLogs(
 		)
 	}
 	return result, nil
+}
+
+func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace string, podLabels map[string]string) (*apiv1.PodList, error) {
+	namespacePodClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
+
+	opts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(podLabels).String(),
+	}
+
+	pods, err := namespacePodClient.List(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get pods with labels '%+v', instead a non-nil error was returned", podLabels)
+	}
+
+	return pods, nil
+}
+
+func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string, podName string) *url.URL {
+	return manager.kubernetesClientSet.RESTClient().Post().Prefix(apiv1Prefix).Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
+}
+
+// ====================================================================================================
+//                                     Private Helper Methods
+// ====================================================================================================
+func (manager *KubernetesManager) waitForPersistentVolumeClaimBound(ctx context.Context, persistentVolumeClaim *apiv1.PersistentVolumeClaim) error {
+	deadline := time.Now().Add(waitForPersistentVolumeBoundTimeout)
+	time.Sleep(time.Duration(waitForPersistentVolumeBoundInitialDelayMilliSeconds) * time.Millisecond)
+	for time.Now().Before(deadline) {
+		claim, err := manager.GetPersistentVolumeClaim(ctx, persistentVolumeClaim.GetNamespace(), persistentVolumeClaim.GetName())
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting persistent volume claim '%v' in namespace '%v", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
+		}
+		claimStatus := claim.Status
+		claimPhase := claimStatus.Phase
+
+		switch claimPhase {
+		//Success phase, the Persistent Volume got bound
+		case apiv1.ClaimBound:
+			return nil
+		//Lost the Persistent Volume phase, unrecoverable state
+		case apiv1.ClaimLost:
+			return stacktrace.NewError(
+				"The persistent volume claim '%v' ended up in unrecoverable state '%v'",
+				claim.GetName(),
+				claimPhase,
+			)
+		}
+
+		time.Sleep(time.Duration(waitForPersistentVolumeBoundRetriesDelayMilliSeconds) * time.Millisecond)
+	}
+
+	return stacktrace.NewError(
+		"Persistent volume claim '%v' in namespace '%v' did not become bound despite waiting for %v with %v " +
+			"between polls",
+		persistentVolumeClaim.GetName(),
+		persistentVolumeClaim.GetNamespace(),
+		waitForPersistentVolumeBoundTimeout,
+		waitForPersistentVolumeBoundRetriesDelayMilliSeconds,
+	)
+}
+
+func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, namespaceName string, podName string) error {
+	// Wait for the pod to start running
+	deadline := time.Now().Add(podWaitForAvailabilityTimeout)
+	var latestPodStatus *apiv1.PodStatus
+	for time.Now().Before(deadline) {
+		pod, err := manager.GetPod(ctx, namespaceName, podName)
+		if err != nil {
+			// We shouldn't get an error on getting the pod, even if it's not ready
+			return stacktrace.Propagate(err, "An error occurred getting the just-created pod '%v'", podName)
+		}
+		latestPodStatus = &pod.Status
+		switch latestPodStatus.Phase {
+		case apiv1.PodRunning:
+			return nil
+		case apiv1.PodFailed:
+			containerStatusStrs := renderContainerStatuses(latestPodStatus.ContainerStatuses, containerStatusLineBulletPoint)
+			return stacktrace.NewError(
+				"Pod '%v' failed before availability with the following message: %v\n" +
+					"The pod's container states are as follows:\n%v",
+				podName,
+				latestPodStatus.Message,
+				strings.Join(containerStatusStrs, "\n"),
+			)
+		case apiv1.PodSucceeded:
+			// NOTE: We'll need to change this if we ever expect to run one-off pods
+			return stacktrace.NewError(
+				"Expected the pod state to arrive at '%v' but the pod instead landed in '%v'",
+				apiv1.PodRunning,
+				apiv1.PodSucceeded,
+			)
+		}
+		time.Sleep(podWaitForAvailabilityTimeBetweenPolls)
+	}
+
+	containerStatusStrs := renderContainerStatuses(latestPodStatus.ContainerStatuses, containerStatusLineBulletPoint)
+	return stacktrace.NewError(
+		"Pod '%v' did not become available after %v; its latest state is '%v' and status message is: %v\n" +
+			"The pod's container states are as follows:\n%v",
+		podName,
+		podWaitForAvailabilityTimeout,
+		latestPodStatus.Phase,
+		latestPodStatus.Message,
+		strings.Join(containerStatusStrs, "\n"),
+	)
+}
+
+func renderContainerStatuses(containerStatuses []apiv1.ContainerStatus, prefixStr string) []string {
+	containerStatusStrs := []string{}
+	for _, containerStatus := range containerStatuses {
+		containerName := containerStatus.Name
+		state := containerStatus.State
+
+
+		// Okay to do in an if-else because only one will be filled out per Kubernetes docs
+		var statusStrForContainer string
+		if state.Waiting != nil {
+			statusStrForContainer = fmt.Sprintf(
+				"WAITING - %v",
+				state.Waiting.Message,
+			)
+		} else if state.Running != nil {
+			statusStrForContainer = fmt.Sprintf(
+				"RUNNING since %v",
+				state.Running.StartedAt,
+			)
+		} else if state.Terminated != nil {
+			terminatedState := state.Terminated
+			statusStrForContainer = fmt.Sprintf(
+				"TERMINATED with exit code %v - %v",
+				terminatedState.ExitCode,
+				terminatedState.Message,
+			)
+		} else {
+			statusStrForContainer = fmt.Sprintf(
+				"Unrecogznied container state '%+v'; this likely means that Kubernetes " +
+					"has added a new container state and Kurtosis needs to be updated to handle it",
+				state,
+			)
+		}
+
+		strForContainer := fmt.Sprintf(
+			"%v%v (%v): %v",
+			prefixStr,
+			containerName,
+			containerStatus.Image,
+			statusStrForContainer,
+		)
+
+		containerStatusStrs = append(
+			containerStatusStrs,
+			strForContainer,
+		)
+	}
+
+	return containerStatusStrs
 }
 

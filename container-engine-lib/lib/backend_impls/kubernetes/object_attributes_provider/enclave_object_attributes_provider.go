@@ -37,6 +37,7 @@ type kubernetesEnclaveObjectAttributesProviderImpl struct {
 }
 
 func newKubernetesEnclaveObjectAttributesProviderImpl(
+
 	enclaveId enclave.EnclaveID,
 ) *kubernetesEnclaveObjectAttributesProviderImpl {
 	return &kubernetesEnclaveObjectAttributesProviderImpl{
@@ -62,12 +63,12 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespa
 		return nil, stacktrace.Propagate(err, "Failed to get labels for enclave namespace using ID '%v'", provider.enclaveId)
 	}
 
-	isPartitioningEnabledLabelValue := label_value_consts.NetworkPartitioningDisabledLabelValue
+	isPartitioningEnabledLabelValue := label_value_consts.NetworkPartitioningDisabledKubernetesLabelValue
 	if isPartitioningEnabled {
-		isPartitioningEnabledLabelValue = label_value_consts.NetworkPartitioningEnabledLabelValue
+		isPartitioningEnabledLabelValue = label_value_consts.NetworkPartitioningEnabledKubernetesLabelValue
 	}
 
-	labels[label_key_consts.IsNetworkPartitioningEnabledLabelKey] = isPartitioningEnabledLabelValue
+	labels[label_key_consts.IsNetworkPartitioningEnabledKubernetesLabelKey] = isPartitioningEnabledLabelValue
 
 	// No custom annotations for enclave namespace
 	customAnnotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
@@ -92,7 +93,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataVol
 	}
 
 	labels, err := provider.getLabelsForEnclaveObject()
-	labels[label_key_consts.KurtosisVolumeTypeLabelKey] = label_value_consts.EnclaveDataVolumeTypeLabelValue
+	labels[label_key_consts.KurtosisVolumeTypeKubernetesLabelKey] = label_value_consts.EnclaveDataVolumeTypeKubernetesLabelValue
 
 	// No custom annotations for enclave data volume
 	customAnnotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
@@ -178,7 +179,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceSer
 			string(serviceGUID),
 		)
 	}
-	labels[label_key_consts.KurtosisResourceTypeLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeLabelValue
+	labels[label_key_consts.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
 
 	//No userServiceService annotations.
 	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
@@ -217,8 +218,8 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEncla
 		return nil, stacktrace.Propagate(err, "Failed to create Kubernetes label value from enclaveId '%v'", provider.enclaveId)
 	}
 	return map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeLabelKey: label_value_consts.EnclaveKurtosisResourceTypeLabelValue,
-		label_key_consts.EnclaveIDLabelKey: enclaveIdLabelValue,
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue,
+		label_key_consts.EnclaveIDKubernetesLabelKey:            enclaveIdLabelValue,
 	}, nil
 }
 
@@ -231,7 +232,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEncla
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes label value from GUID string '%v'", guid)
 	}
-	labels[label_key_consts.GUIDLabelKey] = guidLabelValue
+	labels[label_key_consts.GUIDKubernetesLabelKey] = guidLabelValue
 	return labels, nil
 }
 
@@ -244,7 +245,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEncla
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes label value from ID string '%v'", id)
 	}
-	labels[label_key_consts.IDLabelKey] = idLabelValue
+	labels[label_key_consts.IDKubernetesLabelKey] = idLabelValue
 	return labels, nil
 }
 
