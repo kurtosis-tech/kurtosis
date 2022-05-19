@@ -221,6 +221,7 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Contex
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   persistentVolumeClaimName,
 			Labels: persistentVolumeClaimLabels,
+			Namespace: namespace,
 		},
 		Spec: apiv1.PersistentVolumeClaimSpec{
 			AccessModes: []apiv1.PersistentVolumeAccessMode{
