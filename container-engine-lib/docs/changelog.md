@@ -1,6 +1,10 @@
 # TBD
 ### Features
 * Built out Kubernetes `GetUserServiceLogs`
+* Built out Kubernetes `RunUserServiceExecCommands`
+
+### Breaking Changes
+* NewKubernetesManager now additionally takes in a kubernetes restclient configuration
 
 # 0.24.0
 ### Fixes

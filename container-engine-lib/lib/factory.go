@@ -138,7 +138,7 @@ func getWrappedKubernetesKurtosisBackend(
 		return nil, stacktrace.Propagate(err, "Expected to be able to create kubernetes client set using Kubernetes config '%+v', instead a non nil error was returned", kubernetesConfig)
 	}
 
-	kubernetesManager := kubernetes_manager.NewKubernetesManager(clientSet)
+	kubernetesManager := kubernetes_manager.NewKubernetesManager(clientSet, kubernetesConfig)
 
 	kubernetesBackend, err := kurtosisBackendSupplier(ctx, kubernetesManager)
 	if err != nil {
