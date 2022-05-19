@@ -21,6 +21,11 @@ const (
 	guidBase = 10
 	// Dirpath on the artifact expander container where the destination volume containing expanded files will be mounted
 	destVolMntDirpathOnExpander = "/dest"
+
+	// The Docker API's default is to return just containers whose status is "running"
+	// However, we'd rather do our own filtering on what "running" means (because, e.g., "restarting"
+	// should also be considered as running)
+	shouldFetchAllExpansionContainersWhenRetrievingContainers = true
 )
 
 //Create a files artifact exansion volume for user service and file artifact id and runs a file artifact expander
@@ -45,7 +50,7 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 		},
 	}
 	defer func() {
-		_, erroredVolumeNames, err := backend.DestroyFilesArtifactExpansion(ctx, filesArtifactExpansionFilters)
+		_, erroredVolumeNames, err := backend.DestroyFilesArtifactExpansion(ctx, enclaveId, filesArtifactExpansionFilters)
 		if err != nil {
 			logrus.Errorf("Failed to destroy expansion volumes for files artifact expansion '%v' - got error: \n'%v'", filesArtifactExpansion.GetGUID(), err)
 		}
@@ -63,7 +68,7 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 		filesArtifactFilepathRelativeToEnclaveDatadirRoot,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred running files artifact expander for user service with GUID '%v' and files artifact ID '%v' and files artifact expansion volume '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, volumeName, enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred running files artifact expander for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, enclaveId)
 	}
 	return filesArtifactExpansion, nil
 }
@@ -71,13 +76,62 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 //Destroy files artifact expansion volume and expander using the given filters
 func (backend *DockerKurtosisBackend)  DestroyFilesArtifactExpansion(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters  files_artifact_expansion.FilesArtifactExpansionFilters,
 )(
 	successfulFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]bool,
 	erroredFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]error,
 	resultErr error,
 ) {
-	panic("IMPLEMENT ME")
+	erroredFileArtifactExpansionGUIDs = map[files_artifact_expansion.FilesArtifactExpansionGUID]error{}
+	successfulFileArtifactExpansionGUIDs = filters.GUIDs
+	artifactVolumeLabels := map[string]string{
+		label_key_consts.AppIDDockerLabelKey.GetString(): label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.VolumeTypeDockerLabelKey.GetString(): label_value_consts.FilesArtifactExpansionVolumeTypeDockerLabelValue.GetString(),
+	}
+	volumes, err := backend.dockerManager.GetVolumesByLabels(ctx, artifactVolumeLabels)
+	if err != nil {
+		return nil,nil, stacktrace.Propagate(err, "Failed to find volumes for filters '%+v'", filters)
+	}
+	artifactContainerLabels := map[string]string{
+		label_key_consts.AppIDDockerLabelKey.GetString(): label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.FilesArtifactExpanderContainerTypeDockerLabelValue.GetString(),
+	}
+	containers, err := backend.dockerManager.GetContainersByLabels(ctx, artifactContainerLabels, shouldFetchAllExpansionContainersWhenRetrievingContainers)
+	if err != nil {
+		return nil,nil, stacktrace.Propagate(err, "Failed to find volumes for filters '%+v'", filters)
+	}
+	for _, volume := range volumes {
+		filesArtifactExpansionGUIDStr := volume.Labels[label_key_consts.GUIDDockerLabelKey.GetString()]
+		filesArtifactExpansionGUID := files_artifact_expansion.FilesArtifactExpansionGUID(filesArtifactExpansionGUIDStr)
+		if filters.GUIDs[filesArtifactExpansionGUID] {
+			err := backend.dockerManager.RemoveVolume(ctx, volume.Name)
+			if err != nil {
+				erroredFileArtifactExpansionGUIDs[filesArtifactExpansionGUID] = err
+				successfulFileArtifactExpansionGUIDs[filesArtifactExpansionGUID] = false
+			}
+		}
+	}
+	for _, container := range containers {
+		filesArtifactExpansionGUIDStr := container.GetLabels()[label_key_consts.GUIDDockerLabelKey.GetString()]
+		filesArtifactExpansionGUID := files_artifact_expansion.FilesArtifactExpansionGUID(filesArtifactExpansionGUIDStr)
+		if filters.GUIDs[filesArtifactExpansionGUID] {
+			err := backend.dockerManager.RemoveContainer(ctx, container.GetId())
+			if err != nil {
+				if erroredFileArtifactExpansionGUIDs[filesArtifactExpansionGUID] != nil {
+					volumeErr := erroredFileArtifactExpansionGUIDs[filesArtifactExpansionGUID]
+					erroredFileArtifactExpansionGUIDs[filesArtifactExpansionGUID] = stacktrace.NewError(
+						"Failed to delete files artifact expansion with the following errors: '%v', '%v'",
+						err,
+						volumeErr)
+				} else {
+					erroredFileArtifactExpansionGUIDs[filesArtifactExpansionGUID] = err
+					successfulFileArtifactExpansionGUIDs[filesArtifactExpansionGUID] = false
+				}
+			}
+		}
+	}
+	return successfulFileArtifactExpansionGUIDs, erroredFileArtifactExpansionGUIDs, nil
 }
 
 // ====================== PRIVATE HELPERS =============================
