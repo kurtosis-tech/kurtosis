@@ -27,7 +27,7 @@ const (
 	expanderContainerSuccessExitCode = 0
 )
 
-func (backend *DockerKurtosisBackend) RunFilesArtifactExpander(
+func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 	ctx context.Context,
 	guid files_artifact_expander.FilesArtifactExpanderGUID,
 	enclaveId enclave.EnclaveID,
@@ -131,7 +131,7 @@ func (backend *DockerKurtosisBackend) RunFilesArtifactExpander(
 	return newFilesArtifactExpander, nil
 }
 
-func (backend *DockerKurtosisBackend) DestroyFilesArtifactExpanders(
+func (backend *DockerKurtosisBackend) destroyFilesArtifactExpanders(
 	ctx context.Context,
 	filters *files_artifact_expander.FilesArtifactExpanderFilters,
 ) (

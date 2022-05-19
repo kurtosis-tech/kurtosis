@@ -26,7 +26,7 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 	serviceGuid service.ServiceGUID,
 	filesArtifactId service.FilesArtifactID,
 	filesArtifactFilepathRelativeToEnclaveDatadirRoot string) (*files_artifact_expansion.FilesArtifactExpansionGUID, error) {
-	filesArtifactExpansionVolume, err := backend.CreateFilesArtifactExpansionVolume(
+	filesArtifactExpansionVolume, err := backend.createFilesArtifactExpansionVolume(
 		ctx,
 		enclaveId,
 		serviceGuid,
@@ -42,7 +42,7 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 		//backend.destroyFilesArtifactExpansionVolume(ctx, volumeName)
 	}()
 
-	_, err = backend.RunFilesArtifactExpander(
+	_, err = backend.runFilesArtifactExpander(
 		ctx,
 		newFilesArtifactExpanderGUID(filesArtifactId, serviceGuid),
 		enclaveId,

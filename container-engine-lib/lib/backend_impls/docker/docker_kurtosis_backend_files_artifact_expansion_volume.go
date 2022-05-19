@@ -12,7 +12,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansionVolume(
+func (backend *DockerKurtosisBackend) createFilesArtifactExpansionVolume(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
@@ -68,7 +68,7 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansionVolume(
 	return newFileArtifactExpansionVolume, nil
 }
 
-func (backend *DockerKurtosisBackend) DestroyFilesArtifactExpansionVolumes(
+func (backend *DockerKurtosisBackend) destroyFilesArtifactExpansionVolumes(
 	ctx context.Context,
 	filters *files_artifact_expansion_volume.FilesArtifactExpansionVolumeFilters,
 ) (
