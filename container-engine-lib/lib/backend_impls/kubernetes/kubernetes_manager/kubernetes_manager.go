@@ -228,6 +228,7 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Contex
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   persistentVolumeClaimName,
 			Labels: persistentVolumeClaimLabels,
+			Namespace: namespace,
 		},
 		Spec: apiv1.PersistentVolumeClaimSpec{
 			AccessModes: []apiv1.PersistentVolumeAccessMode{
@@ -759,7 +760,7 @@ func (manager *KubernetesManager) waitForPersistentVolumeClaimBound(ctx context.
 	deadline := time.Now().Add(waitForPersistentVolumeBoundTimeout)
 	time.Sleep(time.Duration(waitForPersistentVolumeBoundInitialDelayMilliSeconds) * time.Millisecond)
 	for time.Now().Before(deadline) {
-		claim, err := manager.GetPersistentVolumeClaim(ctx, persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
+		claim, err := manager.GetPersistentVolumeClaim(ctx, persistentVolumeClaim.GetNamespace(), persistentVolumeClaim.GetName())
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting persistent volume claim '%v' in namespace '%v", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
 		}
