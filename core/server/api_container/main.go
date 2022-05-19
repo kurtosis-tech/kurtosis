@@ -41,6 +41,9 @@ const (
 	grpcServerStopGracePeriod = 5 * time.Second
 
 	shouldFlushMetricsClientQueueOnEachEvent = false
+
+	// TODO PASS THIS IN AS A PROPER ARGUMENT!
+	filesArtifactExpansionVolumeSizeInMegabytes = uint(10)
 )
 
 type doNothingMetricsClientCallback struct{}
@@ -66,6 +69,8 @@ func main() {
 }
 
 func runMain() error {
+	ctx := context.Background()
+
 	serverArgs, ownIpAddress, err := args.GetArgsFromEnv()
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't retrieve API container args from the environment")
@@ -84,7 +89,7 @@ func runMain() error {
 	switch serverArgs.KurtosisBackendType {
 	case args.KurtosisBackendType_Docker:
 		apiContainerModeArgs := &backend_creator.APIContainerModeArgs{
-			Context:   context.Background(),
+			Context:   ctx,
 			EnclaveID: enclave.EnclaveID(serverArgs.EnclaveId),
 			APIContainerIP: ownIpAddress,
 		}
@@ -107,9 +112,13 @@ func runMain() error {
 				args.KurtosisBackendType_Kubernetes.String(),
 			)
 		}
-		kurtosisBackend, err = lib.GetInClusterKubernetesKurtosisBackend(kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInMegabytes)
+		kurtosisBackend, err = lib.GetApiContainerKubernetesKurtosisBackend(
+			ctx,
+			kubernetesBackendConfig.StorageClass,
+			filesArtifactExpansionVolumeSizeInMegabytes,
+		)
 		if err != nil {
-			return stacktrace.Propagate(err, "Failed to get a Kubernetes backend with storage class '%v' and enclave size (in MB) %d", kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInMegabytes)
+			return stacktrace.Propagate(err, "Failed to get a Kubernetes backend with storage class '%v' and enclave size (in MB) %d", kubernetesBackendConfig.StorageClass, filesArtifactExpansionVolumeSizeInMegabytes)
 		}
 	default:
 		return stacktrace.NewError("Backend type '%v' was not recognized by API container.", serverArgs.KurtosisBackendType.String())
