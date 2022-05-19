@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/stacktrace"
 	"path"
@@ -29,7 +30,7 @@ const (
 
 func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 	ctx context.Context,
-	guid files_artifact_expander.FilesArtifactExpanderGUID,
+	filesArtifactExpansion *files_artifact_expansion.FilesArtifactExpansion,
 	enclaveId enclave.EnclaveID,
 	filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
 	destVolMntDirpathOnExpander string,
@@ -47,7 +48,7 @@ func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 			"Received a request to run a files artifact expander attached to service with GUID '%v' in enclave '%v', but no free IP address provider was " +
 				"defined for this enclave; this likely means that the request is being called where it shouldn't " +
 				"be (i.e. outside the API container)",
-			guid,
+			filesArtifactExpansion.GetServiceGUID(),
 			enclaveId,
 		)
 	}
@@ -62,9 +63,9 @@ func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
 
-	containerAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpanderContainer(guid)
+	containerAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpanderContainer(filesArtifactExpansion.GetGUID())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the files artifact expander container attributes for files artifact expander GUID '%v'", guid)
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the files artifact expander container attributes for files artifact expansion GUID '%v'", filesArtifactExpansion.GetGUID())
 	}
 	containerName := containerAttrs.GetName().GetString()
 	containerLabels := map[string]string{}

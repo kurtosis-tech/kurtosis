@@ -7,16 +7,15 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
 func (backend *DockerKurtosisBackend) createFilesArtifactExpansionVolume(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	serviceGuid service.ServiceGUID,
-	filesArtifactId service.FilesArtifactID,
+	filesArtifactExpansion *files_artifact_expansion.FilesArtifactExpansion,
 )(
 	*files_artifact_expansion_volume.FilesArtifactExpansionVolume,
 	error,
@@ -27,14 +26,13 @@ func (backend *DockerKurtosisBackend) createFilesArtifactExpansionVolume(
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
 
-	volumeAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpansionVolume(serviceGuid, filesArtifactId)
+	volumeAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpansionVolume(filesArtifactExpansion.GetGUID())
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred while trying to get the files artifact expansion " +
-				 "volume attributes for service with GUID '%v' and files artifact ID '%v'",
-			serviceGuid,
-			filesArtifactId,
+				 "volume attributes for service with GUID '%v'",
+			filesArtifactExpansion.GetServiceGUID(),
 		)
 	}
 	volumeName := volumeAttrs.GetName().GetString()
