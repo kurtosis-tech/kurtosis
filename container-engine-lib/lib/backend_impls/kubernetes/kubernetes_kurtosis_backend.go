@@ -361,27 +361,47 @@ func getContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus
 	return status, nil
 }
 
-func (backend *KubernetesKurtosisBackend) getEnclaveNamespace(ctx context.Context, enclaveId enclave.EnclaveID) (*apiv1.Namespace, error) {
+func (backend *KubernetesKurtosisBackend) getEnclaveNamespaceName(ctx context.Context, enclaveId enclave.EnclaveID) (string, error) {
+	// TODO This is a big janky hack that results from KubernetesKurtosisBackend containing functions for all of API containers, engines, and CLIs
+	//  We want to fix this by splitting the KubernetesKurtosisBackend into a bunch of different backends, one per user, but we can only
+	//  do this once the CLI no longer uses API container functionality (e.g. GetServices)
+	// CLIs and engines can list namespaces so they'll be able to use the regular list-namespaces-and-find-the-one-matching-the-enclave-ID
+	// API containers can't list all namespaces due to being namespaced objects themselves (can only view their own namespace, so
+	// they can only check if the requested enclave matches the one they have stored
+	var namespaceName string
+	if (backend.cliModeArgs != nil || backend.engineServerModeArgs != nil) {
+		matchLabels := getEnclaveMatchLabels()
+		matchLabels[label_key_consts.EnclaveIDKubernetesLabelKey.GetString()] = string(enclaveId)
 
-	matchLabels := getEnclaveMatchLabels()
-	matchLabels[label_key_consts.EnclaveIDKubernetesLabelKey.GetString()] = string(enclaveId)
+		namespaces, err := backend.kubernetesManager.GetNamespacesByLabels(ctx, matchLabels)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred getting the enclave namespace using labels '%+v'", matchLabels)
+		}
 
-	namespaces, err := backend.kubernetesManager.GetNamespacesByLabels(ctx, matchLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave namespace using labels '%+v'", matchLabels)
+		numOfNamespaces := len(namespaces.Items)
+		if numOfNamespaces == 0 {
+			return "", stacktrace.NewError("No namespace matching labels '%+v' was found", matchLabels)
+		}
+		if numOfNamespaces > 1 {
+			return "", stacktrace.NewError("Expected to find only one API container namespace for API container in enclave ID '%v', but '%v' was found; this is a bug in Kurtosis", enclaveId, numOfNamespaces)
+		}
+
+		namespaceName = namespaces.Items[0].Name
+	} else if (backend.apiContainerModeArgs != nil) {
+		if enclaveId != backend.apiContainerModeArgs.ownEnclaveId {
+			return "", stacktrace.NewError(
+				"Received a request to get namespace for enclave '%v', but the Kubernetes Kurtosis backend is running in an API " +
+					"container in a different enclave '%v' (so Kubernetes would throw a permission error)",
+				enclaveId,
+				backend.apiContainerModeArgs.ownEnclaveId
+			)
+		}
+		namespaceName = backend.apiContainerModeArgs.ownNamespaceName
+	} else {
+
 	}
 
-	numOfNamespaces := len(namespaces.Items)
-	if numOfNamespaces == 0 {
-		return nil, stacktrace.NewError("No namespace matching labels '%+v' was found", matchLabels)
-	}
-	if numOfNamespaces > 1 {
-		return nil, stacktrace.NewError("Expected to find only one API container namespace for API container in enclave ID '%v', but '%v' was found; this is a bug in Kurtosis", enclaveId, numOfNamespaces)
-	}
-
-	resultNamespace := &namespaces.Items[0]
-
-	return resultNamespace, nil
+	return namespaceName, nil
 }
 
 func getEnclaveMatchLabels() map[string]string {

@@ -108,7 +108,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err,"An error occurred getting the API container attributes provider using enclave ID '%v'", enclaveId)
 	}
 
-	enclaveNamespace, err := backend.getEnclaveNamespace(ctx, enclaveId)
+	enclaveNamespace, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave namespace for enclave with ID '%v'", enclaveId)
 	}

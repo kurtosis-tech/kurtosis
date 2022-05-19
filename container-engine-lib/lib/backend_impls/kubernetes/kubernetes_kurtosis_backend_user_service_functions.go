@@ -92,7 +92,7 @@ type userServiceKubernetesResources struct {
 }
 
 func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
-	enclaveNamespace, err := backend.getEnclaveNamespace(ctx, enclaveId)
+	enclaveNamespace, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting namespace matching enclave ID '%v'", enclaveId)
 	}
@@ -515,7 +515,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 	map[service.ServiceGUID]*userServiceKubernetesResources,
 	error,
 ) {
-	enclaveNamespace, err := backend.getEnclaveNamespace(ctx, enclaveId)
+	enclaveNamespace, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes namespace for enclave '%v'", enclaveId)
 	}
