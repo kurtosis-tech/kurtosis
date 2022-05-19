@@ -7,6 +7,7 @@ package kubernetes_manager
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -17,10 +18,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -37,6 +38,8 @@ const (
 
 	podWaitForAvailabilityTimeout = 15 * time.Second
 	podWaitForAvailabilityTimeBetweenPolls = 500 * time.Millisecond
+
+	containerStatusLineBulletPoint = " - "
 )
 
 var (
@@ -668,25 +671,47 @@ func (manager *KubernetesManager) CreatePod(
 		return nil, stacktrace.Propagate(err, "Expected to be able to create pod with name '%v' and labels '%+v', instead a non-nil error was returned", name, podLabels)
 	}
 
+	// Wait for the pod to start running
 	deadline := time.Now().Add(podWaitForAvailabilityTimeout)
 	var latestPodStatus *apiv1.PodStatus
 	for time.Now().Before(deadline) {
 		pod, err := podClient.Get(ctx, name, metav1.GetOptions{})
-		if err == nil {
-			latestPodStatus = &pod.Status
-
+		if err != nil {
+			// We shouldn't get an error on getting the pod, even if it's not ready
+			return nil, stacktrace.Propagate(err, "An error occurred getting the just-created pod '%v'", name)
+		}
+		latestPodStatus = &pod.Status
+		switch latestPodStatus.Phase {
+		case apiv1.PodRunning:
+			return createdPod, nil
+		case apiv1.PodFailed:
+			containerStatusStrs := renderContainerStatuses(latestPodStatus.ContainerStatuses, containerStatusLineBulletPoint)
+			return nil, stacktrace.NewError(
+				"Pod '%v' failed before availability with the following message: %v\n" +
+					"The pod's container states are as follows:\n%v",
+				name,
+				latestPodStatus.Message,
+				strings.Join(containerStatusStrs, "\n"),
+			)
+		case apiv1.PodSucceeded:
+			// NOTE: We'll need to change this if we ever expect to run one-off pods
+			return nil, stacktrace.NewError(
+				"Expected the pod state to arrive at '%v' but the pod instead landed in '%v'",
+				apiv1.PodRunning,
+				apiv1.PodSucceeded,
+			)
 		}
 		time.Sleep(podWaitForAvailabilityTimeBetweenPolls)
 	}
 
-	wait.WaitFor()
-
-
+	containerStatusStrs := renderContainerStatuses(latestPodStatus.ContainerStatuses, containerStatusLineBulletPoint)
 	return nil, stacktrace.NewError(
-		"Pod '%v' in namespace '%v' did not become available after %v with %v between polls",
+		"Pod '%v' did not become available after %v; its latest state is '%v' and status message is: %v\n" +
+			"The pod's container states are as follows:\n%v",
 		name,
-		namespace,
-		TODO
+		latestPodStatus.Phase,
+		latestPodStatus.Message,
+		strings.Join(containerStatusStrs, "\n"),
 	)
 }
 
@@ -792,3 +817,53 @@ func (manager *KubernetesManager) GetContainerLogs(
 	return result, nil
 }
 
+func renderContainerStatuses(containerStatuses []apiv1.ContainerStatus, prefixStr string) []string {
+	containerStatusStrs := []string{}
+	for _, containerStatus := range containerStatuses {
+		containerName := containerStatus.Name
+		state := containerStatus.State
+
+
+		// Okay to do in an if-else because only one will be filled out per Kubernetes docs
+		var statusStrForContainer string
+		if state.Waiting != nil {
+			statusStrForContainer = fmt.Sprintf(
+				"WAITING - %v",
+				state.Waiting.Message,
+			)
+		} else if state.Running != nil {
+			statusStrForContainer = fmt.Sprintf(
+				"RUNNING since %v",
+				state.Running.StartedAt,
+			)
+		} else if state.Terminated != nil {
+			terminatedState := state.Terminated
+			statusStrForContainer = fmt.Sprintf(
+				"TERMINATED with exit code %v - %v",
+				terminatedState.ExitCode,
+				terminatedState.Message,
+			)
+		} else {
+			statusStrForContainer = fmt.Sprintf(
+				"Unrecogznied container state '%+v'; this likely means that Kubernetes " +
+					 "has added a new container state and Kurtosis needs to be updated to handle it",
+				state,
+			)
+		}
+
+		strForContainer := fmt.Sprintf(
+			"%v%v (%v): %v",
+			prefixStr,
+			containerName,
+			containerStatus.Image,
+			statusStrForContainer,
+		)
+
+		containerStatusStrs = append(
+			containerStatusStrs,
+			strForContainer,
+		)
+	}
+
+	return containerStatusStrs
+}
