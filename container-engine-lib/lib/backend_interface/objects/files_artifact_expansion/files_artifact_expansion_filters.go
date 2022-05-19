@@ -11,5 +11,5 @@ type FilesArtifactExpansionFilters struct {
 
 	// Disjunctive set of expander container statuses that returned files artifact expnasions must conform to
 	// If nil or empty, will match all statuses
-	Services map[service.ServiceGUID]bool
+	ServiceGUIDs map[service.ServiceGUID]bool
 }
