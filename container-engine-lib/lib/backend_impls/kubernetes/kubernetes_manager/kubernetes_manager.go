@@ -640,18 +640,18 @@ func (manager *KubernetesManager) RemoveClusterRoleBindings(ctx context.Context,
 
 func (manager *KubernetesManager) CreatePod(
 	ctx context.Context,
-	namespace string,
-	name string,
+	namespaceName string,
+	podName string,
 	podLabels map[string]string,
 	podAnnotations map[string]string,
 	podContainers []apiv1.Container,
 	podVolumes []apiv1.Volume,
 	podServiceAccountName string,
 ) (*apiv1.Pod, error) {
-	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
+	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespaceName)
 
 	podMeta := metav1.ObjectMeta{
-		Name:        name,
+		Name:        podName,
 		Labels:      podLabels,
 		Annotations: podAnnotations,
 	}
@@ -668,51 +668,14 @@ func (manager *KubernetesManager) CreatePod(
 
 	createdPod, err := podClient.Create(ctx, podToCreate, metav1.CreateOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to create pod with name '%v' and labels '%+v', instead a non-nil error was returned", name, podLabels)
+		return nil, stacktrace.Propagate(err, "Expected to be able to create pod with name '%v' and labels '%+v', instead a non-nil error was returned", podName, podLabels)
 	}
 
-	// Wait for the pod to start running
-	deadline := time.Now().Add(podWaitForAvailabilityTimeout)
-	var latestPodStatus *apiv1.PodStatus
-	for time.Now().Before(deadline) {
-		pod, err := podClient.Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			// We shouldn't get an error on getting the pod, even if it's not ready
-			return nil, stacktrace.Propagate(err, "An error occurred getting the just-created pod '%v'", name)
-		}
-		latestPodStatus = &pod.Status
-		switch latestPodStatus.Phase {
-		case apiv1.PodRunning:
-			return createdPod, nil
-		case apiv1.PodFailed:
-			containerStatusStrs := renderContainerStatuses(latestPodStatus.ContainerStatuses, containerStatusLineBulletPoint)
-			return nil, stacktrace.NewError(
-				"Pod '%v' failed before availability with the following message: %v\n" +
-					"The pod's container states are as follows:\n%v",
-				name,
-				latestPodStatus.Message,
-				strings.Join(containerStatusStrs, "\n"),
-			)
-		case apiv1.PodSucceeded:
-			// NOTE: We'll need to change this if we ever expect to run one-off pods
-			return nil, stacktrace.NewError(
-				"Expected the pod state to arrive at '%v' but the pod instead landed in '%v'",
-				apiv1.PodRunning,
-				apiv1.PodSucceeded,
-			)
-		}
-		time.Sleep(podWaitForAvailabilityTimeBetweenPolls)
+	if err := manager.waitForPodAvailability(ctx, namespaceName, podName); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for pod '%v' to become available", podName)
 	}
 
-	containerStatusStrs := renderContainerStatuses(latestPodStatus.ContainerStatuses, containerStatusLineBulletPoint)
-	return nil, stacktrace.NewError(
-		"Pod '%v' did not become available after %v; its latest state is '%v' and status message is: %v\n" +
-			"The pod's container states are as follows:\n%v",
-		name,
-		latestPodStatus.Phase,
-		latestPodStatus.Message,
-		strings.Join(containerStatusStrs, "\n"),
-	)
+	return createdPod, nil
 }
 
 func (manager *KubernetesManager) RemovePod(ctx context.Context, namespace string, name string) error {
@@ -734,6 +697,40 @@ func (manager *KubernetesManager) GetPod(ctx context.Context, namespace string, 
 	}
 
 	return pod, nil
+}
+
+// GetContainerLogs gets the logs for a given container running inside the given pod in the give namespace
+// TODO We could upgrade this to get the logs of many containers at once just like kubectl does, see:
+//  https://github.com/kubernetes/kubectl/blob/master/pkg/cmd/logs/logs.go#L345
+func (manager *KubernetesManager) GetContainerLogs(
+	ctx context.Context,
+	namespaceName string,
+	podName string,
+	containerName string,
+	shouldFollowLogs bool,
+	shouldAddTimestamps bool,
+) (
+	io.ReadCloser,
+	error,
+){
+	options := &apiv1.PodLogOptions{
+		Container: containerName,
+		Follow: shouldFollowLogs,
+		Timestamps: shouldAddTimestamps,
+	}
+
+	getLogsRequest := manager.kubernetesClientSet.CoreV1().Pods(namespaceName).GetLogs(podName, options)
+	result, err := getLogsRequest.Stream(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting logs for container '%v' in pod '%v' in namespace '%v'",
+			containerName,
+			podName,
+			namespaceName,
+		)
+	}
+	return result, nil
 }
 
 func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace string, podLabels map[string]string) (*apiv1.PodList, error) {
@@ -795,38 +792,49 @@ func (manager *KubernetesManager) waitForPersistentVolumeClaimBound(ctx context.
 	)
 }
 
-// GetContainerLogs gets the logs for a given container running inside the given pod in the give namespace
-// TODO We could upgrade this to get the logs of many containers at once just like kubectl does, see:
-//  https://github.com/kubernetes/kubectl/blob/master/pkg/cmd/logs/logs.go#L345
-func (manager *KubernetesManager) GetContainerLogs(
-	ctx context.Context,
-	namespaceName string,
-	podName string,
-	containerName string,
-	shouldFollowLogs bool,
-	shouldAddTimestamps bool,
-) (
-	io.ReadCloser,
-	error,
-){
-	options := &apiv1.PodLogOptions{
-		Container: containerName,
-		Follow: shouldFollowLogs,
-		Timestamps: shouldAddTimestamps,
+func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, namespaceName string, podName string) error {
+	// Wait for the pod to start running
+	deadline := time.Now().Add(podWaitForAvailabilityTimeout)
+	var latestPodStatus *apiv1.PodStatus
+	for time.Now().Before(deadline) {
+		pod, err := manager.GetPod(ctx, namespaceName, podName)
+		if err != nil {
+			// We shouldn't get an error on getting the pod, even if it's not ready
+			return stacktrace.Propagate(err, "An error occurred getting the just-created pod '%v'", name)
+		}
+		latestPodStatus = &pod.Status
+		switch latestPodStatus.Phase {
+		case apiv1.PodRunning:
+			return nil
+		case apiv1.PodFailed:
+			containerStatusStrs := renderContainerStatuses(latestPodStatus.ContainerStatuses, containerStatusLineBulletPoint)
+			return stacktrace.NewError(
+				"Pod '%v' failed before availability with the following message: %v\n" +
+					"The pod's container states are as follows:\n%v",
+				podName,
+				latestPodStatus.Message,
+				strings.Join(containerStatusStrs, "\n"),
+			)
+		case apiv1.PodSucceeded:
+			// NOTE: We'll need to change this if we ever expect to run one-off pods
+			return stacktrace.NewError(
+				"Expected the pod state to arrive at '%v' but the pod instead landed in '%v'",
+				apiv1.PodRunning,
+				apiv1.PodSucceeded,
+			)
+		}
+		time.Sleep(podWaitForAvailabilityTimeBetweenPolls)
 	}
 
-	getLogsRequest := manager.kubernetesClientSet.CoreV1().Pods(namespaceName).GetLogs(podName, options)
-	result, err := getLogsRequest.Stream(ctx)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred getting logs for container '%v' in pod '%v' in namespace '%v'",
-			containerName,
-			podName,
-			namespaceName,
-		)
-	}
-	return result, nil
+	containerStatusStrs := renderContainerStatuses(latestPodStatus.ContainerStatuses, containerStatusLineBulletPoint)
+	return stacktrace.NewError(
+		"Pod '%v' did not become available after %v; its latest state is '%v' and status message is: %v\n" +
+			"The pod's container states are as follows:\n%v",
+		podName,
+		latestPodStatus.Phase,
+		latestPodStatus.Message,
+		strings.Join(containerStatusStrs, "\n"),
+	)
 }
 
 func renderContainerStatuses(containerStatuses []apiv1.ContainerStatus, prefixStr string) []string {
@@ -858,7 +866,7 @@ func renderContainerStatuses(containerStatuses []apiv1.ContainerStatus, prefixSt
 		} else {
 			statusStrForContainer = fmt.Sprintf(
 				"Unrecogznied container state '%+v'; this likely means that Kubernetes " +
-					 "has added a new container state and Kurtosis needs to be updated to handle it",
+					"has added a new container state and Kurtosis needs to be updated to handle it",
 				state,
 			)
 		}
@@ -879,3 +887,4 @@ func renderContainerStatuses(containerStatuses []apiv1.ContainerStatus, prefixSt
 
 	return containerStatusStrs
 }
+
