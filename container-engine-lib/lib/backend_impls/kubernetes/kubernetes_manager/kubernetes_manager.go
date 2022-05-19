@@ -327,17 +327,6 @@ func (manager *KubernetesManager) RemoveNamespace(ctx context.Context, name stri
 	return nil
 }
 
-func (manager *KubernetesManager) GetNamespace(ctx context.Context, name string) (*apiv1.Namespace, error) {
-	namespaceClient := manager.kubernetesClientSet.CoreV1().Namespaces()
-
-	namespace, err := namespaceClient.Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get namespace with name '%s'", name)
-	}
-
-	return namespace, nil
-}
-
 func (manager *KubernetesManager) ListNamespaces(ctx context.Context) (*apiv1.NamespaceList, error) {
 	namespaceClient := manager.kubernetesClientSet.CoreV1().Namespaces()
 
