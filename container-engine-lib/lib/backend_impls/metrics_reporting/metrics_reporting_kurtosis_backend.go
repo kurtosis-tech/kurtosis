@@ -7,9 +7,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -570,8 +568,20 @@ func (backend *MetricsReportingKurtosisBackend) DestroyNetworkingSidecars(
 }
 
 //Create a files artifact exansion volume for user service and file artifact id and runs a file artifact expander
-func (backend *MetricsReportingKurtosisBackend) CreateFilesArtifactExpansion(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID, filesArtifactId service.FilesArtifactID, filesArtifactFilepathRelativeToEnclaveDatadirRoot string, ) (*files_artifact_expansion.FilesArtifactExpansionGUID, error, ) {
-	panic("IMPLEMENT ME")
+func (backend *MetricsReportingKurtosisBackend) CreateFilesArtifactExpansion(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	filesArtifactId service.FilesArtifactID,
+	filesArtifactFilepathRelativeToEnclaveDatadirRoot string) (*files_artifact_expansion.FilesArtifactExpansionGUID, error, ) {
+	expansion, err := backend.underlying.CreateFilesArtifactExpansion(ctx, enclaveId, serviceGuid, filesArtifactId, filesArtifactFilepathRelativeToEnclaveDatadirRoot)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create files artifact expansion in enclave '%v' with for service with GUID '%v' and file artifact with id '%v'",
+			enclaveId,
+			serviceGuid,
+			filesArtifactId)
+	}
+	return expansion, nil
 }
 
 //Destroy files artifact expansion volume and expander using the given filters
@@ -583,79 +593,9 @@ func (backend *MetricsReportingKurtosisBackend)  DestroyFilesArtifactExpansion(
 	erroredFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]error,
 	resultErr error,
 ) {
-	panic("IMPLEMENT ME")
-}
-
-func (backend *MetricsReportingKurtosisBackend) CreateFilesArtifactExpansionVolume(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceGuid service.ServiceGUID,
-	filesArtifactId service.FilesArtifactID,
-) (
-	*files_artifact_expansion_volume.FilesArtifactExpansionVolume,
-	error,
-) {
-	newFileArtifactExpansionVolume, err := backend.underlying.CreateFilesArtifactExpansionVolume(ctx, enclaveId, serviceGuid, filesArtifactId)
+	successfulExpansionVolumeNames, erroredExpansionVolumeNames, err := backend.underlying.DestroyFilesArtifactExpansion(ctx, filters)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, enclaveId)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying files artifact expansions using filters '%+v'", filters)
 	}
-
-	return newFileArtifactExpansionVolume, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) DestroyFilesArtifactExpansionVolumes(
-	ctx context.Context,
-	filters *files_artifact_expansion_volume.FilesArtifactExpansionVolumeFilters,
-) (
-	map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool,
-	map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]error,
-	error,
-) {
-	successfulExpansionVolumeNames, erroredExpansionVolumeNames, err := backend.underlying.DestroyFilesArtifactExpansionVolumes(ctx, filters)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying files artifact expansion volumes using filters '%+v'", filters)
-	}
-
 	return successfulExpansionVolumeNames, erroredExpansionVolumeNames, nil
 }
-
-func (backend *MetricsReportingKurtosisBackend) RunFilesArtifactExpander(
-	ctx context.Context,
-	guid files_artifact_expander.FilesArtifactExpanderGUID,
-	enclaveId enclave.EnclaveID,
-	filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
-	destVolMntDirpathOnExpander string,
-	filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
-) (*files_artifact_expander.FilesArtifactExpander, error) {
-	newFilesArtifactExpander, err := backend.underlying.RunFilesArtifactExpander(
-		ctx,
-		guid,
-		enclaveId,
-		filesArtifactExpansionVolumeName,
-		destVolMntDirpathOnExpander,
-		filesArtifactFilepathRelativeToEnclaveDatadirRoot,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expander with GUID '%v' with files artifact expansion volume name '%v' in enclave with ID '%v'", guid, filesArtifactExpansionVolumeName, enclaveId)
-	}
-
-	return newFilesArtifactExpander, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) DestroyFilesArtifactExpanders(
-	ctx context.Context,
-	filters *files_artifact_expander.FilesArtifactExpanderFilters,
-) (
-	map[files_artifact_expander.FilesArtifactExpanderGUID]bool,
-	map[files_artifact_expander.FilesArtifactExpanderGUID]error,
-	error,
-) {
-	successfulFilesArtifactExpanderGuids, erroredFilesArtifactExpanderGuids, err := backend.underlying.DestroyFilesArtifactExpanders(ctx, filters)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying files artifact expanders using filters '%+v'", filters)
-	}
-
-	return successfulFilesArtifactExpanderGuids, erroredFilesArtifactExpanderGuids, nil
-}
-
-
