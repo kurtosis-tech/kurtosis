@@ -1,10 +1,7 @@
 # TBD
 ### Fixes
 * Fixed a bug where the API container resources map would have entries even if the enclave was empty of API containers
-* Gave the API container permission to list namespaces, which it needs to identify its own namespace
-
-### Removals
-* Removed `GetNamespace`, which wasn't being used because we use the labels API for everything
+* Fixed a bug where the API container didn't have a way to get enclave namespace names, because it isn't allowed to list namespaces given that its service account is a namespaced object
 
 ### Breaking Changes
 * Renamed `GetLocalKubernetesKurtosisBackend` -> `GetCLIKubernetesKurtosisBackend`
