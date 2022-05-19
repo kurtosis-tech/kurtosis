@@ -11,6 +11,9 @@
 * Renamed all Docker constants that were `XXXXXLabelKey` to be `XXXXXDockerLabelKey` to make it more visually obvious that we're using the Docker constants rather than Kubernetes
 * Renamed all constants that were `XXXXXLabelValue` to be `XXXXXDockerLabelValue` to make it more visually obvious that we're using the Docker constants rather than Kubernetes
 
+### Fixes
+* `KubernetesManager.CreatePod` now waits for pods to become available before returning
+
 # 0.23.3
 ### Features
 * Added `KubernetesKurtosisBackend.StopEnclaves` and `KubernetesKurtosisBackend.DestroyEnclaves`
