@@ -18,6 +18,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/remotecommand"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -39,6 +43,14 @@ const (
 	podWaitForAvailabilityTimeBetweenPolls = 500 * time.Millisecond
 
 	containerStatusLineBulletPoint = " - "
+	expectedTerminationMessage				= "command terminated with exit code"
+
+	shouldAllocateStdinOnPodExec = false
+	shouldAllocatedStdoutOnPodExec = true
+	shouldAllocatedStderrOnPodExec = true
+	shouldAllocateTtyOnPodExec = false
+
+	successExecCommandExitCode = 0
 )
 
 var (
@@ -51,10 +63,16 @@ var (
 type KubernetesManager struct {
 	// The underlying K8s client that will be used to modify the K8s environment
 	kubernetesClientSet *kubernetes.Clientset
+	// Underlying restClient configuration
+	kuberneteRestConfig *rest.Config
+
 }
 
-func NewKubernetesManager(kubernetesClientSet *kubernetes.Clientset) *KubernetesManager {
-	return &KubernetesManager{kubernetesClientSet: kubernetesClientSet}
+func NewKubernetesManager(kubernetesClientSet *kubernetes.Clientset, kuberneteRestConfig *rest.Config) *KubernetesManager {
+	return &KubernetesManager{
+		kubernetesClientSet: kubernetesClientSet,
+		kuberneteRestConfig: kuberneteRestConfig,
+	}
 }
 
 // ---------------------------Services------------------------------------------------------------------------------
@@ -715,6 +733,74 @@ func (manager *KubernetesManager) GetContainerLogs(
 	return result, nil
 }
 
+func (manager *KubernetesManager) RunExecCommand(
+	namespaceName string,
+	podName string,
+	containerName string,
+	command []string,
+	logOutput io.Writer,
+) (
+	resultExitCode int32,
+	resultErr error,
+) {
+	execOptions := &apiv1.PodExecOptions{
+		Container: containerName,
+		Command: command,
+		Stdin:   shouldAllocateStdinOnPodExec,
+		Stdout:  shouldAllocatedStdoutOnPodExec,
+		Stderr:  shouldAllocatedStderrOnPodExec,
+		TTY:     shouldAllocateTtyOnPodExec,
+	}
+
+	//Create a RESTful command request.
+	request := manager.kubernetesClientSet.CoreV1().RESTClient().
+		Post().
+		Prefix(apiv1Prefix).
+		Namespace(namespaceName).
+		Resource("pods").
+		Name(podName).
+		SubResource("exec").
+		VersionedParams(execOptions, scheme.ParameterCodec)
+	if request == nil {
+		return -1, stacktrace.NewError(
+			"Failed to build a working RESTful request for the command '%s'.",
+			execOptions.Command,
+		)
+	}
+
+	//Exec request.
+	outputWriter := newConcurrentWriter(logOutput)
+	exec, err := remotecommand.NewSPDYExecutor(manager.kuberneteRestConfig, http.MethodPost, request.URL())
+	if err != nil {
+		return -1, stacktrace.Propagate(
+			err,
+			"Failed to build an executor for the command '%s' with the RESTful endpoint '%s'.",
+			execOptions.Command,
+			request.URL().String(),
+		)
+	}
+	if err = exec.Stream(remotecommand.StreamOptions{
+		Stdout: outputWriter,
+		Stderr: outputWriter,
+	}); err != nil {
+		// Kubernetes returns the exit code of the command via a string in the error message, so we have to extract it
+		statusError := err.Error()
+		exitCode, err := getExitCodeFromStatusMessage(statusError)
+		if err != nil {
+			return exitCode, stacktrace.Propagate(
+				err,
+				"There was an error trying to parse the message '%s' to an exit code.",
+				statusError,
+			)
+		}
+
+		return exitCode, nil
+	}
+
+	return successExecCommandExitCode, nil
+}
+
+
 func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace string, podLabels map[string]string) (*apiv1.PodList, error) {
 	namespacePodClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
 
@@ -871,3 +957,33 @@ func renderContainerStatuses(containerStatuses []apiv1.ContainerStatus, prefixSt
 	return containerStatusStrs
 }
 
+
+// Kubernetes doesn't seem to have a nice API for getting back the exit code of a command (though this seems strange??),
+// so we have to parse it out of a status message
+func getExitCodeFromStatusMessage(statusMessage string) (int32, error){
+	messageSlice := strings.Split(statusMessage, " ")
+	if len(messageSlice) != 6 {
+		return -1, stacktrace.NewError(
+			"Expected the status message to have 6 parts but it has '%v'. This is likely not an exit status message.\n'%s'",
+			len(messageSlice),
+			statusMessage,
+		)
+	}
+
+	terminationBaseMessage := strings.Join(messageSlice[0:5], " ")
+	if terminationBaseMessage != expectedTerminationMessage {
+		return -1, stacktrace.NewError(
+			"Received a termination message of '%s' when we expected a message following the pattern of '%s'. This is likely not an exit status message.",
+			statusMessage,
+			expectedTerminationMessage,
+		)
+	}
+
+	codeAsString := messageSlice[5]
+	codeAsInt64, err := strconv.ParseInt(codeAsString, 0, 32)
+	if err != nil {
+		return -1, stacktrace.Propagate(err, "Failed to convert '%s' to a base32 int.", codeAsString)
+	}
+	codeAsInt32 := int32(codeAsInt64)
+	return codeAsInt32, nil
+}
