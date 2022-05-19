@@ -16,6 +16,7 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 		return nil, stacktrace.Propagate(err, "Failed to create files artifact expansion volume.")
 	}
 	logrus.Infof("'%v'", artifactExpansionVolume.GetName())
+	return nil, nil
 }
 
 //Destroy files artifact expansion volume and expander using the given filters

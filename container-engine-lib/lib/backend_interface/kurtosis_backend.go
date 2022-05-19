@@ -409,7 +409,7 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-	//Create a files artifact exansion volume for user service and file artifact id and runs a file artifact expander
+	//Create and execute a files artifact expansion for given file's FilesArtifactID
 	CreateFilesArtifactExpansion(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
@@ -420,7 +420,7 @@ type KurtosisBackend interface {
 		error,
 	)
 
-	//Destroy files artifact expansion volume and expander using the given filters
+	//Destroy files artifact expansion using the given filters
 	DestroyFilesArtifactExpansion(
 		ctx context.Context,
 		filters  files_artifact_expansion.FilesArtifactExpansionFilters,
