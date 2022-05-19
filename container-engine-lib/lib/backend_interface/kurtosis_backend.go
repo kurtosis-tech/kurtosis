@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
@@ -405,6 +406,29 @@ type KurtosisBackend interface {
 	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool,
 		erroredUserServiceGuids map[service.ServiceGUID]error,
+		resultErr error,
+	)
+
+	//Create a files artifact exansion volume for user service and file artifact id and runs a file artifact expander
+	RunFilesArtifactExpansion(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		serviceGuid service.ServiceGUID,
+		filesArtifactId service.FilesArtifactID,
+		destVolMntDirpathOnExpander string,
+		filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
+	) (
+		*files_artifact_expansion.FilesArtifactExpansionGUID,
+		error,
+	)
+
+	////Destroy files artifact expansion volume and expander using the given filters
+	DestroyFilesArtifactExpansion(
+		ctx context.Context,
+		filters  files_artifact_expansion.FilesArtifactExpansionFilters,
+	) (
+		successfulFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]bool,
+		erroredFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]error,
 		resultErr error,
 	)
 
