@@ -2,7 +2,10 @@
 
 # 0.23.4
 ### Features
-* Build out Kubernetes `RegisterService`
+* Build out the following user service functions in Kubernetes:
+    * `RegisterService`
+    * `StartService`
+    * All the pipeline for transforming Kubernetes objects into user services
 
 ### Fixes
 * Fix bug in `waitForPersistentVolumeClaimBound` in which PVC name and namespace were flipped in args
@@ -12,6 +15,10 @@
 * Renamed all constants that were `XXXXXLabelValue` to be `XXXXXKubernetesLabelValue` to make it more visually obvious that we're using the Kubernetes constants rather than Docker
 * Renamed all Docker constants that were `XXXXXLabelKey` to be `XXXXXDockerLabelKey` to make it more visually obvious that we're using the Docker constants rather than Kubernetes
 * Renamed all constants that were `XXXXXLabelValue` to be `XXXXXDockerLabelValue` to make it more visually obvious that we're using the Docker constants rather than Kubernetes
+* Renamed the Docker & Kubernetes port spec serializers to include their respective names, to be easier to visually identify in code
+
+### Breaking Changes
+* `StartUserService` now takes in a `map[FilesArtifactVolumeName]string` rather than `map[string]string` to be more explicit about the data it's consuming
 
 ### Fixes
 * `KubernetesManager.CreatePod` now waits for pods to become available before returning

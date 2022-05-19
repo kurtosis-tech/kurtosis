@@ -30,30 +30,22 @@ import (
 )
 
 const (
-	// The Kurtosis servers (Engine and API Container) uses gRPC so MUST listen on TCP (no other protocols are supported), which also
+	// The Kurtosis servers (Engine and API Container) use gRPC so MUST listen on TCP (no other protocols are supported), which also
 	// means that its grpc-proxy must listen on TCP
 	kurtosisServersPortProtocol = port_spec.PortProtocol_TCP
 
 	// The ID of the GRPC port for Kurtosis-internal containers (e.g. API container, engine, modules, etc.) which will
 	//  be stored in the port spec label
 	kurtosisInternalContainerGrpcPortSpecId = "grpc"
-	// The GRPC port protocol for Kurtosis-internal containers
-	kurtosisInternalContainerGrpcPortProtocol = apiv1.ProtocolTCP
 
 	// The ID of the GRPC proxy port for Kurtosis-internal containers. This is necessary because
 	// Typescript's grpc-web cannot communicate directly with GRPC ports, so Kurtosis-internal containers
 	// need a proxy  that will translate grpc-web requests before they hit the main GRPC server
 	kurtosisInternalContainerGrpcProxyPortSpecId = "grpcProxy"
-	// The GRPC proxy port protocol for Kurtosis-internal containers
-	kurtosisInternalContainerGrpcProxyPortProtocol = apiv1.ProtocolTCP
 
 	// Port number string parsing constants
 	publicPortNumStrParsingBase = 10
 	publicPortNumStrParsingBits = 16
-
-	externalServiceType = "ClusterIP"
-
-	sentencesSeparator = ", "
 )
 
 // This maps a Kubernetes pod's phase to a binary "is the pod considered running?" determiner
@@ -63,6 +55,13 @@ var isPodRunningDeterminer = map[apiv1.PodPhase]bool{
 	apiv1.PodRunning: true,
 	apiv1.PodSucceeded: false,
 	apiv1.PodUnknown: true, //We can not say that a pod is not running if we don't know the real state
+}
+
+// Completeness enforced via unit test
+var kurtosisPortProtocolToKubernetesPortProtocolTranslator = map[port_spec.PortProtocol]apiv1.Protocol{
+	port_spec.PortProtocol_TCP: apiv1.ProtocolTCP,
+	port_spec.PortProtocol_UDP: apiv1.ProtocolUDP,
+	port_spec.PortProtocol_SCTP: apiv1.ProtocolSCTP,
 }
 
 type KubernetesKurtosisBackend struct {
@@ -258,18 +257,6 @@ func getContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus
 	return status, nil
 }
 
-func (backend *KubernetesKurtosisBackend) getAllEnclaveNamespaces(ctx context.Context) ([]apiv1.Namespace, error) {
-
-	matchLabels := getEnclaveMatchLabels()
-
-	namespaces, err := backend.kubernetesManager.GetNamespacesByLabels(ctx, matchLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave namespace using labels '%+v'", matchLabels)
-	}
-
-	return namespaces.Items, nil
-}
-
 func (backend *KubernetesKurtosisBackend) getEnclaveNamespace(ctx context.Context, enclaveId enclave.EnclaveID) (*apiv1.Namespace, error) {
 
 	matchLabels := getEnclaveMatchLabels()
@@ -293,35 +280,56 @@ func (backend *KubernetesKurtosisBackend) getEnclaveNamespace(ctx context.Contex
 	return resultNamespace, nil
 }
 
-func (backend *KubernetesKurtosisBackend) getEnclaveDataPersistentVolumeClaim(ctx context.Context, enclaveNamespaceName string, enclaveId enclave.EnclaveID) (*apiv1.PersistentVolumeClaim, error) {
-	matchLabels := getEnclaveMatchLabels()
-	matchLabels[label_key_consts.KurtosisVolumeTypeKubernetesLabelKey.GetString()] = label_value_consts.EnclaveDataVolumeTypeKubernetesLabelValue.GetString()
-	matchLabels[label_key_consts.EnclaveIDKubernetesLabelKey.GetString()] = string(enclaveId)
-
-	persistentVolumeClaims, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, enclaveNamespaceName, matchLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave persistent volume claim using labels '%+v'", matchLabels)
-	}
-
-	numOfPersistentVolumeClaims := len(persistentVolumeClaims.Items)
-	if numOfPersistentVolumeClaims == 0 {
-		return nil, stacktrace.NewError("No persistent volume claim matching labels '%+v' was found", matchLabels)
-	}
-	if numOfPersistentVolumeClaims > 1 {
-		return nil, stacktrace.NewError("Expected to find only one enclave data persistent volume claim for enclave ID '%v', but '%v' was found; this is a bug in Kurtosis", enclaveId, numOfPersistentVolumeClaims)
-	}
-
-	resultPersistentVolumeClaim := &persistentVolumeClaims.Items[0]
-
-	return resultPersistentVolumeClaim, nil
-}
-
 func getEnclaveMatchLabels() map[string]string {
 	matchLabels := map[string]string{
 		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue.GetString(),
 	}
 	return matchLabels
+}
+
+func getKubernetesServicePortsFromPrivatePortSpecs(privatePorts map[string]*port_spec.PortSpec) ([]apiv1.ServicePort, error) {
+	result := []apiv1.ServicePort{}
+	for portId, portSpec := range privatePorts {
+		kurtosisProtocol := portSpec.GetProtocol()
+		kubernetesProtocol, found := kurtosisPortProtocolToKubernetesPortProtocolTranslator[kurtosisProtocol]
+		if !found {
+			// Should never happen because we enforce completeness via unit test
+			return nil, stacktrace.NewError("No Kubernetes port protocol was defined for Kurtosis port protocol '%v'; this is a bug in Kurtosis", kurtosisProtocol)
+		}
+
+		kubernetesPortObj := apiv1.ServicePort{
+			Name:        portId,
+			Protocol:    kubernetesProtocol,
+			// TODO Specify this!!! Will make for a really nice user interface (e.g. "https")
+			AppProtocol: nil,
+			// Safe to cast because max uint16 < int32
+			Port:        int32(portSpec.GetNumber()),
+		}
+		result = append(result, kubernetesPortObj)
+	}
+	return result, nil
+}
+
+func getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts map[string]*port_spec.PortSpec) ([]apiv1.ContainerPort, error) {
+	result := []apiv1.ContainerPort{}
+	for portId, portSpec := range privatePorts {
+		kurtosisProtocol := portSpec.GetProtocol()
+		kubernetesProtocol, found := kurtosisPortProtocolToKubernetesPortProtocolTranslator[kurtosisProtocol]
+		if !found {
+			// Should never happen because we enforce completeness via unit test
+			return nil, stacktrace.NewError("No Kubernetes port protocol was defined for Kurtosis port protocol '%v'; this is a bug in Kurtosis", kurtosisProtocol)
+		}
+
+		kubernetesPortObj := apiv1.ContainerPort{
+			Name:          portId,
+			// Safe to do because max uint16 < int32
+			ContainerPort: int32(portSpec.GetNumber()),
+			Protocol:      kubernetesProtocol,
+		}
+		result = append(result, kubernetesPortObj)
+	}
+	return result, nil
 }
 
 // This is a helper function that will take multiple errors, each identified by an ID, and format them together

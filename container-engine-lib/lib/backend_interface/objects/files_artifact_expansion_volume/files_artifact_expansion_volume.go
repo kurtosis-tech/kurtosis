@@ -4,9 +4,11 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 )
 
+type FilesArtifactExpansionGUID string
 type FilesArtifactExpansionVolumeName string
 
 type FilesArtifactExpansionVolume struct {
+	guid		FilesArtifactExpansionGUID
 	name        FilesArtifactExpansionVolumeName
 	enclaveId   enclave.EnclaveID
 }

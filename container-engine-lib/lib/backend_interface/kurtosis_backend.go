@@ -248,14 +248,13 @@ type KurtosisBackend interface {
 	StartUserService(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		guid service.ServiceGUID,
+		serviceGuid service.ServiceGUID,
 		containerImageName string,
 		privatePorts map[string]*port_spec.PortSpec,
 		entrypointArgs []string,
 		cmdArgs []string,
 		envVars map[string]string,
-		// volume_name -> mountpoint_on_container
-		filesArtifactVolumeMountDirpaths map[string]string,
+		filesArtifactVolumeMountDirpaths map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string,
 	) (
 		*service.Service,
 		error,
