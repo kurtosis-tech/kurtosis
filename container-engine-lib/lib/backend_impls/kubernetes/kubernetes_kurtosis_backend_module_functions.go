@@ -2,9 +2,11 @@ package kubernetes
 
 import (
 	"context"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/annotation_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/object_name_constants"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
@@ -61,7 +63,7 @@ func (backend *KubernetesKurtosisBackend) CreateModule(
 			guid: true,
 		},
 	}
-	preexistingModules, err := backend.GetModules(ctx, preexistingModuleFilters)
+	preexistingModules, err := backend.GetModules(ctx, enclaveId, preexistingModuleFilters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting preexisting modules with GUID '%v'", guid)
 	}
@@ -240,6 +242,131 @@ func (backend *KubernetesKurtosisBackend) CreateModule(
 	return resultModule, nil
 }
 
+func (backend *KubernetesKurtosisBackend) GetModules(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *module.ModuleFilters,
+) (
+	map[module.ModuleGUID]*module.Module,
+	error,
+) {
+
+	matchingApiContainers, _, err := backend.getMatchingModuleObjectsAndKubernetesResources(ctx, enclaveId, filters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting API containers matching the following filters: %+v", filters)
+	}
+	return matchingApiContainers, nil
+}
+
+func (backend *KubernetesKurtosisBackend) StopModules(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *module.ModuleFilters,
+) (
+	map[module.ModuleGUID]bool,
+	map[module.ModuleGUID]error,
+	error,
+) {
+	_, matchingKubernetesResources, err := backend.getMatchingModuleObjectsAndKubernetesResources(ctx, enclaveId, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting modules and Kubernetes resources matching filters '%+v'", filters)
+	}
+
+	successfulModuleGUIDs := map[module.ModuleGUID]bool{}
+	erroredModuleGUIDs := map[module.ModuleGUID]error{}
+	for moduleGuid, resources := range matchingKubernetesResources {
+		kubernetesService := resources.service
+		if kubernetesService != nil {
+			namespaceName := kubernetesService.GetNamespace()
+			kubernetesService.Spec.Selector = nil
+			if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, kubernetesService); err != nil {
+				erroredModuleGUIDs[moduleGuid] = stacktrace.Propagate(
+					err,
+					"An error occurred removing selectors from service '%v' in namespace '%v' for module with GUID '%v'",
+					kubernetesService.Name,
+					namespaceName,
+					moduleGuid,
+				)
+				continue
+			}
+		}
+
+		kubernetesPod := resources.pod
+		if kubernetesPod != nil {
+			podName := kubernetesPod.GetName()
+			namespaceName := kubernetesPod.GetNamespace()
+			if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, podName); err != nil {
+				erroredModuleGUIDs[moduleGuid] = stacktrace.Propagate(
+					err,
+					"An error occurred removing pod '%v' in namespace '%v' for module with GUID '%v'",
+					podName,
+					namespaceName,
+					moduleGuid,
+				)
+				continue
+			}
+		}
+
+		successfulModuleGUIDs[moduleGuid] = true
+	}
+
+	return successfulModuleGUIDs, erroredModuleGUIDs, nil
+}
+
+func (backend *KubernetesKurtosisBackend) DestroyModules(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *module.ModuleFilters,
+) (
+	map[module.ModuleGUID]bool,
+	map[module.ModuleGUID]error,
+	error,
+) {
+	_, matchingResources, err := backend.getMatchingModuleObjectsAndKubernetesResources(ctx, enclaveId, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting module Kubernetes resources matching filters: %+v", filters)
+	}
+
+	successfulModuleGUIDs := map[module.ModuleGUID]bool{}
+	erroredModuleGUIDs := map[module.ModuleGUID]error{}
+	for moduleGuid, resources := range matchingResources {
+
+		// Remove Pod
+		if resources.pod != nil {
+			podName := resources.pod.GetName()
+			namespaceName := resources.pod.GetNamespace()
+			if err := backend.kubernetesManager.RemovePod(ctx, podName, namespaceName); err != nil {
+				erroredModuleGUIDs[moduleGuid] = stacktrace.Propagate(
+					err,
+					"An error occurred removing pod '%v' for module with GUID '%v'",
+					podName,
+					moduleGuid,
+				)
+				continue
+			}
+		}
+
+		// Remove Service
+		if resources.service != nil {
+			serviceName := resources.service.GetName()
+			namespaceName := resources.service.GetNamespace()
+			if err := backend.kubernetesManager.RemoveService(ctx, serviceName, namespaceName); err != nil {
+				erroredModuleGUIDs[moduleGuid] = stacktrace.Propagate(
+					err,
+					"An error occurred removing service '%v' for module with GUID '%v'",
+					serviceName,
+					moduleGuid,
+				)
+				continue
+			}
+		}
+
+		successfulModuleGUIDs[moduleGuid] = true
+	}
+	return successfulModuleGUIDs, erroredModuleGUIDs, nil
+}
+
+
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
@@ -289,6 +416,149 @@ func getModuleContainersAndVolumes(
 	}
 
 	return containers, volumes
+}
+
+func (backend *KubernetesKurtosisBackend) getMatchingModuleObjectsAndKubernetesResources(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *module.ModuleFilters,
+) (
+	map[module.ModuleGUID]*module.Module,
+	map[module.ModuleGUID]*moduleKubernetesResources,
+	error,
+) {
+	matchingResources, err := backend.getModuleKubernetesResourcesMatchingGuids(ctx, enclaveId, filters.GUIDs)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting module Kubernetes resources matching module GUIDs: %+v", filters.GUIDs)
+	}
+
+	moduleObjects, err := getModuleObjectsFromKubernetesResources(enclaveId, matchingResources)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting module objects from Kubernetes resources")
+	}
+
+	// Finally, apply the filters
+	resultModuleObjs := map[module.ModuleGUID]*module.Module{}
+	resultKubernetesResources := map[module.ModuleGUID]*moduleKubernetesResources{}
+	for moduleGuid, moduleObj := range moduleObjects {
+		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
+			if _, found := filters.GUIDs[moduleObj.GetGUID()]; !found {
+				continue
+			}
+		}
+
+		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+			if _, found := filters.Statuses[moduleObj.GetStatus()]; !found {
+				continue
+			}
+		}
+
+		resultModuleObjs[moduleGuid] = moduleObj
+		if _, found := matchingResources[moduleGuid]; !found {
+			return nil, nil, stacktrace.NewError("Expected to find Kubernetes resources matching module GUID '%v' but none was found", moduleGuid)
+		}
+		// Okay to do because we're guaranteed a 1:1 mapping between module_obj:module_resources
+		resultKubernetesResources[moduleGuid] = matchingResources[moduleGuid]
+	}
+
+	return resultModuleObjs, resultKubernetesResources, nil
+}
+
+// Get back any and all module's Kubernetes resources matching the given GUIDs, where a nil or empty map == "match all GUIDs"
+func (backend *KubernetesKurtosisBackend) getModuleKubernetesResourcesMatchingGuids(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	moduleGuids map[module.ModuleGUID]bool,
+) (
+	map[module.ModuleGUID]*moduleKubernetesResources,
+	error,
+) {
+	namespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
+	}
+
+	// TODO switch to properly-typed KubernetesLabelValue object!!!
+	postFilterLabelValues := map[string]bool{}
+	for moduleGuid := range moduleGuids {
+		postFilterLabelValues[string(moduleGuid)] = true
+	}
+
+	kubernetesResourceSearchLabels := map[string]string{
+		label_key_consts.AppIDKubernetesLabelKey.GetString(): label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): string(enclaveId),
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.ModuleKurtosisResourceTypeKubernetesLabelValue.GetString(),
+	}
+
+	results := map[module.ModuleGUID]*moduleKubernetesResources{}
+
+	// Get k8s services
+	matchingKubernetesServices, err := kubernetes_resource_collectors.CollectMatchingServices(
+		ctx,
+		backend.kubernetesManager,
+		namespaceName,
+		kubernetesResourceSearchLabels,
+		label_key_consts.GUIDKubernetesLabelKey.GetString(),
+		postFilterLabelValues,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes services matching module GUIDs: %+v", moduleGuids)
+	}
+	for moduleGuidStr, kubernetesServicesForGuid := range matchingKubernetesServices {
+		moduleGuid := module.ModuleGUID(moduleGuidStr)
+
+		numServicesForGuid := len(kubernetesServicesForGuid)
+		if numServicesForGuid == 0 {
+			// This would indicate a bug in our service retrieval logic because we shouldn't even have a map entry if there's nothing matching it
+			return nil, stacktrace.NewError("Got entry of result services for module GUID '%v', but no Kubernetes services were returned; this is a bug in Kurtosis", moduleGuid)
+		}
+		if numServicesForGuid > 1 {
+			return nil, stacktrace.NewError("Found %v Kubernetes services associated with module GUID '%v'; this is a bug in Kurtosis", numServicesForGuid, moduleGuid)
+		}
+		kubernetesService := kubernetesServicesForGuid[0]
+
+		resultObj, found := results[moduleGuid]
+		if !found {
+			resultObj = &moduleKubernetesResources{}
+		}
+		resultObj.service = kubernetesService
+		results[moduleGuid] = resultObj
+	}
+
+	// Get k8s pods
+	matchingKubernetesPods, err := kubernetes_resource_collectors.CollectMatchingPods(
+		ctx,
+		backend.kubernetesManager,
+		namespaceName,
+		kubernetesResourceSearchLabels,
+		label_key_consts.GUIDKubernetesLabelKey.GetString(),
+		postFilterLabelValues,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes pods matching module GUIDs: %+v", moduleGuids)
+	}
+	for moduleGuidStr, kubernetesPodsForGuid := range matchingKubernetesPods {
+		moduleGuid := module.ModuleGUID(moduleGuidStr)
+
+		numPodsForGuid := len(kubernetesPodsForGuid)
+		if numPodsForGuid == 0 {
+			// This would indicate a bug in our pod retrieval logic because we shouldn't even have a map entry if there's nothing matching it
+			return nil, stacktrace.NewError("Got entry of result pods for module GUID '%v', but no Kubernetes pods were returned; this is a bug in Kurtosis", moduleGuid)
+		}
+		if numPodsForGuid > 1 {
+			return nil, stacktrace.NewError("Found %v Kubernetes pods associated with module GUID '%v'; this is a bug in Kurtosis", numPodsForGuid, moduleGuid)
+		}
+		kubernetesPod := kubernetesPodsForGuid[0]
+
+		resultObj, found := results[moduleGuid]
+		if !found {
+			resultObj = &moduleKubernetesResources{}
+		}
+		resultObj.pod = kubernetesPod
+		results[moduleGuid] = resultObj
+	}
+
+	return results, nil
 }
 
 func getModuleObjectsFromKubernetesResources(
@@ -365,4 +635,12 @@ func getModuleObjectsFromKubernetesResources(
 		result[moduleGuid] = moduleObj
 	}
 	return result, nil
+}
+
+func getModuleMatchLabels() map[string]string {
+	matchLabels := map[string]string{
+		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.ModuleKurtosisResourceTypeKubernetesLabelValue.GetString(),
+	}
+	return matchLabels
 }

@@ -1,7 +1,11 @@
 # TBD
 ### Features
-* Added `KubernetesKurtosisBackend.CreateModule`
+* Added `KubernetesKurtosisBackend.CreateModule`, `KubernetesKurtosisBackend.GetModules`, `KubernetesKurtosisBackend.StopModules` and `KubernetesKurtosisBackend.DestroyModules`
 * Added `ForModulePod` and `ForModuleService` to `KubernetesEnclaveObjectAttributesProvider`
+
+### Breaking Changes
+* Added the `enclaveId` argument in `GetModules`, `GetModuleLogs`, `StopModules` and `DestroyModules`
+  * Users should add this new argument on each call
 
 # 0.24.0
 ### Fixes

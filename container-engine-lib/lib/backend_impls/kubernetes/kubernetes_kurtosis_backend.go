@@ -200,22 +200,7 @@ func (backend *KubernetesKurtosisBackend) PullImage(image string) error {
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) GetModules(ctx context.Context, filters *module.ModuleFilters) (map[module.ModuleGUID]*module.Module, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (backend *KubernetesKurtosisBackend) GetModuleLogs(ctx context.Context, filters *module.ModuleFilters, shouldFollowLogs bool) (successfulModuleLogs map[module.ModuleGUID]io.ReadCloser, erroredModuleGuids map[module.ModuleGUID]error, resultError error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) StopModules(ctx context.Context, filters *module.ModuleFilters) (successfulModuleIds map[module.ModuleGUID]bool, erroredModuleIds map[module.ModuleGUID]error, resultErr error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) DestroyModules(ctx context.Context, filters *module.ModuleFilters) (successfulModuleIds map[module.ModuleGUID]bool, erroredModuleIds map[module.ModuleGUID]error, resultErr error) {
 	//TODO implement me
 	panic("implement me")
 }
