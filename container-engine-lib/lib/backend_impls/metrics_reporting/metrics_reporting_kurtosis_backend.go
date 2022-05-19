@@ -573,7 +573,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateFilesArtifactExpansion(
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
 	filesArtifactId service.FilesArtifactID,
-	filesArtifactFilepathRelativeToEnclaveDatadirRoot string) (*files_artifact_expansion.FilesArtifactExpansionGUID, error, ) {
+	filesArtifactFilepathRelativeToEnclaveDatadirRoot string) (*files_artifact_expansion.FilesArtifactExpansion, error) {
 	expansion, err := backend.underlying.CreateFilesArtifactExpansion(ctx, enclaveId, serviceGuid, filesArtifactId, filesArtifactFilepathRelativeToEnclaveDatadirRoot)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create files artifact expansion in enclave '%v' with for service with GUID '%v' and file artifact with id '%v'",
