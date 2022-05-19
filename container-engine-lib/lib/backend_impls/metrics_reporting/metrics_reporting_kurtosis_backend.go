@@ -319,7 +319,7 @@ func (backend *MetricsReportingKurtosisBackend) StartUserService(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	filesArtifactMountDirpaths map[string]string,
+	filesArtifactVolumeMountDirpaths map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string,
 ) (
 	newUserService *service.Service,
 	resultErr error,
@@ -333,7 +333,7 @@ func (backend *MetricsReportingKurtosisBackend) StartUserService(
 		entrypointArgs,
 		cmdArgs,
 		envVars,
-		filesArtifactMountDirpaths,
+		filesArtifactVolumeMountDirpaths,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -347,7 +347,7 @@ func (backend *MetricsReportingKurtosisBackend) StartUserService(
 			entrypointArgs,
 			cmdArgs,
 			envVars,
-			filesArtifactMountDirpaths,
+			filesArtifactVolumeMountDirpaths,
 		)
 	}
 	return userService, nil

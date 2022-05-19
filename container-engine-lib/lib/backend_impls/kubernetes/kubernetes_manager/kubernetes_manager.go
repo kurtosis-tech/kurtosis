@@ -115,18 +115,11 @@ func (manager *KubernetesManager) RemoveService(ctx context.Context, namespace s
 	return nil
 }
 
-func (manager *KubernetesManager) RemoveSelectorsFromService(ctx context.Context, namespace string, name string) error {
+func (manager *KubernetesManager) UpdateService(ctx context.Context, namespace string, service *apiv1.Service) error {
 	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
-	service, err := manager.GetServiceByName(ctx, namespace, name)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to find service with name '%v' in namespace '%v'", name, namespace)
-	}
-	service.Spec.Selector = make(map[string]string)
-
 	updateOpts := metav1.UpdateOptions{}
-
 	if _, err := servicesClient.Update(ctx, service, updateOpts); err != nil {
-		return stacktrace.Propagate(err, "Failed to remove selectors from service '%v' in namespace '%v'", name, namespace)
+		return stacktrace.Propagate(err, "Failed to update service '%v' in namespace '%v'", service.Name, namespace)
 	}
 
 	return nil
@@ -276,6 +269,7 @@ func (manager *KubernetesManager) GetPersistentVolumeClaim(ctx context.Context, 
 	return volumeClaim, nil
 }
 
+// TODO Make return type an actual list
 func (manager *KubernetesManager) ListPersistentVolumeClaims(ctx context.Context, namespace string) (*apiv1.PersistentVolumeClaimList, error) {
 	persistentVolumeClaimsClient := manager.kubernetesClientSet.CoreV1().PersistentVolumeClaims(namespace)
 
@@ -287,6 +281,7 @@ func (manager *KubernetesManager) ListPersistentVolumeClaims(ctx context.Context
 	return persistentVolumeClaimsResult, nil
 }
 
+// TODO Make return type an actual list
 func (manager *KubernetesManager) GetPersistentVolumeClaimsByLabels(ctx context.Context, namespace string, persistentVolumeClaimLabels map[string]string) (*apiv1.PersistentVolumeClaimList, error) {
 	persistentVolumeClaimsClient := manager.kubernetesClientSet.CoreV1().PersistentVolumeClaims(namespace)
 

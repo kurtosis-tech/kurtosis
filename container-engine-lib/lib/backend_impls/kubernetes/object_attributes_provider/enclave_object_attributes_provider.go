@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_object_name"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -26,9 +27,10 @@ const (
 
 type KubernetesEnclaveObjectAttributesProvider interface {
 	ForEnclaveNamespace(isPartitioningEnabled bool) (KubernetesObjectAttributes, error)
-	ForEnclaveDataVolume() (KubernetesObjectAttributes, error)
+	ForEnclaveDataPersistentVolumeClaim() (KubernetesObjectAttributes, error)
 	ForApiContainer() (KubernetesApiContainerObjectAttributesProvider, error)
-	ForUserServiceService(id service.ServiceID, guid service.ServiceGUID) (KubernetesObjectAttributes, error)
+	ForUserServiceService(guid service.ServiceGUID, id service.ServiceID) (KubernetesObjectAttributes, error)
+	ForUserServicePod(guid service.ServiceGUID, id service.ServiceID, privatePorts map[string]*port_spec.PortSpec) (KubernetesObjectAttributes, error)
 }
 
 // Private so it can't be instantiated
@@ -86,7 +88,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespa
 	return objectAttributes, nil
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataVolume() (KubernetesObjectAttributes, error) {
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataPersistentVolumeClaim() (KubernetesObjectAttributes, error) {
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(provider.enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", provider.enclaveId)
@@ -159,8 +161,8 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactE
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceService (
-	serviceID service.ServiceID,
 	serviceGUID service.ServiceGUID,
+	serviceID service.ServiceID,
 ) (
 	KubernetesObjectAttributes,
 	error,
@@ -187,6 +189,44 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceSer
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create user service service object attributes.")
+	}
+
+	return objectAttributes, nil
+}
+
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod(
+	guid service.ServiceGUID,
+	id service.ServiceID,
+	privatePorts map[string]*port_spec.PortSpec,
+) (KubernetesObjectAttributes, error) {
+	name, err := provider.getNameForEnclaveObject([]string{userServiceSuffix})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get name for user service pod")
+	}
+
+	serializedPortSpecsAnnotationValue, err := kubernetes_port_spec_serializer.SerializePortSpecs(privatePorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred serializing the following user service port specs to a string for storing in the ports label: %+v", privatePorts)
+	}
+
+	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(string(id), string(guid))
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"Failed to get labels for user service pod with ID '%s' and GUID '%s'",
+			id,
+			guid,
+		)
+	}
+	labels[label_key_consts.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
+
+	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{
+		kubernetes_annotation_key.PortSpecsKubernetesAnnotationKey: serializedPortSpecsAnnotationValue,
+	}
+
+	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create user service pod object attributes")
 	}
 
 	return objectAttributes, nil
