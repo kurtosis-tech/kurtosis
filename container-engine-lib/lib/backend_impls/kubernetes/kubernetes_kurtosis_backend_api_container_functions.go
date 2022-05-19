@@ -221,7 +221,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		},
 		// Necessary for the API container to find its own namespace
 		{
-			Verbs: []string{consts.ListKubernetesVerb},
+			Verbs: []string{consts.ListKubernetesVerb, consts.GetKubernetesVerb},
 			APIGroups: []string{rbacv1.APIGroupAll},
 			Resources: []string{consts.NamespacesKubernetesResource},
 		},
