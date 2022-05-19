@@ -6,6 +6,9 @@
 ### Removals
 * Removed `GetNamespace`, which wasn't being used because we use the labels API for everything
 
+### Breaking Changes
+* Renamed `GetLocalKubernetesKurtosisBackend` -> `GetCLIKubernetesKurtosisBackend`
+
 # 0.23.4
 ### Features
 * Build out the following user service functions in Kubernetes:

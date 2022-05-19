@@ -64,22 +64,134 @@ var kurtosisPortProtocolToKubernetesPortProtocolTranslator = map[port_spec.PortP
 	port_spec.PortProtocol_SCTP: apiv1.ProtocolSCTP,
 }
 
-type KubernetesKurtosisBackend struct {
-	kubernetesManager *kubernetes_manager.KubernetesManager
+// TODO Remove this once we split apart the KubernetesKurtosisBackend into multiple backends (which we can only
+//  do once the CLI no longer makes any calls directly to the KurtosisBackend, and instead makes all its calls through
+//  the API container & engine APIs)
+type cliModeArgs struct {
+	// No CLI mode args needed for now
+}
+type apiContainerModeArgs struct {
+	ownEnclaveId enclave.EnclaveID
 
-	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider
+	ownNamespaceName string
 
+	storageClassName string
+
+	// TODO make this more dynamic - maybe guess based on the files artifact size?
+	filesArtifactExpansionVolumeSizeInMegabytes uint
+}
+type engineServerModeArgs struct {
 	/*
 		StorageClass name to be used for volumes in the cluster
 		StorageClasses must be defined by a cluster administrator.
 		passes this in when starting Kurtosis with Kubernetes.
 	*/
-	volumeStorageClassName string
+	storageClassName string
+
 	/*
 		Enclave availability must be set and defined by a cluster administrator.
 		The user passes this in when starting Kurtosis with Kubernetes.
-	 */
-	volumeSizePerEnclaveInMegabytes uint
+	*/
+	enclaveDataVolumeSizeInMegabytes uint
+}
+
+type KubernetesKurtosisBackend struct {
+	kubernetesManager *kubernetes_manager.KubernetesManager
+
+	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider
+
+	cliModeArgs *cliModeArgs
+
+	engineServerModeArgs *engineServerModeArgs
+
+	// Will only be filled out for the API container
+	apiContainerModeArgs *apiContainerModeArgs
+}
+
+// Private constructor that the other public constructors will use
+func newKubernetesKurtosisBackend(
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	cliModeArgs *cliModeArgs,
+	engineServerModeArgs *engineServerModeArgs,
+	apiContainerModeArgs *apiContainerModeArgs,
+) *KubernetesKurtosisBackend {
+	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
+	return &KubernetesKurtosisBackend{
+		kubernetesManager:               kubernetesManager,
+		objAttrsProvider:                objAttrsProvider,
+		cliModeArgs:                     cliModeArgs,
+		engineServerModeArgs:            engineServerModeArgs,
+		apiContainerModeArgs:            apiContainerModeArgs,
+	}
+}
+
+func NewAPIContainerKubernetesKurtosisBackend(
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	ownEnclaveId enclave.EnclaveID,
+	ownNamespaceName string,
+	storageClass string,
+	filesArtifactExpansionVolumeSizeInMegabytes uint,
+) *KubernetesKurtosisBackend {
+	modeArgs := &apiContainerModeArgs{
+		ownEnclaveId:     ownEnclaveId,
+		ownNamespaceName: ownNamespaceName,
+		storageClassName: storageClass,
+		filesArtifactExpansionVolumeSizeInMegabytes: filesArtifactExpansionVolumeSizeInMegabytes,
+	}
+	return newKubernetesKurtosisBackend(
+		kubernetesManager,
+		nil,
+		nil,
+		modeArgs,
+	)
+}
+
+func NewEngineServerKubernetesKurtosisBackend(
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	storageClass string,
+	enclaveDataVolumeSizeInMegabytes uint,
+) *KubernetesKurtosisBackend {
+	modeArgs := &engineServerModeArgs{
+		storageClassName:                 storageClass,
+		enclaveDataVolumeSizeInMegabytes: enclaveDataVolumeSizeInMegabytes,
+	}
+	return newKubernetesKurtosisBackend(
+		kubernetesManager,
+		nil,
+		modeArgs,
+		nil,
+	)
+}
+
+func NewCLIModeKubernetesKurtosisBackend(
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) *KubernetesKurtosisBackend {
+	modeArgs := &cliModeArgs{}
+	return newKubernetesKurtosisBackend(
+		kubernetesManager,
+		modeArgs,
+		nil,
+		nil,
+	)
+}
+
+func NewKubernetesKurtosisBackend(
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	// TODO Remove the necessity for these different args by splitting the KubernetesKurtosisBackend into multiple backends per consumer, e.g.
+	//  APIContainerKurtosisBackend, CLIKurtosisBackend, EngineKurtosisBackend, etc. This can only happen once the CLI
+	//  no longer uses the same functionality as API container, engine, etc. though
+	cliModeArgs *cliModeArgs,
+	engineServerModeArgs *engineServerModeArgs,
+	apiContainerModeargs *apiContainerModeArgs,
+) *KubernetesKurtosisBackend {
+	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
+	return &KubernetesKurtosisBackend{
+		kubernetesManager:               kubernetesManager,
+		objAttrsProvider:                objAttrsProvider,
+		cliModeArgs:                     cliModeArgs,
+		engineServerModeArgs:            engineServerModeArgs,
+		apiContainerModeArgs:            apiContainerModeargs,
+	}
 }
 
 func (backend *KubernetesKurtosisBackend) PullImage(image string) error {
@@ -155,16 +267,6 @@ func (backend *KubernetesKurtosisBackend) RunFilesArtifactExpander(ctx context.C
 func (backend *KubernetesKurtosisBackend) DestroyFilesArtifactExpanders(ctx context.Context, filters *files_artifact_expander.FilesArtifactExpanderFilters) (successfulFilesArtifactExpanderGuids map[files_artifact_expander.FilesArtifactExpanderGUID]bool, erroredFilesArtifactExpanderGuids map[files_artifact_expander.FilesArtifactExpanderGUID]error, resultError error) {
 	//TODO implement me
 	panic("implement me")
-}
-
-func NewKubernetesKurtosisBackend(kubernetesManager *kubernetes_manager.KubernetesManager, volumeStorageClassName string, volumeSizePerEnclaveInMegabytes uint) *KubernetesKurtosisBackend {
-	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
-	return &KubernetesKurtosisBackend{
-		kubernetesManager:               kubernetesManager,
-		objAttrsProvider:                objAttrsProvider,
-		volumeStorageClassName:          volumeStorageClassName,
-		volumeSizePerEnclaveInMegabytes: volumeSizePerEnclaveInMegabytes,
-	}
 }
 
 func getStringMapFromLabelMap(labelMap map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue) map[string]string {

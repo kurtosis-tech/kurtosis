@@ -18,6 +18,15 @@ import (
 
 const (
 	kurtosisApiContainerContainerName = "kurtosis-core-api"
+
+	// The name of the environment variable that we'll set using the Kubernetes downward API to tell the API container
+	// its own namespace name. This is necessary because the Role that the API container will run as won't have permission
+	// to list all namespaces on the cluster.
+	ApiContainerOwnNamespaceNameEnvVar = "API_CONTAINER_OWN_NAMESPACE_NAME"
+
+	// The Kubernetes FieldPath string specifying the pod's namespace, which we'll use via the Kubernetes downward API
+	// to give the API container an environment variable with its own namespace
+	kubernetesResourceOwnNamespaceFieldPath = "metadata.namespace"
 )
 
 // Any of these values being nil indicates that the resource doesn't exist
@@ -223,6 +232,12 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 			Verbs: []string{consts.CreateKubernetesVerb, consts.UpdateKubernetesVerb, consts.PatchKubernetesVerb, consts.DeleteKubernetesVerb, consts.GetKubernetesVerb, consts.ListKubernetesVerb, consts.WatchKubernetesVerb},
 			APIGroups: []string{rbacv1.APIGroupAll},
 			Resources: []string{consts.PodsKubernetesResource, consts.ServicesKubernetesResource, consts.PersistentVolumeClaimsKubernetesResource},
+		},
+		{
+			// Necessary for the API container to get its own namespace
+			Verbs: []string{consts.GetKubernetesVerb},
+			APIGroups: []string{rbacv1.APIGroupAll},
+			Resources: []string{consts.NamespacesKubernetesResource},
 		},
 	}
 
@@ -843,7 +858,11 @@ func getApiContainerContainersAndVolumes(
 ) (
 	resultContainers []apiv1.Container,
 	resultVolumes []apiv1.Volume,
+	resultErr error,
 ) {
+	if _, found := envVars[ApiContainerOwnNamespaceNameEnvVar]; found {
+		return nil, nil, stacktrace.NewError("The environment variable that will contain the API container's own namespace name, '%v', conflicts with an existing environment variable", ApiContainerOwnNamespaceNameEnvVar)
+	}
 
 	var containerEnvVars []apiv1.EnvVar
 	for varName, varValue := range envVars {
@@ -853,6 +872,18 @@ func getApiContainerContainersAndVolumes(
 		}
 		containerEnvVars = append(containerEnvVars, envVar)
 	}
+
+	// Using the Kubernetes downward API to tell the API container about its own namespace name
+	ownNamespaceEnvVar := apiv1.EnvVar{
+		Name: ApiContainerOwnNamespaceNameEnvVar,
+		ValueFrom: &apiv1.EnvVarSource{
+			FieldRef: &apiv1.ObjectFieldSelector{
+				 FieldPath: kubernetesResourceOwnNamespaceFieldPath,
+			},
+		},
+	}
+	containerEnvVars = append(containerEnvVars, ownNamespaceEnvVar)
+
 	containers := []apiv1.Container{
 		{
 			Name:  kurtosisApiContainerContainerName,

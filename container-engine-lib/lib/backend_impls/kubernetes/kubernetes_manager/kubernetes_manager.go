@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"io"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
@@ -50,25 +49,12 @@ var (
 )
 
 type KubernetesManager struct {
-	// The logger that all log messages will be written to
-	log *logrus.Logger // NOTE: This log should be used for all log statements - the system-wide logger should NOT be used!
-
 	// The underlying K8s client that will be used to modify the K8s environment
 	kubernetesClientSet *kubernetes.Clientset
 }
 
-/*
-NewKubernetesManager
-Creates a new K8s manager for manipulating the k8s cluster using the given client.
-
-Args:
-	log: The logger that this K8s manager will write all its log messages to.
-	kubernetesClientSet: The k8s client that will be used when interacting with the underlying k8s cluster.
-*/
 func NewKubernetesManager(kubernetesClientSet *kubernetes.Clientset) *KubernetesManager {
-	return &KubernetesManager{
-		kubernetesClientSet: kubernetesClientSet,
-	}
+	return &KubernetesManager{kubernetesClientSet: kubernetesClientSet}
 }
 
 // ---------------------------Services------------------------------------------------------------------------------
@@ -325,6 +311,17 @@ func (manager *KubernetesManager) RemoveNamespace(ctx context.Context, name stri
 	}
 
 	return nil
+}
+
+func (manager *KubernetesManager) GetNamespace(ctx context.Context, name string) (*apiv1.Namespace, error) {
+	namespaceClient := manager.kubernetesClientSet.CoreV1().Namespaces()
+
+	namespace, err := namespaceClient.Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get namespace with name '%s'", name)
+	}
+
+	return namespace, nil
 }
 
 func (manager *KubernetesManager) ListNamespaces(ctx context.Context) (*apiv1.NamespaceList, error) {
