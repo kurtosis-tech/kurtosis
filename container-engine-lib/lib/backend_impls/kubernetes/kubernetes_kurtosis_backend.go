@@ -369,7 +369,7 @@ func (backend *KubernetesKurtosisBackend) getEnclaveNamespaceName(ctx context.Co
 	// API containers can't list all namespaces due to being namespaced objects themselves (can only view their own namespace, so
 	// they can only check if the requested enclave matches the one they have stored
 	var namespaceName string
-	if (backend.cliModeArgs != nil || backend.engineServerModeArgs != nil) {
+	if backend.cliModeArgs != nil || backend.engineServerModeArgs != nil {
 		matchLabels := getEnclaveMatchLabels()
 		matchLabels[label_key_consts.EnclaveIDKubernetesLabelKey.GetString()] = string(enclaveId)
 
@@ -383,11 +383,11 @@ func (backend *KubernetesKurtosisBackend) getEnclaveNamespaceName(ctx context.Co
 			return "", stacktrace.NewError("No namespace matching labels '%+v' was found", matchLabels)
 		}
 		if numOfNamespaces > 1 {
-			return "", stacktrace.NewError("Expected to find only one API container namespace for API container in enclave ID '%v', but '%v' was found; this is a bug in Kurtosis", enclaveId, numOfNamespaces)
+			return "", stacktrace.NewError("Expected to find only one enclave namespace matching enclave ID '%v', but found '%v'; this is a bug in Kurtosis", enclaveId, numOfNamespaces)
 		}
 
 		namespaceName = namespaces.Items[0].Name
-	} else if (backend.apiContainerModeArgs != nil) {
+	} else if backend.apiContainerModeArgs != nil {
 		if enclaveId != backend.apiContainerModeArgs.ownEnclaveId {
 			return "", stacktrace.NewError(
 				"Received a request to get namespace for enclave '%v', but the Kubernetes Kurtosis backend is running in an API " +
@@ -398,7 +398,7 @@ func (backend *KubernetesKurtosisBackend) getEnclaveNamespaceName(ctx context.Co
 		}
 		namespaceName = backend.apiContainerModeArgs.ownNamespaceName
 	} else {
-
+		return "", stacktrace.NewError("Received a request to get an enclave namespace's name, but the Kubernetes Kurtosis backend isn't in any recognized mode; this is a bug in Kurtosis")
 	}
 
 	return namespaceName, nil
