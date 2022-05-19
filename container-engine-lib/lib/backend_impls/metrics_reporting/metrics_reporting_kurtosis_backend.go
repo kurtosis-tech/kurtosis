@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
@@ -566,6 +567,33 @@ func (backend *MetricsReportingKurtosisBackend) DestroyNetworkingSidecars(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying networking sidecars using filters '%+v'", filters)
 	}
 	return successfulUserServiceGuids, erroredUserServiceGuids, nil
+}
+
+//Create a files artifact exansion volume for user service and file artifact id and runs a file artifact expander
+func (backend *MetricsReportingKurtosisBackend) RunFilesArtifactExpansion(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	filesArtifactId service.FilesArtifactID,
+	destVolMntDirpathOnExpander string,
+	filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
+)(
+	*files_artifact_expansion.FilesArtifactExpansionGUID,
+	error,
+) {
+	panic("IMPLEMENT ME")
+}
+
+//Destroy files artifact expansion volume and expander using the given filters
+func (backend *MetricsReportingKurtosisBackend)  DestroyFilesArtifactExpansion(
+	ctx context.Context,
+	filters  files_artifact_expansion.FilesArtifactExpansionFilters,
+)(
+	successfulFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]bool,
+	erroredFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]error,
+	resultErr error,
+) {
+	panic("IMPLEMENT ME")
 }
 
 func (backend *MetricsReportingKurtosisBackend) CreateFilesArtifactExpansionVolume(
