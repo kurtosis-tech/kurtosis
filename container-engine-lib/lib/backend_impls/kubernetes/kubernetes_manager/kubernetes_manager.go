@@ -17,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"net/url"
 	"strconv"
@@ -33,6 +34,9 @@ const (
 	waitForPersistentVolumeBoundRetriesDelayMilliSeconds = 500
 
 	apiv1Prefix = "api/v1"
+
+	podWaitForAvailabilityTimeout = 15 * time.Second
+	podWaitForAvailabilityTimeBetweenPolls = 500 * time.Millisecond
 )
 
 var (
@@ -664,7 +668,26 @@ func (manager *KubernetesManager) CreatePod(
 		return nil, stacktrace.Propagate(err, "Expected to be able to create pod with name '%v' and labels '%+v', instead a non-nil error was returned", name, podLabels)
 	}
 
-	return createdPod, nil
+	deadline := time.Now().Add(podWaitForAvailabilityTimeout)
+	var latestPodStatus *apiv1.PodStatus
+	for time.Now().Before(deadline) {
+		pod, err := podClient.Get(ctx, name, metav1.GetOptions{})
+		if err == nil {
+			latestPodStatus = &pod.Status
+
+		}
+		time.Sleep(podWaitForAvailabilityTimeBetweenPolls)
+	}
+
+	wait.WaitFor()
+
+
+	return nil, stacktrace.NewError(
+		"Pod '%v' in namespace '%v' did not become available after %v with %v between polls",
+		name,
+		namespace,
+		TODO
+	)
 }
 
 func (manager *KubernetesManager) RemovePod(ctx context.Context, namespace string, name string) error {
