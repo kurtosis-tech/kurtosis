@@ -308,7 +308,10 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred getting container ports from the API container's private port specs")
 	}
 
-	apiContainerContainers, apiContainerVolumes := getApiContainerContainersAndVolumes(image, containerPorts, envVarsWithOwnIp, enclaveDataPersistentVolumeClaim, enclaveDataVolumeDirpath)
+	apiContainerContainers, apiContainerVolumes, err := getApiContainerContainersAndVolumes(image, containerPorts, envVarsWithOwnIp, enclaveDataPersistentVolumeClaim, enclaveDataVolumeDirpath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting API containers and volumes")
+	}
 
 	// Create pods with api container containers and volumes in Kubernetes
 	apiContainerPod, err := backend.kubernetesManager.CreatePod(ctx, enclaveNamespaceName, apiContainerPodName, apiContainerPodLabels, apiContainerPodAnnotations, apiContainerContainers, apiContainerVolumes, apiContainerServiceAccountName);
@@ -910,7 +913,7 @@ func getApiContainerContainersAndVolumes(
 		},
 	}
 
-	return containers, volumes
+	return containers, volumes, nil
 }
 
 func getApiContainerMatchLabels() map[string]string {
