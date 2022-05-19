@@ -253,7 +253,7 @@ func (backend *KubernetesKurtosisBackend) GetModules(
 
 	matchingApiContainers, _, err := backend.getMatchingModuleObjectsAndKubernetesResources(ctx, enclaveId, filters)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting API containers matching the following filters: %+v", filters)
+		return nil, stacktrace.Propagate(err, "An error occurred getting modules and Kubernetes resources matching filters '%+v'", filters)
 	}
 	return matchingApiContainers, nil
 }
@@ -324,7 +324,7 @@ func (backend *KubernetesKurtosisBackend) DestroyModules(
 ) {
 	_, matchingResources, err := backend.getMatchingModuleObjectsAndKubernetesResources(ctx, enclaveId, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting module Kubernetes resources matching filters: %+v", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting modules and Kubernetes resources matching filters '%+v'", filters)
 	}
 
 	successfulModuleGUIDs := map[module.ModuleGUID]bool{}
@@ -338,8 +338,9 @@ func (backend *KubernetesKurtosisBackend) DestroyModules(
 			if err := backend.kubernetesManager.RemovePod(ctx, podName, namespaceName); err != nil {
 				erroredModuleGUIDs[moduleGuid] = stacktrace.Propagate(
 					err,
-					"An error occurred removing pod '%v' for module with GUID '%v'",
+					"An error occurred removing pod '%v' in namespace '%v' for module with GUID '%v'",
 					podName,
+					namespaceName,
 					moduleGuid,
 				)
 				continue
@@ -353,8 +354,9 @@ func (backend *KubernetesKurtosisBackend) DestroyModules(
 			if err := backend.kubernetesManager.RemoveService(ctx, serviceName, namespaceName); err != nil {
 				erroredModuleGUIDs[moduleGuid] = stacktrace.Propagate(
 					err,
-					"An error occurred removing service '%v' for module with GUID '%v'",
+					"An error occurred removing service '%v' in namespace '%v' for module with GUID '%v'",
 					serviceName,
+					namespaceName,
 					moduleGuid,
 				)
 				continue
