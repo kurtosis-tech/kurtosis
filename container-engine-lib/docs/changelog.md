@@ -2,6 +2,9 @@
 ### Features
 * Build out Kubernetes `RegisterService`
 
+### Fixes
+* Fix bug in `waitForPersistentVolumeClaimBound` in which PVC name and namespace were flipped in args
+
 ### Changes
 * Renamed all Kubernetes constants that were `XXXXXLabelKey` to be `XXXXXKubernetesLabelKey` to make it more visually obvious that we're using the Kubernetes constants rather than Docker
 * Renamed all constants that were `XXXXXLabelValue` to be `XXXXXKubernetesLabelValue` to make it more visually obvious that we're using the Kubernetes constants rather than Docker
