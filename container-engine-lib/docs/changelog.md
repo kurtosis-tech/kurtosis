@@ -1,6 +1,7 @@
 # TBD
 ### Fixes
 * Fixed `grpcProxy` port ID not being acceptable to Kubernetes
+* Fixed a bug where RegisterService was creating Kubernetes Services without ports, which Kubernetes doesn't allow
 
 # 0.24.0
 ### Fixes

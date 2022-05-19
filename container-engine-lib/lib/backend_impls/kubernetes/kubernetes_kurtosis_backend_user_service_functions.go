@@ -63,6 +63,12 @@ const (
 
 	// Our user services don't need service accounts
 	userServiceServiceAccountName = ""
+
+	// Kubernetes doesn't allow us to create services without ports exposed, but we won't have the ports that the user
+	// wants to listen to until they StartService. We create the Kubernetes Service on RegisterService, so we need to
+	// set up a notional port until the user calls StartService.
+	unboundPortName = "nonexistent"
+	unboundPortNumber = 80
 )
 
 // Kubernetes doesn't provide public IP or port information; this is instead handled by the Kurtosis gateway that the user uses
@@ -135,6 +141,15 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 	}
 	matchedPodLabelStrs := getStringMapFromLabelMap(matchedPodLabels)
 
+	// Kubernetes doesn't allow us to create services without any ports, so we need to set this to a notional value
+	// until the user calls StartService
+	notionalServicePorts := []apiv1.ServicePort{
+		{
+			Name:        unboundPortName,
+			Port:        unboundPortNumber,
+		},
+	}
+
 	createdService, err := backend.kubernetesManager.CreateService(
 		ctx,
 		namespaceName,
@@ -143,7 +158,7 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 		serviceAnnotationsStrs,
 		matchedPodLabelStrs,
 		apiv1.ServiceTypeClusterIP,
-		[]apiv1.ServicePort{},	// This will be filled out when the user starts a pod
+		notionalServicePorts,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating Kubernetes service in enclave '%v' with ID '%v'", enclaveId, serviceId)
