@@ -415,13 +415,14 @@ type KurtosisBackend interface {
 		serviceGuid service.ServiceGUID,
 		filesArtifactId service.FilesArtifactID,
 		filesArtifactFilepathRelativeToEnclaveDatadirRoot string, ) (
-		*files_artifact_expansion.FilesArtifactExpansionGUID,
+		*files_artifact_expansion.FilesArtifactExpansion,
 		error,
 	)
 
 	//Destroy files artifact expansion using the given filters
 	DestroyFilesArtifactExpansion(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters  files_artifact_expansion.FilesArtifactExpansionFilters,
 	) (
 		resultSuccessfulFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]bool,
