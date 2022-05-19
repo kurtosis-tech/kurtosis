@@ -1,4 +1,6 @@
 # TBD
+
+# 0.24.0
 ### Fixes
 * Fixed a bug where the API container resources map would have entries even if the enclave was empty of API containers
 * Fixed a bug where the API container didn't have a way to get enclave namespace names, because it isn't allowed to list namespaces given that its service account is a namespaced object
