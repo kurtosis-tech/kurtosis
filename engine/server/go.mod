@@ -1,6 +1,6 @@
 module github.com/kurtosis-tech/kurtosis-engine-server/server
 
-go 1.15
+go 1.17
 
 replace (
 	github.com/kurtosis-tech/kurtosis-engine-server/api/golang => ../api/golang
@@ -9,9 +9,10 @@ replace (
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220520013740-7e5abf2077b9
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220520014730-9ac1f4aa877d // indirect
-	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220520014718-2ee7e3707bc7
+	github.com/containerd/containerd v1.5.5 // indirect
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220520170436-c1b29432bb40
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220520173359-57be80203ed3 // indirect
+	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220520173349-ca4ecae6ef97
 	github.com/kurtosis-tech/kurtosis-engine-server/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
@@ -20,7 +21,6 @@ require (
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	google.golang.org/grpc v1.41.0
 	google.golang.org/protobuf v1.27.1
 )

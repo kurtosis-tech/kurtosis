@@ -1,4 +1,15 @@
 # TBD
+### Features
+* Built out Kubernetes module CRUD functions
+
+### Changes
+* Upgraded the launcher & server to Go 1.17
+
+### Fixes
+* Fixed bug in updating Kubernetes services
+
+### Breaking Changes
+* The launcher now requires Go 1.17
 
 # 1.21.5
 ### Fixes
