@@ -26,8 +26,24 @@ const (
 	testDatastoreKey = "my-key"
 	testDatastoreValue = "test-value"
 
-	waitForStartupDelayMilliseconds = 1000
-	waitForStartupMaxPolls          = 15
+	millisBetweenAvailabilityRetries = 1000
+
+	/*
+	NOTE: on 2022-05-16 this failed with the following error so we bumped the num polls to 20. If this fails again, look
+	into if there's some sort of nondeterminism happening.
+
+	time="2022-05-16T23:58:21Z" level=info msg="Sanity-checking that all 4 datastore services added via the module work as expected..."
+	--- FAIL: TestModule (21.46s)
+	    module_test.go:81:
+	        	Error Trace:	module_test.go:81
+	        	Error:      	Received unexpected error:
+	        	            	The service didn't return a success code, even after 15 retries with 1000 milliseconds in between retries
+	        	            	 --- at /home/circleci/project/internal_testsuites/golang/test_helpers/test_helpers.go:179 (WaitForHealthy) ---
+	        	            	Caused by: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing dial tcp 127.0.0.1:49188: connect: connection refused"
+	        	Test:       	TestModule
+	        	Messages:   	An error occurred waiting for the datastore service to become available
+	 */
+	waitForStartupMaxPolls           = 20
 )
 
 type DatastoreArmyModuleResult struct {
@@ -80,8 +96,9 @@ func TestModule(t *testing.T) {
 
 		require.NoError(
 			t,
-			test_helpers.WaitForHealthy(ctx, datastoreClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds),
-			"An error occurred waiting for the datastore service to become available",
+			test_helpers.WaitForHealthy(ctx, datastoreClient, waitForStartupMaxPolls, millisBetweenAvailabilityRetries),
+			"An error occurred waiting for datastore service '%v' to become available",
+			serviceId,
 		)
 
 		upsertArgs := &datastore_rpc_api_bindings.UpsertArgs{

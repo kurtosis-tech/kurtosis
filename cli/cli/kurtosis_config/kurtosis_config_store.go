@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/v0"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/v1"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/versioned_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -28,6 +27,12 @@ var (
 
 type kurtosisConfigStore struct {
 	mutex *sync.RWMutex
+}
+
+// Every Kurtosis config version except v0 should have the config-version key, so we'll use that to determine
+// which version of config overrides the user is supply
+type versionDetectingKurtosisConfig struct {
+	ConfigVersion config_version.ConfigVersion `yaml:"config-version"`
 }
 
 func GetKurtosisConfigStore() *kurtosisConfigStore {
@@ -167,14 +172,14 @@ func (configStore *kurtosisConfigStore) readConfigFileBytes() ([]byte, error) {
 		2. Overlay migrated overrides on top of the "default" latest version YAML struct
  */
 func migrateConfigOverridesToLatest(configFileBytes []byte) (*v1.KurtosisConfigV1, error) {
-	configVersionDetector := &versioned_config.VersionedKurtosisConfig{
+	versionDetectingConfig := &versionDetectingKurtosisConfig{
 		ConfigVersion: config_version.ConfigVersion_v0,
 	}
-	if err := yaml.Unmarshal(configFileBytes, configVersionDetector); err != nil {
+	if err := yaml.Unmarshal(configFileBytes, versionDetectingConfig); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(configFileBytes))
 	}
 
-	configVersionOnDisk := configVersionDetector.ConfigVersion
+	configVersionOnDisk := versionDetectingConfig.ConfigVersion
 
 	var uncastedConfig interface{}
 	switch configVersionOnDisk {

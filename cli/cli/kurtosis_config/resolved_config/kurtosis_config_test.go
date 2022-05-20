@@ -26,7 +26,7 @@ func TestNewKurtosisConfigJustMetrics(t *testing.T) {
 	version := config_version.ConfigVersion_v0
 	shouldSendMetrics := true
 	originalOverrides := v1.KurtosisConfigV1{
-		ConfigVersion: &version,
+		ConfigVersion: version,
 		ShouldSendMetrics: &shouldSendMetrics,
 	}
 	config, err := NewKurtosisConfigFromOverrides(&originalOverrides)
