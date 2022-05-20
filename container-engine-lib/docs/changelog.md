@@ -1,4 +1,6 @@
 # TBD
+
+# 0.25.0
 ### Features
 * Built out Kubernetes `GetUserServiceLogs`
 * Built out Kubernetes `RunUserServiceExecCommands`
