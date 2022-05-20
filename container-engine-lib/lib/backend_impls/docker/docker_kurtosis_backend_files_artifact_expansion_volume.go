@@ -22,7 +22,9 @@ func (backend *DockerKurtosisBackend) createFilesArtifactExpansionVolume(
 		return "", stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
 
-	volumeAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpansionVolume(filesArtifactExpansion.GetGUID())
+	volumeAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpansionVolume(
+		filesArtifactExpansion.GetGUID(),
+		filesArtifactExpansion.GetServiceGUID())
 	if err != nil {
 		return "", stacktrace.Propagate(
 			err,
