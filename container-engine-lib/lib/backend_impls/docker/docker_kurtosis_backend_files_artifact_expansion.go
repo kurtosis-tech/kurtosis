@@ -164,6 +164,10 @@ func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionObjsAndDoc
 	map[files_artifact_expansion.FilesArtifactExpansionGUID]*filesArtifactExpansionDockerResources,
 	error,
 ) {
+	// FIRST GET BROAD MATCHES FOR DOCKER RESOURCES
+	// SECOND GET ALL THE KURTOSIS OBJECTS FOR THE BROAD MATCHED DOCKER RESOURCES
+	// THIRD FILTER TO THE ACTUAL SELECTION (THE OR)
+	// FOURTH DESTROY THE KUBERNETES STUFF
 	panic("TODO IMPLEMENT ME")
 }
 
