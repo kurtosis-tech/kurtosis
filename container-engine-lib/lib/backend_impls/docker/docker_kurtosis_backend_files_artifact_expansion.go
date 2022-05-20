@@ -92,7 +92,7 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 	return filesArtifactExpansion, nil
 }
 
-//Destroy files artifact expansion volume and expander using the given filters
+// Destroy files artifact expansion volume and expander using the given filters
 func (backend *DockerKurtosisBackend)  DestroyFilesArtifactExpansion(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
@@ -139,37 +139,6 @@ func (backend *DockerKurtosisBackend)  DestroyFilesArtifactExpansion(
 
 // ====================== PRIVATE HELPERS =============================
 
-// STEP 3: DO ACTUAL FILTERING AND DESTROY THE KUBERNETES STUFF
-func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionObjsAndDockerResources(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	filters *files_artifact_expansion.FilesArtifactExpansionFilters,
-) (
-	map[files_artifact_expansion.FilesArtifactExpansionGUID]*files_artifact_expansion.FilesArtifactExpansion,
-	map[files_artifact_expansion.FilesArtifactExpansionGUID]*filesArtifactExpansionDockerResources,
-	error,
-) {
-	// FIRST GET BROAD MATCHES FOR DOCKER RESOURCES
-	matchingFilesArtifactExpansionDockerResources, err := backend.getMatchingFileArtifactExpansionDockerResources(
-		ctx, enclaveId, filters.GUIDs, filters.ServiceGUIDs)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Failed to get matching files artifact expansion docker resources for enclave" +
-			" '%v' and filters '%+v'", enclaveId, filters)
-	}
-
-	matchingFileArtifactExpansionObjs, err := backend.getFileArtifactExpansionObjsFromDockerResources(enclaveId, matchingFilesArtifactExpansionDockerResources)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Failed to get matching files artifact expansion Kurtosis objects for enclave" +
-			" '%v' and filters '%+v'", enclaveId, filters)
-	}
-
-	// SECOND GET ALL THE KURTOSIS OBJECTS FOR THE BROAD MATCHED DOCKER RESOURCES
-	// THIRD FILTER TO THE ACTUAL SELECTION (THE OR)
-	// FOURTH DESTROY THE KUBERNETES STUFF
-	panic("TODO IMPLEMENT ME")
-}
-
-// STEP 1: GATHER KUBERNETES RESOURCES
 func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionDockerResources(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
@@ -250,14 +219,6 @@ func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionDockerReso
 		}
 	}
 	return resourcesByFilesArtifactGuid, nil
-}
-
-// STEP 2: REMODEL KUBERNETES RESOURCE REPRESENTATION INTO KURTOSIS REPRESENTATION
-func (backend *DockerKurtosisBackend) getFileArtifactExpansionObjsFromDockerResources(
-	enclaveId enclave.EnclaveID,
-	allDockerResources map[files_artifact_expansion.FilesArtifactExpansionGUID]*filesArtifactExpansionDockerResources,
-) (map[files_artifact_expansion.FilesArtifactExpansionGUID]*files_artifact_expansion.FilesArtifactExpansion, error){
-	panic("TODO IMPLEMENT ME")
 }
 
 func newFilesArtifactExpansionGUID(filesArtifactId service.FilesArtifactID, serviceGuid service.ServiceGUID) files_artifact_expansion.FilesArtifactExpansionGUID {
