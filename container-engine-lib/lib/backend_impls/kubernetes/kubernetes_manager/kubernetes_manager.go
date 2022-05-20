@@ -17,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -51,6 +52,9 @@ const (
 	shouldAllocateTtyOnPodExec = false
 
 	successExecCommandExitCode = 0
+
+	// We want to force updates because only Kurtosis is expected to have ownership of the objects Kurtosis creates
+	shouldForceUpdates = true
 )
 
 var (
@@ -119,16 +123,28 @@ func (manager *KubernetesManager) RemoveService(ctx context.Context, namespace s
 	return nil
 }
 
-func (manager *KubernetesManager) UpdateService(ctx context.Context, namespace string, service *apiv1.Service) error {
-	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
-	updateOpts := metav1.UpdateOptions{}
-	if _, err := servicesClient.Update(ctx, service, updateOpts); err != nil {
-		return stacktrace.Propagate(err, "Failed to update service '%v' in namespace '%v'", service.Name, namespace)
+func (manager *KubernetesManager) UpdateService(
+	ctx context.Context,
+	namespaceName string,
+	serviceName string,
+	// We use a configurator, rather than letting the user pass in their own ServiceApplyConfiguration, so that we ensure
+	// they use the constructor (and don't do struct instantiation and forget to add the namespace, object name, etc. which
+	// would result in removing the object name)
+	updateConfigurator func(configuration *applyconfigurationsv1.ServiceApplyConfiguration),
+) (*apiv1.Service, error) {
+	updatesToApply := applyconfigurationsv1.Service(serviceName, namespaceName)
+	updateConfigurator(updatesToApply)
+
+	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespaceName)
+
+	applyOpts := metav1.ApplyOptions{
+		Force: shouldForceUpdates,
 	}
-
-
-
-	return nil
+	result, err := servicesClient.Apply(ctx, updatesToApply, applyOpts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to update service '%v' in namespace '%v'", serviceName, namespaceName)
+	}
+	return result, nil
 }
 
 func (manager *KubernetesManager) GetServiceByName(ctx context.Context, namespace string, name string) (*apiv1.Service, error) {

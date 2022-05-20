@@ -21,6 +21,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	apiv1 "k8s.io/api/core/v1"
+	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"net"
 )
 
@@ -307,19 +308,11 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		}
 	}()
 
+
 	updatedService, err := backend.updateServiceWhenContainerStarted(ctx, namespaceName, kubernetesService, privatePorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred updating service '%v' to reflect its new ports: %+v", kubernetesService.GetName(), privatePorts)
 	}
-	shouldUndoServiceUpdate := true
-	defer func() {
-		if shouldUndoServiceUpdate {
-			if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, kubernetesService); err != nil {
-				logrus.Errorf("Starting service didn't complete successfully so we tried to undo the changes we made to the Kubernetes service but doing so threw an error:\n%v", err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually correct service '%v' in namespace '%v'!!!", kubernetesService.GetName(), namespaceName)
-			}
-		}
-	}()
 
 	kubernetesResources := map[service.ServiceGUID]*userServiceKubernetesResources{
 		serviceGuid: {
@@ -341,7 +334,6 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	}
 
 	shouldDestroyPod = false
-	shouldUndoServiceUpdate = false
 	return objectsAndResources.service, nil
 }
 
@@ -352,7 +344,12 @@ func (backend *KubernetesKurtosisBackend) GetUserServices(
 ) (successfulUserServices map[service.ServiceGUID]*service.Service, resultError error) {
 	allObjectsAndResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' matching filters: %+v", filters)
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting user services in enclave '%v' matching filters: %+v",
+			enclaveId,
+			filters,
+		)
 	}
 	result := map[service.ServiceGUID]*service.Service{}
 	for guid, serviceObjsAndResources := range allObjectsAndResources {
@@ -515,7 +512,12 @@ func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, 
 
 	allObjectsAndResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' matching filters: %+v", filters)
+		return nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting user services in enclave '%v' matching filters: %+v",
+			enclaveId,
+			filters,
+		)
 	}
 
 	successfulGuids := map[service.ServiceGUID]bool{}
@@ -537,13 +539,17 @@ func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, 
 		}
 
 		kubernetesService := resources.service
-		updatedService := kubernetesService.DeepCopy()
-		updatedService.Spec.Selector = nil
-		if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, updatedService); err != nil {
+		serviceName := kubernetesService.Name
+		updateConfigurator := func(updatesToApply *applyconfigurationsv1.ServiceApplyConfiguration) {
+			specUpdates := applyconfigurationsv1.ServiceSpec().WithSelector(nil)
+			updatesToApply.WithSpec(specUpdates)
+		}
+		if _, err := backend.kubernetesManager.UpdateService(ctx, namespaceName, serviceName, updateConfigurator); err != nil {
 			erroredGuids[serviceGuid] = stacktrace.Propagate(
 				err,
 				"An error occurred updating service '%v' in namespace '%v' to reflect that it's no longer running",
-				kubernetesService.Name,
+				serviceName,
+				namespaceName,
 			)
 			continue
 		}
@@ -561,7 +567,12 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 
 	allObjectsAndResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' matching filters: %+v", filters)
+		return nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting user services in enclave '%v' matching filters: %+v",
+			enclaveId,
+			filters,
+		)
 	}
 
 	successfulGuids := map[service.ServiceGUID]bool{}
@@ -1024,8 +1035,11 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 	namespaceName string,
 	kubernetesService *apiv1.Service,
 	privatePorts map[string]*port_spec.PortSpec,
-) (*apiv1.Service, error) {
-	updatedService := kubernetesService.DeepCopy()
+) (
+	*apiv1.Service,
+	error,
+) {
+	serviceName := kubernetesService.GetName()
 
 	serializedPortSpecs, err := kubernetes_port_spec_serializer.SerializePortSpecs(privatePorts)
 	if err != nil {
@@ -1033,23 +1047,81 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 	}
 
 	// We only need to modify the ports from the default (unbound) ports if the user actually declares ports
+	newServicePorts := kubernetesService.Spec.Ports
 	if len(privatePorts) > 0 {
-		kubernetesServicePorts, err := getKubernetesServicePortsFromPrivatePortSpecs(privatePorts)
+		candidateNewServicePorts, err := getKubernetesServicePortsFromPrivatePortSpecs(privatePorts)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes service ports for the following private port specs: %+v", privatePorts)
 		}
-		updatedService.Spec.Ports = kubernetesServicePorts
+		newServicePorts = candidateNewServicePorts
 	}
 
-	updatedAnnotations := updatedService.Annotations
-	if updatedAnnotations == nil {
-		updatedAnnotations = map[string]string{}
+	newAnnotations := kubernetesService.Annotations
+	if newAnnotations == nil {
+		newAnnotations = map[string]string{}
 	}
-	updatedAnnotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()] = serializedPortSpecs.GetString()
-	updatedService.Annotations = updatedAnnotations
+	newAnnotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()] = serializedPortSpecs.GetString()
 
-	if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, updatedService); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred updating the user service to open the service ports and add the serialized private port specs annotation")
+	updatingConfigurator := func(updatesToApply *applyconfigurationsv1.ServiceApplyConfiguration) {
+		specUpdateToApply := applyconfigurationsv1.ServiceSpec()
+		for _, newServicePort := range newServicePorts {
+			portUpdateToApply := &applyconfigurationsv1.ServicePortApplyConfiguration{
+				Name:        &newServicePort.Name,
+				Protocol:    &newServicePort.Protocol,
+				// TODO fill this out for an app port!
+				AppProtocol: nil,
+				Port:        &newServicePort.Port,
+			}
+			specUpdateToApply.WithPorts(portUpdateToApply)
+		}
+		updatesToApply.WithSpec(specUpdateToApply)
+
+		updatesToApply.WithAnnotations(newAnnotations)
 	}
+	updatedService, err := backend.kubernetesManager.UpdateService(ctx, namespaceName, serviceName, updatingConfigurator)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred updating Kubernetes service '%v' in namespace '%v' to open the service ports and add " +
+				"the serialized private port specs annotation",
+			serviceName,
+			namespaceName,
+		)
+	}
+	shouldUndoUpdate := true
+	defer func() {
+		if shouldUndoUpdate {
+			undoingConfigurator := func(reversionToApply *applyconfigurationsv1.ServiceApplyConfiguration) {
+				specReversionToApply := applyconfigurationsv1.ServiceSpec()
+				for _, oldServicePort := range newServicePorts {
+					portUpdateToApply := &applyconfigurationsv1.ServicePortApplyConfiguration{
+						Name:        &oldServicePort.Name,
+						Protocol:    &oldServicePort.Protocol,
+						// TODO fill this out for an app port!
+						AppProtocol: nil,
+						Port:        &oldServicePort.Port,
+					}
+					specReversionToApply.WithPorts(portUpdateToApply)
+				}
+				reversionToApply.WithSpec(specReversionToApply)
+
+				reversionToApply.WithAnnotations(kubernetesService.Annotations)
+			}
+			if _, err := backend.kubernetesManager.UpdateService(ctx, namespaceName, serviceName, undoingConfigurator); err != nil {
+				logrus.Errorf(
+					"An error occurred updating Kubernetes service '%v' in namespace '%v' to open the service ports " +
+						"and add the serialized private port specs annotation so we tried to revert the service to " +
+						"its values before the update, but an error occurred; this means the service is likely in " +
+						"an inconsistent state:\n%v",
+					serviceName,
+					namespaceName,
+					err,
+				)
+				// Nothing we can really do here to recover
+			}
+		}
+	}()
+
+	shouldUndoUpdate = false
 	return updatedService, nil
 }

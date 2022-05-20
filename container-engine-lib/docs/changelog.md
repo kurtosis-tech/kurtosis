@@ -9,6 +9,7 @@
 
 ### Changes
 * Upgraded Kubernetes client SDK from v0.20 to v0.24
+* Switched the `UpdateService` implementation to use server-side apply
 
 ### Fixes
 * Fix a bug in gathering user service Services and Pods
