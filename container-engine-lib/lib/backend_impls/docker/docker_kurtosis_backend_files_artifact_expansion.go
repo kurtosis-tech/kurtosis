@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"github.com/docker/docker/api/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -26,6 +27,24 @@ const (
 	// should also be considered as running)
 	shouldFetchAllExpansionContainersWhenRetrievingContainers = true
 )
+
+type filesArtifactExpansionObjectsAndDockerResources struct {
+	filesArtifactExpansionGUID *files_artifact_expansion.FilesArtifactExpansionGUID
+
+	// May be nil if no pod has been started yet
+	service *service.Service
+
+	// Will never be nil
+	dockerResources *filesArtifactExpansionDockerResources
+}
+
+// Any of these values being nil indicates that the resource doesn't exist
+type filesArtifactExpansionDockerResources struct {
+	// Will never be nil because an API container is defined by its service
+	volume *types.Volume
+
+	container *types.Container
+}
 
 //Create a files artifact exansion volume for user service and file artifact id and runs a file artifact expander
 func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.Context,
@@ -134,6 +153,35 @@ func (backend *DockerKurtosisBackend)  DestroyFilesArtifactExpansion(
 }
 
 // ====================== PRIVATE HELPERS =============================
+
+func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionObjsAndDockerResources(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *service.ServiceFilters,
+) (
+	map[files_artifact_expansion.FilesArtifactExpansionGUID]*files_artifact_expansion.FilesArtifactExpansion,
+	map[files_artifact_expansion.FilesArtifactExpansionGUID]*filesArtifactExpansionDockerResources,
+	error,
+) {
+	panic("TODO IMPLEMENT ME")
+}
+
+func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionDockerResources(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	maybeGuidsToMatch map[files_artifact_expansion.FilesArtifactExpansionGUID]bool,
+) (map[files_artifact_expansion.FilesArtifactExpansionGUID]*filesArtifactExpansionDockerResources, error){
+	panic("TODO IMPLEMENT ME")
+}
+
+func (backend *DockerKurtosisBackend) getFileArtifactExpansionObjsFromDockerResources(
+	enclaveId enclave.EnclaveID,
+	allDockerResources map[files_artifact_expansion.FilesArtifactExpansionGUID]*filesArtifactExpansionDockerResources,
+) (map[files_artifact_expansion.FilesArtifactExpansionGUID]*files_artifact_expansion.FilesArtifactExpansion, error){
+	panic("TODO IMPLEMENT ME")
+}
+
+
 
 func newFilesArtifactExpansionGUID(filesArtifactId service.FilesArtifactID, serviceGuid service.ServiceGUID) files_artifact_expansion.FilesArtifactExpansionGUID {
 	serviceRegistrationGuidStr := string(serviceGuid)
