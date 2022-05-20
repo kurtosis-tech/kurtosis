@@ -58,7 +58,7 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 		}
 	}()
 
-	_, err = backend.runFilesArtifactExpander(
+	err = backend.runFilesArtifactExpander(
 		ctx,
 		filesArtifactExpansion,
 		enclaveId,

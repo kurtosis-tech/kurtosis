@@ -9,7 +9,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
@@ -140,8 +140,8 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForModuleContaine
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpansionVolume(
+	guid files_artifact_expansion.FilesArtifactExpansionGUID,
 	serviceGUID service.ServiceGUID,
-	fileArtifactID service.FilesArtifactID,
 )(
 	KubernetesObjectAttributes,
 	error,
@@ -150,7 +150,8 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactE
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpanderContainer(
-	guid files_artifact_expander.FilesArtifactExpanderGUID,
+	guid files_artifact_expansion.FilesArtifactExpansionGUID,
+	serviceGUID service.ServiceGUID,
 )(
 	KubernetesObjectAttributes,
 	error,
