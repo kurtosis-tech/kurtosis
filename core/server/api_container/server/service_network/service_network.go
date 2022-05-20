@@ -10,6 +10,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/files_artifact_expander"
@@ -703,7 +704,7 @@ func (network *ServiceNetwork) startService(
 	}
 
 
-	artifactVolumeMounts := map[string]string{}
+	artifactVolumeMounts := map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string{}
 	for artifactUuid, mountpoint := range filesArtifactUuidsToMountpoints {
 		artifactVolume, found := artifactUuidsToVolumes[artifactUuid]
 		if !found {
@@ -713,7 +714,7 @@ func (network *ServiceNetwork) startService(
 				artifactUuid,
 			)
 		}
-		artifactVolumeMounts[string(artifactVolume)] = mountpoint
+		artifactVolumeMounts[artifactVolume] = mountpoint
 	}
 
 	launchedUserService, err := network.kurtosisBackend.StartUserService(

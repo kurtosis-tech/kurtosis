@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Upgrade to container-engine-lib 0.25.0, which fixes several bugs
 
 # 1.49.4
 ### Changes
