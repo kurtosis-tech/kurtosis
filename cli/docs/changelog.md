@@ -11,9 +11,16 @@
     * `service shell`
 * Added `kurtosis cluster get|set|ls`, which define which backend cluster (defined in config) that the CLI will access for all engine-related commands.
 * Added 'gateway' command to open a local gateway to kurtosis objects running in Kubernetes
+* Added calls to remote API container in API Container gateway
 
 ### Changes
 * The `enclave-size-in-Megabytes` field in Kubernetes cluster field now is optional, and defaults to 10 MB
+* Upgrade to engine 1.21.4 which understands Kubernetes cluster definitions
+* Execution Ids now serialize timestamp as `YYYY-MM-DDTHH-MM-SS-sss`
+
+### Fixes
+* Fixed a bug where pods would return before being started
+* Upgraded to container-engine-lib 0.25.0 (and downstream deps), which fix several issues on Kubernetes
 
 ### Fixes
 * Bumped the number of retry polls in the module tests up to 20 to try and remediate a timeout while waiting for the datastore service to come up that we were seeing

@@ -1,6 +1,7 @@
 package resolved_config
 
 import (
+	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/backend_creator"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
@@ -16,7 +17,7 @@ const (
 // Nil because the CLI will never operate in API container mode
 var dockerBackendApiContainerModeArgs *backend_creator.APIContainerModeArgs = nil
 
-type kurtosisBackendSupplier func() (backend_interface.KurtosisBackend, error)
+type kurtosisBackendSupplier func(ctx context.Context) (backend_interface.KurtosisBackend, error)
 
 type KurtosisClusterConfig struct {
 	kurtosisBackendSupplier kurtosisBackendSupplier
@@ -49,8 +50,8 @@ func NewKurtosisClusterConfigFromOverrides(overrides *v1.KurtosisClusterConfigV1
 	}, nil
 }
 
-func (clusterConfig *KurtosisClusterConfig) GetKurtosisBackend() (backend_interface.KurtosisBackend, error) {
-	backend, err := clusterConfig.kurtosisBackendSupplier()
+func (clusterConfig *KurtosisClusterConfig) GetKurtosisBackend(ctx context.Context) (backend_interface.KurtosisBackend, error) {
+	backend, err := clusterConfig.kurtosisBackendSupplier(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend")
 	}
@@ -77,7 +78,7 @@ func getSuppliers(clusterType KurtosisClusterType, kubernetesConfig *v1.Kubernet
 		if kubernetesConfig != nil {
 			return nil, nil, stacktrace.NewError("Cluster config must not be provided when cluster type is '%v'", clusterType.String())
 		}
-		backendSupplier = func() (backend_interface.KurtosisBackend, error) {
+		backendSupplier = func(_ context.Context) (backend_interface.KurtosisBackend, error) {
 			backend, err := backend_creator.GetLocalDockerKurtosisBackend(dockerBackendApiContainerModeArgs)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred creating the Docker Kurtosis backend")
@@ -113,8 +114,8 @@ func getSuppliers(clusterType KurtosisClusterType, kubernetesConfig *v1.Kubernet
 			enclaveDataVolumeSizeInMb = *kubernetesConfig.EnclaveSizeInMegabytes
 		}
 
-		backendSupplier = func() (backend_interface.KurtosisBackend, error) {
-			backend, err := lib.GetLocalKubernetesKurtosisBackend(storageClass, enclaveDataVolumeSizeInMb)
+		backendSupplier = func(ctx context.Context) (backend_interface.KurtosisBackend, error) {
+			backend, err := lib.GetCLIKubernetesKurtosisBackend(ctx)
 			if err != nil {
 				return nil, stacktrace.Propagate(
 					err,

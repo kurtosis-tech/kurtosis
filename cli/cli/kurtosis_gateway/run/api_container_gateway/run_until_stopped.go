@@ -30,13 +30,13 @@ func RunApiContainerGatewayUntilStopped(connectionProvider *connection.GatewayCo
 	defer apiContainerGrpcClientConn.Close()
 
 	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(apiContainerGrpcClientConn)
-	apiContainerGatewayServer, gatewayCloseFunc := api_container_gateway.NewEnclaveApiContainerGatewayServer(connectionProvider, apiContainerClient)
+	apiContainerGatewayServer, gatewayCloseFunc := api_container_gateway.NewEnclaveApiContainerGatewayServer(connectionProvider, apiContainerClient, enclaveInfo.GetEnclaveId())
 	defer gatewayCloseFunc()
 
 	apiContainerGatewayServiceRegistrationFunc := func(grpcServer *grpc.Server) {
 		kurtosis_core_rpc_api_bindings.RegisterApiContainerServiceServer(grpcServer, apiContainerGatewayServer)
 	}
-	apiContainerGatewayGrpccServer := minimal_grpc_server.NewMinimalGRPCServer(
+	apiContainerGatewayGrpcServer := minimal_grpc_server.NewMinimalGRPCServer(
 		gatewayPort,
 		grpcServerStopGracePeriod,
 		[]func(*grpc.Server){
@@ -44,7 +44,7 @@ func RunApiContainerGatewayUntilStopped(connectionProvider *connection.GatewayCo
 		},
 	)
 
-	if err := apiContainerGatewayGrpccServer.RunUntilStopped(gatewayStopper); err != nil {
+	if err := apiContainerGatewayGrpcServer.RunUntilStopped(gatewayStopper); err != nil {
 		return stacktrace.Propagate(err, "Expected to run API container gateway server until stopped, but the server exited with a non-nil error")
 	}
 

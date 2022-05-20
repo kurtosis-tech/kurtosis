@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/kurtosis_config_getter"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/resolved_config"
@@ -23,7 +24,7 @@ import (
 
 const (
 	waitForEngineResponseTimeout = 5 * time.Second
-	defaultClusterName = resolved_config.DefaultDockerClusterName
+	defaultClusterName           = resolved_config.DefaultDockerClusterName
 
 	// --------------------------- Old port parsing constants ------------------------------------
 	// These are the old labels that the API container used to use before 2021-11-15 for declaring its port num protocol
@@ -54,7 +55,13 @@ type EngineManager struct {
 	// Make engine IP, port, and protocol configurable in the future
 }
 
-func NewEngineManager() (*EngineManager, error) {
+// TODO It's really weird that we have a context getting passed in to a constructor, but we have to do this
+//  because we're currently creating the KurtosisBackend right here. The right way to fix this is have the
+//  engine manager use the currently-set cluster information to:
+//  1) check if it's Kubernetes or Docker
+//  2) if it's Docker, try to start an engine in case one doesn't exist
+//  3) if it's Kubernets, if creating the EngienClient fails then print the "you need to start a gateway" command
+func NewEngineManager(ctx context.Context) (*EngineManager, error) {
 	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
 
 	isClusterSet, err := clusterSettingStore.HasClusterSetting()
@@ -75,12 +82,12 @@ func NewEngineManager() (*EngineManager, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the Kurtosis config")
 	}
-	clusterConfig, found := kurtosisConfig.GetKurtosisClusters()[clusterName]
-	if !found {
-		return nil, stacktrace.NewError("No cluster exists with name '%v'", clusterName)
+	clusterConfig, err := kurtosis_config_getter.GetKurtosisClusterConfig()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "E")
 	}
 
-	kurtosisBackend, err := clusterConfig.GetKurtosisBackend()
+	kurtosisBackend, err := clusterConfig.GetKurtosisBackend(ctx)
 	if err != nil {
 		return nil, stacktrace.NewError("An error occurred getting the Kurtosis backend for cluster '%v'", clusterName)
 	}
@@ -153,6 +160,8 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 		logLevel,
 		engineVersion,
 	)
+	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
+	//  before we can return an EngineClient
 	engineClient, engineClientCloseFunc, err := startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred starting the engine with the engine existence guarantor")
@@ -190,17 +199,17 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 	//  add a step here that will delete the engine data dirpath if it exists on the host machine
 	// host_machine_directories.GetEngineDataDirpath()
 
-	_, erroredEngineIds, err := manager.kurtosisBackend.StopEngines(ctx, getRunningEnginesFilter())
+	_, erroredEngineGuids, err := manager.kurtosisBackend.StopEngines(ctx, getRunningEnginesFilter())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping ")
 	}
 	engineStopErrorStrs := []string{}
-	for engineId, err := range erroredEngineIds {
+	for engineGuid, err := range erroredEngineGuids {
 		if err != nil {
 			wrappedErr := stacktrace.Propagate(
 				err,
-				"An error occurred stopping engine container `%v'",
-				engineId,
+				"An error occurred stopping engine with GUID '%v'",
+				engineGuid,
 			)
 			engineStopErrorStrs = append(engineStopErrorStrs, wrappedErr.Error())
 		}

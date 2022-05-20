@@ -1,10 +1,11 @@
 package gateway
 
 import (
-	"github.com/kurtosis-tech/container-engine-lib/lib"
+	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/kurtosis_config_getter"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/connection"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/run/engine_gateway"
 	"github.com/kurtosis-tech/stacktrace"
@@ -15,18 +16,12 @@ import (
 )
 
 const (
-	gatewayPortArg = "port"
-	// Same port used by a kurtosis engine running in docker
-	defaultGatewayPort = 9710
-
-	minikubeVolumeStorageClassName = "default"
-	enclaveVolumeSizeInGigabytes   = 2
-	emptyConfigMasterUrl           = ""
+	emptyConfigMasterUrl = ""
 )
 
 var GatewayCmd = &cobra.Command{
 	Use:   command_str_consts.GatewayCmdStr,
-	Short: "Starts a kurtosis gateway to the Kubernetes cluster configured in $HOME/.kube/config",
+	Short: "Starts a local gateway to a Kurtosis cluster running in Kubernetes",
 	RunE:  run,
 }
 
@@ -34,9 +29,16 @@ func init() {
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	kurtosisBackend, err := lib.GetLocalKubernetesKurtosisBackend(minikubeVolumeStorageClassName, enclaveVolumeSizeInGigabytes)
+	ctx := context.Background()
+
+	clusterConfig, err := kurtosis_config_getter.GetKurtosisClusterConfig()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to Kubernetes")
+		return stacktrace.Propagate(err, "Expected to be able to get Kurtosis cluster configuration, instead a non-nil error was returned")
+	}
+
+	kurtosisBackend, err := clusterConfig.GetKurtosisBackend(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to get a Kurtosis backend connected to the cluster, instead a non-nil error was returned")
 	}
 
 	// TODO Store kube config path in configuration and read from there
@@ -59,7 +61,10 @@ func run(cmd *cobra.Command, args []string) error {
 	if len(runningEngines) != 1 {
 		return stacktrace.NewError("Expected to find exactly 1 running engine in Kurtosis, instead found '%v'", len(runningEngines))
 	}
-	runningEngine := getFirstEngineFromMap(runningEngines)
+
+	// Get engine map entry
+	var runningEngine *engine.Engine
+	for _, runningEngine = range runningEngines {}
 	// If the engine is running in kubernetes, there's no portspec for the public port
 
 	if err := engine_gateway.RunEngineGatewayUntilInterrupted(runningEngine, connectionProvider); err != nil {
@@ -75,15 +80,4 @@ func getRunningEnginesFilter() *engine.EngineFilters {
 			container_status.ContainerStatus_Running: true,
 		},
 	}
-}
-
-// getFirstEngineFromMap returns the first value iterated by the `range` statement on a map
-// returns nil if the map is empty
-func getFirstEngineFromMap(engineMap map[string]*engine.Engine) *engine.Engine {
-	firstEngineInMap := (*engine.Engine)(nil)
-	for _, engineInMap := range engineMap {
-		firstEngineInMap = engineInMap
-		break
-	}
-	return firstEngineInMap
 }

@@ -125,26 +125,26 @@ func cleanStoppedEngineContainers(ctx context.Context, kurtosisBackend backend_i
 		},
 	}
 
-	successfulEngineIds, erroredEngineIds, err := kurtosisBackend.DestroyEngines(ctx, engineFilters)
+	successfulEngineGuids, erroredEngineGuids, err := kurtosisBackend.DestroyEngines(ctx, engineFilters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying engines using filters '%+v'", engineFilters)
 	}
 
-	successfullyDestroyedEngineIDs := []string{}
-	for engineId := range successfulEngineIds {
-		successfullyDestroyedEngineIDs = append(successfullyDestroyedEngineIDs, engineId)
+	successfulEngineGuidStrs := []string{}
+	for engineGuid := range successfulEngineGuids {
+		successfulEngineGuidStrs = append(successfulEngineGuidStrs, string(engineGuid))
 	}
 
 	removeEngineErrors := []error{}
-	for engineId, err := range erroredEngineIds {
-		wrappedErr := stacktrace.Propagate(err, "An error occurred destroying stopped engine '%v'", engineId)
+	for engineGuid, err := range erroredEngineGuids {
+		wrappedErr := stacktrace.Propagate(err, "An error occurred destroying stopped engine '%v'", engineGuid)
 		removeEngineErrors = append(removeEngineErrors, wrappedErr)
 	}
 
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred cleaning stopped Kurtosis engine containers")
 	}
-	return successfullyDestroyedEngineIDs, removeEngineErrors, nil
+	return successfulEngineGuidStrs, removeEngineErrors, nil
 }
 
 func cleanEnclaves(ctx context.Context, engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient, shouldCleanAll bool) ([]string, []error, error) {
