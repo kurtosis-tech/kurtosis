@@ -6,6 +6,7 @@
 ### Fixes
 * Fix a bug in gathering user service Services and Pods
 * Fix a nil pointer exception bug when starting a user service
+* Fixes a bug with setting a user service's Service ports to empty if the user doesn't declare any ports
 
 # 0.25.0
 ### Features

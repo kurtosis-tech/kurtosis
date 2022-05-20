@@ -64,11 +64,12 @@ const (
 	// Our user services don't need service accounts
 	userServiceServiceAccountName = ""
 
-	// Kubernetes doesn't allow us to create services without ports exposed, but we won't have the ports that the user
-	// wants to listen to until they StartService. We create the Kubernetes Service on RegisterService, so we need to
-	// set up a notional port until the user calls StartService.
-	unboundPortName = "nonexistent"
-	unboundPortNumber = 80
+	// Kubernetes doesn't allow us to create services without ports exposed, but we might not have ports in the following situations:
+	//  1) we've registered a service but haven't started a container yet (so ports are yet to come)
+	//  2) we've started a container that doesn't listen on any ports
+	// In these cases, we use these notional unbound ports
+	unboundPortName = "nonexistent-port"
+	unboundPortNumber = 101010
 )
 
 // Kubernetes doesn't provide public IP or port information; this is instead handled by the Kurtosis gateway that the user uses
@@ -952,11 +953,15 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred serializing the following private port specs: %+v", privatePorts)
 	}
-	kubernetesServicePorts, err := getKubernetesServicePortsFromPrivatePortSpecs(privatePorts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes service ports for the following private port specs: %+v", privatePorts)
+
+	// We only need to modify the ports from the default (unbound) ports if the user actually declares ports
+	if len(privatePorts) > 0 {
+		kubernetesServicePorts, err := getKubernetesServicePortsFromPrivatePortSpecs(privatePorts)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes service ports for the following private port specs: %+v", privatePorts)
+		}
+		updatedService.Spec.Ports = kubernetesServicePorts
 	}
-	updatedService.Spec.Ports = kubernetesServicePorts
 
 	updatedAnnotations := updatedService.Annotations
 	if updatedAnnotations == nil {
