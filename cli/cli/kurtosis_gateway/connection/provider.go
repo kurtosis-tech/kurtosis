@@ -167,6 +167,7 @@ func (provider *GatewayConnectionProvider) getUserServicePodPortforwardEndpoint(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get a Kubernetes namespace corresponding to a Kurtosis enclave with id '%v', instead a non-nil error was returned", enclaveId)
 	}
+	// TODO Labels with serviceId
 	// TODO labels for user service pods
 	userServicePodName := fmt.Sprintf("kurtosis-user-service--%v--pod", serviceId)
 	return provider.kubernetesManager.GetPodPortforwardEndpointUrl(userServiceNamespace, userServicePodName), nil
