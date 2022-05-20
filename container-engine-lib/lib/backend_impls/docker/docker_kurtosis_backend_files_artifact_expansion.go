@@ -12,9 +12,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
@@ -221,24 +218,4 @@ func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionDockerReso
 		}
 	}
 	return resourcesByFilesArtifactGuid, nil
-}
-
-func newFilesArtifactExpansionGUID(filesArtifactId service.FilesArtifactID, serviceGuid service.ServiceGUID) files_artifact_expansion.FilesArtifactExpansionGUID {
-
-	uuid_generator.GenerateUUIDString()
-	serviceRegistrationGuidStr := string(serviceGuid)
-	filesArtifactIdStr := string(filesArtifactId)
-	suffix := getCurrentTimeStr()
-	guidStr := strings.Join([]string{serviceRegistrationGuidStr, filesArtifactIdStr, suffix}, guidElementSeparator)
-	guid := files_artifact_expansion.FilesArtifactExpansionGUID(guidStr)
-	return guid
-}
-
-// Provides the current time in string form, for use as a suffix to a container ID (e.g. service ID, module ID) that will
-//  make it unique so it won't collide with other containers with the same ID
-func getCurrentTimeStr() string {
-	now := time.Now()
-	// TODO make this UnixNano to reduce risk of collisions???
-	nowUnixSecs := now.Unix()
-	return strconv.FormatInt(nowUnixSecs, guidBase)
 }
