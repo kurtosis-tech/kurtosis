@@ -1,4 +1,6 @@
 # TBD
+
+# 0.18.1
 ### Features
 * When the user adds a new config version, unit tests will now force (at compile time) the following:
     * The user must add a new deserializer
