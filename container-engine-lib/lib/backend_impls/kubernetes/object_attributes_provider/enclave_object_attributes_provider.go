@@ -261,7 +261,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForModulePod(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"Failed to get labels for user service pod with ID '%s' and GUID '%s'",
+			"Failed to get labels for module pod with ID '%s' and GUID '%s'",
 			id,
 			guid,
 		)

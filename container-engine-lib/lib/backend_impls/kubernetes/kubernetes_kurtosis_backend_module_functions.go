@@ -7,12 +7,13 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/object_name_constants"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
 	apiv1 "k8s.io/api/core/v1"
 	"net"
 )
@@ -20,21 +21,22 @@ import (
 const (
 	kurtosisModulePortProtocol = port_spec.PortProtocol_TCP
 
-	// The location where the enclave data volume will be mounted
-	//  on the module container
-	enclaveDataVolumeDirpathOnModuleContainer = "/kurtosis-data"
-
 	// Our module don't need service accounts
 	moduleServiceAccountName = ""
 )
 
+type moduleObjectsAndKubernetesResources struct {
+	module *module.Module
+	kubernetesResources *moduleKubernetesResources
+}
+
 // Any of these values being nil indicates that the resource doesn't exist
 type moduleKubernetesResources struct {
 
-	serviceAccount *apiv1.ServiceAccount
-
+	//This should never be nil as the canonical reference of a module is its service
 	service *apiv1.Service
 
+	//This can be nil if the pod wasn't started yet, or has been removed already
 	pod *apiv1.Pod
 }
 
@@ -92,7 +94,6 @@ func (backend *KubernetesKurtosisBackend) CreateModule(
 		kurtosisInternalContainerGrpcPortSpecId: privateGrpcPortSpec,
 	}
 
-	// Create the Pod
 	// Get Pod Attributes so that we can select them with the Service
 	modulePodAttributes, err := enclaveAttributesProvider.ForModulePod(guid, id, privatePorts)
 	if err != nil {
@@ -107,58 +108,6 @@ func (backend *KubernetesKurtosisBackend) CreateModule(
 	modulePodName := modulePodAttributes.GetName().GetString()
 	modulePodLabels := getStringMapFromLabelMap(modulePodAttributes.GetLabels())
 	modulePodAnnotations := getStringMapFromAnnotationMap(modulePodAttributes.GetAnnotations())
-
-	enclaveDataPersistentVolumeClaim, err := backend.getEnclaveDataPersistentVolumeClaim(ctx, enclaveNamespaceName, enclaveId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data persistent volume claim for enclave '%v' in namespace '%v'", enclaveId, enclaveNamespaceName)
-	}
-
-	grpcPortInt32 := int32(grpcPortNum)
-
-	containerPorts := []apiv1.ContainerPort{
-		{
-			Name:          object_name_constants.KurtosisInternalContainerGrpcPortName.GetString(),
-			Protocol:      apiv1.ProtocolTCP,
-			ContainerPort: grpcPortInt32,
-		},
-	}
-
-	moduleContainers, moduleVolumes := getModuleContainersAndVolumes(guid, image, containerPorts, envVars, enclaveDataPersistentVolumeClaim)
-
-	// Create pod with module containers and volumes in Kubernetes
-	modulePod, err := backend.kubernetesManager.CreatePod(
-		ctx,
-		enclaveNamespaceName,
-		modulePodName,
-		modulePodLabels,
-		modulePodAnnotations,
-		moduleContainers,
-		moduleVolumes,
-		moduleServiceAccountName,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred while creating the pod with name '%s', labels '%+v', annotations '%+v'," +
-				" containers '%v' and volumes '%+v' in namespace '%s' using image '%s'",
-			modulePodName,
-			modulePodLabels,
-			modulePodAnnotations,
-			moduleContainers,
-			moduleVolumes,
-			enclaveNamespaceName,
-			image,
-		)
-	}
-	var shouldRemovePod = true
-	defer func() {
-		if shouldRemovePod {
-			if err := backend.kubernetesManager.RemovePod(ctx, enclaveNamespaceName, modulePodName); err != nil {
-				logrus.Errorf("Creating the module didn't complete successfully, so we tried to delete Kubernetes pod '%v' that we created but an error was thrown:\n%v", modulePodName, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes pod with name '%v'!!!!!!!", modulePodName)
-			}
-		}
-	}()
 
 	// Get Service Attributes
 	moduleServiceAttributes, err := enclaveAttributesProvider.ForModuleService(
@@ -179,12 +128,9 @@ func (backend *KubernetesKurtosisBackend) CreateModule(
 
 	// Define service ports. These hook up to ports on the containers running in the module pod
 	// Kubernetes will assign a public port number to them
-	servicePorts := []apiv1.ServicePort{
-		{
-			Name:     object_name_constants.KurtosisInternalContainerGrpcPortName.GetString(),
-			Protocol: apiv1.ProtocolTCP,
-			Port:     grpcPortInt32,
-		},
+	servicePorts, err := getKubernetesServicePortsFromPrivatePortSpecs(privatePorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes service ports from the private port specs map '%+v'", privatePorts)
 	}
 
 	moduleService, err := backend.kubernetesManager.CreateService(
@@ -220,6 +166,49 @@ func (backend *KubernetesKurtosisBackend) CreateModule(
 		}
 	}()
 
+
+	// Create the Pod
+	containerPorts, err := getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes container ports from the private port specs map '%+v'", privatePorts)
+	}
+
+	moduleContainers := getModuleContainers(guid, image, containerPorts, envVars)
+
+	// Create pod with module containers and not volumes in Kubernetes
+	modulePod, err := backend.kubernetesManager.CreatePod(
+		ctx,
+		enclaveNamespaceName,
+		modulePodName,
+		modulePodLabels,
+		modulePodAnnotations,
+		moduleContainers,
+		nil,
+		moduleServiceAccountName,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred while creating the pod with name '%s', labels '%+v', annotations '%+v'," +
+				" containers '%v' in namespace '%s' using image '%s'",
+			modulePodName,
+			modulePodLabels,
+			modulePodAnnotations,
+			moduleContainers,
+			enclaveNamespaceName,
+			image,
+		)
+	}
+	var shouldRemovePod = true
+	defer func() {
+		if shouldRemovePod {
+			if err := backend.kubernetesManager.RemovePod(ctx, enclaveNamespaceName, modulePodName); err != nil {
+				logrus.Errorf("Creating the module didn't complete successfully, so we tried to delete Kubernetes pod '%v' that we created but an error was thrown:\n%v", modulePodName, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes pod with name '%v'!!!!!!!", modulePodName)
+			}
+		}
+	}()
+
 	moduleResources := &moduleKubernetesResources{
 		service:          moduleService,
 		pod:              modulePod,
@@ -230,10 +219,12 @@ func (backend *KubernetesKurtosisBackend) CreateModule(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred converting the new module's Kubernetes resources to module objects")
 	}
-	resultModule, found := moduleObjsById[guid]
+	resultModuleObjectAndResources, found := moduleObjsById[guid]
 	if !found {
 		return nil, stacktrace.NewError("Successfully converted the new module's Kubernetes resources to an module object, but the resulting map didn't have an entry for GUID '%v'", guid)
 	}
+
+	resultModule := resultModuleObjectAndResources.module
 
 	//TODO implement GRPC availability Checker
 
@@ -251,11 +242,30 @@ func (backend *KubernetesKurtosisBackend) GetModules(
 	error,
 ) {
 
-	matchingApiContainers, _, err := backend.getMatchingModuleObjectsAndKubernetesResources(ctx, enclaveId, filters)
+	allObjectsAndResources, err := backend.getMatchingModuleObjectsAndKubernetesResources(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting modules and Kubernetes resources matching filters '%+v'", filters)
 	}
-	return matchingApiContainers, nil
+
+	results := map[module.ModuleGUID]*module.Module{}
+	for guid, moduleObjsAndResources := range allObjectsAndResources {
+		results[guid] = moduleObjsAndResources.module
+	}
+	return results, nil
+}
+
+func (backend *KubernetesKurtosisBackend) GetModuleLogs(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *module.ModuleFilters,
+	shouldFollowLogs bool,
+) (
+	successfulModuleLogs map[module.ModuleGUID]io.ReadCloser,
+	erroredModuleGuids map[module.ModuleGUID]error,
+	resultError error,
+) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (backend *KubernetesKurtosisBackend) StopModules(
@@ -267,15 +277,15 @@ func (backend *KubernetesKurtosisBackend) StopModules(
 	map[module.ModuleGUID]error,
 	error,
 ) {
-	_, matchingKubernetesResources, err := backend.getMatchingModuleObjectsAndKubernetesResources(ctx, enclaveId, filters)
+	allObjectsAndResources, err := backend.getMatchingModuleObjectsAndKubernetesResources(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting modules and Kubernetes resources matching filters '%+v'", filters)
 	}
 
 	successfulModuleGUIDs := map[module.ModuleGUID]bool{}
 	erroredModuleGUIDs := map[module.ModuleGUID]error{}
-	for moduleGuid, resources := range matchingKubernetesResources {
-		kubernetesService := resources.service
+	for moduleGuid, moduleObjsAndResources := range allObjectsAndResources {
+		kubernetesService := moduleObjsAndResources.kubernetesResources.service
 		if kubernetesService != nil {
 			namespaceName := kubernetesService.GetNamespace()
 			kubernetesService.Spec.Selector = nil
@@ -291,7 +301,7 @@ func (backend *KubernetesKurtosisBackend) StopModules(
 			}
 		}
 
-		kubernetesPod := resources.pod
+		kubernetesPod := moduleObjsAndResources.kubernetesResources.pod
 		if kubernetesPod != nil {
 			podName := kubernetesPod.GetName()
 			namespaceName := kubernetesPod.GetNamespace()
@@ -322,19 +332,20 @@ func (backend *KubernetesKurtosisBackend) DestroyModules(
 	map[module.ModuleGUID]error,
 	error,
 ) {
-	_, matchingResources, err := backend.getMatchingModuleObjectsAndKubernetesResources(ctx, enclaveId, filters)
+	allObjectsAndResources, err := backend.getMatchingModuleObjectsAndKubernetesResources(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting modules and Kubernetes resources matching filters '%+v'", filters)
 	}
 
 	successfulModuleGUIDs := map[module.ModuleGUID]bool{}
 	erroredModuleGUIDs := map[module.ModuleGUID]error{}
-	for moduleGuid, resources := range matchingResources {
+	for moduleGuid, moduleObjsAndResources := range allObjectsAndResources {
 
 		// Remove Pod
-		if resources.pod != nil {
-			podName := resources.pod.GetName()
-			namespaceName := resources.pod.GetNamespace()
+		kubernetesPod := moduleObjsAndResources.kubernetesResources.pod
+		if kubernetesPod != nil {
+			podName := kubernetesPod.GetName()
+			namespaceName := kubernetesPod.GetNamespace()
 			if err := backend.kubernetesManager.RemovePod(ctx, podName, namespaceName); err != nil {
 				erroredModuleGUIDs[moduleGuid] = stacktrace.Propagate(
 					err,
@@ -348,9 +359,10 @@ func (backend *KubernetesKurtosisBackend) DestroyModules(
 		}
 
 		// Remove Service
-		if resources.service != nil {
-			serviceName := resources.service.GetName()
-			namespaceName := resources.service.GetNamespace()
+		kubernetesService := moduleObjsAndResources.kubernetesResources.service
+		if kubernetesService != nil {
+			serviceName := kubernetesService.GetName()
+			namespaceName := kubernetesService.GetNamespace()
 			if err := backend.kubernetesManager.RemoveService(ctx, serviceName, namespaceName); err != nil {
 				erroredModuleGUIDs[moduleGuid] = stacktrace.Propagate(
 					err,
@@ -372,15 +384,13 @@ func (backend *KubernetesKurtosisBackend) DestroyModules(
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
-func getModuleContainersAndVolumes(
+func getModuleContainers(
 	moduleGuid module.ModuleGUID,
 	containerImageAndTag string,
 	containerPorts []apiv1.ContainerPort,
 	envVars map[string]string,
-	enclaveDataPersistentVolumeClaim *apiv1.PersistentVolumeClaim,
 ) (
 	resultContainers []apiv1.Container,
-	resultVolumes []apiv1.Volume,
 ) {
 
 	var containerEnvVars []apiv1.EnvVar
@@ -397,27 +407,11 @@ func getModuleContainersAndVolumes(
 			Image: containerImageAndTag,
 			Env:   containerEnvVars,
 			Ports: containerPorts,
-			VolumeMounts: []apiv1.VolumeMount{
-				{
-					Name:      enclaveDataPersistentVolumeClaim.Spec.VolumeName,
-					MountPath: enclaveDataVolumeDirpathOnModuleContainer,
-				},
-			},
+
 		},
 	}
 
-	volumes := []apiv1.Volume{
-		{
-			Name: enclaveDataPersistentVolumeClaim.Spec.VolumeName,
-			VolumeSource: apiv1.VolumeSource{
-				PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
-					ClaimName: enclaveDataPersistentVolumeClaim.GetName(),
-				},
-			},
-		},
-	}
-
-	return containers, volumes
+	return containers
 }
 
 func (backend *KubernetesKurtosisBackend) getMatchingModuleObjectsAndKubernetesResources(
@@ -425,45 +419,47 @@ func (backend *KubernetesKurtosisBackend) getMatchingModuleObjectsAndKubernetesR
 	enclaveId enclave.EnclaveID,
 	filters *module.ModuleFilters,
 ) (
-	map[module.ModuleGUID]*module.Module,
-	map[module.ModuleGUID]*moduleKubernetesResources,
+	map[module.ModuleGUID]*moduleObjectsAndKubernetesResources,
 	error,
 ) {
 	matchingResources, err := backend.getModuleKubernetesResourcesMatchingGuids(ctx, enclaveId, filters.GUIDs)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting module Kubernetes resources matching module GUIDs: %+v", filters.GUIDs)
+		return nil, stacktrace.Propagate(err, "An error occurred getting module Kubernetes resources matching module GUIDs: %+v", filters.GUIDs)
 	}
 
-	moduleObjects, err := getModuleObjectsFromKubernetesResources(enclaveId, matchingResources)
+	moduleObjectsAndResources, err := getModuleObjectsFromKubernetesResources(enclaveId, matchingResources)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting module objects from Kubernetes resources")
+		return nil, stacktrace.Propagate(err, "An error occurred getting module objects from Kubernetes resources")
+	}
+
+	// Sanity check
+	if len(matchingResources) != len(moduleObjectsAndResources) {
+		return nil, stacktrace.NewError(
+			"Transformed %v Kubernetes resource objects into %v Kurtosis objects; this is a bug in Kurtosis",
+			len(matchingResources),
+			len(moduleObjectsAndResources),
+		)
 	}
 
 	// Finally, apply the filters
-	resultModuleObjs := map[module.ModuleGUID]*module.Module{}
-	resultKubernetesResources := map[module.ModuleGUID]*moduleKubernetesResources{}
-	for moduleGuid, moduleObj := range moduleObjects {
+	results := map[module.ModuleGUID]*moduleObjectsAndKubernetesResources{}
+	for moduleGuid, objectsAndResources := range moduleObjectsAndResources {
 		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
-			if _, found := filters.GUIDs[moduleObj.GetGUID()]; !found {
+			if _, found := filters.GUIDs[objectsAndResources.module.GetGUID()]; !found {
 				continue
 			}
 		}
 
 		if filters.Statuses != nil && len(filters.Statuses) > 0 {
-			if _, found := filters.Statuses[moduleObj.GetStatus()]; !found {
+			if _, found := filters.Statuses[objectsAndResources.module.GetStatus()]; !found {
 				continue
 			}
 		}
 
-		resultModuleObjs[moduleGuid] = moduleObj
-		if _, found := matchingResources[moduleGuid]; !found {
-			return nil, nil, stacktrace.NewError("Expected to find Kubernetes resources matching module GUID '%v' but none was found", moduleGuid)
-		}
-		// Okay to do because we're guaranteed a 1:1 mapping between module_obj:module_resources
-		resultKubernetesResources[moduleGuid] = matchingResources[moduleGuid]
+		results[moduleGuid] = objectsAndResources
 	}
 
-	return resultModuleObjs, resultKubernetesResources, nil
+	return results, nil
 }
 
 // Get back any and all module's Kubernetes resources matching the given GUIDs, where a nil or empty map == "match all GUIDs"
@@ -567,17 +563,25 @@ func getModuleObjectsFromKubernetesResources(
 	enclaveId enclave.EnclaveID,
 	allResources map[module.ModuleGUID]*moduleKubernetesResources,
 ) (
-	map[module.ModuleGUID]*module.Module,
+	map[module.ModuleGUID]*moduleObjectsAndKubernetesResources,
 	error,
 ) {
-	result := map[module.ModuleGUID]*module.Module{}
+	results := map[module.ModuleGUID]*moduleObjectsAndKubernetesResources{}
 
-	for moduleGuid, resourcesForModuleGuid := range allResources {
+	for moduleGuid, resources := range allResources {
+		results[moduleGuid] = &moduleObjectsAndKubernetesResources{
+			kubernetesResources: resources,
+			// The other fields will get filled in below
+		}
+	}
 
-		kubernetesService := resourcesForModuleGuid.service
+	for moduleGuid, resultObj := range results {
+		resourcesToParse := resultObj.kubernetesResources
+
+		kubernetesService := resourcesToParse.service
 
 		if kubernetesService == nil {
-			return nil, stacktrace.NewError("Can not create a module object if there is not a module's Kubernetes service for module '%v'", moduleGuid)
+			return nil, stacktrace.NewError("Cannot create a module object if no Kubernetes service for module '%v' exists", moduleGuid)
 		}
 
 		serviceLabels := kubernetesService.Labels
@@ -593,14 +597,9 @@ func getModuleObjectsFromKubernetesResources(
 		}
 		guid := module.ModuleGUID(guidLabelStr)
 
-		status, err := getContainerStatusFromPod(resourcesForModuleGuid.pod)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting container status from Kubernetes pod '%+v'", resourcesForModuleGuid.pod)
-		}
-
-		privateIpAddr := net.ParseIP(resourcesForModuleGuid.service.Spec.ClusterIP)
+		privateIpAddr := net.ParseIP(kubernetesService.Spec.ClusterIP)
 		if privateIpAddr == nil {
-			return nil, stacktrace.NewError("Expected to be able to get the cluster ip of the module service, instead parsing the cluster ip of service '%v' returned nil", resourcesForModuleGuid.service.Name)
+			return nil, stacktrace.NewError("Expected to be able to get the cluster ip of the module service, instead parsing the cluster ip of service '%v' returned nil", kubernetesService.Name)
 		}
 
 		serviceAnnotations := kubernetesService.Annotations
@@ -609,6 +608,7 @@ func getModuleObjectsFromKubernetesResources(
 			// If the service doesn't have a private port specs annotation, it means a pod was never started so there's nothing more to do
 			continue
 		}
+
 		privatePorts, err := kubernetes_port_spec_serializer.DeserializePortSpecs(portSpecsStr)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred deserializing port specs string '%v'", portSpecsStr)
@@ -623,6 +623,28 @@ func getModuleObjectsFromKubernetesResources(
 		var publicIpAddr net.IP = nil
 		var publicGrpcPortSpec *port_spec.PortSpec = nil
 
+		kubernetesPod := resourcesToParse.pod
+		if kubernetesPod == nil {
+			// No pod here means that a) a Module had private ports but b) now has no Pod
+			// This means that there used to be a Pod, but it was stopped/removed
+			resultObj.module = module.NewModule(
+				enclaveId,
+				id,
+				guid,
+				container_status.ContainerStatus_Stopped,
+				privateIpAddr,
+				privateGrpcPortSpec,
+				publicIpAddr,
+				publicGrpcPortSpec,
+			)
+			continue
+		}
+
+		status, err := getContainerStatusFromPod(resourcesToParse.pod)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting container status from Kubernetes pod '%+v'", resourcesToParse.pod)
+		}
+
 		moduleObj := module.NewModule(
 			enclaveId,
 			id,
@@ -634,15 +656,7 @@ func getModuleObjectsFromKubernetesResources(
 			publicGrpcPortSpec,
 		)
 
-		result[moduleGuid] = moduleObj
+		resultObj.module = moduleObj
 	}
-	return result, nil
-}
-
-func getModuleMatchLabels() map[string]string {
-	matchLabels := map[string]string{
-		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.ModuleKurtosisResourceTypeKubernetesLabelValue.GetString(),
-	}
-	return matchLabels
+	return results, nil
 }
