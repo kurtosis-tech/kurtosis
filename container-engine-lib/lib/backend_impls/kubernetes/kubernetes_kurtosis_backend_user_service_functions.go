@@ -69,7 +69,7 @@ const (
 	//  2) we've started a container that doesn't listen on any ports
 	// In these cases, we use these notional unbound ports
 	unboundPortName = "nonexistent-port"
-	unboundPortNumber = 101010
+	unboundPortNumber = 1
 )
 
 // Kubernetes doesn't provide public IP or port information; this is instead handled by the Kurtosis gateway that the user uses
