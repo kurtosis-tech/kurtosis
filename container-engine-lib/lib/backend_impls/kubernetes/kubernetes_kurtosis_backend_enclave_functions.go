@@ -15,6 +15,7 @@ import (
 	"io"
 	"io/ioutil"
 	apiv1 "k8s.io/api/core/v1"
+	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"os"
 	"path"
 )
@@ -222,30 +223,6 @@ func (backend *KubernetesKurtosisBackend) StopEnclaves(
 	for enclaveId, resources := range matchingKubernetesResources {
 		namespaceName := resources.namespace.GetName()
 
-		if resources.services != nil {
-			errorsByServiceName := map[string]error{}
-			for _, service := range resources.services {
-				updatedService := service.DeepCopy()
-				updatedService.Spec.Selector = nil
-				if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, updatedService); err != nil {
-					errorsByServiceName[service.Name] = err
-					continue
-				}
-			}
-
-			if len(errorsByServiceName) > 0 {
-				combinedErrorTitle := fmt.Sprintf("Namespace %v - Service", namespaceName)
-				combinedError := buildCombinedError(errorsByServiceName, combinedErrorTitle)
-				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
-					combinedError,
-					"An error occurred removing one or more service's selectors in namespace '%v' for enclave with ID '%v'",
-					namespaceName,
-					enclaveId,
-				)
-				continue
-			}
-		}
-
 		// Pods
 		if resources.pods != nil {
 			errorsByPodName := map[string]error{}
@@ -269,6 +246,35 @@ func (backend *KubernetesKurtosisBackend) StopEnclaves(
 				continue
 			}
 		}
+
+		// Services
+		if resources.services != nil {
+			errorsByServiceName := map[string]error{}
+			for _, service := range resources.services {
+				serviceName := service.GetName()
+				updateConfigurator := func(updatesToApply *applyconfigurationsv1.ServiceApplyConfiguration) {
+					specUpdates := applyconfigurationsv1.ServiceSpec().WithSelector(nil)
+					updatesToApply.WithSpec(specUpdates)
+				}
+				if _, err := backend.kubernetesManager.UpdateService(ctx, namespaceName, serviceName, updateConfigurator); err != nil {
+					errorsByServiceName[service.Name] = err
+					continue
+				}
+			}
+
+			if len(errorsByServiceName) > 0 {
+				combinedErrorTitle := fmt.Sprintf("Namespace %v - Service", namespaceName)
+				combinedError := buildCombinedError(errorsByServiceName, combinedErrorTitle)
+				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
+					combinedError,
+					"An error occurred removing one or more service's selectors in namespace '%v' for enclave with ID '%v'",
+					namespaceName,
+					enclaveId,
+				)
+				continue
+			}
+		}
+
 
 		successfulEnclaveIds[enclaveId] = true
 	}

@@ -44,11 +44,12 @@ func (backend *DockerKurtosisBackend) CreateModule(
 	newModule *module.Module,
 	resultErr error,
 ) {
-	guidStr, err := uuid_generator.GenerateUUIDString()
+
+	uuidStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID string for module with ID '%v'", id)
 	}
-	guid := module.ModuleGUID(guidStr)
+	guid := module.ModuleGUID(string(id) + "-" + uuidStr)
 
 	freeIpAddrProvider, found := backend.enclaveFreeIpProviders[enclaveId]
 	if !found {

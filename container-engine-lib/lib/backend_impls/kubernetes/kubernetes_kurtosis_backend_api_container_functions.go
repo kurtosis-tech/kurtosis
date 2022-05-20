@@ -13,6 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"net"
 	"time"
 )
@@ -358,6 +359,18 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container grpc port '%v/%v' to become available", privateGrpcPortSpec.GetProtocol(), privateGrpcPortSpec.GetNumber())
 	}
 
+	if err := waitForPortAvailabilityUsingNetstat(
+		backend.kubernetesManager,
+		enclaveNamespaceName,
+		apiContainerPodName,
+		kurtosisApiContainerContainerName,
+		privateGrpcProxyPortSpec,
+		maxWaitForApiContainerContainerAvailabilityRetries,
+		timeBetweenWaitForApiContainerContainerAvailabilityRetries,
+	); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container grpc proxy port '%v/%v' to become available", privateGrpcProxyPortSpec.GetProtocol(), privateGrpcProxyPortSpec.GetNumber())
+	}
+
 	shouldRemoveRoleBinding = false
 	shouldRemoveRole = false
 	shouldRemoveServiceAccount = false
@@ -414,9 +427,13 @@ func (backend *KubernetesKurtosisBackend) StopAPIContainers(
 
 		kubernetesService := resources.service
 		if kubernetesService != nil {
+			serviceName := kubernetesService.GetName()
 			namespaceName := kubernetesService.GetNamespace()
-			kubernetesService.Spec.Selector = nil
-			if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, kubernetesService); err != nil {
+			updateConfigurator := func(updatesToApply *applyconfigurationsv1.ServiceApplyConfiguration) {
+				specUpdates := applyconfigurationsv1.ServiceSpec().WithSelector(nil)
+				updatesToApply.WithSpec(specUpdates)
+			}
+			if _, err := backend.kubernetesManager.UpdateService(ctx, namespaceName, serviceName, updateConfigurator); err != nil {
 				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
 					err,
 					"An error occurred removing selectors from service '%v' in namespace '%v' for API container in enclave with ID '%v'",
