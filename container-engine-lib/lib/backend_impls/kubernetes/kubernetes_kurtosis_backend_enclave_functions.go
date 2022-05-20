@@ -117,7 +117,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	shouldDeleteNamespace := true
 	defer func() {
 		if shouldDeleteNamespace {
-			if err := backend.kubernetesManager.RemoveNamespace(teardownContext, enclaveNamespaceName); err != nil {
+			if err := backend.kubernetesManager.RemoveNamespace(teardownContext, enclaveNamespace); err != nil {
 				logrus.Errorf("Creating the enclave didn't complete successfully, so we tried to delete namespace '%v' that we created but an error was thrown:\n%v", enclaveNamespaceName, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove namespace with name '%v'!!!!!!!", enclaveNamespaceName)
 			}
@@ -140,7 +140,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because one or more enclave data volumes for that enclave already exists", enclaveId)
 	}
 
-	_, err = backend.kubernetesManager.CreatePersistentVolumeClaim(ctx,
+	persistentVolumeClaim, err := backend.kubernetesManager.CreatePersistentVolumeClaim(ctx,
 		enclaveNamespaceName,
 		persistentVolumeClaimName,
 		persistentVolumeClaimLabels,
@@ -159,7 +159,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	shouldDeleteVolume := true
 	defer func() {
 		if shouldDeleteVolume {
-			if err := backend.kubernetesManager.RemovePersistentVolumeClaim(teardownContext, enclaveNamespaceName, persistentVolumeClaimName); err != nil {
+			if err := backend.kubernetesManager.RemovePersistentVolumeClaim(teardownContext, persistentVolumeClaim); err != nil {
 				logrus.Errorf(
 					"Creating the enclave didn't complete successfully, so we tried to delete enclave persistent volume claim '%v' " +
 						"that we created but an error was thrown:\n%v",
@@ -229,7 +229,7 @@ func (backend *KubernetesKurtosisBackend) StopEnclaves(
 			errorsByPodName := map[string]error{}
 			for _, pod := range resources.pods {
 				podName := pod.GetName()
-				if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, podName); err != nil {
+				if err := backend.kubernetesManager.RemovePod(ctx, pod); err != nil {
 					errorsByPodName[podName] = err
 					continue
 				}
@@ -366,7 +366,7 @@ func (backend *KubernetesKurtosisBackend) DestroyEnclaves(
 		// Remove the namespace
 		if resources.namespace != nil {
 			namespaceName := resources.namespace.Name
-			if err := backend.kubernetesManager.RemoveNamespace(ctx, namespaceName); err != nil {
+			if err := backend.kubernetesManager.RemoveNamespace(ctx, resources.namespace); err != nil {
 				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
 					err,
 					"An error occurred removing namespace '%v' for enclave '%v'",

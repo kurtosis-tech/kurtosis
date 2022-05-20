@@ -63,7 +63,6 @@
 ### Features
 * Built out Kubernetes `GetUserServiceLogs`
 * Built out Kubernetes `RunUserServiceExecCommands`
-* `RemovePod` and `RemoveNamespace` calls in Kubernetes are now synchronous
 
 ### Fixes
 * Fixed `grpcProxy` port ID not being acceptable to Kubernetes
