@@ -16,6 +16,8 @@ import (
 )
 
 const (
+	// All API container objects will be named this, which is fine because the objects are namespaced and there
+	// should only be a single API container per enclave
 	apiContainerObjectNameStr                = "kurtosis-api"
 )
 var apiContainerObjectName = kubernetes_object_name.MustCreateNewKubernetesObjectName(apiContainerObjectNameStr)

@@ -23,6 +23,10 @@ type Engine struct {
 	publicGrpcProxyPort *port_spec.PortSpec
 }
 
+func NewEngine(guid EngineGUID, status container_status.ContainerStatus, publicIpAddr net.IP, publicGrpcPort *port_spec.PortSpec, publicGrpcProxyPort *port_spec.PortSpec) *Engine {
+	return &Engine{guid: guid, status: status, publicIpAddr: publicIpAddr, publicGrpcPort: publicGrpcPort, publicGrpcProxyPort: publicGrpcProxyPort}
+}
+
 func (engine *Engine) GetGUID() EngineGUID {
 	return engine.guid
 }
