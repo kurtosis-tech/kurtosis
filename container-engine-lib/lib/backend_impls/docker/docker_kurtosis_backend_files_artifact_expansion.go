@@ -37,10 +37,7 @@ const (
 )
 
 type filesArtifactExpansionObjectsAndDockerResources struct {
-	filesArtifactExpansionGUID *files_artifact_expansion.FilesArtifactExpansionGUID
-
-	// May be nil if no pod has been started yet
-	service *service.Service
+	filesArtifactExpansion *files_artifact_expansion.FilesArtifactExpansion
 
 	// Will never be nil
 	dockerResources *filesArtifactExpansionDockerResources
@@ -81,7 +78,7 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 				filesArtifactExpansionGUID: true,
 			},
 		}
-		_, erroredVolumeNames, err := backend.DestroyFilesArtifactExpansion(ctx, enclaveId, filesArtifactExpansionFilters)
+		_, erroredVolumeNames, err := backend.DestroyFilesArtifactExpansion(ctx, enclaveId, &filesArtifactExpansionFilters)
 		if err != nil {
 			logrus.Errorf("Failed to destroy expansion volumes for files artifact expansion '%v' - got error: \n%v", filesArtifactExpansionGUID, err)
 		}
@@ -110,14 +107,14 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 func (backend *DockerKurtosisBackend)  DestroyFilesArtifactExpansion(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	filters  files_artifact_expansion.FilesArtifactExpansionFilters,
+	filters *files_artifact_expansion.FilesArtifactExpansionFilters,
 )(
 	resultSuccessfulFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]bool,
 	resultErroredFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]error,
 	resultErr error,
 ) {
-	matchingFilesArtifactExpansionDockerResources, err := backend.getMatchingFileArtifactExpansionDockerResources(
-		ctx, enclaveId, filters.GUIDs, filters.ServiceGUIDs)
+	_, matchingFilesArtifactExpansionDockerResources, err := backend.getMatchingFilesArtifactExpansionObjectsAndDockerResources(
+		ctx, enclaveId, filters)
 	if err != nil {
 		return nil,nil,stacktrace.Propagate(err, "Failed to get files expansion docker resources in enclave '%v' for filters '%+v'",
 			enclaveId, filters)
@@ -132,7 +129,7 @@ func (backend *DockerKurtosisBackend)  DestroyFilesArtifactExpansion(
 		if container != nil {
 			containerErr := backend.dockerManager.RemoveContainer(ctx, container.GetName())
 			if containerErr != nil {
-				errorMap[filesArtifactGUID] = stacktrace.Propagate(containerErr,"Failed to clean up files artifact expansion artifact container. ")
+				errorMap[filesArtifactGUID] = containerErr
 			}
 			continue
 		}
@@ -141,7 +138,7 @@ func (backend *DockerKurtosisBackend)  DestroyFilesArtifactExpansion(
 		if volume != nil {
 			volumeErr := backend.dockerManager.RemoveVolume(ctx, volume.Name)
 			if volumeErr != nil {
-				errorMap[filesArtifactGUID] = stacktrace.Propagate(volumeErr,"Failed to clean up files artifact expansion artifact volume. ")
+				errorMap[filesArtifactGUID] = volumeErr
 			}
 			continue
 		}
@@ -152,12 +149,57 @@ func (backend *DockerKurtosisBackend)  DestroyFilesArtifactExpansion(
 }
 
 // ====================== PRIVATE HELPERS =============================
+func (backend *DockerKurtosisBackend) getMatchingFilesArtifactExpansionObjectsAndDockerResources(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *files_artifact_expansion.FilesArtifactExpansionFilters,
+) (
+	map[files_artifact_expansion.FilesArtifactExpansionGUID]*files_artifact_expansion.FilesArtifactExpansion,
+	map[files_artifact_expansion.FilesArtifactExpansionGUID]*filesArtifactExpansionDockerResources,
+	error,
+) {
+	matchingFilesArtifactExpansionDockerResources, err := backend.getMatchingFileArtifactExpansionDockerResources(
+		ctx, enclaveId, filters.GUIDs)
+	if err != nil {
+		return nil,nil,stacktrace.Propagate(err, "Failed to get files expansion docker resources in enclave '%v' for filters '%+v'",
+			enclaveId, filters)
+	}
+	matchingFilesArtifactExpansionObjects, err := getFilesExpansionObjectsFromKubernetesResources(matchingFilesArtifactExpansionDockerResources)
+	if err != nil {
+		return nil,nil,stacktrace.Propagate(err, "Failed to get files expansion objects in enclave '%v' for filters '%+v'",
+			enclaveId, filters)
+	}
+
+	// Finally, apply the filters
+	resultFilesArtifactExpansionObjects := map[files_artifact_expansion.FilesArtifactExpansionGUID]*files_artifact_expansion.FilesArtifactExpansion{}
+	resultDockerResources := map[files_artifact_expansion.FilesArtifactExpansionGUID]*filesArtifactExpansionDockerResources{}
+	for filesArtifactExpansionGUID, filesArtifactExpansionObj := range matchingFilesArtifactExpansionObjects {
+		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
+			if _, found := filters.GUIDs[filesArtifactExpansionObj.GetGUID()]; !found {
+				continue
+			}
+		}
+
+		if filters.ServiceGUIDs != nil && len(filters.ServiceGUIDs) > 0 {
+			if _, found := filters.ServiceGUIDs[filesArtifactExpansionObj.GetServiceGUID()]; !found {
+				continue
+			}
+		}
+
+		resultFilesArtifactExpansionObjects[filesArtifactExpansionGUID] = filesArtifactExpansionObj
+		if _, found := matchingFilesArtifactExpansionDockerResources[filesArtifactExpansionGUID]; !found {
+			return nil, nil, stacktrace.NewError("Expected to find Docker resources matching files artifact expansion guid '%v' but none was found", filesArtifactExpansionGUID)
+		}
+
+		resultDockerResources[filesArtifactExpansionGUID] = matchingFilesArtifactExpansionDockerResources[filesArtifactExpansionGUID]
+	}
+	return resultFilesArtifactExpansionObjects, resultDockerResources, nil
+}
 
 func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionDockerResources(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	maybeFilesArtifactGuidsToMatch map[files_artifact_expansion.FilesArtifactExpansionGUID]bool,
-	maybeServiceGuidsToMatch map[service.ServiceGUID]bool,
 ) (map[files_artifact_expansion.FilesArtifactExpansionGUID]*filesArtifactExpansionDockerResources, error){
 	resourcesByFilesArtifactGuid := map[files_artifact_expansion.FilesArtifactExpansionGUID]*filesArtifactExpansionDockerResources{}
 	artifactVolumeLabels := map[string]string{
@@ -173,24 +215,12 @@ func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionDockerReso
 	// FILTER VOLUMES BY GUIDS TO MATCH
 	for _, volume := range volumes {
 		filesArtifactExpansionGUIDStr := volume.Labels[label_key_consts.GUIDDockerLabelKey.GetString()]
-		serviceGUIDstr := volume.Labels[label_key_consts.UserServiceGUIDDockerLabelKey.GetString()]
 		filesArtifactExpansionGUID := files_artifact_expansion.FilesArtifactExpansionGUID(filesArtifactExpansionGUIDStr)
-		serviceGUID := service.ServiceGUID(serviceGUIDstr)
 
-		// Default true because empty filter set should return all
-		filesArtifactGUIDFound := true
 		if maybeFilesArtifactGuidsToMatch != nil && len(maybeFilesArtifactGuidsToMatch) > 0 {
-			_, filesArtifactGUIDFound = maybeFilesArtifactGuidsToMatch[filesArtifactExpansionGUID]
-		}
-
-		// Default true because empty filter set should return all
-		serviceGUIDFound := true
-		if maybeServiceGuidsToMatch != nil && len(maybeServiceGuidsToMatch) > 0 {
-			_, serviceGUIDFound = maybeServiceGuidsToMatch[serviceGUID]
-		}
-
-		if filesArtifactGUIDFound || serviceGUIDFound {
-			resourcesByFilesArtifactGuid[filesArtifactExpansionGUID] = &filesArtifactExpansionDockerResources{volume: volume}
+			if _, filesArtifactGUIDFound := maybeFilesArtifactGuidsToMatch[filesArtifactExpansionGUID]; filesArtifactGUIDFound {
+				resourcesByFilesArtifactGuid[filesArtifactExpansionGUID] = &filesArtifactExpansionDockerResources{volume: volume}
+			}
 		}
 	}
 
@@ -208,32 +238,37 @@ func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionDockerReso
 	// FILTER CONTAINERS BY GUIDS TO MATCH
 	for _, container := range containers {
 		filesArtifactExpansionGUIDStr := container.GetLabels()[label_key_consts.GUIDDockerLabelKey.GetString()]
-		serviceGUIDstr := container.GetLabels()[label_key_consts.UserServiceGUIDDockerLabelKey.GetString()]
 		filesArtifactExpansionGUID := files_artifact_expansion.FilesArtifactExpansionGUID(filesArtifactExpansionGUIDStr)
-		serviceGUID := service.ServiceGUID(serviceGUIDstr)
 
-		// Default true because empty filter set should return all
-		filesArtifactGUIDFound := true
 		if maybeFilesArtifactGuidsToMatch != nil && len(maybeFilesArtifactGuidsToMatch) > 0 {
-			_, filesArtifactGUIDFound = maybeFilesArtifactGuidsToMatch[filesArtifactExpansionGUID]
-		}
-
-		// Default true because empty filter set should return all
-		serviceGUIDFound := true
-		if maybeServiceGuidsToMatch != nil && len(maybeServiceGuidsToMatch) > 0 {
-			_, serviceGUIDFound = maybeServiceGuidsToMatch[serviceGUID]
-		}
-
-		if filesArtifactGUIDFound || serviceGUIDFound {
-			if resourcesByFilesArtifactGuid[filesArtifactExpansionGUID] == nil {
-				resourcesByFilesArtifactGuid[filesArtifactExpansionGUID] = &filesArtifactExpansionDockerResources{container: container}
-			} else {
-				resourcesByFilesArtifactGuid[filesArtifactExpansionGUID].container = container
+			if _, filesArtifactGUIDFound := maybeFilesArtifactGuidsToMatch[filesArtifactExpansionGUID]; filesArtifactGUIDFound {
+				if resourcesByFilesArtifactGuid[filesArtifactExpansionGUID] == nil {
+					resourcesByFilesArtifactGuid[filesArtifactExpansionGUID] = &filesArtifactExpansionDockerResources{container: container}
+				} else {
+					resourcesByFilesArtifactGuid[filesArtifactExpansionGUID].container = container
+				}
 			}
 		}
 	}
 	return resourcesByFilesArtifactGuid, nil
 }
+
+func getFilesExpansionObjectsFromKubernetesResources(
+	allResources map[files_artifact_expansion.FilesArtifactExpansionGUID]*filesArtifactExpansionDockerResources,
+) (map[files_artifact_expansion.FilesArtifactExpansionGUID]*files_artifact_expansion.FilesArtifactExpansion, error){
+	filesArtifactExpansionObjects := map[files_artifact_expansion.FilesArtifactExpansionGUID]*files_artifact_expansion.FilesArtifactExpansion{}
+	for filesArtifactExpansionGUID, dockerResource := range allResources {
+		canonicalResource := dockerResource.volume
+		serviceGUIDStr, found := canonicalResource.Labels[label_key_consts.UserServiceGUIDDockerLabelKey.GetString()]
+		if !found {
+			return nil, stacktrace.NewError("Found a volume as part of files artifact expansion '%v' without a service GUID label - this should never happen.")
+		}
+		serviceGUID := service.ServiceGUID(serviceGUIDStr)
+		filesArtifactExpansionObjects[filesArtifactExpansionGUID] = files_artifact_expansion.NewFilesArtifactExpansion(filesArtifactExpansionGUID, serviceGUID)
+	}
+	return filesArtifactExpansionObjects, nil
+}
+
 
 func (backend *DockerKurtosisBackend) createFilesArtifactExpansionVolume(
 	ctx context.Context,

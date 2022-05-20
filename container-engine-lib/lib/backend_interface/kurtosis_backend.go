@@ -423,7 +423,7 @@ type KurtosisBackend interface {
 	DestroyFilesArtifactExpansion(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		filters  files_artifact_expansion.FilesArtifactExpansionFilters,
+		filters *files_artifact_expansion.FilesArtifactExpansionFilters,
 	) (
 		resultSuccessfulFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]bool,
 		resultErroredFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]error,
