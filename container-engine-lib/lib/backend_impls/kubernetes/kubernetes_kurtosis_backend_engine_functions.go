@@ -240,6 +240,20 @@ func (backend *KubernetesKurtosisBackend) StopEngines(
 		}
 		namespaceName := resources.namespace.Name
 
+		if resources.pod != nil {
+			podName := resources.pod.Name
+			if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, podName); err != nil {
+				erroredEngineGuids[engineGuid] = stacktrace.Propagate(
+					err,
+					"An error occurred removing pod '%v' in namespace '%v' for engine '%v'",
+					podName,
+					namespaceName,
+					engineGuid,
+				)
+				continue
+			}
+		}
+
 		kubernetesService := resources.service
 		if kubernetesService != nil {
 			kubernetesService.Spec.Selector = nil
@@ -248,20 +262,6 @@ func (backend *KubernetesKurtosisBackend) StopEngines(
 					err,
 					"An error occurred removing selectors from service '%v' in namespace '%v' for engine '%v'",
 					kubernetesService.Name,
-					namespaceName,
-					engineGuid,
-				)
-				continue
-			}
-		}
-
-		if resources.pod != nil {
-			podName := resources.pod.Name
-			if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, podName); err != nil {
-				erroredEngineGuids[engineGuid] = stacktrace.Propagate(
-					err,
-					"An error occurred removing pod '%v' in namespace '%v' for engine '%v'",
-					podName,
 					namespaceName,
 					engineGuid,
 				)
