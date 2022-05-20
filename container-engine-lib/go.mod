@@ -1,6 +1,6 @@
 module github.com/kurtosis-tech/container-engine-lib
 
-go 1.16
+go 1.17
 
 require (
 	github.com/Microsoft/go-winio v0.4.17 // indirect

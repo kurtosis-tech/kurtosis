@@ -9,6 +9,7 @@
 
 ### Changes
 * Upgraded Kubernetes client SDK from v0.20 to v0.24
+* Upgraded this library to depend on Go 1.17 (required for latest Kubernetes SDK)
 * Switched the `UpdateService` implementation to use server-side apply
 
 ### Fixes
