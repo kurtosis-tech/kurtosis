@@ -261,7 +261,7 @@ func getFilesExpansionObjectsFromKubernetesResources(
 		canonicalResource := dockerResource.volume
 		serviceGUIDStr, found := canonicalResource.Labels[label_key_consts.UserServiceGUIDDockerLabelKey.GetString()]
 		if !found {
-			return nil, stacktrace.NewError("Found a volume as part of files artifact expansion '%v' without a service GUID label - this should never happen.")
+			return nil, stacktrace.NewError("Found a volume as part of files artifact expansion '%v' without a service GUID label - this should never happen.", filesArtifactExpansionGUID)
 		}
 		serviceGUID := service.ServiceGUID(serviceGUIDStr)
 		filesArtifactExpansionObjects[filesArtifactExpansionGUID] = files_artifact_expansion.NewFilesArtifactExpansion(filesArtifactExpansionGUID, serviceGUID)
