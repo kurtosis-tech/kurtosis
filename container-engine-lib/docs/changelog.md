@@ -1,5 +1,26 @@
 # TBD
 
+# 0.25.0
+### Features
+* Built out Kubernetes `GetUserServiceLogs`
+* Built out Kubernetes `RunUserServiceExecCommands`
+
+### Fixes
+* Fixed `grpcProxy` port ID not being acceptable to Kubernetes
+* Fixed a bug where RegisterService was creating Kubernetes Services without ports, which Kubernetes doesn't allow
+
+### Changes
+* The API container objects no longer get prefixed with the enclave name, and all get called `kurtosis-api` (which is fine because they're namespaced)
+
+### Breaking Changes
+* NewKubernetesManager now additionally takes in a Kubernetes configuration object
+    * Users will need to pass in this new configuration (the same as is created when instantiating the Kubernetes clientset)
+* Engine IDs are now of the formal type `EngineGUID` rather than `string`
+    * All instances of engine ID strings need to be replaced with `EngineID` (e.g. all of the engine CRUD methods coming back from KurtosisBackend)
+* The engine object's `GetID` method has now been renamed `GetGUID`
+    * Users should switch to using the new method
+
+
 # 0.24.0
 ### Fixes
 * Fixed a bug where the API container resources map would have entries even if the enclave was empty of API containers
