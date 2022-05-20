@@ -164,7 +164,6 @@ type KurtosisBackend interface {
 		image string,
 		enclaveId enclave.EnclaveID,
 		id module.ModuleID,
-		guid module.ModuleGUID,
 		grpcPortNum uint16,
 		envVars map[string]string,
 	) (

@@ -13,11 +13,11 @@ const (
 
 // Generates a UUID with the dashes removed
 func GenerateUUIDString() (string, error) {
-	engineUuid, err := uuid.NewUUID()
+	newUUID, err := uuid.NewUUID()
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred generating a UUID for the engine GUID")
+		return "", stacktrace.Propagate(err, "An error occurred generating a new UUID")
 	}
 
-	result := strings.Replace(engineUuid.String(), "-", "", numberOfHyphenReplacements)
+	result := strings.Replace(newUUID.String(), "-", "", numberOfHyphenReplacements)
 	return result, nil
 }

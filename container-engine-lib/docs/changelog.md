@@ -9,6 +9,10 @@
     * `StopUserServices`
     * `DestroyUserServices`
 
+### Breaking Changes
+* Removed `ModuleGUID` argument in `KurtosisBackend.CreateModule`
+  * Users will need to remove the argument on each call, the module's GUID will be automatically created in the backend for them
+
 ### Fixes
 * Fix a bug in gathering user service Services and Pods
 * Fix a nil pointer exception bug when starting a user service

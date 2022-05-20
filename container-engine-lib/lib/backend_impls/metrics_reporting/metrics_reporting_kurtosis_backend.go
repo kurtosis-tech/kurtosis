@@ -214,7 +214,6 @@ func (backend *MetricsReportingKurtosisBackend) CreateModule(
 	image string,
 	enclaveId enclave.EnclaveID,
 	id module.ModuleID,
-	guid module.ModuleGUID,
 	grpcPortNum uint16,
 	envVars map[string]string,
 ) (
@@ -226,7 +225,6 @@ func (backend *MetricsReportingKurtosisBackend) CreateModule(
 		image,
 		enclaveId,
 		id,
-		guid,
 		grpcPortNum,
 		envVars,
 	)
@@ -234,9 +232,9 @@ func (backend *MetricsReportingKurtosisBackend) CreateModule(
 		return nil,
 			stacktrace.Propagate(
 				err,
-				"An error occurred creating module with ID '%v', GUID '%v', and image '%v'",
+				"An error occurred creating module with ID '%v' in enclave '%v', and image '%v'",
 				id,
-				guid,
+				enclaveId,
 				image,
 			)
 	}
