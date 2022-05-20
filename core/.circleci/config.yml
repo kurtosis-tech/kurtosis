@@ -11,12 +11,12 @@ parameters:
     default: 20.10.7
   api-go-version:
     type: string
-    default: 1.15.13
+    default: "1.15.13"
   # Separate (and newer) than the API version because we want lots of people to be able to use the Kurtosis API and the API doesn't need to be
   # the same version as the server
   server-go-version:
     type: string
-    default: 1.17
+    default: "1.17"
   api-node-version:
     type: string
     default: 16.13.0
