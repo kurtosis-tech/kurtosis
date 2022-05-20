@@ -1,5 +1,7 @@
 # TBD
 ### Features
+* Added `KubernetesKurtosisBackend.CreateModule`, `KubernetesKurtosisBackend.GetModules`, `KubernetesKurtosisBackend.StopModules` and `KubernetesKurtosisBackend.DestroyModules`
+* Added `ForModulePod` and `ForModuleService` to `KubernetesEnclaveObjectAttributesProvider`
 * Started proto-documentation on README about how the CRUD methods work, and why
 * Switched user service objects to use UUIDs for service GUIDs
 * Implement remaining user service methods:
@@ -37,6 +39,10 @@
 * The engine object's `GetID` method has now been renamed `GetGUID`
     * Users should switch to using the new method
 
+
+### Breaking Changes
+* Added the `enclaveId` argument in `GetModules`, `GetModuleLogs`, `StopModules` and `DestroyModules`
+  * Users should add this new argument on each call
 
 # 0.24.0
 ### Fixes

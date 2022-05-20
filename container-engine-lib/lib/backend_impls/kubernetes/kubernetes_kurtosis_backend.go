@@ -18,12 +18,10 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
-	"io"
 	apiv1 "k8s.io/api/core/v1"
 	"strconv"
 	"strings"
@@ -44,8 +42,9 @@ const (
 	kurtosisInternalContainerGrpcProxyPortSpecId = "grpc-proxy"
 
 	// Port number string parsing constants
-	publicPortNumStrParsingBase = 10
-	publicPortNumStrParsingBits = 16
+	portNumStrParsingBase = 10
+	portNumStrParsingBits = 16
+
 )
 
 // This maps a Kubernetes pod's phase to a binary "is the pod considered running?" determiner
@@ -199,31 +198,6 @@ func (backend *KubernetesKurtosisBackend) PullImage(image string) error {
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateModule(ctx context.Context, image string, enclaveId enclave.EnclaveID, id module.ModuleID, guid module.ModuleGUID, grpcPortNum uint16, envVars map[string]string) (newModule *module.Module, resultErr error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) GetModules(ctx context.Context, filters *module.ModuleFilters) (map[module.ModuleGUID]*module.Module, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) GetModuleLogs(ctx context.Context, filters *module.ModuleFilters, shouldFollowLogs bool) (successfulModuleLogs map[module.ModuleGUID]io.ReadCloser, erroredModuleGuids map[module.ModuleGUID]error, resultError error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) StopModules(ctx context.Context, filters *module.ModuleFilters) (successfulModuleIds map[module.ModuleGUID]bool, erroredModuleIds map[module.ModuleGUID]error, resultErr error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) DestroyModules(ctx context.Context, filters *module.ModuleFilters) (successfulModuleIds map[module.ModuleGUID]bool, erroredModuleIds map[module.ModuleGUID]error, resultErr error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (backend *KubernetesKurtosisBackend) CreateNetworkingSidecar(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID) (*networking_sidecar.NetworkingSidecar, error) {
 	//TODO implement me
 	panic("implement me")
@@ -285,33 +259,33 @@ func getStringMapFromAnnotationMap(labelMap map[*kubernetes_annotation_key.Kuber
 	return strMap
 }
 
-// getPublicPortSpecFromServicePort returns a port_spec representing a Kurtosis port spec for a service port in Kubernetes
-func getPublicPortSpecFromServicePort(servicePort apiv1.ServicePort, portProtocol port_spec.PortProtocol) (*port_spec.PortSpec, error) {
-	publicPortNumStr := strconv.FormatInt(int64(servicePort.Port), publicPortNumStrParsingBase)
-	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, publicPortNumStrParsingBase, publicPortNumStrParsingBits)
+// getPortSpecFromServicePort returns a port_spec representing a Kurtosis port spec for a service port in Kubernetes
+func getPortSpecFromServicePort(servicePort apiv1.ServicePort, portProtocol port_spec.PortProtocol) (*port_spec.PortSpec, error) {
+	portNumStr := strconv.FormatInt(int64(servicePort.Port), portNumStrParsingBase)
+	portNumUint64, err := strconv.ParseUint(portNumStr, portNumStrParsingBase, portNumStrParsingBits)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred parsing public port string '%v' using base '%v' and uint bits '%v'",
-			publicPortNumStr,
-			publicPortNumStrParsingBase,
-			publicPortNumStrParsingBits,
+			"An error occurred parsing port string '%v' using base '%v' and uint bits '%v'",
+			portNumStr,
+			portNumStrParsingBase,
+			portNumStrParsingBits,
 		)
 	}
-	publicPortNum := uint16(publicPortNumUint64) // Safe to do because we pass the requisite number of bits into the parse command
-	publicGrpcPort, err := port_spec.NewPortSpec(publicPortNum, portProtocol)
+	portNum := uint16(portNumUint64) // Safe to do because we pass the requisite number of bits into the parse command
+	portSpec, err := port_spec.NewPortSpec(portNum, portProtocol)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a public port on a Kubernetes node using number '%v' and protocol '%v', instead a non nil error was returned", publicPortNum, portProtocol)
+		return nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a service port on a Kubernetes node using number '%v' and protocol '%v', instead a non nil error was returned", portNum, portProtocol)
 	}
 
-	return publicGrpcPort, nil
+	return portSpec, nil
 }
 
 
 // TODO Replace with pulling the serialized port specs off the Service
 func getGrpcAndGrpcProxyPortSpecsFromServicePorts(servicePorts []apiv1.ServicePort) (resultGrpcPortSpec *port_spec.PortSpec, resultGrpcProxyPortSpec *port_spec.PortSpec, resultErr error) {
-	var publicGrpcPort *port_spec.PortSpec
-	var publicGrpcProxyPort *port_spec.PortSpec
+	var grpcPortSpec *port_spec.PortSpec
+	var grpcProxyPortSpec *port_spec.PortSpec
 	grpcPortName := object_name_constants.KurtosisInternalContainerGrpcPortName.GetString()
 	grpcProxyPortName := object_name_constants.KurtosisInternalContainerGrpcProxyPortName.GetString()
 
@@ -320,31 +294,32 @@ func getGrpcAndGrpcProxyPortSpecsFromServicePorts(servicePorts []apiv1.ServicePo
 		switch servicePortName {
 		case grpcPortName:
 			{
-				publicGrpcPortSpec, err := getPublicPortSpecFromServicePort(servicePort, kurtosisServersPortProtocol)
+				var err error
+				grpcPortSpec, err = getPortSpecFromServicePort(servicePort, kurtosisServersPortProtocol)
 				if err != nil {
-					return nil, nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a public grpc port from Kubernetes service port '%v', instead a non nil error was returned", servicePortName)
+					return nil, nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a grpc port from Kubernetes service port '%v', instead a non nil error was returned", servicePortName)
 				}
-				publicGrpcPort = publicGrpcPortSpec
 			}
 		case grpcProxyPortName:
 			{
-				publicGrpcProxyPortSpec, err := getPublicPortSpecFromServicePort(servicePort, kurtosisServersPortProtocol)
+				var err error
+				grpcProxyPortSpec, err = getPortSpecFromServicePort(servicePort, kurtosisServersPortProtocol)
 				if err != nil {
-					return nil, nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a public grpc proxy port from Kubernetes service port '%v', instead a non nil error was returned", servicePortName)
+					return nil, nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a grpc proxy port from Kubernetes service port '%v', instead a non nil error was returned", servicePortName)
 				}
-				publicGrpcProxyPort = publicGrpcProxyPortSpec
 			}
 		}
 	}
 
-	if publicGrpcPort == nil || publicGrpcProxyPort == nil {
-		return nil, nil, stacktrace.NewError("Expected to get public port specs from Kubernetes service ports, instead got a nil pointer")
+	if grpcPortSpec == nil || grpcProxyPortSpec == nil {
+		return nil, nil, stacktrace.NewError("Expected to get port specs from Kubernetes service ports, instead got a nil pointer")
 	}
 
-	return publicGrpcPort, publicGrpcProxyPort, nil
+	return grpcPortSpec, grpcProxyPortSpec, nil
 }
 
 func getContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus, error) {
+	// TODO Rename this; this shouldn't be called "ContainerStatus" since there's no longer a 1:1 mapping between container:kurtosis_object
 	status := container_status.ContainerStatus_Stopped
 
 	if pod != nil {
@@ -352,7 +327,7 @@ func getContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus
 		isPodRunning, found := isPodRunningDeterminer[podPhase]
 		if !found {
 			// This should never happen because we enforce completeness in a unit test
-			return status, stacktrace.NewError("No is-running designation found for pod phase '%v'; this is a bug in Kurtosis!", podPhase)
+			return status, stacktrace.NewError("No is-pod-running determination found for pod phase '%v' on pod '%v'; this is a bug in Kurtosis", podPhase, pod.Name)
 		}
 		if isPodRunning {
 			status = container_status.ContainerStatus_Running

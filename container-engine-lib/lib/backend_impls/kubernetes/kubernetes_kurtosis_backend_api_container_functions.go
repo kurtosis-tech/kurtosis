@@ -104,10 +104,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	}
 
 	enclaveAttributesProvider := backend.objAttrsProvider.ForEnclave(enclaveId)
-	apiContainerAttributesProvider, err := enclaveAttributesProvider.ForApiContainer()
-	if err != nil {
-		return nil, stacktrace.Propagate(err,"An error occurred getting the API container attributes provider using enclave ID '%v'", enclaveId)
-	}
+	apiContainerAttributesProvider:= enclaveAttributesProvider.ForApiContainer()
 
 	enclaveNamespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
 	if err != nil {
@@ -200,7 +197,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	serviceAccountName := serviceAccountAttributes.GetName().GetString()
 	serviceAccountLabels := getStringMapFromLabelMap(serviceAccountAttributes.GetLabels())
-	apiContainerServiceAccount, err := backend.kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, enclaveNamespaceName, serviceAccountLabels);
+	apiContainerServiceAccount, err := backend.kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, enclaveNamespaceName, serviceAccountLabels)
 	if err != nil {
 		return nil,  stacktrace.Propagate(err, "An error occurred creating service account '%v' with labels '%+v' in namespace '%v'", serviceAccountName, serviceAccountLabels, enclaveNamespaceName)
 	}
@@ -314,7 +311,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	}
 
 	// Create pods with api container containers and volumes in Kubernetes
-	apiContainerPod, err := backend.kubernetesManager.CreatePod(ctx, enclaveNamespaceName, apiContainerPodName, apiContainerPodLabels, apiContainerPodAnnotations, apiContainerContainers, apiContainerVolumes, apiContainerServiceAccountName);
+	apiContainerPod, err := backend.kubernetesManager.CreatePod(ctx, enclaveNamespaceName, apiContainerPodName, apiContainerPodLabels, apiContainerPodAnnotations, apiContainerContainers, apiContainerVolumes, apiContainerServiceAccountName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", apiContainerPodName, enclaveNamespaceName, image)
 	}

@@ -84,8 +84,6 @@ type KurtosisBackend interface {
 		error,
 	)
 
-	// TODO MAYYYYYYYBE DumpEnclaves?
-
 	// Stops enclaves matching the given filters
 	StopEnclaves(
 		ctx context.Context,
@@ -177,6 +175,7 @@ type KurtosisBackend interface {
 	// Gets modules using the given filters, returning a map of matched modules identified by their module ID
 	GetModules(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *module.ModuleFilters,
 	) (
 		map[module.ModuleGUID]*module.Module,
@@ -187,6 +186,7 @@ type KurtosisBackend interface {
 	// User is responsible for closing the 'ReadCloser' object returned in the successfulModuleLogs map
 	GetModuleLogs(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *module.ModuleFilters,
 		shouldFollowLogs bool,
 	) (
@@ -198,6 +198,7 @@ type KurtosisBackend interface {
 	// Stops the modules matching the given filters
 	StopModules(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *module.ModuleFilters,
 	) (
 		successfulModuleIds map[module.ModuleGUID]bool, // "set" of module IDs that were successfully stopped
@@ -208,6 +209,7 @@ type KurtosisBackend interface {
 	// Destroys the modules with the given filters, regardless of if they're running or not
 	DestroyModules(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *module.ModuleFilters,
 	) (
 		successfulModuleIds map[module.ModuleGUID]bool, // "set" of module IDs that were successfully destroyed

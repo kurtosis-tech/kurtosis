@@ -512,12 +512,7 @@ func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, 
 
 	allObjectsAndResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(
-			err,
-			"An error occurred getting user services in enclave '%v' matching filters: %+v",
-			enclaveId,
-			filters,
-		)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' matching filters: %+v", enclaveId, filters)
 	}
 
 	successfulGuids := map[service.ServiceGUID]bool{}
@@ -866,16 +861,9 @@ func getUserServiceObjectsFromKubernetesResources(
 			continue
 		}
 
-		podPhase := kubernetesPod.Status.Phase
-		isPodRunning, found := isPodRunningDeterminer[podPhase]
-		if !found {
-			// Should never happen because we enforce completeness of the determiner via unit test
-			return nil, stacktrace.NewError("No is-pod-running determination found for pod phase '%v' on pod '%v'; this is a bug in Kurtosis", podPhase, kubernetesPod.Name)
-		}
-		// TODO Rename this; this shouldn't be called "ContainerStatus" since there's no longer a 1:1 mapping between container:kurtosis_object
-		containerStatus := container_status.ContainerStatus_Stopped
-		if isPodRunning {
-			containerStatus = container_status.ContainerStatus_Running
+		containerStatus, err := getContainerStatusFromPod(resourcesToParse.pod)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting container status from Kubernetes pod '%+v'", resourcesToParse.pod)
 		}
 
 		resultObj.service = service.NewService(

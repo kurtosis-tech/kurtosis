@@ -46,14 +46,11 @@ func (backend *DockerKurtosisBackend) CreateModule(
 ) {
 	// Verify no module container with the given GUID already exists in the enclave
 	preexistingModuleFilters := &module.ModuleFilters{
-		EnclaveIDs: map[enclave.EnclaveID]bool{
-			enclaveId: true,
-		},
 		GUIDs: map[module.ModuleGUID]bool{
 			guid: true,
 		},
 	}
-	preexistingModules, err := backend.GetModules(ctx, preexistingModuleFilters)
+	preexistingModules, err := backend.GetModules(ctx, enclaveId, preexistingModuleFilters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting preexisting modules in enclave '%v' with GUID '%v'", enclaveId, guid)
 	}
@@ -203,6 +200,7 @@ func (backend *DockerKurtosisBackend) CreateModule(
 
 func (backend *DockerKurtosisBackend) GetModules(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *module.ModuleFilters,
 ) (
 	map[module.ModuleGUID]*module.Module,
@@ -223,6 +221,7 @@ func (backend *DockerKurtosisBackend) GetModules(
 
 func (backend *DockerKurtosisBackend) GetModuleLogs(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *module.ModuleFilters,
 	shouldFollowLogs bool,
 ) (
@@ -254,6 +253,7 @@ func (backend *DockerKurtosisBackend) GetModuleLogs(
 
 func (backend *DockerKurtosisBackend) StopModules(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *module.ModuleFilters,
 ) (
 	resultSuccessfulModuleGuids map[module.ModuleGUID]bool,
@@ -307,6 +307,7 @@ func (backend *DockerKurtosisBackend) StopModules(
 
 func (backend *DockerKurtosisBackend) DestroyModules(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *module.ModuleFilters,
 ) (
 	successfulModuleIds map[module.ModuleGUID]bool,
@@ -384,12 +385,6 @@ func (backend *DockerKurtosisBackend) getMatchingModules(ctx context.Context, fi
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred converting container with ID '%v' into a module object", moduleContainer.GetId())
-		}
-
-		if filters.EnclaveIDs != nil && len(filters.EnclaveIDs) > 0 {
-			if _, found := filters.EnclaveIDs[moduleObj.GetEnclaveID()]; !found {
-				continue
-			}
 		}
 
 		// If the ID filter is specified, drop modules not matching it
