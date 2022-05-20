@@ -12,6 +12,7 @@
 * Added `kurtosis cluster get|set|ls`, which define which backend cluster (defined in config) that the CLI will access for all engine-related commands.
 * Added 'gateway' command to open a local gateway to kurtosis objects running in Kubernetes
 * Added calls to remote API container in API Container gateway
+* Added Kubernetes module CRUD & logs features
 
 ### Changes
 * The `enclave-size-in-Megabytes` field in Kubernetes cluster field now is optional, and defaults to 10 MB
@@ -21,6 +22,7 @@
 ### Fixes
 * Fixed a bug where pods would return before being started
 * Upgraded to container-engine-lib 0.25.0 (and downstream deps), which fix several issues on Kubernetes
+* Fixed a bug where Kubrnetes service updates would sometimes fail
 
 # 0.17.0
 ### Features

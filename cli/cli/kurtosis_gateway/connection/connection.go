@@ -78,7 +78,7 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 	// Connection to pod portforwarder endpoint
 	transport, upgrader, err := spdy.RoundTripperFor(kubernetesRestConfig)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "An error occurred creating a SPDY round-tripper for the Kubernetes REST config")
 	}
 	dialerMethod := "POST"
 	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, dialerMethod, podProxyEndpointUrl)
