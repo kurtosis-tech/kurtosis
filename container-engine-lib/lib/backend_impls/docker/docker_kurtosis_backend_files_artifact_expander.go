@@ -9,7 +9,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/stacktrace"
 	"path"
 )
@@ -30,7 +29,7 @@ func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 	ctx context.Context,
 	filesArtifactExpansion *files_artifact_expansion.FilesArtifactExpansion,
 	enclaveId enclave.EnclaveID,
-	filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
+	filesArtifactExpansionVolumeName string,
 	destVolMntDirpathOnExpander string,
 	filesArtifactFilepathRelativeToEnclaveDataVolumeRoot string,
 )(*files_artifact_expander.FilesArtifactExpander, error){
@@ -71,10 +70,8 @@ func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 		containerLabels[labelKey.GetString()] = labelValue.GetString()
 	}
 
-	filesArtifactExpansionVolumeNameStr := string(filesArtifactExpansionVolumeName)
-
 	volumeMounts := map[string]string{
-		filesArtifactExpansionVolumeNameStr: destVolMntDirpathOnExpander,
+		filesArtifactExpansionVolumeName: destVolMntDirpathOnExpander,
 		enclaveDataVolumeName:               enclaveDataVolumeDirpathOnExpanderContainer,
 	}
 
@@ -107,7 +104,7 @@ func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 	).Build()
 	containerId, _, err := backend.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker container to expand the file artifact '%v' into the volume '%v'", filesArtifactFilepathRelativeToEnclaveDataVolumeRoot, filesArtifactExpansionVolumeNameStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker container to expand the file artifact '%v' into the volume '%v'", filesArtifactFilepathRelativeToEnclaveDataVolumeRoot, filesArtifactExpansionVolumeName)
 	}
 
 	exitCode, err := backend.dockerManager.WaitForExit(ctx, containerId)

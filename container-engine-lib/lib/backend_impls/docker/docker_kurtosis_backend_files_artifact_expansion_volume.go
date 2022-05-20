@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -13,7 +12,7 @@ func (backend *DockerKurtosisBackend) createFilesArtifactExpansionVolume(
 	enclaveId enclave.EnclaveID,
 	filesArtifactExpansion *files_artifact_expansion.FilesArtifactExpansion,
 )(
-	files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
+	string,
 	error,
 ) {
 
@@ -55,5 +54,5 @@ func (backend *DockerKurtosisBackend) createFilesArtifactExpansionVolume(
 	if err := backend.dockerManager.CreateVolume(ctx, volumeName, volumeLabels); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred creating the destination volume '%v' with labels '%+v'", volumeName, volumeLabels)
 	}
-	return files_artifact_expansion_volume.FilesArtifactExpansionVolumeName(volumeName), nil
+	return volumeName, nil
 }
