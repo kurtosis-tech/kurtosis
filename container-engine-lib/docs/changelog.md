@@ -1,4 +1,10 @@
 # TBD
+### Features
+* Build `CopyFromUserService` in Kubernetes
+
+### Breaking Changes
+* Renamed `KurtosisBackend.CopyFromUserService` -> `CopyFilesFromUserService`
+    * Users should update their usages accordingly
 
 # 0.26.1
 

@@ -323,8 +323,9 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-	//Copy content (it can be a file or entire folder) from user service source path and returns a ReadCloser object
-	CopyFromUserService(
+	// Copy content (it can be a file or entire folder) from user service source path and returns a ReadCloser object to
+	// a TAR containing the files
+	CopyFilesFromUserService(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
 		serviceGuid service.ServiceGUID,

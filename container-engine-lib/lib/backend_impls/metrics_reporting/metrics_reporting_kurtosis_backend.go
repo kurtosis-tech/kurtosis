@@ -454,7 +454,7 @@ func (backend *MetricsReportingKurtosisBackend) GetConnectionWithUserService(
 	return newConn, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) CopyFromUserService(
+func (backend *MetricsReportingKurtosisBackend) CopyFilesFromUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
@@ -463,7 +463,7 @@ func (backend *MetricsReportingKurtosisBackend) CopyFromUserService(
 	io.ReadCloser,
 	error,
 ) {
-	tarStreamReadCloser, err := backend.underlying.CopyFromUserService(ctx, enclaveId, serviceGuid, srcPath)
+	tarStreamReadCloser, err := backend.underlying.CopyFilesFromUserService(ctx, enclaveId, serviceGuid, srcPath)
 	if err != nil {
 		stacktrace.Propagate(err, "An error occurred copying content from sourcepath '%v' in user service with GUID '%v' in enclave with ID '%v'", srcPath, serviceGuid, enclaveId)
 	}

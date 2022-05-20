@@ -475,7 +475,7 @@ func (backend *DockerKurtosisBackend) GetConnectionWithUserService(
 }
 
 // It returns io.ReadCloser which is a tar stream. It's up to the caller to close the reader.
-func (backend *DockerKurtosisBackend) CopyFromUserService(
+func (backend *DockerKurtosisBackend) CopyFilesFromUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,

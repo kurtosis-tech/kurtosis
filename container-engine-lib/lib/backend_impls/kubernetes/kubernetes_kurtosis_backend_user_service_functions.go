@@ -499,7 +499,7 @@ func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx conte
 	return nil, stacktrace.NewError("Getting a connection with a user service isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) CopyFromUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID, srcPath string) (resultReadCloser io.ReadCloser, resultErr error) {
+func (backend *KubernetesKurtosisBackend) CopyFilesFromUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID, srcPath string) (resultReadCloser io.ReadCloser, resultErr error) {
 	//TODO implement me
 	panic("implement me")
 }
