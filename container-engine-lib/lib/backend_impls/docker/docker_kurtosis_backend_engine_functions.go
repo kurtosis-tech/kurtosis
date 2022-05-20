@@ -342,8 +342,8 @@ func (backend *DockerKurtosisBackend) getMatchingEngines(ctx context.Context, fi
 		}
 
 		// If the ID filter is specified, drop engines not matching it
-		if filters.IDs != nil && len(filters.IDs) > 0 {
-			if _, found := filters.IDs[engineObj.GetID()]; !found {
+		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
+			if _, found := filters.GUIDs[engineObj.GetID()]; !found {
 				continue
 			}
 		}

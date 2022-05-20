@@ -6,11 +6,13 @@ import (
 	"net"
 )
 
+type EngineGUID string
+
 // Object that represents POINT-IN-TIME information about an engine server
 // Store this object and continue to reference it at your own risk!!!
 type Engine struct {
 	// Will always be filled out
-	id string
+	guid EngineGUID
 
 	status container_status.ContainerStatus
 
@@ -21,12 +23,8 @@ type Engine struct {
 	publicGrpcProxyPort *port_spec.PortSpec
 }
 
-func NewEngine(id string, status container_status.ContainerStatus, publicIpAddr net.IP, publicGrpcPort *port_spec.PortSpec, publicGrpcProxyPort *port_spec.PortSpec) *Engine {
-	return &Engine{id: id, status: status, publicIpAddr: publicIpAddr, publicGrpcPort: publicGrpcPort, publicGrpcProxyPort: publicGrpcProxyPort}
-}
-
-func (engine *Engine) GetID() string {
-	return engine.id
+func (engine *Engine) GetGUID() EngineGUID {
+	return engine.guid
 }
 func (engine *Engine) GetStatus() container_status.ContainerStatus {
 	return engine.status

@@ -347,9 +347,9 @@ func (backend *KubernetesKurtosisBackend) getMatchingEngineObjectsAndKubernetesR
 	map[string]*engineKubernetesResources,
 	error,
 ) {
-	matchingResources, err := backend.getMatchingEngineKubernetesResources(ctx, filters.IDs)
+	matchingResources, err := backend.getMatchingEngineKubernetesResources(ctx, filters.GUIDs)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engine Kubernetes resources matching IDs: %+v", filters.IDs)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engine Kubernetes resources matching IDs: %+v", filters.GUIDs)
 	}
 
 	engineObjects, err := getEngineObjectsFromKubernetesResources(matchingResources)
@@ -361,8 +361,8 @@ func (backend *KubernetesKurtosisBackend) getMatchingEngineObjectsAndKubernetesR
 	resultEngineObjs := map[string]*engine.Engine{}
 	resultKubernetesResources := map[string]*engineKubernetesResources{}
 	for engineId, engineObj := range engineObjects {
-		if filters.IDs != nil && len(filters.IDs) > 0 {
-			if _, found := filters.IDs[engineObj.GetID()]; !found {
+		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
+			if _, found := filters.GUIDs[engineObj.GetID()]; !found {
 				continue
 			}
 		}

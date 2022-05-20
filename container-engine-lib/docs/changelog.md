@@ -7,8 +7,13 @@
 * Fixed `grpcProxy` port ID not being acceptable to Kubernetes
 * Fixed a bug where RegisterService was creating Kubernetes Services without ports, which Kubernetes doesn't allow
 
+### Changes
+* The API container objects no longer get prefixed with the enclave name, and all get called `kurtosis-api` (which is fine because they're namespaced)
+
 ### Breaking Changes
 * NewKubernetesManager now additionally takes in a kubernetes restclient configuration
+* Engine IDs are now of the formal type `EngineGUID`
+* The engine object's `GetID` method has now been renamed `GetGUID`
 
 # 0.24.0
 ### Fixes
