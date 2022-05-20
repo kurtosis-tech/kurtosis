@@ -53,6 +53,9 @@ const (
 
 	successExecCommandExitCode = 0
 
+	// This is the owner string we'll use when updating fields
+	fieldManager = "kurtosis"
+
 	// We want to force updates because only Kurtosis is expected to have ownership of the objects Kurtosis creates
 	shouldForceUpdates = true
 )
@@ -105,7 +108,11 @@ func (manager *KubernetesManager) CreateService(ctx context.Context, namespace s
 		Spec:       serviceSpec,
 	}
 
-	serviceResult, err := servicesClient.Create(ctx, service, metav1.CreateOptions{})
+	createOpts := metav1.CreateOptions{
+		FieldManager:    fieldManager,
+	}
+
+	serviceResult, err := servicesClient.Create(ctx, service, createOpts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create service '%s' in namespace '%s'", name, namespace)
 	}
@@ -138,7 +145,7 @@ func (manager *KubernetesManager) UpdateService(
 	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespaceName)
 
 	applyOpts := metav1.ApplyOptions{
-		Force: shouldForceUpdates,
+		FieldManager: fieldManager,
 	}
 	result, err := servicesClient.Apply(ctx, updatesToApply, applyOpts)
 	if err != nil {
@@ -200,7 +207,9 @@ func (manager *KubernetesManager) CreateStorageClass(ctx context.Context, name s
 		VolumeBindingMode: &volumeBindingMode,
 	}
 
-	storageClassResult, err := storageClassClient.Create(ctx, storageClass, metav1.CreateOptions{})
+	createOpts := metav1.CreateOptions{FieldManager: fieldManager}
+
+	storageClassResult, err := storageClassClient.Create(ctx, storageClass, createOpts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create storage class with name '%s'", name)
 	}
@@ -258,7 +267,9 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Contex
 		},
 	}
 
-	persistentVolumeClaimResult, err := volumeClaimsClient.Create(ctx, persistentVolumeClaim, metav1.CreateOptions{})
+	createOpts := metav1.CreateOptions{FieldManager: fieldManager}
+
+	persistentVolumeClaimResult, err := volumeClaimsClient.Create(ctx, persistentVolumeClaim, createOpts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create persistent volume claim with name '%s' in namespace '%s'", persistentVolumeClaimName, namespace)
 	}
@@ -331,7 +342,9 @@ func (manager *KubernetesManager) CreateNamespace(ctx context.Context, name stri
 		},
 	}
 
-	namespaceResult, err := namespaceClient.Create(ctx, namespace, metav1.CreateOptions{})
+	createOpts := metav1.CreateOptions{FieldManager: fieldManager}
+
+	namespaceResult, err := namespaceClient.Create(ctx, namespace, createOpts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create namespace with name '%s'", name)
 	}
@@ -399,7 +412,9 @@ func (manager *KubernetesManager) CreateDaemonSet(ctx context.Context, namespace
 		Spec: appsv1.DaemonSetSpec{},
 	}
 
-	daemonSetResult, err := daemonSetClient.Create(ctx, daemonSet, metav1.CreateOptions{})
+	createOpts := metav1.CreateOptions{FieldManager: fieldManager}
+
+	daemonSetResult, err := daemonSetClient.Create(ctx, daemonSet, createOpts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create daemonSet with name '%s' in namespace '%s'", name, namespace)
 	}
@@ -440,7 +455,9 @@ func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name
 		},
 	}
 
-	serviceAccountResult, err := client.Create(ctx, serviceAccount, metav1.CreateOptions{})
+	createOpts := metav1.CreateOptions{FieldManager: fieldManager}
+
+	serviceAccountResult, err := client.Create(ctx, serviceAccount, createOpts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create service account with name '%s' in namespace '%v'", name, namespace)
 	}
@@ -485,7 +502,9 @@ func (manager *KubernetesManager) CreateRole(ctx context.Context, name string, n
 		Rules: rules,
 	}
 
-	roleResult, err := client.Create(ctx, role, metav1.CreateOptions{})
+	createOpts := metav1.CreateOptions{FieldManager: fieldManager}
+
+	roleResult, err := client.Create(ctx, role, createOpts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create role with name '%s' in namespace '%v' and rules '%+v'", name, namespace, rules)
 	}
@@ -518,6 +537,8 @@ func (manager *KubernetesManager) RemoveRole(ctx context.Context, name string, n
 	return nil
 }
 
+// --------------------------- Role Bindings ------------------------------------------------------------------------------
+
 func (manager *KubernetesManager) CreateRoleBindings(ctx context.Context, name string, namespace string, subjects []rbacv1.Subject, roleRef rbacv1.RoleRef, labels map[string]string) (*rbacv1.RoleBinding, error) {
 	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
 
@@ -530,7 +551,9 @@ func (manager *KubernetesManager) CreateRoleBindings(ctx context.Context, name s
 		RoleRef: roleRef,
 	}
 
-	roleBindingResult, err := client.Create(ctx, roleBinding, metav1.CreateOptions{})
+	createOpts := metav1.CreateOptions{FieldManager: fieldManager}
+
+	roleBindingResult, err := client.Create(ctx, roleBinding, createOpts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create role binding with name '%s', subjects '%+v' and role ref '%v'", name, subjects, roleRef)
 	}
@@ -576,7 +599,9 @@ func (manager *KubernetesManager) CreateClusterRoles(ctx context.Context, name s
 		Rules: rules,
 	}
 
-	clusterRoleResult, err := client.Create(ctx, clusterRole, metav1.CreateOptions{})
+	createOpts := metav1.CreateOptions{FieldManager: fieldManager}
+
+	clusterRoleResult, err := client.Create(ctx, clusterRole, createOpts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create cluster role with name '%s' with rules '%+v'", name, rules)
 	}
@@ -609,6 +634,8 @@ func (manager *KubernetesManager) RemoveClusterRole(ctx context.Context, name st
 	return nil
 }
 
+// --------------------------- Cluster Role Bindings ------------------------------------------------------------------------------
+
 func (manager *KubernetesManager) CreateClusterRoleBindings(ctx context.Context, name string, subjects []rbacv1.Subject, roleRef rbacv1.RoleRef, labels map[string]string) (*rbacv1.ClusterRoleBinding, error) {
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
 
@@ -621,7 +648,9 @@ func (manager *KubernetesManager) CreateClusterRoleBindings(ctx context.Context,
 		RoleRef: roleRef,
 	}
 
-	clusterRoleBindingResult, err := client.Create(ctx, clusterRoleBinding, metav1.CreateOptions{})
+	createOpts := metav1.CreateOptions{FieldManager: fieldManager}
+
+	clusterRoleBindingResult, err := client.Create(ctx, clusterRoleBinding, createOpts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create cluster role binding with name '%s', subjects '%+v' and role ref '%v'", name, subjects, roleRef)
 	}
@@ -684,7 +713,9 @@ func (manager *KubernetesManager) CreatePod(
 		ObjectMeta: podMeta,
 	}
 
-	createdPod, err := podClient.Create(ctx, podToCreate, metav1.CreateOptions{})
+	createOpts := metav1.CreateOptions{FieldManager: fieldManager}
+
+	createdPod, err := podClient.Create(ctx, podToCreate, createOpts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to create pod with name '%v' and labels '%+v', instead a non-nil error was returned", podName, podLabels)
 	}
