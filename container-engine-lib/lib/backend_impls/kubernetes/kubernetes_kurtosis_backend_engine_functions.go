@@ -18,6 +18,7 @@ import (
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"net"
 	"time"
 )
@@ -272,8 +273,12 @@ func (backend *KubernetesKurtosisBackend) StopEngines(
 
 		kubernetesService := resources.service
 		if kubernetesService != nil {
-			kubernetesService.Spec.Selector = nil
-			if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, kubernetesService); err != nil {
+			serviceName := kubernetesService.Name
+			updateConfigurator := func(updatesToApply *applyconfigurationsv1.ServiceApplyConfiguration) {
+				specUpdates := applyconfigurationsv1.ServiceSpec().WithSelector(nil)
+				updatesToApply.WithSpec(specUpdates)
+			}
+			if _, err := backend.kubernetesManager.UpdateService(ctx, namespaceName, serviceName, updateConfigurator); err != nil {
 				erroredEngineGuids[engineGuid] = stacktrace.Propagate(
 					err,
 					"An error occurred removing selectors from service '%v' in namespace '%v' for engine '%v'",

@@ -9,10 +9,15 @@
     * `GetUserServices`
     * `StopUserServices`
     * `DestroyUserServices`
-
+    
 ### Breaking Changes
 * Removed `ModuleGUID` argument in `KurtosisBackend.CreateModule`
   * Users will need to remove the argument on each call, the module's GUID will be automatically created in the backend for them
+
+### Changes
+* Upgraded Kubernetes client SDK from v0.20 to v0.24
+* Upgraded this library to depend on Go 1.17 (required for latest Kubernetes SDK)
+* Switched the `UpdateService` implementation to use server-side apply
 
 ### Fixes
 * Fix a bug in gathering user service Services and Pods
