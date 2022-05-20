@@ -1,5 +1,9 @@
 # TBD
 
+# 1.49.5
+### Fixes
+* Upgrade to container-engine-lib 0.25.0, which fixes several bugs
+
 # 1.49.4
 ### Changes
 * Replaced `GetLocalKubernetesKurtosisBackend` call with `GetInClusterKubernetesKurtosisBackend` because API container runs inside a K8s cluster
