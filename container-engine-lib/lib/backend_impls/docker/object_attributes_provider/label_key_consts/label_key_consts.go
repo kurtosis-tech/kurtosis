@@ -24,6 +24,8 @@ const (
 	// Used for things like service GUID, module GUID, etc.
 	guidLabelKeyStr = labelNamespaceStr + "guid"
 
+	userServiceGuidDockerLabelKeyStr = labelNamespaceStr + "user-service-guid"
+
 	portSpecsLabelKeyStr = labelNamespaceStr + "ports"
 
 	enclaveIdLabelKeyStr = labelNamespaceStr + "enclave-id"
