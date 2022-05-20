@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/v0"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/v1"
+	v2 "github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/v2"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -23,6 +24,8 @@ var (
 	currentKurtosisConfigStore *kurtosisConfigStore
 	once sync.Once
 )
+
+
 
 
 type kurtosisConfigStore struct {
@@ -186,13 +189,19 @@ func migrateConfigOverridesToLatest(configFileBytes []byte) (*v1.KurtosisConfigV
 	case config_version.ConfigVersion_v0:
 		overrides := &v0.KurtosisConfigV0{}
 		if err := yaml.Unmarshal(configFileBytes, overrides); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(configFileBytes))
+			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v' using config %v", string(configFileBytes), configVersionOnDisk.String())
 		}
 		uncastedConfig = overrides
 	case config_version.ConfigVersion_v1:
 		overrides := &v1.KurtosisConfigV1{}
 		if err := yaml.Unmarshal(configFileBytes, overrides); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(configFileBytes))
+			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v' using config %v", string(configFileBytes), configVersionOnDisk.String())
+		}
+		uncastedConfig = overrides
+	case config_version.ConfigVersion_v2:
+		overrides := &v2.KurtosisConfigV2{}
+		if err := yaml.Unmarshal(configFileBytes, overrides); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v' using config %v", string(configFileBytes), configVersionOnDisk.String())
 		}
 		uncastedConfig = overrides
 	default:
@@ -211,22 +220,16 @@ func migrateConfigOverridesToLatest(configFileBytes []byte) (*v1.KurtosisConfigV
 	for versionToUpgradeFrom := configVersionOnDisk; versionToUpgradeFrom < latestConfigVersion; versionToUpgradeFrom++ {
 		switch versionToUpgradeFrom {
 		case config_version.ConfigVersion_v0:
-			// cast "uncastedConfig" to current version we're upgrading from
-			castedOldConfig, ok := uncastedConfig.(*v0.KurtosisConfigV0)
-			if !ok {
-				return nil, stacktrace.NewError(
-					"Failed to cast configuration '%+v' to expected configuration version v%d",
-					uncastedConfig,
-					versionToUpgradeFrom,
-				)
+			newConfig, err := migrateV0ToV1(uncastedConfig)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred migrating from config version '%v'", versionToUpgradeFrom)
 			}
-			// create a new configuration object to represent the migrated work
-			newConfig := &v1.KurtosisConfigV1{}
-			// do migration steps
-			if castedOldConfig.ShouldSendMetrics != nil {
-				newConfig.ShouldSendMetrics = castedOldConfig.ShouldSendMetrics
+			uncastedConfig = newConfig
+		case config_version.ConfigVersion_v1:
+			newConfig, err := migrateV1ToV2(uncastedConfig)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred migrating from config version '%v'", versionToUpgradeFrom)
 			}
-			// uncast new config interface with upgrade done
 			uncastedConfig = newConfig
 		default:
 			return nil, stacktrace.NewError(
@@ -244,4 +247,66 @@ func migrateConfigOverridesToLatest(configFileBytes []byte) (*v1.KurtosisConfigV
 		return nil, stacktrace.NewError("Failed to cast configuration '%+v' to expected configuration version %d.", uncastedConfig, latestConfigVersion)
 	}
 	return resultConfig, nil
+}
+
+func migrateV0ToV1(uncastedConfig interface{}) (*v1.KurtosisConfigV1, error) {
+	// cast "uncastedConfig" to current version we're upgrading from
+	castedOldConfig, ok := uncastedConfig.(*v0.KurtosisConfigV0)
+	if !ok {
+		return nil, stacktrace.NewError(
+			"Failed to cast old configuration '%+v' to expected configuration struct",
+			uncastedConfig,
+		)
+	}
+	// create a new configuration object to represent the migrated work
+	newConfig := &v1.KurtosisConfigV1{
+		ConfigVersion:     config_version.ConfigVersion_v1,
+		ShouldSendMetrics: castedOldConfig.ShouldSendMetrics,
+		KurtosisClusters:  nil,
+	}
+	return newConfig, nil
+}
+
+func migrateV1ToV2(uncastedConfig interface{}) (*v2.KurtosisConfigV2, error) {
+	// cast "uncastedConfig" to current version we're upgrading from
+	castedOldConfig, ok := uncastedConfig.(*v1.KurtosisConfigV1)
+	if !ok {
+		return nil, stacktrace.NewError(
+			"Failed to cast old configuration '%+v' to expected configuration struct",
+			uncastedConfig,
+		)
+	}
+
+	// Migrate cluster configs across
+	var newClusters map[string]*v2.KurtosisClusterConfigV2
+	if castedOldConfig.KurtosisClusters != nil {
+		newClusters = map[string]*v2.KurtosisClusterConfigV2{}
+		for oldClusterName, oldClusterConfig := range *castedOldConfig.KurtosisClusters {
+			oldKubernetesConfig := oldClusterConfig.Config
+
+			var newKubernetesConfig *v2.KubernetesClusterConfigV2
+			if oldKubernetesConfig != nil {
+				newKubernetesConfig = &v2.KubernetesClusterConfigV2{
+					KubernetesClusterName:  oldKubernetesConfig.KubernetesClusterName,
+					StorageClass:           oldKubernetesConfig.StorageClass,
+					EnclaveSizeInMegabytes: oldKubernetesConfig.EnclaveSizeInMegabytes,
+				}
+			}
+
+			newClusterConfig := &v2.KurtosisClusterConfigV2{
+				Type:   oldClusterConfig.Type,
+				Config: newKubernetesConfig,
+			}
+			newClusters[oldClusterName] = newClusterConfig
+		}
+	}
+
+	// create a new configuration object to represent the migrated work
+	newConfig := &v2.KurtosisConfigV2{
+		ConfigVersion:     config_version.ConfigVersion_v2,
+		ShouldSendMetrics: castedOldConfig.ShouldSendMetrics,
+		KurtosisClusters:  newClusters,
+	}
+
+	return newConfig, nil
 }

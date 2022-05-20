@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-const _ConfigVersionName = "ConfigVersion_v0ConfigVersion_v1"
+const _ConfigVersionName = "ConfigVersion_v0ConfigVersion_v1ConfigVersion_v2"
 
-var _ConfigVersionIndex = [...]uint8{0, 16, 32}
+var _ConfigVersionIndex = [...]uint8{0, 16, 32, 48}
 
-const _ConfigVersionLowerName = "configversion_v0configversion_v1"
+const _ConfigVersionLowerName = "configversion_v0configversion_v1configversion_v2"
 
 func (i ConfigVersion) String() string {
 	if i >= ConfigVersion(len(_ConfigVersionIndex)-1) {
@@ -26,20 +26,24 @@ func _ConfigVersionNoOp() {
 	var x [1]struct{}
 	_ = x[ConfigVersion_v0-(0)]
 	_ = x[ConfigVersion_v1-(1)]
+	_ = x[ConfigVersion_v2-(2)]
 }
 
-var _ConfigVersionValues = []ConfigVersion{ConfigVersion_v0, ConfigVersion_v1}
+var _ConfigVersionValues = []ConfigVersion{ConfigVersion_v0, ConfigVersion_v1, ConfigVersion_v2}
 
 var _ConfigVersionNameToValueMap = map[string]ConfigVersion{
 	_ConfigVersionName[0:16]:       ConfigVersion_v0,
 	_ConfigVersionLowerName[0:16]:  ConfigVersion_v0,
 	_ConfigVersionName[16:32]:      ConfigVersion_v1,
 	_ConfigVersionLowerName[16:32]: ConfigVersion_v1,
+	_ConfigVersionName[32:48]:      ConfigVersion_v2,
+	_ConfigVersionLowerName[32:48]: ConfigVersion_v2,
 }
 
 var _ConfigVersionNames = []string{
 	_ConfigVersionName[0:16],
 	_ConfigVersionName[16:32],
+	_ConfigVersionName[32:48],
 }
 
 // ConfigVersionString retrieves an enum value from the enum constants string name.
