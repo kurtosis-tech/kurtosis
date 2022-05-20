@@ -2,7 +2,6 @@ package kubernetes
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/annotation_key_consts"
@@ -17,12 +16,12 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
 	apiv1 "k8s.io/api/core/v1"
 	"net"
-	"time"
 )
 
 /*
@@ -104,12 +103,11 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 		return nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
 	}
 
-	// TODO Switch this, and all other GUIDs, to a UUID??
-	serviceGuid := service.ServiceGUID(fmt.Sprintf(
-		"%v-%v",
-		serviceId,
-		time.Now().Unix(),
-	))
+	serviceGuidStr, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID to use for the service GUID")
+	}
+	serviceGuid := service.ServiceGUID(serviceGuidStr)
 
 	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
@@ -228,7 +226,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		return nil, stacktrace.Propagate(err, "An error occurred getting user service objects and Kubernetes resources matching service GUID '%v'", serviceGuid)
 	}
 	if len(preexistingObjectsAndResources) == 0 {
-		return nil, stacktrace.NewError("Couldn't find any services registrations matching service GUID '%v'", serviceGuid)
+		return nil, stacktrace.NewError("Couldn't find any service registrations matching service GUID '%v'", serviceGuid)
 	}
 	if len(preexistingObjectsAndResources) > 1 {
 		// Should never happen because service GUIDs should be unique
@@ -542,6 +540,10 @@ func (backend *KubernetesKurtosisBackend) getMatchingUserServiceObjectsAndKubern
 		return nil, stacktrace.Propagate(err, "An error occurred getting user service Kubernetes resources matching GUIDs: %+v", filters.GUIDs)
 	}
 
+	for serviceGuid, serviceResources := range allResources {
+		logrus.Tracef("Found resources for service '%v': %+v", serviceResources)
+	}
+
 	allObjectsAndResources, err := getUserServiceObjectsFromKubernetesResources(enclaveId, allResources)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting user service objects from Kubernetes resources")
@@ -654,6 +656,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes services matching service GUIDs: %+v", serviceGuids)
 	}
 	for serviceGuidStr, kubernetesServicesForGuid := range matchingKubernetesServices {
+		logrus.Tracef("Found Kubernetes services for GUID '%v': %+v", kubernetesServicesForGuid)
 		serviceGuid := service.ServiceGUID(serviceGuidStr)
 
 		numServicesForGuid := len(kubernetesServicesForGuid)
@@ -686,6 +689,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes pods matching service GUIDs: %+v", serviceGuids)
 	}
 	for serviceGuidStr, kubernetesPodsForGuid := range matchingKubernetesPods {
+		logrus.Tracef("Found Kubernetes pods for GUID '%v': %+v", kubernetesPodsForGuid)
 		serviceGuid := service.ServiceGUID(serviceGuidStr)
 
 		numPodsForGuid := len(kubernetesPodsForGuid)
