@@ -1,4 +1,17 @@
 # TBD
+### Features
+* Built out Kubernetes module CRUD & log functions
+
+### Changes
+* Upgraded the launcher & server to Go 1.17
+
+### Fixes
+* Fixed bug in updating Kubernetes services
+
+### Breaking Changes
+* The launcher now requires Go 1.17
+* Upgraded to Kurtosis Core 1.50.0
+    * Users should use the latest APIs from version 1.50.0
 
 # 1.21.5
 ### Fixes
