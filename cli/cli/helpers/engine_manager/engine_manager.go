@@ -2,10 +2,14 @@ package engine_manager
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/kurtosis_config_getter"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cluster_setting"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
@@ -20,6 +24,7 @@ import (
 
 const (
 	waitForEngineResponseTimeout = 5 * time.Second
+	defaultClusterName           = resolved_config.DefaultDockerClusterName
 
 	// --------------------------- Old port parsing constants ------------------------------------
 	// These are the old labels that the API container used to use before 2021-11-15 for declaring its port num protocol
@@ -44,18 +49,62 @@ var objAttrsSchemaPortProtosToDockerPortProtos = map[schema.PortProtocol]string{
 }
 
 type EngineManager struct {
-	kurtosisBackend backend_interface.KurtosisBackend
+	kurtosisBackend                           backend_interface.KurtosisBackend
+	shouldSendMetrics                         bool
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 	// Make engine IP, port, and protocol configurable in the future
 }
 
-func NewEngineManager(kurtosisBackend backend_interface.KurtosisBackend) *EngineManager {
-	// TODO TODO TODO MAKE THIS CONFIGURABLE BETWEEN DOCKER AND KUBERNETES
-	engineServerKurtosisBackendConfigSupplier := engine_server_launcher.NewDockerKurtosisBackendConfigSupplier()
-	return &EngineManager{
-		kurtosisBackend: kurtosisBackend,
-		engineServerKurtosisBackendConfigSupplier: engineServerKurtosisBackendConfigSupplier,
+// TODO It's really weird that we have a context getting passed in to a constructor, but we have to do this
+//  because we're currently creating the KurtosisBackend right here. The right way to fix this is have the
+//  engine manager use the currently-set cluster information to:
+//  1) check if it's Kubernetes or Docker
+//  2) if it's Docker, try to start an engine in case one doesn't exist
+//  3) if it's Kubernets, if creating the EngienClient fails then print the "you need to start a gateway" command
+func NewEngineManager(ctx context.Context) (*EngineManager, error) {
+	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
+
+	isClusterSet, err := clusterSettingStore.HasClusterSetting()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to check if cluster setting has been set.")
 	}
+	var clusterName string
+	if !isClusterSet {
+		// If the user has not yet set a cluster, use default
+		clusterName = defaultClusterName
+	} else {
+		clusterName, err = clusterSettingStore.GetClusterSetting()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to get cluster setting.")
+		}
+	}
+	kurtosisConfig, err := getKurtosisConfig()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the Kurtosis config")
+	}
+	clusterConfig, err := kurtosis_config_getter.GetKurtosisClusterConfig()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "E")
+	}
+
+	kurtosisBackend, err := clusterConfig.GetKurtosisBackend(ctx)
+	if err != nil {
+		return nil, stacktrace.NewError("An error occurred getting the Kurtosis backend for cluster '%v'", clusterName)
+	}
+	engineBackendConfigSupplier := clusterConfig.GetEngineBackendConfigSupplier()
+
+	return &EngineManager{
+		kurtosisBackend:   kurtosisBackend,
+		shouldSendMetrics: kurtosisConfig.GetShouldSendMetrics(),
+		engineServerKurtosisBackendConfigSupplier: engineBackendConfigSupplier,
+	}, nil
+}
+
+// TODO This is a huge hack, that's only here temporarily because we have commands that use KurtosisBackend directly (they
+//  should not), and EngineConsumingKurtosisCommand therefore needs to provide them with a KurtosisBackend. Once all our
+//  commands only access the Kurtosis APIs, we can remove this.
+func (manager *EngineManager) GetKurtosisBackend() backend_interface.KurtosisBackend {
+	return manager.kurtosisBackend
 }
 
 /*
@@ -78,12 +127,9 @@ func (manager *EngineManager) GetEngineStatus(
 	} else if numRunningEngineContainers == 0 {
 		return EngineStatus_Stopped, nil, "", nil
 	}
-	engineContainer := getFirstEngineFromMap(runningEngineContainers)
 
-	runningEngineIpAndPort := &hostMachineIpAndPort{
-		ipAddr:  engineContainer.GetPublicIPAddress(),
-		portNum: engineContainer.GetPublicGRPCPort().GetNumber(),
-	}
+	// TODO Replace this hacky method of defaulting to localhost:DefaultGrpcPort to get connected to the engine
+	runningEngineIpAndPort := getDefaultKurtosisEngineLocalhostMachineIpAndPort()
 
 	engineClient, clientCloseFunc, err := getEngineClientFromHostMachineIpAndPort(runningEngineIpAndPort)
 	if err != nil {
@@ -109,10 +155,13 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 		ctx,
 		maybeHostMachinePortBinding,
 		manager.kurtosisBackend,
+		manager.shouldSendMetrics,
 		manager.engineServerKurtosisBackendConfigSupplier,
 		logLevel,
 		engineVersion,
 	)
+	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
+	//  before we can return an EngineClient
 	engineClient, engineClientCloseFunc, err := startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred starting the engine with the engine existence guarantor")
@@ -130,6 +179,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		ctx,
 		maybeHostMachinePortBinding,
 		manager.kurtosisBackend,
+		manager.shouldSendMetrics,
 		manager.engineServerKurtosisBackendConfigSupplier,
 		engineImageVersionTag,
 		logLevel,
@@ -149,17 +199,17 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 	//  add a step here that will delete the engine data dirpath if it exists on the host machine
 	// host_machine_directories.GetEngineDataDirpath()
 
-	_, erroredEngineIds, err := manager.kurtosisBackend.StopEngines(ctx, getRunningEnginesFilter())
+	_, erroredEngineGuids, err := manager.kurtosisBackend.StopEngines(ctx, getRunningEnginesFilter())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping ")
 	}
 	engineStopErrorStrs := []string{}
-	for engineId, err := range erroredEngineIds {
+	for engineGuid, err := range erroredEngineGuids {
 		if err != nil {
 			wrappedErr := stacktrace.Propagate(
 				err,
-				"An error occurred stopping engine container `%v'",
-				engineId,
+				"An error occurred stopping engine with GUID '%v'",
+				engineGuid,
 			)
 			engineStopErrorStrs = append(engineStopErrorStrs, wrappedErr.Error())
 		}
@@ -193,18 +243,17 @@ func startEngineWithGuarantor(ctx context.Context, currentStatus EngineStatus, e
 	}
 
 	// Final verification to ensure that the engine server is responding
+
 	if _, err := getEngineInfoWithTimeout(ctx, engineClient); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to the engine server; this is very strange and likely indicates a bug in the engine itself")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to the engine server after starting it; "+
+			"if you are running Kurtosis in a Kubernetes cluster, consider running '%v %v' to open a local gateway to the engine running in the cluster", command_str_consts.KurtosisCmdStr, command_str_consts.GatewayCmdStr)
 	}
+
 	return engineClient, clientCloseFunc, nil
 }
 
 func getEngineClientFromHostMachineIpAndPort(hostMachineIpAndPort *hostMachineIpAndPort) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
-	url := fmt.Sprintf(
-		"%v:%v",
-		hostMachineIpAndPort.ipAddr.String(),
-		hostMachineIpAndPort.portNum,
-	)
+	url := hostMachineIpAndPort.GetURL()
 	conn, err := grpc.Dial(url, grpc.WithInsecure())
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred dialling Kurtosis engine at URL '%v'", url)
@@ -298,4 +347,14 @@ func getFirstEngineFromMap(engineMap map[string]*engine.Engine) *engine.Engine {
 		break
 	}
 	return firstEngineInMap
+}
+
+func getKurtosisConfig() (*resolved_config.KurtosisConfig, error) {
+	configStore := kurtosis_config.GetKurtosisConfigStore()
+	configProvider := kurtosis_config.NewKurtosisConfigProvider(configStore)
+	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting or initializing the Kurtosis config")
+	}
+	return kurtosisConfig, nil
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/backend_for_cmd"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/stacktrace"
@@ -31,8 +30,6 @@ var StartCmd = &cobra.Command{
 	RunE:  run,
 }
 
-var WithKubernetes bool
-
 func init() {
 	StartCmd.Flags().StringVar(
 		&engineVersion,
@@ -52,8 +49,6 @@ func init() {
 			),
 		),
 	)
-	// TODO Remove this in favor of actual Kubernetes info in the config file
-	StartCmd.Flags().BoolVarP(&WithKubernetes, "with-kubernetes", "k", false, "Operate on the engine in kubernetes")
 }
 
 func run(cmd *cobra.Command, args []string) error {
@@ -66,11 +61,10 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred parsing log level string '%v'", logLevelStr)
 	}
 
-	kurtosisBackend, err := backend_for_cmd.GetBackendForCmd(WithKubernetes)
+	engineManager, err := engine_manager.NewEngineManager(ctx)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend")
+		return stacktrace.Propagate(err, "An error occurred creating an engine manager")
 	}
-	engineManager := engine_manager.NewEngineManager(kurtosisBackend)
 
 	var engineClientCloseFunc func() error
 	var startEngineErr error

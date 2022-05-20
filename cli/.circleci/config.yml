@@ -16,9 +16,6 @@ parameters:
   cimg-base-version:
     type: string
     default: 2021.11-20.04
-  go-version:
-    type: string
-    default: 1.15.13
   goreleaser-version:
     type: string
     default: "v0.183.0"

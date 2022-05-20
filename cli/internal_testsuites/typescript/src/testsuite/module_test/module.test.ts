@@ -20,8 +20,24 @@ const NUM_MODULE_EXECUTE_CALLS = 2
 const TEST_DATASTORE_KEY = "my-key"
 const TEST_DATASTORE_VALUE = "test-value"
 
-const WAIT_FOR_STARTUP_DELAY_MILLISECONDS = 1000
-const WAIT_FOR_STARTUP_MAX_POLLS = 15
+const MILLIS_BETWEEN_AVAILBILITY_RETRIES = 1000
+
+/*
+NOTE: on 2022-05-16 the Go version failed with the following error so we bumped the num polls to 20. If this fails again, look
+into if there's some sort of nondeterminism happening.
+
+time="2022-05-16T23:58:21Z" level=info msg="Sanity-checking that all 4 datastore services added via the module work as expected..."
+--- FAIL: TestModule (21.46s)
+    module_test.go:81:
+            Error Trace:	module_test.go:81
+            Error:      	Received unexpected error:
+                            The service didn't return a success code, even after 15 retries with 1000 milliseconds in between retries
+                             --- at /home/circleci/project/internal_testsuites/golang/test_helpers/test_helpers.go:179 (WaitForHealthy) ---
+                            Caused by: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing dial tcp 127.0.0.1:49188: connect: connection refused"
+            Test:       	TestModule
+            Messages:   	An error occurred waiting for the datastore service to become available
+ */
+const WAIT_FOR_STARTUP_MAX_POLLS = 20
 
 jest.setTimeout(180000)
 
@@ -84,9 +100,9 @@ test("Test module", async () => {
             const { client: datastoreClient, clientCloseFunction: datastoreClientCloseFunction } = createDatastoreClient(ipAddr, publicPort.number);
 
             try{
-                const waitForHealthyResult = await waitForHealthy(datastoreClient, WAIT_FOR_STARTUP_MAX_POLLS, WAIT_FOR_STARTUP_DELAY_MILLISECONDS );
+                const waitForHealthyResult = await waitForHealthy(datastoreClient, WAIT_FOR_STARTUP_MAX_POLLS, MILLIS_BETWEEN_AVAILBILITY_RETRIES );
                 if(waitForHealthyResult.isErr()){
-                    log.error("An error occurred waiting for the datastore service to become available");
+                    log.error(`An error occurred waiting for the datastore service '${serviceId}' to become available`);
                     throw waitForHealthyResult.error
                 }
 

@@ -8,6 +8,8 @@ import (
 type ArgConfig struct {
 	Key string
 
+	// TODO Add & render descriptions!!
+
 	// If set to true, this argument can be ommitted
 	IsOptional bool
 

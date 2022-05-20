@@ -10,10 +10,14 @@ import (
 var KurtosisCmdStr = path.Base(os.Args[0])
 const (
 	CleanCmdStr = "clean"
+	ClusterCmdStr = "cluster"
+		ClusterSetCmdStr = "set"
+		ClusterGetCmdStr = "get"
+		ClusterLsCmdStr = "ls"
 	EnclaveCmdStr = "enclave"
 		EnclaveInspectCmdStr = "inspect"
-		EnclaveLsCmdStr = "ls"
-		EnclaveNewCmdStr = "new"
+		EnclaveLsCmdStr   = "ls"
+		EnclaveAddCmdStr  = "add"
 		EnclaveStopCmdStr = "stop"
 		EnclaveRmCmdStr = "rm"
 		EnclaveDumpCmdStr = "dump"
@@ -34,10 +38,11 @@ const (
 		ServicePauseCmdStr = "pause"
 		ServiceRmCmdStr = "rm"
 		ServiceUnpauseCmdStr = "unpause"
-		ShellCmdStr = "shell"
-	ConfigCmdStr = "config"
+		ServiceShellCmdStr   = "shell"
+	ConfigCmdStr             = "config"
 		InitCmdStr = "init"
 		PathCmdStr = "path"
 	VersionCmdStr = "version"
+	GatewayCmdStr = "gateway"
 )
 

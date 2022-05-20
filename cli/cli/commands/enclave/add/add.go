@@ -1,9 +1,8 @@
-package new
+package add
 
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/backend_creator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
@@ -33,15 +32,16 @@ var isPartitioningEnabled bool
 var kurtosisLogLevelStr string
 var enclaveIdStr string
 
-// TODO RENAME THIS TO 'add' TO MATCH SERVICE
-var NewCmd = &cobra.Command{
-	Use:   command_str_consts.EnclaveNewCmdStr,
-	Short: "Creates a new, empty Kurtosis enclave",
+var EnclaveAddCmd = &cobra.Command{
+	Use:   command_str_consts.EnclaveAddCmdStr,
+	Short: "Creates an enclave",
+	Long: "Creates a new, empty Kurtosis enclave",
 	RunE:  run,
+	Aliases: []string{"new"}, // TODO remove this after 2022-08-16 when everyone should be using "add"
 }
 
 func init() {
-	NewCmd.Flags().StringVarP(
+	EnclaveAddCmd.Flags().StringVarP(
 		&kurtosisLogLevelStr,
 		apiContainerLogLevelArg,
 		"l",
@@ -51,21 +51,21 @@ func init() {
 			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
 		),
 	)
-	NewCmd.Flags().StringVarP(
+	EnclaveAddCmd.Flags().StringVarP(
 		&apiContainerVersion,
 		apiContainerVersionArg,
 		"a",
 		defaults.DefaultAPIContainerVersion,
 		"The version of the Kurtosis API container that should be started inside the enclave (blank tells the engine to use the default version)",
 	)
-	NewCmd.Flags().BoolVarP(
+	EnclaveAddCmd.Flags().BoolVarP(
 		&isPartitioningEnabled,
 		isPartitioningEnabledArg,
 		"p",
 		defaultIsPartitioningEnabled,
 		"Enable network partitioning functionality (repartitioning won't work if this is set to false)",
 	)
-	NewCmd.Flags().StringVarP(
+	EnclaveAddCmd.Flags().StringVarP(
 		&enclaveIdStr,
 		enclaveIdArg,
 		"i",
@@ -78,13 +78,10 @@ func run(cmd *cobra.Command, args []string) error {
 
 	ctx := context.Background()
 
-	// TODO REFACTOR: we should get this backend from the config!!
-	var apiContainerModeArgs *backend_creator.APIContainerModeArgs = nil  // Not an API container
-	kurtosisBackend, err := backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgs)
+	engineManager, err := engine_manager.NewEngineManager(ctx)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
+		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 	}
-	engineManager := engine_manager.NewEngineManager(kurtosisBackend)
 	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")

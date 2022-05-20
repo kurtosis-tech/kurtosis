@@ -8,29 +8,6 @@ import (
 	"testing"
 )
 
-func TestGetKurtosisBackendSupplier(t *testing.T) {
-	for _, clusterType := range KurtosisClusterTypeValues() {
-		// Set the config appropriately so that we pass validation
-		var config *v1.KubernetesClusterConfigV1
-		switch clusterType {
-		case KurtosisClusterType_Docker:
-			config = nil
-		case KurtosisClusterType_Kubernetes:
-			clusterName := "test"
-			storageClass := "standard"
-			enclaveSizeInMB := uint(10)
-			config = &v1.KubernetesClusterConfigV1{
-				KubernetesClusterName:  &clusterName,
-				StorageClass:           &storageClass,
-				EnclaveSizeInMegabytes: &enclaveSizeInMB,
-			}
-		}
-
-		_, err := getKurtosisBackendSupplier(clusterType, config)
-		require.NoError(t, err)
-	}
-}
-
 func TestNewKurtosisConfigFromRequiredFields_MetricsElectionIsSent(t *testing.T) {
 	config, err := NewKurtosisConfigFromRequiredFields(false)
 	require.NoError(t, err)
@@ -49,7 +26,7 @@ func TestNewKurtosisConfigJustMetrics(t *testing.T) {
 	version := config_version.ConfigVersion_v0
 	shouldSendMetrics := true
 	originalOverrides := v1.KurtosisConfigV1{
-		ConfigVersion: &version,
+		ConfigVersion: version,
 		ShouldSendMetrics: &shouldSendMetrics,
 	}
 	config, err := NewKurtosisConfigFromOverrides(&originalOverrides)
@@ -72,4 +49,3 @@ func TestNewKurtosisConfigOverridesAreLatestVersion(t *testing.T) {
 	// check that overrides are actually the latest version
 	require.Equal(t, latestVersion, overrides.ConfigVersion.String())
 }
-

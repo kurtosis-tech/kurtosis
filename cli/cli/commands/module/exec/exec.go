@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/backend_creator"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
@@ -158,13 +157,12 @@ func run(cmd *cobra.Command, args []string) error {
 		)
 	}
 
-	// TODO REFACTOR: we should get this backend from the config!!
-	var apiContainerModeArgs *backend_creator.APIContainerModeArgs = nil  // Not an API container
-	kurtosisBackend, err := backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgs)
+	engineManager, err := engine_manager.NewEngineManager(ctx)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
+		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 	}
-	engineManager := engine_manager.NewEngineManager(kurtosisBackend)
+	// TODO THIS IS A BIG JANKY HACK. We should instead migrate this commmand to be an EngineConsumingKurtosisCommand instead
+	kurtosisBackend := engineManager.GetKurtosisBackend()
 	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
@@ -259,16 +257,13 @@ func run(cmd *cobra.Command, args []string) error {
 	moduleGUID := module.ModuleGUID(moduleGUIDStr)
 
 	moduleFilters := &module.ModuleFilters{
-		EnclaveIDs: map[enclave.EnclaveID]bool{
-			enclaveId: true,
-		},
 		GUIDs: map[module.ModuleGUID]bool{
 			moduleGUID: true,
 		},
 	}
 
 	//TODO replace with API Container call
-	successfulModuleLogs, erroredModuleGuids, err := kurtosisBackend.GetModuleLogs(ctx, moduleFilters, shouldFollowModuleLogs)
+	successfulModuleLogs, erroredModuleGuids, err := kurtosisBackend.GetModuleLogs(ctx, enclaveId, moduleFilters, shouldFollowModuleLogs)
 	if err != nil {
 		//We do not return because logs aren't mandatory, if it fails we continue executing the module without logs
 		logrus.Errorf("The module containers logs won't be printed. An error occurred getting logs for module with ID '%v': \n%v", moduleId, err)

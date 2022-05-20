@@ -5,16 +5,12 @@ import (
 	"fmt"
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_user_id_store"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"net"
 )
 
 const (
@@ -36,6 +32,9 @@ var engineRestartCmd = fmt.Sprintf(
 type engineExistenceGuarantor struct {
 	// Storing a context in a struct is normally bad, but this visitor is short-lived and behaves more like a function
 	ctx context.Context
+
+	// Whether any engine that gets started should send metrics
+	shouldSendMetrics bool
 
 	// Host machine IP:port of the maybe-started, maybe-not engine (will only be present if the engine status isn't "stopped")
 	preVisitingMaybeHostMachineIpAndPort *hostMachineIpAndPort
@@ -63,6 +62,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	ctx context.Context,
 	preVisitingMaybeHostMachineIpAndPort *hostMachineIpAndPort,
 	kurtosisBackend backend_interface.KurtosisBackend,
+	shouldSendMetrics bool,
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier,
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
@@ -71,6 +71,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		ctx,
 		preVisitingMaybeHostMachineIpAndPort,
 		kurtosisBackend,
+		shouldSendMetrics,
 		engineServerKurtosisBackendConfigSupplier,
 		defaultEngineImageVersionTag,
 		logLevel,
@@ -82,21 +83,23 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	ctx context.Context,
 	preVisitingMaybeHostMachineIpAndPort *hostMachineIpAndPort,
 	kurtosisBackend backend_interface.KurtosisBackend,
+	shouldSendMetrics bool,
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier,
 	imageVersionTag string,
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
-		ctx:                                   ctx,
-		preVisitingMaybeHostMachineIpAndPort:  preVisitingMaybeHostMachineIpAndPort,
-		kurtosisBackend:                       kurtosisBackend,
-		engineServerKurtosisBackendConfigSupplier:	engineServerKurtosisBackendConfigSupplier,
-		engineServerLauncher:                  engine_server_launcher.NewEngineServerLauncher(kurtosisBackend),
-		imageVersionTag:                       imageVersionTag,
-		logLevel:                              logLevel,
-		maybeCurrentlyRunningEngineVersionTag: maybeCurrentlyRunningEngineVersionTag,
-		postVisitingHostMachineIpAndPort:      nil, // Will be filled in upon successful visitation
+		ctx:                                  ctx,
+		preVisitingMaybeHostMachineIpAndPort: preVisitingMaybeHostMachineIpAndPort,
+		kurtosisBackend:                      kurtosisBackend,
+		engineServerKurtosisBackendConfigSupplier: engineServerKurtosisBackendConfigSupplier,
+		engineServerLauncher:                      engine_server_launcher.NewEngineServerLauncher(kurtosisBackend),
+		imageVersionTag:                           imageVersionTag,
+		logLevel:                                  logLevel,
+		maybeCurrentlyRunningEngineVersionTag:     maybeCurrentlyRunningEngineVersionTag,
+		postVisitingHostMachineIpAndPort:          nil, // Will be filled in upon successful visitation
+		shouldSendMetrics:                         shouldSendMetrics,
 	}
 }
 
@@ -114,33 +117,26 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 		return stacktrace.Propagate(err, "An error occurred getting metrics user id")
 	}
 
-	kurtosisConfig, err := getKurtosisConfig()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting Kurtosis config")
-	}
-
-	var hostMachineIpAddr net.IP
-	var hostMachinePortSpec *port_spec.PortSpec
 	var engineLaunchErr error
 	if guarantor.imageVersionTag == defaultEngineImageVersionTag {
-		hostMachineIpAddr, hostMachinePortSpec, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithDefaultVersion(
+		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithDefaultVersion(
 			guarantor.ctx,
 			guarantor.logLevel,
 			kurtosis_context.DefaultKurtosisEngineServerGrpcPortNum,
 			kurtosis_context.DefaultKurtosisEngineServerGrpcProxyPortNum,
 			metricsUserId,
-			kurtosisConfig.GetShouldSendMetrics(),
+			guarantor.shouldSendMetrics,
 			guarantor.engineServerKurtosisBackendConfigSupplier,
 		)
 	} else {
-		hostMachineIpAddr, hostMachinePortSpec, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
+		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
 			guarantor.ctx,
 			guarantor.imageVersionTag,
 			guarantor.logLevel,
 			kurtosis_context.DefaultKurtosisEngineServerGrpcPortNum,
 			kurtosis_context.DefaultKurtosisEngineServerGrpcProxyPortNum,
 			metricsUserId,
-			kurtosisConfig.GetShouldSendMetrics(),
+			guarantor.shouldSendMetrics,
 			guarantor.engineServerKurtosisBackendConfigSupplier,
 		)
 	}
@@ -148,14 +144,8 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 		return stacktrace.Propagate(engineLaunchErr, "An error occurred launching the engine server container")
 	}
 
-	var hostMachinePortNum uint16
-	if hostMachinePortSpec != nil {
-		hostMachinePortNum = hostMachinePortSpec.GetNumber()
-	}
-	guarantor.postVisitingHostMachineIpAndPort = &hostMachineIpAndPort{
-		ipAddr:  hostMachineIpAddr,
-		portNum: hostMachinePortNum,
-	}
+	// TODO Replace hacky method of defaulting engine connection to localhost on predetermined port
+	guarantor.postVisitingHostMachineIpAndPort = getDefaultKurtosisEngineLocalhostMachineIpAndPort()
 	logrus.Info("Successfully started Kurtosis engine")
 	return nil
 }
@@ -242,15 +232,4 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 	}
 
 	return runningEngineSemver, launcherEngineSemver, nil
-}
-
-func getKurtosisConfig() (*resolved_config.KurtosisConfig, error) {
-	configStore := kurtosis_config.GetKurtosisConfigStore()
-	configProvider := kurtosis_config.NewKurtosisConfigProvider(configStore)
-
-	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting or initializing config")
-	}
-	return kurtosisConfig, nil
 }

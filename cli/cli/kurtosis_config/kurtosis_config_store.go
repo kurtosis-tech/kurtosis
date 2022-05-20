@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/v0"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/v1"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/versioned_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -28,6 +27,12 @@ var (
 
 type kurtosisConfigStore struct {
 	mutex *sync.RWMutex
+}
+
+// Every Kurtosis config version except v0 should have the config-version key, so we'll use that to determine
+// which version of config overrides the user is supply
+type versionDetectingKurtosisConfig struct {
+	ConfigVersion config_version.ConfigVersion `yaml:"config-version"`
 }
 
 func GetKurtosisConfigStore() *kurtosisConfigStore {
@@ -112,11 +117,19 @@ func (configStore *kurtosisConfigStore) saveKurtosisConfigYAMLFile(kurtosisConfi
 }
 
 func (configStore *kurtosisConfigStore) getKurtosisConfigFromYAMLFile() (*resolved_config.KurtosisConfig, error) {
+	fileContentBytes, err := configStore.readConfigFileBytes()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred reading the Kurtosis config YAML file")
+	}
+
 	// Overlay overrides that are now stored in the latest versions' override struct
 	// kurtosisConfig.OverlayOverrides(v1ConfigOverrides)
-	kurtosisConfigOverrides, err := configStore.migrateOverridesAcrossYAMLVersions()
+	kurtosisConfigOverrides, err := migrateConfigOverridesToLatest(fileContentBytes)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to migrate overrides across YAML versions, starting with config version")
+		return nil, stacktrace.Propagate(
+			err,
+			"Failed to migrate config overrides to the latest version",
+		)
 	}
 
 	kurtosisConfig, err := resolved_config.NewKurtosisConfigFromOverrides(kurtosisConfigOverrides)
@@ -158,32 +171,28 @@ func (configStore *kurtosisConfigStore) readConfigFileBytes() ([]byte, error) {
 		1. Migrate overrides sequentially from their own version up to the latest version
 		2. Overlay migrated overrides on top of the "default" latest version YAML struct
  */
-func  (configStore *kurtosisConfigStore) migrateOverridesAcrossYAMLVersions() (*v1.KurtosisConfigV1, error) {
-	fileContentBytes, err := configStore.readConfigFileBytes()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred reading Kurtosis config YAML file")
-	}
-
-	configVersionDetector := &versioned_config.VersionedKurtosisConfig{
+func migrateConfigOverridesToLatest(configFileBytes []byte) (*v1.KurtosisConfigV1, error) {
+	versionDetectingConfig := &versionDetectingKurtosisConfig{
 		ConfigVersion: config_version.ConfigVersion_v0,
 	}
-	if err := yaml.Unmarshal(fileContentBytes, configVersionDetector); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(fileContentBytes))
+	if err := yaml.Unmarshal(configFileBytes, versionDetectingConfig); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(configFileBytes))
 	}
-	configVersionOnDisk := configVersionDetector.ConfigVersion
+
+	configVersionOnDisk := versionDetectingConfig.ConfigVersion
 
 	var uncastedConfig interface{}
 	switch configVersionOnDisk {
 	case config_version.ConfigVersion_v0:
 		overrides := &v0.KurtosisConfigV0{}
-		if err := yaml.Unmarshal(fileContentBytes, overrides); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(fileContentBytes))
+		if err := yaml.Unmarshal(configFileBytes, overrides); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(configFileBytes))
 		}
 		uncastedConfig = overrides
 	case config_version.ConfigVersion_v1:
 		overrides := &v1.KurtosisConfigV1{}
-		if err := yaml.Unmarshal(fileContentBytes, overrides); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(fileContentBytes))
+		if err := yaml.Unmarshal(configFileBytes, overrides); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(configFileBytes))
 		}
 		uncastedConfig = overrides
 	default:
