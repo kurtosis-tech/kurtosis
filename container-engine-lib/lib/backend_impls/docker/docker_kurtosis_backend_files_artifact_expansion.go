@@ -129,7 +129,7 @@ func (backend *DockerKurtosisBackend)  DestroyFilesArtifactExpansion(
 		if container != nil {
 			containerErr := backend.dockerManager.RemoveContainer(ctx, container.GetName())
 			if containerErr != nil {
-				errorMap[filesArtifactGUID] = containerErr
+				errorMap[filesArtifactGUID] = stacktrace.Propagate(containerErr, "An error occurred removing container '%v' for files artifact expansion '%v'", container.GetName(), filesArtifactGUID)
 			}
 			continue
 		}
@@ -138,7 +138,7 @@ func (backend *DockerKurtosisBackend)  DestroyFilesArtifactExpansion(
 		if volume != nil {
 			volumeErr := backend.dockerManager.RemoveVolume(ctx, volume.Name)
 			if volumeErr != nil {
-				errorMap[filesArtifactGUID] = volumeErr
+				errorMap[filesArtifactGUID] = stacktrace.Propagate(volumeErr, "An error occurred removing volume '%v' for files artifact expansion '%v'", volume.Name, filesArtifactGUID)
 			}
 			continue
 		}
