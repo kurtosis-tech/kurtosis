@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"github.com/docker/docker/api/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	docker_manager_types "github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
@@ -12,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"path"
 )
 
 const (
@@ -22,6 +24,16 @@ const (
 	// However, we'd rather do our own filtering on what "running" means (because, e.g., "restarting"
 	// should also be considered as running)
 	shouldFetchAllExpansionContainersWhenRetrievingContainers = true
+
+	// Docker image that will be used to launch the container that will expand the files artifact
+	//  into a Docker volume
+	dockerImage = "alpine:3.12"
+
+	// Dirpath on the artifact expander container where the enclave data volume (which contains artifacts)
+	//  will be mounted
+	enclaveDataVolumeDirpathOnExpanderContainer = "/enclave-data"
+
+	expanderContainerSuccessExitCode = 0
 )
 
 type filesArtifactExpansionObjectsAndDockerResources struct {
@@ -50,6 +62,7 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 	filesArtifactFilepathRelativeToEnclaveDatadirRoot string) (*files_artifact_expansion.FilesArtifactExpansion, error) {
 
 	filesArtifactExpansionGUIDStr, err := uuid_generator.GenerateUUIDString()
+	filesArtifactExpansionGUID := files_artifact_expansion.FilesArtifactExpansionGUID(filesArtifactExpansionGUIDStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to generate UUID for files artifact expansion.")
 	}
@@ -57,7 +70,8 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 	filesArtifactExpansionVolumeName, err := backend.createFilesArtifactExpansionVolume(
 		ctx,
 		enclaveId,
-		filesArtifactExpansion,
+		filesArtifactExpansionGUID,
+		serviceGuid,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, enclaveId)
@@ -218,4 +232,164 @@ func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionDockerReso
 		}
 	}
 	return resourcesByFilesArtifactGuid, nil
+}
+
+func (backend *DockerKurtosisBackend) createFilesArtifactExpansionVolume(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filesArtifactExpansionGUID files_artifact_expansion.FilesArtifactExpansionGUID,
+	serviceGUID service.ServiceGUID,
+)(
+	string,
+	error,
+) {
+
+	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
+	}
+
+	volumeAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpansionVolume(
+		filesArtifactExpansionGUID,
+		serviceGUID)
+	if err != nil {
+		return "", stacktrace.Propagate(
+			err,
+			"An error occurred while trying to get the files artifact expansion " +
+				"volume attributes for service with GUID '%v'",
+			serviceGUID,
+		)
+	}
+	volumeName := volumeAttrs.GetName().GetString()
+	volumeLabels := map[string]string{}
+	for labelKey, labelValue := range volumeAttrs.GetLabels() {
+		volumeLabels[labelKey.GetString()] = labelValue.GetString()
+	}
+
+	foundVolumes, err := backend.dockerManager.GetVolumesByName(ctx, volumeName)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting Docker volumes by name '%v'", volumeName)
+	}
+	if len(foundVolumes) > 0 {
+		//We iterate to check if it is exactly the same name
+		for _, foundVolumeName := range foundVolumes {
+			if volumeName == foundVolumeName {
+				return "", stacktrace.NewError("Volume can not be created because a volume with name '%v' already exists.", volumeName)
+			}
+		}
+	}
+
+	if err := backend.dockerManager.CreateVolume(ctx, volumeName, volumeLabels); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred creating the destination volume '%v' with labels '%+v'", volumeName, volumeLabels)
+	}
+	return volumeName, nil
+}
+
+func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
+	ctx context.Context,
+	filesArtifactExpansion *files_artifact_expansion.FilesArtifactExpansion,
+	enclaveId enclave.EnclaveID,
+	filesArtifactExpansionVolumeName string,
+	destVolMntDirpathOnExpander string,
+	filesArtifactFilepathRelativeToEnclaveDataVolumeRoot string,
+) error {
+
+	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
+	}
+
+	freeIpAddrProvider, found := backend.enclaveFreeIpProviders[enclaveId]
+	if !found {
+		return stacktrace.NewError(
+			"Received a request to run a files artifact expander attached to service with GUID '%v' in enclave '%v', but no free IP address provider was " +
+				"defined for this enclave; this likely means that the request is being called where it shouldn't " +
+				"be (i.e. outside the API container)",
+			filesArtifactExpansion.GetServiceGUID(),
+			enclaveId,
+		)
+	}
+
+	enclaveDataVolumeName, err := backend.getEnclaveDataVolumeByEnclaveId(ctx, enclaveId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveId)
+	}
+
+	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
+	if err != nil {
+		return stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
+	}
+
+	containerAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpanderContainer(filesArtifactExpansion.GetGUID(), filesArtifactExpansion.GetServiceGUID())
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while trying to get the files artifact expander container attributes for files artifact expansion GUID '%v'", filesArtifactExpansion.GetGUID())
+	}
+	containerName := containerAttrs.GetName().GetString()
+	containerLabels := map[string]string{}
+	for labelKey, labelValue := range containerAttrs.GetLabels() {
+		containerLabels[labelKey.GetString()] = labelValue.GetString()
+	}
+
+	volumeMounts := map[string]string{
+		filesArtifactExpansionVolumeName: destVolMntDirpathOnExpander,
+		enclaveDataVolumeName:               enclaveDataVolumeDirpathOnExpanderContainer,
+	}
+
+	artifactFilepath := path.Join(enclaveDataVolumeDirpathOnExpanderContainer, filesArtifactFilepathRelativeToEnclaveDataVolumeRoot)
+	containerCmd := getExtractionCommand(artifactFilepath, destVolMntDirpathOnExpander)
+
+	ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting a free IP address")
+	}
+	shouldReleaseIp := true
+	defer func() {
+		if shouldReleaseIp {
+			freeIpAddrProvider.ReleaseIpAddr(ipAddr)
+		}
+	}()
+
+	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
+		dockerImage,
+		containerName,
+		enclaveNetwork.GetId(),
+	).WithStaticIP(
+		ipAddr,
+	).WithCmdArgs(
+		containerCmd,
+	).WithVolumeMounts(
+		volumeMounts,
+	).WithLabels(
+		containerLabels,
+	).Build()
+	containerId, _, err := backend.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating the Docker container to expand the file artifact '%v' into the volume '%v'", filesArtifactFilepathRelativeToEnclaveDataVolumeRoot, filesArtifactExpansionVolumeName)
+	}
+
+	exitCode, err := backend.dockerManager.WaitForExit(ctx, containerId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred waiting for the files artifact expander Docker container '%v' to exit", containerId)
+	}
+	if exitCode != expanderContainerSuccessExitCode {
+		return stacktrace.NewError(
+			"The files artifact expander Docker container '%v' exited with non-%v exit code: %v",
+			containerId,
+			expanderContainerSuccessExitCode,
+			exitCode)
+	}
+	shouldReleaseIp = true
+	return nil
+}
+
+// Image-specific generator of the command that should be run to extract the artifact at the given filepath
+//  to the destination
+func getExtractionCommand(artifactFilepath string, destVolMntDirpathOnExpander string) (dockerRunCmd []string) {
+	return []string{
+		"tar",
+		"-xzvf",
+		artifactFilepath,
+		"-C",
+		destVolMntDirpathOnExpander,
+	}
 }
