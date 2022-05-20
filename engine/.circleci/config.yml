@@ -9,12 +9,15 @@ parameters:
   docker-engine-version:
     type: string
     default: 20.10.7
-  go-version:
+  api-go-version:
     type: string
-    default: 1.15.13
-  node-version:
+    default: "1.15.13"
+  server-go-version:
     type: string
-    default: 16.13.0
+    default: "1.17"
+  api-node-version:
+    type: string
+    default: "16.13.0"
   source-repo-name:
     type: string
     default: kurtosis-engine-api-lib
@@ -31,7 +34,7 @@ jobs:
   # -- PR check jobs ------------------------------------------
   check_api_golang:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.go-version>>"
+      - image: "cimg/go:<< pipeline.parameters.api-go-version>>"
     steps:
       - checkout
 
@@ -48,7 +51,7 @@ jobs:
 
   check_api_typescript:
     docker:
-      - image: "cimg/node:<< pipeline.parameters.node-version>>"
+      - image: "cimg/node:<< pipeline.parameters.api-node-version>>"
     steps:
       - checkout
 
@@ -63,7 +66,7 @@ jobs:
 
   check_launcher:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
       - checkout
 
@@ -83,7 +86,7 @@ jobs:
 
   check_server_code:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
       - checkout
 
@@ -152,7 +155,7 @@ jobs:
 
   publish_api_typescript:
     docker:
-      - image: "cimg/node:<< pipeline.parameters.node-version>>"
+      - image: "cimg/node:<< pipeline.parameters.api-node-version>>"
     steps:
       - checkout
       - run: api/typescript/scripts/build.sh
@@ -162,7 +165,7 @@ jobs:
 
   publish_server_image:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
       - checkout
 
