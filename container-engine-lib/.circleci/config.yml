@@ -7,7 +7,7 @@ orbs:
 parameters:
   go-version:
     type: string
-    default: "1.16"
+    default: "1.17"
   build-cache-key-prefix:
     type: string
     default: "go-mod-v1"   # Can bump this version to bust the cache
