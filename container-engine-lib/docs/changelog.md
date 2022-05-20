@@ -1,5 +1,6 @@
 # TBD
 ### Features
+* Added the functionality to wait until the GRPC port is available before returning when creating `Engines`, `API containers` and `Modules`  
 * Added `KubernetesKurtosisBackend.CreateModule`, `KubernetesKurtosisBackend.GetModules`, `KubernetesKurtosisBackend.StopModules` and `KubernetesKurtosisBackend.DestroyModules`
 * Added `ForModulePod` and `ForModuleService` to `KubernetesEnclaveObjectAttributesProvider`
 * Started proto-documentation on README about how the CRUD methods work, and why

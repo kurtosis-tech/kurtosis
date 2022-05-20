@@ -17,13 +17,19 @@ import (
 	"io"
 	apiv1 "k8s.io/api/core/v1"
 	"net"
+	"time"
 )
 
 const (
+	kurtosisModuleContainerName = "kurtosis-module-container"
+
 	kurtosisModulePortProtocol = port_spec.PortProtocol_TCP
 
 	// Our module don't need service accounts
 	moduleServiceAccountName = ""
+
+	maxWaitForModuleContainerAvailabilityRetries         = 30
+	timeBetweenWaitForModuleContainerAvailabilityRetries = 1 * time.Second
 )
 
 type moduleObjectsAndKubernetesResources struct {
@@ -155,14 +161,13 @@ func (backend *KubernetesKurtosisBackend) CreateModule(
 		}
 	}()
 
-
 	// Create the Pod
 	containerPorts, err := getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes container ports from the private port specs map '%+v'", privatePorts)
 	}
 
-	moduleContainers := getModuleContainers(guid, image, containerPorts, envVars)
+	moduleContainers := getModuleContainers(image, containerPorts, envVars)
 
 	// Create pod with module containers and not volumes in Kubernetes
 	modulePod, err := backend.kubernetesManager.CreatePod(
@@ -215,7 +220,17 @@ func (backend *KubernetesKurtosisBackend) CreateModule(
 
 	resultModule := resultModuleObjectAndResources.module
 
-	//TODO implement GRPC availability Checker
+	if err := waitForPortAvailabilityUsingNetstat(
+		backend.kubernetesManager,
+		enclaveNamespaceName,
+		modulePodName,
+		kurtosisModuleContainerName,
+		privateGrpcPortSpec,
+		maxWaitForModuleContainerAvailabilityRetries,
+		timeBetweenWaitForModuleContainerAvailabilityRetries,
+	); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the module grpc port '%v/%v' to become available", privateGrpcPortSpec.GetProtocol(), privateGrpcPortSpec.GetNumber())
+	}
 
 	shouldRemovePod = false
 	shouldRemoveService = false
@@ -374,7 +389,6 @@ func (backend *KubernetesKurtosisBackend) DestroyModules(
 //                                     Private Helper Methods
 // ====================================================================================================
 func getModuleContainers(
-	moduleGuid module.ModuleGUID,
 	containerImageAndTag string,
 	containerPorts []apiv1.ContainerPort,
 	envVars map[string]string,
@@ -392,7 +406,7 @@ func getModuleContainers(
 	}
 	containers := []apiv1.Container{
 		{
-			Name:  string(moduleGuid),
+			Name:  kurtosisModuleContainerName,
 			Image: containerImageAndTag,
 			Env:   containerEnvVars,
 			Ports: containerPorts,

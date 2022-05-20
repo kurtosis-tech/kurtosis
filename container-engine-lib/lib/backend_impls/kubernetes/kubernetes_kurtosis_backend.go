@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -22,9 +23,11 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -44,6 +47,8 @@ const (
 	// Port number string parsing constants
 	portNumStrParsingBase = 10
 	portNumStrParsingBits = 16
+
+	netstatSuccessExitCode = 0
 
 )
 
@@ -461,4 +466,59 @@ func buildCombinedError(errorsById map[string]error, titleStr string) error {
 	}
 
 	return nil
+}
+
+func waitForPortAvailabilityUsingNetstat(
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	namespaceName string,
+	podName string,
+	containerName string,
+	portSpec *port_spec.PortSpec,
+	maxRetries uint,
+	timeBetweenRetries time.Duration,
+) error {
+	commandStr := fmt.Sprintf(
+		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
+		strings.ToLower(portSpec.GetProtocol().String()),
+		portSpec.GetNumber(),
+	)
+	execCmd := []string{
+		"sh",
+		"-c",
+		commandStr,
+	}
+	for i := uint(0); i < maxRetries; i++ {
+		outputBuffer := &bytes.Buffer{}
+		exitCode, err := kubernetesManager.RunExecCommand(namespaceName, podName, containerName, execCmd, outputBuffer)
+		if err == nil {
+			if exitCode == netstatSuccessExitCode {
+				return nil
+			}
+			logrus.Debugf(
+				"Netstat availability-waiting command '%v' returned without a Kubernetes error, but exited with non-%v exit code '%v' and logs:\n%v",
+				commandStr,
+				netstatSuccessExitCode,
+				exitCode,
+				outputBuffer.String(),
+			)
+		} else {
+			logrus.Debugf(
+				"Netstat availability-waiting command '%v' experienced a Kubernetes error:\n%v",
+				commandStr,
+				err,
+			)
+		}
+
+		// Tiny optimization to not sleep if we're not going to run the loop again
+		if i < maxRetries {
+			time.Sleep(timeBetweenRetries)
+		}
+	}
+
+	return stacktrace.NewError(
+		"The port didn't become available (as measured by the command '%v') even after retrying %v times with %v between retries",
+		commandStr,
+		maxRetries,
+		timeBetweenRetries,
+	)
 }
