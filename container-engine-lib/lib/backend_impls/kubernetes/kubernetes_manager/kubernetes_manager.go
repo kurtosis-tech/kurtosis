@@ -1020,7 +1020,6 @@ func renderContainerStatuses(containerStatuses []apiv1.ContainerStatus, prefixSt
 }
 
 func (manager *KubernetesManager) waitForNamespaceDeletion(ctx context.Context, objectName string) error {
-	// Add timeout field to listoptions
 	listOptions := getWatchListOptionsForObject(objectName)
 
 	namespaceWatchFunc := func(options metav1.ListOptions) (apiwatch.Interface, error) {
@@ -1041,15 +1040,14 @@ func (manager *KubernetesManager) waitForNamespaceDeletion(ctx context.Context, 
 }
 
 func (manager *KubernetesManager) waitForPodDeletion(ctx context.Context, namespace string, podName string) error {
-	// Add timeout field to listoptions
 	listOptions := getWatchListOptionsForObject(podName)
 
-	namespaceWatchFunc := func(options metav1.ListOptions) (apiwatch.Interface, error) {
+	podWatchFunc := func(options metav1.ListOptions) (apiwatch.Interface, error) {
 		// Return watcher with 10m timeout
 		return manager.kubernetesClientSet.CoreV1().Pods(namespace).Watch(ctx, listOptions)
 	}
 
-	retryWatcher, err := watch.NewRetryWatcher(resourceVersionString, &cache.ListWatch{WatchFunc: namespaceWatchFunc})
+	retryWatcher, err := watch.NewRetryWatcher(resourceVersionString, &cache.ListWatch{WatchFunc: podWatchFunc})
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to create a retry watcher for resource deletion, instead a non-nil error was returned")
 	}
