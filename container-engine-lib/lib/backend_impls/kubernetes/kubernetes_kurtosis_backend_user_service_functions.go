@@ -541,7 +541,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingUserServiceObjectsAndKubern
 	}
 
 	for serviceGuid, serviceResources := range allResources {
-		logrus.Tracef("Found resources for service '%v': %+v", serviceResources)
+		logrus.Tracef("Found resources for service '%v': %+v", serviceGuid, serviceResources)
 	}
 
 	allObjectsAndResources, err := getUserServiceObjectsFromKubernetesResources(enclaveId, allResources)
