@@ -20,6 +20,7 @@
 
 ### Fixes
 * Fixed a bug where pods would return before being started
+* Upgraded to container-engine-lib 0.25.0 (and downstream deps), which fix several issues on Kubernetes
 
 # 0.17.0
 ### Features

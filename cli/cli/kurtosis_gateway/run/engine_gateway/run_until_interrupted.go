@@ -21,7 +21,7 @@ const (
 func RunEngineGatewayUntilInterrupted(engine *engine.Engine, connectionProvider *connection.GatewayConnectionProvider) error {
 	engineConnection, err := connectionProvider.ForEngine(engine)
 	if err != nil {
-		return stacktrace.Propagate(err, "Expected to forward a local port to GRPC port of engine '%v', instead a non-nil error was returned", engine.GetID())
+		return stacktrace.Propagate(err, "Expected to forward a local port to GRPC port of engine '%v', instead a non-nil error was returned", engine.GetGUID())
 	}
 	defer engineConnection.Stop()
 
@@ -40,7 +40,7 @@ func RunEngineGatewayUntilInterrupted(engine *engine.Engine, connectionProvider 
 		kurtosis_engine_rpc_api_bindings.RegisterEngineServiceServer(grpcServer, engineGatewayServer)
 	}
 	// Print information to the user
-	logrus.Infof("Starting the gateway for engine with ID '%v' on local port '%v'", engine.GetID(), engineGatewayPort)
+	logrus.Infof("Starting the gateway for engine with GUID '%v' on local port '%v'", engine.GetGUID(), engineGatewayPort)
 	logrus.Infof("You can use this gateway as a drop-in replacement for Kurtosis engine. To connect to the gateway, send a request to '%v:%v'", localHostIpStr, engineGatewayPort)
 	logrus.Infof("To kill the running gateway, press CTRL+C")
 
