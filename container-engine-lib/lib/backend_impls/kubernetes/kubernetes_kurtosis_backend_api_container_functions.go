@@ -359,6 +359,18 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container grpc port '%v/%v' to become available", privateGrpcPortSpec.GetProtocol(), privateGrpcPortSpec.GetNumber())
 	}
 
+	if err := waitForPortAvailabilityUsingNetstat(
+		backend.kubernetesManager,
+		enclaveNamespaceName,
+		apiContainerPodName,
+		kurtosisApiContainerContainerName,
+		privateGrpcProxyPortSpec,
+		maxWaitForApiContainerContainerAvailabilityRetries,
+		timeBetweenWaitForApiContainerContainerAvailabilityRetries,
+	); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container grpc proxy port '%v/%v' to become available", privateGrpcProxyPortSpec.GetProtocol(), privateGrpcProxyPortSpec.GetNumber())
+	}
+
 	shouldRemoveRoleBinding = false
 	shouldRemoveRole = false
 	shouldRemoveServiceAccount = false

@@ -217,6 +217,20 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine grpc port '%v/%v' to become available", privateGrpcPortSpec.GetProtocol(), privateGrpcPortSpec.GetNumber())
 	}
 
+	// TODO UNCOMMENT THIS ONCE WE HAVE GRPC-PROXY WIRED UP!!
+	/*
+	if err := waitForPortAvailabilityUsingNetstat(
+		backend.kubernetesManager,
+		namespaceName,
+		enginePod.Name,
+		kurtosisEngineContainerName,
+		privateGrpcProxyPortSpec,
+		maxWaitForEngineContainerAvailabilityRetries,
+		timeBetweenWaitForEngineContainerAvailabilityRetries,
+	); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine grpc proxy port '%v/%v' to become available", privateGrpcProxyPortSpec.GetProtocol(), privateGrpcProxyPortSpec.GetNumber())
+	}*/
+
 	shouldRemoveNamespace = false
 	shouldRemoveServiceAccount = false
 	shouldRemoveClusterRole = false
