@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"strings"
@@ -19,7 +20,7 @@ const (
 
 type DockerObjectAttributesProvider interface {
 	ForEngineServer(
-		id string,
+		guid engine.EngineGUID,
 		grpcPortId string,
 		grpcPortSpec *port_spec.PortSpec,
 		grpcProxyPortId string,
@@ -39,7 +40,7 @@ func newDockerObjectAttributesProviderImpl() *dockerObjectAttributesProviderImpl
 }
 
 func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(
-	id string,
+	guid engine.EngineGUID,
 	grpcPortId string,
 	grpcPortSpec *port_spec.PortSpec,
 	grpcProxyPortId string,
@@ -49,7 +50,7 @@ func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(
 	nameStr := strings.Join(
 		[]string{
 			engineServerNamePrefix,
-			id,
+			string(guid),
 		},
 		objectNameElementSeparator,
 	)
@@ -58,13 +59,13 @@ func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", nameStr)
 	}
 
-	idLabelValue, err := docker_label_value.CreateNewDockerLabelValue(id)
+	idLabelValue, err := docker_label_value.CreateNewDockerLabelValue(string(guid))
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the engine ID Docker label from string '%v'", id)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine GUID Docker label from string '%v'", guid)
 	}
-	guidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(id)
+	guidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(string(guid))
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the engine GUID Docker label from string '%v'", id)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine GUID Docker label from string '%v'", guid)
 	}
 
 	usedPorts := map[string]*port_spec.PortSpec{
