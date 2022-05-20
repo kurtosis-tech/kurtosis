@@ -168,7 +168,7 @@ func (backend *DockerKurtosisBackend) getMatchingFilesArtifactExpansionObjectsAn
 		return nil,stacktrace.Propagate(err, "Failed to get files expansion docker resources in enclave '%v' for filters '%+v'",
 			enclaveId, filters)
 	}
-	matchingFilesArtifactExpansionObjects, err := getFilesExpansionObjectsFromKubernetesResources(matchingFilesArtifactExpansionDockerResources)
+	matchingFilesArtifactExpansionObjects, err := getFilesExpansionObjectsFromDockerResources(matchingFilesArtifactExpansionDockerResources)
 	if err != nil {
 		return nil,stacktrace.Propagate(err, "Failed to get files expansion objects in enclave '%v' for filters '%+v'",
 			enclaveId, filters)
@@ -258,7 +258,7 @@ func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionDockerReso
 	return resourcesByFilesArtifactGuid, nil
 }
 
-func getFilesExpansionObjectsFromKubernetesResources(
+func getFilesExpansionObjectsFromDockerResources(
 	allResources map[files_artifact_expansion.FilesArtifactExpansionGUID]*filesArtifactExpansionDockerResources,
 ) (map[files_artifact_expansion.FilesArtifactExpansionGUID]*files_artifact_expansion.FilesArtifactExpansion, error){
 	filesArtifactExpansionObjects := map[files_artifact_expansion.FilesArtifactExpansionGUID]*files_artifact_expansion.FilesArtifactExpansion{}
