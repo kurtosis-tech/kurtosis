@@ -1,4 +1,4 @@
-package new
+package add
 
 import (
 	"context"
@@ -32,15 +32,16 @@ var isPartitioningEnabled bool
 var kurtosisLogLevelStr string
 var enclaveIdStr string
 
-// TODO RENAME THIS TO 'add' TO MATCH SERVICE
-var NewCmd = &cobra.Command{
-	Use:   command_str_consts.EnclaveNewCmdStr,
-	Short: "Creates a new, empty Kurtosis enclave",
+var EnclaveAddCmd = &cobra.Command{
+	Use:   command_str_consts.EnclaveAddCmdStr,
+	Short: "Creates an enclave",
+	Long: "Creates a new, empty Kurtosis enclave",
 	RunE:  run,
+	Aliases: []string{"new"}, // TODO remove this after 2022-08-16 when everyone should be using "add"
 }
 
 func init() {
-	NewCmd.Flags().StringVarP(
+	EnclaveAddCmd.Flags().StringVarP(
 		&kurtosisLogLevelStr,
 		apiContainerLogLevelArg,
 		"l",
@@ -50,21 +51,21 @@ func init() {
 			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
 		),
 	)
-	NewCmd.Flags().StringVarP(
+	EnclaveAddCmd.Flags().StringVarP(
 		&apiContainerVersion,
 		apiContainerVersionArg,
 		"a",
 		defaults.DefaultAPIContainerVersion,
 		"The version of the Kurtosis API container that should be started inside the enclave (blank tells the engine to use the default version)",
 	)
-	NewCmd.Flags().BoolVarP(
+	EnclaveAddCmd.Flags().BoolVarP(
 		&isPartitioningEnabled,
 		isPartitioningEnabledArg,
 		"p",
 		defaultIsPartitioningEnabled,
 		"Enable network partitioning functionality (repartitioning won't work if this is set to false)",
 	)
-	NewCmd.Flags().StringVarP(
+	EnclaveAddCmd.Flags().StringVarP(
 		&enclaveIdStr,
 		enclaveIdArg,
 		"i",

@@ -21,6 +21,8 @@
 ### Fixes
 * Fixed a bug where pods would return before being started
 * Upgraded to container-engine-lib 0.25.0 (and downstream deps), which fix several issues on Kubernetes
+* Bumped the number of retry polls in the module tests up to 20 to try and remediate a timeout while waiting for the datastore service to come up that we were seeing
+* Fixed the config getting serialized strangely
 
 # 0.17.0
 ### Features

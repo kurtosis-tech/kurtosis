@@ -52,8 +52,8 @@ func NewKurtosisConfigFromOverrides(overrides *v1.KurtosisConfigV1) (*KurtosisCo
 	}
 
 	// Ensure that the overrides are storing the latest config version
-	// From this point onwards, it should be impossible to not have the right config version
-	config.overrides.ConfigVersion = &latestConfigVersion
+	// From this point onwards, it should be impossible to have the incorrect config version
+	config.overrides.ConfigVersion = latestConfigVersion
 
 	// --------------------- Validation --------------------------
 	if overrides.ShouldSendMetrics == nil {
