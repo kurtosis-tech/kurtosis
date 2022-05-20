@@ -276,12 +276,12 @@ func (backend *KubernetesKurtosisBackend) GetModuleLogs(
 		return nil, nil, stacktrace.Propagate(err, "Expected to be able to get modules and Kubernetes resources, instead a non nil error was returned")
 	}
 	moduleLogs := map[module.ModuleGUID]io.ReadCloser{}
-	erredModuleLogs := map[module.ModuleGUID]error{}
+	erroredModuleLogs := map[module.ModuleGUID]error{}
 	for _, moduleObjectAndResource := range moduleObjectsAndResources {
 		moduleGuid := moduleObjectAndResource.module.GetGUID()
 		modulePod := moduleObjectAndResource.kubernetesResources.pod
 		if modulePod == nil {
-			erredModuleLogs[moduleGuid] = stacktrace.NewError("Expected to find a pod for Kurtosis module with GUID '%v', instead no pod was found", moduleGuid)
+			erroredModuleLogs[moduleGuid] = stacktrace.NewError("Expected to find a pod for Kurtosis module with GUID '%v', instead no pod was found", moduleGuid)
 			continue
 		}
 		enclaveNamespaceName := moduleObjectAndResource.kubernetesResources.service.GetNamespace()
@@ -295,12 +295,12 @@ func (backend *KubernetesKurtosisBackend) GetModuleLogs(
 			shouldAddTimestampsToModuleLogs,
 		)
 		if err != nil {
-			erredModuleLogs[moduleGuid] = stacktrace.Propagate(err, "Expected to be able to call Kubernetes to get logs for module with GUID '%v', instead a non-nil error was returned", moduleGuid)
+			erroredModuleLogs[moduleGuid] = stacktrace.Propagate(err, "Expected to be able to call Kubernetes to get logs for module with GUID '%v', instead a non-nil error was returned", moduleGuid)
 			continue
 		}
 		moduleLogs[moduleGuid] = logReadCloser
 	}
-	return moduleLogs, erredModuleLogs, nil
+	return moduleLogs, erroredModuleLogs, nil
 }
 
 func (backend *KubernetesKurtosisBackend) StopModules(

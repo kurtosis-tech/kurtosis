@@ -1,4 +1,6 @@
 # TBD
+
+# 0.26.0
 ### Features
 * Added `KubernetesKurtosisBackend.GetModuleLogs`
 * Added the functionality to wait until the GRPC port is available before returning when creating `Engines`, `API containers` and `Modules`  
