@@ -84,8 +84,6 @@ type KurtosisBackend interface {
 		error,
 	)
 
-	// TODO MAYYYYYYYBE DumpEnclaves?
-
 	// Stops enclaves matching the given filters
 	StopEnclaves(
 		ctx context.Context,

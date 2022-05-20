@@ -246,20 +246,22 @@ func (backend *MetricsReportingKurtosisBackend) CreateModule(
 
 func (backend *MetricsReportingKurtosisBackend) GetModules(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *module.ModuleFilters,
 ) (
 	map[module.ModuleGUID]*module.Module,
 	error,
 ) {
-	modules, err := backend.underlying.GetModules(ctx, filters)
+	modules, err := backend.underlying.GetModules(ctx, enclaveId, filters)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting modules using filters: %+v", filters)
+		return nil, stacktrace.Propagate(err, "An error occurred getting modules in enclave '%v' using filters: %+v", enclaveId, filters)
 	}
 	return modules, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) GetModuleLogs(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *module.ModuleFilters,
 	shouldFollowLogs bool,
 ) (
@@ -267,32 +269,41 @@ func (backend *MetricsReportingKurtosisBackend) GetModuleLogs(
 	map[module.ModuleGUID]error,
 	error,
 ) {
-	moduleLogs, erroredModules, err := backend.underlying.GetModuleLogs(ctx, filters, shouldFollowLogs)
+	moduleLogs, erroredModules, err := backend.underlying.GetModuleLogs(ctx, enclaveId, filters, shouldFollowLogs)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting module logs using filters '%+v'", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting module logs in enclave '%v' using filters '%+v'", enclaveId, filters)
 	}
 	return moduleLogs, erroredModules, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) StopModules(ctx context.Context, filters *module.ModuleFilters) (successfulModuleIds map[module.ModuleGUID]bool, erroredModuleIds map[module.ModuleGUID]error, resultErr error) {
-	successes, failures, err := backend.underlying.StopModules(ctx, filters)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping modules using filters: %+v", filters)
-	}
-	return successes, failures, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) DestroyModules(
+func (backend *MetricsReportingKurtosisBackend) StopModules(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *module.ModuleFilters,
 ) (
 	successfulModuleIds map[module.ModuleGUID]bool,
 	erroredModuleIds map[module.ModuleGUID]error,
 	resultErr error,
 ) {
-	successes, failures, err := backend.underlying.DestroyModules(ctx, filters)
+	successes, failures, err := backend.underlying.StopModules(ctx, enclaveId, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying modules using filters: %+v", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping modules in enclave '%v' using filters: %+v", enclaveId, filters)
+	}
+	return successes, failures, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) DestroyModules(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *module.ModuleFilters,
+) (
+	successfulModuleIds map[module.ModuleGUID]bool,
+	erroredModuleIds map[module.ModuleGUID]error,
+	resultErr error,
+) {
+	successes, failures, err := backend.underlying.DestroyModules(ctx, enclaveId, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying modules in enclave '%v' using filters: %+v", enclaveId, filters)
 	}
 	return successes, failures, nil
 }
