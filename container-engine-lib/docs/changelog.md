@@ -2,6 +2,10 @@
 ### Features
 * Started proto-documentation on README about how the CRUD methods work, and why
 * Switched user service objects to use UUIDs for service GUIDs
+* Implement remaining user service methods:
+    * `GetUserServices`
+    * `StopUserServices`
+    * `DestroyUserServices`
 
 ### Fixes
 * Fix a bug in gathering user service Services and Pods

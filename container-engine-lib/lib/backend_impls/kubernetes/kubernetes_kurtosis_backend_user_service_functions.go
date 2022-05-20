@@ -507,19 +507,97 @@ func (backend *KubernetesKurtosisBackend) CopyFromUserService(ctx context.Contex
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (successfulUserServiceGuids map[service.ServiceGUID]bool, erroredUserServiceGuids map[service.ServiceGUID]error, resultErr error) {
-	// TODO kill the pod
-	// TODO remove the service's selectors
+func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
+	namespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
+	}
 
-	//TODO implement me
-	panic("implement me")
+	allObjectsAndResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' matching filters: %+v", filters)
+	}
+
+	successfulGuids := map[service.ServiceGUID]bool{}
+	erroredGuids := map[service.ServiceGUID]error{}
+	for serviceGuid, serviceObjsAndResources := range allObjectsAndResources {
+		resources := serviceObjsAndResources.kubernetesResources
+
+		pod := resources.pod
+		if pod != nil {
+			if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, pod.Name); err != nil {
+				erroredGuids[serviceGuid] = stacktrace.Propagate(
+					err,
+					"An error occurred removing Kubernetes pod '%v' in namespace '%v'",
+					pod.Name,
+					namespaceName,
+				)
+				continue
+			}
+		}
+
+		kubernetesService := resources.service
+		updatedService := kubernetesService.DeepCopy()
+		updatedService.Spec.Selector = nil
+		if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, updatedService); err != nil {
+			erroredGuids[serviceGuid] = stacktrace.Propagate(
+				err,
+				"An error occurred updating service '%v' in namespace '%v' to reflect that it's no longer running",
+				kubernetesService.Name,
+			)
+			continue
+		}
+
+		successfulGuids[serviceGuid] = true
+	}
+	return successfulGuids, erroredGuids, nil
 }
 
-func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (successfulUserServiceGuids map[service.ServiceGUID]bool, erroredUserServiceGuids map[service.ServiceGUID]error, resultErr error) {
-	// TODO Destroy persistent volume claims (???)
+func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
+	namespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
+	}
 
-	//TODO implement me
-	panic("implement me")
+	allObjectsAndResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' matching filters: %+v", filters)
+	}
+
+	successfulGuids := map[service.ServiceGUID]bool{}
+	erroredGuids := map[service.ServiceGUID]error{}
+	for serviceGuid, serviceObjsAndResources := range allObjectsAndResources {
+		resources := serviceObjsAndResources.kubernetesResources
+
+		pod := resources.pod
+		if pod != nil {
+			if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, pod.Name); err != nil {
+				erroredGuids[serviceGuid] = stacktrace.Propagate(
+					err,
+					"An error occurred removing Kubernetes pod '%v' in namespace '%v'",
+					pod.Name,
+					namespaceName,
+				)
+				continue
+			}
+		}
+
+		kubernetesService := resources.service
+		if kubernetesService != nil {
+			if err := backend.kubernetesManager.RemoveService(ctx, namespaceName, kubernetesService.Name); err != nil {
+				erroredGuids[serviceGuid] = stacktrace.Propagate(
+					err,
+					"An error occurred removing Kubernetes service '%v' in namespace '%v'",
+					kubernetesService.Name,
+					namespaceName,
+				)
+				continue
+			}
+		}
+
+		successfulGuids[serviceGuid] = true
+	}
+	return successfulGuids, erroredGuids, nil
 }
 
 
