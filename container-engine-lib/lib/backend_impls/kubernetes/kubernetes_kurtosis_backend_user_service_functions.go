@@ -306,23 +306,9 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		}
 	}()
 
-	// Update the service to:
-	// - Set the service ports appropriately
-	// - Irrevocably record that a pod is bound to the service (so that even if the pod is deleted, the service won't
-	// 	 be usable again
-	serializedPortSpecs, err := kubernetes_port_spec_serializer.SerializePortSpecs(privatePorts)
+	updatedService, err := backend.updateServiceWhenContainerStarted(ctx, namespaceName, kubernetesService, privatePorts)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred serializing the following private port specs: %+v", privatePorts)
-	}
-	kubernetesServicePorts, err := getKubernetesServicePortsFromPrivatePortSpecs(privatePorts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes service ports for the following private port specs: %+v", privatePorts)
-	}
-	updatedService := kubernetesService.DeepCopy()
-	updatedService.Annotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()] = serializedPortSpecs.GetString()
-	updatedService.Spec.Ports = kubernetesServicePorts
-	if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, updatedService); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred updating the user service to open the service ports and add the serialized private port specs annotation")
+		return nil, stacktrace.Propagate(err, "An error occurred updating service '%v' to reflect its new ports: %+v", kubernetesService.GetName(), privatePorts)
 	}
 	shouldUndoServiceUpdate := true
 	defer func() {
@@ -948,4 +934,39 @@ func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtif
 	}
 
 	return podVolumes, containerMounts, nil
+}
+
+// Update the service to:
+// - Set the service ports appropriately
+// - Irrevocably record that a pod is bound to the service (so that even if the pod is deleted, the service won't
+// 	 be usable again
+func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
+	ctx context.Context,
+	namespaceName string,
+	kubernetesService *apiv1.Service,
+	privatePorts map[string]*port_spec.PortSpec,
+) (*apiv1.Service, error) {
+	updatedService := kubernetesService.DeepCopy()
+
+	serializedPortSpecs, err := kubernetes_port_spec_serializer.SerializePortSpecs(privatePorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred serializing the following private port specs: %+v", privatePorts)
+	}
+	kubernetesServicePorts, err := getKubernetesServicePortsFromPrivatePortSpecs(privatePorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes service ports for the following private port specs: %+v", privatePorts)
+	}
+	updatedService.Spec.Ports = kubernetesServicePorts
+
+	updatedAnnotations := updatedService.Annotations
+	if updatedAnnotations == nil {
+		updatedAnnotations = map[string]string{}
+	}
+	updatedAnnotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()] = serializedPortSpecs.GetString()
+	updatedService.Annotations = updatedAnnotations
+
+	if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, updatedService); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred updating the user service to open the service ports and add the serialized private port specs annotation")
+	}
+	return updatedService, nil
 }
