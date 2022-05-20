@@ -2,7 +2,6 @@ package kubernetes
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/annotation_key_consts"
@@ -17,12 +16,12 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
 	apiv1 "k8s.io/api/core/v1"
 	"net"
-	"time"
 )
 
 /*
@@ -65,11 +64,12 @@ const (
 	// Our user services don't need service accounts
 	userServiceServiceAccountName = ""
 
-	// Kubernetes doesn't allow us to create services without ports exposed, but we won't have the ports that the user
-	// wants to listen to until they StartService. We create the Kubernetes Service on RegisterService, so we need to
-	// set up a notional port until the user calls StartService.
-	unboundPortName = "nonexistent"
-	unboundPortNumber = 80
+	// Kubernetes doesn't allow us to create services without ports exposed, but we might not have ports in the following situations:
+	//  1) we've registered a service but haven't started a container yet (so ports are yet to come)
+	//  2) we've started a container that doesn't listen on any ports
+	// In these cases, we use these notional unbound ports
+	unboundPortName = "nonexistent-port"
+	unboundPortNumber = 1
 )
 
 // Kubernetes doesn't provide public IP or port information; this is instead handled by the Kurtosis gateway that the user uses
@@ -104,12 +104,11 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 		return nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
 	}
 
-	// TODO Switch this, and all other GUIDs, to a UUID??
-	serviceGuid := service.ServiceGUID(fmt.Sprintf(
-		"%v-%v",
-		serviceId,
-		time.Now().Unix(),
-	))
+	serviceGuidStr, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID to use for the service GUID")
+	}
+	serviceGuid := service.ServiceGUID(serviceGuidStr)
 
 	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
@@ -227,7 +226,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		return nil, stacktrace.Propagate(err, "An error occurred getting user service objects and Kubernetes resources matching service GUID '%v'", serviceGuid)
 	}
 	if len(preexistingObjectsAndResources) == 0 {
-		return nil, stacktrace.NewError("Couldn't find any services registrations matching service GUID '%v'", serviceGuid)
+		return nil, stacktrace.NewError("Couldn't find any service registrations matching service GUID '%v'", serviceGuid)
 	}
 	if len(preexistingObjectsAndResources) > 1 {
 		// Should never happen because service GUIDs should be unique
@@ -307,23 +306,9 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		}
 	}()
 
-	// Update the service to:
-	// - Set the service ports appropriately
-	// - Irrevocably record that a pod is bound to the service (so that even if the pod is deleted, the service won't
-	// 	 be usable again
-	serializedPortSpecs, err := kubernetes_port_spec_serializer.SerializePortSpecs(privatePorts)
+	updatedService, err := backend.updateServiceWhenContainerStarted(ctx, namespaceName, kubernetesService, privatePorts)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred serializing the following private port specs: %+v", privatePorts)
-	}
-	kubernetesServicePorts, err := getKubernetesServicePortsFromPrivatePortSpecs(privatePorts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes service ports for the following private port specs: %+v", privatePorts)
-	}
-	updatedService := kubernetesService.DeepCopy()
-	updatedService.Annotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()] = serializedPortSpecs.GetString()
-	updatedService.Spec.Ports = kubernetesServicePorts
-	if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, updatedService); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred updating the user service to open the service ports and add the serialized private port specs annotation")
+		return nil, stacktrace.Propagate(err, "An error occurred updating service '%v' to reflect its new ports: %+v", kubernetesService.GetName(), privatePorts)
 	}
 	shouldUndoServiceUpdate := true
 	defer func() {
@@ -364,8 +349,25 @@ func (backend *KubernetesKurtosisBackend) GetUserServices(
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 ) (successfulUserServices map[service.ServiceGUID]*service.Service, resultError error) {
-	//TODO implement me
-	panic("implement me")
+	allObjectsAndResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting user services in enclave '%v' matching filters: %+v",
+			enclaveId,
+			filters,
+		)
+	}
+	result := map[service.ServiceGUID]*service.Service{}
+	for guid, serviceObjsAndResources := range allObjectsAndResources {
+		serviceObj := serviceObjsAndResources.service
+		if serviceObj == nil {
+			// Indicates a registration-only service; skip
+			continue
+		}
+		result[guid] = serviceObj
+	}
+	return result, nil
 }
 
 func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
@@ -509,19 +511,98 @@ func (backend *KubernetesKurtosisBackend) CopyFromUserService(ctx context.Contex
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (successfulUserServiceGuids map[service.ServiceGUID]bool, erroredUserServiceGuids map[service.ServiceGUID]error, resultErr error) {
-	// TODO kill the pod
-	// TODO remove the service's selectors
+func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
+	namespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
+	}
 
-	//TODO implement me
-	panic("implement me")
+	allObjectsAndResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' matching filters: %+v", enclaveId, filters)
+	}
+
+	successfulGuids := map[service.ServiceGUID]bool{}
+	erroredGuids := map[service.ServiceGUID]error{}
+	for serviceGuid, serviceObjsAndResources := range allObjectsAndResources {
+		resources := serviceObjsAndResources.kubernetesResources
+
+		pod := resources.pod
+		if pod != nil {
+			if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, pod.Name); err != nil {
+				erroredGuids[serviceGuid] = stacktrace.Propagate(
+					err,
+					"An error occurred removing Kubernetes pod '%v' in namespace '%v'",
+					pod.Name,
+					namespaceName,
+				)
+				continue
+			}
+		}
+
+		kubernetesService := resources.service
+		updatedService := kubernetesService.DeepCopy()
+		updatedService.Spec.Selector = nil
+		if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, updatedService); err != nil {
+			erroredGuids[serviceGuid] = stacktrace.Propagate(
+				err,
+				"An error occurred updating service '%v' in namespace '%v' to reflect that it's no longer running",
+				kubernetesService.Name,
+				namespaceName,
+			)
+			continue
+		}
+
+		successfulGuids[serviceGuid] = true
+	}
+	return successfulGuids, erroredGuids, nil
 }
 
-func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (successfulUserServiceGuids map[service.ServiceGUID]bool, erroredUserServiceGuids map[service.ServiceGUID]error, resultErr error) {
-	// TODO Destroy persistent volume claims (???)
+func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
+	namespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
+	}
 
-	//TODO implement me
-	panic("implement me")
+	allObjectsAndResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' matching filters: %+v", enclaveId, filters)
+	}
+
+	successfulGuids := map[service.ServiceGUID]bool{}
+	erroredGuids := map[service.ServiceGUID]error{}
+	for serviceGuid, serviceObjsAndResources := range allObjectsAndResources {
+		resources := serviceObjsAndResources.kubernetesResources
+
+		pod := resources.pod
+		if pod != nil {
+			if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, pod.Name); err != nil {
+				erroredGuids[serviceGuid] = stacktrace.Propagate(
+					err,
+					"An error occurred removing Kubernetes pod '%v' in namespace '%v'",
+					pod.Name,
+					namespaceName,
+				)
+				continue
+			}
+		}
+
+		kubernetesService := resources.service
+		if kubernetesService != nil {
+			if err := backend.kubernetesManager.RemoveService(ctx, namespaceName, kubernetesService.Name); err != nil {
+				erroredGuids[serviceGuid] = stacktrace.Propagate(
+					err,
+					"An error occurred removing Kubernetes service '%v' in namespace '%v'",
+					kubernetesService.Name,
+					namespaceName,
+				)
+				continue
+			}
+		}
+
+		successfulGuids[serviceGuid] = true
+	}
+	return successfulGuids, erroredGuids, nil
 }
 
 
@@ -539,6 +620,10 @@ func (backend *KubernetesKurtosisBackend) getMatchingUserServiceObjectsAndKubern
 	allResources, err := backend.getUserServiceKubernetesResourcesMatchingGuids(ctx, enclaveId, filters.GUIDs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting user service Kubernetes resources matching GUIDs: %+v", filters.GUIDs)
+	}
+
+	for serviceGuid, serviceResources := range allResources {
+		logrus.Tracef("Found resources for service '%v': %+v", serviceGuid, serviceResources)
 	}
 
 	allObjectsAndResources, err := getUserServiceObjectsFromKubernetesResources(enclaveId, allResources)
@@ -653,6 +738,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes services matching service GUIDs: %+v", serviceGuids)
 	}
 	for serviceGuidStr, kubernetesServicesForGuid := range matchingKubernetesServices {
+		logrus.Tracef("Found Kubernetes services for GUID '%v': %+v", serviceGuidStr, kubernetesServicesForGuid)
 		serviceGuid := service.ServiceGUID(serviceGuidStr)
 
 		numServicesForGuid := len(kubernetesServicesForGuid)
@@ -670,6 +756,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 			resultObj = &userServiceKubernetesResources{}
 		}
 		resultObj.service = kubernetesService
+		results[serviceGuid] = resultObj
 	}
 
 	// Get k8s pods
@@ -685,6 +772,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes pods matching service GUIDs: %+v", serviceGuids)
 	}
 	for serviceGuidStr, kubernetesPodsForGuid := range matchingKubernetesPods {
+		logrus.Tracef("Found Kubernetes pods for GUID '%v': %+v", serviceGuidStr, kubernetesPodsForGuid)
 		serviceGuid := service.ServiceGUID(serviceGuidStr)
 
 		numPodsForGuid := len(kubernetesPodsForGuid)
@@ -702,6 +790,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 			resultObj = &userServiceKubernetesResources{}
 		}
 		resultObj.pod = kubernetesPod
+		results[serviceGuid] = resultObj
 	}
 
 	return results, nil
@@ -929,4 +1018,43 @@ func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtif
 	}
 
 	return podVolumes, containerMounts, nil
+}
+
+// Update the service to:
+// - Set the service ports appropriately
+// - Irrevocably record that a pod is bound to the service (so that even if the pod is deleted, the service won't
+// 	 be usable again
+func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
+	ctx context.Context,
+	namespaceName string,
+	kubernetesService *apiv1.Service,
+	privatePorts map[string]*port_spec.PortSpec,
+) (*apiv1.Service, error) {
+	updatedService := kubernetesService.DeepCopy()
+
+	serializedPortSpecs, err := kubernetes_port_spec_serializer.SerializePortSpecs(privatePorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred serializing the following private port specs: %+v", privatePorts)
+	}
+
+	// We only need to modify the ports from the default (unbound) ports if the user actually declares ports
+	if len(privatePorts) > 0 {
+		kubernetesServicePorts, err := getKubernetesServicePortsFromPrivatePortSpecs(privatePorts)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes service ports for the following private port specs: %+v", privatePorts)
+		}
+		updatedService.Spec.Ports = kubernetesServicePorts
+	}
+
+	updatedAnnotations := updatedService.Annotations
+	if updatedAnnotations == nil {
+		updatedAnnotations = map[string]string{}
+	}
+	updatedAnnotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()] = serializedPortSpecs.GetString()
+	updatedService.Annotations = updatedAnnotations
+
+	if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, updatedService); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred updating the user service to open the service ports and add the serialized private port specs annotation")
+	}
+	return updatedService, nil
 }

@@ -383,22 +383,6 @@ func (backend *KubernetesKurtosisBackend) StopAPIContainers(
 	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
 	erroredEnclaveIds := map[enclave.EnclaveID]error{}
 	for enclaveId, resources := range matchingKubernetesResources {
-		kubernetesService := resources.service
-		if kubernetesService != nil {
-			namespaceName := kubernetesService.GetNamespace()
-			kubernetesService.Spec.Selector = nil
-			if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, kubernetesService); err != nil {
-				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
-					err,
-					"An error occurred removing selectors from service '%v' in namespace '%v' for API container in enclave with ID '%v'",
-					kubernetesService.Name,
-					namespaceName,
-					enclaveId,
-				)
-				continue
-			}
-		}
-
 		kubernetesPod := resources.pod
 		if kubernetesPod != nil {
 			podName := kubernetesPod.GetName()
@@ -408,6 +392,22 @@ func (backend *KubernetesKurtosisBackend) StopAPIContainers(
 					err,
 					"An error occurred removing pod '%v' in namespace '%v' for API container in enclave with ID '%v'",
 					podName,
+					namespaceName,
+					enclaveId,
+				)
+				continue
+			}
+		}
+
+		kubernetesService := resources.service
+		if kubernetesService != nil {
+			namespaceName := kubernetesService.GetNamespace()
+			kubernetesService.Spec.Selector = nil
+			if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, kubernetesService); err != nil {
+				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
+					err,
+					"An error occurred removing selectors from service '%v' in namespace '%v' for API container in enclave with ID '%v'",
+					kubernetesService.Name,
 					namespaceName,
 					enclaveId,
 				)
@@ -454,21 +454,6 @@ func (backend *KubernetesKurtosisBackend) DestroyAPIContainers(
 			}
 		}
 
-		// Remove Service
-		if resources.service != nil {
-			serviceName := resources.service.GetName()
-			namespaceName := resources.service.GetNamespace()
-			if err := backend.kubernetesManager.RemoveService(ctx, serviceName, namespaceName); err != nil {
-				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
-					err,
-					"An error occurred removing service '%v' for API container in enclave with ID '%v'",
-					serviceName,
-					enclaveId,
-				)
-				continue
-			}
-		}
-
 		// Remove RoleBinding
 		if resources.roleBinding != nil {
 			roleBindingName := resources.roleBinding.GetName()
@@ -508,6 +493,21 @@ func (backend *KubernetesKurtosisBackend) DestroyAPIContainers(
 					err,
 					"An error occurred removing service account '%v' for API container in enclave with ID '%v'",
 					serviceAccountName,
+					enclaveId,
+				)
+				continue
+			}
+		}
+
+		// Remove Service
+		if resources.service != nil {
+			serviceName := resources.service.GetName()
+			namespaceName := resources.service.GetNamespace()
+			if err := backend.kubernetesManager.RemoveService(ctx, serviceName, namespaceName); err != nil {
+				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
+					err,
+					"An error occurred removing service '%v' for API container in enclave with ID '%v'",
+					serviceName,
 					enclaveId,
 				)
 				continue

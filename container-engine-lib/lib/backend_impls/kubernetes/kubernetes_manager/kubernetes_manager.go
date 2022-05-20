@@ -109,11 +109,11 @@ func (manager *KubernetesManager) CreateService(ctx context.Context, namespace s
 	return serviceResult, nil
 }
 
-func (manager *KubernetesManager) RemoveService(ctx context.Context, namespace string, name string) error {
+func (manager *KubernetesManager) RemoveService(ctx context.Context, namespace string, serviceName string) error {
 	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
 
-	if err := servicesClient.Delete(ctx, name, removeObjectDeleteOptions); err != nil {
-		return stacktrace.Propagate(err, "Failed to delete service '%s' with delete options '%+v' in namespace '%s'", name, removeObjectDeleteOptions, namespace)
+	if err := servicesClient.Delete(ctx, serviceName, removeObjectDeleteOptions); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete service '%s' with delete options '%+v' in namespace '%s'", serviceName, removeObjectDeleteOptions, namespace)
 	}
 
 	return nil
