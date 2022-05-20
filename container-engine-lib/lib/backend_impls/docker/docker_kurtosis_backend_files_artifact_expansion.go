@@ -113,7 +113,7 @@ func (backend *DockerKurtosisBackend)  DestroyFilesArtifactExpansion(
 	resultErroredFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]error,
 	resultErr error,
 ) {
-	_, matchingFilesArtifactExpansionDockerResources, err := backend.getMatchingFilesArtifactExpansionObjectsAndDockerResources(
+	matchingFilesArtifactExpansionObjectsAndDockerResources, err := backend.getMatchingFilesArtifactExpansionObjectsAndDockerResources(
 		ctx, enclaveId, filters)
 	if err != nil {
 		return nil,nil,stacktrace.Propagate(err, "Failed to get files expansion docker resources in enclave '%v' for filters '%+v'",
@@ -121,10 +121,14 @@ func (backend *DockerKurtosisBackend)  DestroyFilesArtifactExpansion(
 	}
 	successMap := map[files_artifact_expansion.FilesArtifactExpansionGUID]bool{}
 	errorMap := map[files_artifact_expansion.FilesArtifactExpansionGUID]error{}
-	for filesArtifactGUID, dockerResources := range matchingFilesArtifactExpansionDockerResources {
-		volume := dockerResources.volume
-		container := dockerResources.container
+	for filesArtifactGUID, dockerResourcesAndObjects := range matchingFilesArtifactExpansionObjectsAndDockerResources {
+		resources := dockerResourcesAndObjects.dockerResources
 
+		if resources == nil {
+			return nil, nil,
+				stacktrace.NewError("Tried to delete Docker resources but none were given for files artifact expansion guid '%v'", filesArtifactGUID)
+		}
+		container := resources.container
 		// Remove container
 		if container != nil {
 			containerErr := backend.dockerManager.RemoveContainer(ctx, container.GetName())
@@ -134,6 +138,7 @@ func (backend *DockerKurtosisBackend)  DestroyFilesArtifactExpansion(
 			continue
 		}
 
+		volume := resources.volume
 		// Remove volume
 		if volume != nil {
 			volumeErr := backend.dockerManager.RemoveVolume(ctx, volume.Name)
@@ -154,25 +159,23 @@ func (backend *DockerKurtosisBackend) getMatchingFilesArtifactExpansionObjectsAn
 	enclaveId enclave.EnclaveID,
 	filters *files_artifact_expansion.FilesArtifactExpansionFilters,
 ) (
-	map[files_artifact_expansion.FilesArtifactExpansionGUID]*files_artifact_expansion.FilesArtifactExpansion,
-	map[files_artifact_expansion.FilesArtifactExpansionGUID]*filesArtifactExpansionDockerResources,
+	map[files_artifact_expansion.FilesArtifactExpansionGUID]*filesArtifactExpansionObjectsAndDockerResources,
 	error,
 ) {
 	matchingFilesArtifactExpansionDockerResources, err := backend.getMatchingFileArtifactExpansionDockerResources(
 		ctx, enclaveId, filters.GUIDs)
 	if err != nil {
-		return nil,nil,stacktrace.Propagate(err, "Failed to get files expansion docker resources in enclave '%v' for filters '%+v'",
+		return nil,stacktrace.Propagate(err, "Failed to get files expansion docker resources in enclave '%v' for filters '%+v'",
 			enclaveId, filters)
 	}
 	matchingFilesArtifactExpansionObjects, err := getFilesExpansionObjectsFromKubernetesResources(matchingFilesArtifactExpansionDockerResources)
 	if err != nil {
-		return nil,nil,stacktrace.Propagate(err, "Failed to get files expansion objects in enclave '%v' for filters '%+v'",
+		return nil,stacktrace.Propagate(err, "Failed to get files expansion objects in enclave '%v' for filters '%+v'",
 			enclaveId, filters)
 	}
 
 	// Finally, apply the filters
-	resultFilesArtifactExpansionObjects := map[files_artifact_expansion.FilesArtifactExpansionGUID]*files_artifact_expansion.FilesArtifactExpansion{}
-	resultDockerResources := map[files_artifact_expansion.FilesArtifactExpansionGUID]*filesArtifactExpansionDockerResources{}
+	resultFilesArtifactExpansionObjectsAndDockerResources := map[files_artifact_expansion.FilesArtifactExpansionGUID]*filesArtifactExpansionObjectsAndDockerResources{}
 	for filesArtifactExpansionGUID, filesArtifactExpansionObj := range matchingFilesArtifactExpansionObjects {
 		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
 			if _, found := filters.GUIDs[filesArtifactExpansionObj.GetGUID()]; !found {
@@ -186,14 +189,16 @@ func (backend *DockerKurtosisBackend) getMatchingFilesArtifactExpansionObjectsAn
 			}
 		}
 
-		resultFilesArtifactExpansionObjects[filesArtifactExpansionGUID] = filesArtifactExpansionObj
 		if _, found := matchingFilesArtifactExpansionDockerResources[filesArtifactExpansionGUID]; !found {
-			return nil, nil, stacktrace.NewError("Expected to find Docker resources matching files artifact expansion guid '%v' but none was found", filesArtifactExpansionGUID)
+			return nil, stacktrace.NewError("Expected to find Docker resources matching files artifact expansion guid '%v' but none was found", filesArtifactExpansionGUID)
 		}
 
-		resultDockerResources[filesArtifactExpansionGUID] = matchingFilesArtifactExpansionDockerResources[filesArtifactExpansionGUID]
+		resultFilesArtifactExpansionObjectsAndDockerResources[filesArtifactExpansionGUID] = filesArtifactExpansionObjectsAndDockerResources{
+			filesArtifactExpansion: filesArtifactExpansionObj,
+			dockerResources: matchingFilesArtifactExpansionDockerResources[filesArtifactExpansionGUID],
+		}
 	}
-	return resultFilesArtifactExpansionObjects, resultDockerResources, nil
+	return resultFilesArtifactExpansionObjectsAndDockerResources, nil
 }
 
 func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionDockerResources(
