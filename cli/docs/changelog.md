@@ -1,6 +1,6 @@
 # TBD
-### Breaking Changes
-* Fixed bug in YAML spec where yaml type for enclave volume size ended in `Megabytes` not `megabytes`
+### Fixes
+* Reverted a previous breaking change in config
 
 # 0.18.0
 ### Features
