@@ -46,10 +46,10 @@ func GetKubernetesEngineObjectAttributesProvider(engineGuid engine.EngineGUID) K
 }
 
 func newKubernetesEngineObjectAttributesProviderImpl(
-	engineId engine.EngineGUID,
+	engineGuid engine.EngineGUID,
 ) *kubernetesEngineObjectAttributesProviderImpl {
 	return &kubernetesEngineObjectAttributesProviderImpl{
-		engineGuid: engineId,
+		engineGuid: engineGuid,
 	}
 }
 

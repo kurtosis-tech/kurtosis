@@ -152,7 +152,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceSer
 	KubernetesObjectAttributes,
 	error,
 ) {
-	name, err := provider.getCompositeName([]string{
+	name, err := getCompositeKubernetesObjectName([]string{
 		userServicePrefix,
 		string(serviceGUID),
 	})
@@ -187,7 +187,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod
 	id service.ServiceID,
 	privatePorts map[string]*port_spec.PortSpec,
 ) (KubernetesObjectAttributes, error) {
-	name, err := provider.getCompositeName([]string{
+	name, err := getCompositeKubernetesObjectName([]string{
 		userServicePrefix,
 		string(guid),
 	})
