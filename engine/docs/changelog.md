@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Upgrade to container-engine-lib 0.25.0 and core 1.49.5 with various bugfixes for Kubernetes
 
 # 1.21.4
 ### Changes
