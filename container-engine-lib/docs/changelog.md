@@ -2,7 +2,38 @@
 ### Features
 * Added `KubernetesKurtosisBackend.CreateModule`, `KubernetesKurtosisBackend.GetModules`, `KubernetesKurtosisBackend.StopModules` and `KubernetesKurtosisBackend.DestroyModules`
 * Added `ForModulePod` and `ForModuleService` to `KubernetesEnclaveObjectAttributesProvider`
+* Started proto-documentation on README about how the CRUD methods work, and why
+* Switched user service objects to use UUIDs for service GUIDs
+* Implement remaining user service methods:
+    * `GetUserServices`
+    * `StopUserServices`
+    * `DestroyUserServices`
+
+### Fixes
+* Fix a bug in gathering user service Services and Pods
+* Fix a nil pointer exception bug when starting a user service
+* Fixes a bug with setting a user service's Service ports to empty if the user doesn't declare any ports
+
+# 0.25.0
+### Features
 * Built out Kubernetes `GetUserServiceLogs`
+* Built out Kubernetes `RunUserServiceExecCommands`
+
+### Fixes
+* Fixed `grpcProxy` port ID not being acceptable to Kubernetes
+* Fixed a bug where RegisterService was creating Kubernetes Services without ports, which Kubernetes doesn't allow
+
+### Changes
+* The API container objects no longer get prefixed with the enclave name, and all get called `kurtosis-api` (which is fine because they're namespaced)
+
+### Breaking Changes
+* NewKubernetesManager now additionally takes in a Kubernetes configuration object
+    * Users will need to pass in this new configuration (the same as is created when instantiating the Kubernetes clientset)
+* Engine IDs are now of the formal type `EngineGUID` rather than `string`
+    * All instances of engine ID strings need to be replaced with `EngineID` (e.g. all of the engine CRUD methods coming back from KurtosisBackend)
+* The engine object's `GetID` method has now been renamed `GetGUID`
+    * Users should switch to using the new method
+
 
 ### Breaking Changes
 * Added the `enclaveId` argument in `GetModules`, `GetModuleLogs`, `StopModules` and `DestroyModules`

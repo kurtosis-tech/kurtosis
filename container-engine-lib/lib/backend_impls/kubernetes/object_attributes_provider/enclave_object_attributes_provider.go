@@ -15,14 +15,12 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
-	"strings"
-	"time"
 )
 
 const (
 	artifactExpansionObjectTimestampFormat = "2006-01-02T15.04.05.000"
-	userServiceSuffix = "user-service"
-	moduleSuffix = "module"
+	userServicePrefix = "user-service"
+	modulePrefix      = "module"
 )
 
 type KubernetesEnclaveObjectAttributesProvider interface {
@@ -135,7 +133,9 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForApiContainer()
 	return GetKubernetesApiContainerObjectAttributesProvider(enclaveId)
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo service.ServiceGUID) (KubernetesObjectAttributes, error) {
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarContainer(
+	serviceGUIDSidecarAttachedTo service.ServiceGUID,
+) (KubernetesObjectAttributes, error) {
 	panic("implement me")
 }
 
@@ -165,7 +165,10 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceSer
 	KubernetesObjectAttributes,
 	error,
 ) {
-	name, err := provider.getNameForEnclaveObject([]string{userServiceSuffix})
+	name, err := getCompositeKubernetesObjectName([]string{
+		userServicePrefix,
+		string(serviceGUID),
+	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get name for user service service.")
 	}
@@ -197,7 +200,10 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod
 	id service.ServiceID,
 	privatePorts map[string]*port_spec.PortSpec,
 ) (KubernetesObjectAttributes, error) {
-	name, err := provider.getNameForEnclaveObject([]string{userServiceSuffix})
+	name, err := getCompositeKubernetesObjectName([]string{
+		userServicePrefix,
+		string(guid),
+	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get name for user service pod")
 	}
@@ -238,9 +244,12 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForModulePod(
 	KubernetesObjectAttributes,
 	error,
 ) {
-	name, err := provider.getNameForEnclaveObject([]string{moduleSuffix})
+	name, err := getCompositeKubernetesObjectName([]string{
+		modulePrefix,
+		string(guid),
+	})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get name for module pod")
+		return nil, stacktrace.Propagate(err, "Failed to get name for module pod.")
 	}
 
 	serializedPortSpecsAnnotationValue, err := kubernetes_port_spec_serializer.SerializePortSpecs(privatePorts)
@@ -279,7 +288,10 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForModuleService(
 	KubernetesObjectAttributes,
 	error,
 ) {
-	name, err := provider.getNameForEnclaveObject([]string{moduleSuffix})
+	name, err := getCompositeKubernetesObjectName([]string{
+		modulePrefix,
+		string(guid),
+	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get name for module service.")
 	}
@@ -315,23 +327,6 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForModuleService(
 // ====================================================================================================
 //                                      Private Helper Functions
 // ====================================================================================================
-// Gets the name for an enclave object, making sure to put the enclave ID first and join using the standardized separator
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getNameForEnclaveObject(elems []string) (*kubernetes_object_name.KubernetesObjectName, error) {
-	toJoin := []string{
-		provider.enclaveId,
-	}
-	toJoin = append(toJoin, elems...)
-	nameStr := strings.Join(
-		toJoin,
-		objectNameElementSeparator,
-	)
-	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating Kubernetes object name from string '%v'", nameStr)
-	}
-	return name, nil
-}
-
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObject() (map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
 	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.enclaveId)
 	if err != nil {
@@ -375,25 +370,4 @@ func getLabelKeyValuesAsStrings(labels map[*kubernetes_label_key.KubernetesLabel
 		result[key.GetString()] = value.GetString()
 	}
 	return result
-}
-
-// Gets the name for an artifact expansion object (either volume or container)
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getArtifactExpansionObjectName(
-	objectLabel string,
-	forServiceGUID string,
-	artifactId string,
-) (*kubernetes_object_name.KubernetesObjectName, error) {
-	name, err := provider.getNameForEnclaveObject([]string{
-		objectLabel,
-		"for",
-		forServiceGUID,
-		"using",
-		artifactId,
-		"at",
-		time.Now().Format(artifactExpansionObjectTimestampFormat), // We add this timestamp so that if the same artifact for the same service GUID expanded twice, we won't get collisions
-	})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the artifact expansion object name")
-	}
-	return name, nil
 }
