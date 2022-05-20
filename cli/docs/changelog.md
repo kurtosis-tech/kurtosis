@@ -24,6 +24,10 @@
 * Upgraded to container-engine-lib 0.25.0 (and downstream deps), which fix several issues on Kubernetes
 * Fixed a bug where Kubrnetes service updates would sometimes fail
 
+### Breaking Changes
+* Upgraded to engine 1.22.0
+    * Users will need to run `kurtosis engine restart` to use the newest engine
+
 # 0.17.0
 ### Features
 * Added `test_cli_functionality` CircleCI test
