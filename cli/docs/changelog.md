@@ -1,5 +1,16 @@
 # TBD
 
+# 0.18.1
+### Features
+* When the user adds a new config version, unit tests will now force (at compile time) the following:
+    * The user must add a new deserializer
+    * The user must add a new migration from the previous version
+    * The user must update `KurtosisConfig` to use the latest config struct
+
+### Fixes
+* Renamed the `enclave-size-in-Megabytes` -> `enclave-size-in-megabytes` tag on the Kubernetes config
+* Reverted a previous breaking change in config
+
 # 0.18.0
 ### Features
 * `KurtosisClusterConfig` now creates engine container config suppliers
