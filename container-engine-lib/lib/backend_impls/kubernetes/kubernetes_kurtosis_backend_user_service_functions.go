@@ -59,8 +59,8 @@ Implementation notes:
 const (
 	userServiceContainerName = "user-service-container"
 
-	shouldMountVolumesAsReadOnly = false
-	shouldAddTimestampsToLogs = false
+	shouldMountVolumesAsReadOnly         = false
+	shouldAddTimestampsToUserServiceLogs = false
 	// Our user services don't need service accounts
 	userServiceServiceAccountName = ""
 
@@ -392,7 +392,7 @@ func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
 		}
 		serviceNamespaceName := serviceObjectAndResource.kubernetesResources.service.GetNamespace()
 		// Get logs
-		logReadCloser, err := backend.kubernetesManager.GetContainerLogs(ctx, serviceNamespaceName, servicePod.Name, userServiceContainerName, shouldFollowLogs, shouldAddTimestampsToLogs)
+		logReadCloser, err := backend.kubernetesManager.GetContainerLogs(ctx, serviceNamespaceName, servicePod.Name, userServiceContainerName, shouldFollowLogs, shouldAddTimestampsToUserServiceLogs)
 		if err != nil {
 			erredServiceLogs[serviceGuid] = stacktrace.Propagate(err, "Expected to be able to call Kubernetes to get logs for service with GUID '%v', instead a non-nil error was returned", serviceGuid)
 			continue

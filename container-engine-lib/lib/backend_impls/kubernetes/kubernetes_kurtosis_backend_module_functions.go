@@ -30,6 +30,8 @@ const (
 
 	maxWaitForModuleContainerAvailabilityRetries         = 30
 	timeBetweenWaitForModuleContainerAvailabilityRetries = 1 * time.Second
+
+	shouldAddTimestampsToModuleLogs = false
 )
 
 type moduleObjectsAndKubernetesResources struct {
@@ -264,12 +266,40 @@ func (backend *KubernetesKurtosisBackend) GetModuleLogs(
 	filters *module.ModuleFilters,
 	shouldFollowLogs bool,
 ) (
-	successfulModuleLogs map[module.ModuleGUID]io.ReadCloser,
-	erroredModuleGuids map[module.ModuleGUID]error,
-	resultError error,
+	map[module.ModuleGUID]io.ReadCloser,
+	map[module.ModuleGUID]error,
+	error,
 ) {
-	//TODO implement me
-	panic("implement me")
+	moduleObjectsAndResources, err := backend.getMatchingModuleObjectsAndKubernetesResources(ctx, enclaveId, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "Expected to be able to get modules and Kubernetes resources, instead a non nil error was returned")
+	}
+	moduleLogs := map[module.ModuleGUID]io.ReadCloser{}
+	erredModuleLogs := map[module.ModuleGUID]error{}
+	for _, moduleObjectAndResource := range moduleObjectsAndResources {
+		moduleGuid := moduleObjectAndResource.module.GetGUID()
+		modulePod := moduleObjectAndResource.kubernetesResources.pod
+		if modulePod == nil {
+			erredModuleLogs[moduleGuid] = stacktrace.NewError("Expected to find a pod for Kurtosis module with GUID '%v', instead no pod was found", moduleGuid)
+			continue
+		}
+		enclaveNamespaceName := moduleObjectAndResource.kubernetesResources.service.GetNamespace()
+		// Get logs
+		logReadCloser, err := backend.kubernetesManager.GetContainerLogs(
+			ctx,
+			enclaveNamespaceName,
+			modulePod.Name,
+			kurtosisModuleContainerName,
+			shouldFollowLogs,
+			shouldAddTimestampsToModuleLogs,
+		)
+		if err != nil {
+			erredModuleLogs[moduleGuid] = stacktrace.Propagate(err, "Expected to be able to call Kubernetes to get logs for module with GUID '%v', instead a non-nil error was returned", moduleGuid)
+			continue
+		}
+		moduleLogs[moduleGuid] = logReadCloser
+	}
+	return moduleLogs, erredModuleLogs, nil
 }
 
 func (backend *KubernetesKurtosisBackend) StopModules(
