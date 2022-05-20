@@ -1,4 +1,6 @@
 # TBD
+
+# 0.18.0
 ### Features
 * `KurtosisClusterConfig` now creates engine container config suppliers
 * Added a config version migration test
