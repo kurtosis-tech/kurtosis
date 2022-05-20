@@ -66,7 +66,6 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to generate UUID for files artifact expansion.")
 	}
-	filesArtifactExpansion := files_artifact_expansion.NewFilesArtifactExpansion(files_artifact_expansion.FilesArtifactExpansionGUID(filesArtifactExpansionGUIDStr), serviceGuid)
 	filesArtifactExpansionVolumeName, err := backend.createFilesArtifactExpansionVolume(
 		ctx,
 		enclaveId,
@@ -78,22 +77,23 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 	}
 	filesArtifactExpansionFilters := files_artifact_expansion.FilesArtifactExpansionFilters{
 		GUIDs: map[files_artifact_expansion.FilesArtifactExpansionGUID]bool{
-			filesArtifactExpansion.GetGUID(): true,
+			filesArtifactExpansionGUID: true,
 		},
 	}
 	defer func() {
 		_, erroredVolumeNames, err := backend.DestroyFilesArtifactExpansion(ctx, enclaveId, filesArtifactExpansionFilters)
 		if err != nil {
-			logrus.Errorf("Failed to destroy expansion volumes for files artifact expansion '%v' - got error: \n'%v'", filesArtifactExpansion.GetGUID(), err)
+			logrus.Errorf("Failed to destroy expansion volumes for files artifact expansion '%v' - got error: \n%v", filesArtifactExpansionGUID, err)
 		}
 		for name, err := range erroredVolumeNames {
-			logrus.Errorf("Failed to destroy expansion volume '%v' for files artifact expansion '%v' - get error: \n'%v'", name, filesArtifactExpansion.GetGUID(), err)
+			logrus.Errorf("Failed to destroy expansion volume '%v' for files artifact expansion '%v' - get error: \n%v", name, filesArtifactExpansionGUID, err)
 		}
 	}()
 
 	err = backend.runFilesArtifactExpander(
 		ctx,
-		filesArtifactExpansion,
+		filesArtifactExpansionGUID,
+		serviceGuid,
 		enclaveId,
 		filesArtifactExpansionVolumeName,
 		destVolMntDirpathOnExpander,
@@ -102,6 +102,7 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred running files artifact expander for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, enclaveId)
 	}
+	filesArtifactExpansion := files_artifact_expansion.NewFilesArtifactExpansion(filesArtifactExpansionGUID, serviceGuid)
 	return filesArtifactExpansion, nil
 }
 
@@ -287,7 +288,8 @@ func (backend *DockerKurtosisBackend) createFilesArtifactExpansionVolume(
 
 func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 	ctx context.Context,
-	filesArtifactExpansion *files_artifact_expansion.FilesArtifactExpansion,
+	filesArtifactExpansionGUID files_artifact_expansion.FilesArtifactExpansionGUID,
+	serviceGUID service.ServiceGUID,
 	enclaveId enclave.EnclaveID,
 	filesArtifactExpansionVolumeName string,
 	destVolMntDirpathOnExpander string,
@@ -305,7 +307,7 @@ func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 			"Received a request to run a files artifact expander attached to service with GUID '%v' in enclave '%v', but no free IP address provider was " +
 				"defined for this enclave; this likely means that the request is being called where it shouldn't " +
 				"be (i.e. outside the API container)",
-			filesArtifactExpansion.GetServiceGUID(),
+			serviceGUID,
 			enclaveId,
 		)
 	}
@@ -320,9 +322,9 @@ func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 		return stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
 
-	containerAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpanderContainer(filesArtifactExpansion.GetGUID(), filesArtifactExpansion.GetServiceGUID())
+	containerAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpanderContainer(filesArtifactExpansionGUID, serviceGUID)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while trying to get the files artifact expander container attributes for files artifact expansion GUID '%v'", filesArtifactExpansion.GetGUID())
+		return stacktrace.Propagate(err, "An error occurred while trying to get the files artifact expander container attributes for files artifact expansion GUID '%v'", filesArtifactExpansionGUID)
 	}
 	containerName := containerAttrs.GetName().GetString()
 	containerLabels := map[string]string{}
