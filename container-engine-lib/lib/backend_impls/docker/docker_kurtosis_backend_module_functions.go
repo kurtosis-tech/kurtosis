@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -37,26 +38,18 @@ func (backend *DockerKurtosisBackend) CreateModule(
 	image string,
 	enclaveId enclave.EnclaveID,
 	id module.ModuleID,
-	guid module.ModuleGUID,
 	grpcPortNum uint16,
 	envVars map[string]string,
 ) (
 	newModule *module.Module,
 	resultErr error,
 ) {
-	// Verify no module container with the given GUID already exists in the enclave
-	preexistingModuleFilters := &module.ModuleFilters{
-		GUIDs: map[module.ModuleGUID]bool{
-			guid: true,
-		},
-	}
-	preexistingModules, err := backend.GetModules(ctx, enclaveId, preexistingModuleFilters)
+
+	uuidStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting preexisting modules in enclave '%v' with GUID '%v'", enclaveId, guid)
+		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID string for module with ID '%v'", id)
 	}
-	if len(preexistingModules) > 0 {
-		return nil, stacktrace.NewError("Found existing module container(s) in enclave '%v' with GUID '%v'; cannot start a new one", enclaveId, guid)
-	}
+	guid := module.ModuleGUID(string(id) + "-" + uuidStr)
 
 	freeIpAddrProvider, found := backend.enclaveFreeIpProviders[enclaveId]
 	if !found {
