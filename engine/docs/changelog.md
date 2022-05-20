@@ -1,5 +1,9 @@
 # TBD
 
+# 1.21.5
+### Fixes
+* Upgrade to container-engine-lib 0.25.0 and core 1.49.5 with various bugfixes for Kubernetes
+
 # 1.21.4
 ### Changes
 * Replaced `GetLocalKubernetesKurtosisBackend` call with `GetInClusterKubernetesKurtosisBackend` because the engine server runs inside a K8s cluster
