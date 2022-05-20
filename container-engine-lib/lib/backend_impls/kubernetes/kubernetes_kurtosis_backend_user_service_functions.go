@@ -363,8 +363,20 @@ func (backend *KubernetesKurtosisBackend) GetUserServices(
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 ) (successfulUserServices map[service.ServiceGUID]*service.Service, resultError error) {
-	//TODO implement me
-	panic("implement me")
+	allObjectsAndResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' matching filters: %+v", filters)
+	}
+	result := map[service.ServiceGUID]*service.Service{}
+	for guid, serviceObjsAndResources := range allObjectsAndResources {
+		serviceObj := serviceObjsAndResources.service
+		if serviceObj == nil {
+			// Indicates a registration-only service; skip
+			continue
+		}
+		result[guid] = serviceObj
+	}
+	return result, nil
 }
 
 func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
@@ -656,7 +668,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes services matching service GUIDs: %+v", serviceGuids)
 	}
 	for serviceGuidStr, kubernetesServicesForGuid := range matchingKubernetesServices {
-		logrus.Tracef("Found Kubernetes services for GUID '%v': %+v", kubernetesServicesForGuid)
+		logrus.Tracef("Found Kubernetes services for GUID '%v': %+v", serviceGuidStr, kubernetesServicesForGuid)
 		serviceGuid := service.ServiceGUID(serviceGuidStr)
 
 		numServicesForGuid := len(kubernetesServicesForGuid)
@@ -674,6 +686,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 			resultObj = &userServiceKubernetesResources{}
 		}
 		resultObj.service = kubernetesService
+		results[serviceGuid] = resultObj
 	}
 
 	// Get k8s pods
@@ -689,7 +702,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes pods matching service GUIDs: %+v", serviceGuids)
 	}
 	for serviceGuidStr, kubernetesPodsForGuid := range matchingKubernetesPods {
-		logrus.Tracef("Found Kubernetes pods for GUID '%v': %+v", kubernetesPodsForGuid)
+		logrus.Tracef("Found Kubernetes pods for GUID '%v': %+v", serviceGuidStr, kubernetesPodsForGuid)
 		serviceGuid := service.ServiceGUID(serviceGuidStr)
 
 		numPodsForGuid := len(kubernetesPodsForGuid)
@@ -707,6 +720,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 			resultObj = &userServiceKubernetesResources{}
 		}
 		resultObj.pod = kubernetesPod
+		results[serviceGuid] = resultObj
 	}
 
 	return results, nil

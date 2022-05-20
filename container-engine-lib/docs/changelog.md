@@ -2,6 +2,7 @@
 ### Features
 * Started proto-documentation on README about how the CRUD methods work, and why
 * Switched user service objects to use UUIDs for service GUIDs
+* Fix a bug in gathering user service Services and Pods
 
 # 0.25.0
 ### Features
