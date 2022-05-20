@@ -14,7 +14,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
@@ -208,8 +208,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	// TODO This needs a redo - at minimum it should be by files_artifact_expansion_volume_guid
-	filesArtifactVolumeMountDirpaths map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string,
+	filesArtifactVolumeMountDirpaths map[files_artifact_expansion.FilesArtifactExpansionGUID]string,
 ) (
 	newUserService *service.Service,
 	resultErr error,
@@ -259,7 +258,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	podAnnotationsStrs := getStringMapFromAnnotationMap(podAttributes.GetAnnotations())
 
 	// TODO TODO THIS WON'T WORK AND IS BROKEN FOR NOW
-	temporaryHackyFilesArtifactMountDirpaths := map[files_artifact_expansion_volume.FilesArtifactExpansionGUID]string{}
+	temporaryHackyFilesArtifactMountDirpaths := map[files_artifact_expansion.FilesArtifactExpansionGUID]string{}
 
 	podVolumes, containerMounts, err := backend.getUserServiceVolumeInfoFromFilesArtifactMountpoints(
 		ctx,
@@ -846,7 +845,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtif
 	namespaceName string,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
-	filesArtifactMountpoints map[files_artifact_expansion_volume.FilesArtifactExpansionGUID]string,
+	filesArtifactMountpoints map[files_artifact_expansion.FilesArtifactExpansionGUID]string,
 ) (
 	resultPodVolumes []apiv1.Volume,
 	resultContainerVolumeMountsOnPod []apiv1.VolumeMount,
@@ -874,7 +873,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtif
 	}
 
 	// Index PVCs by files artifact expansion GUID
-	persistentVolumeClaimsByExpansionGuid := map[files_artifact_expansion_volume.FilesArtifactExpansionGUID]*apiv1.PersistentVolumeClaim{}
+	persistentVolumeClaimsByExpansionGuid := map[files_artifact_expansion.FilesArtifactExpansionGUID]*apiv1.PersistentVolumeClaim{}
 	for _, claim := range persistentVolumeClaims {
 		expansionGuidStr, found := claim.Labels[label_key_consts.GUIDKubernetesLabelKey.GetString()]
 		if !found {
@@ -883,7 +882,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtif
 				label_key_consts.GUIDKubernetesLabelKey.GetString(),
 			)
 		}
-		expansionGuid := files_artifact_expansion_volume.FilesArtifactExpansionGUID(expansionGuidStr)
+		expansionGuid := files_artifact_expansion.FilesArtifactExpansionGUID(expansionGuidStr)
 		persistentVolumeClaimsByExpansionGuid[expansionGuid] = &claim
 	}
 
