@@ -1,6 +1,6 @@
 # TBD
 ### Features
-* Support Kubernetes module CRUD functions
+* Support Kubernetes module CRUD & log functions
 
 ### Fixes
 * Fix bugs with service updates in Kubernetes

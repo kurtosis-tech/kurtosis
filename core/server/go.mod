@@ -9,7 +9,7 @@ replace (
 
 require (
 	github.com/google/uuid v1.3.0
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220520162523-f6cdf3de0e1b
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220520170436-c1b29432bb40
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e // indirect
 	github.com/kurtosis-tech/kurtosis-core/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0
