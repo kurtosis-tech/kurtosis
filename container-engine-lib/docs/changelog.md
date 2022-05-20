@@ -3,6 +3,10 @@
 * Built out Kubernetes `GetUserServiceLogs`
 * Built out Kubernetes `RunUserServiceExecCommands`
 
+### Fixes
+* Fixed `grpcProxy` port ID not being acceptable to Kubernetes
+* Fixed a bug where RegisterService was creating Kubernetes Services without ports, which Kubernetes doesn't allow
+
 ### Breaking Changes
 * NewKubernetesManager now additionally takes in a kubernetes restclient configuration
 
