@@ -4,9 +4,8 @@ import (
 	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/config_version"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/overrides_objects/v0"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/overrides_objects/v1"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/overrides_objects/v2"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/overrides_deserializers"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/overrides_migrators"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -174,39 +173,14 @@ func (configStore *kurtosisConfigStore) readConfigFileBytes() ([]byte, error) {
 		1. Migrate overrides sequentially from their own version up to the latest version
 		2. Overlay migrated overrides on top of the "default" latest version YAML struct
  */
-func migrateConfigOverridesToLatest(configFileBytes []byte) (*v1.KurtosisConfigV1, error) {
+func migrateConfigOverridesToLatest(configFileBytes []byte) (interface{}, error) {
 	versionDetectingConfig := &versionDetectingKurtosisConfig{
 		ConfigVersion: config_version.ConfigVersion_v0,
 	}
 	if err := yaml.Unmarshal(configFileBytes, versionDetectingConfig); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(configFileBytes))
 	}
-
 	configVersionOnDisk := versionDetectingConfig.ConfigVersion
-
-	var uncastedConfig interface{}
-	switch configVersionOnDisk {
-	case config_version.ConfigVersion_v0:
-		overrides := &v0.KurtosisConfigV0{}
-		if err := yaml.Unmarshal(configFileBytes, overrides); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v' using config %v", string(configFileBytes), configVersionOnDisk.String())
-		}
-		uncastedConfig = overrides
-	case config_version.ConfigVersion_v1:
-		overrides := &v1.KurtosisConfigV1{}
-		if err := yaml.Unmarshal(configFileBytes, overrides); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v' using config %v", string(configFileBytes), configVersionOnDisk.String())
-		}
-		uncastedConfig = overrides
-	case config_version.ConfigVersion_v2:
-		overrides := &v2.KurtosisConfigV2{}
-		if err := yaml.Unmarshal(configFileBytes, overrides); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v' using config %v", string(configFileBytes), configVersionOnDisk.String())
-		}
-		uncastedConfig = overrides
-	default:
-		return nil, stacktrace.NewError("Read invalid configuration version number %d from Kurtosis configuration file", configVersionOnDisk)
-	}
 
 	// Dynamically get latest config version
 	var latestConfigVersion config_version.ConfigVersion
@@ -215,37 +189,51 @@ func migrateConfigOverridesToLatest(configFileBytes []byte) (*v1.KurtosisConfigV
 			latestConfigVersion = configVersion
 		}
 	}
+	if configVersionOnDisk > latestConfigVersion {
+		return nil, stacktrace.NewError(
+			"The config version '%v' declared in your config file is newer than the latest config that version this " +
+				"CLI knows how to process (%v); this likely indicates that the config was copied from a newer CLI " +
+				"version and you need to upgrade your CLI to use this config",
+			configVersionOnDisk,
+			latestConfigVersion,
+		)
+	}
 
-	// PASS OVERRIDES STRUCT THROUGH A SERIES OF MIGRATIONS
+	deserializer, found := overrides_deserializers.AllConfigOverridesDeserializers[configVersionOnDisk]
+	if !found {
+		return nil, stacktrace.NewError(
+			"No config deserializer was found for Kurtosis config version '%v'; this is a bug in Kurtosis",
+			configVersionOnDisk,
+		)
+	}
+
+	uncastedConfig, err := deserializer(configFileBytes)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred deserializing the config file using deserializer v%v",
+			configVersionOnDisk,
+		)
+	}
+
+	// Pass struct containing the deserialized-from-disk config overrides through a series of migrations until we have
+	// the latest version
 	for versionToUpgradeFrom := configVersionOnDisk; versionToUpgradeFrom < latestConfigVersion; versionToUpgradeFrom++ {
-		switch versionToUpgradeFrom {
-		case config_version.ConfigVersion_v0:
-			newConfig, err := migrateV0ToV1(uncastedConfig)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred migrating from config version '%v'", versionToUpgradeFrom)
-			}
-			uncastedConfig = newConfig
-		case config_version.ConfigVersion_v1:
-			newConfig, err := migrateV1ToV2(uncastedConfig)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred migrating from config version '%v'", versionToUpgradeFrom)
-			}
-			uncastedConfig = newConfig
-		default:
+		migrator, found := overrides_migrators.AllConfigOverridesMigrators[versionToUpgradeFrom]
+		if !found {
+			// Should never happen because we enforce completeness of the migrators map via unit test
 			return nil, stacktrace.NewError(
-				"Needed to migrate from config version '%v' to the next highest version but " +
-					 "no migration was defined for this version; this is a bug in Kurtosis",
+				"Needed to migrate from config version '%v' to the next version, but no migrator for this version " +
+					"was defined; this is a bug in Kurtosis",
 				versionToUpgradeFrom,
 			)
 		}
-
+		candidateUncastedConfig, err := migrator(uncastedConfig)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred migrating from config version '%v' to the next version", versionToUpgradeFrom)
+		}
+		uncastedConfig = candidateUncastedConfig
 	}
-
-	// cast back to expected latest version
-	resultConfig, ok := uncastedConfig.(*v1.KurtosisConfigV1)
-	if !ok {
-		return nil, stacktrace.NewError("Failed to cast configuration '%+v' to expected configuration version %d.", uncastedConfig, latestConfigVersion)
-	}
-	return resultConfig, nil
+	return uncastedConfig, nil
 }
 

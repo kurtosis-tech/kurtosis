@@ -16,10 +16,13 @@ func TestOverridesMigratorsCompletenessTest(t *testing.T) {
 	}
 
 	for _, configVersion := range config_version.ConfigVersionValues() {
-		_, found := allConfigOverridesMigrators[configVersion]
+		if configVersion == latestConfigVersion {
+			continue
+		}
+		_, found := AllConfigOverridesMigrators[configVersion]
 		require.True(t, found, "No config overrides migrator found for config version '%v'; you'll need to add one", configVersion.String())
 	}
-	numMigrators := len(allConfigOverridesMigrators)
+	numMigrators := len(AllConfigOverridesMigrators)
 	numConfigVersions := len(config_version.ConfigVersionValues())
 	require.Equal(
 		t,

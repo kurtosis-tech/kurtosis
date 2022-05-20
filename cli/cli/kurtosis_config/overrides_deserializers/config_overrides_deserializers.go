@@ -19,7 +19,7 @@ type configOverridesDeserializer func(configFileBytes []byte) (interface{}, erro
 // We keep these sorted in REVERSE chronological order so you don't need to scroll
 //  to the bottom each time
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>> INSTRUCTIONS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-var allConfigOverridesDeserializers = map[config_version.ConfigVersion]configOverridesDeserializer{
+var AllConfigOverridesDeserializers = map[config_version.ConfigVersion]configOverridesDeserializer{
 	config_version.ConfigVersion_v2: func(configFileBytes []byte) (interface{}, error) {
 		overrides := &v2.KurtosisConfigV2{}
 		if err := yaml.Unmarshal(configFileBytes, overrides); err != nil {

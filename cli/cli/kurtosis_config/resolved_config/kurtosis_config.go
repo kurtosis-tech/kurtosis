@@ -2,7 +2,7 @@ package resolved_config
 
 import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/config_version"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/overrides_objects/v1"
+	v2 "github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/overrides_objects/v2"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -31,14 +31,21 @@ const (
  */
 type KurtosisConfig struct {
 	// Only necessary to store for when we serialize overrides
-	overrides      *v1.KurtosisConfigV1
+	overrides      *v2.KurtosisConfigV2
 
 	shouldSendMetrics bool
 	clusters map[string]*KurtosisClusterConfig
 }
 
-// Constructs a new KurtosisConfig that uses the given overrides
-func NewKurtosisConfigFromOverrides(overrides *v1.KurtosisConfigV1) (*KurtosisConfig, error) {
+// NewKurtosisConfigFromOverrides constructs a new KurtosisConfig that uses the given overrides
+// We leave the overrides as an interface which "quarantines" all versioned config structs into this
+// package
+func NewKurtosisConfigFromOverrides(uncastedOverrides interface{}) (*KurtosisConfig, error) {
+	overrides, err := castUncastedOverrides(uncastedOverrides)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred casting the uncasted config overrides")
+	}
+
 	config := &KurtosisConfig{
 		overrides: overrides,
 	}
@@ -63,7 +70,7 @@ func NewKurtosisConfigFromOverrides(overrides *v1.KurtosisConfigV1) (*KurtosisCo
 
 	allClusterOverrides := getDefaultKurtosisClusterConfigOverrides()
 	if overrides.KurtosisClusters != nil {
-		allClusterOverrides = *overrides.KurtosisClusters
+		allClusterOverrides = overrides.KurtosisClusters
 	}
 
 	if len(allClusterOverrides) == 0 {
@@ -88,7 +95,7 @@ func NewKurtosisConfigFromOverrides(overrides *v1.KurtosisConfigV1) (*KurtosisCo
 
 // NOTE: We probably want to remove this function entirely
 func NewKurtosisConfigFromRequiredFields(didUserAcceptSendingMetrics bool) (*KurtosisConfig, error) {
-	overrides := &v1.KurtosisConfigV1{
+	overrides := &v2.KurtosisConfigV2{
 		ShouldSendMetrics: &didUserAcceptSendingMetrics,
 	}
 	result, err := NewKurtosisConfigFromOverrides(overrides)
@@ -106,28 +113,37 @@ func (kurtosisConfig *KurtosisConfig) GetKurtosisClusters() map[string]*Kurtosis
 	return kurtosisConfig.clusters
 }
 
-func (kurtosisConfig *KurtosisConfig) GetOverrides() *v1.KurtosisConfigV1 {
+func (kurtosisConfig *KurtosisConfig) GetOverrides() *v2.KurtosisConfigV2 {
 	return kurtosisConfig.overrides
 }
 
 // ====================================================================================================
 //                                      Private Helpers
 // ====================================================================================================
-func getDefaultKurtosisClusterConfigOverrides() map[string]*v1.KurtosisClusterConfigV1 {
+// This is a separate helper function so that we can use it to ensure that the
+func castUncastedOverrides(uncastedOverrides interface{}) (*v2.KurtosisConfigV2, error) {
+	castedOverrides, ok := uncastedOverrides.(*v2.KurtosisConfigV2)
+	if !ok {
+		return nil, stacktrace.NewError("An error occurred casting the uncasted config overrides to the right version")
+	}
+	return castedOverrides, nil
+}
+
+func getDefaultKurtosisClusterConfigOverrides() map[string]*v2.KurtosisClusterConfigV2 {
 	dockerClusterType := KurtosisClusterType_Docker.String()
 	minikubeClusterType := KurtosisClusterType_Kubernetes.String()
 	minikubeKubernetesClusterName := defaultMinikubeClusterKubernetesClusterNameStr
 	minikubeStorageClass := defaultMinikubeStorageClass
 	minikubeEnclaveDataVolSizeMB := defaultMinikubeEnclaveDataVolumeMB
 
-	result := map[string]*v1.KurtosisClusterConfigV1{
+	result := map[string]*v2.KurtosisClusterConfigV2{
 		DefaultDockerClusterName: {
 			Type:   &dockerClusterType,
 			Config: nil, // Must be nil for Docker
 		},
 		defaultMinikubeClusterName: {
 			Type:   &minikubeClusterType,
-			Config: &v1.KubernetesClusterConfigV1{
+			Config: &v2.KubernetesClusterConfigV2{
 				KubernetesClusterName:  &minikubeKubernetesClusterName,
 				StorageClass:           &minikubeStorageClass,
 				EnclaveSizeInMegabytes: &minikubeEnclaveDataVolSizeMB,

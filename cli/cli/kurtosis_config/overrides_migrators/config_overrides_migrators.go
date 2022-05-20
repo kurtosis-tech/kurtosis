@@ -22,7 +22,7 @@ type configOverridesMigrator = func(uncastedOldConfig interface{}) (interface{},
 // We keep these sorted in REVERSE chronological order so you don't need to scroll
 //  to the bottom each time
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>> INSTRUCTIONS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-var allConfigOverridesMigrators = map[config_version.ConfigVersion]configOverridesMigrator{
+var AllConfigOverridesMigrators = map[config_version.ConfigVersion]configOverridesMigrator{
 	config_version.ConfigVersion_v1: migrateFromV1,
 	config_version.ConfigVersion_v0: migrateFromV0,
 }

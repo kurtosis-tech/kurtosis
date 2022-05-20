@@ -5,7 +5,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/backend_creator"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/overrides_objects/v1"
+	v2 "github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/overrides_objects/v2"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/stacktrace"
 )
@@ -24,7 +24,7 @@ type KurtosisClusterConfig struct {
 	engineBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 }
 
-func NewKurtosisClusterConfigFromOverrides(overrides *v1.KurtosisClusterConfigV1) (*KurtosisClusterConfig, error) {
+func NewKurtosisClusterConfigFromOverrides(overrides *v2.KurtosisClusterConfigV2) (*KurtosisClusterConfig, error) {
 	if overrides.Type == nil {
 		return nil, stacktrace.NewError("Kurtosis cluster must have a defined type")
 	}
@@ -66,7 +66,7 @@ func (clusterConfig *KurtosisClusterConfig) GetEngineBackendConfigSupplier() (en
 // ====================================================================================================
 //                                      Private Helpers
 // ====================================================================================================
-func getSuppliers(clusterType KurtosisClusterType, kubernetesConfig *v1.KubernetesClusterConfigV1) (
+func getSuppliers(clusterType KurtosisClusterType, kubernetesConfig *v2.KubernetesClusterConfigV2) (
 	kurtosisBackendSupplier,
 	engine_server_launcher.KurtosisBackendConfigSupplier,
 	error,
