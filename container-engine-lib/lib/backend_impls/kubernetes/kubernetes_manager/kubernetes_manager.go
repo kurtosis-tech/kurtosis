@@ -38,9 +38,12 @@ const (
 	waitForPersistentVolumeBoundTimeout = 60 * time.Second
 	waitForPersistentVolumeBoundRetriesDelayMilliSeconds = 500
 
+	apiv1Prefix = "api/v1"
+
 	podWaitForAvailabilityTimeout = 15 * time.Second
 	podWaitForAvailabilityTimeBetweenPolls = 500 * time.Millisecond
 
+	resourceDeletionTimeoutInSeconds = 30
 	containerStatusLineBulletPoint = " - "
 
 	// Kubernetes unfortunately doesn't have a good way to get the exit code out, so we have to parse it out of a string
@@ -51,6 +54,7 @@ const (
 	shouldAllocatedStderrOnPodExec = true
 	shouldAllocateTtyOnPodExec = false
 
+	objectNameMetadataField = "metadata.name"
 	successExecCommandExitCode = 0
 
 	// This is the owner string we'll use when updating fields
@@ -357,6 +361,11 @@ func (manager *KubernetesManager) RemoveNamespace(ctx context.Context, name stri
 
 	if err := namespaceClient.Delete(ctx, name, removeObjectDeleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete namespace with name '%s' with delete options '%+v'", name, removeObjectDeleteOptions)
+	}
+
+	// Make the Delete call synchronous
+	if err := manager.waitForNamespaceDeletion(ctx, name); err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to wait for namespace '%v' to be deleted from Kubernetes, instead a non-nil error was returned", name)
 	}
 
 	return nil
@@ -734,6 +743,11 @@ func (manager *KubernetesManager) RemovePod(ctx context.Context, namespace strin
 		return stacktrace.Propagate(err, "Failed to delete pod with name '%s' with delete options '%+v'", name, removeObjectDeleteOptions)
 	}
 
+	// Make the Delete call synchronous
+	if err := manager.waitForPodDeletion(ctx, namespace, name); err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to wait for pod '%v' in namespace '%v' to be deleted from Kubernetes, instead a non-nil error was returned", name, namespace)
+	}
+
 	return nil
 }
 
@@ -1005,6 +1019,77 @@ func renderContainerStatuses(containerStatuses []apiv1.ContainerStatus, prefixSt
 	return containerStatusStrs
 }
 
+func (manager *KubernetesManager) waitForNamespaceDeletion(ctx context.Context, objectName string) error {
+	// Add timeout field to listoptions
+	listOptions := getWatchListOptionsForObject(objectName)
+
+	namespaceWatchFunc := func(options metav1.ListOptions) (apiwatch.Interface, error) {
+		// Return watcher with 10m timeout
+		return manager.kubernetesClientSet.CoreV1().Namespaces().Watch(ctx, listOptions)
+	}
+
+	retryWatcher, err := watch.NewRetryWatcher(resourceVersionString, &cache.ListWatch{WatchFunc: namespaceWatchFunc})
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to create a retry watcher for resource deletion, instead a non-nil error was returned")
+	}
+	defer retryWatcher.Stop()
+
+	if err := waitWithRetriesForResourceDeletion(ctx, retryWatcher); err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to wait with '%v' second timeout for Namespace deletion, instead a non-nil error was returned", resourceDeletionTimeoutInSeconds)
+	}
+	return nil
+}
+
+func (manager *KubernetesManager) waitForPodDeletion(ctx context.Context, namespace string, podName string) error {
+	// Add timeout field to listoptions
+	listOptions := getWatchListOptionsForObject(podName)
+
+	namespaceWatchFunc := func(options metav1.ListOptions) (apiwatch.Interface, error) {
+		// Return watcher with 10m timeout
+		return manager.kubernetesClientSet.CoreV1().Pods(namespace).Watch(ctx, listOptions)
+	}
+
+	retryWatcher, err := watch.NewRetryWatcher(resourceVersionString, &cache.ListWatch{WatchFunc: namespaceWatchFunc})
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to create a retry watcher for resource deletion, instead a non-nil error was returned")
+	}
+	defer retryWatcher.Stop()
+
+	if err := waitWithRetriesForResourceDeletion(ctx, retryWatcher); err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to wait with '%v' second timeout for Pod deletion, instead a non-nil error was returned", resourceDeletionTimeoutInSeconds)
+	}
+	return nil
+}
+
+
+func getWatchListOptionsForObject(resourceListOptions string) metav1.ListOptions {
+	timeoutInSeconds := int64(resourceDeletionTimeoutInSeconds)
+	return metav1.ListOptions{
+		TimeoutSeconds: &timeoutInSeconds,
+		FieldSelector: getFieldSelectorForObjectName(resourceListOptions),
+	}
+}
+
+func waitWithRetriesForResourceDeletion(ctx context.Context, retryWatcher *watch.RetryWatcher) error {
+	for {
+		select {
+		case resourceEvent := <-retryWatcher.ResultChan():
+			if resourceEvent.Type == apiwatch.Deleted {
+				return nil
+			}
+		case <-retryWatcher.Done():
+			return stacktrace.NewError("Expected to be able to wait for resource deletion, instead the watcher's result channel was closed before we could verify resource deletion.")
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}
+
+func getFieldSelectorForObjectName(objectName string) string {
+	return fields.SelectorFromSet(map[string]string {
+		objectNameMetadataField : objectName,
+	}).String()
+}
 
 // Kubernetes doesn't seem to have a nice API for getting back the exit code of a command (though this seems strange??),
 // so we have to parse it out of a status message
