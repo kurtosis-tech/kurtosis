@@ -136,9 +136,9 @@ func (manager *KubernetesManager) RemoveService(ctx context.Context, namespace s
 		return stacktrace.Propagate(err, "Failed to delete service '%s' with delete options '%+v' in namespace '%s'", serviceName, removeObjectDeleteOptions, namespace)
 	}
 
-	// Make the Delete call synchronous
+	// Wait for resource to be deleted from Kubernetes
 	if err := waitWithRetriesForResourceDeletion(ctx, retryWatcher); err != nil {
-		return stacktrace.Propagate(err, "Expected to be able to wait for Pod deletion, instead a non-nil error was returned", resourceDeletionTimeoutInSeconds)
+		return stacktrace.Propagate(err, "Expected to be able to wait for service deletion, instead a non-nil error was returned")
 	}
 
 	return nil
@@ -232,13 +232,21 @@ func (manager *KubernetesManager) CreateStorageClass(ctx context.Context, name s
 }
 
 func (manager *KubernetesManager) RemoveStorageClass(ctx context.Context, name string) error {
+	retryWatcher, err := manager.getStorageClassWatcher(ctx, name)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to get a watcher for Kubernetes storage class '%v', instead a non-nil error was returned", name)
+	}
+	defer retryWatcher.Stop()
 	storageClassClient := manager.kubernetesClientSet.StorageV1().StorageClasses()
 
-	err := storageClassClient.Delete(ctx, name, removeObjectDeleteOptions)
+	err = storageClassClient.Delete(ctx, name, removeObjectDeleteOptions)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to delete storage class with name '%s' with delete options '%+v'", name, removeObjectDeleteOptions)
 	}
-
+	// Wait for resource to be deleted from Kubernetes
+	if err := waitWithRetriesForResourceDeletion(ctx, retryWatcher); err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to wait for storage class deletion, instead a non-nil error was returned")
+	}
 	return nil
 }
 
@@ -296,12 +304,20 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Contex
 }
 
 func (manager *KubernetesManager) RemovePersistentVolumeClaim(ctx context.Context, namespace string, persistentVolumeClaimName string) error {
+	retryWatcher, err := manager.getPersistentVolumeClaimWatcher(ctx, namespace, persistentVolumeClaimName)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to get a watcher for Kubernetes persistent volume claim '%v', instead a non-nil error was returned", persistentVolumeClaimName)
+	}
+	defer retryWatcher.Stop()
+
 	volumeClaimsClient := manager.kubernetesClientSet.CoreV1().PersistentVolumeClaims(namespace)
 
 	if err := volumeClaimsClient.Delete(ctx, persistentVolumeClaimName, removeObjectDeleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete persistent volume claim with name '%s' with delete options '%+v' in namespace '%s'", persistentVolumeClaimName, removeObjectDeleteOptions, namespace)
 	}
-
+	if err := waitWithRetriesForResourceDeletion(ctx, retryWatcher); err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to wait for persistent volume claim deletion, instead a non-nil error was returned")
+	}
 	return nil
 }
 
@@ -378,7 +394,7 @@ func (manager *KubernetesManager) RemoveNamespace(ctx context.Context, name stri
 		return stacktrace.Propagate(err, "Failed to delete namespace with name '%s' with delete options '%+v'", name, removeObjectDeleteOptions)
 	}
 
-	// Make the Delete call synchronous
+	// Wait for resource to be deleted from Kubernetes
 	if err := waitWithRetriesForResourceDeletion(ctx, retryWatcher); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to wait for namespace '%v' to be deleted from Kubernetes, instead a non-nil error was returned", name)
 	}
@@ -457,7 +473,7 @@ func (manager *KubernetesManager) RemoveDaemonSet(ctx context.Context, name stri
 	if err := daemonSetClient.Delete(ctx, name, removeObjectDeleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete daemon set with name '%s' with delete options '%+v'", name, removeObjectDeleteOptions)
 	}
-	// Make the Delete call synchronous
+	// Wait for resource to be deleted from Kubernetes
 	if err := waitWithRetriesForResourceDeletion(ctx, retryWatcher); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to wait for daemon set '%v' to be deleted from Kubernetes, instead a non-nil error was returned", name)
 	}
@@ -523,7 +539,7 @@ func (manager *KubernetesManager) RemoveServiceAccount(ctx context.Context, name
 	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete service account with name '%s' in namespace '%v'", name, namespace)
 	}
-	// Make the Delete call synchronous
+	// Wait for resource to be deleted from Kubernetes
 	if err := waitWithRetriesForResourceDeletion(ctx, retryWatcher); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to wait for service account '%v' to be deleted from Kubernetes, instead a non-nil error was returned", name)
 	}
@@ -579,7 +595,7 @@ func (manager *KubernetesManager) RemoveRole(ctx context.Context, name string, n
 	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete role with name '%s' in namespace '%v'", name, namespace)
 	}
-	// Make the Delete call synchronous
+	// Wait for resource to be deleted from Kubernetes
 	if err := waitWithRetriesForResourceDeletion(ctx, retryWatcher); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to wait for service account '%v' to be deleted from Kubernetes, instead a non-nil error was returned", name)
 	}
@@ -626,10 +642,19 @@ func (manager *KubernetesManager) GetRoleBindingsByLabels(ctx context.Context, n
 }
 
 func (manager *KubernetesManager) RemoveRoleBindings(ctx context.Context, name string, namespace string) error {
+	retryWatcher, err := manager.getServiceAccountRetryWatcher(ctx, namespace, name)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to get a watcher for Kubernetes role binding '%v', instead a non-nil error was returned", name)
+	}
+	defer retryWatcher.Stop()
 	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
 
 	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete role bindings with name '%s' in namespace '%v'", name, namespace)
+	}
+	// Wait for resource to be deleted from Kubernetes
+	if err := waitWithRetriesForResourceDeletion(ctx, retryWatcher); err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to wait for role binding '%v' to be deleted from Kubernetes, instead a non-nil error was returned", name)
 	}
 
 	return nil
@@ -674,12 +699,21 @@ func (manager *KubernetesManager) GetClusterRolesByLabels(ctx context.Context, c
 }
 
 func (manager *KubernetesManager) RemoveClusterRole(ctx context.Context, name string) error {
+	retryWatcher, err := manager.getClusterRoleRetryWatcher(ctx, name)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to get a watcher for Kubernetes cluster role '%v', instead a non-nil error was returned", name)
+	}
+	defer retryWatcher.Stop()
+
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
 
 	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete cluster role with name '%s'", name)
 	}
-
+	// Wait for resource to be deleted from Kubernetes
+	if err := waitWithRetriesForResourceDeletion(ctx, retryWatcher); err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to wait for cluster role '%v' to be deleted from Kubernetes, instead a non-nil error was returned", name)
+	}
 	return nil
 }
 
@@ -723,12 +757,20 @@ func (manager *KubernetesManager) GetClusterRoleBindingsByLabels(ctx context.Con
 }
 
 func (manager *KubernetesManager) RemoveClusterRoleBindings(ctx context.Context, name string) error {
+	retryWatcher, err := manager.getClusterRoleBindingRetryWatcher(ctx, name)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to get a watcher for Kubernetes cluster role binding '%v', instead a non-nil error was returned", name)
+	}
+	defer retryWatcher.Stop()
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
 
 	if err := client.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete cluster role binding with name '%s'", name)
 	}
-
+	// Wait for resource to be deleted from Kubernetes
+	if err := waitWithRetriesForResourceDeletion(ctx, retryWatcher); err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to wait for cluster role binding '%v' to be deleted from Kubernetes, instead a non-nil error was returned", name)
+	}
 	return nil
 }
 
@@ -789,7 +831,7 @@ func (manager *KubernetesManager) RemovePod(ctx context.Context, namespace strin
 		return stacktrace.Propagate(err, "Failed to delete pod with name '%s' with delete options '%+v'", name, removeObjectDeleteOptions)
 	}
 
-	// Make the Delete call synchronous
+	// Wait for resource to be deleted from Kubernetes
 	if err := waitWithRetriesForResourceDeletion(ctx, retryWatcher); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to wait with '%v' second timeout for Pod deletion, instead a non-nil error was returned", resourceDeletionTimeoutInSeconds)
 	}
@@ -1151,6 +1193,16 @@ func (manager *KubernetesManager) getClusterRoleRetryWatcher(ctx context.Context
 	retryWatcher, err := getRetryWatcherForWatchFunc(watchFunc)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to create a retry watcher for cluster role deletion, instead a non-nil error was returned")
+	}
+	return retryWatcher, nil
+}
+func (manager *KubernetesManager) getClusterRoleBindingRetryWatcher(ctx context.Context, name string) (*watch.RetryWatcher ,error) {
+	watchFunc := func(options metav1.ListOptions) (apiwatch.Interface, error) {
+		return manager.kubernetesClientSet.RbacV1().ClusterRoleBindings().Watch(ctx, getWatchListOptionsForObject(name))
+	}
+	retryWatcher, err := getRetryWatcherForWatchFunc(watchFunc)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to create a retry watcher for cluster role binding deletion, instead a non-nil error was returned")
 	}
 	return retryWatcher, nil
 }
