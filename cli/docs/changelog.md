@@ -1,4 +1,9 @@
 # TBD
+### Features
+* Added extra guards to make it easier for Kurtosis devs to add new configuration versions
+
+### Fixes
+* Renamed the `enclave-size-in-Megabytes` -> `enclave-size-in-megabytes` tag on the Kubernetes config
 
 # 0.18.0
 ### Features
