@@ -7,6 +7,7 @@
 
 ### Fixes
 * Renamed the `enclave-size-in-Megabytes` -> `enclave-size-in-megabytes` tag on the Kubernetes config
+* Reverted a previous breaking change in config
 
 # 0.18.0
 ### Features
