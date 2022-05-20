@@ -154,6 +154,7 @@ func (backend *DockerKurtosisBackend)  DestroyFilesArtifactExpansion(
 
 // ====================== PRIVATE HELPERS =============================
 
+// STEP 3: DO ACTUAL FILTERING AND DESTROY THE KUBERNETES STUFF
 func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionObjsAndDockerResources(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
@@ -166,6 +167,7 @@ func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionObjsAndDoc
 	panic("TODO IMPLEMENT ME")
 }
 
+// STEP 1: GATHER KUBERNETES RESOURCES
 func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionDockerResources(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
@@ -174,14 +176,13 @@ func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionDockerReso
 	panic("TODO IMPLEMENT ME")
 }
 
+// STEP 2: REMODEL KUBERNETES RESOURCE REPRESENTATION INTO KURTOSIS REPRESENTATION
 func (backend *DockerKurtosisBackend) getFileArtifactExpansionObjsFromDockerResources(
 	enclaveId enclave.EnclaveID,
 	allDockerResources map[files_artifact_expansion.FilesArtifactExpansionGUID]*filesArtifactExpansionDockerResources,
 ) (map[files_artifact_expansion.FilesArtifactExpansionGUID]*files_artifact_expansion.FilesArtifactExpansion, error){
 	panic("TODO IMPLEMENT ME")
 }
-
-
 
 func newFilesArtifactExpansionGUID(filesArtifactId service.FilesArtifactID, serviceGuid service.ServiceGUID) files_artifact_expansion.FilesArtifactExpansionGUID {
 	serviceRegistrationGuidStr := string(serviceGuid)
