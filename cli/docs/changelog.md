@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Reverted a previous breaking change in config
 
 # 0.18.0
 ### Features
