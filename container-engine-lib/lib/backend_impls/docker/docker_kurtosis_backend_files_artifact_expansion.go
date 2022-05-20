@@ -391,6 +391,15 @@ func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker container to expand the file artifact '%v' into the volume '%v'", filesArtifactFilepathRelativeToEnclaveDataVolumeRoot, filesArtifactExpansionVolumeName)
 	}
+	shouldKillContainer := true
+	defer func() {
+		if shouldKillContainer {
+			containerTeardownErr := backend.dockerManager.RemoveContainer(ctx, containerId)
+			if containerTeardownErr != nil {
+				logrus.Errorf("Failed to tear down container ID '%v', you will need to manually remove it!", containerId)
+			}
+		}
+	}()
 
 	exitCode, err := backend.dockerManager.WaitForExit(ctx, containerId)
 	if err != nil {
@@ -403,6 +412,7 @@ func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 			expanderContainerSuccessExitCode,
 			exitCode)
 	}
+	shouldKillContainer = false
 	return nil
 }
 
