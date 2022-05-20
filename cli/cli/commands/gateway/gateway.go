@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
@@ -28,12 +29,14 @@ func init() {
 }
 
 func run(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
+
 	clusterConfig, err := kurtosis_config_getter.GetKurtosisClusterConfig()
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to get Kurtosis cluster configuration, instead a non-nil error was returned")
 	}
 
-	kurtosisBackend, err := clusterConfig.GetKurtosisBackend()
+	kurtosisBackend, err := clusterConfig.GetKurtosisBackend(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to get a Kurtosis backend connected to the cluster, instead a non-nil error was returned")
 	}

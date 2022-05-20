@@ -61,7 +61,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred parsing log level string '%v'", logLevelStr)
 	}
 
-	engineManager, err := engine_manager.NewEngineManager()
+	engineManager, err := engine_manager.NewEngineManager(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager")
 	}
