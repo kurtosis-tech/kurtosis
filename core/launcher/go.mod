@@ -1,6 +1,6 @@
 module github.com/kurtosis-tech/kurtosis-core/launcher
 
-go 1.15
+go 1.17
 
 require (
 	github.com/google/martian v2.1.0+incompatible

@@ -2,6 +2,9 @@
 ### Features
 * Support Kubernetes module CRUD & log functions
 
+### Changes
+* The server & launcher now use Go 1.17, though the API continues to use Go 1.15
+
 ### Fixes
 * Fix bugs with service updates in Kubernetes
 
