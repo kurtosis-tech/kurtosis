@@ -86,7 +86,7 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 			logrus.Errorf("Failed to destroy expansion volumes for files artifact expansion '%v' - got error: \n%v", filesArtifactExpansionGUID, err)
 		}
 		for name, err := range erroredVolumeNames {
-			logrus.Errorf("Failed to destroy expansion volume '%v' for files artifact expansion '%v' - get error: \n%v", name, filesArtifactExpansionGUID, err)
+			logrus.Errorf("Failed to destroy expansion volume '%v' for files artifact expansion '%v' - got error: \n%v", name, filesArtifactExpansionGUID, err)
 		}
 	}()
 
