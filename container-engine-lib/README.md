@@ -6,6 +6,10 @@ TODO documentation on:
 * What KurtosisBackend's purpose is
 * The CRUD methods, and how they're necessarily backend-agnostic
 * Kurtosis objects can be composed of multiple resources
+* Explanation of prefiltering on Kubernetes resources (get rid of it)
+* Explanation of the XXXXXFilters:
+    * They're DISJUNCTIVE within a filter layer, but CONJUNCTIVE across the layers
+    * This actually makes the filters simpler, because it makes the filters purely subtractive: each XXXXFilters can only reduce the set of matching objects, and each layer within the XXXXFilters only reduces the set of matching objects
 * We use the `XXXXX(Kubernetes|Docker)Resources` to represent the various ones
 * There are "canonical" Kubernetes/Docker resources that define a given Kurtosis object
     * Created first, destroyed last
