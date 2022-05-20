@@ -1,5 +1,18 @@
 # TBD
 
+# 1.50.0
+### Features
+* Support Kubernetes module CRUD & log functions
+
+### Changes
+* The server & launcher now use Go 1.17, though the API continues to use Go 1.15
+
+### Fixes
+* Fix bugs with service updates in Kubernetes
+
+### Breaking Changes
+* The launcher now requires Go 1.17
+
 # 1.49.5
 ### Fixes
 * Upgrade to container-engine-lib 0.25.0, which fixes several bugs

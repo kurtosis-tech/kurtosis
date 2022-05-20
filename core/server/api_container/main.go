@@ -228,7 +228,7 @@ func createServiceNetworkAndModuleStore(
 		apiContainerSocketInsideNetwork,
 	)
 
-	moduleStore := module_store.NewModuleStore(kurtosisBackend, moduleLauncher)
+	moduleStore := module_store.NewModuleStore(enclaveId, kurtosisBackend, moduleLauncher)
 
 	return serviceNetwork, moduleStore, nil
 }
