@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"net"
 	"path"
 )
 
@@ -73,17 +74,31 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, enclaveId)
 	}
 	defer func() {
-		filesArtifactExpansionFilters := files_artifact_expansion.FilesArtifactExpansionFilters{
-			GUIDs: map[files_artifact_expansion.FilesArtifactExpansionGUID]bool{
-				filesArtifactExpansionGUID: true,
-			},
-		}
-		_, erroredVolumeNames, err := backend.DestroyFilesArtifactExpansion(ctx, enclaveId, &filesArtifactExpansionFilters)
+		err = backend.dockerManager.RemoveVolume(ctx, filesArtifactExpansionVolumeName)
 		if err != nil {
-			logrus.Errorf("Failed to destroy expansion volumes for files artifact expansion '%v' - got error: \n%v", filesArtifactExpansionGUID, err)
+			logrus.Errorf("Failed to destroy expansion volume '%v' for files artifact expansion '%v' - got error: \n%v", filesArtifactExpansionVolumeName, filesArtifactExpansionGUID, err)
 		}
-		for name, err := range erroredVolumeNames {
-			logrus.Errorf("Failed to destroy expansion volume '%v' for files artifact expansion '%v' - got error: \n%v", name, filesArtifactExpansionGUID, err)
+	}()
+
+	freeIpAddrProvider, found := backend.enclaveFreeIpProviders[enclaveId]
+	if !found {
+		return nil, stacktrace.NewError(
+			"Received a request to run a files artifact expander attached to service with GUID '%v' in enclave '%v', but no free IP address provider was " +
+				"defined for this enclave; this likely means that the request is being called where it shouldn't " +
+				"be (i.e. outside the API container)",
+			serviceGuid,
+			enclaveId,
+		)
+	}
+
+	ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting a free IP address")
+	}
+	shouldReleaseIp := true
+	defer func() {
+		if shouldReleaseIp {
+			freeIpAddrProvider.ReleaseIpAddr(ipAddr)
 		}
 	}()
 
@@ -94,12 +109,14 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 		enclaveId,
 		filesArtifactExpansionVolumeName,
 		destVolMntDirpathOnExpander,
+		ipAddr,
 		filesArtifactFilepathRelativeToEnclaveDatadirRoot,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred running files artifact expander for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, enclaveId)
 	}
 	filesArtifactExpansion := files_artifact_expansion.NewFilesArtifactExpansion(filesArtifactExpansionGUID, serviceGuid)
+	shouldReleaseIp = false
 	return filesArtifactExpansion, nil
 }
 
@@ -307,19 +324,6 @@ func (backend *DockerKurtosisBackend) createFilesArtifactExpansionVolume(
 		volumeLabels[labelKey.GetString()] = labelValue.GetString()
 	}
 
-	foundVolumes, err := backend.dockerManager.GetVolumesByName(ctx, volumeName)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting Docker volumes by name '%v'", volumeName)
-	}
-	if len(foundVolumes) > 0 {
-		//We iterate to check if it is exactly the same name
-		for _, foundVolumeName := range foundVolumes {
-			if volumeName == foundVolumeName {
-				return "", stacktrace.NewError("Volume can not be created because a volume with name '%v' already exists.", volumeName)
-			}
-		}
-	}
-
 	if err := backend.dockerManager.CreateVolume(ctx, volumeName, volumeLabels); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred creating the destination volume '%v' with labels '%+v'", volumeName, volumeLabels)
 	}
@@ -333,23 +337,13 @@ func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 	enclaveId enclave.EnclaveID,
 	filesArtifactExpansionVolumeName string,
 	destVolMntDirpathOnExpander string,
+	ipAddr net.IP,
 	filesArtifactFilepathRelativeToEnclaveDataVolumeRoot string,
 ) error {
 
 	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
-	}
-
-	freeIpAddrProvider, found := backend.enclaveFreeIpProviders[enclaveId]
-	if !found {
-		return stacktrace.NewError(
-			"Received a request to run a files artifact expander attached to service with GUID '%v' in enclave '%v', but no free IP address provider was " +
-				"defined for this enclave; this likely means that the request is being called where it shouldn't " +
-				"be (i.e. outside the API container)",
-			serviceGUID,
-			enclaveId,
-		)
 	}
 
 	enclaveDataVolumeName, err := backend.getEnclaveDataVolumeByEnclaveId(ctx, enclaveId)
@@ -380,17 +374,6 @@ func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 	artifactFilepath := path.Join(enclaveDataVolumeDirpathOnExpanderContainer, filesArtifactFilepathRelativeToEnclaveDataVolumeRoot)
 	containerCmd := getExtractionCommand(artifactFilepath, destVolMntDirpathOnExpander)
 
-	ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting a free IP address")
-	}
-	shouldReleaseIp := true
-	defer func() {
-		if shouldReleaseIp {
-			freeIpAddrProvider.ReleaseIpAddr(ipAddr)
-		}
-	}()
-
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		dockerImage,
 		containerName,
@@ -420,7 +403,6 @@ func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 			expanderContainerSuccessExitCode,
 			exitCode)
 	}
-	shouldReleaseIp = true
 	return nil
 }
 

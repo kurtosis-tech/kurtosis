@@ -86,6 +86,7 @@ type DockerKurtosisBackend struct {
 	//  will be cleaner. HOWEVER, the reason it's not done this way as of 2022-05-12 is because the CLI still uses some
 	//  KurtosisBackend functionality that it shouldn't (e.g. GetUserServiceLogs). This should all flow through the API
 	//  container API instaed.
+	// This map is set exactly once, upon creation of the DockerKubernetesBackend, and never modified afterwards. Therefore, it doesn't need to be protected with a mutex (because the FreeIPProviders are themselves threadsafe)
 	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker
 
 	// TODO Migrate this to an on-disk database, so that the API container can be shut down & restarted!
