@@ -193,7 +193,7 @@ func (backend *DockerKurtosisBackend) getMatchingFilesArtifactExpansionObjectsAn
 			return nil, stacktrace.NewError("Expected to find Docker resources matching files artifact expansion guid '%v' but none was found", filesArtifactExpansionGUID)
 		}
 
-		resultFilesArtifactExpansionObjectsAndDockerResources[filesArtifactExpansionGUID] = filesArtifactExpansionObjectsAndDockerResources{
+		resultFilesArtifactExpansionObjectsAndDockerResources[filesArtifactExpansionGUID] = &filesArtifactExpansionObjectsAndDockerResources{
 			filesArtifactExpansion: filesArtifactExpansionObj,
 			dockerResources: matchingFilesArtifactExpansionDockerResources[filesArtifactExpansionGUID],
 		}
