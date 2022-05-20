@@ -2,13 +2,29 @@
 ### Breaking Changes
 * Unified file expansion volume and expanders into one interface with two associated methods (instead of two interfaces and four methods)
 
+# 0.26.1
+
+# 0.26.0
 ### Features
+* Added `KubernetesKurtosisBackend.GetModuleLogs`
+* Added the functionality to wait until the GRPC port is available before returning when creating `Engines`, `API containers` and `Modules`  
+* Added `KubernetesKurtosisBackend.CreateModule`, `KubernetesKurtosisBackend.GetModules`, `KubernetesKurtosisBackend.StopModules` and `KubernetesKurtosisBackend.DestroyModules`
+* Added `ForModulePod` and `ForModuleService` to `KubernetesEnclaveObjectAttributesProvider`
 * Started proto-documentation on README about how the CRUD methods work, and why
 * Switched user service objects to use UUIDs for service GUIDs
 * Implement remaining user service methods:
     * `GetUserServices`
     * `StopUserServices`
     * `DestroyUserServices`
+    
+### Breaking Changes
+* Removed `ModuleGUID` argument in `KurtosisBackend.CreateModule`
+  * Users will need to remove the argument on each call, the module's GUID will be automatically created in the backend for them
+
+### Changes
+* Upgraded Kubernetes client SDK from v0.20 to v0.24
+* Upgraded this library to depend on Go 1.17 (required for latest Kubernetes SDK)
+* Switched the `UpdateService` implementation to use server-side apply
 
 ### Fixes
 * Fix a bug in gathering user service Services and Pods
@@ -35,6 +51,10 @@
 * The engine object's `GetID` method has now been renamed `GetGUID`
     * Users should switch to using the new method
 
+
+### Breaking Changes
+* Added the `enclaveId` argument in `GetModules`, `GetModuleLogs`, `StopModules` and `DestroyModules`
+  * Users should add this new argument on each call
 
 # 0.24.0
 ### Fixes

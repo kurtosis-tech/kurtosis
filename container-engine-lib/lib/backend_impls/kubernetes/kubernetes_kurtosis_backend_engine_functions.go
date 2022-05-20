@@ -18,11 +18,16 @@ import (
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"net"
+	"time"
 )
 
 const (
 	kurtosisEngineContainerName = "kurtosis-engine-container"
+
+	maxWaitForEngineContainerAvailabilityRetries         = 30
+	timeBetweenWaitForEngineContainerAvailabilityRetries = 1 * time.Second
 )
 
 // Any of these values being nil indicates that the resource doesn't exist
@@ -200,6 +205,32 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 		return nil, stacktrace.NewError("Successfully converted the new engine's Kubernetes resources to an engine object, but the resulting map didn't have an entry for engine GUID '%v'", engineGuid)
 	}
 
+	if err := waitForPortAvailabilityUsingNetstat(
+		backend.kubernetesManager,
+		namespaceName,
+		enginePod.Name,
+		kurtosisEngineContainerName,
+		privateGrpcPortSpec,
+		maxWaitForEngineContainerAvailabilityRetries,
+		timeBetweenWaitForEngineContainerAvailabilityRetries,
+	); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine grpc port '%v/%v' to become available", privateGrpcPortSpec.GetProtocol(), privateGrpcPortSpec.GetNumber())
+	}
+
+	// TODO UNCOMMENT THIS ONCE WE HAVE GRPC-PROXY WIRED UP!!
+	/*
+	if err := waitForPortAvailabilityUsingNetstat(
+		backend.kubernetesManager,
+		namespaceName,
+		enginePod.Name,
+		kurtosisEngineContainerName,
+		privateGrpcProxyPortSpec,
+		maxWaitForEngineContainerAvailabilityRetries,
+		timeBetweenWaitForEngineContainerAvailabilityRetries,
+	); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine grpc proxy port '%v/%v' to become available", privateGrpcProxyPortSpec.GetProtocol(), privateGrpcProxyPortSpec.GetNumber())
+	}*/
+
 	shouldRemoveNamespace = false
 	shouldRemoveServiceAccount = false
 	shouldRemoveClusterRole = false
@@ -256,8 +287,12 @@ func (backend *KubernetesKurtosisBackend) StopEngines(
 
 		kubernetesService := resources.service
 		if kubernetesService != nil {
-			kubernetesService.Spec.Selector = nil
-			if err := backend.kubernetesManager.UpdateService(ctx, namespaceName, kubernetesService); err != nil {
+			serviceName := kubernetesService.Name
+			updateConfigurator := func(updatesToApply *applyconfigurationsv1.ServiceApplyConfiguration) {
+				specUpdates := applyconfigurationsv1.ServiceSpec().WithSelector(nil)
+				updatesToApply.WithSpec(specUpdates)
+			}
+			if _, err := backend.kubernetesManager.UpdateService(ctx, namespaceName, serviceName, updateConfigurator); err != nil {
 				erroredEngineGuids[engineGuid] = stacktrace.Propagate(
 					err,
 					"An error occurred removing selectors from service '%v' in namespace '%v' for engine '%v'",
