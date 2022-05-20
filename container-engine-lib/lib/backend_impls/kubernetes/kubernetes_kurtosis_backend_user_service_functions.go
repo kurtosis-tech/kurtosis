@@ -352,7 +352,12 @@ func (backend *KubernetesKurtosisBackend) GetUserServices(
 ) (successfulUserServices map[service.ServiceGUID]*service.Service, resultError error) {
 	allObjectsAndResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' matching filters: %+v", filters)
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting user services in enclave '%v' matching filters: %+v",
+			enclaveId,
+			filters,
+		)
 	}
 	result := map[service.ServiceGUID]*service.Service{}
 	for guid, serviceObjsAndResources := range allObjectsAndResources {
@@ -515,7 +520,7 @@ func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, 
 
 	allObjectsAndResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' matching filters: %+v", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' matching filters: %+v", enclaveId, filters)
 	}
 
 	successfulGuids := map[service.ServiceGUID]bool{}
@@ -544,6 +549,7 @@ func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, 
 				err,
 				"An error occurred updating service '%v' in namespace '%v' to reflect that it's no longer running",
 				kubernetesService.Name,
+				namespaceName,
 			)
 			continue
 		}
@@ -561,7 +567,7 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 
 	allObjectsAndResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' matching filters: %+v", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' matching filters: %+v", enclaveId, filters)
 	}
 
 	successfulGuids := map[service.ServiceGUID]bool{}
