@@ -20,10 +20,14 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"net"
+	"time"
 )
 
 const (
 	kurtosisEngineContainerName = "kurtosis-engine-container"
+
+	maxWaitForEngineContainerAvailabilityRetries         = 30
+	timeBetweenWaitForEngineContainerAvailabilityRetries = 1 * time.Second
 )
 
 // Any of these values being nil indicates that the resource doesn't exist
@@ -200,6 +204,32 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	if !found {
 		return nil, stacktrace.NewError("Successfully converted the new engine's Kubernetes resources to an engine object, but the resulting map didn't have an entry for engine GUID '%v'", engineGuid)
 	}
+
+	if err := waitForPortAvailabilityUsingNetstat(
+		backend.kubernetesManager,
+		namespaceName,
+		enginePod.Name,
+		kurtosisEngineContainerName,
+		privateGrpcPortSpec,
+		maxWaitForEngineContainerAvailabilityRetries,
+		timeBetweenWaitForEngineContainerAvailabilityRetries,
+	); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine grpc port '%v/%v' to become available", privateGrpcPortSpec.GetProtocol(), privateGrpcPortSpec.GetNumber())
+	}
+
+	// TODO UNCOMMENT THIS ONCE WE HAVE GRPC-PROXY WIRED UP!!
+	/*
+	if err := waitForPortAvailabilityUsingNetstat(
+		backend.kubernetesManager,
+		namespaceName,
+		enginePod.Name,
+		kurtosisEngineContainerName,
+		privateGrpcProxyPortSpec,
+		maxWaitForEngineContainerAvailabilityRetries,
+		timeBetweenWaitForEngineContainerAvailabilityRetries,
+	); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine grpc proxy port '%v/%v' to become available", privateGrpcProxyPortSpec.GetProtocol(), privateGrpcProxyPortSpec.GetNumber())
+	}*/
 
 	shouldRemoveNamespace = false
 	shouldRemoveServiceAccount = false

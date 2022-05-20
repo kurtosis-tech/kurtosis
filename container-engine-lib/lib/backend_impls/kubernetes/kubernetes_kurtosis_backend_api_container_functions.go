@@ -15,6 +15,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"net"
+	"time"
 )
 
 const (
@@ -28,6 +29,9 @@ const (
 	// The Kubernetes FieldPath string specifying the pod's namespace, which we'll use via the Kubernetes downward API
 	// to give the API container an environment variable with its own namespace
 	kubernetesResourceOwnNamespaceFieldPath = "metadata.namespace"
+
+	maxWaitForApiContainerContainerAvailabilityRetries         = 30
+	timeBetweenWaitForApiContainerContainerAvailabilityRetries = 1 * time.Second
 )
 
 // Any of these values being nil indicates that the resource doesn't exist
@@ -341,6 +345,30 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	resultApiContainer, found := apiContainerObjsById[enclaveId]
 	if !found {
 		return nil, stacktrace.NewError("Successfully converted the new API container's Kubernetes resources to an API container object, but the resulting map didn't have an entry for enclave ID '%v'", enclaveId)
+	}
+
+	if err := waitForPortAvailabilityUsingNetstat(
+		backend.kubernetesManager,
+		enclaveNamespaceName,
+		apiContainerPodName,
+		kurtosisApiContainerContainerName,
+		privateGrpcPortSpec,
+		maxWaitForApiContainerContainerAvailabilityRetries,
+		timeBetweenWaitForApiContainerContainerAvailabilityRetries,
+	); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container grpc port '%v/%v' to become available", privateGrpcPortSpec.GetProtocol(), privateGrpcPortSpec.GetNumber())
+	}
+
+	if err := waitForPortAvailabilityUsingNetstat(
+		backend.kubernetesManager,
+		enclaveNamespaceName,
+		apiContainerPodName,
+		kurtosisApiContainerContainerName,
+		privateGrpcProxyPortSpec,
+		maxWaitForApiContainerContainerAvailabilityRetries,
+		timeBetweenWaitForApiContainerContainerAvailabilityRetries,
+	); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container grpc proxy port '%v/%v' to become available", privateGrpcProxyPortSpec.GetProtocol(), privateGrpcProxyPortSpec.GetNumber())
 	}
 
 	shouldRemoveRoleBinding = false
