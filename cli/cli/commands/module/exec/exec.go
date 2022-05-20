@@ -257,16 +257,13 @@ func run(cmd *cobra.Command, args []string) error {
 	moduleGUID := module.ModuleGUID(moduleGUIDStr)
 
 	moduleFilters := &module.ModuleFilters{
-		EnclaveIDs: map[enclave.EnclaveID]bool{
-			enclaveId: true,
-		},
 		GUIDs: map[module.ModuleGUID]bool{
 			moduleGUID: true,
 		},
 	}
 
 	//TODO replace with API Container call
-	successfulModuleLogs, erroredModuleGuids, err := kurtosisBackend.GetModuleLogs(ctx, moduleFilters, shouldFollowModuleLogs)
+	successfulModuleLogs, erroredModuleGuids, err := kurtosisBackend.GetModuleLogs(ctx, enclaveId, moduleFilters, shouldFollowModuleLogs)
 	if err != nil {
 		//We do not return because logs aren't mandatory, if it fails we continue executing the module without logs
 		logrus.Errorf("The module containers logs won't be printed. An error occurred getting logs for module with ID '%v': \n%v", moduleId, err)

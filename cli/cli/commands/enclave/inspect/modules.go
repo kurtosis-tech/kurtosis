@@ -19,18 +19,14 @@ const (
 )
 
 func printModules(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveId enclave.EnclaveID) error {
-
 	moduleFilters := &module.ModuleFilters{
-		EnclaveIDs: map[enclave.EnclaveID]bool{
-			enclaveId: true,
-		},
 		Statuses: map[container_status.ContainerStatus]bool{
 			container_status.ContainerStatus_Stopped: true,
 			container_status.ContainerStatus_Running: true,
 		},
 	}
 
-	modules, err := kurtosisBackend.GetModules(ctx, moduleFilters)
+	modules, err := kurtosisBackend.GetModules(ctx, enclaveId, moduleFilters)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting modules using filters '%+v'", moduleFilters)
 	}

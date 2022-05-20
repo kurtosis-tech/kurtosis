@@ -12,6 +12,7 @@
 * Added `kurtosis cluster get|set|ls`, which define which backend cluster (defined in config) that the CLI will access for all engine-related commands.
 * Added 'gateway' command to open a local gateway to kurtosis objects running in Kubernetes
 * Added calls to remote API container in API Container gateway
+* Added Kubernetes module CRUD & logs features
 
 ### Changes
 * The `enclave-size-in-Megabytes` field in Kubernetes cluster field now is optional, and defaults to 10 MB
@@ -23,6 +24,11 @@
 * Upgraded to container-engine-lib 0.25.0 (and downstream deps), which fix several issues on Kubernetes
 * Bumped the number of retry polls in the module tests up to 20 to try and remediate a timeout while waiting for the datastore service to come up that we were seeing
 * Fixed the config getting serialized strangely
+* Fixed a bug where Kubrnetes service updates would sometimes fail
+
+### Breaking Changes
+* Upgraded to engine 1.22.0
+    * Users will need to run `kurtosis engine restart` to use the newest engine
 
 # 0.17.0
 ### Features
