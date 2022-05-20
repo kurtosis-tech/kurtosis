@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strconv"
@@ -17,9 +18,6 @@ import (
 )
 
 const (
-	guidElementSeparator = "-"
-	// TODO Change this to base 16 to be more compact??
-	guidBase = 10
 	// Dirpath on the artifact expander container where the destination volume containing expanded files will be mounted
 	destVolMntDirpathOnExpander = "/dest"
 
@@ -54,7 +52,11 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 	filesArtifactId service.FilesArtifactID,
 	filesArtifactFilepathRelativeToEnclaveDatadirRoot string) (*files_artifact_expansion.FilesArtifactExpansion, error) {
 
-	filesArtifactExpansion := files_artifact_expansion.NewFilesArtifactExpansion(newFilesArtifactExpansionGUID(filesArtifactId, serviceGuid), serviceGuid)
+	filesArtifactExpansionGUIDStr, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to generate UUID for files artifact expansion.")
+	}
+	filesArtifactExpansion := files_artifact_expansion.NewFilesArtifactExpansion(files_artifact_expansion.FilesArtifactExpansionGUID(filesArtifactExpansionGUIDStr), serviceGuid)
 	filesArtifactExpansionVolumeName, err := backend.createFilesArtifactExpansionVolume(
 		ctx,
 		enclaveId,
@@ -222,6 +224,8 @@ func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionDockerReso
 }
 
 func newFilesArtifactExpansionGUID(filesArtifactId service.FilesArtifactID, serviceGuid service.ServiceGUID) files_artifact_expansion.FilesArtifactExpansionGUID {
+
+	uuid_generator.GenerateUUIDString()
 	serviceRegistrationGuidStr := string(serviceGuid)
 	filesArtifactIdStr := string(filesArtifactId)
 	suffix := getCurrentTimeStr()
