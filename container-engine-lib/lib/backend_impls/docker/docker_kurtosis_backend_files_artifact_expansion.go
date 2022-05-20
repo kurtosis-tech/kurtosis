@@ -75,12 +75,12 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, enclaveId)
 	}
-	filesArtifactExpansionFilters := files_artifact_expansion.FilesArtifactExpansionFilters{
-		GUIDs: map[files_artifact_expansion.FilesArtifactExpansionGUID]bool{
-			filesArtifactExpansionGUID: true,
-		},
-	}
 	defer func() {
+		filesArtifactExpansionFilters := files_artifact_expansion.FilesArtifactExpansionFilters{
+			GUIDs: map[files_artifact_expansion.FilesArtifactExpansionGUID]bool{
+				filesArtifactExpansionGUID: true,
+			},
+		}
 		_, erroredVolumeNames, err := backend.DestroyFilesArtifactExpansion(ctx, enclaveId, filesArtifactExpansionFilters)
 		if err != nil {
 			logrus.Errorf("Failed to destroy expansion volumes for files artifact expansion '%v' - got error: \n%v", filesArtifactExpansionGUID, err)
@@ -112,8 +112,8 @@ func (backend *DockerKurtosisBackend)  DestroyFilesArtifactExpansion(
 	enclaveId enclave.EnclaveID,
 	filters  files_artifact_expansion.FilesArtifactExpansionFilters,
 )(
-	successfulFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]bool,
-	erroredFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]error,
+	resultSuccessfulFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]bool,
+	resultErroredFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]error,
 	resultErr error,
 ) {
 	matchingFilesArtifactExpansionDockerResources, err := backend.getMatchingFileArtifactExpansionDockerResources(
