@@ -126,6 +126,8 @@ func (manager *KubernetesManager) UpdateService(ctx context.Context, namespace s
 		return stacktrace.Propagate(err, "Failed to update service '%v' in namespace '%v'", service.Name, namespace)
 	}
 
+
+
 	return nil
 }
 

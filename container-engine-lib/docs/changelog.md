@@ -7,6 +7,9 @@
     * `StopUserServices`
     * `DestroyUserServices`
 
+### Changes
+* Upgraded Kubernetes client SDK from v0.20 to v0.24
+
 ### Fixes
 * Fix a bug in gathering user service Services and Pods
 * Fix a nil pointer exception bug when starting a user service
