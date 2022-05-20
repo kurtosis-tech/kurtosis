@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -42,16 +43,16 @@ type KurtosisBackend interface {
 		error,
 	)
 
-	// Gets engines using the given filters, returning a map of matched engines identified by their engine ID
-	GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[string]*engine.Engine, error)
+	// Gets engines using the given filters, returning a map of matched engines identified by their engine GUID
+	GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[engine.EngineGUID]*engine.Engine, error)
 
 	// Stops the engines matching the given filters
 	StopEngines(
 		ctx context.Context,
 		filters *engine.EngineFilters,
 	) (
-		successfulEngineIds map[string]bool, // "set" of engine IDs that were successfully stopped
-		erroredEngineIds map[string]error, // "set" of engine IDs that errored when stopping, with the error
+		successfulEngineGuids map[engine.EngineGUID]bool, // "set" of engine GUIDs that were successfully stopped
+		erroredEngineGuids map[engine.EngineGUID]error, // "set" of engine GUIDs that errored when stopping, with the error
 		resultErr error, // Represents an error with the function itself, rather than the engines
 	)
 
@@ -60,8 +61,8 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *engine.EngineFilters,
 	) (
-		successfulEngineIds map[string]bool, // "set" of engine IDs that were successfully destroyed
-		erroredEngineIds map[string]error, // "set" of engine IDs that errored when destroying, with the error
+		successfulEngineGuids map[engine.EngineGUID]bool, // "set" of engine GUIDs that were successfully destroyed
+		erroredEngineGuids map[engine.EngineGUID]error, // "set" of engine GUIDs that errored when destroying, with the error
 		resultErr error, // Represents an error with the function itself, rather than the engines
 	)
 
@@ -248,14 +249,13 @@ type KurtosisBackend interface {
 	StartUserService(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		guid service.ServiceGUID,
+		serviceGuid service.ServiceGUID,
 		containerImageName string,
 		privatePorts map[string]*port_spec.PortSpec,
 		entrypointArgs []string,
 		cmdArgs []string,
 		envVars map[string]string,
-		// volume_name -> mountpoint_on_container
-		filesArtifactVolumeMountDirpaths map[string]string,
+		filesArtifactVolumeMountDirpaths map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string,
 	) (
 		*service.Service,
 		error,

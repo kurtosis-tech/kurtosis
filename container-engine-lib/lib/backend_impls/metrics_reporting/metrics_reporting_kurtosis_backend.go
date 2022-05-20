@@ -50,7 +50,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(ctx context.Context
 }
 
 // Gets point-in-time data about engines matching the given filters
-func (backend *MetricsReportingKurtosisBackend) GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[string]*engine.Engine, error) {
+func (backend *MetricsReportingKurtosisBackend) GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[engine.EngineGUID]*engine.Engine, error) {
 	engines, err := backend.underlying.GetEngines(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting engines using filters: %+v", filters)
@@ -59,8 +59,8 @@ func (backend *MetricsReportingKurtosisBackend) GetEngines(ctx context.Context, 
 }
 
 func (backend *MetricsReportingKurtosisBackend) StopEngines(ctx context.Context, filters *engine.EngineFilters) (
-	successfulIds map[string]bool,
-	failedIds map[string]error,
+	successfulIds map[engine.EngineGUID]bool,
+	failedIds map[engine.EngineGUID]error,
 	resultErr error,
 ) {
 	successes, failures, err := backend.underlying.StopEngines(ctx, filters)
@@ -71,8 +71,8 @@ func (backend *MetricsReportingKurtosisBackend) StopEngines(ctx context.Context,
 }
 
 func (backend *MetricsReportingKurtosisBackend) DestroyEngines(ctx context.Context, filters *engine.EngineFilters) (
-	successfulIds map[string]bool,
-	failedIds map[string]error,
+	successfulIds map[engine.EngineGUID]bool,
+	failedIds map[engine.EngineGUID]error,
 	resultErr error,
 ) {
 	successes, failures, err := backend.underlying.DestroyEngines(ctx, filters)
@@ -318,7 +318,7 @@ func (backend *MetricsReportingKurtosisBackend) StartUserService(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	filesArtifactMountDirpaths map[string]string,
+	filesArtifactVolumeMountDirpaths map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string,
 ) (
 	newUserService *service.Service,
 	resultErr error,
@@ -332,7 +332,7 @@ func (backend *MetricsReportingKurtosisBackend) StartUserService(
 		entrypointArgs,
 		cmdArgs,
 		envVars,
-		filesArtifactMountDirpaths,
+		filesArtifactVolumeMountDirpaths,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -346,7 +346,7 @@ func (backend *MetricsReportingKurtosisBackend) StartUserService(
 			entrypointArgs,
 			cmdArgs,
 			envVars,
-			filesArtifactMountDirpaths,
+			filesArtifactVolumeMountDirpaths,
 		)
 	}
 	return userService, nil

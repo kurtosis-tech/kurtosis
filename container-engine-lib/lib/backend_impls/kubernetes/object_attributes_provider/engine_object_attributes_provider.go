@@ -7,12 +7,12 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_object_name"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/port_spec_serializer"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
-	"strings"
 )
 
 const (
@@ -38,36 +38,30 @@ type KubernetesEngineObjectAttributesProvider interface {
 
 // Private so it can't be instantiated
 type kubernetesEngineObjectAttributesProviderImpl struct {
-	engineId string
+	engineGuid engine.EngineGUID
 }
 
-func GetKubernetesEngineObjectAttributesProvider(enclaveId string) KubernetesEngineObjectAttributesProvider {
-	return newKubernetesEngineObjectAttributesProviderImpl(enclaveId)
+func GetKubernetesEngineObjectAttributesProvider(engineGuid engine.EngineGUID) KubernetesEngineObjectAttributesProvider {
+	return newKubernetesEngineObjectAttributesProviderImpl(engineGuid)
 }
 
 func newKubernetesEngineObjectAttributesProviderImpl(
-	engineId string,
+	engineGuid engine.EngineGUID,
 ) *kubernetesEngineObjectAttributesProviderImpl {
 	return &kubernetesEngineObjectAttributesProviderImpl{
-		engineId: engineId,
+		engineGuid: engineGuid,
 	}
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEnginePod() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(podNameSuffix)
-	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
+	name, err := provider.getEngineObjectName()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a pod name for the engine pod")
 	}
 
-	idLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.engineId)
+	labels, err := provider.getEngineObjectLabels()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the engine ID Kubernetes label from string '%v'", provider.engineId)
-	}
-
-	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue,
-		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes labels")
 	}
 
 	// No custom annotations for engine pod
@@ -75,7 +69,8 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEnginePod() (Ku
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name '%s' and labels '%+v', and annotations '%+v'", name, labels, annotations)
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
+			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
 	return objectAttributes, nil
@@ -86,27 +81,21 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 	grpcProxyPortId string,
 	grpcProxyPortSpec *port_spec.PortSpec,
 ) (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(serviceNameSuffix)
-	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
+	name, err := provider.getEngineObjectName()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a name for our engine service")
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name for the engine service")
 	}
 
-	idLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.engineId)
+	labels, err := provider.getEngineObjectLabels()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the engine ID Kubernetes label from string '%v'", provider.engineId)
-	}
-
-	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue,
-		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes labels")
 	}
 
 	usedPorts := map[string]*port_spec.PortSpec{
 		grpcPortId:      grpcPortSpec,
 		grpcProxyPortId: grpcProxyPortSpec,
 	}
-	serializedPortsSpec, err := port_spec_serializer.SerializePortSpecs(usedPorts)
+	serializedPortsSpec, err := kubernetes_port_spec_serializer.SerializePortSpecs(usedPorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred serializing the following engine server ports to a string for storing in the ports annotation: %+v", usedPorts)
 	}
@@ -118,27 +107,22 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name '%s' and labels '%+v', and annotations '%+v'", name, labels, annotations)
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
+			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
 	return objectAttributes, nil
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineNamespace() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(namespaceSuffix)
-	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
+	name, err := provider.getEngineObjectName()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name for the engine namespace")
 	}
 
-	idLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.engineId)
+	labels, err := provider.getEngineObjectLabels()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the engine ID Kubernetes label from string '%v'", provider.engineId)
-	}
-
-	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue,
-		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes labels")
 	}
 
 	// No custom annotations for engine namespace
@@ -146,27 +130,22 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineNamespace
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name '%s' and labels '%+v', and annotations '%+v'", name, labels, annotations)
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
+			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
 	return objectAttributes, nil
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineServiceAccount() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(serviceAccountSuffix)
-	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
+	name, err := provider.getEngineObjectName()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name for the engine service account")
 	}
 
-	idLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.engineId)
+	labels, err := provider.getEngineObjectLabels()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the engine ID Kubernetes label from string '%v'", provider.engineId)
-	}
-
-	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue,
-		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes labels")
 	}
 
 	// No custom annotations for engine service account
@@ -174,27 +153,22 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineServiceAc
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name '%s' and labels '%+v', and annotations '%+v'", name, labels, annotations)
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
+			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
 	return objectAttributes, nil
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRole() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(clusterRoleSuffix)
-	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
+	name, err := provider.getEngineObjectName()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name for the engine cluster role")
 	}
 
-	idLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.engineId)
+	labels, err := provider.getEngineObjectLabels()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the engine ID Kubernetes label from string '%v'", provider.engineId)
-	}
-
-	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue,
-		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes labels")
 	}
 
 	// No custom annotations for engine cluster role
@@ -202,28 +176,22 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRo
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name '%s' and labels '%+v', and annotations '%+v'", name, labels, annotations)
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
+			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
 	return objectAttributes, nil
 }
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRoleBindings() (KubernetesObjectAttributes, error) {
-	nameStr := provider.getEngineObjectNameString(clusterRoleBindingsSuffix)
-
-	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
+	name, err := provider.getEngineObjectName()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name object from string '%v'", nameStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name for the engine cluster role binding")
 	}
 
-	idLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.engineId)
+	labels, err := provider.getEngineObjectLabels()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the engine ID Kubernetes label from string '%v'", provider.engineId)
-	}
-
-	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue,
-		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes labels")
 	}
 
 	// No custom annotations for engine cluster role bindings
@@ -231,36 +199,38 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRo
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name '%s' and labels '%+v', and annotations '%+v'", name, labels, annotations)
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
+			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
 	return objectAttributes, nil
 }
 
-// TODO Move this to its own searcher class, so the AttributesProvider isn't also doing searching
-func (provider *kubernetesEngineObjectAttributesProviderImpl) GetEngineSelectorLabels() (map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
-	idLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.engineId)
+// ====================================================================================================
+//                                      Private Helper Methods
+// ====================================================================================================
+func (provider *kubernetesEngineObjectAttributesProviderImpl) getEngineObjectLabels() (map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
+	guidLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(string(provider.engineGuid))
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the engine ID Kubernetes label from string '%v'", provider.engineId)
+		return nil, stacktrace.Propagate(err, "An error occurred parsing engine GUID '%v' into a Kubernetes label value", provider.engineGuid)
 	}
 
+	// ID and GUID are the same here
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue,
-		label_key_consts.IDKubernetesLabelKey:                   idLabelValue,
+		label_key_consts.IDKubernetesLabelKey:                   guidLabelValue,
+		label_key_consts.GUIDKubernetesLabelKey:                   guidLabelValue,
 	}
-
 	return labels, nil
 }
 
-func (provider *kubernetesEngineObjectAttributesProviderImpl) getEngineObjectNameString(suffix string) string {
-	toJoin := []string{
+func (provider *kubernetesEngineObjectAttributesProviderImpl) getEngineObjectName() (*kubernetes_object_name.KubernetesObjectName, error) {
+	result, err := getCompositeKubernetesObjectName([]string{
 		engineNamePrefix,
-		provider.engineId,
-		suffix,
+		string(provider.engineGuid),
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting a Kubernetes object name for engine GUID '%v'", provider.engineGuid)
 	}
-	nameStr := strings.Join(
-		toJoin,
-		objectNameElementSeparator,
-	)
-	return nameStr
+	return result, nil
 }

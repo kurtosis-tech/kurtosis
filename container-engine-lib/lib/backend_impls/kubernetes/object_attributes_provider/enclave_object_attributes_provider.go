@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_object_name"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -15,20 +16,19 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
-	"strings"
-	"time"
 )
 
 const (
 	artifactExpansionObjectTimestampFormat = "2006-01-02T15.04.05.000"
-	userServiceSuffix = "user-service"
+	userServicePrefix                      = "user-service"
 )
 
 type KubernetesEnclaveObjectAttributesProvider interface {
 	ForEnclaveNamespace(isPartitioningEnabled bool) (KubernetesObjectAttributes, error)
-	ForEnclaveDataVolume() (KubernetesObjectAttributes, error)
+	ForEnclaveDataPersistentVolumeClaim() (KubernetesObjectAttributes, error)
 	ForApiContainer() (KubernetesApiContainerObjectAttributesProvider, error)
-	ForUserServiceService(id service.ServiceID, guid service.ServiceGUID) (KubernetesObjectAttributes, error)
+	ForUserServiceService(guid service.ServiceGUID, id service.ServiceID) (KubernetesObjectAttributes, error)
+	ForUserServicePod(guid service.ServiceGUID, id service.ServiceID, privatePorts map[string]*port_spec.PortSpec) (KubernetesObjectAttributes, error)
 }
 
 // Private so it can't be instantiated
@@ -86,7 +86,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespa
 	return objectAttributes, nil
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataVolume() (KubernetesObjectAttributes, error) {
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataPersistentVolumeClaim() (KubernetesObjectAttributes, error) {
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(provider.enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", provider.enclaveId)
@@ -114,19 +114,6 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataVol
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForApiContainer() (KubernetesApiContainerObjectAttributesProvider, error) {
 	enclaveId := enclave.EnclaveID(provider.enclaveId)
 	return GetKubernetesApiContainerObjectAttributesProvider(enclaveId), nil
-}
-
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl)ForUserServiceContainer(
-	serviceID service.ServiceID,
-	serviceGUID service.ServiceGUID,
-	privateIpAddr net.IP,
-	privatePorts map[string]*port_spec.PortSpec,
-) (KubernetesObjectAttributes, error) {
-	panic("implement me")
-}
-
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo service.ServiceGUID) (KubernetesObjectAttributes, error) {
-	panic("implement me")
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForModuleContainer(
@@ -160,13 +147,16 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactE
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceService (
-	serviceID service.ServiceID,
 	serviceGUID service.ServiceGUID,
+	serviceID service.ServiceID,
 ) (
 	KubernetesObjectAttributes,
 	error,
 ) {
-	name, err := provider.getNameForEnclaveObject([]string{userServiceSuffix})
+	name, err := getCompositeKubernetesObjectName([]string{
+		userServicePrefix,
+		string(serviceGUID),
+	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get name for user service service.")
 	}
@@ -193,26 +183,50 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceSer
 	return objectAttributes, nil
 }
 
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod(
+	guid service.ServiceGUID,
+	id service.ServiceID,
+	privatePorts map[string]*port_spec.PortSpec,
+) (KubernetesObjectAttributes, error) {
+	name, err := getCompositeKubernetesObjectName([]string{
+		userServicePrefix,
+		string(guid),
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get name for user service pod")
+	}
+
+	serializedPortSpecsAnnotationValue, err := kubernetes_port_spec_serializer.SerializePortSpecs(privatePorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred serializing the following user service port specs to a string for storing in the ports label: %+v", privatePorts)
+	}
+
+	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(string(id), string(guid))
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"Failed to get labels for user service pod with ID '%s' and GUID '%s'",
+			id,
+			guid,
+		)
+	}
+	labels[label_key_consts.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
+
+	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{
+		kubernetes_annotation_key.PortSpecsKubernetesAnnotationKey: serializedPortSpecsAnnotationValue,
+	}
+
+	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create user service pod object attributes")
+	}
+
+	return objectAttributes, nil
+}
+
 // ====================================================================================================
 //                                      Private Helper Functions
 // ====================================================================================================
-// Gets the name for an enclave object, making sure to put the enclave ID first and join using the standardized separator
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getNameForEnclaveObject(elems []string) (*kubernetes_object_name.KubernetesObjectName, error) {
-	toJoin := []string{
-		provider.enclaveId,
-	}
-	toJoin = append(toJoin, elems...)
-	nameStr := strings.Join(
-		toJoin,
-		objectNameElementSeparator,
-	)
-	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(nameStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating Kubernetes object name from string '%v'", nameStr)
-	}
-	return name, nil
-}
-
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObject() (map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
 	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.enclaveId)
 	if err != nil {
@@ -256,25 +270,4 @@ func getLabelKeyValuesAsStrings(labels map[*kubernetes_label_key.KubernetesLabel
 		result[key.GetString()] = value.GetString()
 	}
 	return result
-}
-
-// Gets the name for an artifact expansion object (either volume or container)
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getArtifactExpansionObjectName(
-	objectLabel string,
-	forServiceGUID string,
-	artifactId string,
-) (*kubernetes_object_name.KubernetesObjectName, error) {
-	name, err := provider.getNameForEnclaveObject([]string{
-		objectLabel,
-		"for",
-		forServiceGUID,
-		"using",
-		artifactId,
-		"at",
-		time.Now().Format(artifactExpansionObjectTimestampFormat), // We add this timestamp so that if the same artifact for the same service GUID expanded twice, we won't get collisions
-	})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the artifact expansion object name")
-	}
-	return name, nil
 }

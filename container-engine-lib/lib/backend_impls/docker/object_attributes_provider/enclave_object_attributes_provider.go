@@ -4,9 +4,9 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_object_name"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -170,7 +170,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 		privateGrpcPortId:      privateGrpcPortSpec,
 		privateGrpcProxyPortId: privateGrpcProxyPortSpec,
 	}
-	serializedPortsSpec, err := port_spec_serializer.SerializePortSpecs(usedPorts)
+	serializedPortsSpec, err := docker_port_spec_serializer.SerializePortSpecs(usedPorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred serializing the following API container ports object to a string for storing in the ports label: %+v", usedPorts)
 	}
@@ -205,7 +205,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 		return nil, stacktrace.Propagate(err, "An error occurred creating the user service Docker container name object")
 	}
 
-	serializedPortsSpec, err := port_spec_serializer.SerializePortSpecs(privatePorts)
+	serializedPortsSpec, err := docker_port_spec_serializer.SerializePortSpecs(privatePorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred serializing the following user service ports object to a string for storing in the ports label: %+v", privatePorts)
 	}
@@ -300,7 +300,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForModuleContainer(
 	usedPorts := map[string]*port_spec.PortSpec{
 		privatePortId: privatePortSpec,
 	}
-	serializedPortsSpec, err := port_spec_serializer.SerializePortSpecs(usedPorts)
+	serializedPortsSpec, err := docker_port_spec_serializer.SerializePortSpecs(usedPorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred serializing the following module container ports object to a string for storing in the ports label: %+v", usedPorts)
 	}

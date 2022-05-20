@@ -28,30 +28,22 @@ import (
 )
 
 const (
-	// The Kurtosis servers (Engine and API Container) uses gRPC so MUST listen on TCP (no other protocols are supported), which also
+	// The Kurtosis servers (Engine and API Container) use gRPC so MUST listen on TCP (no other protocols are supported), which also
 	// means that its grpc-proxy must listen on TCP
 	kurtosisServersPortProtocol = port_spec.PortProtocol_TCP
 
 	// The ID of the GRPC port for Kurtosis-internal containers (e.g. API container, engine, modules, etc.) which will
 	//  be stored in the port spec label
 	kurtosisInternalContainerGrpcPortSpecId = "grpc"
-	// The GRPC port protocol for Kurtosis-internal containers
-	kurtosisInternalContainerGrpcPortProtocol = apiv1.ProtocolTCP
 
 	// The ID of the GRPC proxy port for Kurtosis-internal containers. This is necessary because
 	// Typescript's grpc-web cannot communicate directly with GRPC ports, so Kurtosis-internal containers
 	// need a proxy  that will translate grpc-web requests before they hit the main GRPC server
-	kurtosisInternalContainerGrpcProxyPortSpecId = "grpcProxy"
-	// The GRPC proxy port protocol for Kurtosis-internal containers
-	kurtosisInternalContainerGrpcProxyPortProtocol = apiv1.ProtocolTCP
+	kurtosisInternalContainerGrpcProxyPortSpecId = "grpc-proxy"
 
 	// Port number string parsing constants
 	publicPortNumStrParsingBase = 10
 	publicPortNumStrParsingBits = 16
-
-	externalServiceType = "ClusterIP"
-
-	sentencesSeparator = ", "
 )
 
 // This maps a Kubernetes pod's phase to a binary "is the pod considered running?" determiner
@@ -63,22 +55,141 @@ var isPodRunningDeterminer = map[apiv1.PodPhase]bool{
 	apiv1.PodUnknown: true, //We can not say that a pod is not running if we don't know the real state
 }
 
-type KubernetesKurtosisBackend struct {
-	kubernetesManager *kubernetes_manager.KubernetesManager
+// Completeness enforced via unit test
+var kurtosisPortProtocolToKubernetesPortProtocolTranslator = map[port_spec.PortProtocol]apiv1.Protocol{
+	port_spec.PortProtocol_TCP: apiv1.ProtocolTCP,
+	port_spec.PortProtocol_UDP: apiv1.ProtocolUDP,
+	port_spec.PortProtocol_SCTP: apiv1.ProtocolSCTP,
+}
 
-	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider
+// TODO Remove this once we split apart the KubernetesKurtosisBackend into multiple backends (which we can only
+//  do once the CLI no longer makes any calls directly to the KurtosisBackend, and instead makes all its calls through
+//  the API container & engine APIs)
+type cliModeArgs struct {
+	// No CLI mode args needed for now
+}
+type apiContainerModeArgs struct {
+	ownEnclaveId enclave.EnclaveID
 
+	ownNamespaceName string
+
+	storageClassName string
+
+	// TODO make this more dynamic - maybe guess based on the files artifact size?
+	filesArtifactExpansionVolumeSizeInMegabytes uint
+}
+type engineServerModeArgs struct {
 	/*
 		StorageClass name to be used for volumes in the cluster
 		StorageClasses must be defined by a cluster administrator.
 		passes this in when starting Kurtosis with Kubernetes.
 	*/
-	volumeStorageClassName string
+	storageClassName string
+
 	/*
 		Enclave availability must be set and defined by a cluster administrator.
 		The user passes this in when starting Kurtosis with Kubernetes.
-	 */
-	volumeSizePerEnclaveInMegabytes uint
+	*/
+	enclaveDataVolumeSizeInMegabytes uint
+}
+
+type KubernetesKurtosisBackend struct {
+	kubernetesManager *kubernetes_manager.KubernetesManager
+
+	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider
+
+	cliModeArgs *cliModeArgs
+
+	engineServerModeArgs *engineServerModeArgs
+
+	// Will only be filled out for the API container
+	apiContainerModeArgs *apiContainerModeArgs
+}
+
+// Private constructor that the other public constructors will use
+func newKubernetesKurtosisBackend(
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	cliModeArgs *cliModeArgs,
+	engineServerModeArgs *engineServerModeArgs,
+	apiContainerModeArgs *apiContainerModeArgs,
+) *KubernetesKurtosisBackend {
+	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
+	return &KubernetesKurtosisBackend{
+		kubernetesManager:               kubernetesManager,
+		objAttrsProvider:                objAttrsProvider,
+		cliModeArgs:                     cliModeArgs,
+		engineServerModeArgs:            engineServerModeArgs,
+		apiContainerModeArgs:            apiContainerModeArgs,
+	}
+}
+
+func NewAPIContainerKubernetesKurtosisBackend(
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	ownEnclaveId enclave.EnclaveID,
+	ownNamespaceName string,
+	storageClass string,
+	filesArtifactExpansionVolumeSizeInMegabytes uint,
+) *KubernetesKurtosisBackend {
+	modeArgs := &apiContainerModeArgs{
+		ownEnclaveId:     ownEnclaveId,
+		ownNamespaceName: ownNamespaceName,
+		storageClassName: storageClass,
+		filesArtifactExpansionVolumeSizeInMegabytes: filesArtifactExpansionVolumeSizeInMegabytes,
+	}
+	return newKubernetesKurtosisBackend(
+		kubernetesManager,
+		nil,
+		nil,
+		modeArgs,
+	)
+}
+
+func NewEngineServerKubernetesKurtosisBackend(
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	storageClass string,
+	enclaveDataVolumeSizeInMegabytes uint,
+) *KubernetesKurtosisBackend {
+	modeArgs := &engineServerModeArgs{
+		storageClassName:                 storageClass,
+		enclaveDataVolumeSizeInMegabytes: enclaveDataVolumeSizeInMegabytes,
+	}
+	return newKubernetesKurtosisBackend(
+		kubernetesManager,
+		nil,
+		modeArgs,
+		nil,
+	)
+}
+
+func NewCLIModeKubernetesKurtosisBackend(
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) *KubernetesKurtosisBackend {
+	modeArgs := &cliModeArgs{}
+	return newKubernetesKurtosisBackend(
+		kubernetesManager,
+		modeArgs,
+		nil,
+		nil,
+	)
+}
+
+func NewKubernetesKurtosisBackend(
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	// TODO Remove the necessity for these different args by splitting the KubernetesKurtosisBackend into multiple backends per consumer, e.g.
+	//  APIContainerKurtosisBackend, CLIKurtosisBackend, EngineKurtosisBackend, etc. This can only happen once the CLI
+	//  no longer uses the same functionality as API container, engine, etc. though
+	cliModeArgs *cliModeArgs,
+	engineServerModeArgs *engineServerModeArgs,
+	apiContainerModeargs *apiContainerModeArgs,
+) *KubernetesKurtosisBackend {
+	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
+	return &KubernetesKurtosisBackend{
+		kubernetesManager:               kubernetesManager,
+		objAttrsProvider:                objAttrsProvider,
+		cliModeArgs:                     cliModeArgs,
+		engineServerModeArgs:            engineServerModeArgs,
+		apiContainerModeArgs:            apiContainerModeargs,
+	}
 }
 
 func (backend *KubernetesKurtosisBackend) PullImage(image string) error {
@@ -136,16 +247,6 @@ func (backend *KubernetesKurtosisBackend) DestroyNetworkingSidecars(ctx context.
 	panic("implement me")
 }
 
-func NewKubernetesKurtosisBackend(kubernetesManager *kubernetes_manager.KubernetesManager, volumeStorageClassName string, volumeSizePerEnclaveInMegabytes uint) *KubernetesKurtosisBackend {
-	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
-	return &KubernetesKurtosisBackend{
-		kubernetesManager:               kubernetesManager,
-		objAttrsProvider:                objAttrsProvider,
-		volumeStorageClassName:          volumeStorageClassName,
-		volumeSizePerEnclaveInMegabytes: volumeSizePerEnclaveInMegabytes,
-	}
-}
-
 func getStringMapFromLabelMap(labelMap map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue) map[string]string {
 	strMap := map[string]string{}
 	for labelKey, labelValue := range labelMap {
@@ -184,6 +285,8 @@ func getPublicPortSpecFromServicePort(servicePort apiv1.ServicePort, portProtoco
 	return publicGrpcPort, nil
 }
 
+
+// TODO Replace with pulling the serialized port specs off the Service
 func getGrpcAndGrpcProxyPortSpecsFromServicePorts(servicePorts []apiv1.ServicePort) (resultGrpcPortSpec *port_spec.PortSpec, resultGrpcProxyPortSpec *port_spec.PortSpec, resultErr error) {
 	var publicGrpcPort *port_spec.PortSpec
 	var publicGrpcProxyPort *port_spec.PortSpec
@@ -236,62 +339,47 @@ func getContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus
 	return status, nil
 }
 
-func (backend *KubernetesKurtosisBackend) getAllEnclaveNamespaces(ctx context.Context) ([]apiv1.Namespace, error) {
+func (backend *KubernetesKurtosisBackend) getEnclaveNamespaceName(ctx context.Context, enclaveId enclave.EnclaveID) (string, error) {
+	// TODO This is a big janky hack that results from KubernetesKurtosisBackend containing functions for all of API containers, engines, and CLIs
+	//  We want to fix this by splitting the KubernetesKurtosisBackend into a bunch of different backends, one per user, but we can only
+	//  do this once the CLI no longer uses API container functionality (e.g. GetServices)
+	// CLIs and engines can list namespaces so they'll be able to use the regular list-namespaces-and-find-the-one-matching-the-enclave-ID
+	// API containers can't list all namespaces due to being namespaced objects themselves (can only view their own namespace, so
+	// they can only check if the requested enclave matches the one they have stored
+	var namespaceName string
+	if backend.cliModeArgs != nil || backend.engineServerModeArgs != nil {
+		matchLabels := getEnclaveMatchLabels()
+		matchLabels[label_key_consts.EnclaveIDKubernetesLabelKey.GetString()] = string(enclaveId)
 
-	matchLabels := getEnclaveMatchLabels()
+		namespaces, err := backend.kubernetesManager.GetNamespacesByLabels(ctx, matchLabels)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred getting the enclave namespace using labels '%+v'", matchLabels)
+		}
 
-	namespaces, err := backend.kubernetesManager.GetNamespacesByLabels(ctx, matchLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave namespace using labels '%+v'", matchLabels)
+		numOfNamespaces := len(namespaces.Items)
+		if numOfNamespaces == 0 {
+			return "", stacktrace.NewError("No namespace matching labels '%+v' was found", matchLabels)
+		}
+		if numOfNamespaces > 1 {
+			return "", stacktrace.NewError("Expected to find only one enclave namespace matching enclave ID '%v', but found '%v'; this is a bug in Kurtosis", enclaveId, numOfNamespaces)
+		}
+
+		namespaceName = namespaces.Items[0].Name
+	} else if backend.apiContainerModeArgs != nil {
+		if enclaveId != backend.apiContainerModeArgs.ownEnclaveId {
+			return "", stacktrace.NewError(
+				"Received a request to get namespace for enclave '%v', but the Kubernetes Kurtosis backend is running in an API " +
+					"container in a different enclave '%v' (so Kubernetes would throw a permission error)",
+				enclaveId,
+				backend.apiContainerModeArgs.ownEnclaveId,
+			)
+		}
+		namespaceName = backend.apiContainerModeArgs.ownNamespaceName
+	} else {
+		return "", stacktrace.NewError("Received a request to get an enclave namespace's name, but the Kubernetes Kurtosis backend isn't in any recognized mode; this is a bug in Kurtosis")
 	}
 
-	return namespaces.Items, nil
-}
-
-func (backend *KubernetesKurtosisBackend) getEnclaveNamespace(ctx context.Context, enclaveId enclave.EnclaveID) (*apiv1.Namespace, error) {
-
-	matchLabels := getEnclaveMatchLabels()
-	matchLabels[label_key_consts.EnclaveIDKubernetesLabelKey.GetString()] = string(enclaveId)
-
-	namespaces, err := backend.kubernetesManager.GetNamespacesByLabels(ctx, matchLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave namespace using labels '%+v'", matchLabels)
-	}
-
-	numOfNamespaces := len(namespaces.Items)
-	if numOfNamespaces == 0 {
-		return nil, stacktrace.NewError("No namespace matching labels '%+v' was found", matchLabels)
-	}
-	if numOfNamespaces > 1 {
-		return nil, stacktrace.NewError("Expected to find only one API container namespace for API container in enclave ID '%v', but '%v' was found; this is a bug in Kurtosis", enclaveId, numOfNamespaces)
-	}
-
-	resultNamespace := &namespaces.Items[0]
-
-	return resultNamespace, nil
-}
-
-func (backend *KubernetesKurtosisBackend) getEnclaveDataPersistentVolumeClaim(ctx context.Context, enclaveNamespaceName string, enclaveId enclave.EnclaveID) (*apiv1.PersistentVolumeClaim, error) {
-	matchLabels := getEnclaveMatchLabels()
-	matchLabels[label_key_consts.KurtosisVolumeTypeKubernetesLabelKey.GetString()] = label_value_consts.EnclaveDataVolumeTypeKubernetesLabelValue.GetString()
-	matchLabels[label_key_consts.EnclaveIDKubernetesLabelKey.GetString()] = string(enclaveId)
-
-	persistentVolumeClaims, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, enclaveNamespaceName, matchLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave persistent volume claim using labels '%+v'", matchLabels)
-	}
-
-	numOfPersistentVolumeClaims := len(persistentVolumeClaims.Items)
-	if numOfPersistentVolumeClaims == 0 {
-		return nil, stacktrace.NewError("No persistent volume claim matching labels '%+v' was found", matchLabels)
-	}
-	if numOfPersistentVolumeClaims > 1 {
-		return nil, stacktrace.NewError("Expected to find only one enclave data persistent volume claim for enclave ID '%v', but '%v' was found; this is a bug in Kurtosis", enclaveId, numOfPersistentVolumeClaims)
-	}
-
-	resultPersistentVolumeClaim := &persistentVolumeClaims.Items[0]
-
-	return resultPersistentVolumeClaim, nil
+	return namespaceName, nil
 }
 
 func getEnclaveMatchLabels() map[string]string {
@@ -300,6 +388,50 @@ func getEnclaveMatchLabels() map[string]string {
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue.GetString(),
 	}
 	return matchLabels
+}
+
+func getKubernetesServicePortsFromPrivatePortSpecs(privatePorts map[string]*port_spec.PortSpec) ([]apiv1.ServicePort, error) {
+	result := []apiv1.ServicePort{}
+	for portId, portSpec := range privatePorts {
+		kurtosisProtocol := portSpec.GetProtocol()
+		kubernetesProtocol, found := kurtosisPortProtocolToKubernetesPortProtocolTranslator[kurtosisProtocol]
+		if !found {
+			// Should never happen because we enforce completeness via unit test
+			return nil, stacktrace.NewError("No Kubernetes port protocol was defined for Kurtosis port protocol '%v'; this is a bug in Kurtosis", kurtosisProtocol)
+		}
+
+		kubernetesPortObj := apiv1.ServicePort{
+			Name:        portId,
+			Protocol:    kubernetesProtocol,
+			// TODO Specify this!!! Will make for a really nice user interface (e.g. "https")
+			AppProtocol: nil,
+			// Safe to cast because max uint16 < int32
+			Port:        int32(portSpec.GetNumber()),
+		}
+		result = append(result, kubernetesPortObj)
+	}
+	return result, nil
+}
+
+func getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts map[string]*port_spec.PortSpec) ([]apiv1.ContainerPort, error) {
+	result := []apiv1.ContainerPort{}
+	for portId, portSpec := range privatePorts {
+		kurtosisProtocol := portSpec.GetProtocol()
+		kubernetesProtocol, found := kurtosisPortProtocolToKubernetesPortProtocolTranslator[kurtosisProtocol]
+		if !found {
+			// Should never happen because we enforce completeness via unit test
+			return nil, stacktrace.NewError("No Kubernetes port protocol was defined for Kurtosis port protocol '%v'; this is a bug in Kurtosis", kurtosisProtocol)
+		}
+
+		kubernetesPortObj := apiv1.ContainerPort{
+			Name:          portId,
+			// Safe to do because max uint16 < int32
+			ContainerPort: int32(portSpec.GetNumber()),
+			Protocol:      kubernetesProtocol,
+		}
+		result = append(result, kubernetesPortObj)
+	}
+	return result, nil
 }
 
 // This is a helper function that will take multiple errors, each identified by an ID, and format them together

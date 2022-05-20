@@ -2,9 +2,44 @@
 ### Breaking Changes
 * Unified file expansion volume and expanders into one interface with two associated methods (instead of two interfaces and four methods)
 
+# 0.25.0
+### Features
+* Built out Kubernetes `GetUserServiceLogs`
+* Built out Kubernetes `RunUserServiceExecCommands`
+
+### Fixes
+* Fixed `grpcProxy` port ID not being acceptable to Kubernetes
+* Fixed a bug where RegisterService was creating Kubernetes Services without ports, which Kubernetes doesn't allow
+
+### Changes
+* The API container objects no longer get prefixed with the enclave name, and all get called `kurtosis-api` (which is fine because they're namespaced)
+
+### Breaking Changes
+* NewKubernetesManager now additionally takes in a Kubernetes configuration object
+    * Users will need to pass in this new configuration (the same as is created when instantiating the Kubernetes clientset)
+* Engine IDs are now of the formal type `EngineGUID` rather than `string`
+    * All instances of engine ID strings need to be replaced with `EngineID` (e.g. all of the engine CRUD methods coming back from KurtosisBackend)
+* The engine object's `GetID` method has now been renamed `GetGUID`
+    * Users should switch to using the new method
+
+
+# 0.24.0
+### Fixes
+* Fixed a bug where the API container resources map would have entries even if the enclave was empty of API containers
+* Fixed a bug where the API container didn't have a way to get enclave namespace names, because it isn't allowed to list namespaces given that its service account is a namespaced object
+
+### Breaking Changes
+* Renamed `GetLocalKubernetesKurtosisBackend` -> `GetCLIKubernetesKurtosisBackend`
+    * Users should switch to the new version
+* Split `GetInClusterKubernetesKurtosisBackend` -> `GetAPIContainerKubernetesKurtosisBackend` and `GetEngineServerKubernetesKurtosisBackend`
+    * Users should select the right version appropriate to the user case
+
 # 0.23.4
 ### Features
-* Build out Kubernetes `RegisterService`
+* Build out the following user service functions in Kubernetes:
+    * `RegisterService`
+    * `StartService`
+    * All the pipeline for transforming Kubernetes objects into user services
 
 ### Fixes
 * Fix bug in `waitForPersistentVolumeClaimBound` in which PVC name and namespace were flipped in args
@@ -14,6 +49,10 @@
 * Renamed all constants that were `XXXXXLabelValue` to be `XXXXXKubernetesLabelValue` to make it more visually obvious that we're using the Kubernetes constants rather than Docker
 * Renamed all Docker constants that were `XXXXXLabelKey` to be `XXXXXDockerLabelKey` to make it more visually obvious that we're using the Docker constants rather than Kubernetes
 * Renamed all constants that were `XXXXXLabelValue` to be `XXXXXDockerLabelValue` to make it more visually obvious that we're using the Docker constants rather than Kubernetes
+* Renamed the Docker & Kubernetes port spec serializers to include their respective names, to be easier to visually identify in code
+
+### Breaking Changes
+* `StartUserService` now takes in a `map[FilesArtifactVolumeName]string` rather than `map[string]string` to be more explicit about the data it's consuming
 
 ### Fixes
 * `KubernetesManager.CreatePod` now waits for pods to become available before returning

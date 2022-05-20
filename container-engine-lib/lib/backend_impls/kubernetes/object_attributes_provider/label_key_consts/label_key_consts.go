@@ -16,7 +16,6 @@ const (
 	resourceTypeLabelKeyStr 	= labelKeyPrefixStr + "resource-type"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	containerTypeLabelKeyStr	= labelKeyPrefixStr + "container-type"
 	volumeTypeLabelKeyStr		= labelKeyPrefixStr + "volume-type"
 
 	// A label to identify a Kurtosis resource (e.g. network, container, etc.) by its id
@@ -25,14 +24,13 @@ const (
 	// Used for things like service GUID, module GUID, etc.
 	guidLabelKeyStr = labelKeyPrefixStr + "guid"
 
-	portSpecsLabelKeyStr = labelKeyPrefixStr + "ports"
-
 	enclaveIdLabelKeyStr = labelKeyPrefixStr + "enclave-id"
 
 	isNetworkPartitioningEnabledKeyStr = labelKeyPrefixStr + "is-network-partitioning-enabled"
 
-	// TODO Remove this and instead use container domain names so we're not dependent on static IPs!
-	privateIpAddrLabelKeyStr = labelKeyPrefixStr + "private-ip"
+	// As of 2022-05-17, these get attached to files artifact expansion volumes
+	userServiceGuidKeyStr = labelKeyPrefixStr + "user-service-guid"
+	filesArtifactIdKeyStr = labelKeyPrefixStr + "files-artifact-id"
 )
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -45,11 +43,10 @@ var AppIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelK
 var KurtosisResourceTypeKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(resourceTypeLabelKeyStr)
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-var KurtosisContainerTypeKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(containerTypeLabelKeyStr)
 var KurtosisVolumeTypeKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(volumeTypeLabelKeyStr)
 var IDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(idLabelKeyStr)
 var GUIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(guidLabelKeyStr)
-var PortSpecsKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(portSpecsLabelKeyStr)
 var EnclaveIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(enclaveIdLabelKeyStr)
 var IsNetworkPartitioningEnabledKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(isNetworkPartitioningEnabledKeyStr)
-var PrivateIPKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(privateIpAddrLabelKeyStr)
+var UserServiceGUIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(userServiceGuidKeyStr)
+var FilesArtifactIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(filesArtifactIdKeyStr)

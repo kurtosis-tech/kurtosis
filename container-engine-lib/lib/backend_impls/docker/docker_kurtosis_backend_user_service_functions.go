@@ -8,12 +8,13 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
@@ -146,21 +147,7 @@ func (backend *DockerKurtosisBackend) RegisterUserService(ctx context.Context, e
 	return registration, nil
 }
 
-func (backend *DockerKurtosisBackend) StartUserService(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceGuid service.ServiceGUID,
-	containerImageName string,
-	privatePorts map[string]*port_spec.PortSpec,
-	entrypointArgs []string,
-	cmdArgs []string,
-	envVars map[string]string,
-	// volume_name -> mountpoint_on_container
-	filesArtifactVolumeMountDirpaths map[string]string,
-) (
-	*service.Service,
-	error,
-) {
+func (backend *DockerKurtosisBackend) StartUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID, containerImageName string, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactVolumeMountDirpaths map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string, ) (*service.Service, error, ) {
 	backend.serviceRegistrationMutex.Lock()
 	defer backend.serviceRegistrationMutex.Unlock()
 
@@ -254,7 +241,11 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		createAndStartArgsBuilder.WithCmdArgs(cmdArgs)
 	}
 	if filesArtifactVolumeMountDirpaths != nil {
-		createAndStartArgsBuilder.WithVolumeMounts(filesArtifactVolumeMountDirpaths)
+		filesArtifactVolumeMountDirpathStrs := map[string]string{}
+		for filesArtifactVolumeName, mountDirpath := range filesArtifactVolumeMountDirpaths {
+			filesArtifactVolumeMountDirpathStrs[string(filesArtifactVolumeName)] = mountDirpath
+		}
+		createAndStartArgsBuilder.WithVolumeMounts(filesArtifactVolumeMountDirpathStrs)
 	}
 	createAndStartArgs := createAndStartArgsBuilder.Build()
 
@@ -887,7 +878,7 @@ func getIpAndPortInfoFromContainer(
 		)
 	}
 
-	privatePortSpecs, err := port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
+	privatePortSpecs, err := docker_port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
 	if err != nil {
 		if err != nil {
 			return nil, nil, nil, nil, stacktrace.Propagate(err, "Couldn't deserialize port spec string '%v'", serializedPortSpecs)
