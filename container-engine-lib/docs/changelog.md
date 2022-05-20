@@ -1,5 +1,7 @@
 # TBD
 
+# 0.26.1
+
 # 0.26.0
 ### Features
 * Added `KubernetesKurtosisBackend.GetModuleLogs`
