@@ -81,7 +81,7 @@ func (launcher ModuleLauncher) Launch(
 	shouldStopModule := true
 	defer func() {
 		if shouldStopModule {
-			_, failedModules, err := launcher.kurtosisBackend.StopModules(ctx, getModuleByModuleGUIDFilter(moduleGUID))
+			_, failedModules, err := launcher.kurtosisBackend.StopModules(ctx, launcher.enclaveId, getModuleByModuleGUIDFilter(moduleGUID))
 			if err != nil {
 				logrus.Error("Launching the module failed, but an error occurred calling the backend to stop the module we started:")
 				fmt.Fprintln(logrus.StandardLogger().Out, err)

@@ -1,4 +1,9 @@
 # TBD
+### Features
+* Support Kubernetes module CRUD functions
+
+### Fixes
+* Fix bugs with service updates in Kubernetes
 
 # 1.49.5
 ### Fixes
