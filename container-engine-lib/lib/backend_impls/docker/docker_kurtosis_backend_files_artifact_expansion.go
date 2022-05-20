@@ -357,7 +357,7 @@ func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 		return stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
 
-	containerAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpanderContainer(filesArtifactExpansionGUID, serviceGUID)
+	containerAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpansionContainer(filesArtifactExpansionGUID, serviceGUID)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while trying to get the files artifact expander container attributes for files artifact expansion GUID '%v'", filesArtifactExpansionGUID)
 	}

@@ -48,7 +48,7 @@ type DockerEnclaveObjectAttributesProvider interface {
 	ForNetworkingSidecarContainer(
 		serviceGUIDSidecarAttachedTo service.ServiceGUID,
 	) (DockerObjectAttributes, error)
-	ForFilesArtifactExpanderContainer(
+	ForFilesArtifactExpansionContainer(
 		fileArtifactExpansionGUID files_artifact_expansion.FilesArtifactExpansionGUID,
 		serviceGUID service.ServiceGUID,
 	) (DockerObjectAttributes, error)
@@ -361,7 +361,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpan
 	return objectAttributes, nil
 }
 
-func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpanderContainer(
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpansionContainer(
 	guid files_artifact_expansion.FilesArtifactExpansionGUID,
 	serviceGUID service.ServiceGUID,
 )(
