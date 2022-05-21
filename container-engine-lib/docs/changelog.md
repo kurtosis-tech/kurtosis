@@ -5,6 +5,7 @@
     * Kubernetes network partitioning methods now return an `error` rather than panicking
     * `PullImage` returns an error, rather than panicking, for both Docker & Kubernetes Kurtosis backends
     * Removed some dead code
+* Remove synchronous deletes because they're too slow
 
 # 0.29.0
 ### Features
