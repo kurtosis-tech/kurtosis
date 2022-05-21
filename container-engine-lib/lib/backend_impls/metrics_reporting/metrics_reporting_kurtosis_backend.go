@@ -458,15 +458,20 @@ func (backend *MetricsReportingKurtosisBackend) CopyFilesFromUserService(
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
 	srcPath string,
+	output io.Writer,
 ) (
-	io.ReadCloser,
 	error,
 ) {
-	tarStreamReadCloser, err := backend.underlying.CopyFilesFromUserService(ctx, enclaveId, serviceGuid, srcPath)
-	if err != nil {
-		stacktrace.Propagate(err, "An error occurred copying content from sourcepath '%v' in user service with GUID '%v' in enclave with ID '%v'", srcPath, serviceGuid, enclaveId)
+	if err := backend.underlying.CopyFilesFromUserService(ctx, enclaveId, serviceGuid, srcPath, output); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred copying files from sourcepath '%v' in user service with GUID '%v' in enclave with ID '%v'",
+			srcPath,
+			serviceGuid,
+			enclaveId,
+		)
 	}
-	return tarStreamReadCloser, nil
+	return nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) StopUserServices(

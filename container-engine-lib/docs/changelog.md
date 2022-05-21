@@ -8,6 +8,7 @@
 ### Fixes
 * Fix DockerLogStreamingReadCloser logging at ERROR level when it should log at DEBUG
 * Ensured we're not going to get race conditions when writing the output of Docker & Kubernetes exec commands
+* Fixed a bug in `getSingleUserServiceObjectAndKubernetesResources`
 
 ### Breaking Changes
 * Renamed `KurtosisBackend.CopyFromUserService` -> `CopyFilesFromUserService`

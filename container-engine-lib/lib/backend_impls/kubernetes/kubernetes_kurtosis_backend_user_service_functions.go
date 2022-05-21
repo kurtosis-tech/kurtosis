@@ -569,7 +569,8 @@ func (backend *KubernetesKurtosisBackend) CopyFilesFromUserService(
 	}
 
 	commandToRun := fmt.Sprintf(
-		`if command -v 'tar' > /dev/null; then tar cf - '%v'; else echo 'The tar binary doesn't exist on the machine' >&2; exit 1; fi`,
+		`if command -v 'tar' > /dev/null; then tar cf - '%v'; else echo "Cannot copy files from path '%v' because the tar binary doesn't exist on the machine" >&2; exit 1; fi`,
+		srcPath,
 		srcPath,
 	)
 	shWrappedCommandToRun := []string{
@@ -798,7 +799,7 @@ func (backend *KubernetesKurtosisBackend) getSingleUserServiceObjectsAndResource
 	if len(searchResults) == 0 {
 		return nil, stacktrace.NewError("No services matched GUID '%v'", serviceGuid)
 	}
-	if len(searchResults) > 0 {
+	if len(searchResults) > 1 {
 		return nil, stacktrace.NewError("Expected one service to match GUID '%v' but found %v", serviceGuid, len(searchResults))
 	}
 	result, found := searchResults[serviceGuid]
