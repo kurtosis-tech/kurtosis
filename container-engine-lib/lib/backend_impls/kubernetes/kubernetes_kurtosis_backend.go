@@ -265,67 +265,6 @@ func getStringMapFromAnnotationMap(labelMap map[*kubernetes_annotation_key.Kuber
 	return strMap
 }
 
-/*
-// getPortSpecFromServicePort returns a port_spec representing a Kurtosis port spec for a service port in Kubernetes
-func getPortSpecFromServicePort(servicePort apiv1.ServicePort, portProtocol port_spec.PortProtocol) (*port_spec.PortSpec, error) {
-	portNumStr := strconv.FormatInt(int64(servicePort.Port), portNumStrParsingBase)
-	portNumUint64, err := strconv.ParseUint(portNumStr, portNumStrParsingBase, portNumStrParsingBits)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred parsing port string '%v' using base '%v' and uint bits '%v'",
-			portNumStr,
-			portNumStrParsingBase,
-			portNumStrParsingBits,
-		)
-	}
-	portNum := uint16(portNumUint64) // Safe to do because we pass the requisite number of bits into the parse command
-	portSpec, err := port_spec.NewPortSpec(portNum, portProtocol)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a service port on a Kubernetes node using number '%v' and protocol '%v', instead a non nil error was returned", portNum, portProtocol)
-	}
-
-	return portSpec, nil
-}
-
-
-// TODO Replace with pulling the serialized port specs off the Service
-func getGrpcAndGrpcProxyPortSpecsFromServicePorts(servicePorts []apiv1.ServicePort) (resultGrpcPortSpec *port_spec.PortSpec, resultGrpcProxyPortSpec *port_spec.PortSpec, resultErr error) {
-	var grpcPortSpec *port_spec.PortSpec
-	var grpcProxyPortSpec *port_spec.PortSpec
-	grpcPortName := object_name_constants.KurtosisInternalContainerGrpcPortName.GetString()
-	grpcProxyPortName := object_name_constants.KurtosisInternalContainerGrpcProxyPortName.GetString()
-
-	for _, servicePort := range servicePorts {
-		servicePortName := servicePort.Name
-		switch servicePortName {
-		case grpcPortName:
-			{
-				var err error
-				grpcPortSpec, err = getPortSpecFromServicePort(servicePort, kurtosisServersPortProtocol)
-				if err != nil {
-					return nil, nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a grpc port from Kubernetes service port '%v', instead a non nil error was returned", servicePortName)
-				}
-			}
-		case grpcProxyPortName:
-			{
-				var err error
-				grpcProxyPortSpec, err = getPortSpecFromServicePort(servicePort, kurtosisServersPortProtocol)
-				if err != nil {
-					return nil, nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a grpc proxy port from Kubernetes service port '%v', instead a non nil error was returned", servicePortName)
-				}
-			}
-		}
-	}
-
-	if grpcPortSpec == nil || grpcProxyPortSpec == nil {
-		return nil, nil, stacktrace.NewError("Expected to get port specs from Kubernetes service ports, instead got a nil pointer")
-	}
-
-	return grpcPortSpec, grpcProxyPortSpec, nil
-}
- */
-
 // If no expected-ports list is passed in, no validation is done and all the ports are passed back as-is
 func getPrivatePortsAndValidatePortExistence(kubernetesService *apiv1.Service, expectedPortIds map[string]bool) (map[string]*port_spec.PortSpec, error) {
 	portSpecsStr, found := kubernetesService.GetAnnotations()[annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString()]
