@@ -1,10 +1,13 @@
 # TBD
 ### Features
-* Build `CopyFromUserService` in Kubernetes
+* Build `CopyFilesFromUserService` in Kubernetes
 
 ### Breaking Changes
 * Renamed `KurtosisBackend.CopyFromUserService` -> `CopyFilesFromUserService`
     * Users should update their usages accordingly
+
+### Fixes
+* Ensured we're not going to get race conditions when writing the output of Docker & Kubernetes exec commands
 
 # 0.28.0
 ### Fixes

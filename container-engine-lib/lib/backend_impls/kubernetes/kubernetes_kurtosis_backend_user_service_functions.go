@@ -1,5 +1,6 @@
 package kubernetes
 import (
+	"bytes"
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
@@ -15,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -484,13 +486,15 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 		userServicePod := userServiceObjectAndResources.kubernetesResources.pod
 		userServicePodName := userServicePod.Name
 
-		outputBuffer := newCon
+		outputBuffer := &bytes.Buffer{}
+		concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
 		exitCode, err := backend.kubernetesManager.RunExecCommand(
 			namespaceName,
 			userServicePodName,
 			userServiceContainerName,
 			serviceCommand,
-			outputBuffer,
+			concurrentBuffer,
+			concurrentBuffer,
 		)
 		if err != nil {
 			userServiceExecErr[serviceGuid] = stacktrace.Propagate(

@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
@@ -21,6 +21,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
@@ -433,7 +434,15 @@ func waitForPortAvailabilityUsingNetstat(
 	}
 	for i := uint(0); i < maxRetries; i++ {
 		outputBuffer := &bytes.Buffer{}
-		exitCode, err := kubernetesManager.RunExecCommand(namespaceName, podName, containerName, execCmd, outputBuffer)
+		concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
+		exitCode, err := kubernetesManager.RunExecCommand(
+			namespaceName,
+			podName,
+			containerName,
+			execCmd,
+			concurrentBuffer,
+			concurrentBuffer,
+		)
 		if err == nil {
 			if exitCode == netstatSuccessExitCode {
 				return nil
