@@ -1,4 +1,6 @@
 # TBD
+
+# 0.28.0
 ### Fixes
 * Fixed bug related to having two annotations-key-consts for Kubernetes objects
 
