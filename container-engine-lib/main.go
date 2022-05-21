@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib"
+	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/backend_creator"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
@@ -22,19 +24,42 @@ func main() {
 	os.Exit(0)
 }
 
-// You can comment out various sections to test various things
+// You can comment out various sections to test various parts of the lib
 func runMain() error {
+	if err := runDockerManagerTesting(); err != nil {
+		return err
+	}
+
 	/*
-	if err := runKubernetesKurtosisBackendTesting(); err != nil {
+	if err := runKubernetesManagerTesting(); err != nil {
+		return err
+	}
+	*/
+
+	/*
+	if err := runKurtosisBackendTesting(); err != nil {
 		return err
 	}
 	 */
 
-	/*
-		if err := runKubernetesManagerTesting(); err != nil {
-			return err
-		}
-	*/
+	return nil
+}
+
+func runDockerManagerTesting() error {
+	ctx := context.Background()
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating a Docker client connected to the local environment")
+	}
+	dockerManager := docker_manager.NewDockerManager(dockerClient)
+
+
+	// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv Arbitrary logic goes here vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+	result, err := dockerManager.GetContainersByLabels(ctx, map[string]string{}, false)
+	if err != nil {
+		return err
+	}
+	fmt.Println(result)
 
 	return nil
 }
@@ -54,20 +79,29 @@ func runKubernetesManagerTesting() error {
 	}
 	kubernetesManager := kubernetes_manager.NewKubernetesManager(clientSet, kubernetesConfig)
 
-	// TODO replace this with whatever you want to test
+
+	// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv Arbitrary logic goes here vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 	kubernetesManager.GetNamespace(ctx, "TODO")
 
 	return nil
 }
 
-func runKubernetesKurtosisBackendTesting() error {
+// Can comment which backend you want to use
+func runKurtosisBackendTesting() error {
 	ctx := context.Background()
+	backend, err := backend_creator.GetLocalDockerKurtosisBackend(nil)
+	if err != nil {
+		return err
+	}
+	/*
 	backend, err := lib.GetCLIKubernetesKurtosisBackend(ctx)
 	if err != nil {
 		return err
 	}
+	 */
 
-	// TODO replace this with whatever you want to test
+
+	// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv Arbitrary logic goes here vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 	enclaveId := enclave.EnclaveID("TODO")  // TODO Make this whatever you need
 	serviceGuid := service.ServiceGUID("TODO")
 	filters := &service.ServiceFilters{
