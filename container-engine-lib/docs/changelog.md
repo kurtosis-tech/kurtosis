@@ -12,6 +12,8 @@
 ### Breaking Changes
 * Renamed `KurtosisBackend.CopyFromUserService` -> `CopyFilesFromUserService`
     * Users should update their usages accordingly
+* `KurtosisBackend.CopyFilesFromUserService` now copies all bytes synchronously, rather than returning a `ReadCloser` for the user to deal with
+    * Remediation: pass in a `io.Writer` where the bytes should go
 
 # 0.28.0
 ### Fixes

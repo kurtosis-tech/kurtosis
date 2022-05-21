@@ -323,16 +323,15 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-	// Copy content (it can be a file or entire folder) from user service source path and returns a ReadCloser object to
-	// a TAR containing the files
+	// Copy files, packaged as a TAR, from the given user service and writes the bytes to the given output writer
 	CopyFilesFromUserService(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
 		serviceGuid service.ServiceGUID,
-		srcPath string,
+		srcPathOnService string,
+		output io.Writer,
 	)(
-		resultReadCloser io.ReadCloser,
-		resultErr error,
+		error,
 	)
 
 	// StopUserServices stops the user containers for the services matching the given filters
