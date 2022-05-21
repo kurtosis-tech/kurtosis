@@ -1,4 +1,7 @@
 # TBD
+### Breaking Changes
+* Unified file expansion volume and expanders into one interface with two associated methods (instead of two interfaces and four methods)
+
 ### Changes
 * Switched the API container to get its port info from the serialized port specs on the Kubernetes service
 

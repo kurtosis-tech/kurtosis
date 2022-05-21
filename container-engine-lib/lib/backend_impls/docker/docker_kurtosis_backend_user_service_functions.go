@@ -14,7 +14,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
@@ -147,7 +147,7 @@ func (backend *DockerKurtosisBackend) RegisterUserService(ctx context.Context, e
 	return registration, nil
 }
 
-func (backend *DockerKurtosisBackend) StartUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID, containerImageName string, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactVolumeMountDirpaths map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string, ) (*service.Service, error, ) {
+func (backend *DockerKurtosisBackend) StartUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID, containerImageName string, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactVolumeMountDirpaths map[files_artifact_expansion.FilesArtifactExpansionGUID]string, ) (*service.Service, error, ) {
 	backend.serviceRegistrationMutex.Lock()
 	defer backend.serviceRegistrationMutex.Unlock()
 
@@ -240,10 +240,34 @@ func (backend *DockerKurtosisBackend) StartUserService(ctx context.Context, encl
 	if cmdArgs != nil {
 		createAndStartArgsBuilder.WithCmdArgs(cmdArgs)
 	}
+
 	if filesArtifactVolumeMountDirpaths != nil {
+
+		// CREATE FILTER SET FOR FILES ARTIFACT EXPANSION GUIDS AND SERVICE GUID
+		filterFilesArtifactExpansionGuids := map[files_artifact_expansion.FilesArtifactExpansionGUID]bool{}
+		for guid, _ := range filesArtifactVolumeMountDirpaths {
+			filterFilesArtifactExpansionGuids[guid] = true
+		}
+		filters := files_artifact_expansion.FilesArtifactExpansionFilters{
+			GUIDs: filterFilesArtifactExpansionGuids,
+			ServiceGUIDs: map[service.ServiceGUID]bool{
+				serviceGuid: true,
+			},
+		}
+		// GET MATCHING EXPANSION OBJECTS AND RESOURCES FOR FILTERS
+		filteredObjectsAndResources, err := backend.getMatchingFilesArtifactExpansionObjectsAndDockerResources(ctx, enclaveId, &filters)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to get expansion volumes for filters '%+v'", filters)
+		}
+		// ITERATE THROUGH MATCHING OBJECTS AND PLACE VOLUME NAMES FROM DOCKER OBJECTS INTO MAP FOR VOLUME TO PATH MAPPING
 		filesArtifactVolumeMountDirpathStrs := map[string]string{}
-		for filesArtifactVolumeName, mountDirpath := range filesArtifactVolumeMountDirpaths {
-			filesArtifactVolumeMountDirpathStrs[string(filesArtifactVolumeName)] = mountDirpath
+		for filesArtifactGUID, objectsAndResources := range filteredObjectsAndResources {
+			resources := objectsAndResources.dockerResources
+			if resources == nil {
+				return nil, stacktrace.Propagate(err, "Found expansion with no docker resources for files artifact expansion '%v'", filesArtifactGUID)
+			}
+			volume := resources.volume
+			filesArtifactVolumeMountDirpathStrs[volume.Name] = filesArtifactVolumeMountDirpaths[filesArtifactGUID]
 		}
 		createAndStartArgsBuilder.WithVolumeMounts(filesArtifactVolumeMountDirpathStrs)
 	}
