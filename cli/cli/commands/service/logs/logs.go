@@ -7,7 +7,6 @@ package logs
 
 import (
 	"context"
-	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
@@ -19,6 +18,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
 	"strconv"
 )
 
@@ -101,6 +101,9 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting user service logs using filters '%+v'", userServiceFilters)
 	}
+	for _, readCloser := range successfulUserServiceLogs {
+		defer readCloser.Close()
+	}
 
 	if len(erroredUserServiceGuids) > 0 {
 		err, found := erroredUserServiceGuids[serviceGuid]
@@ -115,14 +118,8 @@ func run(
 		return stacktrace.NewError("Expected to find logs for user service with GUID '%v' on user service logs map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", serviceGuid, userServiceReadCloserLog)
 	}
 
-	stdout := logrus.StandardLogger().Out
-	// TODO This is a Docker library call; this should be pushed down into KurtosisBackend
-	if _, err := stdcopy.StdCopy(stdout, stdout, userServiceReadCloserLog); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred copying the user service logs stream to STDOUT for user service with GUID '%v'",
-			serviceGuid,
-		)
+	if _, err := io.Copy(logrus.StandardLogger().Out, userServiceReadCloserLog); err != nil {
+		return stacktrace.Propagate(err, "An error occurred copying the service logs to STDOUT")
 	}
 
 	return nil

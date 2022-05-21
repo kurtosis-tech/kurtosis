@@ -18,5 +18,5 @@ var ModuleCmd = &cobra.Command{
 }
 
 func init() {
-	ModuleCmd.AddCommand(exec.ExecCmd)
+	ModuleCmd.AddCommand(exec.ModuleExecCmd.MustGetCobraCommand())
 }
