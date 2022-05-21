@@ -48,7 +48,7 @@ var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Key:       shouldFollowLogsFlagKey,
 			Usage:     "Continues to follow the logs until stopped",
 			Shorthand: "f",
-			Type:      flags.FlagType{},
+			Type:      flags.FlagType_Bool,
 			Default:   defaultShouldFollowLogs,
 		},
 	},

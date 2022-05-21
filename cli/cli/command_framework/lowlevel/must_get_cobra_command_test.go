@@ -186,10 +186,10 @@ func TestMustGetCobraCommand_FlagsWithMismatchedDefaulValuesCausePanic(t *testin
 
 		requirePanicWithSubstring(
 			t,
-			"which doesn't match the flag's declared type of",
+			"An error occurred processing flag",
 			kurtosisCmd.MustGetCobraCommand,
 			"Expected a panic when trying to set a flag with type '%v' and default value string '%v' that doesn't match the type",
-			illegalFlag.Type.AsString(),
+			illegalFlag.Type.String(),
 			illegalFlag.Default,
 		)
 	}

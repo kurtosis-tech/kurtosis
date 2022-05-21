@@ -1,4 +1,9 @@
 # TBD
+### Fixes
+* Fix broken `service logs` command
+
+### Changes
+* Made it impossible to mess up the FlagType environment variable now when declaring new commands
 
 # 0.18.1
 ### Features
