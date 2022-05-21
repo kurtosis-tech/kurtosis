@@ -10,7 +10,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
@@ -618,13 +617,9 @@ func getEngineObjectsFromKubernetesResources(allResources map[engine.EngineGUID]
 	result := map[engine.EngineGUID]*engine.Engine{}
 
 	for engineGuid, resourcesForId := range allResources {
-
-		engineStatus := container_status.ContainerStatus_Stopped
-		if resourcesForId.pod != nil {
-			engineStatus = container_status.ContainerStatus_Running
-		}
-		if resourcesForId.service != nil && len(resourcesForId.service.Spec.Selector) > 0 {
-			engineStatus = container_status.ContainerStatus_Running
+		engineStatus, err := getContainerStatusFromPod(resourcesForId.pod)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting engine status from engine pod")
 		}
 
 		// NOTE: We set these to nil because in Kubernetes we have no way of knowing what the public info is!
@@ -711,9 +706,26 @@ func (backend *KubernetesKurtosisBackend) createEngineClusterRole(
 	clusterRoleLabels := getStringMapFromLabelMap(clusterRolesAttributes.GetLabels())
 	clusterRolePolicyRules := []rbacv1.PolicyRule{
 		{
-			Verbs:     []string{consts.CreateKubernetesVerb, consts.UpdateKubernetesVerb, consts.PatchKubernetesVerb, consts.DeleteKubernetesVerb, consts.GetKubernetesVerb, consts.ListKubernetesVerb, consts.WatchKubernetesVerb},
+			Verbs:     []string{
+				consts.CreateKubernetesVerb,
+				consts.UpdateKubernetesVerb,
+				consts.PatchKubernetesVerb,
+				consts.DeleteKubernetesVerb,
+				consts.GetKubernetesVerb,
+				consts.ListKubernetesVerb,
+				consts.WatchKubernetesVerb,
+			},
 			APIGroups: []string{rbacv1.APIGroupAll},
-			Resources: []string{consts.NamespacesKubernetesResource, consts.ServiceAccountsKubernetesResource, consts.RolesKubernetesResource, consts.RoleBindingsKubernetesResource, consts.PodsKubernetesResource, consts.ServicesKubernetesResource, consts.PersistentVolumeClaimsKubernetesResource},
+			Resources: []string{
+				consts.NamespacesKubernetesResource,
+				consts.ServiceAccountsKubernetesResource,
+				consts.RolesKubernetesResource,
+				consts.RoleBindingsKubernetesResource,
+				consts.PodsKubernetesResource,
+				consts.PodExecsKubernetesResource,
+				consts.ServicesKubernetesResource,
+				consts.PersistentVolumeClaimsKubernetesResource,
+			},
 		},
 	}
 	clusterRole, err := backend.kubernetesManager.CreateClusterRoles(ctx, clusterRoleName, clusterRolePolicyRules, clusterRoleLabels)

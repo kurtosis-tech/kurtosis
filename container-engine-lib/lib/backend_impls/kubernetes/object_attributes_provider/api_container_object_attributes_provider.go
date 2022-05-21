@@ -1,7 +1,7 @@
 package object_attributes_provider
 
 import (
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/annotation_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
@@ -89,7 +89,7 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContai
 
 	// Store Kurtosis port_spec info in annotation
 	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{
-		annotation_key_consts.PortSpecsAnnotationKey: serializedPortsSpec,
+		kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey: serializedPortsSpec,
 	}
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(apiContainerObjectName, labels, annotations)

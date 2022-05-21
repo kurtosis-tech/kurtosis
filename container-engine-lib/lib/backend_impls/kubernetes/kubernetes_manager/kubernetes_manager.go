@@ -38,12 +38,12 @@ const (
 	waitForPersistentVolumeBoundTimeout = 60 * time.Second
 	waitForPersistentVolumeBoundRetriesDelayMilliSeconds = 500
 
-	apiv1Prefix = "api/v1"
-
 	podWaitForAvailabilityTimeout = 15 * time.Second
 	podWaitForAvailabilityTimeBetweenPolls = 500 * time.Millisecond
 
 	containerStatusLineBulletPoint = " - "
+
+	// Kubernetes unfortunately doesn't have a good way to get the exit code out, so we have to parse it out of a string
 	expectedTerminationMessage				= "command terminated with exit code"
 
 	shouldAllocateStdinOnPodExec = false
@@ -804,7 +804,6 @@ func (manager *KubernetesManager) RunExecCommand(
 	//Create a RESTful command request.
 	request := manager.kubernetesClientSet.CoreV1().RESTClient().
 		Post().
-		Prefix(apiv1Prefix).
 		Namespace(namespaceName).
 		Resource("pods").
 		Name(podName).
@@ -866,7 +865,7 @@ func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace
 }
 
 func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string, podName string) *url.URL {
-	return manager.kubernetesClientSet.RESTClient().Post().Prefix(apiv1Prefix).Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
+	return manager.kubernetesClientSet.CoreV1().RESTClient().Post().Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
 }
 
 // ====================================================================================================

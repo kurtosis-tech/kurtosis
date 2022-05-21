@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/annotation_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
@@ -13,7 +13,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
@@ -44,8 +44,11 @@ States:
 State transitions:
 - RegisterService: a Service is created with the ServiceGUID label (for finding later), the Service's selectors are set
 	to look for Pods with the ServiceGUID, and the Service's ClusterIP is returned to the caller.
-- StartService: a Pod is created with the ServiceGUID, the Kubernetes Service gets its ports updated with the requested
-	ports, and the ServiceGUID selector will mean that the Service will automatically connect to the Pod.
+- StartService:
+	1. a Pod is created with the ServiceGUID
+	2. the Kubernetes Service gets its ports updated with the requested ports
+	3. the Kubernetes Service gets the port specs serialized to JSON and stored as an annotation
+	4. the Service's ServiceGUID selector will mean that the Service will automatically connect to the Pod.
 - StopServices: The Pod is destroyed (because Kubernetes doesn't have a way to stop Pods - only remove them) and the Service's
 	selectors are set to empty. If we want to keep Kubernetes logs around after a Pod is destroyed, we'll need to implement
 	our own logstore.
@@ -208,8 +211,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	// TODO This needs a redo - at minimum it should be by files_artifact_expansion_volume_guid
-	filesArtifactVolumeMountDirpaths map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string,
+	filesArtifactVolumeMountDirpaths map[files_artifact_expansion.FilesArtifactExpansionGUID]string,
 ) (
 	newUserService *service.Service,
 	resultErr error,
@@ -258,15 +260,12 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	podLabelsStrs := getStringMapFromLabelMap(podAttributes.GetLabels())
 	podAnnotationsStrs := getStringMapFromAnnotationMap(podAttributes.GetAnnotations())
 
-	// TODO TODO THIS WON'T WORK AND IS BROKEN FOR NOW
-	temporaryHackyFilesArtifactMountDirpaths := map[files_artifact_expansion_volume.FilesArtifactExpansionGUID]string{}
-
 	podVolumes, containerMounts, err := backend.getUserServiceVolumeInfoFromFilesArtifactMountpoints(
 		ctx,
 		namespaceName,
 		enclaveId,
 		serviceGuid,
-		temporaryHackyFilesArtifactMountDirpaths,
+		filesArtifactVolumeMountDirpaths,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting pod volumes from files artifact mountpoints: %+v", filesArtifactVolumeMountDirpaths)
@@ -375,6 +374,7 @@ func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
 	}
 	userServiceLogs := map[service.ServiceGUID]io.ReadCloser{}
 	erredServiceLogs := map[service.ServiceGUID]error{}
+	shouldCloseLogStreams := true
 	for _, serviceObjectAndResource := range serviceObjectsAndResources {
 		serviceGuid := serviceObjectAndResource.service.GetRegistration().GetGUID()
 		servicePod := serviceObjectAndResource.kubernetesResources.pod
@@ -389,8 +389,16 @@ func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
 			erredServiceLogs[serviceGuid] = stacktrace.Propagate(err, "Expected to be able to call Kubernetes to get logs for service with GUID '%v', instead a non-nil error was returned", serviceGuid)
 			continue
 		}
+		defer func() {
+			if shouldCloseLogStreams {
+				logReadCloser.Close()
+			}
+		}()
+
 		userServiceLogs[serviceGuid] = logReadCloser
 	}
+
+	shouldCloseLogStreams = false
 	return userServiceLogs, erredServiceLogs, nil
 }
 
@@ -495,6 +503,19 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 }
 
 func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGUID service.ServiceGUID) (resultConn net.Conn, resultErr error) {
+	// See https://github.com/kubernetes/client-go/issues/912
+	/*
+		in := streams.NewIn(os.Stdin)
+		if err := in.SetRawTerminal(); err != nil{
+	                 // handle err
+		}
+		err = exec.Stream(remotecommand.StreamOptions{
+			Stdin:             in,
+			Stdout:           stdout,
+			Stderr:            stderr,
+	        }
+	 */
+
 	// TODO IMPLEMENT
 	return nil, stacktrace.NewError("Getting a connection with a user service isn't yet implemented on Kubernetes")
 }
@@ -811,8 +832,9 @@ func getUserServiceObjectsFromKubernetesResources(
 
 	for serviceGuid, resultObj := range results {
 		resourcesToParse := resultObj.kubernetesResources
-
 		kubernetesService := resourcesToParse.service
+		kubernetesPod := resourcesToParse.pod
+
 		if kubernetesService == nil {
 			return nil, stacktrace.NewError(
 				"Service with GUID '%v' doesn't have a Kubernetes service; this indicates either a bug in Kurtosis or that the user manually deleted the Kubernetes service",
@@ -836,18 +858,21 @@ func getUserServiceObjectsFromKubernetesResources(
 		serviceRegistrationObj := service.NewServiceRegistration(serviceId, serviceGuid, enclaveId, privateIp)
 		resultObj.serviceRegistration = serviceRegistrationObj
 
-		serviceAnnotations := kubernetesService.Annotations
-		portSpecsStr, found := serviceAnnotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()]
-		if !found {
-			// If the service doesn't have a private port specs annotation, it means a pod was never started so there's nothing more to do
+		// Selectors but no pod means that the registration is open but no pod has yet been started to consume it
+		if len(kubernetesService.Spec.Selector) > 0 && kubernetesPod == nil {
+			resultObj.service = nil
 			continue
 		}
-		privatePorts, err := kubernetes_port_spec_serializer.DeserializePortSpecs(portSpecsStr)
+
+		// From this point onwards, we're guaranteed that a pod was started at _some_ point; it may or may not still be running
+		// Therefore, we know that there will be services registered
+
+		// The empty map means "don't validate any port existence"
+		privatePorts, err := getPrivatePortsAndValidatePortExistence(kubernetesService, map[string]bool{})
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred deserializing port specs string '%v'", portSpecsStr)
+			return nil, stacktrace.Propagate(err, "An error occurred deserializing private ports from the user service's Kubernetes service")
 		}
 
-		kubernetesPod := resourcesToParse.pod
 		if kubernetesPod == nil {
 			// No pod here means that a) a Service had private ports but b) now has no Pod
 			// This means that there  used to be a Pod but it was stopped/removed
@@ -928,7 +953,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtif
 	namespaceName string,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
-	filesArtifactMountpoints map[files_artifact_expansion_volume.FilesArtifactExpansionGUID]string,
+	filesArtifactMountpoints map[files_artifact_expansion.FilesArtifactExpansionGUID]string,
 ) (
 	resultPodVolumes []apiv1.Volume,
 	resultContainerVolumeMountsOnPod []apiv1.VolumeMount,
@@ -956,7 +981,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtif
 	}
 
 	// Index PVCs by files artifact expansion GUID
-	persistentVolumeClaimsByExpansionGuid := map[files_artifact_expansion_volume.FilesArtifactExpansionGUID]*apiv1.PersistentVolumeClaim{}
+	persistentVolumeClaimsByExpansionGuid := map[files_artifact_expansion.FilesArtifactExpansionGUID]*apiv1.PersistentVolumeClaim{}
 	for _, claim := range persistentVolumeClaims {
 		expansionGuidStr, found := claim.Labels[label_key_consts.GUIDKubernetesLabelKey.GetString()]
 		if !found {
@@ -965,7 +990,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtif
 				label_key_consts.GUIDKubernetesLabelKey.GetString(),
 			)
 		}
-		expansionGuid := files_artifact_expansion_volume.FilesArtifactExpansionGUID(expansionGuidStr)
+		expansionGuid := files_artifact_expansion.FilesArtifactExpansionGUID(expansionGuidStr)
 		persistentVolumeClaimsByExpansionGuid[expansionGuid] = &claim
 	}
 
@@ -978,20 +1003,6 @@ func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtif
 		}
 		claimName := claim.Name
 		volumeName := claim.Spec.VolumeName
-
-		/*
-		claimName := claim.Name
-
-		filesArtifactId, found := claim.Labels[label_key_consts.FilesArtifactIDKubernetesLabelKey.GetString()]
-		if !found {
-			return nil, nil, stacktrace.NewError(
-				"Files artifact expansion persistent volume claim '%v' didn't have expected label '%v'",
-				claimName,
-				label_key_consts.FilesArtifactIDKubernetesLabelKey.GetString(),
-			)
-		}
-		 */
-
 
 		volumeObj := apiv1.Volume{
 			Name:         volumeName,
@@ -1048,7 +1059,7 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 	if newAnnotations == nil {
 		newAnnotations = map[string]string{}
 	}
-	newAnnotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()] = serializedPortSpecs.GetString()
+	newAnnotations[kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString()] = serializedPortSpecs.GetString()
 
 	updatingConfigurator := func(updatesToApply *applyconfigurationsv1.ServiceApplyConfiguration) {
 		specUpdateToApply := applyconfigurationsv1.ServiceSpec()

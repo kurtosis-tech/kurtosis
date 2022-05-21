@@ -14,6 +14,7 @@ const (
 	RolesKubernetesResource                  = "roles"
 	RoleBindingsKubernetesResource           = "rolebindings"
 	PodsKubernetesResource                   = "pods"
+	PodExecsKubernetesResource                   = "pods/exec"
 	ServicesKubernetesResource               = "services"
 	PersistentVolumeClaimsKubernetesResource = "persistentvolumeclaims"
 

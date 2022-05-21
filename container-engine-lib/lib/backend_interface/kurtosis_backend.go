@@ -1,12 +1,12 @@
 package backend_interface
+
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -255,7 +255,7 @@ type KurtosisBackend interface {
 		entrypointArgs []string,
 		cmdArgs []string,
 		envVars map[string]string,
-		filesArtifactVolumeMountDirpaths map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string,
+		filesArtifactVolumeMountDirpaths map[files_artifact_expansion.FilesArtifactExpansionGUID]string,
 	) (
 		*service.Service,
 		error,
@@ -409,47 +409,25 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-	//Create a files artifact exansion volume for user service and file artifact id
-	CreateFilesArtifactExpansionVolume(
+	//Create and execute a files artifact expansion for given file's FilesArtifactID
+	CreateFilesArtifactExpansion(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
 		serviceGuid service.ServiceGUID,
 		filesArtifactId service.FilesArtifactID,
-	) (
-		*files_artifact_expansion_volume.FilesArtifactExpansionVolume,
+		filesArtifactFilepathRelativeToEnclaveDatadirRoot string, ) (
+		*files_artifact_expansion.FilesArtifactExpansion,
 		error,
 	)
 
-	//Destroy files artifact expansion volumes using the given filters
-	DestroyFilesArtifactExpansionVolumes(
+	//Destroy files artifact expansion using the given filters
+	DestroyFilesArtifactExpansions(
 		ctx context.Context,
-		filters *files_artifact_expansion_volume.FilesArtifactExpansionVolumeFilters,
-	) (
-		successfulFileArtifactExpansionVolumeNames map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool,
-		erroredFileArtifactExpansionVolumeNames map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]error,
-		resultErr error,
-	)
-
-	//Run a files artifact expander
-	RunFilesArtifactExpander(
-		ctx context.Context,
-		guid files_artifact_expander.FilesArtifactExpanderGUID,
 		enclaveId enclave.EnclaveID,
-		filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
-		destVolMntDirpathOnExpander string,
-		filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
+		filters *files_artifact_expansion.FilesArtifactExpansionFilters,
 	) (
-		*files_artifact_expander.FilesArtifactExpander,
-		error,
-	)
-
-	//Destroy files artifact expanders using the given filters
-	DestroyFilesArtifactExpanders(
-		ctx context.Context,
-		filters *files_artifact_expander.FilesArtifactExpanderFilters,
-	) (
-		successfulFilesArtifactExpanderGuids map[files_artifact_expander.FilesArtifactExpanderGUID]bool,
-		erroredFilesArtifactExpanderGuids map[files_artifact_expander.FilesArtifactExpanderGUID]error,
-		resultError error,
+		resultSuccessfulFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]bool,
+		resultErroredFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]error,
+		resultErr error,
 	)
 }
