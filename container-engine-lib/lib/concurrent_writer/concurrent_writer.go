@@ -1,4 +1,4 @@
-package kubernetes_manager
+package concurrent_writer
 
 import (
 	"io"
@@ -6,19 +6,17 @@ import (
 )
 
 // From https://stackoverflow.com/questions/19646717/is-the-go-bytes-buffer-thread-safe
-type concurrentWriter struct {
+type ConcurrentWriter struct {
 	underlying io.Writer
 	mutex      *sync.Mutex
 }
-
-func newConcurrentWriter(underlying io.Writer) *concurrentWriter {
-	return &concurrentWriter{
+func NewConcurrentWriter(underlying io.Writer) *ConcurrentWriter {
+	return &ConcurrentWriter{
 		underlying: underlying,
 		mutex:      &sync.Mutex{},
 	}
 }
-
-func (writer *concurrentWriter) Write(p []byte) (n int, err error) {
+func (writer *ConcurrentWriter) Write(p []byte) (n int, err error) {
 	writer.mutex.Lock()
 	defer writer.mutex.Unlock()
 	return writer.underlying.Write(p)

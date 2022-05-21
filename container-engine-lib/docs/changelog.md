@@ -1,9 +1,21 @@
 # TBD
+### Features
+* Build `CopyFilesFromUserService` in Kubernetes
+* Added a `main.go` that's Gitignored with some local testing structure already set up
+
 ### Changes
 * Calls to remove Kubernetes resources are now synchronous
 
 ### Fixes
 * Fix DockerLogStreamingReadCloser logging at ERROR level when it should log at DEBUG
+* Ensured we're not going to get race conditions when writing the output of Docker & Kubernetes exec commands
+* Fixed a bug in `getSingleUserServiceObjectAndKubernetesResources`
+
+### Breaking Changes
+* Renamed `KurtosisBackend.CopyFromUserService` -> `CopyFilesFromUserService`
+    * Users should update their usages accordingly
+* `KurtosisBackend.CopyFilesFromUserService` now copies all bytes synchronously, rather than returning a `ReadCloser` for the user to deal with
+    * Remediation: pass in a `io.Writer` where the bytes should go
 
 # 0.28.0
 ### Fixes

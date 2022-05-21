@@ -952,7 +952,8 @@ func (manager *KubernetesManager) RunExecCommand(
 	podName string,
 	containerName string,
 	command []string,
-	logOutput io.Writer,
+	stdOutOutput io.Writer,
+	stdErrOutput io.Writer,
 ) (
 	resultExitCode int32,
 	resultErr error,
@@ -981,8 +982,6 @@ func (manager *KubernetesManager) RunExecCommand(
 		)
 	}
 
-	//Exec request.
-	outputWriter := newConcurrentWriter(logOutput)
 	exec, err := remotecommand.NewSPDYExecutor(manager.kuberneteRestConfig, http.MethodPost, request.URL())
 	if err != nil {
 		return -1, stacktrace.Propagate(
@@ -992,9 +991,10 @@ func (manager *KubernetesManager) RunExecCommand(
 			request.URL().String(),
 		)
 	}
+
 	if err = exec.Stream(remotecommand.StreamOptions{
-		Stdout: outputWriter,
-		Stderr: outputWriter,
+		Stdout: stdOutOutput,
+		Stderr: stdErrOutput,
 	}); err != nil {
 		// Kubernetes returns the exit code of the command via a string in the error message, so we have to extract it
 		statusError := err.Error()

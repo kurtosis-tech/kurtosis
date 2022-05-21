@@ -428,6 +428,7 @@ func (backend *DockerKurtosisBackend) UnpauseService(
 	return nil
 }
 
+// TODO Switch these to streaming so that huge command outputs don't blow up the API container memory
 // NOTE: This function will block while the exec is ongoing; if we need more perf we can make it async
 func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
@@ -516,34 +517,44 @@ func (backend *DockerKurtosisBackend) GetConnectionWithUserService(
 }
 
 // It returns io.ReadCloser which is a tar stream. It's up to the caller to close the reader.
-func (backend *DockerKurtosisBackend) CopyFromUserService(
+func (backend *DockerKurtosisBackend) CopyFilesFromUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
-	srcPath string,
+	srcPathOnContainer string,
+	output io.Writer,
 )(
-	io.ReadCloser,
 	error,
 ) {
 	_, serviceDockerResources, err := backend.getSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user service with GUID '%v' in enclave with ID '%v'", serviceGuid, enclaveId)
+		return stacktrace.Propagate(err, "An error occurred getting user service with GUID '%v' in enclave with ID '%v'", serviceGuid, enclaveId)
 	}
 	container := serviceDockerResources.container
 
-	tarStreamReadCloser, err := backend.dockerManager.CopyFromContainer(ctx, container.GetId(), srcPath)
+	tarStreamReadCloser, err := backend.dockerManager.CopyFromContainer(ctx, container.GetId(), srcPathOnContainer)
 	if err != nil {
-		return nil, stacktrace.Propagate(
+		return stacktrace.Propagate(
 			err,
 			"An error occurred copying content from sourcepath '%v' in container '%v' for user service '%v' in enclave '%v'",
-			srcPath,
+			srcPathOnContainer,
 			container.GetName(),
 			serviceGuid,
 			enclaveId,
 		)
 	}
+	defer tarStreamReadCloser.Close()
 
-	return tarStreamReadCloser, nil
+	if _, err := io.Copy(output, tarStreamReadCloser); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred copying the bytes of TAR'd up files at '%v' on service '%v' to the output",
+			srcPathOnContainer,
+			serviceGuid,
+		)
+	}
+
+	return nil
 }
 
 func (backend *DockerKurtosisBackend) StopUserServices(
