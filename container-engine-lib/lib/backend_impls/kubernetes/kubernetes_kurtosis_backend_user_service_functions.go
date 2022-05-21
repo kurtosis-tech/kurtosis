@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/annotation_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
@@ -170,7 +170,7 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 	shouldDeleteService := true
 	defer func() {
 		if shouldDeleteService {
-			if err := backend.kubernetesManager.RemoveService(ctx, namespaceName, createdService.Name); err != nil {
+			if err := backend.kubernetesManager.RemoveService(ctx, createdService); err != nil {
 				logrus.Errorf("Registering service '%v' didn't complete successfully so we tried to remove the Kubernetes service we created but doing so threw an error:\n%v", serviceId, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to remove service '%v' in namespace '%v' manually!!!", createdService.Name, namespaceName)
 			}
@@ -300,7 +300,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	shouldDestroyPod := true
 	defer func() {
 		if shouldDestroyPod {
-			if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, podName); err != nil {
+			if err := backend.kubernetesManager.RemovePod(ctx, createdPod); err != nil {
 				logrus.Errorf("Starting service didn't complete successfully so we tried to remove the pod we created but doing so threw an error:\n%v", err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to remove pod '%v' in '%v' manually!!!", podName, namespaceName)
 			}
@@ -543,7 +543,7 @@ func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, 
 
 		pod := resources.pod
 		if pod != nil {
-			if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, pod.Name); err != nil {
+			if err := backend.kubernetesManager.RemovePod(ctx, pod); err != nil {
 				erroredGuids[serviceGuid] = stacktrace.Propagate(
 					err,
 					"An error occurred removing Kubernetes pod '%v' in namespace '%v'",
@@ -598,7 +598,7 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 
 		pod := resources.pod
 		if pod != nil {
-			if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, pod.Name); err != nil {
+			if err := backend.kubernetesManager.RemovePod(ctx, pod); err != nil {
 				erroredGuids[serviceGuid] = stacktrace.Propagate(
 					err,
 					"An error occurred removing Kubernetes pod '%v' in namespace '%v'",
@@ -611,7 +611,7 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 
 		kubernetesService := resources.service
 		if kubernetesService != nil {
-			if err := backend.kubernetesManager.RemoveService(ctx, namespaceName, kubernetesService.Name); err != nil {
+			if err := backend.kubernetesManager.RemoveService(ctx, kubernetesService); err != nil {
 				erroredGuids[serviceGuid] = stacktrace.Propagate(
 					err,
 					"An error occurred removing Kubernetes service '%v' in namespace '%v'",
@@ -1059,7 +1059,7 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 	if newAnnotations == nil {
 		newAnnotations = map[string]string{}
 	}
-	newAnnotations[annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString()] = serializedPortSpecs.GetString()
+	newAnnotations[kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString()] = serializedPortSpecs.GetString()
 
 	updatingConfigurator := func(updatesToApply *applyconfigurationsv1.ServiceApplyConfiguration) {
 		specUpdateToApply := applyconfigurationsv1.ServiceSpec()

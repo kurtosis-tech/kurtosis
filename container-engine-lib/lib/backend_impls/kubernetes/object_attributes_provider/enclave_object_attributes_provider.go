@@ -2,6 +2,7 @@ package object_attributes_provider
 
 import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
@@ -313,7 +314,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod
 	labels[label_key_consts.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
 
 	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{
-		kubernetes_annotation_key.PortSpecsKubernetesAnnotationKey: serializedPortSpecsAnnotationValue,
+		kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey : serializedPortSpecsAnnotationValue,
 	}
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
@@ -357,7 +358,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForModulePod(
 	labels[label_key_consts.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.ModuleKurtosisResourceTypeKubernetesLabelValue
 
 	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{
-		kubernetes_annotation_key.PortSpecsKubernetesAnnotationKey: serializedPortSpecsAnnotationValue,
+		kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey: serializedPortSpecsAnnotationValue,
 	}
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
@@ -401,7 +402,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForModuleService(
 	labels[label_key_consts.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.ModuleKurtosisResourceTypeKubernetesLabelValue
 
 	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{
-		kubernetes_annotation_key.PortSpecsKubernetesAnnotationKey: serializedPortSpecsAnnotationValue,
+		kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey: serializedPortSpecsAnnotationValue,
 	}
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)

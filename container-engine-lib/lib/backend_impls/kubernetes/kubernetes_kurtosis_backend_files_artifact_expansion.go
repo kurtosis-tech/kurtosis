@@ -84,7 +84,7 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 	defer func() {
 		if shouldDestroyPVC {
 			err := backend.kubernetesManager.RemovePersistentVolumeClaim(
-				ctx, enclaveNamespaceName, pvcName)
+				ctx, pvc)
 			if err != nil {
 				logrus.Errorf("Failed to destroy persistent volume claim with name '%v' in namespace '%v'. Got error '%v'." +
 					"You should manually destroy this persistent volume claim.", pvcName, enclaveNamespaceName, err.Error())
@@ -143,7 +143,7 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 		if !hasJobSucceeded {
 			// We delete instead of kill/stop because Kubernetes doesn't have the concept of keeping around stopped jobs
 			// https://stackoverflow.com/a/52608258
-			deleteJobError := backend.kubernetesManager.DeleteJob(ctx, enclaveNamespaceName, job.Name)
+			deleteJobError := backend.kubernetesManager.DeleteJob(ctx, enclaveNamespaceName, job)
 			if deleteJobError != nil {
 				logrus.Errorf("Failed to delete job '%v' in namespace '%v', which did not succeed. Error in deletion: '%v'",
 					enclaveNamespaceName, job.Name, deleteJobError.Error())
