@@ -948,30 +948,30 @@ func (manager *KubernetesManager) DeleteJob(ctx context.Context, namespace strin
 	return nil
 }
 
-func (manager KubernetesManager) GetJobHasCompleted(ctx context.Context, namespace string, jobName string) (bool, error) {
+func (manager KubernetesManager) GetJobHasCompletedAndIsSuccess(ctx context.Context, namespace string, jobName string) (hasCompleted bool, isSuccess bool, resultErr error) {
 	job, err := manager.kubernetesClientSet.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{})
 	if err != nil {
-		return false, stacktrace.Propagate(err, "Failed to get job status for job name '%v' in namespace '%v'", jobName, namespace)
+		return false, false, stacktrace.Propagate(err, "Failed to get job status for job name '%v' in namespace '%v'", jobName, namespace)
 	}
 
 	// LOGIC FROM https://stackoverflow.com/a/69262406
 
 	// Job hasn't spun up yet
 	if job.Status.Active == 0 && job.Status.Succeeded == 0 && job.Status.Failed == 0 {
-		return false, nil
+		return false, false, nil
 	}
 
 	// Job is active
 	if job.Status.Active > 0 {
-		return false, nil
+		return false, false, nil
 	}
 
 	// Job succeeded
 	if job.Status.Succeeded > 0 {
-		return true, nil // Job ran successfully
+		return true, true, nil // Job ran successfully
 	}
 
-	return false, stacktrace.NewError("Job '%v' failed with error status", job.Name)
+	return true, false, nil
 }
 
 // ====================================================================================================

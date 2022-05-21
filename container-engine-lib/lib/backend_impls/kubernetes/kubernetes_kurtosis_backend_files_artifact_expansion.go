@@ -124,25 +124,32 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 			}
 		}
 	}()
-	jobSucceededPoller := time.Tick(jobStatusPollerInterval)
+	shouldKeepPollingJob := true
+	jobFinishedPoller := time.Tick(jobStatusPollerInterval)
 	jobSucceededTimeout := time.After(jobStatusPollerTimeout)
-	for {
+	for shouldKeepPollingJob {
 		select {
 		case <- jobSucceededTimeout:
 			return nil, stacktrace.NewError("Timed out waiting for job '%v' for files artifact expansion '%v' to complete.", job.Name, filesArtifactExpansionGUID)
-		case <- jobSucceededPoller:
-			hasJobSucceeded, err = backend.kubernetesManager.GetJobHasCompleted(ctx, enclaveNamespaceName, job.Name)
+		case <-jobFinishedPoller:
+			hasJobCompleted, hasJobSucceededInPoll, err := backend.kubernetesManager.GetJobHasCompletedAndIsSuccess(ctx, enclaveNamespaceName, job.Name)
 			if err != nil {
-				return nil, stacktrace.Propagate(err, "Job '%v' for files artifact expansion '%v' is no longer active, and did not succeed. Error: '%v'",
-					job.Name, filesArtifactExpansionGUID, err.Error())
+				return nil, stacktrace.Propagate(err, "Failed to get status for job '%v' for files artifact expansion '%v'",
+					job.Name, filesArtifactExpansionGUID)
 			}
-			if hasJobSucceeded {
-				shouldDestroyPVC = false
-				filesArtifactExpansion := files_artifact_expansion.NewFilesArtifactExpansion(filesArtifactExpansionGUID, serviceGuid)
-				return filesArtifactExpansion, nil
+			if hasJobCompleted {
+				shouldKeepPollingJob = false
+				hasJobSucceeded = hasJobSucceededInPoll
 			}
 		}
 	}
+	if !hasJobSucceeded {
+		return nil, stacktrace.NewError("Job '%v' for files artifact expansion '%v' did not succeed.", job.Name, filesArtifactExpansionGUID)
+	}
+	hasJobSucceeded = true
+	shouldDestroyPVC = false
+	filesArtifactExpansion := files_artifact_expansion.NewFilesArtifactExpansion(filesArtifactExpansionGUID, serviceGuid)
+	return filesArtifactExpansion, nil
 }
 
 //Destroy files artifact expansion volume and expander using the given filters
