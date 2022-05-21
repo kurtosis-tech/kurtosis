@@ -15,6 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"net"
 	"path"
+	"time"
 )
 
 const (
@@ -35,6 +36,8 @@ const (
 	enclaveDataVolumeDirpathOnExpanderContainer = "/enclave-data"
 
 	expanderContainerSuccessExitCode = 0
+
+	expanderContainerStopTimeout = time.Second * 2
 )
 
 type filesArtifactExpansionObjectsAndDockerResources struct {
@@ -73,10 +76,13 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, enclaveId)
 	}
+	shouldRemoveVolume := true
 	defer func() {
-		err = backend.dockerManager.RemoveVolume(ctx, filesArtifactExpansionVolumeName)
-		if err != nil {
-			logrus.Errorf("Failed to destroy expansion volume '%v' for files artifact expansion '%v' - got error: \n%v", filesArtifactExpansionVolumeName, filesArtifactExpansionGUID, err)
+		if shouldRemoveVolume {
+			err = backend.dockerManager.RemoveVolume(ctx, filesArtifactExpansionVolumeName)
+			if err != nil {
+				logrus.Errorf("Failed to destroy expansion volume '%v' for files artifact expansion '%v' - got error: \n%v", filesArtifactExpansionVolumeName, filesArtifactExpansionGUID, err)
+			}
 		}
 	}()
 
@@ -102,7 +108,7 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 		}
 	}()
 
-	err = backend.runFilesArtifactExpander(
+	_, err = backend.runFilesArtifactExpander(
 		ctx,
 		filesArtifactExpansionGUID,
 		serviceGuid,
@@ -117,6 +123,7 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 	}
 	filesArtifactExpansion := files_artifact_expansion.NewFilesArtifactExpansion(filesArtifactExpansionGUID, serviceGuid)
 	shouldReleaseIp = false
+	shouldRemoveVolume = false
 	return filesArtifactExpansion, nil
 }
 
@@ -151,8 +158,8 @@ func (backend *DockerKurtosisBackend)  DestroyFilesArtifactExpansion(
 			containerErr := backend.dockerManager.RemoveContainer(ctx, container.GetName())
 			if containerErr != nil {
 				errorMap[filesArtifactGUID] = stacktrace.Propagate(containerErr, "An error occurred removing container '%v' for files artifact expansion '%v'", container.GetName(), filesArtifactGUID)
+				continue
 			}
-			continue
 		}
 
 		volume := resources.volume
@@ -161,8 +168,8 @@ func (backend *DockerKurtosisBackend)  DestroyFilesArtifactExpansion(
 			volumeErr := backend.dockerManager.RemoveVolume(ctx, volume.Name)
 			if volumeErr != nil {
 				errorMap[filesArtifactGUID] = stacktrace.Propagate(volumeErr, "An error occurred removing volume '%v' for files artifact expansion '%v'", volume.Name, filesArtifactGUID)
+				continue
 			}
-			continue
 		}
 
 		successMap[filesArtifactGUID] = true
@@ -236,14 +243,19 @@ func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionDockerReso
 
 	// FILTER VOLUMES BY GUIDS TO MATCH
 	for _, volume := range volumes {
-		filesArtifactExpansionGUIDStr := volume.Labels[label_key_consts.GUIDDockerLabelKey.GetString()]
+		filesArtifactExpansionGUIDStr, found := volume.Labels[label_key_consts.GUIDDockerLabelKey.GetString()]
+		if !found {
+			return nil, stacktrace.Propagate(err, "Failed to find GUID label for volume '%v'", volume.Name)
+		}
 		filesArtifactExpansionGUID := files_artifact_expansion.FilesArtifactExpansionGUID(filesArtifactExpansionGUIDStr)
 
 		if maybeFilesArtifactGuidsToMatch != nil && len(maybeFilesArtifactGuidsToMatch) > 0 {
-			if _, filesArtifactGUIDFound := maybeFilesArtifactGuidsToMatch[filesArtifactExpansionGUID]; filesArtifactGUIDFound {
-				resourcesByFilesArtifactGuid[filesArtifactExpansionGUID] = &filesArtifactExpansionDockerResources{volume: volume}
+			if _, filesArtifactGUIDFound := maybeFilesArtifactGuidsToMatch[filesArtifactExpansionGUID]; !filesArtifactGUIDFound {
+				continue
 			}
 		}
+
+		resourcesByFilesArtifactGuid[filesArtifactExpansionGUID] = &filesArtifactExpansionDockerResources{volume: volume}
 	}
 
 	artifactContainerLabels := map[string]string{
@@ -263,14 +275,17 @@ func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionDockerReso
 		filesArtifactExpansionGUID := files_artifact_expansion.FilesArtifactExpansionGUID(filesArtifactExpansionGUIDStr)
 
 		if maybeFilesArtifactGuidsToMatch != nil && len(maybeFilesArtifactGuidsToMatch) > 0 {
-			if _, filesArtifactGUIDFound := maybeFilesArtifactGuidsToMatch[filesArtifactExpansionGUID]; filesArtifactGUIDFound {
-				if resourcesByFilesArtifactGuid[filesArtifactExpansionGUID] == nil {
-					resourcesByFilesArtifactGuid[filesArtifactExpansionGUID] = &filesArtifactExpansionDockerResources{container: container}
-				} else {
-					resourcesByFilesArtifactGuid[filesArtifactExpansionGUID].container = container
-				}
+			if _, filesArtifactGUIDFound := maybeFilesArtifactGuidsToMatch[filesArtifactExpansionGUID]; !filesArtifactGUIDFound {
+				continue
 			}
 		}
+
+		resultObj, found := resourcesByFilesArtifactGuid[filesArtifactExpansionGUID]
+		if !found {
+			resultObj = &filesArtifactExpansionDockerResources{}
+		}
+		resultObj.container = container
+		resourcesByFilesArtifactGuid[filesArtifactExpansionGUID] = resultObj
 	}
 	return resourcesByFilesArtifactGuid, nil
 }
@@ -339,26 +354,26 @@ func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 	destVolMntDirpathOnExpander string,
 	ipAddr net.IP,
 	filesArtifactFilepathRelativeToEnclaveDataVolumeRoot string,
-) error {
+) (expanderContainerId string, resultErr error) {
 
 	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
+		return "", stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
 
 	enclaveDataVolumeName, err := backend.getEnclaveDataVolumeByEnclaveId(ctx, enclaveId)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveId)
+		return "", stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveId)
 	}
 
 	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
 	if err != nil {
-		return stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
+		return "", stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
 
 	containerAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpansionContainer(filesArtifactExpansionGUID, serviceGUID)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while trying to get the files artifact expander container attributes for files artifact expansion GUID '%v'", filesArtifactExpansionGUID)
+		return "", stacktrace.Propagate(err, "An error occurred while trying to get the files artifact expander container attributes for files artifact expansion GUID '%v'", filesArtifactExpansionGUID)
 	}
 	containerName := containerAttrs.GetName().GetString()
 	containerLabels := map[string]string{}
@@ -389,12 +404,12 @@ func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 	).Build()
 	containerId, _, err := backend.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the Docker container to expand the file artifact '%v' into the volume '%v'", filesArtifactFilepathRelativeToEnclaveDataVolumeRoot, filesArtifactExpansionVolumeName)
+		return "", stacktrace.Propagate(err, "An error occurred creating the Docker container to expand the file artifact '%v' into the volume '%v'", filesArtifactFilepathRelativeToEnclaveDataVolumeRoot, filesArtifactExpansionVolumeName)
 	}
 	shouldKillContainer := true
 	defer func() {
 		if shouldKillContainer {
-			containerTeardownErr := backend.dockerManager.RemoveContainer(ctx, containerId)
+			containerTeardownErr := backend.dockerManager.StopContainer(ctx, containerId, expanderContainerStopTimeout)
 			if containerTeardownErr != nil {
 				logrus.Errorf("Failed to tear down container ID '%v', you will need to manually remove it!", containerId)
 			}
@@ -403,17 +418,17 @@ func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 
 	exitCode, err := backend.dockerManager.WaitForExit(ctx, containerId)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred waiting for the files artifact expander Docker container '%v' to exit", containerId)
+		return "", stacktrace.Propagate(err, "An error occurred waiting for the files artifact expander Docker container '%v' to exit", containerId)
 	}
 	if exitCode != expanderContainerSuccessExitCode {
-		return stacktrace.NewError(
+		return "", stacktrace.NewError(
 			"The files artifact expander Docker container '%v' exited with non-%v exit code: %v",
 			containerId,
 			expanderContainerSuccessExitCode,
 			exitCode)
 	}
 	shouldKillContainer = false
-	return nil
+	return containerId,nil
 }
 
 // Image-specific generator of the command that should be run to extract the artifact at the given filepath
