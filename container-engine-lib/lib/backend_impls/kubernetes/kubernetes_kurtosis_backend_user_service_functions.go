@@ -171,7 +171,7 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 	shouldDeleteService := true
 	defer func() {
 		if shouldDeleteService {
-			if err := backend.kubernetesManager.RemoveService(ctx, namespaceName, createdService.Name); err != nil {
+			if err := backend.kubernetesManager.RemoveService(ctx, createdService); err != nil {
 				logrus.Errorf("Registering service '%v' didn't complete successfully so we tried to remove the Kubernetes service we created but doing so threw an error:\n%v", serviceId, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to remove service '%v' in namespace '%v' manually!!!", createdService.Name, namespaceName)
 			}
@@ -301,7 +301,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	shouldDestroyPod := true
 	defer func() {
 		if shouldDestroyPod {
-			if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, podName); err != nil {
+			if err := backend.kubernetesManager.RemovePod(ctx, createdPod); err != nil {
 				logrus.Errorf("Starting service didn't complete successfully so we tried to remove the pod we created but doing so threw an error:\n%v", err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to remove pod '%v' in '%v' manually!!!", podName, namespaceName)
 			}
@@ -554,7 +554,7 @@ func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, 
 
 		pod := resources.pod
 		if pod != nil {
-			if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, pod.Name); err != nil {
+			if err := backend.kubernetesManager.RemovePod(ctx, pod); err != nil {
 				erroredGuids[serviceGuid] = stacktrace.Propagate(
 					err,
 					"An error occurred removing Kubernetes pod '%v' in namespace '%v'",
@@ -609,7 +609,7 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 
 		pod := resources.pod
 		if pod != nil {
-			if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, pod.Name); err != nil {
+			if err := backend.kubernetesManager.RemovePod(ctx, pod); err != nil {
 				erroredGuids[serviceGuid] = stacktrace.Propagate(
 					err,
 					"An error occurred removing Kubernetes pod '%v' in namespace '%v'",
@@ -622,7 +622,7 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 
 		kubernetesService := resources.service
 		if kubernetesService != nil {
-			if err := backend.kubernetesManager.RemoveService(ctx, namespaceName, kubernetesService.Name); err != nil {
+			if err := backend.kubernetesManager.RemoveService(ctx, kubernetesService); err != nil {
 				erroredGuids[serviceGuid] = stacktrace.Propagate(
 					err,
 					"An error occurred removing Kubernetes service '%v' in namespace '%v'",

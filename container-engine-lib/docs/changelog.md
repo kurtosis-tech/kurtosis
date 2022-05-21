@@ -2,12 +2,16 @@
 ### Features
 * Build `CopyFilesFromUserService` in Kubernetes
 
+### Changes
+* Calls to remove Kubernetes resources are now synchronous
+
+### Fixes
+* Fix DockerLogStreamingReadCloser logging at ERROR level when it should log at DEBUG
+* Ensured we're not going to get race conditions when writing the output of Docker & Kubernetes exec commands
+
 ### Breaking Changes
 * Renamed `KurtosisBackend.CopyFromUserService` -> `CopyFilesFromUserService`
     * Users should update their usages accordingly
-
-### Fixes
-* Ensured we're not going to get race conditions when writing the output of Docker & Kubernetes exec commands
 
 # 0.28.0
 ### Fixes
