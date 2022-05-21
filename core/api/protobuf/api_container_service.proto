@@ -207,6 +207,9 @@ message StartServiceResponse {
   //  corresponds to the ID that was passed in in StartServiceArgs
   // NOTE: Will be empty if the service didn't define any private ports
   map<string, Port> public_ports = 2;
+
+  // Guid of the started services
+  string service_guid = 3;
 }
 
 // ==============================================================================================
@@ -233,6 +236,9 @@ message GetServiceInfoResponse {
   // The user_specified_port_id will match the keys specified in StartServiceArgs
   // NOTE: Will be empty if the service isn't running or didn't define any private ports
   map<string, Port> public_ports = 4;
+
+  // Guid of the running service
+  string service_guid = 5;
 }
 
 // ==============================================================================================
