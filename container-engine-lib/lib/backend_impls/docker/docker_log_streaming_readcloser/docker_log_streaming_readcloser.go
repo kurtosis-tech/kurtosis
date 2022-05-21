@@ -44,6 +44,7 @@ func (streamer DockerLogStreamingReadCloser) Read(p []byte) (n int, err error) {
 }
 
 func (streamer DockerLogStreamingReadCloser) Close() error {
+	// Closing the source will then cause the Docker thread to stop demultiplexing and exit
 	streamer.source.Close()
 
 	// Wait until the Docker thread exits
