@@ -29,8 +29,7 @@ const (
 	millisBetweenAvailabilityRetries = 1000
 
 	/*
-	NOTE: on 2022-05-16 this failed with the following error so we bumped the num polls to 20. If this fails again, look
-	into if there's some sort of nondeterminism happening.
+	NOTE: on 2022-05-16 this failed with the following error so we bumped the num polls to 20.
 
 	time="2022-05-16T23:58:21Z" level=info msg="Sanity-checking that all 4 datastore services added via the module work as expected..."
 	--- FAIL: TestModule (21.46s)
@@ -42,8 +41,12 @@ const (
 	        	            	Caused by: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing dial tcp 127.0.0.1:49188: connect: connection refused"
 	        	Test:       	TestModule
 	        	Messages:   	An error occurred waiting for the datastore service to become available
+
+	NOTE: On 2022-05-21 this failed again at 20s. I opened the enclave logs and it's weird because nothing is failing and
+	the datastore service is showing itself as up *before* we even start the check-if-available wait. We're in crunch mode
+	so I'm going to bump this up to 30s, but I suspect there's some sort of nondeterministic underlying failure happening.
 	 */
-	waitForStartupMaxPolls           = 20
+	waitForStartupMaxPolls           = 30
 )
 
 type DatastoreArmyModuleResult struct {
