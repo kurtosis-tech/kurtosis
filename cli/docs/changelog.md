@@ -1,4 +1,6 @@
 # TBD
+
+# 0.18.3
 ### Fixes
 * Upgrade to latest container-engine-lib, Core, and Engine which contain fixes for modules on Kubernetes
 * Switched `module exec` to the new Kurtosis command framework
