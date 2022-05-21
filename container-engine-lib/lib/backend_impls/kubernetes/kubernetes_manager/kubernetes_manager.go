@@ -16,12 +16,16 @@ import (
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
+	apiwatch "k8s.io/apimachinery/pkg/watch"
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/remotecommand"
+	"k8s.io/client-go/tools/watch"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -143,7 +147,7 @@ func (manager *KubernetesManager) RemoveService(ctx context.Context, service *ap
 	}
 
 	// Wait for resource to be deleted from Kubernetes
-	if err := waitResourceDeletion(ctx, retryWatcher); err != nil {
+	if err := waitForResourceDeletion(ctx, retryWatcher); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to wait for service deletion, instead a non-nil error was returned")
 	}
 
@@ -256,7 +260,7 @@ func (manager *KubernetesManager) RemoveStorageClass(ctx context.Context, storag
 		return stacktrace.Propagate(err, "Failed to delete storage class with name '%s' with delete options '%+v'", name, removeObjectDeleteOptions)
 	}
 	// Wait for resource to be deleted from Kubernetes
-	if err := waitResourceDeletion(ctx, retryWatcher); err != nil {
+	if err := waitForResourceDeletion(ctx, retryWatcher); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to wait for storage class deletion, instead a non-nil error was returned")
 	}
 	return nil
@@ -333,7 +337,7 @@ func (manager *KubernetesManager) RemovePersistentVolumeClaim(ctx context.Contex
 	if err := volumeClaimsClient.Delete(ctx, name, removeObjectDeleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete persistent volume claim with name '%s' with delete options '%+v' in namespace '%s'", name, removeObjectDeleteOptions, namespace)
 	}
-	if err := waitResourceDeletion(ctx, retryWatcher); err != nil {
+	if err := waitForResourceDeletion(ctx, retryWatcher); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to wait for persistent volume claim deletion, instead a non-nil error was returned")
 	}
 	return nil
@@ -418,7 +422,7 @@ func (manager *KubernetesManager) RemoveNamespace(ctx context.Context, namespace
 	}
 
 	// Wait for resource to be deleted from Kubernetes
-	if err := waitResourceDeletion(ctx, retryWatcher); err != nil {
+	if err := waitForResourceDeletion(ctx, retryWatcher); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to wait for namespace '%v' to be deleted from Kubernetes, instead a non-nil error was returned", name)
 	}
 
@@ -503,7 +507,7 @@ func (manager *KubernetesManager) RemoveDaemonSet(ctx context.Context, daemonSet
 		return stacktrace.Propagate(err, "Failed to delete daemon set with name '%s' with delete options '%+v'", name, removeObjectDeleteOptions)
 	}
 	// Wait for resource to be deleted from Kubernetes
-	if err := waitResourceDeletion(ctx, retryWatcher); err != nil {
+	if err := waitForResourceDeletion(ctx, retryWatcher); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to wait for daemon set '%v' to be deleted from Kubernetes, instead a non-nil error was returned", name)
 	}
 	return nil
@@ -574,7 +578,7 @@ func (manager *KubernetesManager) RemoveServiceAccount(ctx context.Context, serv
 		return stacktrace.Propagate(err, "Failed to delete service account with name '%s' in namespace '%v'", name, namespace)
 	}
 	// Wait for resource to be deleted from Kubernetes
-	if err := waitResourceDeletion(ctx, retryWatcher); err != nil {
+	if err := waitForResourceDeletion(ctx, retryWatcher); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to wait for service account '%v' to be deleted from Kubernetes, instead a non-nil error was returned", name)
 	}
 	return nil
@@ -636,7 +640,7 @@ func (manager *KubernetesManager) RemoveRole(ctx context.Context, role *rbacv1.R
 		return stacktrace.Propagate(err, "Failed to delete role with name '%s' in namespace '%v'", name, namespace)
 	}
 	// Wait for resource to be deleted from Kubernetes
-	if err := waitResourceDeletion(ctx, retryWatcher); err != nil {
+	if err := waitForResourceDeletion(ctx, retryWatcher); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to wait for service account '%v' to be deleted from Kubernetes, instead a non-nil error was returned", name)
 	}
 	return nil
@@ -699,7 +703,7 @@ func (manager *KubernetesManager) RemoveRoleBindings(ctx context.Context, roleBi
 		return stacktrace.Propagate(err, "Failed to delete role bindings with name '%s' in namespace '%v'", name, namespace)
 	}
 	// Wait for resource to be deleted from Kubernetes
-	if err := waitResourceDeletion(ctx, retryWatcher); err != nil {
+	if err := waitForResourceDeletion(ctx, retryWatcher); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to wait for role binding '%v' to be deleted from Kubernetes, instead a non-nil error was returned", name)
 	}
 
@@ -761,7 +765,7 @@ func (manager *KubernetesManager) RemoveClusterRole(ctx context.Context, cluster
 		return stacktrace.Propagate(err, "Failed to delete cluster role with name '%s'", name)
 	}
 	// Wait for resource to be deleted from Kubernetes
-	if err := waitResourceDeletion(ctx, retryWatcher); err != nil {
+	if err := waitForResourceDeletion(ctx, retryWatcher); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to wait for cluster role '%v' to be deleted from Kubernetes, instead a non-nil error was returned", name)
 	}
 	return nil
@@ -823,7 +827,7 @@ func (manager *KubernetesManager) RemoveClusterRoleBindings(ctx context.Context,
 		return stacktrace.Propagate(err, "Failed to delete cluster role binding with name '%s'", name)
 	}
 	// Wait for resource to be deleted from Kubernetes
-	if err := waitResourceDeletion(ctx, retryWatcher); err != nil {
+	if err := waitForResourceDeletion(ctx, retryWatcher); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to wait for cluster role binding '%v' to be deleted from Kubernetes, instead a non-nil error was returned", name)
 	}
 	return nil
@@ -892,7 +896,7 @@ func (manager *KubernetesManager) RemovePod(ctx context.Context, pod *apiv1.Pod)
 	}
 
 	// Wait for resource to be deleted from Kubernetes
-	if err := waitResourceDeletion(ctx, retryWatcher); err != nil {
+	if err := waitForResourceDeletion(ctx, retryWatcher); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to wait with '%v' second timeout for pod deletion, instead a non-nil error was returned", resourceDeletionTimeoutInSeconds)
 	}
 	return nil
@@ -1174,7 +1178,7 @@ func getRetryWatcherForWatchFunc(watchFunc cache.WatchFunc, resourceVersion stri
 	return retryWatcher, nil
 }
 
-func waitResourceDeletion(ctx context.Context, retryWatcher *watch.RetryWatcher) error {
+func waitForResourceDeletion(ctx context.Context, retryWatcher *watch.RetryWatcher) error {
 	for {
 		select {
 		case resourceEvent := <-retryWatcher.ResultChan():
