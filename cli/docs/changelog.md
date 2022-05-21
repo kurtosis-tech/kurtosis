@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Added files artifact expansion in Kubernetes
+* Implemented copying files from a user service in Kubernetes
 
 # 0.18.3
 ### Fixes
