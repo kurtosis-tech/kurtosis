@@ -23,9 +23,8 @@ const (
 	apiContainerNameSuffix                 = "kurtosis-api"
 	userServiceContainerNameFragment       = "user-service"
 	networkingSidecarContainerNameFragment = "networking-sidecar"
-	artifactExpanderContainerNameFragment  = "files-artifact-expander"
-	artifactExpansionVolumeNameFragment    = "files-artifact-expansion"
-	moduleContainerNameFragment            = "module"
+	artifactExpansionNameFragment         = "files-artifact-expansion"
+	moduleContainerNameFragment           = "module"
 )
 
 type DockerEnclaveObjectAttributesProvider interface {
@@ -334,7 +333,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpan
 	guidStr := string(guid)
 	serviceGuidStr := string(serviceGUID)
 	name, err := provider.getNameForEnclaveObject([]string{
-		artifactExpansionVolumeNameFragment,
+		artifactExpansionNameFragment,
 		guidStr,
 	})
 	if err != nil {
@@ -371,7 +370,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpan
 	guidStr := string(guid)
 	serviceGuidStr := string(serviceGUID)
 	name, err := provider.getNameForEnclaveObject([]string{
-		artifactExpanderContainerNameFragment,
+		artifactExpansionNameFragment,
 		guidStr,
 	})
 	if err != nil {
