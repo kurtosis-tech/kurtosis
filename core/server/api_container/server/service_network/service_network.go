@@ -10,7 +10,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/files_artifact_expander"
@@ -698,23 +698,22 @@ func (network *ServiceNetwork) startService(
 	// First expand the files artifacts into volumes, so that any errors get caught early
 	// NOTE: if users don't need to investigate the volume contents, we could keep track of the volumes we create
 	//  and delete them at the end of the test to keep things cleaner
-	artifactUuidsToVolumes, err := network.filesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, serviceGuid, usedArtifactUuidSet)
+	artifactUuidsToExpansionGUIDs, err := network.filesArtifactExpander.ExpandArtifacts(ctx, serviceGuid, usedArtifactUuidSet)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred expanding the requested files artifacts into volumes")
 	}
 
-
-	artifactVolumeMounts := map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string{}
+	artifactVolumeMounts := map[files_artifact_expansion.FilesArtifactExpansionGUID]string{}
 	for artifactUuid, mountpoint := range filesArtifactUuidsToMountpoints {
-		artifactVolume, found := artifactUuidsToVolumes[artifactUuid]
+		artifactExpansionGUID, found := artifactUuidsToExpansionGUIDs[artifactUuid]
 		if !found {
 			return nil, stacktrace.NewError(
-				"Even though we declared that we need files artifact '%v' to be expanded, no volume containing the "+
+				"Even though we declared that we need files artifact '%v' to be expanded, no expansion containing the "+
 					"expanded contents was found; this is a bug in Kurtosis",
 				artifactUuid,
 			)
 		}
-		artifactVolumeMounts[artifactVolume] = mountpoint
+		artifactVolumeMounts[artifactExpansionGUID] = mountpoint
 	}
 
 	launchedUserService, err := network.kurtosisBackend.StartUserService(
