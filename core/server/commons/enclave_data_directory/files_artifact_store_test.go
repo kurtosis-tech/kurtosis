@@ -18,12 +18,15 @@ func TestFileStore_StoreFileSavesFile(t *testing.T) {
 	fileStore := getTestFileStore(t)
 	testContent := "Long Live Kurtosis!"
 	reader := strings.NewReader(testContent)
-	uuid, err := fileStore.StoreFile(reader)
+	filesArtifactId, err := fileStore.StoreFile(reader)
 	require.Nil(t, err)
-	require.Equal(t, 36, len(uuid)) //UUID is 128 bits but in string it is hex represented chars so 32 chars
+	require.Equal(t, 36, len(filesArtifactId)) //UUID is 128 bits but in string it is hex represented chars so 32 chars
 
 	//Test that it saved where it said it would.
-	expectedFilename := strings.Join([]string{uuid, artifactExtension}, ".")
+	expectedFilename := strings.Join(
+		[]string{string(filesArtifactId), artifactExtension},
+		".",
+	)
 	expectedFilepath := filepath.Join(fileStore.fileCache.absoluteDirpath, expectedFilename)
 	_, dirErr := os.Stat(expectedFilepath)
 	require.Nil(t, dirErr)
@@ -39,7 +42,7 @@ func TestFileStore_GetFilepathByUUIDProperFilepath(t *testing.T) {
 	uuid, err := fileStore.StoreFile(reader)
 	require.Nil(t, err)
 
-	enclaveDataFile, err := fileStore.GetFileByUUID(uuid)
+	enclaveDataFile, err := fileStore.GetFile(uuid)
 	require.Nil(t, err)
 
 	_, dirErr := os.Stat(enclaveDataFile.absoluteFilepath)
@@ -65,9 +68,9 @@ func TestFileStore_StoreFilesUniquely(t *testing.T){
 	require.NotEqual(t, uuid, anotherUUID)
 
 	//Get their paths.
-	enclaveDataFile, err := fileStore.GetFileByUUID(uuid)
+	enclaveDataFile, err := fileStore.GetFile(uuid)
 	require.Nil(t, err)
-	anotherFilepath, err := fileStore.GetFileByUUID(anotherUUID)
+	anotherFilepath, err := fileStore.GetFile(anotherUUID)
 	require.Nil(t, err)
 	require.NotEqual(t, enclaveDataFile, anotherFilepath)
 
