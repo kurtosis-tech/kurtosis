@@ -378,6 +378,7 @@ func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
 	}
 	userServiceLogs := map[service.ServiceGUID]io.ReadCloser{}
 	erredServiceLogs := map[service.ServiceGUID]error{}
+	shouldCloseLogStreams := true
 	for _, serviceObjectAndResource := range serviceObjectsAndResources {
 		serviceGuid := serviceObjectAndResource.service.GetRegistration().GetGUID()
 		servicePod := serviceObjectAndResource.kubernetesResources.pod
@@ -392,8 +393,16 @@ func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
 			erredServiceLogs[serviceGuid] = stacktrace.Propagate(err, "Expected to be able to call Kubernetes to get logs for service with GUID '%v', instead a non-nil error was returned", serviceGuid)
 			continue
 		}
+		defer func() {
+			if shouldCloseLogStreams {
+				logReadCloser.Close()
+			}
+		}()
+
 		userServiceLogs[serviceGuid] = logReadCloser
 	}
+
+	shouldCloseLogStreams = false
 	return userServiceLogs, erredServiceLogs, nil
 }
 
