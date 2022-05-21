@@ -275,6 +275,7 @@ func (backend *KubernetesKurtosisBackend) GetModuleLogs(
 	}
 	moduleLogs := map[module.ModuleGUID]io.ReadCloser{}
 	erroredModuleLogs := map[module.ModuleGUID]error{}
+	shouldCloseLogStreams := true
 	for _, moduleObjectAndResource := range moduleObjectsAndResources {
 		moduleGuid := moduleObjectAndResource.module.GetGUID()
 		modulePod := moduleObjectAndResource.kubernetesResources.pod
@@ -284,7 +285,7 @@ func (backend *KubernetesKurtosisBackend) GetModuleLogs(
 		}
 		enclaveNamespaceName := moduleObjectAndResource.kubernetesResources.service.GetNamespace()
 		// Get logs
-		logReadCloser, err := backend.kubernetesManager.GetContainerLogs(
+		logStream, err := backend.kubernetesManager.GetContainerLogs(
 			ctx,
 			enclaveNamespaceName,
 			modulePod.Name,
@@ -296,8 +297,16 @@ func (backend *KubernetesKurtosisBackend) GetModuleLogs(
 			erroredModuleLogs[moduleGuid] = stacktrace.Propagate(err, "Expected to be able to call Kubernetes to get logs for module with GUID '%v', instead a non-nil error was returned", moduleGuid)
 			continue
 		}
-		moduleLogs[moduleGuid] = logReadCloser
+		defer func() {
+			if shouldCloseLogStreams {
+				logStream.Close()
+			}
+		}()
+
+		moduleLogs[moduleGuid] = logStream
 	}
+
+	shouldCloseLogStreams = false
 	return moduleLogs, erroredModuleLogs, nil
 }
 

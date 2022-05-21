@@ -13,6 +13,7 @@
 * Fixed our exec command
 * Fixed API containers and engines not being able to run pod exec commands
 * Fixed a bug that caused service registration to fail
+* Fixed the user services and modules Docker log streams not actually coming back demultiplexed
 
 # 0.26.1
 ### Features
