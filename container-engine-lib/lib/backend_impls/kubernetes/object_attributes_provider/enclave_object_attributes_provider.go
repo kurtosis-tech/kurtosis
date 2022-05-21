@@ -177,7 +177,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactE
 	}
 	labels[label_key_consts.UserServiceGUIDKubernetesLabelKey] = serviceGUIDLabel
 
-	// No custom annotations for enclave data volume
+	// No custom annotations for files artifact expansion job
 	customAnnotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, customAnnotations)
@@ -215,13 +215,14 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactE
 	}
 
 	labels[label_key_consts.KurtosisVolumeTypeKubernetesLabelKey] = label_value_consts.FilesArtifactExpansionVolumeTypeKubernetesLabelValue
+	labels[label_key_consts.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.FilesArtifactExpansionKurtosisResourceTypeKubernetesLabelValue
 	serviceGUIDLabel, err := kubernetes_label_value.CreateNewKubernetesLabelValue(serviceGuidStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes label value from GUID string '%v'", serviceGuidStr)
 	}
 	labels[label_key_consts.UserServiceGUIDKubernetesLabelKey] = serviceGUIDLabel
 
-	// No custom annotations for enclave data volume
+	// No custom annotations for files artifact expansion persistent volume claim
 	customAnnotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, customAnnotations)
@@ -235,16 +236,6 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactE
 	}
 
 	return objectAttributes, nil
-}
-
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpansionContainer(
-	guid files_artifact_expansion.FilesArtifactExpansionGUID,
-	serviceGUID service.ServiceGUID,
-)(
-	KubernetesObjectAttributes,
-	error,
-) {
-	panic("implement me")
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceService (

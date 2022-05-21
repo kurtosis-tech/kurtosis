@@ -25,7 +25,7 @@ const (
 	// Dirpath on the artifact expander container where the destination volume containing expanded files will be mounted
 	destVolMntDirpathOnExpander = "/dest"
 
-	isPvcVolumeClaimReadOnly = false
+	isPersistentVolumeClaimReadOnly = false
 
 	jobStatusPollerInterval = time.Millisecond * 100
 
@@ -62,9 +62,9 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 		)
 	}
 	pvcName := pvcAttrs.GetName().GetString()
-	pvcLabels := map[string]string{}
+	pvcLabelStrs := map[string]string{}
 	for labelKey, labelValue := range pvcAttrs.GetLabels() {
-		pvcLabels[labelKey.GetString()] = labelValue.GetString()
+		pvcLabelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 	enclaveNamespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
 	if err != nil {
@@ -74,7 +74,7 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 		ctx,
 		enclaveNamespaceName,
 		pvcName,
-		pvcLabels,
+		pvcLabelStrs,
 		backend.apiContainerModeArgs.filesArtifactExpansionVolumeSizeInMegabytes,
 		backend.apiContainerModeArgs.storageClassName)
 	if err != nil {
@@ -105,7 +105,7 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 
 	pvcVolumeSource := apiv1.PersistentVolumeClaimVolumeSource{
 		ClaimName: pvc.Name,
-		ReadOnly:  isPvcVolumeClaimReadOnly,
+		ReadOnly:  isPersistentVolumeClaimReadOnly,
 	}
 
 	volumeSource := apiv1.VolumeSource{
@@ -138,9 +138,9 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create files artifact expansion job for expansion '%v'", filesArtifactExpansionGUID)
 	}
-	hasJobSucceeded := false
+	hasJobNotSucceeded := true
 	defer func(){
-		if !hasJobSucceeded {
+		if hasJobNotSucceeded {
 			// We delete instead of kill/stop because Kubernetes doesn't have the concept of keeping around stopped jobs
 			// https://stackoverflow.com/a/52608258
 			deleteJobError := backend.kubernetesManager.DeleteJob(ctx, enclaveNamespaceName, job)
@@ -156,23 +156,23 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 	for shouldKeepPollingJob {
 		select {
 		case <- jobSucceededTimeout:
-			return nil, stacktrace.NewError("Timed out waiting for job '%v' for files artifact expansion '%v' to complete.", job.Name, filesArtifactExpansionGUID)
+			return nil, stacktrace.NewError("Timed out after '%v' seconds waiting for job '%v' for files artifact expansion '%v' to complete.", jobStatusPollerTimeout.Seconds(), job.Name, filesArtifactExpansionGUID)
 		case <-jobFinishedPoller:
-			hasJobCompleted, hasJobSucceededInPoll, err := backend.kubernetesManager.GetJobHasCompletedAndIsSuccess(ctx, enclaveNamespaceName, job.Name)
+			hasJobCompleted, hasJobSucceededInPoll, err := backend.kubernetesManager.GetJobCompletionAndSuccessFlags(ctx, enclaveNamespaceName, job.Name)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "Failed to get status for job '%v' for files artifact expansion '%v'",
 					job.Name, filesArtifactExpansionGUID)
 			}
 			if hasJobCompleted {
 				shouldKeepPollingJob = false
-				hasJobSucceeded = hasJobSucceededInPoll
+				hasJobNotSucceeded = !hasJobSucceededInPoll
 			}
 		}
 	}
-	if !hasJobSucceeded {
+	if hasJobNotSucceeded {
 		return nil, stacktrace.NewError("Job '%v' for files artifact expansion '%v' did not succeed.", job.Name, filesArtifactExpansionGUID)
 	}
-	hasJobSucceeded = true
+	hasJobNotSucceeded = false
 	shouldDestroyPVC = false
 	filesArtifactExpansion := files_artifact_expansion.NewFilesArtifactExpansion(filesArtifactExpansionGUID, serviceGuid)
 	return filesArtifactExpansion, nil

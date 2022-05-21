@@ -1082,7 +1082,7 @@ func (manager *KubernetesManager) DeleteJob(ctx context.Context, namespace strin
 	}
 	retryWatcher, err := getRetryWatcherForWatchFunc(watchFunc, resourceVersion)
 	if err != nil {
-		return stacktrace.Propagate(err, "Expected to be able to create a retry watcher for persistent volume claim deletion, instead a non-nil error was returned")
+		return stacktrace.Propagate(err, "Expected to be able to create a retry watcher for job deletion, instead a non-nil error was returned")
 	}
 	defer retryWatcher.Stop()
 
@@ -1097,7 +1097,7 @@ func (manager *KubernetesManager) DeleteJob(ctx context.Context, namespace strin
 	return nil
 }
 
-func (manager KubernetesManager) GetJobHasCompletedAndIsSuccess(ctx context.Context, namespace string, jobName string) (hasCompleted bool, isSuccess bool, resultErr error) {
+func (manager KubernetesManager) GetJobCompletionAndSuccessFlags(ctx context.Context, namespace string, jobName string) (hasCompleted bool, isSuccess bool, resultErr error) {
 	job, err := manager.kubernetesClientSet.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{})
 	if err != nil {
 		return false, false, stacktrace.Propagate(err, "Failed to get job status for job name '%v' in namespace '%v'", jobName, namespace)
