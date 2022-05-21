@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed a null pointer exception occurring when launching a module
 
 # 1.50.0
 ### Features
