@@ -230,9 +230,22 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	roleLabels := getStringMapFromLabelMap(rolesAttributes.GetLabels())
 	rolePolicyRules := []rbacv1.PolicyRule{
 		{
-			Verbs: []string{consts.CreateKubernetesVerb, consts.UpdateKubernetesVerb, consts.PatchKubernetesVerb, consts.DeleteKubernetesVerb, consts.GetKubernetesVerb, consts.ListKubernetesVerb, consts.WatchKubernetesVerb},
+			Verbs: []string{
+				consts.CreateKubernetesVerb,
+				consts.UpdateKubernetesVerb,
+				consts.PatchKubernetesVerb,
+				consts.DeleteKubernetesVerb,
+				consts.GetKubernetesVerb,
+				consts.ListKubernetesVerb,
+				consts.WatchKubernetesVerb,
+			},
 			APIGroups: []string{rbacv1.APIGroupAll},
-			Resources: []string{consts.PodsKubernetesResource, consts.ServicesKubernetesResource, consts.PersistentVolumeClaimsKubernetesResource},
+			Resources: []string{
+				consts.PodsKubernetesResource,
+				consts.PodExecsKubernetesResource,
+				consts.ServicesKubernetesResource,
+				consts.PersistentVolumeClaimsKubernetesResource,
+			},
 		},
 		{
 			// Necessary for the API container to get its own namespace

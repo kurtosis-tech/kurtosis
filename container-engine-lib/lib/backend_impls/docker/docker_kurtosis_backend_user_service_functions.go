@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_log_streaming_readcloser"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
@@ -80,6 +81,7 @@ var commandToRunWhenCreatingUserServiceShell = []string{
 	"-c",
 	"if command -v 'bash' > /dev/null; then echo \"Found bash on container; creating bash shell...\"; bash; else echo \"No bash found on container; dropping down to sh shell...\"; sh; fi",
 }
+
 
 type userServiceDockerResources struct {
 	// This will never be nil because a user services is represented ONLY by a container in Docker
@@ -354,6 +356,7 @@ func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 	//TODO use concurrency to improve perf
 	successfulUserServicesLogs := map[service.ServiceGUID]io.ReadCloser{}
 	erroredUserServices := map[service.ServiceGUID]error{}
+	shouldCloseLogStreams := true
 	for guid, resourcesForService := range allDockerResources {
 		container := resourcesForService.container
 		if container == nil {
@@ -361,15 +364,29 @@ func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 			continue
 		}
 
-		readCloserLogs, err := backend.dockerManager.GetContainerLogs(ctx, container.GetId(), shouldFollowLogs)
+		rawDockerLogStream, err := backend.dockerManager.GetContainerLogs(ctx, container.GetId(), shouldFollowLogs)
 		if err != nil {
 			serviceError := stacktrace.Propagate(err, "An error occurred getting logs for container '%v' for user service with GUID '%v'", container.GetName(), guid)
 			erroredUserServices[guid] = serviceError
 			continue
 		}
-		successfulUserServicesLogs[guid] = readCloserLogs
+		defer func() {
+			if shouldCloseLogStreams {
+				rawDockerLogStream.Close()
+			}
+		}()
+
+		demultiplexedLogStream := docker_log_streaming_readcloser.NewDockerLogStreamingReadCloser(rawDockerLogStream)
+		defer func() {
+			if shouldCloseLogStreams {
+				demultiplexedLogStream.Close()
+			}
+		}()
+
+		successfulUserServicesLogs[guid] = demultiplexedLogStream
 	}
 
+	shouldCloseLogStreams = false
 	return successfulUserServicesLogs, erroredUserServices, nil
 }
 

@@ -19,12 +19,16 @@ type Module struct {
 	status container_status.ContainerStatus
 	privateIp net.IP
 	privatePort *port_spec.PortSpec
-	publicIp net.IP
-	publicPort *port_spec.PortSpec
+
+	// Will be nil if the module isn't running, or if the backend is Kubernetes
+	maybePublicIp net.IP
+
+	// Will be nil if the module isn't running, or if the backend is Kubernetes
+	maybePublicPort *port_spec.PortSpec
 }
 
-func NewModule(enclaveId enclave.EnclaveID, id ModuleID, guid ModuleGUID, status container_status.ContainerStatus, privateIp net.IP, privatePort *port_spec.PortSpec, publicIp net.IP, publicPort *port_spec.PortSpec) *Module {
-	return &Module{enclaveId: enclaveId, id: id, guid: guid, status: status, privateIp: privateIp, privatePort: privatePort, publicIp: publicIp, publicPort: publicPort}
+func NewModule(enclaveId enclave.EnclaveID, id ModuleID, guid ModuleGUID, status container_status.ContainerStatus, privateIp net.IP, privatePort *port_spec.PortSpec, maybePublicIp net.IP, maybePublicPort *port_spec.PortSpec) *Module {
+	return &Module{enclaveId: enclaveId, id: id, guid: guid, status: status, privateIp: privateIp, privatePort: privatePort, maybePublicIp: maybePublicIp, maybePublicPort: maybePublicPort}
 }
 
 func (module *Module) GetEnclaveID() enclave.EnclaveID {
@@ -43,7 +47,7 @@ func (module *Module) GetStatus() container_status.ContainerStatus {
 	return module.status
 }
 
-func (module *Module) GetPrivateIp() net.IP {
+func (module *Module) GetPrivateIP() net.IP {
 	return module.privateIp
 }
 
@@ -51,10 +55,10 @@ func (module *Module) GetPrivatePort() *port_spec.PortSpec {
 	return module.privatePort
 }
 
-func (module *Module) GetPublicIp() net.IP {
-	return module.publicIp
+func (module *Module) GetMaybePublicIP() net.IP {
+	return module.maybePublicIp
 }
 
-func (module *Module) GetPublicPort() *port_spec.PortSpec {
-	return module.publicPort
+func (module *Module) GetMaybePublicPort() *port_spec.PortSpec {
+	return module.maybePublicPort
 }

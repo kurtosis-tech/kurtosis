@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/annotation_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
@@ -245,11 +245,11 @@ func getStringMapFromAnnotationMap(labelMap map[*kubernetes_annotation_key.Kuber
 
 // If no expected-ports list is passed in, no validation is done and all the ports are passed back as-is
 func getPrivatePortsAndValidatePortExistence(kubernetesService *apiv1.Service, expectedPortIds map[string]bool) (map[string]*port_spec.PortSpec, error) {
-	portSpecsStr, found := kubernetesService.GetAnnotations()[annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString()]
+	portSpecsStr, found := kubernetesService.GetAnnotations()[kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString()]
 	if !found {
 		return nil, stacktrace.NewError(
 			"Couldn't find expected port specs annotation key '%v' on the Kubernetes service",
-			annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString(),
+			kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString(),
 		)
 	}
 	privatePortSpecs, err := kubernetes_port_spec_serializer.DeserializePortSpecs(portSpecsStr)

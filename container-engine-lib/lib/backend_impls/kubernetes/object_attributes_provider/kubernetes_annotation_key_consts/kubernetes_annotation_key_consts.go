@@ -1,4 +1,4 @@
-package annotation_key_consts
+package kubernetes_annotation_key_consts
 
 import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"

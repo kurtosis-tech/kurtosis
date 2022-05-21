@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_log_streaming_readcloser"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
@@ -231,16 +232,31 @@ func (backend *DockerKurtosisBackend) GetModuleLogs(
 	erroredModules := map[module.ModuleGUID]error{}
 
 	//TODO use concurrency to improve perf
+	shouldCloseLogStreams := true
 	for containerId, module := range matchingModulesByContainerId {
-		readCloserLogs, err := backend.dockerManager.GetContainerLogs(ctx, containerId, shouldFollowLogs)
+		rawLogStream, err := backend.dockerManager.GetContainerLogs(ctx, containerId, shouldFollowLogs)
 		if err != nil {
 			serviceError := stacktrace.Propagate(err, "An error occurred getting logs for module with GUID '%v' and container ID '%v'", module.GetGUID(), containerId)
 			erroredModules[module.GetGUID()] = serviceError
 			continue
 		}
-		successfulModuleLogs[module.GetGUID()] = readCloserLogs
+		defer func() {
+			if shouldCloseLogStreams {
+				rawLogStream.Close()
+			}
+		}()
+
+		demultiplexedStream := docker_log_streaming_readcloser.NewDockerLogStreamingReadCloser(rawLogStream)
+		defer func() {
+			if shouldCloseLogStreams {
+				rawLogStream.Close()
+			}
+		}()
+
+		successfulModuleLogs[module.GetGUID()] = demultiplexedStream
 	}
 
+	shouldCloseLogStreams = false
 	return successfulModuleLogs, erroredModules, nil
 }
 

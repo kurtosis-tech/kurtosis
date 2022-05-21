@@ -13,7 +13,7 @@ const (
 
 // Generates a UUID with the dashes removed
 func GenerateUUIDString() (string, error) {
-	newUUID, err := uuid.NewUUID()
+	newUUID, err := uuid.NewRandom()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred generating a new UUID")
 	}
