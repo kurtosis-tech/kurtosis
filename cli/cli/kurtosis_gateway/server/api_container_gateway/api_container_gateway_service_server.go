@@ -2,7 +2,6 @@ package api_container_gateway
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/connection"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
@@ -110,9 +109,8 @@ func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Contex
 		if cleanUpService {
 			destroyEnclaveArgs := &kurtosis_core_rpc_api_bindings.RemoveServiceArgs{ServiceId: args.GetServiceId()}
 			if _, err := service.remoteApiContainerClient.RemoveService(ctx, destroyEnclaveArgs); err != nil {
-				logrus.Error("Connecting to the service running in the remote cluster failed, expected to be able to cleanup the created service, but an error occurred calling the backend to remove the service we created:")
-				fmt.Fprintln(logrus.StandardLogger().Out, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remote the service with id '%v'", args.GetServiceId())
+				logrus.Errorf("Connecting to the service running in the remote cluster failed, expected to be able to cleanup the created service, but an error occurred calling the backend to remove the service we created:\v%v", err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the service with id '%v'", args.GetServiceId())
 			}
 		}
 	}()
@@ -156,19 +154,19 @@ func (service *ApiContainerGatewayServiceServer) GetServiceInfo(ctx context.Cont
 	// Get the running connection if it's available, start one if there is no running connection
 	serviceGuid := remoteApiContainerResponse.GetServiceGuid()
 	var runningLocalConnection *runningLocalServiceConnection
+	cleanUpConnection := true
 	runningLocalConnection, isFound := service.userServiceGuidToLocalConnectionMap[serviceGuid]
 	if !isFound {
 		runningLocalConnection, err = service.startRunningConnectionForKurtosisService(serviceGuid, remoteApiContainerResponse.PrivatePorts)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Expected to be able to start a local connection to kurtosis service '%v', instead a non-nil error was returned", args.GetServiceId())
 		}
+		defer func() {
+			if cleanUpConnection {
+				service.idempotentKillRunningConnectionForServiceGuid(serviceGuid)
+			}
+		}()
 	}
-	cleanUpConnection := true
-	defer func() {
-		if cleanUpConnection {
-			service.idempotentKillRunningConnectionForServiceGuid(args.GetServiceId())
-		}
-	}()
 	// Overwrite PublicPorts and PublicIp fields
 	remoteApiContainerResponse.PublicPorts = runningLocalConnection.localPublicServicePorts
 	remoteApiContainerResponse.PublicIpAddr = runningLocalConnection.localPublicIp

@@ -114,16 +114,14 @@ func (service *EngineGatewayServiceServer) GetEnclaves(ctx context.Context, in *
 	}
 	responseEnclaves := remoteEngineResponse.GetEnclaveInfo()
 	cleanUpRunningGateways := true
-	defer func() {
-		if cleanUpRunningGateways {
-			for enclaveId := range responseEnclaves {
-				service.idempotentKillRunningGatewayForEnclaveId(enclaveId)
-			}
-		}
-	}()
 	for enclaveId, enclaveInfo := range responseEnclaves {
 		var runningApiContainerGateway *runningApiContainerGateway
 		runningApiContainerGateway, isRunning := service.enclaveIdToRunningGatewayMap[enclaveId]
+		defer func() {
+			if cleanUpRunningGateways {
+				service.idempotentKillRunningGatewayForEnclaveId(enclaveId)
+			}
+		}()
 		// If the gateway isn't running, start it
 		if !isRunning {
 			runningApiContainerGateway, err = service.startRunningGatewayForEnclave(enclaveInfo)
