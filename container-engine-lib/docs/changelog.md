@@ -1,7 +1,15 @@
 # TBD
 ### Fixes
 * Fixed bug related to having two annotations-key-consts for Kubernetes objects
- 
+
+### Breaking Changes
+* `Module.GetPublicIP` is renamed to `GetMaybePublicIP`
+    * Remediation: switch to new version
+* `Module.GetPublicPorts` renamed to `GetMaybePublicPorts`
+    * Remediation: switch to new version
+* `Module.GetPublicIp` renamed to `Module.GetPublicIP`
+    * Remediation: switch to new version
+    
 # 0.27.0
 ### Breaking Changes
 * Unified file expansion volume and expanders into one interface with two associated methods (instead of two interfaces and four methods)
