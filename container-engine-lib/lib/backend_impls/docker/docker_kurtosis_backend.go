@@ -45,11 +45,6 @@ const (
 	hostMachinePortNumStrParsingBits = 16
 
 	netstatSuccessExitCode = 0
-
-	uninitializedPublicIpAddrStrValue = ""
-
-	dockerContainerPortNumUintBase = 10
-	dockerContainerPortNumUintBits = 16
 )
 
 
@@ -119,50 +114,12 @@ func NewDockerKurtosisBackend(
 }
 
 func (backend *DockerKurtosisBackend) PullImage(image string) error {
-	//TODO implement me
-	panic("implement me")
+	return stacktrace.NewError("PullImage isn't implemented for Docker yet")
 }
 
-// Engine methods in separate file
-
-/*
-func (backendCore *DockerKurtosisBackend) CleanStoppedEngines(ctx context.Context) ([]string, []error, error) {
-	successfullyDestroyedContainerNames, containerDestructionErrors, err := backendCore.cleanContainers(ctx, engineLabels, shouldCleanRunningEngineContainers)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred cleaning stopped Kurtosis engine containers")
-	}
-	return successfullyDestroyedContainerNames, containerDestructionErrors, nil
-}
-
-
-func (backendCore *DockerKurtosisBackend) GetEnginePublicIPAndPort(
-	ctx context.Context,
-) (
-	resultPublicIpAddr net.IP,
-	resultPublicPortNum uint16,
-	resultIsEngineStopped bool,
-	resultErr error,
-) {
-	runningEngineContainers, err := backendCore.dockerManager.GetContainersByLabels(ctx, engineLabels, shouldGetStoppedContainersWhenCheckingForExistingEngines)
-	if err != nil {
-		return nil, 0, false, stacktrace.Propagate(err, "An error occurred getting Kurtosis engine containers")
-	}
-
-	numRunningEngineContainers := len(runningEngineContainers)
-	if numRunningEngineContainers > 1 {
-		return nil, 0, false, stacktrace.NewError("Cannot report engine status because we found %v running Kurtosis engine containers; this is very strange as there should never be more than one", numRunningEngineContainers)
-	}
-	if numRunningEngineContainers == 0 {
-		return nil, 0, true, nil
-	}
-	engineContainer := runningEngineContainers[0]
-
-	currentlyRunningEngineContainerLabels := engineContainer.GetLabels()
-}
-*/
 
 // ====================================================================================================
-//                                     Private Helper Methods
+//                       Private helper functions shared by multiple subfunctions files
 // ====================================================================================================
 func transformPortSpecToDockerPort(portSpec *port_spec.PortSpec) (nat.Port, error) {
 	portSpecProto := portSpec.GetProtocol()
@@ -346,18 +303,6 @@ func waitForPortAvailabilityUsingNetstat(
 		timeBetweenRetries,
 	)
 }
-
-// TODO Move to _enclave_functions file
-func getEnclaveIdFromNetwork(network *types.Network) (enclave.EnclaveID, error) {
-	labels := network.GetLabels()
-	enclaveIdLabelValue, found := labels[label_key_consts.EnclaveIDDockerLabelKey.GetString()]
-	if !found {
-		return "", stacktrace.NewError("Expected to find network's label with key '%v' but none was found", label_key_consts.EnclaveIDDockerLabelKey.GetString())
-	}
-	enclaveId := enclave.EnclaveID(enclaveIdLabelValue)
-	return enclaveId, nil
-}
-
 
 func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID) (*types.Network, error) {
 	networkSearchLabels := map[string]string{

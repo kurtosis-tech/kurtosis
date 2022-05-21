@@ -1,4 +1,10 @@
 # TBD
+### Changes
+* Trying to run networking partitioning methods in Kubernetes will result in an error, rather than a panic
+* Tidying up several things inside the codebase:
+    * Kubernetes network partitioning methods now return an `error` rather than panicking
+    * `PullImage` returns an error, rather than panicking, for both Docker & Kubernetes Kurtosis backends
+    * Removed some dead code
 
 # 0.29.0
 ### Features
