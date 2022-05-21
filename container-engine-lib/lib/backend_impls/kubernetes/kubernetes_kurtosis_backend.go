@@ -13,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/object_name_constants"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
@@ -25,7 +24,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -58,7 +56,8 @@ var isPodRunningDeterminer = map[apiv1.PodPhase]bool{
 	apiv1.PodPending: true,
 	apiv1.PodRunning: true,
 	apiv1.PodSucceeded: false,
-	apiv1.PodUnknown: true, //We can not say that a pod is not running if we don't know the real state
+	apiv1.PodFailed: false,
+	apiv1.PodUnknown: false, //We cannot say that a pod is not running if we don't know the real state
 }
 
 // Completeness enforced via unit test
@@ -264,6 +263,7 @@ func getStringMapFromAnnotationMap(labelMap map[*kubernetes_annotation_key.Kuber
 	return strMap
 }
 
+/*
 // getPortSpecFromServicePort returns a port_spec representing a Kurtosis port spec for a service port in Kubernetes
 func getPortSpecFromServicePort(servicePort apiv1.ServicePort, portProtocol port_spec.PortProtocol) (*port_spec.PortSpec, error) {
 	portNumStr := strconv.FormatInt(int64(servicePort.Port), portNumStrParsingBase)
@@ -322,6 +322,7 @@ func getGrpcAndGrpcProxyPortSpecsFromServicePorts(servicePorts []apiv1.ServicePo
 
 	return grpcPortSpec, grpcProxyPortSpec, nil
 }
+ */
 
 func getContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus, error) {
 	// TODO Rename this; this shouldn't be called "ContainerStatus" since there's no longer a 1:1 mapping between container:kurtosis_object
