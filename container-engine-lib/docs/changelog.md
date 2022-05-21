@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fix DockerLogStreamingReadCloser logging at ERROR level when it should log at DEBUG
 
 # 0.28.0
 ### Fixes
