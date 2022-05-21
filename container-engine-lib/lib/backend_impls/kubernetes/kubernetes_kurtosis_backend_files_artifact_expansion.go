@@ -2,15 +2,14 @@ package kubernetes
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"net"
 	"path"
+	"time"
 )
 
 const (
@@ -27,7 +26,9 @@ const (
 
 	pvcVolumeClaimReadOnly = false
 
-	expanderContainerSuccessExitCode = 0
+	jobStatusPollerInterval = time.Millisecond * 100
+
+	jobStatusPollerTimeout = time.Second * 2
 
 	// Based on example on k8s docs https://kubernetes.io/docs/concepts/workloads/controllers/job/
 	ttlSecondsAfterFinishedExpanderJob = 100
@@ -91,7 +92,7 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 	artifactFilepath := path.Join(enclaveDataVolumeDirpathOnExpanderContainer, filesArtifactFilepathRelativeToEnclaveDatadirRoot)
 	extractionCommand := getExtractionCommand(artifactFilepath, destVolMntDirpathOnExpander)
 
-	jobAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpansionJob(filesArtifactExpansionGUID, serviceGUID)
+	jobAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpansionJob(filesArtifactExpansionGUID, serviceGuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the files artifact expander container attributes for files artifact expansion GUID '%v'", filesArtifactExpansionGUID)
 	}
@@ -111,8 +112,37 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create files artifact expansion job for expansion '%v'", filesArtifactExpansionGUID)
 	}
-	shouldDestroyPVC = false
-	panic("IMPLEMENT ME")
+	hasJobSucceeded := false
+	defer func(){
+		if !hasJobSucceeded {
+			// We delete instead of kill/stop because Kubernetes doesn't have the concept of keeping around stopped jobs
+			// https://stackoverflow.com/a/52608258
+			deleteJobError := backend.kubernetesManager.DeleteJob(ctx, enclaveNamespaceName, job.Name)
+			if deleteJobError != nil {
+				logrus.Errorf("Failed to delete job '%v' in namespace '%v', which did not succeed. Error in deletion: '%v'",
+					enclaveNamespaceName, job.Name, deleteJobError.Error())
+			}
+		}
+	}()
+	jobSucceededPoller := time.Tick(jobStatusPollerInterval)
+	jobSucceededTimeout := time.After(jobStatusPollerTimeout)
+	for {
+		select {
+		case <- jobSucceededTimeout:
+			return nil, stacktrace.NewError("Timed out waiting for job '%v' for files artifact expansion '%v' to complete.", job.Name, filesArtifactExpansionGUID)
+		case <- jobSucceededPoller:
+			hasJobSucceeded, err = backend.kubernetesManager.GetJobHasCompleted(ctx, enclaveNamespaceName, job.Name)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "Job '%v' for files artifact expansion '%v' is no longer active, and did not succeed. Error: '%v'",
+					job.Name, filesArtifactExpansionGUID, err.Error())
+			}
+			if hasJobSucceeded {
+				shouldDestroyPVC = false
+				filesArtifactExpansion := files_artifact_expansion.NewFilesArtifactExpansion(filesArtifactExpansionGUID, serviceGuid)
+				return filesArtifactExpansion, nil
+			}
+		}
+	}
 }
 
 //Destroy files artifact expansion volume and expander using the given filters
@@ -140,91 +170,5 @@ func getExtractionCommand(artifactFilepath string, destVolMntDirpathOnExpander s
 		"-C",
 		destVolMntDirpathOnExpander,
 	}
-}
-
-func (backend *KubernetesKurtosisBackend) runFilesArtifactExpander(
-	ctx context.Context,
-	filesArtifactExpansionGUID files_artifact_expansion.FilesArtifactExpansionGUID,
-	serviceGUID service.ServiceGUID,
-	enclaveId enclave.EnclaveID,
-	filesArtifactExpansionVolumeName string,
-	destVolMntDirpathOnExpander string,
-	ipAddr net.IP,
-	filesArtifactFilepathRelativeToEnclaveDataVolumeRoot string,
-) (expanderContainerId string, resultErr error) {
-
-	namespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting namespaceName by enclave ID '%v'", enclaveId)
-	}
-
-	enclaveDataVolumeName, err := backend.getEnclaveDataVolumeByEnclaveId(ctx, enclaveId)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveId)
-	}
-
-	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
-	}
-
-	containerAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpansionContainer(filesArtifactExpansionGUID, serviceGUID)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while trying to get the files artifact expander container attributes for files artifact expansion GUID '%v'", filesArtifactExpansionGUID)
-	}
-	containerName := containerAttrs.GetName().GetString()
-	containerLabels := map[string]string{}
-	for labelKey, labelValue := range containerAttrs.GetLabels() {
-		containerLabels[labelKey.GetString()] = labelValue.GetString()
-	}
-
-	volumeMounts := map[string]string{
-		filesArtifactExpansionVolumeName: destVolMntDirpathOnExpander,
-		enclaveDataVolumeName:               enclaveDataVolumeDirpathOnExpanderContainer,
-	}
-
-	artifactFilepath := path.Join(enclaveDataVolumeDirpathOnExpanderContainer, filesArtifactFilepathRelativeToEnclaveDataVolumeRoot)
-	containerCmd := getExtractionCommand(artifactFilepath, destVolMntDirpathOnExpander)
-
-	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
-		dockerImage,
-		containerName,
-		enclaveNetwork.GetId(),
-	).WithStaticIP(
-		ipAddr,
-	).WithCmdArgs(
-		containerCmd,
-	).WithVolumeMounts(
-		volumeMounts,
-	).WithLabels(
-		containerLabels,
-	).Build()
-	containerId, _, err := backend.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred creating the Docker container to expand the file artifact '%v' into the volume '%v'", filesArtifactFilepathRelativeToEnclaveDataVolumeRoot, filesArtifactExpansionVolumeName)
-	}
-	shouldKillContainer := true
-	defer func() {
-		if shouldKillContainer {
-			containerTeardownErr := backend.dockerManager.KillContainer(ctx, containerId)
-			if containerTeardownErr != nil {
-				logrus.Errorf("Failed to tear down container ID '%v', you will need to manually remove it!", containerId)
-			}
-		}
-	}()
-
-	exitCode, err := backend.dockerManager.WaitForExit(ctx, containerId)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred waiting for the files artifact expander Docker container '%v' to exit", containerId)
-	}
-	if exitCode != expanderContainerSuccessExitCode {
-		return "", stacktrace.NewError(
-			"The files artifact expander Docker container '%v' exited with non-%v exit code: %v",
-			containerId,
-			expanderContainerSuccessExitCode,
-			exitCode)
-	}
-	shouldKillContainer = false
-	return containerId,nil
 }
 

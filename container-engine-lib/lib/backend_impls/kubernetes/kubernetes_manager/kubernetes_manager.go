@@ -930,10 +930,48 @@ func (manager *KubernetesManager) CreateJobWithPVCMount(ctx context.Context,
 	job, err := jobsClient.Create(ctx, &jobInput, options)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create job in namespace '%v' with " +
-			"imageName '%v', commands '%v', persistent volume claim '%v', and mount path '%v'.",
-			namespace, imageName, pvcClaimName, volumeMountPath)
+			"imageName '%v', commands '%+v', persistent volume claim '%v', and mount path '%v'.",
+			namespace, imageName, command, pvcClaimName, volumeMountPath)
 	}
 	return job, nil
+}
+
+func (manager *KubernetesManager) DeleteJob(ctx context.Context, namespace string, jobName string) error {
+	jobsClient := manager.kubernetesClientSet.BatchV1().Jobs(namespace)
+	if jobsClient == nil {
+		return stacktrace.NewError("Failed to create a jobs client for namespace '%v'", namespace)
+	}
+	err := jobsClient.Delete(ctx, jobName, metav1.DeleteOptions{})
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to delete job '%v' in namespace '%v'", jobName, namespace)
+	}
+	return nil
+}
+
+func (manager KubernetesManager) GetJobHasCompleted(ctx context.Context, namespace string, jobName string) (bool, error) {
+	job, err := manager.kubernetesClientSet.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{})
+	if err != nil {
+		return false, stacktrace.Propagate(err, "Failed to get job status for job name '%v' in namespace '%v'", jobName, namespace)
+	}
+
+	// LOGIC FROM https://stackoverflow.com/a/69262406
+
+	// Job hasn't spun up yet
+	if job.Status.Active == 0 && job.Status.Succeeded == 0 && job.Status.Failed == 0 {
+		return false, nil
+	}
+
+	// Job is active
+	if job.Status.Active > 0 {
+		return false, nil
+	}
+
+	// Job succeeded
+	if job.Status.Succeeded > 0 {
+		return true, nil // Job ran successfully
+	}
+
+	return false, stacktrace.NewError("Job '%v' failed with error status", job.Name)
 }
 
 // ====================================================================================================
