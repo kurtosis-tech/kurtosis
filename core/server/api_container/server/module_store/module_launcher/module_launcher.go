@@ -69,6 +69,7 @@ func (launcher ModuleLauncher) Launch(
 		modulePortNum,
 		envVars,
 	)
+	moduleGuid := createdModule.GetGUID()
 
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching module '%v' with image '%v'", moduleID, containerImage)
@@ -76,11 +77,11 @@ func (launcher ModuleLauncher) Launch(
 	shouldStopModule := true
 	defer func() {
 		if shouldStopModule {
-			_, failedModules, err := launcher.kurtosisBackend.StopModules(ctx, launcher.enclaveId, getModuleByModuleGUIDFilter(createdModule.GetGUID()))
+			_, failedModules, err := launcher.kurtosisBackend.StopModules(ctx, launcher.enclaveId, getModuleByModuleGUIDFilter(moduleGuid))
 			if err != nil {
 				logrus.Error("Launching the module failed, but an error occurred calling the backend to stop the module we started:")
 				fmt.Fprintln(logrus.StandardLogger().Out, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually kill the module with GUID '%v'", createdModule.GetGUID())
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually kill the module with GUID '%v'", moduleGuid)
 			}
 			if len(failedModules) > 0 {
 				for failedModuleGUID, failedModuleErr := range failedModules {

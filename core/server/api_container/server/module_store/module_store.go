@@ -31,11 +31,11 @@ type moduleInfo struct {
 }
 
 type ModuleStore struct {
+	enclaveId enclave.EnclaveID
+	
 	mutex *sync.Mutex
 
 	kurtosisBackend backend_interface.KurtosisBackend
-
-	enclaveId enclave.EnclaveID
 
 	// module_id -> IP addr, container ID, etc.
 	modules map[module.ModuleID]moduleInfo
@@ -43,11 +43,11 @@ type ModuleStore struct {
 	moduleLauncher *module_launcher.ModuleLauncher
 }
 
-func NewModuleStore(kurtosisBackend backend_interface.KurtosisBackend, enclaveId enclave.EnclaveID, moduleLauncher *module_launcher.ModuleLauncher) *ModuleStore {
+func NewModuleStore(enclaveId enclave.EnclaveID, kurtosisBackend backend_interface.KurtosisBackend, moduleLauncher *module_launcher.ModuleLauncher) *ModuleStore {
 	return &ModuleStore{
+		enclaveId:       enclaveId,
 		mutex:           &sync.Mutex{},
 		kurtosisBackend: kurtosisBackend,
-		enclaveId: 		 enclaveId,
 		modules:         map[module.ModuleID]moduleInfo{},
 		moduleLauncher:  moduleLauncher,
 	}

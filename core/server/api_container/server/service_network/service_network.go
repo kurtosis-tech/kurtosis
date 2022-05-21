@@ -703,7 +703,6 @@ func (network *ServiceNetwork) startService(
 		return nil, stacktrace.Propagate(err, "An error occurred expanding the requested files artifacts into volumes")
 	}
 
-
 	artifactVolumeMounts := map[files_artifact_expansion.FilesArtifactExpansionGUID]string{}
 	for artifactUuid, mountpoint := range filesArtifactUuidsToMountpoints {
 		artifactExpansionGUID, found := artifactUuidsToExpansionGUIDs[artifactUuid]
