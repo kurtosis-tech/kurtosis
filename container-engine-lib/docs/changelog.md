@@ -1,4 +1,7 @@
 # TBD
+### Changes
+* Trying to run networking partitioning methods in Kubernetes will result in an error, rather than a panic
+* Tidying up several things inside the codebase
 
 # 0.29.0
 ### Features
