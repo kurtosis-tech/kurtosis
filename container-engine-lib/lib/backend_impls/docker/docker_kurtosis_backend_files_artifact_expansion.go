@@ -60,10 +60,10 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 	filesArtifactFilepathRelativeToEnclaveDatadirRoot string) (*files_artifact_expansion.FilesArtifactExpansion, error) {
 
 	filesArtifactExpansionGUIDStr, err := uuid_generator.GenerateUUIDString()
-	filesArtifactExpansionGUID := files_artifact_expansion.FilesArtifactExpansionGUID(filesArtifactExpansionGUIDStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to generate UUID for files artifact expansion.")
 	}
+	filesArtifactExpansionGUID := files_artifact_expansion.FilesArtifactExpansionGUID(filesArtifactExpansionGUIDStr)
 	filesArtifactExpansionVolumeName, err := backend.createFilesArtifactExpansionVolume(
 		ctx,
 		enclaveId,

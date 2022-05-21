@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/batch/v1"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	storagev1 "k8s.io/api/storage/v1"
@@ -866,6 +867,73 @@ func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace
 
 func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string, podName string) *url.URL {
 	return manager.kubernetesClientSet.CoreV1().RESTClient().Post().Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
+}
+
+func (manager *KubernetesManager) CreateJobWithPVCMount(ctx context.Context,
+	namespace string,
+	ttlSecondsAfterFinished uint,
+	imageName string,
+	command []string,
+	containerName string,
+	pvcVolumeName string,
+	pvcClaimName string,
+	volumeMountPath string,
+	pvcMountReadOnly bool) (*v1.Job, error) {
+
+	jobsClient := manager.kubernetesClientSet.BatchV1().Jobs(namespace)
+	ttlSecondsAfterFinishedInt32 := int32(ttlSecondsAfterFinished)
+
+	pvcVolumeSource := apiv1.PersistentVolumeClaimVolumeSource{
+		ClaimName: pvcClaimName,
+		ReadOnly:  pvcMountReadOnly,
+	}
+
+	volumeSource := apiv1.VolumeSource{
+		PersistentVolumeClaim: &pvcVolumeSource,
+	}
+
+	volume := apiv1.Volume{
+		Name:         pvcVolumeName,
+		VolumeSource: volumeSource,
+	}
+
+	volumeMount := apiv1.VolumeMount{
+		Name:             pvcVolumeName,
+		MountPath:        volumeMountPath,
+	}
+
+	container := apiv1.Container{
+		Name:                     containerName,
+		Image:                    imageName,
+		Command:                  command,
+		VolumeMounts:             []apiv1.VolumeMount{volumeMount},
+	}
+
+	podSpec := apiv1.PodSpec{
+		Containers: []apiv1.Container{container},
+		Volumes: []apiv1.Volume{volume},
+	}
+
+	jobSpec := v1.JobSpec{
+		Template:                apiv1.PodTemplateSpec{
+			Spec: podSpec,
+		},
+		TTLSecondsAfterFinished: &ttlSecondsAfterFinishedInt32,
+	}
+
+	jobInput := v1.Job{
+		Spec: jobSpec,
+	}
+
+	options := metav1.CreateOptions{}
+
+	job, err := jobsClient.Create(ctx, &jobInput, options)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create job in namespace '%v' with " +
+			"imageName '%v', commands '%v', persistent volume claim '%v', and mount path '%v'.",
+			namespace, imageName, pvcClaimName, volumeMountPath)
+	}
+	return job, nil
 }
 
 // ====================================================================================================
