@@ -641,7 +641,7 @@ func getModuleObjectsFromKubernetesResources(
 		}
 
 		serviceAnnotations := kubernetesService.Annotations
-		portSpecsStr, found := serviceAnnotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()]
+		portSpecsStr, found := serviceAnnotations[annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString()]
 		if !found {
 			// If the service doesn't have a private port specs annotation, it means a pod was never started so there's nothing more to do
 			continue

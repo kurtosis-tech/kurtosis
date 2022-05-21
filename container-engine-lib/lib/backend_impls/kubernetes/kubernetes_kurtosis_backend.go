@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/annotation_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
@@ -323,6 +325,30 @@ func getGrpcAndGrpcProxyPortSpecsFromServicePorts(servicePorts []apiv1.ServicePo
 	return grpcPortSpec, grpcProxyPortSpec, nil
 }
  */
+
+// If no expected-ports list is passed in, no validation is done and all the ports are passed back as-is
+func getPrivatePortsAndValidatePortExistence(kubernetesService *apiv1.Service, expectedPortIds map[string]bool) (map[string]*port_spec.PortSpec, error) {
+	portSpecsStr, found := kubernetesService.GetAnnotations()[annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString()]
+	if !found {
+		return nil, stacktrace.NewError(
+			"Couldn't find expected port specs annotation key '%v' on the Kubernetes service",
+			annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString(),
+		)
+	}
+	privatePortSpecs, err := kubernetes_port_spec_serializer.DeserializePortSpecs(portSpecsStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred deserializing private port specs string '%v'", privatePortSpecs)
+	}
+
+	if expectedPortIds != nil && len(expectedPortIds) > 0 {
+		for portId := range expectedPortIds {
+			if _, found := privatePortSpecs[portId]; !found {
+				return nil, stacktrace.NewError("Missing private port with ID '%v' in the private ports", portId)
+			}
+		}
+	}
+	return privatePortSpecs, nil
+}
 
 func getContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus, error) {
 	// TODO Rename this; this shouldn't be called "ContainerStatus" since there's no longer a 1:1 mapping between container:kurtosis_object

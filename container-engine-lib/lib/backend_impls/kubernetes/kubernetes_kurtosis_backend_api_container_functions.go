@@ -841,8 +841,8 @@ func getApiContainerObjectsFromKubernetesResources(
 	result := map[enclave.EnclaveID]*api_container.APIContainer{}
 
 	for enclaveId, resourcesForEnclaveId := range allResources {
-
-		if resourcesForEnclaveId.service == nil {
+		kubernetesService := resourcesForEnclaveId.service
+		if kubernetesService == nil {
 			return nil, stacktrace.NewError("Expected a Kubernetes service for API container in enclave '%v'", enclaveId)
 		}
 
@@ -855,11 +855,19 @@ func getApiContainerObjectsFromKubernetesResources(
 		if privateIpAddr == nil {
 			return nil, stacktrace.NewError("Expected to be able to get the cluster ip of the API container service, instead parsing the cluster ip of service '%v' returned nil", resourcesForEnclaveId.service.Name)
 		}
-		var portSpecError error
-		privateGrpcPortSpec, privateGrpcProxyPortSpec, portSpecError := getGrpcAndGrpcProxyPortSpecsFromServicePorts(resourcesForEnclaveId.service.Spec.Ports)
-		if portSpecError != nil {
-			return nil, stacktrace.Propagate(portSpecError, "Expected to be able to determine API container grpc port specs from Kubernetes service ports for API container in enclave with ID '%v', instead a non-nil error was returned", enclaveId)
+
+		privatePorts, err := getPrivatePortsAndValidatePortExistence(
+			kubernetesService,
+			map[string]bool{
+				kurtosisInternalContainerGrpcPortSpecId: true,
+				kurtosisInternalContainerGrpcProxyPortSpecId: true,
+			},
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred parsing the API container private port specs and validating gRPC and gRPC proxy port existence")
 		}
+		privateGrpcPortSpec := privatePorts[kurtosisInternalContainerGrpcPortSpecId]
+		privateGrpcProxyPortSpec := privatePorts[kurtosisInternalContainerGrpcProxyPortSpecId]
 
 		// NOTE: We set these to nil because in Kubernetes we have no way of knowing what the public info is!
 		var publicIpAddr net.IP = nil

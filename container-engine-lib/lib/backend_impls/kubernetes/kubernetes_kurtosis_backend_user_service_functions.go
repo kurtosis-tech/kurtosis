@@ -837,7 +837,7 @@ func getUserServiceObjectsFromKubernetesResources(
 		resultObj.serviceRegistration = serviceRegistrationObj
 
 		serviceAnnotations := kubernetesService.Annotations
-		portSpecsStr, found := serviceAnnotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()]
+		portSpecsStr, found := serviceAnnotations[annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString()]
 		if !found {
 			// If the service doesn't have a private port specs annotation, it means a pod was never started so there's nothing more to do
 			continue
@@ -1048,7 +1048,7 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 	if newAnnotations == nil {
 		newAnnotations = map[string]string{}
 	}
-	newAnnotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()] = serializedPortSpecs.GetString()
+	newAnnotations[annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString()] = serializedPortSpecs.GetString()
 
 	updatingConfigurator := func(updatesToApply *applyconfigurationsv1.ServiceApplyConfiguration) {
 		specUpdateToApply := applyconfigurationsv1.ServiceSpec()
