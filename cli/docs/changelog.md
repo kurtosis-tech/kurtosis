@@ -1,5 +1,13 @@
 # TBD
 
+# 0.18.4
+### Features
+* Added files artifact expansion in Kubernetes
+* Implemented copying files from a user service in Kubernetes
+
+### Changes
+* Increased the per-service availability-waiting time for the module test to 30s (but I suspect there's some other weird nondeterminism going on)
+
 # 0.18.3
 ### Fixes
 * Upgrade to latest container-engine-lib, Core, and Engine which contain fixes for modules on Kubernetes

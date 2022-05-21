@@ -13,10 +13,10 @@ require (
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/docker v20.10.16+incompatible
 	github.com/go-yaml/yaml v2.1.0+incompatible
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220521153702-5e08e26d6508
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220521154712-2964702780c5
-	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220521155047-0b8eec16bbe2
-	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220521155037-136797d23686
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220521210240-41a57610287b
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220521214237-92ff647c6125
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220521214843-b616905cfe8c
+	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220521214828-37b35d58b8b5
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211205213337-f5088fc26465
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220225193403-74da3f3b98ce
@@ -56,6 +56,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
+	github.com/google/go-cmp v0.5.7 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
