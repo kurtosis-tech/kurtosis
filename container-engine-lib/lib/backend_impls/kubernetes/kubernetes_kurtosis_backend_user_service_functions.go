@@ -257,15 +257,12 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	podLabelsStrs := getStringMapFromLabelMap(podAttributes.GetLabels())
 	podAnnotationsStrs := getStringMapFromAnnotationMap(podAttributes.GetAnnotations())
 
-	// TODO TODO THIS WON'T WORK AND IS BROKEN FOR NOW
-	temporaryHackyFilesArtifactMountDirpaths := map[files_artifact_expansion.FilesArtifactExpansionGUID]string{}
-
 	podVolumes, containerMounts, err := backend.getUserServiceVolumeInfoFromFilesArtifactMountpoints(
 		ctx,
 		namespaceName,
 		enclaveId,
 		serviceGuid,
-		temporaryHackyFilesArtifactMountDirpaths,
+		filesArtifactVolumeMountDirpaths,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting pod volumes from files artifact mountpoints: %+v", filesArtifactVolumeMountDirpaths)
