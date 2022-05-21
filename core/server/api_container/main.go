@@ -66,6 +66,7 @@ func main() {
 }
 
 func runMain() error {
+	ctx := context.Background()
 	serverArgs, ownIpAddress, err := args.GetArgsFromEnv()
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't retrieve API container args from the environment")
@@ -102,7 +103,7 @@ func runMain() error {
 		if !ok {
 			return stacktrace.NewError("Failed to cast cluster configuration interface to the appropriate type, even though Kurtosis backend type is '%v'", args.KurtosisBackendType_Kubernetes.String())
 		}
-		kurtosisBackend, err = lib.GetInClusterKubernetesKurtosisBackend(kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInMegabytes)
+		kurtosisBackend, err = lib.GetApiContainerKubernetesKurtosisBackend(ctx, kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInMegabytes)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to get a Kubernetes backend with storage class '%v' and enclave size (in MB) %d", kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInMegabytes)
 		}
@@ -214,7 +215,7 @@ func createServiceNetworkAndModuleStore(
 		apiContainerSocketInsideNetwork,
 	)
 
-	moduleStore := module_store.NewModuleStore(kurtosisBackend, moduleLauncher)
+	moduleStore := module_store.NewModuleStore(kurtosisBackend, enclaveId, moduleLauncher)
 
 	return serviceNetwork, moduleStore, nil
 }

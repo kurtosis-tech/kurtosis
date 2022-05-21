@@ -8,6 +8,7 @@ package module_store
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
@@ -34,16 +35,19 @@ type ModuleStore struct {
 
 	kurtosisBackend backend_interface.KurtosisBackend
 
+	enclaveId enclave.EnclaveID
+
 	// module_id -> IP addr, container ID, etc.
 	modules map[module.ModuleID]moduleInfo
 
 	moduleLauncher *module_launcher.ModuleLauncher
 }
 
-func NewModuleStore(kurtosisBackend backend_interface.KurtosisBackend, moduleLauncher *module_launcher.ModuleLauncher) *ModuleStore {
+func NewModuleStore(kurtosisBackend backend_interface.KurtosisBackend, enclaveId enclave.EnclaveID, moduleLauncher *module_launcher.ModuleLauncher) *ModuleStore {
 	return &ModuleStore{
 		mutex:           &sync.Mutex{},
 		kurtosisBackend: kurtosisBackend,
+		enclaveId: 		 enclaveId,
 		modules:         map[module.ModuleID]moduleInfo{},
 		moduleLauncher:  moduleLauncher,
 	}
@@ -107,7 +111,7 @@ func (store *ModuleStore) UnloadModule(ctx context.Context, moduleId module.Modu
 	}
 
 	moduleGuid := infoForModule.moduleGUID
-	_, failedToStopModules, err := store.kurtosisBackend.StopModules(ctx, getModuleByModuleGUIDFilter(moduleGuid))
+	_, failedToStopModules, err := store.kurtosisBackend.StopModules(ctx, store.enclaveId, getModuleByModuleGUIDFilter(moduleGuid))
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred killing module container '%v' while unloading the module from the store", moduleId)
 	}
