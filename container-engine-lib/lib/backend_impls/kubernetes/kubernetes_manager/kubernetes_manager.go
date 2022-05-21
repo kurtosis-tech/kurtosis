@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/batch/v1"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	storagev1 "k8s.io/api/storage/v1"
@@ -1031,6 +1032,95 @@ func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace
 
 func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string, podName string) *url.URL {
 	return manager.kubernetesClientSet.CoreV1().RESTClient().Post().Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
+}
+
+func (manager *KubernetesManager) CreateJobWithContainerAndVolume(ctx context.Context,
+	namespace string,
+	ttlSecondsAfterFinished uint,
+	container apiv1.Container,
+	volume apiv1.Volume) (*v1.Job, error) {
+
+	jobsClient := manager.kubernetesClientSet.BatchV1().Jobs(namespace)
+	ttlSecondsAfterFinishedInt32 := int32(ttlSecondsAfterFinished)
+
+	podSpec := apiv1.PodSpec{
+		Containers: []apiv1.Container{container},
+		Volumes: []apiv1.Volume{volume},
+	}
+
+	jobSpec := v1.JobSpec{
+		Template:                apiv1.PodTemplateSpec{
+			Spec: podSpec,
+		},
+		TTLSecondsAfterFinished: &ttlSecondsAfterFinishedInt32,
+	}
+
+	jobInput := v1.Job{
+		Spec: jobSpec,
+	}
+
+	options := metav1.CreateOptions{}
+
+	job, err := jobsClient.Create(ctx, &jobInput, options)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create job in namespace '%v' with " +
+			"container '%v' and volume '%v'.",
+			namespace, container.Name, volume.Name)
+	}
+	return job, nil
+}
+
+func (manager *KubernetesManager) DeleteJob(ctx context.Context, namespace string, job *v1.Job) error {
+	jobsClient := manager.kubernetesClientSet.BatchV1().Jobs(namespace)
+	if jobsClient == nil {
+		return stacktrace.NewError("Failed to create a jobs client for namespace '%v'", namespace)
+	}
+	resourceVersion := job.ResourceVersion
+	jobName := job.Name
+	watchFunc := func(options metav1.ListOptions) (apiwatch.Interface, error) {
+		return jobsClient.Watch(ctx, getWatchListOptionsForObject(jobName))
+	}
+	retryWatcher, err := getRetryWatcherForWatchFunc(watchFunc, resourceVersion)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to create a retry watcher for job deletion, instead a non-nil error was returned")
+	}
+	defer retryWatcher.Stop()
+
+	if err := jobsClient.Delete(ctx, jobName, removeObjectDeleteOptions); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete job '%v' in namespace '%v' with delete options '%+v'", jobName, namespace, removeObjectDeleteOptions)
+	}
+
+	// Wait for resource to be deleted from Kubernetes
+	if err := waitForResourceDeletion(ctx, retryWatcher); err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to wait for job deletion, instead a non-nil error was returned")
+	}
+	return nil
+}
+
+func (manager KubernetesManager) GetJobCompletionAndSuccessFlags(ctx context.Context, namespace string, jobName string) (hasCompleted bool, isSuccess bool, resultErr error) {
+	job, err := manager.kubernetesClientSet.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{})
+	if err != nil {
+		return false, false, stacktrace.Propagate(err, "Failed to get job status for job name '%v' in namespace '%v'", jobName, namespace)
+	}
+
+	// LOGIC FROM https://stackoverflow.com/a/69262406
+
+	// Job hasn't spun up yet
+	if job.Status.Active == 0 && job.Status.Succeeded == 0 && job.Status.Failed == 0 {
+		return false, false, nil
+	}
+
+	// Job is active
+	if job.Status.Active > 0 {
+		return false, false, nil
+	}
+
+	// Job succeeded
+	if job.Status.Succeeded > 0 {
+		return true, true, nil // Job ran successfully
+	}
+
+	return true, false, nil
 }
 
 // ====================================================================================================

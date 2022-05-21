@@ -1,5 +1,6 @@
 # TBD
 ### Features
+* Implement Kubernetes-backed file artifact expansion
 * Build `CopyFilesFromUserService` in Kubernetes
 * Added a `main.go` that's Gitignored with some local testing structure already set up
 
