@@ -28,7 +28,7 @@ const (
 
 	jobStatusPollerInterval = time.Millisecond * 100
 
-	jobStatusPollerTimeout = time.Second * 2
+	jobStatusPollerTimeout = time.Second * 10
 
 	// Based on example on k8s docs https://kubernetes.io/docs/concepts/workloads/controllers/job/
 	ttlSecondsAfterFinishedExpanderJob = 100
