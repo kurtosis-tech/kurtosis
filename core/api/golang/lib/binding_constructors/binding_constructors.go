@@ -131,10 +131,11 @@ func NewStartServiceArgs(
 	}
 }
 
-func NewStartServiceResponse(publicIpAddr string, publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port) *kurtosis_core_rpc_api_bindings.StartServiceResponse {
+func NewStartServiceResponse(publicIpAddr string, publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port, serviceGuid string) *kurtosis_core_rpc_api_bindings.StartServiceResponse {
 	return &kurtosis_core_rpc_api_bindings.StartServiceResponse{
 		PublicIpAddr: publicIpAddr,
 		PublicPorts:  publicPorts,
+		ServiceGuid: serviceGuid,
 	}
 }
 
@@ -152,12 +153,14 @@ func NewGetServiceInfoResponse(
 	privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
 	publicIpAddr string,
 	publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
+	serviceGuid string,
 ) *kurtosis_core_rpc_api_bindings.GetServiceInfoResponse {
 	return &kurtosis_core_rpc_api_bindings.GetServiceInfoResponse{
 		PrivateIpAddr:              privateIpAddr,
 		PrivatePorts:               privatePorts,
 		PublicIpAddr:               publicIpAddr,
 		PublicPorts:                publicPorts,
+		ServiceGuid:	serviceGuid,
 	}
 }
 

@@ -1,5 +1,10 @@
 # TBD
 
+# 1.50.3
+### Features
+* Support `CopyFilesFromUserService` for Kubernetes
+* `StartService` and `GetServiceInfo` now return the Service GUID
+
 # 1.50.2
 ### Fixes
 * Fixed a null pointer exception occurring when launching a module

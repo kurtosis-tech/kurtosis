@@ -213,7 +213,7 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 	for filesArtifactIdStr, mountDirPath := range args.FilesArtifactMountpoints {
 		filesArtifactMountpointsByArtifactId[kurtosis_backend_service.FilesArtifactID(filesArtifactIdStr)] = mountDirPath
 	}
-	maybePublicIpAddr, publicServicePortSpecs, err := apicService.serviceNetwork.StartService(
+	serviceGuid, maybePublicIpAddr, publicServicePortSpecs, err := apicService.serviceNetwork.StartService(
 		ctx,
 		serviceId,
 		args.DockerImage,
@@ -235,7 +235,7 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 	if maybePublicIpAddr != nil {
 		publicIpAddrStr = maybePublicIpAddr.String()
 	}
-	response := binding_constructors.NewStartServiceResponse(publicIpAddrStr, publicApiPorts)
+	response := binding_constructors.NewStartServiceResponse(publicIpAddrStr, publicApiPorts, string(serviceGuid))
 
 	serviceStartLoglineSuffix := ""
 	if len(publicServicePortSpecs) > 0 {
@@ -263,6 +263,7 @@ func (apicService ApiContainerService) GetServiceInfo(ctx context.Context, args 
 	privateIp := serviceObj.GetRegistration().GetPrivateIP()
 	maybePublicIp := serviceObj.GetMaybePublicIP()
 	maybePublicPorts := serviceObj.GetMaybePublicPorts()
+	serviceGuidStr := string(serviceObj.GetRegistration().GetGUID())
 
 	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privatePorts)
 	if err != nil {
@@ -285,6 +286,7 @@ func (apicService ApiContainerService) GetServiceInfo(ctx context.Context, args 
 		privateApiPorts,
 		publicIpAddrStr,
 		publicApiPorts,
+		serviceGuidStr,
 	)
 	return serviceInfoResponse, nil
 }
@@ -488,12 +490,12 @@ func (apicService ApiContainerService) UploadFilesArtifact(ctx context.Context, 
 	}
 	reader := bytes.NewReader(args.Data)
 
-	uuid, err := store.StoreFile(reader)
+	filesArtifactId, err := store.StoreFile(reader)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to store files.")
 	}
 
-	response := &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{Uuid: uuid}
+	response := &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{Uuid: string(filesArtifactId)}
 	return response, nil
 }
 
@@ -513,12 +515,12 @@ func (apicService ApiContainerService) StoreWebFilesArtifact(ctx context.Context
 	defer resp.Body.Close()
 	body := bufio.NewReader(resp.Body)
 
-	uuid, err := store.StoreFile(body)
+	filesArtifactId, err := store.StoreFile(body)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred storing the file from URL '%v' in the files artifact store", url)
 	}
 
-	response := &kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactResponse{Uuid: uuid}
+	response := &kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactResponse{Uuid: string(filesArtifactId)}
 	return response, nil
 }
 
@@ -527,12 +529,12 @@ func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context
 	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
 	srcPath := args.SourcePath
 
-	fileArtifactUUID, err := apicService.serviceNetwork.CopyFilesFromService(ctx, serviceId, srcPath)
+	filesArtifactId, err := apicService.serviceNetwork.CopyFilesFromService(ctx, serviceId, srcPath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred copying source '%v' from service with ID '%v'", srcPath, serviceId)
 	}
 
-	response := &kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceResponse{Uuid: fileArtifactUUID}
+	response := &kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceResponse{Uuid: string(filesArtifactId)}
 	return response, nil
 }
 

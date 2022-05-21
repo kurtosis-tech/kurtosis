@@ -2894,7 +2894,8 @@ proto.api_container_api.StartServiceResponse.prototype.toObject = function(opt_i
 proto.api_container_api.StartServiceResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
     publicIpAddr: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    publicPortsMap: (f = msg.getPublicPortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : []
+    publicPortsMap: (f = msg.getPublicPortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : [],
+    serviceGuid: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -2941,6 +2942,10 @@ proto.api_container_api.StartServiceResponse.deserializeBinaryFromReader = funct
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api_container_api.Port.deserializeBinaryFromReader, "", new proto.api_container_api.Port());
          });
       break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setServiceGuid(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -2980,6 +2985,13 @@ proto.api_container_api.StartServiceResponse.serializeBinaryToWriter = function(
   f = message.getPublicPortsMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api_container_api.Port.serializeBinaryToWriter);
+  }
+  f = message.getServiceGuid();
+  if (f.length > 0) {
+    writer.writeString(
+      3,
+      f
+    );
   }
 };
 
@@ -3022,6 +3034,24 @@ proto.api_container_api.StartServiceResponse.prototype.getPublicPortsMap = funct
 proto.api_container_api.StartServiceResponse.prototype.clearPublicPortsMap = function() {
   this.getPublicPortsMap().clear();
   return this;};
+
+
+/**
+ * optional string service_guid = 3;
+ * @return {string}
+ */
+proto.api_container_api.StartServiceResponse.prototype.getServiceGuid = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.StartServiceResponse} returns this
+ */
+proto.api_container_api.StartServiceResponse.prototype.setServiceGuid = function(value) {
+  return jspb.Message.setProto3StringField(this, 3, value);
+};
 
 
 
@@ -3189,7 +3219,8 @@ proto.api_container_api.GetServiceInfoResponse.toObject = function(includeInstan
     privateIpAddr: jspb.Message.getFieldWithDefault(msg, 1, ""),
     privatePortsMap: (f = msg.getPrivatePortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : [],
     publicIpAddr: jspb.Message.getFieldWithDefault(msg, 3, ""),
-    publicPortsMap: (f = msg.getPublicPortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : []
+    publicPortsMap: (f = msg.getPublicPortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : [],
+    serviceGuid: jspb.Message.getFieldWithDefault(msg, 5, "")
   };
 
   if (includeInstance) {
@@ -3246,6 +3277,10 @@ proto.api_container_api.GetServiceInfoResponse.deserializeBinaryFromReader = fun
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api_container_api.Port.deserializeBinaryFromReader, "", new proto.api_container_api.Port());
          });
       break;
+    case 5:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setServiceGuid(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -3296,6 +3331,13 @@ proto.api_container_api.GetServiceInfoResponse.serializeBinaryToWriter = functio
   f = message.getPublicPortsMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(4, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api_container_api.Port.serializeBinaryToWriter);
+  }
+  f = message.getServiceGuid();
+  if (f.length > 0) {
+    writer.writeString(
+      5,
+      f
+    );
   }
 };
 
@@ -3378,6 +3420,24 @@ proto.api_container_api.GetServiceInfoResponse.prototype.getPublicPortsMap = fun
 proto.api_container_api.GetServiceInfoResponse.prototype.clearPublicPortsMap = function() {
   this.getPublicPortsMap().clear();
   return this;};
+
+
+/**
+ * optional string service_guid = 5;
+ * @return {string}
+ */
+proto.api_container_api.GetServiceInfoResponse.prototype.getServiceGuid = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.GetServiceInfoResponse} returns this
+ */
+proto.api_container_api.GetServiceInfoResponse.prototype.setServiceGuid = function(value) {
+  return jspb.Message.setProto3StringField(this, 5, value);
+};
 
 
 

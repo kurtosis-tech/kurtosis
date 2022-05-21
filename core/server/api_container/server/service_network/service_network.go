@@ -24,7 +24,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -34,6 +33,11 @@ const (
 	defaultPartitionId                       service_network_types.PartitionID = "default"
 	startingDefaultConnectionPacketLossValue                                   = 0
 )
+
+type storeFilesArtifactResult struct {
+	filesArtifactId service.FilesArtifactID
+	err             error
+}
 
 /*
 This is the in-memory representation of the service network that the API container will manipulate. To make
@@ -214,6 +218,7 @@ func (network *ServiceNetwork) StartService(
 	dockerEnvVars map[string]string,
 	filesArtifactMountDirpaths map[service.FilesArtifactID]string,
 ) (
+	resultServiceGuid service.ServiceGUID,
 	resultMaybePublicIpAddr net.IP, // Will be nil if the service doesn't declare any private ports
 	resultPublicPorts map[string]*port_spec.PortSpec,
 	resultErr error,
@@ -224,7 +229,7 @@ func (network *ServiceNetwork) StartService(
 
 	registration, found := network.registeredServiceInfo[serviceId]
 	if !found {
-		return nil, nil, stacktrace.NewError("Cannot start service; no registration exists for service with ID '%v'", serviceId)
+		return "", nil, nil, stacktrace.NewError("Cannot start service; no registration exists for service with ID '%v'", serviceId)
 	}
 	serviceGuid := registration.GetGUID()
 
@@ -238,7 +243,7 @@ func (network *ServiceNetwork) StartService(
 	if network.isPartitioningEnabled {
 		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
 		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
+			return "", nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
 				" to know what packet loss updates to apply on the new node")
 		}
 
@@ -256,7 +261,7 @@ func (network *ServiceNetwork) StartService(
 			network.registeredServiceInfo,
 			network.networkingSidecars,
 		); err != nil {
-			return nil, nil, stacktrace.Propagate(
+			return "", nil, nil, stacktrace.Propagate(
 				err,
 				"An error occurred updating the traffic control configuration of all the other services "+
 					 "before adding the new service, meaning that the service wouldn't actually start in a partition",
@@ -276,7 +281,7 @@ func (network *ServiceNetwork) StartService(
 		filesArtifactMountDirpaths,
 	)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(
+		return "", nil, nil, stacktrace.Propagate(
 			err,
 			"An error occurred starting service '%v'",
 			serviceId,
@@ -287,19 +292,19 @@ func (network *ServiceNetwork) StartService(
 	if network.isPartitioningEnabled {
 		sidecar, err := network.networkingSidecarManager.Add(ctx, registration.GetGUID())
 		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred adding the networking sidecar")
+			return "", nil, nil, stacktrace.Propagate(err, "An error occurred adding the networking sidecar")
 		}
 		network.networkingSidecars[serviceId] = sidecar
 
 		if err := sidecar.InitializeTrafficControl(ctx); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred initializing the newly-created networking-sidecar-traffic-control-qdisc-configuration")
+			return "", nil, nil, stacktrace.Propagate(err, "An error occurred initializing the newly-created networking-sidecar-traffic-control-qdisc-configuration")
 		}
 
 		// TODO Getting packet loss configuration by service ID is an expensive call and, as of 2021-11-23, we do it twice - the solution is to make
 		//  Getting packet loss configuration by service ID not an expensive call
 		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
 		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
+			return "", nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
 				" to know what packet loss updates to apply on the new node")
 		}
 		newNodeServicePacketLossConfiguration := servicePacketLossConfigurationsByServiceID[serviceId]
@@ -307,12 +312,12 @@ func (network *ServiceNetwork) StartService(
 			serviceId: newNodeServicePacketLossConfiguration,
 		}
 		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.registeredServiceInfo, network.networkingSidecars); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration on the new node to partition it "+
+			return "", nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration on the new node to partition it "+
 				"off from other nodes")
 		}
 	}
 
-	return userService.GetMaybePublicIP(), userService.GetMaybePublicPorts(), nil
+	return serviceGuid, userService.GetMaybePublicIP(), userService.GetMaybePublicPorts(), nil
 }
 
 func (network *ServiceNetwork) RemoveService(
@@ -522,44 +527,51 @@ func (network *ServiceNetwork) GetServiceIDs() map[service.ServiceID]bool {
 	return serviceIDs
 }
 
-func (network *ServiceNetwork) CopyFilesFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (string, error) {
+func (network *ServiceNetwork) CopyFilesFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (service.FilesArtifactID, error) {
 	serviceObj, found := network.registeredServiceInfo[serviceId]
 	if !found {
 		return "", stacktrace.NewError("Cannot copy files from service '%v' because it does not exist in the network", serviceId)
 	}
 	serviceGuid := serviceObj.GetGUID()
 
-	readCloser, err := network.kurtosisBackend.CopyFromUserService(ctx, network.enclaveId, serviceGuid, srcPath)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred copying source '%v' from user service with GUID '%v' in enclave with ID '%v'", srcPath, serviceGuid, network.enclaveId)
-	}
-	defer readCloser.Close()
-
-	//Creates a new tgz file in a temporary directory
-	tarGzipFileFilepath, err := gzipCompressFile(readCloser)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred creating new temporary tar-gzip-file")
-	}
-
-	//Then opens the .tgz file
-	tarGzipFile, err := os.Open(tarGzipFileFilepath)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred opening file '%v'", tarGzipFileFilepath)
-	}
-	defer tarGzipFile.Close()
-
 	store, err := network.enclaveDataDir.GetFilesArtifactStore()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting the files artifact store")
 	}
 
-	//And finally pass it the .tgz file to the artifact file store
-	uuid, err := store.StoreFile(tarGzipFile)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while trying to store file '%v' into the artifact file store", tarGzipFileFilepath)
+	pipeReader, pipeWriter := io.Pipe()
+	defer pipeWriter.Close()
+
+	storeFilesArtifactResultChan := make(chan storeFilesArtifactResult)
+	go func() {
+		defer pipeReader.Close()
+
+		//And finally pass it the .tgz file to the artifact file store
+		filesArtifactId, storeFileErr := store.StoreFile(pipeReader)
+		storeFilesArtifactResultChan <- storeFilesArtifactResult{
+			filesArtifactId: filesArtifactId,
+			err:             storeFileErr,
+		}
+	}()
+
+	gzippingPipeWriter := gzip.NewWriter(pipeWriter)
+	defer gzippingPipeWriter.Close()
+
+	if err := network.kurtosisBackend.CopyFilesFromUserService(ctx, network.enclaveId, serviceGuid, srcPath, gzippingPipeWriter); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred copying source '%v' from user service with GUID '%v' in enclave with ID '%v'", srcPath, serviceGuid, network.enclaveId)
 	}
 
-	return uuid, nil
+	storeFileResult := <- storeFilesArtifactResultChan
+	if storeFileResult.err != nil {
+		return "", stacktrace.Propagate(
+			err,
+			"An error occurred storing files from path '%v' on service '%v' in in the files artifact store",
+			srcPath,
+			serviceGuid,
+		)
+	}
+
+	return storeFileResult.filesArtifactId, nil
 }
 
 // ====================================================================================================
