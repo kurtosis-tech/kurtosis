@@ -1,4 +1,6 @@
 # TBD
+
+# 0.18.2
 ### Fixes
 * Fix broken `service logs` command
 
