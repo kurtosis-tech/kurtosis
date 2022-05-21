@@ -1,4 +1,6 @@
 # TBD
+
+# 0.29.0
 ### Features
 * Implement Kubernetes-backed file artifact expansion
 * Build `CopyFilesFromUserService` in Kubernetes
