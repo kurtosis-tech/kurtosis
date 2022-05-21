@@ -1,5 +1,12 @@
 # TBD
 
+# 0.18.2
+### Fixes
+* Fix broken `service logs` command
+
+### Changes
+* Made it impossible to mess up the FlagType environment variable now when declaring new commands
+
 # 0.18.1
 ### Features
 * When the user adds a new config version, unit tests will now force (at compile time) the following:
