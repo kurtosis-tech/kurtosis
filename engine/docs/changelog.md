@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Implement Kubernetes files artifacts
+* Implement copying files from user services in Kubernetes
 
 # 1.22.2
 ### Fixes
