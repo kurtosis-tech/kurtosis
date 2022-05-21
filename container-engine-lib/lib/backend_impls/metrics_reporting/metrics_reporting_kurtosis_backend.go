@@ -594,7 +594,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateFilesArtifactExpansion(
 }
 
 //Destroy files artifact expansion volume and expander using the given filters
-func (backend *MetricsReportingKurtosisBackend)  DestroyFilesArtifactExpansion(
+func (backend *MetricsReportingKurtosisBackend) DestroyFilesArtifactExpansions(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *files_artifact_expansion.FilesArtifactExpansionFilters,
@@ -603,7 +603,7 @@ func (backend *MetricsReportingKurtosisBackend)  DestroyFilesArtifactExpansion(
 	erroredFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]error,
 	resultErr error,
 ) {
-	successfulExpansionVolumeNames, erroredExpansionVolumeNames, err := backend.underlying.DestroyFilesArtifactExpansion(ctx, enclaveId, filters)
+	successfulExpansionVolumeNames, erroredExpansionVolumeNames, err := backend.underlying.DestroyFilesArtifactExpansions(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying files artifact expansions using filters '%+v'", filters)
 	}

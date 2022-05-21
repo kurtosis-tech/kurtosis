@@ -15,7 +15,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"net"
 	"path"
-	"time"
 )
 
 const (
@@ -36,8 +35,6 @@ const (
 	enclaveDataVolumeDirpathOnExpanderContainer = "/enclave-data"
 
 	expanderContainerSuccessExitCode = 0
-
-	expanderContainerStopTimeout = time.Second * 2
 )
 
 type filesArtifactExpansionObjectsAndDockerResources struct {
@@ -76,15 +73,7 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, enclaveId)
 	}
-	shouldRemoveVolume := true
-	defer func() {
-		if shouldRemoveVolume {
-			err = backend.dockerManager.RemoveVolume(ctx, filesArtifactExpansionVolumeName)
-			if err != nil {
-				logrus.Errorf("Failed to destroy expansion volume '%v' for files artifact expansion '%v' - got error: \n%v", filesArtifactExpansionVolumeName, filesArtifactExpansionGUID, err)
-			}
-		}
-	}()
+	// We don't delete the volume because we only defer-stop the expander container (not remove) and Docker won't let us remove a volume that's in use
 
 	freeIpAddrProvider, found := backend.enclaveFreeIpProviders[enclaveId]
 	if !found {
@@ -101,12 +90,7 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting a free IP address")
 	}
-	shouldReleaseIp := true
-	defer func() {
-		if shouldReleaseIp {
-			freeIpAddrProvider.ReleaseIpAddr(ipAddr)
-		}
-	}()
+	// We don't release the IP because we only defer-stop the expander container (not remove) so it will still be consuming the IP
 
 	_, err = backend.runFilesArtifactExpander(
 		ctx,
@@ -122,13 +106,11 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 		return nil, stacktrace.Propagate(err, "An error occurred running files artifact expander for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, enclaveId)
 	}
 	filesArtifactExpansion := files_artifact_expansion.NewFilesArtifactExpansion(filesArtifactExpansionGUID, serviceGuid)
-	shouldReleaseIp = false
-	shouldRemoveVolume = false
 	return filesArtifactExpansion, nil
 }
 
 // Destroy files artifact expansion volume and expander using the given filters
-func (backend *DockerKurtosisBackend)  DestroyFilesArtifactExpansion(
+func (backend *DockerKurtosisBackend) DestroyFilesArtifactExpansions(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *files_artifact_expansion.FilesArtifactExpansionFilters,
@@ -216,7 +198,6 @@ func (backend *DockerKurtosisBackend) getMatchingFilesArtifactExpansionObjectsAn
 		if _, found := matchingFilesArtifactExpansionDockerResources[filesArtifactExpansionGUID]; !found {
 			return nil, stacktrace.NewError("Expected to find Docker resources matching files artifact expansion guid '%v' but none was found", filesArtifactExpansionGUID)
 		}
-
 		resultFilesArtifactExpansionObjectsAndDockerResources[filesArtifactExpansionGUID] = &filesArtifactExpansionObjectsAndDockerResources{
 			filesArtifactExpansion: filesArtifactExpansionObj,
 			dockerResources: matchingFilesArtifactExpansionDockerResources[filesArtifactExpansionGUID],
@@ -271,7 +252,10 @@ func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionDockerReso
 
 	// FILTER CONTAINERS BY GUIDS TO MATCH
 	for _, container := range containers {
-		filesArtifactExpansionGUIDStr := container.GetLabels()[label_key_consts.GUIDDockerLabelKey.GetString()]
+		filesArtifactExpansionGUIDStr, found := container.GetLabels()[label_key_consts.GUIDDockerLabelKey.GetString()]
+		if !found {
+			return nil, stacktrace.NewError("Failed to find GUID label on docker container '%v'", container.GetId())
+		}
 		filesArtifactExpansionGUID := files_artifact_expansion.FilesArtifactExpansionGUID(filesArtifactExpansionGUIDStr)
 
 		if maybeFilesArtifactGuidsToMatch != nil && len(maybeFilesArtifactGuidsToMatch) > 0 {
@@ -409,7 +393,7 @@ func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 	shouldKillContainer := true
 	defer func() {
 		if shouldKillContainer {
-			containerTeardownErr := backend.dockerManager.StopContainer(ctx, containerId, expanderContainerStopTimeout)
+			containerTeardownErr := backend.dockerManager.KillContainer(ctx, containerId)
 			if containerTeardownErr != nil {
 				logrus.Errorf("Failed to tear down container ID '%v', you will need to manually remove it!", containerId)
 			}

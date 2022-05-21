@@ -420,7 +420,7 @@ type KurtosisBackend interface {
 	)
 
 	//Destroy files artifact expansion using the given filters
-	DestroyFilesArtifactExpansion(
+	DestroyFilesArtifactExpansions(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
 		filters *files_artifact_expansion.FilesArtifactExpansionFilters,

@@ -18,7 +18,7 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 }
 
 //Destroy files artifact expansion volume and expander using the given filters
-func (backend *KubernetesKurtosisBackend)  DestroyFilesArtifactExpansion(
+func (backend *KubernetesKurtosisBackend) DestroyFilesArtifactExpansions(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters  *files_artifact_expansion.FilesArtifactExpansionFilters,
