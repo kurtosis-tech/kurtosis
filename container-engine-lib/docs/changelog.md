@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Implement Kubernetes-backed file artifact expansion
 
 # 0.27.0
 ### Breaking Changes
