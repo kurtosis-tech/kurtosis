@@ -1,6 +1,5 @@
 package kubernetes
 import (
-	"bytes"
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
@@ -418,6 +417,7 @@ func (backend *KubernetesKurtosisBackend) UnpauseService(
 	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because unpausing is not supported by Kubernetes", serviceId, enclaveId)
 }
 
+// TODO Switch these to streaming methods, so that huge command outputs don't blow up the memory of the API container
 func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
@@ -471,6 +471,7 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 		}
 	}
 
+	// TODO Parallelize for perf
 	userServiceExecSuccess := map[service.ServiceGUID]*exec_result.ExecResult{}
 	userServiceExecErr := map[service.ServiceGUID]error{}
 	for serviceGuid, serviceCommand := range userServiceCommands {
@@ -483,8 +484,14 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 		userServicePod := userServiceObjectAndResources.kubernetesResources.pod
 		userServicePodName := userServicePod.Name
 
-		outputBuffer := &bytes.Buffer{}
-		exitCode, err := backend.kubernetesManager.RunExecCommand(namespaceName, userServicePodName, userServiceContainerName, serviceCommand, outputBuffer)
+		outputBuffer := newCon
+		exitCode, err := backend.kubernetesManager.RunExecCommand(
+			namespaceName,
+			userServicePodName,
+			userServiceContainerName,
+			serviceCommand,
+			outputBuffer,
+		)
 		if err != nil {
 			userServiceExecErr[serviceGuid] = stacktrace.Propagate(
 				err,
