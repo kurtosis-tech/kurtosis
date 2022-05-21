@@ -155,7 +155,7 @@ func (backend *KubernetesKurtosisBackend) CreateModule(
 	var shouldRemoveService = true
 	defer func() {
 		if shouldRemoveService {
-			if err := backend.kubernetesManager.RemoveService(ctx, enclaveNamespaceName, moduleServiceName); err != nil {
+			if err := backend.kubernetesManager.RemoveService(ctx, moduleService); err != nil {
 				logrus.Errorf("Creating the module didn't complete successfully, so we tried to delete Kubernetes service '%v' that we created but an error was thrown:\n%v", moduleServiceName, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes service with name '%v'!!!!!!!", moduleServiceName)
 			}
@@ -197,7 +197,7 @@ func (backend *KubernetesKurtosisBackend) CreateModule(
 	var shouldRemovePod = true
 	defer func() {
 		if shouldRemovePod {
-			if err := backend.kubernetesManager.RemovePod(ctx, enclaveNamespaceName, modulePodName); err != nil {
+			if err := backend.kubernetesManager.RemovePod(ctx, modulePod); err != nil {
 				logrus.Errorf("Creating the module didn't complete successfully, so we tried to delete Kubernetes pod '%v' that we created but an error was thrown:\n%v", modulePodName, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes pod with name '%v'!!!!!!!", modulePodName)
 			}
@@ -351,7 +351,7 @@ func (backend *KubernetesKurtosisBackend) StopModules(
 		if kubernetesPod != nil {
 			podName := kubernetesPod.GetName()
 			namespaceName := kubernetesPod.GetNamespace()
-			if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, podName); err != nil {
+			if err := backend.kubernetesManager.RemovePod(ctx, kubernetesPod); err != nil {
 				erroredModuleGUIDs[moduleGuid] = stacktrace.Propagate(
 					err,
 					"An error occurred removing pod '%v' in namespace '%v' for module with GUID '%v'",
@@ -392,7 +392,7 @@ func (backend *KubernetesKurtosisBackend) DestroyModules(
 		if kubernetesPod != nil {
 			podName := kubernetesPod.GetName()
 			namespaceName := kubernetesPod.GetNamespace()
-			if err := backend.kubernetesManager.RemovePod(ctx, podName, namespaceName); err != nil {
+			if err := backend.kubernetesManager.RemovePod(ctx, kubernetesPod); err != nil {
 				erroredModuleGUIDs[moduleGuid] = stacktrace.Propagate(
 					err,
 					"An error occurred removing pod '%v' in namespace '%v' for module with GUID '%v'",
@@ -409,7 +409,7 @@ func (backend *KubernetesKurtosisBackend) DestroyModules(
 		if kubernetesService != nil {
 			serviceName := kubernetesService.GetName()
 			namespaceName := kubernetesService.GetNamespace()
-			if err := backend.kubernetesManager.RemoveService(ctx, serviceName, namespaceName); err != nil {
+			if err := backend.kubernetesManager.RemoveService(ctx, kubernetesService); err != nil {
 				erroredModuleGUIDs[moduleGuid] = stacktrace.Propagate(
 					err,
 					"An error occurred removing service '%v' in namespace '%v' for module with GUID '%v'",

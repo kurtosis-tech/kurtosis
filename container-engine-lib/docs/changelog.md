@@ -1,4 +1,7 @@
 # TBD
+### Changes
+* Calls to remove Kubernetes resources are now synchronous
+
 ### Fixes
 * Fix DockerLogStreamingReadCloser logging at ERROR level when it should log at DEBUG
 
