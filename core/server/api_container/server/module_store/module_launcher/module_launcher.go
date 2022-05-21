@@ -13,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/module_launch_api"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons/current_time_str_provider"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -51,9 +50,6 @@ func (launcher ModuleLauncher) Launch(
 	resultClient kurtosis_core_rpc_api_bindings.ExecutableModuleServiceClient,
 	resultErr error,
 ) {
-	suffix := current_time_str_provider.GetCurrentTimeStr()
-	moduleGUID := module.ModuleGUID(string(moduleID) + "-" + suffix)
-
 	args := module_launch_api.NewModuleContainerArgs(
 		string(launcher.enclaveId),
 		modulePortNum,
@@ -70,7 +66,6 @@ func (launcher ModuleLauncher) Launch(
 		containerImage,
 		launcher.enclaveId,
 		moduleID,
-		moduleGUID,
 		modulePortNum,
 		envVars,
 	)
@@ -81,11 +76,11 @@ func (launcher ModuleLauncher) Launch(
 	shouldStopModule := true
 	defer func() {
 		if shouldStopModule {
-			_, failedModules, err := launcher.kurtosisBackend.StopModules(ctx, getModuleByModuleGUIDFilter(moduleGUID))
+			_, failedModules, err := launcher.kurtosisBackend.StopModules(ctx, launcher.enclaveId, getModuleByModuleGUIDFilter(createdModule.GetGUID()))
 			if err != nil {
 				logrus.Error("Launching the module failed, but an error occurred calling the backend to stop the module we started:")
 				fmt.Fprintln(logrus.StandardLogger().Out, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually kill the module with GUID '%v'", moduleGUID)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually kill the module with GUID '%v'", createdModule.GetGUID())
 			}
 			if len(failedModules) > 0 {
 				for failedModuleGUID, failedModuleErr := range failedModules {
