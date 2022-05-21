@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -582,16 +583,13 @@ func getEnclaveStatusFromEnclavePods(enclavePods []*apiv1.Pod) (enclave.EnclaveS
 		resultEnclaveStatus = enclave.EnclaveStatus_Stopped
 	}
 	for _, enclavePod := range enclavePods {
-		podPhase := enclavePod.Status.Phase
-
-		isPodRunning, found := isPodRunningDeterminer[podPhase]
-		if !found {
-			// This should never happen because we enforce completeness in a unit test
-			return resultEnclaveStatus, stacktrace.NewError("No is-running designation found for enclave pod phase '%v'; this is a bug in Kurtosis!", podPhase)
+		podStatus, err := getContainerStatusFromPod(enclavePod)
+		if err != nil {
+			return 0, stacktrace.Propagate(err, "An error occurred getting status from pod '%v'", enclavePod.Name)
 		}
-		if isPodRunning {
+		// An enclave is considered running if we found at least one pod running
+		if podStatus == container_status.ContainerStatus_Running {
 			resultEnclaveStatus = enclave.EnclaveStatus_Running
-			//Enclave is considered running if we found at least one pod running
 			break
 		}
 	}

@@ -1,4 +1,9 @@
 # TBD
+### Changes
+* Switched the API container to get its port info from the serialized port specs on the Kubernetes service
+
+### Fixes
+* Fixed the engine container being listed as running if the engine service had selectors defined
 
 # 0.26.1
 ### Features

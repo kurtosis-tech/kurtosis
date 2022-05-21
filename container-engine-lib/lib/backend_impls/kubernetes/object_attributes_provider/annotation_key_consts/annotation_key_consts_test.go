@@ -12,7 +12,7 @@ var labelKeyStrsToEnsure = map[string]string{
 }
 
 var labelKeysToEnsure = map[*kubernetes_annotation_key.KubernetesAnnotationKey]string{
-	PortSpecsAnnotationKey: "kurtosistech.com/ports",
+	PortSpecsKubernetesAnnotationKey: "kurtosistech.com/ports",
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -836,15 +836,10 @@ func getUserServiceObjectsFromKubernetesResources(
 		serviceRegistrationObj := service.NewServiceRegistration(serviceId, serviceGuid, enclaveId, privateIp)
 		resultObj.serviceRegistration = serviceRegistrationObj
 
-		serviceAnnotations := kubernetesService.Annotations
-		portSpecsStr, found := serviceAnnotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()]
-		if !found {
-			// If the service doesn't have a private port specs annotation, it means a pod was never started so there's nothing more to do
-			continue
-		}
-		privatePorts, err := kubernetes_port_spec_serializer.DeserializePortSpecs(portSpecsStr)
+		// The empty map means "don't validate any port existence"
+		privatePorts, err := getPrivatePortsAndValidatePortExistence(kubernetesService, map[string]bool{})
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred deserializing port specs string '%v'", portSpecsStr)
+			return nil, stacktrace.Propagate(err, "An error occurred deserializing private ports from the user service's Kubernetes service")
 		}
 
 		kubernetesPod := resourcesToParse.pod
@@ -1048,7 +1043,7 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 	if newAnnotations == nil {
 		newAnnotations = map[string]string{}
 	}
-	newAnnotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()] = serializedPortSpecs.GetString()
+	newAnnotations[annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString()] = serializedPortSpecs.GetString()
 
 	updatingConfigurator := func(updatesToApply *applyconfigurationsv1.ServiceApplyConfiguration) {
 		specUpdateToApply := applyconfigurationsv1.ServiceSpec()

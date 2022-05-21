@@ -3,8 +3,6 @@ package kubernetes
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/annotation_key_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
@@ -640,22 +638,16 @@ func getModuleObjectsFromKubernetesResources(
 			return nil, stacktrace.NewError("Expected to be able to get the cluster ip of the module service, instead parsing the cluster ip of service '%v' returned nil", kubernetesService.Name)
 		}
 
-		serviceAnnotations := kubernetesService.Annotations
-		portSpecsStr, found := serviceAnnotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()]
-		if !found {
-			// If the service doesn't have a private port specs annotation, it means a pod was never started so there's nothing more to do
-			continue
-		}
-
-		privatePorts, err := kubernetes_port_spec_serializer.DeserializePortSpecs(portSpecsStr)
+		privatePorts, err := getPrivatePortsAndValidatePortExistence(
+			kubernetesService,
+			map[string]bool{
+				kurtosisInternalContainerGrpcPortSpecId: true,
+			},
+		)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred deserializing port specs string '%v'", portSpecsStr)
+			return nil, stacktrace.Propagate(err, "An error occurred getting private module ports and validating gRPC port existence from the module service")
 		}
-
-		privateGrpcPortSpec, found := privatePorts[kurtosisInternalContainerGrpcPortSpecId]
-		if !found {
-			return nil, stacktrace.NewError("Expected to find port spec '%v' after deserializing the port spec string '%v' stored in the service's labels with GUID '%v', but was not found", kurtosisInternalContainerGrpcPortSpecId, portSpecsStr, guid)
-		}
+		privateGrpcPortSpec := privatePorts[kurtosisInternalContainerGrpcPortSpecId]
 
 		// NOTE: We set these to nil because in Kubernetes we have no way of knowing what the public info is!
 		var publicIpAddr net.IP = nil
