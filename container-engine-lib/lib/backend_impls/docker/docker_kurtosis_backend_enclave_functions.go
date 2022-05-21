@@ -891,3 +891,13 @@ func destroyEnclaveNetworks(
 
 	return successfulEnclaveIds, erroredEnclaveIds, nil
 }
+
+func getEnclaveIdFromNetwork(network *types.Network) (enclave.EnclaveID, error) {
+	labels := network.GetLabels()
+	enclaveIdLabelValue, found := labels[label_key_consts.EnclaveIDDockerLabelKey.GetString()]
+	if !found {
+		return "", stacktrace.NewError("Expected to find network's label with key '%v' but none was found", label_key_consts.EnclaveIDDockerLabelKey.GetString())
+	}
+	enclaveId := enclave.EnclaveID(enclaveIdLabelValue)
+	return enclaveId, nil
+}
