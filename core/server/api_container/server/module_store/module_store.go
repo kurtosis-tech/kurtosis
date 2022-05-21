@@ -21,13 +21,15 @@ import (
 
 type moduleInfo struct {
 	moduleGUID    module.ModuleGUID
-	privateIpAddr net.IP
-	privatePort   *port_spec.PortSpec
-	publicIpAddr  net.IP
-	publicPort    *port_spec.PortSpec
+
 	// NOTE: When we want restart-able enclaves, we'll need to not store this client and instead recreate one
 	//  from the port num/protocol stored as a label on the module container
 	client kurtosis_core_rpc_api_bindings.ExecutableModuleServiceClient
+
+	privateIpAddr net.IP
+	privatePort       *port_spec.PortSpec
+	maybePublicIpAddr net.IP
+	maybePublicPort   *port_spec.PortSpec
 }
 
 type ModuleStore struct {
@@ -84,17 +86,17 @@ func (store *ModuleStore) LoadModule(
 		)
 	}
 
-	privateIpAddr := launchedModule.GetPrivateIp()
-	publicIpAddr := launchedModule.GetPublicIp()
+	privateIpAddr := launchedModule.GetPrivateIP()
+	maybePublicIpAddr := launchedModule.GetMaybePublicIP()
 	privatePort := launchedModule.GetPrivatePort()
-	publicPort := launchedModule.GetPublicPort()
+	maybePublicPort := launchedModule.GetMaybePublicPort()
 	infoForModule := moduleInfo{
-		moduleGUID:    launchedModule.GetGUID(),
-		privateIpAddr: privateIpAddr,
-		privatePort:   privatePort,
-		publicIpAddr:  publicIpAddr,
-		publicPort:    publicPort,
-		client:        launchedModuleClient,
+		moduleGUID:        launchedModule.GetGUID(),
+		privateIpAddr:     privateIpAddr,
+		privatePort:       privatePort,
+		maybePublicIpAddr: maybePublicIpAddr,
+		maybePublicPort:   maybePublicPort,
+		client:            launchedModuleClient,
 	}
 
 	store.modules[moduleId] = infoForModule
@@ -160,8 +162,8 @@ func (store *ModuleStore) ExecuteModule(ctx context.Context, moduleId module.Mod
 func (store *ModuleStore) GetModuleInfo(moduleId module.ModuleID) (
 	resultPrivateIp net.IP,
 	resultPrivatePort *port_spec.PortSpec,
-	resultPublicIp net.IP,
-	resultPublicPort *port_spec.PortSpec,
+	resultMaybePublicIp net.IP,
+	resultMaybePublicPort *port_spec.PortSpec,
 	resultErr error,
 ) {
 	store.mutex.Lock()
@@ -171,7 +173,7 @@ func (store *ModuleStore) GetModuleInfo(moduleId module.ModuleID) (
 	if !found {
 		return nil, nil, nil, nil, stacktrace.NewError("No module with ID '%v' has been loaded", moduleId)
 	}
-	return info.privateIpAddr, info.privatePort, info.publicIpAddr, info.publicPort, nil
+	return info.privateIpAddr, info.privatePort, info.maybePublicIpAddr, info.maybePublicPort, nil
 }
 
 func (store *ModuleStore) GetModules() map[module.ModuleID]bool {

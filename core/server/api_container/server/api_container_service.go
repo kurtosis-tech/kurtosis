@@ -92,21 +92,36 @@ func (apicService ApiContainerService) LoadModule(ctx context.Context, args *kur
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred loading module '%v' with container image '%v' and serialized params '%v'", moduleId, image, serializedParams)
 	}
+
+	privateIpStr := loadedModule.GetPrivateIP().String()
 	privateApiPort, err := transformPortSpecToApiPort(loadedModule.GetPrivatePort())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's private port spec port to an API port")
 	}
-	publicApiPort, err := transformPortSpecToApiPort(loadedModule.GetPublicPort())
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's public port spec port to an API port")
+
+	maybePublicIpStr := missingPublicIpAddrStr
+	if loadedModule.GetMaybePublicIP() != nil {
+		maybePublicIpStr = loadedModule.GetMaybePublicIP().String()
+	}
+	var maybePublicApiPort *kurtosis_core_rpc_api_bindings.Port
+	if loadedModule.GetMaybePublicPort() != nil {
+		candidatePublicApiPort, err := transformPortSpecToApiPort(loadedModule.GetMaybePublicPort())
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred transforming the module's public port '%v' to an API port",
+				loadedModule.GetMaybePublicPort(),
+			)
+		}
+		maybePublicApiPort = candidatePublicApiPort
 	}
 
 	result := binding_constructors.NewLoadModuleResponse(
 		string(loadedModule.GetGUID()),
-		loadedModule.GetPrivateIp().String(),
+		privateIpStr,
 		privateApiPort,
-		loadedModule.GetPublicIp().String(),
-		publicApiPort,
+		maybePublicIpStr,
+		maybePublicApiPort,
 	)
 	return result, nil
 }

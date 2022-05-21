@@ -69,11 +69,12 @@ func (launcher ModuleLauncher) Launch(
 		modulePortNum,
 		envVars,
 	)
-	moduleGuid := createdModule.GetGUID()
-
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching module '%v' with image '%v'", moduleID, containerImage)
 	}
+
+	moduleGuid := createdModule.GetGUID()
+
 	shouldStopModule := true
 	defer func() {
 		if shouldStopModule {
@@ -93,7 +94,7 @@ func (launcher ModuleLauncher) Launch(
 		}
 	}()
 
-	moduleSocket := fmt.Sprintf("%v:%v", createdModule.GetPrivateIp(), modulePortNum)
+	moduleSocket := fmt.Sprintf("%v:%v", createdModule.GetPrivateIP(), modulePortNum)
 	conn, err := grpc.Dial(
 		moduleSocket,
 		grpc.WithInsecure(), // TODO SECURITY: Use HTTPS to verify we're connecting to the correct module
