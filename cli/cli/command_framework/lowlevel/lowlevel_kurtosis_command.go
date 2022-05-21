@@ -8,15 +8,11 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"strconv"
 	"strings"
 )
 
 const (
 	shouldLogCompletionDebugMessagesToStderr = true
-
-	uintBase = 10
-	uint32Bits = 32
 )
 
 // LowlevelKurtosisCommand is the most configurable, lowest-level implementation of the KurtosisCommand interface
@@ -330,53 +326,26 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 		shorthand := flagConfig.Shorthand
 		usage := flagConfig.Usage
 		defaultValStr := flagConfig.Default
+		flagType := flagConfig.Type
 
-		typeStr := flagConfig.Type.AsString()
-		defaultValueDoesntMatchType := false
-		switch typeStr {
-		case "":   // This is the case where the user doesn't fill out a flag type
-		case flags.FlagType_String.AsString():
-			// No validation needed because the default type is already string
-			resultFlags.StringP(
-				key,
-				shorthand,
-				defaultValStr,
-				usage,
-			)
-		case flags.FlagType_Bool.AsString():
-			defaultValue, err := strconv.ParseBool(defaultValStr)
-			if err != nil {
-				defaultValueDoesntMatchType = true
-				break
-			}
-			resultFlags.BoolP(
-				key,
-				shorthand,
-				defaultValue,
-				usage,
-			)
-		case flags.FlagType_Uint32.AsString():
-			defaultValueUint64, err := strconv.ParseUint(defaultValStr, uintBase, uint32Bits)
-			if err != nil {
-				defaultValueDoesntMatchType = true
-				break
-			}
-			resultFlags.Uint32P(
-				key,
-				shorthand,
-				uint32(defaultValueUint64),
-				usage,
-			)
-		default:
-			panic(stacktrace.NewError("Flag '%v' on command '%v' is of unrecognized type '%v'", key, kurtosisCmd.CommandStr, typeStr))
-		}
-		if defaultValueDoesntMatchType {
+		processor, found := flags.AllFlagTypeProcessors[flagType]
+		if !found {
+			// Should never happen because we enforce completeness via unit test
 			panic(stacktrace.NewError(
-				"Default value of flag '%v' on command '%v' is '%v', which doesn't match the flag's declared type of '%v'",
+				"Flag '%v' on command '%v' has type '%v' which doesn't have a flag type processor defined; this means " +
+					"that the flag type is invalid or a processor needs to be defined",
 				key,
 				kurtosisCmd.CommandStr,
-				defaultValStr,
-				typeStr,
+				flagType.String(),
+			))
+		}
+
+		if err := processor(key, shorthand, defaultValStr, usage, resultFlags); err != nil {
+			panic(stacktrace.NewError(
+				"An error occurred processing flag '%v' on command '%v' of type '%v'",
+				key,
+				kurtosisCmd.CommandStr,
+				flagType.String(),
 			))
 		}
 	}
