@@ -56,47 +56,24 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 
 	// TODO PERF: parallelize this to increase speed
 	artifactIdsToVolNames := map[service.FilesArtifactID]files_artifact_expansion_volume.FilesArtifactExpansionVolumeName{}
-	volumesToDestroyIfSomethingFails := map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool{}
 	for filesArtifactId := range artifactUuidsToExpand {
 		artifactFile, err := expander.filesArtifactStore.GetFileByUUID(string(filesArtifactId))
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the file for files artifact '%v'", filesArtifactId)
 		}
 
-		filesArtifactExpansionVolume, err := expander.kurtosisBackend.CreateFilesArtifactExpansionVolume(
+		_, err = expander.kurtosisBackend.CreateFilesArtifactExpansion(
 			ctx,
 			expander.enclaveId,
 			serviceGuid,
 			filesArtifactId,
-		)
+			artifactFile.GetFilepathRelativeToDataDirRoot())
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, expander.enclaveId)
-		}
-		volumeName := filesArtifactExpansionVolume.GetName()
-		volumesToDestroyIfSomethingFails[volumeName] = true
-		defer func() {
-			if len(volumesToDestroyIfSomethingFails) > 0 {
-				expander.destroyFilesArtifactExpansionVolumes(ctx, volumesToDestroyIfSomethingFails)
-				//We rewrite this var here to prevent more than one execution becase it is in a loop
-				volumesToDestroyIfSomethingFails = map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool{}
-			}
-		}()
-
-		if err := expander.runFilesArtifactExpander(
-			ctx,
-			filesArtifactId,
-			serviceGuid,
-			volumeName,
-			artifactFile.GetFilepathRelativeToDataDirRoot(),
-		); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred running files artifact expander for user service with GUID '%v' and files artifact ID '%v' and files artifact expansion volume '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, volumeName, expander.enclaveId)
+			return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, expander.enclaveId)
 		}
 
-		artifactIdsToVolNames[filesArtifactId] = volumeName
+		artifactIdsToVolNames[filesArtifactId] = ""
 	}
-
-	//We rewrite this var to avoid destroying them if everything is ok
-	volumesToDestroyIfSomethingFails = map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool{}
 	return artifactIdsToVolNames, nil
 }
 

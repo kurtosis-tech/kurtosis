@@ -703,7 +703,7 @@ func (network *ServiceNetwork) startService(
 	}
 
 
-	artifactVolumeMounts := map[string]string{}
+	/*artifactVolumeMounts := map[string]string{}
 	for artifactUuid, mountpoint := range filesArtifactUuidsToMountpoints {
 		artifactVolume, found := artifactUuidsToVolumes[artifactUuid]
 		if !found {
@@ -714,7 +714,7 @@ func (network *ServiceNetwork) startService(
 			)
 		}
 		artifactVolumeMounts[string(artifactVolume)] = mountpoint
-	}
+	}*/
 
 	launchedUserService, err := network.kurtosisBackend.StartUserService(
 		ctx,
