@@ -40,7 +40,7 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 		idStr := string(userService.GetRegistration().GetID())
 		guidStr := string(userService.GetRegistration().GetGUID())
 
-		portBindingLines, err := getPortBindingStrings(userService)
+		portBindingLines, err := getUserServicePortBindingStrings(userService)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting the port binding strings")
 		}
@@ -87,7 +87,7 @@ func getSortedUserServiceSliceFromUserServiceMap(userServices map[service.Servic
 }
 
 // Guaranteed to have at least one entry
-func getPortBindingStrings(userService *service.Service) ([]string, error) {
+func getUserServicePortBindingStrings(userService *service.Service) ([]string, error) {
 	privatePorts := userService.GetPrivatePorts()
 	if privatePorts == nil || len(privatePorts) == 0 {
 		return []string{missingPortPlaceholder}, nil

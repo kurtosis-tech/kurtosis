@@ -16,6 +16,8 @@ import (
 const (
 	moduleGUIDColHeader  = "GUID"
 	modulePortsColHeader = "Ports"
+
+	grpcPortId = "grpc"
 )
 
 func printModules(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveId enclave.EnclaveID) error {
@@ -34,22 +36,10 @@ func printModules(ctx context.Context, kurtosisBackend backend_interface.Kurtosi
 	tablePrinter := output_printers.NewTablePrinter(moduleGUIDColHeader, modulePortsColHeader)
 	sortedModules := getSortedModuleSliceFromModulesMap(modules)
 
-	for _, module := range sortedModules {
+	for _, moduleObj := range sortedModules {
+		portString := getModulePortBindingString(moduleObj)
 
-		portString := fmt.Sprintf(
-			"%v/%v",
-			 module.GetPrivatePort().GetNumber(),
-			 strings.ToLower(module.GetPrivatePort().GetProtocol().String()),
-		)
-		if module.GetStatus() == container_status.ContainerStatus_Running {
-			portString = portString + fmt.Sprintf(
-				" -> %v:%v",
-				module.GetPublicIp(),
-				module.GetPublicPort().GetNumber(),
-			)
-		}
-
-		moduleGuidStr := string(module.GetGUID())
+		moduleGuidStr := string(moduleObj.GetGUID())
 
 		if err := tablePrinter.AddRow(moduleGuidStr, portString); err != nil {
 			return stacktrace.NewError(
@@ -66,10 +56,9 @@ func printModules(ctx context.Context, kurtosisBackend backend_interface.Kurtosi
 }
 
 func getSortedModuleSliceFromModulesMap(modules map[module.ModuleGUID]*module.Module) []*module.Module {
-
 	modulesResult := make([]*module.Module, 0, len(modules))
-	for _, module := range modules {
-		modulesResult = append(modulesResult, module)
+	for _, moduleObj := range modules {
+		modulesResult = append(modulesResult, moduleObj)
 	}
 
 	sort.Slice(modulesResult, func(i, j int) bool {
@@ -77,4 +66,22 @@ func getSortedModuleSliceFromModulesMap(modules map[module.ModuleGUID]*module.Mo
 	})
 
 	return modulesResult
+}
+
+func getModulePortBindingString(module *module.Module) string {
+	privatePort := module.GetPrivatePort()
+	line := fmt.Sprintf(
+		"%v: %v/%v",
+		grpcPortId,
+		privatePort.GetNumber(),
+		strings.ToLower(privatePort.GetProtocol().String()),
+	)
+
+	// If the container is running, add host machine port binding information
+	publicIpAddr := module.GetMaybePublicPort()
+	publicPort := module.GetMaybePublicPort()
+	if publicIpAddr != nil && publicPort != nil {
+		line = line + fmt.Sprintf(" -> %v:%v", publicIpAddr, publicPort.GetNumber())
+	}
+	return line
 }

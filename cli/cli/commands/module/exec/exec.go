@@ -10,38 +10,41 @@ import (
 	"fmt"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
 	"net"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
 
 const (
-	loadParamsStrArg         = "load-params"
-	executeParamsStrArg      = "execute-params"
-	apiContainerVersionArg   = "api-container-version"
-	apiContainerLogLevelArg  = "api-container-log-level"
-	moduleImageArg           = "module-image"
-	enclaveIdArg             = "enclave-id"
-	isPartitioningEnabledArg = "with-partitioning"
+	loadParamsFlagKey      = "load-params"
+	executeParamsFlagKey       = "execute-params"
+	apiContainerVersionFlagKey  = "api-container-version"
+	apiContainerLogLevelFlagKey = "api-container-log-level"
+	enclaveIdFlagKey             = "enclave-id"
+	isPartitioningEnabledFlagKey = "with-partitioning"
+
+	moduleImageArgKey        = "module-image"
 
 	defaultLoadParams            = "{}"
 	defaultExecuteParams         = "{}"
@@ -55,81 +58,114 @@ const (
 	netReadOpt = "read"
 
 	netReadOptFailBecauseSourceIsUsedOrClosedErrorText = "use of closed network connection"
+
+	kurtosisBackendCtxKey = "kurtosis-backend"
+	engineClientCtxKey = "engine-client"
 )
 
 var positionalArgs = []string{
-	moduleImageArg,
+	moduleImageArgKey,
 }
 
-var loadParamsStr string
-var executeParamsStr string
-var apiContainerVersion string
-var apiContainerLogLevelStr string
-var userRequestedEnclaveId string
-var isPartitioningEnabled bool
-
-var ExecCmd = &cobra.Command{
-	Use:                   command_str_consts.ModuleExecCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
-	DisableFlagsInUseLine: true,
-	Short:                 "Creates a new enclave and loads & executes the given executable module inside it",
-	RunE:                  run,
+var ModuleExecCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
+	CommandStr:                command_str_consts.ModuleExecCmdStr,
+	ShortDescription:          "Executes a module in an enclave",
+	LongDescription:           "Creates a new enclave and loads & executes the given executable module inside it",
+	KurtosisBackendContextKey: kurtosisBackendCtxKey,
+	EngineClientContextKey:    engineClientCtxKey,
+	Flags: []*flags.FlagConfig{
+		{
+			Key:       loadParamsFlagKey,
+			Usage:     "The serialized params that should be passed to the module when loading it",
+			Type:      flags.FlagType_String,
+			Default:   defaultLoadParams,
+		},
+		{
+			Key:       executeParamsFlagKey,
+			Usage:     "The serialized params that should be passed to the module when executing it",
+			Type:      flags.FlagType_String,
+			Default:   defaultExecuteParams,
+		},
+		{
+			Key:       apiContainerVersionFlagKey,
+			Usage:     "The image of the API container that should be started inside the enclave where the module will execute (blank will use the engine's default version)",
+			Type:      flags.FlagType_String,
+			Default:   defaults.DefaultAPIContainerVersion,
+		},
+		{
+			Key:       apiContainerLogLevelFlagKey,
+			Usage:     fmt.Sprintf(
+				"The log level that the started API container should log at (%v)",
+				strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
+			),
+			Shorthand: "l",
+			Type:      flags.FlagType_String,
+			Default:   defaults.DefaultApiContainerLogLevel.String(),
+		},
+		{
+			Key:       enclaveIdFlagKey,
+			Usage:     fmt.Sprintf(
+				"The ID to give the enclave that will be created to execute the module inside, which must match regex '%v' (default: use the module image and the current Unix time)",
+				// TODO Get this from the Kurtosis backend maybe????
+				allowedEnclaveIdCharsRegexStr,
+			),
+			Type:      flags.FlagType_String,
+			Default:   defaultEnclaveId,
+		},
+		{
+			Key:       isPartitioningEnabledFlagKey,
+			Usage:     "If set to true, the enclave that the module executes in will have partitioning enabled so network partitioning simulations can be run",
+			Type:      flags.FlagType_Bool,
+			Default:   strconv.FormatBool(defaultIsPartitioningEnabled),
+		},
+	},
+	Args: []*args.ArgConfig{
+		{
+			Key:             moduleImageArgKey,
+		},
+	},
+	RunFunc:                   run,
 }
 
-func init() {
-	ExecCmd.Flags().StringVar(
-		&loadParamsStr,
-		loadParamsStrArg,
-		defaultLoadParams,
-		"The serialized params that should be passed to the module when loading it",
-	)
-	ExecCmd.Flags().StringVar(
-		&executeParamsStr,
-		executeParamsStrArg,
-		defaultExecuteParams,
-		"The serialized params that should be passed to the module when executing it",
-	)
-	ExecCmd.Flags().StringVar(
-		&apiContainerVersion,
-		apiContainerVersionArg,
-		defaults.DefaultAPIContainerVersion,
-		"The image of the API container that should be started inside the enclave where the module will execute (blank will use the engine's default version)",
-	)
-	ExecCmd.Flags().StringVarP(
-		&apiContainerLogLevelStr,
-		apiContainerLogLevelArg,
-		"l",
-		defaults.DefaultApiContainerLogLevel.String(),
-		fmt.Sprintf(
-			"The log level that the started API container should log at (%v)",
-			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
-		),
-	)
-	ExecCmd.Flags().StringVar(
-		&userRequestedEnclaveId,
-		enclaveIdArg,
-		defaultEnclaveId,
-		fmt.Sprintf(
-			"The ID to give the enclave that will be created to execute the module inside, which must match regex '%v' (default: use the module image and the current Unix time)",
-			// TODO Get this from the Kurtosis backend maybe????
-			allowedEnclaveIdCharsRegexStr,
-		),
-	)
-	ExecCmd.Flags().BoolVar(
-		&isPartitioningEnabled,
-		isPartitioningEnabledArg,
-		defaultIsPartitioningEnabled,
-		"If set to true, the enclave that the module executes in will have partitioning enabled so network partitioning simulations can be run",
-	)
-}
-
-func run(cmd *cobra.Command, args []string) error {
-	ctx := context.Background()
-
-	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
+func run(
+	ctx context.Context,
+	// TODO This is a hack that's only here temporarily because we have commands that use KurtosisBackend directly (they
+	//  should not), and EngineConsumingKurtosisCommand therefore needs to provide them with a KurtosisBackend. Once all our
+	//  commands only access the Kurtosis APIs, we can remove this.
+	kurtosisBackend backend_interface.KurtosisBackend,
+	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	flags *flags.ParsedFlags,
+	args *args.ParsedArgs,
+) error {
+	loadParamsStr, err := flags.GetString(loadParamsFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
+		return stacktrace.Propagate(err, "An error occurred getting the module load params using flag key '%v'", loadParamsFlagKey)
 	}
-	moduleImage := parsedPositionalArgs[moduleImageArg]
+	executeParamsStr, err := flags.GetString(executeParamsFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the module execute params using flag key '%v'", executeParamsFlagKey)
+	}
+	userRequestedEnclaveId, err := flags.GetString(enclaveIdFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the enclave ID using flag key '%v'", enclaveIdFlagKey)
+	}
+	apiContainerVersion, err := flags.GetString(apiContainerVersionFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the API container version using flag key '%v'", apiContainerVersionFlagKey)
+	}
+	apiContainerLogLevelStr, err := flags.GetString(apiContainerLogLevelFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the API container log level using flag key '%v'", apiContainerLogLevelFlagKey)
+	}
+	isPartitioningEnabled, err := flags.GetBool(isPartitioningEnabledFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the is-partitioning-enabled setting using flag key '%v'", isPartitioningEnabledFlagKey)
+	}
+
+	moduleImage, err := args.GetNonGreedyArg(moduleImageArgKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the module image using arg key '%v'", moduleImageArgKey)
+	}
 
 	imageNameWithUnixTimestamp := getImageNameWithUnixTimestamp(moduleImage)
 
@@ -156,18 +192,6 @@ func run(cmd *cobra.Command, args []string) error {
 			allowedEnclaveIdCharsRegexStr,
 		)
 	}
-
-	engineManager, err := engine_manager.NewEngineManager(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
-	}
-	// TODO THIS IS A BIG JANKY HACK. We should instead migrate this commmand to be an EngineConsumingKurtosisCommand instead
-	kurtosisBackend := engineManager.GetKurtosisBackend()
-	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
-	}
-	defer closeClientFunc()
 
 	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -216,7 +240,8 @@ func run(cmd *cobra.Command, args []string) error {
 		apicHostMachineIp,
 		apicHostMachineGrpcPort,
 	)
-	conn, err := grpc.Dial(apiContainerHostGrpcUrl, grpc.WithInsecure())
+	// TODO
+	conn, err := grpc.Dial(apiContainerHostGrpcUrl, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -267,6 +292,12 @@ func run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		//We do not return because logs aren't mandatory, if it fails we continue executing the module without logs
 		logrus.Errorf("The module containers logs won't be printed. An error occurred getting logs for module with ID '%v': \n%v", moduleId, err)
+	}
+	if len(successfulModuleLogs) == 0 {
+		return stacktrace.NewError("Didn't find any module logs for newly-created GUID '%v'; this is a bug in Kurtosis", moduleGUID)
+	}
+	for _, readCloser := range successfulModuleLogs {
+		defer readCloser.Close()
 	}
 	if len(erroredModuleGuids) > 0 {
 		moduleLogErr, found := erroredModuleGuids[moduleGUID]
@@ -330,7 +361,7 @@ func getImageNameWithUnixTimestamp(moduleImage string) string {
 	pathElement := reference.Path(namedModuleImage)
 
 	return fmt.Sprintf(
-		"%v.%v",
+		"%v--%v",
 		pathElement,
 		time.Now().Unix(),
 	)

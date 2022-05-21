@@ -14,5 +14,8 @@ func ValidateEnclaveLiveness(enclaveInfo *kurtosis_engine_rpc_api_bindings.Encla
 		return "", 0, stacktrace.NewError("The enclave's API container isn't running")
 	}
 	hostMachineInfo := enclaveInfo.GetApiContainerHostMachineInfo()
+
+
+
 	return hostMachineInfo.IpOnHostMachine, hostMachineInfo.GrpcPortOnHostMachine, nil
 }
