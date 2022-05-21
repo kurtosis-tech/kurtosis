@@ -44,8 +44,11 @@ States:
 State transitions:
 - RegisterService: a Service is created with the ServiceGUID label (for finding later), the Service's selectors are set
 	to look for Pods with the ServiceGUID, and the Service's ClusterIP is returned to the caller.
-- StartService: a Pod is created with the ServiceGUID, the Kubernetes Service gets its ports updated with the requested
-	ports, and the ServiceGUID selector will mean that the Service will automatically connect to the Pod.
+- StartService:
+	1. a Pod is created with the ServiceGUID
+	2. the Kubernetes Service gets its ports updated with the requested ports
+	3. the Kubernetes Service gets the port specs serialized to JSON and stored as an annotation
+	4. the Service's ServiceGUID selector will mean that the Service will automatically connect to the Pod.
 - StopServices: The Pod is destroyed (because Kubernetes doesn't have a way to stop Pods - only remove them) and the Service's
 	selectors are set to empty. If we want to keep Kubernetes logs around after a Pod is destroyed, we'll need to implement
 	our own logstore.
@@ -491,6 +494,19 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 }
 
 func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGUID service.ServiceGUID) (resultConn net.Conn, resultErr error) {
+	// See https://github.com/kubernetes/client-go/issues/912
+	/*
+		in := streams.NewIn(os.Stdin)
+		if err := in.SetRawTerminal(); err != nil{
+	                 // handle err
+		}
+		err = exec.Stream(remotecommand.StreamOptions{
+			Stdin:             in,
+			Stdout:           stdout,
+			Stderr:            stderr,
+	        }
+	 */
+
 	// TODO IMPLEMENT
 	return nil, stacktrace.NewError("Getting a connection with a user service isn't yet implemented on Kubernetes")
 }
@@ -807,8 +823,9 @@ func getUserServiceObjectsFromKubernetesResources(
 
 	for serviceGuid, resultObj := range results {
 		resourcesToParse := resultObj.kubernetesResources
-
 		kubernetesService := resourcesToParse.service
+		kubernetesPod := resourcesToParse.pod
+
 		if kubernetesService == nil {
 			return nil, stacktrace.NewError(
 				"Service with GUID '%v' doesn't have a Kubernetes service; this indicates either a bug in Kurtosis or that the user manually deleted the Kubernetes service",
@@ -832,13 +849,21 @@ func getUserServiceObjectsFromKubernetesResources(
 		serviceRegistrationObj := service.NewServiceRegistration(serviceId, serviceGuid, enclaveId, privateIp)
 		resultObj.serviceRegistration = serviceRegistrationObj
 
+		// Selectors but no pod means that the registration is open but no pod has yet been started to consume it
+		if len(kubernetesService.Spec.Selector) > 0 && kubernetesPod == nil {
+			resultObj.service = nil
+			continue
+		}
+
+		// From this point onwards, we're guaranteed that a pod was started at _some_ point; it may or may not still be running
+		// Therefore, we know that there will be services registered
+
 		// The empty map means "don't validate any port existence"
 		privatePorts, err := getPrivatePortsAndValidatePortExistence(kubernetesService, map[string]bool{})
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred deserializing private ports from the user service's Kubernetes service")
 		}
 
-		kubernetesPod := resourcesToParse.pod
 		if kubernetesPod == nil {
 			// No pod here means that a) a Service had private ports but b) now has no Pod
 			// This means that there  used to be a Pod but it was stopped/removed
@@ -969,20 +994,6 @@ func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtif
 		}
 		claimName := claim.Name
 		volumeName := claim.Spec.VolumeName
-
-		/*
-		claimName := claim.Name
-
-		filesArtifactId, found := claim.Labels[label_key_consts.FilesArtifactIDKubernetesLabelKey.GetString()]
-		if !found {
-			return nil, nil, stacktrace.NewError(
-				"Files artifact expansion persistent volume claim '%v' didn't have expected label '%v'",
-				claimName,
-				label_key_consts.FilesArtifactIDKubernetesLabelKey.GetString(),
-			)
-		}
-		 */
-
 
 		volumeObj := apiv1.Volume{
 			Name:         volumeName,

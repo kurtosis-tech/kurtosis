@@ -9,6 +9,10 @@
 
 ### Fixes
 * Fixed the engine container being listed as running if the engine service had selectors defined
+* Switched our UUID generation to be fully random (v4) UUIDs rather than v1
+* Fixed our exec command
+* Fixed API containers and engines not being able to run pod exec commands
+* Fixed a bug that caused service registration to fail
 
 # 0.26.1
 ### Features

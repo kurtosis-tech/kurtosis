@@ -706,9 +706,26 @@ func (backend *KubernetesKurtosisBackend) createEngineClusterRole(
 	clusterRoleLabels := getStringMapFromLabelMap(clusterRolesAttributes.GetLabels())
 	clusterRolePolicyRules := []rbacv1.PolicyRule{
 		{
-			Verbs:     []string{consts.CreateKubernetesVerb, consts.UpdateKubernetesVerb, consts.PatchKubernetesVerb, consts.DeleteKubernetesVerb, consts.GetKubernetesVerb, consts.ListKubernetesVerb, consts.WatchKubernetesVerb},
+			Verbs:     []string{
+				consts.CreateKubernetesVerb,
+				consts.UpdateKubernetesVerb,
+				consts.PatchKubernetesVerb,
+				consts.DeleteKubernetesVerb,
+				consts.GetKubernetesVerb,
+				consts.ListKubernetesVerb,
+				consts.WatchKubernetesVerb,
+			},
 			APIGroups: []string{rbacv1.APIGroupAll},
-			Resources: []string{consts.NamespacesKubernetesResource, consts.ServiceAccountsKubernetesResource, consts.RolesKubernetesResource, consts.RoleBindingsKubernetesResource, consts.PodsKubernetesResource, consts.ServicesKubernetesResource, consts.PersistentVolumeClaimsKubernetesResource},
+			Resources: []string{
+				consts.NamespacesKubernetesResource,
+				consts.ServiceAccountsKubernetesResource,
+				consts.RolesKubernetesResource,
+				consts.RoleBindingsKubernetesResource,
+				consts.PodsKubernetesResource,
+				consts.PodExecsKubernetesResource,
+				consts.ServicesKubernetesResource,
+				consts.PersistentVolumeClaimsKubernetesResource,
+			},
 		},
 	}
 	clusterRole, err := backend.kubernetesManager.CreateClusterRoles(ctx, clusterRoleName, clusterRolePolicyRules, clusterRoleLabels)
