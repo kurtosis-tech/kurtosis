@@ -138,9 +138,9 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create files artifact expansion job for expansion '%v'", filesArtifactExpansionGUID)
 	}
-	hasJobNotSucceeded := true
+	jobHasNotSucceeded := true
 	defer func(){
-		if hasJobNotSucceeded {
+		if jobHasNotSucceeded {
 			// We delete instead of kill/stop because Kubernetes doesn't have the concept of keeping around stopped jobs
 			// https://stackoverflow.com/a/52608258
 			deleteJobError := backend.kubernetesManager.DeleteJob(ctx, enclaveNamespaceName, job)
@@ -165,14 +165,14 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 			}
 			if hasJobCompleted {
 				shouldKeepPollingJob = false
-				hasJobNotSucceeded = !hasJobSucceededInPoll
+				jobHasNotSucceeded = !hasJobSucceededInPoll
 			}
 		}
 	}
-	if hasJobNotSucceeded {
+	if jobHasNotSucceeded {
 		return nil, stacktrace.NewError("Job '%v' for files artifact expansion '%v' did not succeed.", job.Name, filesArtifactExpansionGUID)
 	}
-	hasJobNotSucceeded = false
+	jobHasNotSucceeded = false
 	shouldDestroyPVC = false
 	filesArtifactExpansion := files_artifact_expansion.NewFilesArtifactExpansion(filesArtifactExpansionGUID, serviceGuid)
 	return filesArtifactExpansion, nil
