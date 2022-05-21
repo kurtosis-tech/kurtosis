@@ -1,4 +1,6 @@
 # TBD
+### Features
+* `kurtosis gateway` now connects to user services running in cluster
 
 # 0.18.4
 ### Features
