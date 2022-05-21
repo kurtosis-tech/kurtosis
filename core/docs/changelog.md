@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Update files expansion logic to use unified expansion method from container-engine-lib
 
 # 1.50.0
 ### Features
