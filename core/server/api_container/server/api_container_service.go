@@ -213,7 +213,7 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 	for filesArtifactIdStr, mountDirPath := range args.FilesArtifactMountpoints {
 		filesArtifactMountpointsByArtifactId[kurtosis_backend_service.FilesArtifactID(filesArtifactIdStr)] = mountDirPath
 	}
-	maybePublicIpAddr, publicServicePortSpecs, err := apicService.serviceNetwork.StartService(
+	serviceGuid, maybePublicIpAddr, publicServicePortSpecs, err := apicService.serviceNetwork.StartService(
 		ctx,
 		serviceId,
 		args.DockerImage,
@@ -235,7 +235,7 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 	if maybePublicIpAddr != nil {
 		publicIpAddrStr = maybePublicIpAddr.String()
 	}
-	response := binding_constructors.NewStartServiceResponse(publicIpAddrStr, publicApiPorts)
+	response := binding_constructors.NewStartServiceResponse(publicIpAddrStr, publicApiPorts, string(serviceGuid))
 
 	serviceStartLoglineSuffix := ""
 	if len(publicServicePortSpecs) > 0 {
@@ -263,6 +263,7 @@ func (apicService ApiContainerService) GetServiceInfo(ctx context.Context, args 
 	privateIp := serviceObj.GetRegistration().GetPrivateIP()
 	maybePublicIp := serviceObj.GetMaybePublicIP()
 	maybePublicPorts := serviceObj.GetMaybePublicPorts()
+	serviceGuidStr := string(serviceObj.GetRegistration().GetGUID())
 
 	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privatePorts)
 	if err != nil {
@@ -285,6 +286,7 @@ func (apicService ApiContainerService) GetServiceInfo(ctx context.Context, args 
 		privateApiPorts,
 		publicIpAddrStr,
 		publicApiPorts,
+		serviceGuidStr,
 	)
 	return serviceInfoResponse, nil
 }

@@ -298,6 +298,9 @@ export class StartServiceResponse extends jspb.Message {
   getPublicPortsMap(): jspb.Map<string, Port>;
   clearPublicPortsMap(): StartServiceResponse;
 
+  getServiceGuid(): string;
+  setServiceGuid(value: string): StartServiceResponse;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StartServiceResponse.AsObject;
   static toObject(includeInstance: boolean, msg: StartServiceResponse): StartServiceResponse.AsObject;
@@ -310,6 +313,7 @@ export namespace StartServiceResponse {
   export type AsObject = {
     publicIpAddr: string,
     publicPortsMap: Array<[string, Port.AsObject]>,
+    serviceGuid: string,
   }
 }
 
@@ -344,6 +348,9 @@ export class GetServiceInfoResponse extends jspb.Message {
   getPublicPortsMap(): jspb.Map<string, Port>;
   clearPublicPortsMap(): GetServiceInfoResponse;
 
+  getServiceGuid(): string;
+  setServiceGuid(value: string): GetServiceInfoResponse;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetServiceInfoResponse.AsObject;
   static toObject(includeInstance: boolean, msg: GetServiceInfoResponse): GetServiceInfoResponse.AsObject;
@@ -358,6 +365,7 @@ export namespace GetServiceInfoResponse {
     privatePortsMap: Array<[string, Port.AsObject]>,
     publicIpAddr: string,
     publicPortsMap: Array<[string, Port.AsObject]>,
+    serviceGuid: string,
   }
 }
 
