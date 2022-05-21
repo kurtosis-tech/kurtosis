@@ -7,6 +7,7 @@ package enclave_data_directory
 
 import (
 	"github.com/google/uuid"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	"strings"
@@ -27,12 +28,15 @@ func newFilesArtifactStore(absoluteDirpath string, dirpathRelativeToDataDirRoot 
 }
 
 // StoreFile: Saves file to disk.
-func (store FilesArtifactStore) StoreFile(reader io.Reader) (string, error) {
+func (store FilesArtifactStore) StoreFile(reader io.Reader) (service.FilesArtifactID, error) {
 	newFileUuid, err := getUniversallyUniqueID()
 	if err != nil{
 		return "", stacktrace.Propagate(err, "Could not generate Universally Unique ID.")
 	}
-	filename := strings.Join([]string{newFileUuid,artifactExtension}, ".")
+	filename := strings.Join(
+		[]string{newFileUuid,artifactExtension},
+		".",
+	)
 	_, err = store.fileCache.AddFile(filename, reader)
 	if err != nil{
 		return "", stacktrace.Propagate(
@@ -41,12 +45,15 @@ func (store FilesArtifactStore) StoreFile(reader io.Reader) (string, error) {
 			filename,
 		)
 	}
-	return newFileUuid, nil
+	return service.FilesArtifactID(newFileUuid), nil
 }
 
 // Get the file by uuid
-func (store FilesArtifactStore) GetFileByUUID(retrievalUuid string) (*EnclaveDataDirFile, error) {
-	filename := strings.Join([]string{retrievalUuid, artifactExtension}, ".")
+func (store FilesArtifactStore) GetFile(filesArtifactId service.FilesArtifactID) (*EnclaveDataDirFile, error) {
+	filename := strings.Join(
+		[]string{string(filesArtifactId), artifactExtension},
+		".",
+	)
 	enclaveDataDirFile, err := store.fileCache.GetFile(filename)
 	if err != nil {
 		return nil, stacktrace.Propagate(

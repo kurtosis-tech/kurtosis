@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Support `CopyFilesFromUserService` for Kubernetes
 
 # 1.50.2
 ### Fixes

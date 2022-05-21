@@ -46,7 +46,7 @@ func (expander FilesArtifactExpander) ExpandArtifacts(
 	// TODO PERF: parallelize this to increase speed
 	artifactIdsToExpansionGUIDs := map[service.FilesArtifactID]files_artifact_expansion.FilesArtifactExpansionGUID{}
 	for filesArtifactId := range artifactUuidsToExpand {
-		artifactFile, err := expander.filesArtifactStore.GetFileByUUID(string(filesArtifactId))
+		artifactFile, err := expander.filesArtifactStore.GetFile(filesArtifactId)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the file for files artifact '%v'", filesArtifactId)
 		}
