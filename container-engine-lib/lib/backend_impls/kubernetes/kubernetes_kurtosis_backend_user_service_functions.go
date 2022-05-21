@@ -495,6 +495,19 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 }
 
 func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGUID service.ServiceGUID) (resultConn net.Conn, resultErr error) {
+	// See https://github.com/kubernetes/client-go/issues/912
+	/*
+		in := streams.NewIn(os.Stdin)
+		if err := in.SetRawTerminal(); err != nil{
+	                 // handle err
+		}
+		err = exec.Stream(remotecommand.StreamOptions{
+			Stdin:             in,
+			Stdout:           stdout,
+			Stderr:            stderr,
+	        }
+	 */
+
 	// TODO IMPLEMENT
 	return nil, stacktrace.NewError("Getting a connection with a user service isn't yet implemented on Kubernetes")
 }

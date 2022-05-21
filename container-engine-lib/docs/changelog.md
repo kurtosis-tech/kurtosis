@@ -4,6 +4,8 @@
 
 ### Fixes
 * Fixed the engine container being listed as running if the engine service had selectors defined
+* Switched our UUID generation to be fully random (v4) UUIDs rather than v1
+* Fixed our exec command
 
 # 0.26.1
 ### Features
