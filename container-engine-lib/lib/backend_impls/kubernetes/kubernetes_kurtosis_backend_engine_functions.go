@@ -100,7 +100,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	shouldRemoveNamespace := true
 	defer func() {
 		if shouldRemoveNamespace {
-			if err := backend.kubernetesManager.RemoveNamespace(ctx, namespace.Name); err != nil {
+			if err := backend.kubernetesManager.RemoveNamespace(ctx, namespace); err != nil {
 				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes namespace '%v' that we created but an error was thrown:\n%v", namespace.Name, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes namespace with name '%v'!!!!!!!", namespace.Name)
 			}
@@ -115,7 +115,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	shouldRemoveServiceAccount := true
 	defer func() {
 		if shouldRemoveServiceAccount {
-			if err := backend.kubernetesManager.RemoveServiceAccount(ctx, serviceAccount.Name, namespaceName); err != nil {
+			if err := backend.kubernetesManager.RemoveServiceAccount(ctx, serviceAccount); err != nil {
 				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete service account '%v' in namespace '%v' that we created but an error was thrown:\n%v", serviceAccount.Name, namespaceName, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove service account with name '%v'!!!!!!!", serviceAccount.Name)
 			}
@@ -129,7 +129,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	shouldRemoveClusterRole := true
 	defer func() {
 		if shouldRemoveClusterRole {
-			if err := backend.kubernetesManager.RemoveClusterRole(ctx, clusterRole.Name); err != nil {
+			if err := backend.kubernetesManager.RemoveClusterRole(ctx, clusterRole); err != nil {
 				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete cluster role '%v' that we created but an error was thrown:\n%v", clusterRole.Name, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove cluster role with name '%v'!!!!!!!", clusterRole.Name)
 			}
@@ -143,7 +143,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	shouldRemoveClusterRoleBinding := true
 	defer func() {
 		if shouldRemoveClusterRoleBinding {
-			if err := backend.kubernetesManager.RemoveClusterRoleBindings(ctx, clusterRoleBindings.Name); err != nil {
+			if err := backend.kubernetesManager.RemoveClusterRoleBindings(ctx, clusterRoleBindings); err != nil {
 				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete cluster role bindings '%v' in namespace '%v' that we created but an error was thrown:\n%v", clusterRoleBindings.Name, namespaceName, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove cluster role bindings with name '%v'!!!!!!!", clusterRoleBindings.Name)
 			}
@@ -157,7 +157,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	var shouldRemovePod = true
 	defer func() {
 		if shouldRemovePod {
-			if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, enginePod.Name); err != nil {
+			if err := backend.kubernetesManager.RemovePod(ctx, enginePod); err != nil {
 				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes pod '%v' that we created but an error was thrown:\n%v", enginePod.Name, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes pod with name '%v'!!!!!!!", enginePod.Name)
 			}
@@ -178,7 +178,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	var shouldRemoveService = true
 	defer func() {
 		if shouldRemoveService {
-			if err := backend.kubernetesManager.RemoveService(ctx, namespaceName, engineService.Name); err != nil {
+			if err := backend.kubernetesManager.RemoveService(ctx, engineService); err != nil {
 				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes service '%v' that we created but an error was thrown:\n%v", engineService.Name, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes service with name '%v'!!!!!!!", engineService.Name)
 			}
@@ -272,7 +272,7 @@ func (backend *KubernetesKurtosisBackend) StopEngines(
 
 		if resources.pod != nil {
 			podName := resources.pod.Name
-			if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, podName); err != nil {
+			if err := backend.kubernetesManager.RemovePod(ctx, resources.pod); err != nil {
 				erroredEngineGuids[engineGuid] = stacktrace.Propagate(
 					err,
 					"An error occurred removing pod '%v' in namespace '%v' for engine '%v'",
@@ -328,7 +328,7 @@ func (backend *KubernetesKurtosisBackend) DestroyEngines(
 		// Remove ClusterRoleBinding
 		if resources.clusterRoleBinding != nil {
 			roleBindingName := resources.clusterRoleBinding.Name
-			if err := backend.kubernetesManager.RemoveClusterRoleBindings(ctx, roleBindingName); err != nil {
+			if err := backend.kubernetesManager.RemoveClusterRoleBindings(ctx, resources.clusterRoleBinding); err != nil {
 				erroredEngineGuids[engineGuid] = stacktrace.Propagate(
 					err,
 					"An error occurred removing cluster role binding '%v' for engine '%v'",
@@ -342,7 +342,7 @@ func (backend *KubernetesKurtosisBackend) DestroyEngines(
 		// Remove ClusterRole
 		if resources.clusterRole != nil {
 			roleName := resources.clusterRole.Name
-			if err := backend.kubernetesManager.RemoveClusterRole(ctx, roleName); err != nil {
+			if err := backend.kubernetesManager.RemoveClusterRole(ctx, resources.clusterRole); err != nil {
 				erroredEngineGuids[engineGuid] = stacktrace.Propagate(
 					err,
 					"An error occurred removing cluster role '%v' for engine '%v'",
@@ -356,7 +356,7 @@ func (backend *KubernetesKurtosisBackend) DestroyEngines(
 		// Remove the namespace
 		if resources.namespace != nil {
 			namespaceName := resources.namespace.Name
-			if err := backend.kubernetesManager.RemoveNamespace(ctx, namespaceName); err != nil {
+			if err := backend.kubernetesManager.RemoveNamespace(ctx, resources.namespace); err != nil {
 				erroredEngineGuids[engineGuid] = stacktrace.Propagate(
 					err,
 					"An error occurred removing namespace '%v' for engine '%v'",

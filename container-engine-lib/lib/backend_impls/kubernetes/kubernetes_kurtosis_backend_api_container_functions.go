@@ -172,7 +172,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	var shouldRemoveService = true
 	defer func() {
 		if shouldRemoveService {
-			if err := backend.kubernetesManager.RemoveService(ctx, enclaveNamespaceName, apiContainerServiceName); err != nil {
+			if err := backend.kubernetesManager.RemoveService(ctx, apiContainerService); err != nil {
 				logrus.Errorf("Creating the api container didn't complete successfully, so we tried to delete Kubernetes service '%v' that we created but an error was thrown:\n%v", apiContainerServiceName, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes service with name '%v'!!!!!!!", apiContainerServiceName)
 			}
@@ -209,7 +209,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	shouldRemoveServiceAccount := true
 	defer func() {
 		if shouldRemoveServiceAccount {
-			if err := backend.kubernetesManager.RemoveServiceAccount(ctx, apiContainerServiceAccountName, enclaveNamespaceName); err != nil {
+			if err := backend.kubernetesManager.RemoveServiceAccount(ctx, apiContainerServiceAccount); err != nil {
 				logrus.Errorf("Creating the API container didn't complete successfully, so we tried to delete service account '%v' in namespace '%v' that we created but an error was thrown:\n%v", apiContainerServiceAccountName, enclaveNamespaceName, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove service account with name '%v'!!!!!!!", apiContainerServiceAccountName)
 			}
@@ -263,7 +263,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	shouldRemoveRole := true
 	defer func() {
 		if shouldRemoveRole {
-			if err := backend.kubernetesManager.RemoveRole(ctx, roleName, enclaveNamespaceName); err != nil {
+			if err := backend.kubernetesManager.RemoveRole(ctx, apiContainerRole); err != nil {
 				logrus.Errorf("Creating the API container didn't complete successfully, so we tried to delete role '%v' in namespace '%v' that we created but an error was thrown:\n%v", roleName, enclaveNamespaceName, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove role with name '%v'!!!!!!!", roleName)
 			}
@@ -304,7 +304,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	shouldRemoveRoleBinding := true
 	defer func() {
 		if shouldRemoveRoleBinding {
-			if err := backend.kubernetesManager.RemoveRoleBindings(ctx, roleBindingName, enclaveNamespaceName); err != nil {
+			if err := backend.kubernetesManager.RemoveRoleBindings(ctx, apiContainerRoleBinding); err != nil {
 				logrus.Errorf("Creating the API container didn't complete successfully, so we tried to delete role binding '%v' in namespace '%v' that we created but an error was thrown:\n%v", roleBindingName, enclaveNamespaceName, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove role binding with name '%v'!!!!!!!", roleBindingName)
 			}
@@ -335,7 +335,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	var shouldRemovePod = true
 	defer func() {
 		if shouldRemovePod {
-			if err := backend.kubernetesManager.RemovePod(ctx, enclaveNamespaceName, apiContainerPodName); err != nil {
+			if err := backend.kubernetesManager.RemovePod(ctx, apiContainerPod); err != nil {
 				logrus.Errorf("Creating the api container didn't complete successfully, so we tried to delete Kubernetes pod '%v' that we created but an error was thrown:\n%v", apiContainerPodName, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes pod with name '%v'!!!!!!!", apiContainerPodName)
 			}
@@ -426,7 +426,7 @@ func (backend *KubernetesKurtosisBackend) StopAPIContainers(
 		if kubernetesPod != nil {
 			podName := kubernetesPod.GetName()
 			namespaceName := kubernetesPod.GetNamespace()
-			if err := backend.kubernetesManager.RemovePod(ctx, namespaceName, podName); err != nil {
+			if err := backend.kubernetesManager.RemovePod(ctx, kubernetesPod); err != nil {
 				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
 					err,
 					"An error occurred removing pod '%v' in namespace '%v' for API container in enclave with ID '%v'",
@@ -485,8 +485,7 @@ func (backend *KubernetesKurtosisBackend) DestroyAPIContainers(
 		// Remove Pod
 		if resources.pod != nil {
 			podName := resources.pod.GetName()
-			namespaceName := resources.pod.GetNamespace()
-			if err := backend.kubernetesManager.RemovePod(ctx, podName, namespaceName); err != nil {
+			if err := backend.kubernetesManager.RemovePod(ctx, resources.pod); err != nil {
 				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
 					err,
 					"An error occurred removing pod '%v' for API container in enclave with ID '%v'",
@@ -500,8 +499,7 @@ func (backend *KubernetesKurtosisBackend) DestroyAPIContainers(
 		// Remove RoleBinding
 		if resources.roleBinding != nil {
 			roleBindingName := resources.roleBinding.GetName()
-			namespaceName := resources.roleBinding.GetNamespace()
-			if err := backend.kubernetesManager.RemoveRoleBindings(ctx, roleBindingName, namespaceName); err != nil {
+			if err := backend.kubernetesManager.RemoveRoleBindings(ctx, resources.roleBinding); err != nil {
 				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
 					err,
 					"An error occurred removing role binding '%v' for API container in enclave with ID '%v'",
@@ -515,8 +513,7 @@ func (backend *KubernetesKurtosisBackend) DestroyAPIContainers(
 		// Remove Role
 		if resources.role != nil {
 			roleName := resources.role.GetName()
-			namespaceName := resources.role.GetNamespace()
-			if err := backend.kubernetesManager.RemoveRole(ctx, roleName, namespaceName); err != nil {
+			if err := backend.kubernetesManager.RemoveRole(ctx, resources.role); err != nil {
 				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
 					err,
 					"An error occurred removing role '%v' for API container in enclave with ID '%v'",
@@ -530,8 +527,7 @@ func (backend *KubernetesKurtosisBackend) DestroyAPIContainers(
 		// Remove Service Account
 		if resources.serviceAccount != nil {
 			serviceAccountName := resources.serviceAccount.GetName()
-			namespaceName := resources.serviceAccount.GetNamespace()
-			if err := backend.kubernetesManager.RemoveServiceAccount(ctx, serviceAccountName, namespaceName); err != nil {
+			if err := backend.kubernetesManager.RemoveServiceAccount(ctx, resources.serviceAccount); err != nil {
 				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
 					err,
 					"An error occurred removing service account '%v' for API container in enclave with ID '%v'",
@@ -545,8 +541,7 @@ func (backend *KubernetesKurtosisBackend) DestroyAPIContainers(
 		// Remove Service
 		if resources.service != nil {
 			serviceName := resources.service.GetName()
-			namespaceName := resources.service.GetNamespace()
-			if err := backend.kubernetesManager.RemoveService(ctx, serviceName, namespaceName); err != nil {
+			if err := backend.kubernetesManager.RemoveService(ctx, resources.service); err != nil {
 				erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
 					err,
 					"An error occurred removing service '%v' for API container in enclave with ID '%v'",
