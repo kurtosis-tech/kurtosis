@@ -25,7 +25,10 @@ func NewDockerLogStreamingReadCloser(dockerLogStream io.ReadCloser) *DockerLogSt
 	dockerCopyEndedChan := make(chan interface{})
 	go func() {
 		if _, err := stdcopy.StdCopy(pipeWriter, pipeWriter, dockerLogStream); err != nil {
-			logrus.Errorf("An error occurred copying the Docker-multiplexed stream to the pipe: %v", err)
+			// We log this as a debug because:
+			//  1) StdCopy throws an error if its underlying reader is closed but
+			//  2) closing the underlying dockerLogStream is the only way we have to tell StdCopy to stop
+			logrus.Debugf("An error occurred copying the Docker-multiplexed stream to the pipe: %v", err)
 		}
 		pipeWriter.Close()
 		close(dockerCopyEndedChan)
