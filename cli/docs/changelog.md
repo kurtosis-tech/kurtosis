@@ -1,6 +1,8 @@
 # TBD
 ### Fixes
 * Upgrade to latest container-engine-lib, Core, and Engine which contain fixes for modules on Kubernetes
+* Switched `module exec` to the new Kurtosis command framework
+* Fixed the logs `ReadCloser`s returned by `service logs` and `module exec` not getting closed
 
 # 0.18.2
 ### Fixes
