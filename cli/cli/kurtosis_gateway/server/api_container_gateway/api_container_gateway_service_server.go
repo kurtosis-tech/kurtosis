@@ -116,17 +116,25 @@ func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Contex
 			}
 		}
 	}()
+	serviceGuid := "Asdfa"
 
-	runningLocalServiceConnection, err := service.startRunningConnectionForKurtosisService(args.GetServiceId(), args.PrivatePorts)
+	runningLocalServiceConnection, err := service.startRunningConnectionForKurtosisService(serviceGuid, args.PrivatePorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to start a local connection to service '%v', instead a non-nil error was returned", args.GetServiceId())
 	}
+	cleanUpServiceConnection := true
+	defer func() {
+		if cleanUpServiceConnection {
+			service.idempotentKillRunningConnectionForServiceGuid(serviceGuid)
+		}
+	}()
 
 	// Overwrite PublicPorts and PublicIp fields
 	remoteApiContainerResponse.PublicIpAddr = runningLocalServiceConnection.localPublicIp
 	remoteApiContainerResponse.PublicPorts = runningLocalServiceConnection.localPublicServicePorts
 
 	cleanUpService = false
+	cleanUpServiceConnection = false
 	return remoteApiContainerResponse, nil
 }
 
@@ -146,13 +154,13 @@ func (service *ApiContainerGatewayServiceServer) GetServiceInfo(ctx context.Cont
 	}
 
 	// Get the running connection if it's available, start one if there is no running connection
-	serviceId := args.GetServiceId()
+	serviceGuid := "fadsf"
 	var runningLocalConnection *runningLocalServiceConnection
-	runningLocalConnection, isFound := service.userServiceToLocalConnectionMap[serviceId]
+	runningLocalConnection, isFound := service.userServiceToLocalConnectionMap[serviceGuid]
 	if !isFound {
-		runningLocalConnection, err = service.startRunningConnectionForKurtosisService(serviceId, remoteApiContainerResponse.PrivatePorts)
+		runningLocalConnection, err = service.startRunningConnectionForKurtosisService(serviceGuid, remoteApiContainerResponse.PrivatePorts)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "Expected to be able to start a local connection to kurtosis service '%v', instead a non-nil error was returned", serviceId)
+			return nil, stacktrace.Propagate(err, "Expected to be able to start a local connection to kurtosis service '%v', instead a non-nil error was returned", args.ServiceId)
 		}
 	}
 	// Overwrite PublicPorts and PublicIp fields
