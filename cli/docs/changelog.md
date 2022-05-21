@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Get modules working with Kubernetes
 
 # 0.18.2
 ### Fixes
