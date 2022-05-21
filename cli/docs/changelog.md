@@ -1,6 +1,6 @@
 # TBD
 ### Fixes
-* Get modules working with Kubernetes
+* Upgrade to latest container-engine-lib, Core, and Engine which contain fixes for modules on Kubernetes
 
 # 0.18.2
 ### Fixes
