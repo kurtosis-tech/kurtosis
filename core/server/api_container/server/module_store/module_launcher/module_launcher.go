@@ -94,7 +94,7 @@ func (launcher ModuleLauncher) Launch(
 		}
 	}()
 
-	moduleSocket := fmt.Sprintf("%v:%v", createdModule.GetPrivateIp(), modulePortNum)
+	moduleSocket := fmt.Sprintf("%v:%v", createdModule.GetPrivateIP(), modulePortNum)
 	conn, err := grpc.Dial(
 		moduleSocket,
 		grpc.WithInsecure(), // TODO SECURITY: Use HTTPS to verify we're connecting to the correct module
