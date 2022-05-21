@@ -17,6 +17,7 @@ import (
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
 	docker_manager_types "github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -767,7 +768,8 @@ func (manager DockerManager) RunExecCommand(context context.Context, containerId
 
 	// NOTE: We have to demultiplex the logs that come back
 	// This will keep reading until it receives EOF
-	if _, err := stdcopy.StdCopy(logOutput, logOutput, attachResp.Reader); err != nil {
+	concurrentWriter := concurrent_writer.NewConcurrentWriter(logOutput)
+	if _, err := stdcopy.StdCopy(concurrentWriter, concurrentWriter, attachResp.Reader); err != nil {
 		return 0, stacktrace.Propagate(
 			err,
 			"An error occurred copying the exec command output to the given output writer")
@@ -902,7 +904,8 @@ func (manager DockerManager) CreateContainerExec(context context.Context, contai
 	return &hijackedResponse, nil
 }
 
-// It returns io.ReadCloser which is a tar stream. It's up to the caller to close the reader.
+// CopyFromContainer returns a io.ReadCloser representing the bytes of the TAR'd files at srcPath
+// The caller must close the result
 func (manager DockerManager) CopyFromContainer(ctx context.Context, containerId string, srcPath string) (io.ReadCloser, error) {
 
 	tarStreamReadCloser, _, err := manager.dockerClient.CopyFromContainer(

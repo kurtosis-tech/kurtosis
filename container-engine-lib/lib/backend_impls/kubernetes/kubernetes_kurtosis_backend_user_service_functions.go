@@ -2,6 +2,7 @@ package kubernetes
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
@@ -16,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -74,6 +76,8 @@ const (
 	// In these cases, we use these notional unbound ports
 	unboundPortName = "nonexistent-port"
 	unboundPortNumber = 1
+
+	tarSuccessExitCode = 0
 )
 
 // Kubernetes doesn't provide public IP or port information; this is instead handled by the Kurtosis gateway that the user uses
@@ -418,6 +422,7 @@ func (backend *KubernetesKurtosisBackend) UnpauseService(
 	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because unpausing is not supported by Kubernetes", serviceId, enclaveId)
 }
 
+// TODO Switch these to streaming methods, so that huge command outputs don't blow up the memory of the API container
 func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
@@ -471,6 +476,7 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 		}
 	}
 
+	// TODO Parallelize for perf
 	userServiceExecSuccess := map[service.ServiceGUID]*exec_result.ExecResult{}
 	userServiceExecErr := map[service.ServiceGUID]error{}
 	for serviceGuid, serviceCommand := range userServiceCommands {
@@ -484,7 +490,15 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 		userServicePodName := userServicePod.Name
 
 		outputBuffer := &bytes.Buffer{}
-		exitCode, err := backend.kubernetesManager.RunExecCommand(namespaceName, userServicePodName, userServiceContainerName, serviceCommand, outputBuffer)
+		concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
+		exitCode, err := backend.kubernetesManager.RunExecCommand(
+			namespaceName,
+			userServicePodName,
+			userServiceContainerName,
+			serviceCommand,
+			concurrentBuffer,
+			concurrentBuffer,
+		)
 		if err != nil {
 			userServiceExecErr[serviceGuid] = stacktrace.Propagate(
 				err,
@@ -520,9 +534,84 @@ func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx conte
 	return nil, stacktrace.NewError("Getting a connection with a user service isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) CopyFromUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID, srcPath string) (resultReadCloser io.ReadCloser, resultErr error) {
-	//TODO implement me
-	panic("implement me")
+func (backend *KubernetesKurtosisBackend) CopyFilesFromUserService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	srcPath string,
+	output io.Writer,
+) error {
+	namespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
+	}
+
+	objectAndResources, err := backend.getSingleUserServiceObjectsAndResources(ctx, enclaveId, serviceGuid)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting user service object & Kubernetes resources for service '%v' in enclave '%v'", serviceGuid, enclaveId)
+	}
+	pod := objectAndResources.kubernetesResources.pod
+	if pod == nil {
+		return stacktrace.NewError(
+			"Cannot copy path '%v' on service '%v' in enclave '%v' because no pod exists for the service",
+			srcPath,
+			serviceGuid,
+			enclaveId,
+		)
+	}
+	if pod.Status.Phase != apiv1.PodRunning {
+		return stacktrace.NewError(
+			"Cannot copy path '%v' on service '%v' in enclave '%v' because the pod isn't running",
+			srcPath,
+			serviceGuid,
+			enclaveId,
+		)
+	}
+
+	commandToRun := fmt.Sprintf(
+		`if command -v 'tar' > /dev/null; then tar cf - '%v'; else echo "Cannot copy files from path '%v' because the tar binary doesn't exist on the machine" >&2; exit 1; fi`,
+		srcPath,
+		srcPath,
+	)
+	shWrappedCommandToRun := []string{
+		"sh",
+		"-c",
+		commandToRun,
+	}
+
+	// NOTE: If we hit problems with very large files and connections breaking before they do, 'kubectl cp' implements a retry
+	// mechanism that we could draw inspiration from:
+	// https://github.com/kubernetes/kubectl/blob/335090af6913fb1ebf4a1f9e2463c46248b3e68d/pkg/cmd/cp/cp.go#L345
+	stdErrOutput := &bytes.Buffer{}
+	exitCode, err := backend.kubernetesManager.RunExecCommand(
+		 namespaceName,
+		 pod.Name,
+		 userServiceContainerName,
+		 shWrappedCommandToRun,
+		 output,
+		 stdErrOutput,
+	)
+	if err != nil {
+		 return stacktrace.Propagate(
+			 err,
+			 "An error occurred running command '%v' on pod '%v' for service '%v' in namespace '%v'",
+			 commandToRun,
+			 pod.Name,
+			 serviceGuid,
+			 namespaceName,
+		 )
+	}
+	if exitCode != tarSuccessExitCode {
+		return stacktrace.NewError(
+			"Command '%v' exited with non-%v exit code %v and the following STDERR:\n%v",
+			commandToRun,
+			tarSuccessExitCode,
+			exitCode,
+			stdErrOutput.String(),
+		)
+	}
+
+	return nil
 }
 
 func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
@@ -710,7 +799,7 @@ func (backend *KubernetesKurtosisBackend) getSingleUserServiceObjectsAndResource
 	if len(searchResults) == 0 {
 		return nil, stacktrace.NewError("No services matched GUID '%v'", serviceGuid)
 	}
-	if len(searchResults) > 0 {
+	if len(searchResults) > 1 {
 		return nil, stacktrace.NewError("Expected one service to match GUID '%v' but found %v", serviceGuid, len(searchResults))
 	}
 	result, found := searchResults[serviceGuid]
