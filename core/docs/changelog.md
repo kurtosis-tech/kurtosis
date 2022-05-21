@@ -1,6 +1,7 @@
 # TBD
 ### Changes
 * Update files expansion logic to use unified expansion method from container-engine-lib
+* Upgrade to container-engine-lib 0.27.0, which implements the unified file artifact expansion logic
 
 # 1.50.0
 ### Features
