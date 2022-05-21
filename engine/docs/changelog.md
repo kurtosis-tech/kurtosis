@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Upgraded kurtosis core to `1.50.1`
 
 # 1.22.0
 ### Features
