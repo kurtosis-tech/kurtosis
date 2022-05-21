@@ -19,6 +19,7 @@ import (
 
 const (
 	artifactExpansionObjectTimestampFormat = "2006-01-02T15.04.05.000"
+	filesArtifactExpansionPrefix = "files-artifact-expansion"
 	userServicePrefix = "user-service"
 	modulePrefix      = "module"
 )
@@ -156,16 +157,19 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactE
 ){
 	guidStr := string(guid)
 	serviceGuidStr := string(serviceGUID)
-	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(provider.enclaveId)
+	name, err := getCompositeKubernetesObjectName([]string{
+		filesArtifactExpansionPrefix,
+		guidStr,
+	})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", provider.enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred creating an artifact expansion name object from string '%v'", guidStr)
 	}
 
 	labels, err := provider.getLabelsForEnclaveObjectWithGUID(guidStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", guid)
 	}
-	labels[label_key_consts.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.FilesArtifactExpanderKurtosisResourceTypeKubernetesLabelValue
+	labels[label_key_consts.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.FilesArtifactExpansionKurtosisResourceTypeKubernetesLabelValue
 	serviceGUIDLabel, err := kubernetes_label_value.CreateNewKubernetesLabelValue(serviceGuidStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes label value from GUID string '%v'", serviceGuidStr)
@@ -196,9 +200,12 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactE
 ){
 	guidStr := string(guid)
 	serviceGuidStr := string(serviceGUID)
-	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(provider.enclaveId)
+	name, err := getCompositeKubernetesObjectName([]string{
+		filesArtifactExpansionPrefix,
+		guidStr,
+	})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", provider.enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred creating an artifact expansion name object from string '%v'", guidStr)
 	}
 
 	labels, err := provider.getLabelsForEnclaveObjectWithGUID(guidStr)
@@ -229,7 +236,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactE
 	return objectAttributes, nil
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpanderContainer(
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpansionContainer(
 	guid files_artifact_expansion.FilesArtifactExpansionGUID,
 	serviceGUID service.ServiceGUID,
 )(

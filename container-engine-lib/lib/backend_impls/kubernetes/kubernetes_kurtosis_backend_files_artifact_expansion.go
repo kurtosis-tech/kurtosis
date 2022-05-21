@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	apiv1 "k8s.io/api/core/v1"
 	"path"
 	"time"
 )
@@ -24,7 +25,7 @@ const (
 	// Dirpath on the artifact expander container where the destination volume containing expanded files will be mounted
 	destVolMntDirpathOnExpander = "/dest"
 
-	pvcVolumeClaimReadOnly = false
+	isPvcVolumeClaimReadOnly = false
 
 	jobStatusPollerInterval = time.Millisecond * 100
 
@@ -76,6 +77,9 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 		pvcLabels,
 		backend.apiContainerModeArgs.filesArtifactExpansionVolumeSizeInMegabytes,
 		backend.apiContainerModeArgs.storageClassName)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a persistent volume claim in namespace '%v' for files artifact expansion '%v'", enclaveNamespaceName, filesArtifactExpansionGUID)
+	}
 	shouldDestroyPVC := true
 	defer func() {
 		if shouldDestroyPVC {
@@ -98,17 +102,39 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 	}
 	jobContainerName := jobAttrs.GetName().GetString()
 
-	job, err := backend.kubernetesManager.CreateJobWithPVCMount(ctx,
+
+	pvcVolumeSource := apiv1.PersistentVolumeClaimVolumeSource{
+		ClaimName: pvc.Name,
+		ReadOnly:  isPvcVolumeClaimReadOnly,
+	}
+
+	volumeSource := apiv1.VolumeSource{
+		PersistentVolumeClaim: &pvcVolumeSource,
+	}
+
+	volume := apiv1.Volume{
+		Name:         pvc.Spec.VolumeName,
+		VolumeSource: volumeSource,
+	}
+
+	volumeMount := apiv1.VolumeMount{
+		Name:             pvc.Name,
+		MountPath:        enclaveDataVolumeDirpathOnExpanderContainer,
+	}
+
+	container := apiv1.Container{
+		Name:                     jobContainerName,
+		Image:                    dockerImage,
+		Command:                  extractionCommand,
+		VolumeMounts:             []apiv1.VolumeMount{volumeMount},
+	}
+
+	job, err := backend.kubernetesManager.CreateJobWithContainerAndVolume(ctx,
 		enclaveNamespaceName,
 		ttlSecondsAfterFinishedExpanderJob,
-		dockerImage,
-		extractionCommand,
-		jobContainerName,
-		pvc.Spec.VolumeName,
-		pvc.Name,
-		enclaveDataVolumeDirpathOnExpanderContainer,
-		pvcVolumeClaimReadOnly,
-	)
+		container,
+		volume)
+
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create files artifact expansion job for expansion '%v'", filesArtifactExpansionGUID)
 	}

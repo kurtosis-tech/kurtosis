@@ -869,45 +869,14 @@ func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string,
 	return manager.kubernetesClientSet.CoreV1().RESTClient().Post().Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
 }
 
-func (manager *KubernetesManager) CreateJobWithPVCMount(ctx context.Context,
+func (manager *KubernetesManager) CreateJobWithContainerAndVolume(ctx context.Context,
 	namespace string,
 	ttlSecondsAfterFinished uint,
-	imageName string,
-	command []string,
-	containerName string,
-	pvcVolumeName string,
-	pvcClaimName string,
-	volumeMountPath string,
-	pvcMountReadOnly bool) (*v1.Job, error) {
+	container apiv1.Container,
+	volume apiv1.Volume) (*v1.Job, error) {
 
 	jobsClient := manager.kubernetesClientSet.BatchV1().Jobs(namespace)
 	ttlSecondsAfterFinishedInt32 := int32(ttlSecondsAfterFinished)
-
-	pvcVolumeSource := apiv1.PersistentVolumeClaimVolumeSource{
-		ClaimName: pvcClaimName,
-		ReadOnly:  pvcMountReadOnly,
-	}
-
-	volumeSource := apiv1.VolumeSource{
-		PersistentVolumeClaim: &pvcVolumeSource,
-	}
-
-	volume := apiv1.Volume{
-		Name:         pvcVolumeName,
-		VolumeSource: volumeSource,
-	}
-
-	volumeMount := apiv1.VolumeMount{
-		Name:             pvcVolumeName,
-		MountPath:        volumeMountPath,
-	}
-
-	container := apiv1.Container{
-		Name:                     containerName,
-		Image:                    imageName,
-		Command:                  command,
-		VolumeMounts:             []apiv1.VolumeMount{volumeMount},
-	}
 
 	podSpec := apiv1.PodSpec{
 		Containers: []apiv1.Container{container},
@@ -930,8 +899,8 @@ func (manager *KubernetesManager) CreateJobWithPVCMount(ctx context.Context,
 	job, err := jobsClient.Create(ctx, &jobInput, options)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create job in namespace '%v' with " +
-			"imageName '%v', commands '%+v', persistent volume claim '%v', and mount path '%v'.",
-			namespace, imageName, command, pvcClaimName, volumeMountPath)
+			"container '%v' and volume '%v'.",
+			namespace, container.Name, volume.Name)
 	}
 	return job, nil
 }
