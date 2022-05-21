@@ -1,10 +1,21 @@
 # TBD
 
+# 0.27.0
+### Breaking Changes
+* Unified file expansion volume and expanders into one interface with two associated methods (instead of two interfaces and four methods)
+
+### Changes
+* Switched the API container to get its port info from the serialized port specs on the Kubernetes service
+
+### Fixes
+* Fixed the engine container being listed as running if the engine service had selectors defined
+
 # 0.26.1
+### Features
+* Added `KubernetesKurtosisBackend.GetModuleLogs`
 
 # 0.26.0
 ### Features
-* Added `KubernetesKurtosisBackend.GetModuleLogs`
 * Added the functionality to wait until the GRPC port is available before returning when creating `Engines`, `API containers` and `Modules`  
 * Added `KubernetesKurtosisBackend.CreateModule`, `KubernetesKurtosisBackend.GetModules`, `KubernetesKurtosisBackend.StopModules` and `KubernetesKurtosisBackend.DestroyModules`
 * Added `ForModulePod` and `ForModuleService` to `KubernetesEnclaveObjectAttributesProvider`

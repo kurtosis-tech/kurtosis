@@ -13,7 +13,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
@@ -208,8 +208,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	// TODO This needs a redo - at minimum it should be by files_artifact_expansion_volume_guid
-	filesArtifactVolumeMountDirpaths map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]string,
+	filesArtifactVolumeMountDirpaths map[files_artifact_expansion.FilesArtifactExpansionGUID]string,
 ) (
 	newUserService *service.Service,
 	resultErr error,
@@ -258,15 +257,12 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	podLabelsStrs := getStringMapFromLabelMap(podAttributes.GetLabels())
 	podAnnotationsStrs := getStringMapFromAnnotationMap(podAttributes.GetAnnotations())
 
-	// TODO TODO THIS WON'T WORK AND IS BROKEN FOR NOW
-	temporaryHackyFilesArtifactMountDirpaths := map[files_artifact_expansion_volume.FilesArtifactExpansionGUID]string{}
-
 	podVolumes, containerMounts, err := backend.getUserServiceVolumeInfoFromFilesArtifactMountpoints(
 		ctx,
 		namespaceName,
 		enclaveId,
 		serviceGuid,
-		temporaryHackyFilesArtifactMountDirpaths,
+		filesArtifactVolumeMountDirpaths,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting pod volumes from files artifact mountpoints: %+v", filesArtifactVolumeMountDirpaths)
@@ -836,15 +832,10 @@ func getUserServiceObjectsFromKubernetesResources(
 		serviceRegistrationObj := service.NewServiceRegistration(serviceId, serviceGuid, enclaveId, privateIp)
 		resultObj.serviceRegistration = serviceRegistrationObj
 
-		serviceAnnotations := kubernetesService.Annotations
-		portSpecsStr, found := serviceAnnotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()]
-		if !found {
-			// If the service doesn't have a private port specs annotation, it means a pod was never started so there's nothing more to do
-			continue
-		}
-		privatePorts, err := kubernetes_port_spec_serializer.DeserializePortSpecs(portSpecsStr)
+		// The empty map means "don't validate any port existence"
+		privatePorts, err := getPrivatePortsAndValidatePortExistence(kubernetesService, map[string]bool{})
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred deserializing port specs string '%v'", portSpecsStr)
+			return nil, stacktrace.Propagate(err, "An error occurred deserializing private ports from the user service's Kubernetes service")
 		}
 
 		kubernetesPod := resourcesToParse.pod
@@ -928,7 +919,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtif
 	namespaceName string,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
-	filesArtifactMountpoints map[files_artifact_expansion_volume.FilesArtifactExpansionGUID]string,
+	filesArtifactMountpoints map[files_artifact_expansion.FilesArtifactExpansionGUID]string,
 ) (
 	resultPodVolumes []apiv1.Volume,
 	resultContainerVolumeMountsOnPod []apiv1.VolumeMount,
@@ -956,7 +947,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtif
 	}
 
 	// Index PVCs by files artifact expansion GUID
-	persistentVolumeClaimsByExpansionGuid := map[files_artifact_expansion_volume.FilesArtifactExpansionGUID]*apiv1.PersistentVolumeClaim{}
+	persistentVolumeClaimsByExpansionGuid := map[files_artifact_expansion.FilesArtifactExpansionGUID]*apiv1.PersistentVolumeClaim{}
 	for _, claim := range persistentVolumeClaims {
 		expansionGuidStr, found := claim.Labels[label_key_consts.GUIDKubernetesLabelKey.GetString()]
 		if !found {
@@ -965,7 +956,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtif
 				label_key_consts.GUIDKubernetesLabelKey.GetString(),
 			)
 		}
-		expansionGuid := files_artifact_expansion_volume.FilesArtifactExpansionGUID(expansionGuidStr)
+		expansionGuid := files_artifact_expansion.FilesArtifactExpansionGUID(expansionGuidStr)
 		persistentVolumeClaimsByExpansionGuid[expansionGuid] = &claim
 	}
 
@@ -1048,7 +1039,7 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 	if newAnnotations == nil {
 		newAnnotations = map[string]string{}
 	}
-	newAnnotations[annotation_key_consts.PortSpecsAnnotationKey.GetString()] = serializedPortSpecs.GetString()
+	newAnnotations[annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString()] = serializedPortSpecs.GetString()
 
 	updatingConfigurator := func(updatesToApply *applyconfigurationsv1.ServiceApplyConfiguration) {
 		specUpdateToApply := applyconfigurationsv1.ServiceSpec()

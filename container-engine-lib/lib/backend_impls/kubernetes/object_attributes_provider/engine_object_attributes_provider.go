@@ -102,7 +102,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 
 	// Store Kurtosis port_spec info in annotation
 	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{
-		annotation_key_consts.PortSpecsAnnotationKey: serializedPortsSpec,
+		annotation_key_consts.PortSpecsKubernetesAnnotationKey: serializedPortsSpec,
 	}
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)

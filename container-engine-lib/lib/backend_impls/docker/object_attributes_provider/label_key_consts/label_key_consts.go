@@ -24,6 +24,8 @@ const (
 	// Used for things like service GUID, module GUID, etc.
 	guidLabelKeyStr = labelNamespaceStr + "guid"
 
+	userServiceGuidDockerLabelKeyStr = labelNamespaceStr + "user-service-guid"
+
 	portSpecsLabelKeyStr = labelNamespaceStr + "ports"
 
 	enclaveIdLabelKeyStr = labelNamespaceStr + "enclave-id"
@@ -49,3 +51,4 @@ var PortSpecsDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(portS
 var EnclaveIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(enclaveIdLabelKeyStr)
 var IsNetworkPartitioningEnabledDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(isNetworkPartitioningEnabledKeyStr)
 var PrivateIPDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(privateIpAddrLabelKeyStr)
+var UserServiceGUIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(userServiceGuidDockerLabelKeyStr)

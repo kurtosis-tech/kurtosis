@@ -7,25 +7,23 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/annotation_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/object_name_constants"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -58,7 +56,8 @@ var isPodRunningDeterminer = map[apiv1.PodPhase]bool{
 	apiv1.PodPending: true,
 	apiv1.PodRunning: true,
 	apiv1.PodSucceeded: false,
-	apiv1.PodUnknown: true, //We can not say that a pod is not running if we don't know the real state
+	apiv1.PodFailed: false,
+	apiv1.PodUnknown: false, //We cannot say that a pod is not running if we don't know the real state
 }
 
 // Completeness enforced via unit test
@@ -228,26 +227,6 @@ func (backend *KubernetesKurtosisBackend) DestroyNetworkingSidecars(ctx context.
 	panic("implement me")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansionVolume(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID, filesArtifactId service.FilesArtifactID) (*files_artifact_expansion_volume.FilesArtifactExpansionVolume, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) DestroyFilesArtifactExpansionVolumes(ctx context.Context, filters *files_artifact_expansion_volume.FilesArtifactExpansionVolumeFilters) (successfulFileArtifactExpansionVolumeNames map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool, erroredFileArtifactExpansionVolumeNames map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]error, resultErr error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) RunFilesArtifactExpander(ctx context.Context, guid files_artifact_expander.FilesArtifactExpanderGUID, enclaveId enclave.EnclaveID, filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName, destVolMntDirpathOnExpander string, filesArtifactFilepathRelativeToEnclaveDatadirRoot string) (*files_artifact_expander.FilesArtifactExpander, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (backend *KubernetesKurtosisBackend) DestroyFilesArtifactExpanders(ctx context.Context, filters *files_artifact_expander.FilesArtifactExpanderFilters) (successfulFilesArtifactExpanderGuids map[files_artifact_expander.FilesArtifactExpanderGUID]bool, erroredFilesArtifactExpanderGuids map[files_artifact_expander.FilesArtifactExpanderGUID]error, resultError error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func getStringMapFromLabelMap(labelMap map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue) map[string]string {
 	strMap := map[string]string{}
 	for labelKey, labelValue := range labelMap {
@@ -264,63 +243,28 @@ func getStringMapFromAnnotationMap(labelMap map[*kubernetes_annotation_key.Kuber
 	return strMap
 }
 
-// getPortSpecFromServicePort returns a port_spec representing a Kurtosis port spec for a service port in Kubernetes
-func getPortSpecFromServicePort(servicePort apiv1.ServicePort, portProtocol port_spec.PortProtocol) (*port_spec.PortSpec, error) {
-	portNumStr := strconv.FormatInt(int64(servicePort.Port), portNumStrParsingBase)
-	portNumUint64, err := strconv.ParseUint(portNumStr, portNumStrParsingBase, portNumStrParsingBits)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred parsing port string '%v' using base '%v' and uint bits '%v'",
-			portNumStr,
-			portNumStrParsingBase,
-			portNumStrParsingBits,
+// If no expected-ports list is passed in, no validation is done and all the ports are passed back as-is
+func getPrivatePortsAndValidatePortExistence(kubernetesService *apiv1.Service, expectedPortIds map[string]bool) (map[string]*port_spec.PortSpec, error) {
+	portSpecsStr, found := kubernetesService.GetAnnotations()[annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString()]
+	if !found {
+		return nil, stacktrace.NewError(
+			"Couldn't find expected port specs annotation key '%v' on the Kubernetes service",
+			annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString(),
 		)
 	}
-	portNum := uint16(portNumUint64) // Safe to do because we pass the requisite number of bits into the parse command
-	portSpec, err := port_spec.NewPortSpec(portNum, portProtocol)
+	privatePortSpecs, err := kubernetes_port_spec_serializer.DeserializePortSpecs(portSpecsStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a service port on a Kubernetes node using number '%v' and protocol '%v', instead a non nil error was returned", portNum, portProtocol)
+		return nil, stacktrace.Propagate(err, "An error occurred deserializing private port specs string '%v'", privatePortSpecs)
 	}
 
-	return portSpec, nil
-}
-
-
-// TODO Replace with pulling the serialized port specs off the Service
-func getGrpcAndGrpcProxyPortSpecsFromServicePorts(servicePorts []apiv1.ServicePort) (resultGrpcPortSpec *port_spec.PortSpec, resultGrpcProxyPortSpec *port_spec.PortSpec, resultErr error) {
-	var grpcPortSpec *port_spec.PortSpec
-	var grpcProxyPortSpec *port_spec.PortSpec
-	grpcPortName := object_name_constants.KurtosisInternalContainerGrpcPortName.GetString()
-	grpcProxyPortName := object_name_constants.KurtosisInternalContainerGrpcProxyPortName.GetString()
-
-	for _, servicePort := range servicePorts {
-		servicePortName := servicePort.Name
-		switch servicePortName {
-		case grpcPortName:
-			{
-				var err error
-				grpcPortSpec, err = getPortSpecFromServicePort(servicePort, kurtosisServersPortProtocol)
-				if err != nil {
-					return nil, nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a grpc port from Kubernetes service port '%v', instead a non nil error was returned", servicePortName)
-				}
-			}
-		case grpcProxyPortName:
-			{
-				var err error
-				grpcProxyPortSpec, err = getPortSpecFromServicePort(servicePort, kurtosisServersPortProtocol)
-				if err != nil {
-					return nil, nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a grpc proxy port from Kubernetes service port '%v', instead a non nil error was returned", servicePortName)
-				}
+	if expectedPortIds != nil && len(expectedPortIds) > 0 {
+		for portId := range expectedPortIds {
+			if _, found := privatePortSpecs[portId]; !found {
+				return nil, stacktrace.NewError("Missing private port with ID '%v' in the private ports", portId)
 			}
 		}
 	}
-
-	if grpcPortSpec == nil || grpcProxyPortSpec == nil {
-		return nil, nil, stacktrace.NewError("Expected to get port specs from Kubernetes service ports, instead got a nil pointer")
-	}
-
-	return grpcPortSpec, grpcProxyPortSpec, nil
+	return privatePortSpecs, nil
 }
 
 func getContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus, error) {

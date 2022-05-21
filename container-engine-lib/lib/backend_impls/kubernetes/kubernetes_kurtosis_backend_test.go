@@ -11,6 +11,7 @@ var allPodPhases = []apiv1.PodPhase{
 	apiv1.PodPending,
 	apiv1.PodRunning,
 	apiv1.PodSucceeded,
+	apiv1.PodFailed,
 	apiv1.PodUnknown,
 }
 func TestIsPodRunningDeterminerCompleteness(t *testing.T) {
