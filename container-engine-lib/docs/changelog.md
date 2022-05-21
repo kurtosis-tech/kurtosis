@@ -1,6 +1,7 @@
 # TBD
 ### Features
 * Build `CopyFilesFromUserService` in Kubernetes
+* Added a `main.go` that's Gitignored with some local testing structure already set up
 
 ### Changes
 * Calls to remove Kubernetes resources are now synchronous

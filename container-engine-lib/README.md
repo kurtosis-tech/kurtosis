@@ -2,6 +2,8 @@ Container Engine Lib
 ====================
 This library abstracts away interactions with the container engine (be it Docker or Kubernetes) via a `KurtosisBackend` interface. Users should call `GetLocalDockerKurtosisBackend` (or the Kubernetes equivalent when it exists).
 
+**NOTE:** To test locally, you can use the `main.go` file which is set up for plugging in whatever logic you want to test!
+
 TODO documentation on:
 * How you can use `main.go` to debug locally!!
 * What KurtosisBackend's purpose is
