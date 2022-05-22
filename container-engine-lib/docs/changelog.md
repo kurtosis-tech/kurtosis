@@ -6,8 +6,6 @@
 ### Breaking Changes
 * `CreateFilesArtifactExpansion` no longer takes in a `FilesArtifactID` (as it's unneeded)
     * Remediation: remove the argument in the call
-* Removed the `FilesArtifactID` type
-    * Users should manage their own FilesArtifactIDs, as the backend no longer deals with them
 
 # 0.29.1
 ### Changes
