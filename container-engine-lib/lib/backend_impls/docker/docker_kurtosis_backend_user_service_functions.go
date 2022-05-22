@@ -92,13 +92,15 @@ var commandToRunWhenCreatingUserServiceShell = []string{
 }
 
 
+// NOTE: Normally we'd have a "canonical" resource here, where that resource is always guaranteed to exist. For Kurtosis services,
+// we want this to be the container engine's representation of a user service registration. Unfortunately, Docker has no way
+// of representing a user service registration, so we store them in an in-memory map on the DockerKurtosisBackend. Therefore, an
+// entry in that map is actually the canonical representation, which means that any of these fields could be nil!
 type userServiceDockerResources struct {
-	// Canonical resource: this will never be nil because a user services is represented ONLY by a container in Docker
 	serviceContainer *types.Container
 
-	// Guaranteed to be non-nil because even though these start before the canonical container resource, if an error
-	// occurs during expansion (before starting the user container) we'll destroy the expander container & volumes
-	expanderVolumeName []string
+	// Will never be nil but may be empty if no expander volumes exist
+	expanderVolumeNames []string
 }
 
 func (backend *DockerKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID, ) (*service.ServiceRegistration, error, ) {
@@ -232,7 +234,8 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
 
-	var volumeMounts map[string]string
+	volumeMounts := map[string]string{}
+	shouldDeleteVolumes := true
 	if filesArtifactsExpansion != nil {
 		candidateVolumeMounts, err := backend.doFilesArtifactExpansionAndGetUserServiceVolumes(
 			ctx,
@@ -250,6 +253,17 @@ func (backend *DockerKurtosisBackend) StartUserService(
 				"An error occurred doing files artifacts expansion to get user service volumes",
 			)
 		}
+		defer func() {
+			if shouldDeleteVolumes {
+				for volumeName := range candidateVolumeMounts {
+					// Use background context so we delete these even if input context was cancelled
+					if err := backend.dockerManager.RemoveVolume(context.Background(), volumeName); err != nil {
+						logrus.Errorf("Starting the service failed so we tried to delete files artifact expansion volume '%v' that we created, but doing so threw an error:\n%v", volumeName, err)
+						logrus.Errorf("You'll need to delete volume '%v' manually!", volumeName)
+					}
+				}
+			}
+		}()
 		volumeMounts = candidateVolumeMounts
 	}
 
@@ -382,6 +396,7 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		maybePublicPortSpecs,
 	)
 
+	shouldDeleteVolumes = false
 	shouldKillContainer = false
 	return result, nil
 }
@@ -684,6 +699,16 @@ func (backend *DockerKurtosisBackend) StopUserServices(
 	return successfulGuids, erroredGuids, nil
 }
 
+/*
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+This code is INCREDIBLY tricky, as a result of:
+1) Needing to do service registrations to get an IP address before the service container is started
+2) Docker not having a canonical way to represent a service registration-before-container-started,
+   which requires us to use an in-memory registration map
+
+        Be VERY careful when modifying this code, and ideally get Kevin's eyes on it!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ */
 func (backend *DockerKurtosisBackend) DestroyUserServices(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
@@ -715,6 +740,8 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 		)
 	}
 
+	// Normally we'd filter on the Kurtosis object (Service), but we can't get one of these if a service is only
+	// registered-but-not-started so we filter on registrations to start with!
 	matchingRegistrations := map[service.ServiceGUID]*service.ServiceRegistration{}
 	for guid, registration := range registrationsForEnclave {
 		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
@@ -732,75 +759,74 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 		matchingRegistrations[guid] = registration
 	}
 
+	// NOTE: This may end up with less results here than we have registrations, if the user registered but did not start a service,
+	// though we should never end up with _more_ Docker resources
 	allServiceObjs, allDockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
 
-	// Sanity check
-	for guid := range allDockerResources {
-		if _, found := matchingRegistrations[guid]; !found {
-			// Should never happen
-			return nil, nil, stacktrace.NewError("Service '%v' has Docker resources but no container registration; this is a bug in Kurtosis", guid)
+	if len(allServiceObjs) > len(matchingRegistrations) || len(allDockerResources) > len(matchingRegistrations) {
+		return nil, nil, stacktrace.NewError("Found more Docker resources matching the following filters than service registrations; this is a bug in Kurtosis: %+v", filters)
+	}
+
+	// TODO Refactor getMatchingUserServiceObjsAndDockerResourcesNoMutex to return a single package object so we don't need to do this
+	// Before deleting anything, verify we have the same keys in both maps
+	if len(allServiceObjs) != len(allDockerResources) {
+		return nil, nil, stacktrace.NewError(
+			"Expected the number of services to remove (%v), and the number of services for which we have Docker resources for (%v), to be the same but were different!",
+			len(allServiceObjs),
+			len(allDockerResources),
+		)
+	}
+	for serviceGuid := range allServiceObjs {
+		if _, found := allDockerResources[serviceGuid]; !found {
+			return nil, nil, stacktrace.NewError(
+				"Have service object to remove '%v', which doesn't have corresponding Docker resources; this is a bug in Kurtosis",
+			)
 		}
 	}
 
 	registrationsToDeregister := map[service.ServiceGUID]*service.ServiceRegistration{}
-	servicesToDestroyByContainerIdBeforeDeregistration := map[string]interface{}{}
+
+	// Find the registrations which don't have any Docker resources and immediately add them to the list of stuff to deregister
 	for guid, registration := range matchingRegistrations {
-		dockerResources, found := allDockerResources[guid]
-		if !found {
-			// For registrations-without-containers, only add them to the deregistration list if the status filter wasn't specified
-			if filters.Statuses == nil || len(filters.Statuses) == 0 {
-				registrationsToDeregister[guid] = registration
-			}
+		if _, doesRegistrationHaveResources := allDockerResources[guid]; doesRegistrationHaveResources {
+			// We'll deregister these registrations if and only if we can successfully remove their resources
 			continue
 		}
-		containerId := dockerResources.serviceContainer.GetId()
 
-		serviceObj, found := allServiceObjs[guid]
-		if !found {
-			// Should never happen
-			return nil, nil, stacktrace.NewError("Service '%v' has Docker resources but no service object; this is a bug in Kurtosis", guid)
+		// If the status filter is specified, don't deregister any registrations-without-resources
+		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+			continue
 		}
-		servicesToDestroyByContainerIdBeforeDeregistration[containerId] = serviceObj
+
+		registrationsToDeregister[guid] = registration
 	}
 
-	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
-	var dockerOperation docker_operation_parallelizer.DockerOperation = func(
-		ctx context.Context,
-		dockerManager *docker_manager.DockerManager,
-		dockerObjectId string,
-	) error {
-		if err := dockerManager.RemoveContainer(ctx, dockerObjectId); err != nil {
-			return stacktrace.Propagate(err, "An error occurred removing user service container with ID '%v'", dockerObjectId)
-		}
-		return nil
-	}
-
-	successfulContainerRemoveGuidStrs, erroredContainerRemoveGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+	// Now try removing all the registrations-with-resources
+	successfulResourceRemovalGuids, erroredResourceRemovalGuids, err := backend.removeDockerResources(
 		ctx,
-		servicesToDestroyByContainerIdBeforeDeregistration,
-		backend.dockerManager,
-		extractServiceGUIDFromServiceObj,
-		dockerOperation,
+		allServiceObjs,
+		allDockerResources,
 	)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred removing user service containers matching filters '%+v'", filters)
-	}
-
-	erroredGuids := map[service.ServiceGUID]error{}
-	for guidStr, err := range erroredContainerRemoveGuidStrs {
-		erroredGuids[service.ServiceGUID(guidStr)] = stacktrace.Propagate(
+		return nil, nil, stacktrace.Propagate(
 			err,
-			"An error occurred destroying container for service '%v'",
-			guidStr,
+			"An error occurred trying to remove Docker resources for services with ",
 		)
 	}
 
-	for guidStr := range successfulContainerRemoveGuidStrs {
-		guid := service.ServiceGUID(guidStr)
-		// Safe because earlier we verified that all the services that have containers also have GUIDs in the registration map
+	erroredGuids := map[service.ServiceGUID]error{}
+	for guid, err := range erroredResourceRemovalGuids {
+		erroredGuids[guid] = stacktrace.Propagate(
+			err,
+			"An error occurred destroying Docker resources for service '%v'",
+			guid,
+		)
+	}
+
+	for guid := range successfulResourceRemovalGuids {
 		registrationsToDeregister[guid] = matchingRegistrations[guid]
 	}
 
@@ -881,7 +907,9 @@ func (backend *DockerKurtosisBackend) getMatchingUserServiceDockerResources(
 	enclaveId enclave.EnclaveID,
 	maybeGuidsToMatch map[service.ServiceGUID]bool,
 ) (map[service.ServiceGUID]*userServiceDockerResources, error) {
-	// For the matching values, get the containers to check the status
+	result := map[service.ServiceGUID]*userServiceDockerResources{}
+
+	// Grab services, INDEPENDENT OF volumes
 	userServiceContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
 		label_key_consts.EnclaveIDDockerLabelKey.GetString():     string(enclaveId),
@@ -891,7 +919,7 @@ func (backend *DockerKurtosisBackend) getMatchingUserServiceDockerResources(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting user service containers in enclave '%v' by labels: %+v", enclaveId, userServiceContainerSearchLabels)
 	}
-	resourcesByServiceGuid := map[service.ServiceGUID]*userServiceDockerResources{}
+
 	for _, container := range userServiceContainers {
 		serviceGuidStr, found := container.GetLabels()[label_key_consts.GUIDDockerLabelKey.GetString()]
 		if !found {
@@ -904,10 +932,48 @@ func (backend *DockerKurtosisBackend) getMatchingUserServiceDockerResources(
 				continue
 			}
 		}
-
-		resourcesByServiceGuid[serviceGuid] = &userServiceDockerResources{serviceContainer: container}
+		
+		resourceObj, found := result[serviceGuid]
+		if !found {
+			resourceObj = &userServiceDockerResources{}
+		}
+		resourceObj.serviceContainer = container
+		result[serviceGuid] = resourceObj
 	}
-	return resourcesByServiceGuid, nil
+
+	// Grab volumes, INDEPENDENT OF whether there any containers
+	filesArtifactExpansionVolumeSearchLabels := map[string]string{
+		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.EnclaveIDDockerLabelKey.GetString():     string(enclaveId),
+		label_key_consts.VolumeTypeDockerLabelKey.GetString(): label_value_consts.FilesArtifactExpansionVolumeTypeDockerLabelValue.GetString(),
+	}
+	matchingFilesArtifactExpansionVolumes, err := backend.dockerManager.GetVolumesByLabels(ctx, filesArtifactExpansionVolumeSearchLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact expansion volumes in enclave '%v' by labels: %+v", enclaveId, filesArtifactExpansionVolumeSearchLabels)
+	}
+
+	for _, volume := range matchingFilesArtifactExpansionVolumes {
+		serviceGuidStr, found := volume.Labels[label_key_consts.UserServiceGUIDDockerLabelKey.GetString()]
+		if !found {
+			return nil, stacktrace.NewError("Found files artifact expansion volume '%v' that didn't have expected service GUID label '%v'", volume.Name, label_key_consts.UserServiceGUIDDockerLabelKey.GetString())
+		}
+		serviceGuid := service.ServiceGUID(serviceGuidStr)
+
+		if maybeGuidsToMatch != nil && len(maybeGuidsToMatch) > 0 {
+			if _, found := maybeGuidsToMatch[serviceGuid]; !found {
+				continue
+			}
+		}
+
+		resourceObj, found := result[serviceGuid]
+		if !found {
+			resourceObj = &userServiceDockerResources{}
+		}
+		resourceObj.expanderVolumeNames = append(resourceObj.expanderVolumeNames, volume.Name)
+		result[serviceGuid] = resourceObj
+	}
+
+	return result, nil
 }
 
 func getUserServiceObjsFromDockerResources(
@@ -915,8 +981,20 @@ func getUserServiceObjsFromDockerResources(
 	allDockerResources map[service.ServiceGUID]*userServiceDockerResources,
 ) (map[service.ServiceGUID]*service.Service, error) {
 	result := map[service.ServiceGUID]*service.Service{}
+
+	// If we have an entry in the map, it means there's at least one Docker resource
 	for serviceGuid, resources := range allDockerResources {
 		container := resources.serviceContainer
+
+		// If we don't have a container, we don't have the service ID label which means we can't actually construct a Service object
+		// The only case where this would happen is if, during deletion, we delete the container but an error occurred deleting the volumes
+		if container == nil {
+			return nil, stacktrace.NewError(
+				"Service '%v' has Docker resources but not a container; this indicates that there the service's " +
+					"container was deleted but errors occurred deleting the rest of the resources",
+				serviceGuid,
+			)
+		}
 		containerName := container.GetName()
 		containerLabels := container.GetLabels()
 
@@ -1114,6 +1192,18 @@ func (backend *DockerKurtosisBackend) doFilesArtifactExpansionAndGetUserServiceV
 			requestedExpanderMountpoints,
 		)
 	}
+	shouldDeleteVolumes := true
+	defer func() {
+		if shouldDeleteVolumes {
+			for _, volumeName := range expanderMountpointsToVolumeNames {
+				// Use background context so we delete these even if input context was cancelled
+				if err := backend.dockerManager.RemoveVolume(context.Background(), volumeName); err != nil {
+					logrus.Errorf("Running the expansion failed so we tried to delete files artifact expansion volume '%v' that we created, but doing so threw an error:\n%v", volumeName, err)
+					logrus.Errorf("You'll need to delete volume '%v' manually!", volumeName)
+				}
+			}
+		}
+	}()
 
 	if err := backend.runFilesArtifactsExpander(
 		ctx,
@@ -1144,6 +1234,8 @@ func (backend *DockerKurtosisBackend) doFilesArtifactExpansionAndGetUserServiceV
 		}
 		userServiceVolumeMounts[volumeName] = userServiceMountpoint
 	}
+
+	shouldDeleteVolumes = false
 	return userServiceVolumeMounts, nil
 }
 
@@ -1351,3 +1443,138 @@ func (backend *DockerKurtosisBackend) createFilesArtifactsExpansionVolumes(
 	return result, nil
 }
 
+/*
+Destroys the Docker containers and makes a best-effort attempt to destroy the volumes
+
+NOTE: We make a best-effort attempt to delete files artifact expansion volumes for a service, but there's still the
+possibility that some will get leaked! There's unfortunately no way around this though because:
+
+1) We delete the canonical resource (the user container) before the volumes out of necessity
+   since Docker won't let us delete volumes unless no containers are using them
+2) We can't undo container deletion
+3) Normally whichever resource is created first (volumes) is the one we'd use as the canonical resource,
+   but we can't do that since we're not guaranteed to have volumes (because a service may not have requested any
+   files artifacts).
+
+Therefore, we just make a best-effort attempt to clean up the volumes and leak the rest, though it's not THAT
+big of a deal since they'll be deleted when the enclave gets deleted.
+ */
+func (backend *DockerKurtosisBackend) removeDockerResources(
+	ctx context.Context,
+	serviceObjectsToRemove map[service.ServiceGUID]*service.Service,
+	resourcesToRemove map[service.ServiceGUID]*userServiceDockerResources,
+) (map[service.ServiceGUID]bool, map[service.ServiceGUID]error, error) {
+
+	erroredGuids := map[service.ServiceGUID]error{}
+
+	// Before deleting anything, verify we have the same keys in both maps
+	if len(serviceObjectsToRemove) != len(resourcesToRemove) {
+		return nil, nil, stacktrace.NewError(
+			"Expected the number of services to remove (%v), and the number of services for which we have Docker resources for (%v), to be the same but were different!",
+			len(serviceObjectsToRemove),
+			len(resourcesToRemove),
+		)
+	}
+	for serviceGuid := range serviceObjectsToRemove {
+		if _, found := resourcesToRemove[serviceGuid]; !found {
+			return nil, nil, stacktrace.NewError(
+				"Have service object to remove '%v', which doesn't have corresponding Docker resources; this is a bug in Kurtosis",
+			)
+		}
+	}
+
+	uncastedKurtosisObjectsToRemoveByContainerId := map[string]interface{}{}
+	for serviceGuid, resources := range resourcesToRemove {
+		// Safe to skip the is-found check because we verified the map keys are identical earlier
+		serviceObj := serviceObjectsToRemove[serviceGuid]
+
+		containerId := resources.serviceContainer.GetId()
+		uncastedKurtosisObjectsToRemoveByContainerId[containerId] = serviceObj
+	}
+
+	// TODO Simplify this with Go generics
+	var dockerOperation docker_operation_parallelizer.DockerOperation = func(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		dockerObjectId string,
+	) error {
+		if err := dockerManager.RemoveContainer(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing user service container with ID '%v'", dockerObjectId)
+		}
+		return nil
+	}
+
+	successfulContainerRemoveGuidStrs, erroredContainerRemoveGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+		ctx,
+		uncastedKurtosisObjectsToRemoveByContainerId,
+		backend.dockerManager,
+		extractServiceGUIDFromServiceObj,
+		dockerOperation,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing user service containers in parallel")
+	}
+
+	for guidStr, err := range erroredContainerRemoveGuidStrs {
+		erroredGuids[service.ServiceGUID(guidStr)] = stacktrace.Propagate(
+			err,
+			"An error occurred destroying container for service '%v'",
+			guidStr,
+		)
+	}
+
+	// NOTE: If volume removal fails for any reason here then we're actually going to leak the volume!!! This is unfortunately
+	// unavoidable
+
+	// TODO Parallelize if we need more perf (but we shouldn't, since volumes are way faster than containers)
+	successfulVolumeRemovalGuids := map[service.ServiceGUID]bool{}
+	for serviceGuidStr := range successfulContainerRemoveGuidStrs {
+		serviceGuid := service.ServiceGUID(serviceGuidStr)
+
+		// Safe to skip the is-found check because we verified that the maps have the same keys earlier
+		resources := resourcesToRemove[serviceGuid]
+
+		failedVolumeErrStrs := []string{}
+		for _, volumeName := range resources.expanderVolumeNames {
+			/*
+			We try to delete as many volumes as we can here, rather than ejecting on failure, because any volumes not
+			deleted here will be leaked! There's unfortunately no way around this though because:
+
+			 1) we've already deleted the canonical resource (the user container) out of necessity
+			    since Docker won't let us delete volumes unless no containers are using them
+			 2) we can't undo container deletion
+			 3) normally whichever resource is created first (volumes) is the one we'd use as the canonical resource,
+			    but we can't do that since we're not guaranteed to have volumes
+
+			Therefore, we just make a best-effort attempt to clean up the volumes and leak the rest :(
+			 */
+			if err := backend.dockerManager.RemoveVolume(ctx, volumeName); err != nil {
+				errStrBuilder := strings.Builder{}
+				errStrBuilder.WriteString(fmt.Sprintf(
+					">>>>>>>>>>>>>>>>>> Removal error for volume %v <<<<<<<<<<<<<<<<<<<<<<<<<<<\n",
+					volumeName,
+				))
+				errStrBuilder.WriteString(err.Error())
+				errStrBuilder.WriteString(fmt.Sprintf(
+					"\n>>>>>>>>>>>>>>> End removal error for volume %v <<<<<<<<<<<<<<<<<<<<<<<<<<<",
+					volumeName,
+				))
+				failedVolumeErrStrs = append(failedVolumeErrStrs, errStrBuilder.String())
+			}
+		}
+
+		if len(failedVolumeErrStrs) > 0 {
+			erroredGuids[serviceGuid] = stacktrace.NewError(
+				"Errors occurred removing volumes for service '%v'\n" +
+				"ACTION REQUIRED: You will need to manually remove these volumes, else they will stay around until the enclave is destroyed!!!!\n" +
+				"%v",
+				strings.Join(failedVolumeErrStrs, "\n\n"),
+			)
+			continue
+		}
+		successfulVolumeRemovalGuids[serviceGuid] = true
+	}
+
+	successGuids := successfulVolumeRemovalGuids
+	return successGuids, erroredGuids, nil
+}

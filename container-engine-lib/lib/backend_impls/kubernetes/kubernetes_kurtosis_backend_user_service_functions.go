@@ -311,7 +311,6 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		}
 	}()
 
-
 	updatedService, err := backend.updateServiceWhenContainerStarted(ctx, namespaceName, kubernetesService, privatePorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred updating service '%v' to reflect its new ports: %+v", kubernetesService.GetName(), privatePorts)
