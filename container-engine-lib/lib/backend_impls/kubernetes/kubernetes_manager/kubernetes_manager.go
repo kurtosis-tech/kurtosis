@@ -1046,12 +1046,11 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 				maybeContainerWaitingState := containerStatus.State.Waiting
 				if maybeContainerWaitingState != nil && maybeContainerWaitingState.Reason == imagePullBackOffContainerReason {
 					return stacktrace.NewError(
-						"Container '%v' using image '%v' (%v) in pod '%v' in namespace '%v' is stuck in state '%v'. This likely means:\n" +
+						"Container '%v' using image '%v' in pod '%v' in namespace '%v' is stuck in state '%v'. This likely means:\n" +
 							"1) There's a typo in either the image name or the tag name\n" +
-							"2) The image isn't accessible to Kubernetes (e.g. it's a local image, or it's in a private image registry)",
+							"2) The image isn't accessible to Kubernetes (e.g. it's a local image, or it's in a private image registry that Kubernetes can't access)",
 						containerName,
 						containerStatus.Image,
-						containerStatus.ImageID,
 						pod.Name,
 						namespaceName,
 						imagePullBackOffContainerReason,
