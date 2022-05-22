@@ -20,6 +20,7 @@ import (
 )
 
 const (
+	namespacePrefix = "kurtosis-enclave"
 	artifactExpansionObjectTimestampFormat = "2006-01-02T15.04.05.000"
 	filesArtifactExpansionPrefix = "files-artifact-expansion"
 	userServicePrefix = "user-service"
@@ -78,11 +79,14 @@ func GetKubernetesEnclaveObjectAttributesProvider(enclaveId enclave.EnclaveID) K
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespace(isPartitioningEnabled bool) (KubernetesObjectAttributes, error) {
-	namespaceName, err := uuid_generator.GenerateUUIDString()
+	namespaceUuid, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to generate UUID string for namespace name for enclave '%v'", provider.enclaveId)
 	}
-	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(namespaceName)
+	name, err := getCompositeKubernetesObjectName([]string{
+		namespacePrefix,
+		namespaceUuid,
+	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", provider.enclaveId)
 	}
