@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Use UUIDs for enclave namespace names
 
 # 0.30.1
 ### Fixes
