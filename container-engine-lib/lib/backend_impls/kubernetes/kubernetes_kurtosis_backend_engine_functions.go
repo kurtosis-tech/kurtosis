@@ -723,6 +723,7 @@ func (backend *KubernetesKurtosisBackend) createEngineClusterRole(
 				consts.RoleBindingsKubernetesResource,
 				consts.PodsKubernetesResource,
 				consts.PodExecsKubernetesResource,
+				consts.PodLogsKubernetesResource,
 				consts.ServicesKubernetesResource,
 				consts.PersistentVolumeClaimsKubernetesResource,
 				consts.JobsKubernetesResource,  // Necessary so that we can give the API container the permission
