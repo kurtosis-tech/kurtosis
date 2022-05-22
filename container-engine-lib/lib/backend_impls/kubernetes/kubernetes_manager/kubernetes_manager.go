@@ -7,6 +7,7 @@ package kubernetes_manager
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
@@ -681,6 +682,10 @@ func (manager *KubernetesManager) CreatePod(
 	podToCreate := &apiv1.Pod{
 		Spec:       podSpec,
 		ObjectMeta: podMeta,
+	}
+
+	if podDefinitionBytes, err := json.Marshal(podToCreate); err == nil {
+		logrus.Debugf("Going to start pod using the following JSON: %v", string(podDefinitionBytes))
 	}
 
 	createdPod, err := podClient.Create(ctx, podToCreate, globalCreateOptions)
