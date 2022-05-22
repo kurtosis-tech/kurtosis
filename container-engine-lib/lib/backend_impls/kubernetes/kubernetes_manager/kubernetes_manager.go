@@ -20,7 +20,6 @@ import (
 	v1 "k8s.io/api/batch/v1"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -168,20 +167,6 @@ func (manager *KubernetesManager) UpdateService(
 	return result, nil
 }
 
-func (manager *KubernetesManager) GetServiceByName(ctx context.Context, namespace string, name string) (*apiv1.Service, error) {
-	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
-
-	serviceResult, err := servicesClient.Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get service '%s' in namespace '%s'", name, namespace)
-	}
-	deletionTimestamp := serviceResult.GetObjectMeta().GetDeletionTimestamp()
-	if deletionTimestamp != nil {
-		return nil, stacktrace.Propagate(err, "Service with name '%s' in namespace '%s' has been marked for deletion", name, namespace)
-	}
-	return serviceResult, nil
-}
-
 func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, namespace string, serviceLabels map[string]string) (*apiv1.ServiceList, error) {
 	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
 
@@ -212,55 +197,6 @@ func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, names
 }
 
 // ---------------------------Volumes------------------------------------------------------------------------------
-
-func (manager *KubernetesManager) CreateStorageClass(ctx context.Context, name string, provisioner string, volumeBindingMode storagev1.VolumeBindingMode) (*storagev1.StorageClass, error) {
-	storageClassClient := manager.kubernetesClientSet.StorageV1().StorageClasses()
-
-	//volumeBindingMode := storagev1.VolumeBindingWaitForFirstConsumer
-	//provisioner := "kubernetes.io/no-provisioner"
-
-	storageClass := &storagev1.StorageClass{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
-		Provisioner:       provisioner,
-		VolumeBindingMode: &volumeBindingMode,
-	}
-
-	storageClassResult, err := storageClassClient.Create(ctx, storageClass, globalCreateOptions)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create storage class with name '%s'", name)
-	}
-
-	return storageClassResult, nil
-}
-
-func (manager *KubernetesManager) RemoveStorageClass(ctx context.Context, storageClass *storagev1.StorageClass) error {
-	name := storageClass.Name
-	storageClassClient := manager.kubernetesClientSet.StorageV1().StorageClasses()
-
-	// Delete Resource
-	if err := storageClassClient.Delete(ctx, name, globalDeleteOptions); err != nil {
-		return stacktrace.Propagate(err, "Failed to delete storage class with name '%s' with delete options '%+v'", name, globalDeleteOptions)
-	}
-	return nil
-}
-
-func (manager *KubernetesManager) GetStorageClass(ctx context.Context, name string) (*storagev1.StorageClass, error) {
-	storageClassClient := manager.kubernetesClientSet.StorageV1().StorageClasses()
-
-	storageClassResult, err := storageClassClient.Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get storage class with name '%s'", name)
-	}
-
-	deletionTimestamp := storageClassResult.GetObjectMeta().GetDeletionTimestamp()
-	if deletionTimestamp != nil {
-		return nil, stacktrace.Propagate(err, "Storage class with name '%s' has been marked for deletion", name)
-	}
-	return storageClassResult, nil
-}
-
 func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 	ctx context.Context,
 	namespace string,
