@@ -94,34 +94,29 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 		}
 	}()
 
-
 	artifactFilepath := path.Join(enclaveDataVolumeDirpathOnExpanderContainer, filesArtifactFilepathRelativeToEnclaveDatadirRoot)
 	extractionCommand := getExtractionCommand(artifactFilepath, destVolMntDirpathOnExpander)
 
-	pvcVolumeSource := apiv1.PersistentVolumeClaimVolumeSource{
-		ClaimName: pvc.Name,
-		ReadOnly:  isPersistentVolumeClaimReadOnly,
-	}
-
-	volumeSource := apiv1.VolumeSource{
-		PersistentVolumeClaim: &pvcVolumeSource,
-	}
-
 	volume := apiv1.Volume{
 		Name:         pvc.Spec.VolumeName,
-		VolumeSource: volumeSource,
-	}
-
-	volumeMount := apiv1.VolumeMount{
-		Name:             pvc.Spec.VolumeName,
-		MountPath:        enclaveDataVolumeDirpathOnExpanderContainer,
+		VolumeSource: apiv1.VolumeSource{
+			PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
+				ClaimName: pvc.GetName(),
+				ReadOnly:  isPersistentVolumeClaimReadOnly,
+			},
+		},
 	}
 
 	container := apiv1.Container{
 		Name:                     filesArtifactExpansionContainerName,
 		Image:                    dockerImage,
 		Command:                  extractionCommand,
-		VolumeMounts:             []apiv1.VolumeMount{volumeMount},
+		VolumeMounts:             []apiv1.VolumeMount{
+			{
+				Name:             pvc.Spec.VolumeName,
+				MountPath:        enclaveDataVolumeDirpathOnExpanderContainer,
+			},
+		},
 	}
 
 	jobAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpansionJob(filesArtifactExpansionGUID, serviceGuid)

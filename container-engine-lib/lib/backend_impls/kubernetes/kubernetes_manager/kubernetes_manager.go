@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_object_name"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"io"
 	v1 "k8s.io/api/batch/v1"
 	apiv1 "k8s.io/api/core/v1"
@@ -66,9 +67,13 @@ const (
 )
 
 var (
-	removeObjectDeletePolicy  = metav1.DeletePropagationForeground
-	removeObjectDeleteOptions = metav1.DeleteOptions{
-		PropagationPolicy: &removeObjectDeletePolicy,
+	globalDeletePolicy  = metav1.DeletePropagationForeground
+	globalDeleteOptions = metav1.DeleteOptions{
+		PropagationPolicy: &globalDeletePolicy,
+	}
+	globalCreateOptions = metav1.CreateOptions{
+		// We need every object to have this field manager so that the Kurtosis objects can all seamlessly modify Kubernetes resources
+		FieldManager:    fieldManager,
 	}
 )
 
@@ -113,11 +118,7 @@ func (manager *KubernetesManager) CreateService(ctx context.Context, namespace s
 		Spec:       serviceSpec,
 	}
 
-	createOpts := metav1.CreateOptions{
-		FieldManager:    fieldManager,
-	}
-
-	serviceResult, err := servicesClient.Create(ctx, service, createOpts)
+	serviceResult, err := servicesClient.Create(ctx, service, globalCreateOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create service '%s' in namespace '%s'", name, namespace)
 	}
@@ -130,8 +131,8 @@ func (manager *KubernetesManager) RemoveService(ctx context.Context, service *ap
 	serviceName := service.Name
 	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
 
-	if err := servicesClient.Delete(ctx, serviceName, removeObjectDeleteOptions); err != nil {
-		return stacktrace.Propagate(err, "Failed to delete service '%s' with delete options '%+v' in namespace '%s'", serviceName, removeObjectDeleteOptions, namespace)
+	if err := servicesClient.Delete(ctx, serviceName, globalDeleteOptions); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete service '%s' with delete options '%+v' in namespace '%s'", serviceName, globalDeleteOptions, namespace)
 	}
 
 	return nil
@@ -214,9 +215,7 @@ func (manager *KubernetesManager) CreateStorageClass(ctx context.Context, name s
 		VolumeBindingMode: &volumeBindingMode,
 	}
 
-	createOpts := metav1.CreateOptions{FieldManager: fieldManager}
-
-	storageClassResult, err := storageClassClient.Create(ctx, storageClass, createOpts)
+	storageClassResult, err := storageClassClient.Create(ctx, storageClass, globalCreateOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create storage class with name '%s'", name)
 	}
@@ -229,8 +228,8 @@ func (manager *KubernetesManager) RemoveStorageClass(ctx context.Context, storag
 	storageClassClient := manager.kubernetesClientSet.StorageV1().StorageClasses()
 
 	// Delete Resource
-	if err := storageClassClient.Delete(ctx, name, removeObjectDeleteOptions); err != nil {
-		return stacktrace.Propagate(err, "Failed to delete storage class with name '%s' with delete options '%+v'", name, removeObjectDeleteOptions)
+	if err := storageClassClient.Delete(ctx, name, globalDeleteOptions); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete storage class with name '%s' with delete options '%+v'", name, globalDeleteOptions)
 	}
 	return nil
 }
@@ -246,7 +245,14 @@ func (manager *KubernetesManager) GetStorageClass(ctx context.Context, name stri
 	return storageClassResult, nil
 }
 
-func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Context, namespace string, persistentVolumeClaimName string, persistentVolumeClaimLabels map[string]string, volumeSizeInMegabytes uint, storageClassName string) (*apiv1.PersistentVolumeClaim, error) {
+func (manager *KubernetesManager) CreatePersistentVolumeClaim(
+	ctx context.Context,
+	namespace string,
+	persistentVolumeClaimName string,
+	persistentVolumeClaimLabels map[string]string,
+	volumeSizeInMegabytes uint,
+	storageClassName string,
+) (*apiv1.PersistentVolumeClaim, error) {
 	volumeClaimsClient := manager.kubernetesClientSet.CoreV1().PersistentVolumeClaims(namespace)
 
 	volumeSizeInMegabytesStr := strconv.FormatUint(uint64(volumeSizeInMegabytes), uintToIntStringConversionBase)
@@ -274,9 +280,7 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Contex
 		},
 	}
 
-	createOpts := metav1.CreateOptions{FieldManager: fieldManager}
-
-	persistentVolumeClaimResult, err := volumeClaimsClient.Create(ctx, persistentVolumeClaim, createOpts)
+	persistentVolumeClaimResult, err := volumeClaimsClient.Create(ctx, persistentVolumeClaim, globalCreateOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create persistent volume claim with name '%s' in namespace '%s'", persistentVolumeClaimName, namespace)
 	}
@@ -293,8 +297,8 @@ func (manager *KubernetesManager) RemovePersistentVolumeClaim(ctx context.Contex
 	name := volumeClaim.Name
 	volumeClaimsClient := manager.kubernetesClientSet.CoreV1().PersistentVolumeClaims(namespace)
 
-	if err := volumeClaimsClient.Delete(ctx, name, removeObjectDeleteOptions); err != nil {
-		return stacktrace.Propagate(err, "Failed to delete persistent volume claim with name '%s' with delete options '%+v' in namespace '%s'", name, removeObjectDeleteOptions, namespace)
+	if err := volumeClaimsClient.Delete(ctx, name, globalDeleteOptions); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete persistent volume claim with name '%s' with delete options '%+v' in namespace '%s'", name, globalDeleteOptions, namespace)
 	}
 	return nil
 }
@@ -350,9 +354,7 @@ func (manager *KubernetesManager) CreateNamespace(ctx context.Context, name stri
 		},
 	}
 
-	createOpts := metav1.CreateOptions{FieldManager: fieldManager}
-
-	namespaceResult, err := namespaceClient.Create(ctx, namespace, createOpts)
+	namespaceResult, err := namespaceClient.Create(ctx, namespace, globalCreateOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create namespace with name '%s'", name)
 	}
@@ -364,8 +366,8 @@ func (manager *KubernetesManager) RemoveNamespace(ctx context.Context, namespace
 	name := namespace.Name
 	namespaceClient := manager.kubernetesClientSet.CoreV1().Namespaces()
 
-	if err := namespaceClient.Delete(ctx, name, removeObjectDeleteOptions); err != nil {
-		return stacktrace.Propagate(err, "Failed to delete namespace with name '%s' with delete options '%+v'", name, removeObjectDeleteOptions)
+	if err := namespaceClient.Delete(ctx, name, globalDeleteOptions); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete namespace with name '%s' with delete options '%+v'", name, globalDeleteOptions)
 	}
 
 	return nil
@@ -420,9 +422,7 @@ func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name
 		},
 	}
 
-	createOpts := metav1.CreateOptions{FieldManager: fieldManager}
-
-	serviceAccountResult, err := client.Create(ctx, serviceAccount, createOpts)
+	serviceAccountResult, err := client.Create(ctx, serviceAccount, globalCreateOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create service account with name '%s' in namespace '%v'", name, namespace)
 	}
@@ -469,9 +469,7 @@ func (manager *KubernetesManager) CreateRole(ctx context.Context, name string, n
 		Rules: rules,
 	}
 
-	createOpts := metav1.CreateOptions{FieldManager: fieldManager}
-
-	roleResult, err := client.Create(ctx, role, createOpts)
+	roleResult, err := client.Create(ctx, role, globalCreateOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create role with name '%s' in namespace '%v' and rules '%+v'", name, namespace, rules)
 	}
@@ -520,9 +518,7 @@ func (manager *KubernetesManager) CreateRoleBindings(ctx context.Context, name s
 		RoleRef: roleRef,
 	}
 
-	createOpts := metav1.CreateOptions{FieldManager: fieldManager}
-
-	roleBindingResult, err := client.Create(ctx, roleBinding, createOpts)
+	roleBindingResult, err := client.Create(ctx, roleBinding, globalCreateOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create role binding with name '%s', subjects '%+v' and role ref '%v'", name, subjects, roleRef)
 	}
@@ -570,9 +566,7 @@ func (manager *KubernetesManager) CreateClusterRoles(ctx context.Context, name s
 		Rules: rules,
 	}
 
-	createOpts := metav1.CreateOptions{FieldManager: fieldManager}
-
-	clusterRoleResult, err := client.Create(ctx, clusterRole, createOpts)
+	clusterRoleResult, err := client.Create(ctx, clusterRole, globalCreateOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create cluster role with name '%s' with rules '%+v'", name, rules)
 	}
@@ -620,9 +614,7 @@ func (manager *KubernetesManager) CreateClusterRoleBindings(ctx context.Context,
 		RoleRef: roleRef,
 	}
 
-	createOpts := metav1.CreateOptions{FieldManager: fieldManager}
-
-	clusterRoleBindingResult, err := client.Create(ctx, clusterRoleBinding, createOpts)
+	clusterRoleBindingResult, err := client.Create(ctx, clusterRoleBinding, globalCreateOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create cluster role binding with name '%s', subjects '%+v' and role ref '%v'", name, subjects, roleRef)
 	}
@@ -688,9 +680,7 @@ func (manager *KubernetesManager) CreatePod(
 		ObjectMeta: podMeta,
 	}
 
-	createOpts := metav1.CreateOptions{FieldManager: fieldManager}
-
-	createdPod, err := podClient.Create(ctx, podToCreate, createOpts)
+	createdPod, err := podClient.Create(ctx, podToCreate, globalCreateOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to create pod with name '%v' and labels '%+v', instead a non-nil error was returned", podName, podLabels)
 	}
@@ -707,8 +697,8 @@ func (manager *KubernetesManager) RemovePod(ctx context.Context, pod *apiv1.Pod)
 	namespace := pod.Namespace
 	client := manager.kubernetesClientSet.CoreV1().Pods(namespace)
 
-	if err := client.Delete(ctx, name, removeObjectDeleteOptions); err != nil {
-		return stacktrace.Propagate(err, "Failed to delete pod with name '%s' with delete options '%+v'", name, removeObjectDeleteOptions)
+	if err := client.Delete(ctx, name, globalDeleteOptions); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete pod with name '%s' with delete options '%+v'", name, globalDeleteOptions)
 	}
 
 	return nil
@@ -886,9 +876,9 @@ func (manager *KubernetesManager) CreateJobWithContainerAndVolume(ctx context.Co
 		Spec:       jobSpec,
 	}
 
-	options := metav1.CreateOptions{}
+	logrus.Debugf("Job resource to create: %+v", jobInput)
 
-	job, err := jobsClient.Create(ctx, &jobInput, options)
+	job, err := jobsClient.Create(ctx, &jobInput, globalCreateOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -909,8 +899,8 @@ func (manager *KubernetesManager) DeleteJob(ctx context.Context, namespace strin
 	}
 	jobName := job.Name
 
-	if err := jobsClient.Delete(ctx, jobName, removeObjectDeleteOptions); err != nil {
-		return stacktrace.Propagate(err, "Failed to delete job '%v' in namespace '%v' with delete options '%+v'", jobName, namespace, removeObjectDeleteOptions)
+	if err := jobsClient.Delete(ctx, jobName, globalDeleteOptions); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete job '%v' in namespace '%v' with delete options '%+v'", jobName, namespace, globalDeleteOptions)
 	}
 
 	return nil
