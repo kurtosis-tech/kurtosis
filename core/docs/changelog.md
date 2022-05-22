@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fix bug where `CopyFilesFromUserService` was hanging
 
 # 1.50.3
 ### Features
