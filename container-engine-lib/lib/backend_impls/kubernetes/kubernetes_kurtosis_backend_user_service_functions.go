@@ -1070,7 +1070,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtif
 	}
 
 	// Index PVCs by files artifact expansion GUID
-	persistentVolumeClaimsByExpansionGuid := map[files_artifact_expansion.FilesArtifactExpansionGUID]*apiv1.PersistentVolumeClaim{}
+	persistentVolumeClaimsByExpansionGuid := map[files_artifact_expansion.FilesArtifactExpansionGUID]apiv1.PersistentVolumeClaim{}
 	for _, claim := range persistentVolumeClaims {
 		expansionGuidStr, found := claim.Labels[label_key_consts.GUIDKubernetesLabelKey.GetString()]
 		if !found {
@@ -1080,7 +1080,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtif
 			)
 		}
 		expansionGuid := files_artifact_expansion.FilesArtifactExpansionGUID(expansionGuidStr)
-		persistentVolumeClaimsByExpansionGuid[expansionGuid] = &claim
+		persistentVolumeClaimsByExpansionGuid[expansionGuid] = claim
 	}
 
 	podVolumes := []apiv1.Volume{}
