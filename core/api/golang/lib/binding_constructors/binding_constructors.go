@@ -86,6 +86,22 @@ func NewGetModulesResponse(
 	}
 }
 
+func NewModuleInfo(
+	guid string,
+	privateIpAddr string,
+	privateGrpcPort *kurtosis_core_rpc_api_bindings.Port,
+	maybePublicIpAddr string,
+	maybePublicGrpcPort *kurtosis_core_rpc_api_bindings.Port,
+	) *kurtosis_core_rpc_api_bindings.ModuleInfo {
+	return &kurtosis_core_rpc_api_bindings.ModuleInfo{
+		Guid:                guid,
+		PrivateIpAddr:       privateIpAddr,
+		PrivateGrpcPort:     privateGrpcPort,
+		MaybePublicIpAddr:   maybePublicIpAddr,
+		MaybePublicGrpcPort: maybePublicGrpcPort,
+	}
+}
+
 // ==============================================================================================
 //                                     Register Service
 // ==============================================================================================

@@ -221,33 +221,33 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID) (*services.ServiceContext, error) {
 	serviceIdMapForArgs := map[string]bool{string(serviceId):true}
 	getServiceInfoArgs := binding_constructors.NewGetServicesArgs(serviceIdMapForArgs)
-	respSet, err := enclaveCtx.client.GetServices(context.Background(), getServiceInfoArgs)
+	response, err := enclaveCtx.client.GetServices(context.Background(), getServiceInfoArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred when trying to get info for service '%v'",
 			serviceId)
 	}
-	resp, ok := respSet.GetServiceInfo()[string(serviceId)]
-	if !ok {
+	serviceInfo, found := response.GetServiceInfo()[string(serviceId)]
+	if !found {
 		return nil, stacktrace.NewError("Failed to retrieve service information for service '%v'", string(serviceId))
 	}
-	if resp.GetPrivateIpAddr() == "" {
+	if serviceInfo.GetPrivateIpAddr() == "" {
 		return nil, stacktrace.NewError(
 			"Kurtosis API reported an empty private IP address for service '%v' - this should never happen, and is a bug with Kurtosis!",
 			serviceId)
 	}
-	if resp.GetMaybePublicIpAddr() == "" {
+	if serviceInfo.GetMaybePublicIpAddr() == "" {
 		return nil, stacktrace.NewError(
 			"Kurtosis API reported an empty public IP address for service '%v' - this should never happen, and is a bug with Kurtosis!",
 			serviceId)
 	}
 
-	serviceCtxPrivatePorts, err := convertApiPortsToServiceContextPorts(resp.GetPrivatePorts())
+	serviceCtxPrivatePorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetPrivatePorts())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred converting the private ports returned by the API to ports usable by the service context")
 	}
-	serviceCtxPublicPorts, err := convertApiPortsToServiceContextPorts(resp.GetMaybePublicPorts())
+	serviceCtxPublicPorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetMaybePublicPorts())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred converting the public ports returned by the API to ports usable by the service context")
 	}
@@ -255,9 +255,9 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID
 	serviceContext := services.NewServiceContext(
 		enclaveCtx.client,
 		serviceId,
-		resp.GetPrivateIpAddr(),
+		serviceInfo.GetPrivateIpAddr(),
 		serviceCtxPrivatePorts,
-		resp.GetMaybePublicIpAddr(),
+		serviceInfo.GetMaybePublicIpAddr(),
 		serviceCtxPublicPorts,
 	)
 
@@ -388,16 +388,16 @@ func (enclaveCtx *EnclaveContext) WaitForHttpPostEndpointAvailability(serviceId 
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]bool, error) {
-	emptyMapForGetServicesArgs := map[string]bool{}
-	getServicesArgs := binding_constructors.NewGetServicesArgs(emptyMapForGetServicesArgs)
-	responseList, err := enclaveCtx.client.GetServices(context.Background(), getServicesArgs)
+	getAllServicesIdFilter := map[string]bool{}
+	getServicesArgs := binding_constructors.NewGetServicesArgs(getAllServicesIdFilter)
+	response, err := enclaveCtx.client.GetServices(context.Background(), getServicesArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the service IDs in the enclave")
 	}
 
-	serviceIds := make(map[services.ServiceID]bool, len(responseList.GetServiceInfo()))
+	serviceIds := make(map[services.ServiceID]bool, len(response.GetServiceInfo()))
 
-	for key, _ := range responseList.GetServiceInfo() {
+	for key, _ := range response.GetServiceInfo() {
 		serviceId := services.ServiceID(key)
 		if _, ok := serviceIds[serviceId]; !ok {
 			serviceIds[serviceId] = true
@@ -409,8 +409,8 @@ func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]bool, er
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error) {
-	emptyMapForGetModulesArgs := map[string]bool{}
-	emptyGetModulesArgs := binding_constructors.NewGetModulesArgs(emptyMapForGetModulesArgs)
+	getAllModulesIdFilter := map[string]bool{}
+	emptyGetModulesArgs := binding_constructors.NewGetModulesArgs(getAllModulesIdFilter)
 	response, err := enclaveCtx.client.GetModules(context.Background(), emptyGetModulesArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the IDs of the modules in the enclave")
