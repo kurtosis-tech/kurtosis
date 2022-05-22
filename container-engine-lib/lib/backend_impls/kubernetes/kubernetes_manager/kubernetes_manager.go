@@ -842,23 +842,6 @@ func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace
 	return pods, nil
 }
 
-/*
-func (manager *KubernetesManager) GetPodsForJob(ctx context.Context, namespace string, jobName string) (*apiv1.PodList, error) {
-	namespacePodClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
-
-	opts := metav1.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(jobNameField, jobName).String(),
-	}
-
-	pods, err := namespacePodClient.List(ctx, opts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get pods matching job '%v', but instead a non-nil error was returned", jobName)
-	}
-
-	return pods, nil
-}
- */
-
 func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string, podName string) *url.URL {
 	return manager.kubernetesClientSet.CoreV1().RESTClient().Post().Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
 }
