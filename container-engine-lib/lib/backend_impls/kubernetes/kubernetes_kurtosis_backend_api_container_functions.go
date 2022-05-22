@@ -245,6 +245,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 				consts.PodExecsKubernetesResource,
 				consts.ServicesKubernetesResource,
 				consts.PersistentVolumeClaimsKubernetesResource,
+				consts.JobsKubernetesResource,
 			},
 		},
 		{

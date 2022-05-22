@@ -17,6 +17,7 @@ const (
 	PodExecsKubernetesResource                   = "pods/exec"
 	ServicesKubernetesResource               = "services"
 	PersistentVolumeClaimsKubernetesResource = "persistentvolumeclaims"
+	JobsKubernetesResource = "jobs"
 
 	ClusterRoleKubernetesResourceType = "ClusterRole"
 	RoleKubernetesResourceType = "Role"

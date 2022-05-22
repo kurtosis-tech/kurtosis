@@ -58,9 +58,6 @@ const (
 
 	// This is the owner string we'll use when updating fields
 	fieldManager = "kurtosis"
-
-	// We want to force updates because only Kurtosis is expected to have ownership of the objects Kurtosis creates
-	shouldForceUpdates = true
 )
 
 var (

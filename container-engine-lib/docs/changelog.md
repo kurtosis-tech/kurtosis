@@ -1,6 +1,7 @@
 # TBD
 ### Changes
 * Bumped the pod wait-for-availability timeout to 1 minute
+* Gave the API container permission to create jobs
 
 # 0.29.1
 ### Changes
