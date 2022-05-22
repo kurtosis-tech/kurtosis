@@ -243,8 +243,10 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 			Resources: []string{
 				consts.PodsKubernetesResource,
 				consts.PodExecsKubernetesResource,
+				consts.PodLogsKubernetesResource,
 				consts.ServicesKubernetesResource,
 				consts.PersistentVolumeClaimsKubernetesResource,
+				consts.JobsKubernetesResource,
 			},
 		},
 		{

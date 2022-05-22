@@ -56,7 +56,6 @@ type filesArtifactExpansionDockerResources struct {
 func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
-	filesArtifactId service.FilesArtifactID,
 	filesArtifactFilepathRelativeToEnclaveDatadirRoot string) (*files_artifact_expansion.FilesArtifactExpansion, error) {
 
 	filesArtifactExpansionGUIDStr, err := uuid_generator.GenerateUUIDString()
@@ -71,7 +70,14 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 		serviceGuid,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, enclaveId)
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating files artifact expansion volume for user service with GUID '%v' and files " +
+				"artifact relative filepath '%v' in enclave with ID '%v'",
+			serviceGuid,
+			filesArtifactFilepathRelativeToEnclaveDatadirRoot,
+			enclaveId,
+		)
 	}
 	// We don't delete the volume because we only defer-stop the expander container (not remove) and Docker won't let us remove a volume that's in use
 
@@ -103,7 +109,14 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 		filesArtifactFilepathRelativeToEnclaveDatadirRoot,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred running files artifact expander for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, enclaveId)
+		return nil,
+		stacktrace.Propagate(
+			err,
+			"An error occurred running files artifact expander for user service with GUID '%v' and files artifact relative path '%v' in enclave with ID '%v'",
+			serviceGuid,
+			filesArtifactFilepathRelativeToEnclaveDatadirRoot,
+			enclaveId,
+		)
 	}
 	filesArtifactExpansion := files_artifact_expansion.NewFilesArtifactExpansion(filesArtifactExpansionGUID, serviceGuid)
 	return filesArtifactExpansion, nil
