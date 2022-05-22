@@ -11,11 +11,11 @@ expander_root_dirpath="$(dirname "${script_dirpath}")"
 #                                             Constants
 # ==================================================================================================
 BUILD_DIRNAME="build"
-MAIN_DIRNAME="files_artifact_expander"
+MAIN_DIRNAME="files_artifacts_expander"
 MAIN_GO_FILEPATH="${expander_root_dirpath}/main.go"
-MAIN_BINARY_OUTPUT_FILENAME="files-artifact-expander"
+MAIN_BINARY_OUTPUT_FILENAME="files-artifacts-expander"
 MAIN_BINARY_OUTPUT_FILEPATH="${expander_root_dirpath}/${BUILD_DIRNAME}/${MAIN_BINARY_OUTPUT_FILENAME}"
-IMAGE_ORG_AND_REPO="kurtosistech/kurtosis-files-artifact-expander"
+IMAGE_ORG_AND_REPO="kurtosistech/kurtosis-files-artifacts-expander"
 GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME="get-docker-image-tag.sh"
 
 # =============================================================================
@@ -23,7 +23,7 @@ GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME="get-docker-image-tag.sh"
 # =============================================================================
 # Checks if dockerignore file is in the root path
 if ! [ -f "${expander_root_dirpath}"/.dockerignore ]; then
-  echo "Error: No .dockerignore file found in files artifact expander root '${expander_root_dirpath}'; this is required so Docker caching is enabled and the image builds remain quick" >&2
+  echo "Error: No .dockerignore file found in files artifacts expander root '${expander_root_dirpath}'; this is required so Docker caching is enabled and the image builds remain quick" >&2
   exit 1
 fi
 
@@ -31,12 +31,12 @@ fi
 # no tests :(
 
 # Build binary for packaging inside an Alpine Linux image
-echo "Building files artifact expander main.go '${MAIN_GO_FILEPATH}'..."
+echo "Building files artifacts expander main.go '${MAIN_GO_FILEPATH}'..."
 if ! CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o "${MAIN_BINARY_OUTPUT_FILEPATH}" "${MAIN_GO_FILEPATH}"; then
-  echo "Error: An error occurred building the files artifact expander code" >&2
+  echo "Error: An error occurred building the files artifacts expander code" >&2
   exit 1
 fi
-echo "Successfully built files artifact expander code"
+echo "Successfully built files artifacts expander code"
 
 # Generate Docker image tag
 get_docker_image_tag_script_filepath="${script_dirpath}/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}"

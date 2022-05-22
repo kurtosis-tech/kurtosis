@@ -1,4 +1,4 @@
-module github.com/kurtosis-tech/kurtosis-core/files_artifact_expander
+module github.com/kurtosis-tech/kurtosis-core/files_artifacts_expander
 
 go 1.17
 

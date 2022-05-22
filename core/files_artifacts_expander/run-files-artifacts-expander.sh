@@ -10,4 +10,4 @@ set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "starting files artifact expander"
-"${script_dirpath}"/files-artifact-expander
+"${script_dirpath}"/files-artifacts-expander

@@ -12,13 +12,13 @@ import (
 	"strings"
 )
 
-// JSON-serialized args that the files artifact expander container take in
+// JSON-serialized args that the files artifacts expander container take in
 const (
 	jsonFieldTag = "json"
 )
 
 // Fields are public for JSON de/serialization
-type FilesArtifactExpanderArgs struct {
+type FilesArtifactsExpanderArgs struct {
 	APIContainerIpAddress string `json:"apiContainerIpAddress"`
 	ApiContainerPort        uint16                   `json:"apiContainerPort"`
 	FilesArtifactExpansions []FilesArtifactExpansion `json:"filesArtifactExpansions"`
@@ -30,18 +30,18 @@ type FilesArtifactExpansion struct {
 	DirPathToExpandTo string `json:"dirPathToExpandTo"`
 }
 
-func (args *FilesArtifactExpanderArgs) UnmarshalJSON(data []byte) error {
-	type FilesArtifactExpanderArgsMirror FilesArtifactExpanderArgs
+func (args *FilesArtifactsExpanderArgs) UnmarshalJSON(data []byte) error {
+	type FilesArtifactExpanderArgsMirror FilesArtifactsExpanderArgs
 	var filesArtifactExpanderArgsMirror FilesArtifactExpanderArgsMirror
 	if err := json.Unmarshal(data, &filesArtifactExpanderArgsMirror); err != nil {
-		return stacktrace.Propagate(err, "Failed to unmarhsal files artifact expander args")
+		return stacktrace.Propagate(err, "Failed to unmarhsal files artifacts expander args")
 	}
-	*args = FilesArtifactExpanderArgs(filesArtifactExpanderArgsMirror)
+	*args = FilesArtifactsExpanderArgs(filesArtifactExpanderArgsMirror)
 	return nil
 }
 
-func NewFilesArtifactExpanderArgs(apiContainerIpAddress string, apiContainerPort uint16, filesArtifactExpansions []FilesArtifactExpansion) (*FilesArtifactExpanderArgs, error) {
-	result := &FilesArtifactExpanderArgs{
+func NewFilesArtifactExpanderArgs(apiContainerIpAddress string, apiContainerPort uint16, filesArtifactExpansions []FilesArtifactExpansion) (*FilesArtifactsExpanderArgs, error) {
+	result := &FilesArtifactsExpanderArgs{
 		APIContainerIpAddress:   apiContainerIpAddress,
 		ApiContainerPort:        apiContainerPort,
 		FilesArtifactExpansions: filesArtifactExpansions,
@@ -53,7 +53,7 @@ func NewFilesArtifactExpanderArgs(apiContainerIpAddress string, apiContainerPort
 	return result, nil
 }
 
-func (args *FilesArtifactExpanderArgs) validate() error {
+func (args *FilesArtifactsExpanderArgs) validate() error {
 	// Generic validation based on field type
 	reflectVal := reflect.ValueOf(args)
 	reflectValType := reflectVal.Type()

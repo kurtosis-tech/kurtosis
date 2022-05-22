@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package files_artifact_expander
+package files_artifacts_expander
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"github.com/gammazero/workerpool"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-core/files_artifact_expander/args"
+	"github.com/kurtosis-tech/kurtosis-core/files_artifacts_expander/args"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
