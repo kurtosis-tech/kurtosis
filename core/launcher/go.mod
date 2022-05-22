@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/google/martian v2.1.0+incompatible
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220521210240-41a57610287b
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220521235358-60e8b2052deb
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
@@ -30,7 +30,6 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
-	github.com/google/go-cmp v0.5.5 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect

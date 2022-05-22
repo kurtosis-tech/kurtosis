@@ -1,5 +1,9 @@
 # TBD
 
+# 1.50.4
+### Changes
+* Upgraded to container-engine-lib 0.29.1 which drops synchronous deletion of objects
+
 # 1.50.3
 ### Features
 * Support `CopyFilesFromUserService` for Kubernetes
