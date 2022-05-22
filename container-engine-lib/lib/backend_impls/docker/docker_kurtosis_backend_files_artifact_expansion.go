@@ -1,18 +1,6 @@
 package docker
 
-import (
-	"context"
-	"github.com/docker/docker/api/types"
-	docker_manager_types "github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
-	"github.com/kurtosis-tech/stacktrace"
-)
-
+/*
 const (
 	// Dirpath on the artifact expander container where the destination volume containing expanded files will be mounted
 	destVolMntDirpathOnExpander = "/dest"
@@ -94,7 +82,7 @@ func (backend *DockerKurtosisBackend) CreateFilesArtifactExpansion(ctx context.C
 	}
 	// We don't release the IP because we only defer-stop the expander container (not remove) so it will still be consuming the IP
 
-	_, err = backend.runFilesArtifactsExpander(
+	_, err = backend.runFilesArtifactExpander(
 		ctx,
 		filesArtifactExpansionGUID,
 		serviceGuid,
@@ -338,7 +326,6 @@ func (backend *DockerKurtosisBackend) createFilesArtifactExpansionVolume(
 	return volumeName, nil
 }
 
-/*
 func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
 	ctx context.Context,
 	filesArtifactExpansionGUID files_artifact_expansion.FilesArtifactExpansionGUID,
@@ -436,5 +423,6 @@ func getExtractionCommand(artifactFilepath string, destVolMntDirpathOnExpander s
 		destVolMntDirpathOnExpander,
 	}
 }
+
 
  */

@@ -1,5 +1,7 @@
 package files_artifact_expansion
 
+// TODO DELETE THIS ENTIRE PACKAGE
+
 import "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 
 type FilesArtifactExpansionFilters struct {
