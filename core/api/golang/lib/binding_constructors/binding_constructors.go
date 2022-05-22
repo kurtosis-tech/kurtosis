@@ -72,23 +72,17 @@ func NewExecuteModuleResponse(serializedResult string) *kurtosis_core_rpc_api_bi
 // ==============================================================================================
 //                                     Get Module Info
 // ==============================================================================================
-func NewGetModuleInfoArgs(moduleId string) *kurtosis_core_rpc_api_bindings.GetModuleInfoArgs {
-	return &kurtosis_core_rpc_api_bindings.GetModuleInfoArgs{
-		ModuleId: moduleId,
+func NewGetModulesArgs(moduleIds map[string]bool) *kurtosis_core_rpc_api_bindings.GetModulesArgs {
+	return &kurtosis_core_rpc_api_bindings.GetModulesArgs{
+		Ids: moduleIds,
 	}
 }
 
-func NewGetModuleInfoResponse(
-	privateIpAddr string,
-	privatePort *kurtosis_core_rpc_api_bindings.Port,
-	publicIpAddr string,
-	publicPort *kurtosis_core_rpc_api_bindings.Port,
-) *kurtosis_core_rpc_api_bindings.GetModuleInfoResponse {
-	return &kurtosis_core_rpc_api_bindings.GetModuleInfoResponse{
-		PrivateIpAddr: privateIpAddr,
-		PrivatePort:   privatePort,
-		PublicIpAddr:  publicIpAddr,
-		PublicPort:    publicPort,
+func NewGetModulesResponse(
+	moduleInfoMap map[string]*kurtosis_core_rpc_api_bindings.ModuleInfo,
+) *kurtosis_core_rpc_api_bindings.GetModulesResponse {
+	return &kurtosis_core_rpc_api_bindings.GetModulesResponse{
+		ModuleInfo: moduleInfoMap,
 	}
 }
 
@@ -142,25 +136,17 @@ func NewStartServiceResponse(publicIpAddr string, publicPorts map[string]*kurtos
 // ==============================================================================================
 //                                       Get Service Info
 // ==============================================================================================
-func NewGetServiceInfoArgs(serviceId string) *kurtosis_core_rpc_api_bindings.GetServiceInfoArgs {
-	return &kurtosis_core_rpc_api_bindings.GetServiceInfoArgs{
-		ServiceId: serviceId,
+func NewGetServicesArgs(serviceIds map[string]bool) *kurtosis_core_rpc_api_bindings.GetServicesArgs {
+	return &kurtosis_core_rpc_api_bindings.GetServicesArgs{
+		ServiceIds: serviceIds,
 	}
 }
 
 func NewGetServiceInfoResponse(
-	privateIpAddr string,
-	privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-	publicIpAddr string,
-	publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-	serviceGuid string,
-) *kurtosis_core_rpc_api_bindings.GetServiceInfoResponse {
-	return &kurtosis_core_rpc_api_bindings.GetServiceInfoResponse{
-		PrivateIpAddr:              privateIpAddr,
-		PrivatePorts:               privatePorts,
-		PublicIpAddr:               publicIpAddr,
-		PublicPorts:                publicPorts,
-		ServiceGuid:	serviceGuid,
+	serviceInfo map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo,
+) *kurtosis_core_rpc_api_bindings.GetServicesResponse {
+	return &kurtosis_core_rpc_api_bindings.GetServicesResponse{
+		ServiceInfo: serviceInfo,
 	}
 }
 
