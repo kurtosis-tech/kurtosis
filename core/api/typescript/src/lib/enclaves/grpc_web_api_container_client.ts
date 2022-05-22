@@ -25,7 +25,7 @@ import {
     StoreWebFilesArtifactResponse,
     StoreWebFilesArtifactArgs,
     StoreFilesArtifactFromServiceArgs,
-    StoreFilesArtifactFromServiceResponse,
+    StoreFilesArtifactFromServiceResponse, GetServicesArgs, GetModulesArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -207,9 +207,9 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         return ok(null);
     }
 
-    public async getServices(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetServicesResponse, Error>> {
+    public async getServices(getServicesArgs: GetServicesArgs): Promise<Result<GetServicesResponse, Error>> {
         const promiseGetServices: Promise<Result<GetServicesResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.getServices(emptyArg, {}, (error: grpc_web.RpcError | null, response?: GetServicesResponse) => {
+            this.client.getServices(getServicesArgs, {}, (error: grpc_web.RpcError | null, response?: GetServicesResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -231,9 +231,9 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         return ok(getServicesResponse)
     }
 
-    public async getModules(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetModulesResponse, Error>> {
+    public async getModules(getModulesArgs: GetModulesArgs): Promise<Result<GetModulesResponse, Error>> {
         const getModulesPromise: Promise<Result<GetModulesResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.getModules(emptyArg, {}, (error: grpc_web.RpcError | null, response?: GetModulesResponse) => {
+            this.client.getModules(getModulesArgs, {}, (error: grpc_web.RpcError | null, response?: GetModulesResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));

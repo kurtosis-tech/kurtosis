@@ -9,8 +9,8 @@ import {
     ExecCommandArgs,
     ExecCommandResponse,
     ExecuteModuleArgs,
-    ExecuteModuleResponse,
-    GetModulesResponse,
+    ExecuteModuleResponse, GetModulesArgs,
+    GetModulesResponse, GetServicesArgs,
     GetServicesResponse,
     LoadModuleArgs,
     PauseServiceArgs,
@@ -39,8 +39,8 @@ export interface GenericApiContainerClient {
     repartitionNetwork(repartitionArgs: RepartitionArgs): Promise<Result<null, Error>>
     waitForHttpGetEndpointAvailability(availabilityArgs: WaitForHttpGetEndpointAvailabilityArgs): Promise<Result<null, Error>>
     waitForHttpPostEndpointAvailability(availabilityArgs: WaitForHttpPostEndpointAvailabilityArgs): Promise<Result<null, Error>>
-    getServices(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetServicesResponse, Error>>
-    getModules(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetModulesResponse, Error>>
+    getServices(getServicesArgs: GetServicesArgs): Promise<Result<GetServicesResponse, Error>>
+    getModules(getModulesArgs: GetModulesArgs): Promise<Result<GetModulesResponse, Error>>
     executeModule(executeModuleArgs: ExecuteModuleArgs): Promise<Result<ExecuteModuleResponse, Error>>
     execCommand(execCommandArgs: ExecCommandArgs): Promise<Result<ExecCommandResponse, Error>>
     pauseService(pauseServiceArgs: PauseServiceArgs): Promise<Result<null, Error>>

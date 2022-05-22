@@ -25,12 +25,13 @@ import {
     StoreWebFilesArtifactArgs,
     StoreWebFilesArtifactResponse,
     StoreFilesArtifactFromServiceArgs,
-    StoreFilesArtifactFromServiceResponse,
+    StoreFilesArtifactFromServiceResponse, GetServicesArgs, GetModulesArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
 import { EnclaveID } from "./enclave_context";
 import {Empty} from "google-protobuf/google/protobuf/empty_pb";
+import {newGetServicesArgs} from "../constructor_calls";
 
 export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
@@ -208,9 +209,9 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(null);
     }
 
-    public async getServices(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetServicesResponse, Error>> {
+    public async getServices(services: GetServicesArgs): Promise<Result<GetServicesResponse, Error>> {
         const promiseGetServices: Promise<Result<GetServicesResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.getServices(emptyArg, (error: ServiceError | null, response?: GetServicesResponse) => {
+            this.client.getServices(services, (error: ServiceError | null, response?: GetServicesResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -232,9 +233,9 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(getServicesResponse)
     }
 
-    public async getModules(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetModulesResponse, Error>> {
+    public async getModules(getModulesArgs: GetModulesArgs): Promise<Result<GetModulesResponse, Error>> {
         const getModulesPromise: Promise<Result<GetModulesResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.getModules(emptyArg, (error: ServiceError | null, response?: GetModulesResponse) => {
+            this.client.getModules(getModulesArgs, (error: ServiceError | null, response?: GetModulesResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
