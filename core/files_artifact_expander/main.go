@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/gammazero/workerpool"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-core/files_artifact_expander/args"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -47,17 +48,17 @@ func main() {
 }
 
 func runMain() error {
-	args, err := GetArgsFromEnv()
+	filesArtifactExpanderArgs, err := args.GetArgsFromEnv()
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to get arguments from environment, instead a non-nil errorw was returned")
 	}
 	// Connect to the API container described in the args
-	ipAddrString := args.APIContainerIpAddress
+	ipAddrString := filesArtifactExpanderArgs.APIContainerIpAddress
 	apiContainerIpAddr := net.ParseIP(ipAddrString)
 	if apiContainerIpAddr == nil {
 		return stacktrace.NewError("Expected to be able parse a valid api container IP address from arguments, instead parsed a nil IP address")
 	}
-	apiContainerPortNum := args.ApiContainerPort
+	apiContainerPortNum := filesArtifactExpanderArgs.ApiContainerPort
 	grpcUrl := fmt.Sprintf("%v:%v", apiContainerIpAddr, apiContainerPortNum)
 	apiContainerConnection, err := grpc.Dial(grpcUrl)
 	if err != nil {
@@ -67,8 +68,8 @@ func runMain() error {
 	backgroundContext := context.Background()
 	// Download and extract the file artifacts in the args
 	filesArtifactWorkerPool := workerpool.New(maxWorkers)
-	resultErrsChan := make(chan error, len(args.FilesArtifactExpansions))
-	for _, filesArtifactExpansion := range args.FilesArtifactExpansions {
+	resultErrsChan := make(chan error, len(filesArtifactExpanderArgs.FilesArtifactExpansions))
+	for _, filesArtifactExpansion := range filesArtifactExpanderArgs.FilesArtifactExpansions {
 		jobToSubmit := createExpandFilesArtifactJob(backgroundContext, apiContainerClient, resultErrsChan, filesArtifactExpansion)
 		filesArtifactWorkerPool.Submit(jobToSubmit)
 	}
@@ -96,7 +97,7 @@ func runMain() error {
 	return nil
 }
 
-func createExpandFilesArtifactJob(ctx context.Context, apiContainerClient kurtosis_core_rpc_api_bindings.ApiContainerServiceClient, resultErrsChan chan error, filesArtifactExpansion FilesArtifactExpansion) func() {
+func createExpandFilesArtifactJob(ctx context.Context, apiContainerClient kurtosis_core_rpc_api_bindings.ApiContainerServiceClient, resultErrsChan chan error, filesArtifactExpansion args.FilesArtifactExpansion) func() {
 	return func() {
 		if err := expandFilesArtifact(ctx, apiContainerClient, filesArtifactExpansion); err != nil {
 			resultErrsChan <- stacktrace.Propagate(err, "An error occured expanding files artifact '%v' into directory '%v'", filesArtifactExpansion.FilesArtifactId, filesArtifactExpansion.DirPathToExpandTo)
@@ -104,7 +105,8 @@ func createExpandFilesArtifactJob(ctx context.Context, apiContainerClient kurtos
 	}
 }
 
-func expandFilesArtifact(ctx context.Context, apiContainerClient kurtosis_core_rpc_api_bindings.ApiContainerServiceClient, filesArtifactExpansion FilesArtifactExpansion) error {
+// TODO Actually call apiContainerClient to Download the files artifacts
+func expandFilesArtifact(ctx context.Context, apiContainerClient kurtosis_core_rpc_api_bindings.ApiContainerServiceClient, filesArtifactExpansion args.FilesArtifactExpansion) error {
 	artifactId := filesArtifactExpansion.FilesArtifactId
 	// Get the raw bytes of the file artifact
 	// TODO call DownloadFilesArtifact

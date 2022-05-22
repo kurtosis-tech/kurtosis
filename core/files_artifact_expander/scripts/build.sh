@@ -46,10 +46,10 @@ if ! docker_tag="$(bash "${get_docker_image_tag_script_filepath}")"; then
 fi
 
 # Build Docker image
-dockerfile_filepath="${server_root_dirpath}/Dockerfile"
+dockerfile_filepath="${expander_root_dirpath}/Dockerfile"
 image_name="${IMAGE_ORG_AND_REPO}:${docker_tag}"
 echo "Building server into a Docker image named '${image_name}'..."
-if ! docker build -t "${image_name}" -f "${dockerfile_filepath}" "${server_root_dirpath}"; then
+if ! docker build -t "${image_name}" -f "${dockerfile_filepath}" "${expander_root_dirpath}"; then
   echo "Error: Docker build of the server failed" >&2
   exit 1
 fi
