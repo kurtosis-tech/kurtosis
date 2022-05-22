@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/distribution/reference"
-	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
@@ -29,7 +28,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
-	"net"
 	"regexp"
 	"strconv"
 	"strings"
@@ -318,7 +316,7 @@ func run(
 
 	logrus.Infof("Executing the module with execute params '%v'...", executeParamsStr)
 	if readCloserLogs != nil {
-		go printModuleContainerLogs(readCloserLogs)
+		go io.Copy(logrus.StandardLogger().Out, readCloserLogs)
 		logrus.Info("----------------------- MODULE LOGS ----------------------")
 	}
 
@@ -365,17 +363,4 @@ func getImageNameWithUnixTimestamp(moduleImage string) string {
 		pathElement,
 		time.Now().Unix(),
 	)
-}
-
-func printModuleContainerLogs(readCloserLogs io.ReadCloser) {
-	if _, err := stdcopy.StdCopy(logrus.StandardLogger().Out, logrus.StandardLogger().Out, readCloserLogs); err != nil {
-		opError, ok := err.(*net.OpError)
-		if ok {
-			//We ignore this type of error because it was generated when the main go routine closes the readCloserLogs object
-			if opError.Op == netReadOpt && strings.Contains(opError.Error(), netReadOptFailBecauseSourceIsUsedOrClosedErrorText) {
-				return
-			}
-		}
-		logrus.Errorf("An error occurred copying the container logs to STDOUT: \n %v", err)
-	}
 }

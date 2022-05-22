@@ -1,5 +1,15 @@
 # TBD
 
+# 0.18.5
+### Changes
+* Upgraded to container-engine-lib 0.30.0, core 1.50.5, and engine 1.22.5
+
+### Features
+* `kurtosis gateway` now connects to user services running in cluster
+
+### Fixes
+* Fixed a bug where the gateway wasn't rewriting user service requests with the local ports
+
 # 0.18.4
 ### Features
 * Added files artifact expansion in Kubernetes

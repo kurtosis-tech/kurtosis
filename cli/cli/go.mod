@@ -11,12 +11,11 @@ require (
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/dmarkham/enumer v1.5.5
 	github.com/docker/distribution v2.7.1+incompatible
-	github.com/docker/docker v20.10.16+incompatible
 	github.com/go-yaml/yaml v2.1.0+incompatible
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220521210240-41a57610287b
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220521214237-92ff647c6125
-	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220521214843-b616905cfe8c
-	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220521214828-37b35d58b8b5
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220522084228-7c1f07bd2732
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220522084804-5cf86fe1cbbe
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220522085555-1ae0223c755a
+	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220522085538-3c58c9f707b9
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211205213337-f5088fc26465
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220225193403-74da3f3b98ce
@@ -42,6 +41,7 @@ require (
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/docker/docker v20.10.16+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/dsnet/compress v0.0.1 // indirect
@@ -56,7 +56,6 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
-	github.com/google/go-cmp v0.5.7 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
