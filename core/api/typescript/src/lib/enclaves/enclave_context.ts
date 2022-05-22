@@ -55,9 +55,10 @@ import type { PartitionConnection } from "./partition_connection";
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
 import {
     ModuleInfo,
-    PauseServiceArgs, ServiceInfo,
+    PauseServiceArgs, ServiceInfo, UnloadModuleResponse,
     UnpauseServiceArgs
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
+import {ModuleGUID} from "../../../build/lib/modules/module_context";
 
 export type EnclaveID = string;
 export type PartitionID = string;
@@ -174,7 +175,7 @@ export class EnclaveContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public async unloadModule(moduleId: ModuleID): Promise<Result<null,Error>> {
+    public async unloadModule(moduleId: ModuleID): Promise<Result<null ,Error>> {
         const unloadModuleArgs: UnloadModuleArgs = newUnloadModuleArgs(moduleId);
 
         const unloadModuleResult = await this.backend.unloadModule(unloadModuleArgs)
@@ -182,8 +183,8 @@ export class EnclaveContext {
             return err(unloadModuleResult.error)
         }
 
-        const result = unloadModuleResult.value
-        return ok(result)
+        // We discard the module GUID
+        return ok(null)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
