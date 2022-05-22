@@ -202,7 +202,21 @@ func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, names
 		return nil, stacktrace.Propagate(err, "Failed to list services with labels '%+v' in namespace '%s'", serviceLabels, namespace)
 	}
 
-	return serviceResult, nil
+	// Only return objects not tombstoned by Kubernetes
+	var servicesNotMarkedForDeletionList []apiv1.Service
+	for _, service := range serviceResult.Items {
+		deletionTimestamp := service.GetObjectMeta().GetDeletionTimestamp()
+		if deletionTimestamp == nil {
+			servicesNotMarkedForDeletionList = append(servicesNotMarkedForDeletionList, service)
+		}
+	}
+	servicesNotMarkedForDeletionserviceList := apiv1.ServiceList{
+		Items:    servicesNotMarkedForDeletionList,
+		TypeMeta: serviceResult.TypeMeta,
+		ListMeta: serviceResult.ListMeta,
+	}
+	
+	return &servicesNotMarkedForDeletionserviceList, nil
 }
 
 // ---------------------------Volumes------------------------------------------------------------------------------
@@ -345,8 +359,21 @@ func (manager *KubernetesManager) GetPersistentVolumeClaimsByLabels(ctx context.
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get persistent volume claim with labels '%+v' in namespace '%s'", persistentVolumeClaimLabels, namespace)
 	}
-
-	return persistentVolumeClaimsResult, nil
+ 
+	// Only return objects not tombstoned by Kubernetes
+	var persistentVolumeClaimsNotMarkedForDeletionList []apiv1.PersistentVolumeClaim
+	for _, persistentVolumeClaim := range persistentVolumeClaimsResult.Items {
+		deletionTimestamp := persistentVolumeClaim.GetObjectMeta().GetDeletionTimestamp()
+		if deletionTimestamp == nil {
+			persistentVolumeClaimsNotMarkedForDeletionList = append(persistentVolumeClaimsNotMarkedForDeletionList, persistentVolumeClaim)
+		}
+	}
+	persistentVolumeClaimsNotMarkedForDeletionpersistentVolumeClaimList := apiv1.PersistentVolumeClaimList{
+		Items:    persistentVolumeClaimsNotMarkedForDeletionList,
+		TypeMeta: persistentVolumeClaimsResult.TypeMeta,
+		ListMeta: persistentVolumeClaimsResult.ListMeta,
+	}
+	return &persistentVolumeClaimsNotMarkedForDeletionpersistentVolumeClaimList, nil
 }
 
 // ---------------------------namespaces------------------------------------------------------------------------------
@@ -414,7 +441,20 @@ func (manager *KubernetesManager) GetNamespacesByLabels(ctx context.Context, nam
 		return nil, stacktrace.Propagate(err, "Failed to list namespaces with labels '%+v'", namespaceLabels)
 	}
 
-	return namespaces, nil
+	// Only return objects not tombstoned by Kubernetes
+	var namespacesNotMarkedForDeletionList []apiv1.Namespace
+	for _, namespace := range namespaces.Items {
+		deletionTimestamp := namespace.GetObjectMeta().GetDeletionTimestamp()
+		if deletionTimestamp == nil {
+			namespacesNotMarkedForDeletionList = append(namespacesNotMarkedForDeletionList, namespace)
+		}
+	}
+	namespacesNotMarkedForDeletionnamespaceList := apiv1.NamespaceList{
+		Items:    namespacesNotMarkedForDeletionList,
+		TypeMeta: namespaces.TypeMeta,
+		ListMeta: namespaces.ListMeta,
+	}
+	return &namespacesNotMarkedForDeletionnamespaceList, nil
 }
 
 // ---------------------------service accounts------------------------------------------------------------------------------
@@ -443,12 +483,25 @@ func (manager *KubernetesManager) GetServiceAccountsByLabels(ctx context.Context
 		LabelSelector: labels.SelectorFromSet(serviceAccountsLabels).String(),
 	}
 
-	pods, err := client.List(ctx, opts)
+	serviceAccounts, err := client.List(ctx, opts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get service accounts with labels '%+v', instead a non-nil error was returned", serviceAccountsLabels)
 	}
 
-	return pods, nil
+	// Only return objects not tombstoned by Kubernetes
+	var serviceAccountsNotMarkedForDeletionList []apiv1.ServiceAccount
+	for _, serviceAccount := range serviceAccounts.Items {
+		deletionTimestamp := serviceAccount.GetObjectMeta().GetDeletionTimestamp()
+		if deletionTimestamp == nil {
+			serviceAccountsNotMarkedForDeletionList = append(serviceAccountsNotMarkedForDeletionList, serviceAccount)
+		}
+	}
+	serviceAccountsNotMarkedForDeletionserviceAccountList := apiv1.ServiceAccountList{
+		Items:    serviceAccountsNotMarkedForDeletionList,
+		TypeMeta: serviceAccounts.TypeMeta,
+		ListMeta: serviceAccounts.ListMeta,
+	}
+	return &serviceAccountsNotMarkedForDeletionserviceAccountList, nil
 }
 
 func (manager *KubernetesManager) RemoveServiceAccount(ctx context.Context, serviceAccount *apiv1.ServiceAccount) error {
@@ -491,12 +544,25 @@ func (manager *KubernetesManager) GetRolesByLabels(ctx context.Context, namespac
 		LabelSelector: labels.SelectorFromSet(rolesLabels).String(),
 	}
 
-	pods, err := client.List(ctx, opts)
+	roles, err := client.List(ctx, opts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get roles with labels '%+v', instead a non-nil error was returned", rolesLabels)
 	}
 
-	return pods, nil
+	// Only return objects not tombstoned by Kubernetes
+	var rolesNotMarkedForDeletionList []rbacv1.Role
+	for _, role := range roles.Items {
+		deletionTimestamp := role.GetObjectMeta().GetDeletionTimestamp()
+		if deletionTimestamp == nil {
+			rolesNotMarkedForDeletionList = append(rolesNotMarkedForDeletionList, role)
+		}
+	}
+	rolesNotMarkedForDeletionroleList := rbacv1.RoleList{
+		Items:    rolesNotMarkedForDeletionList,
+		TypeMeta: roles.TypeMeta,
+		ListMeta: roles.ListMeta,
+	}
+	return &rolesNotMarkedForDeletionroleList, nil
 }
 
 func (manager *KubernetesManager) RemoveRole(ctx context.Context, role *rbacv1.Role) error {
@@ -540,12 +606,25 @@ func (manager *KubernetesManager) GetRoleBindingsByLabels(ctx context.Context, n
 		LabelSelector: labels.SelectorFromSet(roleBindingsLabels).String(),
 	}
 
-	pods, err := client.List(ctx, opts)
+	roleBindings, err := client.List(ctx, opts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get role bindings with labels '%+v', instead a non-nil error was returned", roleBindingsLabels)
 	}
 
-	return pods, nil
+	// Only return objects not tombstoned by Kubernetes
+	var roleBindingsNotMarkedForDeletionList []rbacv1.RoleBinding
+	for _, roleBinding := range roleBindings.Items {
+		deletionTimestamp := roleBinding.GetObjectMeta().GetDeletionTimestamp()
+		if deletionTimestamp == nil {
+			roleBindingsNotMarkedForDeletionList = append(roleBindingsNotMarkedForDeletionList, roleBinding)
+		}
+	}
+	roleBindingsNotMarkedForDeletionroleBindingList := rbacv1.RoleBindingList{
+		Items:    roleBindingsNotMarkedForDeletionList,
+		TypeMeta: roleBindings.TypeMeta,
+		ListMeta: roleBindings.ListMeta,
+	}
+	return &roleBindingsNotMarkedForDeletionroleBindingList, nil
 }
 
 func (manager *KubernetesManager) RemoveRoleBindings(ctx context.Context, roleBinding *rbacv1.RoleBinding) error {
@@ -588,12 +667,25 @@ func (manager *KubernetesManager) GetClusterRolesByLabels(ctx context.Context, c
 		LabelSelector: labels.SelectorFromSet(clusterRoleLabels).String(),
 	}
 
-	pods, err := client.List(ctx, opts)
+	clusterRoles, err := client.List(ctx, opts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get cluster roles with labels '%+v', instead a non-nil error was returned", clusterRoleLabels)
 	}
-
-	return pods, nil
+	
+	// Only return objects not tombstoned by Kubernetes
+	var clusterRolesNotMarkedForDeletionList []rbacv1.ClusterRole
+	for _, clusterRole := range clusterRoles.Items {
+		deletionTimestamp := clusterRole.GetObjectMeta().GetDeletionTimestamp()
+		if deletionTimestamp == nil {
+			clusterRolesNotMarkedForDeletionList = append(clusterRolesNotMarkedForDeletionList, clusterRole)
+		}
+	}
+	clusterRolesNotMarkedForDeletionclusterRoleList := rbacv1.ClusterRoleList{
+		Items:    clusterRolesNotMarkedForDeletionList,
+		TypeMeta: clusterRoles.TypeMeta,
+		ListMeta: clusterRoles.ListMeta,
+	}
+	return &clusterRolesNotMarkedForDeletionclusterRoleList, nil
 }
 
 func (manager *KubernetesManager) RemoveClusterRole(ctx context.Context, clusterRole *rbacv1.ClusterRole) error {
@@ -636,12 +728,25 @@ func (manager *KubernetesManager) GetClusterRoleBindingsByLabels(ctx context.Con
 		LabelSelector: labels.SelectorFromSet(clusterRoleBindingsLabels).String(),
 	}
 
-	pods, err := client.List(ctx, opts)
+	clusterRoleBindings, err := client.List(ctx, opts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get cluster role bindings with labels '%+v', instead a non-nil error was returned", clusterRoleBindingsLabels)
 	}
 
-	return pods, nil
+	// Only return objects not tombstoned by Kubernetes
+	var clusterRoleBindingsNotMarkedForDeletionList []rbacv1.ClusterRoleBinding
+	for _, clusterRoleBindings := range clusterRoleBindings.Items {
+		deletionTimestamp := clusterRoleBindings.GetObjectMeta().GetDeletionTimestamp()
+		if deletionTimestamp == nil {
+			clusterRoleBindingsNotMarkedForDeletionList = append(clusterRoleBindingsNotMarkedForDeletionList, clusterRoleBindings)
+		}
+	}
+	clusterRoleBindingssNotMarkedForDeletionclusterRoleBindingsList := rbacv1.ClusterRoleBindingList{
+		Items:    clusterRoleBindingsNotMarkedForDeletionList,
+		TypeMeta: clusterRoleBindings.TypeMeta,
+		ListMeta: clusterRoleBindings.ListMeta,
+	}
+	return &clusterRoleBindingssNotMarkedForDeletionclusterRoleBindingsList, nil
 }
 
 func (manager *KubernetesManager) RemoveClusterRoleBindings(ctx context.Context, clusterRoleBinding *rbacv1.ClusterRoleBinding) error {
@@ -839,7 +944,20 @@ func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace
 		return nil, stacktrace.Propagate(err, "Expected to be able to get pods with labels '%+v', instead a non-nil error was returned", podLabels)
 	}
 
-	return pods, nil
+	// Only return objects not tombstoned by Kubernetes
+	var podsNotMarkedForDeletionList []apiv1.Pod
+	for _, pod := range pods.Items {
+		deletionTimestamp := pod.GetObjectMeta().GetDeletionTimestamp()
+		if deletionTimestamp == nil {
+			podsNotMarkedForDeletionList = append(podsNotMarkedForDeletionList, pod)
+		}
+	}
+	podsNotMarkedForDeletionPodList := apiv1.PodList{
+		Items:    podsNotMarkedForDeletionList,
+		TypeMeta: pods.TypeMeta,
+		ListMeta: pods.ListMeta,
+	}
+	return &podsNotMarkedForDeletionPodList, nil
 }
 
 func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string, podName string) *url.URL {
@@ -1122,6 +1240,7 @@ func renderContainerStatuses(containerStatuses []apiv1.ContainerStatus, prefixSt
 
 	return containerStatusStrs
 }
+
 
 /*
 func getRetryWatcherForWatchFunc(watchFunc cache.WatchFunc, resourceVersion string) (*watch.RetryWatcher, error) {
