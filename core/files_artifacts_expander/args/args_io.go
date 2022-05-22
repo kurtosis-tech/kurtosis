@@ -38,7 +38,7 @@ func GetArgsFromEnv() (*FilesArtifactsExpanderArgs, error) {
 		return nil, stacktrace.NewError("Expected to find args environment variable '%v', instead found no such environment variable", serializedArgsEnvVar)
 	}
 	if serializedParamsStr == "" {
-		return nil, stacktrace.NewError("Expected serialized args environment variable '%v' to not be empty, instead it was empty")
+		return nil, stacktrace.NewError("Expected serialized args environment variable to not be empty, instead it was empty")
 	}
 	paramsJsonBytes := []byte(serializedParamsStr)
 	var args FilesArtifactsExpanderArgs

@@ -92,7 +92,7 @@ func runMain() error {
 
 		// NOTE: We don't use stacktrace here because the actual stacktraces we care about are the ones from the threads!
 		return errors.New(fmt.Sprintf(
-			"The following errors occurred when trying to expand files artifacts '%v':\n%v",
+			"The following errors occurred when trying to expand files artifacts:\n%v",
 			strings.Join(allIndexedResultErrStrs, "\n\n"),
 		))
 	}
@@ -107,7 +107,6 @@ func createExpandFilesArtifactJob(ctx context.Context, apiContainerClient kurtos
 	}
 }
 
-// TODO Actually call apiContainerClient to Download the files artifacts
 func expandFilesArtifact(ctx context.Context, apiContainerClient kurtosis_core_rpc_api_bindings.ApiContainerServiceClient, filesArtifactExpansion args.FilesArtifactExpansion) error {
 	artifactId := filesArtifactExpansion.FilesArtifactId
 	// Get the raw bytes of the file artifact
@@ -116,20 +115,22 @@ func expandFilesArtifact(ctx context.Context, apiContainerClient kurtosis_core_r
 	}
 	response, err := apiContainerClient.DownloadFilesArtifact(ctx, downloadRequestArgs)
 	if err != nil {
-		return stacktrace.Propagate(err, "Expected to be able to download files artifacts from Kurtosis, instead a non-nil error was returned")
+		return stacktrace.Propagate(err, "Expected to be able to download files artifacts for files artifact with id '%v' from Kurtosis, instead a non-nil error was returned", artifactId)
 	}
 	// Save the bytes to file, might not be necssary if we can pipe the artifact bytes to stdin
 	filesArtifactFile, err := os.CreateTemp(os.TempDir(), "")
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to create a temporary file for the files artifact bytes, instead a non-nil error was returned")
 	}
-	defer filesArtifactFile.Close()
+	if err := filesArtifactFile.Close(); err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to close the temporary file '%v' we created to store the downloaded files artifact, instead a non-nil error was returned", filesArtifactFile.Name())
+	}
 	filesArtifactFileName := filesArtifactFile.Name()
 	if err := os.WriteFile(filesArtifactFileName, response.Data, filesArtifactTemporaryFilePermissions); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to save files artifact to disk at path '%v', instead a non nil error was returned", filesArtifactFileName)
 	}
 	// Extract the tarball to the specified location
-	extractTarballCmd := exec.Command("tar", "-xzf", filesArtifactFileName, filesArtifactExpansion.DirPathToExpandTo)
+	extractTarballCmd := exec.Command("tar", "-xzf", filesArtifactFileName, "-C", filesArtifactExpansion.DirPathToExpandTo)
 	if err := extractTarballCmd.Start(); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to extract the tarball containing the files artifacts, instead a non nil error was returned")
 	}
