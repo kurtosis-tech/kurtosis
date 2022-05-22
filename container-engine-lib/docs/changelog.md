@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* `GetObjectByLabels` methods in Kubernetes manager only return non-tombstoned objects
 
 # 0.30.1
 ### Fixes
