@@ -53,6 +53,12 @@ func NewUnloadModuleArgs(moduleId string) *kurtosis_core_rpc_api_bindings.Unload
 	}
 }
 
+func NewUnloadModuleResponse(moduleGuid string) *kurtosis_core_rpc_api_bindings.UnloadModuleResponse {
+	return &kurtosis_core_rpc_api_bindings.UnloadModuleResponse{
+		ModuleGuid: moduleGuid,
+	}
+}
+
 // ==============================================================================================
 //                                     Execute Module
 // ==============================================================================================
@@ -166,6 +172,22 @@ func NewGetServiceInfoResponse(
 	}
 }
 
+func NewServiceInfo(
+	guid string,
+	privateIpAddr string,
+	privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
+	maybePublicIpAddr string,
+	maybePublicPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
+) *kurtosis_core_rpc_api_bindings.ServiceInfo {
+	return &kurtosis_core_rpc_api_bindings.ServiceInfo{
+		ServiceGuid:                guid,
+		PrivateIpAddr:       		privateIpAddr,
+		PrivatePorts:     			privatePorts,
+		MaybePublicIpAddr:   		maybePublicIpAddr,
+		MaybePublicPorts: 			maybePublicPorts,
+	}
+}
+
 // ==============================================================================================
 //                                        Remove Service
 // ==============================================================================================
@@ -173,6 +195,12 @@ func NewRemoveServiceArgs(serviceId string, containerStopTimeoutSeconds uint64) 
 	return &kurtosis_core_rpc_api_bindings.RemoveServiceArgs{
 		ServiceId:                   serviceId,
 		ContainerStopTimeoutSeconds: containerStopTimeoutSeconds,
+	}
+}
+
+func NewRemoveServiceResponse(serviceGuid string) *kurtosis_core_rpc_api_bindings.RemoveServiceResponse {
+	return &kurtosis_core_rpc_api_bindings.RemoveServiceResponse{
+		ServiceGuid: serviceGuid,
 	}
 }
 
