@@ -1,9 +1,9 @@
-FROM  envoyproxy/envoy-alpine:v1.21.0
+FROM alpine:3.14
 
-RUN apk update && apk add bash tar
+RUN apk update && apk add tar
 
 WORKDIR /run
 
-COPY ./build/files-artifacts-expander ./run-files-artifacts-expander.sh ./
+COPY ./build/files-artifacts-expander  ./
 
-CMD bash ./run-files-artifacts-expander.sh
+CMD ./files-artifacts-expander

@@ -26,9 +26,8 @@ const (
 	failureExitCode = 1
 	maxWorkers = 4
 
-	targzFileExtension = "tar.gz"
-	// Files artifacts are saved on disk to /tmp/{files-artifact-id}.tar.gz
-	filesArtifactPathFmtString = "/tmp/%v.%v"
+	//Files permissions for temporary file storing files artifact data: readable by all the user groups, but writable by user only
+	filesArtifactTemporaryFilePermissions = 0644
 )
 
 func main() {
@@ -50,13 +49,13 @@ func main() {
 func runMain() error {
 	filesArtifactExpanderArgs, err := args.GetArgsFromEnv()
 	if err != nil {
-		return stacktrace.Propagate(err, "Expected to be able to get arguments from environment, instead a non-nil errorw was returned")
+		return stacktrace.Propagate(err, "Expected to be able to get arguments from environment, instead a non-nil error was returned")
 	}
 	// Connect to the API container described in the args
 	ipAddrString := filesArtifactExpanderArgs.APIContainerIpAddress
 	apiContainerIpAddr := net.ParseIP(ipAddrString)
 	if apiContainerIpAddr == nil {
-		return stacktrace.NewError("Expected to be able parse a valid api container IP address from arguments, instead parsed a nil IP address")
+		return stacktrace.NewError("Expected to be able parse a valid api container IP address from string '%v', instead parsed a nil IP address", ipAddrString)
 	}
 	apiContainerPortNum := filesArtifactExpanderArgs.ApiContainerPort
 	grpcUrl := fmt.Sprintf("%v:%v", apiContainerIpAddr, apiContainerPortNum)
@@ -64,6 +63,7 @@ func runMain() error {
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to create a client connection to API container at address '%v', instead a non-nil error was returned", grpcUrl)
 	}
+	defer apiContainerConnection.Close()
 	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(apiContainerConnection)
 	backgroundContext := context.Background()
 	// Download and extract the file artifacts in the args
@@ -78,7 +78,9 @@ func runMain() error {
 
 	allResultErrStrs := []string{}
 	for resultErr := range(resultErrsChan) {
-		allResultErrStrs = append(allResultErrStrs, resultErr.Error())
+		if resultErr != nil {
+			allResultErrStrs = append(allResultErrStrs, resultErr.Error())
+		}
 	}
 
 	if len(allResultErrStrs) > 0 {
@@ -109,17 +111,21 @@ func createExpandFilesArtifactJob(ctx context.Context, apiContainerClient kurtos
 func expandFilesArtifact(ctx context.Context, apiContainerClient kurtosis_core_rpc_api_bindings.ApiContainerServiceClient, filesArtifactExpansion args.FilesArtifactExpansion) error {
 	artifactId := filesArtifactExpansion.FilesArtifactId
 	// Get the raw bytes of the file artifact
-	// TODO call DownloadFilesArtifact
 	downloadRequestArgs := &kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs{
-		Id: filesArtifactExpansion.FilesArtifactId,
+		Id: artifactId,
 	}
 	response, err := apiContainerClient.DownloadFilesArtifact(ctx, downloadRequestArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to download files artifacts from Kurtosis, instead a non-nil error was returned")
 	}
 	// Save the bytes to file, might not be necssary if we can pipe the artifact bytes to stdin
-	filesArtifactFileName := fmt.Sprintf("/tmp/%v.%v", artifactId, targzFileExtension)
-	if err := os.WriteFile(filesArtifactFileName, response.Data, 0644); err != nil {
+	filesArtifactFile, err := os.CreateTemp(os.TempDir(), "")
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to create a temporary file for the files artifact bytes, instead a non-nil error was returned")
+	}
+	defer filesArtifactFile.Close()
+	filesArtifactFileName := filesArtifactFile.Name()
+	if err := os.WriteFile(filesArtifactFileName, response.Data, filesArtifactTemporaryFilePermissions); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to save files artifact to disk at path '%v', instead a non nil error was returned", filesArtifactFileName)
 	}
 	// Extract the tarball to the specified location
@@ -127,15 +133,5 @@ func expandFilesArtifact(ctx context.Context, apiContainerClient kurtosis_core_r
 	if err := extractTarballCmd.Start(); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to extract the tarball containing the files artifacts, instead a non nil error was returned")
 	}
-	// Delete the downloaded file artifact
-	if err := os.Remove(filesArtifactFileName); err != nil {
-		return stacktrace.Propagate(err, "Expected to be able to removed the downloaded files artifact tarball, instead a non-nil error was returned")
-	}
 	return nil
 }
-
-// Use the a
-
-// Parallelize using WorkerPool of size 4
-
-// Also do tar expansion

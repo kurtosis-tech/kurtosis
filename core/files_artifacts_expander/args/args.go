@@ -6,7 +6,6 @@
 package args
 
 import (
-	"encoding/json"
 	"github.com/kurtosis-tech/stacktrace"
 	"reflect"
 	"strings"
@@ -28,16 +27,6 @@ type FilesArtifactsExpanderArgs struct {
 type FilesArtifactExpansion struct {
 	FilesArtifactId string `json:"filesArtifactId"`
 	DirPathToExpandTo string `json:"dirPathToExpandTo"`
-}
-
-func (args *FilesArtifactsExpanderArgs) UnmarshalJSON(data []byte) error {
-	type FilesArtifactExpanderArgsMirror FilesArtifactsExpanderArgs
-	var filesArtifactExpanderArgsMirror FilesArtifactExpanderArgsMirror
-	if err := json.Unmarshal(data, &filesArtifactExpanderArgsMirror); err != nil {
-		return stacktrace.Propagate(err, "Failed to unmarhsal files artifacts expander args")
-	}
-	*args = FilesArtifactsExpanderArgs(filesArtifactExpanderArgsMirror)
-	return nil
 }
 
 func NewFilesArtifactExpanderArgs(apiContainerIpAddress string, apiContainerPort uint16, filesArtifactExpansions []FilesArtifactExpansion) (*FilesArtifactsExpanderArgs, error) {

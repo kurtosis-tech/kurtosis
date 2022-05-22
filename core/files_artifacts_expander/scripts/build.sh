@@ -48,10 +48,10 @@ fi
 # Build Docker image
 dockerfile_filepath="${expander_root_dirpath}/Dockerfile"
 image_name="${IMAGE_ORG_AND_REPO}:${docker_tag}"
-echo "Building server into a Docker image named '${image_name}'..."
+echo "Building files artifacts expander into a Docker image named '${image_name}'..."
 if ! docker build -t "${image_name}" -f "${dockerfile_filepath}" "${expander_root_dirpath}"; then
-  echo "Error: Docker build of the server failed" >&2
+  echo "Error: Docker build of the files artifacts expander failed" >&2
   exit 1
 fi
-echo "Successfully built Docker image '${image_name}' containing the server"
+echo "Successfully built Docker image '${image_name}' containing the files artifacts expander"
 

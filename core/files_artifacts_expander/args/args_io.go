@@ -14,15 +14,15 @@ import (
 // Serialize args to JSON
 // Deserialize args from SERIALIZED_PARAMS variable
 const (
-	// All API containers accept exactly one environment variable, which contains the serialized params that
-	// dictate how the API container ought to behave
+	// All files artifacts expanders accept exactly one environment variable, which contains the serialized params that
+	// dictate how the files artifacts expander ought to behave
 	serializedArgsEnvVar = "SERIALIZED_ARGS"
 )
 
 func GetEnvFromArgs(args *FilesArtifactsExpanderArgs) (resultEnvVars map[string]string, resultErr error) {
 	argBytes, err := json.Marshal(args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to to serialize API container args to JSON, instead a non nil error was returned")
+		return nil, stacktrace.Propagate(err, "Expected to be able to to serialize files artifacts expander args to JSON, instead a non nil error was returned")
 	}
 	argsStr := string(argBytes)
 
