@@ -10,7 +10,7 @@ import * as grpc from "@grpc/grpc-js";
 interface IApiContainerServiceService extends grpc.ServiceDefinition<grpc.UntypedServiceImplementation> {
   loadModule: grpc.MethodDefinition<api_container_service_pb.LoadModuleArgs, api_container_service_pb.LoadModuleResponse>;
   getModules: grpc.MethodDefinition<api_container_service_pb.GetModulesArgs, api_container_service_pb.GetModulesResponse>;
-  unloadModule: grpc.MethodDefinition<api_container_service_pb.UnloadModuleArgs, google_protobuf_empty_pb.Empty>;
+  unloadModule: grpc.MethodDefinition<api_container_service_pb.UnloadModuleArgs, api_container_service_pb.UnloadModuleResponse>;
   executeModule: grpc.MethodDefinition<api_container_service_pb.ExecuteModuleArgs, api_container_service_pb.ExecuteModuleResponse>;
   registerService: grpc.MethodDefinition<api_container_service_pb.RegisterServiceArgs, api_container_service_pb.RegisterServiceResponse>;
   startService: grpc.MethodDefinition<api_container_service_pb.StartServiceArgs, api_container_service_pb.StartServiceResponse>;
@@ -33,7 +33,7 @@ export const ApiContainerServiceService: IApiContainerServiceService;
 export interface IApiContainerServiceServer extends grpc.UntypedServiceImplementation {
   loadModule: grpc.handleUnaryCall<api_container_service_pb.LoadModuleArgs, api_container_service_pb.LoadModuleResponse>;
   getModules: grpc.handleUnaryCall<api_container_service_pb.GetModulesArgs, api_container_service_pb.GetModulesResponse>;
-  unloadModule: grpc.handleUnaryCall<api_container_service_pb.UnloadModuleArgs, google_protobuf_empty_pb.Empty>;
+  unloadModule: grpc.handleUnaryCall<api_container_service_pb.UnloadModuleArgs, api_container_service_pb.UnloadModuleResponse>;
   executeModule: grpc.handleUnaryCall<api_container_service_pb.ExecuteModuleArgs, api_container_service_pb.ExecuteModuleResponse>;
   registerService: grpc.handleUnaryCall<api_container_service_pb.RegisterServiceArgs, api_container_service_pb.RegisterServiceResponse>;
   startService: grpc.handleUnaryCall<api_container_service_pb.StartServiceArgs, api_container_service_pb.StartServiceResponse>;
@@ -59,9 +59,9 @@ export class ApiContainerServiceClient extends grpc.Client {
   getModules(argument: api_container_service_pb.GetModulesArgs, callback: grpc.requestCallback<api_container_service_pb.GetModulesResponse>): grpc.ClientUnaryCall;
   getModules(argument: api_container_service_pb.GetModulesArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.GetModulesResponse>): grpc.ClientUnaryCall;
   getModules(argument: api_container_service_pb.GetModulesArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.GetModulesResponse>): grpc.ClientUnaryCall;
-  unloadModule(argument: api_container_service_pb.UnloadModuleArgs, callback: grpc.requestCallback<google_protobuf_empty_pb.Empty>): grpc.ClientUnaryCall;
-  unloadModule(argument: api_container_service_pb.UnloadModuleArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<google_protobuf_empty_pb.Empty>): grpc.ClientUnaryCall;
-  unloadModule(argument: api_container_service_pb.UnloadModuleArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<google_protobuf_empty_pb.Empty>): grpc.ClientUnaryCall;
+  unloadModule(argument: api_container_service_pb.UnloadModuleArgs, callback: grpc.requestCallback<api_container_service_pb.UnloadModuleResponse>): grpc.ClientUnaryCall;
+  unloadModule(argument: api_container_service_pb.UnloadModuleArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.UnloadModuleResponse>): grpc.ClientUnaryCall;
+  unloadModule(argument: api_container_service_pb.UnloadModuleArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.UnloadModuleResponse>): grpc.ClientUnaryCall;
   executeModule(argument: api_container_service_pb.ExecuteModuleArgs, callback: grpc.requestCallback<api_container_service_pb.ExecuteModuleResponse>): grpc.ClientUnaryCall;
   executeModule(argument: api_container_service_pb.ExecuteModuleArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ExecuteModuleResponse>): grpc.ClientUnaryCall;
   executeModule(argument: api_container_service_pb.ExecuteModuleArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ExecuteModuleResponse>): grpc.ClientUnaryCall;

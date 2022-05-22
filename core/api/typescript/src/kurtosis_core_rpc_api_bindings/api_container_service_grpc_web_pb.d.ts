@@ -27,8 +27,8 @@ export class ApiContainerServiceClient {
     request: api_container_service_pb.UnloadModuleArgs,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: google_protobuf_empty_pb.Empty) => void
-  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+               response: api_container_service_pb.UnloadModuleResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.UnloadModuleResponse>;
 
   executeModule(
     request: api_container_service_pb.ExecuteModuleArgs,
@@ -155,7 +155,7 @@ export class ApiContainerServicePromiseClient {
   unloadModule(
     request: api_container_service_pb.UnloadModuleArgs,
     metadata?: grpcWeb.Metadata
-  ): Promise<google_protobuf_empty_pb.Empty>;
+  ): Promise<api_container_service_pb.UnloadModuleResponse>;
 
   executeModule(
     request: api_container_service_pb.ExecuteModuleArgs,

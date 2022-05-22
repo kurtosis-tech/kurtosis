@@ -25,13 +25,14 @@ import {
     StoreWebFilesArtifactArgs,
     StoreWebFilesArtifactResponse,
     StoreFilesArtifactFromServiceArgs,
-    StoreFilesArtifactFromServiceResponse, GetServicesArgs, GetModulesArgs,
+    StoreFilesArtifactFromServiceResponse, GetServicesArgs, GetModulesArgs, UnloadModuleResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
 import { EnclaveID } from "./enclave_context";
 import {Empty} from "google-protobuf/google/protobuf/empty_pb";
-import {newGetServicesArgs} from "../constructor_calls";
+import {newGetServicesArgs, newRemoveServiceResponse} from "../constructor_calls";
+import {RemoveServiceResponse} from "../../../build/kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
 export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
@@ -69,14 +70,14 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(null);
     }
 
-    public async unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<null,Error>> {
-        const unloadModulePromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.unloadModule(unloadModuleArgs, (error: ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
+    public async unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<UnloadModuleResponse,Error>> {
+        const unloadModulePromise: Promise<Result<UnloadModuleResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.unloadModule(unloadModuleArgs, (error: ServiceError | null, unloadModuleResponse: UnloadModuleResponse | null) => {
                 if (error === null) {
-                    if (!response) {
+                    if (!unloadModuleResponse) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
                     } else {
-                        resolve(ok(response!));
+                        resolve(ok(unloadModuleResponse!));
                     }
                 } else {
                     resolve(err(error));
@@ -84,11 +85,11 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
             })
         })
 
-        const unloadModuleResult: Result<google_protobuf_empty_pb.Empty, Error> = await unloadModulePromise;
+        const unloadModuleResult: Result<UnloadModuleResponse, Error> = await unloadModulePromise;
         if (unloadModuleResult.isErr()) {
             return err(unloadModuleResult.error);
         }
-        return ok(null);
+        return ok(unloadModuleResult.value);
     }
 
     public async registerService(registerServiceArgs: RegisterServiceArgs): Promise<Result<RegisterServiceResponse, Error>>{
@@ -137,22 +138,26 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(startServiceResponse)
     }
 
-    public async removeService(args: RemoveServiceArgs): Promise<Result<null, Error>> {
-        const removeServicePromise: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.removeService(args, (error: ServiceError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
+    public async removeService(args: RemoveServiceArgs): Promise<Result<RemoveServiceResponse, Error>> {
+        const removeServicePromise: Promise<Result<RemoveServiceResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.removeService(args, (error: ServiceError | null, removeServiceResponse: RemoveServiceResponse | null) => {
                 if (error === null) {
-                    resolve(ok(null));
+                    if (!removeServiceResponse) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")))
+                    } else {
+                        resolve(ok(removeServiceResponse!));
+                    }
                 } else {
                     resolve(err(error));
                 }
             })
         });
-        const resultRemoveService: Result<null, Error> = await removeServicePromise;
+        const resultRemoveService: Result<RemoveServiceResponse, Error> = await removeServicePromise;
         if (resultRemoveService.isErr()) {
             return err(resultRemoveService.error);
         }
         
-        return ok(null);
+        return ok(resultRemoveService.value);
     }
 
     public async repartitionNetwork(repartitionArgs: RepartitionArgs): Promise<Result<null, Error>> {
@@ -303,7 +308,6 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(execCommandResponse)
     }
 
-
     public async pauseService(pauseServiceArgs: PauseServiceArgs): Promise<Result<null, Error>> {
         const pauseServicePromise: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.pauseService(pauseServiceArgs, (error: ServiceError | null) => {
@@ -321,7 +325,6 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
         return ok(null)
     }
-
 
     public async unpauseService(unpauseServiceArgs: UnpauseServiceArgs): Promise<Result<null, Error>> {
         const unpauseServicePromise: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {

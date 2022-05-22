@@ -87,11 +87,11 @@ export function newExecuteModuleArgs(moduleId: ModuleID, serializedParams: strin
 // ==============================================================================================
 //                                     Get Modules
 // ==============================================================================================
-export function newGetModulesArgs(modules: Map<string, boolean>): GetModulesArgs {
+export function newGetModulesArgs(moduleIds: Map<string, boolean>): GetModulesArgs {
     const result: GetModulesArgs = new GetModulesArgs();
     const moduleMap: jspb.Map<string, boolean> = result.getIdsMap();
-    for (const [portId, portSpec] of modules) {
-        moduleMap.set(portId, portSpec);
+    for (const [moduleId, isModuleIncluded] of moduleIds) {
+        moduleMap.set(moduleId, isModuleIncluded);
     }
 
     return result;
@@ -100,11 +100,13 @@ export function newGetModulesArgs(modules: Map<string, boolean>): GetModulesArgs
 export function newModuleInfo(
     guid: string,
     publicGrpcPort: Port,
+    privateGrpcPort: Port,
     publicIpAddr: string,
     privateIpAddr: string): ModuleInfo {
     const result: ModuleInfo = new ModuleInfo();
     result.setGuid(guid)
     result.setMaybePublicGrpcPort(publicGrpcPort)
+    result.setPrivateGrpcPort(privateGrpcPort)
     result.setMaybePublicIpAddr(publicIpAddr)
     result.setPrivateIpAddr(privateIpAddr)
 
@@ -179,11 +181,23 @@ export function newGetServicesArgs(services: Map<string, boolean>): GetServicesA
 export function newServiceInfo(
     serviceGuid: string,
     maybePublicIpAddr: string,
-    privateIpAddr: string): ServiceInfo {
+    privateIpAddr: string,
+    privatePorts: Map<string, Port>,
+    maybePublicPorts: Map<string, Port>,
+): ServiceInfo {
     const result: ServiceInfo = new ServiceInfo();
     result.setServiceGuid(serviceGuid)
     result.setMaybePublicIpAddr(maybePublicIpAddr)
     result.setPrivateIpAddr(privateIpAddr)
+
+    const privatePortsMap: jspb.Map<string, Port> = result.getPrivatePortsMap()
+    for (const [portName, privatePort] of privatePorts.entries()) {
+        privatePortsMap.set(portName, privatePort)
+    }
+    const maybePublicPortsMap: jspb.Map<string, Port> = result.getMaybePublicPortsMap()
+    for (const [portName, publicPort] of maybePublicPorts.entries()) {
+        maybePublicPortsMap.set(portName, publicPort)
+    }
 
     return result
 }

@@ -28,7 +28,7 @@ type ApiContainerServiceClient interface {
 	// Gets information about loaded modules
 	GetModules(ctx context.Context, in *GetModulesArgs, opts ...grpc.CallOption) (*GetModulesResponse, error)
 	// Stop and remove a module from the enclave
-	UnloadModule(ctx context.Context, in *UnloadModuleArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UnloadModule(ctx context.Context, in *UnloadModuleArgs, opts ...grpc.CallOption) (*UnloadModuleResponse, error)
 	// Executes an executable module on the user's behalf
 	ExecuteModule(ctx context.Context, in *ExecuteModuleArgs, opts ...grpc.CallOption) (*ExecuteModuleResponse, error)
 	// Registers a service with the API container but doesn't start the container for it
@@ -88,8 +88,8 @@ func (c *apiContainerServiceClient) GetModules(ctx context.Context, in *GetModul
 	return out, nil
 }
 
-func (c *apiContainerServiceClient) UnloadModule(ctx context.Context, in *UnloadModuleArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *apiContainerServiceClient) UnloadModule(ctx context.Context, in *UnloadModuleArgs, opts ...grpc.CallOption) (*UnloadModuleResponse, error) {
+	out := new(UnloadModuleResponse)
 	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/UnloadModule", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -241,7 +241,7 @@ type ApiContainerServiceServer interface {
 	// Gets information about loaded modules
 	GetModules(context.Context, *GetModulesArgs) (*GetModulesResponse, error)
 	// Stop and remove a module from the enclave
-	UnloadModule(context.Context, *UnloadModuleArgs) (*emptypb.Empty, error)
+	UnloadModule(context.Context, *UnloadModuleArgs) (*UnloadModuleResponse, error)
 	// Executes an executable module on the user's behalf
 	ExecuteModule(context.Context, *ExecuteModuleArgs) (*ExecuteModuleResponse, error)
 	// Registers a service with the API container but doesn't start the container for it
@@ -286,7 +286,7 @@ func (UnimplementedApiContainerServiceServer) LoadModule(context.Context, *LoadM
 func (UnimplementedApiContainerServiceServer) GetModules(context.Context, *GetModulesArgs) (*GetModulesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetModules not implemented")
 }
-func (UnimplementedApiContainerServiceServer) UnloadModule(context.Context, *UnloadModuleArgs) (*emptypb.Empty, error) {
+func (UnimplementedApiContainerServiceServer) UnloadModule(context.Context, *UnloadModuleArgs) (*UnloadModuleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnloadModule not implemented")
 }
 func (UnimplementedApiContainerServiceServer) ExecuteModule(context.Context, *ExecuteModuleArgs) (*ExecuteModuleResponse, error) {
