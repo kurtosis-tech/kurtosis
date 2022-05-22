@@ -1,4 +1,4 @@
 package service
 
-// The ID of an artifact containing files that should be mounted into a service container
+// TODO Remove this - it's not used anywhere in this package (just by dependants)
 type FilesArtifactID string

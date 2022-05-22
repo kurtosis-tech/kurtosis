@@ -1,10 +1,38 @@
 # TBD
+
+# 0.30.1
+### Fixes
+* Fixed an issue where a Service and a Pod could exist at the same time even though the Service won't have private port annotations
+
+# 0.30.0
+### Features
+* Failed file artifact expansion jobs will now return their logs
+
+### Changes
+* Set pod restart policies to `Never` so that we have less magic going on
+
+### Fixes
+* Fixed issue with the files artifact expansion not waiting for the volume to get bound
+* Gave the API container permission to create jobs
+* Fixed issue with engine and API containers not having permissions to get Pod logs
+* Fixed bug with the files artifact expansion job not mounting the enclave data volume
+* Changed pod wait-for-availability timeout (how long the pod can stay in "Pending") from 1 minute to 15 minutes, because Pending also includes the time spent pulling images and some images can be very large (e.g. NEAR)
+* Return an error if a pod's container hits ImagePullBackOff
+* Fixed a bug where user services were mounting the same volume multiple times due to a reference to a for-loop variable (which will always have the value of the last iteration of the loop)
+* Fixed a bug in declaring user service ports, due to the same reference-to-a-for-loop-variable thing
+
+### Breaking Changes
+* `CreateFilesArtifactExpansion` no longer takes in a `FilesArtifactID` (as it's unneeded)
+    * Remediation: remove the argument in the call
+
+# 0.29.1
 ### Changes
 * Trying to run networking partitioning methods in Kubernetes will result in an error, rather than a panic
 * Tidying up several things inside the codebase:
     * Kubernetes network partitioning methods now return an `error` rather than panicking
     * `PullImage` returns an error, rather than panicking, for both Docker & Kubernetes Kurtosis backends
     * Removed some dead code
+* Remove synchronous deletes because they're too slow
 
 # 0.29.0
 ### Features

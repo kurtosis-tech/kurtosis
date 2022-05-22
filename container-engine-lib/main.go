@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/backend_creator"
+	"github.com/kurtosis-tech/container-engine-lib/lib"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -26,9 +24,12 @@ func main() {
 
 // You can comment out various sections to test various parts of the lib
 func runMain() error {
+	/*
 	if err := runDockerManagerTesting(); err != nil {
 		return err
 	}
+
+	 */
 
 	/*
 	if err := runKubernetesManagerTesting(); err != nil {
@@ -36,11 +37,9 @@ func runMain() error {
 	}
 	*/
 
-	/*
 	if err := runKurtosisBackendTesting(); err != nil {
 		return err
 	}
-	 */
 
 	return nil
 }
@@ -89,27 +88,24 @@ func runKubernetesManagerTesting() error {
 // Can comment which backend you want to use
 func runKurtosisBackendTesting() error {
 	ctx := context.Background()
+
+	/*
 	backend, err := backend_creator.GetLocalDockerKurtosisBackend(nil)
 	if err != nil {
 		return err
 	}
-	/*
+
+	 */
 	backend, err := lib.GetCLIKubernetesKurtosisBackend(ctx)
 	if err != nil {
 		return err
 	}
-	 */
 
 
 	// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv Arbitrary logic goes here vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-	enclaveId := enclave.EnclaveID("TODO")  // TODO Make this whatever you need
-	serviceGuid := service.ServiceGUID("TODO")
-	filters := &service.ServiceFilters{
-		GUIDs:    map[service.ServiceGUID]bool{
-			serviceGuid: true,
-		},
-	}
-	results, err := backend.GetUserServices(ctx, enclaveId, filters)
+	// enclaveId := enclave.EnclaveID("test")  // TODO Make this whatever you need
+	// serviceGuid := service.ServiceGUID("TODO")
+	results, err := backend.CreateFilesArtifactExpansion(ctx, "test", "TODO", "/foo/bar")
 	if err != nil {
 		return err
 	}

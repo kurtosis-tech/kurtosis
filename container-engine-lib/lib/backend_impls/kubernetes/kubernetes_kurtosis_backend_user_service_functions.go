@@ -948,7 +948,16 @@ func getUserServiceObjectsFromKubernetesResources(
 		resultObj.serviceRegistration = serviceRegistrationObj
 
 		// Selectors but no pod means that the registration is open but no pod has yet been started to consume it
-		if len(kubernetesService.Spec.Selector) > 0 && kubernetesPod == nil {
+		stillUsingUnboundPort := false
+		for _, servicePort := range kubernetesService.Spec.Ports {
+			if servicePort.Name == unboundPortName {
+				stillUsingUnboundPort = true
+				break
+			}
+		}
+		if stillUsingUnboundPort {
+			// If we're using the unbound port, no actual user ports have been set yet so there's no way we can
+			// return a service
 			resultObj.service = nil
 			continue
 		}
@@ -1070,7 +1079,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtif
 	}
 
 	// Index PVCs by files artifact expansion GUID
-	persistentVolumeClaimsByExpansionGuid := map[files_artifact_expansion.FilesArtifactExpansionGUID]*apiv1.PersistentVolumeClaim{}
+	persistentVolumeClaimsByExpansionGuid := map[files_artifact_expansion.FilesArtifactExpansionGUID]apiv1.PersistentVolumeClaim{}
 	for _, claim := range persistentVolumeClaims {
 		expansionGuidStr, found := claim.Labels[label_key_consts.GUIDKubernetesLabelKey.GetString()]
 		if !found {
@@ -1080,7 +1089,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtif
 			)
 		}
 		expansionGuid := files_artifact_expansion.FilesArtifactExpansionGUID(expansionGuidStr)
-		persistentVolumeClaimsByExpansionGuid[expansionGuid] = &claim
+		persistentVolumeClaimsByExpansionGuid[expansionGuid] = claim
 	}
 
 	podVolumes := []apiv1.Volume{}
@@ -1153,12 +1162,18 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 	updatingConfigurator := func(updatesToApply *applyconfigurationsv1.ServiceApplyConfiguration) {
 		specUpdateToApply := applyconfigurationsv1.ServiceSpec()
 		for _, newServicePort := range newServicePorts {
+			// You'd *think* that we could just feed in &newServicePort below, since the struct below needs pointer
+			// args. However, this would be a bug: Go for loop iteration variables are updated in-place (probably to
+			// save on memory), so if you pass around references to the for loop iteration variable then all dereferences
+			// done after the loop will get the same value (the value of the last iteration). Therefore, we copy the variable
+			// on each loop so that we have a fixed moment-in-time value.
+			newServicePortCopy := newServicePort
 			portUpdateToApply := &applyconfigurationsv1.ServicePortApplyConfiguration{
-				Name:        &newServicePort.Name,
-				Protocol:    &newServicePort.Protocol,
+				Name:        &newServicePortCopy.Name,
+				Protocol:    &newServicePortCopy.Protocol,
 				// TODO fill this out for an app port!
 				AppProtocol: nil,
-				Port:        &newServicePort.Port,
+				Port:        &newServicePortCopy.Port,
 			}
 			specUpdateToApply.WithPorts(portUpdateToApply)
 		}
