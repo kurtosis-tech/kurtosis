@@ -1059,7 +1059,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtif
 ) {
 	filesArtifactExpansionPvcSearchLabels := map[string]string{
 		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): string(enclaveId),
-		label_key_consts.KurtosisVolumeTypeKubernetesLabelKey.GetString(): label_value_consts.FilesArtifactExpansionVolumeTypeKubernetesLabelValue.GetString(),
+		label_key_consts.KurtosisVolumeTypeKubernetesLabelKey.GetString(): label_value_consts.FilesArtifactsExpansionVolumeTypeKubernetesLabelValue.GetString(),
 		label_key_consts.UserServiceGUIDKubernetesLabelKey.GetString(): string(serviceGuid),
 	}
 	persistentVolumeClaimsList, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, namespaceName, filesArtifactExpansionPvcSearchLabels)
@@ -1227,4 +1227,58 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 
 	shouldUndoUpdate = false
 	return updatedService, nil
+}
+
+// Takes in a list of mountpoints on the expander container that the expander container wants populated,
+// and creates one volume per mountpoint location
+func (backend *DockerKurtosisBackend) createFilesArtifactsExpansionVolumes(
+	ctx context.Context,
+	serviceGuid service.ServiceGUID,
+	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
+	allMountpointsExpanderWants map[string]bool,
+) (map[string]string, error) {
+	shouldDeleteVolumes := true
+	result := map[string]string{}
+	for mountpointExpanderWants := range allMountpointsExpanderWants {
+		volumeAttrs, err := enclaveObjAttrsProvider.ForSingleFilesArtifactExpansionVolume(serviceGuid)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for service '%v'", serviceGuid)
+		}
+		volumeNameStr := volumeAttrs.GetName().GetString()
+		volumeLabelsStrs := map[string]string{}
+		for key, value := range volumeAttrs.GetLabels() {
+			volumeLabelsStrs[key.GetString()] = value.GetString()
+		}
+		if err := backend.dockerManager.CreateVolume(
+			ctx,
+			volumeAttrs.GetName().GetString(),
+			volumeLabelsStrs,
+		); err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred creating files artifact expansion volume for service '%v' that's intended to be mounted " +
+					"on the expander container at path '%v'",
+				serviceGuid,
+				mountpointExpanderWants,
+			)
+		}
+		//goland:noinspection GoDeferInLoop
+		defer func() {
+			if shouldDeleteVolumes {
+				// Background context so we still run this even if the input context was cancelled
+				if err := backend.dockerManager.RemoveVolume(context.Background(), volumeNameStr); err != nil {
+					logrus.Warnf(
+						"Creating files artifact expansion volumes didn't complete successfully so we tried to delete volume '%v' that we created, but doing so threw an error:\n%v",
+						volumeNameStr,
+						err,
+					)
+					logrus.Warnf("You'll need to clean up volume '%v' manually!", volumeNameStr)
+				}
+			}
+		}()
+
+		result[mountpointExpanderWants] = volumeNameStr
+	}
+	shouldDeleteVolumes = false
+	return result, nil
 }
