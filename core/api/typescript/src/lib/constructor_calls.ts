@@ -25,11 +25,11 @@ import {
     StoreFilesArtifactFromServiceArgs,
     UploadFilesArtifactArgs,
     PauseServiceArgs,
-    UnpauseServiceArgs, ModuleInfo, ServiceInfo
+    UnpauseServiceArgs, ModuleInfo, ServiceInfo, RemoveServiceResponse, UnloadModuleResponse
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceID } from './services/service';
 import { PartitionID } from './enclaves/enclave_context';
-import { ModuleID } from "./modules/module_context";
+import { ModuleID, ModuleGUID } from "./modules/module_context";
 
 // ==============================================================================================
 //                           Shared Objects (Used By Multiple Endpoints)
@@ -60,6 +60,13 @@ export function newLoadModuleArgs(moduleId: ModuleID, image: string, serializedP
 export function newUnloadModuleArgs(moduleId: ModuleID): UnloadModuleArgs {
     const result: UnloadModuleArgs = new UnloadModuleArgs();
     result.setModuleId(String(moduleId));
+
+    return result;
+}
+
+export function newUnloadModuleResponse(moduleGuid: ModuleGUID): UnloadModuleResponse {
+    const result: UnloadModuleResponse = new UnloadModuleResponse();
+    result.setModuleGuid(moduleGuid)
 
     return result;
 }
@@ -191,6 +198,12 @@ export function newRemoveServiceArgs(serviceId: ServiceID, containerStopTimeoutS
     result.setContainerStopTimeoutSeconds(containerStopTimeoutSeconds);
 
     return result;
+}
+
+export function newRemoveServiceResponse(guid: string): RemoveServiceResponse {
+    const result: RemoveServiceResponse = new RemoveServiceResponse();
+    result.setServiceGuid(guid)
+    return result
 }
 
 
