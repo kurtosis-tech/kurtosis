@@ -25,7 +25,7 @@ import {
     StoreWebFilesArtifactResponse,
     StoreWebFilesArtifactArgs,
     StoreFilesArtifactFromServiceArgs,
-    StoreFilesArtifactFromServiceResponse, GetServicesArgs, GetModulesArgs,
+    StoreFilesArtifactFromServiceResponse, GetServicesArgs, GetModulesArgs, UnloadModuleResponse, RemoveServiceResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -67,9 +67,9 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         return ok(null);
     }
 
-    public async unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<null,Error>> {
-        const unloadModulePromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.unloadModule(unloadModuleArgs, {}, (error: grpc_web.RpcError | null, response?: google_protobuf_empty_pb.Empty) => {
+    public async unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<UnloadModuleResponse,Error>> {
+        const unloadModulePromise: Promise<Result<UnloadModuleResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.unloadModule(unloadModuleArgs, {}, (error: grpc_web.RpcError | null, response?: UnloadModuleResponse | undefined) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -82,12 +82,12 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
             })
         })
 
-        const unloadModuleResult: Result<google_protobuf_empty_pb.Empty, Error> = await unloadModulePromise;
+        const unloadModuleResult: Result<UnloadModuleResponse, Error> = await unloadModulePromise;
         if (unloadModuleResult.isErr()) {
             return err(unloadModuleResult.error);
         }
 
-        return ok(null);
+        return ok(unloadModuleResult.value);
     }
 
     public async registerService(registerServiceArgs: RegisterServiceArgs): Promise<Result<RegisterServiceResponse, Error>>{
@@ -136,21 +136,25 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         return ok(startServiceResponse)
     }
 
-    public async removeService(args: RemoveServiceArgs): Promise<Result<null, Error>> {
-        const removeServicePromise: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.removeService(args, {}, (error: grpc_web.RpcError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
+    public async removeService(args: RemoveServiceArgs): Promise<Result<RemoveServiceResponse, Error>> {
+        const removeServicePromise: Promise<Result<RemoveServiceResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.removeService(args, {}, (error: grpc_web.RpcError | null, response?: RemoveServiceResponse | undefined) => {
                 if (error === null) {
-                    resolve(ok(null));
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
                 } else {
                     resolve(err(error));
                 }
             })
         });
-        const resultRemoveService: Result<null, Error> = await removeServicePromise;
+        const resultRemoveService: Result<RemoveServiceResponse, Error> = await removeServicePromise;
         if (resultRemoveService.isErr()) {
             return err(resultRemoveService.error);
         }
-        return ok(null);
+        return ok(resultRemoveService.value);
     }
 
     public async repartitionNetwork(repartitionArgs: RepartitionArgs): Promise<Result<null, Error>> {
