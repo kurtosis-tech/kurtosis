@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_log_streaming_readcloser"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -20,15 +21,19 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
 	"net"
+	"strings"
 	"time"
 )
 
 const (
 	shouldGetStoppedContainersWhenGettingServiceInfo = true
+
+	shouldFollowContainerLogsWhenExpanderHasError = false
 )
 
 /*
@@ -1036,11 +1041,148 @@ func extractServiceGUIDFromServiceObj(uncastedObj interface{}) (string, error) {
 	return string(castedObj.GetRegistration().GetGUID()), nil
 }
 
-func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
-	ctx ) {
+// Runs a single expander container which expands one or more files artifacts into multiple volumes
+func (backend *DockerKurtosisBackend) runFilesArtifactsExpander(
+	ctx context.Context,
+	serviceGuid service.ServiceGUID,
+	objAttrProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
+	image string,
+	ipAddr net.IP,
+	envVars map[string]string,
+	enclaveNetworkId string,
+	mountpointsToVolumeNames map[string]string,
+) error {
+	containerAttrs, err := objAttrProvider.ForFilesArtifactsExpanderContainer(serviceGuid)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while trying to get the files artifact expander container attributes for service '%v'", serviceGuid)
+	}
+	containerName := containerAttrs.GetName().GetString()
+	containerLabels := map[string]string{}
+	for labelKey, labelValue := range containerAttrs.GetLabels() {
+		containerLabels[labelKey.GetString()] = labelValue.GetString()
+	}
 
+	volumeMounts := map[string]string{}
+	for mountpointOnExpander, volumeName := range mountpointsToVolumeNames {
+		volumeMounts[volumeName] = mountpointOnExpander
+	}
+
+	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
+		image,
+		containerName,
+		enclaveNetworkId,
+	).WithStaticIP(
+		ipAddr,
+	).WithEnvironmentVariables(
+		envVars,
+	).WithVolumeMounts(
+		volumeMounts,
+	).WithLabels(
+		containerLabels,
+	).Build()
+	containerId, _, err := backend.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred creating files artifacts expander container '%v' for service '%v'",
+			containerName,
+			serviceGuid,
+		)
+	}
+	shouldKillContainer := true
+	defer func() {
+		if shouldKillContainer {
+			if containerTeardownErr := backend.dockerManager.KillContainer(ctx, containerId); containerTeardownErr != nil {
+				logrus.Warnf(
+					"Running files artifacts expansion didn't complete successfully so we tried to kill " +
+						"container '%v' with ID '%v' that we started, but doing so threw an error:\n%v",
+					containerName,
+					containerId,
+					containerTeardownErr,
+				)
+				logrus.Warnf("You'll need to stop files artifacts expander container '%v' manually", containerName)
+			}
+		}
+	}()
+
+	exitCode, err := backend.dockerManager.WaitForExit(ctx, containerId)
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred waiting for files artifacts expander container '%v' to exit",
+			containerName,
+		)
+	}
+	if exitCode != expanderContainerSuccessExitCode {
+		containerLogsBlockStr, err := backend.getFilesArtifactsExpanderContainerLogsBlockStr(
+			ctx,
+			containerId,
+		)
+		if err != nil {
+			return stacktrace.NewError(
+				"Files artifacts expander container '%v' for service '%v' finished with non-%v exit code '%v' so we tried " +
+					"to get the logs, but doing so failed with an error:\n%v",
+				containerName,
+				serviceGuid,
+				expanderContainerSuccessExitCode,
+				exitCode,
+				err,
+			)
+		}
+		return stacktrace.NewError(
+			"Files artifacts expander container '%v' for service '%v' finished with non-%v exit code '%v' and logs:\n%v",
+			containerName,
+			serviceGuid,
+			expanderContainerSuccessExitCode,
+			exitCode,
+			containerLogsBlockStr,
+		)
+	}
+
+	shouldKillContainer = false
+	return nil
 }
 
+// This seems like a lot of effort to go through to get the logs of a failed container, but easily seeing the reason an expander
+// container has failed has proven to be very useful
+func (backend *DockerKurtosisBackend) getFilesArtifactsExpanderContainerLogsBlockStr(
+	ctx context.Context,
+	containerId string,
+) (string, error) {
+	containerLogsReadCloser, err := backend.dockerManager.GetContainerLogs(ctx, containerId, shouldFollowContainerLogsWhenExpanderHasError)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the logs for expander container with ID '%v'", containerId)
+	}
+	defer containerLogsReadCloser.Close()
+
+	buffer := &bytes.Buffer{}
+	concurrentBuffer := concurrent_writer.NewConcurrentWriter(buffer)
+
+	// TODO Push this down into GetContainerLogs!!!! This code actually has a bug where it won't work if the container is a TTY
+	//  container; the proper checking logic can be seen in the 'enclave dump' functions but should all be abstracted by GetContainerLogs
+	//  The only reason I'm not doing it right now is because we have the huge ETH deadline tomorrow and I don't have time for any
+	//  nice-to-have refactors (ktoday, 2022-05-22)
+	if _, err := stdcopy.StdCopy(concurrentBuffer, concurrentBuffer, containerLogsReadCloser); err != nil {
+		 return "", stacktrace.Propagate(
+			 err,
+			 "An error occurred copying logs to memory for files artifact expander container '%v'",
+			 containerId,
+		 )
+	}
+
+	wrappedContainerLogsStrBuilder := strings.Builder{}
+	wrappedContainerLogsStrBuilder.WriteString(fmt.Sprintf(
+		">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Logs for container '%v' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n",
+		containerId,
+	))
+	wrappedContainerLogsStrBuilder.WriteString(buffer.String())
+	wrappedContainerLogsStrBuilder.WriteString(fmt.Sprintf(
+		"\n>>>>>>>>>>>>>>>>>>>>>>>>>>>> End logs for container '%v' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<",
+		containerId,
+	))
+
+	return wrappedContainerLogsStrBuilder.String(), nil
+}
 
 // Takes in a list of mountpoints on the expander container that the expander container wants populated with volumes,
 // and creates one volume per mountpoint location

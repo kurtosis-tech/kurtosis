@@ -48,12 +48,9 @@ type DockerEnclaveObjectAttributesProvider interface {
 	ForNetworkingSidecarContainer(
 		serviceGUIDSidecarAttachedTo service.ServiceGUID,
 	) (DockerObjectAttributes, error)
-	/*
-	ForFilesArtifactExpansionContainer(
-		fileArtifactExpansionGUID files_artifact_expansion.FilesArtifactExpansionGUID,
+	ForFilesArtifactsExpanderContainer(
 		serviceGUID service.ServiceGUID,
 	) (DockerObjectAttributes, error)
-	 */
 	ForSingleFilesArtifactExpansionVolume(
 		serviceGUID service.ServiceGUID,
 	) (DockerObjectAttributes, error)
@@ -369,7 +366,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSingleFilesArtifac
 
 // We'll have at most one files artifact expansion container per service, because the single container will handle
 // all expansion
-func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactsExpansionContainer(
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactsExpanderContainer(
 	serviceGUID service.ServiceGUID,
 )(
 	DockerObjectAttributes,
