@@ -11,9 +11,8 @@ require (
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/dmarkham/enumer v1.5.5
 	github.com/docker/distribution v2.7.1+incompatible
-	github.com/docker/docker v20.10.16+incompatible
 	github.com/go-yaml/yaml v2.1.0+incompatible
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220521235358-60e8b2052deb
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220522051031-7e9fefce0d09
 	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220522000900-5215497adb6e
 	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220522001400-181c194bf40d
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220522001339-356c341a5532
@@ -42,6 +41,7 @@ require (
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/docker/docker v20.10.16+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/dsnet/compress v0.0.1 // indirect
