@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed an issue when getting a single enclave object by its ID fails because a condition was wrong
 
 # 0.30.1
 ### Fixes

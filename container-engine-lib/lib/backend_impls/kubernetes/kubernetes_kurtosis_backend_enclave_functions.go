@@ -443,7 +443,7 @@ func (backend *KubernetesKurtosisBackend) getSingleEnclaveAndKubernetesResources
 	if len(matchingEnclaveObjects) == 0 || len(matchingKubernetesResources) == 0 {
 		return nil, nil, stacktrace.NewError("Didn't find enclave objects and Kubernetes resources for enclave '%v'", enclaveId)
 	}
-	if len(matchingEnclaveObjects) > 1 || len(matchingEnclaveObjects) > 0 {
+	if len(matchingEnclaveObjects) > 1 || len(matchingKubernetesResources) > 1 {
 		return nil, nil, stacktrace.NewError("Found more than one enclave objects/Kubernetes resources for enclave '%v'", enclaveId)
 	}
 
