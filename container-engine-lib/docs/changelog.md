@@ -1,4 +1,7 @@
 # TBD
+### Fixes
+* Fixed an issue when getting a single enclave object by its ID fails because a condition was wrong
+* Fixed a bug related to using array of reference variables for `enclaveKubernetesResources.pods` and `enclaveKubernetesResources.services` fields
 
 # 0.30.1
 ### Fixes
