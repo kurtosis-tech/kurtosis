@@ -1,4 +1,11 @@
 # TBD
+### Features
+* Added a new `DownloadFilesArtifact` endpoint
+* `RemoveServiceResponse` now comes back with the GUID of the service that was removed
+
+### Breaking Changes
+* Replaced `GetServiceInfo` with `GetServices`
+    * Users should pass in the ID of the services that they want to get info for
 
 # 1.50.7
 ### Changes
