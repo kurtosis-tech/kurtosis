@@ -1,4 +1,6 @@
 # TBD
+
+# 0.30.1
 ### Fixes
 * Fixed an issue where a Service and a Pod could exist at the same time even though the Service won't have private port annotations
 
