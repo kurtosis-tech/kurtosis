@@ -13,6 +13,7 @@
 * Changed pod wait-for-availability timeout (how long the pod can stay in "Pending") from 1 minute to 15 minutes, because Pending also includes the time spent pulling images and some images can be very large (e.g. NEAR)
 * Return an error if a pod's container hits ImagePullBackOff
 * Fixed a bug where user services were mounting the same volume multiple times due to a reference to a for-loop variable (which will always have the value of the last iteration of the loop)
+* Fixed a bug in declaring user service ports, due to the same reference-to-a-for-loop-variable thing
 
 ### Breaking Changes
 * `CreateFilesArtifactExpansion` no longer takes in a `FilesArtifactID` (as it's unneeded)
