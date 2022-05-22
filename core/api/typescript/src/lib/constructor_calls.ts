@@ -25,7 +25,7 @@ import {
     StoreFilesArtifactFromServiceArgs,
     UploadFilesArtifactArgs,
     PauseServiceArgs,
-    UnpauseServiceArgs
+    UnpauseServiceArgs, ModuleInfo, ServiceInfo
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceID } from './services/service';
 import { PartitionID } from './enclaves/enclave_context';
@@ -78,7 +78,7 @@ export function newExecuteModuleArgs(moduleId: ModuleID, serializedParams: strin
 
 
 // ==============================================================================================
-//                                     Get Module Info
+//                                     Get Modules
 // ==============================================================================================
 export function newGetModulesArgs(modules: Map<string, boolean>): GetModulesArgs {
     const result: GetModulesArgs = new GetModulesArgs();
@@ -88,6 +88,20 @@ export function newGetModulesArgs(modules: Map<string, boolean>): GetModulesArgs
     }
 
     return result;
+}
+
+export function newModuleInfo(
+    guid: string,
+    publicGrpcPort: Port,
+    publicIpAddr: string,
+    privateIpAddr: string): ModuleInfo {
+    const result: ModuleInfo = new ModuleInfo();
+    result.setGuid(guid)
+    result.setMaybePublicGrpcPort(publicGrpcPort)
+    result.setMaybePublicIpAddr(publicIpAddr)
+    result.setPrivateIpAddr(privateIpAddr)
+
+    return result
 }
 
 
@@ -143,7 +157,7 @@ export function newStartServiceArgs(
 }
 
 // ==============================================================================================
-//                                       Get Services Info
+//                                       Get Services
 // ==============================================================================================
 export function newGetServicesArgs(services: Map<string, boolean>): GetServicesArgs{
     const result: GetServicesArgs = new GetServicesArgs();
@@ -153,6 +167,18 @@ export function newGetServicesArgs(services: Map<string, boolean>): GetServicesA
     }
 
     return result;
+}
+
+export function newServiceInfo(
+    serviceGuid: string,
+    maybePublicIpAddr: string,
+    privateIpAddr: string): ServiceInfo {
+    const result: ServiceInfo = new ServiceInfo();
+    result.setServiceGuid(serviceGuid)
+    result.setMaybePublicIpAddr(maybePublicIpAddr)
+    result.setPrivateIpAddr(privateIpAddr)
+
+    return result
 }
 
 
