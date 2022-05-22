@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -77,7 +78,11 @@ func GetKubernetesEnclaveObjectAttributesProvider(enclaveId enclave.EnclaveID) K
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespace(isPartitioningEnabled bool) (KubernetesObjectAttributes, error) {
-	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(provider.enclaveId)
+	namespaceName, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to generate UUID string for namespace name for enclave '%v'", provider.enclaveId)
+	}
+	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(namespaceName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", provider.enclaveId)
 	}
