@@ -538,6 +538,7 @@ func (network *ServiceNetwork) CopyFilesFromService(ctx context.Context, service
 	}
 
 	pipeReader, pipeWriter := io.Pipe()
+	defer pipeReader.Close()
 	defer pipeWriter.Close()
 
 	storeFilesArtifactResultChan := make(chan storeFilesArtifactResult)
