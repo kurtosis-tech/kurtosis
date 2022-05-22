@@ -45,7 +45,7 @@ const (
 	waitForPersistentVolumeBoundTimeout = 60 * time.Second
 	waitForPersistentVolumeBoundRetriesDelayMilliSeconds = 500
 
-	podWaitForAvailabilityTimeout = 60 * time.Second
+	podWaitForAvailabilityTimeout = 15 * time.Minute
 	podWaitForAvailabilityTimeBetweenPolls = 500 * time.Millisecond
 	resourceDeletionTimeoutInSeconds = 30 * time.Second
 
@@ -1027,6 +1027,7 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 			// We shouldn't get an error on getting the pod, even if it's not ready
 			return stacktrace.Propagate(err, "An error occurred getting the just-created pod '%v'", podName)
 		}
+
 		latestPodStatus = &pod.Status
 		switch latestPodStatus.Phase {
 		case apiv1.PodRunning:
