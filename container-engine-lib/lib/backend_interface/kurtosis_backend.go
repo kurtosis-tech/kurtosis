@@ -413,7 +413,6 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
 		serviceGuid service.ServiceGUID,
-		filesArtifactId service.FilesArtifactID,
 		filesArtifactFilepathRelativeToEnclaveDatadirRoot string, ) (
 		*files_artifact_expansion.FilesArtifactExpansion,
 		error,
