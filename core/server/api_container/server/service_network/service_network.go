@@ -17,12 +17,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons/current_time_str_provider"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
-	"io/ioutil"
 	"net"
 	"strings"
 	"sync"
@@ -540,6 +538,7 @@ func (network *ServiceNetwork) CopyFilesFromService(ctx context.Context, service
 	}
 
 	pipeReader, pipeWriter := io.Pipe()
+	defer pipeReader.Close()
 	defer pipeWriter.Close()
 
 	storeFilesArtifactResultChan := make(chan storeFilesArtifactResult)
@@ -554,11 +553,8 @@ func (network *ServiceNetwork) CopyFilesFromService(ctx context.Context, service
 		}
 	}()
 
-	gzippingPipeWriter := gzip.NewWriter(pipeWriter)
-	defer gzippingPipeWriter.Close()
-
-	if err := network.kurtosisBackend.CopyFilesFromUserService(ctx, network.enclaveId, serviceGuid, srcPath, gzippingPipeWriter); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred copying source '%v' from user service with GUID '%v' in enclave with ID '%v'", srcPath, serviceGuid, network.enclaveId)
+	if err := network.gzipAndPushTarredFileBytesToOutput(ctx, pipeWriter, serviceGuid, srcPath); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred gzip'ing and pushing tar'd file bytes to the pipe")
 	}
 
 	storeFileResult := <- storeFilesArtifactResultChan
@@ -623,6 +619,7 @@ func updateTrafficControlConfiguration(
 	return nil
 }
 
+/*
 func newServiceGUID(serviceID service.ServiceID) service.ServiceGUID {
 	suffix := current_time_str_provider.GetCurrentTimeStr()
 	return service.ServiceGUID(string(serviceID) + "-" + suffix)
@@ -656,6 +653,8 @@ func gzipCompressFile(readCloser io.Reader) (resultFilepath string, resultErr er
 
 	return tarGzipFileFilepath, nil
 }
+
+ */
 
 func (network *ServiceNetwork) destroyServiceBestEffortAfterRegistrationFailure(
 	serviceGuid service.ServiceGUID,
@@ -743,4 +742,23 @@ func (network *ServiceNetwork) startService(
 		return nil, stacktrace.Propagate(err, "An error occurred starting service '%v' with image '%v'", serviceGuid, imageName)
 	}
 	return launchedUserService, nil
+}
+
+func (network *ServiceNetwork) gzipAndPushTarredFileBytesToOutput(
+	ctx context.Context,
+	output io.WriteCloser,
+	serviceGuid service.ServiceGUID,
+	srcPathOnContainer string,
+) error {
+	defer output.Close()
+
+	// Need to compress the TAR bytes on our side, since we're not guaranteedj
+	gzippingOutput := gzip.NewWriter(output)
+	defer gzippingOutput.Close()
+
+	if err := network.kurtosisBackend.CopyFilesFromUserService(ctx, network.enclaveId, serviceGuid, srcPathOnContainer, gzippingOutput); err != nil {
+		return stacktrace.Propagate(err, "An error occurred copying source '%v' from user service with GUID '%v' in enclave with ID '%v'", srcPathOnContainer, serviceGuid, network.enclaveId)
+	}
+
+	return nil
 }
