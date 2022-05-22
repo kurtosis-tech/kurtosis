@@ -31,6 +31,78 @@ export namespace Port {
   }
 }
 
+export class ServiceInfo extends jspb.Message {
+  getServiceGuid(): string;
+  setServiceGuid(value: string): ServiceInfo;
+
+  getPrivateIpAddr(): string;
+  setPrivateIpAddr(value: string): ServiceInfo;
+
+  getPrivatePortsMap(): jspb.Map<string, Port>;
+  clearPrivatePortsMap(): ServiceInfo;
+
+  getMaybePublicIpAddr(): string;
+  setMaybePublicIpAddr(value: string): ServiceInfo;
+
+  getMaybePublicPortsMap(): jspb.Map<string, Port>;
+  clearMaybePublicPortsMap(): ServiceInfo;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ServiceInfo.AsObject;
+  static toObject(includeInstance: boolean, msg: ServiceInfo): ServiceInfo.AsObject;
+  static serializeBinaryToWriter(message: ServiceInfo, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ServiceInfo;
+  static deserializeBinaryFromReader(message: ServiceInfo, reader: jspb.BinaryReader): ServiceInfo;
+}
+
+export namespace ServiceInfo {
+  export type AsObject = {
+    serviceGuid: string,
+    privateIpAddr: string,
+    privatePortsMap: Array<[string, Port.AsObject]>,
+    maybePublicIpAddr: string,
+    maybePublicPortsMap: Array<[string, Port.AsObject]>,
+  }
+}
+
+export class ModuleInfo extends jspb.Message {
+  getGuid(): string;
+  setGuid(value: string): ModuleInfo;
+
+  getPrivateIpAddr(): string;
+  setPrivateIpAddr(value: string): ModuleInfo;
+
+  getPrivateGrpcPort(): Port | undefined;
+  setPrivateGrpcPort(value?: Port): ModuleInfo;
+  hasPrivateGrpcPort(): boolean;
+  clearPrivateGrpcPort(): ModuleInfo;
+
+  getMaybePublicIpAddr(): string;
+  setMaybePublicIpAddr(value: string): ModuleInfo;
+
+  getMaybePublicGrpcPort(): Port | undefined;
+  setMaybePublicGrpcPort(value?: Port): ModuleInfo;
+  hasMaybePublicGrpcPort(): boolean;
+  clearMaybePublicGrpcPort(): ModuleInfo;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ModuleInfo.AsObject;
+  static toObject(includeInstance: boolean, msg: ModuleInfo): ModuleInfo.AsObject;
+  static serializeBinaryToWriter(message: ModuleInfo, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ModuleInfo;
+  static deserializeBinaryFromReader(message: ModuleInfo, reader: jspb.BinaryReader): ModuleInfo;
+}
+
+export namespace ModuleInfo {
+  export type AsObject = {
+    guid: string,
+    privateIpAddr: string,
+    privateGrpcPort?: Port.AsObject,
+    maybePublicIpAddr: string,
+    maybePublicGrpcPort?: Port.AsObject,
+  }
+}
+
 export class LoadModuleArgs extends jspb.Message {
   getModuleId(): string;
   setModuleId(value: string): LoadModuleArgs;
@@ -95,6 +167,42 @@ export namespace LoadModuleResponse {
   }
 }
 
+export class GetModulesArgs extends jspb.Message {
+  getIdsMap(): jspb.Map<string, boolean>;
+  clearIdsMap(): GetModulesArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetModulesArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: GetModulesArgs): GetModulesArgs.AsObject;
+  static serializeBinaryToWriter(message: GetModulesArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetModulesArgs;
+  static deserializeBinaryFromReader(message: GetModulesArgs, reader: jspb.BinaryReader): GetModulesArgs;
+}
+
+export namespace GetModulesArgs {
+  export type AsObject = {
+    idsMap: Array<[string, boolean]>,
+  }
+}
+
+export class GetModulesResponse extends jspb.Message {
+  getModuleInfoMap(): jspb.Map<string, ModuleInfo>;
+  clearModuleInfoMap(): GetModulesResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetModulesResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: GetModulesResponse): GetModulesResponse.AsObject;
+  static serializeBinaryToWriter(message: GetModulesResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetModulesResponse;
+  static deserializeBinaryFromReader(message: GetModulesResponse, reader: jspb.BinaryReader): GetModulesResponse;
+}
+
+export namespace GetModulesResponse {
+  export type AsObject = {
+    moduleInfoMap: Array<[string, ModuleInfo.AsObject]>,
+  }
+}
+
 export class UnloadModuleArgs extends jspb.Message {
   getModuleId(): string;
   setModuleId(value: string): UnloadModuleArgs;
@@ -110,6 +218,24 @@ export class UnloadModuleArgs extends jspb.Message {
 export namespace UnloadModuleArgs {
   export type AsObject = {
     moduleId: string,
+  }
+}
+
+export class UnloadModuleResponse extends jspb.Message {
+  getModuleGuid(): string;
+  setModuleGuid(value: string): UnloadModuleResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): UnloadModuleResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: UnloadModuleResponse): UnloadModuleResponse.AsObject;
+  static serializeBinaryToWriter(message: UnloadModuleResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): UnloadModuleResponse;
+  static deserializeBinaryFromReader(message: UnloadModuleResponse, reader: jspb.BinaryReader): UnloadModuleResponse;
+}
+
+export namespace UnloadModuleResponse {
+  export type AsObject = {
+    moduleGuid: string,
   }
 }
 
@@ -150,58 +276,6 @@ export class ExecuteModuleResponse extends jspb.Message {
 export namespace ExecuteModuleResponse {
   export type AsObject = {
     serializedResult: string,
-  }
-}
-
-export class GetModuleInfoArgs extends jspb.Message {
-  getModuleId(): string;
-  setModuleId(value: string): GetModuleInfoArgs;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): GetModuleInfoArgs.AsObject;
-  static toObject(includeInstance: boolean, msg: GetModuleInfoArgs): GetModuleInfoArgs.AsObject;
-  static serializeBinaryToWriter(message: GetModuleInfoArgs, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): GetModuleInfoArgs;
-  static deserializeBinaryFromReader(message: GetModuleInfoArgs, reader: jspb.BinaryReader): GetModuleInfoArgs;
-}
-
-export namespace GetModuleInfoArgs {
-  export type AsObject = {
-    moduleId: string,
-  }
-}
-
-export class GetModuleInfoResponse extends jspb.Message {
-  getPrivateIpAddr(): string;
-  setPrivateIpAddr(value: string): GetModuleInfoResponse;
-
-  getPrivatePort(): Port | undefined;
-  setPrivatePort(value?: Port): GetModuleInfoResponse;
-  hasPrivatePort(): boolean;
-  clearPrivatePort(): GetModuleInfoResponse;
-
-  getPublicIpAddr(): string;
-  setPublicIpAddr(value: string): GetModuleInfoResponse;
-
-  getPublicPort(): Port | undefined;
-  setPublicPort(value?: Port): GetModuleInfoResponse;
-  hasPublicPort(): boolean;
-  clearPublicPort(): GetModuleInfoResponse;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): GetModuleInfoResponse.AsObject;
-  static toObject(includeInstance: boolean, msg: GetModuleInfoResponse): GetModuleInfoResponse.AsObject;
-  static serializeBinaryToWriter(message: GetModuleInfoResponse, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): GetModuleInfoResponse;
-  static deserializeBinaryFromReader(message: GetModuleInfoResponse, reader: jspb.BinaryReader): GetModuleInfoResponse;
-}
-
-export namespace GetModuleInfoResponse {
-  export type AsObject = {
-    privateIpAddr: string,
-    privatePort?: Port.AsObject,
-    publicIpAddr: string,
-    publicPort?: Port.AsObject,
   }
 }
 
@@ -317,55 +391,39 @@ export namespace StartServiceResponse {
   }
 }
 
-export class GetServiceInfoArgs extends jspb.Message {
-  getServiceId(): string;
-  setServiceId(value: string): GetServiceInfoArgs;
+export class GetServicesArgs extends jspb.Message {
+  getServiceIdsMap(): jspb.Map<string, boolean>;
+  clearServiceIdsMap(): GetServicesArgs;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): GetServiceInfoArgs.AsObject;
-  static toObject(includeInstance: boolean, msg: GetServiceInfoArgs): GetServiceInfoArgs.AsObject;
-  static serializeBinaryToWriter(message: GetServiceInfoArgs, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): GetServiceInfoArgs;
-  static deserializeBinaryFromReader(message: GetServiceInfoArgs, reader: jspb.BinaryReader): GetServiceInfoArgs;
+  toObject(includeInstance?: boolean): GetServicesArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: GetServicesArgs): GetServicesArgs.AsObject;
+  static serializeBinaryToWriter(message: GetServicesArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetServicesArgs;
+  static deserializeBinaryFromReader(message: GetServicesArgs, reader: jspb.BinaryReader): GetServicesArgs;
 }
 
-export namespace GetServiceInfoArgs {
+export namespace GetServicesArgs {
   export type AsObject = {
-    serviceId: string,
+    serviceIdsMap: Array<[string, boolean]>,
   }
 }
 
-export class GetServiceInfoResponse extends jspb.Message {
-  getPrivateIpAddr(): string;
-  setPrivateIpAddr(value: string): GetServiceInfoResponse;
-
-  getPrivatePortsMap(): jspb.Map<string, Port>;
-  clearPrivatePortsMap(): GetServiceInfoResponse;
-
-  getPublicIpAddr(): string;
-  setPublicIpAddr(value: string): GetServiceInfoResponse;
-
-  getPublicPortsMap(): jspb.Map<string, Port>;
-  clearPublicPortsMap(): GetServiceInfoResponse;
-
-  getServiceGuid(): string;
-  setServiceGuid(value: string): GetServiceInfoResponse;
+export class GetServicesResponse extends jspb.Message {
+  getServiceInfoMap(): jspb.Map<string, ServiceInfo>;
+  clearServiceInfoMap(): GetServicesResponse;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): GetServiceInfoResponse.AsObject;
-  static toObject(includeInstance: boolean, msg: GetServiceInfoResponse): GetServiceInfoResponse.AsObject;
-  static serializeBinaryToWriter(message: GetServiceInfoResponse, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): GetServiceInfoResponse;
-  static deserializeBinaryFromReader(message: GetServiceInfoResponse, reader: jspb.BinaryReader): GetServiceInfoResponse;
+  toObject(includeInstance?: boolean): GetServicesResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: GetServicesResponse): GetServicesResponse.AsObject;
+  static serializeBinaryToWriter(message: GetServicesResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetServicesResponse;
+  static deserializeBinaryFromReader(message: GetServicesResponse, reader: jspb.BinaryReader): GetServicesResponse;
 }
 
-export namespace GetServiceInfoResponse {
+export namespace GetServicesResponse {
   export type AsObject = {
-    privateIpAddr: string,
-    privatePortsMap: Array<[string, Port.AsObject]>,
-    publicIpAddr: string,
-    publicPortsMap: Array<[string, Port.AsObject]>,
-    serviceGuid: string,
+    serviceInfoMap: Array<[string, ServiceInfo.AsObject]>,
   }
 }
 
@@ -388,6 +446,24 @@ export namespace RemoveServiceArgs {
   export type AsObject = {
     serviceId: string,
     containerStopTimeoutSeconds: number,
+  }
+}
+
+export class RemoveServiceResponse extends jspb.Message {
+  getServiceGuid(): string;
+  setServiceGuid(value: string): RemoveServiceResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RemoveServiceResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: RemoveServiceResponse): RemoveServiceResponse.AsObject;
+  static serializeBinaryToWriter(message: RemoveServiceResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RemoveServiceResponse;
+  static deserializeBinaryFromReader(message: RemoveServiceResponse, reader: jspb.BinaryReader): RemoveServiceResponse;
+}
+
+export namespace RemoveServiceResponse {
+  export type AsObject = {
+    serviceGuid: string,
   }
 }
 
@@ -643,42 +719,6 @@ export namespace WaitForHttpPostEndpointAvailabilityArgs {
   }
 }
 
-export class GetServicesResponse extends jspb.Message {
-  getServiceIdsMap(): jspb.Map<string, boolean>;
-  clearServiceIdsMap(): GetServicesResponse;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): GetServicesResponse.AsObject;
-  static toObject(includeInstance: boolean, msg: GetServicesResponse): GetServicesResponse.AsObject;
-  static serializeBinaryToWriter(message: GetServicesResponse, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): GetServicesResponse;
-  static deserializeBinaryFromReader(message: GetServicesResponse, reader: jspb.BinaryReader): GetServicesResponse;
-}
-
-export namespace GetServicesResponse {
-  export type AsObject = {
-    serviceIdsMap: Array<[string, boolean]>,
-  }
-}
-
-export class GetModulesResponse extends jspb.Message {
-  getModuleIdsMap(): jspb.Map<string, boolean>;
-  clearModuleIdsMap(): GetModulesResponse;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): GetModulesResponse.AsObject;
-  static toObject(includeInstance: boolean, msg: GetModulesResponse): GetModulesResponse.AsObject;
-  static serializeBinaryToWriter(message: GetModulesResponse, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): GetModulesResponse;
-  static deserializeBinaryFromReader(message: GetModulesResponse, reader: jspb.BinaryReader): GetModulesResponse;
-}
-
-export namespace GetModulesResponse {
-  export type AsObject = {
-    moduleIdsMap: Array<[string, boolean]>,
-  }
-}
-
 export class UploadFilesArtifactArgs extends jspb.Message {
   getData(): Uint8Array | string;
   getData_asU8(): Uint8Array;
@@ -714,6 +754,44 @@ export class UploadFilesArtifactResponse extends jspb.Message {
 export namespace UploadFilesArtifactResponse {
   export type AsObject = {
     uuid: string,
+  }
+}
+
+export class DownloadFilesArtifactArgs extends jspb.Message {
+  getId(): string;
+  setId(value: string): DownloadFilesArtifactArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): DownloadFilesArtifactArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: DownloadFilesArtifactArgs): DownloadFilesArtifactArgs.AsObject;
+  static serializeBinaryToWriter(message: DownloadFilesArtifactArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): DownloadFilesArtifactArgs;
+  static deserializeBinaryFromReader(message: DownloadFilesArtifactArgs, reader: jspb.BinaryReader): DownloadFilesArtifactArgs;
+}
+
+export namespace DownloadFilesArtifactArgs {
+  export type AsObject = {
+    id: string,
+  }
+}
+
+export class DownloadFilesArtifactResponse extends jspb.Message {
+  getData(): Uint8Array | string;
+  getData_asU8(): Uint8Array;
+  getData_asB64(): string;
+  setData(value: Uint8Array | string): DownloadFilesArtifactResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): DownloadFilesArtifactResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: DownloadFilesArtifactResponse): DownloadFilesArtifactResponse.AsObject;
+  static serializeBinaryToWriter(message: DownloadFilesArtifactResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): DownloadFilesArtifactResponse;
+  static deserializeBinaryFromReader(message: DownloadFilesArtifactResponse, reader: jspb.BinaryReader): DownloadFilesArtifactResponse;
+}
+
+export namespace DownloadFilesArtifactResponse {
+  export type AsObject = {
+    data: Uint8Array | string,
   }
 }
 
