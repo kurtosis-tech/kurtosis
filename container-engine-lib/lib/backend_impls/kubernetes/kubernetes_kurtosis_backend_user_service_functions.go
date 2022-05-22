@@ -948,7 +948,16 @@ func getUserServiceObjectsFromKubernetesResources(
 		resultObj.serviceRegistration = serviceRegistrationObj
 
 		// Selectors but no pod means that the registration is open but no pod has yet been started to consume it
-		if len(kubernetesService.Spec.Selector) > 0 && kubernetesPod == nil {
+		stillUsingUnboundPort := false
+		for _, servicePort := range kubernetesService.Spec.Ports {
+			if servicePort.Name == unboundPortName {
+				stillUsingUnboundPort = true
+				break
+			}
+		}
+		if stillUsingUnboundPort {
+			// If we're using the unbound port, no actual user ports have been set yet so there's no way we can
+			// return a service
 			resultObj.service = nil
 			continue
 		}
