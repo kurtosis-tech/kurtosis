@@ -7,7 +7,6 @@ import {ok, err, Result, Err} from "neverthrow";
 import log from "loglevel";
 import { isNode as  isExecutionEnvNode} from "browser-or-node";
 import * as jspb from "google-protobuf";
-import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import type {
     PartitionConnectionInfo,
     PartitionServices,
@@ -58,7 +57,6 @@ import {
     PauseServiceArgs, ServiceInfo, UnloadModuleResponse,
     UnpauseServiceArgs
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
-import {ModuleGUID} from "../../../build/lib/modules/module_context";
 
 export type EnclaveID = string;
 export type PartitionID = string;

@@ -29,7 +29,7 @@ import {
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceID } from './services/service';
 import { PartitionID } from './enclaves/enclave_context';
-import { ModuleID, ModuleGUID } from "./modules/module_context";
+import { ModuleID } from "./modules/module_context";
 
 // ==============================================================================================
 //                           Shared Objects (Used By Multiple Endpoints)
@@ -64,7 +64,7 @@ export function newUnloadModuleArgs(moduleId: ModuleID): UnloadModuleArgs {
     return result;
 }
 
-export function newUnloadModuleResponse(moduleGuid: ModuleGUID): UnloadModuleResponse {
+export function newUnloadModuleResponse(moduleGuid: string): UnloadModuleResponse {
     const result: UnloadModuleResponse = new UnloadModuleResponse();
     result.setModuleGuid(moduleGuid)
 
