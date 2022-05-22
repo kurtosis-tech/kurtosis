@@ -1,6 +1,11 @@
 # TBD
 ### Changes
-* `GetObjectByLabels` methods in Kubernetes manager only return non-tombstoned objects
+* Use `kurtosis-enclave--UUID` for enclave namespace names
+* `GetXXXXX` methods in Kubernetes manager only return non-tombstoned objects
+
+### Fixes
+* Fixed an issue when getting a single enclave object by its ID fails because a condition was wrong
+* Fixed a bug related to using array of reference variables for `enclaveKubernetesResources.pods` and `enclaveKubernetesResources.services` fields
 
 # 0.30.1
 ### Fixes

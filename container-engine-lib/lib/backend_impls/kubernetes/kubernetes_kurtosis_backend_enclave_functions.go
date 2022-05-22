@@ -53,11 +53,11 @@ type enclaveKubernetesResources struct {
 
 	// Not technically resources that define an enclave, but we need them both
 	// to StopEnclave and to return an EnclaveStatus
-	pods []*apiv1.Pod
+	pods []apiv1.Pod
 
 	// Not technically resources that define an enclave, but we need them for
 	// StopEnclave
-	services []*apiv1.Service
+	services []apiv1.Service
 }
 
 type dumpPodResult struct {
@@ -173,7 +173,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 
 	enclaveResources := &enclaveKubernetesResources{
 		namespace: enclaveNamespace,
-		pods: []*apiv1.Pod{},
+		pods: []apiv1.Pod{},
 	}
 	enclaveObjsById, err := getEnclaveObjectsFromKubernetesResources(map[enclave.EnclaveID]*enclaveKubernetesResources{
 		enclaveId: enclaveResources,
@@ -229,7 +229,7 @@ func (backend *KubernetesKurtosisBackend) StopEnclaves(
 			errorsByPodName := map[string]error{}
 			for _, pod := range resources.pods {
 				podName := pod.GetName()
-				if err := backend.kubernetesManager.RemovePod(ctx, pod); err != nil {
+				if err := backend.kubernetesManager.RemovePod(ctx, &pod); err != nil {
 					errorsByPodName[podName] = err
 					continue
 				}
@@ -303,7 +303,7 @@ func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, encla
 
 	podsToDump := kubernetesResources.pods
 	if podsToDump == nil {
-		podsToDump = []*apiv1.Pod{}
+		podsToDump = []apiv1.Pod{}
 	}
 
 	workerPool := workerpool.New(numPodsToDumpAtOnce)
@@ -443,7 +443,7 @@ func (backend *KubernetesKurtosisBackend) getSingleEnclaveAndKubernetesResources
 	if len(matchingEnclaveObjects) == 0 || len(matchingKubernetesResources) == 0 {
 		return nil, nil, stacktrace.NewError("Didn't find enclave objects and Kubernetes resources for enclave '%v'", enclaveId)
 	}
-	if len(matchingEnclaveObjects) > 1 || len(matchingEnclaveObjects) > 0 {
+	if len(matchingEnclaveObjects) > 1 || len(matchingKubernetesResources) > 1 {
 		return nil, nil, stacktrace.NewError("Found more than one enclave objects/Kubernetes resources for enclave '%v'", enclaveId)
 	}
 
@@ -518,9 +518,9 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting pods matching enclave ID '%v' in namespace '%v'", enclaveIdStr, namespace.GetName())
 		}
-		pods := []*apiv1.Pod{}
+		pods := []apiv1.Pod{}
 		for _, pod := range podsList.Items {
-			pods = append(pods, &pod)
+			pods = append(pods, pod)
 		}
 
 		// Services
@@ -532,9 +532,9 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting services matching enclave ID '%v' in namespace '%v'", enclaveIdStr, namespace.GetName())
 		}
-		services := []*apiv1.Service{}
+		services := []apiv1.Service{}
 		for _, service := range servicesList.Items {
-			services = append(services, &service)
+			services = append(services, service)
 		}
 
 		enclaveResources := &enclaveKubernetesResources{
@@ -577,13 +577,13 @@ func getEnclaveObjectsFromKubernetesResources(
 	return result, nil
 }
 
-func getEnclaveStatusFromEnclavePods(enclavePods []*apiv1.Pod) (enclave.EnclaveStatus, error) {
+func getEnclaveStatusFromEnclavePods(enclavePods []apiv1.Pod) (enclave.EnclaveStatus, error) {
 	resultEnclaveStatus := enclave.EnclaveStatus_Empty
 	if len(enclavePods) > 0 {
 		resultEnclaveStatus = enclave.EnclaveStatus_Stopped
 	}
 	for _, enclavePod := range enclavePods {
-		podStatus, err := getContainerStatusFromPod(enclavePod)
+		podStatus, err := getContainerStatusFromPod(&enclavePod)
 		if err != nil {
 			return 0, stacktrace.Propagate(err, "An error occurred getting status from pod '%v'", enclavePod.Name)
 		}
@@ -601,7 +601,7 @@ func createDumpPodJob(
 	ctx context.Context,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	namespaceName string,
-	pod *apiv1.Pod,
+	pod apiv1.Pod,
 	enclaveOutputDirpath string,
 	resultChan chan dumpPodResult,
 ) func() {
@@ -620,7 +620,7 @@ func dumpPodInfo(
 	ctx context.Context,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	namespaceName string,
-	pod *apiv1.Pod,
+	pod apiv1.Pod,
 	enclaveOutputDirpath string,
 ) error {
 	podName := pod.Name
