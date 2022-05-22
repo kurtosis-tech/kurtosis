@@ -679,6 +679,8 @@ func (manager *KubernetesManager) CreatePod(
 		Volumes:    podVolumes,
 		Containers: podContainers,
 		ServiceAccountName: podServiceAccountName,
+		// We don't want Kubernetes auto-magically restarting our containers if they fail
+		RestartPolicy: apiv1.RestartPolicyNever,
 	}
 
 	podToCreate := &apiv1.Pod{
@@ -848,9 +850,9 @@ func (manager *KubernetesManager) CreateJobWithContainerAndVolume(ctx context.Co
 	jobName *kubernetes_object_name.KubernetesObjectName,
 	jobLabels map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue,
 	jobAnnotations map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue,
-	ttlSecondsAfterFinished uint,
 	containers []apiv1.Container,
 	volumes []apiv1.Volume,
+	ttlSecondsAfterFinished uint,
 ) (*v1.Job, error) {
 
 	jobsClient := manager.kubernetesClientSet.BatchV1().Jobs(namespaceName)
@@ -868,6 +870,8 @@ func (manager *KubernetesManager) CreateJobWithContainerAndVolume(ctx context.Co
 	podSpec := apiv1.PodSpec{
 		Containers: containers,
 		Volumes: volumes,
+		// We don't want Kubernetes automagically restarting our containers
+		RestartPolicy: apiv1.RestartPolicyNever,
 	}
 
 	jobSpec := v1.JobSpec{

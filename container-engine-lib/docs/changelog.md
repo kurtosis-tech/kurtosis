@@ -2,6 +2,7 @@
 ### Changes
 * Bumped the pod wait-for-availability timeout to 1 minute
 * Gave the API container permission to create jobs
+* Set pod restart policies to `Never` so that we have less magic going on
 
 ### Breaking Changes
 * `CreateFilesArtifactExpansion` no longer takes in a `FilesArtifactID` (as it's unneeded)

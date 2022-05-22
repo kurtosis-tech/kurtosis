@@ -113,7 +113,7 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 	}
 
 	volumeMount := apiv1.VolumeMount{
-		Name:             pvc.Name,
+		Name:             pvc.Spec.VolumeName,
 		MountPath:        enclaveDataVolumeDirpathOnExpanderContainer,
 	}
 
