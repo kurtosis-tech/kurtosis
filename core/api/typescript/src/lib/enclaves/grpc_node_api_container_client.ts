@@ -72,7 +72,7 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
     public async unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<UnloadModuleResponse,Error>> {
         const unloadModulePromise: Promise<Result<UnloadModuleResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.unloadModule(unloadModuleArgs, (error: ServiceError | null, unloadModuleResponse: UnloadModuleResponse | null) => {
+            this.client.unloadModule(unloadModuleArgs, (error: ServiceError | null, unloadModuleResponse: UnloadModuleResponse | undefined) => {
                 if (error === null) {
                     if (!unloadModuleResponse) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -140,7 +140,7 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
     public async removeService(args: RemoveServiceArgs): Promise<Result<RemoveServiceResponse, Error>> {
         const removeServicePromise: Promise<Result<RemoveServiceResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.removeService(args, (error: ServiceError | null, removeServiceResponse: RemoveServiceResponse | null) => {
+            this.client.removeService(args, (error: ServiceError | null, removeServiceResponse: RemoveServiceResponse | undefined) => {
                 if (error === null) {
                     if (!removeServiceResponse) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")))
