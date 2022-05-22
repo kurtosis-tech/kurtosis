@@ -110,10 +110,16 @@ func expandFilesArtifact(ctx context.Context, apiContainerClient kurtosis_core_r
 	artifactId := filesArtifactExpansion.FilesArtifactId
 	// Get the raw bytes of the file artifact
 	// TODO call DownloadFilesArtifact
-	artifactBytes := []byte{}
+	downloadRequestArgs := &kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs{
+		Id: filesArtifactExpansion.FilesArtifactId,
+	}
+	response, err := apiContainerClient.DownloadFilesArtifact(ctx, downloadRequestArgs)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to download files artifacts from Kurtosis, instead a non-nil error was returned")
+	}
 	// Save the bytes to file, might not be necssary if we can pipe the artifact bytes to stdin
 	filesArtifactFileName := fmt.Sprintf("/tmp/%v.%v", artifactId, targzFileExtension)
-	if err := os.WriteFile(filesArtifactFileName, artifactBytes, 0644); err != nil {
+	if err := os.WriteFile(filesArtifactFileName, response.Data, 0644); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to save files artifact to disk at path '%v', instead a non nil error was returned", filesArtifactFileName)
 	}
 	// Extract the tarball to the specified location
