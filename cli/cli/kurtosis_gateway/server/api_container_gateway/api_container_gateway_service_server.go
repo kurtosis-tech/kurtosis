@@ -116,7 +116,7 @@ func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Contex
 	}()
 	serviceGuid := remoteApiContainerResponse.GetServiceGuid()
 
-	runningLocalServiceConnection, err := service.startRunningConnectionForKurtosisService(serviceGuid, args.PrivatePorts)
+	runningServiceConnection, err := service.startRunningConnectionForKurtosisService(serviceGuid, args.PrivatePorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to start a local connection to service '%v', instead a non-nil error was returned", args.GetServiceId())
 	}
@@ -128,8 +128,8 @@ func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Contex
 	}()
 
 	// Overwrite PublicPorts and PublicIp fields
-	remoteApiContainerResponse.PublicIpAddr = runningLocalServiceConnection.localPublicIp
-	remoteApiContainerResponse.PublicPorts = runningLocalServiceConnection.localPublicServicePorts
+	remoteApiContainerResponse.PublicIpAddr = runningServiceConnection.localPublicIp
+	remoteApiContainerResponse.PublicPorts = runningServiceConnection.localPublicServicePorts
 
 	cleanUpService = false
 	cleanUpServiceConnection = false
@@ -268,13 +268,21 @@ func (service *ApiContainerGatewayServiceServer) UnpauseService(ctx context.Cont
 }
 
 // Private functions for managing our running enclave api container gateways
-func (service *ApiContainerGatewayServiceServer) startRunningConnectionForKurtosisService(serviceGuid string, servicePrivatePorts map[string]*kurtosis_core_rpc_api_bindings.Port) (*runningLocalServiceConnection, error) {
+func (service *ApiContainerGatewayServiceServer) startRunningConnectionForKurtosisService(serviceGuid string, privatePortsFromApi map[string]*kurtosis_core_rpc_api_bindings.Port) (*runningLocalServiceConnection, error) {
 	service.mutex.Lock()
 	defer service.mutex.Unlock()
 	remotePrivatePortSpecs := map[string]*port_spec.PortSpec{}
-	for portSpecId, coreApiPort := range servicePrivatePorts {
+	for portSpecId, coreApiPort := range privatePortsFromApi {
 		if coreApiPort.GetProtocol() != kurtosis_core_rpc_api_bindings.Port_TCP {
-			logrus.Warnf("Will not be able to forward service port with id '%v' for service with guid '%v' in enclave '%v'. The protocol of this port is '%v', but only TCP protocol is supported", portSpecId, serviceGuid, service.enclaveId, coreApiPort.GetProtocol())
+			logrus.Warnf(
+				"Will not be able to forward service port with id '%v' for service with guid '%v' in enclave '%v'. " +
+					"The protocol of this port is '%v', but only '%v' is supported",
+				portSpecId,
+				serviceGuid,
+				service.enclaveId,
+				coreApiPort.GetProtocol(),
+				kurtosis_core_rpc_api_bindings.Port_TCP.String(),
+			)
 			continue
 		}
 		portNumberUint16 := uint16(coreApiPort.GetNumber())
@@ -296,8 +304,18 @@ func (service *ApiContainerGatewayServiceServer) startRunningConnectionForKurtos
 			serviceConnection.Stop()
 		}
 	}()
-	// Locally forward ports described as expected by GRPC bindings
+
 	localPublicApiPorts := map[string]*kurtosis_core_rpc_api_bindings.Port{}
+	for portId, privateApiPort := range privatePortsFromApi {
+		localPortSpec, found := serviceConnection.GetLocalPorts()[portId]
+		if !found {
+			return nil, stacktrace.NewError("Service requested private port '%v', but no local forwarded port was made for it", portId)
+		}
+		localPublicApiPorts[portId] = &kurtosis_core_rpc_api_bindings.Port{
+			Number:   uint32(localPortSpec.GetNumber()),
+			Protocol: privateApiPort.Protocol,
+		}
+	}
 
 	runingLocalServiceConnection := &runningLocalServiceConnection{
 		kurtosisConnection:      serviceConnection,
