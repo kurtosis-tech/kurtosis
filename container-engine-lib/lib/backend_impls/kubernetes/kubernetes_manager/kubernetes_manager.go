@@ -964,6 +964,11 @@ func (manager KubernetesManager) GetJobCompletionAndSuccessFlags(ctx context.Con
 		return false, false, stacktrace.Propagate(err, "Failed to get job status for job name '%v' in namespace '%v'", jobName, namespace)
 	}
 
+	deletionTimestamp := job.GetObjectMeta().GetDeletionTimestamp()
+	if deletionTimestamp != nil {
+		return false, false, stacktrace.Propagate(err, "Job with name '%s' in namespace '%s' has been marked for deletion", job.GetName(), namespace)
+	}
+
 	// LOGIC FROM https://stackoverflow.com/a/69262406
 
 	// Job hasn't spun up yet
