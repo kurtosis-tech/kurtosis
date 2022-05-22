@@ -3,6 +3,7 @@
 * Added a new `DownloadFilesArtifact` endpoint
 * `RemoveServiceResponse` now comes back with the GUID of the service that was removed
 * `UnloadModule` now comes back with the GUID of the module that was removed
+* Added a `files_artifact_expander` module for downloading and extracting files artifacts from Kurtosis
 
 ### Breaking Changes
 * Replaced `GetServiceInfo` with `GetServices`
@@ -10,7 +11,7 @@
 * `GetServices` now takes in a service ID filter 
 * Replaced `GetModuleInfo` with `GetModules`
     * Users should pass in the ID of the modules that they want to get info for
-* `GetModules` now takes in a module ID filter 
+* `GetModules` now takes in a module ID filter
 
 # 1.50.7
 ### Changes
