@@ -10,6 +10,7 @@
 ### Fixes
 * Fixed issue with the files artifact expansion not waiting for the volume to get bound
 * Fixed issue with engine and API containers not having permissions to get Pod logs
+* Fixed bug with the files artifact expansion job not mounting the enclave data volume
 
 ### Breaking Changes
 * `CreateFilesArtifactExpansion` no longer takes in a `FilesArtifactID` (as it's unneeded)

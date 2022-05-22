@@ -28,9 +28,10 @@ const (
 	enclaveDataVolumeDirpathOnExpanderContainer = "/enclave-data"
 
 	// Dirpath on the artifact expander container where the destination volume containing expanded files will be mounted
-	destVolMntDirpathOnExpander = "/dest"
+	destinationVolumeMountDirpathOnExpanderContainer = "/dest"
 
-	isPersistentVolumeClaimReadOnly = false
+	isEnclaveDataPersistentVolumeClaimReadOnly = true
+	isDestinationPersistentVolumeClaimReadOnly = false
 
 	jobStatusPollerInterval = time.Millisecond * 100
 
@@ -58,52 +59,67 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 	serviceGuid service.ServiceGUID,
 	filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
 )(*files_artifact_expansion.FilesArtifactExpansion, error) {
+	enclaveNamespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave namespace name for enclave with ID '%v'", enclaveId)
+	}
+
 	filesArtifactExpansionGUIDStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to generate UUID for files artifact expansion.")
 	}
 
+	enclaveDataPvc, err := backend.getEnclaveDataPersistentVolumeClaim(ctx, enclaveNamespaceName, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveId)
+	}
 
 	filesArtifactExpansionGUID := files_artifact_expansion.FilesArtifactExpansionGUID(filesArtifactExpansionGUIDStr)
 	enclaveObjAttrsProvider := backend.objAttrsProvider.ForEnclave(enclaveId)
-	pvcAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpansionPersistentVolumeClaim(
+	destinationPvcAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpansionPersistentVolumeClaim(
 		filesArtifactExpansionGUID,
 		serviceGuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred while trying to get the files artifact expansion " +
+			"An error occurred while trying to get the destination files artifact expansion " +
 				"volume attributes for service with GUID '%v'",
 			serviceGuid,
 		)
 	}
-	pvcName := pvcAttrs.GetName().GetString()
-	pvcLabelStrs := map[string]string{}
-	for labelKey, labelValue := range pvcAttrs.GetLabels() {
-		pvcLabelStrs[labelKey.GetString()] = labelValue.GetString()
+	destPvcName := destinationPvcAttrs.GetName().GetString()
+	destPvcLabelStrs := map[string]string{}
+	for labelKey, labelValue := range destinationPvcAttrs.GetLabels() {
+		destPvcLabelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
-	enclaveNamespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave namespace name for enclave with ID '%v'", enclaveId)
-	}
-	pvc, err := backend.kubernetesManager.CreatePersistentVolumeClaim(
+	destinationPvc, err := backend.kubernetesManager.CreatePersistentVolumeClaim(
 		ctx,
 		enclaveNamespaceName,
-		pvcName,
-		pvcLabelStrs,
+		destPvcName,
+		destPvcLabelStrs,
 		backend.apiContainerModeArgs.filesArtifactExpansionVolumeSizeInMegabytes,
 		backend.apiContainerModeArgs.storageClassName)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a persistent volume claim in namespace '%v' for files artifact expansion '%v'", enclaveNamespaceName, filesArtifactExpansionGUID)
+		return nil, stacktrace.Propagate(err, "An error occurred creating destination persistent volume claim in namespace '%v' for files artifact expansion '%v'", enclaveNamespaceName, filesArtifactExpansionGUID)
 	}
 	shouldDestroyPVC := true
 	defer func() {
 		if shouldDestroyPVC {
 			err := backend.kubernetesManager.RemovePersistentVolumeClaim(
-				ctx, pvc)
+				ctx, destinationPvc)
 			if err != nil {
-				logrus.Errorf("Failed to destroy persistent volume claim with name '%v' in namespace '%v'. Got error '%v'." +
-					"You should manually destroy this persistent volume claim.", pvcName, enclaveNamespaceName, err.Error())
+				logrus.Errorf(
+					"Files artifact expansion '%v' failed so we tried to destroy destination persistent volume '%v' that we " +
+						"created, but doing so threw an error:\n%v",
+					filesArtifactExpansionGUID,
+					destPvcName,
+					err,
+				)
+				logrus.Errorf(
+					"ACTION REQUIRED: You will need to destroy persistent volume claim '%v' in namespace '%v' manually!",
+					destPvcName,
+					enclaveNamespaceName,
+				)
 			}
 		}
 	}()
@@ -118,9 +134,10 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 	if err := backend.runExtractionJobToCompletion(
 		ctx,
 		enclaveNamespaceName,
-		pvc,
+		enclaveDataPvc,
+		destinationPvc,
 		artifactFilepath,
-		destVolMntDirpathOnExpander,
+		destinationVolumeMountDirpathOnExpanderContainer,
 		jobAttrs,
 	); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred running the extraction job to completion")
@@ -163,7 +180,8 @@ func getExtractionCommand(artifactFilepath string, destVolMntDirpathOnExpander s
 func (backend *KubernetesKurtosisBackend) runExtractionJobToCompletion(
 	ctx context.Context,
 	namespaceName string,
-	pvc *apiv1.PersistentVolumeClaim,
+	enclaveDataPvc *apiv1.PersistentVolumeClaim,
+	destinationPvc *apiv1.PersistentVolumeClaim,
 	artifactFilepathOnVolume string,
 	destinationDirpath string,
 	jobAttrs object_attributes_provider.KubernetesObjectAttributes,
@@ -172,12 +190,22 @@ func (backend *KubernetesKurtosisBackend) runExtractionJobToCompletion(
 
 	jobName := jobAttrs.GetName()
 
-	volume := apiv1.Volume{
-		Name:         pvc.Spec.VolumeName,
+	enclaveDataVolume := apiv1.Volume{
+		Name: enclaveDataPvc.Spec.VolumeName,
 		VolumeSource: apiv1.VolumeSource{
 			PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
-				ClaimName: pvc.GetName(),
-				ReadOnly:  isPersistentVolumeClaimReadOnly,
+				ClaimName: enclaveDataPvc.GetName(),
+				ReadOnly:  isEnclaveDataPersistentVolumeClaimReadOnly,
+			},
+		},
+	}
+
+	destinationVolume := apiv1.Volume{
+		Name: destinationPvc.Spec.VolumeName,
+		VolumeSource: apiv1.VolumeSource{
+			PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
+				ClaimName: destinationPvc.GetName(),
+				ReadOnly:  isDestinationPersistentVolumeClaimReadOnly,
 			},
 		},
 	}
@@ -188,8 +216,12 @@ func (backend *KubernetesKurtosisBackend) runExtractionJobToCompletion(
 		Command:                  extractionCommand,
 		VolumeMounts:             []apiv1.VolumeMount{
 			{
-				Name:             pvc.Spec.VolumeName,
-				MountPath:        enclaveDataVolumeDirpathOnExpanderContainer,
+				Name: enclaveDataPvc.Spec.VolumeName,
+				MountPath: enclaveDataVolumeDirpathOnExpanderContainer,
+			},
+			{
+				Name:      destinationPvc.Spec.VolumeName,
+				MountPath: destinationVolumeMountDirpathOnExpanderContainer,
 			},
 		},
 	}
@@ -201,7 +233,10 @@ func (backend *KubernetesKurtosisBackend) runExtractionJobToCompletion(
 		jobAttrs.GetLabels(),
 		jobAttrs.GetAnnotations(),
 		[]apiv1.Container{container},
-		[]apiv1.Volume{volume},
+		[]apiv1.Volume{
+			enclaveDataVolume,
+			destinationVolume,
+		},
 		numTarExpansionRetries,
 		ttlSecondsAfterFinishedExpanderJob,
 	)
