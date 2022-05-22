@@ -10,10 +10,7 @@ import {
     ExecCommandResponse,
     ExecuteModuleArgs,
     ExecuteModuleResponse,
-    GetModuleInfoArgs,
     GetModulesResponse,
-    GetServiceInfoArgs,
-    GetServiceInfoResponse,
     GetServicesResponse,
     LoadModuleArgs,
     PauseServiceArgs,
@@ -36,10 +33,8 @@ export interface GenericApiContainerClient {
     getEnclaveId(): EnclaveID
     loadModule(loadModuleArgs: LoadModuleArgs): Promise<Result<null, Error>>
     unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<null,Error>>
-    getModuleInfo(getModuleInfoArgs: GetModuleInfoArgs): Promise<Result<null, Error>>
     registerService(registerServiceArgs: RegisterServiceArgs): Promise<Result<RegisterServiceResponse, Error>>
     startService(startServiceArgs: StartServiceArgs): Promise<Result<StartServiceResponse, Error>>
-    getServiceInfo(getServiceInfoArgs: GetServiceInfoArgs): Promise<Result<GetServiceInfoResponse, Error>>
     removeService(args: RemoveServiceArgs): Promise<Result<null, Error>>
     repartitionNetwork(repartitionArgs: RepartitionArgs): Promise<Result<null, Error>>
     waitForHttpGetEndpointAvailability(availabilityArgs: WaitForHttpGetEndpointAvailabilityArgs): Promise<Result<null, Error>>

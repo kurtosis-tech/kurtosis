@@ -5,8 +5,6 @@ import {
     RegisterServiceArgs,
     RegisterServiceResponse,
     StartServiceArgs,
-    GetServiceInfoArgs,
-    GetServiceInfoResponse,
     RemoveServiceArgs,
     RepartitionArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
@@ -15,8 +13,6 @@ import {
     GetServicesResponse,
     LoadModuleArgs,
     UnloadModuleArgs,
-    GetModuleInfoArgs,
-    GetModuleInfoResponse,
     GetModulesResponse,
     ExecuteModuleArgs,
     ExecuteModuleResponse,
@@ -94,27 +90,6 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         return ok(null);
     }
 
-    public async getModuleInfo(getModuleInfoArgs: GetModuleInfoArgs): Promise<Result<null, Error>> {
-        const getModuleInfoPromise: Promise<Result<GetModuleInfoResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.getModuleInfo(getModuleInfoArgs, {}, (error: grpc_web.RpcError | null, response?: GetModuleInfoResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    }
-                    resolve(ok(response!));
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const getModuleInfoResponseResult: Result<GetModuleInfoResponse, Error> = await getModuleInfoPromise;
-        if (getModuleInfoResponseResult.isErr()) {
-            return err(getModuleInfoResponseResult.error);
-        }
-
-        return ok(null);
-    }
-
     public async registerService(registerServiceArgs: RegisterServiceArgs): Promise<Result<RegisterServiceResponse, Error>>{
         const registerServicePromise: Promise<Result<RegisterServiceResponse, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.registerService(registerServiceArgs, {}, (error: grpc_web.RpcError | null, response?: RegisterServiceResponse) => {
@@ -159,29 +134,6 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
 
         const startServiceResponse: StartServiceResponse = resultStartService.value;
         return ok(startServiceResponse)
-    }
-
-    public async getServiceInfo(getServiceInfoArgs: GetServiceInfoArgs): Promise<Result<GetServiceInfoResponse, Error>> {
-        const promiseGetServiceInfo: Promise<Result<GetServiceInfoResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.getServiceInfo(getServiceInfoArgs, {}, (error: grpc_web.RpcError | null, response?: GetServiceInfoResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const resultGetServiceInfo: Result<GetServiceInfoResponse, Error> = await promiseGetServiceInfo;
-        if (resultGetServiceInfo.isErr()) {
-            return err(resultGetServiceInfo.error);
-        }
-
-        const getServiceInfoResponse: GetServiceInfoResponse = resultGetServiceInfo.value;
-        return ok(getServiceInfoResponse)
     }
 
     public async removeService(args: RemoveServiceArgs): Promise<Result<null, Error>> {

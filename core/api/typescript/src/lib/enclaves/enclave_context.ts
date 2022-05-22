@@ -18,9 +18,9 @@ import type {
     PartitionConnections,
     LoadModuleArgs,
     UnloadModuleArgs,
-    GetModuleInfoArgs,
+    GetModulesArgs,
     RegisterServiceArgs,
-    GetServiceInfoArgs,
+    GetServicesArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
     WaitForHttpPostEndpointAvailabilityArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
@@ -29,8 +29,8 @@ import { GrpcWebApiContainerClient } from "./grpc_web_api_container_client";
 import type { GenericApiContainerClient } from "./generic_api_container_client";
 import { ModuleContext, ModuleID } from "../modules/module_context";
 import {
-    newGetModuleInfoArgs,
-    newGetServiceInfoArgs,
+    newGetModulesArgs,
+    newGetServicesArgs,
     newLoadModuleArgs,
     newPartitionConnections,
     newPartitionServices,
@@ -53,7 +53,11 @@ import { PortProtocol, PortSpec } from "../services/port_spec";
 import type { GenericPathJoiner } from "./generic_path_joiner";
 import type { PartitionConnection } from "./partition_connection";
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
-import {PauseServiceArgs, UnpauseServiceArgs} from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
+import {
+    ModuleInfo,
+    PauseServiceArgs, ServiceInfo,
+    UnpauseServiceArgs
+} from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
 export type EnclaveID = string;
 export type PartitionID = string;
@@ -184,7 +188,9 @@ export class EnclaveContext {
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async getModuleContext(moduleId: ModuleID): Promise<Result<ModuleContext, Error>> {
-        const getModuleInfoArgs: GetModuleInfoArgs = newGetModuleInfoArgs(moduleId);
+        const moduleArgMap = new Map<string, boolean>()
+        moduleArgMap.set(moduleId, true)
+        const getModuleInfoArgs: GetModulesArgs = newGetModulesArgs(moduleArgMap);
 
         const getModuleInfoResult = await this.backend.getModuleInfo(getModuleInfoArgs)
         if(getModuleInfoResult.isErr()){
@@ -297,7 +303,9 @@ export class EnclaveContext {
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async getServiceContext(serviceId: ServiceID): Promise<Result<ServiceContext, Error>> {
-        const getServiceInfoArgs: GetServiceInfoArgs = newGetServiceInfoArgs(serviceId);
+        const serviceArgMap = new Map<string, boolean>()
+        serviceArgMap.set(serviceId, true)
+        const getServiceInfoArgs: GetServicesArgs = newGetServicesArgs(serviceArgMap);
 
         const getServiceInfoResult = await this.backend.getServiceInfo(getServiceInfoArgs)
         if(getServiceInfoResult.isErr()){
@@ -473,7 +481,7 @@ export class EnclaveContext {
 
         const serviceIDs: Set<ServiceID> = new Set<ServiceID>()
 
-        getServicesResponse.getServiceIdsMap().forEach((value: boolean, key: string) => {
+        getServicesResponse.getServiceInfoMap().forEach((value: ServiceInfo, key: string) => {
             serviceIDs.add(key)
         });
 
@@ -493,7 +501,7 @@ export class EnclaveContext {
 
         const moduleIds: Set<ModuleID> = new Set<ModuleID>()
 
-        modulesResponse.getModuleIdsMap().forEach((value: boolean, key: string) => {
+        modulesResponse.getModuleInfoMap().forEach((value: ModuleInfo, key: string) => {
             moduleIds.add(key)
         })
 
