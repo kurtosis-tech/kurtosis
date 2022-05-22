@@ -18,10 +18,10 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/concurrent_writer"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -170,6 +170,24 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	backend.serviceRegistrationMutex.Lock()
 	defer backend.serviceRegistrationMutex.Unlock()
 
+	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
+	}
+	enclaveNetworkId := enclaveNetwork.GetId()
+
+	// Needed for files artifacts expansion container
+	freeIpAddrProvider, found := backend.enclaveFreeIpProviders[enclaveId]
+	if !found {
+		return nil, stacktrace.NewError(
+			"Received a request to start service with GUID '%v' in enclave '%v', but no free IP address provider was "+
+				"defined for this enclave; this likely means that the start request is being called where it shouldn't "+
+				"be (i.e. outside the API container)",
+			serviceGuid,
+			enclaveId,
+		)
+	}
+
 	// Find the registration
 	registrationsForEnclave, found := backend.serviceRegistrations[enclaveId]
 	if !found {
@@ -208,6 +226,27 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
 
+	var volumeMounts map[string]string
+	if filesArtifactsExpansion != nil {
+		candidateVolumeMounts, err := backend.doFilesArtifactExpansionAndGetUserServiceVolumes(
+			ctx,
+			serviceGuid,
+			enclaveObjAttrsProvider,
+			freeIpAddrProvider,
+			enclaveNetworkId,
+			filesArtifactsExpansion.ExpanderImage,
+			filesArtifactsExpansion.ExpanderEnvVars,
+			filesArtifactsExpansion.ExpanderDirpathsToServiceDirpaths,
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred doing files artifacts expansion to get user service volumes",
+			)
+		}
+		volumeMounts = candidateVolumeMounts
+	}
+
 	containerAttrs, err := enclaveObjAttrsProvider.ForUserServiceContainer(
 		serviceId,
 		serviceGuid,
@@ -224,11 +263,6 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
-	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
-	}
-
 	dockerUsedPorts := map[nat.Port]docker_manager.PortPublishSpec{}
 	for portId, portSpec := range privatePorts {
 		dockerPort, err := transformPortSpecToDockerPort(portSpec)
@@ -241,7 +275,7 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImageName,
 		containerName.GetString(),
-		enclaveNetwork.GetId(),
+		enclaveNetworkId,
 	).WithStaticIP(
 		privateIpAddr,
 	).WithUsedPorts(
@@ -259,7 +293,11 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	if cmdArgs != nil {
 		createAndStartArgsBuilder.WithCmdArgs(cmdArgs)
 	}
+	if volumeMounts != nil {
+		createAndStartArgsBuilder.WithVolumeMounts(volumeMounts)
+	}
 
+	/*
 	if filesArtifactVolumeMountDirpaths != nil {
 
 		// CREATE FILTER SET FOR FILES ARTIFACT EXPANSION GUIDS AND SERVICE GUID
@@ -290,6 +328,8 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		}
 		createAndStartArgsBuilder.WithVolumeMounts(filesArtifactVolumeMountDirpathStrs)
 	}
+
+	 */
 	createAndStartArgs := createAndStartArgsBuilder.Build()
 
 	// Best-effort pull attempt
@@ -1041,6 +1081,73 @@ func extractServiceGUIDFromServiceObj(uncastedObj interface{}) (string, error) {
 	return string(castedObj.GetRegistration().GetGUID()), nil
 }
 
+func (backend *DockerKurtosisBackend) doFilesArtifactExpansionAndGetUserServiceVolumes(
+	ctx context.Context,
+	serviceGuid service.ServiceGUID,
+	objAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
+	freeIpAddrProvider *lib.FreeIpAddrTracker,
+	enclaveNetworkId string,
+	expanderImage string,
+	expanderEnvVars map[string]string,
+	expanderMountpointsToServiceMountpoints map[string]string,
+) (map[string]string, error) {
+	requestedExpanderMountpoints := map[string]bool{}
+	for expanderMountpoint := range expanderMountpointsToServiceMountpoints {
+		requestedExpanderMountpoints[expanderMountpoint] = true
+	}
+	expanderMountpointsToVolumeNames, err := backend.createFilesArtifactsExpansionVolumes(
+		ctx,
+		serviceGuid,
+		objAttrsProvider,
+		requestedExpanderMountpoints,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"Couldn't create files artifact expansion volumes for requested expander mounpoints: %+v",
+			requestedExpanderMountpoints,
+		)
+	}
+
+	expanderIpAddr, err := freeIpAddrProvider.GetFreeIpAddr()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting a free IP for the files artifacts expander container")
+	}
+	// TODO defer a ReleaseIpAddr here when we delete the files artifact expander container after running (we can't do it
+	//  right now because the expander container will still exist after we run the expansion)
+
+	if err := backend.runFilesArtifactsExpander(
+		ctx,
+		serviceGuid,
+		objAttrsProvider,
+		expanderImage,
+		expanderIpAddr,
+		expanderEnvVars,
+		enclaveNetworkId,
+		expanderMountpointsToVolumeNames,
+	); err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred running files artifacts expander for service '%v'",
+			serviceGuid,
+		)
+	}
+
+	userServiceVolumeMounts := map[string]string{}
+	for expanderMountpoint, userServiceMountpoint := range expanderMountpointsToServiceMountpoints {
+		volumeName, found := expanderMountpointsToVolumeNames[expanderMountpoint]
+		if !found {
+			return nil, stacktrace.NewError(
+				"Found expander mountpoint '%v' for which no expansion volume was created; this should never happen " +
+					"and is a bug in Kurtosis",
+				expanderMountpoint,
+			)
+		}
+		userServiceVolumeMounts[volumeName] = userServiceMountpoint
+	}
+	return userServiceVolumeMounts, nil
+}
+
 // Runs a single expander container which expands one or more files artifacts into multiple volumes
 func (backend *DockerKurtosisBackend) runFilesArtifactsExpander(
 	ctx context.Context,
@@ -1237,3 +1344,4 @@ func (backend *DockerKurtosisBackend) createFilesArtifactsExpansionVolumes(
 	shouldDeleteVolumes = false
 	return result, nil
 }
+

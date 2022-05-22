@@ -24,15 +24,15 @@ import (
 
 type FilesArtifactsExpansion struct {
 	// The image that will be run as an InitContainer before the user service starts
-	expanderImage string
+	ExpanderImage string
 
 	// The environment variables that the expander container will be passed in, to configure
 	// its operation
-	expanderEnvVars map[string]string
+	ExpanderEnvVars map[string]string
 
 	// Map of dirpaths on the expander container (which the expander will expand into), mapped to
 	// dirpaths on the user service container where those same directories should be made available
-	expanderDirpathsToServiceDirpaths map[string]string
+	ExpanderDirpathsToServiceDirpaths map[string]string
 }
 
 // KurtosisBackend abstracts a Kurtosis backend, which will be a container engine (Docker or Kubernetes).
