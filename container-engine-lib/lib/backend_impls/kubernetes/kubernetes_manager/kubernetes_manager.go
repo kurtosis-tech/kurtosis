@@ -39,9 +39,7 @@ const (
 	waitForPersistentVolumeBoundTimeout = 60 * time.Second
 	waitForPersistentVolumeBoundRetriesDelayMilliSeconds = 500
 
-	apiv1Prefix = "api/v1"
-
-	podWaitForAvailabilityTimeout = 15 * time.Second
+	podWaitForAvailabilityTimeout = 60 * time.Second
 	podWaitForAvailabilityTimeBetweenPolls = 500 * time.Millisecond
 	resourceDeletionTimeoutInSeconds = 30 * time.Second
 

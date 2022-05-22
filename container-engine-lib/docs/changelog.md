@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Bumped the pod wait-for-availability timeout to 1 minute
 
 # 0.29.1
 ### Changes
