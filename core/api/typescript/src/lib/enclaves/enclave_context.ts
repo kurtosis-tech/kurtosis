@@ -192,7 +192,7 @@ export class EnclaveContext {
         moduleArgMap.set(moduleId, true)
         const getModuleInfoArgs: GetModulesArgs = newGetModulesArgs(moduleArgMap);
 
-        const getModuleInfoResult = await this.backend.getModuleInfo(getModuleInfoArgs)
+        const getModuleInfoResult = await this.backend.getModules(getModuleInfoArgs)
         if(getModuleInfoResult.isErr()){
             return err(getModuleInfoResult.error)
         }
@@ -307,19 +307,24 @@ export class EnclaveContext {
         serviceArgMap.set(serviceId, true)
         const getServiceInfoArgs: GetServicesArgs = newGetServicesArgs(serviceArgMap);
 
-        const getServiceInfoResult = await this.backend.getServiceInfo(getServiceInfoArgs)
-        if(getServiceInfoResult.isErr()){
-            return err(getServiceInfoResult.error)
+        const getServicesResult = await this.backend.getServices(getServiceInfoArgs)
+        if(getServicesResult.isErr()){
+            return err(getServicesResult.error)
         }
 
-        const serviceInfo = getServiceInfoResult.value
+        const serviceInfo = getServicesResult.value.getServiceInfoMap().get(serviceId)
+        if(!serviceInfo) {
+            return err(new Error(
+                    "Failed to find service with id " + serviceId + " in backend."
+            ))
+        }
         if (serviceInfo.getPrivateIpAddr() === "") {
             return err(new Error(
                     "Kurtosis API reported an empty private IP address for service " + serviceId +  " - this should never happen, and is a bug with Kurtosis!",
                 )
             );
         }
-        if (serviceInfo.getPublicIpAddr() === "") {
+        if (serviceInfo.getMaybePublicIpAddr() === "") {
             return err(new Error(
                     "Kurtosis API reported an empty public IP address for service " + serviceId +  " - this should never happen, and is a bug with Kurtosis!",
                 )
@@ -330,7 +335,7 @@ export class EnclaveContext {
             serviceInfo.getPrivatePortsMap(),
         );
         const serviceCtxPublicPorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
-            serviceInfo.getPublicPortsMap(),
+            serviceInfo.getMaybePublicPortsMap(),
         );
 
         const serviceContext: ServiceContext = new ServiceContext(
@@ -338,7 +343,7 @@ export class EnclaveContext {
             serviceId,
             serviceInfo.getPrivateIpAddr(),
             serviceCtxPrivatePorts,
-            serviceInfo.getPublicIpAddr(),
+            serviceInfo.getMaybePublicIpAddr(),
             serviceCtxPublicPorts,
         );
 
@@ -470,9 +475,10 @@ export class EnclaveContext {
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async getServices(): Promise<Result<Set<ServiceID>, Error>> {
-        const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
+        const getAllServicesArgMap: Map<string, boolean> = new Map<string,boolean>()
+        const emptyGetServicesArg: GetServicesArgs = newGetServicesArgs(getAllServicesArgMap)
 
-        const getServicesResponseResult = await this.backend.getServices(emptyArg)
+        const getServicesResponseResult = await this.backend.getServices(emptyGetServicesArg)
         if(getServicesResponseResult.isErr()){
             return err(getServicesResponseResult.error)
         }
@@ -490,9 +496,10 @@ export class EnclaveContext {
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async getModules(): Promise<Result<Set<ModuleID>, Error>> {
-        const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
+        const getAllModulesArgMap: Map<string, boolean> = new Map<string,boolean>()
+        const emptyGetModulesArg: GetModulesArgs = newGetModulesArgs(getAllModulesArgMap)
 
-        const getModulesResponseResult = await this.backend.getModules(emptyArg)
+        const getModulesResponseResult = await this.backend.getModules(emptyGetModulesArg)
         if(getModulesResponseResult.isErr()){
             return err(getModulesResponseResult.error)
         }
