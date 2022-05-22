@@ -67,6 +67,13 @@ const (
 
 	// This is the owner string we'll use when updating fields
 	fieldManager = "kurtosis"
+
+
+
+	// This is a container "reason" (machine-readable string) indicating that the container has some issue with
+	// pulling the image (usually, a typo in the image name or the image doesn't exist)
+	// Pods in this state don't really recover on their own
+	imagePullBackOffContainerReason = "ImagePullBackOff"
 )
 
 var (
@@ -1037,6 +1044,24 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 		switch latestPodStatus.Phase {
 		case apiv1.PodRunning:
 			return nil
+		case apiv1.PodPending:
+			for _, containerStatus := range pod.Status.ContainerStatuses {
+				containerName := containerStatus.Name
+				maybeContainerWaitingState := containerStatus.State.Waiting
+				if maybeContainerWaitingState != nil && maybeContainerWaitingState.Reason == imagePullBackOffContainerReason {
+					return stacktrace.NewError(
+						"Container '%v' using image '%v' (%v) in pod '%v' in namespace '%v' is stuck in state '%v'. This likely means:\n" +
+							"1) There's a typo in either the image name or the tag name\n" +
+							"2) The image isn't accessible to Kubernetes (e.g. it's a local image, or it's in a private image registry)",
+						containerName,
+						containerStatus.Image,
+						containerStatus.ImageID,
+						pod.Name,
+						namespaceName,
+						imagePullBackOffContainerReason,
+					)
+				}
+			}
 		case apiv1.PodFailed:
 			containerStatusStrs := renderContainerStatuses(latestPodStatus.ContainerStatuses, containerStatusLineBulletPoint)
 			return stacktrace.NewError(

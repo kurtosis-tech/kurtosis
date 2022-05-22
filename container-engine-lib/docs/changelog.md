@@ -11,6 +11,7 @@
 * Fixed issue with engine and API containers not having permissions to get Pod logs
 * Fixed bug with the files artifact expansion job not mounting the enclave data volume
 * Changed pod wait-for-availability timeout (how long the pod can stay in "Pending") from 1 minute to 15 minutes, because Pending also includes the time spent pulling images and some images can be very large (e.g. NEAR)
+* Return an error if a pod's container hits ImagePullBackOff
 
 ### Breaking Changes
 * `CreateFilesArtifactExpansion` no longer takes in a `FilesArtifactID` (as it's unneeded)
