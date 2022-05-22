@@ -1,5 +1,14 @@
 # TBD
 
+# 0.30.2
+### Changes
+* Use `kurtosis-enclave--UUID` for enclave namespace names
+* `GetXXXXX` methods in Kubernetes manager only return non-tombstoned objects
+
+### Fixes
+* Fixed an issue when getting a single enclave object by its ID fails because a condition was wrong
+* Fixed a bug related to using array of reference variables for `enclaveKubernetesResources.pods` and `enclaveKubernetesResources.services` fields
+
 # 0.30.1
 ### Fixes
 * Fixed an issue where a Service and a Pod could exist at the same time even though the Service won't have private port annotations
