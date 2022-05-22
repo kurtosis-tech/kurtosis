@@ -33,6 +33,8 @@ const (
 
 	// Based on example on k8s docs https://kubernetes.io/docs/concepts/workloads/controllers/job/
 	ttlSecondsAfterFinishedExpanderJob = 100
+
+	filesArtifactExpansionContainerName = "files-artifact-expansion-container"
 )
 
 //Create a files artifact exansion volume for user service and file artifact id and runs a file artifact expander
@@ -40,8 +42,8 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
-	filesArtifactId service.FilesArtifactID,
-	filesArtifactFilepathRelativeToEnclaveDatadirRoot string)(*files_artifact_expansion.FilesArtifactExpansion, error) {
+	filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
+)(*files_artifact_expansion.FilesArtifactExpansion, error) {
 	filesArtifactExpansionGUIDStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to generate UUID for files artifact expansion.")
@@ -96,13 +98,6 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 	artifactFilepath := path.Join(enclaveDataVolumeDirpathOnExpanderContainer, filesArtifactFilepathRelativeToEnclaveDatadirRoot)
 	extractionCommand := getExtractionCommand(artifactFilepath, destVolMntDirpathOnExpander)
 
-	jobAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpansionJob(filesArtifactExpansionGUID, serviceGuid)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the files artifact expander container attributes for files artifact expansion GUID '%v'", filesArtifactExpansionGUID)
-	}
-	jobContainerName := jobAttrs.GetName().GetString()
-
-
 	pvcVolumeSource := apiv1.PersistentVolumeClaimVolumeSource{
 		ClaimName: pvc.Name,
 		ReadOnly:  isPersistentVolumeClaimReadOnly,
@@ -123,18 +118,25 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 	}
 
 	container := apiv1.Container{
-		Name:                     jobContainerName,
+		Name:                     filesArtifactExpansionContainerName,
 		Image:                    dockerImage,
 		Command:                  extractionCommand,
 		VolumeMounts:             []apiv1.VolumeMount{volumeMount},
 	}
 
+	jobAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpansionJob(filesArtifactExpansionGUID, serviceGuid)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the files artifact expander container attributes for files artifact expansion GUID '%v'", filesArtifactExpansionGUID)
+	}
 	job, err := backend.kubernetesManager.CreateJobWithContainerAndVolume(ctx,
 		enclaveNamespaceName,
+		jobAttrs.GetName(),
+		jobAttrs.GetLabels(),
+		jobAttrs.GetAnnotations(),
 		ttlSecondsAfterFinishedExpanderJob,
-		container,
-		volume)
-
+		[]apiv1.Container{container},
+		[]apiv1.Volume{volume},
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create files artifact expansion job for expansion '%v'", filesArtifactExpansionGUID)
 	}

@@ -3,6 +3,12 @@
 * Bumped the pod wait-for-availability timeout to 1 minute
 * Gave the API container permission to create jobs
 
+### Breaking Changes
+* `CreateFilesArtifactExpansion` no longer takes in a `FilesArtifactID` (as it's unneeded)
+    * Remediation: remove the argument in the call
+* Removed the `FilesArtifactID` type
+    * Users should manage their own FilesArtifactIDs, as the backend no longer deals with them
+
 # 0.29.1
 ### Changes
 * Trying to run networking partitioning methods in Kubernetes will result in an error, rather than a panic

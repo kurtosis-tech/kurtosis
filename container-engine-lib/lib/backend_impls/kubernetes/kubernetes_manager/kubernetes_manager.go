@@ -8,6 +8,11 @@ package kubernetes_manager
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_object_name"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	v1 "k8s.io/api/batch/v1"
@@ -839,17 +844,30 @@ func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string,
 }
 
 func (manager *KubernetesManager) CreateJobWithContainerAndVolume(ctx context.Context,
-	namespace string,
+	namespaceName string,
+	jobName *kubernetes_object_name.KubernetesObjectName,
+	jobLabels map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue,
+	jobAnnotations map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue,
 	ttlSecondsAfterFinished uint,
-	container apiv1.Container,
-	volume apiv1.Volume) (*v1.Job, error) {
+	containers []apiv1.Container,
+	volumes []apiv1.Volume,
+) (*v1.Job, error) {
 
-	jobsClient := manager.kubernetesClientSet.BatchV1().Jobs(namespace)
+	jobsClient := manager.kubernetesClientSet.BatchV1().Jobs(namespaceName)
 	ttlSecondsAfterFinishedInt32 := int32(ttlSecondsAfterFinished)
 
+	labelStrs := transformTypedLabelsToStrs(jobLabels)
+	annotationStrs := transformTypedAnnotationsToStrs(jobAnnotations)
+
+	jobMeta := metav1.ObjectMeta{
+		Name:                       jobName.GetString(),
+		Labels:                     labelStrs,
+		Annotations:                annotationStrs,
+	}
+
 	podSpec := apiv1.PodSpec{
-		Containers: []apiv1.Container{container},
-		Volumes: []apiv1.Volume{volume},
+		Containers: containers,
+		Volumes: volumes,
 	}
 
 	jobSpec := v1.JobSpec{
@@ -860,16 +878,22 @@ func (manager *KubernetesManager) CreateJobWithContainerAndVolume(ctx context.Co
 	}
 
 	jobInput := v1.Job{
-		Spec: jobSpec,
+		ObjectMeta: jobMeta,
+		Spec:       jobSpec,
 	}
 
 	options := metav1.CreateOptions{}
 
 	job, err := jobsClient.Create(ctx, &jobInput, options)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create job in namespace '%v' with " +
-			"container '%v' and volume '%v'.",
-			namespace, container.Name, volume.Name)
+		return nil, stacktrace.Propagate(
+			err,
+			"Failed to create job '%v' in namespace '%v' with containers '%+v' and volumes '%+v'",
+			jobName,
+			namespaceName,
+			containers,
+			volumes,
+		)
 	}
 	return job, nil
 }
@@ -917,6 +941,22 @@ func (manager KubernetesManager) GetJobCompletionAndSuccessFlags(ctx context.Con
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
+func transformTypedLabelsToStrs(input map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue) map[string]string {
+	result := map[string]string{}
+	for key, value := range input {
+		result[key.GetString()] = value.GetString()
+	}
+	return result
+}
+
+func transformTypedAnnotationsToStrs(input map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue) map[string]string {
+	result := map[string]string{}
+	for key, value := range input {
+		result[key.GetString()] = value.GetString()
+	}
+	return result
+}
+
 func (manager *KubernetesManager) waitForPersistentVolumeClaimBound(ctx context.Context, persistentVolumeClaim *apiv1.PersistentVolumeClaim) error {
 	deadline := time.Now().Add(waitForPersistentVolumeBoundTimeout)
 	time.Sleep(time.Duration(waitForPersistentVolumeBoundInitialDelayMilliSeconds) * time.Millisecond)
