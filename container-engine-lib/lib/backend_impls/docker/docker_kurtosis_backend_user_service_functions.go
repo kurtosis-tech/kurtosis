@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
@@ -158,7 +159,7 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	filesArtifactVolumeMountDirpaths map[files_artifact_expansion.FilesArtifactExpansionGUID]string,
+	filesArtifactsExpansion *backend_interface.FilesArtifactsExpansion,
 ) (*service.Service, error, ) {
 	backend.serviceRegistrationMutex.Lock()
 	defer backend.serviceRegistrationMutex.Unlock()
@@ -1032,4 +1033,10 @@ func extractServiceGUIDFromServiceObj(uncastedObj interface{}) (string, error) {
 		return "", stacktrace.NewError("An error occurred downcasting the user service object")
 	}
 	return string(castedObj.GetRegistration().GetGUID()), nil
+}
+
+func createFilesArtifactsExpansionVolumes
+
+func runFilesArtifactsExpansionContainer() {
+
 }

@@ -228,7 +228,7 @@ func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionDockerReso
 	artifactVolumeLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString(): label_value_consts.AppIDDockerLabelValue.GetString(),
 		label_key_consts.EnclaveIDDockerLabelKey.GetString():     string(enclaveId),
-		label_key_consts.VolumeTypeDockerLabelKey.GetString(): label_value_consts.FilesArtifactExpansionsVolumeTypeDockerLabelValue.GetString(),
+		label_key_consts.VolumeTypeDockerLabelKey.GetString(): label_value_consts.FilesArtifactExpansionVolumeTypeDockerLabelValue.GetString(),
 	}
 	volumes, err := backend.dockerManager.GetVolumesByLabels(ctx, artifactVolumeLabels)
 	if err != nil {
@@ -319,7 +319,7 @@ func (backend *DockerKurtosisBackend) createFilesArtifactExpansionVolume(
 		return "", stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
 
-	volumeAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpansionVolume(
+	volumeAttrs, err := enclaveObjAttrsProvider.ForSingleFilesArtifactExpansionVolume(
 		filesArtifactExpansionGUID,
 		serviceGUID)
 	if err != nil {

@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 	"strings"
@@ -52,7 +53,7 @@ type DockerEnclaveObjectAttributesProvider interface {
 		serviceGUID service.ServiceGUID,
 	) (DockerObjectAttributes, error)
 	 */
-	ForFilesArtifactsExpansionVolume(
+	ForSingleFilesArtifactExpansionVolume(
 		serviceGUID service.ServiceGUID,
 	) (DockerObjectAttributes, error)
 	ForModuleContainer(
@@ -323,29 +324,39 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForModuleContainer(
 	return objectAttributes, nil
 }
 
-func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactsExpansionVolume(
+// In Docker we get one volume per artifact being expanded
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSingleFilesArtifactExpansionVolume(
 	serviceGUID service.ServiceGUID,
 )(
 	DockerObjectAttributes,
 	error,
 ){
 	serviceGuidStr := string(serviceGUID)
-	name, err := provider.getNameForEnclaveObject([]string{
-		artifactExpansionNameFragment,
-		serviceGuidStr,
-	})
+
+	guidStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the files artifact expansion volume name object for service '%v'", serviceGuidStr)
+		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID for the files artifact expnasion volume for service '%v'", serviceGuidStr)
 	}
 
-	labels := provider.getLabelsForEnclaveObject()
+	name, err := provider.getNameForEnclaveObject([]string{
+		artifactExpansionNameFragment,
+		guidStr,
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the files artifact expansion volume name object using GUID '%v' and service GUID ", guidStr, serviceGuidStr)
+	}
+
+	labels, err := provider.getLabelsForEnclaveObjectWithGUID(guidStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for files artifact expansion volume with GUID '%v'", guidStr)
+	}
 
 	serviceGuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(serviceGuidStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from sevice GUID string '%v'", serviceGuidStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from service GUID string '%v'", serviceGuidStr)
 	}
 	labels[label_key_consts.UserServiceGUIDDockerLabelKey] = serviceGuidLabelValue
-	labels[label_key_consts.VolumeTypeDockerLabelKey] = label_value_consts.FilesArtifactExpansionsVolumeTypeDockerLabelValue
+	labels[label_key_consts.VolumeTypeDockerLabelKey] = label_value_consts.FilesArtifactExpansionVolumeTypeDockerLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
