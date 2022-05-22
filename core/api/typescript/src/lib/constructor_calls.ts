@@ -80,9 +80,12 @@ export function newExecuteModuleArgs(moduleId: ModuleID, serializedParams: strin
 // ==============================================================================================
 //                                     Get Module Info
 // ==============================================================================================
-export function newGetModulesArgs(moduleId: ModuleID): GetModulesArgs {
+export function newGetModulesArgs(modules: Map<string, boolean>): GetModulesArgs {
     const result: GetModulesArgs = new GetModulesArgs();
-    result.setModuleId(String(moduleId));
+    const moduleMap: jspb.Map<string, boolean> = result.getIdsMap();
+    for (const [portId, portSpec] of modules) {
+        moduleMap.set(portId, portSpec);
+    }
 
     return result;
 }
@@ -140,11 +143,14 @@ export function newStartServiceArgs(
 }
 
 // ==============================================================================================
-//                                       Get Service Info
+//                                       Get Services Info
 // ==============================================================================================
-export function newGetServiceInfoArgs(serviceId: ServiceID): GetServicesArgs{
+export function newGetServicesArgs(services: Map<string, boolean>): GetServicesArgs{
     const result: GetServicesArgs = new GetServicesArgs();
-    result.setServiceId(String(serviceId));
+    const serviceIdMap: jspb.Map<string, boolean> = result.getServiceIdsMap()
+    for (const [serviceId, booleanVal] of services) {
+        serviceIdMap.set(serviceId, booleanVal);
+    }
 
     return result;
 }
