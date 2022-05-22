@@ -133,9 +133,9 @@ func (backend *KubernetesKurtosisBackend) CreateFilesArtifactExpansion(
 		jobAttrs.GetName(),
 		jobAttrs.GetLabels(),
 		jobAttrs.GetAnnotations(),
-		ttlSecondsAfterFinishedExpanderJob,
 		[]apiv1.Container{container},
 		[]apiv1.Volume{volume},
+		ttlSecondsAfterFinishedExpanderJob,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create files artifact expansion job for expansion '%v'", filesArtifactExpansionGUID)
