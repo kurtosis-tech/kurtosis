@@ -18,8 +18,8 @@ const (
 	apiContainerContainerTypeLabelValueStr          = "api-container"
 	userServiceContainerTypeLabelValueStr           = "user-service"
 	networkingSidecarContainerTypeLabelValueStr     = "networking-sidecar"
-	moduleContainerTypeLabelValueStr                = "module"
-	filesArtifactExpanderContainerTypeLabelValueStr = "files-artifact-expander"
+	moduleContainerTypeLabelValueStr                 = "module"
+	filesArtifactsExpanderContainerTypeLabelValueStr = "files-artifacts-expander"
 
 	enclaveDataVolumeTypeLabelValueStr            = "enclave-data"
 	filesArtifactExpansionVolumeTypeLabelValueStr = "files-artifacts-expansion"
@@ -45,7 +45,7 @@ var UserServiceContainerTypeDockerLabelValue = docker_label_value.MustCreateNewD
 var NetworkingSidecarContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(networkingSidecarContainerTypeLabelValueStr)
 var NetworkPartitioningEnabledDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(trueValueStr)
 var NetworkPartitioningDisabledDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(falseValueStr)
-var FilesArtifactExpanderContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(filesArtifactExpanderContainerTypeLabelValueStr)
+var FilesArtifactExpanderContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(filesArtifactsExpanderContainerTypeLabelValueStr)
 
 var EnclaveDataVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(enclaveDataVolumeTypeLabelValueStr)
 var FilesArtifactExpansionVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(filesArtifactExpansionVolumeTypeLabelValueStr)

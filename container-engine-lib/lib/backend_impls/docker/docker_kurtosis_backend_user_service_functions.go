@@ -1036,6 +1036,11 @@ func extractServiceGUIDFromServiceObj(uncastedObj interface{}) (string, error) {
 	return string(castedObj.GetRegistration().GetGUID()), nil
 }
 
+func (backend *DockerKurtosisBackend) runFilesArtifactExpander(
+	ctx ) {
+
+}
+
 
 // Takes in a list of mountpoints on the expander container that the expander container wants populated with volumes,
 // and creates one volume per mountpoint location

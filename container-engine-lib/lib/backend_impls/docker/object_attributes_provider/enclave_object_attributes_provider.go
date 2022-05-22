@@ -23,8 +23,9 @@ const (
 	apiContainerNameSuffix                 = "kurtosis-api"
 	userServiceContainerNameFragment       = "user-service"
 	networkingSidecarContainerNameFragment = "networking-sidecar"
-	artifactExpansionNameFragment         = "files-artifact-expansion"
-	moduleContainerNameFragment           = "module"
+	artifactExpansionVolumeNameFragment    = "files-artifact-expansion"
+	artifactsExpanderContainerNameFragment = "files-artifacts-expander"
+	moduleContainerNameFragment            = "module"
 )
 
 type DockerEnclaveObjectAttributesProvider interface {
@@ -339,7 +340,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSingleFilesArtifac
 	}
 
 	name, err := provider.getNameForEnclaveObject([]string{
-		artifactExpansionNameFragment,
+		artifactExpansionVolumeNameFragment,
 		guidStr,
 	})
 	if err != nil {
@@ -366,32 +367,37 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSingleFilesArtifac
 	return objectAttributes, nil
 }
 
-/*
+// We'll have at most one files artifact expansion container per service, because the single container will handle
+// all expansion
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactsExpansionContainer(
-	guid files_artifact_expansion.FilesArtifactExpansionGUID,
 	serviceGUID service.ServiceGUID,
 )(
 	DockerObjectAttributes,
 	error,
 ) {
-	guidStr := string(guid)
 	serviceGuidStr := string(serviceGUID)
+
+	guidStr, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID for the files artifacts expander container for service '%v'", serviceGuidStr)
+	}
+
 	name, err := provider.getNameForEnclaveObject([]string{
-		artifactExpansionNameFragment,
+		artifactsExpanderContainerNameFragment,
 		guidStr,
 	})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the files artifact expander container name object")
+		return nil, stacktrace.Propagate(err, "An error occurred creating the files artifacts expander container with GUID '%v'", guidStr)
 	}
 
 	labels, err := provider.getLabelsForEnclaveObjectWithGUID(guidStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", guid)
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for files artifacts expander container with GUID '%v'", guidStr)
 	}
 
 	serviceGuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(serviceGuidStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from GUID string '%v'", serviceGuidStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from service GUID string '%v'", serviceGuidStr)
 	}
 	labels[label_key_consts.UserServiceGUIDDockerLabelKey] = serviceGuidLabelValue
 	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.FilesArtifactExpanderContainerTypeDockerLabelValue
@@ -403,7 +409,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactsExpa
 
 	return objectAttributes, nil
 }
- */
 
 // ====================================================================================================
 //                                      Private Helper Functions
