@@ -1,5 +1,4 @@
 package docker
-
 import (
 	"bytes"
 	"context"
@@ -28,12 +27,6 @@ import (
 	"net"
 	"strings"
 	"time"
-)
-
-const (
-	shouldGetStoppedContainersWhenGettingServiceInfo = true
-
-	shouldFollowContainerLogsWhenExpanderHasError = false
 )
 
 /*
@@ -82,6 +75,15 @@ The benefits of this implementation:
 - We can call the GetServices method (that the CLI needs) without the API container running
  */
 
+const (
+	shouldGetStoppedContainersWhenGettingServiceInfo = true
+
+	shouldFollowContainerLogsWhenExpanderHasError = false
+
+	expanderContainerSuccessExitCode = 0
+)
+
+
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
 var commandToRunWhenCreatingUserServiceShell = []string{
 	"sh",
@@ -91,8 +93,12 @@ var commandToRunWhenCreatingUserServiceShell = []string{
 
 
 type userServiceDockerResources struct {
-	// This will never be nil because a user services is represented ONLY by a container in Docker
-	container *types.Container
+	// Canonical resource: this will never be nil because a user services is represented ONLY by a container in Docker
+	serviceContainer *types.Container
+
+	// Guaranteed to be non-nil because even though these start before the canonical container resource, if an error
+	// occurs during expansion (before starting the user container) we'll destroy the expander container & volumes
+	expanderVolumeName []string
 }
 
 func (backend *DockerKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID, ) (*service.ServiceRegistration, error, ) {
@@ -415,7 +421,7 @@ func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 	erroredUserServices := map[service.ServiceGUID]error{}
 	shouldCloseLogStreams := true
 	for guid, resourcesForService := range allDockerResources {
-		container := resourcesForService.container
+		container := resourcesForService.serviceContainer
 		if container == nil {
 			erroredUserServices[guid] = stacktrace.NewError("Cannot get logs for service '%v' as it has no container", guid)
 			continue
@@ -456,7 +462,7 @@ func (backend *DockerKurtosisBackend) PauseService(
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get information about service '%v' from Kurtosis backend.", serviceGuid)
 	}
-	container := dockerResources.container
+	container := dockerResources.serviceContainer
 	if container == nil {
 		return stacktrace.NewError("Cannot pause service '%v' as it doesn't have a container to pause", serviceGuid)
 	}
@@ -475,7 +481,7 @@ func (backend *DockerKurtosisBackend) UnpauseService(
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get information about service '%v' from Kurtosis backend.", serviceGuid)
 	}
-	container := dockerResources.container
+	container := dockerResources.serviceContainer
 	if container == nil {
 		return stacktrace.NewError("Cannot unpause service '%v' as it doesn't have a container to pause", serviceGuid)
 	}
@@ -522,7 +528,7 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 			)
 			continue
 		}
-		container := dockerResources.container
+		container := dockerResources.serviceContainer
 
 		execOutputBuf := &bytes.Buffer{}
 		exitCode, err := backend.dockerManager.RunExecCommand(
@@ -561,7 +567,7 @@ func (backend *DockerKurtosisBackend) GetConnectionWithUserService(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting service object and Docker resources for service '%v' in enclave '%v'", serviceGuid, enclaveId)
 	}
-	container := serviceDockerResources.container
+	container := serviceDockerResources.serviceContainer
 
 	hijackedResponse, err := backend.dockerManager.CreateContainerExec(ctx, container.GetId(), commandToRunWhenCreatingUserServiceShell)
 	if err != nil {
@@ -587,7 +593,7 @@ func (backend *DockerKurtosisBackend) CopyFilesFromUserService(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting user service with GUID '%v' in enclave with ID '%v'", serviceGuid, enclaveId)
 	}
-	container := serviceDockerResources.container
+	container := serviceDockerResources.serviceContainer
 
 	tarStreamReadCloser, err := backend.dockerManager.CopyFromContainer(ctx, container.GetId(), srcPathOnContainer)
 	if err != nil {
@@ -635,7 +641,7 @@ func (backend *DockerKurtosisBackend) StopUserServices(
 			// Should never happen; there should be a 1:1 mapping between service_objects:docker_resources by GUID
 			return nil, nil, stacktrace.NewError("No service object found for service '%v' that had Docker resources", guid)
 		}
-		servicesToStopByContainerId[serviceResources.container.GetId()] = serviceObj
+		servicesToStopByContainerId[serviceResources.serviceContainer.GetId()] = serviceObj
 	}
 
 	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
@@ -750,7 +756,7 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 			}
 			continue
 		}
-		containerId := dockerResources.container.GetId()
+		containerId := dockerResources.serviceContainer.GetId()
 
 		serviceObj, found := allServiceObjs[guid]
 		if !found {
@@ -899,7 +905,7 @@ func (backend *DockerKurtosisBackend) getMatchingUserServiceDockerResources(
 			}
 		}
 
-		resourcesByServiceGuid[serviceGuid] = &userServiceDockerResources{container: container}
+		resourcesByServiceGuid[serviceGuid] = &userServiceDockerResources{serviceContainer: container}
 	}
 	return resourcesByServiceGuid, nil
 }
@@ -910,7 +916,7 @@ func getUserServiceObjsFromDockerResources(
 ) (map[service.ServiceGUID]*service.Service, error) {
 	result := map[service.ServiceGUID]*service.Service{}
 	for serviceGuid, resources := range allDockerResources {
-		container := resources.container
+		container := resources.serviceContainer
 		containerName := container.GetName()
 		containerLabels := container.GetLabels()
 
@@ -1109,19 +1115,12 @@ func (backend *DockerKurtosisBackend) doFilesArtifactExpansionAndGetUserServiceV
 		)
 	}
 
-	expanderIpAddr, err := freeIpAddrProvider.GetFreeIpAddr()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting a free IP for the files artifacts expander container")
-	}
-	// TODO defer a ReleaseIpAddr here when we delete the files artifact expander container after running (we can't do it
-	//  right now because the expander container will still exist after we run the expansion)
-
 	if err := backend.runFilesArtifactsExpander(
 		ctx,
 		serviceGuid,
 		objAttrsProvider,
+		freeIpAddrProvider,
 		expanderImage,
-		expanderIpAddr,
 		expanderEnvVars,
 		enclaveNetworkId,
 		expanderMountpointsToVolumeNames,
@@ -1149,12 +1148,13 @@ func (backend *DockerKurtosisBackend) doFilesArtifactExpansionAndGetUserServiceV
 }
 
 // Runs a single expander container which expands one or more files artifacts into multiple volumes
+// NOTE: It is the caller's responsibility to handle the volumes that get returns
 func (backend *DockerKurtosisBackend) runFilesArtifactsExpander(
 	ctx context.Context,
 	serviceGuid service.ServiceGUID,
 	objAttrProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
+	freeIpAddrProvider *lib.FreeIpAddrTracker,
 	image string,
-	ipAddr net.IP,
 	envVars map[string]string,
 	enclaveNetworkId string,
 	mountpointsToVolumeNames map[string]string,
@@ -1173,6 +1173,13 @@ func (backend *DockerKurtosisBackend) runFilesArtifactsExpander(
 	for mountpointOnExpander, volumeName := range mountpointsToVolumeNames {
 		volumeMounts[volumeName] = mountpointOnExpander
 	}
+
+	ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
+	if err != nil {
+		return stacktrace.Propagate(err, "Couldn't get a free IP to give the expander container '%v'", containerName)
+	}
+	defer freeIpAddrProvider.ReleaseIpAddr(ipAddr)
+
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		image,
@@ -1196,19 +1203,19 @@ func (backend *DockerKurtosisBackend) runFilesArtifactsExpander(
 			serviceGuid,
 		)
 	}
-	shouldKillContainer := true
 	defer func() {
-		if shouldKillContainer {
-			if containerTeardownErr := backend.dockerManager.KillContainer(ctx, containerId); containerTeardownErr != nil {
-				logrus.Warnf(
-					"Running files artifacts expansion didn't complete successfully so we tried to kill " +
-						"container '%v' with ID '%v' that we started, but doing so threw an error:\n%v",
-					containerName,
-					containerId,
-					containerTeardownErr,
-				)
-				logrus.Warnf("You'll need to stop files artifacts expander container '%v' manually", containerName)
-			}
+		// We destroy the expander container, rather than leaving it around, so that we clean up the resource we created
+		// in this function (meaning the caller doesn't have to do it)
+		// We can do this because if an error occurs, we'll capture the logs of the container in the error we return
+		// to the user
+		if destroyContainerErr := backend.dockerManager.RemoveContainer(ctx, containerId); destroyContainerErr != nil {
+			logrus.Errorf(
+				"We tried to remove the expander container '%v' with ID '%v' that we started, but doing so threw an error:\n%v",
+				containerName,
+				containerId,
+				destroyContainerErr,
+			)
+			logrus.Errorf("ACTION REQUIRED: You'll need to remove files artifacts expander container '%v' manually", containerName)
 		}
 	}()
 
@@ -1246,7 +1253,6 @@ func (backend *DockerKurtosisBackend) runFilesArtifactsExpander(
 		)
 	}
 
-	shouldKillContainer = false
 	return nil
 }
 
