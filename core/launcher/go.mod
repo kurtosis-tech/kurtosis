@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/google/martian v2.1.0+incompatible
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220522002000-eb15b159cbe4
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220522084228-7c1f07bd2732
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
@@ -36,7 +36,6 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect

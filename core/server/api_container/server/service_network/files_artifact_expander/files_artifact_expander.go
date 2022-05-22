@@ -55,8 +55,8 @@ func (expander FilesArtifactExpander) ExpandArtifacts(
 			ctx,
 			expander.enclaveId,
 			serviceGuid,
-			filesArtifactId,
-			artifactFile.GetFilepathRelativeToDataDirRoot())
+			artifactFile.GetFilepathRelativeToDataDirRoot(),
+		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, expander.enclaveId)
 		}
