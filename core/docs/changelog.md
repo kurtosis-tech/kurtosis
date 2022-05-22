@@ -1,5 +1,9 @@
 # TBD
 
+# 1.50.6
+### Changes
+* Upgraded to container-engine-lib 0.30.1
+
 # 1.50.5
 ### Fixes
 * Fix bug where `CopyFilesFromUserService` was hanging
