@@ -50,6 +50,11 @@ const (
 	podWaitForAvailabilityTimeBetweenPolls = 500 * time.Millisecond
 	resourceDeletionTimeoutInSeconds = 30 * time.Second
 
+	// This is a container "reason" (machine-readable string) indicating that the container has some issue with
+	// pulling the image (usually, a typo in the image name or the image doesn't exist)
+	// Pods in this state don't really recover on their own
+	imagePullBackOffContainerReason = "ImagePullBackOff"
+
 	containerStatusLineBulletPoint = " - "
 
 	// Kubernetes unfortunately doesn't have a good way to get the exit code out, so we have to parse it out of a string
@@ -63,17 +68,8 @@ const (
 	objectNameMetadataField = "metadata.name"
 	successExecCommandExitCode = 0
 
-	jobNameField = "job-name"
-
 	// This is the owner string we'll use when updating fields
 	fieldManager = "kurtosis"
-
-
-
-	// This is a container "reason" (machine-readable string) indicating that the container has some issue with
-	// pulling the image (usually, a typo in the image name or the image doesn't exist)
-	// Pods in this state don't really recover on their own
-	imagePullBackOffContainerReason = "ImagePullBackOff"
 )
 
 var (
