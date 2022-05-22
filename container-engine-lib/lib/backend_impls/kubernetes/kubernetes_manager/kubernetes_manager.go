@@ -62,6 +62,8 @@ const (
 	objectNameMetadataField = "metadata.name"
 	successExecCommandExitCode = 0
 
+	jobNameField = "job-name"
+
 	// This is the owner string we'll use when updating fields
 	fieldManager = "kurtosis"
 )
@@ -280,16 +282,17 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 		},
 	}
 
-	persistentVolumeClaimResult, err := volumeClaimsClient.Create(ctx, persistentVolumeClaim, globalCreateOptions)
-	if err != nil {
+	if _, err := volumeClaimsClient.Create(ctx, persistentVolumeClaim, globalCreateOptions); err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create persistent volume claim with name '%s' in namespace '%s'", persistentVolumeClaimName, namespace)
 	}
 
-	if err = manager.waitForPersistentVolumeClaimBound(ctx, persistentVolumeClaimResult); err != nil {
+	// Wait for the PVC to become bound and return that object (which will have VolumeName filled out)
+	result, err := manager.waitForPersistentVolumeClaimBinding(ctx, namespace, persistentVolumeClaimName)
+	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for persistent volume claim '%v' get bound in namespace '%v'", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
 	}
 
-	return persistentVolumeClaimResult, nil
+	return result, nil
 }
 
 func (manager *KubernetesManager) RemovePersistentVolumeClaim(ctx context.Context, volumeClaim *apiv1.PersistentVolumeClaim) error {
@@ -831,6 +834,21 @@ func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace
 	return pods, nil
 }
 
+func (manager *KubernetesManager) GetPodsForJob(ctx context.Context, namespace string, jobName string) (*apiv1.PodList, error) {
+	namespacePodClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
+
+	opts := metav1.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(jobNameField, jobName).String(),
+	}
+
+	pods, err := namespacePodClient.List(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get pods matching job '%v', but instead a non-nil error was returned", jobName)
+	}
+
+	return pods, nil
+}
+
 func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string, podName string) *url.URL {
 	return manager.kubernetesClientSet.CoreV1().RESTClient().Post().Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
 }
@@ -842,6 +860,7 @@ func (manager *KubernetesManager) CreateJobWithContainerAndVolume(ctx context.Co
 	jobAnnotations map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue,
 	containers []apiv1.Container,
 	volumes []apiv1.Volume,
+	numRetries int32,
 	ttlSecondsAfterFinished uint,
 ) (*v1.Job, error) {
 
@@ -865,6 +884,7 @@ func (manager *KubernetesManager) CreateJobWithContainerAndVolume(ctx context.Co
 	}
 
 	jobSpec := v1.JobSpec{
+		BackoffLimit: &numRetries,
 		Template:                apiv1.PodTemplateSpec{
 			Spec: podSpec,
 		},
@@ -889,6 +909,7 @@ func (manager *KubernetesManager) CreateJobWithContainerAndVolume(ctx context.Co
 			volumes,
 		)
 	}
+
 	return job, nil
 }
 
@@ -951,24 +972,30 @@ func transformTypedAnnotationsToStrs(input map[*kubernetes_annotation_key.Kubern
 	return result
 }
 
-func (manager *KubernetesManager) waitForPersistentVolumeClaimBound(ctx context.Context, persistentVolumeClaim *apiv1.PersistentVolumeClaim) error {
+func (manager *KubernetesManager) waitForPersistentVolumeClaimBinding(
+	ctx context.Context,
+	namespaceName string,
+	persistentVolumeClaimName string,
+) (*apiv1.PersistentVolumeClaim, error) {
 	deadline := time.Now().Add(waitForPersistentVolumeBoundTimeout)
 	time.Sleep(time.Duration(waitForPersistentVolumeBoundInitialDelayMilliSeconds) * time.Millisecond)
+	var result *apiv1.PersistentVolumeClaim
 	for time.Now().Before(deadline) {
-		claim, err := manager.GetPersistentVolumeClaim(ctx, persistentVolumeClaim.GetNamespace(), persistentVolumeClaim.GetName())
+		claim, err := manager.GetPersistentVolumeClaim(ctx, namespaceName, persistentVolumeClaimName)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting persistent volume claim '%v' in namespace '%v", persistentVolumeClaim.GetName(), persistentVolumeClaim.GetNamespace())
+			return nil, stacktrace.Propagate(err, "An error occurred getting persistent volume claim '%v' in namespace '%v", persistentVolumeClaimName, namespaceName)
 		}
+		result = claim
 		claimStatus := claim.Status
 		claimPhase := claimStatus.Phase
 
 		switch claimPhase {
 		//Success phase, the Persistent Volume got bound
 		case apiv1.ClaimBound:
-			return nil
+			return result, nil
 		//Lost the Persistent Volume phase, unrecoverable state
 		case apiv1.ClaimLost:
-			return stacktrace.NewError(
+			return nil, stacktrace.NewError(
 				"The persistent volume claim '%v' ended up in unrecoverable state '%v'",
 				claim.GetName(),
 				claimPhase,
@@ -978,11 +1005,11 @@ func (manager *KubernetesManager) waitForPersistentVolumeClaimBound(ctx context.
 		time.Sleep(time.Duration(waitForPersistentVolumeBoundRetriesDelayMilliSeconds) * time.Millisecond)
 	}
 
-	return stacktrace.NewError(
+	return nil, stacktrace.NewError(
 		"Persistent volume claim '%v' in namespace '%v' did not become bound despite waiting for %v with %v " +
 			"between polls",
-		persistentVolumeClaim.GetName(),
-		persistentVolumeClaim.GetNamespace(),
+		persistentVolumeClaimName,
+		namespaceName,
 		waitForPersistentVolumeBoundTimeout,
 		waitForPersistentVolumeBoundRetriesDelayMilliSeconds,
 	)

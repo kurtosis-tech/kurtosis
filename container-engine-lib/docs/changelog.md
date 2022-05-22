@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Failed file artifact expansion jobs will now return their logs
+
 ### Changes
 * Bumped the pod wait-for-availability timeout to 1 minute
 * Gave the API container permission to create jobs
