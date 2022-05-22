@@ -1,5 +1,9 @@
 # TBD
 
+# 1.22.7
+### Changes
+* Upgraded to container-engine-lib 0.30.2 and Core 1.50.7
+
 # 1.22.6
 ### Changes
 * Upgraded to container-engine-lib 0.30.1 and Core 1.50.6
