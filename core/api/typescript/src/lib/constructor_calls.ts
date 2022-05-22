@@ -6,7 +6,7 @@
 import * as jspb from "google-protobuf";
 import {
     ExecCommandArgs,
-    GetServiceInfoArgs,
+    GetServicesArgs,
     PartitionServices,
     PartitionConnections,
     PartitionConnectionInfo,
@@ -19,7 +19,7 @@ import {
     LoadModuleArgs,
     UnloadModuleArgs,
     ExecuteModuleArgs,
-    GetModuleInfoArgs,
+    GetModulesArgs,
     Port,
     StoreWebFilesArtifactArgs,
     StoreFilesArtifactFromServiceArgs,
@@ -80,8 +80,8 @@ export function newExecuteModuleArgs(moduleId: ModuleID, serializedParams: strin
 // ==============================================================================================
 //                                     Get Module Info
 // ==============================================================================================
-export function newGetModuleInfoArgs(moduleId: ModuleID): GetModuleInfoArgs {
-    const result: GetModuleInfoArgs = new GetModuleInfoArgs();
+export function newGetModulesArgs(moduleId: ModuleID): GetModulesArgs {
+    const result: GetModulesArgs = new GetModulesArgs();
     result.setModuleId(String(moduleId));
 
     return result;
@@ -142,8 +142,8 @@ export function newStartServiceArgs(
 // ==============================================================================================
 //                                       Get Service Info
 // ==============================================================================================
-export function newGetServiceInfoArgs(serviceId: ServiceID): GetServiceInfoArgs{
-    const result: GetServiceInfoArgs = new GetServiceInfoArgs();
+export function newGetServiceInfoArgs(serviceId: ServiceID): GetServicesArgs{
+    const result: GetServicesArgs = new GetServicesArgs();
     result.setServiceId(String(serviceId));
 
     return result;
