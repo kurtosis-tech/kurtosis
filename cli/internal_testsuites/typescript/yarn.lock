@@ -1993,10 +1993,10 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-kurtosis-core-api-lib@1.50.6:
-  version "1.50.6"
-  resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.50.6.tgz#5355f0a2649c987d20a7761cf1f90dbfa79c03ca"
-  integrity sha512-SYm5fSN4/R4iXPoDqO3Bk7uJDiLfMEoTWtE+VHRa0JJ9aMrPxCWp5M3QhsQ6D3dCRdP5xJVNik4JgVfPzOBksA==
+kurtosis-core-api-lib@1.50.7:
+  version "1.50.7"
+  resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.50.7.tgz#0dd9830b83f3d899720e534c2efff5043db636bb"
+  integrity sha512-LDTJAas3Ta7ePlk/f5iJo3IVN1LmGyyuQidTSQg88WMapab4i6xYyosHXEbOMPubC5trQBW3QQid6d1f4F6uQQ==
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
     "@types/google-protobuf" "^3.15.5"
@@ -2009,17 +2009,17 @@ kurtosis-core-api-lib@1.50.6:
     path-browserify "^1.0.1"
     tar "^6.1.11"
 
-kurtosis-engine-api-lib@1.22.6:
-  version "1.22.6"
-  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.22.6.tgz#89589934db3323f10ec022b960a8320a791a3f26"
-  integrity sha512-GLZQujyc1A+DIyt4zsEcXR3hYgWfs6teDoH2u8vgk6Y0IaewS/47PAPqdyUwXZuqv35Ez9rWJRAXI0BgYq6GBg==
+kurtosis-engine-api-lib@1.22.7:
+  version "1.22.7"
+  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.22.7.tgz#66efba98d3aa4a67c8e944ec81cc687861d556d1"
+  integrity sha512-92qkB4H+26CpYBjrZJTx2N0tvYJI7KiQEIsfBZko8r+0zKcGvfFyuLPfHFLzso2YZrqV/90syXTspLVXmHqLlw==
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
     "@types/semver" "^7.3.9"
     browser-or-node "^2.0.0"
     google-protobuf "^3.17.3"
     grpc-web "^1.3.0"
-    kurtosis-core-api-lib "1.50.6"
+    kurtosis-core-api-lib "1.50.7"
     loglevel "^1.7.1"
     neverthrow "^4.2.2"
     semver "^7.3.5"
