@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
@@ -47,12 +46,13 @@ type DockerEnclaveObjectAttributesProvider interface {
 	ForNetworkingSidecarContainer(
 		serviceGUIDSidecarAttachedTo service.ServiceGUID,
 	) (DockerObjectAttributes, error)
+	/*
 	ForFilesArtifactExpansionContainer(
 		fileArtifactExpansionGUID files_artifact_expansion.FilesArtifactExpansionGUID,
 		serviceGUID service.ServiceGUID,
 	) (DockerObjectAttributes, error)
-	ForFilesArtifactExpansionVolume(
-		fileArtifactExpansionGUID files_artifact_expansion.FilesArtifactExpansionGUID,
+	 */
+	ForFilesArtifactsExpansionVolume(
 		serviceGUID service.ServiceGUID,
 	) (DockerObjectAttributes, error)
 	ForModuleContainer(
@@ -323,34 +323,29 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForModuleContainer(
 	return objectAttributes, nil
 }
 
-func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpansionVolume(
-	guid files_artifact_expansion.FilesArtifactExpansionGUID,
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactsExpansionVolume(
 	serviceGUID service.ServiceGUID,
 )(
 	DockerObjectAttributes,
 	error,
 ){
-	guidStr := string(guid)
 	serviceGuidStr := string(serviceGUID)
 	name, err := provider.getNameForEnclaveObject([]string{
 		artifactExpansionNameFragment,
-		guidStr,
+		serviceGuidStr,
 	})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the files artifact expansion volume name object")
+		return nil, stacktrace.Propagate(err, "An error occurred creating the files artifact expansion volume name object for service '%v'", serviceGuidStr)
 	}
 
-	labels, err := provider.getLabelsForEnclaveObjectWithGUID(guidStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", guid)
-	}
+	labels := provider.getLabelsForEnclaveObject()
 
 	serviceGuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(serviceGuidStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from GUID string '%v'", serviceGuidStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from sevice GUID string '%v'", serviceGuidStr)
 	}
 	labels[label_key_consts.UserServiceGUIDDockerLabelKey] = serviceGuidLabelValue
-	labels[label_key_consts.VolumeTypeDockerLabelKey] = label_value_consts.FilesArtifactExpansionVolumeTypeDockerLabelValue
+	labels[label_key_consts.VolumeTypeDockerLabelKey] = label_value_consts.FilesArtifactExpansionsVolumeTypeDockerLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -360,7 +355,8 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpan
 	return objectAttributes, nil
 }
 
-func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpansionContainer(
+/*
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactsExpansionContainer(
 	guid files_artifact_expansion.FilesArtifactExpansionGUID,
 	serviceGUID service.ServiceGUID,
 )(
@@ -396,6 +392,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpan
 
 	return objectAttributes, nil
 }
+ */
 
 // ====================================================================================================
 //                                      Private Helper Functions

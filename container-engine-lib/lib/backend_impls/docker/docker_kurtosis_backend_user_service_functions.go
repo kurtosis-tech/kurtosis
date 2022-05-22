@@ -149,7 +149,17 @@ func (backend *DockerKurtosisBackend) RegisterUserService(ctx context.Context, e
 	return registration, nil
 }
 
-func (backend *DockerKurtosisBackend) StartUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID, containerImageName string, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactVolumeMountDirpaths map[files_artifact_expansion.FilesArtifactExpansionGUID]string, ) (*service.Service, error, ) {
+func (backend *DockerKurtosisBackend) StartUserService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	containerImageName string,
+	privatePorts map[string]*port_spec.PortSpec,
+	entrypointArgs []string,
+	cmdArgs []string,
+	envVars map[string]string,
+	filesArtifactVolumeMountDirpaths map[files_artifact_expansion.FilesArtifactExpansionGUID]string,
+) (*service.Service, error, ) {
 	backend.serviceRegistrationMutex.Lock()
 	defer backend.serviceRegistrationMutex.Unlock()
 

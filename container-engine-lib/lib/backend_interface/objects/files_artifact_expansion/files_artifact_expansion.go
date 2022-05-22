@@ -1,7 +1,6 @@
 package files_artifact_expansion
 
-import "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-
+/*
 type FilesArtifactExpansionGUID string
 
 type FilesArtifactExpansion struct {
@@ -20,3 +19,5 @@ func (filesArtifactExpansion *FilesArtifactExpansion) GetGUID() FilesArtifactExp
 func (filesArtifactExpansion *FilesArtifactExpansion) GetServiceGUID() service.ServiceGUID {
 	return filesArtifactExpansion.serviceGUID
 }
+
+ */

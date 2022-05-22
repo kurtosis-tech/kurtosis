@@ -21,8 +21,8 @@ const (
 	moduleContainerTypeLabelValueStr                = "module"
 	filesArtifactExpanderContainerTypeLabelValueStr = "files-artifact-expander"
 
-	enclaveDataVolumeTypeLabelValueStr = "enclave-data"
-	filesArtifactExpansionVolumeTypeLabelValueStr = "files-artifact-expansion"
+	enclaveDataVolumeTypeLabelValueStr             = "enclave-data"
+	filesArtifactExpansionsVolumeTypeLabelValueStr = "files-artifacts-expansion"
 
 	trueValueStr  = "true"
 	falseValueStr = "false"
@@ -48,4 +48,4 @@ var NetworkPartitioningDisabledDockerLabelValue = docker_label_value.MustCreateN
 var FilesArtifactExpanderContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(filesArtifactExpanderContainerTypeLabelValueStr)
 
 var EnclaveDataVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(enclaveDataVolumeTypeLabelValueStr)
-var FilesArtifactExpansionVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(filesArtifactExpansionVolumeTypeLabelValueStr)
+var FilesArtifactExpansionsVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(filesArtifactExpansionsVolumeTypeLabelValueStr)

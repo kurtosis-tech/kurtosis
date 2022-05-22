@@ -228,7 +228,7 @@ func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionDockerReso
 	artifactVolumeLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString(): label_value_consts.AppIDDockerLabelValue.GetString(),
 		label_key_consts.EnclaveIDDockerLabelKey.GetString():     string(enclaveId),
-		label_key_consts.VolumeTypeDockerLabelKey.GetString(): label_value_consts.FilesArtifactExpansionVolumeTypeDockerLabelValue.GetString(),
+		label_key_consts.VolumeTypeDockerLabelKey.GetString(): label_value_consts.FilesArtifactExpansionsVolumeTypeDockerLabelValue.GetString(),
 	}
 	volumes, err := backend.dockerManager.GetVolumesByLabels(ctx, artifactVolumeLabels)
 	if err != nil {

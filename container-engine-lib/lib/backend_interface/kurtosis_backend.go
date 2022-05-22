@@ -22,6 +22,19 @@ import (
 //  APIs don't yet support them. Once the Kurtosis APIs support everything, we'll have the CLI
 //  use purely the Kurtosis SDK (as it should)
 
+type FilesArtifactsExpansion struct {
+	// The image that will be run as an InitContainer before the user service starts
+	expanderImage string
+
+	// The environment variables that the expander container will be passed in, to configure
+	// its operation
+	expanderEnvVars map[string]string
+
+	// Map of dirpaths on the expander container (which the expander will expand into), mapped to
+	// dirpaths on the user service container where those same directories should be made available
+	expanderDirpathsToServiceDirpaths map[string]string
+}
+
 // KurtosisBackend abstracts a Kurtosis backend, which will be a container engine (Docker or Kubernetes).
 // The heuristic for "do I need a method in KurtosisBackend?" here is "will I make one or more calls to
 // the underlying container engine?"
@@ -255,7 +268,8 @@ type KurtosisBackend interface {
 		entrypointArgs []string,
 		cmdArgs []string,
 		envVars map[string]string,
-		filesArtifactVolumeMountDirpaths map[files_artifact_expansion.FilesArtifactExpansionGUID]string,
+		// Leave as nil to not do any files artifact expansion
+		filesArtifactExpansion *FilesArtifactsExpansion,
 	) (
 		*service.Service,
 		error,
