@@ -4,7 +4,6 @@
  */
 
 import { Result } from "neverthrow";
-import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import {
     ExecCommandArgs,
     ExecCommandResponse,
