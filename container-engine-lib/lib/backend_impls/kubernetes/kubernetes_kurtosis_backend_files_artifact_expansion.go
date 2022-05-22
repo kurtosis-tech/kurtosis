@@ -46,6 +46,9 @@ const (
 
 	shouldFollowContainerLogsWhenArtifactExpansionJobFails = false
 	shouldAddTimestampsToContainerLogsWhenArtifactExpansionJobFails = true
+
+	// Kubernetes will label all Job pods with this label
+	jobNamePodLabel = "job-name"
 )
 
 //Create a files artifact exansion volume for user service and file artifact id and runs a file artifact expander
@@ -243,17 +246,24 @@ func (backend *KubernetesKurtosisBackend) runExtractionJobToCompletion(
 		}
 	}
 	if !didJobSucceed {
-		pods, err := backend.kubernetesManager.GetPodsForJob(ctx, namespaceName, jobName.GetString())
+		jobPodsLabels := map[string]string{
+			jobNamePodLabel: jobName.GetString(),
+		}
+		pods, err := backend.kubernetesManager.GetPodsByLabels(ctx, namespaceName, jobPodsLabels)
 		if err != nil {
-			return stacktrace.NewError("Job '%v' did not succeed, and we couldn't grab pod logs due to the following error: %v", err)
+			return stacktrace.NewError("Job '%v' did not succeed, and we couldn't grab pod logs due to the following error: %v", jobName, err)
+		}
+		if len(pods.Items) == 0 {
+			return stacktrace.NewError("Job '%v' did not succeed, and we couldn't grab pod logs because Kubernetes didn't return any pods for the job", jobName)
 		}
 
 		// This *seems* like a huge amount of work to go through, but the logs are actually invaluable for debugging
 		containerLogs := backend.getAllJobContainerLogs(ctx, namespaceName, pods.Items)
 
 		return stacktrace.NewError(
-			"Job '%v' in namespace '%v' did not succeed; container logss are as follows:\n%v",
+			"Job '%v' in namespace '%v' did not succeed; container logs are as follows:\n%v",
 			jobName,
+			namespaceName,
 			strings.Join(containerLogs, "\n"),
 		)
 	}
@@ -274,7 +284,7 @@ func (backend *KubernetesKurtosisBackend) getAllJobContainerLogs(
 		for _, podContainer := range pod.Spec.Containers {
 			strBuilder := strings.Builder{}
 			strBuilder.WriteString(fmt.Sprintf(
-				">>>>>>>>>>>>>>>>>>>>>>>>>>> Pod %v - Container %v <<<<<<<<<<<<<<<<<<<<<<<<<<<",
+				">>>>>>>>>>>>>>>>>>>> Pod %v - Container %v <<<<<<<<<<<<<<<<<<<<\n",
 				pod.Name,
 				podContainer.Name,
 			))
@@ -285,7 +295,7 @@ func (backend *KubernetesKurtosisBackend) getAllJobContainerLogs(
 				strBuilder.WriteString(containerLogs)
 			}
 			strBuilder.WriteString(fmt.Sprintf(
-				">>>>>>>>>>>>>>>>>>>>>>>>> End Pod %v - Container %v <<<<<<<<<<<<<<<<<<<<<<<<<<<",
+				"\n>>>>>>>>>>>>>>>>>> End Pod %v - Container %v <<<<<<<<<<<<<<<<<<<<",
 				pod.Name,
 				podContainer.Name,
 			))

@@ -834,6 +834,7 @@ func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace
 	return pods, nil
 }
 
+/*
 func (manager *KubernetesManager) GetPodsForJob(ctx context.Context, namespace string, jobName string) (*apiv1.PodList, error) {
 	namespacePodClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
 
@@ -848,6 +849,7 @@ func (manager *KubernetesManager) GetPodsForJob(ctx context.Context, namespace s
 
 	return pods, nil
 }
+ */
 
 func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string, podName string) *url.URL {
 	return manager.kubernetesClientSet.CoreV1().RESTClient().Post().Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
