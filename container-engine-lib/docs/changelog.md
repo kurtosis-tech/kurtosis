@@ -1,6 +1,7 @@
 # TBD
 ### Changes
 * Use `kurtosis-enclave--UUID` for enclave namespace names
+* `GetXXXXX` methods in Kubernetes manager only return non-tombstoned objects
 
 ### Fixes
 * Fixed an issue when getting a single enclave object by its ID fails because a condition was wrong
