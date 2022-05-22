@@ -175,18 +175,10 @@ func (manager *KubernetesManager) GetServiceByName(ctx context.Context, namespac
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get service '%s' in namespace '%s'", name, namespace)
 	}
-
-	return serviceResult, nil
-}
-
-func (manager *KubernetesManager) ListServices(ctx context.Context, namespace string) (*apiv1.ServiceList, error) {
-	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
-
-	serviceResult, err := servicesClient.List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to list services in namespace '%s'", namespace)
+	deletionTimestamp := serviceResult.GetObjectMeta().GetDeletionTimestamp()
+	if deletionTimestamp != nil {
+		return nil, stacktrace.Propagate(err, "Service with name '%s' in namespace '%s' has been marked for deletion", name, namespace)
 	}
-
 	return serviceResult, nil
 }
 
@@ -262,6 +254,10 @@ func (manager *KubernetesManager) GetStorageClass(ctx context.Context, name stri
 		return nil, stacktrace.Propagate(err, "Failed to get storage class with name '%s'", name)
 	}
 
+	deletionTimestamp := storageClassResult.GetObjectMeta().GetDeletionTimestamp()
+	if deletionTimestamp != nil {
+		return nil, stacktrace.Propagate(err, "Storage class with name '%s' has been marked for deletion", name)
+	}
 	return storageClassResult, nil
 }
 
@@ -331,20 +327,12 @@ func (manager *KubernetesManager) GetPersistentVolumeClaim(ctx context.Context, 
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get persistent volume claim with name '%s' in namespace '%s'", persistentVolumeClaimName, namespace)
 	}
-
-	return volumeClaim, nil
-}
-
-// TODO Make return type an actual list
-func (manager *KubernetesManager) ListPersistentVolumeClaims(ctx context.Context, namespace string) (*apiv1.PersistentVolumeClaimList, error) {
-	persistentVolumeClaimsClient := manager.kubernetesClientSet.CoreV1().PersistentVolumeClaims(namespace)
-
-	persistentVolumeClaimsResult, err := persistentVolumeClaimsClient.List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to list persistent volume claims in namespace '%s'", namespace)
+	
+	deletionTimestamp := volumeClaim.GetObjectMeta().GetDeletionTimestamp()
+	if deletionTimestamp != nil {
+		return nil, stacktrace.Propagate(err, "Persistent volume claim with name '%s' in namespace '%s' has been marked for deletion", persistentVolumeClaimName, namespace)
 	}
-
-	return persistentVolumeClaimsResult, nil
+	return volumeClaim, nil
 }
 
 // TODO Make return type an actual list
@@ -414,19 +402,11 @@ func (manager *KubernetesManager) GetNamespace(ctx context.Context, name string)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get namespace with name '%s'", name)
 	}
-
-	return namespace, nil
-}
-
-func (manager *KubernetesManager) ListNamespaces(ctx context.Context) (*apiv1.NamespaceList, error) {
-	namespaceClient := manager.kubernetesClientSet.CoreV1().Namespaces()
-
-	namespaces, err := namespaceClient.List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to list namespaces")
+	deletionTimestamp := namespace.GetObjectMeta().GetDeletionTimestamp()
+	if deletionTimestamp != nil {
+		return nil, stacktrace.Propagate(err, "Namespace with name '%s' has been marked for deletion", namespace)
 	}
-
-	return namespaces, nil
+	return namespace, nil
 }
 
 func (manager *KubernetesManager) GetNamespacesByLabels(ctx context.Context, namespaceLabels map[string]string) (*apiv1.NamespaceList, error) {
@@ -826,6 +806,10 @@ func (manager *KubernetesManager) GetPod(ctx context.Context, namespace string, 
 	pod, err := podClient.Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get pod with name '%s'", name)
+	}
+	deletionTimestamp := pod.GetObjectMeta().GetDeletionTimestamp()
+	if deletionTimestamp != nil {
+		return nil, stacktrace.Propagate(err, "Pod with name '%s' in namespace '%s' has been marked for deletion", name, namespace)
 	}
 
 	return pod, nil
