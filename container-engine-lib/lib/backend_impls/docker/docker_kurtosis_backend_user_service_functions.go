@@ -317,39 +317,6 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		createAndStartArgsBuilder.WithVolumeMounts(volumeMounts)
 	}
 
-	/*
-	if filesArtifactVolumeMountDirpaths != nil {
-
-		// CREATE FILTER SET FOR FILES ARTIFACT EXPANSION GUIDS AND SERVICE GUID
-		filterFilesArtifactExpansionGuids := map[files_artifact_expansion.FilesArtifactExpansionGUID]bool{}
-		for guid, _ := range filesArtifactVolumeMountDirpaths {
-			filterFilesArtifactExpansionGuids[guid] = true
-		}
-		filters := files_artifact_expansion.FilesArtifactExpansionFilters{
-			GUIDs: filterFilesArtifactExpansionGuids,
-			ServiceGUIDs: map[service.ServiceGUID]bool{
-				serviceGuid: true,
-			},
-		}
-		// GET MATCHING EXPANSION OBJECTS AND RESOURCES FOR FILTERS
-		filteredObjectsAndResources, err := backend.getMatchingFilesArtifactExpansionObjectsAndDockerResources(ctx, enclaveId, &filters)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Failed to get expansion volumes for filters '%+v'", filters)
-		}
-		// ITERATE THROUGH MATCHING OBJECTS AND PLACE VOLUME NAMES FROM DOCKER OBJECTS INTO MAP FOR VOLUME TO PATH MAPPING
-		filesArtifactVolumeMountDirpathStrs := map[string]string{}
-		for filesArtifactGUID, objectsAndResources := range filteredObjectsAndResources {
-			resources := objectsAndResources.dockerResources
-			if resources == nil {
-				return nil, stacktrace.Propagate(err, "Found expansion with no docker resources for files artifact expansion '%v'", filesArtifactGUID)
-			}
-			volume := resources.volume
-			filesArtifactVolumeMountDirpathStrs[volume.Name] = filesArtifactVolumeMountDirpaths[filesArtifactGUID]
-		}
-		createAndStartArgsBuilder.WithVolumeMounts(filesArtifactVolumeMountDirpathStrs)
-	}
-
-	 */
 	createAndStartArgs := createAndStartArgsBuilder.Build()
 
 	// Best-effort pull attempt
@@ -740,8 +707,8 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 		)
 	}
 
-	// Normally we'd filter on the Kurtosis object (Service), but we can't get one of these if a service is only
-	// registered-but-not-started so we filter on registrations to start with!
+	// We filter registrations here because a registration is the canonical resource for a Kurtosis user service - no registration,
+	// no Kurtosis service - and not all registrations will have Docker resources
 	matchingRegistrations := map[service.ServiceGUID]*service.ServiceRegistration{}
 	for guid, registration := range registrationsForEnclave {
 		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
@@ -794,7 +761,7 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 	// Find the registrations which don't have any Docker resources and immediately add them to the list of stuff to deregister
 	for guid, registration := range matchingRegistrations {
 		if _, doesRegistrationHaveResources := allDockerResources[guid]; doesRegistrationHaveResources {
-			// We'll deregister these registrations if and only if we can successfully remove their resources
+			// We'll deregister registrations-with-resources if and only if we can successfully remove their resources
 			continue
 		}
 
@@ -807,7 +774,7 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 	}
 
 	// Now try removing all the registrations-with-resources
-	successfulResourceRemovalGuids, erroredResourceRemovalGuids, err := backend.removeDockerResources(
+	successfulResourceRemovalGuids, erroredResourceRemovalGuids, err := backend.removeUserServiceDockerResources(
 		ctx,
 		allServiceObjs,
 		allDockerResources,
@@ -815,7 +782,7 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
 			err,
-			"An error occurred trying to remove Docker resources for services with ",
+			"An error occurred trying to remove user service Docker resources",
 		)
 	}
 
@@ -1242,7 +1209,7 @@ func (backend *DockerKurtosisBackend) doFilesArtifactExpansionAndGetUserServiceV
 }
 
 // Runs a single expander container which expands one or more files artifacts into multiple volumes
-// NOTE: It is the caller's responsibility to handle the volumes that get returns
+// NOTE: It is the caller's responsibility to handle the volumes that get returned
 func (backend *DockerKurtosisBackend) runFilesArtifactsExpander(
 	ctx context.Context,
 	serviceGuid service.ServiceGUID,
@@ -1383,8 +1350,9 @@ func (backend *DockerKurtosisBackend) getFilesArtifactsExpanderContainerLogsBloc
 		containerId,
 	))
 	wrappedContainerLogsStrBuilder.WriteString(buffer.String())
+	wrappedContainerLogsStrBuilder.WriteString("\n")
 	wrappedContainerLogsStrBuilder.WriteString(fmt.Sprintf(
-		"\n>>>>>>>>>>>>>>>>>>>>>>>>>>>> End logs for container '%v' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<",
+		">>>>>>>>>>>>>>>>>>>>>>>>>>>> End logs for container '%v' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<",
 		containerId,
 	))
 
@@ -1392,7 +1360,8 @@ func (backend *DockerKurtosisBackend) getFilesArtifactsExpanderContainerLogsBloc
 }
 
 // Takes in a list of mountpoints on the expander container that the expander container wants populated with volumes,
-// and creates one volume per mountpoint location
+// creates one volume per mountpoint location, and returns the volume_name -> mountpoint map that the container
+// can use when starting
 func (backend *DockerKurtosisBackend) createFilesArtifactsExpansionVolumes(
 	ctx context.Context,
 	serviceGuid service.ServiceGUID,
@@ -1461,7 +1430,7 @@ possibility that some will get leaked! There's unfortunately no way around this 
 Therefore, we just make a best-effort attempt to clean up the volumes and leak the rest, though it's not THAT
 big of a deal since they'll be deleted when the enclave gets deleted.
  */
-func (backend *DockerKurtosisBackend) removeDockerResources(
+func (backend *DockerKurtosisBackend) removeUserServiceDockerResources(
 	ctx context.Context,
 	serviceObjectsToRemove map[service.ServiceGUID]*service.Service,
 	resourcesToRemove map[service.ServiceGUID]*userServiceDockerResources,
@@ -1527,10 +1496,7 @@ func (backend *DockerKurtosisBackend) removeDockerResources(
 		)
 	}
 
-	// NOTE: If volume removal fails for any reason here then we're actually going to leak the volume!!! This is unfortunately
-	// unavoidable
-
-	// TODO Parallelize if we need more perf (but we shouldn't, since volumes are way faster than containers)
+	// TODO Parallelize if we need more perf (but we shouldn't, since removing volumes way faster than containers)
 	successfulVolumeRemovalGuids := map[service.ServiceGUID]bool{}
 	for serviceGuidStr := range successfulContainerRemoveGuidStrs {
 		serviceGuid := service.ServiceGUID(serviceGuidStr)
@@ -1559,8 +1525,9 @@ func (backend *DockerKurtosisBackend) removeDockerResources(
 					volumeName,
 				))
 				errStrBuilder.WriteString(err.Error())
+				errStrBuilder.WriteString("\n")
 				errStrBuilder.WriteString(fmt.Sprintf(
-					"\n>>>>>>>>>>>>>>> End removal error for volume %v <<<<<<<<<<<<<<<<<<<<<<<<<<<",
+					">>>>>>>>>>>>>>> End removal error for volume %v <<<<<<<<<<<<<<<<<<<<<<<<<<",
 					volumeName,
 				))
 				failedVolumeErrStrs = append(failedVolumeErrStrs, errStrBuilder.String())
@@ -1570,8 +1537,8 @@ func (backend *DockerKurtosisBackend) removeDockerResources(
 		if len(failedVolumeErrStrs) > 0 {
 			erroredGuids[serviceGuid] = stacktrace.NewError(
 				"Errors occurred removing volumes for service '%v'\n" +
-				"ACTION REQUIRED: You will need to manually remove these volumes, else they will stay around until the enclave is destroyed!!!!\n" +
-				"%v",
+					 "ACTION REQUIRED: You will need to manually remove these volumes, else they will stay around until the enclave is destroyed!\n" +
+					 "%v",
 				serviceGuid,
 				strings.Join(failedVolumeErrStrs, "\n\n"),
 			)
