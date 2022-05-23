@@ -314,7 +314,7 @@ export class EnclaveContext {
         const serviceInfo = getServicesResult.value.getServiceInfoMap().get(serviceId)
         if(!serviceInfo) {
             return err(new Error(
-                    "Failed to find service with id " + serviceId + " in backend."
+                    "Failed to retrieve service information for service " + serviceId
             ))
         }
         if (serviceInfo.getPrivateIpAddr() === "") {
