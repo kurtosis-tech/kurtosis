@@ -34,8 +34,6 @@ const (
 	apiContainerStatusTitleName        = "API Container Status"
 	apiContainerHostGrpcPortTitle      = "API Container Host GRPC Port"
 	apiContainerHostGrpcProxyPortTitle = "API Container Host GRPC Proxy Port"
-	userServiceIdTitle				   = "User Service with ID"
-	moduleIdTitle				   	   = "Module with ID"
 
 	headerWidthChars = 100
 	headerPadChar    = "="
@@ -47,7 +45,7 @@ const (
 // TODO TODO TODO CHANGE THIS SIGNATURE SO THAT IT MATCHES MODULE AND USER SERVICES SIGNATURE
 var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, enclaveInfo kurtosis_engine_rpc_api_bindings.EnclaveInfo) error{
 	"User Services":     printUserServices,
-	//"Kurtosis Modules":  printModules,
+	"Kurtosis Modules":  printModules,
 }
 
 var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -113,53 +111,6 @@ func run(
 		)
 		keyValuePrinter.AddPair(apiContainerHostGrpcPortTitle, apiContainerHostGrpcPortInfoStr)
 		keyValuePrinter.AddPair(apiContainerHostGrpcProxyPortTitle, apiContainerHostGrpcProxyPortInfoStr)
-
-		// -----------Print service and module info --------------
-		/*
-		apicHostMachineIp, apicHostMachineGrpcPort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred verifying that the enclave was running")
-		}
-
-		apiContainerHostGrpcUrl := fmt.Sprintf(
-			"%v:%v",
-			apicHostMachineIp,
-			apicHostMachineGrpcPort,
-		)
-		conn, err := grpc.Dial(apiContainerHostGrpcUrl, grpc.WithInsecure())
-		if err != nil {
-			return stacktrace.Propagate(
-				err,
-				"An error occurred connecting to the API container grpc port at '%v' in enclave '%v'",
-				apiContainerHostGrpcUrl,
-				enclaveIdStr,
-			)
-		}
-		defer func() {
-			conn.Close()
-		}()
-		apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
-
-		emptyPub := emptypb.Empty{}
-		servicesResponse, err := apiContainerClient.GetServices(ctx, &emptyPub)
-		if err != nil {
-			return stacktrace.Propagate(err,
-				"An error occurred getting services from API Container in enclave '%v'",
-				enclaveIdStr)
-		}
-		for serviceId, _ := range servicesResponse.ServiceIds {
-			keyValuePrinter.AddPair(userServiceIdTitle, serviceId)
-		}
-
-		modulesResponse, err := apiContainerClient.GetModules(ctx, &emptyPub)
-		if err != nil {
-			return stacktrace.Propagate(err,
-				"An error occurred getting modules from API Container in enclave '%v'",
-				enclaveIdStr)
-		}
-		for moduleId, _ := range modulesResponse.ModuleIds {
-			keyValuePrinter.AddPair(moduleIdTitle, moduleId)
-		}*/
 	}
 
 	// Print key-values:
