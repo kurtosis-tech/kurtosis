@@ -11,10 +11,6 @@
 * `StartService` now returns a `ServiceInfo` object
 * `LoadModule` now returns a `ModuleInfo` object
 
-### Breaking Changes
-* `StartService` now returns a `ServiceInfo` object
-* `LoadModule` now returns a `ModuleInfo` object
-
 # 1.51.1
 ### Features
 * Implement `DownloadFilesArtifact` endpoint
