@@ -103,19 +103,19 @@ func (store *ModuleStore) LoadModule(
 	return launchedModule, nil
 }
 
-func (store *ModuleStore) UnloadModule(ctx context.Context, moduleId module.ModuleID) error {
+func (store *ModuleStore) UnloadModule(ctx context.Context, moduleId module.ModuleID) (*module.ModuleGUID, error) {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
 
 	infoForModule, found := store.modules[moduleId]
 	if !found {
-		return stacktrace.NewError("Module ID '%v' does not exist in the module map", moduleId)
+		return nil, stacktrace.NewError("Module ID '%v' does not exist in the module map", moduleId)
 	}
 
 	moduleGuid := infoForModule.moduleGUID
 	_, failedToStopModules, err := store.kurtosisBackend.StopModules(ctx, store.enclaveId, getModuleByModuleGUIDFilter(moduleGuid))
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred killing module container '%v' while unloading the module from the store", moduleId)
+		return nil, stacktrace.Propagate(err, "An error occurred killing module container '%v' while unloading the module from the store", moduleId)
 	}
 	if len(failedToStopModules) > 0 {
 		moduleStopErrs := []string{}
@@ -127,7 +127,7 @@ func (store *ModuleStore) UnloadModule(ctx context.Context, moduleId module.Modu
 			)
 			moduleStopErrs = append(moduleStopErrs, wrappedErr.Error())
 		}
-		return stacktrace.NewError(
+		return nil, stacktrace.NewError(
 			"One or more errors occurred stopping the module(s):\n%v",
 			strings.Join(
 				moduleStopErrs,
@@ -137,7 +137,7 @@ func (store *ModuleStore) UnloadModule(ctx context.Context, moduleId module.Modu
 	}
 	delete(store.modules, moduleId)
 
-	return nil
+	return &moduleGuid, nil
 }
 
 func (store *ModuleStore) ExecuteModule(ctx context.Context, moduleId module.ModuleID, serializedParams string) (serializedResult string, resultErr error) {
@@ -160,6 +160,7 @@ func (store *ModuleStore) ExecuteModule(ctx context.Context, moduleId module.Mod
 }
 
 func (store *ModuleStore) GetModuleInfo(moduleId module.ModuleID) (
+	moduleGuid module.ModuleGUID,
 	resultPrivateIp net.IP,
 	resultPrivatePort *port_spec.PortSpec,
 	resultMaybePublicIp net.IP,
@@ -171,9 +172,9 @@ func (store *ModuleStore) GetModuleInfo(moduleId module.ModuleID) (
 
 	info, found := store.modules[moduleId]
 	if !found {
-		return nil, nil, nil, nil, stacktrace.NewError("No module with ID '%v' has been loaded", moduleId)
+		return "", nil, nil, nil, nil, stacktrace.NewError("No module with ID '%v' has been loaded", moduleId)
 	}
-	return info.privateIpAddr, info.privatePort, info.maybePublicIpAddr, info.maybePublicPort, nil
+	return info.moduleGUID, info.privateIpAddr, info.privatePort, info.maybePublicIpAddr, info.maybePublicPort, nil
 }
 
 func (store *ModuleStore) GetModules() map[module.ModuleID]bool {
