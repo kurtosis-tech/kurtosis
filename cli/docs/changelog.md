@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Updated default kubernetes-enclave-data-volume-size to 1024Mb
 
 # 0.20.0
 ### Breaking Changes
