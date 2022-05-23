@@ -11,21 +11,15 @@ import (
 )
 
 type KubernetesBackendConfigSupplier struct {
-	storageClass string
-	enclaveSizeInMegabytes uint
 }
 
-func NewKubernetesKurtosisBackendConfigSupplier(storageClass string, enclaveSizeInMegabytes uint) KubernetesBackendConfigSupplier {
+func NewKubernetesKurtosisBackendConfigSupplier() KubernetesBackendConfigSupplier {
 	return KubernetesBackendConfigSupplier{
-		storageClass: storageClass,
-		enclaveSizeInMegabytes: enclaveSizeInMegabytes,
+		// More fields here when needed
 	}
 }
 
 func (backendConfigSupplier KubernetesBackendConfigSupplier) getKurtosisBackendConfig() (args.KurtosisBackendType, interface{}) {
-	return args.KurtosisBackendType_Kubernetes, kurtosis_backend_config.KubernetesBackendConfig{
-		StorageClass: backendConfigSupplier.storageClass,
-		EnclaveSizeInMegabytes: backendConfigSupplier.enclaveSizeInMegabytes,
-	}
+	return args.KurtosisBackendType_Kubernetes, kurtosis_backend_config.KubernetesBackendConfig{}
 }
 

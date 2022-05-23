@@ -39,9 +39,6 @@ const (
 	grpcServerStopGracePeriod = 5 * time.Second
 
 	shouldFlushMetricsClientQueueOnEachEvent = false
-
-	// TODO PASS THIS IN AS A PROPER ARGUMENT!
-	filesArtifactExpansionVolumeSizeInMegabytes = uint(1024)
 )
 
 type doNothingMetricsClientCallback struct{}
@@ -87,6 +84,11 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred getting the files artifact store")
 	}
 
+	clusterConfig := serverArgs.KurtosisBackendConfig
+	if clusterConfig == nil {
+		return stacktrace.NewError("Kurtosis backend type is '%v' but cluster configuration parameters are null.", args.KurtosisBackendType_Kubernetes.String())
+	}
+
 	// TODO Extract into own function
 	var kurtosisBackend backend_interface.KurtosisBackend
 	switch serverArgs.KurtosisBackendType {
@@ -101,12 +103,8 @@ func runMain() error {
 			return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 		}
 	case args.KurtosisBackendType_Kubernetes:
-		// TODO apply this is-nil error-checking to all cluster types, because none should be nil!
-		clusterConfig := serverArgs.KurtosisBackendConfig
-		if clusterConfig == nil {
-			return stacktrace.NewError("Kurtosis backend type is '%v' but cluster configuration parameters are null.", args.KurtosisBackendType_Kubernetes.String())
-		}
-		kubernetesBackendConfig, ok := (clusterConfig).(kurtosis_backend_config.KubernetesBackendConfig)
+		// TODO Use this value when we have fields for the API container
+		_, ok := (clusterConfig).(kurtosis_backend_config.KubernetesBackendConfig)
 		if !ok {
 			return stacktrace.NewError(
 				"Failed to cast untyped cluster configuration object '%+v' to the appropriate type, even though " +
@@ -115,13 +113,9 @@ func runMain() error {
 				args.KurtosisBackendType_Kubernetes.String(),
 			)
 		}
-		kurtosisBackend, err = lib.GetApiContainerKubernetesKurtosisBackend(
-			ctx,
-			kubernetesBackendConfig.StorageClass,
-			filesArtifactExpansionVolumeSizeInMegabytes,
-		)
+		kurtosisBackend, err = lib.GetApiContainerKubernetesKurtosisBackend(ctx)
 		if err != nil {
-			return stacktrace.Propagate(err, "Failed to get a Kubernetes backend with storage class '%v' and enclave size (in MB) %d", kubernetesBackendConfig.StorageClass, filesArtifactExpansionVolumeSizeInMegabytes)
+			return stacktrace.Propagate(err, "Failed to get a Kubernetes backend")
 		}
 	default:
 		return stacktrace.NewError("Backend type '%v' was not recognized by API container.", serverArgs.KurtosisBackendType.String())
