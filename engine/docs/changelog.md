@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Upgrade to core 1.53.2, with bugfixes for files artifact expander not waiting until the `tar` command finishes
 
 # 1.25.1
 ### Fixes
