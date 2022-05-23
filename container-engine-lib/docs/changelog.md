@@ -1,5 +1,9 @@
 # TBD
 
+# 0.31.1
+### Fixes
+* Fixed a bug in how we were checking for services which don't have pods yet
+
 # 0.31.0
 ### Features
 * Reworked how files artifact expansion works, so that our volumes only need to be mounted as `ReadWriteOnce`

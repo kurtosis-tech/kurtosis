@@ -226,7 +226,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	envVars map[string]string,
 	filesArtifactsExpansion *backend_interface.FilesArtifactsExpansion,
 ) (
-	newUserService *service.Service,
+	resultUserService *service.Service,
 	resultErr error,
 ) {
 	preexistingServiceFilters := &service.ServiceFilters{
@@ -363,6 +363,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 			filesArtifactExpansionPersistentVolumeClaim: filesArtifactsExpansionPvc,
 		},
 	}
+
 	convertedObjects, err := getUserServiceObjectsFromKubernetesResources(enclaveId, kubernetesResources)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting a service object from the Kubernetes service and newly-created pod")
@@ -1036,15 +1037,8 @@ func getUserServiceObjectsFromKubernetesResources(
 		serviceRegistrationObj := service.NewServiceRegistration(serviceId, serviceGuid, enclaveId, privateIp)
 		resultObj.serviceRegistration = serviceRegistrationObj
 
-		// Selectors but no pod means that the registration is open but no pod has yet been started to consume it
-		stillUsingUnboundPort := false
-		for _, servicePort := range kubernetesService.Spec.Ports {
-			if servicePort.Name == unboundPortName {
-				stillUsingUnboundPort = true
-				break
-			}
-		}
-		if stillUsingUnboundPort {
+		// A service with no ports annotation means that no pod has yet consumed the registration
+		if _, found := kubernetesService.Annotations[kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString()]; !found {
 			// If we're using the unbound port, no actual user ports have been set yet so there's no way we can
 			// return a service
 			resultObj.service = nil
