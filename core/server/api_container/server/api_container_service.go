@@ -139,7 +139,7 @@ func (apicService ApiContainerService) UnloadModule(ctx context.Context, args *k
 		return nil, stacktrace.Propagate(err, "An error occurred unloading module '%v' from the network", moduleId)
 	}
 
-	return binding_constructors.NewUnloadModuleResponse(string(*moduleGuid)), nil
+	return binding_constructors.NewUnloadModuleResponse(string(moduleGuid)), nil
 }
 
 func (apicService ApiContainerService) ExecuteModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteModuleResponse, error) {

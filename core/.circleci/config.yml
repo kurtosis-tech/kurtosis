@@ -318,7 +318,6 @@ workflows:
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
       - publish_files_artifacts_expander_image:
           context:
-            - github-user
             - docker-user
           filters:
             branches:
