@@ -30,7 +30,6 @@ const (
 
 	// As of 2022-05-17, these get attached to files artifact expansion volumes
 	userServiceGuidKeyStr = labelKeyPrefixStr + "user-service-guid"
-	// filesArtifactIdKeyStr = labelKeyPrefixStr + "files-artifact-id"
 )
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -49,4 +48,3 @@ var GUIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKe
 var EnclaveIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(enclaveIdLabelKeyStr)
 var IsNetworkPartitioningEnabledKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(isNetworkPartitioningEnabledKeyStr)
 var UserServiceGUIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(userServiceGuidKeyStr)
-// var FilesArtifactIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(filesArtifactIdKeyStr)

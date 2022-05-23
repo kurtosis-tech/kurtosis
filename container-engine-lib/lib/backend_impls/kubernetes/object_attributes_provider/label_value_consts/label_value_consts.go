@@ -20,7 +20,6 @@ const (
 	userServiceKurtosisResourceTypeLabelValueStr       			= "user-service"
 	networkingSidecarKurtosisResourceTypeLabelValueStr 			= "networking-sidecar"
 	moduleKurtosisResourceTypeLabelValueStr            			= "module"
-	filesArtifactExpansionKurtosisResourceLabelValueStr 			= "files-artifact-expander"
 
 	enclaveDataVolumeTypeLabelValueStr             = "enclave-data"
 	filesArtifactsExpansionVolumeTypeLabelValueStr = "files-artifacts-expansion"
@@ -43,7 +42,6 @@ var ModuleKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.Must
 var EnclaveKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(enclaveKurtosisResourceTypeLabelValueStr)
 var APIContainerKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(apiContainerKurtosisResourceTypeLabelValueStr)
 var UserServiceKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(userServiceKurtosisResourceTypeLabelValueStr)
-// var FilesArtifactExpansionKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(filesArtifactExpansionKurtosisResourceLabelValueStr)
 var NetworkingSidecarKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(networkingSidecarKurtosisResourceTypeLabelValueStr)
 var NetworkPartitioningEnabledKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(trueValueStr)
 var NetworkPartitioningDisabledKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(falseValueStr)

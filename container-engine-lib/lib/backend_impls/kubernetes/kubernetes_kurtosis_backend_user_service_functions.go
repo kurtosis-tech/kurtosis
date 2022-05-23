@@ -191,8 +191,9 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 
 	kubernetesResources := map[service.ServiceGUID]*userServiceKubernetesResources{
 		serviceGuid: {
-			service:   createdService,
-			pod: nil,	// No pod yet
+			service: createdService,
+			pod:     nil, // No pod yet
+			filesArtifactExpansionPersistentVolumeClaim: nil, // No PVC yet
 		},
 	}
 
@@ -264,99 +265,38 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
 
-	userServicePodInitContainers := []apiv1.Container{}
-	userServicePodVolumes := []apiv1.Volume{}
-	userServiceContainerVolumeMounts := []apiv1.VolumeMount{}
+	var filesArtifactsExpansionPvc *apiv1.PersistentVolumeClaim
+	var podInitContainers []apiv1.Container
+	var podVolumes []apiv1.Volume
+	var userServiceContainerVolumeMounts []apiv1.VolumeMount
 	shouldDeleteExpansionPvc := true
 	if filesArtifactsExpansion != nil {
-		apiContainerArgs := backend.apiContainerModeArgs
-		if apiContainerArgs == nil {
-			return nil, stacktrace.NewError(
-				"Received request to start service '%v' with files artifact expansions, but no API container mode " +
-					"args were defined which are necessary for creating the files artifacts expansion volume",
-				serviceGuid,
-			)
-		}
-		storageClass := apiContainerArgs.storageClassName
-		expansionVolumeSizeMb := apiContainerArgs.filesArtifactExpansionVolumeSizeInMegabytes
-
-		pvc, err := backend.createFilesArtifactsExpansionPersistentVolumeClaim(
+		filesArtifactsExpansionPvc, podVolumes, userServiceContainerVolumeMounts, podInitContainers, err = backend.prepareFilesArtifactsExpansionResources(
 			ctx,
 			namespaceName,
-			expansionVolumeSizeMb,
-			storageClass,
 			serviceGuid,
 			enclaveObjAttributesProvider,
+			filesArtifactsExpansion.ExpanderImage,
+			filesArtifactsExpansion.ExpanderEnvVars,
+			filesArtifactsExpansion.ExpanderDirpathsToServiceDirpaths,
 		)
 		if err != nil {
-			return nil, stacktrace.Propagate(
-				err,
-				"An error occurred creating files artifact expansion persistent volume claim for service '%v'",
-				serviceGuid,
-			)
+			return nil, stacktrace.Propagate(err, "An error occurred preparing the files artifacts expansion resources")
 		}
 		defer func() {
 			if shouldDeleteExpansionPvc {
 				// Use background context so we delete these even if input context was cancelled
-				if err := backend.kubernetesManager.RemovePersistentVolumeClaim(context.Background(), pvc); err != nil {
+				if err := backend.kubernetesManager.RemovePersistentVolumeClaim(context.Background(), filesArtifactsExpansionPvc); err != nil {
 					logrus.Errorf(
-						"Starting the service failed so we tried to delete files artifact expansion PVC '%v' that we " +
+						"Starting service '%v' didn't complete successfully so we tried to delete files artifact expansion PVC '%v' that we " +
 							"created, but doing so threw an error:\n%v",
-						pvc.Name,
+						serviceGuid,
 						err,
 					)
-					logrus.Errorf("You'll need to delete PVC '%v' manually!", pvc.Name)
+					logrus.Errorf("You'll need to delete PVC '%v' manually!", filesArtifactsExpansionPvc.Name)
 				}
 			}
 		}()
-
-		underlyingVolumeName := pvc.Spec.VolumeName
-
-		userServicePodVolumes = []apiv1.Volume{
-			{
-				Name: underlyingVolumeName,
-				VolumeSource: apiv1.VolumeSource{
-					PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
-						ClaimName: pvc.Name,
-						ReadOnly:  isFilesArtifactExpansionVolumeReadOnly,
-					},
-				},
-			},
-		}
-
-		volumeMountsOnExpanderContainer := []apiv1.VolumeMount{}
-		volumeSubdirIndex := 0
-		for requestedExpanderDirpath, requestedUserServiceDirpath := range filesArtifactsExpansion.ExpanderDirpathsToServiceDirpaths {
-			subdirName := strconv.Itoa(volumeSubdirIndex)
-
-			expanderContainerMount := apiv1.VolumeMount{
-				Name:             underlyingVolumeName,
-				ReadOnly:         isFilesArtifactExpansionVolumeReadOnly,
-				MountPath:        requestedExpanderDirpath,
-				SubPath:          subdirName,
-			}
-			volumeMountsOnExpanderContainer = append(volumeMountsOnExpanderContainer, expanderContainerMount)
-
-			userServiceContainerMount := apiv1.VolumeMount{
-				Name:             underlyingVolumeName,
-				ReadOnly:         isFilesArtifactExpansionVolumeReadOnly,
-				MountPath:        requestedUserServiceDirpath,
-				SubPath:          subdirName,
-			}
-			userServiceContainerVolumeMounts = append(userServiceContainerVolumeMounts, userServiceContainerMount)
-
-			volumeSubdirIndex = volumeSubdirIndex + 1
-		}
-
-		filesArtifactExpansionInitContainer := getFilesArtifactExpansionInitContainerSpecs(
-			filesArtifactsExpansion.ExpanderImage,
-			filesArtifactsExpansion.ExpanderEnvVars,
-			volumeMountsOnExpanderContainer,
-		)
-
-		userServicePodInitContainers = []apiv1.Container{
-			filesArtifactExpansionInitContainer,
-		}
 	}
 
 	// Create the pod
@@ -386,9 +326,9 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		podName,
 		podLabelsStrs,
 		podAnnotationsStrs,
-		userServicePodInitContainers,
+		podInitContainers,
 		podContainers,
-		userServicePodVolumes,
+		podVolumes,
 		userServiceServiceAccountName,
 	)
 	if err != nil {
@@ -419,6 +359,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		serviceGuid: {
 			service: updatedService,
 			pod:     createdPod,
+			filesArtifactExpansionPersistentVolumeClaim: filesArtifactsExpansionPvc,
 		},
 	}
 	convertedObjects, err := getUserServiceObjectsFromKubernetesResources(enclaveId, kubernetesResources)
@@ -1146,6 +1087,118 @@ func getUserServiceObjectsFromKubernetesResources(
 	}
 
 	return results, nil
+}
+
+// NOTE: If this function succeeds, it is the user's responsibility to take care of the PersistentVolumeClaim that was created
+func (backend *KubernetesKurtosisBackend) prepareFilesArtifactsExpansionResources(
+	ctx context.Context,
+	namespaceName string,
+	serviceGuid service.ServiceGUID,
+	enclaveObjAttributesProvider object_attributes_provider.KubernetesEnclaveObjectAttributesProvider,
+	expanderImage string,
+	expanderEnvVars map[string]string,
+	expanderDirpathsToUserServiceDirpaths map[string]string,
+) (
+	resultFilesArtifactExpansionPvc *apiv1.PersistentVolumeClaim,
+	resultPodVolumes []apiv1.Volume,
+	resultUserServiceContainerVolumeMounts []apiv1.VolumeMount,
+	resultPodInitContainers []apiv1.Container,
+	resultErr error,
+) {
+	apiContainerArgs := backend.apiContainerModeArgs
+	if apiContainerArgs == nil {
+		return nil, nil, nil, nil, stacktrace.NewError(
+			"Received request to start service '%v' with files artifact expansions, but no API container mode " +
+				"args were defined which are necessary for creating the files artifacts expansion volume",
+			serviceGuid,
+		)
+	}
+	storageClass := apiContainerArgs.storageClassName
+	expansionVolumeSizeMb := apiContainerArgs.filesArtifactExpansionVolumeSizeInMegabytes
+
+
+	pvc, err := backend.createFilesArtifactsExpansionPersistentVolumeClaim(
+		ctx,
+		namespaceName,
+		expansionVolumeSizeMb,
+		storageClass,
+		serviceGuid,
+		enclaveObjAttributesProvider,
+	)
+	if err != nil {
+		return nil, nil, nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating files artifact expansion persistent volume claim for service '%v'",
+			serviceGuid,
+		)
+	}
+	shouldDeleteExpansionPvc := true
+	defer func() {
+		if shouldDeleteExpansionPvc {
+			// Use background context so we delete these even if input context was cancelled
+			if err := backend.kubernetesManager.RemovePersistentVolumeClaim(context.Background(), pvc); err != nil {
+				logrus.Errorf(
+					"Running files artifact expansion didn't complete successfully so we tried to delete files artifact expansion PVC '%v' that we " +
+						"created, but doing so threw an error:\n%v",
+					pvc.Name,
+					err,
+				)
+				logrus.Errorf("You'll need to delete PVC '%v' manually!", pvc.Name)
+			}
+		}
+	}()
+
+	underlyingVolumeName := pvc.Spec.VolumeName
+
+	podVolumes := []apiv1.Volume{
+		{
+			Name: underlyingVolumeName,
+			VolumeSource: apiv1.VolumeSource{
+				PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
+					ClaimName: pvc.Name,
+					ReadOnly:  isFilesArtifactExpansionVolumeReadOnly,
+				},
+			},
+		},
+	}
+
+	volumeMountsOnExpanderContainer := []apiv1.VolumeMount{}
+	volumeMountsOnUserServiceContainer := []apiv1.VolumeMount{}
+	volumeSubdirIndex := 0
+	for requestedExpanderDirpath, requestedUserServiceDirpath := range expanderDirpathsToUserServiceDirpaths {
+		subdirName := strconv.Itoa(volumeSubdirIndex)
+
+		expanderContainerMount := apiv1.VolumeMount{
+			Name:             underlyingVolumeName,
+			ReadOnly:         isFilesArtifactExpansionVolumeReadOnly,
+			MountPath:        requestedExpanderDirpath,
+			SubPath:          subdirName,
+		}
+		volumeMountsOnExpanderContainer = append(volumeMountsOnExpanderContainer, expanderContainerMount)
+
+		userServiceContainerMount := apiv1.VolumeMount{
+			Name:             underlyingVolumeName,
+			ReadOnly:         isFilesArtifactExpansionVolumeReadOnly,
+			MountPath:        requestedUserServiceDirpath,
+			SubPath:          subdirName,
+		}
+		volumeMountsOnUserServiceContainer = append(volumeMountsOnUserServiceContainer, userServiceContainerMount)
+
+		volumeSubdirIndex = volumeSubdirIndex + 1
+	}
+
+	filesArtifactExpansionInitContainer := getFilesArtifactExpansionInitContainerSpecs(
+		expanderImage,
+		expanderEnvVars,
+		volumeMountsOnExpanderContainer,
+	)
+
+	podInitContainers := []apiv1.Container{
+		filesArtifactExpansionInitContainer,
+	}
+
+	shouldDeleteExpansionPvc = false
+	return pvc, podVolumes, volumeMountsOnUserServiceContainer, podInitContainers, nil
 }
 
 func getFilesArtifactExpansionInitContainerSpecs(

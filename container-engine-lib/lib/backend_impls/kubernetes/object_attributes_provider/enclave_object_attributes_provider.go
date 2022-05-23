@@ -154,55 +154,6 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForNetworkingSide
 	panic("implement me")
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactsExpansionJob(
-	serviceGUID service.ServiceGUID,
-)(
-	KubernetesObjectAttributes,
-	error,
-){
-	serviceGuidStr := string(serviceGUID)
-
-	guidStr, err := uuid_generator.GenerateUUIDString()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID for the files artifacts expansion persistent volume claim for service '%v'", serviceGuidStr)
-	}
-
-	name, err := getCompositeKubernetesObjectName([]string{
-		filesArtifactsExpansionPrefix,
-		guidStr,
-	})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating an artifact expansion name object with expansion GUID '%v'", guidStr)
-	}
-
-	labels, err := provider.getLabelsForEnclaveObjectWithGUID(guidStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting labels for files artifact expansion persistent volume claim with GUID '%v'", guidStr)
-	}
-
-	serviceGUIDLabel, err := kubernetes_label_value.CreateNewKubernetesLabelValue(serviceGuidStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a label value from service GUID string '%v'", serviceGuidStr)
-	}
-	labels[label_key_consts.UserServiceGUIDKubernetesLabelKey] = serviceGUIDLabel
-	labels[label_key_consts.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
-	labels[label_key_consts.KurtosisVolumeTypeKubernetesLabelKey] = label_value_consts.FilesArtifactsExpansionVolumeTypeKubernetesLabelValue
-
-	// No custom annotations for files artifact expansion volume
-	customAnnotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
-
-	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, customAnnotations)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred while creating the ObjectAttributesImpl with name '%s' and labels '%+v'",
-			name.GetString(),
-			getLabelKeyValuesAsStrings(labels),
-		)
-	}
-	return objectAttributes, nil
-}
-
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactsExpansionPersistentVolumeClaim(
 	serviceGUID service.ServiceGUID,
 )(
@@ -235,6 +186,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifacts
 	}
 	labels[label_key_consts.UserServiceGUIDKubernetesLabelKey] = serviceGUIDLabel
 	labels[label_key_consts.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
+	labels[label_key_consts.KurtosisVolumeTypeKubernetesLabelKey] = label_value_consts.FilesArtifactsExpansionVolumeTypeKubernetesLabelValue
 
 	// No custom annotations for files artifact expansion persistent volume claim
 	customAnnotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
