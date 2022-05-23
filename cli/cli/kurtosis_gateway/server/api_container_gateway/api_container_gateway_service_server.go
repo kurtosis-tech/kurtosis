@@ -166,8 +166,10 @@ func (service *ApiContainerGatewayServiceServer) RemoveService(ctx context.Conte
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
 	}
+
+	removedServiceGuid := remoteApiContainerResponse.GetServiceGuid()
 	// Kill the connection if we can
-	service.idempotentKillRunningConnectionForServiceGuid(args.GetServiceId())
+	service.idempotentKillRunningConnectionForServiceGuid(removedServiceGuid)
 
 	return remoteApiContainerResponse, nil
 }
