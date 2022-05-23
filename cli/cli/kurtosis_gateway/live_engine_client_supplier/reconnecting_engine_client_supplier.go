@@ -18,9 +18,9 @@ const (
 )
 
 type currentEngineInfo struct {
-	EngineID
+	engineGuid engine.EngineGUID
 
-	proxyConn *connection.GatewayConnectionToKurtosis
+	proxyConn connection.GatewayConnectionToKurtosis
 
 	grpcConn net.Conn
 
@@ -32,6 +32,8 @@ type currentEngineInfo struct {
 // Class that will constantly poll the Kubernetes backend to try and find a live engine
 type LiveEngineClientSupplier struct {
 	kubernetesBackend *kubernetes.KubernetesKurtosisBackend
+
+	connectionProvider *connection.GatewayConnectionProvider
 
 	currentInfo *currentEngineInfo
 
@@ -56,18 +58,14 @@ func (supplier *LiveEngineClientSupplier) Start() error {
 	}
 
 	stopUpdaterSignalChan := make(chan interface{})
-
 	go func() {
 		poller := time.NewTicker(pollInterval)
 		defer poller.Stop()
 
 		for {
 			select {
-			case <- poller:
-
-
-
-
+			case <- poller.C:
+				supplier.replaceEngineIfNecessary()
 			case <-stopUpdaterSignalChan:
 				return
 			}
@@ -115,11 +113,42 @@ func (supplier *LiveEngineClientSupplier) replaceEngineIfNecessary() {
 		logrus.Infof("No engines are running so engine functionality won't be available")
 		return
 	}
-
 	if len(runningEngines) > 1 {
 		logrus.Errorf("Found > 1 engine running, which should never happen")
 		return
 	}
+	var runningEngine *engine.Engine
+	for _, runningEngine = range runningEngines {}
+
+	if supplier.currentInfo.engineGuid == runningEngine.GetGUID() {
+		return
+	}
 
 	
+}
+
+func (supplier *LiveEngineClientSupplier) replaceCurrentEngineInfo(newEngine *engine.Engine) {
+	currentInfo := supplier.currentInfo
+
+	defer currentInfo.proxyConn.Stop()
+	defer currentInfo.grpcConn.Close()
+
+	newProxyConn := supplier.connectionProvider.ForEngine(newEngine)
+	shouldDestroyNewProxy := true
+	defer func() {
+		if shouldDestroyNewProxy {
+			newProxyConn.Stop()
+		}
+	}()
+
+
+	newEngineInfo := &currentEngineInfo{
+		engineGuid:   currentInfo.engineGuid,
+		proxyConn:    nil,
+		grpcConn:     nil,
+		engineClient: nil,
+	}
+	supplier.currentInfo = newEngineInfo
+
+	shouldDestroyNewProxy = false
 }
