@@ -3,7 +3,7 @@ import { ExecuteModuleArgs } from "../../kurtosis_core_rpc_api_bindings/api_cont
 import { newExecuteModuleArgs } from "../constructor_calls";
 import { GenericApiContainerClient } from "../enclaves/generic_api_container_client";
 
-export type ModuleID= string;
+export type ModuleID = string;
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class ModuleContext {

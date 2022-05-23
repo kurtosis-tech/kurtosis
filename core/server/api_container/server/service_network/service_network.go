@@ -322,13 +322,13 @@ func (network *ServiceNetwork) RemoveService(
 	ctx context.Context,
 	serviceId service.ServiceID,
 	containerStopTimeout time.Duration,
-) error {
+) (service.ServiceGUID, error) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
 	serviceToRemove, found := network.registeredServiceInfo[serviceId]
 	if !found {
-		return stacktrace.NewError("No service found with ID '%v'", serviceId)
+		return "", stacktrace.NewError("No service found with ID '%v'", serviceId)
 	}
 	serviceGuid := serviceToRemove.GetGUID()
 
@@ -344,10 +344,10 @@ func (network *ServiceNetwork) RemoveService(
 	}
 	_, erroredGuids, err := network.kurtosisBackend.StopUserServices(ctx, network.enclaveId, stopServiceFilters)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred during the call to stop service '%v'", serviceGuid)
+		return "", stacktrace.Propagate(err, "An error occurred during the call to stop service '%v'", serviceGuid)
 	}
 	if err, found := erroredGuids[serviceGuid]; found {
-		return stacktrace.Propagate(err, "An error occurred stopping service '%v'", serviceGuid)
+		return "", stacktrace.Propagate(err, "An error occurred stopping service '%v'", serviceGuid)
 	}
 
 	sidecar, foundSidecar := network.networkingSidecars[serviceId]
@@ -358,13 +358,13 @@ func (network *ServiceNetwork) RemoveService(
 		//	 b) all service's iptables get overwritten on the next Add/Repartition call
 		// If we ever do incremental iptables though, we'll need to fix all the other service's iptables here!
 		if err := network.networkingSidecarManager.Remove(ctx, sidecar); err != nil {
-			return stacktrace.Propagate(err, "An error occurred destroying the sidecar for service with ID '%v'", serviceId)
+			return "", stacktrace.Propagate(err, "An error occurred destroying the sidecar for service with ID '%v'", serviceId)
 		}
 		delete(network.networkingSidecars, serviceId)
 		logrus.Debugf("Successfully removed sidecar attached to service with ID '%v'", serviceId)
 	}
 
-	return nil
+	return serviceGuid, nil
 }
 
 // TODO we could switch this to be a bulk command; the backend would support it

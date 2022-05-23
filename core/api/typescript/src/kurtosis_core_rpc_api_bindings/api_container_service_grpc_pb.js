@@ -5,6 +5,28 @@ var grpc = require('@grpc/grpc-js');
 var api_container_service_pb = require('./api_container_service_pb.js');
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 
+function serialize_api_container_api_DownloadFilesArtifactArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.DownloadFilesArtifactArgs)) {
+    throw new Error('Expected argument of type api_container_api.DownloadFilesArtifactArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_DownloadFilesArtifactArgs(buffer_arg) {
+  return api_container_service_pb.DownloadFilesArtifactArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_DownloadFilesArtifactResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.DownloadFilesArtifactResponse)) {
+    throw new Error('Expected argument of type api_container_api.DownloadFilesArtifactResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_DownloadFilesArtifactResponse(buffer_arg) {
+  return api_container_service_pb.DownloadFilesArtifactResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_ExecCommandArgs(arg) {
   if (!(arg instanceof api_container_service_pb.ExecCommandArgs)) {
     throw new Error('Expected argument of type api_container_api.ExecCommandArgs');
@@ -49,26 +71,15 @@ function deserialize_api_container_api_ExecuteModuleResponse(buffer_arg) {
   return api_container_service_pb.ExecuteModuleResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_GetModuleInfoArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.GetModuleInfoArgs)) {
-    throw new Error('Expected argument of type api_container_api.GetModuleInfoArgs');
+function serialize_api_container_api_GetModulesArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.GetModulesArgs)) {
+    throw new Error('Expected argument of type api_container_api.GetModulesArgs');
   }
   return Buffer.from(arg.serializeBinary());
 }
 
-function deserialize_api_container_api_GetModuleInfoArgs(buffer_arg) {
-  return api_container_service_pb.GetModuleInfoArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_GetModuleInfoResponse(arg) {
-  if (!(arg instanceof api_container_service_pb.GetModuleInfoResponse)) {
-    throw new Error('Expected argument of type api_container_api.GetModuleInfoResponse');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_GetModuleInfoResponse(buffer_arg) {
-  return api_container_service_pb.GetModuleInfoResponse.deserializeBinary(new Uint8Array(buffer_arg));
+function deserialize_api_container_api_GetModulesArgs(buffer_arg) {
+  return api_container_service_pb.GetModulesArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_GetModulesResponse(arg) {
@@ -82,26 +93,15 @@ function deserialize_api_container_api_GetModulesResponse(buffer_arg) {
   return api_container_service_pb.GetModulesResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_GetServiceInfoArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.GetServiceInfoArgs)) {
-    throw new Error('Expected argument of type api_container_api.GetServiceInfoArgs');
+function serialize_api_container_api_GetServicesArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.GetServicesArgs)) {
+    throw new Error('Expected argument of type api_container_api.GetServicesArgs');
   }
   return Buffer.from(arg.serializeBinary());
 }
 
-function deserialize_api_container_api_GetServiceInfoArgs(buffer_arg) {
-  return api_container_service_pb.GetServiceInfoArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_GetServiceInfoResponse(arg) {
-  if (!(arg instanceof api_container_service_pb.GetServiceInfoResponse)) {
-    throw new Error('Expected argument of type api_container_api.GetServiceInfoResponse');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_GetServiceInfoResponse(buffer_arg) {
-  return api_container_service_pb.GetServiceInfoResponse.deserializeBinary(new Uint8Array(buffer_arg));
+function deserialize_api_container_api_GetServicesArgs(buffer_arg) {
+  return api_container_service_pb.GetServicesArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_GetServicesResponse(arg) {
@@ -179,6 +179,17 @@ function serialize_api_container_api_RemoveServiceArgs(arg) {
 
 function deserialize_api_container_api_RemoveServiceArgs(buffer_arg) {
   return api_container_service_pb.RemoveServiceArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_RemoveServiceResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.RemoveServiceResponse)) {
+    throw new Error('Expected argument of type api_container_api.RemoveServiceResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_RemoveServiceResponse(buffer_arg) {
+  return api_container_service_pb.RemoveServiceResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_RepartitionArgs(arg) {
@@ -269,6 +280,17 @@ function deserialize_api_container_api_UnloadModuleArgs(buffer_arg) {
   return api_container_service_pb.UnloadModuleArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_UnloadModuleResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.UnloadModuleResponse)) {
+    throw new Error('Expected argument of type api_container_api.UnloadModuleResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_UnloadModuleResponse(buffer_arg) {
+  return api_container_service_pb.UnloadModuleResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_UnpauseServiceArgs(arg) {
   if (!(arg instanceof api_container_service_pb.UnpauseServiceArgs)) {
     throw new Error('Expected argument of type api_container_api.UnpauseServiceArgs');
@@ -349,17 +371,29 @@ loadModule: {
     responseSerialize: serialize_api_container_api_LoadModuleResponse,
     responseDeserialize: deserialize_api_container_api_LoadModuleResponse,
   },
+  // Gets information about loaded modules
+getModules: {
+    path: '/api_container_api.ApiContainerService/GetModules',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.GetModulesArgs,
+    responseType: api_container_service_pb.GetModulesResponse,
+    requestSerialize: serialize_api_container_api_GetModulesArgs,
+    requestDeserialize: deserialize_api_container_api_GetModulesArgs,
+    responseSerialize: serialize_api_container_api_GetModulesResponse,
+    responseDeserialize: deserialize_api_container_api_GetModulesResponse,
+  },
   // Stop and remove a module from the enclave
 unloadModule: {
     path: '/api_container_api.ApiContainerService/UnloadModule',
     requestStream: false,
     responseStream: false,
     requestType: api_container_service_pb.UnloadModuleArgs,
-    responseType: google_protobuf_empty_pb.Empty,
+    responseType: api_container_service_pb.UnloadModuleResponse,
     requestSerialize: serialize_api_container_api_UnloadModuleArgs,
     requestDeserialize: deserialize_api_container_api_UnloadModuleArgs,
-    responseSerialize: serialize_google_protobuf_Empty,
-    responseDeserialize: deserialize_google_protobuf_Empty,
+    responseSerialize: serialize_api_container_api_UnloadModuleResponse,
+    responseDeserialize: deserialize_api_container_api_UnloadModuleResponse,
   },
   // Executes an executable module on the user's behalf
 executeModule: {
@@ -372,18 +406,6 @@ executeModule: {
     requestDeserialize: deserialize_api_container_api_ExecuteModuleArgs,
     responseSerialize: serialize_api_container_api_ExecuteModuleResponse,
     responseDeserialize: deserialize_api_container_api_ExecuteModuleResponse,
-  },
-  // Gets information about a loaded module
-getModuleInfo: {
-    path: '/api_container_api.ApiContainerService/GetModuleInfo',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.GetModuleInfoArgs,
-    responseType: api_container_service_pb.GetModuleInfoResponse,
-    requestSerialize: serialize_api_container_api_GetModuleInfoArgs,
-    requestDeserialize: deserialize_api_container_api_GetModuleInfoArgs,
-    responseSerialize: serialize_api_container_api_GetModuleInfoResponse,
-    responseDeserialize: deserialize_api_container_api_GetModuleInfoResponse,
   },
   // Registers a service with the API container but doesn't start the container for it
 registerService: {
@@ -409,17 +431,17 @@ startService: {
     responseSerialize: serialize_api_container_api_StartServiceResponse,
     responseDeserialize: deserialize_api_container_api_StartServiceResponse,
   },
-  // Returns relevant information about the service
-getServiceInfo: {
-    path: '/api_container_api.ApiContainerService/GetServiceInfo',
+  // Returns the IDs of the current services in the enclave
+getServices: {
+    path: '/api_container_api.ApiContainerService/GetServices',
     requestStream: false,
     responseStream: false,
-    requestType: api_container_service_pb.GetServiceInfoArgs,
-    responseType: api_container_service_pb.GetServiceInfoResponse,
-    requestSerialize: serialize_api_container_api_GetServiceInfoArgs,
-    requestDeserialize: deserialize_api_container_api_GetServiceInfoArgs,
-    responseSerialize: serialize_api_container_api_GetServiceInfoResponse,
-    responseDeserialize: deserialize_api_container_api_GetServiceInfoResponse,
+    requestType: api_container_service_pb.GetServicesArgs,
+    responseType: api_container_service_pb.GetServicesResponse,
+    requestSerialize: serialize_api_container_api_GetServicesArgs,
+    requestDeserialize: deserialize_api_container_api_GetServicesArgs,
+    responseSerialize: serialize_api_container_api_GetServicesResponse,
+    responseDeserialize: deserialize_api_container_api_GetServicesResponse,
   },
   // Instructs the API container to remove the given service
 removeService: {
@@ -427,11 +449,11 @@ removeService: {
     requestStream: false,
     responseStream: false,
     requestType: api_container_service_pb.RemoveServiceArgs,
-    responseType: google_protobuf_empty_pb.Empty,
+    responseType: api_container_service_pb.RemoveServiceResponse,
     requestSerialize: serialize_api_container_api_RemoveServiceArgs,
     requestDeserialize: deserialize_api_container_api_RemoveServiceArgs,
-    responseSerialize: serialize_google_protobuf_Empty,
-    responseDeserialize: deserialize_google_protobuf_Empty,
+    responseSerialize: serialize_api_container_api_RemoveServiceResponse,
+    responseDeserialize: deserialize_api_container_api_RemoveServiceResponse,
   },
   // Instructs the API container to repartition the enclave
 repartition: {
@@ -505,31 +527,7 @@ waitForHttpPostEndpointAvailability: {
     responseSerialize: serialize_google_protobuf_Empty,
     responseDeserialize: deserialize_google_protobuf_Empty,
   },
-  // Returns the IDs of the current services in the enclave
-getServices: {
-    path: '/api_container_api.ApiContainerService/GetServices',
-    requestStream: false,
-    responseStream: false,
-    requestType: google_protobuf_empty_pb.Empty,
-    responseType: api_container_service_pb.GetServicesResponse,
-    requestSerialize: serialize_google_protobuf_Empty,
-    requestDeserialize: deserialize_google_protobuf_Empty,
-    responseSerialize: serialize_api_container_api_GetServicesResponse,
-    responseDeserialize: deserialize_api_container_api_GetServicesResponse,
-  },
-  // Returns the IDs of the Kurtosis modules that have been loaded into the enclave
-getModules: {
-    path: '/api_container_api.ApiContainerService/GetModules',
-    requestStream: false,
-    responseStream: false,
-    requestType: google_protobuf_empty_pb.Empty,
-    responseType: api_container_service_pb.GetModulesResponse,
-    requestSerialize: serialize_google_protobuf_Empty,
-    requestDeserialize: deserialize_google_protobuf_Empty,
-    responseSerialize: serialize_api_container_api_GetModulesResponse,
-    responseDeserialize: deserialize_api_container_api_GetModulesResponse,
-  },
-  // Uploads a files artifact to the Kurtosis File System.
+  // Uploads a files artifact to the Kurtosis File System
 uploadFilesArtifact: {
     path: '/api_container_api.ApiContainerService/UploadFilesArtifact',
     requestStream: false,
@@ -540,6 +538,19 @@ uploadFilesArtifact: {
     requestDeserialize: deserialize_api_container_api_UploadFilesArtifactArgs,
     responseSerialize: serialize_api_container_api_UploadFilesArtifactResponse,
     responseDeserialize: deserialize_api_container_api_UploadFilesArtifactResponse,
+  },
+  // TODO Make this a server-side streaming method so the client can download large files
+// Downloads a files artifact from the Kurtosis File System
+downloadFilesArtifact: {
+    path: '/api_container_api.ApiContainerService/DownloadFilesArtifact',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.DownloadFilesArtifactArgs,
+    responseType: api_container_service_pb.DownloadFilesArtifactResponse,
+    requestSerialize: serialize_api_container_api_DownloadFilesArtifactArgs,
+    requestDeserialize: deserialize_api_container_api_DownloadFilesArtifactArgs,
+    responseSerialize: serialize_api_container_api_DownloadFilesArtifactResponse,
+    responseDeserialize: deserialize_api_container_api_DownloadFilesArtifactResponse,
   },
   // Tells the API container to download a files artifact from the web to the Kurtosis File System
 storeWebFilesArtifact: {

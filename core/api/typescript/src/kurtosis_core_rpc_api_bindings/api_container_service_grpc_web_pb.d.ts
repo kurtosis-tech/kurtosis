@@ -16,12 +16,19 @@ export class ApiContainerServiceClient {
                response: api_container_service_pb.LoadModuleResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.LoadModuleResponse>;
 
+  getModules(
+    request: api_container_service_pb.GetModulesArgs,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: api_container_service_pb.GetModulesResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.GetModulesResponse>;
+
   unloadModule(
     request: api_container_service_pb.UnloadModuleArgs,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: google_protobuf_empty_pb.Empty) => void
-  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+               response: api_container_service_pb.UnloadModuleResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.UnloadModuleResponse>;
 
   executeModule(
     request: api_container_service_pb.ExecuteModuleArgs,
@@ -29,13 +36,6 @@ export class ApiContainerServiceClient {
     callback: (err: grpcWeb.RpcError,
                response: api_container_service_pb.ExecuteModuleResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.ExecuteModuleResponse>;
-
-  getModuleInfo(
-    request: api_container_service_pb.GetModuleInfoArgs,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: api_container_service_pb.GetModuleInfoResponse) => void
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.GetModuleInfoResponse>;
 
   registerService(
     request: api_container_service_pb.RegisterServiceArgs,
@@ -51,19 +51,19 @@ export class ApiContainerServiceClient {
                response: api_container_service_pb.StartServiceResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.StartServiceResponse>;
 
-  getServiceInfo(
-    request: api_container_service_pb.GetServiceInfoArgs,
+  getServices(
+    request: api_container_service_pb.GetServicesArgs,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: api_container_service_pb.GetServiceInfoResponse) => void
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.GetServiceInfoResponse>;
+               response: api_container_service_pb.GetServicesResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.GetServicesResponse>;
 
   removeService(
     request: api_container_service_pb.RemoveServiceArgs,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: google_protobuf_empty_pb.Empty) => void
-  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+               response: api_container_service_pb.RemoveServiceResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.RemoveServiceResponse>;
 
   repartition(
     request: api_container_service_pb.RepartitionArgs,
@@ -107,26 +107,19 @@ export class ApiContainerServiceClient {
                response: google_protobuf_empty_pb.Empty) => void
   ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
 
-  getServices(
-    request: google_protobuf_empty_pb.Empty,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: api_container_service_pb.GetServicesResponse) => void
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.GetServicesResponse>;
-
-  getModules(
-    request: google_protobuf_empty_pb.Empty,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: api_container_service_pb.GetModulesResponse) => void
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.GetModulesResponse>;
-
   uploadFilesArtifact(
     request: api_container_service_pb.UploadFilesArtifactArgs,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
                response: api_container_service_pb.UploadFilesArtifactResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.UploadFilesArtifactResponse>;
+
+  downloadFilesArtifact(
+    request: api_container_service_pb.DownloadFilesArtifactArgs,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: api_container_service_pb.DownloadFilesArtifactResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.DownloadFilesArtifactResponse>;
 
   storeWebFilesArtifact(
     request: api_container_service_pb.StoreWebFilesArtifactArgs,
@@ -154,20 +147,20 @@ export class ApiContainerServicePromiseClient {
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.LoadModuleResponse>;
 
+  getModules(
+    request: api_container_service_pb.GetModulesArgs,
+    metadata?: grpcWeb.Metadata
+  ): Promise<api_container_service_pb.GetModulesResponse>;
+
   unloadModule(
     request: api_container_service_pb.UnloadModuleArgs,
     metadata?: grpcWeb.Metadata
-  ): Promise<google_protobuf_empty_pb.Empty>;
+  ): Promise<api_container_service_pb.UnloadModuleResponse>;
 
   executeModule(
     request: api_container_service_pb.ExecuteModuleArgs,
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.ExecuteModuleResponse>;
-
-  getModuleInfo(
-    request: api_container_service_pb.GetModuleInfoArgs,
-    metadata?: grpcWeb.Metadata
-  ): Promise<api_container_service_pb.GetModuleInfoResponse>;
 
   registerService(
     request: api_container_service_pb.RegisterServiceArgs,
@@ -179,15 +172,15 @@ export class ApiContainerServicePromiseClient {
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.StartServiceResponse>;
 
-  getServiceInfo(
-    request: api_container_service_pb.GetServiceInfoArgs,
+  getServices(
+    request: api_container_service_pb.GetServicesArgs,
     metadata?: grpcWeb.Metadata
-  ): Promise<api_container_service_pb.GetServiceInfoResponse>;
+  ): Promise<api_container_service_pb.GetServicesResponse>;
 
   removeService(
     request: api_container_service_pb.RemoveServiceArgs,
     metadata?: grpcWeb.Metadata
-  ): Promise<google_protobuf_empty_pb.Empty>;
+  ): Promise<api_container_service_pb.RemoveServiceResponse>;
 
   repartition(
     request: api_container_service_pb.RepartitionArgs,
@@ -219,20 +212,15 @@ export class ApiContainerServicePromiseClient {
     metadata?: grpcWeb.Metadata
   ): Promise<google_protobuf_empty_pb.Empty>;
 
-  getServices(
-    request: google_protobuf_empty_pb.Empty,
-    metadata?: grpcWeb.Metadata
-  ): Promise<api_container_service_pb.GetServicesResponse>;
-
-  getModules(
-    request: google_protobuf_empty_pb.Empty,
-    metadata?: grpcWeb.Metadata
-  ): Promise<api_container_service_pb.GetModulesResponse>;
-
   uploadFilesArtifact(
     request: api_container_service_pb.UploadFilesArtifactArgs,
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.UploadFilesArtifactResponse>;
+
+  downloadFilesArtifact(
+    request: api_container_service_pb.DownloadFilesArtifactArgs,
+    metadata?: grpcWeb.Metadata
+  ): Promise<api_container_service_pb.DownloadFilesArtifactResponse>;
 
   storeWebFilesArtifact(
     request: api_container_service_pb.StoreWebFilesArtifactArgs,
