@@ -356,6 +356,8 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		}
 	}()
 
+	logrus.Debugf("Updated user service service after updating ports: %+v", updatedService)
+
 	kubernetesResources := map[service.ServiceGUID]*userServiceKubernetesResources{
 		serviceGuid: {
 			service: updatedService,
@@ -364,7 +366,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		},
 	}
 
-	logrus.Debugf("Kubernetes resources that will be converted into a Service object: %+v")
+	logrus.Debugf("Kubernetes resources that will be converted into a Service object: %+v", kubernetesResources)
 
 	convertedObjects, err := getUserServiceObjectsFromKubernetesResources(enclaveId, kubernetesResources)
 	if err != nil {
