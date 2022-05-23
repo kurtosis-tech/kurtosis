@@ -1,5 +1,9 @@
 # TBD
 
+# 1.25.4
+### Changes
+* Upgraded to Core 1.53.4 which set files artifact expansion volume size to 1024Mb
+
 # 1.25.3
 ### Fixes
 * Take core 1.53.3 which deletes files artifacts expander containers when done with them
