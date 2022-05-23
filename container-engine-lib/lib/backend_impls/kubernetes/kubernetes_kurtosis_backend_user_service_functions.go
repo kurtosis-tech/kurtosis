@@ -1,4 +1,5 @@
 package kubernetes
+
 import (
 	"bytes"
 	"context"
@@ -26,7 +27,6 @@ import (
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"net"
 	"strconv"
-	"strings"
 )
 
 /*
@@ -1028,6 +1028,40 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 		results[serviceGuid] = resultObj
 	}
 
+	// Get files artifact expansion persistent volume claims
+	matchingkubernetesPvcs, err := kubernetes_resource_collectors.CollectMatchingPersistentVolumeClaims(
+		ctx,
+		backend.kubernetesManager,
+		namespaceName,
+		kubernetesResourceSearchLabels,
+		label_key_consts.GUIDKubernetesLabelKey.GetString(),
+		postFilterLabelValues,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes PVCs matching service GUIDs: %+v", serviceGuids)
+	}
+	for serviceGuidStr, kubernetesPvcsForGuid := range matchingkubernetesPvcs {
+		logrus.Tracef("Found Kubernetes PVCs for GUID '%v': %+v", serviceGuidStr, kubernetesPvcsForGuid)
+		serviceGuid := service.ServiceGUID(serviceGuidStr)
+
+		numPvcsForGuid := len(kubernetesPvcsForGuid)
+		if numPvcsForGuid == 0 {
+			// This would indicate a bug in our PVC retrieval logic because we shouldn't even have a map entry if there's nothing matching it
+			return nil, stacktrace.NewError("Got entry of result PVCs for service GUID '%v', but no Kubernetes PVCs were returned; this is a bug in Kurtosis", serviceGuid)
+		}
+		if numPvcsForGuid > 1 {
+			return nil, stacktrace.NewError("Found %v Kubernetes PVCs associated with service GUID '%v'; this is a bug in Kurtosis", numPvcsForGuid, serviceGuid)
+		}
+		kubernetesPvc := kubernetesPvcsForGuid[0]
+
+		resultObj, found := results[serviceGuid]
+		if !found {
+			resultObj = &userServiceKubernetesResources{}
+		}
+		resultObj.filesArtifactExpansionPersistentVolumeClaim = kubernetesPvc
+		results[serviceGuid] = resultObj
+	}
+
 	return results, nil
 }
 
@@ -1564,6 +1598,7 @@ func (backend *KubernetesKurtosisBackend) runExtractionJobToCompletion(
 
 
 
+/*
 func (backend *KubernetesKurtosisBackend) getAllJobContainerLogs(
 	ctx context.Context,
 	namespaceName string,
@@ -1601,6 +1636,7 @@ func (backend *KubernetesKurtosisBackend) getAllJobContainerLogs(
 
 
 
+/*
 func (backend *KubernetesKurtosisBackend) getSingleJobContainerLogs(ctx context.Context, namespaceName string, podName string, containerName string) (string, error) {
 	logs, err := backend.kubernetesManager.GetContainerLogs(
 		ctx,
@@ -1628,3 +1664,6 @@ func (backend *KubernetesKurtosisBackend) getSingleJobContainerLogs(ctx context.
 
 	return output.String(), nil
 }
+
+
+ */

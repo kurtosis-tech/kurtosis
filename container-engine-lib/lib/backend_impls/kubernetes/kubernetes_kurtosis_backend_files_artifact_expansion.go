@@ -1,17 +1,6 @@
 package kubernetes
 
-import (
-	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
-	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
-	"path"
-	"time"
-)
-
+/*
 const (
 	// Docker image that will be used to launch the container that will expand the files artifact
 	//  into a Docker volume
