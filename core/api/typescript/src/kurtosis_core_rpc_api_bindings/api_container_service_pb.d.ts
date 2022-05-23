@@ -129,6 +129,44 @@ export namespace LoadModuleArgs {
   }
 }
 
+export class LoadModuleResponse extends jspb.Message {
+  getPrivateIpAddr(): string;
+  setPrivateIpAddr(value: string): LoadModuleResponse;
+
+  getPrivatePort(): Port | undefined;
+  setPrivatePort(value?: Port): LoadModuleResponse;
+  hasPrivatePort(): boolean;
+  clearPrivatePort(): LoadModuleResponse;
+
+  getPublicIpAddr(): string;
+  setPublicIpAddr(value: string): LoadModuleResponse;
+
+  getPublicPort(): Port | undefined;
+  setPublicPort(value?: Port): LoadModuleResponse;
+  hasPublicPort(): boolean;
+  clearPublicPort(): LoadModuleResponse;
+
+  getGuid(): string;
+  setGuid(value: string): LoadModuleResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): LoadModuleResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: LoadModuleResponse): LoadModuleResponse.AsObject;
+  static serializeBinaryToWriter(message: LoadModuleResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): LoadModuleResponse;
+  static deserializeBinaryFromReader(message: LoadModuleResponse, reader: jspb.BinaryReader): LoadModuleResponse;
+}
+
+export namespace LoadModuleResponse {
+  export type AsObject = {
+    privateIpAddr: string,
+    privatePort?: Port.AsObject,
+    publicIpAddr: string,
+    publicPort?: Port.AsObject,
+    guid: string,
+  }
+}
+
 export class GetModulesArgs extends jspb.Message {
   getIdsMap(): jspb.Map<string, boolean>;
   clearIdsMap(): GetModulesArgs;
@@ -324,6 +362,32 @@ export namespace StartServiceArgs {
     cmdArgsList: Array<string>,
     dockerEnvVarsMap: Array<[string, string]>,
     filesArtifactMountpointsMap: Array<[string, string]>,
+  }
+}
+
+export class StartServiceResponse extends jspb.Message {
+  getPublicIpAddr(): string;
+  setPublicIpAddr(value: string): StartServiceResponse;
+
+  getPublicPortsMap(): jspb.Map<string, Port>;
+  clearPublicPortsMap(): StartServiceResponse;
+
+  getServiceGuid(): string;
+  setServiceGuid(value: string): StartServiceResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StartServiceResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: StartServiceResponse): StartServiceResponse.AsObject;
+  static serializeBinaryToWriter(message: StartServiceResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StartServiceResponse;
+  static deserializeBinaryFromReader(message: StartServiceResponse, reader: jspb.BinaryReader): StartServiceResponse;
+}
+
+export namespace StartServiceResponse {
+  export type AsObject = {
+    publicIpAddr: string,
+    publicPortsMap: Array<[string, Port.AsObject]>,
+    serviceGuid: string,
   }
 }
 

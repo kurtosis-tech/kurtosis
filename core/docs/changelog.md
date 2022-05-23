@@ -1,5 +1,9 @@
 # TBD
 
+# 1.53.0
+### Breaking Changes
+* Revert `StartService` and `LoadModule` changes from 1.52.0
+
 # 1.52.1
 ### Fixes
 * Actually use container-engine-lib 0.31.0
