@@ -107,24 +107,26 @@ func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Contex
 			}
 		}
 	}()
+	// Do not connect to services with no ports specified
+	if len(args.PrivatePorts) == 0 {
+		return remoteApiContainerResponse, nil
+	}
 	serviceGuid := remoteApiContainerResponse.GetServiceGuid()
 
-	// Only services with ports specified can be connected
-	if len(args.PrivatePorts) > 0 {
-		runningServiceConnection, err := service.startRunningConnectionForKurtosisService(serviceGuid, args.PrivatePorts)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Expected to be able to start a local connection to service '%v', instead a non-nil error was returned", args.GetServiceId())
-		}
-		defer func() {
-			if cleanUpServiceConnection {
-				service.idempotentKillRunningConnectionForServiceGuid(serviceGuid)
-			}
-		}()
-
-		// Overwrite PublicPorts and PublicIp fields
-		remoteApiContainerResponse.PublicIpAddr = runningServiceConnection.localPublicIp
-		remoteApiContainerResponse.PublicPorts = runningServiceConnection.localPublicServicePorts
+	runningServiceConnection, err := service.startRunningConnectionForKurtosisService(serviceGuid, args.PrivatePorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to start a local connection to service '%v', instead a non-nil error was returned", args.GetServiceId())
 	}
+	defer func() {
+		if cleanUpServiceConnection {
+			service.idempotentKillRunningConnectionForServiceGuid(serviceGuid)
+		}
+	}()
+
+	// Overwrite PublicPorts and PublicIp fields
+	remoteApiContainerResponse.PublicIpAddr = runningServiceConnection.localPublicIp
+	remoteApiContainerResponse.PublicPorts = runningServiceConnection.localPublicServicePorts
+
 	cleanUpService = false
 	cleanUpServiceConnection = false
 	return remoteApiContainerResponse, nil
@@ -135,12 +137,11 @@ func (service *ApiContainerGatewayServiceServer) GetServices(ctx context.Context
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
 	}
-
+	cleanUpConnection := true
 	for serviceId, serviceInfo := range remoteApiContainerResponse.ServiceInfo {
 		// Get the running connection if it's available, start one if there is no running connection
 		serviceGuid := serviceInfo.GetServiceGuid()
 		var runningLocalConnection *runningLocalServiceConnection
-		cleanUpConnection := true
 		runningLocalConnection, isFound := service.userServiceGuidToLocalConnectionMap[serviceGuid]
 		if !isFound && len(serviceInfo.PrivatePorts) > 0 {
 			runningLocalConnection, err = service.startRunningConnectionForKurtosisService(serviceGuid, serviceInfo.PrivatePorts)
@@ -158,6 +159,7 @@ func (service *ApiContainerGatewayServiceServer) GetServices(ctx context.Context
 		serviceInfo.MaybePublicIpAddr = runningLocalConnection.localPublicIp
 	}
 
+	cleanUpConnection = false
 	return remoteApiContainerResponse, nil
 }
 
