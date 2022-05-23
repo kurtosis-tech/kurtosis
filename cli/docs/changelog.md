@@ -1,9 +1,10 @@
 # TBD
 ### Fixes
 * Fixes bugs that were happening with API container's gRPC wire format
+* Fixes various bugs with files artifacts expansion
 
 ### Breaking Changes
-* Upgraded to engine 1.25.0
+* Upgraded to engine 1.25.1
     * Users will need to run `kurtosis engine restart`
 
 # 0.18.7
