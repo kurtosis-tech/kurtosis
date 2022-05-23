@@ -356,8 +356,6 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		}
 	}()
 
-	logrus.Debugf("Updated user service service after updating ports: %+v", updatedService)
-
 	kubernetesResources := map[service.ServiceGUID]*userServiceKubernetesResources{
 		serviceGuid: {
 			service: updatedService,
@@ -365,8 +363,6 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 			filesArtifactExpansionPersistentVolumeClaim: filesArtifactsExpansionPvc,
 		},
 	}
-
-	logrus.Debugf("Kubernetes resources that will be converted into a Service object: %+v", kubernetesResources)
 
 	convertedObjects, err := getUserServiceObjectsFromKubernetesResources(enclaveId, kubernetesResources)
 	if err != nil {
@@ -380,8 +376,6 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 			serviceGuid,
 		)
 	}
-
-	logrus.Debugf("Post-conversion objects & Kubernetes resources: %+v", objectsAndResources)
 
 	shouldDeleteExpansionPvc = false
 	shouldDestroyPod = false
@@ -1043,16 +1037,8 @@ func getUserServiceObjectsFromKubernetesResources(
 		serviceRegistrationObj := service.NewServiceRegistration(serviceId, serviceGuid, enclaveId, privateIp)
 		resultObj.serviceRegistration = serviceRegistrationObj
 
-		// The serialized port spec annotation but no pod means that the registration is open but no pod has yet been started to consume it
-		logrus.Debugf("Service under consideration: %+v", kubernetesService)
-		stillUsingUnboundPort := false
-		for _, servicePort := range kubernetesService.Spec.Ports {
-			if servicePort.Name == unboundPortName {
-				stillUsingUnboundPort = true
-				break
-			}
-		}
-		if stillUsingUnboundPort {
+		// A service with no ports annotation means that no pod has yet consumed the registration
+		if _, found := kubernetesService.Annotations[kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString()]; !found {
 			// If we're using the unbound port, no actual user ports have been set yet so there's no way we can
 			// return a service
 			resultObj.service = nil
