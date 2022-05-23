@@ -65,7 +65,7 @@ jobs:
 
       - run: api/typescript/scripts/build.sh
 
-  check_launcher:
+  check_files_artifacts_expander:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
