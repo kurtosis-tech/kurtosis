@@ -1,5 +1,9 @@
 # TBD
 
+# 0.19.2
+### Fixes
+* Revert "bugfix" from 0.19.1 that actually caused a bug
+
 # 0.19.1
 ### Features
 * Cluster config validation failures print out the name of the failed cluster
