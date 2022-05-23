@@ -48,7 +48,8 @@ const (
 	engineClientCtxKey  = "engine-client"
 )
 
-var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveId enclave.EnclaveID) error{
+// TODO TODO TODO CHANGE THIS SIGNATURE SO THAT IT MATCHES MODULE AND USER SERVICES SIGNATURE
+var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo kurtosis_engine_rpc_api_bindings.EnclaveInfo, enclaveId enclave.EnclaveID) error{
 	"User Services":     printUserServices,
 	"Kurtosis Modules":  printModules,
 }
@@ -101,6 +102,7 @@ func run(
 	// TODO Refactor these to use a user-friendly string and not the enum name
 	keyValuePrinter.AddPair(enclaveStatusTitleName, enclaveContainersStatus.String())
 	keyValuePrinter.AddPair(apiContainerStatusTitleName, enclaveApiContainerStatus.String())
+
 	if enclaveApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING {
 		// ------------ Print API container info -----------------
 		apiContainerHostInfo := enclaveInfo.GetApiContainerHostMachineInfo()

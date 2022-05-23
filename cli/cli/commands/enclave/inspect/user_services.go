@@ -6,8 +6,13 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"sort"
 	"strings"
 )
@@ -20,15 +25,44 @@ const (
 	missingPortPlaceholder = "<none>"
 )
 
-func printUserServices(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveId enclave.EnclaveID) error {
+// TODO TODO TODO REMOVE BACKEND ARG AND MAKE SURE THIS IS CALLED CORRECTLY IN INSPECT.GO
+func printUserServices(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo kurtosis_engine_rpc_api_bindings.EnclaveInfo) error {
+	enclaveIdStr := enclaveInfo.EnclaveId
+	enclaveId := enclave.EnclaveID(enclaveIdStr)
+	apicHostMachineIp, apicHostMachineGrpcPort, err := enclave_liveness_validator.ValidateEnclaveLiveness(&enclaveInfo)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred verifying that the enclave was running")
+	}
+
+	apiContainerHostGrpcUrl := fmt.Sprintf(
+		"%v:%v",
+		apicHostMachineIp,
+		apicHostMachineGrpcPort,
+	)
+	conn, err := grpc.Dial(apiContainerHostGrpcUrl, grpc.WithInsecure())
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred connecting to the API container grpc port at '%v' in enclave '%v'",
+			apiContainerHostGrpcUrl,
+			enclaveIdStr,
+		)
+	}
+	defer func() {
+		conn.Close()
+	}()
+	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
 
 	userServiceFilters := &service.ServiceFilters{}
 
 	// TODO Switch to using the API container API once it can show *all* services (not just running ones)
-	userServices, err := kurtosisBackend.GetUserServices(ctx, enclaveId, userServiceFilters)
+	emptyPub := emptypb.Empty{}
+	userServicesResponse, err := apiContainerClient.GetServices(ctx, &emptyPub)
+	//userServices, err := kurtosisBackend.GetUserServices(ctx, enclaveId, userServiceFilters)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' using filters '%+v'", enclaveId, userServiceFilters)
 	}
+	userServices := userServicesResponse.GetServiceIds()
 
 	tablePrinter := output_printers.NewTablePrinter(
 		userServiceGUIDColHeader,
