@@ -160,31 +160,6 @@ func (apicService ApiContainerService) ExecuteModule(ctx context.Context, args *
 	return resp, nil
 }
 
-/*
-func (apicService ApiContainerService) GetModuleInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetModuleInfoArgs) (*kurtosis_core_rpc_api_bindings.GetModuleInfoResponse, error) {
-	moduleId := module.ModuleID(args.ModuleId)
-	privateIpAddr, privateModulePort, publicIpAddr, publicModulePort, err := apicService.moduleStore.GetModuleInfo(moduleId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the IP address for module '%v'", moduleId)
-	}
-	privateApiPort, err := transformPortSpecToApiPort(privateModulePort)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's private port spec port to an API port")
-	}
-	publicApiPort, err := transformPortSpecToApiPort(publicModulePort)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's public port spec port to an API port")
-	}
-	response := binding_constructors.NewGetModuleInfoResponse(
-		privateIpAddr.String(),
-		privateApiPort,
-		publicIpAddr.String(),
-		publicApiPort,
-	)
-	return response, nil
-}
-*/
-
 func (apicService ApiContainerService) RegisterService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServiceArgs) (*kurtosis_core_rpc_api_bindings.RegisterServiceResponse, error) {
 	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
 	partitionId := service_network_types.PartitionID(args.PartitionId)
@@ -251,50 +226,6 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 
 	return response, nil
 }
-
-/*
-func (apicService ApiContainerService) GetServiceInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServiceInfoArgs) (*kurtosis_core_rpc_api_bindings.GetServiceInfoResponse, error) {
-	serviceIdStr := args.GetServiceId()
-	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
-	serviceObj, err := apicService.serviceNetwork.GetService(
-		ctx,
-		serviceId,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting info for service '%v'", serviceIdStr)
-	}
-	privatePorts := serviceObj.GetPrivatePorts()
-	privateIp := serviceObj.GetRegistration().GetPrivateIP()
-	maybePublicIp := serviceObj.GetMaybePublicIP()
-	maybePublicPorts := serviceObj.GetMaybePublicPorts()
-	serviceGuidStr := string(serviceObj.GetRegistration().GetGUID())
-
-	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privatePorts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's private port specs to API ports")
-	}
-	publicIpAddrStr := missingPublicIpAddrStr
-	if maybePublicIp != nil {
-		publicIpAddrStr = maybePublicIp.String()
-	}
-	publicApiPorts := map[string]*kurtosis_core_rpc_api_bindings.Port{}
-	if maybePublicPorts != nil {
-		publicApiPorts, err = transformPortSpecMapToApiPortsMap(maybePublicPorts)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public port spec ports to API ports")
-		}
-	}
-
-	serviceInfoResponse := binding_constructors.NewGetServicesResponse(
-		privateIp.String(),
-		privateApiPorts,
-		publicIpAddrStr,
-		publicApiPorts,
-		serviceGuidStr,
-	)
-	return serviceInfoResponse, nil
-}
-*/
 
 func (apicService ApiContainerService) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*kurtosis_core_rpc_api_bindings.RemoveServiceResponse, error) {
 	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
@@ -455,39 +386,46 @@ func (apicService ApiContainerService) WaitForHttpPostEndpointAvailability(ctx c
 	return &emptypb.Empty{}, nil
 }
 
-//TODOTODOTODO FIX ME
 func (apicService ApiContainerService) GetServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServicesArgs) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
+	serviceInfos := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
+	filterServiceIds := args.ServiceIds
+	shouldFilter := len(filterServiceIds) > 0
 
-	serviceIDs := make(map[string]bool, len(apicService.serviceNetwork.GetServiceIDs()))
-
-	for serviceID := range apicService.serviceNetwork.GetServiceIDs() {
+	for serviceID, _ := range apicService.serviceNetwork.GetServiceIDs() {
 		serviceIDStr := string(serviceID)
-		if _, ok := serviceIDs[serviceIDStr]; !ok {
-			serviceIDs[serviceIDStr] = true
+		_, found := filterServiceIds[serviceIDStr]
+		if found || !shouldFilter {
+			serviceInfo, err := apicService.getServiceInfo(ctx, serviceID)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "Failed to get service info for service '%v'", serviceID)
+			}
+			serviceInfos[serviceIDStr] = serviceInfo
 		}
 	}
 
-	resp := &kurtosis_core_rpc_api_bindings.GetServicesResponse{
-		ServiceIds: serviceIDs,
-	}
+	resp := binding_constructors.NewGetServicesResponse(serviceInfos)
 	return resp, nil
 }
 
-//TODOTODOTODO FIX ME
 func (apicService ApiContainerService) GetModules(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetModulesArgs) (*kurtosis_core_rpc_api_bindings.GetModulesResponse, error) {
 
-	allModuleIDs := make(map[string]bool, len(apicService.moduleStore.GetModules()))
+	moduleInfos := map[string]*kurtosis_core_rpc_api_bindings.ModuleInfo{}
+	filterModuleIds := args.Ids
+	shouldFilter := len(filterModuleIds) > 0
 
-	for moduleID := range apicService.moduleStore.GetModules() {
+	for moduleID, _ := range apicService.moduleStore.GetModules() {
 		moduleIDStr := string(moduleID)
-		if _, ok := allModuleIDs[moduleIDStr]; !ok {
-			allModuleIDs[moduleIDStr] = true
+		_, found := filterModuleIds[moduleIDStr]
+		if found || !shouldFilter {
+			moduleInfo, err := apicService.getModuleInfo(ctx, moduleID)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "Failed to get module info for module '%v'", moduleID)
+			}
+			moduleInfos[moduleIDStr] = moduleInfo
 		}
 	}
 
-	resp := &kurtosis_core_rpc_api_bindings.GetModulesResponse{
-		ModuleIds: allModuleIDs,
-	}
+	resp := binding_constructors.NewGetModulesResponse(moduleInfos)
 	return resp, nil
 }
 
@@ -506,7 +444,6 @@ func (apicService ApiContainerService) UploadFilesArtifact(ctx context.Context, 
 	response := &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{Uuid: string(filesArtifactId)}
 	return response, nil
 }
-
 
 func (apicService ApiContainerService) StoreWebFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactResponse, error) {
 	url := args.Url
@@ -702,4 +639,67 @@ func makeHttpRequest(httpMethod string, url string, body string) (*http.Response
 		return nil, stacktrace.NewError("Received non-OK status code: '%v'", resp.StatusCode)
 	}
 	return resp, nil
+}
+
+func (apicService ApiContainerService) getServiceInfo(ctx context.Context, serviceId kurtosis_backend_service.ServiceID) (*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
+	serviceObj, err := apicService.serviceNetwork.GetService(
+		ctx,
+		serviceId,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting info for service '%v'", serviceId)
+	}
+	privatePorts := serviceObj.GetPrivatePorts()
+	privateIp := serviceObj.GetRegistration().GetPrivateIP()
+	maybePublicIp := serviceObj.GetMaybePublicIP()
+	maybePublicPorts := serviceObj.GetMaybePublicPorts()
+	serviceGuidStr := string(serviceObj.GetRegistration().GetGUID())
+
+	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privatePorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's private port specs to API ports")
+	}
+	publicIpAddrStr := missingPublicIpAddrStr
+	if maybePublicIp != nil {
+		publicIpAddrStr = maybePublicIp.String()
+	}
+	publicApiPorts := map[string]*kurtosis_core_rpc_api_bindings.Port{}
+	if maybePublicPorts != nil {
+		publicApiPorts, err = transformPortSpecMapToApiPortsMap(maybePublicPorts)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public port spec ports to API ports")
+		}
+	}
+
+	serviceInfoResponse := binding_constructors.NewServiceInfo(
+		serviceGuidStr,
+		privateIp.String(),
+		privateApiPorts,
+		publicIpAddrStr,
+		publicApiPorts,
+	)
+	return serviceInfoResponse, nil
+}
+
+func (apicService ApiContainerService) getModuleInfo(ctx context.Context, moduleId module.ModuleID) (*kurtosis_core_rpc_api_bindings.ModuleInfo, error) {
+	moduleGuid, privateIpAddr, privateModulePort, publicIpAddr, publicModulePort, err := apicService.moduleStore.GetModuleInfo(moduleId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the IP address for module '%v'", moduleId)
+	}
+	privateApiPort, err := transformPortSpecToApiPort(privateModulePort)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's private port spec port to an API port")
+	}
+	publicApiPort, err := transformPortSpecToApiPort(publicModulePort)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's public port spec port to an API port")
+	}
+	response := binding_constructors.NewModuleInfo(
+		string(*moduleGuid),
+		privateIpAddr.String(),
+		privateApiPort,
+		publicIpAddr.String(),
+		publicApiPort,
+	)
+	return response, nil
 }

@@ -160,6 +160,7 @@ func (store *ModuleStore) ExecuteModule(ctx context.Context, moduleId module.Mod
 }
 
 func (store *ModuleStore) GetModuleInfo(moduleId module.ModuleID) (
+	moduleGuid *module.ModuleGUID,
 	resultPrivateIp net.IP,
 	resultPrivatePort *port_spec.PortSpec,
 	resultMaybePublicIp net.IP,
@@ -171,9 +172,9 @@ func (store *ModuleStore) GetModuleInfo(moduleId module.ModuleID) (
 
 	info, found := store.modules[moduleId]
 	if !found {
-		return nil, nil, nil, nil, stacktrace.NewError("No module with ID '%v' has been loaded", moduleId)
+		return nil, nil, nil, nil, nil, stacktrace.NewError("No module with ID '%v' has been loaded", moduleId)
 	}
-	return info.privateIpAddr, info.privatePort, info.maybePublicIpAddr, info.maybePublicPort, nil
+	return &info.moduleGUID, info.privateIpAddr, info.privatePort, info.maybePublicIpAddr, info.maybePublicPort, nil
 }
 
 func (store *ModuleStore) GetModules() map[module.ModuleID]bool {
