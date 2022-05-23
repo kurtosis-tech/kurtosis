@@ -134,19 +134,16 @@ func getEnclaveManager(ctx context.Context, kurtosisBackendType args.KurtosisBac
 		}
 		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewDockerKurtosisBackendConfigSupplier()
 	case args.KurtosisBackendType_Kubernetes:
-		kubernetesBackendConfig, ok := (backendConfig).(kurtosis_backend_config.KubernetesBackendConfig)
+		// Use this with more properties
+		_, ok := (backendConfig).(kurtosis_backend_config.KubernetesBackendConfig)
 		if !ok {
 			return nil, stacktrace.NewError("Failed to cast cluster configuration interface to the appropriate type, even though Kurtosis backend type is '%v'", args.KurtosisBackendType_Kubernetes.String())
 		}
-		kurtosisBackend, err = lib.GetEngineServerKubernetesKurtosisBackend(
-			ctx,
-			kubernetesBackendConfig.StorageClass,
-			kubernetesBackendConfig.EnclaveSizeInMegabytes,
-		)
+		kurtosisBackend, err = lib.GetEngineServerKubernetesKurtosisBackend(ctx)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "Failed to get a Kubernetes backend with storage class '%v' and enclave size (in MB) %d", kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInMegabytes)
+			return nil, stacktrace.Propagate(err, "Failed to get a Kubernetes backend")
 		}
-		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewKubernetesKurtosisBackendConfigSupplier(kubernetesBackendConfig.StorageClass, kubernetesBackendConfig.EnclaveSizeInMegabytes)
+		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewKubernetesKurtosisBackendConfigSupplier()
 	default:
 		return nil, stacktrace.NewError("Backend type '%v' was not recognized by engine server.", kurtosisBackendType.String())
 	}
