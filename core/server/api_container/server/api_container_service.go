@@ -238,7 +238,7 @@ func (apicService ApiContainerService) RemoveService(ctx context.Context, args *
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "An error occurred removing service with ID '%v'", serviceId)
 	}
-	return binding_constructors.NewRemoveServiceResponse(string(*serviceGuid)), nil
+	return binding_constructors.NewRemoveServiceResponse(string(serviceGuid)), nil
 }
 
 func (apicService ApiContainerService) Repartition(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RepartitionArgs) (*emptypb.Empty, error) {
@@ -389,18 +389,19 @@ func (apicService ApiContainerService) WaitForHttpPostEndpointAvailability(ctx c
 func (apicService ApiContainerService) GetServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServicesArgs) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
 	serviceInfos := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
 	filterServiceIds := args.ServiceIds
-	shouldFilter := len(filterServiceIds) > 0
 
 	for serviceID, _ := range apicService.serviceNetwork.GetServiceIDs() {
 		serviceIDStr := string(serviceID)
-		_, found := filterServiceIds[serviceIDStr]
-		if found || !shouldFilter {
-			serviceInfo, err := apicService.getServiceInfo(ctx, serviceID)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "Failed to get service info for service '%v'", serviceID)
+		if filterServiceIds != nil && len(filterServiceIds) > 0 {
+			if _, found := filterServiceIds[serviceIDStr]; !found {
+				continue
 			}
-			serviceInfos[serviceIDStr] = serviceInfo
 		}
+		serviceInfo, err := apicService.getServiceInfo(ctx, serviceID)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to get service info for service '%v'", serviceID)
+		}
+		serviceInfos[serviceIDStr] = serviceInfo
 	}
 
 	resp := binding_constructors.NewGetServicesResponse(serviceInfos)
@@ -408,21 +409,21 @@ func (apicService ApiContainerService) GetServices(ctx context.Context, args *ku
 }
 
 func (apicService ApiContainerService) GetModules(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetModulesArgs) (*kurtosis_core_rpc_api_bindings.GetModulesResponse, error) {
-
 	moduleInfos := map[string]*kurtosis_core_rpc_api_bindings.ModuleInfo{}
 	filterModuleIds := args.Ids
-	shouldFilter := len(filterModuleIds) > 0
 
 	for moduleID, _ := range apicService.moduleStore.GetModules() {
 		moduleIDStr := string(moduleID)
-		_, found := filterModuleIds[moduleIDStr]
-		if found || !shouldFilter {
-			moduleInfo, err := apicService.getModuleInfo(ctx, moduleID)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "Failed to get module info for module '%v'", moduleID)
+		if filterModuleIds != nil && len(filterModuleIds) > 0 {
+			if _, found := filterModuleIds[moduleIDStr]; !found {
+				continue
 			}
-			moduleInfos[moduleIDStr] = moduleInfo
 		}
+		moduleInfo, err := apicService.getModuleInfo(ctx, moduleID)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to get Module info for Module '%v'", moduleID)
+		}
+		moduleInfos[moduleIDStr] = moduleInfo
 	}
 
 	resp := binding_constructors.NewGetModulesResponse(moduleInfos)
@@ -682,7 +683,7 @@ func (apicService ApiContainerService) getServiceInfo(ctx context.Context, servi
 }
 
 func (apicService ApiContainerService) getModuleInfo(ctx context.Context, moduleId module.ModuleID) (*kurtosis_core_rpc_api_bindings.ModuleInfo, error) {
-	moduleGuid, privateIpAddr, privateModulePort, publicIpAddr, publicModulePort, err := apicService.moduleStore.GetModuleInfo(moduleId)
+	moduleGuid, privateIpAddr, privateModulePort, maybePublicIpAddr, maybePublicModulePort, err := apicService.moduleStore.GetModuleInfo(moduleId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the IP address for module '%v'", moduleId)
 	}
@@ -690,15 +691,25 @@ func (apicService ApiContainerService) getModuleInfo(ctx context.Context, module
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's private port spec port to an API port")
 	}
-	publicApiPort, err := transformPortSpecToApiPort(publicModulePort)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's public port spec port to an API port")
+	var publicApiPort *kurtosis_core_rpc_api_bindings.Port
+	if maybePublicModulePort != nil {
+		publicApiPort, err = transformPortSpecToApiPort(maybePublicModulePort)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred transforming the module's public port spec port to an API port")
+		}
+	}
+	publicIpAddr := missingPublicIpAddrStr
+	if maybePublicIpAddr != nil {
+		publicIpAddr = maybePublicIpAddr.String()
+	}
+	if privateIpAddr == nil {
+		return nil, stacktrace.NewError("Private IP address for module '%v' was nil - this should never happen.", moduleId)
 	}
 	response := binding_constructors.NewModuleInfo(
-		string(*moduleGuid),
+		string(moduleGuid),
 		privateIpAddr.String(),
 		privateApiPort,
-		publicIpAddr.String(),
+		publicIpAddr,
 		publicApiPort,
 	)
 	return response, nil
