@@ -78,12 +78,12 @@ jobs:
             circleci-agent step halt
           fi
 
-      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
-      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
-      - run: |
-          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
-          files_artifacts_expander/scripts/build.sh
+      - setup_remote_docker:
+          version: "<< pipeline.parameters.docker-engine-version>>"
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+
+      # Doesn't actually read any private repos so doesn't need the magic Go-private-repo Git config stuff
+      - run: files_artifacts_expander/scripts/build.sh
 
   check_launcher:
     docker:
@@ -275,6 +275,8 @@ workflows:
                 - develop
                 - master
       - check_files_artifacts_expander:
+          context:
+            - docker-user
           filters:
             branches:
               ignore:
