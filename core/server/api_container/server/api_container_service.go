@@ -126,7 +126,6 @@ func (apicService ApiContainerService) LoadModule(ctx context.Context, args *kur
 	return result, nil
 }
 
-
 func (apicService ApiContainerService) UnloadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnloadModuleArgs) (*kurtosis_core_rpc_api_bindings.UnloadModuleResponse, error) {
 	moduleId := module.ModuleID(args.ModuleId)
 
@@ -297,18 +296,18 @@ func (apicService ApiContainerService) GetServiceInfo(ctx context.Context, args 
 }
 */
 
-//TODOTODOTODO FIX ME
 func (apicService ApiContainerService) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*kurtosis_core_rpc_api_bindings.RemoveServiceResponse, error) {
 	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
 
 	containerStopTimeoutSeconds := args.ContainerStopTimeoutSeconds
 	containerStopTimeout := time.Duration(containerStopTimeoutSeconds) * time.Second
 
-	if err := apicService.serviceNetwork.RemoveService(ctx, serviceId, containerStopTimeout); err != nil {
+	serviceGuid, err := apicService.serviceNetwork.RemoveService(ctx, serviceId, containerStopTimeout)
+	if err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "An error occurred removing service with ID '%v'", serviceId)
 	}
-	return &emptypb.Empty{}, nil
+	return binding_constructors.NewRemoveServiceResponse(string(*serviceGuid)), nil
 }
 
 func (apicService ApiContainerService) Repartition(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RepartitionArgs) (*emptypb.Empty, error) {
