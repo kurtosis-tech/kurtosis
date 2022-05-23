@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Delete Docker files artifact expander containers after the expansion runs
 
 # 1.53.2
 ### Fixes

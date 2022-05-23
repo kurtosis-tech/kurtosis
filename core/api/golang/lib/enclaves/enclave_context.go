@@ -108,11 +108,15 @@ func (enclaveCtx *EnclaveContext) GetModuleContext(moduleId modules.ModuleID) (*
 	}
 	args := binding_constructors.NewGetModulesArgs(moduleMapForArgs)
 
-	// NOTE: As of 2021-07-18, we actually don't use any of the info that comes back because the ModuleContext doesn't require it!
-	_, err := enclaveCtx.client.GetModules(context.Background(), args)
+	resp, err := enclaveCtx.client.GetModules(context.Background(), args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for module '%v'", moduleId)
 	}
+
+	if _, found := resp.ModuleInfo[string(moduleId)]; !found {
+		return nil, stacktrace.NewError("Module '%v' does not exist", moduleId)
+	}
+
 	moduleCtx := modules.NewModuleContext(enclaveCtx.client, moduleId)
 	return moduleCtx, nil
 }
