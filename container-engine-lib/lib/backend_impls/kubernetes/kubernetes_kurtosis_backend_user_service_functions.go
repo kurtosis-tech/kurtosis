@@ -226,7 +226,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	envVars map[string]string,
 	filesArtifactsExpansion *backend_interface.FilesArtifactsExpansion,
 ) (
-	newUserService *service.Service,
+	resultUserService *service.Service,
 	resultErr error,
 ) {
 	preexistingServiceFilters := &service.ServiceFilters{
@@ -363,6 +363,9 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 			filesArtifactExpansionPersistentVolumeClaim: filesArtifactsExpansionPvc,
 		},
 	}
+
+	logrus.Debugf("Kubernetes resources that will be converted into a Service object: %+v")
+
 	convertedObjects, err := getUserServiceObjectsFromKubernetesResources(enclaveId, kubernetesResources)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting a service object from the Kubernetes service and newly-created pod")
@@ -375,6 +378,8 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 			serviceGuid,
 		)
 	}
+
+	logrus.Debugf("Post-conversion objects & Kubernetes resources: %+v", objectsAndResources)
 
 	shouldDeleteExpansionPvc = false
 	shouldDestroyPod = false
