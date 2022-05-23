@@ -58,7 +58,7 @@ func NewEnclaveApiContainerGatewayServer(connectionProvider *connection.GatewayC
 	}, closeGatewayFunc
 }
 
-func (service *ApiContainerGatewayServiceServer) LoadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadModuleArgs) (*kurtosis_core_rpc_api_bindings.ModuleInfo, error) {
+func (service *ApiContainerGatewayServiceServer) LoadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadModuleArgs) (*kurtosis_core_rpc_api_bindings.LoadModuleResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.LoadModule(ctx, args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
@@ -91,7 +91,7 @@ func (service *ApiContainerGatewayServiceServer) RegisterService(ctx context.Con
 	return remoteApiContainerResponse, nil
 
 }
-func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
+func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.StartService(ctx, args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
@@ -120,8 +120,8 @@ func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Contex
 	}()
 
 	// Overwrite PublicPorts and PublicIp fields
-	remoteApiContainerResponse.MaybePublicIpAddr = runningServiceConnection.localPublicIp
-	remoteApiContainerResponse.MaybePublicPorts = runningServiceConnection.localPublicServicePorts
+	remoteApiContainerResponse.PublicIpAddr = runningServiceConnection.localPublicIp
+	remoteApiContainerResponse.PublicPorts = runningServiceConnection.localPublicServicePorts
 
 	cleanUpService = false
 	cleanUpServiceConnection = false
