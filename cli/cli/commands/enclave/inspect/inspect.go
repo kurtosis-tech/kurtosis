@@ -94,6 +94,87 @@ func run(
 	// TODO Refactor these to use a user-friendly string and not the enum name
 	keyValuePrinter.AddPair(enclaveStatusTitleName, enclaveContainersStatus.String())
 	keyValuePrinter.AddPair(apiContainerStatusTitleName, enclaveApiContainerStatus.String())
+	isApiContainerRunning := enclaveApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING
+	if isApiContainerRunning {
+		apiContainerHostInfo := enclaveInfo.GetApiContainerHostMachineInfo()
+		apiContainerHostGrpcPortInfoStr := fmt.Sprintf(
+			"%v:%v",
+			apiContainerHostInfo.GetIpOnHostMachine(),
+			apiContainerHostInfo.GetGrpcPortOnHostMachine(),
+		)
+		apiContainerHostGrpcProxyPortInfoStr := fmt.Sprintf(
+			"%v:%v",
+			apiContainerHostInfo.GetIpOnHostMachine(),
+			apiContainerHostInfo.GetGrpcProxyPortOnHostMachine(),
+		)
+		keyValuePrinter.AddPair(apiContainerHostGrpcPortTitle, apiContainerHostGrpcPortInfoStr)
+		keyValuePrinter.AddPair(apiContainerHostGrpcProxyPortTitle, apiContainerHostGrpcProxyPortInfoStr)
+	}
+	keyValuePrinter.Print()
+	fmt.Fprintln(logrus.StandardLogger().Out, "")
+
+	sortedEnclaveObjHeaders := []string{}
+	for header := range enclaveObjectPrintingFuncs {
+		sortedEnclaveObjHeaders = append(sortedEnclaveObjHeaders, header)
+	}
+	sort.Strings(sortedEnclaveObjHeaders)
+
+	headersWithPrintErrs := []string{}
+	for _, header := range sortedEnclaveObjHeaders {
+		printingFunc, found := enclaveObjectPrintingFuncs[header]
+		if !found {
+			return stacktrace.NewError("No printing function found for enclave object '%v'; this is a bug in Kurtosis!", header)
+		}
+
+		numRunesInHeader := utf8.RuneCountInString(header) + 2 // 2 because there will be a space before and after the header
+		numPadChars := (headerWidthChars - numRunesInHeader) / 2
+		padStr := strings.Repeat(headerPadChar, numPadChars)
+		fmt.Println(fmt.Sprintf("%v %v %v", padStr, header, padStr))
+
+
+		if err := printingFunc(ctx, kurtosisBackend, *enclaveInfo, isApiContainerRunning); err != nil {
+			logrus.Error(err)
+			headersWithPrintErrs = append(headersWithPrintErrs, header)
+		}
+		fmt.Println("")
+	}
+
+	if len(headersWithPrintErrs) > 0 {
+		return stacktrace.NewError(
+			"Errors occurred printing the following enclave elements: %v",
+			strings.Join(headersWithPrintErrs, ", "),
+		)
+	}
+
+	return nil
+
+
+
+
+	/*
+	enclaveIdStr, err := args.GetNonGreedyArg(enclaveIdArgKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for non-greedy enclave ID arg '%v' but none was found; this is a bug with Kurtosis!", enclaveIdArgKey)
+	}
+
+	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting enclaves, which is necessary to display the state for enclave '%v'", enclaveIdStr)
+	}
+
+	enclaveInfo, found := getEnclavesResp.EnclaveInfo[enclaveIdStr]
+	if !found {
+		return stacktrace.NewError("No enclave with ID '%v' exists", enclaveIdStr)
+	}
+
+	enclaveContainersStatus := enclaveInfo.ContainersStatus
+	enclaveApiContainerStatus := enclaveInfo.ApiContainerStatus
+
+	keyValuePrinter := output_printers.NewKeyValuePrinter()
+	keyValuePrinter.AddPair(enclaveIdTitleName, enclaveIdStr)
+	// TODO Refactor these to use a user-friendly string and not the enum name
+	keyValuePrinter.AddPair(enclaveStatusTitleName, enclaveContainersStatus.String())
+	keyValuePrinter.AddPair(apiContainerStatusTitleName, enclaveApiContainerStatus.String())
 
 	isAPIContainerRunning := enclaveApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING
 	if isAPIContainerRunning {
@@ -113,7 +194,6 @@ func run(
 		keyValuePrinter.AddPair(apiContainerHostGrpcProxyPortTitle, apiContainerHostGrpcProxyPortInfoStr)
 	}
 
-	// Print key-values:
 	keyValuePrinter.Print()
 	fmt.Fprintln(logrus.StandardLogger().Out, "")
 
@@ -151,4 +231,5 @@ func run(
 		}
 	}
 	return nil
+	 */
 }
