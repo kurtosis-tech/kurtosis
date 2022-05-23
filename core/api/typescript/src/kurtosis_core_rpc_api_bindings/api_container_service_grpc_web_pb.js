@@ -76,13 +76,13 @@ proto.api_container_api.ApiContainerServicePromiseClient =
  * @const
  * @type {!grpc.web.MethodDescriptor<
  *   !proto.api_container_api.LoadModuleArgs,
- *   !proto.api_container_api.ModuleInfo>}
+ *   !proto.api_container_api.LoadModuleResponse>}
  */
 const methodDescriptor_ApiContainerService_LoadModule = new grpc.web.MethodDescriptor(
   '/api_container_api.ApiContainerService/LoadModule',
   grpc.web.MethodType.UNARY,
   proto.api_container_api.LoadModuleArgs,
-  proto.api_container_api.ModuleInfo,
+  proto.api_container_api.LoadModuleResponse,
   /**
    * @param {!proto.api_container_api.LoadModuleArgs} request
    * @return {!Uint8Array}
@@ -90,7 +90,7 @@ const methodDescriptor_ApiContainerService_LoadModule = new grpc.web.MethodDescr
   function(request) {
     return request.serializeBinary();
   },
-  proto.api_container_api.ModuleInfo.deserializeBinary
+  proto.api_container_api.LoadModuleResponse.deserializeBinary
 );
 
 
@@ -99,9 +99,9 @@ const methodDescriptor_ApiContainerService_LoadModule = new grpc.web.MethodDescr
  *     request proto
  * @param {?Object<string, string>} metadata User defined
  *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.api_container_api.ModuleInfo)}
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.LoadModuleResponse)}
  *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.ModuleInfo>|undefined}
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.LoadModuleResponse>|undefined}
  *     The XHR Node Readable Stream
  */
 proto.api_container_api.ApiContainerServiceClient.prototype.loadModule =
@@ -120,7 +120,7 @@ proto.api_container_api.ApiContainerServiceClient.prototype.loadModule =
  *     request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!Promise<!proto.api_container_api.ModuleInfo>}
+ * @return {!Promise<!proto.api_container_api.LoadModuleResponse>}
  *     Promise that resolves to the response
  */
 proto.api_container_api.ApiContainerServicePromiseClient.prototype.loadModule =
@@ -381,13 +381,13 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.registerServi
  * @const
  * @type {!grpc.web.MethodDescriptor<
  *   !proto.api_container_api.StartServiceArgs,
- *   !proto.api_container_api.ServiceInfo>}
+ *   !proto.api_container_api.StartServiceResponse>}
  */
 const methodDescriptor_ApiContainerService_StartService = new grpc.web.MethodDescriptor(
   '/api_container_api.ApiContainerService/StartService',
   grpc.web.MethodType.UNARY,
   proto.api_container_api.StartServiceArgs,
-  proto.api_container_api.ServiceInfo,
+  proto.api_container_api.StartServiceResponse,
   /**
    * @param {!proto.api_container_api.StartServiceArgs} request
    * @return {!Uint8Array}
@@ -395,7 +395,7 @@ const methodDescriptor_ApiContainerService_StartService = new grpc.web.MethodDes
   function(request) {
     return request.serializeBinary();
   },
-  proto.api_container_api.ServiceInfo.deserializeBinary
+  proto.api_container_api.StartServiceResponse.deserializeBinary
 );
 
 
@@ -404,9 +404,9 @@ const methodDescriptor_ApiContainerService_StartService = new grpc.web.MethodDes
  *     request proto
  * @param {?Object<string, string>} metadata User defined
  *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.api_container_api.ServiceInfo)}
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.StartServiceResponse)}
  *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.ServiceInfo>|undefined}
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StartServiceResponse>|undefined}
  *     The XHR Node Readable Stream
  */
 proto.api_container_api.ApiContainerServiceClient.prototype.startService =
@@ -425,7 +425,7 @@ proto.api_container_api.ApiContainerServiceClient.prototype.startService =
  *     request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!Promise<!proto.api_container_api.ServiceInfo>}
+ * @return {!Promise<!proto.api_container_api.StartServiceResponse>}
  *     Promise that resolves to the response
  */
 proto.api_container_api.ApiContainerServicePromiseClient.prototype.startService =

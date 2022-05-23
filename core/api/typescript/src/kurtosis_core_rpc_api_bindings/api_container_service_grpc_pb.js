@@ -126,15 +126,15 @@ function deserialize_api_container_api_LoadModuleArgs(buffer_arg) {
   return api_container_service_pb.LoadModuleArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_ModuleInfo(arg) {
-  if (!(arg instanceof api_container_service_pb.ModuleInfo)) {
-    throw new Error('Expected argument of type api_container_api.ModuleInfo');
+function serialize_api_container_api_LoadModuleResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.LoadModuleResponse)) {
+    throw new Error('Expected argument of type api_container_api.LoadModuleResponse');
   }
   return Buffer.from(arg.serializeBinary());
 }
 
-function deserialize_api_container_api_ModuleInfo(buffer_arg) {
-  return api_container_service_pb.ModuleInfo.deserializeBinary(new Uint8Array(buffer_arg));
+function deserialize_api_container_api_LoadModuleResponse(buffer_arg) {
+  return api_container_service_pb.LoadModuleResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_PauseServiceArgs(arg) {
@@ -203,17 +203,6 @@ function deserialize_api_container_api_RepartitionArgs(buffer_arg) {
   return api_container_service_pb.RepartitionArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_ServiceInfo(arg) {
-  if (!(arg instanceof api_container_service_pb.ServiceInfo)) {
-    throw new Error('Expected argument of type api_container_api.ServiceInfo');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_ServiceInfo(buffer_arg) {
-  return api_container_service_pb.ServiceInfo.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
 function serialize_api_container_api_StartServiceArgs(arg) {
   if (!(arg instanceof api_container_service_pb.StartServiceArgs)) {
     throw new Error('Expected argument of type api_container_api.StartServiceArgs');
@@ -223,6 +212,17 @@ function serialize_api_container_api_StartServiceArgs(arg) {
 
 function deserialize_api_container_api_StartServiceArgs(buffer_arg) {
   return api_container_service_pb.StartServiceArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_StartServiceResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.StartServiceResponse)) {
+    throw new Error('Expected argument of type api_container_api.StartServiceResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_StartServiceResponse(buffer_arg) {
+  return api_container_service_pb.StartServiceResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_StoreFilesArtifactFromServiceArgs(arg) {
@@ -365,11 +365,11 @@ loadModule: {
     requestStream: false,
     responseStream: false,
     requestType: api_container_service_pb.LoadModuleArgs,
-    responseType: api_container_service_pb.ModuleInfo,
+    responseType: api_container_service_pb.LoadModuleResponse,
     requestSerialize: serialize_api_container_api_LoadModuleArgs,
     requestDeserialize: deserialize_api_container_api_LoadModuleArgs,
-    responseSerialize: serialize_api_container_api_ModuleInfo,
-    responseDeserialize: deserialize_api_container_api_ModuleInfo,
+    responseSerialize: serialize_api_container_api_LoadModuleResponse,
+    responseDeserialize: deserialize_api_container_api_LoadModuleResponse,
   },
   // Gets information about loaded modules
 getModules: {
@@ -425,11 +425,11 @@ startService: {
     requestStream: false,
     responseStream: false,
     requestType: api_container_service_pb.StartServiceArgs,
-    responseType: api_container_service_pb.ServiceInfo,
+    responseType: api_container_service_pb.StartServiceResponse,
     requestSerialize: serialize_api_container_api_StartServiceArgs,
     requestDeserialize: deserialize_api_container_api_StartServiceArgs,
-    responseSerialize: serialize_api_container_api_ServiceInfo,
-    responseDeserialize: deserialize_api_container_api_ServiceInfo,
+    responseSerialize: serialize_api_container_api_StartServiceResponse,
+    responseDeserialize: deserialize_api_container_api_StartServiceResponse,
   },
   // Returns the IDs of the current services in the enclave
 getServices: {

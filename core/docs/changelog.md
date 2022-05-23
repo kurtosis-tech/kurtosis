@@ -1,10 +1,16 @@
 # TBD
+### Breaking Changes
+* Revert `StartService` and `LoadModule` changes from 1.52.0
 
 # 1.52.1
 ### Fixes
 * Actually use container-engine-lib 0.31.0
 
 # 1.52.0
+### Breaking Changes
+* `StartService` now returns a `ServiceInfo` object
+* `LoadModule` now returns a `ModuleInfo` object
+
 ### Breaking Changes
 * `StartService` now returns a `ServiceInfo` object
 * `LoadModule` now returns a `ModuleInfo` object

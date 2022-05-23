@@ -279,12 +279,13 @@ export class EnclaveContext {
         if(startServiceResponseResult.isErr()){
             return err(startServiceResponseResult.error)
         }
+
         const startServiceResponse = startServiceResponseResult.value
 
         log.trace("Successfully started service with Kurtosis API");
 
         const serviceCtxPublicPorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
-            startServiceResponse.getMaybePublicPortsMap(),
+            startServiceResponse.getPublicPortsMap(),
         );
 
         const serviceContext: ServiceContext = new ServiceContext(
@@ -292,7 +293,7 @@ export class EnclaveContext {
             serviceId,
             privateIpAddr,
             privatePorts,
-            startServiceResponse.getMaybePublicIpAddr(),
+            startServiceResponse.getPublicIpAddr(),
             serviceCtxPublicPorts,
         );
 

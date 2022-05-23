@@ -13,8 +13,8 @@ export class ApiContainerServiceClient {
     request: api_container_service_pb.LoadModuleArgs,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: api_container_service_pb.ModuleInfo) => void
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.ModuleInfo>;
+               response: api_container_service_pb.LoadModuleResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.LoadModuleResponse>;
 
   getModules(
     request: api_container_service_pb.GetModulesArgs,
@@ -48,8 +48,8 @@ export class ApiContainerServiceClient {
     request: api_container_service_pb.StartServiceArgs,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: api_container_service_pb.ServiceInfo) => void
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.ServiceInfo>;
+               response: api_container_service_pb.StartServiceResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.StartServiceResponse>;
 
   getServices(
     request: api_container_service_pb.GetServicesArgs,
@@ -145,7 +145,7 @@ export class ApiContainerServicePromiseClient {
   loadModule(
     request: api_container_service_pb.LoadModuleArgs,
     metadata?: grpcWeb.Metadata
-  ): Promise<api_container_service_pb.ModuleInfo>;
+  ): Promise<api_container_service_pb.LoadModuleResponse>;
 
   getModules(
     request: api_container_service_pb.GetModulesArgs,
@@ -170,7 +170,7 @@ export class ApiContainerServicePromiseClient {
   startService(
     request: api_container_service_pb.StartServiceArgs,
     metadata?: grpcWeb.Metadata
-  ): Promise<api_container_service_pb.ServiceInfo>;
+  ): Promise<api_container_service_pb.StartServiceResponse>;
 
   getServices(
     request: api_container_service_pb.GetServicesArgs,
