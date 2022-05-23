@@ -1,5 +1,9 @@
 # TBD
 
+# 1.53.3
+### Changes
+* Delete Docker files artifact expander containers after the expansion runs
+
 # 1.53.2
 ### Fixes
 * Fix bug with files artifacts expander not waiting until command terminates to exit
