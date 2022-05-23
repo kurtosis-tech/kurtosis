@@ -26,10 +26,12 @@ type FilesArtifactsExpanderArgs struct {
 
 type FilesArtifactExpansion struct {
 	FilesArtifactId string `json:"filesArtifactId"`
+
+	// Directory on the files artifacts expander where the files artifact will be expanded into
 	DirPathToExpandTo string `json:"dirPathToExpandTo"`
 }
 
-func NewFilesArtifactExpanderArgs(apiContainerIpAddress string, apiContainerPort uint16, filesArtifactExpansions []FilesArtifactExpansion) (*FilesArtifactsExpanderArgs, error) {
+func NewFilesArtifactsExpanderArgs(apiContainerIpAddress string, apiContainerPort uint16, filesArtifactExpansions []FilesArtifactExpansion) (*FilesArtifactsExpanderArgs, error) {
 	result := &FilesArtifactsExpanderArgs{
 		APIContainerIpAddress:   apiContainerIpAddress,
 		ApiContainerPort:        apiContainerPort,
