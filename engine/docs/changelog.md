@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Upgraded to container-engine-lib 0.31.0 and core 1.51.1, which uses a rewritten files artifact expansion engine to allow for `ReadWriteOnce` volumes in Kubernetes
 
 # 1.22.7
 ### Changes
