@@ -1043,7 +1043,8 @@ func getUserServiceObjectsFromKubernetesResources(
 		serviceRegistrationObj := service.NewServiceRegistration(serviceId, serviceGuid, enclaveId, privateIp)
 		resultObj.serviceRegistration = serviceRegistrationObj
 
-		// Selectors but no pod means that the registration is open but no pod has yet been started to consume it
+		// The serialized port spec annotation but no pod means that the registration is open but no pod has yet been started to consume it
+		logrus.Debugf("Service under consideration: %+v", kubernetesService)
 		stillUsingUnboundPort := false
 		for _, servicePort := range kubernetesService.Spec.Ports {
 			if servicePort.Name == unboundPortName {
