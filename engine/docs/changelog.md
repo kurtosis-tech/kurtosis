@@ -1,4 +1,6 @@
 # TBD
+
+# 1.25.1
 ### Fixes
 * Multiple bugfixes for files artifact expander and Kubernetes
 
