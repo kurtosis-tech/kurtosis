@@ -272,8 +272,10 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		apiContainerArgs := backend.apiContainerModeArgs
 		if apiContainerArgs == nil {
 			return nil, stacktrace.NewError(
-				"Received request to start service '%v' with files artifact expansions '%v', but no API container mode " +
-					"args were defined which are necessary for ")
+				"Received request to start service '%v' with files artifact expansions, but no API container mode " +
+					"args were defined which are necessary for creating the files artifacts expansion volume",
+				serviceGuid,
+			)
 		}
 		storageClass := apiContainerArgs.storageClassName
 		expansionVolumeSizeMb := apiContainerArgs.filesArtifactExpansionVolumeSizeInMegabytes

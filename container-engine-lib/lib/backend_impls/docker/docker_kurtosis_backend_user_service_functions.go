@@ -782,7 +782,9 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 	for serviceGuid := range allServiceObjs {
 		if _, found := allDockerResources[serviceGuid]; !found {
 			return nil, nil, stacktrace.NewError(
-				"Have service object to remove '%v', which doesn't have corresponding Docker resources; this is a bug in Kurtosis",
+				"Have service object to remove '%v', which doesn't have corresponding Docker resources; this is a " +
+					"bug in Kurtosis",
+				serviceGuid,
 			)
 		}
 	}
@@ -1478,7 +1480,9 @@ func (backend *DockerKurtosisBackend) removeDockerResources(
 	for serviceGuid := range serviceObjectsToRemove {
 		if _, found := resourcesToRemove[serviceGuid]; !found {
 			return nil, nil, stacktrace.NewError(
-				"Have service object to remove '%v', which doesn't have corresponding Docker resources; this is a bug in Kurtosis",
+				"Have service object to remove '%v', which doesn't have corresponding Docker resources; this is a " +
+					"bug in Kurtosis",
+				serviceGuid,
 			)
 		}
 	}
@@ -1568,6 +1572,7 @@ func (backend *DockerKurtosisBackend) removeDockerResources(
 				"Errors occurred removing volumes for service '%v'\n" +
 				"ACTION REQUIRED: You will need to manually remove these volumes, else they will stay around until the enclave is destroyed!!!!\n" +
 				"%v",
+				serviceGuid,
 				strings.Join(failedVolumeErrStrs, "\n\n"),
 			)
 			continue

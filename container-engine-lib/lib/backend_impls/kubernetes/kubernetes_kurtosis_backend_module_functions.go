@@ -170,6 +170,9 @@ func (backend *KubernetesKurtosisBackend) CreateModule(
 
 	moduleContainers := getModuleContainers(image, containerPorts, envVars)
 
+	moduleInitContainers := []apiv1.Container{}
+	modulePodVolumes := []apiv1.Volume{}
+
 	// Create pod with module containers and not volumes in Kubernetes
 	modulePod, err := backend.kubernetesManager.CreatePod(
 		ctx,
@@ -177,8 +180,9 @@ func (backend *KubernetesKurtosisBackend) CreateModule(
 		modulePodName,
 		modulePodLabels,
 		modulePodAnnotations,
+		moduleInitContainers,
 		moduleContainers,
-		nil,
+		modulePodVolumes,
 		moduleServiceAccountName,
 	)
 	if err != nil {
