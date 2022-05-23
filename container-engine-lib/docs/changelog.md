@@ -1,4 +1,6 @@
 # TBD
+
+# 0.32.0
 ### Changes
 * Switched to using EmptyDir ephemeral volumes for the enclave data directory and the files artifact expansion volumes in response to learning that Kubernetes/DigitalOcean doesn't really want you creating lots of these
 
