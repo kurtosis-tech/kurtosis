@@ -1,4 +1,6 @@
 # TBD
+
+# 0.31.1
 ### Fixes
 * Fixed a bug in how we were checking for services which don't have pods yet
 
