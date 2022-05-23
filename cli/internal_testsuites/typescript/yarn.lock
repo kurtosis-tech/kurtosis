@@ -1993,22 +1993,6 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-kurtosis-core-api-lib@1.51.1:
-  version "1.51.1"
-  resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.51.1.tgz#f2d6705eaf85fdb281aeff3cdd0240b4c4c2cc20"
-  integrity sha512-jdc/uJF9vbIuQjFcvexzJ7l6BwdbipIeXBuw39JnKLJT/tlq13dkjit8fLirWS7wB0X8Iy3eNXhvFHjSo5PCAg==
-  dependencies:
-    "@grpc/grpc-js" "^1.4.4"
-    "@types/google-protobuf" "^3.15.5"
-    "@types/path-browserify" "^1.0.0"
-    browser-or-node "^2.0.0"
-    google-protobuf "^3.19.1"
-    grpc-web "^1.3.0"
-    loglevel "^1.7.1"
-    neverthrow "^4.2.2"
-    path-browserify "^1.0.1"
-    tar "^6.1.11"
-
 kurtosis-core-api-lib@1.52.1:
   version "1.52.1"
   resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.52.1.tgz#e5923fed634371a4f67155c3a220a01eb5562322"
@@ -2025,17 +2009,17 @@ kurtosis-core-api-lib@1.52.1:
     path-browserify "^1.0.1"
     tar "^6.1.11"
 
-kurtosis-engine-api-lib@1.23.0:
-  version "1.23.0"
-  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.23.0.tgz#8ae0f774e841949a88b662c7473ee2de5456a71f"
-  integrity sha512-XF2IGFg5L+P05RY+vTBu2NaIUsmpD8GP95j75YI6R8ANhyFHBfz7ZxXOC7dSJqn0e6bW40UfcOnNA9/pV+/1IA==
+kurtosis-engine-api-lib@1.24.0:
+  version "1.24.0"
+  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.24.0.tgz#2624390046b38722a0763f4e1b26ac0faa1e1a12"
+  integrity sha512-m2bpEIoN7h1U5udIMa8hu4PgnpuQWnwyJCq3muYC11k4+PGL4lvLXjdXU8QK/2oi8U9iZWvoQpKU5BdrfdAJrA==
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
     "@types/semver" "^7.3.9"
     browser-or-node "^2.0.0"
     google-protobuf "^3.17.3"
     grpc-web "^1.3.0"
-    kurtosis-core-api-lib "1.51.1"
+    kurtosis-core-api-lib "1.52.1"
     loglevel "^1.7.1"
     neverthrow "^4.2.2"
     semver "^7.3.5"
