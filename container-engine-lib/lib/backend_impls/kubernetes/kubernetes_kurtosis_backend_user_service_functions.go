@@ -26,6 +26,7 @@ import (
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"net"
 	"strconv"
+	"strings"
 )
 
 /*
@@ -1558,6 +1559,7 @@ func (backend *KubernetesKurtosisBackend) runExtractionJobToCompletion(
 	shouldDeleteJob = false
 	return nil
 }
+*/
 
 
 
@@ -1595,7 +1597,6 @@ func (backend *KubernetesKurtosisBackend) getAllJobContainerLogs(
 
 	return containerLogStrs
 }
- */
 
 
 
@@ -1626,9 +1627,4 @@ func (backend *KubernetesKurtosisBackend) getSingleJobContainerLogs(ctx context.
 	}
 
 	return output.String(), nil
-}
-
-func setUpFilesArtifactVolumesAndInitContainer() (
-){
-
 }

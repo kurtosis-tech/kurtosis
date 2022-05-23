@@ -158,6 +158,7 @@ func (backend *KubernetesKurtosisBackend) DestroyFilesArtifactExpansions(
 
 // ==================== PRIVATE HELPERS ===============
 
+/*
 // Image-specific generator of the command that should be run to extract the artifact at the given filepath
 //  to the destination
 func getExtractionCommand(artifactFilepath string, destVolMntDirpathOnExpander string) (dockerRunCmd []string) {
@@ -169,6 +170,8 @@ func getExtractionCommand(artifactFilepath string, destVolMntDirpathOnExpander s
 		destVolMntDirpathOnExpander,
 	}
 }
+
+ */
 
 /*
 // TODO Push into KubernetesBackend??

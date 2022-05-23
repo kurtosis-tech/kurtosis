@@ -6,6 +6,7 @@
 package kubernetes_manager
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -22,7 +23,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -64,11 +64,13 @@ const (
 	shouldAllocatedStderrOnPodExec = true
 	shouldAllocateTtyOnPodExec = false
 
-	objectNameMetadataField = "metadata.name"
 	successExecCommandExitCode = 0
 
 	// This is the owner string we'll use when updating fields
 	fieldManager = "kurtosis"
+
+	shouldFollowContainerLogsWhenPrintingPodInfo = false
+	shouldAddTimestampsWhenPrintingPodInfo = true
 )
 
 var (
@@ -1118,6 +1120,66 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 	)
 }
 
+func (manager *KubernetesManager) getPodInfoBlockStr(
+	ctx context.Context,
+	namespaceName string,
+	pod apiv1.Pod,
+) string {
+	podName := pod.Name
+
+	// TODO Parallelize to increase perf? But make sure we don't explode memory with huge pod logs
+	// We go through all this work so that the user can get detailed information about their pod without needing to dive
+	// through the Kubernetes API
+	resultStrBuilder := strings.Builder{}
+	resultStrBuilder.WriteString(fmt.Sprintf(
+		">>>>>>>>>>>>>>>>>>>>>>>>>> Pod %v <<<<<<<<<<<<<<<<<<<<<<<<<<\n",
+		podName,
+	))
+	resultStrBuilder.WriteString("Container Statuses:")
+	for _, containerStatusStr := range renderContainerStatuses(pod.Status.ContainerStatuses, containerStatusLineBulletPoint) {
+		resultStrBuilder.WriteString(containerStatusStr)
+		resultStrBuilder.WriteString("\n")
+	}
+	resultStrBuilder.WriteString("\n")
+	for _, podContainer := range pod.Spec.Containers {
+		containerName := podContainer.Name
+
+		resultStrBuilder.WriteString(fmt.Sprintf(
+			"-------------------- Container %v Logs --------------------\n",
+			podContainer.Name,
+		))
+
+		containerLogsStr := manager.getSingleContainerLogs(ctx, namespaceName, podName, containerName)
+		resultStrBuilder.WriteString(containerLogsStr)
+		resultStrBuilder.WriteString("\n")
+
+		resultStrBuilder.WriteString(fmt.Sprintf(
+			"------------------ End Container %v Logs ---------------------\n",
+			containerName,
+		))
+	}
+	resultStrBuilder.WriteString(fmt.Sprintf(
+		">>>>>>>>>>>>>>>>>>>>>>>> End Pod %v <<<<<<<<<<<<<<<<<<<<<<<<<<<",
+		pod.Name,
+	))
+
+	return resultStrBuilder.String()
+}
+
+func (manager *KubernetesManager) getSingleContainerLogs(ctx context.Context, namespaceName string, podName string, containerName string) string {
+	containerLogs, err := manager.GetContainerLogs(ctx, namespaceName, podName, containerName, shouldFollowContainerLogsWhenPrintingPodInfo, shouldAddTimestampsWhenPrintingPodInfo)
+	defer containerLogs.Close()
+	if err != nil {
+		return fmt.Sprintf("Cannot display container logs because an error occurred getting the logs:\n%v", err)
+	}
+
+	buffer := &bytes.Buffer{}
+	if _, copyErr := io.Copy(buffer, containerLogs); copyErr != nil {
+		return fmt.Sprintf("Cannot display container logs because an error occurred saving the logs to memory:\n%v", err)
+	}
+	return buffer.String()
+}
+
 func renderContainerStatuses(containerStatuses []apiv1.ContainerStatus, prefixStr string) []string {
 	containerStatusStrs := []string{}
 	for _, containerStatus := range containerStatuses {
@@ -1196,6 +1258,7 @@ func waitForResourceDeletion(ctx context.Context, retryWatcher *watch.RetryWatch
 }
  */
 
+/*
 func getWatchListOptionsForObject(resourceListOptions string) metav1.ListOptions {
 	timeoutInSeconds := int64(resourceDeletionTimeoutInSeconds)
 	return metav1.ListOptions{
@@ -1204,11 +1267,13 @@ func getWatchListOptionsForObject(resourceListOptions string) metav1.ListOptions
 	}
 }
 
+
 func getFieldSelectorForObjectName(objectName string) string {
 	return fields.SelectorFromSet(map[string]string {
 		objectNameMetadataField : objectName,
 	}).String()
 }
+*/
 
 // Kubernetes doesn't seem to have a nice API for getting back the exit code of a command (though this seems strange??),
 // so we have to parse it out of a status message
@@ -1239,3 +1304,4 @@ func getExitCodeFromStatusMessage(statusMessage string) (int32, error){
 	codeAsInt32 := int32(codeAsInt64)
 	return codeAsInt32, nil
 }
+
