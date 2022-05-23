@@ -1,4 +1,6 @@
 # TBD
+
+# 0.19.0
 ### Fixes
 * Fixes bugs that were happening with API container's gRPC wire format
 * Fixes various bugs with files artifacts expansion
