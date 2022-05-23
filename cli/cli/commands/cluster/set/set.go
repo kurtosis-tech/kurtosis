@@ -49,7 +49,7 @@ func validateClusterName(clusterName string) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get or initialize Kurtosis configuration when validating cluster name '%v'.", clusterName)
 	}
-	if _, found := kurtosisConfig.GetKurtosisClusters()[clusterName]; found {
+	if _, found := kurtosisConfig.GetKurtosisClusters()[clusterName]; !found {
 		return stacktrace.NewError("Cluster '%v' isn't defined in the Kurtosis config file", clusterName)
 	}
 	return nil
