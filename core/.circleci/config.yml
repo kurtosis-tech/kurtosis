@@ -194,12 +194,8 @@ jobs:
           version: "<< pipeline.parameters.docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
-      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
-      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
-      - run: |
-          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
-          files_artifacts_expander/scripts/build.sh
+      # Doesn't actually use any Kurtosis private repos so doesn't need the Go-private-repo Git config magic
+      - run: files_artifacts_expander/scripts/build.sh
 
       - run: |
           set -euo pipefail
