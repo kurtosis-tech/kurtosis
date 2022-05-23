@@ -1089,20 +1089,19 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 				}
 			}
 		case apiv1.PodFailed:
-			containerStatusStrs := renderContainerStatuses(latestPodStatus.ContainerStatuses, containerStatusLineBulletPoint)
+			podStateStr := manager.getPodInfoBlockStr(ctx, namespaceName, pod)
 			return stacktrace.NewError(
-				"Pod '%v' failed before availability with the following message: %v\n" +
-					"The pod's container states are as follows:\n%v",
-				podName,
-				latestPodStatus.Message,
-				strings.Join(containerStatusStrs, "\n"),
+				"Pod '%v' failed before availability with the following state:\n%v",
+				podStateStr,
 			)
 		case apiv1.PodSucceeded:
+			podStateStr := manager.getPodInfoBlockStr(ctx, namespaceName, pod)
 			// NOTE: We'll need to change this if we ever expect to run one-off pods
 			return stacktrace.NewError(
-				"Expected the pod state to arrive at '%v' but the pod instead landed in '%v'",
+				"Expected the pod state to arrive at '%v' but the pod instead landed in '%v' with the following state:\n%v",
 				apiv1.PodRunning,
 				apiv1.PodSucceeded,
+				podStateStr,
 			)
 		}
 		time.Sleep(podWaitForAvailabilityTimeBetweenPolls)
@@ -1123,7 +1122,7 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 func (manager *KubernetesManager) getPodInfoBlockStr(
 	ctx context.Context,
 	namespaceName string,
-	pod apiv1.Pod,
+	pod *apiv1.Pod,
 ) string {
 	podName := pod.Name
 
