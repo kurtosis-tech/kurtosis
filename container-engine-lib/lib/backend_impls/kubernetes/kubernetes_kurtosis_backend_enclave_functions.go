@@ -82,11 +82,13 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	}
 	teardownContext := context.Background()
 
+	/*
 	if backend.engineServerModeArgs == nil {
 		return nil, stacktrace.NewError("Enclave creation cannot be done unless the Kubernetes Kurtosis backend is in engine mode")
 	}
 	enclaveDataVolumeStorageClass := backend.engineServerModeArgs.storageClassName
 	enclaveDataVolumeSizeInMegabytes := backend.engineServerModeArgs.enclaveDataVolumeSizeInMegabytes
+	 */
 
 	searchNamespaceLabels := map[string]string{
 		label_key_consts.AppIDKubernetesLabelKey.GetString():     label_value_consts.AppIDKubernetesLabelValue.GetString(),
@@ -124,6 +126,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		}
 	}()
 
+	/*
 	enclaveDataVolumeAttrs, err := enclaveObjAttrsProvider.ForEnclaveDataPersistentVolumeClaim()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave data volume attributes for the enclave with ID '%v'", enclaveId)
@@ -172,6 +175,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 			}
 		}
 	}()
+	 */
 
 	enclaveResources := &enclaveKubernetesResources{
 		namespace: enclaveNamespace,
@@ -188,7 +192,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		return nil, stacktrace.NewError("Successfully converted the new enclave's Kubernetes resources to an enclave object, but the resulting map didn't have an entry for enclave ID '%v'", enclaveId)
 	}
 
-	shouldDeleteVolume = false
+	// shouldDeleteVolume = false
 	shouldDeleteNamespace = false
 	return resultEnclave, nil
 }
