@@ -1,5 +1,9 @@
 # TBD
 
+# 1.53.4
+### Changes
+* Updated files artifact expansion volume size to 1024Mb 
+
 # 1.53.3
 ### Changes
 * Delete Docker files artifact expander containers after the expansion runs
