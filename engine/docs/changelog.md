@@ -1,4 +1,9 @@
 # TBD
+### Fixes
+* Go up to core 1.53.0, which fixes a bug with the gRPC API
+
+### Breaking Changes
+* CLIs using this version of the engine will no longer be able to communicate with old API versions
 
 # 1.24.0
 ### Fixes
