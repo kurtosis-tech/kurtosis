@@ -6,6 +6,4 @@
 package kurtosis_backend_config
 
 type KubernetesBackendConfig struct {
-	StorageClass string `json:"storageClass"`
-	EnclaveSizeInMegabytes uint `json:"enclaveSizeInMegabytes"`
 }
