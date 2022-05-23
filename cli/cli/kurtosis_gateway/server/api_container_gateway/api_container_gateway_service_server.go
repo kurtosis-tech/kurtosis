@@ -92,11 +92,12 @@ func (service *ApiContainerGatewayServiceServer) RegisterService(ctx context.Con
 
 }
 func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
+	cleanUpServiceConnection := true
+	cleanUpService := true
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.StartService(ctx, args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
 	}
-	cleanUpService := true
 	defer func() {
 		if cleanUpService {
 			destroyEnclaveArgs := &kurtosis_core_rpc_api_bindings.RemoveServiceArgs{ServiceId: args.GetServiceId()}
@@ -108,21 +109,22 @@ func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Contex
 	}()
 	serviceGuid := remoteApiContainerResponse.GetServiceGuid()
 
-	runningServiceConnection, err := service.startRunningConnectionForKurtosisService(serviceGuid, args.PrivatePorts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to start a local connection to service '%v', instead a non-nil error was returned", args.GetServiceId())
-	}
-	cleanUpServiceConnection := true
-	defer func() {
-		if cleanUpServiceConnection {
-			service.idempotentKillRunningConnectionForServiceGuid(serviceGuid)
+	// Only services with ports specified can be connected
+	if len(args.PrivatePorts) > 0 {
+		runningServiceConnection, err := service.startRunningConnectionForKurtosisService(serviceGuid, args.PrivatePorts)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Expected to be able to start a local connection to service '%v', instead a non-nil error was returned", args.GetServiceId())
 		}
-	}()
+		defer func() {
+			if cleanUpServiceConnection {
+				service.idempotentKillRunningConnectionForServiceGuid(serviceGuid)
+			}
+		}()
 
-	// Overwrite PublicPorts and PublicIp fields
-	remoteApiContainerResponse.PublicIpAddr = runningServiceConnection.localPublicIp
-	remoteApiContainerResponse.PublicPorts = runningServiceConnection.localPublicServicePorts
-
+		// Overwrite PublicPorts and PublicIp fields
+		remoteApiContainerResponse.PublicIpAddr = runningServiceConnection.localPublicIp
+		remoteApiContainerResponse.PublicPorts = runningServiceConnection.localPublicServicePorts
+	}
 	cleanUpService = false
 	cleanUpServiceConnection = false
 	return remoteApiContainerResponse, nil
@@ -140,7 +142,7 @@ func (service *ApiContainerGatewayServiceServer) GetServices(ctx context.Context
 		var runningLocalConnection *runningLocalServiceConnection
 		cleanUpConnection := true
 		runningLocalConnection, isFound := service.userServiceGuidToLocalConnectionMap[serviceGuid]
-		if !isFound {
+		if !isFound && len(serviceInfo.PrivatePorts) > 0 {
 			runningLocalConnection, err = service.startRunningConnectionForKurtosisService(serviceGuid, serviceInfo.PrivatePorts)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "Expected to be able to start a local connection to kurtosis service '%v', instead a non-nil error was returned", serviceId)
@@ -252,15 +254,19 @@ func (service *ApiContainerGatewayServiceServer) UnpauseService(ctx context.Cont
 	return remoteApiContainerResponse, nil
 }
 
-// Private functions for managing our running enclave api container gateways
+// startRunningConnectionForKurtosisService starts a port forwarding process from kernel assigned local ports to the remote service ports specified
+// If privatePortsFromApi is empty, an error is thrown
 func (service *ApiContainerGatewayServiceServer) startRunningConnectionForKurtosisService(serviceGuid string, privatePortsFromApi map[string]*kurtosis_core_rpc_api_bindings.Port) (*runningLocalServiceConnection, error) {
 	service.mutex.Lock()
 	defer service.mutex.Unlock()
+	if len(privatePortsFromApi) == 0 {
+		return nil, stacktrace.NewError("Expected Kurtosis service to have private ports specified for port forwarding, instead no ports were provided")
+	}
 	remotePrivatePortSpecs := map[string]*port_spec.PortSpec{}
 	for portSpecId, coreApiPort := range privatePortsFromApi {
 		if coreApiPort.GetProtocol() != kurtosis_core_rpc_api_bindings.Port_TCP {
 			logrus.Warnf(
-				"Will not be able to forward service port with id '%v' for service with guid '%v' in enclave '%v'. " +
+				"Will not be able to forward service port with id '%v' for service with guid '%v' in enclave '%v'. "+
 					"The protocol of this port is '%v', but only '%v' is supported",
 				portSpecId,
 				serviceGuid,
