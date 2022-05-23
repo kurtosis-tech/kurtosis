@@ -8,12 +8,12 @@ package service_network
 import (
 	"compress/gzip"
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-core/files_artifacts_expander/args"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
@@ -35,7 +35,7 @@ const (
 	filesArtifactExpansionDirsParentDirpath = "/files-artifacts"
 
 	// TODO This should be populated from the build flow that builds the files-artifacts-expander Docker image
-	filesArtifactsExpanderImage = ""
+	filesArtifactsExpanderImage = "kurtosistech/kurtosis-files-artifacts-expander"
 )
 
 type storeFilesArtifactResult struct {
@@ -52,6 +52,7 @@ type ServiceNetwork struct {
 	
 	apiContainerIpAddress net.IP
 	apiContainerGrpcPortNum uint16
+	apiContainerVersion string
 
 	mutex *sync.Mutex // VERY IMPORTANT TO CHECK AT THE START OF EVERY METHOD!
 
@@ -61,8 +62,6 @@ type ServiceNetwork struct {
 	kurtosisBackend backend_interface.KurtosisBackend
 
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory
-
-	filesArtifactExpander    *files_artifact_expander.FilesArtifactExpander
 
 	topology *partition_topology.PartitionTopology
 
@@ -79,11 +78,11 @@ func NewServiceNetwork(
 	enclaveId enclave.EnclaveID,
 	apiContainerIpAddr net.IP,
 	apiContainerGrpcPortNum uint16,
+	apiContainerVersion string,
 	isPartitioningEnabled bool,
 	kurtosisBackend backend_interface.KurtosisBackend,
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 	networkingSidecarManager networking_sidecar.NetworkingSidecarManager,
-	filesArtifactExpander *files_artifact_expander.FilesArtifactExpander,
 ) *ServiceNetwork {
 	defaultPartitionConnection := partition_topology.PartitionConnection{
 		PacketLossPercentage: startingDefaultConnectionPacketLossValue,
@@ -92,11 +91,11 @@ func NewServiceNetwork(
 		enclaveId:               enclaveId,
 		apiContainerIpAddress:   apiContainerIpAddr,
 		apiContainerGrpcPortNum: apiContainerGrpcPortNum,
+		apiContainerVersion:     apiContainerVersion,
 		mutex:                   &sync.Mutex{},
 		isPartitioningEnabled:   isPartitioningEnabled,
 		kurtosisBackend:         kurtosisBackend,
 		enclaveDataDir:          enclaveDataDir,
-		filesArtifactExpander:   filesArtifactExpander,
 		topology: partition_topology.NewPartitionTopology(
 			defaultPartitionId,
 			defaultPartitionConnection,
@@ -743,12 +742,22 @@ func (network *ServiceNetwork) startService(
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating files artifacts expander args")
 		}
-		filesArtifactsExpanderEnvVars, err := args.GetEnvFromArgs(filesArtifactsExpanderArgs)
+		expanderEnvVars, err := args.GetEnvFromArgs(filesArtifactsExpanderArgs)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting files artifacts expander environment variables using args: %+v", filesArtifactsExpanderArgs)
 		}
 
-
+		expanderImageAndTag := fmt.Sprintf(
+			"%v:%v",
+			filesArtifactsExpanderImage,
+			network.apiContainerVersion,
+		)
+		
+		filesArtifactsExpansion = &backend_interface.FilesArtifactsExpansion{
+			ExpanderImage:                     expanderImageAndTag,
+			ExpanderEnvVars:                   expanderEnvVars,
+			ExpanderDirpathsToServiceDirpaths: expanderDirpathToUserServiceDirpathMap,
+		}
 	}
 
 	/*
@@ -783,10 +792,16 @@ func (network *ServiceNetwork) startService(
 		entrypointArgs,
 		cmdArgs,
 		envVars,
-		artifactVolumeMounts,
+		filesArtifactsExpansion,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred starting service '%v' with image '%v'", serviceGuid, imageName)
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred starting service '%v' with image '%v' and files artifacts expansions '%+v'",
+			serviceGuid,
+			imageName,
+			filesArtifactsExpansion,
+		)
 	}
 	return launchedUserService, nil
 }

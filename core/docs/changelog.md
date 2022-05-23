@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Implement `DownloadFilesArtifact` endpoint
 
 # 1.51.0
 ### Features
