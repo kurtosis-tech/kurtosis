@@ -1,4 +1,6 @@
 # TBD
+
+# 1.24.0
 ### Fixes
 * Upgraded to container-engine-lib 0.31.0 and core 1.52.0 (seems there were some oddities going on with dependencies)
 
