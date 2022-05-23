@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Switch to EmptyDirs rather than PersistentVolumeClaims
 
 # 1.25.4
 ### Changes
