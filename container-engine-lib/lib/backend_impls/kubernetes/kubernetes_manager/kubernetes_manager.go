@@ -47,7 +47,6 @@ const (
 
 	podWaitForAvailabilityTimeout = 15 * time.Minute
 	podWaitForAvailabilityTimeBetweenPolls = 500 * time.Millisecond
-	resourceDeletionTimeoutInSeconds = 30 * time.Second
 
 	// This is a container "reason" (machine-readable string) indicating that the container has some issue with
 	// pulling the image (usually, a typo in the image name or the image doesn't exist)
@@ -1231,50 +1230,6 @@ func renderContainerStatuses(containerStatuses []apiv1.ContainerStatus, prefixSt
 
 	return containerStatusStrs
 }
-
-
-/*
-func getRetryWatcherForWatchFunc(watchFunc cache.WatchFunc, resourceVersion string) (*watch.RetryWatcher, error) {
-	retryWatcher, err := watch.NewRetryWatcher(resourceVersion, &cache.ListWatch{WatchFunc: watchFunc})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to create a retry watcher for resource deletion, instead a non-nil error was returned")
-	}
-	return retryWatcher, nil
-}
-func waitForResourceDeletion(ctx context.Context, retryWatcher *watch.RetryWatcher) error {
-	for {
-		select {
-		case resourceEvent := <-retryWatcher.ResultChan():
-			if resourceEvent.Type == apiwatch.Deleted {
-				return nil
-			}
-		case <-retryWatcher.Done():
-			return stacktrace.NewError("Expected to be able to wait for resource deletion, instead the watcher's result channel was closed before we could verify resource deletion.")
-		case <- time.After(resourceDeletionTimeoutInSeconds):
-			return stacktrace.NewError("Timed out waiting for resource deletion, '%s' seconds passed with no message from our resource watcher", resourceDeletionTimeoutInSeconds)
-		case <-ctx.Done():
-			return stacktrace.NewError("Process cancelled by user")
-		}
-	}
-}
- */
-
-/*
-func getWatchListOptionsForObject(resourceListOptions string) metav1.ListOptions {
-	timeoutInSeconds := int64(resourceDeletionTimeoutInSeconds)
-	return metav1.ListOptions{
-		TimeoutSeconds: &timeoutInSeconds,
-		FieldSelector: getFieldSelectorForObjectName(resourceListOptions),
-	}
-}
-
-
-func getFieldSelectorForObjectName(objectName string) string {
-	return fields.SelectorFromSet(map[string]string {
-		objectNameMetadataField : objectName,
-	}).String()
-}
-*/
 
 // Kubernetes doesn't seem to have a nice API for getting back the exit code of a command (though this seems strange??),
 // so we have to parse it out of a status message
