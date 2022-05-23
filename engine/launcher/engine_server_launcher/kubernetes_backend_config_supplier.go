@@ -24,8 +24,6 @@ func NewKubernetesKurtosisBackendConfigSupplier(storageClass string, enclaveSize
 
 func (backendConfigSupplier KubernetesBackendConfigSupplier) getKurtosisBackendConfig() (args.KurtosisBackendType, interface{}) {
 	return args.KurtosisBackendType_Kubernetes, kurtosis_backend_config.KubernetesBackendConfig{
-		StorageClass: backendConfigSupplier.storageClass,
-		EnclaveSizeInMegabytes: backendConfigSupplier.enclaveSizeInMegabytes,
 	}
 }
 
