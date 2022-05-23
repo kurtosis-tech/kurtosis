@@ -79,7 +79,7 @@ func NewKurtosisConfigFromOverrides(uncastedOverrides interface{}) (*KurtosisCon
 
 	allClusterConfigs := map[string]*KurtosisClusterConfig{}
 	for clusterId, overridesForCluster := range allClusterOverrides {
-		clusterConfig, err := NewKurtosisClusterConfigFromOverrides(overridesForCluster)
+		clusterConfig, err := NewKurtosisClusterConfigFromOverrides(clusterId, overridesForCluster)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating a Kurtosis cluster config object from overrides: %+v", overridesForCluster)
 		}

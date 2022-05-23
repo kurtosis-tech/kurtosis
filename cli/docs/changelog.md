@@ -1,9 +1,18 @@
 # TBD
 
+# 0.19.1
+### Features
+* Cluster config validation failures print out the name of the failed cluster
+
+### Fixes
+* Fix bug where enclave data volume size was getting force-overwritten if and only if it was set
+
 # 0.19.0
 ### Fixes
 * Fixes bugs that were happening with API container's gRPC wire format
 * Fixes various bugs with files artifacts expansion
+* Fixed `RemoveService` in APIC gateway not killing local connection
+* Fixed APIC gateway trying to create a connection to a Kurtosis service with no ports specified
 
 ### Breaking Changes
 * Upgraded to engine 1.25.3
