@@ -291,6 +291,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 						"Starting service '%v' didn't complete successfully so we tried to delete files artifact expansion PVC '%v' that we " +
 							"created, but doing so threw an error:\n%v",
 						serviceGuid,
+						filesArtifactsExpansionPvc.Name,
 						err,
 					)
 					logrus.Errorf("You'll need to delete PVC '%v' manually!", filesArtifactsExpansionPvc.Name)

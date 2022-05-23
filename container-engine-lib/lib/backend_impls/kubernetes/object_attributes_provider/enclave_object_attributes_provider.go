@@ -51,9 +51,6 @@ type KubernetesEnclaveObjectAttributesProvider interface {
 	ForFilesArtifactsExpansionPersistentVolumeClaim(
 		serviceGUID service.ServiceGUID,
 	) (KubernetesObjectAttributes, error)
-	ForFilesArtifactsExpansionJob(
-		serviceGUID service.ServiceGUID,
-	) (KubernetesObjectAttributes, error)
 }
 
 // Private so it can't be instantiated
