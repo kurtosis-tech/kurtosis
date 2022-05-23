@@ -7,25 +7,23 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
-	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
-	"google.golang.org/grpc"
 	"sort"
 	"strings"
 )
 
 const (
 	moduleGUIDColHeader  = "GUID"
+	moduleIDColHeader = "ID"
 	modulePortsColHeader         = "Ports"
 	defaultEmptyIPAddrForModules = ""
 
 	grpcPortId = "grpc"
 )
 
+// TODO TODO When gateway binds public ports for modules, use isAPIContainerRunning to know to query for public port bindings.
 func printModules(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo kurtosis_engine_rpc_api_bindings.EnclaveInfo, isAPIContainerRunning bool) error {
 	enclaveIdStr := enclaveInfo.GetEnclaveId()
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
@@ -41,39 +39,16 @@ func printModules(ctx context.Context, kurtosisBackend backend_interface.Kurtosi
 		return stacktrace.Propagate(err, "An error occurred getting modules using filters '%+v'", moduleFilters)
 	}
 
-	// Pull module info from API container if it is running
-	moduleInfoMapFromAPIC := map[string]*kurtosis_core_rpc_api_bindings.ModuleInfo{}
-	if isAPIContainerRunning {
-		moduleInfoMapFromAPIC, err = getModuleInfoMapFromAPIContainer(ctx, enclaveInfo)
-		if err != nil {
-			return stacktrace.Propagate(err, "Failed to get module info from API container in enclave '%v'", enclaveInfo.GetEnclaveId())
-		}
-	}
-
-	tablePrinter := output_printers.NewTablePrinter(moduleGUIDColHeader, modulePortsColHeader)
+	tablePrinter := output_printers.NewTablePrinter(moduleGUIDColHeader, moduleIDColHeader, modulePortsColHeader)
 	sortedModules := getSortedModuleSliceFromModulesMap(modules)
 
 	for _, moduleObj := range sortedModules {
 		moduleGuidStr := string(moduleObj.GetGUID())
 		moduleIdStr := string(moduleObj.GetID())
 
-		// Look for public port and IP information in API container map
-		var maybePublicPortFromAPIC uint32
-		maybePublicIpAddrFromAPIC := ""
-		moduleInfoFromAPIC, found := moduleInfoMapFromAPIC[moduleIdStr]
-		if found {
-			// Set public port from API container information
-			maybePublicPortGRPC := moduleInfoFromAPIC.GetMaybePublicGrpcPort()
-			if maybePublicPortGRPC != nil {
-				maybePublicPortFromAPIC = maybePublicPortGRPC.GetNumber()
-			}
-			// Set public IP address from API container information
-			maybePublicIpAddrFromAPIC = moduleInfoFromAPIC.GetMaybePublicIpAddr()
-		}
+		portString := getModulePortBindingString(moduleObj)
 
-		portString := getModulePortBindingString(moduleObj, &maybePublicPortFromAPIC, maybePublicIpAddrFromAPIC)
-
-		if err := tablePrinter.AddRow(moduleGuidStr, portString); err != nil {
+		if err := tablePrinter.AddRow(moduleGuidStr, moduleIdStr, portString); err != nil {
 			return stacktrace.NewError(
 				"An error occurred adding row for module GUID '%v' to the table printer",
 				moduleGuidStr,
@@ -100,7 +75,7 @@ func getSortedModuleSliceFromModulesMap(modules map[module.ModuleGUID]*module.Mo
 	return modulesResult
 }
 
-func getModulePortBindingString(module *module.Module, maybePublicPortFromAPIC *uint32, maybePublicIpAddrFromAPIC string) string {
+func getModulePortBindingString(module *module.Module) string {
 	privatePort := module.GetPrivatePort()
 	line := fmt.Sprintf(
 		"%v: %v/%v",
@@ -110,64 +85,10 @@ func getModulePortBindingString(module *module.Module, maybePublicPortFromAPIC *
 	)
 
 	// If the container is running, add host machine port binding information
-
-	// If API container returned public port information, use that.
-	var publicPort *uint32
-	publicPortObjFromBackend := module.GetMaybePublicPort()
-	if maybePublicPortFromAPIC != nil {
-		publicPort = maybePublicPortFromAPIC
-	} else if publicPortObjFromBackend != nil {
-		publicPortUint32 := uint32(publicPortObjFromBackend.GetNumber())
-		publicPort = &publicPortUint32
-	}
-
-	// If API container returned public IP information, use that.
-	publicIpAddr := defaultEmptyIPAddrForModules
-	publicIpAddrFromBackend := module.GetMaybePublicIP()
-	if maybePublicIpAddrFromAPIC != defaultEmptyIPAddrForModules {
-		publicIpAddr = maybePublicIpAddrFromAPIC
-	} else if publicIpAddrFromBackend.String() != defaultEmptyIPAddrForModules {
-		publicIpAddr = publicIpAddrFromBackend.String()
-	}
-
-	if publicIpAddr != defaultEmptyIPAddrForModules && publicPort != nil {
-		publicPortUint := *publicPort
-		line = line + fmt.Sprintf(" -> %v:%v", publicIpAddr, publicPortUint)
+	publicIpAddr := module.GetMaybePublicPort()
+	publicPort := module.GetMaybePublicPort()
+	if publicIpAddr != nil && publicPort != nil {
+		line = line + fmt.Sprintf(" -> %v:%v", publicIpAddr, publicPort.GetNumber())
 	}
 	return line
-}
-
-func getModuleInfoMapFromAPIContainer(ctx context.Context, enclaveInfo kurtosis_engine_rpc_api_bindings.EnclaveInfo) (map[string]*kurtosis_core_rpc_api_bindings.ModuleInfo, error) {
-	apicHostMachineIp, apicHostMachineGrpcPort, err := enclave_liveness_validator.ValidateEnclaveLiveness(&enclaveInfo)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred verifying that the enclave was running")
-	}
-
-	apiContainerHostGrpcUrl := fmt.Sprintf(
-		"%v:%v",
-		apicHostMachineIp,
-		apicHostMachineGrpcPort,
-	)
-	conn, err := grpc.Dial(apiContainerHostGrpcUrl, grpc.WithInsecure())
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred connecting to the API container grpc port at '%v' in enclave '%v'",
-			apiContainerHostGrpcUrl,
-			enclaveInfo.EnclaveId,
-		)
-	}
-	defer func() {
-		conn.Close()
-	}()
-	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
-
-	getAllModulesMap := map[string]bool{}
-	getAllModulesArgs := binding_constructors.NewGetModulesArgs(getAllModulesMap)
-	allModulesResponse, err := apiContainerClient.GetModules(ctx, getAllModulesArgs)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get service information for all services in enclave '%v'", enclaveInfo.GetEnclaveId())
-	}
-	moduleInfoMapFromAPIC := allModulesResponse.GetModuleInfo()
-	return moduleInfoMapFromAPIC, nil
 }
