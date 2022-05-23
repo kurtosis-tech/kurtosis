@@ -64,8 +64,10 @@ func runMain() error {
 		return stacktrace.Propagate(err, "Expected to be able to create a client connection to API container at address '%v', instead a non-nil error was returned", grpcUrl)
 	}
 	defer apiContainerConnection.Close()
+
 	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(apiContainerConnection)
 	backgroundContext := context.Background()
+
 	// Download and extract the file artifacts in the args
 	filesArtifactWorkerPool := workerpool.New(maxWorkers)
 	resultErrsChan := make(chan error, len(filesArtifactExpanderArgs.FilesArtifactExpansions))
@@ -125,14 +127,20 @@ func expandFilesArtifact(ctx context.Context, apiContainerClient kurtosis_core_r
 	if err := filesArtifactFile.Close(); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to close the temporary file '%v' we created to store the downloaded files artifact, instead a non-nil error was returned", filesArtifactFile.Name())
 	}
+
 	filesArtifactFileName := filesArtifactFile.Name()
 	if err := os.WriteFile(filesArtifactFileName, response.Data, filesArtifactTemporaryFilePermissions); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to save files artifact to disk at path '%v', instead a non nil error was returned", filesArtifactFileName)
 	}
 	// Extract the tarball to the specified location
 	extractTarballCmd := exec.Command("tar", "-xzf", filesArtifactFileName, "-C", filesArtifactExpansion.DirPathToExpandTo)
-	if err := extractTarballCmd.Start(); err != nil {
-		return stacktrace.Propagate(err, "Expected to be able to extract the tarball containing the files artifacts, instead a non nil error was returned")
+	if err := extractTarballCmd.Run(); err != nil {
+		// Per the docs, we can downcast like so
+		castedErr, ok := err.(*exec.ExitError)
+		if !ok {
+			return stacktrace.Propagate(err, "Command '%v' failed with an unrecognized error", extractTarballCmd.String())
+		}
+		return stacktrace.NewError("Command '%v' exited with an error and the following STDERR:\n%v", extractTarballCmd.String(), string(castedErr.Stderr))
 	}
 	return nil
 }

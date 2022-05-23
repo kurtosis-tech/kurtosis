@@ -10,7 +10,7 @@ replace (
 
 require (
 	github.com/google/uuid v1.3.0
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220523120430-bedfc6f6994a
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220523123440-08071cbd5de5
 	github.com/kurtosis-tech/kurtosis-core/api/golang v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis-core/files_artifacts_expander v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0 // Local dependency
