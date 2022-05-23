@@ -1,5 +1,9 @@
 # TBD
 
+# 1.25.3
+### Fixes
+* Take core 1.53.3 which deletes files artifacts expander containers when done with them
+
 # 1.25.2
 ### Fixes
 * Upgrade to core 1.53.2, with bugfixes for files artifact expander not waiting until the `tar` command finishes
