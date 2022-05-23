@@ -1,4 +1,7 @@
 # TBD
+### Fixes
+* Fix bugs with the files artifact expander Dockerfile and main.go
+* Fixed bug with how we detect registered-but-not-running services in Kubernetes
 
 # 1.53.0
 ### Breaking Changes

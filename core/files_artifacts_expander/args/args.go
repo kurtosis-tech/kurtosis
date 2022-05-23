@@ -7,6 +7,7 @@ package args
 
 import (
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"reflect"
 	"strings"
 )
@@ -21,7 +22,6 @@ type FilesArtifactsExpanderArgs struct {
 	APIContainerIpAddress string `json:"apiContainerIpAddress"`
 	ApiContainerPort        uint16                   `json:"apiContainerPort"`
 	FilesArtifactExpansions []FilesArtifactExpansion `json:"filesArtifactExpansions"`
-
 }
 
 type FilesArtifactExpansion struct {
@@ -37,6 +37,7 @@ func NewFilesArtifactsExpanderArgs(apiContainerIpAddress string, apiContainerPor
 		ApiContainerPort:        apiContainerPort,
 		FilesArtifactExpansions: filesArtifactExpansions,
 	}
+	logrus.Debugf("Expander args: %+v", result)
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "Expected args object to be valid, instead an error occurred validating it")
 	}
@@ -44,7 +45,8 @@ func NewFilesArtifactsExpanderArgs(apiContainerIpAddress string, apiContainerPor
 	return result, nil
 }
 
-func (args *FilesArtifactsExpanderArgs) validate() error {
+// NOTE: We can't use a pointer receiver here else reflection's NumField will panic
+func (args FilesArtifactsExpanderArgs) validate() error {
 	// Generic validation based on field type
 	reflectVal := reflect.ValueOf(args)
 	reflectValType := reflectVal.Type()
