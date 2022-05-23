@@ -198,13 +198,13 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.getModules =
  * @const
  * @type {!grpc.web.MethodDescriptor<
  *   !proto.api_container_api.UnloadModuleArgs,
- *   !proto.google.protobuf.Empty>}
+ *   !proto.api_container_api.UnloadModuleResponse>}
  */
 const methodDescriptor_ApiContainerService_UnloadModule = new grpc.web.MethodDescriptor(
   '/api_container_api.ApiContainerService/UnloadModule',
   grpc.web.MethodType.UNARY,
   proto.api_container_api.UnloadModuleArgs,
-  google_protobuf_empty_pb.Empty,
+  proto.api_container_api.UnloadModuleResponse,
   /**
    * @param {!proto.api_container_api.UnloadModuleArgs} request
    * @return {!Uint8Array}
@@ -212,7 +212,7 @@ const methodDescriptor_ApiContainerService_UnloadModule = new grpc.web.MethodDes
   function(request) {
     return request.serializeBinary();
   },
-  google_protobuf_empty_pb.Empty.deserializeBinary
+  proto.api_container_api.UnloadModuleResponse.deserializeBinary
 );
 
 
@@ -221,9 +221,9 @@ const methodDescriptor_ApiContainerService_UnloadModule = new grpc.web.MethodDes
  *     request proto
  * @param {?Object<string, string>} metadata User defined
  *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.google.protobuf.Empty)}
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.UnloadModuleResponse)}
  *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.google.protobuf.Empty>|undefined}
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.UnloadModuleResponse>|undefined}
  *     The XHR Node Readable Stream
  */
 proto.api_container_api.ApiContainerServiceClient.prototype.unloadModule =
@@ -242,7 +242,7 @@ proto.api_container_api.ApiContainerServiceClient.prototype.unloadModule =
  *     request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!Promise<!proto.google.protobuf.Empty>}
+ * @return {!Promise<!proto.api_container_api.UnloadModuleResponse>}
  *     Promise that resolves to the response
  */
 proto.api_container_api.ApiContainerServicePromiseClient.prototype.unloadModule =

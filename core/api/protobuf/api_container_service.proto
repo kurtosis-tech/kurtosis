@@ -15,7 +15,7 @@ service ApiContainerService {
   rpc GetModules(GetModulesArgs) returns (GetModulesResponse) {};
 
   // Stop and remove a module from the enclave
-  rpc UnloadModule(UnloadModuleArgs) returns (google.protobuf.Empty) {};
+  rpc UnloadModule(UnloadModuleArgs) returns (UnloadModuleResponse) {};
 
   // Executes an executable module on the user's behalf
   rpc ExecuteModule(ExecuteModuleArgs) returns (ExecuteModuleResponse) {};

@@ -280,6 +280,17 @@ function deserialize_api_container_api_UnloadModuleArgs(buffer_arg) {
   return api_container_service_pb.UnloadModuleArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_UnloadModuleResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.UnloadModuleResponse)) {
+    throw new Error('Expected argument of type api_container_api.UnloadModuleResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_UnloadModuleResponse(buffer_arg) {
+  return api_container_service_pb.UnloadModuleResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_UnpauseServiceArgs(arg) {
   if (!(arg instanceof api_container_service_pb.UnpauseServiceArgs)) {
     throw new Error('Expected argument of type api_container_api.UnpauseServiceArgs');
@@ -378,11 +389,11 @@ unloadModule: {
     requestStream: false,
     responseStream: false,
     requestType: api_container_service_pb.UnloadModuleArgs,
-    responseType: google_protobuf_empty_pb.Empty,
+    responseType: api_container_service_pb.UnloadModuleResponse,
     requestSerialize: serialize_api_container_api_UnloadModuleArgs,
     requestDeserialize: deserialize_api_container_api_UnloadModuleArgs,
-    responseSerialize: serialize_google_protobuf_Empty,
-    responseDeserialize: deserialize_google_protobuf_Empty,
+    responseSerialize: serialize_api_container_api_UnloadModuleResponse,
+    responseDeserialize: deserialize_api_container_api_UnloadModuleResponse,
   },
   // Executes an executable module on the user's behalf
 executeModule: {

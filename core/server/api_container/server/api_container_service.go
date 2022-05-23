@@ -281,7 +281,7 @@ func (apicService ApiContainerService) GetServiceInfo(ctx context.Context, args 
 		}
 	}
 
-	serviceInfoResponse := binding_constructors.NewGetServiceInfoResponse(
+	serviceInfoResponse := binding_constructors.NewGetServicesResponse(
 		privateIp.String(),
 		privateApiPorts,
 		publicIpAddrStr,

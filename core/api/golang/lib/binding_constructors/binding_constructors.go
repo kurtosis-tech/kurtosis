@@ -164,7 +164,7 @@ func NewGetServicesArgs(serviceIds map[string]bool) *kurtosis_core_rpc_api_bindi
 	}
 }
 
-func NewGetServiceInfoResponse(
+func NewGetServicesResponse(
 	serviceInfo map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo,
 ) *kurtosis_core_rpc_api_bindings.GetServicesResponse {
 	return &kurtosis_core_rpc_api_bindings.GetServicesResponse{
