@@ -58,7 +58,7 @@ func NewEnclaveApiContainerGatewayServer(connectionProvider *connection.GatewayC
 	}, closeGatewayFunc
 }
 
-func (service *ApiContainerGatewayServiceServer) LoadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadModuleArgs) (*kurtosis_core_rpc_api_bindings.LoadModuleResponse, error) {
+func (service *ApiContainerGatewayServiceServer) LoadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadModuleArgs) (*kurtosis_core_rpc_api_bindings.ModuleInfo, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.LoadModule(ctx, args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
@@ -66,7 +66,7 @@ func (service *ApiContainerGatewayServiceServer) LoadModule(ctx context.Context,
 
 	return remoteApiContainerResponse, nil
 }
-func (service *ApiContainerGatewayServiceServer) UnloadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnloadModuleArgs) (*emptypb.Empty, error) {
+func (service *ApiContainerGatewayServiceServer) UnloadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnloadModuleArgs) (*kurtosis_core_rpc_api_bindings.UnloadModuleResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.UnloadModule(ctx, args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
@@ -82,14 +82,6 @@ func (service *ApiContainerGatewayServiceServer) ExecuteModule(ctx context.Conte
 
 	return remoteApiContainerResponse, nil
 }
-func (service *ApiContainerGatewayServiceServer) GetModuleInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetModuleInfoArgs) (*kurtosis_core_rpc_api_bindings.GetModuleInfoResponse, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.GetModuleInfo(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
-	}
-
-	return remoteApiContainerResponse, nil
-}
 func (service *ApiContainerGatewayServiceServer) RegisterService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServiceArgs) (*kurtosis_core_rpc_api_bindings.RegisterServiceResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.RegisterService(ctx, args)
 	if err != nil {
@@ -99,7 +91,7 @@ func (service *ApiContainerGatewayServiceServer) RegisterService(ctx context.Con
 	return remoteApiContainerResponse, nil
 
 }
-func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
+func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.StartService(ctx, args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
@@ -128,53 +120,46 @@ func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Contex
 	}()
 
 	// Overwrite PublicPorts and PublicIp fields
-	remoteApiContainerResponse.PublicIpAddr = runningServiceConnection.localPublicIp
-	remoteApiContainerResponse.PublicPorts = runningServiceConnection.localPublicServicePorts
+	remoteApiContainerResponse.MaybePublicIpAddr = runningServiceConnection.localPublicIp
+	remoteApiContainerResponse.MaybePublicPorts = runningServiceConnection.localPublicServicePorts
 
 	cleanUpService = false
 	cleanUpServiceConnection = false
 	return remoteApiContainerResponse, nil
 }
 
-func (service *ApiContainerGatewayServiceServer) GetServices(ctx context.Context, args *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
+func (service *ApiContainerGatewayServiceServer) GetServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServicesArgs) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.GetServices(ctx, args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
 	}
 
-	return remoteApiContainerResponse, nil
-}
-
-func (service *ApiContainerGatewayServiceServer) GetServiceInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServiceInfoArgs) (*kurtosis_core_rpc_api_bindings.GetServiceInfoResponse, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.GetServiceInfo(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
-	}
-
-	// Get the running connection if it's available, start one if there is no running connection
-	serviceGuid := remoteApiContainerResponse.GetServiceGuid()
-	var runningLocalConnection *runningLocalServiceConnection
-	cleanUpConnection := true
-	runningLocalConnection, isFound := service.userServiceGuidToLocalConnectionMap[serviceGuid]
-	if !isFound {
-		runningLocalConnection, err = service.startRunningConnectionForKurtosisService(serviceGuid, remoteApiContainerResponse.PrivatePorts)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Expected to be able to start a local connection to kurtosis service '%v', instead a non-nil error was returned", args.GetServiceId())
-		}
-		defer func() {
-			if cleanUpConnection {
-				service.idempotentKillRunningConnectionForServiceGuid(serviceGuid)
+	for serviceId, serviceInfo := range remoteApiContainerResponse.ServiceInfo {
+		// Get the running connection if it's available, start one if there is no running connection
+		serviceGuid := serviceInfo.GetServiceGuid()
+		var runningLocalConnection *runningLocalServiceConnection
+		cleanUpConnection := true
+		runningLocalConnection, isFound := service.userServiceGuidToLocalConnectionMap[serviceGuid]
+		if !isFound {
+			runningLocalConnection, err = service.startRunningConnectionForKurtosisService(serviceGuid, serviceInfo.PrivatePorts)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "Expected to be able to start a local connection to kurtosis service '%v', instead a non-nil error was returned", serviceId)
 			}
-		}()
+			defer func() {
+				if cleanUpConnection {
+					service.idempotentKillRunningConnectionForServiceGuid(serviceGuid)
+				}
+			}()
+		}
+		// Overwrite PublicPorts and PublicIp fields
+		serviceInfo.MaybePublicPorts = runningLocalConnection.localPublicServicePorts
+		serviceInfo.MaybePublicIpAddr = runningLocalConnection.localPublicIp
 	}
-	// Overwrite PublicPorts and PublicIp fields
-	remoteApiContainerResponse.PublicPorts = runningLocalConnection.localPublicServicePorts
-	remoteApiContainerResponse.PublicIpAddr = runningLocalConnection.localPublicIp
 
-	cleanUpConnection = false
 	return remoteApiContainerResponse, nil
 }
-func (service *ApiContainerGatewayServiceServer) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*emptypb.Empty, error) {
+
+func (service *ApiContainerGatewayServiceServer) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*kurtosis_core_rpc_api_bindings.RemoveServiceResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.RemoveService(ctx, args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
@@ -217,7 +202,7 @@ func (service *ApiContainerGatewayServiceServer) WaitForHttpPostEndpointAvailabi
 	return remoteApiContainerResponse, nil
 }
 
-func (service *ApiContainerGatewayServiceServer) GetModules(ctx context.Context, args *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetModulesResponse, error) {
+func (service *ApiContainerGatewayServiceServer) GetModules(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetModulesArgs) (*kurtosis_core_rpc_api_bindings.GetModulesResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.GetModules(ctx, args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")

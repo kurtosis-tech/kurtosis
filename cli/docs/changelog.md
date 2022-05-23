@@ -1,4 +1,7 @@
 # TBD
+### Breaking Changes
+* Upgraded to engine 1.23.0
+    * Users will need to run `kurtosis engine restart`
 
 # 0.18.7
 ### Changes
