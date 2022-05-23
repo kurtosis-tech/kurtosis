@@ -1,4 +1,12 @@
 # TBD
+### Features
+* Reworked how files artifact expansion works, so that our volumes only need to be mounted as `ReadWriteOnce`
+
+### Breaking Changes
+* Removed `FilesArtifactGUID` and the `FilesArtifactExpansion` types
+* Removed the `KurtosisBackend.CreateFilesArtifactExpansion` and `DestroyFilesArtifactExpansions` methods
+* `StartUserService` now takes in a map specifying a connection between files that get expanded on the files artifact expander container and mountpoints on the user service container
+
 
 # 0.30.2
 ### Changes

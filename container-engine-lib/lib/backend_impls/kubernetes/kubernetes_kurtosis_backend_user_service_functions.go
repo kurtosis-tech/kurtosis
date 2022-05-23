@@ -1,4 +1,5 @@
 package kubernetes
+
 import (
 	"bytes"
 	"context"
@@ -11,10 +12,10 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/concurrent_writer"
@@ -25,6 +26,7 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"net"
+	"strconv"
 )
 
 /*
@@ -63,7 +65,8 @@ Implementation notes:
 */
 
 const (
-	userServiceContainerName = "user-service-container"
+	userServiceContainerName               = "user-service-container"
+	filesArtifactExpanderInitContainerName = "files-artifact-expander"
 
 	shouldMountVolumesAsReadOnly         = false
 	shouldAddTimestampsToUserServiceLogs = false
@@ -78,6 +81,8 @@ const (
 	unboundPortNumber = 1
 
 	tarSuccessExitCode = 0
+
+	isFilesArtifactExpansionVolumeReadOnly = false
 )
 
 // Kubernetes doesn't provide public IP or port information; this is instead handled by the Kurtosis gateway that the user uses
@@ -104,6 +109,9 @@ type userServiceKubernetesResources struct {
 
 	// This can be nil if the user hasn't started a pod for the service yet, or if the pod was deleted
 	pod *apiv1.Pod
+
+	// This may be nil if no files artifacts were expanded
+	filesArtifactExpansionPersistentVolumeClaim *apiv1.PersistentVolumeClaim
 }
 
 func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
@@ -183,8 +191,9 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 
 	kubernetesResources := map[service.ServiceGUID]*userServiceKubernetesResources{
 		serviceGuid: {
-			service:   createdService,
-			pod: nil,	// No pod yet
+			service: createdService,
+			pod:     nil, // No pod yet
+			filesArtifactExpansionPersistentVolumeClaim: nil, // No PVC yet
 		},
 	}
 
@@ -215,7 +224,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	filesArtifactVolumeMountDirpaths map[files_artifact_expansion.FilesArtifactExpansionGUID]string,
+	filesArtifactsExpansion *backend_interface.FilesArtifactsExpansion,
 ) (
 	newUserService *service.Service,
 	resultErr error,
@@ -253,27 +262,51 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	namespaceName := kubernetesService.GetNamespace()
 	serviceRegistrationObj := matchingObjectAndResources.serviceRegistration
 
-	// Create the pod
 	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
+
+	var filesArtifactsExpansionPvc *apiv1.PersistentVolumeClaim
+	var podInitContainers []apiv1.Container
+	var podVolumes []apiv1.Volume
+	var userServiceContainerVolumeMounts []apiv1.VolumeMount
+	shouldDeleteExpansionPvc := true
+	if filesArtifactsExpansion != nil {
+		filesArtifactsExpansionPvc, podVolumes, userServiceContainerVolumeMounts, podInitContainers, err = backend.prepareFilesArtifactsExpansionResources(
+			ctx,
+			namespaceName,
+			serviceGuid,
+			enclaveObjAttributesProvider,
+			filesArtifactsExpansion.ExpanderImage,
+			filesArtifactsExpansion.ExpanderEnvVars,
+			filesArtifactsExpansion.ExpanderDirpathsToServiceDirpaths,
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred preparing the files artifacts expansion resources")
+		}
+		defer func() {
+			if shouldDeleteExpansionPvc {
+				// Use background context so we delete these even if input context was cancelled
+				if err := backend.kubernetesManager.RemovePersistentVolumeClaim(context.Background(), filesArtifactsExpansionPvc); err != nil {
+					logrus.Errorf(
+						"Starting service '%v' didn't complete successfully so we tried to delete files artifact expansion PVC '%v' that we " +
+							"created, but doing so threw an error:\n%v",
+						serviceGuid,
+						filesArtifactsExpansionPvc.Name,
+						err,
+					)
+					logrus.Errorf("You'll need to delete PVC '%v' manually!", filesArtifactsExpansionPvc.Name)
+				}
+			}
+		}()
+	}
+
+	// Create the pod
 	podAttributes, err := enclaveObjAttributesProvider.ForUserServicePod(serviceGuid, serviceRegistrationObj.GetID(), privatePorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting attributes for new pod for service with GUID '%v'", serviceGuid)
 	}
-
 	podLabelsStrs := getStringMapFromLabelMap(podAttributes.GetLabels())
 	podAnnotationsStrs := getStringMapFromAnnotationMap(podAttributes.GetAnnotations())
-
-	podVolumes, containerMounts, err := backend.getUserServiceVolumeInfoFromFilesArtifactMountpoints(
-		ctx,
-		namespaceName,
-		enclaveId,
-		serviceGuid,
-		filesArtifactVolumeMountDirpaths,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting pod volumes from files artifact mountpoints: %+v", filesArtifactVolumeMountDirpaths)
-	}
 
 	podContainers, err := getUserServicePodContainerSpecs(
 		containerImageName,
@@ -281,7 +314,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		cmdArgs,
 		envVars,
 		privatePorts,
-		containerMounts,
+		userServiceContainerVolumeMounts,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the container specs for the user service pod with image '%v'", containerImageName)
@@ -294,6 +327,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		podName,
 		podLabelsStrs,
 		podAnnotationsStrs,
+		podInitContainers,
 		podContainers,
 		podVolumes,
 		userServiceServiceAccountName,
@@ -311,16 +345,22 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		}
 	}()
 
-
-	updatedService, err := backend.updateServiceWhenContainerStarted(ctx, namespaceName, kubernetesService, privatePorts)
+	updatedService, undoServiceUpdateFunc, err := backend.updateServiceWhenContainerStarted(ctx, namespaceName, kubernetesService, privatePorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred updating service '%v' to reflect its new ports: %+v", kubernetesService.GetName(), privatePorts)
 	}
+	shouldUndoServiceUpdate := true
+	defer func() {
+		if shouldUndoServiceUpdate {
+			undoServiceUpdateFunc()
+		}
+	}()
 
 	kubernetesResources := map[service.ServiceGUID]*userServiceKubernetesResources{
 		serviceGuid: {
 			service: updatedService,
 			pod:     createdPod,
+			filesArtifactExpansionPersistentVolumeClaim: filesArtifactsExpansionPvc,
 		},
 	}
 	convertedObjects, err := getUserServiceObjectsFromKubernetesResources(enclaveId, kubernetesResources)
@@ -336,7 +376,9 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		)
 	}
 
+	shouldDeleteExpansionPvc = false
 	shouldDestroyPod = false
+	shouldUndoServiceUpdate = false
 	return objectsAndResources.service, nil
 }
 
@@ -698,6 +740,19 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 			}
 		}
 
+		pvc := resources.filesArtifactExpansionPersistentVolumeClaim
+		if pvc != nil {
+			if err := backend.kubernetesManager.RemovePersistentVolumeClaim(ctx, pvc); err != nil {
+				erroredGuids[serviceGuid] = stacktrace.Propagate(
+					err,
+					"An error occurred removing files artifact expansion persistent volume claim for service '%v'",
+					serviceGuid,
+				)
+				continue
+			}
+		}
+
+		// Canonical resource; this must be deleted last!
 		kubernetesService := resources.service
 		if kubernetesService != nil {
 			if err := backend.kubernetesManager.RemoveService(ctx, kubernetesService); err != nil {
@@ -710,7 +765,7 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 				continue
 			}
 		}
-
+		// WARNING: DO NOT ADD ANYTHING HERE! The Service must be deleted as the very last thing as it's the canonical resource for the Kurtosis Service
 		successfulGuids[serviceGuid] = true
 	}
 	return successfulGuids, erroredGuids, nil
@@ -904,6 +959,40 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 		results[serviceGuid] = resultObj
 	}
 
+	// Get files artifact expansion persistent volume claims
+	matchingkubernetesPvcs, err := kubernetes_resource_collectors.CollectMatchingPersistentVolumeClaims(
+		ctx,
+		backend.kubernetesManager,
+		namespaceName,
+		kubernetesResourceSearchLabels,
+		label_key_consts.GUIDKubernetesLabelKey.GetString(),
+		postFilterLabelValues,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes PVCs matching service GUIDs: %+v", serviceGuids)
+	}
+	for serviceGuidStr, kubernetesPvcsForGuid := range matchingkubernetesPvcs {
+		logrus.Tracef("Found Kubernetes PVCs for GUID '%v': %+v", serviceGuidStr, kubernetesPvcsForGuid)
+		serviceGuid := service.ServiceGUID(serviceGuidStr)
+
+		numPvcsForGuid := len(kubernetesPvcsForGuid)
+		if numPvcsForGuid == 0 {
+			// This would indicate a bug in our PVC retrieval logic because we shouldn't even have a map entry if there's nothing matching it
+			return nil, stacktrace.NewError("Got entry of result PVCs for service GUID '%v', but no Kubernetes PVCs were returned; this is a bug in Kurtosis", serviceGuid)
+		}
+		if numPvcsForGuid > 1 {
+			return nil, stacktrace.NewError("Found %v Kubernetes PVCs associated with service GUID '%v'; this is a bug in Kurtosis", numPvcsForGuid, serviceGuid)
+		}
+		kubernetesPvc := kubernetesPvcsForGuid[0]
+
+		resultObj, found := results[serviceGuid]
+		if !found {
+			resultObj = &userServiceKubernetesResources{}
+		}
+		resultObj.filesArtifactExpansionPersistentVolumeClaim = kubernetesPvc
+		results[serviceGuid] = resultObj
+	}
+
 	return results, nil
 }
 
@@ -1001,6 +1090,143 @@ func getUserServiceObjectsFromKubernetesResources(
 	return results, nil
 }
 
+// NOTE: If this function succeeds, it is the user's responsibility to take care of the PersistentVolumeClaim that was created
+func (backend *KubernetesKurtosisBackend) prepareFilesArtifactsExpansionResources(
+	ctx context.Context,
+	namespaceName string,
+	serviceGuid service.ServiceGUID,
+	enclaveObjAttributesProvider object_attributes_provider.KubernetesEnclaveObjectAttributesProvider,
+	expanderImage string,
+	expanderEnvVars map[string]string,
+	expanderDirpathsToUserServiceDirpaths map[string]string,
+) (
+	resultFilesArtifactExpansionPvc *apiv1.PersistentVolumeClaim,
+	resultPodVolumes []apiv1.Volume,
+	resultUserServiceContainerVolumeMounts []apiv1.VolumeMount,
+	resultPodInitContainers []apiv1.Container,
+	resultErr error,
+) {
+	apiContainerArgs := backend.apiContainerModeArgs
+	if apiContainerArgs == nil {
+		return nil, nil, nil, nil, stacktrace.NewError(
+			"Received request to start service '%v' with files artifact expansions, but no API container mode " +
+				"args were defined which are necessary for creating the files artifacts expansion volume",
+			serviceGuid,
+		)
+	}
+	storageClass := apiContainerArgs.storageClassName
+	expansionVolumeSizeMb := apiContainerArgs.filesArtifactExpansionVolumeSizeInMegabytes
+
+
+	pvc, err := backend.createFilesArtifactsExpansionPersistentVolumeClaim(
+		ctx,
+		namespaceName,
+		expansionVolumeSizeMb,
+		storageClass,
+		serviceGuid,
+		enclaveObjAttributesProvider,
+	)
+	if err != nil {
+		return nil, nil, nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating files artifact expansion persistent volume claim for service '%v'",
+			serviceGuid,
+		)
+	}
+	shouldDeleteExpansionPvc := true
+	defer func() {
+		if shouldDeleteExpansionPvc {
+			// Use background context so we delete these even if input context was cancelled
+			if err := backend.kubernetesManager.RemovePersistentVolumeClaim(context.Background(), pvc); err != nil {
+				logrus.Errorf(
+					"Running files artifact expansion didn't complete successfully so we tried to delete files artifact expansion PVC '%v' that we " +
+						"created, but doing so threw an error:\n%v",
+					pvc.Name,
+					err,
+				)
+				logrus.Errorf("You'll need to delete PVC '%v' manually!", pvc.Name)
+			}
+		}
+	}()
+
+	underlyingVolumeName := pvc.Spec.VolumeName
+
+	podVolumes := []apiv1.Volume{
+		{
+			Name: underlyingVolumeName,
+			VolumeSource: apiv1.VolumeSource{
+				PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
+					ClaimName: pvc.Name,
+					ReadOnly:  isFilesArtifactExpansionVolumeReadOnly,
+				},
+			},
+		},
+	}
+
+	volumeMountsOnExpanderContainer := []apiv1.VolumeMount{}
+	volumeMountsOnUserServiceContainer := []apiv1.VolumeMount{}
+	volumeSubdirIndex := 0
+	for requestedExpanderDirpath, requestedUserServiceDirpath := range expanderDirpathsToUserServiceDirpaths {
+		subdirName := strconv.Itoa(volumeSubdirIndex)
+
+		expanderContainerMount := apiv1.VolumeMount{
+			Name:             underlyingVolumeName,
+			ReadOnly:         isFilesArtifactExpansionVolumeReadOnly,
+			MountPath:        requestedExpanderDirpath,
+			SubPath:          subdirName,
+		}
+		volumeMountsOnExpanderContainer = append(volumeMountsOnExpanderContainer, expanderContainerMount)
+
+		userServiceContainerMount := apiv1.VolumeMount{
+			Name:             underlyingVolumeName,
+			ReadOnly:         isFilesArtifactExpansionVolumeReadOnly,
+			MountPath:        requestedUserServiceDirpath,
+			SubPath:          subdirName,
+		}
+		volumeMountsOnUserServiceContainer = append(volumeMountsOnUserServiceContainer, userServiceContainerMount)
+
+		volumeSubdirIndex = volumeSubdirIndex + 1
+	}
+
+	filesArtifactExpansionInitContainer := getFilesArtifactExpansionInitContainerSpecs(
+		expanderImage,
+		expanderEnvVars,
+		volumeMountsOnExpanderContainer,
+	)
+
+	podInitContainers := []apiv1.Container{
+		filesArtifactExpansionInitContainer,
+	}
+
+	shouldDeleteExpansionPvc = false
+	return pvc, podVolumes, volumeMountsOnUserServiceContainer, podInitContainers, nil
+}
+
+func getFilesArtifactExpansionInitContainerSpecs(
+	image string,
+	envVars map[string]string,
+	volumeMounts []apiv1.VolumeMount,
+) apiv1.Container {
+	expanderEnvVars := []apiv1.EnvVar{}
+	for key, value := range envVars {
+		envVar := apiv1.EnvVar{
+			Name:      key,
+			Value: value,
+		}
+		expanderEnvVars = append(expanderEnvVars, envVar)
+	}
+
+	filesArtifactExpansionInitContainer := apiv1.Container{
+		Name:          filesArtifactExpanderInitContainerName,
+		Image:         image,
+		Env:           expanderEnvVars,
+		VolumeMounts:  volumeMounts,
+	}
+
+	return filesArtifactExpansionInitContainer
+
+}
+
 func getUserServicePodContainerSpecs(
 	image string,
 	entrypointArgs []string,
@@ -1046,83 +1272,6 @@ func getUserServicePodContainerSpecs(
 	return containers, nil
 }
 
-func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtifactMountpoints(
-	ctx context.Context,
-	namespaceName string,
-	enclaveId enclave.EnclaveID,
-	serviceGuid service.ServiceGUID,
-	filesArtifactMountpoints map[files_artifact_expansion.FilesArtifactExpansionGUID]string,
-) (
-	resultPodVolumes []apiv1.Volume,
-	resultContainerVolumeMountsOnPod []apiv1.VolumeMount,
-	resultErr error,
-) {
-	filesArtifactExpansionPvcSearchLabels := map[string]string{
-		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): string(enclaveId),
-		label_key_consts.KurtosisVolumeTypeKubernetesLabelKey.GetString(): label_value_consts.FilesArtifactExpansionVolumeTypeKubernetesLabelValue.GetString(),
-		label_key_consts.UserServiceGUIDKubernetesLabelKey.GetString(): string(serviceGuid),
-	}
-	persistentVolumeClaimsList, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, namespaceName, filesArtifactExpansionPvcSearchLabels)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting files artifact expansion persistent volume claims for service '%v' matching labels: %+v", serviceGuid, filesArtifactExpansionPvcSearchLabels)
-	}
-	persistentVolumeClaims := persistentVolumeClaimsList.Items
-
-	if len(persistentVolumeClaims) != len(filesArtifactMountpoints) {
-		return nil, nil, stacktrace.Propagate(
-			err,
-			"Received request to start service with %v files artifact mountpoints '%+v', but only found %v persistent volume claims prepared for the service",
-			len(filesArtifactMountpoints),
-			filesArtifactMountpoints,
-			len(persistentVolumeClaims),
-		)
-	}
-
-	// Index PVCs by files artifact expansion GUID
-	persistentVolumeClaimsByExpansionGuid := map[files_artifact_expansion.FilesArtifactExpansionGUID]apiv1.PersistentVolumeClaim{}
-	for _, claim := range persistentVolumeClaims {
-		expansionGuidStr, found := claim.Labels[label_key_consts.GUIDKubernetesLabelKey.GetString()]
-		if !found {
-			return nil, nil, stacktrace.NewError(
-				"Files artifact expansion persistent volume claim is missing required label '%v'",
-				label_key_consts.GUIDKubernetesLabelKey.GetString(),
-			)
-		}
-		expansionGuid := files_artifact_expansion.FilesArtifactExpansionGUID(expansionGuidStr)
-		persistentVolumeClaimsByExpansionGuid[expansionGuid] = claim
-	}
-
-	podVolumes := []apiv1.Volume{}
-	containerMounts := []apiv1.VolumeMount{}
-	for expansionGuid, mountpoint := range filesArtifactMountpoints {
-		claim, found := persistentVolumeClaimsByExpansionGuid[expansionGuid]
-		if !found {
-			return nil, nil, stacktrace.NewError("Expected a persistent volume claim for files artifact expansion '%v' but none was found", expansionGuid)
-		}
-		claimName := claim.Name
-		volumeName := claim.Spec.VolumeName
-
-		volumeObj := apiv1.Volume{
-			Name:         volumeName,
-			VolumeSource: apiv1.VolumeSource{
-				PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
-					ClaimName: claimName,
-				},
-			},
-		}
-		podVolumes = append(podVolumes, volumeObj)
-
-		containerMountObj := apiv1.VolumeMount{
-			Name:             volumeName,
-			ReadOnly:         shouldMountVolumesAsReadOnly,
-			MountPath:        mountpoint,
-		}
-		containerMounts = append(containerMounts, containerMountObj)
-	}
-
-	return podVolumes, containerMounts, nil
-}
-
 // Update the service to:
 // - Set the service ports appropriately
 // - Irrevocably record that a pod is bound to the service (so that even if the pod is deleted, the service won't
@@ -1134,13 +1283,14 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 	privatePorts map[string]*port_spec.PortSpec,
 ) (
 	*apiv1.Service,
+	func(), // function to undo the update
 	error,
 ) {
 	serviceName := kubernetesService.GetName()
 
 	serializedPortSpecs, err := kubernetes_port_spec_serializer.SerializePortSpecs(privatePorts)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred serializing the following private port specs: %+v", privatePorts)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred serializing the following private port specs: %+v", privatePorts)
 	}
 
 	// We only need to modify the ports from the default (unbound) ports if the user actually declares ports
@@ -1148,7 +1298,7 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 	if len(privatePorts) > 0 {
 		candidateNewServicePorts, err := getKubernetesServicePortsFromPrivatePortSpecs(privatePorts)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes service ports for the following private port specs: %+v", privatePorts)
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes service ports for the following private port specs: %+v", privatePorts)
 		}
 		newServicePorts = candidateNewServicePorts
 	}
@@ -1181,9 +1331,41 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 
 		updatesToApply.WithAnnotations(newAnnotations)
 	}
+
+	undoUpdateFunc := func() {
+		undoingConfigurator := func(reversionToApply *applyconfigurationsv1.ServiceApplyConfiguration) {
+			specReversionToApply := applyconfigurationsv1.ServiceSpec()
+			for _, oldServicePort := range newServicePorts {
+				portUpdateToApply := &applyconfigurationsv1.ServicePortApplyConfiguration{
+					Name:        &oldServicePort.Name,
+					Protocol:    &oldServicePort.Protocol,
+					// TODO fill this out for an app port!
+					AppProtocol: nil,
+					Port:        &oldServicePort.Port,
+				}
+				specReversionToApply.WithPorts(portUpdateToApply)
+			}
+			reversionToApply.WithSpec(specReversionToApply)
+
+			reversionToApply.WithAnnotations(kubernetesService.Annotations)
+		}
+		if _, err := backend.kubernetesManager.UpdateService(ctx, namespaceName, serviceName, undoingConfigurator); err != nil {
+			logrus.Errorf(
+				"An error occurred updating Kubernetes service '%v' in namespace '%v' to open the service ports " +
+					"and add the serialized private port specs annotation so we tried to revert the service to " +
+					"its values before the update, but an error occurred; this means the service is likely in " +
+					"an inconsistent state:\n%v",
+				serviceName,
+				namespaceName,
+				err,
+			)
+			// Nothing we can really do here to recover
+		}
+	}
+
 	updatedService, err := backend.kubernetesManager.UpdateService(ctx, namespaceName, serviceName, updatingConfigurator)
 	if err != nil {
-		return nil, stacktrace.Propagate(
+		return nil, nil, stacktrace.Propagate(
 			err,
 			"An error occurred updating Kubernetes service '%v' in namespace '%v' to open the service ports and add " +
 				"the serialized private port specs annotation",
@@ -1194,37 +1376,46 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 	shouldUndoUpdate := true
 	defer func() {
 		if shouldUndoUpdate {
-			undoingConfigurator := func(reversionToApply *applyconfigurationsv1.ServiceApplyConfiguration) {
-				specReversionToApply := applyconfigurationsv1.ServiceSpec()
-				for _, oldServicePort := range newServicePorts {
-					portUpdateToApply := &applyconfigurationsv1.ServicePortApplyConfiguration{
-						Name:        &oldServicePort.Name,
-						Protocol:    &oldServicePort.Protocol,
-						// TODO fill this out for an app port!
-						AppProtocol: nil,
-						Port:        &oldServicePort.Port,
-					}
-					specReversionToApply.WithPorts(portUpdateToApply)
-				}
-				reversionToApply.WithSpec(specReversionToApply)
-
-				reversionToApply.WithAnnotations(kubernetesService.Annotations)
-			}
-			if _, err := backend.kubernetesManager.UpdateService(ctx, namespaceName, serviceName, undoingConfigurator); err != nil {
-				logrus.Errorf(
-					"An error occurred updating Kubernetes service '%v' in namespace '%v' to open the service ports " +
-						"and add the serialized private port specs annotation so we tried to revert the service to " +
-						"its values before the update, but an error occurred; this means the service is likely in " +
-						"an inconsistent state:\n%v",
-					serviceName,
-					namespaceName,
-					err,
-				)
-				// Nothing we can really do here to recover
-			}
+			undoUpdateFunc()
 		}
 	}()
 
 	shouldUndoUpdate = false
-	return updatedService, nil
+	return updatedService, undoUpdateFunc, nil
+}
+
+// Creates a persistent volume claim that the expander job will write all its expansions to
+func (backend *KubernetesKurtosisBackend) createFilesArtifactsExpansionPersistentVolumeClaim(
+	ctx context.Context,
+	namespaceName string,
+	expansionVolumeSizeInMegabytes uint,
+	storageClass string,
+	serviceGuid service.ServiceGUID,
+	enclaveObjAttrsProvider object_attributes_provider.KubernetesEnclaveObjectAttributesProvider,
+) (*apiv1.PersistentVolumeClaim, error) {
+	pvcAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactsExpansionPersistentVolumeClaim(serviceGuid)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion persistent volume claim for service '%v'", serviceGuid)
+	}
+	pvcNameStr := pvcAttrs.GetName().GetString()
+	pvcLabelsStr := getStringMapFromLabelMap(pvcAttrs.GetLabels())
+	pvcAnnotationsStrs := getStringMapFromAnnotationMap(pvcAttrs.GetAnnotations())
+
+	pvc, err := backend.kubernetesManager.CreatePersistentVolumeClaim(
+		ctx,
+		namespaceName,
+		pvcNameStr,
+		pvcLabelsStr,
+		pvcAnnotationsStrs,
+		expansionVolumeSizeInMegabytes,
+		storageClass,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating files artifact expansion persistent volume claim for service '%v'",
+			serviceGuid,
+		)
+	}
+	return pvc, nil
 }

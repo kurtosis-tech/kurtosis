@@ -329,8 +329,20 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred getting API containers and volumes")
 	}
 
+	apiContainerInitContainers := []apiv1.Container{}
+
 	// Create pods with api container containers and volumes in Kubernetes
-	apiContainerPod, err := backend.kubernetesManager.CreatePod(ctx, enclaveNamespaceName, apiContainerPodName, apiContainerPodLabels, apiContainerPodAnnotations, apiContainerContainers, apiContainerVolumes, apiContainerServiceAccountName)
+	apiContainerPod, err := backend.kubernetesManager.CreatePod(
+		ctx,
+		enclaveNamespaceName,
+		apiContainerPodName,
+		apiContainerPodLabels,
+		apiContainerPodAnnotations,
+		apiContainerInitContainers,
+		apiContainerContainers,
+		apiContainerVolumes,
+		apiContainerServiceAccountName,
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", apiContainerPodName, enclaveNamespaceName, image)
 	}

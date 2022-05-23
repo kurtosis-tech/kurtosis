@@ -6,6 +6,7 @@
 package kubernetes_manager
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -22,7 +23,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -37,7 +37,7 @@ import (
 )
 
 const (
-	defaultPersistentVolumeClaimAccessMode = apiv1.ReadWriteMany
+	defaultPersistentVolumeClaimAccessMode = apiv1.ReadWriteOnce
 	binaryMegabytesSuffix         		   = "Mi"
 	uintToIntStringConversionBase		   = 10
 
@@ -47,7 +47,6 @@ const (
 
 	podWaitForAvailabilityTimeout = 15 * time.Minute
 	podWaitForAvailabilityTimeBetweenPolls = 500 * time.Millisecond
-	resourceDeletionTimeoutInSeconds = 30 * time.Second
 
 	// This is a container "reason" (machine-readable string) indicating that the container has some issue with
 	// pulling the image (usually, a typo in the image name or the image doesn't exist)
@@ -64,11 +63,13 @@ const (
 	shouldAllocatedStderrOnPodExec = true
 	shouldAllocateTtyOnPodExec = false
 
-	objectNameMetadataField = "metadata.name"
 	successExecCommandExitCode = 0
 
 	// This is the owner string we'll use when updating fields
 	fieldManager = "kurtosis"
+
+	shouldFollowContainerLogsWhenPrintingPodInfo = false
+	shouldAddTimestampsWhenPrintingPodInfo = true
 )
 
 var (
@@ -202,6 +203,7 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 	namespace string,
 	persistentVolumeClaimName string,
 	persistentVolumeClaimLabels map[string]string,
+	persistentVolumeClaimAnnotations map[string]string,
 	volumeSizeInMegabytes uint,
 	storageClassName string,
 ) (*apiv1.PersistentVolumeClaim, error) {
@@ -684,6 +686,7 @@ func (manager *KubernetesManager) CreatePod(
 	podName string,
 	podLabels map[string]string,
 	podAnnotations map[string]string,
+	initContainers []apiv1.Container,
 	podContainers []apiv1.Container,
 	podVolumes []apiv1.Volume,
 	podServiceAccountName string,
@@ -697,6 +700,7 @@ func (manager *KubernetesManager) CreatePod(
 	}
 	podSpec := apiv1.PodSpec{
 		Volumes:    podVolumes,
+		InitContainers: initContainers,
 		Containers: podContainers,
 		ServiceAccountName: podServiceAccountName,
 		// We don't want Kubernetes auto-magically restarting our containers if they fail
@@ -1084,20 +1088,21 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 				}
 			}
 		case apiv1.PodFailed:
-			containerStatusStrs := renderContainerStatuses(latestPodStatus.ContainerStatuses, containerStatusLineBulletPoint)
+			podStateStr := manager.getPodInfoBlockStr(ctx, namespaceName, pod)
 			return stacktrace.NewError(
-				"Pod '%v' failed before availability with the following message: %v\n" +
-					"The pod's container states are as follows:\n%v",
+				"Pod '%v' failed before availability with the following state:\n%v",
 				podName,
-				latestPodStatus.Message,
-				strings.Join(containerStatusStrs, "\n"),
+				podStateStr,
 			)
 		case apiv1.PodSucceeded:
+			podStateStr := manager.getPodInfoBlockStr(ctx, namespaceName, pod)
 			// NOTE: We'll need to change this if we ever expect to run one-off pods
 			return stacktrace.NewError(
-				"Expected the pod state to arrive at '%v' but the pod instead landed in '%v'",
+				"Expected state of pod '%v' to arrive at '%v' but the pod instead landed in '%v' with the following state:\n%v",
+				podName,
 				apiv1.PodRunning,
 				apiv1.PodSucceeded,
+				podStateStr,
 			)
 		}
 		time.Sleep(podWaitForAvailabilityTimeBetweenPolls)
@@ -1113,6 +1118,66 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 		latestPodStatus.Message,
 		strings.Join(containerStatusStrs, "\n"),
 	)
+}
+
+func (manager *KubernetesManager) getPodInfoBlockStr(
+	ctx context.Context,
+	namespaceName string,
+	pod *apiv1.Pod,
+) string {
+	podName := pod.Name
+
+	// TODO Parallelize to increase perf? But make sure we don't explode memory with huge pod logs
+	// We go through all this work so that the user can get detailed information about their pod without needing to dive
+	// through the Kubernetes API
+	resultStrBuilder := strings.Builder{}
+	resultStrBuilder.WriteString(fmt.Sprintf(
+		">>>>>>>>>>>>>>>>>>>>>>>>>> Pod %v <<<<<<<<<<<<<<<<<<<<<<<<<<\n",
+		podName,
+	))
+	resultStrBuilder.WriteString("Container Statuses:")
+	for _, containerStatusStr := range renderContainerStatuses(pod.Status.ContainerStatuses, containerStatusLineBulletPoint) {
+		resultStrBuilder.WriteString(containerStatusStr)
+		resultStrBuilder.WriteString("\n")
+	}
+	resultStrBuilder.WriteString("\n")
+	for _, podContainer := range pod.Spec.Containers {
+		containerName := podContainer.Name
+
+		resultStrBuilder.WriteString(fmt.Sprintf(
+			"-------------------- Container %v Logs --------------------\n",
+			podContainer.Name,
+		))
+
+		containerLogsStr := manager.getSingleContainerLogs(ctx, namespaceName, podName, containerName)
+		resultStrBuilder.WriteString(containerLogsStr)
+		resultStrBuilder.WriteString("\n")
+
+		resultStrBuilder.WriteString(fmt.Sprintf(
+			"------------------ End Container %v Logs ---------------------\n",
+			containerName,
+		))
+	}
+	resultStrBuilder.WriteString(fmt.Sprintf(
+		">>>>>>>>>>>>>>>>>>>>>>>> End Pod %v <<<<<<<<<<<<<<<<<<<<<<<<<<<",
+		pod.Name,
+	))
+
+	return resultStrBuilder.String()
+}
+
+func (manager *KubernetesManager) getSingleContainerLogs(ctx context.Context, namespaceName string, podName string, containerName string) string {
+	containerLogs, err := manager.GetContainerLogs(ctx, namespaceName, podName, containerName, shouldFollowContainerLogsWhenPrintingPodInfo, shouldAddTimestampsWhenPrintingPodInfo)
+	defer containerLogs.Close()
+	if err != nil {
+		return fmt.Sprintf("Cannot display container logs because an error occurred getting the logs:\n%v", err)
+	}
+
+	buffer := &bytes.Buffer{}
+	if _, copyErr := io.Copy(buffer, containerLogs); copyErr != nil {
+		return fmt.Sprintf("Cannot display container logs because an error occurred saving the logs to memory:\n%v", err)
+	}
+	return buffer.String()
 }
 
 func renderContainerStatuses(containerStatuses []apiv1.ContainerStatus, prefixStr string) []string {
@@ -1166,47 +1231,6 @@ func renderContainerStatuses(containerStatuses []apiv1.ContainerStatus, prefixSt
 	return containerStatusStrs
 }
 
-
-/*
-func getRetryWatcherForWatchFunc(watchFunc cache.WatchFunc, resourceVersion string) (*watch.RetryWatcher, error) {
-	retryWatcher, err := watch.NewRetryWatcher(resourceVersion, &cache.ListWatch{WatchFunc: watchFunc})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to create a retry watcher for resource deletion, instead a non-nil error was returned")
-	}
-	return retryWatcher, nil
-}
-func waitForResourceDeletion(ctx context.Context, retryWatcher *watch.RetryWatcher) error {
-	for {
-		select {
-		case resourceEvent := <-retryWatcher.ResultChan():
-			if resourceEvent.Type == apiwatch.Deleted {
-				return nil
-			}
-		case <-retryWatcher.Done():
-			return stacktrace.NewError("Expected to be able to wait for resource deletion, instead the watcher's result channel was closed before we could verify resource deletion.")
-		case <- time.After(resourceDeletionTimeoutInSeconds):
-			return stacktrace.NewError("Timed out waiting for resource deletion, '%s' seconds passed with no message from our resource watcher", resourceDeletionTimeoutInSeconds)
-		case <-ctx.Done():
-			return stacktrace.NewError("Process cancelled by user")
-		}
-	}
-}
- */
-
-func getWatchListOptionsForObject(resourceListOptions string) metav1.ListOptions {
-	timeoutInSeconds := int64(resourceDeletionTimeoutInSeconds)
-	return metav1.ListOptions{
-		TimeoutSeconds: &timeoutInSeconds,
-		FieldSelector: getFieldSelectorForObjectName(resourceListOptions),
-	}
-}
-
-func getFieldSelectorForObjectName(objectName string) string {
-	return fields.SelectorFromSet(map[string]string {
-		objectNameMetadataField : objectName,
-	}).String()
-}
-
 // Kubernetes doesn't seem to have a nice API for getting back the exit code of a command (though this seems strange??),
 // so we have to parse it out of a status message
 func getExitCodeFromStatusMessage(statusMessage string) (int32, error){
@@ -1236,3 +1260,4 @@ func getExitCodeFromStatusMessage(statusMessage string) (int32, error){
 	codeAsInt32 := int32(codeAsInt64)
 	return codeAsInt32, nil
 }
+

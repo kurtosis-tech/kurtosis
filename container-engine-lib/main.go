@@ -96,7 +96,9 @@ func runKurtosisBackendTesting() error {
 	}
 
 	 */
-	backend, err := lib.GetCLIKubernetesKurtosisBackend(ctx)
+
+
+	_, err := lib.GetCLIKubernetesKurtosisBackend(ctx)
 	if err != nil {
 		return err
 	}
@@ -105,11 +107,14 @@ func runKurtosisBackendTesting() error {
 	// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv Arbitrary logic goes here vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 	// enclaveId := enclave.EnclaveID("test")  // TODO Make this whatever you need
 	// serviceGuid := service.ServiceGUID("TODO")
+	/*
 	results, err := backend.CreateFilesArtifactExpansion(ctx, "test", "TODO", "/foo/bar")
 	if err != nil {
 		return err
 	}
 	fmt.Println(results)
+
+	 */
 
 
 	return nil

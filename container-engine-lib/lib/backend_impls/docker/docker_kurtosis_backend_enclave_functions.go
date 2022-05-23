@@ -643,10 +643,10 @@ func dumpContainerInfo(
 	}
 	defer logsOutputFp.Close()
 
-	// TODO Figure out a way to abstract this!!! This check-if-the-container-is-TTY-and-use-io.Copy-if-so-and-stdcopy-if-not
+	// TODO Push this down into DockerManager as this is copied in multiple places!!! This check-if-the-container-is-TTY-and-use-io.Copy-if-so-and-stdcopy-if-not
 	//  is copied straight from the Docker CLI, but it REALLY sucks that a Kurtosis dev magically needs to know that that's what
 	//  they have to do if they want to read container logs
-	// If we don't have this, reading the logs from REPL container breaks
+	// If we don't have this, reading the logs from a TTY container breaks
 	if inspectResult.Config.Tty {
 		if _, err := io.Copy(logsOutputFp, containerLogsReadCloser); err != nil {
 			return stacktrace.Propagate(
