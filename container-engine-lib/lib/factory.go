@@ -41,10 +41,9 @@ func GetCLIKubernetesKurtosisBackend(ctx context.Context) (backend_interface.Kur
 	return wrappedBackend, nil
 }
 
+
 func GetEngineServerKubernetesKurtosisBackend(
 	ctx context.Context,
-	volumeStorageClassName string,
-	enclaveDataVolumeSizeInMegabytes uint,
 ) (backend_interface.KurtosisBackend, error) {
 	kubernetesConfig, err := rest.InClusterConfig()
 	if err != nil {
@@ -54,8 +53,6 @@ func GetEngineServerKubernetesKurtosisBackend(
 	backendSupplier := func(_ context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*kubernetes_backend.KubernetesKurtosisBackend, error) {
 		return kubernetes_backend.NewEngineServerKubernetesKurtosisBackend(
 			kubernetesManager,
-			volumeStorageClassName,
-			enclaveDataVolumeSizeInMegabytes,
 		), nil
 	}
 
@@ -73,8 +70,6 @@ func GetEngineServerKubernetesKurtosisBackend(
 
 func GetApiContainerKubernetesKurtosisBackend(
 	ctx context.Context,
-	volumeStorageClassName string,
-	filesArtifactExpansionVolumeSizeInMegabytes uint,
 ) (backend_interface.KurtosisBackend, error) {
 	kubernetesConfig, err := rest.InClusterConfig()
 	if err != nil {
@@ -107,8 +102,6 @@ func GetApiContainerKubernetesKurtosisBackend(
 			kubernetesManager,
 			enclaveId,
 			namespaceName,
-			volumeStorageClassName,
-			filesArtifactExpansionVolumeSizeInMegabytes,
 		), nil
 	}
 

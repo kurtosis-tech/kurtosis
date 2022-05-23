@@ -195,6 +195,7 @@ func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, names
 }
 
 // ---------------------------Volumes------------------------------------------------------------------------------
+// TODO Delete this after 2022-08-01 if we're still not using PersistentVolumeClaims
 /*
 func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 	ctx context.Context,
@@ -889,6 +890,7 @@ func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string,
 }
 
 
+// TODO Delete this after 2022-08-01 if we're not using Jobs
 /*
 func (manager *KubernetesManager) CreateJobWithContainerAndVolume(ctx context.Context,
 	namespaceName string,
@@ -1015,6 +1017,7 @@ func transformTypedAnnotationsToStrs(input map[*kubernetes_annotation_key.Kubern
 	return result
 }
 
+// TODO Delete this after 2022-08-01 if we're still not using PersistentVolumeClaims
 /*
 func (manager *KubernetesManager) waitForPersistentVolumeClaimBinding(
 	ctx context.Context,
