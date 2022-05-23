@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	defaultKubernetesEnclaveDataVolumeSizeInMegabytes = uint(10)
+	defaultKubernetesEnclaveDataVolumeSizeInMegabytes = uint(1024)
 )
 
 // Nil because the CLI will never operate in API container mode
