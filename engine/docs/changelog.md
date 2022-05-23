@@ -1,5 +1,13 @@
 # TBD
 
+# 1.24.0
+### Fixes
+* Upgraded to container-engine-lib 0.31.0 and core 1.52.0 (seems there were some oddities going on with dependencies)
+
+### Breaking Changes
+* Upgrade to Core 1.52.0
+    * Users will need to restart their enclaves
+
 # 1.23.0
 ### Changes
 * Upgraded to container-engine-lib 0.31.0 and core 1.51.1, which uses a rewritten files artifact expansion engine to allow for `ReadWriteOnce` volumes in Kubernetes
