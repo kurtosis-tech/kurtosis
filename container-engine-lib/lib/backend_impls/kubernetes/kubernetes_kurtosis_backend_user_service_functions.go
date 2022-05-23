@@ -82,6 +82,8 @@ const (
 
 	tarSuccessExitCode = 0
 
+	filesArtifactExpansionVolumeName = "files-artifact-expansion"
+
 	isFilesArtifactExpansionVolumeReadOnly = false
 )
 
@@ -269,8 +271,18 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	var podInitContainers []apiv1.Container
 	var podVolumes []apiv1.Volume
 	var userServiceContainerVolumeMounts []apiv1.VolumeMount
-	shouldDeleteExpansionPvc := true
+	// shouldDeleteExpansionPvc := true
 	if filesArtifactsExpansion != nil {
+		podVolumes, userServiceContainerVolumeMounts, podInitContainers, err = backend.prepareFilesArtifactsExpansionResources(
+			ctx,
+			namespaceName,
+			serviceGuid,
+			enclaveObjAttributesProvider,
+			filesArtifactsExpansion.ExpanderImage,
+			filesArtifactsExpansion.ExpanderEnvVars,
+			filesArtifactsExpansion.ExpanderDirpathsToServiceDirpaths,
+		)
+		/*
 		filesArtifactsExpansionPvc, podVolumes, userServiceContainerVolumeMounts, podInitContainers, err = backend.prepareFilesArtifactsExpansionResources(
 			ctx,
 			namespaceName,
@@ -298,6 +310,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 				}
 			}
 		}()
+		 */
 	}
 
 	// Create the pod
@@ -377,7 +390,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		)
 	}
 
-	shouldDeleteExpansionPvc = false
+	// shouldDeleteExpansionPvc = false
 	shouldDestroyPod = false
 	shouldUndoServiceUpdate = false
 	return objectsAndResources.service, nil
@@ -1094,7 +1107,7 @@ func (backend *KubernetesKurtosisBackend) prepareFilesArtifactsExpansionResource
 	expanderEnvVars map[string]string,
 	expanderDirpathsToUserServiceDirpaths map[string]string,
 ) (
-	resultFilesArtifactExpansionPvc *apiv1.PersistentVolumeClaim,
+	// resultFilesArtifactExpansionPvc *apiv1.PersistentVolumeClaim,
 	resultPodVolumes []apiv1.Volume,
 	resultUserServiceContainerVolumeMounts []apiv1.VolumeMount,
 	resultPodInitContainers []apiv1.Container,
@@ -1102,16 +1115,27 @@ func (backend *KubernetesKurtosisBackend) prepareFilesArtifactsExpansionResource
 ) {
 	apiContainerArgs := backend.apiContainerModeArgs
 	if apiContainerArgs == nil {
+		/*
 		return nil, nil, nil, nil, stacktrace.NewError(
 			"Received request to start service '%v' with files artifact expansions, but no API container mode " +
 				"args were defined which are necessary for creating the files artifacts expansion volume",
 			serviceGuid,
 		)
+		 */
+		return nil, nil, nil, stacktrace.NewError(
+			"Received request to start service '%v' with files artifact expansions, but no API container mode " +
+				"args were defined which are necessary for creating the files artifacts expansion volume",
+			serviceGuid,
+		)
 	}
+
+	/*
 	storageClass := apiContainerArgs.storageClassName
 	expansionVolumeSizeMb := apiContainerArgs.filesArtifactExpansionVolumeSizeInMegabytes
+	 */
 
 
+	/*
 	pvc, err := backend.createFilesArtifactsExpansionPersistentVolumeClaim(
 		ctx,
 		namespaceName,
@@ -1143,16 +1167,15 @@ func (backend *KubernetesKurtosisBackend) prepareFilesArtifactsExpansionResource
 		}
 	}()
 
+
 	underlyingVolumeName := pvc.Spec.VolumeName
+	*/
 
 	podVolumes := []apiv1.Volume{
 		{
-			Name: underlyingVolumeName,
+			Name: filesArtifactExpansionVolumeName,
 			VolumeSource: apiv1.VolumeSource{
-				PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
-					ClaimName: pvc.Name,
-					ReadOnly:  isFilesArtifactExpansionVolumeReadOnly,
-				},
+				EmptyDir: &apiv1.EmptyDirVolumeSource{},
 			},
 		},
 	}
@@ -1164,7 +1187,7 @@ func (backend *KubernetesKurtosisBackend) prepareFilesArtifactsExpansionResource
 		subdirName := strconv.Itoa(volumeSubdirIndex)
 
 		expanderContainerMount := apiv1.VolumeMount{
-			Name:             underlyingVolumeName,
+			Name:             filesArtifactExpansionVolumeName,
 			ReadOnly:         isFilesArtifactExpansionVolumeReadOnly,
 			MountPath:        requestedExpanderDirpath,
 			SubPath:          subdirName,
@@ -1172,7 +1195,7 @@ func (backend *KubernetesKurtosisBackend) prepareFilesArtifactsExpansionResource
 		volumeMountsOnExpanderContainer = append(volumeMountsOnExpanderContainer, expanderContainerMount)
 
 		userServiceContainerMount := apiv1.VolumeMount{
-			Name:             underlyingVolumeName,
+			Name:             filesArtifactExpansionVolumeName,
 			ReadOnly:         isFilesArtifactExpansionVolumeReadOnly,
 			MountPath:        requestedUserServiceDirpath,
 			SubPath:          subdirName,
@@ -1192,8 +1215,9 @@ func (backend *KubernetesKurtosisBackend) prepareFilesArtifactsExpansionResource
 		filesArtifactExpansionInitContainer,
 	}
 
-	shouldDeleteExpansionPvc = false
-	return pvc, podVolumes, volumeMountsOnUserServiceContainer, podInitContainers, nil
+	// shouldDeleteExpansionPvc = false
+	// return pvc, podVolumes, volumeMountsOnUserServiceContainer, podInitContainers, nil
+	return podVolumes, volumeMountsOnUserServiceContainer, podInitContainers, nil
 }
 
 func getFilesArtifactExpansionInitContainerSpecs(
