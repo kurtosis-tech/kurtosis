@@ -41,7 +41,7 @@ const (
 	shouldFlushMetricsClientQueueOnEachEvent = false
 
 	// TODO PASS THIS IN AS A PROPER ARGUMENT!
-	filesArtifactExpansionVolumeSizeInMegabytes = uint(10)
+	filesArtifactExpansionVolumeSizeInMegabytes = uint(1024)
 )
 
 type doNothingMetricsClientCallback struct{}
