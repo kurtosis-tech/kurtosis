@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220523132324-dbcfe6925681
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220523135359-0885b7a6526d
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
 	google.golang.org/grpc v1.41.0
