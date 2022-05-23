@@ -116,38 +116,38 @@ func run(
 	keyValuePrinter.Print()
 	fmt.Fprintln(logrus.StandardLogger().Out, "")
 
-	sortedEnclaveObjHeaders := []string{}
-	for header := range enclaveObjectPrintingFuncs {
-		sortedEnclaveObjHeaders = append(sortedEnclaveObjHeaders, header)
-	}
-	sort.Strings(sortedEnclaveObjHeaders)
+	if enclaveApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING {
+		sortedEnclaveObjHeaders := []string{}
+		for header := range enclaveObjectPrintingFuncs {
+			sortedEnclaveObjHeaders = append(sortedEnclaveObjHeaders, header)
+		}
+		sort.Strings(sortedEnclaveObjHeaders)
 
-	headersWithPrintErrs := []string{}
-	for _, header := range sortedEnclaveObjHeaders {
-		printingFunc, found := enclaveObjectPrintingFuncs[header]
-		if !found {
-			return stacktrace.NewError("No printing function found for enclave object '%v'; this is a bug in Kurtosis!", header)
+		headersWithPrintErrs := []string{}
+		for _, header := range sortedEnclaveObjHeaders {
+			printingFunc, found := enclaveObjectPrintingFuncs[header]
+			if !found {
+				return stacktrace.NewError("No printing function found for enclave object '%v'; this is a bug in Kurtosis!", header)
+			}
+
+			numRunesInHeader := utf8.RuneCountInString(header) + 2 // 2 because there will be a space before and after the header
+			numPadChars := (headerWidthChars - numRunesInHeader) / 2
+			padStr := strings.Repeat(headerPadChar, numPadChars)
+			fmt.Println(fmt.Sprintf("%v %v %v", padStr, header, padStr))
+
+			if err := printingFunc(ctx, *enclaveInfo); err != nil {
+				logrus.Error(err)
+				headersWithPrintErrs = append(headersWithPrintErrs, header)
+			}
+			fmt.Println("")
 		}
 
-		numRunesInHeader := utf8.RuneCountInString(header) + 2 // 2 because there will be a space before and after the header
-		numPadChars := (headerWidthChars - numRunesInHeader) / 2
-		padStr := strings.Repeat(headerPadChar, numPadChars)
-		fmt.Println(fmt.Sprintf("%v %v %v", padStr, header, padStr))
-
-
-		if err := printingFunc(ctx, *enclaveInfo); err != nil {
-			logrus.Error(err)
-			headersWithPrintErrs = append(headersWithPrintErrs, header)
+		if len(headersWithPrintErrs) > 0 {
+			return stacktrace.NewError(
+				"Errors occurred printing the following enclave elements: %v",
+				strings.Join(headersWithPrintErrs, ", "),
+			)
 		}
-		fmt.Println("")
 	}
-
-	if len(headersWithPrintErrs) > 0 {
-		return stacktrace.NewError(
-			"Errors occurred printing the following enclave elements: %v",
-			strings.Join(headersWithPrintErrs, ", "),
-		)
-	}
-
 	return nil
 }
