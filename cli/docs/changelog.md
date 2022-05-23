@@ -2,6 +2,9 @@
 ### Features
 * Cluster config validation failures print out the name of the failed cluster
 
+### Fixes
+* Fix bug where enclave data volume size was getting force-overwritten if and only if it was set
+
 # 0.19.0
 ### Fixes
 * Fixes bugs that were happening with API container's gRPC wire format
