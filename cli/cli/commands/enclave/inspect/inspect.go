@@ -42,7 +42,6 @@ const (
 	engineClientCtxKey  = "engine-client"
 )
 
-// TODO TODO TODO CHANGE THIS SIGNATURE SO THAT IT MATCHES MODULE AND USER SERVICES SIGNATURE
 var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, enclaveInfo kurtosis_engine_rpc_api_bindings.EnclaveInfo) error{
 	"User Services":     printUserServices,
 	"Kurtosis Modules":  printModules,
