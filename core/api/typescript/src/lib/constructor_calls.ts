@@ -25,7 +25,13 @@ import {
     StoreFilesArtifactFromServiceArgs,
     UploadFilesArtifactArgs,
     PauseServiceArgs,
-    UnpauseServiceArgs, ModuleInfo, ServiceInfo, RemoveServiceResponse, UnloadModuleResponse
+    UnpauseServiceArgs,
+    ModuleInfo,
+    ServiceInfo,
+    RemoveServiceResponse,
+    UnloadModuleResponse,
+    GetModulesResponse,
+    GetServicesResponse
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceID } from './services/service';
 import { PartitionID } from './enclaves/enclave_context';
@@ -97,18 +103,29 @@ export function newGetModulesArgs(moduleIds: Map<string, boolean>): GetModulesAr
     return result;
 }
 
+export function newGetModulesResponse(moduleInfoMap: Map<string, ModuleInfo>): GetModulesResponse {
+    const result: GetModulesResponse = new GetModulesResponse();
+    const resultModuleInfoMap: jspb.Map<string, ModuleInfo> = result.getModuleInfoMap();
+    for (const [moduleId, moduleInfo] of moduleInfoMap) {
+        resultModuleInfoMap.set(moduleId, moduleInfo);
+    }
+
+    return result;
+}
+
+
 export function newModuleInfo(
     guid: string,
-    publicGrpcPort: Port,
+    privateIpAddr: string,
     privateGrpcPort: Port,
-    publicIpAddr: string,
-    privateIpAddr: string): ModuleInfo {
+    maybePublicIpAddr: string,
+    maybePublicGrpcPort: Port,): ModuleInfo {
     const result: ModuleInfo = new ModuleInfo();
     result.setGuid(guid)
-    result.setMaybePublicGrpcPort(publicGrpcPort)
-    result.setPrivateGrpcPort(privateGrpcPort)
-    result.setMaybePublicIpAddr(publicIpAddr)
     result.setPrivateIpAddr(privateIpAddr)
+    result.setPrivateGrpcPort(privateGrpcPort)
+    result.setMaybePublicIpAddr(maybePublicIpAddr)
+    result.setMaybePublicGrpcPort(maybePublicGrpcPort)
 
     return result
 }
@@ -168,21 +185,31 @@ export function newStartServiceArgs(
 // ==============================================================================================
 //                                       Get Services
 // ==============================================================================================
-export function newGetServicesArgs(services: Map<string, boolean>): GetServicesArgs{
+export function newGetServicesArgs(serviceIds: Map<string, boolean>): GetServicesArgs{
     const result: GetServicesArgs = new GetServicesArgs();
-    const serviceIdMap: jspb.Map<string, boolean> = result.getServiceIdsMap()
-    for (const [serviceId, booleanVal] of services) {
-        serviceIdMap.set(serviceId, booleanVal);
+    const resultServiceIdMap: jspb.Map<string, boolean> = result.getServiceIdsMap()
+    for (const [serviceId, booleanVal] of serviceIds) {
+        resultServiceIdMap.set(serviceId, booleanVal);
     }
 
     return result;
 }
 
+export function newGetServicesResponse(serviceInfoMap: Map<string,ServiceInfo>): GetServicesResponse{
+    const result: GetServicesResponse = new GetServicesResponse();
+    const resultServiceMap: jspb.Map<string,ServiceInfo> = result.getServiceInfoMap()
+    for (const [serviceId, serviceInfo] of serviceInfoMap) {
+        resultServiceMap.set(serviceId, serviceInfo)
+    }
+
+    return result
+}
+
 export function newServiceInfo(
     serviceGuid: string,
-    maybePublicIpAddr: string,
     privateIpAddr: string,
     privatePorts: Map<string, Port>,
+    maybePublicIpAddr: string,
     maybePublicPorts: Map<string, Port>,
 ): ServiceInfo {
     const result: ServiceInfo = new ServiceInfo();
@@ -214,9 +241,9 @@ export function newRemoveServiceArgs(serviceId: ServiceID, containerStopTimeoutS
     return result;
 }
 
-export function newRemoveServiceResponse(guid: string): RemoveServiceResponse {
+export function newRemoveServiceResponse(serviceGuid: string): RemoveServiceResponse {
     const result: RemoveServiceResponse = new RemoveServiceResponse();
-    result.setServiceGuid(guid)
+    result.setServiceGuid(serviceGuid)
     return result
 }
 
