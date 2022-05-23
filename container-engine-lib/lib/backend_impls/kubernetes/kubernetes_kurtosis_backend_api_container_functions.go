@@ -319,7 +319,6 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred getting container ports from the API container's private port specs")
 	}
 
-	// apiContainerContainers, apiContainerVolumes, err := getApiContainerContainersAndVolumes(image, containerPorts, envVarsWithOwnIp, enclaveDataPersistentVolumeClaim, enclaveDataVolumeDirpath)
 	apiContainerContainers, apiContainerVolumes, err := getApiContainerContainersAndVolumes(image, containerPorts, envVarsWithOwnIp, enclaveDataVolumeDirpath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting API containers and volumes")
@@ -912,7 +911,6 @@ func getApiContainerContainersAndVolumes(
 	containerImageAndTag string,
 	containerPorts []apiv1.ContainerPort,
 	envVars map[string]string,
-	// enclaveDataPersistentVolumeClaim *apiv1.PersistentVolumeClaim,
 	enclaveDataVolumeDirpath string,
 ) (
 	resultContainers []apiv1.Container,
@@ -951,7 +949,6 @@ func getApiContainerContainersAndVolumes(
 			Ports: containerPorts,
 			VolumeMounts: []apiv1.VolumeMount{
 				{
-					// Name:      enclaveDataPersistentVolumeClaim.Spec.VolumeName,
 					Name:      enclaveDataDirVolumeName,
 					MountPath: enclaveDataVolumeDirpath,
 				},
@@ -961,7 +958,6 @@ func getApiContainerContainersAndVolumes(
 
 	volumes := []apiv1.Volume{
 		{
-			// Name: enclaveDataPersistentVolumeClaim.Spec.VolumeName,
 			Name: enclaveDataDirVolumeName,
 			VolumeSource: apiv1.VolumeSource{
 				EmptyDir: &apiv1.EmptyDirVolumeSource{},
