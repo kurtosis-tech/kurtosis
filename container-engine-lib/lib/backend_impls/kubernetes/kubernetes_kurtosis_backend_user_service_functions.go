@@ -264,54 +264,21 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	namespaceName := kubernetesService.GetNamespace()
 	serviceRegistrationObj := matchingObjectAndResources.serviceRegistration
 
-	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
-	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
 
 	var filesArtifactsExpansionPvc *apiv1.PersistentVolumeClaim
 	var podInitContainers []apiv1.Container
 	var podVolumes []apiv1.Volume
 	var userServiceContainerVolumeMounts []apiv1.VolumeMount
-	// shouldDeleteExpansionPvc := true
 	if filesArtifactsExpansion != nil {
 		podVolumes, userServiceContainerVolumeMounts, podInitContainers, err = backend.prepareFilesArtifactsExpansionResources(
-			ctx,
-			namespaceName,
-			serviceGuid,
-			enclaveObjAttributesProvider,
 			filesArtifactsExpansion.ExpanderImage,
 			filesArtifactsExpansion.ExpanderEnvVars,
 			filesArtifactsExpansion.ExpanderDirpathsToServiceDirpaths,
 		)
-		/*
-		filesArtifactsExpansionPvc, podVolumes, userServiceContainerVolumeMounts, podInitContainers, err = backend.prepareFilesArtifactsExpansionResources(
-			ctx,
-			namespaceName,
-			serviceGuid,
-			enclaveObjAttributesProvider,
-			filesArtifactsExpansion.ExpanderImage,
-			filesArtifactsExpansion.ExpanderEnvVars,
-			filesArtifactsExpansion.ExpanderDirpathsToServiceDirpaths,
-		)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred preparing the files artifacts expansion resources")
-		}
-		defer func() {
-			if shouldDeleteExpansionPvc {
-				// Use background context so we delete these even if input context was cancelled
-				if err := backend.kubernetesManager.RemovePersistentVolumeClaim(context.Background(), filesArtifactsExpansionPvc); err != nil {
-					logrus.Errorf(
-						"Starting service '%v' didn't complete successfully so we tried to delete files artifact expansion PVC '%v' that we " +
-							"created, but doing so threw an error:\n%v",
-						serviceGuid,
-						filesArtifactsExpansionPvc.Name,
-						err,
-					)
-					logrus.Errorf("You'll need to delete PVC '%v' manually!", filesArtifactsExpansionPvc.Name)
-				}
-			}
-		}()
-		 */
 	}
+
+	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
+	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
 
 	// Create the pod
 	podAttributes, err := enclaveObjAttributesProvider.ForUserServicePod(serviceGuid, serviceRegistrationObj.GetID(), privatePorts)
@@ -390,7 +357,6 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		)
 	}
 
-	// shouldDeleteExpansionPvc = false
 	shouldDestroyPod = false
 	shouldUndoServiceUpdate = false
 	return objectsAndResources.service, nil
@@ -753,37 +719,6 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 				continue
 			}
 		}
-
-		/*
-		pvc := resources.filesArtifactExpansionPersistentVolumeClaim
-		if pvc != nil {
-			if err := backend.kubernetesManager.RemovePersistentVolumeClaim(ctx, pvc); err != nil {
-				erroredGuids[serviceGuid] = stacktrace.Propagate(
-					err,
-					"An error occurred removing files artifact expansion persistent volume claim for service '%v'",
-					serviceGuid,
-				)
-				continue
-			}
-		}
-
-		// Canonical resource; this must be deleted last!
-		kubernetesService := resources.service
-		if kubernetesService != nil {
-			if err := backend.kubernetesManager.RemoveService(ctx, kubernetesService); err != nil {
-				erroredGuids[serviceGuid] = stacktrace.Propagate(
-					err,
-					"An error occurred removing Kubernetes service '%v' in namespace '%v'",
-					kubernetesService.Name,
-					namespaceName,
-				)
-				continue
-			}
-		}
-		// WARNING: DO NOT ADD ANYTHING HERE! The Service must be deleted as the very last thing as it's the canonical resource for the Kurtosis Service
-		successfulGuids[serviceGuid] = true
-
-		 */
 	}
 	return successfulGuids, erroredGuids, nil
 }
@@ -976,42 +911,6 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 		results[serviceGuid] = resultObj
 	}
 
-	/*
-	// Get files artifact expansion persistent volume claims
-	matchingkubernetesPvcs, err := kubernetes_resource_collectors.CollectMatchingPersistentVolumeClaims(
-		ctx,
-		backend.kubernetesManager,
-		namespaceName,
-		kubernetesResourceSearchLabels,
-		label_key_consts.GUIDKubernetesLabelKey.GetString(),
-		postFilterLabelValues,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes PVCs matching service GUIDs: %+v", serviceGuids)
-	}
-	for serviceGuidStr, kubernetesPvcsForGuid := range matchingkubernetesPvcs {
-		logrus.Tracef("Found Kubernetes PVCs for GUID '%v': %+v", serviceGuidStr, kubernetesPvcsForGuid)
-		serviceGuid := service.ServiceGUID(serviceGuidStr)
-
-		numPvcsForGuid := len(kubernetesPvcsForGuid)
-		if numPvcsForGuid == 0 {
-			// This would indicate a bug in our PVC retrieval logic because we shouldn't even have a map entry if there's nothing matching it
-			return nil, stacktrace.NewError("Got entry of result PVCs for service GUID '%v', but no Kubernetes PVCs were returned; this is a bug in Kurtosis", serviceGuid)
-		}
-		if numPvcsForGuid > 1 {
-			return nil, stacktrace.NewError("Found %v Kubernetes PVCs associated with service GUID '%v'; this is a bug in Kurtosis", numPvcsForGuid, serviceGuid)
-		}
-		kubernetesPvc := kubernetesPvcsForGuid[0]
-
-		resultObj, found := results[serviceGuid]
-		if !found {
-			resultObj = &userServiceKubernetesResources{}
-		}
-		resultObj.filesArtifactExpansionPersistentVolumeClaim = kubernetesPvc
-		results[serviceGuid] = resultObj
-	}
-	 */
-
 	return results, nil
 }
 
@@ -1104,10 +1003,6 @@ func getUserServiceObjectsFromKubernetesResources(
 
 // NOTE: If this function succeeds, it is the user's responsibility to take care of the PersistentVolumeClaim that was created
 func (backend *KubernetesKurtosisBackend) prepareFilesArtifactsExpansionResources(
-	ctx context.Context,
-	namespaceName string,
-	serviceGuid service.ServiceGUID,
-	enclaveObjAttributesProvider object_attributes_provider.KubernetesEnclaveObjectAttributesProvider,
 	expanderImage string,
 	expanderEnvVars map[string]string,
 	expanderDirpathsToUserServiceDirpaths map[string]string,
@@ -1118,64 +1013,6 @@ func (backend *KubernetesKurtosisBackend) prepareFilesArtifactsExpansionResource
 	resultPodInitContainers []apiv1.Container,
 	resultErr error,
 ) {
-	apiContainerArgs := backend.apiContainerModeArgs
-	if apiContainerArgs == nil {
-		/*
-		return nil, nil, nil, nil, stacktrace.NewError(
-			"Received request to start service '%v' with files artifact expansions, but no API container mode " +
-				"args were defined which are necessary for creating the files artifacts expansion volume",
-			serviceGuid,
-		)
-		 */
-		return nil, nil, nil, stacktrace.NewError(
-			"Received request to start service '%v' with files artifact expansions, but no API container mode " +
-				"args were defined which are necessary for creating the files artifacts expansion volume",
-			serviceGuid,
-		)
-	}
-
-	/*
-	storageClass := apiContainerArgs.storageClassName
-	expansionVolumeSizeMb := apiContainerArgs.filesArtifactExpansionVolumeSizeInMegabytes
-	 */
-
-
-	/*
-	pvc, err := backend.createFilesArtifactsExpansionPersistentVolumeClaim(
-		ctx,
-		namespaceName,
-		expansionVolumeSizeMb,
-		storageClass,
-		serviceGuid,
-		enclaveObjAttributesProvider,
-	)
-	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating files artifact expansion persistent volume claim for service '%v'",
-			serviceGuid,
-		)
-	}
-	shouldDeleteExpansionPvc := true
-	defer func() {
-		if shouldDeleteExpansionPvc {
-			// Use background context so we delete these even if input context was cancelled
-			if err := backend.kubernetesManager.RemovePersistentVolumeClaim(context.Background(), pvc); err != nil {
-				logrus.Errorf(
-					"Running files artifact expansion didn't complete successfully so we tried to delete files artifact expansion PVC '%v' that we " +
-						"created, but doing so threw an error:\n%v",
-					pvc.Name,
-					err,
-				)
-				logrus.Errorf("You'll need to delete PVC '%v' manually!", pvc.Name)
-			}
-		}
-	}()
-
-
-	underlyingVolumeName := pvc.Spec.VolumeName
-	*/
-
 	podVolumes := []apiv1.Volume{
 		{
 			Name: filesArtifactExpansionVolumeName,
@@ -1220,8 +1057,6 @@ func (backend *KubernetesKurtosisBackend) prepareFilesArtifactsExpansionResource
 		filesArtifactExpansionInitContainer,
 	}
 
-	// shouldDeleteExpansionPvc = false
-	// return pvc, podVolumes, volumeMountsOnUserServiceContainer, podInitContainers, nil
 	return podVolumes, volumeMountsOnUserServiceContainer, podInitContainers, nil
 }
 
@@ -1406,41 +1241,3 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 	shouldUndoUpdate = false
 	return updatedService, undoUpdateFunc, nil
 }
-
-/*
-// Creates a persistent volume claim that the expander job will write all its expansions to
-func (backend *KubernetesKurtosisBackend) createFilesArtifactsExpansionPersistentVolumeClaim(
-	ctx context.Context,
-	namespaceName string,
-	expansionVolumeSizeInMegabytes uint,
-	storageClass string,
-	serviceGuid service.ServiceGUID,
-	enclaveObjAttrsProvider object_attributes_provider.KubernetesEnclaveObjectAttributesProvider,
-) (*apiv1.PersistentVolumeClaim, error) {
-	pvcAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactsExpansionPersistentVolumeClaim(serviceGuid)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion persistent volume claim for service '%v'", serviceGuid)
-	}
-	pvcNameStr := pvcAttrs.GetName().GetString()
-	pvcLabelsStr := getStringMapFromLabelMap(pvcAttrs.GetLabels())
-	pvcAnnotationsStrs := getStringMapFromAnnotationMap(pvcAttrs.GetAnnotations())
-
-	pvc, err := backend.kubernetesManager.CreatePersistentVolumeClaim(
-		ctx,
-		namespaceName,
-		pvcNameStr,
-		pvcLabelsStr,
-		pvcAnnotationsStrs,
-		expansionVolumeSizeInMegabytes,
-		storageClass,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating files artifact expansion persistent volume claim for service '%v'",
-			serviceGuid,
-		)
-	}
-	return pvc, nil
-}
- */
