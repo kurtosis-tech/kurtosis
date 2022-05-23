@@ -1,5 +1,10 @@
 # TBD
 
+# 0.20.1
+### Changes
+* Updated default kubernetes-enclave-data-volume-size to 1024Mb
+* Update to latest Kurtosis dependencies to switch to using EmptyDirs rather than PerstistentVolumeClaims
+
 # 0.20.0
 ### Breaking Changes
 * Upgraded to engine 1.25.4 and core 1.53.4
