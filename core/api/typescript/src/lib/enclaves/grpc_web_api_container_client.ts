@@ -9,7 +9,6 @@ import {
     RepartitionArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
     WaitForHttpPostEndpointAvailabilityArgs,
-    StartServiceResponse,
     GetServicesResponse,
     LoadModuleArgs,
     UnloadModuleArgs,
@@ -25,7 +24,12 @@ import {
     StoreWebFilesArtifactResponse,
     StoreWebFilesArtifactArgs,
     StoreFilesArtifactFromServiceArgs,
-    StoreFilesArtifactFromServiceResponse, GetServicesArgs, GetModulesArgs, UnloadModuleResponse, RemoveServiceResponse,
+    StoreFilesArtifactFromServiceResponse,
+    GetServicesArgs,
+    GetModulesArgs,
+    UnloadModuleResponse,
+    RemoveServiceResponse,
+    ServiceInfo, ModuleInfo,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -45,9 +49,9 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         return this.enclaveId;
     }
 
-    public async loadModule(loadModuleArgs: LoadModuleArgs): Promise<Result<null, Error>> {
-        const loadModulePromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.loadModule(loadModuleArgs, {}, (error: grpc_web.RpcError | null, response?: google_protobuf_empty_pb.Empty) => {
+    public async loadModule(loadModuleArgs: LoadModuleArgs): Promise<Result<ModuleInfo, Error>> {
+        const loadModulePromise: Promise<Result<ModuleInfo, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.loadModule(loadModuleArgs, {}, (error: grpc_web.RpcError | null, response?: ModuleInfo) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -59,12 +63,13 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
                 }
             })
         });
-        const loadModulePromiseResult: Result<google_protobuf_empty_pb.Empty, Error> = await loadModulePromise;
+        const loadModulePromiseResult: Result<ModuleInfo, Error> = await loadModulePromise;
         if (loadModulePromiseResult.isErr()) {
             return err(loadModulePromiseResult.error);
         }
+        const loadModuleResponse = loadModulePromiseResult.value
 
-        return ok(null);
+        return ok(loadModuleResponse);
     }
 
     public async unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<UnloadModuleResponse,Error>> {
@@ -113,9 +118,9 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         return ok(registerServiceResponse)
     }
 
-    public async startService(startServiceArgs: StartServiceArgs): Promise<Result<StartServiceResponse, Error>>{
-        const promiseStartService: Promise<Result<StartServiceResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.startService(startServiceArgs, {}, (error: grpc_web.RpcError | null, response?: StartServiceResponse) => {
+    public async startService(startServiceArgs: StartServiceArgs): Promise<Result<ServiceInfo, Error>>{
+        const promiseStartService: Promise<Result<ServiceInfo, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.startService(startServiceArgs, {}, (error: grpc_web.RpcError | null, response?: ServiceInfo) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -127,12 +132,12 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
                 }
             })
         });
-        const resultStartService: Result<StartServiceResponse, Error> = await promiseStartService;
+        const resultStartService: Result<ServiceInfo, Error> = await promiseStartService;
         if (resultStartService.isErr()) {
             return err(resultStartService.error);
         }
 
-        const startServiceResponse: StartServiceResponse = resultStartService.value;
+        const startServiceResponse: ServiceInfo = resultStartService.value;
         return ok(startServiceResponse)
     }
 
