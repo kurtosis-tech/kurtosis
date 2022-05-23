@@ -122,7 +122,7 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 		storageClass := *kubernetesConfig.StorageClass
 
 		enclaveDataVolumeSizeInMb := defaultKubernetesEnclaveDataVolumeSizeInMegabytes
-		if kubernetesConfig.EnclaveSizeInMegabytes == nil {
+		if kubernetesConfig.EnclaveSizeInMegabytes != nil {
 			enclaveDataVolumeSizeInMb = *kubernetesConfig.EnclaveSizeInMegabytes
 		}
 
