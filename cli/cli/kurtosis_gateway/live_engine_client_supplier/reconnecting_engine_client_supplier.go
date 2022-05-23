@@ -17,7 +17,7 @@ const (
 	pollInterval = 2 * time.Second
 )
 
-type currentEngineInfo struct {
+type engineInfo struct {
 	engineGuid engine.EngineGUID
 
 	proxyConn connection.GatewayConnectionToKurtosis
@@ -35,7 +35,7 @@ type LiveEngineClientSupplier struct {
 
 	connectionProvider *connection.GatewayConnectionProvider
 
-	currentInfo *currentEngineInfo
+	currentInfo *engineInfo
 
 	stopUpdaterSignalChan chan interface{}
 
@@ -97,6 +97,9 @@ func (supplier *LiveEngineClientSupplier) Stop() {
 
 }
 
+// This function will gather the current state of engines in the cluster and compare it with the current state of the
+// supplier. If necessary, the supplier's currently-tracked engine will be supplanted with the new running engine.
+// NOT thread-safe!
 func (supplier *LiveEngineClientSupplier) replaceEngineIfNecessary() {
 	runningEngineFilters := &engine.EngineFilters{
 		Statuses: map[container_status.ContainerStatus]bool{
@@ -108,32 +111,52 @@ func (supplier *LiveEngineClientSupplier) replaceEngineIfNecessary() {
 		logrus.Errorf("An error occurred finding running engines:\n%v", err)
 		return
 	}
-
 	if len(runningEngines) == 0 {
-		logrus.Infof("No engines are running so engine functionality won't be available")
+		// If no running engines, don't give out EngineClients (because they won't work)
+		closeEngineInfo(supplier.currentInfo)
+		supplier.currentInfo = nil
 		return
 	}
 	if len(runningEngines) > 1 {
 		logrus.Errorf("Found > 1 engine running, which should never happen")
 		return
 	}
+
 	var runningEngine *engine.Engine
 	for _, runningEngine = range runningEngines {}
 
+	// If we have no engine, we'll take anything we can get
+	if supplier.currentInfo == nil {
+		supplier.replaceCurrentEngineInfoBestEffort(runningEngine)
+		return
+	}
+
+	// No need to replace if it's the one we're already connected to
 	if supplier.currentInfo.engineGuid == runningEngine.GetGUID() {
 		return
 	}
 
-	
+	// If we get here, we must: a) have an engine that b) doesn't match the currently-running engine
+	// Therefore, replace
+	supplier.replaceCurrentEngineInfoBestEffort(runningEngine)
 }
 
-func (supplier *LiveEngineClientSupplier) replaceCurrentEngineInfo(newEngine *engine.Engine) {
+func (supplier *LiveEngineClientSupplier) replaceCurrentEngineInfoBestEffort(newEngine *engine.Engine) {
+	newProxyConn := supplier.connectionProvider.ForEngine(newEngine)
+
 	currentInfo := supplier.currentInfo
 
-	defer currentInfo.proxyConn.Stop()
-	defer currentInfo.grpcConn.Close()
+	currentProxy := currentInfo.proxyConn
+	currentGrpc := currentInfo.grpcConn
 
-	newProxyConn := supplier.connectionProvider.ForEngine(newEngine)
+	shouldCloseCurrentResources := false
+	defer func() {
+		if shouldCloseCurrentResources {
+			// Very important not to pass in supplier.currentInfo, else we'll close the new info after replacement!
+			closeEngineInfo(currentInfo)
+		}
+	}()
+
 	shouldDestroyNewProxy := true
 	defer func() {
 		if shouldDestroyNewProxy {
@@ -142,7 +165,7 @@ func (supplier *LiveEngineClientSupplier) replaceCurrentEngineInfo(newEngine *en
 	}()
 
 
-	newEngineInfo := &currentEngineInfo{
+	newEngineInfo := &engineInfo{
 		engineGuid:   currentInfo.engineGuid,
 		proxyConn:    nil,
 		grpcConn:     nil,
@@ -151,4 +174,10 @@ func (supplier *LiveEngineClientSupplier) replaceCurrentEngineInfo(newEngine *en
 	supplier.currentInfo = newEngineInfo
 
 	shouldDestroyNewProxy = false
+}
+
+func closeEngineInfo(info *engineInfo) {
+	// Ordering is important
+	info.grpcConn.Close()
+	info.proxyConn.Stop()
 }
