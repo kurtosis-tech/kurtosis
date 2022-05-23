@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Cluster config validation failures print out the name of the failed cluster
 
 # 0.19.0
 ### Fixes

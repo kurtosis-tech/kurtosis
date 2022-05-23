@@ -8,6 +8,7 @@ import (
 	v2 "github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/overrides_objects/v2"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/stacktrace"
+	"strings"
 )
 
 const (
@@ -24,7 +25,7 @@ type KurtosisClusterConfig struct {
 	engineBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 }
 
-func NewKurtosisClusterConfigFromOverrides(overrides *v2.KurtosisClusterConfigV2) (*KurtosisClusterConfig, error) {
+func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v2.KurtosisClusterConfigV2) (*KurtosisClusterConfig, error) {
 	if overrides.Type == nil {
 		return nil, stacktrace.NewError("Kurtosis cluster must have a defined type")
 	}
@@ -33,15 +34,16 @@ func NewKurtosisClusterConfigFromOverrides(overrides *v2.KurtosisClusterConfigV2
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"Unrecognized cluster type string '%v'; valid values are: %+v",
+			"Cluster '%v' has unrecognized type '%v'; valid values are: %+v",
+			clusterId,
 			*overrides.Type,
-			KurtosisClusterTypeStrings(),
+			strings.Join(KurtosisClusterTypeStrings(), ", "),
 		)
 	}
 
-	backendSupplier, engineBackendConfigSupplier, err := getSuppliers(clusterType, overrides.Config)
+	backendSupplier, engineBackendConfigSupplier, err := getSuppliers(clusterId, clusterType, overrides.Config)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the suppliers that the cluster config will use")
+		return nil, stacktrace.Propagate(err, "An error occurred getting the suppliers that cluster '%v' will use", clusterId)
 	}
 
 	return &KurtosisClusterConfig{
@@ -66,7 +68,7 @@ func (clusterConfig *KurtosisClusterConfig) GetEngineBackendConfigSupplier() (en
 // ====================================================================================================
 //                                      Private Helpers
 // ====================================================================================================
-func getSuppliers(clusterType KurtosisClusterType, kubernetesConfig *v2.KubernetesClusterConfigV2) (
+func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesConfig *v2.KubernetesClusterConfigV2) (
 	kurtosisBackendSupplier,
 	engine_server_launcher.KurtosisBackendConfigSupplier,
 	error,
@@ -76,7 +78,11 @@ func getSuppliers(clusterType KurtosisClusterType, kubernetesConfig *v2.Kubernet
 	switch clusterType {
 	case KurtosisClusterType_Docker:
 		if kubernetesConfig != nil {
-			return nil, nil, stacktrace.NewError("Cluster config must not be provided when cluster type is '%v'", clusterType.String())
+			return nil, nil, stacktrace.NewError(
+				"Cluster '%v' defines cluster config, but config must not be provided when cluster type is '%v'",
+				clusterId,
+				clusterType.String(),
+			)
 		}
 		backendSupplier = func(_ context.Context) (backend_interface.KurtosisBackend, error) {
 			backend, err := backend_creator.GetLocalDockerKurtosisBackend(dockerBackendApiContainerModeArgs)
@@ -89,11 +95,16 @@ func getSuppliers(clusterType KurtosisClusterType, kubernetesConfig *v2.Kubernet
 		engineConfigSupplier = engine_server_launcher.NewDockerKurtosisBackendConfigSupplier()
 	case KurtosisClusterType_Kubernetes:
 		if kubernetesConfig == nil {
-			return nil, nil, stacktrace.NewError("Cluster config must be provided when cluster type is '%v'", clusterType.String())
+			return nil, nil, stacktrace.NewError(
+				"Cluster '%v' doesn't define cluster config, but config must be provided when cluster type is '%v'",
+				clusterId,
+				clusterType.String(),
+			)
 		}
 		if kubernetesConfig.KubernetesClusterName == nil {
 			return nil, nil, stacktrace.NewError(
-				"Cluster type is '%v' but has no Kubernetes cluster name in its config map",
+				"Type of cluster '%v' is '%v' but has no Kubernetes cluster name in its config map",
+				clusterId,
 				clusterType,
 			)
 		}
@@ -103,7 +114,8 @@ func getSuppliers(clusterType KurtosisClusterType, kubernetesConfig *v2.Kubernet
 
 		if kubernetesConfig.StorageClass == nil {
 			return nil, nil, stacktrace.NewError(
-				"Cluster type is '%v' but has no storage class in its config map",
+				"Type of cluster '%v' is '%v' but no storage class was defined in the config",
+				clusterId,
 				clusterType,
 			)
 		}
@@ -119,7 +131,8 @@ func getSuppliers(clusterType KurtosisClusterType, kubernetesConfig *v2.Kubernet
 			if err != nil {
 				return nil, stacktrace.Propagate(
 					err,
-					"An error occurred getting a Kurtosis Kubernetes backend with storage class '%v' and enclave data volume size (in MB) '%v'",
+					"An error occurred getting a Kurtosis Kubernetes backend from cluster '%v' with storage class '%v' and enclave data volume size (in MB) '%v'",
+					clusterId,
 					storageClass,
 					enclaveDataVolumeSizeInMb,
 				)
@@ -131,7 +144,8 @@ func getSuppliers(clusterType KurtosisClusterType, kubernetesConfig *v2.Kubernet
 	default:
 		// This should never happen because we enforce this via unit tests
 		return nil, nil, stacktrace.NewError(
-			"No Kurtosis backend supplier definition for cluster type '%v'; this is a bug in Kurtosis",
+			"Cluster '%v' has unrecognized type '%v'; this is a bug in Kurtosis",
+			clusterId,
 			clusterType.String(),
 		)
 	}
