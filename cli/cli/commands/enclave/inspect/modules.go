@@ -20,8 +20,8 @@ import (
 
 const (
 	moduleGUIDColHeader  = "GUID"
-	modulePortsColHeader = "Ports"
-	defaultEmptyIPAddr = ""
+	modulePortsColHeader         = "Ports"
+	defaultEmptyIPAddrForModules = ""
 
 	grpcPortId = "grpc"
 )
@@ -44,7 +44,7 @@ func printModules(ctx context.Context, kurtosisBackend backend_interface.Kurtosi
 	// Pull module info from API container if it is running
 	moduleInfoMapFromAPIC := map[string]*kurtosis_core_rpc_api_bindings.ModuleInfo{}
 	if isAPIContainerRunning {
-		moduleInfoMapFromAPIC, err = getModuleInfoFromAPIContainer(ctx, enclaveInfo)
+		moduleInfoMapFromAPIC, err = getModuleInfoMapFromAPIContainer(ctx, enclaveInfo)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to get module info from API container in enclave '%v'", enclaveInfo.GetEnclaveId())
 		}
@@ -122,21 +122,21 @@ func getModulePortBindingString(module *module.Module, maybePublicPortFromAPIC *
 	}
 
 	// If API container returned public IP information, use that.
-	publicIpAddr := defaultEmptyIPAddr
+	publicIpAddr := defaultEmptyIPAddrForModules
 	publicIpAddrFromBackend := module.GetMaybePublicIP()
-	if maybePublicIpAddrFromAPIC != defaultEmptyIPAddr {
+	if maybePublicIpAddrFromAPIC != defaultEmptyIPAddrForModules {
 		publicIpAddr = maybePublicIpAddrFromAPIC
-	} else if publicIpAddrFromBackend.String() != defaultEmptyIPAddr {
+	} else if publicIpAddrFromBackend.String() != defaultEmptyIPAddrForModules {
 		publicIpAddr = publicIpAddrFromBackend.String()
 	}
 
-	if publicIpAddr != defaultEmptyIPAddr && publicPort != nil {
+	if publicIpAddr != defaultEmptyIPAddrForModules && publicPort != nil {
 		line = line + fmt.Sprintf(" -> %v:%v", publicIpAddr, publicPort)
 	}
 	return line
 }
 
-func getModuleInfoFromAPIContainer(ctx context.Context, enclaveInfo kurtosis_engine_rpc_api_bindings.EnclaveInfo) (map[string]*kurtosis_core_rpc_api_bindings.ModuleInfo, error) {
+func getModuleInfoMapFromAPIContainer(ctx context.Context, enclaveInfo kurtosis_engine_rpc_api_bindings.EnclaveInfo) (map[string]*kurtosis_core_rpc_api_bindings.ModuleInfo, error) {
 	apicHostMachineIp, apicHostMachineGrpcPort, err := enclave_liveness_validator.ValidateEnclaveLiveness(&enclaveInfo)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred verifying that the enclave was running")
