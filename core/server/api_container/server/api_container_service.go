@@ -126,7 +126,8 @@ func (apicService ApiContainerService) LoadModule(ctx context.Context, args *kur
 	return result, nil
 }
 
-func (apicService ApiContainerService) UnloadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnloadModuleArgs) (*emptypb.Empty, error) {
+
+func (apicService ApiContainerService) UnloadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnloadModuleArgs) (*kurtosis_core_rpc_api_bindings.UnloadModuleResponse, error) {
 	moduleId := module.ModuleID(args.ModuleId)
 
 	if err := apicService.metricsClient.TrackUnloadModule(args.ModuleId); err != nil {
@@ -134,11 +135,12 @@ func (apicService ApiContainerService) UnloadModule(ctx context.Context, args *k
 		logrus.Errorf("An error occurred tracking unload module event\n%v", err)
 	}
 
-	if err := apicService.moduleStore.UnloadModule(ctx, moduleId); err != nil {
+	moduleGuid, err := apicService.moduleStore.UnloadModule(ctx, moduleId)
+	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred unloading module '%v' from the network", moduleId)
 	}
 
-	return &emptypb.Empty{}, nil
+	return binding_constructors.NewUnloadModuleResponse(string(*moduleGuid)), nil
 }
 
 func (apicService ApiContainerService) ExecuteModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteModuleResponse, error) {
@@ -159,6 +161,7 @@ func (apicService ApiContainerService) ExecuteModule(ctx context.Context, args *
 	return resp, nil
 }
 
+/*
 func (apicService ApiContainerService) GetModuleInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetModuleInfoArgs) (*kurtosis_core_rpc_api_bindings.GetModuleInfoResponse, error) {
 	moduleId := module.ModuleID(args.ModuleId)
 	privateIpAddr, privateModulePort, publicIpAddr, publicModulePort, err := apicService.moduleStore.GetModuleInfo(moduleId)
@@ -181,6 +184,7 @@ func (apicService ApiContainerService) GetModuleInfo(ctx context.Context, args *
 	)
 	return response, nil
 }
+*/
 
 func (apicService ApiContainerService) RegisterService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServiceArgs) (*kurtosis_core_rpc_api_bindings.RegisterServiceResponse, error) {
 	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
@@ -249,6 +253,7 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 	return response, nil
 }
 
+/*
 func (apicService ApiContainerService) GetServiceInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServiceInfoArgs) (*kurtosis_core_rpc_api_bindings.GetServiceInfoResponse, error) {
 	serviceIdStr := args.GetServiceId()
 	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
@@ -290,8 +295,10 @@ func (apicService ApiContainerService) GetServiceInfo(ctx context.Context, args 
 	)
 	return serviceInfoResponse, nil
 }
+*/
 
-func (apicService ApiContainerService) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*emptypb.Empty, error) {
+//TODOTODOTODO FIX ME
+func (apicService ApiContainerService) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*kurtosis_core_rpc_api_bindings.RemoveServiceResponse, error) {
 	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
 
 	containerStopTimeoutSeconds := args.ContainerStopTimeoutSeconds
@@ -449,7 +456,8 @@ func (apicService ApiContainerService) WaitForHttpPostEndpointAvailability(ctx c
 	return &emptypb.Empty{}, nil
 }
 
-func (apicService ApiContainerService) GetServices(ctx context.Context, empty *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
+//TODOTODOTODO FIX ME
+func (apicService ApiContainerService) GetServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServicesArgs) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
 
 	serviceIDs := make(map[string]bool, len(apicService.serviceNetwork.GetServiceIDs()))
 
@@ -466,7 +474,8 @@ func (apicService ApiContainerService) GetServices(ctx context.Context, empty *e
 	return resp, nil
 }
 
-func (apicService ApiContainerService) GetModules(ctx context.Context, empty *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetModulesResponse, error) {
+//TODOTODOTODO FIX ME
+func (apicService ApiContainerService) GetModules(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetModulesArgs) (*kurtosis_core_rpc_api_bindings.GetModulesResponse, error) {
 
 	allModuleIDs := make(map[string]bool, len(apicService.moduleStore.GetModules()))
 
