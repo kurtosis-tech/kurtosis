@@ -1,4 +1,6 @@
 # TBD
+
+# 1.52.0
 ### Breaking Changes
 * `StartService` now returns a `ServiceInfo` object
 * `LoadModule` now returns a `ModuleInfo` object
