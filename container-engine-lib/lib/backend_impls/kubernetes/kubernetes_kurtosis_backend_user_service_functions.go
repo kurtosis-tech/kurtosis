@@ -754,6 +754,7 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 			}
 		}
 
+		/*
 		pvc := resources.filesArtifactExpansionPersistentVolumeClaim
 		if pvc != nil {
 			if err := backend.kubernetesManager.RemovePersistentVolumeClaim(ctx, pvc); err != nil {
@@ -781,6 +782,8 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 		}
 		// WARNING: DO NOT ADD ANYTHING HERE! The Service must be deleted as the very last thing as it's the canonical resource for the Kurtosis Service
 		successfulGuids[serviceGuid] = true
+
+		 */
 	}
 	return successfulGuids, erroredGuids, nil
 }
@@ -973,6 +976,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 		results[serviceGuid] = resultObj
 	}
 
+	/*
 	// Get files artifact expansion persistent volume claims
 	matchingkubernetesPvcs, err := kubernetes_resource_collectors.CollectMatchingPersistentVolumeClaims(
 		ctx,
@@ -1006,6 +1010,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 		resultObj.filesArtifactExpansionPersistentVolumeClaim = kubernetesPvc
 		results[serviceGuid] = resultObj
 	}
+	 */
 
 	return results, nil
 }
@@ -1402,6 +1407,7 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 	return updatedService, undoUpdateFunc, nil
 }
 
+/*
 // Creates a persistent volume claim that the expander job will write all its expansions to
 func (backend *KubernetesKurtosisBackend) createFilesArtifactsExpansionPersistentVolumeClaim(
 	ctx context.Context,
@@ -1437,3 +1443,4 @@ func (backend *KubernetesKurtosisBackend) createFilesArtifactsExpansionPersisten
 	}
 	return pvc, nil
 }
+ */

@@ -32,6 +32,8 @@ const (
 
 	maxWaitForApiContainerContainerAvailabilityRetries         = 30
 	timeBetweenWaitForApiContainerContainerAvailabilityRetries = 1 * time.Second
+
+	enclaveDataDirVolumeName = "enclave-data"
 )
 
 // Any of these values being nil indicates that the resource doesn't exist
@@ -314,17 +316,20 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	}()
 
 	// Create the Pod
+	/*
 	enclaveDataPersistentVolumeClaim, err := backend.getEnclaveDataPersistentVolumeClaim(ctx, enclaveNamespaceName, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data persistent volume claim for enclave '%v' in namespace '%v'", enclaveId, enclaveNamespaceName)
 	}
+	 */
 
 	containerPorts, err := getKubernetesContainerPortsFromPrivatePortSpecs(privatePortSpecs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting container ports from the API container's private port specs")
 	}
 
-	apiContainerContainers, apiContainerVolumes, err := getApiContainerContainersAndVolumes(image, containerPorts, envVarsWithOwnIp, enclaveDataPersistentVolumeClaim, enclaveDataVolumeDirpath)
+	// apiContainerContainers, apiContainerVolumes, err := getApiContainerContainersAndVolumes(image, containerPorts, envVarsWithOwnIp, enclaveDataPersistentVolumeClaim, enclaveDataVolumeDirpath)
+	apiContainerContainers, apiContainerVolumes, err := getApiContainerContainersAndVolumes(image, containerPorts, envVarsWithOwnIp, enclaveDataVolumeDirpath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting API containers and volumes")
 	}
@@ -916,11 +921,11 @@ func getApiContainerContainersAndVolumes(
 	containerImageAndTag string,
 	containerPorts []apiv1.ContainerPort,
 	envVars map[string]string,
-	enclaveDataPersistentVolumeClaim *apiv1.PersistentVolumeClaim,
+	// enclaveDataPersistentVolumeClaim *apiv1.PersistentVolumeClaim,
 	enclaveDataVolumeDirpath string,
 ) (
 	resultContainers []apiv1.Container,
-	resultVolumes []apiv1.Volume,
+	resultPodVolumes []apiv1.Volume,
 	resultErr error,
 ) {
 	if _, found := envVars[ApiContainerOwnNamespaceNameEnvVar]; found {
@@ -955,7 +960,8 @@ func getApiContainerContainersAndVolumes(
 			Ports: containerPorts,
 			VolumeMounts: []apiv1.VolumeMount{
 				{
-					Name:      enclaveDataPersistentVolumeClaim.Spec.VolumeName,
+					// Name:      enclaveDataPersistentVolumeClaim.Spec.VolumeName,
+					Name:      enclaveDataDirVolumeName,
 					MountPath: enclaveDataVolumeDirpath,
 				},
 			},
@@ -964,11 +970,10 @@ func getApiContainerContainersAndVolumes(
 
 	volumes := []apiv1.Volume{
 		{
-			Name: enclaveDataPersistentVolumeClaim.Spec.VolumeName,
+			// Name: enclaveDataPersistentVolumeClaim.Spec.VolumeName,
+			Name: enclaveDataDirVolumeName,
 			VolumeSource: apiv1.VolumeSource{
-				PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
-					ClaimName: enclaveDataPersistentVolumeClaim.GetName(),
-				},
+				EmptyDir: &apiv1.EmptyDirVolumeSource{},
 			},
 		},
 	}
@@ -984,6 +989,7 @@ func getApiContainerMatchLabels() map[string]string {
 	return engineMatchLabels
 }
 
+/*
 func (backend *KubernetesKurtosisBackend) getEnclaveDataPersistentVolumeClaim(ctx context.Context, enclaveNamespaceName string, enclaveId enclave.EnclaveID) (*apiv1.PersistentVolumeClaim, error) {
 	matchLabels := getEnclaveMatchLabels()
 	matchLabels[label_key_consts.KurtosisVolumeTypeKubernetesLabelKey.GetString()] = label_value_consts.EnclaveDataVolumeTypeKubernetesLabelValue.GetString()
@@ -1006,3 +1012,6 @@ func (backend *KubernetesKurtosisBackend) getEnclaveDataPersistentVolumeClaim(ct
 
 	return resultPersistentVolumeClaim, nil
 }
+
+
+ */
