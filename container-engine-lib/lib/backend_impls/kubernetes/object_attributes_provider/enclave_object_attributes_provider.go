@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_object_name"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
@@ -27,7 +26,6 @@ const (
 
 type KubernetesEnclaveObjectAttributesProvider interface {
 	ForEnclaveNamespace(isPartitioningEnabled bool) (KubernetesObjectAttributes, error)
-	ForEnclaveDataPersistentVolumeClaim() (KubernetesObjectAttributes, error)
 	ForApiContainer() KubernetesApiContainerObjectAttributesProvider
 	ForUserServiceService(
 		guid service.ServiceGUID,
@@ -47,9 +45,6 @@ type KubernetesEnclaveObjectAttributesProvider interface {
 		guid module.ModuleGUID,
 		id module.ModuleID,
 		privatePorts map[string]*port_spec.PortSpec,
-	) (KubernetesObjectAttributes, error)
-	ForFilesArtifactsExpansionPersistentVolumeClaim(
-		serviceGUID service.ServiceGUID,
 	) (KubernetesObjectAttributes, error)
 }
 
@@ -115,31 +110,6 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespa
 	return objectAttributes, nil
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataPersistentVolumeClaim() (KubernetesObjectAttributes, error) {
-	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(provider.enclaveId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", provider.enclaveId)
-	}
-
-	labels, err := provider.getLabelsForEnclaveObject()
-	labels[label_key_consts.KurtosisVolumeTypeKubernetesLabelKey] = label_value_consts.EnclaveDataVolumeTypeKubernetesLabelValue
-
-	// No custom annotations for enclave data volume
-	customAnnotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
-
-	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, customAnnotations)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred while creating the ObjectAttributesImpl with name '%s' and labels '%+v'",
-			name.GetString(),
-			getLabelKeyValuesAsStrings(labels),
-		)
-	}
-
-	return objectAttributes, nil
-}
-
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForApiContainer() KubernetesApiContainerObjectAttributesProvider{
 	enclaveId := enclave.EnclaveID(provider.enclaveId)
 	return GetKubernetesApiContainerObjectAttributesProvider(enclaveId)
@@ -149,56 +119,6 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForNetworkingSide
 	serviceGUIDSidecarAttachedTo service.ServiceGUID,
 ) (KubernetesObjectAttributes, error) {
 	panic("implement me")
-}
-
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForFilesArtifactsExpansionPersistentVolumeClaim(
-	serviceGUID service.ServiceGUID,
-)(
-	KubernetesObjectAttributes,
-	error,
-){
-	serviceGuidStr := string(serviceGUID)
-
-	guidStr, err := uuid_generator.GenerateUUIDString()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID for the files artifacts expander job for service '%v'", serviceGuidStr)
-	}
-
-	name, err := getCompositeKubernetesObjectName([]string{
-		filesArtifactsExpansionPrefix,
-		guidStr,
-	})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the files artifacts expander job name with GUID '%v'", guidStr)
-	}
-
-	labels, err := provider.getLabelsForEnclaveObjectWithGUID(guidStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting labels for files artifacts expander job with GUID '%v'", guidStr)
-	}
-
-	serviceGUIDLabel, err := kubernetes_label_value.CreateNewKubernetesLabelValue(serviceGuidStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes label value from service GUID string '%v'", serviceGuidStr)
-	}
-	labels[label_key_consts.UserServiceGUIDKubernetesLabelKey] = serviceGUIDLabel
-	labels[label_key_consts.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
-	labels[label_key_consts.KurtosisVolumeTypeKubernetesLabelKey] = label_value_consts.FilesArtifactsExpansionVolumeTypeKubernetesLabelValue
-
-	// No custom annotations for files artifact expansion persistent volume claim
-	customAnnotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
-
-	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, customAnnotations)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred while creating the ObjectAttributesImpl with name '%s' and labels '%+v'",
-			name.GetString(),
-			getLabelKeyValuesAsStrings(labels),
-		)
-	}
-
-	return objectAttributes, nil
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceService (

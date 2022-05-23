@@ -1,5 +1,13 @@
 # TBD
 
+# 0.32.0
+### Changes
+* Switched to using EmptyDir ephemeral volumes for the enclave data directory and the files artifact expansion volumes in response to learning that Kubernetes/DigitalOcean doesn't really want you creating lots of these
+
+### Breaking Changes
+* `GetEngineServerKubernetesKurtosisBackend` and `GetApiContainerKubernetesKurtosisBackend` no longer take in `storageClassName` or `enclaveSizeInMegabytes`
+    * These parameters are no longer needed
+
 # 0.31.1
 ### Fixes
 * Fixed a bug in how we were checking for services which don't have pods yet

@@ -26,8 +26,6 @@ const (
 	podSpecFilename             = "spec.json"
 	containerLogsFilenameSuffix = ".log"
 
-	shouldFetchStoppedContainersWhenDumpingEnclave = true
-
 	// Permissions for the files & directories we create as a result of the dump
 	createdDirPerms  os.FileMode = 0755
 	createdFilePerms os.FileMode = 0644
@@ -44,9 +42,6 @@ const (
 )
 
 // Any of these values being nil indicates that the resource doesn't exist
-// The persistent volume claim created for the enclave data volume is not
-// included, because it is not required for any of the current CRUD methods at
-// this moment.
 type enclaveKubernetesResources struct {
 	// Will never be nil because enclaves are defined by namespaces
 	namespace *apiv1.Namespace
@@ -81,12 +76,6 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		return nil, stacktrace.NewError("Partitioning not supported for Kubernetes-backed Kurtosis.")
 	}
 	teardownContext := context.Background()
-
-	if backend.engineServerModeArgs == nil {
-		return nil, stacktrace.NewError("Enclave creation cannot be done unless the Kubernetes Kurtosis backend is in engine mode")
-	}
-	enclaveDataVolumeStorageClass := backend.engineServerModeArgs.storageClassName
-	enclaveDataVolumeSizeInMegabytes := backend.engineServerModeArgs.enclaveDataVolumeSizeInMegabytes
 
 	searchNamespaceLabels := map[string]string{
 		label_key_consts.AppIDKubernetesLabelKey.GetString():     label_value_consts.AppIDKubernetesLabelValue.GetString(),
@@ -124,55 +113,6 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		}
 	}()
 
-	enclaveDataVolumeAttrs, err := enclaveObjAttrsProvider.ForEnclaveDataPersistentVolumeClaim()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave data volume attributes for the enclave with ID '%v'", enclaveId)
-	}
-
-	persistentVolumeClaimName := enclaveDataVolumeAttrs.GetName().GetString()
-	persistentVolumeClaimLabels := getStringMapFromLabelMap(enclaveDataVolumeAttrs.GetLabels())
-	persistentVolumeClaimAnnotations := getStringMapFromAnnotationMap(enclaveDataVolumeAttrs.GetAnnotations())
-
-	foundVolumes, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, enclaveNamespaceName, persistentVolumeClaimLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave data volumes matching labels '%+v'", persistentVolumeClaimLabels)
-	}
-	if len(foundVolumes.Items) > 0 {
-		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because one or more enclave data volumes for that enclave already exists", enclaveId)
-	}
-
-	persistentVolumeClaim, err := backend.kubernetesManager.CreatePersistentVolumeClaim(ctx,
-		enclaveNamespaceName,
-		persistentVolumeClaimName,
-		persistentVolumeClaimLabels,
-		persistentVolumeClaimAnnotations,
-		enclaveDataVolumeSizeInMegabytes,
-		enclaveDataVolumeStorageClass,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err,
-			"Failed to create persistent volume claim in enclave '%v' with name '%v', size '%v', and storage class name '%v'",
-			enclaveNamespaceName,
-			persistentVolumeClaimName,
-			enclaveDataVolumeSizeInMegabytes,
-			enclaveDataVolumeStorageClass,
-		)
-	}
-	shouldDeleteVolume := true
-	defer func() {
-		if shouldDeleteVolume {
-			if err := backend.kubernetesManager.RemovePersistentVolumeClaim(teardownContext, persistentVolumeClaim); err != nil {
-				logrus.Errorf(
-					"Creating the enclave didn't complete successfully, so we tried to delete enclave persistent volume claim '%v' " +
-						"that we created but an error was thrown:\n%v",
-					persistentVolumeClaimName,
-					err,
-				)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove persistent volume claim with name '%v'!!!!!!!", persistentVolumeClaimName)
-			}
-		}
-	}()
-
 	enclaveResources := &enclaveKubernetesResources{
 		namespace: enclaveNamespace,
 		pods: []apiv1.Pod{},
@@ -188,7 +128,6 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		return nil, stacktrace.NewError("Successfully converted the new enclave's Kubernetes resources to an enclave object, but the resulting map didn't have an entry for enclave ID '%v'", enclaveId)
 	}
 
-	shouldDeleteVolume = false
 	shouldDeleteNamespace = false
 	return resultEnclave, nil
 }
