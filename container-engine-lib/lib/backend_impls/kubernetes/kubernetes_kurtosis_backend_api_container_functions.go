@@ -1,5 +1,4 @@
 package kubernetes
-
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager/consts"
@@ -32,6 +31,8 @@ const (
 
 	maxWaitForApiContainerContainerAvailabilityRetries         = 30
 	timeBetweenWaitForApiContainerContainerAvailabilityRetries = 1 * time.Second
+
+	enclaveDataDirVolumeName = "enclave-data"
 )
 
 // Any of these values being nil indicates that the resource doesn't exist
@@ -245,7 +246,6 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 				consts.PodExecsKubernetesResource,
 				consts.PodLogsKubernetesResource,
 				consts.ServicesKubernetesResource,
-				consts.PersistentVolumeClaimsKubernetesResource,
 				consts.JobsKubernetesResource,
 			},
 		},
@@ -313,18 +313,12 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		}
 	}()
 
-	// Create the Pod
-	enclaveDataPersistentVolumeClaim, err := backend.getEnclaveDataPersistentVolumeClaim(ctx, enclaveNamespaceName, enclaveId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data persistent volume claim for enclave '%v' in namespace '%v'", enclaveId, enclaveNamespaceName)
-	}
-
 	containerPorts, err := getKubernetesContainerPortsFromPrivatePortSpecs(privatePortSpecs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting container ports from the API container's private port specs")
 	}
 
-	apiContainerContainers, apiContainerVolumes, err := getApiContainerContainersAndVolumes(image, containerPorts, envVarsWithOwnIp, enclaveDataPersistentVolumeClaim, enclaveDataVolumeDirpath)
+	apiContainerContainers, apiContainerVolumes, err := getApiContainerContainersAndVolumes(image, containerPorts, envVarsWithOwnIp, enclaveDataVolumeDirpath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting API containers and volumes")
 	}
@@ -916,11 +910,10 @@ func getApiContainerContainersAndVolumes(
 	containerImageAndTag string,
 	containerPorts []apiv1.ContainerPort,
 	envVars map[string]string,
-	enclaveDataPersistentVolumeClaim *apiv1.PersistentVolumeClaim,
 	enclaveDataVolumeDirpath string,
 ) (
 	resultContainers []apiv1.Container,
-	resultVolumes []apiv1.Volume,
+	resultPodVolumes []apiv1.Volume,
 	resultErr error,
 ) {
 	if _, found := envVars[ApiContainerOwnNamespaceNameEnvVar]; found {
@@ -955,7 +948,7 @@ func getApiContainerContainersAndVolumes(
 			Ports: containerPorts,
 			VolumeMounts: []apiv1.VolumeMount{
 				{
-					Name:      enclaveDataPersistentVolumeClaim.Spec.VolumeName,
+					Name:      enclaveDataDirVolumeName,
 					MountPath: enclaveDataVolumeDirpath,
 				},
 			},
@@ -964,11 +957,9 @@ func getApiContainerContainersAndVolumes(
 
 	volumes := []apiv1.Volume{
 		{
-			Name: enclaveDataPersistentVolumeClaim.Spec.VolumeName,
+			Name: enclaveDataDirVolumeName,
 			VolumeSource: apiv1.VolumeSource{
-				PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
-					ClaimName: enclaveDataPersistentVolumeClaim.GetName(),
-				},
+				EmptyDir: &apiv1.EmptyDirVolumeSource{},
 			},
 		},
 	}
@@ -982,27 +973,4 @@ func getApiContainerMatchLabels() map[string]string {
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.APIContainerKurtosisResourceTypeKubernetesLabelValue.GetString(),
 	}
 	return engineMatchLabels
-}
-
-func (backend *KubernetesKurtosisBackend) getEnclaveDataPersistentVolumeClaim(ctx context.Context, enclaveNamespaceName string, enclaveId enclave.EnclaveID) (*apiv1.PersistentVolumeClaim, error) {
-	matchLabels := getEnclaveMatchLabels()
-	matchLabels[label_key_consts.KurtosisVolumeTypeKubernetesLabelKey.GetString()] = label_value_consts.EnclaveDataVolumeTypeKubernetesLabelValue.GetString()
-	matchLabels[label_key_consts.EnclaveIDKubernetesLabelKey.GetString()] = string(enclaveId)
-
-	persistentVolumeClaims, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, enclaveNamespaceName, matchLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave persistent volume claim using labels '%+v'", matchLabels)
-	}
-
-	numOfPersistentVolumeClaims := len(persistentVolumeClaims.Items)
-	if numOfPersistentVolumeClaims == 0 {
-		return nil, stacktrace.NewError("No persistent volume claim matching labels '%+v' was found", matchLabels)
-	}
-	if numOfPersistentVolumeClaims > 1 {
-		return nil, stacktrace.NewError("Expected to find only one enclave data persistent volume claim for enclave ID '%v', but '%v' was found; this is a bug in Kurtosis", enclaveId, numOfPersistentVolumeClaims)
-	}
-
-	resultPersistentVolumeClaim := &persistentVolumeClaims.Items[0]
-
-	return resultPersistentVolumeClaim, nil
 }

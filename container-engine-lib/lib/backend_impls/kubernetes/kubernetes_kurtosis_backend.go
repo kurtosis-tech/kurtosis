@@ -130,14 +130,10 @@ func NewAPIContainerKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	ownEnclaveId enclave.EnclaveID,
 	ownNamespaceName string,
-	storageClass string,
-	filesArtifactExpansionVolumeSizeInMegabytes uint,
 ) *KubernetesKurtosisBackend {
 	modeArgs := &apiContainerModeArgs{
 		ownEnclaveId:     ownEnclaveId,
 		ownNamespaceName: ownNamespaceName,
-		storageClassName: storageClass,
-		filesArtifactExpansionVolumeSizeInMegabytes: filesArtifactExpansionVolumeSizeInMegabytes,
 	}
 	return newKubernetesKurtosisBackend(
 		kubernetesManager,
@@ -149,13 +145,8 @@ func NewAPIContainerKubernetesKurtosisBackend(
 
 func NewEngineServerKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
-	storageClass string,
-	enclaveDataVolumeSizeInMegabytes uint,
 ) *KubernetesKurtosisBackend {
-	modeArgs := &engineServerModeArgs{
-		storageClassName:                 storageClass,
-		enclaveDataVolumeSizeInMegabytes: enclaveDataVolumeSizeInMegabytes,
-	}
+	modeArgs := &engineServerModeArgs{}
 	return newKubernetesKurtosisBackend(
 		kubernetesManager,
 		nil,

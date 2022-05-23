@@ -14,14 +14,11 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_object_name"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
-	v1 "k8s.io/api/batch/v1"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
@@ -198,6 +195,8 @@ func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, names
 }
 
 // ---------------------------Volumes------------------------------------------------------------------------------
+// TODO Delete this after 2022-08-01 if we're still not using PersistentVolumeClaims
+/*
 func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 	ctx context.Context,
 	namespace string,
@@ -301,6 +300,8 @@ func (manager *KubernetesManager) GetPersistentVolumeClaimsByLabels(ctx context.
 	}
 	return &persistentVolumeClaimsNotMarkedForDeletionpersistentVolumeClaimList, nil
 }
+
+ */
 
 // ---------------------------namespaces------------------------------------------------------------------------------
 
@@ -888,6 +889,9 @@ func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string,
 	return manager.kubernetesClientSet.CoreV1().RESTClient().Post().Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
 }
 
+
+// TODO Delete this after 2022-08-01 if we're not using Jobs
+/*
 func (manager *KubernetesManager) CreateJobWithContainerAndVolume(ctx context.Context,
 	namespaceName string,
 	jobName *kubernetes_object_name.KubernetesObjectName,
@@ -992,6 +996,7 @@ func (manager KubernetesManager) GetJobCompletionAndSuccessFlags(ctx context.Con
 
 	return true, false, nil
 }
+ */
 
 // ====================================================================================================
 //                                     Private Helper Methods
@@ -1012,6 +1017,8 @@ func transformTypedAnnotationsToStrs(input map[*kubernetes_annotation_key.Kubern
 	return result
 }
 
+// TODO Delete this after 2022-08-01 if we're still not using PersistentVolumeClaims
+/*
 func (manager *KubernetesManager) waitForPersistentVolumeClaimBinding(
 	ctx context.Context,
 	namespaceName string,
@@ -1054,6 +1061,8 @@ func (manager *KubernetesManager) waitForPersistentVolumeClaimBinding(
 		waitForPersistentVolumeBoundRetriesDelayMilliSeconds,
 	)
 }
+
+ */
 
 func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, namespaceName string, podName string) error {
 	// Wait for the pod to start running
