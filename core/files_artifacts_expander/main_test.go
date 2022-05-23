@@ -3,5 +3,5 @@
  * All Rights Reserved.
  */
 
-package files_artifacts_expander
+package main
 // empty test file

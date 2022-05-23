@@ -111,6 +111,7 @@ func NewAPIContainerArgs(
 	return result, nil
 }
 
+// NOTE: We can't use a pointer receiver here else reflection's NumField will panic
 func (args APIContainerArgs) validate() error {
 	// Generic validation based on field type
 	reflectVal := reflect.ValueOf(args)
