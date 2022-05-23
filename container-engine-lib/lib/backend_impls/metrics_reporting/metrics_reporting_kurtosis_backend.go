@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -327,7 +326,7 @@ func (backend *MetricsReportingKurtosisBackend) StartUserService(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	filesArtifactVolumeMountDirpaths map[files_artifact_expansion.FilesArtifactExpansionGUID]string,
+	filesArtifactExpansion *backend_interface.FilesArtifactsExpansion,
 ) (
 	newUserService *service.Service,
 	resultErr error,
@@ -341,21 +340,27 @@ func (backend *MetricsReportingKurtosisBackend) StartUserService(
 		entrypointArgs,
 		cmdArgs,
 		envVars,
-		filesArtifactVolumeMountDirpaths,
+		filesArtifactExpansion,
 	)
 	if err != nil {
+		filesArtifactMountDirpaths := []string{}
+		if filesArtifactExpansion != nil {
+			for _, mountpointOnUserService := range filesArtifactExpansion.ExpanderDirpathsToServiceDirpaths {
+				filesArtifactMountDirpaths = append(filesArtifactMountDirpaths, mountpointOnUserService)
+			}
+		}
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred starting user service '%v' using image '%v' " +
 				"with private ports '%+v' and entry point args '%+v', command args '%+v', environment " +
-				"vars '%+v', and file artifacts mount dirpath '%v'",
+				"vars '%+v', and file artifacts mount dirpaths '%v'",
 			guid,
 			containerImageName,
 			privatePorts,
 			entrypointArgs,
 			cmdArgs,
 			envVars,
-			filesArtifactVolumeMountDirpaths,
+			strings.Join(filesArtifactMountDirpaths, ", "),
 		)
 	}
 	return userService, nil
@@ -581,6 +586,7 @@ func (backend *MetricsReportingKurtosisBackend) DestroyNetworkingSidecars(
 	return successfulUserServiceGuids, erroredUserServiceGuids, nil
 }
 
+/*
 //Create a files artifact exansion volume for user service and file artifact id and runs a file artifact expander
 func (backend *MetricsReportingKurtosisBackend) CreateFilesArtifactExpansion(
 	ctx context.Context,
@@ -614,3 +620,5 @@ func (backend *MetricsReportingKurtosisBackend) DestroyFilesArtifactExpansions(
 	}
 	return successfulExpansionVolumeNames, erroredExpansionVolumeNames, nil
 }
+
+ */

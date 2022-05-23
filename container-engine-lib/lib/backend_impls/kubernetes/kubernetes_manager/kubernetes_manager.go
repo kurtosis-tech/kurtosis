@@ -685,6 +685,7 @@ func (manager *KubernetesManager) CreatePod(
 	podName string,
 	podLabels map[string]string,
 	podAnnotations map[string]string,
+	initContainers []apiv1.Container,
 	podContainers []apiv1.Container,
 	podVolumes []apiv1.Volume,
 	podServiceAccountName string,
@@ -698,6 +699,7 @@ func (manager *KubernetesManager) CreatePod(
 	}
 	podSpec := apiv1.PodSpec{
 		Volumes:    podVolumes,
+		InitContainers: initContainers,
 		Containers: podContainers,
 		ServiceAccountName: podServiceAccountName,
 		// We don't want Kubernetes auto-magically restarting our containers if they fail

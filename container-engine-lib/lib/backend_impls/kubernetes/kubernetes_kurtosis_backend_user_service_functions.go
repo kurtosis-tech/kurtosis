@@ -15,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/concurrent_writer"
@@ -297,7 +296,12 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 			if shouldDeleteExpansionPvc {
 				// Use background context so we delete these even if input context was cancelled
 				if err := backend.kubernetesManager.RemovePersistentVolumeClaim(context.Background(), pvc); err != nil {
-					logrus.Errorf("Starting the service failed so we tried to delete files artifact expansion PVC '%v' that we created, but doing so threw an error:\n%v", volumeName, err)
+					logrus.Errorf(
+						"Starting the service failed so we tried to delete files artifact expansion PVC '%v' that we " +
+							"created, but doing so threw an error:\n%v",
+						pvc.Name,
+						err,
+					)
 					logrus.Errorf("You'll need to delete PVC '%v' manually!", pvc.Name)
 				}
 			}
@@ -341,41 +345,26 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 			volumeSubdirIndex = volumeSubdirIndex + 1
 		}
 
-		expanderEnvVars := []apiv1.EnvVar{}
-		for key, value := range filesArtifactsExpansion.ExpanderEnvVars {
-			envVar := apiv1.EnvVar{
-				Name:      key,
-				Value: value,
-			}
-			expanderEnvVars = append(expanderEnvVars, envVar)
-		}
-
-		filesArtifactExpansionInitContainer := apiv1.Container{
-			Name:          filesArtifactExpanderInitContainerName,
-			Image:         filesArtifactsExpansion.ExpanderImage,
-			Env:           expanderEnvVars,
-			VolumeMounts:  volumeMountsOnExpanderContainer,
-		}
+		filesArtifactExpansionInitContainer := getFilesArtifactExpansionInitContainerSpecs(
+			filesArtifactsExpansion.ExpanderImage,
+			filesArtifactsExpansion.ExpanderEnvVars,
+			volumeMountsOnExpanderContainer,
+		)
 
 		userServicePodInitContainers = []apiv1.Container{
 			filesArtifactExpansionInitContainer,
 		}
 	}
-	
-
-
-
-
 
 	// Create the pod
 	podAttributes, err := enclaveObjAttributesProvider.ForUserServicePod(serviceGuid, serviceRegistrationObj.GetID(), privatePorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting attributes for new pod for service with GUID '%v'", serviceGuid)
 	}
-
 	podLabelsStrs := getStringMapFromLabelMap(podAttributes.GetLabels())
 	podAnnotationsStrs := getStringMapFromAnnotationMap(podAttributes.GetAnnotations())
 
+	/*
 	podVolumes, containerMounts, err := backend.getUserServiceVolumeInfoFromFilesArtifactMountpoints(
 		ctx,
 		namespaceName,
@@ -386,6 +375,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting pod volumes from files artifact mountpoints: %+v", filesArtifactVolumeMountDirpaths)
 	}
+	 */
 
 	podContainers, err := getUserServicePodContainerSpecs(
 		containerImageName,
@@ -393,7 +383,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		cmdArgs,
 		envVars,
 		privatePorts,
-		containerMounts,
+		userServiceContainerVolumeMounts,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the container specs for the user service pod with image '%v'", containerImageName)
@@ -406,8 +396,9 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		podName,
 		podLabelsStrs,
 		podAnnotationsStrs,
+		userServicePodInitContainers,
 		podContainers,
-		podVolumes,
+		userServicePodVolumes,
 		userServiceServiceAccountName,
 	)
 	if err != nil {
@@ -423,10 +414,16 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		}
 	}()
 
-	updatedService, err := backend.updateServiceWhenContainerStarted(ctx, namespaceName, kubernetesService, privatePorts)
+	updatedService, undoServiceUpdateFunc, err := backend.updateServiceWhenContainerStarted(ctx, namespaceName, kubernetesService, privatePorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred updating service '%v' to reflect its new ports: %+v", kubernetesService.GetName(), privatePorts)
 	}
+	shouldUndoServiceUpdate := true
+	defer func() {
+		if shouldUndoServiceUpdate {
+			undoServiceUpdateFunc()
+		}
+	}()
 
 	kubernetesResources := map[service.ServiceGUID]*userServiceKubernetesResources{
 		serviceGuid: {
@@ -449,6 +446,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 
 	shouldDeleteExpansionPvc = false
 	shouldDestroyPod = false
+	shouldUndoServiceUpdate = false
 	return objectsAndResources.service, nil
 }
 
@@ -1126,6 +1124,31 @@ func getUserServiceObjectsFromKubernetesResources(
 	return results, nil
 }
 
+func getFilesArtifactExpansionInitContainerSpecs(
+	image string,
+	envVars map[string]string,
+	volumeMounts []apiv1.VolumeMount,
+) apiv1.Container {
+	expanderEnvVars := []apiv1.EnvVar{}
+	for key, value := range envVars {
+		envVar := apiv1.EnvVar{
+			Name:      key,
+			Value: value,
+		}
+		expanderEnvVars = append(expanderEnvVars, envVar)
+	}
+
+	filesArtifactExpansionInitContainer := apiv1.Container{
+		Name:          filesArtifactExpanderInitContainerName,
+		Image:         image,
+		Env:           expanderEnvVars,
+		VolumeMounts:  volumeMounts,
+	}
+
+	return filesArtifactExpansionInitContainer
+
+}
+
 func getUserServicePodContainerSpecs(
 	image string,
 	entrypointArgs []string,
@@ -1171,6 +1194,7 @@ func getUserServicePodContainerSpecs(
 	return containers, nil
 }
 
+/*
 func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtifactMountpoints(
 	ctx context.Context,
 	namespaceName string,
@@ -1247,6 +1271,7 @@ func (backend *KubernetesKurtosisBackend) getUserServiceVolumeInfoFromFilesArtif
 
 	return podVolumes, containerMounts, nil
 }
+ */
 
 // Update the service to:
 // - Set the service ports appropriately
@@ -1259,13 +1284,14 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 	privatePorts map[string]*port_spec.PortSpec,
 ) (
 	*apiv1.Service,
+	func(), // function to undo the update
 	error,
 ) {
 	serviceName := kubernetesService.GetName()
 
 	serializedPortSpecs, err := kubernetes_port_spec_serializer.SerializePortSpecs(privatePorts)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred serializing the following private port specs: %+v", privatePorts)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred serializing the following private port specs: %+v", privatePorts)
 	}
 
 	// We only need to modify the ports from the default (unbound) ports if the user actually declares ports
@@ -1273,7 +1299,7 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 	if len(privatePorts) > 0 {
 		candidateNewServicePorts, err := getKubernetesServicePortsFromPrivatePortSpecs(privatePorts)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes service ports for the following private port specs: %+v", privatePorts)
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes service ports for the following private port specs: %+v", privatePorts)
 		}
 		newServicePorts = candidateNewServicePorts
 	}
@@ -1306,9 +1332,41 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 
 		updatesToApply.WithAnnotations(newAnnotations)
 	}
+
+	undoUpdateFunc := func() {
+		undoingConfigurator := func(reversionToApply *applyconfigurationsv1.ServiceApplyConfiguration) {
+			specReversionToApply := applyconfigurationsv1.ServiceSpec()
+			for _, oldServicePort := range newServicePorts {
+				portUpdateToApply := &applyconfigurationsv1.ServicePortApplyConfiguration{
+					Name:        &oldServicePort.Name,
+					Protocol:    &oldServicePort.Protocol,
+					// TODO fill this out for an app port!
+					AppProtocol: nil,
+					Port:        &oldServicePort.Port,
+				}
+				specReversionToApply.WithPorts(portUpdateToApply)
+			}
+			reversionToApply.WithSpec(specReversionToApply)
+
+			reversionToApply.WithAnnotations(kubernetesService.Annotations)
+		}
+		if _, err := backend.kubernetesManager.UpdateService(ctx, namespaceName, serviceName, undoingConfigurator); err != nil {
+			logrus.Errorf(
+				"An error occurred updating Kubernetes service '%v' in namespace '%v' to open the service ports " +
+					"and add the serialized private port specs annotation so we tried to revert the service to " +
+					"its values before the update, but an error occurred; this means the service is likely in " +
+					"an inconsistent state:\n%v",
+				serviceName,
+				namespaceName,
+				err,
+			)
+			// Nothing we can really do here to recover
+		}
+	}
+
 	updatedService, err := backend.kubernetesManager.UpdateService(ctx, namespaceName, serviceName, updatingConfigurator)
 	if err != nil {
-		return nil, stacktrace.Propagate(
+		return nil, nil, stacktrace.Propagate(
 			err,
 			"An error occurred updating Kubernetes service '%v' in namespace '%v' to open the service ports and add " +
 				"the serialized private port specs annotation",
@@ -1319,39 +1377,12 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 	shouldUndoUpdate := true
 	defer func() {
 		if shouldUndoUpdate {
-			undoingConfigurator := func(reversionToApply *applyconfigurationsv1.ServiceApplyConfiguration) {
-				specReversionToApply := applyconfigurationsv1.ServiceSpec()
-				for _, oldServicePort := range newServicePorts {
-					portUpdateToApply := &applyconfigurationsv1.ServicePortApplyConfiguration{
-						Name:        &oldServicePort.Name,
-						Protocol:    &oldServicePort.Protocol,
-						// TODO fill this out for an app port!
-						AppProtocol: nil,
-						Port:        &oldServicePort.Port,
-					}
-					specReversionToApply.WithPorts(portUpdateToApply)
-				}
-				reversionToApply.WithSpec(specReversionToApply)
-
-				reversionToApply.WithAnnotations(kubernetesService.Annotations)
-			}
-			if _, err := backend.kubernetesManager.UpdateService(ctx, namespaceName, serviceName, undoingConfigurator); err != nil {
-				logrus.Errorf(
-					"An error occurred updating Kubernetes service '%v' in namespace '%v' to open the service ports " +
-						"and add the serialized private port specs annotation so we tried to revert the service to " +
-						"its values before the update, but an error occurred; this means the service is likely in " +
-						"an inconsistent state:\n%v",
-					serviceName,
-					namespaceName,
-					err,
-				)
-				// Nothing we can really do here to recover
-			}
+			undoUpdateFunc()
 		}
 	}()
 
 	shouldUndoUpdate = false
-	return updatedService, nil
+	return updatedService, undoUpdateFunc, nil
 }
 
 
@@ -1595,4 +1626,9 @@ func (backend *KubernetesKurtosisBackend) getSingleJobContainerLogs(ctx context.
 	}
 
 	return output.String(), nil
+}
+
+func setUpFilesArtifactVolumesAndInitContainer() (
+){
+
 }
