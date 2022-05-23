@@ -212,9 +212,9 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(null);
     }
 
-    public async getServices(services: GetServicesArgs): Promise<Result<GetServicesResponse, Error>> {
+    public async getServices(getServicesArgs: GetServicesArgs): Promise<Result<GetServicesResponse, Error>> {
         const promiseGetServices: Promise<Result<GetServicesResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.getServices(services, (error: ServiceError | null, response?: GetServicesResponse) => {
+            this.client.getServices(getServicesArgs, (error: ServiceError | null, response?: GetServicesResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
