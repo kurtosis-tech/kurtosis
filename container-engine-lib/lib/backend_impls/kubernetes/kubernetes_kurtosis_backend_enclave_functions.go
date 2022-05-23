@@ -131,6 +131,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 
 	persistentVolumeClaimName := enclaveDataVolumeAttrs.GetName().GetString()
 	persistentVolumeClaimLabels := getStringMapFromLabelMap(enclaveDataVolumeAttrs.GetLabels())
+	persistentVolumeClaimAnnotations := getStringMapFromAnnotationMap(enclaveDataVolumeAttrs.GetAnnotations())
 
 	foundVolumes, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, enclaveNamespaceName, persistentVolumeClaimLabels)
 	if err != nil {
@@ -144,6 +145,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		enclaveNamespaceName,
 		persistentVolumeClaimName,
 		persistentVolumeClaimLabels,
+		persistentVolumeClaimAnnotations,
 		enclaveDataVolumeSizeInMegabytes,
 		enclaveDataVolumeStorageClass,
 	)

@@ -826,6 +826,8 @@ func (backend *KubernetesKurtosisBackend) createEnginePod(
 
 	engineVolumes := []apiv1.Volume{}
 
+	engineInitContainers := []apiv1.Container{}
+
 	// Create pods with engine containers and volumes in kubernetes
 	pod, err := backend.kubernetesManager.CreatePod(
 		ctx,
@@ -833,6 +835,7 @@ func (backend *KubernetesKurtosisBackend) createEnginePod(
 		enginePodName,
 		enginePodLabelStrs,
 		enginePodAnnotationStrs,
+		engineInitContainers,
 		engineContainers,
 		engineVolumes,
 		serviceAccountName,
