@@ -1,5 +1,10 @@
 # TBD
 
+# 0.20.0
+### Breaking Changes
+* Upgraded to engine 1.25.4 and core 1.53.4
+  * Users will need to run `kurtosis engine restart`
+
 # 0.19.2
 ### Fixes
 * Revert "bugfix" from 0.19.1 that actually caused a bug
