@@ -1,10 +1,14 @@
 package live_engine_client_supplier
 
 import (
+	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/connection"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"net"
 	"time"
 )
@@ -87,11 +91,35 @@ func GetEngineClient() (*kurtosis_engine_rpc_api_bindings.EngineServiceClient, e
 
 }
 
-func Close() {
+func (supplier *LiveEngineClientSupplier) Stop() {
+	if supplier.stopUpdaterSignalChan == nil {
+		return
+	}
+
 
 }
 
-func (supplier *kubernetes.KubernetesKurtosisBackend) checkIfWeShouldReplaceEngine() {
+func (supplier *LiveEngineClientSupplier) replaceEngineIfNecessary() {
+	runningEngineFilters := &engine.EngineFilters{
+		Statuses: map[container_status.ContainerStatus]bool{
+			container_status.ContainerStatus_Running: true,
+		},
+	}
+	runningEngines, err := supplier.kubernetesBackend.GetEngines(context.Background(), runningEngineFilters)
+	if err != nil {
+		logrus.Errorf("An error occurred finding running engines:\n%v", err)
+		return
+	}
 
+	if len(runningEngines) == 0 {
+		logrus.Infof("No engines are running so engine functionality won't be available")
+		return
+	}
 
+	if len(runningEngines) > 1 {
+		logrus.Errorf("Found > 1 engine running, which should never happen")
+		return
+	}
+
+	
 }
