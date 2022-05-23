@@ -1,4 +1,6 @@
 # TBD
+
+# 1.25.0
 ### Fixes
 * Go up to core 1.53.0, which fixes a bug with the gRPC API
 
