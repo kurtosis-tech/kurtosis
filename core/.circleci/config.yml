@@ -65,6 +65,26 @@ jobs:
 
       - run: api/typescript/scripts/build.sh
 
+  check_files_artifacts_expander:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+    steps:
+      - checkout
+
+      # If the only changes are to the docs, don't run the slow (and expensive) code checks
+      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
+      - run: |
+          if git --no-pager diff --exit-code origin/develop...HEAD -- . ':!docs'; then
+            circleci-agent step halt
+          fi
+
+      - setup_remote_docker:
+          version: "<< pipeline.parameters.docker-engine-version>>"
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+
+      # Doesn't actually read any private repos so doesn't need the magic Go-private-repo Git config stuff
+      - run: files_artifacts_expander/scripts/build.sh
+
   check_launcher:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
@@ -164,6 +184,34 @@ jobs:
           package-path: api/typescript
           publish-token-variable: NPMJS_AUTH_TOKEN
 
+  publish_files_artifacts_expander_image:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+    steps:
+      - checkout
+
+      - setup_remote_docker:
+          version: "<< pipeline.parameters.docker-engine-version>>"
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+
+      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
+      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
+      - run: |
+          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+          files_artifacts_expander/scripts/build.sh
+
+      - run: |
+          set -euo pipefail
+          source files_artifacts_expander/scripts/_constants.env
+          version_to_publish="$(bash "files_artifacts_expander/scripts/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}")"
+          echo "Version that will be published: ${version_to_publish}"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
+          docker tag "${image_name_with_version}" "${image_name_no_version}"
+          docker push "${image_name_with_version}"
+          docker push "${image_name_no_version}"
+
   publish_server_image:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
@@ -226,6 +274,14 @@ workflows:
               ignore:
                 - develop
                 - master
+      - check_files_artifacts_expander:
+          context:
+            - docker-user
+          filters:
+            branches:
+              ignore:
+                - develop
+                - master
       - check_launcher:
           context:
             # This pulls in KurtosisBot's Github token, so that we can read from our private repos
@@ -263,6 +319,15 @@ workflows:
             branches:
               ignore: /.*/
             tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - publish_files_artifacts_expander_image:
+          context:
+            - github-user
+            - docker-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags: 
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
       - publish_server_image:
           context:
