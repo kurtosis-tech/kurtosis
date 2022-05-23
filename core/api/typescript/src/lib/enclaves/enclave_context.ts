@@ -187,17 +187,22 @@ export class EnclaveContext {
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async getModuleContext(moduleId: ModuleID): Promise<Result<ModuleContext, Error>> {
-        const moduleArgMap = new Map<string, boolean>()
-        moduleArgMap.set(moduleId, true)
-        const getModuleInfoArgs: GetModulesArgs = newGetModulesArgs(moduleArgMap);
+        const moduleMapForArgs = new Map<string, boolean>()
+        moduleMapForArgs.set(moduleId, true)
+        const args: GetModulesArgs = newGetModulesArgs(moduleMapForArgs);
 
-        const getModuleInfoResult = await this.backend.getModules(getModuleInfoArgs)
+        const getModuleInfoResult = await this.backend.getModules(args)
         if(getModuleInfoResult.isErr()){
             return err(getModuleInfoResult.error)
         }
+        const resp = getModuleInfoResult.value
 
-        const moduleContext: ModuleContext = new ModuleContext(this.backend, moduleId);
-        return ok(moduleContext)
+        if (!resp.getModuleInfoMap().has(moduleId)) {
+            return err(new Error(`Module '${moduleId}' does not exist`))
+        }
+
+        const moduleCtx: ModuleContext = new ModuleContext(this.backend, moduleId);
+        return ok(moduleCtx)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
