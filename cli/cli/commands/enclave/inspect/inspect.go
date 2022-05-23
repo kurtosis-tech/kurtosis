@@ -15,10 +15,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"sort"
 	"strings"
@@ -35,6 +38,8 @@ const (
 	apiContainerStatusTitleName        = "API Container Status"
 	apiContainerHostGrpcPortTitle      = "API Container Host GRPC Port"
 	apiContainerHostGrpcProxyPortTitle = "API Container Host GRPC Proxy Port"
+	userServiceIdTitle				   = "User Service with ID"
+	moduleIdTitle				   	   = "Module with ID"
 
 	headerWidthChars = 100
 	headerPadChar    = "="
@@ -97,6 +102,7 @@ func run(
 	keyValuePrinter.AddPair(enclaveStatusTitleName, enclaveContainersStatus.String())
 	keyValuePrinter.AddPair(apiContainerStatusTitleName, enclaveApiContainerStatus.String())
 	if enclaveApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING {
+		// ------------ Print API container info -----------------
 		apiContainerHostInfo := enclaveInfo.GetApiContainerHostMachineInfo()
 		apiContainerHostGrpcPortInfoStr := fmt.Sprintf(
 			"%v:%v",
@@ -110,7 +116,56 @@ func run(
 		)
 		keyValuePrinter.AddPair(apiContainerHostGrpcPortTitle, apiContainerHostGrpcPortInfoStr)
 		keyValuePrinter.AddPair(apiContainerHostGrpcProxyPortTitle, apiContainerHostGrpcProxyPortInfoStr)
+
+		// -----------Print service and module info --------------
+
+		apicHostMachineIp, apicHostMachineGrpcPort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred verifying that the enclave was running")
+		}
+
+		apiContainerHostGrpcUrl := fmt.Sprintf(
+			"%v:%v",
+			apicHostMachineIp,
+			apicHostMachineGrpcPort,
+		)
+		conn, err := grpc.Dial(apiContainerHostGrpcUrl, grpc.WithInsecure())
+		if err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred connecting to the API container grpc port at '%v' in enclave '%v'",
+				apiContainerHostGrpcUrl,
+				enclaveIdStr,
+			)
+		}
+		defer func() {
+			conn.Close()
+		}()
+		apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
+
+		emptyPub := emptypb.Empty{}
+		servicesResponse, err := apiContainerClient.GetServices(ctx, &emptyPub)
+		if err != nil {
+			return stacktrace.Propagate(err,
+				"An error occurred getting services from API Container in enclave '%v'",
+				enclaveIdStr)
+		}
+		for serviceId, _ := range servicesResponse.ServiceIds {
+			keyValuePrinter.AddPair(userServiceIdTitle, serviceId)
+		}
+
+		modulesResponse, err := apiContainerClient.GetModules(ctx, &emptyPub)
+		if err != nil {
+			return stacktrace.Propagate(err,
+				"An error occurred getting modules from API Container in enclave '%v'",
+				enclaveIdStr)
+		}
+		for moduleId, _ := range modulesResponse.ModuleIds {
+			keyValuePrinter.AddPair(moduleIdTitle, moduleId)
+		}
 	}
+
+	// Print key-values:
 	keyValuePrinter.Print()
 	fmt.Fprintln(logrus.StandardLogger().Out, "")
 
