@@ -30,12 +30,8 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to read user input.")
 	}
-	validClusterName, err := validateClusterName(clusterName)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to validate cluster setting.")
-	}
-	if !validClusterName {
-		return stacktrace.NewError("Cluster name '%v' is not a valid Kurtosis cluster name.", clusterName)
+	if err := validateClusterName(clusterName); err != nil {
+		return stacktrace.Propagate(err, "An error occurred validating cluster '%v'", clusterName)
 	}
 
 	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
@@ -46,15 +42,15 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	return nil
 }
 
-func validateClusterName(clusterName string) (bool, error) {
+func validateClusterName(clusterName string) error {
 	configStore := kurtosis_config.GetKurtosisConfigStore()
 	configProvider := kurtosis_config.NewKurtosisConfigProvider(configStore)
 	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
 	if err != nil {
-		return false, stacktrace.Propagate(err, "Failed to get or initialize Kurtosis configuration when validating cluster name '%v'.", clusterName)
+		return stacktrace.Propagate(err, "Failed to get or initialize Kurtosis configuration when validating cluster name '%v'.", clusterName)
 	}
-	if _, ok := kurtosisConfig.GetKurtosisClusters()[clusterName]; ok {
-		return true, nil
+	if _, found := kurtosisConfig.GetKurtosisClusters()[clusterName]; !found {
+		return stacktrace.NewError("Cluster '%v' isn't defined in the Kurtosis config file", clusterName)
 	}
-	return false, nil
+	return nil
 }
