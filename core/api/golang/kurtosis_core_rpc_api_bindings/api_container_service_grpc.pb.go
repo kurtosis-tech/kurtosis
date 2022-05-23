@@ -25,20 +25,20 @@ const _ = grpc.SupportPackageIsVersion7
 type ApiContainerServiceClient interface {
 	// Starts a module container in the enclave
 	LoadModule(ctx context.Context, in *LoadModuleArgs, opts ...grpc.CallOption) (*LoadModuleResponse, error)
+	// Gets information about loaded modules
+	GetModules(ctx context.Context, in *GetModulesArgs, opts ...grpc.CallOption) (*GetModulesResponse, error)
 	// Stop and remove a module from the enclave
-	UnloadModule(ctx context.Context, in *UnloadModuleArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UnloadModule(ctx context.Context, in *UnloadModuleArgs, opts ...grpc.CallOption) (*UnloadModuleResponse, error)
 	// Executes an executable module on the user's behalf
 	ExecuteModule(ctx context.Context, in *ExecuteModuleArgs, opts ...grpc.CallOption) (*ExecuteModuleResponse, error)
-	// Gets information about a loaded module
-	GetModuleInfo(ctx context.Context, in *GetModuleInfoArgs, opts ...grpc.CallOption) (*GetModuleInfoResponse, error)
 	// Registers a service with the API container but doesn't start the container for it
 	RegisterService(ctx context.Context, in *RegisterServiceArgs, opts ...grpc.CallOption) (*RegisterServiceResponse, error)
 	// Starts a previously-registered service by creating a Docker container for it
 	StartService(ctx context.Context, in *StartServiceArgs, opts ...grpc.CallOption) (*StartServiceResponse, error)
-	// Returns relevant information about the service
-	GetServiceInfo(ctx context.Context, in *GetServiceInfoArgs, opts ...grpc.CallOption) (*GetServiceInfoResponse, error)
+	// Returns the IDs of the current services in the enclave
+	GetServices(ctx context.Context, in *GetServicesArgs, opts ...grpc.CallOption) (*GetServicesResponse, error)
 	// Instructs the API container to remove the given service
-	RemoveService(ctx context.Context, in *RemoveServiceArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RemoveService(ctx context.Context, in *RemoveServiceArgs, opts ...grpc.CallOption) (*RemoveServiceResponse, error)
 	// Instructs the API container to repartition the enclave
 	Repartition(ctx context.Context, in *RepartitionArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Executes the given command inside a running container
@@ -51,12 +51,11 @@ type ApiContainerServiceClient interface {
 	WaitForHttpGetEndpointAvailability(ctx context.Context, in *WaitForHttpGetEndpointAvailabilityArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Block until the given HTTP endpoint returns available, calling it through a HTTP Post request
 	WaitForHttpPostEndpointAvailability(ctx context.Context, in *WaitForHttpPostEndpointAvailabilityArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// Returns the IDs of the current services in the enclave
-	GetServices(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetServicesResponse, error)
-	// Returns the IDs of the Kurtosis modules that have been loaded into the enclave
-	GetModules(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetModulesResponse, error)
-	// Uploads a files artifact to the Kurtosis File System.
+	// Uploads a files artifact to the Kurtosis File System
 	UploadFilesArtifact(ctx context.Context, in *UploadFilesArtifactArgs, opts ...grpc.CallOption) (*UploadFilesArtifactResponse, error)
+	// TODO Make this a server-side streaming method so the client can download large files
+	// Downloads a files artifact from the Kurtosis File System
+	DownloadFilesArtifact(ctx context.Context, in *DownloadFilesArtifactArgs, opts ...grpc.CallOption) (*DownloadFilesArtifactResponse, error)
 	// Tells the API container to download a files artifact from the web to the Kurtosis File System
 	StoreWebFilesArtifact(ctx context.Context, in *StoreWebFilesArtifactArgs, opts ...grpc.CallOption) (*StoreWebFilesArtifactResponse, error)
 	// Tells the API container to copy a files artifact from a service to the Kurtosis File System
@@ -80,8 +79,17 @@ func (c *apiContainerServiceClient) LoadModule(ctx context.Context, in *LoadModu
 	return out, nil
 }
 
-func (c *apiContainerServiceClient) UnloadModule(ctx context.Context, in *UnloadModuleArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *apiContainerServiceClient) GetModules(ctx context.Context, in *GetModulesArgs, opts ...grpc.CallOption) (*GetModulesResponse, error) {
+	out := new(GetModulesResponse)
+	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/GetModules", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *apiContainerServiceClient) UnloadModule(ctx context.Context, in *UnloadModuleArgs, opts ...grpc.CallOption) (*UnloadModuleResponse, error) {
+	out := new(UnloadModuleResponse)
 	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/UnloadModule", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -92,15 +100,6 @@ func (c *apiContainerServiceClient) UnloadModule(ctx context.Context, in *Unload
 func (c *apiContainerServiceClient) ExecuteModule(ctx context.Context, in *ExecuteModuleArgs, opts ...grpc.CallOption) (*ExecuteModuleResponse, error) {
 	out := new(ExecuteModuleResponse)
 	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/ExecuteModule", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiContainerServiceClient) GetModuleInfo(ctx context.Context, in *GetModuleInfoArgs, opts ...grpc.CallOption) (*GetModuleInfoResponse, error) {
-	out := new(GetModuleInfoResponse)
-	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/GetModuleInfo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -125,17 +124,17 @@ func (c *apiContainerServiceClient) StartService(ctx context.Context, in *StartS
 	return out, nil
 }
 
-func (c *apiContainerServiceClient) GetServiceInfo(ctx context.Context, in *GetServiceInfoArgs, opts ...grpc.CallOption) (*GetServiceInfoResponse, error) {
-	out := new(GetServiceInfoResponse)
-	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/GetServiceInfo", in, out, opts...)
+func (c *apiContainerServiceClient) GetServices(ctx context.Context, in *GetServicesArgs, opts ...grpc.CallOption) (*GetServicesResponse, error) {
+	out := new(GetServicesResponse)
+	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/GetServices", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *apiContainerServiceClient) RemoveService(ctx context.Context, in *RemoveServiceArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *apiContainerServiceClient) RemoveService(ctx context.Context, in *RemoveServiceArgs, opts ...grpc.CallOption) (*RemoveServiceResponse, error) {
+	out := new(RemoveServiceResponse)
 	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/RemoveService", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -197,27 +196,18 @@ func (c *apiContainerServiceClient) WaitForHttpPostEndpointAvailability(ctx cont
 	return out, nil
 }
 
-func (c *apiContainerServiceClient) GetServices(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetServicesResponse, error) {
-	out := new(GetServicesResponse)
-	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/GetServices", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiContainerServiceClient) GetModules(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetModulesResponse, error) {
-	out := new(GetModulesResponse)
-	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/GetModules", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *apiContainerServiceClient) UploadFilesArtifact(ctx context.Context, in *UploadFilesArtifactArgs, opts ...grpc.CallOption) (*UploadFilesArtifactResponse, error) {
 	out := new(UploadFilesArtifactResponse)
 	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/UploadFilesArtifact", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *apiContainerServiceClient) DownloadFilesArtifact(ctx context.Context, in *DownloadFilesArtifactArgs, opts ...grpc.CallOption) (*DownloadFilesArtifactResponse, error) {
+	out := new(DownloadFilesArtifactResponse)
+	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/DownloadFilesArtifact", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -248,20 +238,20 @@ func (c *apiContainerServiceClient) StoreFilesArtifactFromService(ctx context.Co
 type ApiContainerServiceServer interface {
 	// Starts a module container in the enclave
 	LoadModule(context.Context, *LoadModuleArgs) (*LoadModuleResponse, error)
+	// Gets information about loaded modules
+	GetModules(context.Context, *GetModulesArgs) (*GetModulesResponse, error)
 	// Stop and remove a module from the enclave
-	UnloadModule(context.Context, *UnloadModuleArgs) (*emptypb.Empty, error)
+	UnloadModule(context.Context, *UnloadModuleArgs) (*UnloadModuleResponse, error)
 	// Executes an executable module on the user's behalf
 	ExecuteModule(context.Context, *ExecuteModuleArgs) (*ExecuteModuleResponse, error)
-	// Gets information about a loaded module
-	GetModuleInfo(context.Context, *GetModuleInfoArgs) (*GetModuleInfoResponse, error)
 	// Registers a service with the API container but doesn't start the container for it
 	RegisterService(context.Context, *RegisterServiceArgs) (*RegisterServiceResponse, error)
 	// Starts a previously-registered service by creating a Docker container for it
 	StartService(context.Context, *StartServiceArgs) (*StartServiceResponse, error)
-	// Returns relevant information about the service
-	GetServiceInfo(context.Context, *GetServiceInfoArgs) (*GetServiceInfoResponse, error)
+	// Returns the IDs of the current services in the enclave
+	GetServices(context.Context, *GetServicesArgs) (*GetServicesResponse, error)
 	// Instructs the API container to remove the given service
-	RemoveService(context.Context, *RemoveServiceArgs) (*emptypb.Empty, error)
+	RemoveService(context.Context, *RemoveServiceArgs) (*RemoveServiceResponse, error)
 	// Instructs the API container to repartition the enclave
 	Repartition(context.Context, *RepartitionArgs) (*emptypb.Empty, error)
 	// Executes the given command inside a running container
@@ -274,12 +264,11 @@ type ApiContainerServiceServer interface {
 	WaitForHttpGetEndpointAvailability(context.Context, *WaitForHttpGetEndpointAvailabilityArgs) (*emptypb.Empty, error)
 	// Block until the given HTTP endpoint returns available, calling it through a HTTP Post request
 	WaitForHttpPostEndpointAvailability(context.Context, *WaitForHttpPostEndpointAvailabilityArgs) (*emptypb.Empty, error)
-	// Returns the IDs of the current services in the enclave
-	GetServices(context.Context, *emptypb.Empty) (*GetServicesResponse, error)
-	// Returns the IDs of the Kurtosis modules that have been loaded into the enclave
-	GetModules(context.Context, *emptypb.Empty) (*GetModulesResponse, error)
-	// Uploads a files artifact to the Kurtosis File System.
+	// Uploads a files artifact to the Kurtosis File System
 	UploadFilesArtifact(context.Context, *UploadFilesArtifactArgs) (*UploadFilesArtifactResponse, error)
+	// TODO Make this a server-side streaming method so the client can download large files
+	// Downloads a files artifact from the Kurtosis File System
+	DownloadFilesArtifact(context.Context, *DownloadFilesArtifactArgs) (*DownloadFilesArtifactResponse, error)
 	// Tells the API container to download a files artifact from the web to the Kurtosis File System
 	StoreWebFilesArtifact(context.Context, *StoreWebFilesArtifactArgs) (*StoreWebFilesArtifactResponse, error)
 	// Tells the API container to copy a files artifact from a service to the Kurtosis File System
@@ -294,14 +283,14 @@ type UnimplementedApiContainerServiceServer struct {
 func (UnimplementedApiContainerServiceServer) LoadModule(context.Context, *LoadModuleArgs) (*LoadModuleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoadModule not implemented")
 }
-func (UnimplementedApiContainerServiceServer) UnloadModule(context.Context, *UnloadModuleArgs) (*emptypb.Empty, error) {
+func (UnimplementedApiContainerServiceServer) GetModules(context.Context, *GetModulesArgs) (*GetModulesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetModules not implemented")
+}
+func (UnimplementedApiContainerServiceServer) UnloadModule(context.Context, *UnloadModuleArgs) (*UnloadModuleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnloadModule not implemented")
 }
 func (UnimplementedApiContainerServiceServer) ExecuteModule(context.Context, *ExecuteModuleArgs) (*ExecuteModuleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecuteModule not implemented")
-}
-func (UnimplementedApiContainerServiceServer) GetModuleInfo(context.Context, *GetModuleInfoArgs) (*GetModuleInfoResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetModuleInfo not implemented")
 }
 func (UnimplementedApiContainerServiceServer) RegisterService(context.Context, *RegisterServiceArgs) (*RegisterServiceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterService not implemented")
@@ -309,10 +298,10 @@ func (UnimplementedApiContainerServiceServer) RegisterService(context.Context, *
 func (UnimplementedApiContainerServiceServer) StartService(context.Context, *StartServiceArgs) (*StartServiceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartService not implemented")
 }
-func (UnimplementedApiContainerServiceServer) GetServiceInfo(context.Context, *GetServiceInfoArgs) (*GetServiceInfoResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetServiceInfo not implemented")
+func (UnimplementedApiContainerServiceServer) GetServices(context.Context, *GetServicesArgs) (*GetServicesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetServices not implemented")
 }
-func (UnimplementedApiContainerServiceServer) RemoveService(context.Context, *RemoveServiceArgs) (*emptypb.Empty, error) {
+func (UnimplementedApiContainerServiceServer) RemoveService(context.Context, *RemoveServiceArgs) (*RemoveServiceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveService not implemented")
 }
 func (UnimplementedApiContainerServiceServer) Repartition(context.Context, *RepartitionArgs) (*emptypb.Empty, error) {
@@ -333,14 +322,11 @@ func (UnimplementedApiContainerServiceServer) WaitForHttpGetEndpointAvailability
 func (UnimplementedApiContainerServiceServer) WaitForHttpPostEndpointAvailability(context.Context, *WaitForHttpPostEndpointAvailabilityArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method WaitForHttpPostEndpointAvailability not implemented")
 }
-func (UnimplementedApiContainerServiceServer) GetServices(context.Context, *emptypb.Empty) (*GetServicesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetServices not implemented")
-}
-func (UnimplementedApiContainerServiceServer) GetModules(context.Context, *emptypb.Empty) (*GetModulesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetModules not implemented")
-}
 func (UnimplementedApiContainerServiceServer) UploadFilesArtifact(context.Context, *UploadFilesArtifactArgs) (*UploadFilesArtifactResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UploadFilesArtifact not implemented")
+}
+func (UnimplementedApiContainerServiceServer) DownloadFilesArtifact(context.Context, *DownloadFilesArtifactArgs) (*DownloadFilesArtifactResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DownloadFilesArtifact not implemented")
 }
 func (UnimplementedApiContainerServiceServer) StoreWebFilesArtifact(context.Context, *StoreWebFilesArtifactArgs) (*StoreWebFilesArtifactResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StoreWebFilesArtifact not implemented")
@@ -375,6 +361,24 @@ func _ApiContainerService_LoadModule_Handler(srv interface{}, ctx context.Contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ApiContainerServiceServer).LoadModule(ctx, req.(*LoadModuleArgs))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApiContainerService_GetModules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetModulesArgs)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiContainerServiceServer).GetModules(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api_container_api.ApiContainerService/GetModules",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiContainerServiceServer).GetModules(ctx, req.(*GetModulesArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -415,24 +419,6 @@ func _ApiContainerService_ExecuteModule_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApiContainerService_GetModuleInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetModuleInfoArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).GetModuleInfo(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api_container_api.ApiContainerService/GetModuleInfo",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).GetModuleInfo(ctx, req.(*GetModuleInfoArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ApiContainerService_RegisterService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegisterServiceArgs)
 	if err := dec(in); err != nil {
@@ -469,20 +455,20 @@ func _ApiContainerService_StartService_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApiContainerService_GetServiceInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetServiceInfoArgs)
+func _ApiContainerService_GetServices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetServicesArgs)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).GetServiceInfo(ctx, in)
+		return srv.(ApiContainerServiceServer).GetServices(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api_container_api.ApiContainerService/GetServiceInfo",
+		FullMethod: "/api_container_api.ApiContainerService/GetServices",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).GetServiceInfo(ctx, req.(*GetServiceInfoArgs))
+		return srv.(ApiContainerServiceServer).GetServices(ctx, req.(*GetServicesArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -613,42 +599,6 @@ func _ApiContainerService_WaitForHttpPostEndpointAvailability_Handler(srv interf
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApiContainerService_GetServices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).GetServices(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api_container_api.ApiContainerService/GetServices",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).GetServices(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiContainerService_GetModules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).GetModules(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api_container_api.ApiContainerService/GetModules",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).GetModules(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ApiContainerService_UploadFilesArtifact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UploadFilesArtifactArgs)
 	if err := dec(in); err != nil {
@@ -663,6 +613,24 @@ func _ApiContainerService_UploadFilesArtifact_Handler(srv interface{}, ctx conte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ApiContainerServiceServer).UploadFilesArtifact(ctx, req.(*UploadFilesArtifactArgs))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApiContainerService_DownloadFilesArtifact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DownloadFilesArtifactArgs)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiContainerServiceServer).DownloadFilesArtifact(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api_container_api.ApiContainerService/DownloadFilesArtifact",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiContainerServiceServer).DownloadFilesArtifact(ctx, req.(*DownloadFilesArtifactArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -715,16 +683,16 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ApiContainerService_LoadModule_Handler,
 		},
 		{
+			MethodName: "GetModules",
+			Handler:    _ApiContainerService_GetModules_Handler,
+		},
+		{
 			MethodName: "UnloadModule",
 			Handler:    _ApiContainerService_UnloadModule_Handler,
 		},
 		{
 			MethodName: "ExecuteModule",
 			Handler:    _ApiContainerService_ExecuteModule_Handler,
-		},
-		{
-			MethodName: "GetModuleInfo",
-			Handler:    _ApiContainerService_GetModuleInfo_Handler,
 		},
 		{
 			MethodName: "RegisterService",
@@ -735,8 +703,8 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ApiContainerService_StartService_Handler,
 		},
 		{
-			MethodName: "GetServiceInfo",
-			Handler:    _ApiContainerService_GetServiceInfo_Handler,
+			MethodName: "GetServices",
+			Handler:    _ApiContainerService_GetServices_Handler,
 		},
 		{
 			MethodName: "RemoveService",
@@ -767,16 +735,12 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ApiContainerService_WaitForHttpPostEndpointAvailability_Handler,
 		},
 		{
-			MethodName: "GetServices",
-			Handler:    _ApiContainerService_GetServices_Handler,
-		},
-		{
-			MethodName: "GetModules",
-			Handler:    _ApiContainerService_GetModules_Handler,
-		},
-		{
 			MethodName: "UploadFilesArtifact",
 			Handler:    _ApiContainerService_UploadFilesArtifact_Handler,
+		},
+		{
+			MethodName: "DownloadFilesArtifact",
+			Handler:    _ApiContainerService_DownloadFilesArtifact_Handler,
 		},
 		{
 			MethodName: "StoreWebFilesArtifact",

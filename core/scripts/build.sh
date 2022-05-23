@@ -15,6 +15,7 @@ BUILD_SCRIPT_RELATIVE_FILEPATHS=(
     "api/typescript/scripts/build.sh"
     "launcher/scripts/build.sh"
     "server/scripts/build.sh"
+    "files_artifacts_expander/scripts/build.sh"
 )
 
 

@@ -11,14 +11,14 @@ service ApiContainerService {
   // Starts a module container in the enclave
   rpc LoadModule(LoadModuleArgs) returns (LoadModuleResponse) {};
 
+  // Gets information about loaded modules
+  rpc GetModules(GetModulesArgs) returns (GetModulesResponse) {};
+
   // Stop and remove a module from the enclave
-  rpc UnloadModule(UnloadModuleArgs) returns (google.protobuf.Empty) {};
+  rpc UnloadModule(UnloadModuleArgs) returns (UnloadModuleResponse) {};
 
   // Executes an executable module on the user's behalf
   rpc ExecuteModule(ExecuteModuleArgs) returns (ExecuteModuleResponse) {};
-
-  // Gets information about a loaded module
-  rpc GetModuleInfo(GetModuleInfoArgs) returns (GetModuleInfoResponse) {};
 
   // Registers a service with the API container but doesn't start the container for it
   rpc RegisterService(RegisterServiceArgs) returns (RegisterServiceResponse) {};
@@ -26,11 +26,11 @@ service ApiContainerService {
   // Starts a previously-registered service by creating a Docker container for it
   rpc StartService(StartServiceArgs) returns (StartServiceResponse) {};
 
-  // Returns relevant information about the service
-  rpc GetServiceInfo(GetServiceInfoArgs) returns (GetServiceInfoResponse) {};
+  // Returns the IDs of the current services in the enclave
+  rpc GetServices(GetServicesArgs) returns (GetServicesResponse) {};
 
   // Instructs the API container to remove the given service
-  rpc RemoveService(RemoveServiceArgs) returns (google.protobuf.Empty) {};
+  rpc RemoveService(RemoveServiceArgs) returns (RemoveServiceResponse) {};
 
   // Instructs the API container to repartition the enclave
   rpc Repartition(RepartitionArgs) returns (google.protobuf.Empty) {};
@@ -50,14 +50,12 @@ service ApiContainerService {
   // Block until the given HTTP endpoint returns available, calling it through a HTTP Post request
   rpc WaitForHttpPostEndpointAvailability(WaitForHttpPostEndpointAvailabilityArgs) returns (google.protobuf.Empty) {};
 
-  // Returns the IDs of the current services in the enclave
-  rpc GetServices(google.protobuf.Empty) returns (GetServicesResponse) {};
-
-  // Returns the IDs of the Kurtosis modules that have been loaded into the enclave
-  rpc GetModules(google.protobuf.Empty) returns (GetModulesResponse) {};
-
-  // Uploads a files artifact to the Kurtosis File System.
+  // Uploads a files artifact to the Kurtosis File System
   rpc UploadFilesArtifact(UploadFilesArtifactArgs) returns (UploadFilesArtifactResponse) {};
+
+  // TODO Make this a server-side streaming method so the client can download large files
+  // Downloads a files artifact from the Kurtosis File System
+  rpc DownloadFilesArtifact(DownloadFilesArtifactArgs) returns (DownloadFilesArtifactResponse) {};
 
   // Tells the API container to download a files artifact from the web to the Kurtosis File System
   rpc StoreWebFilesArtifact(StoreWebFilesArtifactArgs) returns (StoreWebFilesArtifactResponse) {};
@@ -80,6 +78,46 @@ message Port {
 
   // The protocol that the port is listening on
   Protocol protocol = 2;
+}
+
+message ServiceInfo {
+  // GUID of the service
+  string service_guid = 1;
+
+  // The IP address of the service inside the enclave
+  string private_ip_addr = 2;
+
+  // The ports on which the service is reachable inside the enclave, specified in user_specified_port_id -> port_info
+  // Will be exactly what was passed in at the time of starting the service
+  map<string, Port> private_ports = 3;
+
+  // Public IP address *outside* the enclave where the service is reachable
+  // NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
+  string maybe_public_ip_addr = 4;
+
+  // Mapping defining the ports that the service can be reached at *outside* the enclave, in the user_defined_port_id -> port_info where user_defined_port_id
+  //  corresponds to the ID that was passed in in StartServiceArgs
+  // NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
+  map<string, Port> maybe_public_ports = 5;
+}
+
+message ModuleInfo {
+  // GUID of the module
+  string guid = 1;
+
+  // The IP address of the module inside the enclave
+  string private_ip_addr = 2;
+
+  // The port inside the enclave where the module's gRPC server is running
+  Port private_grpc_port = 3;
+
+  // Public IP address *outside* the enclave where the module is reachable
+  // NOTE: Will be empty if the module isn't running or the backend doesn't support reporting public service info
+  string maybe_public_ip_addr = 4;
+
+  // Port where the module's gRPC server can be reached *outside* the enclave
+  // NOTE: Will be empty if the module isn't running or the backend doesn't support reporting public service info
+  Port maybe_public_grpc_port = 5;
 }
 
 // ==============================================================================================
@@ -112,11 +150,30 @@ message LoadModuleResponse {
   string guid = 5;
 }
 
+
+// ==============================================================================================
+//                                          Get Modules
+// ==============================================================================================
+message GetModulesArgs {
+  // "Set" of module IDs to fetch info for
+  // If empty, will fetch info for all modules
+  map<string, bool> ids = 1;
+}
+
+message GetModulesResponse {
+  // "Set" of current module IDs in the enclave -> info about the module
+  map<string, ModuleInfo> module_info = 1;
+}
+
 // ==============================================================================================
 //                                     Unload Module
 // ==============================================================================================
 message UnloadModuleArgs {
   string module_id = 1;
+}
+message UnloadModuleResponse {
+  // The GUID of the module that was unloaded
+  string module_guid = 1;
 }
 
 // ==============================================================================================
@@ -134,27 +191,6 @@ message ExecuteModuleResponse {
   // Serialized result data from the module's execute function
   // The serialization format is dependent on the Module
   string serialized_result = 1;
-}
-
-// ==============================================================================================
-//                                     Get Module Info
-// ==============================================================================================
-message GetModuleInfoArgs {
-  string module_id = 1;
-}
-
-message GetModuleInfoResponse {
-  // The IP address of the module inside the enclave
-  string private_ip_addr = 1;
-
-  // The port on which the module is reachable inside the enclave
-  Port private_port = 2;
-
-  // Public IP address *outside* the enclave where the module is reachable
-  string public_ip_addr = 3;
-
-  // The port the module can be reached at *outside* the enclave
-  Port public_port = 4;
 }
 
 // ==============================================================================================
@@ -213,32 +249,17 @@ message StartServiceResponse {
 }
 
 // ==============================================================================================
-//                                       Get Service Info
+//                                          Get Services
 // ==============================================================================================
-message GetServiceInfoArgs {
-  //The service ID to get the info from
-  string service_id = 1;
+message GetServicesArgs {
+  // "Set" of IDs to fetch info for
+  // If empty, will fetch info for all services
+  map<string, bool> service_ids = 1;
 }
 
-message GetServiceInfoResponse {
-  // The IP address of the service inside the enclave
-  string private_ip_addr = 1;
-
-  // The ports on which the service is reachable inside the enclave, specified in user_specified_port_id -> port_info
-  // Will be exactly what was passed in at the time of starting the service
-  map<string, Port> private_ports = 2;
-
-  // Public IP address *outside* the enclave where the service is reachable
-  // NOTE: Will be empty if the service isn't running or didn't define any private ports
-  string public_ip_addr = 3;
-
-  // The ports on which the service can be reached *outside* the enclave, specified in user_specified_port_id -> port_info where user_defined_port_id
-  // The user_specified_port_id will match the keys specified in StartServiceArgs
-  // NOTE: Will be empty if the service isn't running or didn't define any private ports
-  map<string, Port> public_ports = 4;
-
-  // Guid of the running service
-  string service_guid = 5;
+message GetServicesResponse {
+  // "Set" of current service IDs in the enclave -> info about the service
+  map<string, ServiceInfo> service_info = 1;
 }
 
 // ==============================================================================================
@@ -249,6 +270,11 @@ message RemoveServiceArgs {
 
   // How long to wait for the service to gracefully stop before hard killing it
   uint64 container_stop_timeout_seconds = 2;
+}
+
+message RemoveServiceResponse {
+  // The GUID of the service that was removed
+  string service_guid = 1;
 }
 
 // ==============================================================================================
@@ -353,23 +379,6 @@ message WaitForHttpPostEndpointAvailabilityArgs {
 }
 
 // ==============================================================================================
-//                                          Get Services
-// ==============================================================================================
-message GetServicesResponse {
-  // "Set" of current service IDs in the enclave
-  map<string, bool> service_ids = 1;
-}
-
-// ==============================================================================================
-//                                          Get Modules
-// ==============================================================================================
-message GetModulesResponse {
-  // "Set" of current Kurtosis module IDs loaded in the enclave
-  map<string, bool> module_ids = 1;
-}
-
-
-// ==============================================================================================
 //                                          Upload Files Artifact
 // ==============================================================================================
 message UploadFilesArtifactArgs {
@@ -380,6 +389,20 @@ message UploadFilesArtifactArgs {
 message UploadFilesArtifactResponse {
   // UUID of the files artifact, for use when referencing it in the future
   string uuid = 1;
+}
+
+
+// ==============================================================================================
+//                                          Download Files Artifact
+// ==============================================================================================
+message DownloadFilesArtifactArgs {
+  // Files artifact ID to get bytes for
+  string id = 1;
+}
+
+message DownloadFilesArtifactResponse {
+  // Contents of the requested files artifact
+  bytes data = 1;
 }
 
 

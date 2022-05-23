@@ -136,14 +136,75 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.loadModule =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.GetModulesArgs,
+ *   !proto.api_container_api.GetModulesResponse>}
+ */
+const methodDescriptor_ApiContainerService_GetModules = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/GetModules',
+  grpc.web.MethodType.UNARY,
+  proto.api_container_api.GetModulesArgs,
+  proto.api_container_api.GetModulesResponse,
+  /**
+   * @param {!proto.api_container_api.GetModulesArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.GetModulesResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.GetModulesArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.GetModulesResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.GetModulesResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.getModules =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/GetModules',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_GetModules,
+      callback);
+};
+
+
+/**
+ * @param {!proto.api_container_api.GetModulesArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.api_container_api.GetModulesResponse>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.getModules =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/GetModules',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_GetModules);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.api_container_api.UnloadModuleArgs,
- *   !proto.google.protobuf.Empty>}
+ *   !proto.api_container_api.UnloadModuleResponse>}
  */
 const methodDescriptor_ApiContainerService_UnloadModule = new grpc.web.MethodDescriptor(
   '/api_container_api.ApiContainerService/UnloadModule',
   grpc.web.MethodType.UNARY,
   proto.api_container_api.UnloadModuleArgs,
-  google_protobuf_empty_pb.Empty,
+  proto.api_container_api.UnloadModuleResponse,
   /**
    * @param {!proto.api_container_api.UnloadModuleArgs} request
    * @return {!Uint8Array}
@@ -151,7 +212,7 @@ const methodDescriptor_ApiContainerService_UnloadModule = new grpc.web.MethodDes
   function(request) {
     return request.serializeBinary();
   },
-  google_protobuf_empty_pb.Empty.deserializeBinary
+  proto.api_container_api.UnloadModuleResponse.deserializeBinary
 );
 
 
@@ -160,9 +221,9 @@ const methodDescriptor_ApiContainerService_UnloadModule = new grpc.web.MethodDes
  *     request proto
  * @param {?Object<string, string>} metadata User defined
  *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.google.protobuf.Empty)}
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.UnloadModuleResponse)}
  *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.google.protobuf.Empty>|undefined}
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.UnloadModuleResponse>|undefined}
  *     The XHR Node Readable Stream
  */
 proto.api_container_api.ApiContainerServiceClient.prototype.unloadModule =
@@ -181,7 +242,7 @@ proto.api_container_api.ApiContainerServiceClient.prototype.unloadModule =
  *     request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!Promise<!proto.google.protobuf.Empty>}
+ * @return {!Promise<!proto.api_container_api.UnloadModuleResponse>}
  *     Promise that resolves to the response
  */
 proto.api_container_api.ApiContainerServicePromiseClient.prototype.unloadModule =
@@ -252,67 +313,6 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeModule
       request,
       metadata || {},
       methodDescriptor_ApiContainerService_ExecuteModule);
-};
-
-
-/**
- * @const
- * @type {!grpc.web.MethodDescriptor<
- *   !proto.api_container_api.GetModuleInfoArgs,
- *   !proto.api_container_api.GetModuleInfoResponse>}
- */
-const methodDescriptor_ApiContainerService_GetModuleInfo = new grpc.web.MethodDescriptor(
-  '/api_container_api.ApiContainerService/GetModuleInfo',
-  grpc.web.MethodType.UNARY,
-  proto.api_container_api.GetModuleInfoArgs,
-  proto.api_container_api.GetModuleInfoResponse,
-  /**
-   * @param {!proto.api_container_api.GetModuleInfoArgs} request
-   * @return {!Uint8Array}
-   */
-  function(request) {
-    return request.serializeBinary();
-  },
-  proto.api_container_api.GetModuleInfoResponse.deserializeBinary
-);
-
-
-/**
- * @param {!proto.api_container_api.GetModuleInfoArgs} request The
- *     request proto
- * @param {?Object<string, string>} metadata User defined
- *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.api_container_api.GetModuleInfoResponse)}
- *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.GetModuleInfoResponse>|undefined}
- *     The XHR Node Readable Stream
- */
-proto.api_container_api.ApiContainerServiceClient.prototype.getModuleInfo =
-    function(request, metadata, callback) {
-  return this.client_.rpcCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/GetModuleInfo',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_GetModuleInfo,
-      callback);
-};
-
-
-/**
- * @param {!proto.api_container_api.GetModuleInfoArgs} request The
- *     request proto
- * @param {?Object<string, string>=} metadata User defined
- *     call metadata
- * @return {!Promise<!proto.api_container_api.GetModuleInfoResponse>}
- *     Promise that resolves to the response
- */
-proto.api_container_api.ApiContainerServicePromiseClient.prototype.getModuleInfo =
-    function(request, metadata) {
-  return this.client_.unaryCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/GetModuleInfo',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_GetModuleInfo);
 };
 
 
@@ -441,61 +441,61 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.startService 
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
- *   !proto.api_container_api.GetServiceInfoArgs,
- *   !proto.api_container_api.GetServiceInfoResponse>}
+ *   !proto.api_container_api.GetServicesArgs,
+ *   !proto.api_container_api.GetServicesResponse>}
  */
-const methodDescriptor_ApiContainerService_GetServiceInfo = new grpc.web.MethodDescriptor(
-  '/api_container_api.ApiContainerService/GetServiceInfo',
+const methodDescriptor_ApiContainerService_GetServices = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/GetServices',
   grpc.web.MethodType.UNARY,
-  proto.api_container_api.GetServiceInfoArgs,
-  proto.api_container_api.GetServiceInfoResponse,
+  proto.api_container_api.GetServicesArgs,
+  proto.api_container_api.GetServicesResponse,
   /**
-   * @param {!proto.api_container_api.GetServiceInfoArgs} request
+   * @param {!proto.api_container_api.GetServicesArgs} request
    * @return {!Uint8Array}
    */
   function(request) {
     return request.serializeBinary();
   },
-  proto.api_container_api.GetServiceInfoResponse.deserializeBinary
+  proto.api_container_api.GetServicesResponse.deserializeBinary
 );
 
 
 /**
- * @param {!proto.api_container_api.GetServiceInfoArgs} request The
+ * @param {!proto.api_container_api.GetServicesArgs} request The
  *     request proto
  * @param {?Object<string, string>} metadata User defined
  *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.api_container_api.GetServiceInfoResponse)}
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.GetServicesResponse)}
  *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.GetServiceInfoResponse>|undefined}
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.GetServicesResponse>|undefined}
  *     The XHR Node Readable Stream
  */
-proto.api_container_api.ApiContainerServiceClient.prototype.getServiceInfo =
+proto.api_container_api.ApiContainerServiceClient.prototype.getServices =
     function(request, metadata, callback) {
   return this.client_.rpcCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/GetServiceInfo',
+      '/api_container_api.ApiContainerService/GetServices',
       request,
       metadata || {},
-      methodDescriptor_ApiContainerService_GetServiceInfo,
+      methodDescriptor_ApiContainerService_GetServices,
       callback);
 };
 
 
 /**
- * @param {!proto.api_container_api.GetServiceInfoArgs} request The
+ * @param {!proto.api_container_api.GetServicesArgs} request The
  *     request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!Promise<!proto.api_container_api.GetServiceInfoResponse>}
+ * @return {!Promise<!proto.api_container_api.GetServicesResponse>}
  *     Promise that resolves to the response
  */
-proto.api_container_api.ApiContainerServicePromiseClient.prototype.getServiceInfo =
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.getServices =
     function(request, metadata) {
   return this.client_.unaryCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/GetServiceInfo',
+      '/api_container_api.ApiContainerService/GetServices',
       request,
       metadata || {},
-      methodDescriptor_ApiContainerService_GetServiceInfo);
+      methodDescriptor_ApiContainerService_GetServices);
 };
 
 
@@ -503,13 +503,13 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.getServiceInf
  * @const
  * @type {!grpc.web.MethodDescriptor<
  *   !proto.api_container_api.RemoveServiceArgs,
- *   !proto.google.protobuf.Empty>}
+ *   !proto.api_container_api.RemoveServiceResponse>}
  */
 const methodDescriptor_ApiContainerService_RemoveService = new grpc.web.MethodDescriptor(
   '/api_container_api.ApiContainerService/RemoveService',
   grpc.web.MethodType.UNARY,
   proto.api_container_api.RemoveServiceArgs,
-  google_protobuf_empty_pb.Empty,
+  proto.api_container_api.RemoveServiceResponse,
   /**
    * @param {!proto.api_container_api.RemoveServiceArgs} request
    * @return {!Uint8Array}
@@ -517,7 +517,7 @@ const methodDescriptor_ApiContainerService_RemoveService = new grpc.web.MethodDe
   function(request) {
     return request.serializeBinary();
   },
-  google_protobuf_empty_pb.Empty.deserializeBinary
+  proto.api_container_api.RemoveServiceResponse.deserializeBinary
 );
 
 
@@ -526,9 +526,9 @@ const methodDescriptor_ApiContainerService_RemoveService = new grpc.web.MethodDe
  *     request proto
  * @param {?Object<string, string>} metadata User defined
  *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.google.protobuf.Empty)}
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.RemoveServiceResponse)}
  *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.google.protobuf.Empty>|undefined}
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.RemoveServiceResponse>|undefined}
  *     The XHR Node Readable Stream
  */
 proto.api_container_api.ApiContainerServiceClient.prototype.removeService =
@@ -547,7 +547,7 @@ proto.api_container_api.ApiContainerServiceClient.prototype.removeService =
  *     request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!Promise<!proto.google.protobuf.Empty>}
+ * @return {!Promise<!proto.api_container_api.RemoveServiceResponse>}
  *     Promise that resolves to the response
  */
 proto.api_container_api.ApiContainerServicePromiseClient.prototype.removeService =
@@ -929,128 +929,6 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.waitForHttpPo
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
- *   !proto.google.protobuf.Empty,
- *   !proto.api_container_api.GetServicesResponse>}
- */
-const methodDescriptor_ApiContainerService_GetServices = new grpc.web.MethodDescriptor(
-  '/api_container_api.ApiContainerService/GetServices',
-  grpc.web.MethodType.UNARY,
-  google_protobuf_empty_pb.Empty,
-  proto.api_container_api.GetServicesResponse,
-  /**
-   * @param {!proto.google.protobuf.Empty} request
-   * @return {!Uint8Array}
-   */
-  function(request) {
-    return request.serializeBinary();
-  },
-  proto.api_container_api.GetServicesResponse.deserializeBinary
-);
-
-
-/**
- * @param {!proto.google.protobuf.Empty} request The
- *     request proto
- * @param {?Object<string, string>} metadata User defined
- *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.api_container_api.GetServicesResponse)}
- *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.GetServicesResponse>|undefined}
- *     The XHR Node Readable Stream
- */
-proto.api_container_api.ApiContainerServiceClient.prototype.getServices =
-    function(request, metadata, callback) {
-  return this.client_.rpcCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/GetServices',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_GetServices,
-      callback);
-};
-
-
-/**
- * @param {!proto.google.protobuf.Empty} request The
- *     request proto
- * @param {?Object<string, string>=} metadata User defined
- *     call metadata
- * @return {!Promise<!proto.api_container_api.GetServicesResponse>}
- *     Promise that resolves to the response
- */
-proto.api_container_api.ApiContainerServicePromiseClient.prototype.getServices =
-    function(request, metadata) {
-  return this.client_.unaryCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/GetServices',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_GetServices);
-};
-
-
-/**
- * @const
- * @type {!grpc.web.MethodDescriptor<
- *   !proto.google.protobuf.Empty,
- *   !proto.api_container_api.GetModulesResponse>}
- */
-const methodDescriptor_ApiContainerService_GetModules = new grpc.web.MethodDescriptor(
-  '/api_container_api.ApiContainerService/GetModules',
-  grpc.web.MethodType.UNARY,
-  google_protobuf_empty_pb.Empty,
-  proto.api_container_api.GetModulesResponse,
-  /**
-   * @param {!proto.google.protobuf.Empty} request
-   * @return {!Uint8Array}
-   */
-  function(request) {
-    return request.serializeBinary();
-  },
-  proto.api_container_api.GetModulesResponse.deserializeBinary
-);
-
-
-/**
- * @param {!proto.google.protobuf.Empty} request The
- *     request proto
- * @param {?Object<string, string>} metadata User defined
- *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.api_container_api.GetModulesResponse)}
- *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.GetModulesResponse>|undefined}
- *     The XHR Node Readable Stream
- */
-proto.api_container_api.ApiContainerServiceClient.prototype.getModules =
-    function(request, metadata, callback) {
-  return this.client_.rpcCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/GetModules',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_GetModules,
-      callback);
-};
-
-
-/**
- * @param {!proto.google.protobuf.Empty} request The
- *     request proto
- * @param {?Object<string, string>=} metadata User defined
- *     call metadata
- * @return {!Promise<!proto.api_container_api.GetModulesResponse>}
- *     Promise that resolves to the response
- */
-proto.api_container_api.ApiContainerServicePromiseClient.prototype.getModules =
-    function(request, metadata) {
-  return this.client_.unaryCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/GetModules',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_GetModules);
-};
-
-
-/**
- * @const
- * @type {!grpc.web.MethodDescriptor<
  *   !proto.api_container_api.UploadFilesArtifactArgs,
  *   !proto.api_container_api.UploadFilesArtifactResponse>}
  */
@@ -1106,6 +984,67 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.uploadFilesAr
       request,
       metadata || {},
       methodDescriptor_ApiContainerService_UploadFilesArtifact);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.DownloadFilesArtifactArgs,
+ *   !proto.api_container_api.DownloadFilesArtifactResponse>}
+ */
+const methodDescriptor_ApiContainerService_DownloadFilesArtifact = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/DownloadFilesArtifact',
+  grpc.web.MethodType.UNARY,
+  proto.api_container_api.DownloadFilesArtifactArgs,
+  proto.api_container_api.DownloadFilesArtifactResponse,
+  /**
+   * @param {!proto.api_container_api.DownloadFilesArtifactArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.DownloadFilesArtifactResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.DownloadFilesArtifactArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.DownloadFilesArtifactResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.DownloadFilesArtifactResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.downloadFilesArtifact =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/DownloadFilesArtifact',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_DownloadFilesArtifact,
+      callback);
+};
+
+
+/**
+ * @param {!proto.api_container_api.DownloadFilesArtifactArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.api_container_api.DownloadFilesArtifactResponse>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.downloadFilesArtifact =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/DownloadFilesArtifact',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_DownloadFilesArtifact);
 };
 
 
