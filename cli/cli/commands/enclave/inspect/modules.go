@@ -131,7 +131,8 @@ func getModulePortBindingString(module *module.Module, maybePublicPortFromAPIC *
 	}
 
 	if publicIpAddr != defaultEmptyIPAddrForModules && publicPort != nil {
-		line = line + fmt.Sprintf(" -> %v:%v", publicIpAddr, publicPort)
+		publicPortUint := *publicPort
+		line = line + fmt.Sprintf(" -> %v:%v", publicIpAddr, publicPortUint)
 	}
 	return line
 }
