@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Reworked how files artifact expansion works, so that our volumes only need to be mounted as `ReadWriteOnce`
 
 # 0.30.2
 ### Changes
