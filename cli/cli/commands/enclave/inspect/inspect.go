@@ -9,19 +9,15 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
-	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"sort"
 	"strings"
@@ -49,9 +45,9 @@ const (
 )
 
 // TODO TODO TODO CHANGE THIS SIGNATURE SO THAT IT MATCHES MODULE AND USER SERVICES SIGNATURE
-var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo kurtosis_engine_rpc_api_bindings.EnclaveInfo, enclaveId enclave.EnclaveID) error{
+var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, enclaveInfo kurtosis_engine_rpc_api_bindings.EnclaveInfo) error{
 	"User Services":     printUserServices,
-	"Kurtosis Modules":  printModules,
+	//"Kurtosis Modules":  printModules,
 }
 
 var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -82,7 +78,6 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for non-greedy enclave ID arg '%v' but none was found; this is a bug with Kurtosis!", enclaveIdArgKey)
 	}
-	enclaveId := enclave.EnclaveID(enclaveIdStr)
 
 	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -120,7 +115,7 @@ func run(
 		keyValuePrinter.AddPair(apiContainerHostGrpcProxyPortTitle, apiContainerHostGrpcProxyPortInfoStr)
 
 		// -----------Print service and module info --------------
-
+		/*
 		apicHostMachineIp, apicHostMachineGrpcPort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred verifying that the enclave was running")
@@ -164,7 +159,7 @@ func run(
 		}
 		for moduleId, _ := range modulesResponse.ModuleIds {
 			keyValuePrinter.AddPair(moduleIdTitle, moduleId)
-		}
+		}*/
 	}
 
 	// Print key-values:
@@ -190,7 +185,7 @@ func run(
 		fmt.Println(fmt.Sprintf("%v %v %v", padStr, header, padStr))
 
 
-		if err := printingFunc(ctx, kurtosisBackend, enclaveId); err != nil {
+		if err := printingFunc(ctx, *enclaveInfo); err != nil {
 			logrus.Error(err)
 			headersWithPrintErrs = append(headersWithPrintErrs, header)
 		}

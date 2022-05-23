@@ -3,16 +3,14 @@ package inspect
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/emptypb"
 	"sort"
 	"strings"
 )
@@ -25,8 +23,7 @@ const (
 	missingPortPlaceholder = "<none>"
 )
 
-// TODO TODO TODO REMOVE BACKEND ARG AND MAKE SURE THIS IS CALLED CORRECTLY IN INSPECT.GO
-func printUserServices(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo kurtosis_engine_rpc_api_bindings.EnclaveInfo) error {
+func printUserServices(ctx context.Context, enclaveInfo kurtosis_engine_rpc_api_bindings.EnclaveInfo) error {
 	enclaveIdStr := enclaveInfo.EnclaveId
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
 	apicHostMachineIp, apicHostMachineGrpcPort, err := enclave_liveness_validator.ValidateEnclaveLiveness(&enclaveInfo)
@@ -53,39 +50,40 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 	}()
 	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
 
-	userServiceFilters := &service.ServiceFilters{}
-
-	// TODO Switch to using the API container API once it can show *all* services (not just running ones)
-	emptyPub := emptypb.Empty{}
-	userServicesResponse, err := apiContainerClient.GetServices(ctx, &emptyPub)
-	//userServices, err := kurtosisBackend.GetUserServices(ctx, enclaveId, userServiceFilters)
+	getAllServicesMap := map[string]bool{}
+	getAllServicesArgs := binding_constructors.NewGetServicesArgs(getAllServicesMap)
+	allServicesResponse, err := apiContainerClient.GetServices(ctx, getAllServicesArgs)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' using filters '%+v'", enclaveId, userServiceFilters)
+		return stacktrace.Propagate(err, "Failed to get service information for all services in enclave '%v'", enclaveId)
 	}
-	userServices := userServicesResponse.GetServiceIds()
+	userServiceInfoMap := allServicesResponse.GetServiceInfo()
 
 	tablePrinter := output_printers.NewTablePrinter(
 		userServiceGUIDColHeader,
 		userServiceIDColHeader,
 		userServicePortsColHeader,
 	)
-	sortedUserServices:= getSortedUserServiceSliceFromUserServiceMap(userServices)
-	for _, userService := range sortedUserServices {
-		idStr := string(userService.GetRegistration().GetID())
-		guidStr := string(userService.GetRegistration().GetGUID())
 
-		portBindingLines, err := getUserServicePortBindingStrings(userService)
+	sortedUserServiceInfoTuples := getSortedUserServiceSliceFromUserServiceInfoMap(userServiceInfoMap)
+
+	for _, userServiceInfoTuple := range sortedUserServiceInfoTuples {
+		serviceIdStr := userServiceInfoTuple.serviceId
+		userServiceInfo := userServiceInfoTuple.serviceInfo
+		serviceGuid := userServiceInfo.GetServiceGuid()
+		serviceGuidStr := string(serviceGuid)
+
+		portBindingLines, err := getUserServicePortBindingStringsFromServiceInfo(userServiceInfo)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting the port binding strings")
+			return stacktrace.Propagate(err, "Failed to create port binding strings from service info.")
 		}
 		firstPortBindingLine := portBindingLines[0]
 		additionalPortBindingLines := portBindingLines[1:]
 
-		if err := tablePrinter.AddRow(guidStr, idStr, firstPortBindingLine); err != nil {
+		if err := tablePrinter.AddRow(serviceGuidStr, serviceIdStr, firstPortBindingLine); err != nil {
 			return stacktrace.Propagate(
 				err,
 				"An error occurred adding row for user service with GUID '%v' to the table printer",
-				guidStr,
+				serviceGuidStr,
 			)
 		}
 
@@ -95,34 +93,40 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 					err,
 					"An error occurred adding additional port binding row '%v' for user service with GUID '%v' to the table printer",
 					additionalPortBindingLine,
-					guidStr,
+					serviceGuidStr,
 				)
 			}
 		}
 	}
 	tablePrinter.Print()
-
 	return nil
 }
 
-func getSortedUserServiceSliceFromUserServiceMap(userServices map[service.ServiceGUID]*service.Service) []*service.Service {
-	userServicesResult := make([]*service.Service, 0, len(userServices))
-	for _, userService := range userServices {
-		userServicesResult = append(userServicesResult, userService)
+type serviceIdServiceInfoTuple struct {
+	serviceId string
+	serviceInfo *kurtosis_core_rpc_api_bindings.ServiceInfo
+}
+
+func getSortedUserServiceSliceFromUserServiceInfoMap(userServiceInfoMap map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo) []*serviceIdServiceInfoTuple {
+	userServicesResult := make([]*serviceIdServiceInfoTuple, 0, len(userServiceInfoMap))
+	for serviceId, userServiceInfo := range userServiceInfoMap {
+		userServicesResult = append(userServicesResult, &serviceIdServiceInfoTuple{
+			serviceId: serviceId,
+			serviceInfo: userServiceInfo})
 	}
 
 	sort.Slice(userServicesResult, func(i, j int) bool {
 		firstService := userServicesResult[i]
 		secondService := userServicesResult[j]
-		return firstService.GetRegistration().GetGUID() < secondService.GetRegistration().GetGUID()
+		return firstService.serviceInfo.GetServiceGuid() < secondService.serviceInfo.GetServiceGuid()
 	})
 
 	return userServicesResult
 }
 
 // Guaranteed to have at least one entry
-func getUserServicePortBindingStrings(userService *service.Service) ([]string, error) {
-	privatePorts := userService.GetPrivatePorts()
+func getUserServicePortBindingStringsFromServiceInfo(serviceInfo *kurtosis_core_rpc_api_bindings.ServiceInfo) ([]string, error) {
+	privatePorts := serviceInfo.GetPrivatePorts()
 	if privatePorts == nil || len(privatePorts) == 0 {
 		return []string{missingPortPlaceholder}, nil
 	}
@@ -141,9 +145,9 @@ func getUserServicePortBindingStrings(userService *service.Service) ([]string, e
 	}
 
 	// If the container is running, add host machine port binding information
-	if userService.GetMaybePublicIP() != nil && userService.GetMaybePublicPorts() != nil {
-		publicIpAddr := userService.GetMaybePublicIP()
-		publicPorts := userService.GetMaybePublicPorts()
+	if serviceInfo.GetMaybePublicIpAddr() != "" && serviceInfo.GetMaybePublicPorts() != nil {
+		publicIpAddr := serviceInfo.GetMaybePublicIpAddr()
+		publicPorts := serviceInfo.GetMaybePublicPorts()
 		for portId := range privatePorts {
 			publicPortSpec, found := publicPorts[portId]
 			if !found {
@@ -151,7 +155,7 @@ func getUserServicePortBindingStrings(userService *service.Service) ([]string, e
 					"Private port '%v' was declared on service '%v' and the container is running, but no corresponding public port " +
 						"was found; this is very strange!",
 					portId,
-					userService.GetRegistration().GetGUID(),
+					serviceInfo.GetServiceGuid(),
 				)
 			}
 			currentPortLine := resultLines[portId]
