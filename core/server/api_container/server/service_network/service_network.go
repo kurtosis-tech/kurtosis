@@ -8,12 +8,12 @@ package service_network
 import (
 	"compress/gzip"
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/files_artifact_expander"
+	"github.com/kurtosis-tech/kurtosis-core/files_artifacts_expander/args"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
@@ -22,6 +22,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"net"
+	"path"
 	"strings"
 	"sync"
 	"time"
@@ -30,6 +31,11 @@ import (
 const (
 	defaultPartitionId                       service_network_types.PartitionID = "default"
 	startingDefaultConnectionPacketLossValue                                   = 0
+
+	filesArtifactExpansionDirsParentDirpath = "/files-artifacts"
+
+	// TODO This should be populated from the build flow that builds the files-artifacts-expander Docker image
+	filesArtifactsExpanderImage = "kurtosistech/kurtosis-files-artifacts-expander"
 )
 
 type storeFilesArtifactResult struct {
@@ -43,6 +49,10 @@ This is the in-memory representation of the service network that the API contain
 */
 type ServiceNetwork struct {
 	enclaveId enclave.EnclaveID
+	
+	apiContainerIpAddress net.IP
+	apiContainerGrpcPortNum uint16
+	apiContainerVersion string
 
 	mutex *sync.Mutex // VERY IMPORTANT TO CHECK AT THE START OF EVERY METHOD!
 
@@ -52,8 +62,6 @@ type ServiceNetwork struct {
 	kurtosisBackend backend_interface.KurtosisBackend
 
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory
-
-	filesArtifactExpander    *files_artifact_expander.FilesArtifactExpander
 
 	topology *partition_topology.PartitionTopology
 
@@ -68,22 +76,26 @@ type ServiceNetwork struct {
 
 func NewServiceNetwork(
 	enclaveId enclave.EnclaveID,
+	apiContainerIpAddr net.IP,
+	apiContainerGrpcPortNum uint16,
+	apiContainerVersion string,
 	isPartitioningEnabled bool,
 	kurtosisBackend backend_interface.KurtosisBackend,
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 	networkingSidecarManager networking_sidecar.NetworkingSidecarManager,
-	filesArtifactExpander *files_artifact_expander.FilesArtifactExpander,
 ) *ServiceNetwork {
 	defaultPartitionConnection := partition_topology.PartitionConnection{
 		PacketLossPercentage: startingDefaultConnectionPacketLossValue,
 	}
 	return &ServiceNetwork{
-		enclaveId:             enclaveId,
-		mutex:                 &sync.Mutex{},
-		isPartitioningEnabled: isPartitioningEnabled,
-		kurtosisBackend:       kurtosisBackend,
-		enclaveDataDir:        enclaveDataDir,
-		filesArtifactExpander: filesArtifactExpander,
+		enclaveId:               enclaveId,
+		apiContainerIpAddress:   apiContainerIpAddr,
+		apiContainerGrpcPortNum: apiContainerGrpcPortNum,
+		apiContainerVersion:     apiContainerVersion,
+		mutex:                   &sync.Mutex{},
+		isPartitioningEnabled:   isPartitioningEnabled,
+		kurtosisBackend:         kurtosisBackend,
+		enclaveDataDir:          enclaveDataDir,
 		topology: partition_topology.NewPartitionTopology(
 			defaultPartitionId,
 			defaultPartitionConnection,
@@ -701,11 +713,54 @@ func (network *ServiceNetwork) startService(
 	resultUserService *service.Service,
 	resultErr error,
 ) {
-	usedArtifactUuidSet := map[service.FilesArtifactID]bool{}
-	for artifactUuid := range filesArtifactUuidsToMountpoints {
-		usedArtifactUuidSet[artifactUuid] = true
+
+	var filesArtifactsExpansion *backend_interface.FilesArtifactsExpansion
+	if len(filesArtifactUuidsToMountpoints) > 0 {
+		usedArtifactUuidSet := map[service.FilesArtifactID]bool{}
+		for artifactUuid := range filesArtifactUuidsToMountpoints {
+			usedArtifactUuidSet[artifactUuid] = true
+		}
+
+		filesArtifactsExpansions := []args.FilesArtifactExpansion{}
+		expanderDirpathToUserServiceDirpathMap := map[string]string{}
+		for filesArtifactId, mountpointOnUserService := range filesArtifactUuidsToMountpoints {
+			dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, string(filesArtifactId))
+			expansion := args.FilesArtifactExpansion{
+				FilesArtifactId:   string(filesArtifactId),
+				DirPathToExpandTo: dirpathToExpandTo,
+			}
+			filesArtifactsExpansions = append(filesArtifactsExpansions, expansion)
+
+			expanderDirpathToUserServiceDirpathMap[dirpathToExpandTo] = mountpointOnUserService
+		}
+
+		filesArtifactsExpanderArgs, err := args.NewFilesArtifactsExpanderArgs(
+			network.apiContainerIpAddress.String(),
+			network.apiContainerGrpcPortNum,
+			filesArtifactsExpansions,
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating files artifacts expander args")
+		}
+		expanderEnvVars, err := args.GetEnvFromArgs(filesArtifactsExpanderArgs)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting files artifacts expander environment variables using args: %+v", filesArtifactsExpanderArgs)
+		}
+
+		expanderImageAndTag := fmt.Sprintf(
+			"%v:%v",
+			filesArtifactsExpanderImage,
+			network.apiContainerVersion,
+		)
+		
+		filesArtifactsExpansion = &backend_interface.FilesArtifactsExpansion{
+			ExpanderImage:                     expanderImageAndTag,
+			ExpanderEnvVars:                   expanderEnvVars,
+			ExpanderDirpathsToServiceDirpaths: expanderDirpathToUserServiceDirpathMap,
+		}
 	}
 
+	/*
 	// First expand the files artifacts into volumes, so that any errors get caught early
 	// NOTE: if users don't need to investigate the volume contents, we could keep track of the volumes we create
 	//  and delete them at the end of the test to keep things cleaner
@@ -726,6 +781,7 @@ func (network *ServiceNetwork) startService(
 		}
 		artifactVolumeMounts[artifactExpansionGUID] = mountpoint
 	}
+	 */
 
 	launchedUserService, err := network.kurtosisBackend.StartUserService(
 		ctx,
@@ -736,10 +792,16 @@ func (network *ServiceNetwork) startService(
 		entrypointArgs,
 		cmdArgs,
 		envVars,
-		artifactVolumeMounts,
+		filesArtifactsExpansion,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred starting service '%v' with image '%v'", serviceGuid, imageName)
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred starting service '%v' with image '%v' and files artifacts expansions '%+v'",
+			serviceGuid,
+			imageName,
+			filesArtifactsExpansion,
+		)
 	}
 	return launchedUserService, nil
 }

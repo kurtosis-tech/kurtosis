@@ -15,6 +15,10 @@ const (
 
 // Fields are public for JSON de/serialization
 type APIContainerArgs struct {
+	// The version of the API container that was started by the engine, so that the API container can report its
+	// own version
+	// Ideally this would come from a hardcoded constant, but we don't yet have the machinery that can update a constant
+	// on every build
 	Version string `json:"version"`
 
 	LogLevel string `json:"logLevel"`

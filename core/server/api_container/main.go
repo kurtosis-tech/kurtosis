@@ -19,13 +19,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -83,6 +81,11 @@ func runMain() error {
 	logrus.SetLevel(logLevel)
 
 	enclaveDataDir := enclave_data_directory.NewEnclaveDataDirectory(serverArgs.EnclaveDataVolumeDirpath)
+
+	filesArtifactStore, err := enclaveDataDir.GetFilesArtifactStore()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the files artifact store")
+	}
 
 	// TODO Extract into own function
 	var kurtosisBackend backend_interface.KurtosisBackend
@@ -148,7 +151,7 @@ func runMain() error {
 
 	//Creation of ApiContainerService
 	apiContainerService, err := server.NewApiContainerService(
-		enclaveDataDir,
+		filesArtifactStore,
 		serviceNetwork,
 		moduleStore,
 		metricsClient,
@@ -185,13 +188,12 @@ func createServiceNetworkAndModuleStore(
 	enclaveIdStr := args.EnclaveId
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
 
-	objAttrsProvider := schema.GetObjectAttributesProvider()
-	enclaveObjAttrsProvider := objAttrsProvider.ForEnclave(enclaveIdStr)
-
+	/*
 	filesArtifactStore, err := enclaveDataDir.GetFilesArtifactStore()
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the files artifact store")
 	}
+	 */
 
 	isPartitioningEnabled := args.IsPartitioningEnabled
 
@@ -201,25 +203,28 @@ func createServiceNetworkAndModuleStore(
 		args.GrpcListenPortNum,
 	)
 
+	/*
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
 		kurtosisBackend,
 		enclaveObjAttrsProvider,
 		enclaveId,
 		filesArtifactStore,
 	)
+	 */
 
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
 		kurtosisBackend,
-		enclaveObjAttrsProvider,
 		enclaveId)
 
 	serviceNetwork := service_network.NewServiceNetwork(
 		enclaveId,
+		ownIpAddress,
+		args.GrpcListenPortNum,
+		args.Version,
 		isPartitioningEnabled,
 		kurtosisBackend,
 		enclaveDataDir,
 		networkingSidecarManager,
-		filesArtifactExpander,
 	)
 
 	moduleLauncher := module_launcher.NewModuleLauncher(

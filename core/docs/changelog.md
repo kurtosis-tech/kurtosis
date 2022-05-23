@@ -1,5 +1,15 @@
 # TBD
 
+# 1.51.1
+### Features
+* Implement `DownloadFilesArtifact` endpoint
+
+### Changes
+* Upgraded to container-engine-lib 0.31.0, which uses a rewritten files artifact expansion engine to allow for `ReadWriteOnce` volumes in Kubernetes
+
+### Removals
+* Removed the `FilesArtifactExpander` because it's no longer needed as files artifact expansion is handled inside `KurtosisBackend` now
+
 # 1.51.0
 ### Features
 * Added a new `DownloadFilesArtifact` endpoint

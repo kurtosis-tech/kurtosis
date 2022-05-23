@@ -10,13 +10,13 @@ expander_root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
+source "${script_dirpath}/_constants.env"
+
 BUILD_DIRNAME="build"
-MAIN_DIRNAME="files_artifacts_expander"
+
 MAIN_GO_FILEPATH="${expander_root_dirpath}/main.go"
 MAIN_BINARY_OUTPUT_FILENAME="files-artifacts-expander"
 MAIN_BINARY_OUTPUT_FILEPATH="${expander_root_dirpath}/${BUILD_DIRNAME}/${MAIN_BINARY_OUTPUT_FILENAME}"
-IMAGE_ORG_AND_REPO="kurtosistech/kurtosis-files-artifacts-expander"
-GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME="get-docker-image-tag.sh"
 
 # =============================================================================
 #                                 Main Code

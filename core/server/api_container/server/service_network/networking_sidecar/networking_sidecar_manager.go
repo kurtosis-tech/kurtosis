@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -34,13 +33,11 @@ type NetworkingSidecarManager interface {
 type StandardNetworkingSidecarManager struct {
 	kurtosisBackend backend_interface.KurtosisBackend
 
-	enclaveObjAttrProvider schema.EnclaveObjectAttributesProvider
-
 	enclaveId enclave.EnclaveID
 }
 
-func NewStandardNetworkingSidecarManager(kurtosisBackend backend_interface.KurtosisBackend, enclaveObjAttrProvider schema.EnclaveObjectAttributesProvider, enclaveId enclave.EnclaveID) *StandardNetworkingSidecarManager {
-	return &StandardNetworkingSidecarManager{kurtosisBackend: kurtosisBackend, enclaveObjAttrProvider: enclaveObjAttrProvider, enclaveId: enclaveId}
+func NewStandardNetworkingSidecarManager(kurtosisBackend backend_interface.KurtosisBackend, enclaveId enclave.EnclaveID) *StandardNetworkingSidecarManager {
+	return &StandardNetworkingSidecarManager{kurtosisBackend: kurtosisBackend, enclaveId: enclaveId}
 }
 
 // Adds a sidecar container attached to the given service ID
