@@ -420,27 +420,4 @@ type KurtosisBackend interface {
 		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultErr error,
 	)
-
-	/*
-	//Create and execute a files artifact expansion for given file's FilesArtifactID
-	CreateFilesArtifactExpansion(
-		ctx context.Context,
-		enclaveId enclave.EnclaveID,
-		serviceGuid service.ServiceGUID,
-		filesArtifactFilepathRelativeToEnclaveDatadirRoot string, ) (
-		*files_artifact_expansion.FilesArtifactExpansion,
-		error,
-	)
-
-	//Destroy files artifact expansion using the given filters
-	DestroyFilesArtifactExpansions(
-		ctx context.Context,
-		enclaveId enclave.EnclaveID,
-		filters *files_artifact_expansion.FilesArtifactExpansionFilters,
-	) (
-		resultSuccessfulFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]bool,
-		resultErroredFileArtifactExpansionGUIDs map[files_artifact_expansion.FilesArtifactExpansionGUID]error,
-		resultErr error,
-	)
-	 */
 }
