@@ -1,4 +1,6 @@
 # TBD
+
+# 0.30.2
 ### Changes
 * Use `kurtosis-enclave--UUID` for enclave namespace names
 * `GetXXXXX` methods in Kubernetes manager only return non-tombstoned objects
