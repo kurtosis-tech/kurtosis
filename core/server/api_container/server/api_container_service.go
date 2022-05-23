@@ -79,7 +79,7 @@ func NewApiContainerService(
 	return service, nil
 }
 
-func (apicService ApiContainerService) LoadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadModuleArgs) (*kurtosis_core_rpc_api_bindings.LoadModuleResponse, error) {
+func (apicService ApiContainerService) LoadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadModuleArgs) (*kurtosis_core_rpc_api_bindings.ModuleInfo, error) {
 	moduleId := module.ModuleID(args.ModuleId)
 	image := args.ContainerImage
 	serializedParams := args.SerializedParams
@@ -117,7 +117,7 @@ func (apicService ApiContainerService) LoadModule(ctx context.Context, args *kur
 		maybePublicApiPort = candidatePublicApiPort
 	}
 
-	result := binding_constructors.NewLoadModuleResponse(
+	result := binding_constructors.NewModuleInfo(
 		string(loadedModule.GetGUID()),
 		privateIpStr,
 		privateApiPort,
@@ -176,7 +176,7 @@ func (apicService ApiContainerService) RegisterService(ctx context.Context, args
 	}, nil
 }
 
-func (apicService ApiContainerService) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
+func (apicService ApiContainerService) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
 	logrus.Debugf("Received request to start service with the following args: %+v", args)
 	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
 	privateApiPorts := args.PrivatePorts
@@ -192,7 +192,7 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 	for filesArtifactIdStr, mountDirPath := range args.FilesArtifactMountpoints {
 		filesArtifactMountpointsByArtifactId[kurtosis_backend_service.FilesArtifactID(filesArtifactIdStr)] = mountDirPath
 	}
-	serviceGuid, maybePublicIpAddr, publicServicePortSpecs, err := apicService.serviceNetwork.StartService(
+	serviceGuid, privateIpAddr, maybePublicIpAddr, publicServicePortSpecs, err := apicService.serviceNetwork.StartService(
 		ctx,
 		serviceId,
 		args.DockerImage,
@@ -214,7 +214,13 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 	if maybePublicIpAddr != nil {
 		publicIpAddrStr = maybePublicIpAddr.String()
 	}
-	response := binding_constructors.NewStartServiceResponse(publicIpAddrStr, publicApiPorts, string(serviceGuid))
+	response := binding_constructors.NewServiceInfo(
+		string(serviceGuid),
+		privateIpAddr.String(),
+		privateApiPorts,
+		publicIpAddrStr,
+		publicApiPorts,
+	)
 
 	serviceStartLoglineSuffix := ""
 	if len(publicServicePortSpecs) > 0 {

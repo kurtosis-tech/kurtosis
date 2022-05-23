@@ -24,7 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ApiContainerServiceClient interface {
 	// Starts a module container in the enclave
-	LoadModule(ctx context.Context, in *LoadModuleArgs, opts ...grpc.CallOption) (*LoadModuleResponse, error)
+	LoadModule(ctx context.Context, in *LoadModuleArgs, opts ...grpc.CallOption) (*ModuleInfo, error)
 	// Gets information about loaded modules
 	GetModules(ctx context.Context, in *GetModulesArgs, opts ...grpc.CallOption) (*GetModulesResponse, error)
 	// Stop and remove a module from the enclave
@@ -34,7 +34,7 @@ type ApiContainerServiceClient interface {
 	// Registers a service with the API container but doesn't start the container for it
 	RegisterService(ctx context.Context, in *RegisterServiceArgs, opts ...grpc.CallOption) (*RegisterServiceResponse, error)
 	// Starts a previously-registered service by creating a Docker container for it
-	StartService(ctx context.Context, in *StartServiceArgs, opts ...grpc.CallOption) (*StartServiceResponse, error)
+	StartService(ctx context.Context, in *StartServiceArgs, opts ...grpc.CallOption) (*ServiceInfo, error)
 	// Returns the IDs of the current services in the enclave
 	GetServices(ctx context.Context, in *GetServicesArgs, opts ...grpc.CallOption) (*GetServicesResponse, error)
 	// Instructs the API container to remove the given service
@@ -70,8 +70,8 @@ func NewApiContainerServiceClient(cc grpc.ClientConnInterface) ApiContainerServi
 	return &apiContainerServiceClient{cc}
 }
 
-func (c *apiContainerServiceClient) LoadModule(ctx context.Context, in *LoadModuleArgs, opts ...grpc.CallOption) (*LoadModuleResponse, error) {
-	out := new(LoadModuleResponse)
+func (c *apiContainerServiceClient) LoadModule(ctx context.Context, in *LoadModuleArgs, opts ...grpc.CallOption) (*ModuleInfo, error) {
+	out := new(ModuleInfo)
 	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/LoadModule", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -115,8 +115,8 @@ func (c *apiContainerServiceClient) RegisterService(ctx context.Context, in *Reg
 	return out, nil
 }
 
-func (c *apiContainerServiceClient) StartService(ctx context.Context, in *StartServiceArgs, opts ...grpc.CallOption) (*StartServiceResponse, error) {
-	out := new(StartServiceResponse)
+func (c *apiContainerServiceClient) StartService(ctx context.Context, in *StartServiceArgs, opts ...grpc.CallOption) (*ServiceInfo, error) {
+	out := new(ServiceInfo)
 	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/StartService", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -237,7 +237,7 @@ func (c *apiContainerServiceClient) StoreFilesArtifactFromService(ctx context.Co
 // for forward compatibility
 type ApiContainerServiceServer interface {
 	// Starts a module container in the enclave
-	LoadModule(context.Context, *LoadModuleArgs) (*LoadModuleResponse, error)
+	LoadModule(context.Context, *LoadModuleArgs) (*ModuleInfo, error)
 	// Gets information about loaded modules
 	GetModules(context.Context, *GetModulesArgs) (*GetModulesResponse, error)
 	// Stop and remove a module from the enclave
@@ -247,7 +247,7 @@ type ApiContainerServiceServer interface {
 	// Registers a service with the API container but doesn't start the container for it
 	RegisterService(context.Context, *RegisterServiceArgs) (*RegisterServiceResponse, error)
 	// Starts a previously-registered service by creating a Docker container for it
-	StartService(context.Context, *StartServiceArgs) (*StartServiceResponse, error)
+	StartService(context.Context, *StartServiceArgs) (*ServiceInfo, error)
 	// Returns the IDs of the current services in the enclave
 	GetServices(context.Context, *GetServicesArgs) (*GetServicesResponse, error)
 	// Instructs the API container to remove the given service
@@ -280,7 +280,7 @@ type ApiContainerServiceServer interface {
 type UnimplementedApiContainerServiceServer struct {
 }
 
-func (UnimplementedApiContainerServiceServer) LoadModule(context.Context, *LoadModuleArgs) (*LoadModuleResponse, error) {
+func (UnimplementedApiContainerServiceServer) LoadModule(context.Context, *LoadModuleArgs) (*ModuleInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoadModule not implemented")
 }
 func (UnimplementedApiContainerServiceServer) GetModules(context.Context, *GetModulesArgs) (*GetModulesResponse, error) {
@@ -295,7 +295,7 @@ func (UnimplementedApiContainerServiceServer) ExecuteModule(context.Context, *Ex
 func (UnimplementedApiContainerServiceServer) RegisterService(context.Context, *RegisterServiceArgs) (*RegisterServiceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterService not implemented")
 }
-func (UnimplementedApiContainerServiceServer) StartService(context.Context, *StartServiceArgs) (*StartServiceResponse, error) {
+func (UnimplementedApiContainerServiceServer) StartService(context.Context, *StartServiceArgs) (*ServiceInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartService not implemented")
 }
 func (UnimplementedApiContainerServiceServer) GetServices(context.Context, *GetServicesArgs) (*GetServicesResponse, error) {
