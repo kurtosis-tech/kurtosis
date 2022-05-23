@@ -42,9 +42,6 @@ const (
 )
 
 // Any of these values being nil indicates that the resource doesn't exist
-// The persistent volume claim created for the enclave data volume is not
-// included, because it is not required for any of the current CRUD methods at
-// this moment.
 type enclaveKubernetesResources struct {
 	// Will never be nil because enclaves are defined by namespaces
 	namespace *apiv1.Namespace

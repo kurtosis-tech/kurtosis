@@ -111,9 +111,6 @@ type userServiceKubernetesResources struct {
 
 	// This can be nil if the user hasn't started a pod for the service yet, or if the pod was deleted
 	pod *apiv1.Pod
-
-	// This may be nil if no files artifacts were expanded
-	filesArtifactExpansionPersistentVolumeClaim *apiv1.PersistentVolumeClaim
 }
 
 func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
@@ -195,7 +192,6 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 		serviceGuid: {
 			service: createdService,
 			pod:     nil, // No pod yet
-			filesArtifactExpansionPersistentVolumeClaim: nil, // No PVC yet
 		},
 	}
 
@@ -265,7 +261,6 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	serviceRegistrationObj := matchingObjectAndResources.serviceRegistration
 
 
-	var filesArtifactsExpansionPvc *apiv1.PersistentVolumeClaim
 	var podInitContainers []apiv1.Container
 	var podVolumes []apiv1.Volume
 	var userServiceContainerVolumeMounts []apiv1.VolumeMount
@@ -340,7 +335,6 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		serviceGuid: {
 			service: updatedService,
 			pod:     createdPod,
-			filesArtifactExpansionPersistentVolumeClaim: filesArtifactsExpansionPvc,
 		},
 	}
 
@@ -1001,13 +995,11 @@ func getUserServiceObjectsFromKubernetesResources(
 	return results, nil
 }
 
-// NOTE: If this function succeeds, it is the user's responsibility to take care of the PersistentVolumeClaim that was created
 func (backend *KubernetesKurtosisBackend) prepareFilesArtifactsExpansionResources(
 	expanderImage string,
 	expanderEnvVars map[string]string,
 	expanderDirpathsToUserServiceDirpaths map[string]string,
 ) (
-	// resultFilesArtifactExpansionPvc *apiv1.PersistentVolumeClaim,
 	resultPodVolumes []apiv1.Volume,
 	resultUserServiceContainerVolumeMounts []apiv1.VolumeMount,
 	resultPodInitContainers []apiv1.Container,
