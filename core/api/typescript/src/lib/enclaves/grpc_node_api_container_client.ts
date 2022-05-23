@@ -30,9 +30,7 @@ import {
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
 import { EnclaveID } from "./enclave_context";
-import {Empty} from "google-protobuf/google/protobuf/empty_pb";
-import {newGetServicesArgs, newRemoveServiceResponse} from "../constructor_calls";
-import {RemoveServiceResponse} from "../../../build/kurtosis_core_rpc_api_bindings/api_container_service_pb";
+import {RemoveServiceResponse} from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
 export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
