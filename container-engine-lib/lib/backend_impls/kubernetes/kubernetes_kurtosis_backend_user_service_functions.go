@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
@@ -25,6 +26,7 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"net"
+	"strconv"
 )
 
 /*
@@ -63,7 +65,8 @@ Implementation notes:
 */
 
 const (
-	userServiceContainerName = "user-service-container"
+	userServiceContainerName               = "user-service-container"
+	filesArtifactExpanderInitContainerName = "files-artifact-expander"
 
 	shouldMountVolumesAsReadOnly         = false
 	shouldAddTimestampsToUserServiceLogs = false
@@ -78,6 +81,8 @@ const (
 	unboundPortNumber = 1
 
 	tarSuccessExitCode = 0
+
+	isFilesArtifactExpansionVolumeReadOnly = false
 )
 
 // Kubernetes doesn't provide public IP or port information; this is instead handled by the Kurtosis gateway that the user uses
@@ -104,6 +109,9 @@ type userServiceKubernetesResources struct {
 
 	// This can be nil if the user hasn't started a pod for the service yet, or if the pod was deleted
 	pod *apiv1.Pod
+
+	// This may be nil if no files artifacts were expanded
+	filesArtifactExpansionPersistentVolumeClaim *apiv1.PersistentVolumeClaim
 }
 
 func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
@@ -215,7 +223,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	filesArtifactVolumeMountDirpaths map[files_artifact_expansion.FilesArtifactExpansionGUID]string,
+	filesArtifactsExpansion *backend_interface.FilesArtifactsExpansion,
 ) (
 	newUserService *service.Service,
 	resultErr error,
@@ -253,9 +261,113 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	namespaceName := kubernetesService.GetNamespace()
 	serviceRegistrationObj := matchingObjectAndResources.serviceRegistration
 
-	// Create the pod
 	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
+
+	userServicePodInitContainers := []apiv1.Container{}
+	userServicePodVolumes := []apiv1.Volume{}
+	userServiceContainerVolumeMounts := []apiv1.VolumeMount{}
+	shouldDeleteExpansionPvc := true
+	if filesArtifactsExpansion != nil {
+		apiContainerArgs := backend.apiContainerModeArgs
+		if apiContainerArgs == nil {
+			return nil, stacktrace.NewError(
+				"Received request to start service '%v' with files artifact expansions '%v', but no API container mode " +
+					"args were defined which are necessary for ")
+		}
+		storageClass := apiContainerArgs.storageClassName
+		expansionVolumeSizeMb := apiContainerArgs.filesArtifactExpansionVolumeSizeInMegabytes
+
+		pvc, err := backend.createFilesArtifactsExpansionPersistentVolumeClaim(
+			ctx,
+			namespaceName,
+			expansionVolumeSizeMb,
+			storageClass,
+			serviceGuid,
+			enclaveObjAttributesProvider,
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred creating files artifact expansion persistent volume claim for service '%v'",
+				serviceGuid,
+			)
+		}
+		defer func() {
+			if shouldDeleteExpansionPvc {
+				// Use background context so we delete these even if input context was cancelled
+				if err := backend.kubernetesManager.RemovePersistentVolumeClaim(context.Background(), pvc); err != nil {
+					logrus.Errorf("Starting the service failed so we tried to delete files artifact expansion PVC '%v' that we created, but doing so threw an error:\n%v", volumeName, err)
+					logrus.Errorf("You'll need to delete PVC '%v' manually!", pvc.Name)
+				}
+			}
+		}()
+
+		underlyingVolumeName := pvc.Spec.VolumeName
+
+		userServicePodVolumes = []apiv1.Volume{
+			{
+				Name: underlyingVolumeName,
+				VolumeSource: apiv1.VolumeSource{
+					PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
+						ClaimName: pvc.Name,
+						ReadOnly:  isFilesArtifactExpansionVolumeReadOnly,
+					},
+				},
+			},
+		}
+
+		volumeMountsOnExpanderContainer := []apiv1.VolumeMount{}
+		volumeSubdirIndex := 0
+		for requestedExpanderDirpath, requestedUserServiceDirpath := range filesArtifactsExpansion.ExpanderDirpathsToServiceDirpaths {
+			subdirName := strconv.Itoa(volumeSubdirIndex)
+
+			expanderContainerMount := apiv1.VolumeMount{
+				Name:             underlyingVolumeName,
+				ReadOnly:         isFilesArtifactExpansionVolumeReadOnly,
+				MountPath:        requestedExpanderDirpath,
+				SubPath:          subdirName,
+			}
+			volumeMountsOnExpanderContainer = append(volumeMountsOnExpanderContainer, expanderContainerMount)
+
+			userServiceContainerMount := apiv1.VolumeMount{
+				Name:             underlyingVolumeName,
+				ReadOnly:         isFilesArtifactExpansionVolumeReadOnly,
+				MountPath:        requestedUserServiceDirpath,
+				SubPath:          subdirName,
+			}
+			userServiceContainerVolumeMounts = append(userServiceContainerVolumeMounts, userServiceContainerMount)
+
+			volumeSubdirIndex = volumeSubdirIndex + 1
+		}
+
+		expanderEnvVars := []apiv1.EnvVar{}
+		for key, value := range filesArtifactsExpansion.ExpanderEnvVars {
+			envVar := apiv1.EnvVar{
+				Name:      key,
+				Value: value,
+			}
+			expanderEnvVars = append(expanderEnvVars, envVar)
+		}
+
+		filesArtifactExpansionInitContainer := apiv1.Container{
+			Name:          filesArtifactExpanderInitContainerName,
+			Image:         filesArtifactsExpansion.ExpanderImage,
+			Env:           expanderEnvVars,
+			VolumeMounts:  volumeMountsOnExpanderContainer,
+		}
+
+		userServicePodInitContainers = []apiv1.Container{
+			filesArtifactExpansionInitContainer,
+		}
+	}
+	
+
+
+
+
+
+	// Create the pod
 	podAttributes, err := enclaveObjAttributesProvider.ForUserServicePod(serviceGuid, serviceRegistrationObj.GetID(), privatePorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting attributes for new pod for service with GUID '%v'", serviceGuid)
@@ -335,6 +447,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		)
 	}
 
+	shouldDeleteExpansionPvc = false
 	shouldDestroyPod = false
 	return objectsAndResources.service, nil
 }
@@ -697,6 +810,19 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 			}
 		}
 
+		pvc := resources.filesArtifactExpansionPersistentVolumeClaim
+		if pvc != nil {
+			if err := backend.kubernetesManager.RemovePersistentVolumeClaim(ctx, pvc); err != nil {
+				erroredGuids[serviceGuid] = stacktrace.Propagate(
+					err,
+					"An error occurred removing files artifact expansion persistent volume claim for service '%v'",
+					serviceGuid,
+				)
+				continue
+			}
+		}
+
+		// Canonical resource; this must be deleted last!
 		kubernetesService := resources.service
 		if kubernetesService != nil {
 			if err := backend.kubernetesManager.RemoveService(ctx, kubernetesService); err != nil {
@@ -709,7 +835,7 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 				continue
 			}
 		}
-
+		// WARNING: DO NOT ADD ANYTHING HERE! The Service must be deleted as the very last thing as it's the canonical resource for the Kurtosis Service
 		successfulGuids[serviceGuid] = true
 	}
 	return successfulGuids, erroredGuids, nil
@@ -1228,15 +1354,19 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 	return updatedService, nil
 }
 
+
+
+
+
 // Creates a persistent volume claim that the expander job will write all its expansions to
 func (backend *KubernetesKurtosisBackend) createFilesArtifactsExpansionPersistentVolumeClaim(
 	ctx context.Context,
+	namespaceName string,
+	expansionVolumeSizeInMegabytes uint,
+	storageClass string,
 	serviceGuid service.ServiceGUID,
 	enclaveObjAttrsProvider object_attributes_provider.KubernetesEnclaveObjectAttributesProvider,
 ) (*apiv1.PersistentVolumeClaim, error) {
-	shouldDeletePvc := true
-	result := map[string]string{}
-
 	pvcAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactsExpansionPersistentVolumeClaim(serviceGuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion persistent volume claim for service '%v'", serviceGuid)
@@ -1245,34 +1375,224 @@ func (backend *KubernetesKurtosisBackend) createFilesArtifactsExpansionPersisten
 	pvcLabelsStr := getStringMapFromLabelMap(pvcAttrs.GetLabels())
 	pvcAnnotationsStrs := getStringMapFromAnnotationMap(pvcAttrs.GetAnnotations())
 
-	if err := backend.kubernetesManager.CreatePersistentVolumeClaim(
+	pvc, err := backend.kubernetesManager.CreatePersistentVolumeClaim(
 		ctx,
-		pvcAttrs.GetName().GetString(),
-		pvcLabelsStrs,
-	); err != nil {
+		namespaceName,
+		pvcNameStr,
+		pvcLabelsStr,
+		pvcAnnotationsStrs,
+		expansionVolumeSizeInMegabytes,
+		storageClass,
+	)
+	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating files artifact expansion volume for service '%v' that's intended to be mounted " +
-				"on the expander container at path '%v'",
+			"An error occurred creating files artifact expansion persistent volume claim for service '%v'",
 			serviceGuid,
-			mountpointExpanderWants,
 		)
 	}
-	//goland:noinspection GoDeferInLoop
-	defer func() {
-		if shouldDeletePvc {
-			// Background context so we still run this even if the input context was cancelled
-			if err := backend.dockerManager.RemoveVolume(context.Background(), pvcNameStr); err != nil {
-				logrus.Warnf(
-					"Creating files artifact expansion volumes didn't complete successfully so we tried to delete volume '%v' that we created, but doing so threw an error:\n%v",
-					pvcNameStr,
-					err,
+	return pvc, nil
+}
+
+
+
+/*
+// TODO Push into KubernetesBackend??
+func (backend *KubernetesKurtosisBackend) runExtractionJobToCompletion(
+	ctx context.Context,
+	namespaceName string,
+	enclaveDataPvc *apiv1.PersistentVolumeClaim,
+	destinationPvc *apiv1.PersistentVolumeClaim,
+	artifactFilepathOnVolume string,
+	destinationDirpath string,
+	jobAttrs object_attributes_provider.KubernetesObjectAttributes,
+) error {
+	extractionCommand := getExtractionCommand(artifactFilepathOnVolume, destinationDirpath)
+
+	jobName := jobAttrs.GetName()
+
+	enclaveDataVolume := apiv1.Volume{
+		Name: enclaveDataPvc.Spec.VolumeName,
+		VolumeSource: apiv1.VolumeSource{
+			PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
+				ClaimName: enclaveDataPvc.GetName(),
+				ReadOnly:  isEnclaveDataPersistentVolumeClaimReadOnly,
+			},
+		},
+	}
+
+	destinationVolume := apiv1.Volume{
+		Name: destinationPvc.Spec.VolumeName,
+		VolumeSource: apiv1.VolumeSource{
+			PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
+				ClaimName: destinationPvc.GetName(),
+				ReadOnly:  isDestinationPersistentVolumeClaimReadOnly,
+			},
+		},
+	}
+
+	container := apiv1.Container{
+		Name:                     filesArtifactExpansionContainerName,
+		Image:                    dockerImage,
+		Command:                  extractionCommand,
+		VolumeMounts:             []apiv1.VolumeMount{
+			{
+				Name: enclaveDataPvc.Spec.VolumeName,
+				MountPath: enclaveDataVolumeDirpathOnExpanderContainer,
+			},
+			{
+				Name:      destinationPvc.Spec.VolumeName,
+				MountPath: destinationVolumeMountDirpathOnExpanderContainer,
+			},
+		},
+	}
+
+	job, err := backend.kubernetesManager.CreateJobWithContainerAndVolume(
+		ctx,
+		namespaceName,
+		jobName,
+		jobAttrs.GetLabels(),
+		jobAttrs.GetAnnotations(),
+		[]apiv1.Container{container},
+		[]apiv1.Volume{
+			enclaveDataVolume,
+			destinationVolume,
+		},
+		numTarExpansionRetries,
+		ttlSecondsAfterFinishedExpanderJob,
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to create files artifact expansion job '%v'", jobName.GetString())
+	}
+	shouldDeleteJob := true
+	defer func(){
+		if shouldDeleteJob {
+			// We delete instead of kill/stop because Kubernetes doesn't have the concept of keeping around stopped jobs
+			// https://stackoverflow.com/a/52608258
+			deleteJobError := backend.kubernetesManager.DeleteJob(ctx, namespaceName, job)
+			if deleteJobError != nil {
+				logrus.Errorf(
+					"Running the extraction job to completion failed so we tried to delete job '%v' in namespace '%v' that we created, but doing so threw an error:\n%v",
+					jobName.GetString(),
+					namespaceName,
+					deleteJobError,
 				)
-				logrus.Warnf("You'll need to clean up volume '%v' manually!", pvcNameStr)
 			}
 		}
 	}()
 
-	shouldDeletePvc = false
-	return result, nil
+	hasJobEnded := false
+	didJobSucceed := false
+	jobEndedPoller := time.Tick(jobStatusPollerInterval)
+	jobEndedTimeout := time.After(jobStatusPollerTimeout)
+	for !hasJobEnded {
+		select {
+		case <-jobEndedTimeout:
+			return stacktrace.NewError("Timed out after %v waiting for job '%v' to complete.", jobStatusPollerTimeout, job.Name)
+		case <-jobEndedPoller:
+			hasJobEnded, didJobSucceed, err = backend.kubernetesManager.GetJobCompletionAndSuccessFlags(ctx, namespaceName, job.Name)
+			if err != nil {
+				return stacktrace.Propagate(
+					err,
+					"Failed to get status for job '%v' in namespace '%v'",
+					job.Name,
+					namespaceName,
+				)
+			}
+		}
+	}
+	if !didJobSucceed {
+		jobPodsLabels := map[string]string{
+			jobNamePodLabel: jobName.GetString(),
+		}
+		pods, err := backend.kubernetesManager.GetPodsByLabels(ctx, namespaceName, jobPodsLabels)
+		if err != nil {
+			return stacktrace.NewError("Job '%v' did not succeed, and we couldn't grab pod logs due to the following error: %v", jobName, err)
+		}
+		if len(pods.Items) == 0 {
+			return stacktrace.NewError("Job '%v' did not succeed, and we couldn't grab pod logs because Kubernetes didn't return any pods for the job", jobName)
+		}
+
+		// This *seems* like a huge amount of work to go through, but the logs are actually invaluable for debugging
+		containerLogs := backend.getAllJobContainerLogs(ctx, namespaceName, pods.Items)
+
+		return stacktrace.NewError(
+			"Job '%v' in namespace '%v' did not succeed; container logs are as follows:\n%v",
+			jobName,
+			namespaceName,
+			strings.Join(containerLogs, "\n"),
+		)
+	}
+
+	shouldDeleteJob = false
+	return nil
+}
+
+
+
+
+func (backend *KubernetesKurtosisBackend) getAllJobContainerLogs(
+	ctx context.Context,
+	namespaceName string,
+	pods []apiv1.Pod,
+) []string {
+	// TODO Parallelize to increase perf? But make sure we don't explode memory with huge pod logs
+	// We go through all this work so that the user can see why the job failed
+	containerLogStrs := []string{}
+	for _, pod := range pods {
+		for _, podContainer := range pod.Spec.Containers {
+			strBuilder := strings.Builder{}
+			strBuilder.WriteString(fmt.Sprintf(
+				">>>>>>>>>>>>>>>>>>>> Pod %v - Container %v <<<<<<<<<<<<<<<<<<<<\n",
+				pod.Name,
+				podContainer.Name,
+			))
+			containerLogs, err := backend.getSingleJobContainerLogs(ctx, namespaceName, pod.Name, podContainer.Name)
+			if err != nil {
+				strBuilder.WriteString(fmt.Sprintf("Couldn't get logs for container due to an error:\n%v", err))
+			} else {
+				strBuilder.WriteString(containerLogs)
+			}
+			strBuilder.WriteString(fmt.Sprintf(
+				"\n>>>>>>>>>>>>>>>>>> End Pod %v - Container %v <<<<<<<<<<<<<<<<<<<<",
+				pod.Name,
+				podContainer.Name,
+			))
+			containerLogStrs = append(containerLogStrs, strBuilder.String())
+		}
+	}
+
+	return containerLogStrs
+}
+ */
+
+
+
+
+func (backend *KubernetesKurtosisBackend) getSingleJobContainerLogs(ctx context.Context, namespaceName string, podName string, containerName string) (string, error) {
+	logs, err := backend.kubernetesManager.GetContainerLogs(
+		ctx,
+		namespaceName,
+		podName,
+		containerName,
+		shouldFollowContainerLogsWhenArtifactExpansionJobFails,
+		shouldAddTimestampsToContainerLogsWhenArtifactExpansionJobFails,
+	)
+	if err != nil {
+		return "", stacktrace.Propagate(
+			err,
+			"An error occurred copying logs from container '%v' in pod '%v' in namespace '%v'",
+			containerName,
+			podName,
+			namespaceName,
+		)
+	}
+	defer logs.Close()
+
+	output := &bytes.Buffer{}
+	if _, err := io.Copy(output, logs); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred copying logs of container '%v' in pod '%v' to a buffer", containerName, podName)
+	}
+
+	return output.String(), nil
 }

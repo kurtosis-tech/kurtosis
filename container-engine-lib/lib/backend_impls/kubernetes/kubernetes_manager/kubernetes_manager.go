@@ -37,7 +37,7 @@ import (
 )
 
 const (
-	defaultPersistentVolumeClaimAccessMode = apiv1.ReadWriteMany
+	defaultPersistentVolumeClaimAccessMode = apiv1.ReadWriteOnce
 	binaryMegabytesSuffix         		   = "Mi"
 	uintToIntStringConversionBase		   = 10
 
@@ -202,6 +202,7 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 	namespace string,
 	persistentVolumeClaimName string,
 	persistentVolumeClaimLabels map[string]string,
+	persistentVolumeClaimAnnotations map[string]string,
 	volumeSizeInMegabytes uint,
 	storageClassName string,
 ) (*apiv1.PersistentVolumeClaim, error) {

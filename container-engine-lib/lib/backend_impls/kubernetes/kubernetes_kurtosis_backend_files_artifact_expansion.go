@@ -1,20 +1,14 @@
 package kubernetes
 
 import (
-	"bytes"
 	"context"
-	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io"
-	apiv1 "k8s.io/api/core/v1"
 	"path"
-	"strings"
 	"time"
 )
 
@@ -176,6 +170,7 @@ func getExtractionCommand(artifactFilepath string, destVolMntDirpathOnExpander s
 	}
 }
 
+/*
 // TODO Push into KubernetesBackend??
 func (backend *KubernetesKurtosisBackend) runExtractionJobToCompletion(
 	ctx context.Context,
@@ -368,3 +363,4 @@ func (backend *KubernetesKurtosisBackend) getSingleJobContainerLogs(ctx context.
 
 	return output.String(), nil
 }
+*/
