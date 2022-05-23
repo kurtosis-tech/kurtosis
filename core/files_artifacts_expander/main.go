@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package files_artifacts_expander
+package main
 
 import (
 	"context"
@@ -59,7 +59,7 @@ func runMain() error {
 	}
 	apiContainerPortNum := filesArtifactExpanderArgs.ApiContainerPort
 	grpcUrl := fmt.Sprintf("%v:%v", apiContainerIpAddr, apiContainerPortNum)
-	apiContainerConnection, err := grpc.Dial(grpcUrl)
+	apiContainerConnection, err := grpc.Dial(grpcUrl, grpc.WithInsecure())
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to create a client connection to API container at address '%v', instead a non-nil error was returned", grpcUrl)
 	}
