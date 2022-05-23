@@ -42,8 +42,8 @@ const (
 	engineClientCtxKey  = "engine-client"
 )
 
-var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, enclaveInfo kurtosis_engine_rpc_api_bindings.EnclaveInfo) error{
-	"User Services":     printUserServices,
+var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo kurtosis_engine_rpc_api_bindings.EnclaveInfo, isAPIContainerRunning bool) error{
+	//"User Services":     printUserServices,
 	"Kurtosis Modules":  printModules,
 }
 
@@ -95,7 +95,8 @@ func run(
 	keyValuePrinter.AddPair(enclaveStatusTitleName, enclaveContainersStatus.String())
 	keyValuePrinter.AddPair(apiContainerStatusTitleName, enclaveApiContainerStatus.String())
 
-	if enclaveApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING {
+	isAPIContainerRunning := enclaveApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING
+	if isAPIContainerRunning {
 		// ------------ Print API container info -----------------
 		apiContainerHostInfo := enclaveInfo.GetApiContainerHostMachineInfo()
 		apiContainerHostGrpcPortInfoStr := fmt.Sprintf(
@@ -135,7 +136,7 @@ func run(
 			padStr := strings.Repeat(headerPadChar, numPadChars)
 			fmt.Println(fmt.Sprintf("%v %v %v", padStr, header, padStr))
 
-			if err := printingFunc(ctx, *enclaveInfo); err != nil {
+			if err := printingFunc(ctx, kurtosisBackend, *enclaveInfo, isAPIContainerRunning); err != nil {
 				logrus.Error(err)
 				headersWithPrintErrs = append(headersWithPrintErrs, header)
 			}
