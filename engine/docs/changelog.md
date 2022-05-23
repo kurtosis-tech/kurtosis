@@ -1,4 +1,10 @@
 # TBD
+### Changes
+* Upgraded to container-engine-lib 0.31.0 and core 1.51.1, which uses a rewritten files artifact expansion engine to allow for `ReadWriteOnce` volumes in Kubernetes
+
+### Breaking Changes
+* Upgraded to Kurtosis Core 1.51.1, which 
+    * Remediation: users should run `kurtosis engine restart` to use the latest engine + Core
 
 # 1.22.7
 ### Changes
