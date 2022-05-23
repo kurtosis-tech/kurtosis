@@ -1,5 +1,14 @@
 # TBD
 
+# 0.19.0
+### Fixes
+* Fixes bugs that were happening with API container's gRPC wire format
+* Fixes various bugs with files artifacts expansion
+
+### Breaking Changes
+* Upgraded to engine 1.25.3
+    * Users will need to run `kurtosis engine restart`
+
 # 0.18.7
 ### Changes
 * Upgraded to container-engine-lib 0.30.2, core 1.50.7, and engine 1.22.7
