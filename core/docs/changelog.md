@@ -1,5 +1,9 @@
 # TBD
 
+# 1.53.2
+### Fixes
+* Fix bug with files artifacts expander not waiting until command terminates to exit
+
 # 1.53.1
 ### Fixes
 * Fix bugs with the files artifact expander Dockerfile and main.go
