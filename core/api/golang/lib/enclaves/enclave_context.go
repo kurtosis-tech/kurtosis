@@ -200,7 +200,7 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	}
 	logrus.Trace("Successfully started service with Kurtosis API")
 
-	serviceCtxPublicPorts, err := convertApiPortsToServiceContextPorts(resp.GetPublicPorts())
+	serviceCtxPublicPorts, err := convertApiPortsToServiceContextPorts(resp.GetMaybePublicPorts())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred converting the public ports returned by the API to ports usable by the service context")
 	}
@@ -210,7 +210,7 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 		serviceId,
 		privateIpAddr,
 		privatePorts,
-		resp.GetPublicIpAddr(),
+		resp.GetMaybePublicIpAddr(),
 		serviceCtxPublicPorts,
 	)
 

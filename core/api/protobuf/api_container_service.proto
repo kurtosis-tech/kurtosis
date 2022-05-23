@@ -9,7 +9,7 @@ import "google/protobuf/empty.proto";
 
 service ApiContainerService {
   // Starts a module container in the enclave
-  rpc LoadModule(LoadModuleArgs) returns (LoadModuleResponse) {};
+  rpc LoadModule(LoadModuleArgs) returns (ModuleInfo) {};
 
   // Gets information about loaded modules
   rpc GetModules(GetModulesArgs) returns (GetModulesResponse) {};
@@ -24,7 +24,7 @@ service ApiContainerService {
   rpc RegisterService(RegisterServiceArgs) returns (RegisterServiceResponse) {};
 
   // Starts a previously-registered service by creating a Docker container for it
-  rpc StartService(StartServiceArgs) returns (StartServiceResponse) {};
+  rpc StartService(StartServiceArgs) returns (ServiceInfo) {};
 
   // Returns the IDs of the current services in the enclave
   rpc GetServices(GetServicesArgs) returns (GetServicesResponse) {};
@@ -133,23 +133,6 @@ message LoadModuleArgs {
   string serialized_params = 3;
 }
 
-message LoadModuleResponse {
-  // The IP address of the module inside the enclave
-  string private_ip_addr = 1;
-
-  // The port on which the module is reachable inside the enclave
-  Port private_port = 2;
-
-  // Public IP address *outside* the enclave where the module is reachable
-  string public_ip_addr = 3;
-
-  // The port the module can be reached at *outside* the enclave
-  Port public_port = 4;
-
-  // The module's GUID
-  string guid = 5;
-}
-
 
 // ==============================================================================================
 //                                          Get Modules
@@ -232,20 +215,6 @@ message StartServiceArgs {
 
   // Mapping of files_artifact_uuid -> filepath_on_container_to_mount_artifact_contents
   map<string, string> files_artifact_mountpoints = 8;
-}
-
-message StartServiceResponse {
-  // Public IP address *outside* the enclave where the service is reachable
-  // NOTE: Will be empty if the service didn't define any private ports
-  string public_ip_addr = 1;
-
-  // Mapping defining the ports that the service can be reached at *outside* the enclave, in the user_defined_port_id -> port_info where user_defined_port_id
-  //  corresponds to the ID that was passed in in StartServiceArgs
-  // NOTE: Will be empty if the service didn't define any private ports
-  map<string, Port> public_ports = 2;
-
-  // Guid of the started services
-  string service_guid = 3;
 }
 
 // ==============================================================================================
