@@ -1,5 +1,13 @@
 # TBD
 
+# 1.54.0
+### Breaking Changes
+* Renamed `FilesArtifactID` to `FilesArtifactUUID` which is more accurate
+  * Users should adapt their code to use this new type name when calling `EnclaveContext` methods like `EnclaveContext.StoreWebFiles`
+
+### Changes
+* Replaced `FilesArtifactID` type, provided by `container-engine-lib` with a new type `FilesArtifactUUID`, which is more accurate
+
 # 1.53.5
 ### Changes
 * Switch to using EmptyDir volumes rather than PersistentVolumeClaims

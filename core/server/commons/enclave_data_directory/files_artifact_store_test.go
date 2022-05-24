@@ -18,13 +18,13 @@ func TestFileStore_StoreFileSavesFile(t *testing.T) {
 	fileStore := getTestFileStore(t)
 	testContent := "Long Live Kurtosis!"
 	reader := strings.NewReader(testContent)
-	filesArtifactId, err := fileStore.StoreFile(reader)
+	filesArtifactUuid, err := fileStore.StoreFile(reader)
 	require.Nil(t, err)
-	require.Equal(t, 36, len(filesArtifactId)) //UUID is 128 bits but in string it is hex represented chars so 32 chars
+	require.Equal(t, 36, len(filesArtifactUuid)) //UUID is 128 bits but in string it is hex represented chars so 32 chars
 
 	//Test that it saved where it said it would.
 	expectedFilename := strings.Join(
-		[]string{string(filesArtifactId), artifactExtension},
+		[]string{string(filesArtifactUuid), artifactExtension},
 		".",
 	)
 	expectedFilepath := filepath.Join(fileStore.fileCache.absoluteDirpath, expectedFilename)

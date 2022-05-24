@@ -104,13 +104,13 @@ func runMain() error {
 func createExpandFilesArtifactJob(ctx context.Context, apiContainerClient kurtosis_core_rpc_api_bindings.ApiContainerServiceClient, resultErrsChan chan error, filesArtifactExpansion args.FilesArtifactExpansion) func() {
 	return func() {
 		if err := expandFilesArtifact(ctx, apiContainerClient, filesArtifactExpansion); err != nil {
-			resultErrsChan <- stacktrace.Propagate(err, "An error occured expanding files artifact '%v' into directory '%v'", filesArtifactExpansion.FilesArtifactId, filesArtifactExpansion.DirPathToExpandTo)
+			resultErrsChan <- stacktrace.Propagate(err, "An error occured expanding files artifact '%v' into directory '%v'", filesArtifactExpansion.FilesArtifactUUID, filesArtifactExpansion.DirPathToExpandTo)
 		}
 	}
 }
 
 func expandFilesArtifact(ctx context.Context, apiContainerClient kurtosis_core_rpc_api_bindings.ApiContainerServiceClient, filesArtifactExpansion args.FilesArtifactExpansion) error {
-	artifactId := filesArtifactExpansion.FilesArtifactId
+	artifactId := filesArtifactExpansion.FilesArtifactUUID
 	// Get the raw bytes of the file artifact
 	downloadRequestArgs := &kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs{
 		Id: artifactId,

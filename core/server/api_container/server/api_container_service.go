@@ -188,9 +188,9 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 		}
 		privateServicePortSpecs[portId] = privateServicePortSpec
 	}
-	filesArtifactMountpointsByArtifactId := map[kurtosis_backend_service.FilesArtifactID]string{}
-	for filesArtifactIdStr, mountDirPath := range args.FilesArtifactMountpoints {
-		filesArtifactMountpointsByArtifactId[kurtosis_backend_service.FilesArtifactID(filesArtifactIdStr)] = mountDirPath
+	filesArtifactMountpointsByArtifactUuid := map[enclave_data_directory.FilesArtifactUUID]string{}
+	for filesArtifactUuidStr, mountDirPath := range args.FilesArtifactMountpoints {
+		filesArtifactMountpointsByArtifactUuid[enclave_data_directory.FilesArtifactUUID(filesArtifactUuidStr)] = mountDirPath
 	}
 	serviceGuid, maybePublicIpAddr, publicServicePortSpecs, err := apicService.serviceNetwork.StartService(
 		ctx,
@@ -200,7 +200,7 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 		args.EntrypointArgs,
 		args.CmdArgs,
 		args.DockerEnvVars,
-		filesArtifactMountpointsByArtifactId,
+		filesArtifactMountpointsByArtifactUuid,
 	)
 	if err != nil {
 		// TODO IP: Leaks internal information about the API container
@@ -434,24 +434,25 @@ func (apicService ApiContainerService) GetModules(ctx context.Context, args *kur
 func (apicService ApiContainerService) UploadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse, error) {
 	reader := bytes.NewReader(args.Data)
 
-	filesArtifactId, err := apicService.filesArtifactStore.StoreFile(reader)
+	filesArtifactUuid, err := apicService.filesArtifactStore.StoreFile(reader)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to store files.")
 	}
 
-	response := &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{Uuid: string(filesArtifactId)}
+	response := &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{Uuid: string(filesArtifactUuid)}
 	return response, nil
 }
 
 func (apicService ApiContainerService) DownloadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.DownloadFilesArtifactResponse, error) {
-	filesArtifactId := args.Id
-	if strings.TrimSpace(filesArtifactId) == "" {
-		return nil, stacktrace.NewError("Cannot download file with empty files artifact ID")
+	filesArtifactUuidStr := args.Id
+	if strings.TrimSpace(filesArtifactUuidStr) == "" {
+		return nil, stacktrace.NewError("Cannot download file with empty files artifact UUID")
 	}
+	filesArtifactUuid := enclave_data_directory.FilesArtifactUUID(filesArtifactUuidStr)
 
-	artifactFile, err := apicService.filesArtifactStore.GetFile(kurtosis_backend_service.FilesArtifactID(filesArtifactId))
+	artifactFile, err := apicService.filesArtifactStore.GetFile(filesArtifactUuid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact '%v'", filesArtifactId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact '%v'", filesArtifactUuid)
 	}
 
 	fileBytes, err := ioutil.ReadFile(artifactFile.GetAbsoluteFilepath())
@@ -473,12 +474,12 @@ func (apicService ApiContainerService) StoreWebFilesArtifact(ctx context.Context
 	defer resp.Body.Close()
 	body := bufio.NewReader(resp.Body)
 
-	filesArtifactId, err := apicService.filesArtifactStore.StoreFile(body)
+	filesArtifactUuId, err := apicService.filesArtifactStore.StoreFile(body)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred storing the file from URL '%v' in the files artifact store", url)
 	}
 
-	response := &kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactResponse{Uuid: string(filesArtifactId)}
+	response := &kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactResponse{Uuid: string(filesArtifactUuId)}
 	return response, nil
 }
 
