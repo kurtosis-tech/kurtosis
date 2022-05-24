@@ -17,10 +17,6 @@ builds:
       - 386
       - amd64
       - arm64
-    goamd64:
-      - v1
-      - v2
-      - v3
 
 # In order for releasing-to-Github to work, we have to create these archives
 archives:
