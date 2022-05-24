@@ -38,7 +38,6 @@ type LiveEngineClientSupplier struct {
 	currentInfo *engineInfo
 
 	stopUpdaterSignalChan chan interface{}
-
 }
 
 func NewLiveEngineClientSupplier(
@@ -49,6 +48,7 @@ func NewLiveEngineClientSupplier(
 		kubernetesBackend:     kubernetesKurtosisBackend,
 		currentInfo:           nil,
 		stopUpdaterSignalChan: nil,
+		connectionProvider:    connectionProvider,
 	}
 }
 
@@ -57,6 +57,7 @@ func (supplier *LiveEngineClientSupplier) Start() error {
 		return stacktrace.NewError("Cannot start live engine client supplier because it's already started")
 	}
 
+	// Start health checking the engine
 	stopUpdaterSignalChan := make(chan interface{})
 	go func() {
 		poller := time.NewTicker(pollInterval)
@@ -64,7 +65,7 @@ func (supplier *LiveEngineClientSupplier) Start() error {
 
 		for {
 			select {
-			case <- poller.C:
+			case <-poller.C:
 				supplier.replaceEngineIfNecessary()
 			case <-stopUpdaterSignalChan:
 				return
@@ -93,8 +94,7 @@ func (supplier *LiveEngineClientSupplier) Stop() {
 	if supplier.stopUpdaterSignalChan == nil {
 		return
 	}
-
-
+	supplier.stopUpdaterSignalChan <- nil
 }
 
 // This function will gather the current state of engines in the cluster and compare it with the current state of the
@@ -121,9 +121,11 @@ func (supplier *LiveEngineClientSupplier) replaceEngineIfNecessary() {
 		logrus.Errorf("Found > 1 engine running, which should never happen")
 		return
 	}
+	runningEngine := runningEngines[0]
 
 	var runningEngine *engine.Engine
-	for _, runningEngine = range runningEngines {}
+	for _, runningEngine = range runningEngines {
+	}
 
 	// If we have no engine, we'll take anything we can get
 	if supplier.currentInfo == nil {
@@ -163,7 +165,6 @@ func (supplier *LiveEngineClientSupplier) replaceCurrentEngineInfoBestEffort(new
 			newProxyConn.Stop()
 		}
 	}()
-
 
 	newEngineInfo := &engineInfo{
 		engineGuid:   currentInfo.engineGuid,
