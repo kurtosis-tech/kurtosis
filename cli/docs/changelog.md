@@ -1,11 +1,10 @@
 # TBD
-### Features
-* Updated goreleaser config to build all AMD64 binary versions and added the `maintainer` field because it is mandatory now
-* Updated `build cli script` to support the goamd64 env var
-
 ### Breaking Changes
 * Upgraded to engine 1.26.0 and core 1.54.0
   * Users will need to run `kurtosis engine restart`
+
+### Fixes
+* Fixed bug with Gateway erring out when getting service info for service with non TCP protocol port
 
 # 0.20.1
 ### Changes
