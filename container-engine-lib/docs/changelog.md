@@ -1,4 +1,7 @@
 # TBD
+### Breaking Changes
+* Removed `FilesArtifactID` type because it is not used anywhere in this package
+  * Users have to remove the dependency with this type and create their own type instead
 
 # 0.32.0
 ### Changes
