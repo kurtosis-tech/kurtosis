@@ -1,4 +1,4 @@
-import { ContainerConfig, ContainerConfigBuilder, FilesArtifactID, PortProtocol, PortSpec, ServiceID } from "kurtosis-core-api-lib"
+import { ContainerConfig, ContainerConfigBuilder, FilesArtifactUUID, PortProtocol, PortSpec, ServiceID } from "kurtosis-core-api-lib"
 import log from "loglevel";
 import { Result, ok, err } from "neverthrow";
 import axios from "axios"
@@ -45,10 +45,10 @@ test("Test web file storing", async () => {
         // ------------------------------------- TEST SETUP ----------------------------------------------
         const storeWebFilesResult = await enclaveContext.storeWebFiles(TEST_FILES_ARTIFACT_URL);
         if(storeWebFilesResult.isErr()) { throw storeWebFilesResult.error }
-        const filesArtifactId = storeWebFilesResult.value;
+        const filesArtifactUuid = storeWebFilesResult.value;
 
-        const filesArtifactsMountpoints = new Map<FilesArtifactID, string>()
-        filesArtifactsMountpoints.set(filesArtifactId, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT)
+        const filesArtifactsMountpoints = new Map<FilesArtifactUUID, string>()
+        filesArtifactsMountpoints.set(filesArtifactUuid, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT)
 
         const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier(filesArtifactsMountpoints)
 
@@ -125,7 +125,7 @@ test("Test web file storing", async () => {
 //                                       Private helper functions
 // ====================================================================================================
 
-function getFileServerContainerConfigSupplier(filesArtifactMountpoints: Map<FilesArtifactID, string>): (ipAddr: string) => Result<ContainerConfig, Error> {
+function getFileServerContainerConfigSupplier(filesArtifactMountpoints: Map<FilesArtifactUUID, string>): (ipAddr: string) => Result<ContainerConfig, Error> {
 	
     const containerConfigSupplier = (ipAddr:string): Result<ContainerConfig, Error> => {
 

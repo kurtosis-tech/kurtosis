@@ -13,9 +13,9 @@ require (
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220523215213-c7335b7ab2ea
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220523220451-7790abcadd56
-	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220523222136-b29cebf32f4f
-	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220523222125-a07373f1942e
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220524183359-4861d3d42bb7
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220524194248-3efc08f3ef1a
+	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220524194229-00a064ba94a6
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211205213337-f5088fc26465
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220225193403-74da3f3b98ce

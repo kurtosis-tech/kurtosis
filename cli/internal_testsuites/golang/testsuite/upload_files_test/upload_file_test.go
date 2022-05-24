@@ -68,11 +68,11 @@ func TestUploadFiles(t *testing.T) {
 	if pathToUpload == "" {
 		stacktrace.NewError("Failed to store uploadable path in path map.")
 	}
-	filesArtifactID, err := enclaveCtx.UploadFiles(filePathsMap[diskDirKeyword])
+	filesArtifactUUID, err := enclaveCtx.UploadFiles(filePathsMap[diskDirKeyword])
 	require.NoError(t, err)
 
-	filesArtifactMountPoints := map[services.FilesArtifactID]string{
-		filesArtifactID: userServiceMountPointForTestFilesArtifact,
+	filesArtifactMountPoints := map[services.FilesArtifactUUID]string{
+		filesArtifactUUID: userServiceMountPointForTestFilesArtifact,
 	}
 	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactMountPoints)
 	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
@@ -268,7 +268,7 @@ func createTestFolderToUpload() (map[string]string, error) {
 	return relativeDiskPaths, nil
 }
 
-func getFileServerContainerConfigSupplier(filesArtifactMountPoints map[services.FilesArtifactID]string) func(ipAddr string) (*services.ContainerConfig, error) {
+func getFileServerContainerConfigSupplier(filesArtifactMountPoints map[services.FilesArtifactUUID]string) func(ipAddr string) (*services.ContainerConfig, error) {
 	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
 		containerConfig := services.NewContainerConfigBuilder(
 			fileServerServiceImage,

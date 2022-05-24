@@ -5,3 +5,7 @@ GET_VERSION_SCRIPT_FILENAME="get-docker-images-tag.sh"
 
 GORELEASER_CLI_BUILD_ID="cli"
 CLI_BINARY_FILENAME="kurtosis"  # Name of the CLI binary
+
+GO_ARCH_ENV_AMD64_VALUE="amd64"
+
+GO_DEFAULT_AMD64_ENV="v1"

@@ -80,18 +80,18 @@ func run(
 	phasesWithErrors := []string{}
 	for phaseTitle, cleaningFunc := range cleaningPhaseFunctions {
 		logrus.Infof("Cleaning %v...", phaseTitle)
-		successfullyRemovedArtifactIds, removalErrors, err := cleaningFunc()
+		successfullyRemovedArtifactUuids, removalErrors, err := cleaningFunc()
 		if err != nil {
 			logrus.Errorf("Errors occurred cleaning %v:\n%v", phaseTitle, err)
 			phasesWithErrors = append(phasesWithErrors, phaseTitle)
 			continue
 		}
 
-		if len(successfullyRemovedArtifactIds) > 0 {
+		if len(successfullyRemovedArtifactUuids) > 0 {
 			logrus.Infof("Successfully removed the following %v:", phaseTitle)
-			sort.Strings(successfullyRemovedArtifactIds)
-			for _, successfulArtifactId := range successfullyRemovedArtifactIds {
-				fmt.Fprintln(logrus.StandardLogger().Out, successfulArtifactId)
+			sort.Strings(successfullyRemovedArtifactUuids)
+			for _, successfulArtifactUuid := range successfullyRemovedArtifactUuids {
+				fmt.Fprintln(logrus.StandardLogger().Out, successfulArtifactUuid)
 			}
 		}
 

@@ -17,6 +17,10 @@ builds:
       - 386
       - amd64
       - arm64
+    goamd64:
+      - v1
+      - v2
+      - v3
 
 # In order for releasing-to-Github to work, we have to create these archives
 archives:
@@ -43,6 +47,7 @@ nfpms:
     formats:
       - deb
       - rpm
+    maintainer: Kurtosis Technologies Inc. <hello@kurtosistech.com>
   - id: apk-package
     package_name: kurtosis-cli
     homepage: https://kurtosistech.com
@@ -52,6 +57,7 @@ nfpms:
       - cli
     formats:
       - apk
+    maintainer: Kurtosis Technologies Inc. <hello@kurtosistech.com>
 
 # In order for Homebrew to work, we have to create a repo where the CLI release artifacts will be uploaded
 release:
