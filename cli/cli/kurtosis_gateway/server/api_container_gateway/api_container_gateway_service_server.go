@@ -303,11 +303,15 @@ func (service *ApiContainerGatewayServiceServer) startRunningConnectionForKurtos
 	localPublicApiPorts := map[string]*kurtosis_core_rpc_api_bindings.Port{}
 	for portId, privateApiPort := range privatePortsFromApi {
 		localPortSpec, found := serviceConnection.GetLocalPorts()[portId]
-		if !found {
-			return nil, stacktrace.NewError("Service requested private port '%v', but no local forwarded port was made for it", portId)
+		// If there is a public local port for this remote private port, use the number of the local port
+		// If there is no locally forwarded port, then default to the port number 0 to show it's not reachable
+		// This case arises when the private remote port protocol is not supported by Kubernetes port forwarding
+		var localPortNumber uint32 = 0
+		if found {
+			localPortNumber = uint32(localPortSpec.GetNumber())
 		}
 		localPublicApiPorts[portId] = &kurtosis_core_rpc_api_bindings.Port{
-			Number:   uint32(localPortSpec.GetNumber()),
+			Number:   localPortNumber,
 			Protocol: privateApiPort.Protocol,
 		}
 	}
