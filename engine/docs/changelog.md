@@ -1,4 +1,6 @@
 # TBD
+
+# 1.26.0
 ### Breaking Changes
 * Upgrade to Core 1.54.0 which replaces FilesArtifactID with FilesArtifactUUID
   * Users will need to restart their enclaves
