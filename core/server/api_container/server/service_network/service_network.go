@@ -39,8 +39,8 @@ const (
 )
 
 type storeFilesArtifactResult struct {
-	filesArtifactId service.FilesArtifactID
-	err             error
+	filesArtifactUuid enclave_data_directory.FilesArtifactUUID
+	err               error
 }
 
 /*
@@ -226,7 +226,7 @@ func (network *ServiceNetwork) StartService(
 	entrypointArgs []string,
 	cmdArgs []string,
 	dockerEnvVars map[string]string,
-	filesArtifactMountDirpaths map[service.FilesArtifactID]string,
+	filesArtifactMountDirpaths map[enclave_data_directory.FilesArtifactUUID]string,
 ) (
 	resultServiceGuid service.ServiceGUID,
 	resultMaybePublicIpAddr net.IP, // Will be nil if the service doesn't declare any private ports
@@ -537,7 +537,7 @@ func (network *ServiceNetwork) GetServiceIDs() map[service.ServiceID]bool {
 	return serviceIDs
 }
 
-func (network *ServiceNetwork) CopyFilesFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (service.FilesArtifactID, error) {
+func (network *ServiceNetwork) CopyFilesFromService(ctx context.Context, serviceId service.ServiceID, srcPath string) (enclave_data_directory.FilesArtifactUUID, error) {
 	serviceObj, found := network.registeredServiceInfo[serviceId]
 	if !found {
 		return "", stacktrace.NewError("Cannot copy files from service '%v' because it does not exist in the network", serviceId)
@@ -558,10 +558,10 @@ func (network *ServiceNetwork) CopyFilesFromService(ctx context.Context, service
 		defer pipeReader.Close()
 
 		//And finally pass it the .tgz file to the artifact file store
-		filesArtifactId, storeFileErr := store.StoreFile(pipeReader)
+		filesArtifactUuId, storeFileErr := store.StoreFile(pipeReader)
 		storeFilesArtifactResultChan <- storeFilesArtifactResult{
-			filesArtifactId: filesArtifactId,
-			err:             storeFileErr,
+			filesArtifactUuid: filesArtifactUuId,
+			err:               storeFileErr,
 		}
 	}()
 
@@ -579,7 +579,7 @@ func (network *ServiceNetwork) CopyFilesFromService(ctx context.Context, service
 		)
 	}
 
-	return storeFileResult.filesArtifactId, nil
+	return storeFileResult.filesArtifactUuid, nil
 }
 
 // ====================================================================================================
@@ -708,7 +708,7 @@ func (network *ServiceNetwork) startService(
 	envVars map[string]string,
 	// Mapping of UUIDs of previously-registered files artifacts -> mountpoints on the container
 	// being launched
-	filesArtifactUuidsToMountpoints map[service.FilesArtifactID]string,
+	filesArtifactUuidsToMountpoints map[enclave_data_directory.FilesArtifactUUID]string,
 ) (
 	resultUserService *service.Service,
 	resultErr error,
@@ -716,17 +716,17 @@ func (network *ServiceNetwork) startService(
 
 	var filesArtifactsExpansion *backend_interface.FilesArtifactsExpansion
 	if len(filesArtifactUuidsToMountpoints) > 0 {
-		usedArtifactUuidSet := map[service.FilesArtifactID]bool{}
+		usedArtifactUuidSet := map[enclave_data_directory.FilesArtifactUUID]bool{}
 		for artifactUuid := range filesArtifactUuidsToMountpoints {
 			usedArtifactUuidSet[artifactUuid] = true
 		}
 
 		filesArtifactsExpansions := []args.FilesArtifactExpansion{}
 		expanderDirpathToUserServiceDirpathMap := map[string]string{}
-		for filesArtifactId, mountpointOnUserService := range filesArtifactUuidsToMountpoints {
-			dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, string(filesArtifactId))
+		for filesArtifactUuid, mountpointOnUserService := range filesArtifactUuidsToMountpoints {
+			dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, string(filesArtifactUuid))
 			expansion := args.FilesArtifactExpansion{
-				FilesArtifactId:   string(filesArtifactId),
+				FilesArtifactUUID: string(filesArtifactUuid),
 				DirPathToExpandTo: dirpathToExpandTo,
 			}
 			filesArtifactsExpansions = append(filesArtifactsExpansions, expansion)

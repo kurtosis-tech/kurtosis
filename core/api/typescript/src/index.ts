@@ -2,7 +2,7 @@
 export { KURTOSIS_CORE_VERSION } from "./kurtosis_core_version/kurtosis_core_version";
 
 // Services
-export type { FilesArtifactID, ContainerConfig } from "./lib/services/container_config";
+export type { FilesArtifactUUID, ContainerConfig } from "./lib/services/container_config";
 export { ContainerConfigBuilder } from "./lib/services/container_config";
 export type { ServiceID } from "./lib/services/service";
 export { ServiceContext } from "./lib/services/service_context";

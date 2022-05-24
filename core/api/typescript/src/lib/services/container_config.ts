@@ -1,7 +1,7 @@
 import { PortSpec } from "./port_spec";
 
-// The ID of an artifact containing files that should be mounted into a service container
-export type FilesArtifactID = string;
+// The UUID of an artifact containing files that should be mounted into a service container
+export type FilesArtifactUUID = string;
 
 // ====================================================================================================
 //                                    Config Object
@@ -12,7 +12,7 @@ export class ContainerConfig {
     constructor(
         public readonly image: string,
         public readonly usedPorts: Map<string, PortSpec>,
-        public readonly filesArtifactMountpoints: Map<FilesArtifactID, string>,
+        public readonly filesArtifactMountpoints: Map<FilesArtifactUUID, string>,
         public readonly entrypointOverrideArgs: string[],
         public readonly cmdOverrideArgs: string[],
         public readonly environmentVariableOverrides: Map<string,string>,
@@ -29,7 +29,7 @@ export class ContainerConfig {
 export class ContainerConfigBuilder {
     private readonly image: string;
     private usedPorts: Map<string, PortSpec>;
-    private filesArtifactMountpoints: Map<FilesArtifactID, string>;
+    private filesArtifactMountpoints: Map<FilesArtifactUUID, string>;
     private entrypointOverrideArgs: string[];
 	private cmdOverrideArgs: string[];
 	private environmentVariableOverrides: Map<string,string>;
@@ -48,7 +48,7 @@ export class ContainerConfigBuilder {
         return this;
     }
 
-    public withFiles(filesArtifactMountpoints: Map<FilesArtifactID, string>): ContainerConfigBuilder {
+    public withFiles(filesArtifactMountpoints: Map<FilesArtifactUUID, string>): ContainerConfigBuilder {
         this.filesArtifactMountpoints = filesArtifactMountpoints;
         return this;
     }
