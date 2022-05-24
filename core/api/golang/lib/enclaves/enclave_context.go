@@ -433,7 +433,7 @@ func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.FilesArtifactID, error) {
+func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.FilesArtifactUUID, error) {
 	pathToUpload = strings.TrimRight(pathToUpload, string(filepath.Separator))
 	if _, err := os.Stat(pathToUpload); err != nil {
 		return "", stacktrace.Propagate(err, "There was a path error for '%s' during file uploading.", pathToUpload)
@@ -473,28 +473,28 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 	if err != nil {
 		return "", stacktrace.Propagate(err,"An error was encountered while uploading data to the API Container.")
 	}
-	return services.FilesArtifactID(response.Uuid), nil;
+	return services.FilesArtifactUUID(response.Uuid), nil;
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreWeb string) (services.FilesArtifactID, error) {
+func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreWeb string) (services.FilesArtifactUUID, error) {
 	args := binding_constructors.NewStoreWebFilesArtifactArgs(urlToStoreWeb)
 	response, err := enclaveCtx.client.StoreWebFilesArtifact(ctx, args)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred downloading files artifact from URL '%v'", urlToStoreWeb)
 	}
-	return services.FilesArtifactID(response.Uuid), nil
+	return services.FilesArtifactUUID(response.Uuid), nil
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveContext *EnclaveContext) StoreServiceFiles(ctx context.Context, serviceId services.ServiceID, absoluteFilepathOnServiceContainer string) (services.FilesArtifactID, error) {
+func (enclaveContext *EnclaveContext) StoreServiceFiles(ctx context.Context, serviceId services.ServiceID, absoluteFilepathOnServiceContainer string) (services.FilesArtifactUUID, error) {
 	serviceIdStr := string(serviceId)
 	args := binding_constructors.NewStoreFilesArtifactFromServiceArgs(serviceIdStr, absoluteFilepathOnServiceContainer)
 	response, err := enclaveContext.client.StoreFilesArtifactFromService(ctx, args)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred copying source content from absolute filepath '%v' in service container with ID '%v'", absoluteFilepathOnServiceContainer, serviceIdStr)
 	}
-	return services.FilesArtifactID(response.Uuid), nil
+	return services.FilesArtifactUUID(response.Uuid), nil
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation

@@ -6,8 +6,6 @@
 package enclave_data_directory
 
 import (
-	"github.com/google/uuid"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	"strings"
@@ -28,13 +26,13 @@ func newFilesArtifactStore(absoluteDirpath string, dirpathRelativeToDataDirRoot 
 }
 
 // StoreFile: Saves file to disk.
-func (store FilesArtifactStore) StoreFile(reader io.Reader) (service.FilesArtifactID, error) {
-	newFileUuid, err := getUniversallyUniqueID()
+func (store FilesArtifactStore) StoreFile(reader io.Reader) (FilesArtifactUUID, error) {
+	newFilesArtifactUuid, err := newFilesArtifactUUID()
 	if err != nil{
-		return "", stacktrace.Propagate(err, "Could not generate Universally Unique ID.")
+		return "", stacktrace.Propagate(err, "An error occurred creating new files artifact UUID")
 	}
 	filename := strings.Join(
-		[]string{newFileUuid,artifactExtension},
+		[]string{string(newFilesArtifactUuid),artifactExtension},
 		".",
 	)
 	_, err = store.fileCache.AddFile(filename, reader)
@@ -45,13 +43,13 @@ func (store FilesArtifactStore) StoreFile(reader io.Reader) (service.FilesArtifa
 			filename,
 		)
 	}
-	return service.FilesArtifactID(newFileUuid), nil
+	return newFilesArtifactUuid, nil
 }
 
 // Get the file by uuid
-func (store FilesArtifactStore) GetFile(filesArtifactId service.FilesArtifactID) (*EnclaveDataDirFile, error) {
+func (store FilesArtifactStore) GetFile(filesArtifactUuid FilesArtifactUUID) (*EnclaveDataDirFile, error) {
 	filename := strings.Join(
-		[]string{string(filesArtifactId), artifactExtension},
+		[]string{string(filesArtifactUuid), artifactExtension},
 		".",
 	)
 	enclaveDataDirFile, err := store.fileCache.GetFile(filename)
@@ -63,16 +61,4 @@ func (store FilesArtifactStore) GetFile(filesArtifactId service.FilesArtifactID)
 		)
 	}
 	return enclaveDataDirFile, nil
-}
-
-
-//There are some suggestions that go's implementation of uuid is not RFC compliant.
-//If we can verify it is compliant, it would be better to use ipv6 as nodeID and interface name where the data came in.
-//Just generating a random one for now.
-func getUniversallyUniqueID() (string, error) {
-	generatedUUID, err := uuid.NewRandom()
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred generating a UUID")
-	}
-	return generatedUUID.String(), nil
 }

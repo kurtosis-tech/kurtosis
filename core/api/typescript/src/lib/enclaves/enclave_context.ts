@@ -45,7 +45,7 @@ import {
     newWaitForHttpPostEndpointAvailabilityArgs,
     newUploadFilesArtifactArgs, newPauseServiceArgs, newUnpauseServiceArgs
 } from "../constructor_calls";
-import type { ContainerConfig, FilesArtifactID } from "../services/container_config";
+import type { ContainerConfig, FilesArtifactUUID } from "../services/container_config";
 import type { ServiceID } from "../services/service";
 import { ServiceContext } from "../services/service_context";
 import { PortProtocol, PortSpec } from "../services/port_spec";
@@ -520,7 +520,7 @@ export class EnclaveContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public async uploadFiles(pathToArchive: string): Promise<Result<FilesArtifactID, Error>>  {
+    public async uploadFiles(pathToArchive: string): Promise<Result<FilesArtifactUUID, Error>>  {
         const archiverResponse = await this.genericTgzArchiver.createTgzByteArray(pathToArchive)
         if (archiverResponse.isErr()){
             return err(archiverResponse.error)
@@ -536,7 +536,7 @@ export class EnclaveContext {
     }
       
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public async storeWebFiles(url: string): Promise<Result<FilesArtifactID, Error>> {
+    public async storeWebFiles(url: string): Promise<Result<FilesArtifactUUID, Error>> {
         const args = newStoreWebFilesArtifactArgs(url);
         const storeWebFilesArtifactResponseResult = await this.backend.storeWebFilesArtifact(args)
         if (storeWebFilesArtifactResponseResult.isErr()) {
@@ -547,7 +547,7 @@ export class EnclaveContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public async storeServiceFiles(serviceId: ServiceID, absoluteFilepathOnServiceContainer: string): Promise<Result<FilesArtifactID, Error>> {
+    public async storeServiceFiles(serviceId: ServiceID, absoluteFilepathOnServiceContainer: string): Promise<Result<FilesArtifactUUID, Error>> {
         const args = newStoreFilesArtifactFromServiceArgs(serviceId, absoluteFilepathOnServiceContainer)
         const storeFilesArtifactFromServiceResponseResult = await this.backend.storeFilesArtifactFromService(args)
         if (storeFilesArtifactFromServiceResponseResult.isErr()) {

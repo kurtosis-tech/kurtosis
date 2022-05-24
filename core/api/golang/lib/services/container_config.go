@@ -17,8 +17,8 @@
 
 package services
 
-// The ID of an artifact containing files that should be mounted into a service container
-type FilesArtifactID string
+// The UUID of an artifact containing files that should be mounted into a service container
+type FilesArtifactUUID string
 
 // ====================================================================================================
 //                                    Config Object
@@ -27,7 +27,7 @@ type FilesArtifactID string
 type ContainerConfig struct {
 	image                        string
 	usedPorts                   map[string]*PortSpec
-	filesArtifactMountpoints    map[FilesArtifactID]string
+	filesArtifactMountpoints    map[FilesArtifactUUID]string
 	entrypointOverrideArgs      []string
 	cmdOverrideArgs              []string
 	environmentVariableOverrides map[string]string
@@ -41,7 +41,7 @@ func (config *ContainerConfig) GetUsedPorts() map[string]*PortSpec {
 	return config.usedPorts
 }
 
-func (config *ContainerConfig) GetFilesArtifactMountpoints() map[FilesArtifactID]string {
+func (config *ContainerConfig) GetFilesArtifactMountpoints() map[FilesArtifactUUID]string {
 	return config.filesArtifactMountpoints
 }
 
@@ -64,9 +64,9 @@ func (config *ContainerConfig) GetEnvironmentVariableOverrides() map[string]stri
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 type ContainerConfigBuilder struct {
 	image                        string
-	usedPorts                   map[string]*PortSpec
-	filesArtifactMountpoints  map[FilesArtifactID]string
-	entrypointOverrideArgs      []string
+	usedPorts                    map[string]*PortSpec
+	filesArtifactMountpoints     map[FilesArtifactUUID]string
+	entrypointOverrideArgs       []string
 	cmdOverrideArgs              []string
 	environmentVariableOverrides map[string]string
 }
@@ -75,7 +75,7 @@ func NewContainerConfigBuilder(image string) *ContainerConfigBuilder {
 	return &ContainerConfigBuilder{
 		image:                        image,
 		usedPorts:                    map[string]*PortSpec{},
-		filesArtifactMountpoints:     map[FilesArtifactID]string{},
+		filesArtifactMountpoints:     map[FilesArtifactUUID]string{},
 		entrypointOverrideArgs:       nil,
 		cmdOverrideArgs:              nil,
 		environmentVariableOverrides: map[string]string{},
@@ -87,7 +87,7 @@ func (builder *ContainerConfigBuilder) WithUsedPorts(usedPorts map[string]*PortS
 	return builder
 }
 
-func (builder *ContainerConfigBuilder) WithFiles(filesArtifactMountpoints map[FilesArtifactID]string) *ContainerConfigBuilder {
+func (builder *ContainerConfigBuilder) WithFiles(filesArtifactMountpoints map[FilesArtifactUUID]string) *ContainerConfigBuilder {
 	builder.filesArtifactMountpoints = filesArtifactMountpoints
 	return builder
 }
