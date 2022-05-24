@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed bug with Gateway erring out when getting service info for service with non TCP protocol port
 
 # 0.20.1
 ### Changes
