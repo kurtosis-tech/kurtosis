@@ -1,4 +1,6 @@
 # TBD
+
+# 1.54.0
 ### Breaking Changes
 * Renamed `FilesArtifactID` to `FilesArtifactUUID` which is more accurate
   * Users should adapt their code to use this new type name when calling `EnclaveContext` methods like `EnclaveContext.StoreWebFiles`
