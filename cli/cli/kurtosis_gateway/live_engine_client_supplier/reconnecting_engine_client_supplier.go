@@ -90,10 +90,12 @@ func (supplier *LiveEngineClientSupplier) Start() error {
 // NOTE: Do not save this value!! Just use it as a point-in-time piece of info
 func (supplier *LiveEngineClientSupplier) GetEngineClient() (kurtosis_engine_rpc_api_bindings.EngineServiceClient, error) {
 	if supplier.currentInfo == nil {
-		return nil, stacktrace.NewError("Expected to have info about a running live engine, instead no info was found")
-	}
-	if supplier.currentInfo.engineClient == nil {
-		return nil, stacktrace.NewError("Expected to have a client connected to a running Kurtosis engine, instead no engine client was found")
+		// If no current info is found, we wait for a health check to run to verify that there are no connectable engines running
+		// If it's still nil after waiting, we throw an error
+		time.Sleep(pollInterval)
+		if supplier.currentInfo == nil {
+			return nil, stacktrace.NewError("Expected to have info about a running live engine, instead no info was found")
+		}
 	}
 	return supplier.currentInfo.engineClient, nil
 }
@@ -135,7 +137,7 @@ func (supplier *LiveEngineClientSupplier) replaceEngineIfNecessary() {
 		runningEngine = onlyEngineInMap
 	}
 
-	// If we have no engine, we'll take anything we can get
+	// If we have no engine client, we'll take anything we can get
 	if supplier.currentInfo == nil {
 		supplier.replaceCurrentEngineInfoBestEffort(runningEngine)
 		return
@@ -199,6 +201,9 @@ func (supplier *LiveEngineClientSupplier) replaceCurrentEngineInfoBestEffort(new
 }
 
 func closeEngineInfo(info *engineInfo) {
+	if info == nil {
+		return
+	}
 	// Ordering is important
 	info.grpcConn.Close()
 	info.proxyConn.Stop()

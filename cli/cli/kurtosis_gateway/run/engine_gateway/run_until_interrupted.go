@@ -1,6 +1,7 @@
 package engine_gateway
 
 import (
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/connection"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/live_engine_client_supplier"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/server/engine_gateway"
@@ -18,8 +19,11 @@ const (
 	grpcServerStopGracePeriod = 5 * time.Second
 )
 
-func RunEngineGatewayUntilInterrupted(engineClientSupplier *live_engine_client_supplier.LiveEngineClientSupplier, connectionProvider *connection.GatewayConnectionProvider) error {
-
+func RunEngineGatewayUntilInterrupted(kurtosisBackend backend_interface.KurtosisBackend, connectionProvider *connection.GatewayConnectionProvider) error {
+	engineClientSupplier := live_engine_client_supplier.NewLiveEngineClientSupplier(kurtosisBackend, connectionProvider)
+	if err := engineClientSupplier.Start(); err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to start supplier for live Kurtosis engine clients, instead a non-nil error was returned")
+	}
 	engineGatewayServer, gatewayCloseFunc := engine_gateway.NewEngineGatewayServiceServer(connectionProvider, engineClientSupplier)
 	defer gatewayCloseFunc()
 	engineGatewayServiceRegistrationFunc := func(grpcServer *grpc.Server) {

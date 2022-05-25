@@ -5,7 +5,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/kurtosis_config_getter"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/connection"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/live_engine_client_supplier"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/run/engine_gateway"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/spf13/cobra"
@@ -53,10 +52,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "Expected to be able to instantiate a gateway connection provider, instead a non-nil error was returned")
 	}
 
-	engineClientSupplier := live_engine_client_supplier.NewLiveEngineClientSupplier(kurtosisBackend, connectionProvider)
-	// If the engine is running in kubernetes, there's no portspec for the public port
-
-	if err := engine_gateway.RunEngineGatewayUntilInterrupted(engineClientSupplier, connectionProvider); err != nil {
+	if err := engine_gateway.RunEngineGatewayUntilInterrupted(kurtosisBackend, connectionProvider); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the engine gateway server.")
 	}
 
