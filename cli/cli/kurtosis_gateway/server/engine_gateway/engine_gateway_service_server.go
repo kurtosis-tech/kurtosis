@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/connection"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/live_engine_client_supplier"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/port_utils"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/run/api_container_gateway"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
@@ -24,7 +25,7 @@ type EngineGatewayServiceServer struct {
 	kurtosis_engine_rpc_api_bindings.UnimplementedEngineServiceServer
 
 	// Client for the engine we'll be connecting too
-	remoteEngineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient
+	engineClientSupplier *live_engine_client_supplier.LiveEngineClientSupplier
 
 	// Configuration for the kubernetes cluster kurtosis is running on
 	kubernetesConfig *restclient.Config
@@ -44,12 +45,12 @@ type runningApiContainerGateway struct {
 
 // NewEngineGatewayServiceServer returns a EngineGatewayServiceServer
 // runningEngine is a kurtosis engine running a cluster that can be reached through clients configured with kubernetesConfig
-func NewEngineGatewayServiceServer(connectionProvider *connection.GatewayConnectionProvider, engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient) (resultGatewayService *EngineGatewayServiceServer, gatewayCloseFunc func()) {
+func NewEngineGatewayServiceServer(connectionProvider *connection.GatewayConnectionProvider, engineClientSupplier *live_engine_client_supplier.LiveEngineClientSupplier) (resultGatewayService *EngineGatewayServiceServer, gatewayCloseFunc func()) {
 	// We start out with no enclave api-container gateways runnings
 	runningApiContainers := map[string]*runningApiContainerGateway{}
 
 	service := &EngineGatewayServiceServer{
-		remoteEngineClient:           engineClient,
+		engineClientSupplier:         engineClientSupplier,
 		connectionProvider:           connectionProvider,
 		enclaveIdToRunningGatewayMap: runningApiContainers,
 		mutex:                        &sync.Mutex{},
@@ -65,7 +66,11 @@ func NewEngineGatewayServiceServer(connectionProvider *connection.GatewayConnect
 }
 
 func (service *EngineGatewayServiceServer) CreateEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs) (*kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse, error) {
-	remoteEngineResponse, err := service.remoteEngineClient.CreateEnclave(ctx, args)
+	remoteEngineClient, err := service.engineClientSupplier.GetEngineClient()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get a client for a live Kurtosis engine, instead a non nil error was returned")
+	}
+	remoteEngineResponse, err := remoteEngineClient.CreateEnclave(ctx, args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave through the remote engine")
 	}
@@ -73,7 +78,7 @@ func (service *EngineGatewayServiceServer) CreateEnclave(ctx context.Context, ar
 	defer func() {
 		if cleanUpEnclave {
 			destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{EnclaveId: args.GetEnclaveId()}
-			if _, err := service.remoteEngineClient.DestroyEnclave(ctx, destroyEnclaveArgs); err != nil {
+			if _, err := remoteEngineClient.DestroyEnclave(ctx, destroyEnclaveArgs); err != nil {
 				logrus.Error("Launching the Enclave gateway failed, expected to be able to cleanup the created enclave, but an error occurred calling the backend to destroy the enclave we created:")
 				fmt.Fprintln(logrus.StandardLogger().Out, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually kill the enclave with id '%v'", args.GetEnclaveId())
@@ -108,7 +113,11 @@ func (service *EngineGatewayServiceServer) CreateEnclave(ctx context.Context, ar
 }
 
 func (service *EngineGatewayServiceServer) GetEnclaves(ctx context.Context, in *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error) {
-	remoteEngineResponse, err := service.remoteEngineClient.GetEnclaves(ctx, in)
+	remoteEngineClient, err := service.engineClientSupplier.GetEngineClient()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get a client for a live Kurtosis engine, instead a non nil error was returned")
+	}
+	remoteEngineResponse, err := remoteEngineClient.GetEnclaves(ctx, in)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves from the remote engine")
 	}
@@ -117,14 +126,14 @@ func (service *EngineGatewayServiceServer) GetEnclaves(ctx context.Context, in *
 	for enclaveId, enclaveInfo := range responseEnclaves {
 		var runningApiContainerGateway *runningApiContainerGateway
 		runningApiContainerGateway, isRunning := service.enclaveIdToRunningGatewayMap[enclaveId]
-		defer func() {
-			if cleanUpRunningGateways {
-				service.idempotentKillRunningGatewayForEnclaveId(enclaveId)
-			}
-		}()
 		// If the gateway isn't running, start it
 		if !isRunning {
 			runningApiContainerGateway, err = service.startRunningGatewayForEnclave(enclaveInfo)
+			defer func() {
+				if cleanUpRunningGateways {
+					service.idempotentKillRunningGatewayForEnclaveId(enclaveId)
+				}
+			}()
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "Expected to be able to start a local gateway for enclave '%v', instead a non-nil error was returned", enclaveId)
 			}
@@ -137,7 +146,11 @@ func (service *EngineGatewayServiceServer) GetEnclaves(ctx context.Context, in *
 }
 
 func (service *EngineGatewayServiceServer) StopEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.StopEnclaveArgs) (*emptypb.Empty, error) {
-	if _, err := service.remoteEngineClient.StopEnclave(ctx, args); err != nil {
+	remoteEngineClient, err := service.engineClientSupplier.GetEngineClient()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get a client for a live Kurtosis engine, instead a non nil error was returned")
+	}
+	if _, err := remoteEngineClient.StopEnclave(ctx, args); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred calling remote engine to stop enclave '%v'", args.EnclaveId)
 	}
 
@@ -145,7 +158,11 @@ func (service *EngineGatewayServiceServer) StopEnclave(ctx context.Context, args
 }
 
 func (service *EngineGatewayServiceServer) DestroyEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs) (*emptypb.Empty, error) {
-	if _, err := service.remoteEngineClient.DestroyEnclave(ctx, args); err != nil {
+	remoteEngineClient, err := service.engineClientSupplier.GetEngineClient()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get a client for a live Kurtosis engine, instead a non nil error was returned")
+	}
+	if _, err := remoteEngineClient.DestroyEnclave(ctx, args); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred calling remote engine to destroy enclave with ID '%v':", args.EnclaveId)
 	}
 	// Kill the running api container gateway for this enclave
@@ -156,7 +173,11 @@ func (service *EngineGatewayServiceServer) DestroyEnclave(ctx context.Context, a
 }
 
 func (service *EngineGatewayServiceServer) Clean(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.CleanArgs) (*kurtosis_engine_rpc_api_bindings.CleanResponse, error) {
-	remoteEngineResponse, err := service.remoteEngineClient.Clean(ctx, args)
+	remoteEngineClient, err := service.engineClientSupplier.GetEngineClient()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get a client for a live Kurtosis engine, instead a non nil error was returned")
+	}
+	remoteEngineResponse, err := remoteEngineClient.Clean(ctx, args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves")
 	}
@@ -168,7 +189,11 @@ func (service *EngineGatewayServiceServer) Clean(ctx context.Context, args *kurt
 }
 
 func (service *EngineGatewayServiceServer) GetEngineInfo(ctx context.Context, emptyArgs *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse, error) {
-	remoteEngineResponse, err := service.remoteEngineClient.GetEngineInfo(ctx, emptyArgs)
+	remoteEngineClient, err := service.engineClientSupplier.GetEngineClient()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get a client for a live Kurtosis engine, instead a non nil error was returned")
+	}
+	remoteEngineResponse, err := remoteEngineClient.GetEngineInfo(ctx, emptyArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting engine info through the remote engine")
 	}

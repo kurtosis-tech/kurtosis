@@ -1,8 +1,8 @@
 package engine_gateway
 
 import (
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/connection"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/live_engine_client_supplier"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/server/engine_gateway"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
@@ -18,29 +18,15 @@ const (
 	grpcServerStopGracePeriod = 5 * time.Second
 )
 
-func RunEngineGatewayUntilInterrupted(engine *engine.Engine, connectionProvider *connection.GatewayConnectionProvider) error {
-	engineConnection, err := connectionProvider.ForEngine(engine)
-	if err != nil {
-		return stacktrace.Propagate(err, "Expected to forward a local port to GRPC port of engine '%v', instead a non-nil error was returned", engine.GetGUID())
-	}
-	defer engineConnection.Stop()
+func RunEngineGatewayUntilInterrupted(engineClientSupplier *live_engine_client_supplier.LiveEngineClientSupplier, connectionProvider *connection.GatewayConnectionProvider) error {
 
-	// Dial in to our locally forwarded port
-	// remoteEngineClient -> kube-utils port-forwarded port (local) -> engine in cluster (remote)
-	remoteEngineConn, err := engineConnection.GetGrpcClientConn()
-	if err != nil {
-		return stacktrace.Propagate(err, "Expected to be able to get a GRPC client connection to the engine through a locally forwarded port, instead a non-nil error was returned")
-	}
-	defer remoteEngineConn.Close()
-	engineClient := kurtosis_engine_rpc_api_bindings.NewEngineServiceClient(remoteEngineConn)
-
-	engineGatewayServer, gatewayCloseFunc := engine_gateway.NewEngineGatewayServiceServer(connectionProvider, engineClient)
+	engineGatewayServer, gatewayCloseFunc := engine_gateway.NewEngineGatewayServiceServer(connectionProvider, engineClientSupplier)
 	defer gatewayCloseFunc()
 	engineGatewayServiceRegistrationFunc := func(grpcServer *grpc.Server) {
 		kurtosis_engine_rpc_api_bindings.RegisterEngineServiceServer(grpcServer, engineGatewayServer)
 	}
 	// Print information to the user
-	logrus.Infof("Starting the gateway for engine with GUID '%v' on local port '%v'", engine.GetGUID(), engineGatewayPort)
+	logrus.Infof("Starting Kurtosis gateway on local port '%v'", engineGatewayPort)
 	logrus.Infof("You can use this gateway as a drop-in replacement for Kurtosis engine. To connect to the gateway, send a request to '%v:%v'", localHostIpStr, engineGatewayPort)
 	logrus.Infof("To kill the running gateway, press CTRL+C")
 

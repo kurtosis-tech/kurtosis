@@ -2,14 +2,14 @@ package live_engine_client_supplier
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/connection"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"net"
+	"google.golang.org/grpc"
 	"time"
 )
 
@@ -22,16 +22,16 @@ type engineInfo struct {
 
 	proxyConn connection.GatewayConnectionToKurtosis
 
-	grpcConn net.Conn
+	grpcConn *grpc.ClientConn
 
 	// This _might_ stateful, which is why we keep it here and hand
 	// it back to requesters rather than creating a new one each time
-	engineClient *kurtosis_engine_rpc_api_bindings.EngineServiceClient
+	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient
 }
 
 // Class that will constantly poll the Kubernetes backend to try and find a live engine
 type LiveEngineClientSupplier struct {
-	kubernetesBackend *kubernetes.KubernetesKurtosisBackend
+	kubernetesBackend backend_interface.KurtosisBackend
 
 	connectionProvider *connection.GatewayConnectionProvider
 
@@ -41,11 +41,11 @@ type LiveEngineClientSupplier struct {
 }
 
 func NewLiveEngineClientSupplier(
-	kubernetesKurtosisBackend *kubernetes.KubernetesKurtosisBackend,
+	kurtosisBackend backend_interface.KurtosisBackend,
 	connectionProvider *connection.GatewayConnectionProvider,
 ) *LiveEngineClientSupplier {
 	return &LiveEngineClientSupplier{
-		kubernetesBackend:     kubernetesKurtosisBackend,
+		kubernetesBackend:     kurtosisBackend,
 		currentInfo:           nil,
 		stopUpdaterSignalChan: nil,
 		connectionProvider:    connectionProvider,
@@ -56,6 +56,8 @@ func (supplier *LiveEngineClientSupplier) Start() error {
 	if supplier.stopUpdaterSignalChan != nil {
 		return stacktrace.NewError("Cannot start live engine client supplier because it's already started")
 	}
+	// Get connected to the engine
+	supplier.replaceEngineIfNecessary()
 
 	// Start health checking the engine
 	stopUpdaterSignalChan := make(chan interface{})
@@ -86,8 +88,14 @@ func (supplier *LiveEngineClientSupplier) Start() error {
 }
 
 // NOTE: Do not save this value!! Just use it as a point-in-time piece of info
-func GetEngineClient() (*kurtosis_engine_rpc_api_bindings.EngineServiceClient, error) {
-
+func (supplier *LiveEngineClientSupplier) GetEngineClient() (kurtosis_engine_rpc_api_bindings.EngineServiceClient, error) {
+	if supplier.currentInfo == nil {
+		return nil, stacktrace.NewError("Expected to have info about a running live engine, instead no info was found")
+	}
+	if supplier.currentInfo.engineClient == nil {
+		return nil, stacktrace.NewError("Expected to have a client connected to a running Kurtosis engine, instead no engine client was found")
+	}
+	return supplier.currentInfo.engineClient, nil
 }
 
 func (supplier *LiveEngineClientSupplier) Stop() {
@@ -121,10 +129,10 @@ func (supplier *LiveEngineClientSupplier) replaceEngineIfNecessary() {
 		logrus.Errorf("Found > 1 engine running, which should never happen")
 		return
 	}
-	runningEngine := runningEngines[0]
 
 	var runningEngine *engine.Engine
-	for _, runningEngine = range runningEngines {
+	for _, onlyEngineInMap := range runningEngines {
+		runningEngine = onlyEngineInMap
 	}
 
 	// If we have no engine, we'll take anything we can get
@@ -143,38 +151,51 @@ func (supplier *LiveEngineClientSupplier) replaceEngineIfNecessary() {
 	supplier.replaceCurrentEngineInfoBestEffort(runningEngine)
 }
 
-func (supplier *LiveEngineClientSupplier) replaceCurrentEngineInfoBestEffort(newEngine *engine.Engine) {
-	newProxyConn := supplier.connectionProvider.ForEngine(newEngine)
-
-	currentInfo := supplier.currentInfo
-
-	currentProxy := currentInfo.proxyConn
-	currentGrpc := currentInfo.grpcConn
-
-	shouldCloseCurrentResources := false
-	defer func() {
-		if shouldCloseCurrentResources {
-			// Very important not to pass in supplier.currentInfo, else we'll close the new info after replacement!
-			closeEngineInfo(currentInfo)
-		}
-	}()
-
+func (supplier *LiveEngineClientSupplier) replaceCurrentEngineInfoBestEffort(newEngine *engine.Engine) error {
+	// Get a port forwarded connection to the new engine
+	newProxyConn, err := supplier.connectionProvider.ForEngine(newEngine)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to get a port forwarded connection to engine '%v', instead a non-nil error was returned", newEngine.GetGUID())
+	}
 	shouldDestroyNewProxy := true
 	defer func() {
 		if shouldDestroyNewProxy {
 			newProxyConn.Stop()
 		}
 	}()
-
-	newEngineInfo := &engineInfo{
-		engineGuid:   currentInfo.engineGuid,
-		proxyConn:    nil,
-		grpcConn:     nil,
-		engineClient: nil,
+	// Create an engine client that sends requests to our new client
+	newGrpcConnection, err := newProxyConn.GetGrpcClientConn()
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to get a GRPC client connection to engine '%v', instead a non-nil error was returned", newEngine.GetGUID())
 	}
-	supplier.currentInfo = newEngineInfo
+	shouldDestroyNewGrpcClientConn := true
+	defer func() {
+		if shouldDestroyNewGrpcClientConn {
+			newGrpcConnection.Close()
+		}
+	}()
+	newEngineClient := kurtosis_engine_rpc_api_bindings.NewEngineServiceClient(newGrpcConnection)
+	newEngineInfo := &engineInfo{
+		engineGuid:   newEngine.GetGUID(),
+		proxyConn:    newProxyConn,
+		grpcConn:     newGrpcConnection,
+		engineClient: newEngineClient,
+	}
 
+	oldEngineInfo := supplier.currentInfo
+	shouldCloseOldEngineInfo := false
+	defer func() {
+		if shouldCloseOldEngineInfo {
+			// Very important not to pass in supplier.currentInfo, else we'll close the new info after replacement!
+			closeEngineInfo(oldEngineInfo)
+		}
+	}()
+	supplier.currentInfo = newEngineInfo
+	logrus.Infof("Connected to running Kurtosis engine with id '%v'", newEngine.GetGUID())
 	shouldDestroyNewProxy = false
+	shouldDestroyNewGrpcClientConn = false
+	shouldCloseOldEngineInfo = true
+	return nil
 }
 
 func closeEngineInfo(info *engineInfo) {
