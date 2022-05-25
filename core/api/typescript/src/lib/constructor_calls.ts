@@ -150,6 +150,7 @@ export function newStartServiceArgs(
     serviceId: ServiceID,
     dockerImage: string,
     privatePorts: Map<string, Port>,
+    useStaticPrivatePorts: boolean, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
     entrypointArgs: string[],
     cmdArgs: string[],
     dockerEnvVars: Map<string, string>,
@@ -178,6 +179,9 @@ export function newStartServiceArgs(
     for (const [artifactId, mountDirpath] of filesArtifactMountDirpaths.entries()) {
         filesArtificatMountDirpathsMap.set(artifactId, mountDirpath);
     }
+
+    //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+    result.setUseStaticPrivatePorts(useStaticPrivatePorts)
 
     return result;
 }

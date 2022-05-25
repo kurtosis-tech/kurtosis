@@ -3182,7 +3182,8 @@ proto.api_container_api.StartServiceArgs.toObject = function(includeInstance, ms
     entrypointArgsList: (f = jspb.Message.getRepeatedField(msg, 4)) == null ? undefined : f,
     cmdArgsList: (f = jspb.Message.getRepeatedField(msg, 5)) == null ? undefined : f,
     dockerEnvVarsMap: (f = msg.getDockerEnvVarsMap()) ? f.toObject(includeInstance, undefined) : [],
-    filesArtifactMountpointsMap: (f = msg.getFilesArtifactMountpointsMap()) ? f.toObject(includeInstance, undefined) : []
+    filesArtifactMountpointsMap: (f = msg.getFilesArtifactMountpointsMap()) ? f.toObject(includeInstance, undefined) : [],
+    useStaticPrivatePorts: jspb.Message.getBooleanFieldWithDefault(msg, 9, false)
   };
 
   if (includeInstance) {
@@ -3253,6 +3254,10 @@ proto.api_container_api.StartServiceArgs.deserializeBinaryFromReader = function(
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
          });
       break;
+    case 9:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setUseStaticPrivatePorts(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -3321,6 +3326,13 @@ proto.api_container_api.StartServiceArgs.serializeBinaryToWriter = function(mess
   f = message.getFilesArtifactMountpointsMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(8, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
+  }
+  f = message.getUseStaticPrivatePorts();
+  if (f) {
+    writer.writeBool(
+      9,
+      f
+    );
   }
 };
 
@@ -3499,6 +3511,24 @@ proto.api_container_api.StartServiceArgs.prototype.getFilesArtifactMountpointsMa
 proto.api_container_api.StartServiceArgs.prototype.clearFilesArtifactMountpointsMap = function() {
   this.getFilesArtifactMountpointsMap().clear();
   return this;};
+
+
+/**
+ * optional bool use_static_private_ports = 9;
+ * @return {boolean}
+ */
+proto.api_container_api.StartServiceArgs.prototype.getUseStaticPrivatePorts = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 9, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.api_container_api.StartServiceArgs} returns this
+ */
+proto.api_container_api.StartServiceArgs.prototype.setUseStaticPrivatePorts = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 9, value);
+};
 
 
 

@@ -197,6 +197,7 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 		serviceId,
 		args.DockerImage,
 		privateServicePortSpecs,
+		args.UseStaticPrivatePorts,
 		args.EntrypointArgs,
 		args.CmdArgs,
 		args.DockerEnvVars,

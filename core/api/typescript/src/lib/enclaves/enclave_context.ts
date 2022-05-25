@@ -274,6 +274,7 @@ export class EnclaveContext {
             serviceId,
             containerConfig.image,
             privatePortsForApi,
+            containerConfig.useStaticPrivatePorts,
             containerConfig.entrypointOverrideArgs,
             containerConfig.cmdOverrideArgs,
             containerConfig.environmentVariableOverrides,

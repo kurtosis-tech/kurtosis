@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added a temporary method `ContainerConfigBuilder.WithUseStaticPrivatePort` to support using `static private ports` for user services in Kurtosis Docker backend
 
 # 1.54.0
 ### Breaking Changes

@@ -193,6 +193,7 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 		string(serviceId),
 		containerConfig.GetImage(),
 		privatePortsForApi,
+		containerConfig.GetUseStaticPrivatePorts(),
 		containerConfig.GetEntrypointOverrideArgs(),
 		containerConfig.GetCmdOverrideArgs(),
 		containerConfig.GetEnvironmentVariableOverrides(),
