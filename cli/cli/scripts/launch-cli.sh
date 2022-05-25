@@ -16,7 +16,19 @@ source "${script_dirpath}/_constants.sh"
 # ==================================================================================================
 goarch="$(go env GOARCH)"
 goos="$(go env GOOS)"
-cli_binary_filepath="${cli_module_dirpath}/${GORELEASER_OUTPUT_DIRNAME}/${GORELEASER_CLI_BUILD_ID}_${goos}_${goarch}/${CLI_BINARY_FILENAME}"
+
+architecture_dirname="${GORELEASER_CLI_BUILD_ID}_${goos}_${goarch}"
+
+if [ "${goarch}" == "${GO_ARCH_ENV_AMD64_VALUE}" ]; then
+  goamd64="$(go env GOAMD64)"
+  if [ "${goamd64}" == "" ]; then
+    goamd64="${GO_DEFAULT_AMD64_ENV}"
+  fi
+  architecture_dirname="${architecture_dirname}_${goamd64}"
+fi
+
+cli_binary_filepath="${cli_module_dirpath}/${GORELEASER_OUTPUT_DIRNAME}/${architecture_dirname}/${CLI_BINARY_FILENAME}"
+
 if ! [ -f "${cli_binary_filepath}" ]; then
     echo "Error: Expected a CLI binary to have been built by Goreleaser at '${cli_binary_filepath}' but none exists" >&2
     exit 1
