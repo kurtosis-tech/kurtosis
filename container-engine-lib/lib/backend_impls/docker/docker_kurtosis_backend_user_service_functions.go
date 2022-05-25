@@ -170,6 +170,7 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	serviceGuid service.ServiceGUID,
 	containerImageName string,
 	privatePorts map[string]*port_spec.PortSpec,
+	useStaticPrivatePorts bool, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
@@ -289,7 +290,12 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred converting private port spec '%v' to a Docker port", portId)
 		}
-		dockerUsedPorts[dockerPort] = docker_manager.NewAutomaticPublishingSpec()
+		//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+		if useStaticPrivatePorts {
+			dockerUsedPorts[dockerPort] = docker_manager.NewManualPublishingSpec(portSpec.GetNumber())
+		} else {
+			dockerUsedPorts[dockerPort] = docker_manager.NewAutomaticPublishingSpec()
+		}
 	}
 
 	createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
