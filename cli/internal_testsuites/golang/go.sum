@@ -68,13 +68,13 @@ github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211207020812-00a
 github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211207020812-00a54fc29318/go.mod h1:HI+M5KdzhZ165JPV7vQvldNNE8m86ZIeg86PzwS6cqs=
 github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211207020830-504dbf5ed1a6 h1:0LRCDs1zd30kFyEVdapKnVHuq9gdMNzpLQ6glahob9k=
 github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211207020830-504dbf5ed1a6/go.mod h1:LB2yqaqWgd0oSew+GsdpcI1jRTq3W7toM7tX8rcS7c4=
-github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220523220451-7790abcadd56/go.mod h1:Sp+fZHIHtfQRVD7D6agQp5GqEbGzJDrKseJsm2HYxJk=
-github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220524183359-4861d3d42bb7 h1:eAlqp2mCBOGPXjAlew+eLnlRAYx+MTD/ckLRJzuAHWc=
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220524183359-4861d3d42bb7/go.mod h1:Sp+fZHIHtfQRVD7D6agQp5GqEbGzJDrKseJsm2HYxJk=
-github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220523222136-b29cebf32f4f h1:65pSShhdFlEYtk56B4aJJHCLie83S4xj8E+czYDif8E=
-github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220523222136-b29cebf32f4f/go.mod h1:lUCxoMfye7ERvTMYVWyYyTtpPYUcyWr/75FV02mBzNM=
+github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220526181932-5f429e23f635 h1:kHtTDQvVWLdD2NFpaCCGjvCfGOu2MK0o/bkod6799TA=
+github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220526181932-5f429e23f635/go.mod h1:Sp+fZHIHtfQRVD7D6agQp5GqEbGzJDrKseJsm2HYxJk=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220524194248-3efc08f3ef1a h1:tpvfBJ72tpk8sVbQptoVfGxyHqqRWdeWTMMlvV7KpnM=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220524194248-3efc08f3ef1a/go.mod h1:v6KWwpiGofVEitvcBlG+9PYcI24CouPelbnPMIljLEg=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220526194821-5801f859c7b5 h1:6F0jHrXCdUy8SZ0k2+FOQNa+y4nIwM5gVjaCM26X3eM=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220526194821-5801f859c7b5/go.mod h1:+rVZybgN08Yf9gFy8CrtDsFQ51qQizjY+QHh8Ri0JAY=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 h1:YQTATifMUwZEtZYb0LVA7DK2pj8s71iY8rzweuUQ5+g=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409/go.mod h1:y5weVs5d9wXXHcDA1awRxkIhhHC1xxYJN8a7aXnE6S8=
 github.com/mholt/archiver v3.1.1+incompatible h1:1dCVxuqs0dJseYEhi5pl7MYPH9zDa1wBi7mF09cbNkU=
