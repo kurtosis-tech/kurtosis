@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Added a temporary parameter `publicPorts` in `KurtosisBackend.StartUserService` to support defining static public ports
+
 ### Breaking Changes
 * Removed `FilesArtifactID` type because it is not used anywhere in this package
   * Users have to remove the dependency with this type and create their own type instead

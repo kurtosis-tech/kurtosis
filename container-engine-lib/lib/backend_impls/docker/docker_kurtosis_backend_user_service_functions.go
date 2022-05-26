@@ -170,11 +170,28 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	serviceGuid service.ServiceGUID,
 	containerImageName string,
 	privatePorts map[string]*port_spec.PortSpec,
+	publicPorts map[string]*port_spec.PortSpec, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
 	filesArtifactsExpansion *backend_interface.FilesArtifactsExpansion,
 ) (*service.Service, error, ) {
+
+	//Sanity check for port bindings
+	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	if publicPorts != nil && len(publicPorts) > 0 {
+
+		if len(privatePorts) != len(publicPorts) {
+			return nil, stacktrace.NewError("The received private ports length and the public ports length are not equal, received '%v' private ports and '%v' public ports", len(privatePorts), len(publicPorts))
+		}
+
+		for portId, privatePortSpec := range privatePorts {
+			if _, found := publicPorts[portId]; !found {
+				return nil, stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portId, privatePortSpec.GetNumber())
+			}
+		}
+	}
+
 	backend.serviceRegistrationMutex.Lock()
 	defer backend.serviceRegistrationMutex.Unlock()
 
@@ -284,12 +301,21 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	}
 
 	dockerUsedPorts := map[nat.Port]docker_manager.PortPublishSpec{}
-	for portId, portSpec := range privatePorts {
-		dockerPort, err := transformPortSpecToDockerPort(portSpec)
+	for portId, privatePortSpec := range privatePorts {
+		dockerPort, err := transformPortSpecToDockerPort(privatePortSpec)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred converting private port spec '%v' to a Docker port", portId)
 		}
-		dockerUsedPorts[dockerPort] = docker_manager.NewAutomaticPublishingSpec()
+		//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+		if publicPorts != nil && len(publicPorts) > 0 {
+			publicPortSpec, found := publicPorts[portId]
+			if !found {
+				return nil, stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portId, privatePortSpec.GetNumber())
+			}
+			dockerUsedPorts[dockerPort] = docker_manager.NewManualPublishingSpec(publicPortSpec.GetNumber())
+		} else {
+			dockerUsedPorts[dockerPort] = docker_manager.NewAutomaticPublishingSpec()
+		}
 	}
 
 	createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
