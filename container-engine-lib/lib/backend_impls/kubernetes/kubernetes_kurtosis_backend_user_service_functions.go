@@ -219,7 +219,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	serviceGuid service.ServiceGUID,
 	containerImageName string,
 	privatePorts map[string]*port_spec.PortSpec,
-	useStaticPrivatePorts bool, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	publicPorts map[string]*port_spec.PortSpec, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
@@ -230,8 +230,8 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 ) {
 
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	if useStaticPrivatePorts {
-		logrus.Warn("It's not allowed to use static private ports in Kurtosis Kubernetes Backend, the private port will be automatically generated")
+	if len(publicPorts) > 0 {
+		logrus.Warn("It's not allowed to use public ports in Kurtosis Kubernetes Backend, the public ports will be automatically generated")
 	}
 
 	preexistingServiceFilters := &service.ServiceFilters{

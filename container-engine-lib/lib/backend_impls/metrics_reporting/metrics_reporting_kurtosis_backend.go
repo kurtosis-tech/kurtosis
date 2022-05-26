@@ -323,7 +323,7 @@ func (backend *MetricsReportingKurtosisBackend) StartUserService(
 	guid service.ServiceGUID,
 	containerImageName string,
 	privatePorts map[string]*port_spec.PortSpec,
-	useStaticPrivatePorts bool, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	publicPorts map[string]*port_spec.PortSpec, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
@@ -338,7 +338,7 @@ func (backend *MetricsReportingKurtosisBackend) StartUserService(
 		guid,
 		containerImageName,
 		privatePorts,
-		useStaticPrivatePorts,
+		publicPorts,
 		entrypointArgs,
 		cmdArgs,
 		envVars,

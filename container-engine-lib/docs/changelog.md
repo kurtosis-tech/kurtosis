@@ -1,6 +1,6 @@
 # TBD
 ### Features
-* Added a temporary argument `useStaticPrivatePorts` to support using `static private ports` for user services in Kurtosis Docker backend
+* Added a temporary parameter `publicPorts` in `KurtosisBackend.StartUserService` to support defining static public ports
 
 ### Breaking Changes
 * Removed `FilesArtifactID` type because it is not used anywhere in this package
