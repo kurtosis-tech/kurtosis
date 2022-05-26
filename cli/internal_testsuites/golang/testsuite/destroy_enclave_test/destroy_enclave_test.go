@@ -40,10 +40,10 @@ func TestDestroyEnclave(t *testing.T) {
 	}()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
-	filesArtifactId, err := enclaveCtx.StoreWebFiles(ctx, testFilesArtifactUrl)
+	filesArtifactUuid, err := enclaveCtx.StoreWebFiles(ctx, testFilesArtifactUrl)
 	require.NoError(t, err, "An error occurred storing the files artifact")
 
-	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactId)
+	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactUuid)
 	_, err = enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
 	require.NoError(t, err, "An error occurred adding the file server service")
 
@@ -56,15 +56,15 @@ func TestDestroyEnclave(t *testing.T) {
 //                                       Private helper functions
 // ====================================================================================================
 
-func getFileServerContainerConfigSupplier(filesArtifactId services.FilesArtifactID) func(ipAddr string) (*services.ContainerConfig, error) {
+func getFileServerContainerConfigSupplier(filesArtifactUuid services.FilesArtifactUUID) func(ipAddr string) (*services.ContainerConfig, error) {
 	containerConfigSupplier  := func(ipAddr string) (*services.ContainerConfig, error) {
 
 		containerConfig := services.NewContainerConfigBuilder(
 			fileServerServiceImage,
 		).WithUsedPorts(map[string]*services.PortSpec{
 			fileServerPortId: fileServerPortSpec,
-		}).WithFiles(map[services.FilesArtifactID]string{
-			filesArtifactId: filesArtifactMountpoint,
+		}).WithFiles(map[services.FilesArtifactUUID]string{
+			filesArtifactUuid: filesArtifactMountpoint,
 		}).Build()
 		return containerConfig, nil
 	}

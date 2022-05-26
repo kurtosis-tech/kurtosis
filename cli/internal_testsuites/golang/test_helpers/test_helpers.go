@@ -126,12 +126,12 @@ func AddAPIServiceToPartition(ctx context.Context, serviceId services.ServiceID,
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the datastore config file")
 	}
-	datastoreConfigArtifactId, err := enclaveCtx.UploadFiles(configFilepath)
+	datastoreConfigArtifactUuid, err := enclaveCtx.UploadFiles(configFilepath)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred uploading the datastore config file")
 	}
 
-	containerConfigSupplier := getApiServiceContainerConfigSupplier(datastoreConfigArtifactId)
+	containerConfigSupplier := getApiServiceContainerConfigSupplier(datastoreConfigArtifactUuid)
 
 	serviceCtx, err := enclaveCtx.AddServiceToPartition(serviceId, partitionId, containerConfigSupplier)
 	if err != nil {
@@ -202,7 +202,7 @@ func getDatastoreContainerConfigSupplier() func(ipAddr string) (*services.Contai
 	return containerConfigSupplier
 }
 
-func getApiServiceContainerConfigSupplier(apiConfigArtifactId services.FilesArtifactID) func(ipAddr string) (*services.ContainerConfig, error) {
+func getApiServiceContainerConfigSupplier(apiConfigArtifactUuid services.FilesArtifactUUID) func(ipAddr string) (*services.ContainerConfig, error) {
 	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
 		startCmd := []string{
 			"./example-api-server.bin",
@@ -214,8 +214,8 @@ func getApiServiceContainerConfigSupplier(apiConfigArtifactId services.FilesArti
 			apiServiceImage,
 		).WithUsedPorts(map[string]*services.PortSpec{
 			apiPortId: apiPortSpec,
-		}).WithFiles(map[services.FilesArtifactID]string{
-			apiConfigArtifactId: configMountpathOnApiContainer,
+		}).WithFiles(map[services.FilesArtifactUUID]string{
+			apiConfigArtifactUuid: configMountpathOnApiContainer,
 		}).WithCmdOverride(startCmd).Build()
 
 		return containerConfig, nil

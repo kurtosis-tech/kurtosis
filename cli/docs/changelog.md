@@ -1,4 +1,8 @@
 # TBD
+### Breaking Changes
+* Upgraded to engine 1.26.1, core 1.54.1 and container-engine-lib 0.33.0
+  * Users will need to run `kurtosis engine restart`
+
 ### Fixes
 * Fixed bug with Gateway erring out when getting service info for service with non TCP protocol port
 

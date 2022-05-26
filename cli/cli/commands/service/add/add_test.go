@@ -98,89 +98,89 @@ func TestParseEnvVarsStr_EmptyDeclarations(t *testing.T) {
 }
 
 func TestParseFilesArtifactMountStr_ValidParse(t *testing.T) {
-	artifactId1 := services.FilesArtifactID("1234")
-	artifactId2 := services.FilesArtifactID("4567")
+	artifactUuid1 := services.FilesArtifactUUID("1234")
+	artifactUuid2 := services.FilesArtifactUUID("4567")
 	mountpoint1 := "/dest1"
 	mountpoint2 := "/dest2"
 
 	result, err := parseFilesArtifactMountsStr(fmt.Sprintf(
 		"%v:%v,%v:%v",
-		artifactId1,
+		artifactUuid1,
 		mountpoint1,
-		artifactId2,
+		artifactUuid2,
 		mountpoint2,
 	))
 	require.NoError(t, err)
 	require.Equal(t, 2, len(result))
 
-	parsedMountpoint1, found := result[artifactId1]
+	parsedMountpoint1, found := result[artifactUuid1]
 	require.True(t, found)
 	require.Equal(t, mountpoint1, parsedMountpoint1)
 
-	parsedMountpoint2, found := result[artifactId2]
+	parsedMountpoint2, found := result[artifactUuid2]
 	require.True(t, found)
 	require.Equal(t, mountpoint2, parsedMountpoint2)
 }
 
 func TestParseFilesArtifactMountStr_EmptyDeclarationsAreSkipped(t *testing.T) {
-	artifactId1 := services.FilesArtifactID("1234")
-	artifactId2 := services.FilesArtifactID("4567")
+	artifactUuid1 := services.FilesArtifactUUID("1234")
+	artifactUuid2 := services.FilesArtifactUUID("4567")
 	mountpoint1 := "/dest1"
 	mountpoint2 := "/dest2"
 
 	result, err := parseFilesArtifactMountsStr(fmt.Sprintf(
 		"%v:%v,,,,,%v:%v",
-		artifactId1,
+		artifactUuid1,
 		mountpoint1,
-		artifactId2,
+		artifactUuid2,
 		mountpoint2,
 	))
 	require.NoError(t, err)
 	require.Equal(t, 2, len(result))
 
-	parsedMountpoint1, found := result[artifactId1]
+	parsedMountpoint1, found := result[artifactUuid1]
 	require.True(t, found)
 	require.Equal(t, mountpoint1, parsedMountpoint1)
 
-	parsedMountpoint2, found := result[artifactId2]
+	parsedMountpoint2, found := result[artifactUuid2]
 	require.True(t, found)
 	require.Equal(t, mountpoint2, parsedMountpoint2)
 }
 
-func TestParseFilesArtifactMountStr_TooManyArtifactIdMountpointDelimitersIsError(t *testing.T) {
-	artifactId := services.FilesArtifactID("1234")
+func TestParseFilesArtifactMountStr_TooManyArtifactUuidMountpointDelimitersIsError(t *testing.T) {
+	artifactUuid := services.FilesArtifactUUID("1234")
 	mountpoint := "/dest"
 
 	_, err := parseFilesArtifactMountsStr(fmt.Sprintf(
 		"%v::%v",
-		artifactId,
+		artifactUuid,
 		mountpoint,
 	))
 	require.Error(t, err)
 }
 
-func TestParseFilesArtifactMountStr_TooFewArtifactIdMountpointDelimitersIsError(t *testing.T) {
-	artifactId := services.FilesArtifactID("1234")
+func TestParseFilesArtifactMountStr_TooFewArtifactUuidMountpointDelimitersIsError(t *testing.T) {
+	artifactUuid := services.FilesArtifactUUID("1234")
 	mountpoint := "/dest"
 
 	_, err := parseFilesArtifactMountsStr(fmt.Sprintf(
 		"%v%v",
-		artifactId,
+		artifactUuid,
 		mountpoint,
 	))
 	require.Error(t, err)
 }
 
-func TestParseFilesArtifactMountStr_DuplicateArtifactIds(t *testing.T) {
-	artifactId := services.FilesArtifactID("1234")
+func TestParseFilesArtifactMountStr_DuplicateArtifactUuids(t *testing.T) {
+	artifactUuid := services.FilesArtifactUUID("1234")
 	mountpoint1 := "/dest1"
 	mountpoint2 := "/dest2"
 
 	_, err := parseFilesArtifactMountsStr(fmt.Sprintf(
 		"%v:%v,%v:%v",
-		artifactId,
+		artifactUuid,
 		mountpoint1,
-		artifactId,
+		artifactUuid,
 		mountpoint2,
 	))
 	require.Error(t, err)

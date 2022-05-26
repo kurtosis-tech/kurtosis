@@ -6,7 +6,7 @@ import {createEnclave} from "../../test_helpers/enclave_setup";
 import {
     ContainerConfig,
     ContainerConfigBuilder,
-    FilesArtifactID,
+    FilesArtifactUUID,
     PortProtocol,
     PortSpec,
     ServiceID
@@ -66,10 +66,10 @@ async function TestUploadFiles() {
         if (typeof pathToUpload === "undefined") {throw new Error("Failed to store uploadable path in path map.")}
         const uploadResults = await enclaveCtx.uploadFiles(pathToUpload)
         if(uploadResults.isErr()) { throw uploadResults.error }
-        const filesArtifactId = uploadResults.value
+        const filesArtifactUuid = uploadResults.value
 
-        const filesArtifactsMountPoints = new Map<FilesArtifactID, string>()
-        filesArtifactsMountPoints.set(filesArtifactId, USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT)
+        const filesArtifactsMountPoints = new Map<FilesArtifactUUID, string>()
+        filesArtifactsMountPoints.set(filesArtifactUuid, USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT)
 
         const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier(filesArtifactsMountPoints)
         const addServiceResult = await enclaveCtx.addService(FILE_SERVER_SERVICE_ID, fileServerContainerConfigSupplier)
@@ -265,7 +265,7 @@ async function createTempDirectory(directoryBase: string, directoryPattern: stri
     return ok(tempDirPathResult.value)
 }
 
-function getFileServerContainerConfigSupplier(filesArtifactMountPoints: Map<FilesArtifactID, string>): (ipAddr: string) => Result<ContainerConfig, Error> {
+function getFileServerContainerConfigSupplier(filesArtifactMountPoints: Map<FilesArtifactUUID, string>): (ipAddr: string) => Result<ContainerConfig, Error> {
     const containerConfigSupplier = (ipAddr:string): Result<ContainerConfig, Error> => {
         const usedPorts = new Map<string, PortSpec>()
         usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)

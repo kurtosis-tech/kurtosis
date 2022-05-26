@@ -89,7 +89,7 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveId)
 	}
-	filesArtifactId, err := enclaveCtx.StoreServiceFiles(ctx, serviceId, filepath)
+	filesArtifactUuid, err := enclaveCtx.StoreServiceFiles(ctx, serviceId, filepath)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -99,6 +99,6 @@ func run(
 			enclaveId,
 		)
 	}
-	logrus.Infof("Files package ID: %v", filesArtifactId)
+	logrus.Infof("Files package UUID: %v", filesArtifactUuid)
 	return nil
 }

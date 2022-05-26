@@ -6,7 +6,8 @@ import {
     ServiceContext,
     PartitionID,
     PortSpec,
-    PortProtocol, FilesArtifactID,
+    PortProtocol,
+    FilesArtifactUUID,
 } from "kurtosis-core-api-lib";
 import * as datastoreApi from "example-datastore-server-api-lib";
 import * as serverApi from "example-api-server-api-lib";
@@ -131,9 +132,9 @@ export async function addAPIServiceToPartition(
     if (uploadConfigResult.isErr()) {
         return err(uploadConfigResult.error)
     }
-    const datastoreConfigArtifactId = uploadConfigResult.value
+    const datastoreConfigArtifactUuid = uploadConfigResult.value
 
-    const containerConfigSupplier = getApiServiceContainerConfigSupplier(datastoreConfigArtifactId)
+    const containerConfigSupplier = getApiServiceContainerConfigSupplier(datastoreConfigArtifactUuid)
 
     const addServiceToPartitionResult = await enclaveContext.addServiceToPartition(serviceId, partitionId, containerConfigSupplier)
     if(addServiceToPartitionResult.isErr()) return err(addServiceToPartitionResult.error)
@@ -216,7 +217,7 @@ function getDatastoreContainerConfigSupplier(): ( ipAddr: string) => Result<Cont
 }
 
 function getApiServiceContainerConfigSupplier(
-    apiConfigArtifactId: FilesArtifactID,
+    apiConfigArtifactUuid: FilesArtifactUUID,
 ): (ipAddr:string) => Result<ContainerConfig, Error> {
 
     const containerConfigSupplier = (ipAddr: string): Result<ContainerConfig, Error> => {
@@ -229,8 +230,8 @@ function getApiServiceContainerConfigSupplier(
             path.join(CONFIG_MOUNTPATH_ON_API_CONTAINER, CONFIG_FILENAME),
         ]
 
-        const filesArtifactMountpoints = new Map<FilesArtifactID, string>()
-        filesArtifactMountpoints.set(apiConfigArtifactId, CONFIG_MOUNTPATH_ON_API_CONTAINER)
+        const filesArtifactMountpoints = new Map<FilesArtifactUUID, string>()
+        filesArtifactMountpoints.set(apiConfigArtifactUuid, CONFIG_MOUNTPATH_ON_API_CONTAINER)
 
         const containerConfig = new ContainerConfigBuilder(API_SERVICE_IMAGE)
             .withUsedPorts(usedPorts)
