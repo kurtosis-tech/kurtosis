@@ -158,7 +158,7 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 			"An error occurred registering service with ID '%v' with the Kurtosis API",
 			serviceId)
 	}
-	defer
+
 	// TODO Defer a removeService call here if the function exits unsuccessfully
 	logrus.Trace("New service successfully registered with Kurtosis API")
 

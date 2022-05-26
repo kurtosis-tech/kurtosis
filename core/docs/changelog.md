@@ -1,6 +1,9 @@
 # TBD
 ### Features
-* Added a temporary method `ContainerConfigBuilder.WithUseStaticPrivatePort` to support using `static private ports` for user services in Kurtosis Docker backend
+* Added a temporary method `ContainerConfigBuilder.WithPublicPorts` to support using `static public ports` for user services
+
+### Changes
+* Upgraded to container-engine-lib 0.33.0,
 
 # 1.54.0
 ### Breaking Changes
