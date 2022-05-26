@@ -26,9 +26,10 @@ type FilesArtifactUUID string
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 type ContainerConfig struct {
 	image                        string
-	usedPorts                   map[string]*PortSpec
-	filesArtifactMountpoints    map[FilesArtifactUUID]string
-	entrypointOverrideArgs      []string
+	usedPorts                    map[string]*PortSpec
+	publicPorts 				 map[string]*PortSpec //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	filesArtifactMountpoints     map[FilesArtifactUUID]string
+	entrypointOverrideArgs       []string
 	cmdOverrideArgs              []string
 	environmentVariableOverrides map[string]string
 }
@@ -57,6 +58,11 @@ func (config *ContainerConfig) GetEnvironmentVariableOverrides() map[string]stri
 	return config.environmentVariableOverrides
 }
 
+//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+func (config *ContainerConfig) GetPublicPorts() map[string]*PortSpec {
+	return config.publicPorts
+}
+
 // ====================================================================================================
 //                                      Builder
 // ====================================================================================================
@@ -65,6 +71,7 @@ func (config *ContainerConfig) GetEnvironmentVariableOverrides() map[string]stri
 type ContainerConfigBuilder struct {
 	image                        string
 	usedPorts                    map[string]*PortSpec
+	publicPorts 				 map[string]*PortSpec //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	filesArtifactMountpoints     map[FilesArtifactUUID]string
 	entrypointOverrideArgs       []string
 	cmdOverrideArgs              []string
@@ -107,6 +114,12 @@ func (builder *ContainerConfigBuilder) WithEnvironmentVariableOverrides(envVars 
 	return builder
 }
 
+//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+func (builder *ContainerConfigBuilder) WithPublicPorts(publicPorts map[string]*PortSpec) *ContainerConfigBuilder {
+	builder.publicPorts = publicPorts
+	return builder
+}
+
 func (builder *ContainerConfigBuilder) Build() *ContainerConfig {
 	return &ContainerConfig{
 		image:                        builder.image,
@@ -115,5 +128,7 @@ func (builder *ContainerConfigBuilder) Build() *ContainerConfig {
 		entrypointOverrideArgs:       builder.entrypointOverrideArgs,
 		cmdOverrideArgs:              builder.cmdOverrideArgs,
 		environmentVariableOverrides: builder.environmentVariableOverrides,
+		//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+		publicPorts:				  builder.publicPorts,
 	}
 }

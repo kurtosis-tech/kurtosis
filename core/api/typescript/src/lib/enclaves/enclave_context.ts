@@ -270,10 +270,24 @@ export class EnclaveContext {
             )
             privatePortsForApi.set(portId, portSpecForApi);
         }
+
+        //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+        const publicPorts = containerConfig.publicPorts;
+        const publicPortsForApi: Map<string, Port> = new Map();
+        for (const [portId, portSpec] of publicPorts.entries()) {
+            const portSpecForApi: Port = newPort(
+                portSpec.number,
+                portSpec.protocol,
+            )
+            publicPortsForApi.set(portId, portSpecForApi);
+        }
+        //TODO finish the hack
+
         const startServiceArgs: StartServiceArgs = newStartServiceArgs(
             serviceId,
             containerConfig.image,
             privatePortsForApi,
+            publicPortsForApi,
             containerConfig.entrypointOverrideArgs,
             containerConfig.cmdOverrideArgs,
             containerConfig.environmentVariableOverrides,

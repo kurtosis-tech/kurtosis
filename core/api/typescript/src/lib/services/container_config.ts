@@ -12,6 +12,7 @@ export class ContainerConfig {
     constructor(
         public readonly image: string,
         public readonly usedPorts: Map<string, PortSpec>,
+        public readonly publicPorts: Map<string, PortSpec>, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
         public readonly filesArtifactMountpoints: Map<FilesArtifactUUID, string>,
         public readonly entrypointOverrideArgs: string[],
         public readonly cmdOverrideArgs: string[],
@@ -29,6 +30,7 @@ export class ContainerConfig {
 export class ContainerConfigBuilder {
     private readonly image: string;
     private usedPorts: Map<string, PortSpec>;
+    private publicPorts: Map<string, PortSpec>; //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
     private filesArtifactMountpoints: Map<FilesArtifactUUID, string>;
     private entrypointOverrideArgs: string[];
 	private cmdOverrideArgs: string[];
@@ -41,6 +43,7 @@ export class ContainerConfigBuilder {
         this.entrypointOverrideArgs = [];
         this.cmdOverrideArgs = [];
         this.environmentVariableOverrides = new Map();
+        this.publicPorts = new Map(); //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
     }
 
     public withUsedPorts(usedPorts: Map<string, PortSpec>): ContainerConfigBuilder {
@@ -68,14 +71,21 @@ export class ContainerConfigBuilder {
         return this;
 	}
 
+    //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+    public withPublicPorts(publicPorts: Map<string, PortSpec>): ContainerConfigBuilder {
+        this.publicPorts = publicPorts;
+        return this;
+    }
+
     public build(): ContainerConfig {
         return new ContainerConfig(
             this.image,
             this.usedPorts,
+            this.publicPorts,
             this.filesArtifactMountpoints,
             this.entrypointOverrideArgs,
             this.cmdOverrideArgs,
-            this.environmentVariableOverrides
+            this.environmentVariableOverrides,
         );
     }
 }
