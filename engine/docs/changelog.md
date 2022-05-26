@@ -1,5 +1,9 @@
 # TBD
 
+# 1.26.1
+### Changes
+* Upgrade to Core 1.54.1 and container-engine-lib 0.33.0, both include setting public ports functionality
+
 # 1.26.0
 ### Breaking Changes
 * Upgrade to Core 1.54.0 which replaces FilesArtifactID with FilesArtifactUUID
