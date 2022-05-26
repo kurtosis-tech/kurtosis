@@ -3182,7 +3182,8 @@ proto.api_container_api.StartServiceArgs.toObject = function(includeInstance, ms
     entrypointArgsList: (f = jspb.Message.getRepeatedField(msg, 4)) == null ? undefined : f,
     cmdArgsList: (f = jspb.Message.getRepeatedField(msg, 5)) == null ? undefined : f,
     dockerEnvVarsMap: (f = msg.getDockerEnvVarsMap()) ? f.toObject(includeInstance, undefined) : [],
-    filesArtifactMountpointsMap: (f = msg.getFilesArtifactMountpointsMap()) ? f.toObject(includeInstance, undefined) : []
+    filesArtifactMountpointsMap: (f = msg.getFilesArtifactMountpointsMap()) ? f.toObject(includeInstance, undefined) : [],
+    publicPortsMap: (f = msg.getPublicPortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : []
   };
 
   if (includeInstance) {
@@ -3253,6 +3254,12 @@ proto.api_container_api.StartServiceArgs.deserializeBinaryFromReader = function(
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
          });
       break;
+    case 9:
+      var value = msg.getPublicPortsMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api_container_api.Port.deserializeBinaryFromReader, "", new proto.api_container_api.Port());
+         });
+      break;
     default:
       reader.skipField();
       break;
@@ -3321,6 +3328,10 @@ proto.api_container_api.StartServiceArgs.serializeBinaryToWriter = function(mess
   f = message.getFilesArtifactMountpointsMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(8, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
+  }
+  f = message.getPublicPortsMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(9, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api_container_api.Port.serializeBinaryToWriter);
   }
 };
 
@@ -3498,6 +3509,28 @@ proto.api_container_api.StartServiceArgs.prototype.getFilesArtifactMountpointsMa
  */
 proto.api_container_api.StartServiceArgs.prototype.clearFilesArtifactMountpointsMap = function() {
   this.getFilesArtifactMountpointsMap().clear();
+  return this;};
+
+
+/**
+ * map<string, Port> public_ports = 9;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<string,!proto.api_container_api.Port>}
+ */
+proto.api_container_api.StartServiceArgs.prototype.getPublicPortsMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<string,!proto.api_container_api.Port>} */ (
+      jspb.Message.getMapField(this, 9, opt_noLazyCreate,
+      proto.api_container_api.Port));
+};
+
+
+/**
+ * Clears values from the map. The map will be non-null.
+ * @return {!proto.api_container_api.StartServiceArgs} returns this
+ */
+proto.api_container_api.StartServiceArgs.prototype.clearPublicPortsMap = function() {
+  this.getPublicPortsMap().clear();
   return this;};
 
 

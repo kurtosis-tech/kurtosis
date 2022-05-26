@@ -158,6 +158,7 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 			"An error occurred registering service with ID '%v' with the Kurtosis API",
 			serviceId)
 	}
+
 	// TODO Defer a removeService call here if the function exits unsuccessfully
 	logrus.Trace("New service successfully registered with Kurtosis API")
 
@@ -189,10 +190,23 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 			Protocol: kurtosis_core_rpc_api_bindings.Port_Protocol(portSpec.GetProtocol()),
 		}
 	}
+
+	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	publicPorts := containerConfig.GetPublicPorts()
+	publicPortsForApi := map[string]*kurtosis_core_rpc_api_bindings.Port{}
+	for portId, portSpec := range publicPorts {
+		publicPortsForApi[portId] = &kurtosis_core_rpc_api_bindings.Port{
+			Number:   uint32(portSpec.GetNumber()),
+			Protocol: kurtosis_core_rpc_api_bindings.Port_Protocol(portSpec.GetProtocol()),
+		}
+	}
+	//TODO finish the hack
+
 	startServiceArgs := binding_constructors.NewStartServiceArgs(
 		string(serviceId),
 		containerConfig.GetImage(),
 		privatePortsForApi,
+		publicPortsForApi,
 		containerConfig.GetEntrypointOverrideArgs(),
 		containerConfig.GetCmdOverrideArgs(),
 		containerConfig.GetEnvironmentVariableOverrides(),

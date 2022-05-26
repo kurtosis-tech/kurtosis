@@ -1,5 +1,12 @@
 # TBD
 
+# 1.54.1
+### Features
+* Added a temporary method `ContainerConfigBuilder.WithPublicPorts` to support using `static public ports` for user services
+
+### Changes
+* Upgraded to container-engine-lib 0.33.0,
+
 # 1.54.0
 ### Breaking Changes
 * Renamed `FilesArtifactID` to `FilesArtifactUUID` which is more accurate

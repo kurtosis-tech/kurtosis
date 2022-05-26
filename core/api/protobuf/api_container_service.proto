@@ -232,6 +232,9 @@ message StartServiceArgs {
 
   // Mapping of files_artifact_uuid -> filepath_on_container_to_mount_artifact_contents
   map<string, string> files_artifact_mountpoints = 8;
+
+  //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+  map<string, Port> public_ports  = 9;
 }
 
 message StartServiceResponse {
