@@ -3,9 +3,6 @@ import { PortSpec } from "./port_spec";
 // The UUID of an artifact containing files that should be mounted into a service container
 export type FilesArtifactUUID = string;
 
-const USE_STATIC_PRIVATE_PORTS = true;
-const DO_NOT_USE_STATIC_PRIVATE_PORTS = false;
-
 // ====================================================================================================
 //                                    Config Object
 // ====================================================================================================
@@ -15,7 +12,7 @@ export class ContainerConfig {
     constructor(
         public readonly image: string,
         public readonly usedPorts: Map<string, PortSpec>,
-        public readonly useStaticPrivatePorts: boolean, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+        public readonly publicPorts: Map<string, PortSpec>, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
         public readonly filesArtifactMountpoints: Map<FilesArtifactUUID, string>,
         public readonly entrypointOverrideArgs: string[],
         public readonly cmdOverrideArgs: string[],
@@ -33,7 +30,7 @@ export class ContainerConfig {
 export class ContainerConfigBuilder {
     private readonly image: string;
     private usedPorts: Map<string, PortSpec>;
-    private useStaticPrivatePorts: boolean; //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+    private publicPorts: Map<string, PortSpec>; //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
     private filesArtifactMountpoints: Map<FilesArtifactUUID, string>;
     private entrypointOverrideArgs: string[];
 	private cmdOverrideArgs: string[];
@@ -46,7 +43,7 @@ export class ContainerConfigBuilder {
         this.entrypointOverrideArgs = [];
         this.cmdOverrideArgs = [];
         this.environmentVariableOverrides = new Map();
-        this.useStaticPrivatePorts = DO_NOT_USE_STATIC_PRIVATE_PORTS; //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+        this.publicPorts = new Map(); //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
     }
 
     public withUsedPorts(usedPorts: Map<string, PortSpec>): ContainerConfigBuilder {
@@ -75,8 +72,8 @@ export class ContainerConfigBuilder {
 	}
 
     //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-    public withUseStaticPrivatePorts(): ContainerConfigBuilder {
-        this.useStaticPrivatePorts = USE_STATIC_PRIVATE_PORTS;
+    public withPublicPorts(publicPorts: Map<string, PortSpec>): ContainerConfigBuilder {
+        this.publicPorts = publicPorts;
         return this;
     }
 
@@ -84,7 +81,7 @@ export class ContainerConfigBuilder {
         return new ContainerConfig(
             this.image,
             this.usedPorts,
-            this.useStaticPrivatePorts,
+            this.publicPorts,
             this.filesArtifactMountpoints,
             this.entrypointOverrideArgs,
             this.cmdOverrideArgs,

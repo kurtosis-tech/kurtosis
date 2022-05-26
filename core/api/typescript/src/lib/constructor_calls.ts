@@ -150,7 +150,7 @@ export function newStartServiceArgs(
     serviceId: ServiceID,
     dockerImage: string,
     privatePorts: Map<string, Port>,
-    useStaticPrivatePorts: boolean, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+    publicPorts:  Map<string, Port>, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
     entrypointArgs: string[],
     cmdArgs: string[],
     dockerEnvVars: Map<string, string>,
@@ -181,7 +181,11 @@ export function newStartServiceArgs(
     }
 
     //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-    result.setUseStaticPrivatePorts(useStaticPrivatePorts)
+    const publicPortsMap: jspb.Map<string, Port> = result.getPublicPortsMap();
+    for (const [portId, portSpec] of publicPorts) {
+        publicPortsMap.set(portId, portSpec);
+    }
+    //TODO finish the hack
 
     return result;
 }

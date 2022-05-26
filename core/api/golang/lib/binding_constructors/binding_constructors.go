@@ -131,7 +131,7 @@ func NewStartServiceArgs(
 	serviceId string,
 	image string,
 	privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-	useStaticPrivatePorts bool, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
@@ -145,7 +145,7 @@ func NewStartServiceArgs(
 		CmdArgs:                    cmdArgs,
 		DockerEnvVars:              envVars,
 		FilesArtifactMountpoints:   filesArtifactMountDirpaths,
-		UseStaticPrivatePorts: 		useStaticPrivatePorts, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+		PublicPorts: 				publicPorts, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	}
 }
 

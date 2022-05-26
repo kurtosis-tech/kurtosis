@@ -3183,7 +3183,7 @@ proto.api_container_api.StartServiceArgs.toObject = function(includeInstance, ms
     cmdArgsList: (f = jspb.Message.getRepeatedField(msg, 5)) == null ? undefined : f,
     dockerEnvVarsMap: (f = msg.getDockerEnvVarsMap()) ? f.toObject(includeInstance, undefined) : [],
     filesArtifactMountpointsMap: (f = msg.getFilesArtifactMountpointsMap()) ? f.toObject(includeInstance, undefined) : [],
-    useStaticPrivatePorts: jspb.Message.getBooleanFieldWithDefault(msg, 9, false)
+    publicPortsMap: (f = msg.getPublicPortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : []
   };
 
   if (includeInstance) {
@@ -3255,8 +3255,10 @@ proto.api_container_api.StartServiceArgs.deserializeBinaryFromReader = function(
          });
       break;
     case 9:
-      var value = /** @type {boolean} */ (reader.readBool());
-      msg.setUseStaticPrivatePorts(value);
+      var value = msg.getPublicPortsMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api_container_api.Port.deserializeBinaryFromReader, "", new proto.api_container_api.Port());
+         });
       break;
     default:
       reader.skipField();
@@ -3327,12 +3329,9 @@ proto.api_container_api.StartServiceArgs.serializeBinaryToWriter = function(mess
   if (f && f.getLength() > 0) {
     f.serializeBinary(8, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
   }
-  f = message.getUseStaticPrivatePorts();
-  if (f) {
-    writer.writeBool(
-      9,
-      f
-    );
+  f = message.getPublicPortsMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(9, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api_container_api.Port.serializeBinaryToWriter);
   }
 };
 
@@ -3514,21 +3513,25 @@ proto.api_container_api.StartServiceArgs.prototype.clearFilesArtifactMountpoints
 
 
 /**
- * optional bool use_static_private_ports = 9;
- * @return {boolean}
+ * map<string, Port> public_ports = 9;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<string,!proto.api_container_api.Port>}
  */
-proto.api_container_api.StartServiceArgs.prototype.getUseStaticPrivatePorts = function() {
-  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 9, false));
+proto.api_container_api.StartServiceArgs.prototype.getPublicPortsMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<string,!proto.api_container_api.Port>} */ (
+      jspb.Message.getMapField(this, 9, opt_noLazyCreate,
+      proto.api_container_api.Port));
 };
 
 
 /**
- * @param {boolean} value
+ * Clears values from the map. The map will be non-null.
  * @return {!proto.api_container_api.StartServiceArgs} returns this
  */
-proto.api_container_api.StartServiceArgs.prototype.setUseStaticPrivatePorts = function(value) {
-  return jspb.Message.setProto3BooleanField(this, 9, value);
-};
+proto.api_container_api.StartServiceArgs.prototype.clearPublicPortsMap = function() {
+  this.getPublicPortsMap().clear();
+  return this;};
 
 
 

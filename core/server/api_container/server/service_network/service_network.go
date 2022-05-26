@@ -223,7 +223,7 @@ func (network *ServiceNetwork) StartService(
 	serviceId service.ServiceID,
 	imageName string,
 	privatePorts map[string]*port_spec.PortSpec,
-	useStaticPrivatePorts bool, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	publicPorts map[string]*port_spec.PortSpec, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	entrypointArgs []string,
 	cmdArgs []string,
 	dockerEnvVars map[string]string,
@@ -286,7 +286,7 @@ func (network *ServiceNetwork) StartService(
 		serviceGuid,
 		imageName,
 		privatePorts,
-		useStaticPrivatePorts,
+		publicPorts,
 		entrypointArgs,
 		cmdArgs,
 		dockerEnvVars,
@@ -705,7 +705,7 @@ func (network *ServiceNetwork) startService(
 	serviceGuid service.ServiceGUID,
 	imageName string,
 	privatePorts map[string]*port_spec.PortSpec,
-	useStaticPrivatePorts bool, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	publicPorts map[string]*port_spec.PortSpec, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
@@ -792,7 +792,7 @@ func (network *ServiceNetwork) startService(
 		serviceGuid,
 		imageName,
 		privatePorts,
-		useStaticPrivatePorts,
+		publicPorts,
 		entrypointArgs,
 		cmdArgs,
 		envVars,

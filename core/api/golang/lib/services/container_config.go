@@ -17,10 +17,6 @@
 
 package services
 
-const (
-	useStaticPrivatePorts = true
-)
-
 // The UUID of an artifact containing files that should be mounted into a service container
 type FilesArtifactUUID string
 
@@ -31,7 +27,7 @@ type FilesArtifactUUID string
 type ContainerConfig struct {
 	image                        string
 	usedPorts                    map[string]*PortSpec
-	useStaticPrivatePorts        bool //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	publicPorts 				 map[string]*PortSpec //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	filesArtifactMountpoints     map[FilesArtifactUUID]string
 	entrypointOverrideArgs       []string
 	cmdOverrideArgs              []string
@@ -63,8 +59,8 @@ func (config *ContainerConfig) GetEnvironmentVariableOverrides() map[string]stri
 }
 
 //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-func (config *ContainerConfig) GetUseStaticPrivatePorts() bool {
-	return config.useStaticPrivatePorts
+func (config *ContainerConfig) GetPublicPorts() map[string]*PortSpec {
+	return config.publicPorts
 }
 
 // ====================================================================================================
@@ -75,7 +71,7 @@ func (config *ContainerConfig) GetUseStaticPrivatePorts() bool {
 type ContainerConfigBuilder struct {
 	image                        string
 	usedPorts                    map[string]*PortSpec
-	useStaticPrivatePorts        bool //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	publicPorts 				 map[string]*PortSpec //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	filesArtifactMountpoints     map[FilesArtifactUUID]string
 	entrypointOverrideArgs       []string
 	cmdOverrideArgs              []string
@@ -119,8 +115,8 @@ func (builder *ContainerConfigBuilder) WithEnvironmentVariableOverrides(envVars 
 }
 
 //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-func (builder *ContainerConfigBuilder) WithUseStaticPrivatePorts() *ContainerConfigBuilder {
-	builder.useStaticPrivatePorts = useStaticPrivatePorts
+func (builder *ContainerConfigBuilder) WithPublicPorts(publicPorts map[string]*PortSpec) *ContainerConfigBuilder {
+	builder.publicPorts = publicPorts
 	return builder
 }
 
@@ -133,6 +129,6 @@ func (builder *ContainerConfigBuilder) Build() *ContainerConfig {
 		cmdOverrideArgs:              builder.cmdOverrideArgs,
 		environmentVariableOverrides: builder.environmentVariableOverrides,
 		//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-		useStaticPrivatePorts: 		  builder.useStaticPrivatePorts,
+		publicPorts:				  builder.publicPorts,
 	}
 }

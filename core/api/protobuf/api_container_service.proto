@@ -234,7 +234,7 @@ message StartServiceArgs {
   map<string, string> files_artifact_mountpoints = 8;
 
   //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-  bool use_static_private_ports = 9;
+  map<string, Port> public_ports  = 9;
 }
 
 message StartServiceResponse {

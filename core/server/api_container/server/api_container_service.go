@@ -180,6 +180,33 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 	logrus.Debugf("Received request to start service with the following args: %+v", args)
 	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
 	privateApiPorts := args.PrivatePorts
+
+	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	requestedPublicApiPorts := args.PublicPorts
+	if len(requestedPublicApiPorts) > 0 {
+
+		if len(privateApiPorts) != len(requestedPublicApiPorts) {
+			return nil, stacktrace.NewError("The received private ports length and the public ports length are not equal, received '%v' private ports and '%v' public ports", len(privateApiPorts), len(requestedPublicApiPorts))
+		}
+
+		for portId, privatePort := range privateApiPorts {
+			if _, found := requestedPublicApiPorts[portId]; !found {
+				return nil, stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portId, privatePort.GetNumber())
+			}
+		}
+	}
+
+	requestedPublicServicePortSpecs := map[string]*port_spec.PortSpec{}
+	for portId, publicApiPort := range requestedPublicApiPorts {
+		publicServicePortSpec, err := transformApiPortToPortSpec(publicApiPort)
+		if err != nil {
+			return nil, stacktrace.NewError("An error occurred transforming the API port for public port '%v' into a port spec port", portId)
+		}
+		requestedPublicServicePortSpecs[portId] = publicServicePortSpec
+	}
+	//TODO Finished the huge hack to temporarily enable static ports for NEAR
+
+
 	privateServicePortSpecs := map[string]*port_spec.PortSpec{}
 	for portId, privateApiPort := range privateApiPorts {
 		privateServicePortSpec, err := transformApiPortToPortSpec(privateApiPort)
@@ -197,7 +224,7 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 		serviceId,
 		args.DockerImage,
 		privateServicePortSpecs,
-		args.UseStaticPrivatePorts,
+		requestedPublicServicePortSpecs,
 		args.EntrypointArgs,
 		args.CmdArgs,
 		args.DockerEnvVars,

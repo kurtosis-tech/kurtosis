@@ -345,8 +345,8 @@ export class StartServiceArgs extends jspb.Message {
   getFilesArtifactMountpointsMap(): jspb.Map<string, string>;
   clearFilesArtifactMountpointsMap(): StartServiceArgs;
 
-  getUseStaticPrivatePorts(): boolean;
-  setUseStaticPrivatePorts(value: boolean): StartServiceArgs;
+  getPublicPortsMap(): jspb.Map<string, Port>;
+  clearPublicPortsMap(): StartServiceArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StartServiceArgs.AsObject;
@@ -365,7 +365,7 @@ export namespace StartServiceArgs {
     cmdArgsList: Array<string>,
     dockerEnvVarsMap: Array<[string, string]>,
     filesArtifactMountpointsMap: Array<[string, string]>,
-    useStaticPrivatePorts: boolean,
+    publicPortsMap: Array<[string, Port.AsObject]>,
   }
 }
 
