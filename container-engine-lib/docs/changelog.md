@@ -1,4 +1,6 @@
 # TBD
+
+# 0.33.0
 ### Features
 * Added a temporary parameter `publicPorts` in `KurtosisBackend.StartUserService` to support defining static public ports
 
