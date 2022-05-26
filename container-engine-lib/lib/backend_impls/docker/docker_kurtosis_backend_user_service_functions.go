@@ -179,7 +179,7 @@ func (backend *DockerKurtosisBackend) StartUserService(
 
 	//Sanity check for port bindings
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	if len(publicPorts) > 0 {
+	if publicPorts != nil && len(publicPorts) > 0 {
 
 		if len(privatePorts) != len(publicPorts) {
 			return nil, stacktrace.NewError("The received private ports length and the public ports length are not equal, received '%v' private ports and '%v' public ports", len(privatePorts), len(publicPorts))
@@ -307,7 +307,7 @@ func (backend *DockerKurtosisBackend) StartUserService(
 			return nil, stacktrace.Propagate(err, "An error occurred converting private port spec '%v' to a Docker port", portId)
 		}
 		//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-		if len(publicPorts) > 0 {
+		if publicPorts != nil && len(publicPorts) > 0 {
 			publicPortSpec, found := publicPorts[portId]
 			if !found {
 				return nil, stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portId, privatePortSpec.GetNumber())

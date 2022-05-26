@@ -230,8 +230,8 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 ) {
 
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	if len(publicPorts) > 0 {
-		logrus.Warn("It's not allowed to use public ports in Kurtosis Kubernetes Backend, the public ports will be automatically generated")
+	if publicPorts != nil && len(publicPorts) > 0 {
+		logrus.Warn("The Kubernetes Kurtosis backend doesn't support defining static ports for services; the public ports will be ignored")
 	}
 
 	preexistingServiceFilters := &service.ServiceFilters{
