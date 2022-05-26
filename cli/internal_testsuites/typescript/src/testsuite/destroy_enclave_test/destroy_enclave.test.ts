@@ -1,4 +1,4 @@
-import { ContainerConfig, ContainerConfigBuilder, FilesArtifactID, PortProtocol, PortSpec, ServiceID } from "kurtosis-core-api-lib"
+import { ContainerConfig, ContainerConfigBuilder, FilesArtifactUUID, PortProtocol, PortSpec, ServiceID } from "kurtosis-core-api-lib"
 import log from "loglevel";
 import { Result, ok, err } from "neverthrow";
 
@@ -35,9 +35,9 @@ test("Test destroy enclave", async () => {
         // ------------------------------------- TEST SETUP ----------------------------------------------
         const storeWebFilesResult = await enclaveContext.storeWebFiles(TEST_FILES_ARTIFACT_URL);
         if(storeWebFilesResult.isErr()) { throw storeWebFilesResult.error }
-        const filesArtifactId = storeWebFilesResult.value;
+        const filesArtifactUuid = storeWebFilesResult.value;
 
-        const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier(filesArtifactId)
+        const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier(filesArtifactUuid)
 
         const addServiceResult = await enclaveContext.addService(FILE_SERVER_SERVICE_ID, fileServerContainerConfigSupplier)
         if(addServiceResult.isErr()){ throw addServiceResult.error }
@@ -74,15 +74,15 @@ test("Test destroy enclave", async () => {
 //                                       Private helper functions
 // ====================================================================================================
 
-function getFileServerContainerConfigSupplier(filesArtifactId: FilesArtifactID): (ipAddr: string) => Result<ContainerConfig, Error> {
+function getFileServerContainerConfigSupplier(filesArtifactUuid: FilesArtifactUUID): (ipAddr: string) => Result<ContainerConfig, Error> {
 
     const containerConfigSupplier = (ipAddr:string): Result<ContainerConfig, Error> => {
 
         const usedPorts = new Map<string, PortSpec>()
         usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
 
-        const filesArtifactMountpoints = new Map<FilesArtifactID, string>()
-        filesArtifactMountpoints.set(filesArtifactId, FILES_ARTIFACT_MOUNTPOINT)
+        const filesArtifactMountpoints = new Map<FilesArtifactUUID, string>()
+        filesArtifactMountpoints.set(filesArtifactUuid, FILES_ARTIFACT_MOUNTPOINT)
 
         const containerConfig = new ContainerConfigBuilder(FILE_SERVER_SERVICE_IMAGE)
             .withUsedPorts(usedPorts)

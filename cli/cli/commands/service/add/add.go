@@ -47,8 +47,8 @@ const (
 	portNumberUintParsingBits   = 16
 
 	filesFlagKey                       = "files"
-	filesArtifactMountsDelimiter       = ","
-	filesArtifactIdMountpointDelimiter = ":"
+	filesArtifactMountsDelimiter         = ","
+	filesArtifactUuidMountpointDelimiter = ":"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
@@ -138,12 +138,12 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 		{
 			Key: filesFlagKey,
 			Usage: fmt.Sprintf(
-				"String containing declarations of files artifact IDs -> paths on the container where the contents of those "+
-					"files artifacts should be mounted, in the form \"ARTIFACTID1%vMOUNTPATH1%vARTIFACTID2%vMOUNTPATH2\" where "+
-					"ARTIFACTID is the ID returned by Kurtosis when uploading files to the enclave (e.g. via the '%v %v' command)",
-				filesArtifactIdMountpointDelimiter,
+				"String containing declarations of files artifact UUIDs -> paths on the container where the contents of those "+
+					"files artifacts should be mounted, in the form \"ARTIFACTUUID1%vMOUNTPATH1%vARTIFACTUUID2%vMOUNTPATH2\" where "+
+					"ARTIFACTUUID is the UUID returned by Kurtosis when uploading files to the enclave (e.g. via the '%v %v' command)",
+				filesArtifactUuidMountpointDelimiter,
 				filesArtifactMountsDelimiter,
-				filesArtifactIdMountpointDelimiter,
+				filesArtifactUuidMountpointDelimiter,
 				command_str_consts.FilesCmdStr,
 				command_str_consts.FilesUploadCmdStr,
 			),
@@ -490,8 +490,8 @@ func parsePortSpecStr(specStr string) (*services.PortSpec, error) {
 	return services.NewPortSpec(portNumberUint16, portProtocol), nil
 }
 
-func parseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[services.FilesArtifactID]string, error) {
-	result := map[services.FilesArtifactID]string{}
+func parseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[services.FilesArtifactUUID]string, error) {
+	result := map[services.FilesArtifactUUID]string{}
 	if strings.TrimSpace(filesArtifactMountsStr) == "" {
 		return result, nil
 	}
@@ -504,28 +504,28 @@ func parseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[services.Fi
 			continue
 		}
 
-		mountFragments := strings.Split(trimmedMountStr, filesArtifactIdMountpointDelimiter)
+		mountFragments := strings.Split(trimmedMountStr, filesArtifactUuidMountpointDelimiter)
 		if len(mountFragments) != 2 {
 			return nil, stacktrace.NewError(
-				"Files artifact mountpoint string %v was '%v' but should be in the form 'files_artifact_id%vmountpoint'",
+				"Files artifact mountpoint string %v was '%v' but should be in the form 'files_artifact_uuid%vmountpoint'",
 				idx,
 				trimmedMountStr,
-				filesArtifactIdMountpointDelimiter,
+				filesArtifactUuidMountpointDelimiter,
 			)
 		}
-		filesArtifactId := services.FilesArtifactID(mountFragments[0])
+		filesArtifactUuid := services.FilesArtifactUUID(mountFragments[0])
 		mountpoint := mountFragments[1]
 
-		if existingMountpoint, found := result[filesArtifactId]; found {
+		if existingMountpoint, found := result[filesArtifactUuid]; found {
 			return nil, stacktrace.NewError(
-				"Files artifact with ID '%v' is declared twice; once to mountpoint '%v' and again to mountpoint '%v'",
-				filesArtifactId,
+				"Files artifact with UUID '%v' is declared twice; once to mountpoint '%v' and again to mountpoint '%v'",
+				filesArtifactUuid,
 				existingMountpoint,
 				mountpoint,
 			)
 		}
 
-		result[filesArtifactId] = mountpoint
+		result[filesArtifactUuid] = mountpoint
 	}
 
 	return result, nil

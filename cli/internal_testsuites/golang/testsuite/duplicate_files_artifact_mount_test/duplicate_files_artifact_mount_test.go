@@ -31,14 +31,14 @@ func TestStoreWebFiles(t *testing.T) {
 	defer stopEnclaveFunc()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
-	firstFilesArtifactId, err := enclaveCtx.StoreWebFiles(context.Background(), testFilesArtifactUrl)
+	firstFilesArtifactUuid, err := enclaveCtx.StoreWebFiles(context.Background(), testFilesArtifactUrl)
 	require.NoError(t, err, "An error occurred storing the first files artifact")
-	secondFilesArtifactId, err := enclaveCtx.StoreWebFiles(context.Background(), testFilesArtifactUrl)
+	secondFilesArtifactUuid, err := enclaveCtx.StoreWebFiles(context.Background(), testFilesArtifactUrl)
 	require.NoError(t, err, "An error occurred storing the second files artifact")
 
-	filesArtifactMountpoints := map[services.FilesArtifactID]string{
-		firstFilesArtifactId: userServiceMountPointForTestFilesArtifact,
-		secondFilesArtifactId: userServiceMountPointForTestFilesArtifact,
+	filesArtifactMountpoints := map[services.FilesArtifactUUID]string{
+		firstFilesArtifactUuid:  userServiceMountPointForTestFilesArtifact,
+		secondFilesArtifactUuid: userServiceMountPointForTestFilesArtifact,
 	}
 	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactMountpoints)
 
@@ -66,7 +66,7 @@ func TestStoreWebFiles(t *testing.T) {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getFileServerContainerConfigSupplier(filesArtifactMountpoints map[services.FilesArtifactID]string) func(ipAddr string) (*services.ContainerConfig, error) {
+func getFileServerContainerConfigSupplier(filesArtifactMountpoints map[services.FilesArtifactUUID]string) func(ipAddr string) (*services.ContainerConfig, error) {
 	containerConfigSupplier  := func(ipAddr string) (*services.ContainerConfig, error) {
 
 		containerConfig := services.NewContainerConfigBuilder(

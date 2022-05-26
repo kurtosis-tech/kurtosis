@@ -1,7 +1,7 @@
 import {
     ContainerConfig,
     ContainerConfigBuilder,
-    FilesArtifactID,
+    FilesArtifactUUID,
     PortProtocol,
     PortSpec,
     ServiceID
@@ -38,14 +38,14 @@ test("Test two files artifacts mounted to the same location", async () => {
         // ------------------------------------- TEST SETUP ----------------------------------------------
         const storeFirstArtifactResult = await enclaveContext.storeWebFiles(TEST_FILES_ARTIFACT_URL)
         if (storeFirstArtifactResult.isErr()) { throw storeFirstArtifactResult.error }
-        const firstFilesArtifactId = storeFirstArtifactResult.value;
+        const firstFilesArtifactUuid = storeFirstArtifactResult.value;
         const storeSecondArtifactResult = await enclaveContext.storeWebFiles(TEST_FILES_ARTIFACT_URL)
         if (storeSecondArtifactResult.isErr()) { throw storeSecondArtifactResult.error }
-        const secondFilesArtifactId = storeSecondArtifactResult.value;
+        const secondFilesArtifactUuid = storeSecondArtifactResult.value;
 
-        const filesArtifactMountpoints = new Map<FilesArtifactID, string>()
-        filesArtifactMountpoints.set(firstFilesArtifactId, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT);
-        filesArtifactMountpoints.set(secondFilesArtifactId, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT);
+        const filesArtifactMountpoints = new Map<FilesArtifactUUID, string>()
+        filesArtifactMountpoints.set(firstFilesArtifactUuid, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT);
+        filesArtifactMountpoints.set(secondFilesArtifactUuid, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT);
         const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier(filesArtifactMountpoints)
 
         // ------------------------------------- TEST RUN ----------------------------------------------
@@ -68,7 +68,7 @@ test("Test two files artifacts mounted to the same location", async () => {
 //                                       Private helper functions
 // ====================================================================================================
 
-function getFileServerContainerConfigSupplier(filesArtifactMountpoints: Map<FilesArtifactID, string>): (ipAddr: string) => Result<ContainerConfig, Error> {
+function getFileServerContainerConfigSupplier(filesArtifactMountpoints: Map<FilesArtifactUUID, string>): (ipAddr: string) => Result<ContainerConfig, Error> {
 
     const containerConfigSupplier = (ipAddr:string): Result<ContainerConfig, Error> => {
         const containerConfig = new ContainerConfigBuilder(IMAGE)
