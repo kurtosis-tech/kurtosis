@@ -1,5 +1,13 @@
 # TBD
 
+# 0.33.0
+### Features
+* Added a temporary parameter `publicPorts` in `KurtosisBackend.StartUserService` to support defining static public ports
+
+### Breaking Changes
+* Removed `FilesArtifactID` type because it is not used anywhere in this package
+  * Users have to remove the dependency with this type and create their own type instead
+
 # 0.32.0
 ### Changes
 * Switched to using EmptyDir ephemeral volumes for the enclave data directory and the files artifact expansion volumes in response to learning that Kubernetes/DigitalOcean doesn't really want you creating lots of these
