@@ -1,6 +1,12 @@
 # TBD
+### Changes
+* Upgraded Ubuntu machine image in Circle CI configuration to version `ubuntu-2004:202201-02`
+* Upgraded goreleaser to v1.9.1 in Circle CI config file
+* Updated `build cli script` and `cli launch script` to support the goamd64 env var
+
+# 0.21.0
 ### Breaking Changes
-* Upgraded to engine 1.26.0 and core 1.54.0
+* Upgraded to engine 1.26.1, core 1.54.1 and container-engine-lib 0.33.0
   * Users will need to run `kurtosis engine restart`
 
 ### Fixes
