@@ -1,4 +1,6 @@
 # TBD
+### Breaking Changes
+* `StartServiceResponse` now consists of a `ServiceInfo` struct describing the newly created service
 
 # 1.54.1
 ### Features

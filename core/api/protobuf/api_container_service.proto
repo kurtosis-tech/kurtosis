@@ -238,17 +238,8 @@ message StartServiceArgs {
 }
 
 message StartServiceResponse {
-  // Public IP address *outside* the enclave where the service is reachable
-  // NOTE: Will be empty if the service didn't define any private ports
-  string public_ip_addr = 1;
-
-  // Mapping defining the ports that the service can be reached at *outside* the enclave, in the user_defined_port_id -> port_info where user_defined_port_id
-  //  corresponds to the ID that was passed in in StartServiceArgs
-  // NOTE: Will be empty if the service didn't define any private ports
-  map<string, Port> public_ports = 2;
-
-  // Guid of the started services
-  string service_guid = 3;
+  // Info describing the newly started service
+  ServiceInfo service_info = 1;
 }
 
 // ==============================================================================================
