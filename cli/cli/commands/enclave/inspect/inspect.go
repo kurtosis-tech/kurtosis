@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
@@ -43,7 +42,7 @@ const (
 	engineClientCtxKey  = "engine-client"
 )
 
-var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveId enclave.EnclaveID) error{
+var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo kurtosis_engine_rpc_api_bindings.EnclaveInfo, isAPIContainerRunning bool) error{
 	"User Services":     printUserServices,
 	"Kurtosis Modules":  printModules,
 }
@@ -76,7 +75,6 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for non-greedy enclave ID arg '%v' but none was found; this is a bug with Kurtosis!", enclaveIdArgKey)
 	}
-	enclaveId := enclave.EnclaveID(enclaveIdStr)
 
 	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -96,7 +94,8 @@ func run(
 	// TODO Refactor these to use a user-friendly string and not the enum name
 	keyValuePrinter.AddPair(enclaveStatusTitleName, enclaveContainersStatus.String())
 	keyValuePrinter.AddPair(apiContainerStatusTitleName, enclaveApiContainerStatus.String())
-	if enclaveApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING {
+	isApiContainerRunning := enclaveApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING
+	if isApiContainerRunning {
 		apiContainerHostInfo := enclaveInfo.GetApiContainerHostMachineInfo()
 		apiContainerHostGrpcPortInfoStr := fmt.Sprintf(
 			"%v:%v",
@@ -133,7 +132,7 @@ func run(
 		fmt.Println(fmt.Sprintf("%v %v %v", padStr, header, padStr))
 
 
-		if err := printingFunc(ctx, kurtosisBackend, enclaveId); err != nil {
+		if err := printingFunc(ctx, kurtosisBackend, *enclaveInfo, isApiContainerRunning); err != nil {
 			logrus.Error(err)
 			headersWithPrintErrs = append(headersWithPrintErrs, header)
 		}
