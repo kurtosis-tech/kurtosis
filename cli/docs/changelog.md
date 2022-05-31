@@ -1,4 +1,8 @@
 # TBD
+### Changes
+* Upgraded Ubuntu machine image in Circle CI configuration to version `ubuntu-2004:202201-02`
+* Upgraded goreleaser to v1.9.1 in Circle CI config file
+* Updated `build cli script` and `cli launch script` to support the goamd64 env var
 
 # 0.21.0
 ### Breaking Changes
