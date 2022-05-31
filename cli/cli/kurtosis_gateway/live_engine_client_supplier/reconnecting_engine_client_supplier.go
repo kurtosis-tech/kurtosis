@@ -90,12 +90,7 @@ func (supplier *LiveEngineClientSupplier) Start() error {
 // NOTE: Do not save this value!! Just use it as a point-in-time piece of info
 func (supplier *LiveEngineClientSupplier) GetEngineClient() (kurtosis_engine_rpc_api_bindings.EngineServiceClient, error) {
 	if supplier.currentInfo == nil {
-		// If no current info is found, we wait for a health check to run to verify that there are no connectable engines running
-		// If it's still nil after waiting, we throw an error
-		time.Sleep(pollInterval)
-		if supplier.currentInfo == nil {
-			return nil, stacktrace.NewError("Expected to have info about a running live engine, instead no info was found")
-		}
+		return nil, stacktrace.NewError("Expected to have info about a running live engine, instead no info was found")
 	}
 	return supplier.currentInfo.engineClient, nil
 }
@@ -139,7 +134,9 @@ func (supplier *LiveEngineClientSupplier) replaceEngineIfNecessary() {
 
 	// If we have no engine client, we'll take anything we can get
 	if supplier.currentInfo == nil {
-		supplier.replaceCurrentEngineInfoBestEffort(runningEngine)
+		if err := supplier.replaceCurrentEngineInfo(runningEngine); err != nil {
+			logrus.Errorf("Expected to be able to replace the current engine info, instead a non-nil error was returned:\n%v", err)
+		}
 		return
 	}
 
@@ -150,10 +147,12 @@ func (supplier *LiveEngineClientSupplier) replaceEngineIfNecessary() {
 
 	// If we get here, we must: a) have an engine that b) doesn't match the currently-running engine
 	// Therefore, replace
-	supplier.replaceCurrentEngineInfoBestEffort(runningEngine)
+	if err := supplier.replaceCurrentEngineInfo(runningEngine); err != nil {
+		logrus.Errorf("Expected to be able to replace the current engine info, instead a non-nil error was returned:\n%v", err)
+	}
 }
 
-func (supplier *LiveEngineClientSupplier) replaceCurrentEngineInfoBestEffort(newEngine *engine.Engine) error {
+func (supplier *LiveEngineClientSupplier) replaceCurrentEngineInfo(newEngine *engine.Engine) error {
 	// Get a port forwarded connection to the new engine
 	newProxyConn, err := supplier.connectionProvider.ForEngine(newEngine)
 	if err != nil {
@@ -185,10 +184,13 @@ func (supplier *LiveEngineClientSupplier) replaceCurrentEngineInfoBestEffort(new
 	}
 
 	oldEngineInfo := supplier.currentInfo
-	shouldCloseOldEngineInfo := false
+	shouldReinsertOldEngineInfo := true
 	defer func() {
-		if shouldCloseOldEngineInfo {
-			// Very important not to pass in supplier.currentInfo, else we'll close the new info after replacement!
+		// Put back oldEngineInfo if a failure occurs
+		if shouldReinsertOldEngineInfo {
+			supplier.currentInfo = oldEngineInfo
+		} else {
+			// If we're not going to reinsert the old engine info, then close it as it's no longer needed
 			closeEngineInfo(oldEngineInfo)
 		}
 	}()
@@ -196,7 +198,7 @@ func (supplier *LiveEngineClientSupplier) replaceCurrentEngineInfoBestEffort(new
 	logrus.Infof("Connected to running Kurtosis engine with id '%v'", newEngine.GetGUID())
 	shouldDestroyNewProxy = false
 	shouldDestroyNewGrpcClientConn = false
-	shouldCloseOldEngineInfo = true
+	shouldReinsertOldEngineInfo = false
 	return nil
 }
 
