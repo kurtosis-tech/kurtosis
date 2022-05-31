@@ -300,11 +300,14 @@ export class EnclaveContext {
         }
 
         const startServiceResponse = startServiceResponseResult.value
-
+        const startedServiceInfo = startServiceResponse.getServiceInfo()
+        if(startedServiceInfo == undefined) {
+            return err(new Error("Expected StartServiceResponse to contain a service_info field, instead no such field was found"))
+        }
         log.trace("Successfully started service with Kurtosis API");
 
         const serviceCtxPublicPorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
-            startServiceResponse.getPublicPortsMap(),
+            startedServiceInfo.getMaybePublicPortsMap(),
         );
 
         const serviceContext: ServiceContext = new ServiceContext(
@@ -312,7 +315,7 @@ export class EnclaveContext {
             serviceId,
             privateIpAddr,
             privatePorts,
-            startServiceResponse.getPublicIpAddr(),
+            startedServiceInfo.getMaybePublicIpAddr(),
             serviceCtxPublicPorts,
         );
 

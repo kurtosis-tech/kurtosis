@@ -219,7 +219,7 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 	for filesArtifactUuidStr, mountDirPath := range args.FilesArtifactMountpoints {
 		filesArtifactMountpointsByArtifactUuid[enclave_data_directory.FilesArtifactUUID(filesArtifactUuidStr)] = mountDirPath
 	}
-	serviceGuid, maybePublicIpAddr, publicServicePortSpecs, err := apicService.serviceNetwork.StartService(
+	startedService, err := apicService.serviceNetwork.StartService(
 		ctx,
 		serviceId,
 		args.DockerImage,
@@ -234,7 +234,11 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "An error occurred starting the service in the service network")
 	}
+	privateServiceIpStr := startedService.GetRegistration().GetPrivateIP().String()
+	serviceGuidStr := string(startedService.GetRegistration().GetGUID())
+	publicServicePortSpecs := startedService.GetMaybePublicPorts()
 	publicApiPorts, err := transformPortSpecMapToApiPortsMap(publicServicePortSpecs)
+	maybePublicIpAddr := startedService.GetMaybePublicIP()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public port specs to API ports")
 	}
@@ -242,7 +246,7 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 	if maybePublicIpAddr != nil {
 		publicIpAddrStr = maybePublicIpAddr.String()
 	}
-	response := binding_constructors.NewStartServiceResponse(publicIpAddrStr, publicApiPorts, string(serviceGuid))
+	response := binding_constructors.NewStartServiceResponse(privateServiceIpStr, privateApiPorts, publicIpAddrStr, publicApiPorts, serviceGuidStr)
 
 	serviceStartLoglineSuffix := ""
 	if len(publicServicePortSpecs) > 0 {
