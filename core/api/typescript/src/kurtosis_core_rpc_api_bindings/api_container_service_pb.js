@@ -3566,9 +3566,7 @@ proto.api_container_api.StartServiceResponse.prototype.toObject = function(opt_i
  */
 proto.api_container_api.StartServiceResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    publicIpAddr: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    publicPortsMap: (f = msg.getPublicPortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : [],
-    serviceGuid: jspb.Message.getFieldWithDefault(msg, 3, "")
+    serviceInfo: (f = msg.getServiceInfo()) && proto.api_container_api.ServiceInfo.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -3606,18 +3604,9 @@ proto.api_container_api.StartServiceResponse.deserializeBinaryFromReader = funct
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setPublicIpAddr(value);
-      break;
-    case 2:
-      var value = msg.getPublicPortsMap();
-      reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api_container_api.Port.deserializeBinaryFromReader, "", new proto.api_container_api.Port());
-         });
-      break;
-    case 3:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setServiceGuid(value);
+      var value = new proto.api_container_api.ServiceInfo;
+      reader.readMessage(value,proto.api_container_api.ServiceInfo.deserializeBinaryFromReader);
+      msg.setServiceInfo(value);
       break;
     default:
       reader.skipField();
@@ -3648,82 +3637,51 @@ proto.api_container_api.StartServiceResponse.prototype.serializeBinary = functio
  */
 proto.api_container_api.StartServiceResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getPublicIpAddr();
-  if (f.length > 0) {
-    writer.writeString(
+  f = message.getServiceInfo();
+  if (f != null) {
+    writer.writeMessage(
       1,
-      f
-    );
-  }
-  f = message.getPublicPortsMap(true);
-  if (f && f.getLength() > 0) {
-    f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api_container_api.Port.serializeBinaryToWriter);
-  }
-  f = message.getServiceGuid();
-  if (f.length > 0) {
-    writer.writeString(
-      3,
-      f
+      f,
+      proto.api_container_api.ServiceInfo.serializeBinaryToWriter
     );
   }
 };
 
 
 /**
- * optional string public_ip_addr = 1;
- * @return {string}
+ * optional ServiceInfo service_info = 1;
+ * @return {?proto.api_container_api.ServiceInfo}
  */
-proto.api_container_api.StartServiceResponse.prototype.getPublicIpAddr = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+proto.api_container_api.StartServiceResponse.prototype.getServiceInfo = function() {
+  return /** @type{?proto.api_container_api.ServiceInfo} */ (
+    jspb.Message.getWrapperField(this, proto.api_container_api.ServiceInfo, 1));
 };
 
 
 /**
- * @param {string} value
+ * @param {?proto.api_container_api.ServiceInfo|undefined} value
+ * @return {!proto.api_container_api.StartServiceResponse} returns this
+*/
+proto.api_container_api.StartServiceResponse.prototype.setServiceInfo = function(value) {
+  return jspb.Message.setWrapperField(this, 1, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
  * @return {!proto.api_container_api.StartServiceResponse} returns this
  */
-proto.api_container_api.StartServiceResponse.prototype.setPublicIpAddr = function(value) {
-  return jspb.Message.setProto3StringField(this, 1, value);
+proto.api_container_api.StartServiceResponse.prototype.clearServiceInfo = function() {
+  return this.setServiceInfo(undefined);
 };
 
 
 /**
- * map<string, Port> public_ports = 2;
- * @param {boolean=} opt_noLazyCreate Do not create the map if
- * empty, instead returning `undefined`
- * @return {!jspb.Map<string,!proto.api_container_api.Port>}
+ * Returns whether this field is set.
+ * @return {boolean}
  */
-proto.api_container_api.StartServiceResponse.prototype.getPublicPortsMap = function(opt_noLazyCreate) {
-  return /** @type {!jspb.Map<string,!proto.api_container_api.Port>} */ (
-      jspb.Message.getMapField(this, 2, opt_noLazyCreate,
-      proto.api_container_api.Port));
-};
-
-
-/**
- * Clears values from the map. The map will be non-null.
- * @return {!proto.api_container_api.StartServiceResponse} returns this
- */
-proto.api_container_api.StartServiceResponse.prototype.clearPublicPortsMap = function() {
-  this.getPublicPortsMap().clear();
-  return this;};
-
-
-/**
- * optional string service_guid = 3;
- * @return {string}
- */
-proto.api_container_api.StartServiceResponse.prototype.getServiceGuid = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
-};
-
-
-/**
- * @param {string} value
- * @return {!proto.api_container_api.StartServiceResponse} returns this
- */
-proto.api_container_api.StartServiceResponse.prototype.setServiceGuid = function(value) {
-  return jspb.Message.setProto3StringField(this, 3, value);
+proto.api_container_api.StartServiceResponse.prototype.hasServiceInfo = function() {
+  return jspb.Message.getField(this, 1) != null;
 };
 
 
