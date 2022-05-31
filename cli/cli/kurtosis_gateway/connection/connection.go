@@ -141,8 +141,6 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 
 func (connection *gatewayConnectionToKurtosisImpl) Stop() {
 	connection.portforwarder.Close()
-	// stopping the channel is necessary to close the connection
-	close(connection.portforwarderStopChannel)
 }
 
 func (connection *gatewayConnectionToKurtosisImpl) GetLocalPorts() map[string]*port_spec.PortSpec {
