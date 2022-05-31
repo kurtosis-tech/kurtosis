@@ -18,9 +18,9 @@ import (
 )
 
 const (
-	userServiceGUIDColHeader                                    = "GUID"
-	userServiceIDColHeader    = "ID"
-	userServicePortsColHeader = "Ports"
+	userServiceGUIDColHeader      = "GUID"
+	userServiceIDColHeader        = "ID"
+	userServicePortsColHeader     = "Ports"
 	defaultEmptyIPAddrForServices = ""
 
 	missingPortPlaceholder = "<none>"
@@ -30,7 +30,7 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 	enclaveIdStr := enclaveInfo.GetEnclaveId()
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
 	userServiceFilters := &service.ServiceFilters{}
-	
+
 	userServices, err := kurtosisBackend.GetUserServices(ctx, enclaveId, userServiceFilters)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' using filters '%+v'", enclaveId, userServiceFilters)
@@ -50,7 +50,7 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 		userServiceIDColHeader,
 		userServicePortsColHeader,
 	)
-	sortedUserServices:= getSortedUserServiceSliceFromUserServiceMap(userServices)
+	sortedUserServices := getSortedUserServiceSliceFromUserServiceMap(userServices)
 	for _, userService := range sortedUserServices {
 		serviceIdStr := string(userService.GetRegistration().GetID())
 		guidStr := string(userService.GetRegistration().GetGUID())
@@ -140,13 +140,10 @@ func getUserServicePortBindingStrings(userService *service.Service,
 		publicPorts := maybePublicPortMapFromAPIC
 		for portId := range privatePorts {
 			publicPortSpec, found := publicPorts[portId]
+			// With Kubernetes, it's now possible for a private port to not have a corresponding public port
+			// We only expose TCP ports through the gateway
 			if !found {
-				return nil, stacktrace.NewError(
-					"Private port '%v' was declared on service '%v' and the container is running, but no corresponding public port " +
-						"was found; this is very strange!",
-					portId,
-					userService.GetRegistration().GetGUID(),
-				)
+				continue
 			}
 			currentPortLine := resultLines[portId]
 			resultLines[portId] = currentPortLine + fmt.Sprintf(" -> %v:%v", publicIpAddr, publicPortSpec.GetNumber())
