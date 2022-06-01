@@ -370,14 +370,10 @@ export namespace StartServiceArgs {
 }
 
 export class StartServiceResponse extends jspb.Message {
-  getPublicIpAddr(): string;
-  setPublicIpAddr(value: string): StartServiceResponse;
-
-  getPublicPortsMap(): jspb.Map<string, Port>;
-  clearPublicPortsMap(): StartServiceResponse;
-
-  getServiceGuid(): string;
-  setServiceGuid(value: string): StartServiceResponse;
+  getServiceInfo(): ServiceInfo | undefined;
+  setServiceInfo(value?: ServiceInfo): StartServiceResponse;
+  hasServiceInfo(): boolean;
+  clearServiceInfo(): StartServiceResponse;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StartServiceResponse.AsObject;
@@ -389,9 +385,7 @@ export class StartServiceResponse extends jspb.Message {
 
 export namespace StartServiceResponse {
   export type AsObject = {
-    publicIpAddr: string,
-    publicPortsMap: Array<[string, Port.AsObject]>,
-    serviceGuid: string,
+    serviceInfo?: ServiceInfo.AsObject,
   }
 }
 

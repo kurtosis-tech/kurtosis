@@ -1,5 +1,9 @@
 # TBD
 
+# 1.55.0
+### Breaking Changes
+* `StartServiceResponse` now consists of a `ServiceInfo` struct describing the newly created service
+
 # 1.54.1
 ### Features
 * Added a temporary method `ContainerConfigBuilder.WithPublicPorts` to support using `static public ports` for user services
