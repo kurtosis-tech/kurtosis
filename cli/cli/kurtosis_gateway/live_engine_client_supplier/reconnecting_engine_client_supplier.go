@@ -57,7 +57,7 @@ func (supplier *LiveEngineClientSupplier) Start() error {
 		return stacktrace.NewError("Cannot start live engine client supplier because it's already started")
 	}
 	// Get connected to the engine
-	supplier.replaceEngineIfNecessary()
+	supplier.replaceEngineIfNecessaryBestEffort()
 
 	// Start health checking the engine
 	stopUpdaterSignalChan := make(chan interface{})
@@ -68,7 +68,7 @@ func (supplier *LiveEngineClientSupplier) Start() error {
 		for {
 			select {
 			case <-poller.C:
-				supplier.replaceEngineIfNecessary()
+				supplier.replaceEngineIfNecessaryBestEffort()
 			case <-stopUpdaterSignalChan:
 				return
 			}
@@ -105,7 +105,7 @@ func (supplier *LiveEngineClientSupplier) Stop() {
 // This function will gather the current state of engines in the cluster and compare it with the current state of the
 // supplier. If necessary, the supplier's currently-tracked engine will be supplanted with the new running engine.
 // NOT thread-safe!
-func (supplier *LiveEngineClientSupplier) replaceEngineIfNecessary() {
+func (supplier *LiveEngineClientSupplier) replaceEngineIfNecessaryBestEffort() {
 	runningEngineFilters := &engine.EngineFilters{
 		Statuses: map[container_status.ContainerStatus]bool{
 			container_status.ContainerStatus_Running: true,
@@ -135,7 +135,7 @@ func (supplier *LiveEngineClientSupplier) replaceEngineIfNecessary() {
 	// If we have no engine client, we'll take anything we can get
 	if supplier.currentInfo == nil {
 		if err := supplier.replaceCurrentEngineInfo(runningEngine); err != nil {
-			logrus.Errorf("Expected to be able to replace the current engine info, instead a non-nil error was returned:\n%v", err)
+			logrus.Errorf("An error occurred connecting to engine '%v'", runningEngine.GetGUID())
 		}
 		return
 	}
@@ -148,7 +148,7 @@ func (supplier *LiveEngineClientSupplier) replaceEngineIfNecessary() {
 	// If we get here, we must: a) have an engine that b) doesn't match the currently-running engine
 	// Therefore, replace
 	if err := supplier.replaceCurrentEngineInfo(runningEngine); err != nil {
-		logrus.Errorf("Expected to be able to replace the current engine info, instead a non-nil error was returned:\n%v", err)
+		logrus.Errorf("An error occurred connecting to engine '%v'", runningEngine.GetGUID())
 	}
 }
 

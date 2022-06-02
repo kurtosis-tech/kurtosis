@@ -92,7 +92,6 @@ func (service *ApiContainerGatewayServiceServer) RegisterService(ctx context.Con
 
 }
 func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
-	cleanUpServiceConnection := true
 	cleanUpService := true
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.StartService(ctx, args)
 	if err != nil {
@@ -107,28 +106,12 @@ func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Contex
 			}
 		}
 	}()
-	// Do not connect to services with no ports specified
-	if len(args.PrivatePorts) == 0 {
-		return remoteApiContainerResponse, nil
+
+	// Write over the PublicIp and Public Ports fields so the service can be accessed through local port forwarding
+	if err := service.writeOverServiceInfoFieldsWithLocalConnectionInformation(remoteApiContainerResponse.ServiceInfo); err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to write over ServiceInfo field for service '%v', instead a non-nil error was returned", args.GetServiceId())
 	}
-	serviceGuid := remoteApiContainerResponse.GetServiceGuid()
-
-	runningServiceConnection, err := service.startRunningConnectionForKurtosisService(serviceGuid, args.PrivatePorts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to start a local connection to service '%v', instead a non-nil error was returned", args.GetServiceId())
-	}
-	defer func() {
-		if cleanUpServiceConnection {
-			service.idempotentKillRunningConnectionForServiceGuid(serviceGuid)
-		}
-	}()
-
-	// Overwrite PublicPorts and PublicIp fields
-	remoteApiContainerResponse.PublicIpAddr = runningServiceConnection.localPublicIp
-	remoteApiContainerResponse.PublicPorts = runningServiceConnection.localPublicServicePorts
-
 	cleanUpService = false
-	cleanUpServiceConnection = false
 	return remoteApiContainerResponse, nil
 }
 
@@ -137,29 +120,12 @@ func (service *ApiContainerGatewayServiceServer) GetServices(ctx context.Context
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
 	}
-	cleanUpConnection := true
 	for serviceId, serviceInfo := range remoteApiContainerResponse.ServiceInfo {
-		// Get the running connection if it's available, start one if there is no running connection
-		serviceGuid := serviceInfo.GetServiceGuid()
-		var runningLocalConnection *runningLocalServiceConnection
-		runningLocalConnection, isFound := service.userServiceGuidToLocalConnectionMap[serviceGuid]
-		if !isFound && len(serviceInfo.PrivatePorts) > 0 {
-			runningLocalConnection, err = service.startRunningConnectionForKurtosisService(serviceGuid, serviceInfo.PrivatePorts)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "Expected to be able to start a local connection to kurtosis service '%v', instead a non-nil error was returned", serviceId)
-			}
-			defer func() {
-				if cleanUpConnection {
-					service.idempotentKillRunningConnectionForServiceGuid(serviceGuid)
-				}
-			}()
+		if err := service.writeOverServiceInfoFieldsWithLocalConnectionInformation(serviceInfo); err != nil {
+			return nil, stacktrace.Propagate(err, "Expected to be able to write over ServiceInfo field for service '%v', instead a non-nil error was returned", serviceId)
 		}
-		// Overwrite PublicPorts and PublicIp fields
-		serviceInfo.MaybePublicPorts = runningLocalConnection.localPublicServicePorts
-		serviceInfo.MaybePublicIpAddr = runningLocalConnection.localPublicIp
 	}
 
-	cleanUpConnection = false
 	return remoteApiContainerResponse, nil
 }
 
@@ -258,11 +224,40 @@ func (service *ApiContainerGatewayServiceServer) UnpauseService(ctx context.Cont
 	return remoteApiContainerResponse, nil
 }
 
+func (service *ApiContainerGatewayServiceServer) writeOverServiceInfoFieldsWithLocalConnectionInformation(serviceInfo *kurtosis_core_rpc_api_bindings.ServiceInfo) error {
+	service.mutex.Lock()
+	defer service.mutex.Unlock()
+	// If the service has no private ports, then don't overwrite any of the service info fields
+	if len(serviceInfo.PrivatePorts) == 0 {
+		return nil
+	}
+
+	serviceGuid := serviceInfo.GetServiceGuid()
+	var localConnErr error
+	var runningLocalConnection *runningLocalServiceConnection
+	cleanUpConnection := true
+	runningLocalConnection, isFound := service.userServiceGuidToLocalConnectionMap[serviceGuid]
+	if !isFound {
+		runningLocalConnection, localConnErr = service.startRunningConnectionForKurtosisService(serviceGuid, serviceInfo.PrivatePorts)
+		if localConnErr != nil {
+			return stacktrace.Propagate(localConnErr, "Expected to be able to start a local connection to kurtosis service '%v', instead a non-nil error was returned", serviceGuid)
+		}
+		defer func() {
+			if cleanUpConnection {
+				service.idempotentKillRunningConnectionForServiceGuid(serviceGuid)
+			}
+		}()
+	}
+	serviceInfo.MaybePublicPorts = runningLocalConnection.localPublicServicePorts
+	serviceInfo.MaybePublicIpAddr = runningLocalConnection.localPublicIp
+
+	cleanUpConnection = false
+	return nil
+}
+
 // startRunningConnectionForKurtosisService starts a port forwarding process from kernel assigned local ports to the remote service ports specified
 // If privatePortsFromApi is empty, an error is thrown
 func (service *ApiContainerGatewayServiceServer) startRunningConnectionForKurtosisService(serviceGuid string, privatePortsFromApi map[string]*kurtosis_core_rpc_api_bindings.Port) (*runningLocalServiceConnection, error) {
-	service.mutex.Lock()
-	defer service.mutex.Unlock()
 	if len(privatePortsFromApi) == 0 {
 		return nil, stacktrace.NewError("Expected Kurtosis service to have private ports specified for port forwarding, instead no ports were provided")
 	}
@@ -334,8 +329,6 @@ func (service *ApiContainerGatewayServiceServer) startRunningConnectionForKurtos
 }
 
 func (service *ApiContainerGatewayServiceServer) idempotentKillRunningConnectionForServiceGuid(serviceGuid string) {
-	service.mutex.Lock()
-	defer service.mutex.Unlock()
 	runningLocalConnection, isRunning := service.userServiceGuidToLocalConnectionMap[serviceGuid]
 	// Nothing running, nothing to kill
 	if !isRunning {
