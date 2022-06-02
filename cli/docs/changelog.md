@@ -1,4 +1,10 @@
 # TBD
+### Breaking Changes
+* Upgraded to core 1.55.0
+
+### Fixes
+* Fixed Consistency issues in API Container Gateway
+
 ### Changes
 * Changed enclave inspect to query the API container for module and service information
 * Upgraded Ubuntu machine image in Circle CI configuration to version `ubuntu-2004:202201-02`

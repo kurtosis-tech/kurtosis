@@ -146,7 +146,6 @@ func (supplier *LiveEngineClientSupplier) replaceEngineIfNecessaryBestEffort() {
 	}
 
 	// If we get here, we must: a) have an engine that b) doesn't match the currently-running engine
-	// Therefore, replace
 	if err := supplier.replaceCurrentEngineInfo(runningEngine); err != nil {
 		logrus.Errorf("An error occurred connecting to engine '%v'", runningEngine.GetGUID())
 	}

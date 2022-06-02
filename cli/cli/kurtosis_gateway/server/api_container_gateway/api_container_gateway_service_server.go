@@ -92,6 +92,8 @@ func (service *ApiContainerGatewayServiceServer) RegisterService(ctx context.Con
 
 }
 func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
+	service.mutex.Lock()
+	defer service.mutex.Unlock()
 	cleanUpService := true
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.StartService(ctx, args)
 	if err != nil {
@@ -99,8 +101,8 @@ func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Contex
 	}
 	defer func() {
 		if cleanUpService {
-			destroyEnclaveArgs := &kurtosis_core_rpc_api_bindings.RemoveServiceArgs{ServiceId: args.GetServiceId()}
-			if _, err := service.remoteApiContainerClient.RemoveService(ctx, destroyEnclaveArgs); err != nil {
+			removeServiceArgs := &kurtosis_core_rpc_api_bindings.RemoveServiceArgs{ServiceId: args.GetServiceId()}
+			if _, err := service.remoteApiContainerClient.RemoveService(ctx, removeServiceArgs); err != nil {
 				logrus.Errorf("Connecting to the service running in the remote cluster failed, expected to be able to cleanup the created service, but an error occurred calling the backend to remove the service we created:\v%v", err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the service with id '%v'", args.GetServiceId())
 			}
@@ -116,6 +118,9 @@ func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Contex
 }
 
 func (service *ApiContainerGatewayServiceServer) GetServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServicesArgs) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
+	service.mutex.Lock()
+	defer service.mutex.Unlock()
+	cleanUpLocalConnections := true
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.GetServices(ctx, args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
@@ -124,12 +129,20 @@ func (service *ApiContainerGatewayServiceServer) GetServices(ctx context.Context
 		if err := service.writeOverServiceInfoFieldsWithLocalConnectionInformation(serviceInfo); err != nil {
 			return nil, stacktrace.Propagate(err, "Expected to be able to write over ServiceInfo field for service '%v', instead a non-nil error was returned", serviceId)
 		}
+		defer func() {
+			if cleanUpLocalConnections {
+				service.idempotentKillRunningConnectionForServiceGuid(serviceInfo.GetServiceGuid())
+			}
+		}()
 	}
 
+	cleanUpLocalConnections = false
 	return remoteApiContainerResponse, nil
 }
 
 func (service *ApiContainerGatewayServiceServer) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*kurtosis_core_rpc_api_bindings.RemoveServiceResponse, error) {
+	service.mutex.Lock()
+	defer service.mutex.Unlock()
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.RemoveService(ctx, args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
@@ -224,9 +237,9 @@ func (service *ApiContainerGatewayServiceServer) UnpauseService(ctx context.Cont
 	return remoteApiContainerResponse, nil
 }
 
+//writeOverServiceInfoFieldsWithLocalConnectionInformation overwites the `MaybePublicPorts` and `MaybePublicIpAdrr` fields to connect to local ports forwarding requests to private ports in Kubernetes
+// Only TCP Private Ports are forwarded
 func (service *ApiContainerGatewayServiceServer) writeOverServiceInfoFieldsWithLocalConnectionInformation(serviceInfo *kurtosis_core_rpc_api_bindings.ServiceInfo) error {
-	service.mutex.Lock()
-	defer service.mutex.Unlock()
 	// If the service has no private ports, then don't overwrite any of the service info fields
 	if len(serviceInfo.PrivatePorts) == 0 {
 		return nil
