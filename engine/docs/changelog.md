@@ -1,4 +1,7 @@
 # TBD
+### Breaking Changes
+* Upgrade to Core 1.55.1, which returns Service info for `StartService` calls
+  * Users will have to restart their enclaves
 
 # 1.26.1
 ### Changes
