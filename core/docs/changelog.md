@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Moved error reporting in `StartService`
 
 # 1.55.0
 ### Breaking Changes
