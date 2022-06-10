@@ -70,10 +70,10 @@ func NewApiContainerService(
 	metricsClient client.MetricsClient,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
-		filesArtifactStore:                     filesArtifactStore,
-		serviceNetwork:                         serviceNetwork,
-		moduleStore:                            moduleStore,
-		metricsClient:                          metricsClient,
+		filesArtifactStore: filesArtifactStore,
+		serviceNetwork:     serviceNetwork,
+		moduleStore:        moduleStore,
+		metricsClient:      metricsClient,
 	}
 
 	return service, nil
@@ -172,7 +172,7 @@ func (apicService ApiContainerService) RegisterService(ctx context.Context, args
 	}
 
 	return &kurtosis_core_rpc_api_bindings.RegisterServiceResponse{
-		PrivateIpAddr:           privateIpAddr.String(),
+		PrivateIpAddr: privateIpAddr.String(),
 	}, nil
 }
 
@@ -206,7 +206,6 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 	}
 	//TODO Finished the huge hack to temporarily enable static ports for NEAR
 
-
 	privateServicePortSpecs := map[string]*port_spec.PortSpec{}
 	for portId, privateApiPort := range privateApiPorts {
 		privateServicePortSpec, err := transformApiPortToPortSpec(privateApiPort)
@@ -238,10 +237,10 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 	serviceGuidStr := string(startedService.GetRegistration().GetGUID())
 	publicServicePortSpecs := startedService.GetMaybePublicPorts()
 	publicApiPorts, err := transformPortSpecMapToApiPortsMap(publicServicePortSpecs)
-	maybePublicIpAddr := startedService.GetMaybePublicIP()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public port specs to API ports")
 	}
+	maybePublicIpAddr := startedService.GetMaybePublicIP()
 	publicIpAddrStr := missingPublicIpAddrStr
 	if maybePublicIpAddr != nil {
 		publicIpAddrStr = maybePublicIpAddr.String()
