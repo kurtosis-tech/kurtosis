@@ -1,5 +1,9 @@
 # TBD
 
+# 1.27.1
+### Changes
+* Upgraded to core 1.55.2
+
 # 1.27.0
 ### Breaking Changes
 * Upgrade to Core 1.55.1, which returns Service info for `StartService` calls
