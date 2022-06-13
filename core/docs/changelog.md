@@ -1,5 +1,13 @@
 # TBD
 
+# 1.55.2
+### Fixes
+* Moved error reporting in `StartService`
+
+# 1.55.1 
+### Changes
+* Messed up release, no code changes
+
 # 1.55.0
 ### Breaking Changes
 * `StartServiceResponse` now consists of a `ServiceInfo` struct describing the newly created service
