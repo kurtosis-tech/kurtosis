@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Upgraded to core 1.55.2
 
 # 1.27.0
 ### Breaking Changes
