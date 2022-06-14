@@ -4,6 +4,7 @@
 * Upgraded Ubuntu machine image in Circle CI configuration to version `ubuntu-2004:202201-02`
 * Upgraded goreleaser to v1.9.1 in Circle CI config file
 * Updated `build cli script` and `cli launch script` to support the goamd64 env var
+* No longer run health checks against a created engine in a Kubernetes cluster
 
 ### Features
 * The gateway will reconnect if the engine pod it's connected to is restarted

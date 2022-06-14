@@ -21,8 +21,9 @@ var dockerBackendApiContainerModeArgs *backend_creator.APIContainerModeArgs = ni
 type kurtosisBackendSupplier func(ctx context.Context) (backend_interface.KurtosisBackend, error)
 
 type KurtosisClusterConfig struct {
-	kurtosisBackendSupplier kurtosisBackendSupplier
+	kurtosisBackendSupplier     kurtosisBackendSupplier
 	engineBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
+	clusterType                 KurtosisClusterType
 }
 
 func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v2.KurtosisClusterConfigV2) (*KurtosisClusterConfig, error) {
@@ -49,6 +50,7 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v2.Kurto
 	return &KurtosisClusterConfig{
 		kurtosisBackendSupplier:     backendSupplier,
 		engineBackendConfigSupplier: engineBackendConfigSupplier,
+		clusterType:                 clusterType,
 	}, nil
 }
 
@@ -60,10 +62,13 @@ func (clusterConfig *KurtosisClusterConfig) GetKurtosisBackend(ctx context.Conte
 	return backend, nil
 }
 
-func (clusterConfig *KurtosisClusterConfig) GetEngineBackendConfigSupplier() (engine_server_launcher.KurtosisBackendConfigSupplier) {
+func (clusterConfig *KurtosisClusterConfig) GetEngineBackendConfigSupplier() engine_server_launcher.KurtosisBackendConfigSupplier {
 	return clusterConfig.engineBackendConfigSupplier
 }
 
+func (clusterConfig *KurtosisClusterConfig) GetClusterType() KurtosisClusterType {
+	return clusterConfig.clusterType
+}
 
 // ====================================================================================================
 //                                      Private Helpers

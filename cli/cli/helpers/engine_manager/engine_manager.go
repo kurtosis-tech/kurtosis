@@ -52,6 +52,7 @@ type EngineManager struct {
 	kurtosisBackend                           backend_interface.KurtosisBackend
 	shouldSendMetrics                         bool
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
+	clusterConfig                             *resolved_config.KurtosisClusterConfig
 	// Make engine IP, port, and protocol configurable in the future
 }
 
@@ -97,6 +98,7 @@ func NewEngineManager(ctx context.Context) (*EngineManager, error) {
 		kurtosisBackend:   kurtosisBackend,
 		shouldSendMetrics: kurtosisConfig.GetShouldSendMetrics(),
 		engineServerKurtosisBackendConfigSupplier: engineBackendConfigSupplier,
+		clusterConfig: clusterConfig,
 	}, nil
 }
 
@@ -162,7 +164,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
 	//  before we can return an EngineClient
-	engineClient, engineClientCloseFunc, err := startEngineWithGuarantor(ctx, status, engineGuarantor)
+	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred starting the engine with the engine existence guarantor")
 	}
@@ -185,7 +187,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		logLevel,
 		engineVersion,
 	)
-	engineClient, engineClientCloseFunc, err := startEngineWithGuarantor(ctx, status, engineGuarantor)
+	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred starting the engine with the engine existence guarantor")
 	}
@@ -231,7 +233,7 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 // ====================================================================================================
 //                                       Private Helper Functions
 // ====================================================================================================
-func startEngineWithGuarantor(ctx context.Context, currentStatus EngineStatus, engineGuarantor *engineExistenceGuarantor) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+func (manager *EngineManager) startEngineWithGuarantor(ctx context.Context, currentStatus EngineStatus, engineGuarantor *engineExistenceGuarantor) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	if err := currentStatus.Accept(engineGuarantor); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred guaranteeing that a Kurtosis engine is running")
 	}
@@ -242,11 +244,18 @@ func startEngineWithGuarantor(ctx context.Context, currentStatus EngineStatus, e
 		return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to the running engine; this is very strange and likely indicates a bug in the engine itself")
 	}
 
-	// Final verification to ensure that the engine server is responding
+	clusterType := manager.clusterConfig.GetClusterType()
+	// If we're in docker, we can make a health check
+	// In the kubernetes case, this health check will fail if the gateway isn't running
+	if clusterType == resolved_config.KurtosisClusterType_Docker {
+		// Final verification to ensure that the engine server is responding
+		if _, err := getEngineInfoWithTimeout(ctx, engineClient); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to the engine server after starting it ")
+		}
+	}
 
-	if _, err := getEngineInfoWithTimeout(ctx, engineClient); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to the engine server after starting it; "+
-			"if you are running Kurtosis in a Kubernetes cluster, consider running '%v %v' to open a local gateway to the engine running in the cluster", command_str_consts.KurtosisCmdStr, command_str_consts.GatewayCmdStr)
+	if clusterType == resolved_config.KurtosisClusterType_Kubernetes {
+		logrus.Infof("Engine running in Kubernetes cluster, to connect to the engine from outside the cluster run '%v %v' to open a local gateway to the engine", command_str_consts.KurtosisCmdStr, command_str_consts.GatewayCmdStr)
 	}
 
 	return engineClient, clientCloseFunc, nil
