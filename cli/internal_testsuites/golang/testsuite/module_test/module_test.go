@@ -14,39 +14,39 @@ import (
 )
 
 const (
-	testName = "module"
+	testName              = "module"
 	isPartitioningEnabled = false
 
-	testModuleImage = "kurtosistech/datastore-army-module:0.2.2"
+	testModuleImage = "kurtosistech/datastore-army-module:0.2.4"
 
 	datastoreArmyModuleId modules.ModuleID = "datastore-army"
 
 	numModuleExecuteCalls = 2
 
-	testDatastoreKey = "my-key"
+	testDatastoreKey   = "my-key"
 	testDatastoreValue = "test-value"
 
 	millisBetweenAvailabilityRetries = 1000
 
 	/*
-	NOTE: on 2022-05-16 this failed with the following error so we bumped the num polls to 20.
+		NOTE: on 2022-05-16 this failed with the following error so we bumped the num polls to 20.
 
-	time="2022-05-16T23:58:21Z" level=info msg="Sanity-checking that all 4 datastore services added via the module work as expected..."
-	--- FAIL: TestModule (21.46s)
-	    module_test.go:81:
-	        	Error Trace:	module_test.go:81
-	        	Error:      	Received unexpected error:
-	        	            	The service didn't return a success code, even after 15 retries with 1000 milliseconds in between retries
-	        	            	 --- at /home/circleci/project/internal_testsuites/golang/test_helpers/test_helpers.go:179 (WaitForHealthy) ---
-	        	            	Caused by: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing dial tcp 127.0.0.1:49188: connect: connection refused"
-	        	Test:       	TestModule
-	        	Messages:   	An error occurred waiting for the datastore service to become available
+		time="2022-05-16T23:58:21Z" level=info msg="Sanity-checking that all 4 datastore services added via the module work as expected..."
+		--- FAIL: TestModule (21.46s)
+		    module_test.go:81:
+		        	Error Trace:	module_test.go:81
+		        	Error:      	Received unexpected error:
+		        	            	The service didn't return a success code, even after 15 retries with 1000 milliseconds in between retries
+		        	            	 --- at /home/circleci/project/internal_testsuites/golang/test_helpers/test_helpers.go:179 (WaitForHealthy) ---
+		        	            	Caused by: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing dial tcp 127.0.0.1:49188: connect: connection refused"
+		        	Test:       	TestModule
+		        	Messages:   	An error occurred waiting for the datastore service to become available
 
-	NOTE: On 2022-05-21 this failed again at 20s. I opened the enclave logs and it's weird because nothing is failing and
-	the datastore service is showing itself as up *before* we even start the check-if-available wait. We're in crunch mode
-	so I'm going to bump this up to 30s, but I suspect there's some sort of nondeterministic underlying failure happening.
-	 */
-	waitForStartupMaxPolls           = 30
+		NOTE: On 2022-05-21 this failed again at 20s. I opened the enclave logs and it's weird because nothing is failing and
+		the datastore service is showing itself as up *before* we even start the check-if-available wait. We're in crunch mode
+		so I'm going to bump this up to 30s, but I suspect there's some sort of nondeterministic underlying failure happening.
+	*/
+	waitForStartupMaxPolls = 30
 )
 
 type DatastoreArmyModuleResult struct {
@@ -60,7 +60,6 @@ func TestModule(t *testing.T) {
 	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
-
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	logrus.Info("Loading module...")
@@ -166,4 +165,3 @@ func addTwoDatastoreServices(moduleCtx *modules.ModuleContext) (map[services.Ser
 	}
 	return result, nil
 }
-

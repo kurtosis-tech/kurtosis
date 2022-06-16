@@ -13,9 +13,9 @@ require (
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220526180337-ae7332175f52
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220526181932-5f429e23f635
-	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220526194821-5801f859c7b5
-	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220526194755-8f8ee1a59806
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220613175156-d6392795abca
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220613185735-4abf0388fe57
+	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220613185701-49e64d40d243
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211205213337-f5088fc26465
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220225193403-74da3f3b98ce
@@ -63,7 +63,6 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d // indirect
-	github.com/kurtosis-tech/kurtosis-core v0.0.0-20220523020625-fa54f704b9b3 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/mholt/archiver v3.1.1+incompatible // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
