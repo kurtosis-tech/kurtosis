@@ -111,7 +111,7 @@ func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Contex
 
 	// Write over the PublicIp and Public Ports fields so the service can be accessed through local port forwarding
 	if err := service.writeOverServiceInfoFieldsWithLocalConnectionInformation(remoteApiContainerResponse.ServiceInfo); err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to write over ServiceInfo field for service '%v', instead a non-nil error was returned", args.GetServiceId())
+		return nil, stacktrace.Propagate(err, "Expected to be able to write over service info fields for service '%v', instead a non-nil error was returned", args.GetServiceId())
 	}
 	cleanUpService = false
 	return remoteApiContainerResponse, nil
@@ -120,23 +120,16 @@ func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Contex
 func (service *ApiContainerGatewayServiceServer) GetServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServicesArgs) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
 	service.mutex.Lock()
 	defer service.mutex.Unlock()
-	cleanUpLocalConnections := true
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.GetServices(ctx, args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
 	}
 	for serviceId, serviceInfo := range remoteApiContainerResponse.ServiceInfo {
 		if err := service.writeOverServiceInfoFieldsWithLocalConnectionInformation(serviceInfo); err != nil {
-			return nil, stacktrace.Propagate(err, "Expected to be able to write over ServiceInfo field for service '%v', instead a non-nil error was returned", serviceId)
+			return nil, stacktrace.Propagate(err, "Expected to be able to write over service info fields for service '%v', instead a non-nil error was returned", serviceId)
 		}
-		defer func() {
-			if cleanUpLocalConnections {
-				service.idempotentKillRunningConnectionForServiceGuid(serviceInfo.GetServiceGuid())
-			}
-		}()
 	}
 
-	cleanUpLocalConnections = false
 	return remoteApiContainerResponse, nil
 }
 
@@ -253,7 +246,7 @@ func (service *ApiContainerGatewayServiceServer) writeOverServiceInfoFieldsWithL
 	if !isFound {
 		runningLocalConnection, localConnErr = service.startRunningConnectionForKurtosisService(serviceGuid, serviceInfo.PrivatePorts)
 		if localConnErr != nil {
-			return stacktrace.Propagate(localConnErr, "Expected to be able to start a local connection to kurtosis service '%v', instead a non-nil error was returned", serviceGuid)
+			return stacktrace.Propagate(localConnErr, "Expected to be able to start a local connection to Kurtosis service '%v', instead a non-nil error was returned", serviceGuid)
 		}
 		defer func() {
 			if cleanUpConnection {

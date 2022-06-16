@@ -1,7 +1,7 @@
 # TBD
 ### Breaking Changes
-* Upgraded core to 1.55.1
-* Upgraded engine to 1.27.0
+* Upgraded core to 1.55.2
+* Upgraded engine to 1.27.1
 
 ### Fixes
 * Fixed Consistency issues in API Container Gateway
