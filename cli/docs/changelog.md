@@ -3,6 +3,9 @@
 * Upgraded core to 1.55.2
 * Upgraded engine to 1.27.1
 
+### Changes
+* Updated CI to test cluster setups
+
 ### Fixes
 * Fixed Consistency issues in API Container Gateway
 

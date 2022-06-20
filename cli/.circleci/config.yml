@@ -1,3 +1,35 @@
+# Don't run cli jobs on develop or master branches
+filters-ignore-develop-master: &filters-ignore-develop-master
+  filters:
+    branches:
+      ignore:
+        - develop
+        - master
+
+
+# Anchor for cli cluster param used to run test suites against docker/kubernetes tests
+param-cli-cluster: &param-cli-cluster
+  cli-cluster:
+    description: "Kurtosis cluster backend for the cli to use. Must be one of 'docker', 'minikube'. Default is 'docker'"
+    type: enum
+    default: "docker"
+    enum: [ "docker", "minikube" ]
+
+steps-prepare-kubernetes-testing: &steps-prepare-kubernetes-testing
+  steps:
+    - run: |
+        curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb
+        sudo dpkg -i minikube_latest_amd64.deb
+        minikube start --vm-driver=docker --kubernetes-version=v1.19.0
+    - run:
+        name: Check status
+        command: |
+          minikube status
+    - run: "${KURTOSIS_BINPATH} cluster set minikube"
+    - run:
+        command: "${KURTOSIS_BINPATH} gateway"
+        background: true
+
 version: 2.1
 
 orbs:
@@ -72,11 +104,14 @@ jobs:
 
       - persist_to_workspace:
           root: .
-          paths: 
+          paths:
             - "./<< pipeline.parameters.cli-dist-home-relative-dirpath >>"
+
 
   build_golang_testsuite:
     executor: ubuntu_vm
+    parameters:
+      <<: *param-cli-cluster
     steps:
       - checkout
       - attach_workspace:
@@ -88,6 +123,10 @@ jobs:
       #Run config init to avoid metrics consent prompt when execute engine start command,
       #We do not send metrics from CI to not dirty the metrics data
       - run: "${KURTOSIS_BINPATH} config init dont-send-metrics"
+      - when:
+          condition:
+            equal: [ "minikube", << parameters.cli-cluster >> ]
+          <<: *steps-prepare-kubernetes-testing
       - run: "${KURTOSIS_BINPATH} engine start"
 
       # Run the testsuite, but don't fail the job immediately so that we can upload the enclave dump
@@ -114,6 +153,8 @@ jobs:
 
   build_typescript_testsuite:
     executor: ubuntu_vm
+    parameters:
+      <<: *param-cli-cluster
     steps:
       - checkout
       - attach_workspace:
@@ -129,6 +170,10 @@ jobs:
       #Run config init to avoid metrics consent prompt when execute engine start command,
       #We do not send metrics from CI to not dirty the metrics data
       - run: "${KURTOSIS_BINPATH} config init dont-send-metrics"
+      - when:
+          condition:
+            equal: [ "minikube", << parameters.cli-cluster >> ]
+          <<: *steps-prepare-kubernetes-testing
       - run: "${KURTOSIS_BINPATH} engine start"
 
       # Run the testsuite, but don't fail the job immediately so that we can upload the enclave dump
@@ -181,10 +226,10 @@ jobs:
 
       # Make sure we can still interact with the old enclaves
       - run: "${KURTOSIS_BINPATH} enclave ls"
-      - run: "${KURTOSIS_BINPATH} enclave inspect running-old-enclave" 
+      - run: "${KURTOSIS_BINPATH} enclave inspect running-old-enclave"
       - run: "${KURTOSIS_BINPATH} service add running-old-enclave test-service httpd --ports http=80"
-      - run: "${KURTOSIS_BINPATH} enclave stop running-old-enclave" 
-      - run: "${KURTOSIS_BINPATH} enclave inspect stopped-old-enclave" 
+      - run: "${KURTOSIS_BINPATH} enclave stop running-old-enclave"
+      - run: "${KURTOSIS_BINPATH} enclave inspect stopped-old-enclave"
 
       # Ensure modules & enclaves still work
       - run: "${KURTOSIS_BINPATH} clean -a"
@@ -198,14 +243,14 @@ jobs:
               docker container ls -a
               false
             fi
-      - run: 
+      - run:
           name: "Verify Kurtosis cleaned up all its volumes"
           command: |
             if ! [ $(docker volume ls | tail -n+2 | wc -l) -eq 0 ]; then
               docker volume ls
               false
             fi
-      - run: 
+      - run:
           name: "Verify Kurtosis cleaned up all its networks"
           command: |
             builtin_network_ids=(
@@ -220,6 +265,8 @@ jobs:
 
   test_basic_cli_functionality:
     executor: ubuntu_vm
+    parameters:
+      <<: *param-cli-cluster
     steps:
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
@@ -235,6 +282,12 @@ jobs:
       - run: |
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
 
+      # When backend is 'minikube' install minikube and start a Kurtosis gateway
+      - when:
+          condition:
+            equal: [ "minikube", << parameters.cli-cluster >> ]
+          <<: *steps-prepare-kubernetes-testing
+      - run: "${KURTOSIS_BINPATH} engine start"
       # Basic service add & rm
       - run: "${KURTOSIS_BINPATH} enclave new --id test-enclave"
       - run: "${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=80"
@@ -251,33 +304,40 @@ jobs:
       - run: "${KURTOSIS_BINPATH} clean -a"
       - run: "${KURTOSIS_BINPATH} engine stop"
 
-      # Ensure everything got cleaned up successfully
-      - run:
-          name: "Verify only the engine container remains after the clean"
-          command: |
-            if ! [ "$(docker container ls -a | tail -n+2 | wc -l)" -eq 1 ]; then
-              docker container ls -a
-              false
-            fi
-      - run: 
-          name: "Verify Kurtosis cleaned up all its volumes"
-          command: |
-            if ! [ $(docker volume ls | tail -n+2 | wc -l) -eq 0 ]; then
-              docker volume ls
-              false
-            fi
-      - run: 
-          name: "Verify Kurtosis cleaned up all its networks"
-          command: |
-            builtin_network_ids=(
-              "$(docker network ls --quiet --filter "name=host")"
-              "$(docker network ls --quiet --filter "name=bridge")"
-              "$(docker network ls --quiet --filter "name=none")"
-            )
-            if ! [ $(docker network ls | grep -v -f <(printf "%s\n" "${builtin_network_ids[@]}") | tail -n+2 | wc -l) -eq 0 ]; then
-              docker network ls
-              false
-            fi
+      # Ensure Docker resources cleaned up successfully
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster >> ]
+          steps:
+            - run:
+                name: "Verify only the engine container remains after the clean"
+                command: |
+                  if ! [ "$(docker container ls -a | tail -n+2 | wc -l)" -eq 1 ]; then
+                    docker container ls -a
+                    false
+                  fi
+            - run:
+                name: "Verify Kurtosis cleaned up all its volumes"
+                command: |
+                  if ! [ $(docker volume ls | tail -n+2 | wc -l) -eq 0 ]; then
+                    docker volume ls
+                    false
+                  fi
+            - run:
+                name: "Verify Kurtosis cleaned up all its networks"
+                command: |
+                  builtin_network_ids=(
+                     "$(docker network ls --quiet --filter "name=host")"
+                    "$(docker network ls --quiet --filter "name=bridge")"
+                    "$(docker network ls --quiet --filter "name=none")"
+                  )
+                  if ! [ $(docker network ls | grep -v -f <(printf "%s\n" "${builtin_network_ids[@]}") | tail -n+2 | wc -l) -eq 0 ]; then
+                    docker network ls
+                    false
+                  fi  
+
+
+      # Ensure Kubernetes resoureces clean up successfully
 
   test_config_init_edge_cases:
     executor: ubuntu_vm
@@ -348,77 +408,83 @@ workflows:
       # -- Build jobs ------------------------------------------
       - kurtosis-docs-checker/check-docs:
           markdown-link-check-config-json: "{}"
-          filters:
-            branches:
-              ignore:
-                - develop
-                - master
+          <<: *filters-ignore-develop-master
       - build_cli:
           context:
             - github-user
-          filters:
-            branches:
-              ignore:
-                - develop
-                - master
-      - build_golang_testsuite:
-          context:
-            - docker-user
-          requires:
-            - build_cli
-          filters:
-            branches:
-              ignore:
-                - develop
-                - master
-      - build_typescript_testsuite:
-          context:
-            - docker-user
-          requires:
-            - build_cli
-          filters:
-            branches:
-              ignore:
-                - develop
-                - master
+          <<: *filters-ignore-develop-master
+      # -- test Basic CLI Functionality
       - test_basic_cli_functionality:
+          name: "Test Basic CLI Functionality in Docker"
+          cli-cluster: "docker"
           context:
             - docker-user
           requires:
             - build_cli
-          filters:
-            branches:
-              ignore:
-                - develop
-                - master
+          <<: *filters-ignore-develop-master
+      - test_basic_cli_functionality:
+          name: "Test Basic CLI Functionality in Kubernetes"
+          cli-cluster: "minikube"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+          <<: *filters-ignore-develop-master
+      # -- Build golang testsuite
+      - build_golang_testsuite:
+          name: "Build golang testsuite against Docker"
+          cli-cluster: "docker"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+          <<: *filters-ignore-develop-master
+      - build_golang_testsuite:
+          name: "Build golang testsuite against Kubernetes"
+          cli-cluster: "minikube"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+          <<: *filters-ignore-develop-master
+      # -- Build typescript testsuite
+      - build_typescript_testsuite:
+          name: "Build typescript testsuite against Docker"
+          cli-cluster: "docker"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+          <<: *filters-ignore-develop-master
+      - build_typescript_testsuite:
+          name: "Build typescript testsuite against Kubernetes"
+          cli-cluster: "minikube"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+          <<: *filters-ignore-develop-master
+
       - test_old_enclave_continuity:
           context:
             - docker-user
           requires:
             - build_cli
-          filters:
-            branches:
-              ignore:
-                - develop
-                - master
+          <<: *filters-ignore-develop-master
       - test_config_init_edge_cases:
           requires:
             - build_cli
-          filters:
-            branches:
-              ignore:
-                - develop
-                - master
-      # -- End build jobs ---------------------------------------
+          <<: *filters-ignore-develop-master
+          # -- End build jobs ---------------------------------------
 
-      # -- Artifact-publishing jobs --------------------------------
+          # -- Artifact-publishing jobs --------------------------------
       - push_cli_artifacts:
           context:
             - github-user
             - gemfury-publisher
           filters:
-            branches:
-              ignore: /.*/
-            tags: 
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
-      # -- End artifact-publishing jobs ----------------------------
+                branches:
+                  ignore: /.*/
+                tags:
+                  only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+        # -- End artifact-publishing jobs ----------------------------
