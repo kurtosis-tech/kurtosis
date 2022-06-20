@@ -110,7 +110,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		imageVersionTag,
 	)
 
-	log.Debugf("Launching Kurtosis API container...")
+	logrus.Debugf("Launching Kurtosis API container...")
 	apiContainer, err := launcher.kurtosisBackend.CreateAPIContainer(
 		ctx,
 		containerImageAndTag,
