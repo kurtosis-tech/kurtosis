@@ -7,7 +7,6 @@ package api_container_launcher
 import (
 	"context"
 	"fmt"
-	"github.com/google/martian/log"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -111,7 +110,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		imageVersionTag,
 	)
 
-	log.Debugf("Launching Kurtosis API container...")
+	logrus.Debugf("Launching Kurtosis API container...")
 	apiContainer, err := launcher.kurtosisBackend.CreateAPIContainer(
 		ctx,
 		containerImageAndTag,

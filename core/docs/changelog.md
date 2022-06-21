@@ -1,5 +1,7 @@
 # TBD
 
+* Removed unused logging package in error reporting in `api_container_launcher`
+
 # 1.55.2
 ### Fixes
 * Moved error reporting in `StartService`
