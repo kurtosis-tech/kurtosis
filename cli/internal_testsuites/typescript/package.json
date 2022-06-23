@@ -1,7 +1,7 @@
 {
   "scripts": {
     "build": "tsc",
-    "test": "jest --maxWorkers 2 ./build"
+    "test": "jest --maxWorkers 2 ./build --testPathIgnorePatterns=\"\/build\/testsuite\/(network_partition_test|network_soft_partition_test|service_pause_test)\""
   },
   "devDependencies": {
     "@types/jest": "^27.0.3",
