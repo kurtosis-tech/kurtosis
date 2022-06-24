@@ -29,6 +29,9 @@ const (
 )
 
 func TestNetworkPartition(t *testing.T) {
+	// Dont run this test in Kubernetes
+	test_helpers.SkipTestInKubernetes(t)
+
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------

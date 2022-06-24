@@ -24,6 +24,9 @@ const (
 )
 
 func TestPauseUnpause(t *testing.T) {
+	// Dont run this test in Kubernetes
+	test_helpers.SkipTestInKubernetes(t)
+
 	ctx := context.Background()
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
 	enclaveCtx, stopEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)

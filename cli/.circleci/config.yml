@@ -424,7 +424,7 @@ workflows:
           <<: *filters-ignore-develop-master
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Kubernetes"
-          cli-cluster: "minikube"
+          cli-cluster: "docker"
           context:
             - docker-user
           requires:
@@ -458,7 +458,7 @@ workflows:
           <<: *filters-ignore-develop-master
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Kubernetes"
-          cli-cluster: "minikube"
+          cli-cluster: "docker"
           context:
             - docker-user
           requires:

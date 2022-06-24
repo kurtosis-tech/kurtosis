@@ -18,6 +18,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"testing"
 	"time"
 )
 
@@ -245,4 +246,8 @@ func createApiConfigFile(datastoreIP string) (string, error) {
 	}
 
 	return tempFilepath, nil
+}
+
+func SkipTestInKubernetes(t *testing.T) {
+	t.Skip("Building testsuite Against Kubernetes, Skipping this test as functionality is not expected in Kubernetes")
 }
