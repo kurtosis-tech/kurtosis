@@ -29,6 +29,8 @@ steps-prepare-kubernetes-testing: &steps-prepare-kubernetes-testing
     - run:
         command: "${KURTOSIS_BINPATH} gateway"
         background: true
+    - run:
+        command: "export TESTING_KUBERNETES=1"
 
 version: 2.1
 
@@ -424,7 +426,7 @@ workflows:
           <<: *filters-ignore-develop-master
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Kubernetes"
-          cli-cluster: "docker"
+          cli-cluster: "minikube"
           context:
             - docker-user
           requires:
@@ -458,7 +460,7 @@ workflows:
           <<: *filters-ignore-develop-master
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Kubernetes"
-          cli-cluster: "docker"
+          cli-cluster: "minikube"
           context:
             - docker-user
           requires:

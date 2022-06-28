@@ -7,17 +7,22 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/live_engine_client_supplier"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/port_utils"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/run/api_container_gateway"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	restclient "k8s.io/client-go/rest"
 	"sync"
+	"time"
 )
 
 const (
 	// API Container gateways spun up by this engine gateway run on localhost
 	localHostIpStr = "127.0.0.1"
+
+	apiContainerGatewayHealthcheckTimeout = 5 * time.Second
 )
 
 type EngineGatewayServiceServer struct {
@@ -211,7 +216,7 @@ func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclave
 		return nil, stacktrace.Propagate(err, "Expected to be able to get a free, open TCP port on host, instead a non-nil error was returned")
 	}
 	// Channel for messages to stop the running server
-	gatewayServerStopper := make(chan interface{}, 1)
+	gatewayStopChannel := make(chan interface{}, 1)
 
 	// Info for how to connect to the api container through the gateway running on host machine
 	apiContainerHostMachineInfo := &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
@@ -225,10 +230,11 @@ func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclave
 	// Stop the running gateway
 	gatewayStopFunc := func() {
 		// Send message to stop the gateway server
-		gatewayServerStopper <- nil
+		gatewayStopChannel <- nil
 	}
+	// Need to block on gateway being Reachable
 	go func() {
-		if err := api_container_gateway.RunApiContainerGatewayUntilStopped(service.connectionProvider, enclaveInfo, gatewayPortSpec.GetNumber(), gatewayServerStopper); err != nil {
+		if err := api_container_gateway.RunApiContainerGatewayUntilStopped(service.connectionProvider, enclaveInfo, gatewayPortSpec.GetNumber(), gatewayStopChannel); err != nil {
 			logrus.Warnf("Expected to run api container gateway until stopped, but the server exited prematurely with a non-nil error: '%v'", err)
 		}
 	}()
@@ -239,11 +245,17 @@ func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclave
 		}
 	}()
 
+
+	if err := waitForGatewayReady(apiContainerHostMachineInfo); err != nil {
+		logrus.Warnf("Expected Gateway to be reachable, instead an error was returned:\n%v", err)
+	}
+
+
 	runningGatewayInfo := &runningApiContainerGateway{
 		closeFunc:       gatewayStopFunc,
 		hostMachineInfo: apiContainerHostMachineInfo,
 	}
-
+	logrus.Infof("Started running gateway for enclave '%v' on port '%v'", enclaveId, apiContainerHostMachineInfo.GrpcPortOnHostMachine)
 	// Store information about our running gateway
 	service.enclaveIdToRunningGatewayMap[enclaveId] = runningGatewayInfo
 	cleanUpMapEntry := true
@@ -258,6 +270,28 @@ func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclave
 	return runningGatewayInfo, nil
 }
 
+// Calls `GetModules` and waits for the gateway to be ready
+func waitForGatewayReady(apiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo) error {
+	backgroundCtx := context.Background()
+	gatewayAddress := fmt.Sprintf("%v:%v", apiContainerHostMachineInfo.IpOnHostMachine, apiContainerHostMachineInfo.GrpcPortOnHostMachine)
+
+	conn, err := grpc.Dial(gatewayAddress, grpc.WithInsecure())
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected to be dial in to API container running at address '%v', instead a non-nil error was returned", gatewayAddress)
+	}
+	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
+
+	ctxWithTimeout, cancelFunc := context.WithTimeout(backgroundCtx, apiContainerGatewayHealthcheckTimeout)
+	defer cancelFunc()
+	getModulesHealthCheckParams := &kurtosis_core_rpc_api_bindings.GetModulesArgs{Ids: nil}
+	_, err = apiContainerClient.GetModules(ctxWithTimeout, getModulesHealthCheckParams, grpc.WaitForReady(true))
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected to be to call `GetModules` and wait for server to be ready, instead a non-nil error was returned")
+	}
+
+	return nil
+}
+
 func (service *EngineGatewayServiceServer) idempotentKillRunningGatewayForEnclaveId(enclaveId string) {
 	service.mutex.Lock()
 	defer service.mutex.Unlock()
@@ -269,6 +303,8 @@ func (service *EngineGatewayServiceServer) idempotentKillRunningGatewayForEnclav
 
 	// Close up the connections
 	runningGateway.closeFunc()
+
+	logrus.Infof("Stopped running Gateway for enclave '%v' on port '%v'", enclaveId, runningGateway.hostMachineInfo.GrpcPortOnHostMachine)
 	// delete the entry for the enclave
 	delete(service.enclaveIdToRunningGatewayMap, enclaveId)
 }

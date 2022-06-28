@@ -6,11 +6,19 @@ script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root_dirpath="$(dirname "${script_dirpath}")"
 
 
+# Ignore these tests if building in kubernetes
+if "$TESTING_KUBERNETES"; then
+  ignore_patterns="/build/testsuite/(network_partition_test|network_soft_partition_test|service_pause_test)"
+else
+  ignore_patterns=""
+fi
+
+
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
 cd "${root_dirpath}"
 rm -rf build
 yarn install
-yarn build
+yarn build --testPathIgnorePatterns=${ignore_patterns}
 yarn test
