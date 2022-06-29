@@ -362,8 +362,8 @@ jobs:
             - run:
                 name: "Verify no kurtosis pods are running after clean and stopping the engine"
                 command: |
-                  if ! [ "$(minikube kubectl -- get pods --all-namespaces --field-selector=status.phase=Running --selector=kurtosistech.com/app-id=kurtosis | tail -n+2 | wc -l)" -eq 0 ]; then
-                    minikube kubectl -- get pods --all-namespaces --field-selector=status.phase=Running --selector=kurtosistech.com/app-id=kurtosis
+                  if ! [ "$(minikube kubectl -- get pods --all-namespaces --selector=kurtosistech.com/app-id=kurtosis -o jsonpath='{.items[?(@.status.phase=="Running")].metadata.name}' | awk '{print NF}')" -eq 0 ]; then
+                    minikube kubectl -- get pods --all-namespaces --selector=kurtosistech.com/app-id=kurtosis -o jsonpath='{.items[?(@.status.phase=="Running")].metadata.name}'
                     false
                   fi
 
