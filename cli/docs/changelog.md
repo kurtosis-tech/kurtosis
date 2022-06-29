@@ -5,6 +5,7 @@
 
 ### Changes
 * Updated CI to test cluster setups
+* Added `build-k8s` scripts to internal_testsuites to build against Kubernetes target
 
 ### Fixes
 * Fixed Consistency issues in API Container Gateway
