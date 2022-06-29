@@ -15,6 +15,7 @@ param-cli-cluster: &param-cli-cluster
     default: "docker"
     enum: [ "docker", "minikube" ]
 
+# Steps to
 steps-prepare-kubernetes-testing: &steps-prepare-kubernetes-testing
   steps:
     - run: |
@@ -29,8 +30,6 @@ steps-prepare-kubernetes-testing: &steps-prepare-kubernetes-testing
     - run:
         command: "${KURTOSIS_BINPATH} gateway"
         background: true
-    - run:
-        command: "export TESTING_KUBERNETES=1"
 
 version: 2.1
 
@@ -131,11 +130,24 @@ jobs:
           <<: *steps-prepare-kubernetes-testing
       - run: "${KURTOSIS_BINPATH} engine start"
 
-      # Run the testsuite, but don't fail the job immediately so that we can upload the enclave dump
-      - run: |
-          if ! ./internal_testsuites/golang/scripts/build.sh; then
-            touch /tmp/testsuite-failed
-          fi
+      # Run the testsuite for kubernetes and docker, but don't fail the job immediately so that we can upload the enclave dump
+      - when:
+          condition:
+            equal: [ "minikube", << parameters.cli-cluster >> ]
+          steps:
+            - run: |
+                if ! ./internal_testsuites/golang/scripts/build-k8s.sh; then
+                  touch /tmp/testsuite-failed
+                fi
+
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster >> ]
+          steps:
+            - run: |
+                if ! ./internal_testsuites/golang/scripts/build.sh; then
+                   touch /tmp/testsuite-failed
+                 fi
 
       # Dump enclave data so we can debug any issues that arise
       - run: |
@@ -178,12 +190,23 @@ jobs:
           <<: *steps-prepare-kubernetes-testing
       - run: "${KURTOSIS_BINPATH} engine start"
 
-      # Run the testsuite, but don't fail the job immediately so that we can upload the enclave dump
-      - run: |
-          if ! ./internal_testsuites/typescript/scripts/build.sh; then
-            touch /tmp/testsuite-failed
-          fi
-
+      # Run the testsuite for either docker or kubernetes, but don't fail the job immediately so that we can upload the enclave dump
+      - when:
+          condition:
+            equal: [ "minikube", << parameters.cli-cluster >> ]
+          steps:
+            - run: |
+               if ! ./internal_testsuites/typescript/scripts/build-k8s.sh; then
+                  touch /tmp/testsuite-failed
+               fi
+      - when:
+          condition:
+           equal: [ "docker", << parameters.cli-cluster >> ]
+          steps:
+           - run: |
+               if ! ./internal_testsuites/typescript/scripts/build.sh; then
+                  touch /tmp/testsuite-failed
+                fi
       # Dump enclave data so we can debug any issues that arise
       - run: |
           cd /tmp

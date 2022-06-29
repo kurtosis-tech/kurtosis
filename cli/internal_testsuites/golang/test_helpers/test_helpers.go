@@ -249,8 +249,12 @@ func createApiConfigFile(datastoreIP string) (string, error) {
 }
 
 func SkipTestInKubernetes(t *testing.T) {
-	isInKubernetes := len(os.Getenv("TESTING_KUBERNETES")) > 1
-	if isInKubernetes {
+	if IsInKubernetes() {
 		t.Skip("Building testsuite Against Kubernetes, Skipping this test as functionality is not expected in Kubernetes")
 	}
+}
+
+// Returns true if the testsuite is being built against Kubernetes
+func IsInKubernetes() bool {
+	return len(os.Getenv("TESTING_KUBERNETES")) > 0
 }
