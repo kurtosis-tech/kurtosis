@@ -1,5 +1,8 @@
+##############
+# Yaml Anchors
+##############
 # Don't run cli jobs on develop or master branches
-filters-ignore-develop-master: &filters-ignore-develop-master
+filters_ignore_develop_master: &filters_ignore_develop_master
   filters:
     branches:
       ignore:
@@ -7,16 +10,16 @@ filters-ignore-develop-master: &filters-ignore-develop-master
         - master
 
 
-# Anchor for cli cluster param used to run test suites against docker/kubernetes tests
-param-cli-cluster: &param-cli-cluster
+# cli cluster param used to run test suites against docker/kubernetes tests
+param_cli_cluster: &param_cli_cluster
   cli-cluster:
     description: "Kurtosis cluster backend for the cli to use. Must be one of 'docker', 'minikube'. Default is 'docker'"
     type: enum
     default: "docker"
     enum: [ "docker", "minikube" ]
 
-# Steps to
-steps-prepare-kubernetes-testing: &steps-prepare-kubernetes-testing
+# Steps to prepare a job for Kubernetes testing
+steps_prepare_testing_k8s: &steps_prepare_testing_k8s
   steps:
     - run: |
         curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb
@@ -31,6 +34,40 @@ steps-prepare-kubernetes-testing: &steps-prepare-kubernetes-testing
         command: "${KURTOSIS_BINPATH} gateway"
         background: true
 
+# Run script to dump kurtosis enclaves when running against Kubernetes
+when_k8s_dump_kurtosis_enclave: &when_k8s_dump_kurtosis_enclave
+  when:
+    condition:
+      equal: [ "minikube", << parameters.cli-cluster >> ]
+    steps:
+      - run: |
+            cd /tmp
+            output_dirname="enclave-dumps"
+            mkdir "${output_dirname}"
+            for enclave_id in $("${KURTOSIS_BINPATH}" enclave ls | tail -n+3 | awk '{print $1}'); do
+              "${KURTOSIS_BINPATH}" enclave dump "${enclave_id}" "${output_dirname}/${enclave_id}"
+            done
+            zip -r "${output_dirname}.zip" "${output_dirname}"
+
+# Run script to dump kurtosis enclaves from docker
+when_docker_dump_kurtosis_enclave: &when_docker_dump_kurtosis_enclave
+  when:
+    condition:
+      equal: [ "docker", << parameters.cli-cluster >> ]
+    steps:
+      - run: |
+          cd /tmp
+          output_dirname="enclave-dumps"
+          mkdir "${output_dirname}"
+          for enclave_id in $("${KURTOSIS_BINPATH}" enclave ls | tail -n+2 | awk '{print $1}'); do
+            "${KURTOSIS_BINPATH}" enclave dump "${enclave_id}" "${output_dirname}/${enclave_id}"
+          done
+          zip -r "${output_dirname}.zip" "${output_dirname}"
+            
+        
+##############
+# CircleCI
+##############
 version: 2.1
 
 orbs:
@@ -112,7 +149,7 @@ jobs:
   build_golang_testsuite:
     executor: ubuntu_vm
     parameters:
-      <<: *param-cli-cluster
+      <<: *param_cli_cluster
     steps:
       - checkout
       - attach_workspace:
@@ -127,7 +164,7 @@ jobs:
       - when:
           condition:
             equal: [ "minikube", << parameters.cli-cluster >> ]
-          <<: *steps-prepare-kubernetes-testing
+          <<: *steps_prepare_testing_k8s
       - run: "${KURTOSIS_BINPATH} engine start"
 
       # Run the testsuite for kubernetes and docker, but don't fail the job immediately so that we can upload the enclave dump
@@ -150,14 +187,8 @@ jobs:
                  fi
 
       # Dump enclave data so we can debug any issues that arise
-      - run: |
-          cd /tmp
-          output_dirname="enclave-dumps"
-          mkdir "${output_dirname}"
-          for enclave_id in $("${KURTOSIS_BINPATH}" enclave ls | tail -n+2 | awk '{print $1}'); do
-            "${KURTOSIS_BINPATH}" enclave dump "${enclave_id}" "${output_dirname}/${enclave_id}"
-          done
-          zip -r "${output_dirname}.zip" "${output_dirname}"
+      - <<: *when_k8s_dump_kurtosis_enclave
+      - <<: *when_docker_dump_kurtosis_enclave
       - store_artifacts:
           path: /tmp/enclave-dumps.zip
           destination: enclave-dumps.zip
@@ -168,7 +199,7 @@ jobs:
   build_typescript_testsuite:
     executor: ubuntu_vm
     parameters:
-      <<: *param-cli-cluster
+      <<: *param_cli_cluster
     steps:
       - checkout
       - attach_workspace:
@@ -187,7 +218,7 @@ jobs:
       - when:
           condition:
             equal: [ "minikube", << parameters.cli-cluster >> ]
-          <<: *steps-prepare-kubernetes-testing
+          <<: *steps_prepare_testing_k8s
       - run: "${KURTOSIS_BINPATH} engine start"
 
       # Run the testsuite for either docker or kubernetes, but don't fail the job immediately so that we can upload the enclave dump
@@ -208,14 +239,8 @@ jobs:
                   touch /tmp/testsuite-failed
                 fi
       # Dump enclave data so we can debug any issues that arise
-      - run: |
-          cd /tmp
-          output_dirname="enclave-dumps"
-          mkdir "${output_dirname}"
-          for enclave_id in $("${KURTOSIS_BINPATH}" enclave ls | tail -n+2 | awk '{print $1}'); do
-            "${KURTOSIS_BINPATH}" enclave dump "${enclave_id}" "${output_dirname}/${enclave_id}"
-          done
-          zip -r "${output_dirname}.zip" "${output_dirname}"
+      - <<: *when_k8s_dump_kurtosis_enclave
+      - <<: *when_docker_dump_kurtosis_enclave
       - store_artifacts:
           path: /tmp/enclave-dumps.zip
           destination: enclave-dumps.zip
@@ -291,7 +316,7 @@ jobs:
   test_basic_cli_functionality:
     executor: ubuntu_vm
     parameters:
-      <<: *param-cli-cluster
+      <<: *param_cli_cluster
     steps:
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
@@ -311,7 +336,7 @@ jobs:
       - when:
           condition:
             equal: [ "minikube", << parameters.cli-cluster >> ]
-          <<: *steps-prepare-kubernetes-testing
+          <<: *steps_prepare_testing_k8s
       - run: "${KURTOSIS_BINPATH} engine start"
       # Basic service add & rm
       - run: "${KURTOSIS_BINPATH} enclave new --id test-enclave"
@@ -328,6 +353,19 @@ jobs:
       - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"   # Ensure we can still inspect stopped enclaves
       - run: "${KURTOSIS_BINPATH} clean -a"
       - run: "${KURTOSIS_BINPATH} engine stop"
+
+      # Ensure Kubernetes resources clean up successfully
+      - when:
+          condition:
+            equal: [ "minikube", << parameters.cli-cluster >> ]
+          steps:
+            - run:
+                name: "Verify no kurtosis pods are running after clean and stopping the engine"
+                command: |
+                  if ! [ "$(minikube kubectl -- get pods --all-namespaces --field-selector=status.phase=Running --selector=kurtosistech.com/app-id=kurtosis | tail -n+2 | wc -l)" -eq 0 ]; then
+                    minikube kubectl -- get pods --all-namespaces --field-selector=status.phase=Running --selector=kurtosistech.com/app-id=kurtosis
+                    false
+                  fi
 
       # Ensure Docker resources cleaned up successfully
       - when:
@@ -362,7 +400,6 @@ jobs:
                   fi  
 
 
-      # Ensure Kubernetes resoureces clean up successfully
 
   test_config_init_edge_cases:
     executor: ubuntu_vm
@@ -433,11 +470,11 @@ workflows:
       # -- Build jobs ------------------------------------------
       - kurtosis-docs-checker/check-docs:
           markdown-link-check-config-json: "{}"
-          <<: *filters-ignore-develop-master
+          <<: *filters_ignore_develop_master
       - build_cli:
           context:
             - github-user
-          <<: *filters-ignore-develop-master
+          <<: *filters_ignore_develop_master
       # -- test Basic CLI Functionality
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Docker"
@@ -446,7 +483,7 @@ workflows:
             - docker-user
           requires:
             - build_cli
-          <<: *filters-ignore-develop-master
+          <<: *filters_ignore_develop_master
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Kubernetes"
           cli-cluster: "minikube"
@@ -454,7 +491,7 @@ workflows:
             - docker-user
           requires:
             - build_cli
-          <<: *filters-ignore-develop-master
+          <<: *filters_ignore_develop_master
       # -- Build golang testsuite
       - build_golang_testsuite:
           name: "Build golang testsuite against Docker"
@@ -463,7 +500,7 @@ workflows:
             - docker-user
           requires:
             - build_cli
-          <<: *filters-ignore-develop-master
+          <<: *filters_ignore_develop_master
       - build_golang_testsuite:
           name: "Build golang testsuite against Kubernetes"
           cli-cluster: "minikube"
@@ -471,7 +508,7 @@ workflows:
             - docker-user
           requires:
             - build_cli
-          <<: *filters-ignore-develop-master
+          <<: *filters_ignore_develop_master
       # -- Build typescript testsuite
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Docker"
@@ -480,7 +517,7 @@ workflows:
             - docker-user
           requires:
             - build_cli
-          <<: *filters-ignore-develop-master
+          <<: *filters_ignore_develop_master
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Kubernetes"
           cli-cluster: "minikube"
@@ -488,18 +525,18 @@ workflows:
             - docker-user
           requires:
             - build_cli
-          <<: *filters-ignore-develop-master
+          <<: *filters_ignore_develop_master
 
       - test_old_enclave_continuity:
           context:
             - docker-user
           requires:
             - build_cli
-          <<: *filters-ignore-develop-master
+          <<: *filters_ignore_develop_master
       - test_config_init_edge_cases:
           requires:
             - build_cli
-          <<: *filters-ignore-develop-master
+          <<: *filters_ignore_develop_master
           # -- End build jobs ---------------------------------------
 
           # -- Artifact-publishing jobs --------------------------------

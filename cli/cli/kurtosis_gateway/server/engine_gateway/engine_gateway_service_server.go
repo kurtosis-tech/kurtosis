@@ -232,7 +232,8 @@ func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclave
 		// Send message to stop the gateway server
 		gatewayStopChannel <- nil
 	}
-	// Need to block on gateway being Reachable
+	// TODO: Modify MinimalGrpcServer.RunUntilStopped to take in a `ReadyChannel` to communicate when a GRPC server is ready to serve
+	// Currently, we have to make a health check request to verify that the API container gateway is ready
 	go func() {
 		if err := api_container_gateway.RunApiContainerGatewayUntilStopped(service.connectionProvider, enclaveInfo, gatewayPortSpec.GetNumber(), gatewayStopChannel); err != nil {
 			logrus.Warnf("Expected to run api container gateway until stopped, but the server exited prematurely with a non-nil error: '%v'", err)
@@ -244,18 +245,15 @@ func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclave
 			gatewayStopFunc()
 		}
 	}()
-
-
+	// Need to wait for the GRPC server spun up in the goFunc to be ready
 	if err := waitForGatewayReady(apiContainerHostMachineInfo); err != nil {
 		logrus.Warnf("Expected Gateway to be reachable, instead an error was returned:\n%v", err)
 	}
-
 
 	runningGatewayInfo := &runningApiContainerGateway{
 		closeFunc:       gatewayStopFunc,
 		hostMachineInfo: apiContainerHostMachineInfo,
 	}
-	logrus.Infof("Started running gateway for enclave '%v' on port '%v'", enclaveId, apiContainerHostMachineInfo.GrpcPortOnHostMachine)
 	// Store information about our running gateway
 	service.enclaveIdToRunningGatewayMap[enclaveId] = runningGatewayInfo
 	cleanUpMapEntry := true
@@ -281,6 +279,9 @@ func waitForGatewayReady(apiContainerHostMachineInfo *kurtosis_engine_rpc_api_bi
 	}
 	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
 
+	// The GRPC Server for our `API Container Gateway` is spun up in a gofunc
+	// We call `GetModules` with `WaitForReady` to wait for the server to finish setting up
+	// Modifying
 	ctxWithTimeout, cancelFunc := context.WithTimeout(backgroundCtx, apiContainerGatewayHealthcheckTimeout)
 	defer cancelFunc()
 	getModulesHealthCheckParams := &kurtosis_core_rpc_api_bindings.GetModulesArgs{Ids: nil}
