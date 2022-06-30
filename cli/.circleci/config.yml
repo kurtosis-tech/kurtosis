@@ -220,6 +220,7 @@ jobs:
           condition:
             equal: [ "minikube", << parameters.cli-cluster >> ]
           <<: *steps_prepare_testing_k8s
+      - run: "${KURTOSIS_BINPATH} engine start"
 
       # Run the testsuite for either docker or kubernetes, but don't fail the job immediately so that we can upload the enclave dump
       - when:
@@ -337,7 +338,6 @@ jobs:
           condition:
             equal: [ "minikube", << parameters.cli-cluster >> ]
           <<: *steps_prepare_testing_k8s
-      - run: "${KURTOSIS_BINPATH} engine start"
       # Basic service add & rm
       - run: "${KURTOSIS_BINPATH} enclave new --id test-enclave"
       - run: "${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=80"
