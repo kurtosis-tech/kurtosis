@@ -30,6 +30,7 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
         command: |
           minikube status
     - run: "${KURTOSIS_BINPATH} cluster set minikube"
+    - run: "${KURTOSIS_BINPATH} engine start"
     - run:
         command: "${KURTOSIS_BINPATH} gateway"
         background: true
@@ -219,7 +220,6 @@ jobs:
           condition:
             equal: [ "minikube", << parameters.cli-cluster >> ]
           <<: *steps_prepare_testing_k8s
-      - run: "${KURTOSIS_BINPATH} engine start"
 
       # Run the testsuite for either docker or kubernetes, but don't fail the job immediately so that we can upload the enclave dump
       - when:
