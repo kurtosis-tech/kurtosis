@@ -34,7 +34,7 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
         command: "${KURTOSIS_BINPATH} gateway"
         background: true
 
-# Run script to dump kurtosis enclaves when running against Kubernetes
+# Run steps to dump kurtosis enclaves from Kubernetes
 when_k8s_dump_kurtosis_enclave: &when_k8s_dump_kurtosis_enclave
   when:
     condition:
@@ -49,7 +49,7 @@ when_k8s_dump_kurtosis_enclave: &when_k8s_dump_kurtosis_enclave
             done
             zip -r "${output_dirname}.zip" "${output_dirname}"
 
-# Run script to dump kurtosis enclaves from docker
+# Run steps to dump kurtosis enclaves from docker
 when_docker_dump_kurtosis_enclave: &when_docker_dump_kurtosis_enclave
   when:
     condition:
@@ -362,8 +362,8 @@ jobs:
             - run:
                 name: "Verify no kurtosis pods are running after clean and stopping the engine"
                 command: |
-                  if ! [ "$(minikube kubectl -- get pods --all-namespaces --selector=kurtosistech.com/app-id=kurtosis -o jsonpath='{.items[?(@.status.phase=="Running")].metadata.name}' | awk '{print NF}')" -eq 0 ]; then
-                    minikube kubectl -- get pods --all-namespaces --selector=kurtosistech.com/app-id=kurtosis -o jsonpath='{.items[?(@.status.phase=="Running")].metadata.name}'
+                  if ! [ $(minikube kubectl -- get pods --all-namespaces --selector=kurtosistech.com/app-id=kurtosis |  grep -f <(printf "%s\n" "Running") | wc -l) -eq 0 ]; then
+                    minikube kubectl -- get pods --all-namespaces --selector=kurtosistech.com/app-id=kurtosis
                     false
                   fi
 
