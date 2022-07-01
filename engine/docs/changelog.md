@@ -1,5 +1,7 @@
 # TBD
 
+* Migrated repo to use ineternal cli tool `kudet` to retrieve image tags as opposed to script
+
 # 1.27.1
 ### Changes
 * Upgraded to core 1.55.2
