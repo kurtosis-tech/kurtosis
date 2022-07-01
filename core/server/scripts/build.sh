@@ -47,8 +47,7 @@ fi
 echo "Successfully built server code"
 
 # Generate Docker image tag
-get_docker_image_tag_script_filepath="${script_dirpath}/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}"
-if ! docker_tag="$(bash "${get_docker_image_tag_script_filepath}")"; then
+if ! docker_tag="$(bash "${GET_DOCKER_IMAGE_TAG_CMD}")"; then
     echo "Error: Couldn't get the Docker image tag" >&2
     exit 1
 fi
