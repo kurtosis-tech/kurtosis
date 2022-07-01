@@ -157,14 +157,14 @@ jobs:
       - run: |
           source server/scripts/_constants.env
           version="$(${GET_DOCKER_IMAGE_TAG_CMD})"
-#          cd /tmp/<< pipeline.parameters.source-repo-name >>
-#          git config --global user.name "${KURTOSISBOT_GITHUB_USERNAME}"
-#          git config --global user.email "${KURTOSISBOT_GITHUB_EMAIL}"
-#          git add .
-#          git commit -m "Committing ${version} files"
-#          git push origin master
-#          git tag "${version}"
-#          git push --tags
+          cd /tmp/<< pipeline.parameters.source-repo-name >>
+          git config --global user.name "${KURTOSISBOT_GITHUB_USERNAME}"
+          git config --global user.email "${KURTOSISBOT_GITHUB_EMAIL}"
+          git add .
+          git commit -m "Committing ${version} files"
+          git push origin master
+          git tag "${version}"
+          git push --tags
 
   publish_api_typescript:
     docker:
@@ -204,11 +204,11 @@ jobs:
           source server/scripts/_constants.env
           version_to_publish="$(${GET_DOCKER_IMAGE_TAG_CMD})"
           echo "Version that will be published: ${version_to_publish}"
-#          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
-#          image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
-#          docker tag "${image_name_with_version}" "${image_name_no_version}"
-#          docker push "${image_name_with_version}"
-#          docker push "${image_name_no_version}"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
+          docker tag "${image_name_with_version}" "${image_name_no_version}"
+          docker push "${image_name_with_version}"
+          docker push "${image_name_no_version}"
 
 workflows:
   build:
@@ -269,6 +269,8 @@ workflows:
           context:
             - github-user
           filters:
+            branches:
+              ignore: /.*/
             tags:
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
       - publish_api_typescript:
@@ -284,6 +286,8 @@ workflows:
             - github-user
             - docker-user
           filters:
+            branches:
+              ignore: /.*/
             tags:
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
       # -- End artifact-publishing jobs ----------------------------
