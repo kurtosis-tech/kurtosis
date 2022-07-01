@@ -146,6 +146,11 @@ jobs:
     docker:
       - image: cimg/base:2021.10
     steps:
+      # Install Kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
       - checkout
       - run: |
           cd /tmp/
@@ -161,11 +166,6 @@ jobs:
           for pattern in "*.go" "go.mod" "*.proto"; do
             sed -i 's,github.com/kurtosis-tech/kurtosis-core,github.com/kurtosis-tech/<< pipeline.parameters.source-repo-name >>,g' $(find . -type f -name "${pattern}")
           done
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
       # Push the code up to the remote
       - run: |
           source server/scripts/_constants.env
@@ -193,6 +193,11 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
+      # Install Kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
       - checkout
 
       - setup_remote_docker:
@@ -201,11 +206,6 @@ jobs:
 
       # Doesn't actually use any Kurtosis private repos so doesn't need the Go-private-repo Git config magic
       - run: files_artifacts_expander/scripts/build.sh
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
       - run: |
           set -euo pipefail
           source files_artifacts_expander/scripts/_constants.env
@@ -221,6 +221,12 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
+      # Install Kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
       - checkout
 
       - setup_remote_docker:
@@ -233,11 +239,6 @@ jobs:
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           server/scripts/build.sh
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
       - run: |
           set -euo pipefail
           source server/scripts/_constants.env
@@ -323,6 +324,8 @@ workflows:
           context:
             - npmjs-user
           filters:
+            branches:
+              ignore: /.*/
             tags:
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
       - publish_files_artifacts_expander_image:
