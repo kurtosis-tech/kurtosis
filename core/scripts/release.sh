@@ -5,20 +5,18 @@ set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root_dirpath="$(dirname "${script_dirpath}")"
 
-
-
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
-RELEASE_SCRIPT_FILENAME="release-repo.sh"     # NOTE: Must be on the path; comes from devtools repo
-
-UPDATE_OWN_VERSION_CONSTS_SCRIPT_FILENAME="update-own-version-constants.sh"
-UPDATE_PACKAGE_VERSION_SCRIPT_FILENAME="update-package-versions.sh"
+RELEASE_CMD_NAME="kudet release"     # NOTE: kudet should be installed by every Kurtosis dev
 
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
-if ! bash "${RELEASE_SCRIPT_FILENAME}" "${root_dirpath}" "${script_dirpath}/${UPDATE_OWN_VERSION_CONSTS_SCRIPT_FILENAME}" "${script_dirpath}/${UPDATE_PACKAGE_VERSION_SCRIPT_FILENAME}"; then
+if ! cd "${root_dirpath}"; then
+  echo "Couldn't cd to the git root dirpath '${root_dirpath}'" >&2
+  exit 1
+if ! $(${RELEASE_CMD_NAME}); then
     echo "Error: Couldn't cut the release" >&2
     exit 1
 fi
