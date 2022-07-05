@@ -69,6 +69,12 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
+      # Install Kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
       - checkout
 
       # If the only changes are to the docs, don't run the slow (and expensive) code checks
@@ -109,6 +115,12 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
+      # Install Kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
       - checkout
 
       # If the only changes are to the docs, don't run the slow (and expensive) code checks
@@ -146,6 +158,11 @@ jobs:
     docker:
       - image: cimg/base:2021.10
     steps:
+      # Install Kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
       - checkout
       - run: |
           cd /tmp/
@@ -164,7 +181,7 @@ jobs:
       # Push the code up to the remote
       - run: |
           source server/scripts/_constants.env
-          version="$(bash "server/scripts/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}")"
+          version="$(kudet get-docker-tag)"
           cd /tmp/<< pipeline.parameters.source-repo-name >>
           git config --global user.name "${KURTOSISBOT_GITHUB_USERNAME}"
           git config --global user.email "${KURTOSISBOT_GITHUB_EMAIL}"
@@ -188,6 +205,11 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
+      # Install Kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
       - checkout
 
       - setup_remote_docker:
@@ -196,11 +218,10 @@ jobs:
 
       # Doesn't actually use any Kurtosis private repos so doesn't need the Go-private-repo Git config magic
       - run: files_artifacts_expander/scripts/build.sh
-
       - run: |
           set -euo pipefail
           source files_artifacts_expander/scripts/_constants.env
-          version_to_publish="$(bash "files_artifacts_expander/scripts/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}")"
+          version_to_publish="$(kudet get-docker-tag)"
           echo "Version that will be published: ${version_to_publish}"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
@@ -212,6 +233,12 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
+      # Install Kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
       - checkout
 
       - setup_remote_docker:
@@ -224,11 +251,10 @@ jobs:
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           server/scripts/build.sh
-
       - run: |
           set -euo pipefail
           source server/scripts/_constants.env
-          version_to_publish="$(bash "server/scripts/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}")"
+          version_to_publish="$(kudet get-docker-tag)"
           echo "Version that will be published: ${version_to_publish}"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
