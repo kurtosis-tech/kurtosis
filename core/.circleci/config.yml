@@ -181,7 +181,7 @@ jobs:
       # Push the code up to the remote
       - run: |
           source server/scripts/_constants.env
-          version="$(${GET_DOCKER_IMAGE_TAG_CMD})"
+          version="$(kudet get-docker-tag)"
           cd /tmp/<< pipeline.parameters.source-repo-name >>
           git config --global user.name "${KURTOSISBOT_GITHUB_USERNAME}"
           git config --global user.email "${KURTOSISBOT_GITHUB_EMAIL}"
@@ -221,7 +221,7 @@ jobs:
       - run: |
           set -euo pipefail
           source files_artifacts_expander/scripts/_constants.env
-          version_to_publish="$(${GET_DOCKER_IMAGE_TAG_CMD})"
+          version_to_publish="$(kudet get-docker-tag)"
           echo "Version that will be published: ${version_to_publish}"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
@@ -254,7 +254,7 @@ jobs:
       - run: |
           set -euo pipefail
           source server/scripts/_constants.env
-          version_to_publish="$(${GET_DOCKER_IMAGE_TAG_CMD})"
+          version_to_publish="$(kudet get-docker-tag)"
           echo "Version that will be published: ${version_to_publish}"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
