@@ -6,7 +6,7 @@
 set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 expander_root_dirpath="$(dirname "${script_dirpath}")"
-git_repo_dirpath="$(dirname "${server_root_dirpath}")"
+git_repo_dirpath="$(dirname "${expander_root_dirpath}")"
 
 # ==================================================================================================
 #                                             Constants
