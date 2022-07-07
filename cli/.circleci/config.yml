@@ -361,8 +361,9 @@ jobs:
             - run:
                 name: "Verify no kurtosis pods are running after clean and stopping the engine"
                 command: |
-                  if ! [ $(minikube kubectl -- get pods --all-namespaces --selector=kurtosistech.com/app-id=kurtosis |  grep -f <(printf "%s\n" "Running") | wc -l) -eq 0 ]; then
-                    minikube kubectl -- get pods --all-namespaces --selector=kurtosistech.com/app-id=kurtosis
+                  kurtosis_pods=$(minikube kubectl -- get pods --all-namespaces --selector=kurtosistech.com/app-id=kurtosis)
+                  if ! [ $(echo "${kurtosis_pods}" |  grep -f <(printf "%s\n" "Running") | wc -l) -eq 0 ]; then
+                    echo "${kurtosis_pods}"
                     false
                   fi
 
@@ -536,16 +537,16 @@ workflows:
           requires:
             - build_cli
           <<: *filters_ignore_develop_master
-          # -- End build jobs ---------------------------------------
+      # -- End build jobs ---------------------------------------
 
-          # -- Artifact-publishing jobs --------------------------------
+      # -- Artifact-publishing jobs --------------------------------
       - push_cli_artifacts:
           context:
             - github-user
             - gemfury-publisher
           filters:
-                branches:
-                  ignore: /.*/
-                tags:
-                  only: /^[0-9]+\.[0-9]+\.[0-9]+$/
-        # -- End artifact-publishing jobs ----------------------------
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      # -- End artifact-publishing jobs ----------------------------

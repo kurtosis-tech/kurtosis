@@ -22,6 +22,8 @@ const (
 	// API Container gateways spun up by this engine gateway run on localhost
 	localHostIpStr = "127.0.0.1"
 
+	waitForGatewayGrpcReady = true
+
 	apiContainerGatewayHealthcheckTimeout = 5 * time.Second
 )
 
@@ -247,7 +249,7 @@ func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclave
 	}()
 	// Need to wait for the GRPC server spun up in the goFunc to be ready
 	if err := waitForGatewayReady(apiContainerHostMachineInfo); err != nil {
-		logrus.Warnf("Expected Gateway to be reachable, instead an error was returned:\n%v", err)
+		logrus.Errorf("Expected Gateway to be reachable, instead an error was returned:\n%v", err)
 	}
 
 	runningGatewayInfo := &runningApiContainerGateway{
@@ -285,7 +287,7 @@ func waitForGatewayReady(apiContainerHostMachineInfo *kurtosis_engine_rpc_api_bi
 	ctxWithTimeout, cancelFunc := context.WithTimeout(backgroundCtx, apiContainerGatewayHealthcheckTimeout)
 	defer cancelFunc()
 	getModulesHealthCheckParams := &kurtosis_core_rpc_api_bindings.GetModulesArgs{Ids: nil}
-	_, err = apiContainerClient.GetModules(ctxWithTimeout, getModulesHealthCheckParams, grpc.WaitForReady(true))
+	_, err = apiContainerClient.GetModules(ctxWithTimeout, getModulesHealthCheckParams, grpc.WaitForReady(waitForGatewayGrpcReady))
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected to be to call `GetModules` and wait for server to be ready, instead a non-nil error was returned")
 	}

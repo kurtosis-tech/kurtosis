@@ -24,17 +24,17 @@ func CreateEnclave(t *testing.T, ctx context.Context, testName string, isPartiti
 		"%v.%v.%v",
 		testsuiteNameEnclaveIDFragment,
 		testName,
-		time.Now().UnixNano() / millisInNanos,
+		time.Now().UnixNano()/millisInNanos,
 	))
 	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveId, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating enclave '%v'", enclaveId)
 	stopEnclaveFunc := func() {
-		/*
+
 		if err := kurtosisCtx.StopEnclave(ctx, enclaveId); err != nil {
 			logrus.Errorf("An error occurred stopping enclave '%v' that we created for this test:\n%v", enclaveId, err)
 			logrus.Errorf("ACTION REQUIRED: You'll need to stop enclave '%v' manually!!!!", enclaveId)
 		}
-		 */
+
 	}
 	destroyEnclaveFunc := func() error {
 		if err := kurtosisCtx.DestroyEnclave(ctx, enclaveId); err != nil {

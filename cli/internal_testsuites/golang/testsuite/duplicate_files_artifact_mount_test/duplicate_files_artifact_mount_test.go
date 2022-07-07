@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
 	"github.com/stretchr/testify/require"
+	"strings"
 	"testing"
 )
 
@@ -53,30 +54,13 @@ func TestStoreWebFiles(t *testing.T) {
 		serviceId,
 		filesArtifactMountpoints,
 	)
+	isExpectedErrorMsg := strings.Contains(err.Error(), duplicateMountpointKubernetesErrMsgSentence) || strings.Contains(err.Error(), duplicateMountpointDockerDaemonErrMsgSentence)
 
-	if test_helpers.IsInKubernetes() {
-		require.Contains(
-			t,
-			err.Error(),
-			duplicateMountpointKubernetesErrMsgSentence,
-			"Adding service '%v' has failed, but the error is not the duplicated-files-artifact-mountpoints error "+
-				"that we expected, this is throwing this error instead:\n%v",
-			serviceId,
-			err.Error(),
-		)
-
-	} else {
-		require.Contains(
-			t,
-			err.Error(),
-			duplicateMountpointDockerDaemonErrMsgSentence,
-			"Adding service '%v' has failed, but the error is not the duplicated-files-artifact-mountpoints error "+
-				"that we expected, this is throwing this error instead:\n%v",
-			serviceId,
-			err.Error(),
-		)
-
-	}
+	require.True(t, isExpectedErrorMsg, "Adding service '%v' has failed, but the error is not the duplicated-files-artifact-mountpoints error "+
+		"that we expected, this is throwing this error instead:\n%v",
+		serviceId,
+		err.Error(),
+	)
 }
 
 // ====================================================================================================

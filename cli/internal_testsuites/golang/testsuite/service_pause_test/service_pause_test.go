@@ -14,17 +14,17 @@ import (
 )
 
 const (
-	testName                          = "pause-unpause"
-	isPartitioningEnabled             = false
-	pauseUnpauseTestImageName         = "alpine:3.12.4"
-	testServiceId                     = "test"
+	testName                       = "pause-unpause"
+	isPartitioningEnabled          = false
+	pauseUnpauseTestImageName      = "alpine:3.12.4"
+	testServiceId                  = "test"
 	testLogFilepath                = "/time.log"
 	delayBetweenCommandsInSeconds  = 4
 	minimumGapRequirementInSeconds = 3
 )
 
 func TestPauseUnpause(t *testing.T) {
-	// Dont run this test in Kubernetes
+	// We don't run this test in Kubernetes because, as of 2022-07-07, Kubernetes doesn't support container pause/unpause
 	test_helpers.SkipTestInKubernetes(t)
 
 	ctx := context.Background()
