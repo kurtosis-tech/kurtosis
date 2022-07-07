@@ -11,11 +11,10 @@ filters_ignore_develop_master: &filters_ignore_develop_master
 
 
 # cli cluster param used to run test suites against docker/kubernetes tests
-param_cli_cluster: &param_cli_cluster
-  cli-cluster:
-    description: "Kurtosis cluster backend for the cli to use. Must be one of 'docker', 'minikube'. Default is 'docker'"
+param_cli_cluster_backend: &param_cli_cluster_backend
+  cli-cluster-backend:
+    description: "Kurtosis cluster backend for the cli to use. Must be one of 'docker', 'minikube'"
     type: enum
-    default: "docker"
     enum: [ "docker", "minikube" ]
 
 # Steps to prepare a job for Kubernetes testing
@@ -39,7 +38,7 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
 when_k8s_dump_kurtosis_enclave: &when_k8s_dump_kurtosis_enclave
   when:
     condition:
-      equal: [ "minikube", << parameters.cli-cluster >> ]
+      equal: [ "minikube", << parameters.cli-cluster-backend >> ]
     steps:
       - run: |
             cd /tmp
@@ -54,7 +53,7 @@ when_k8s_dump_kurtosis_enclave: &when_k8s_dump_kurtosis_enclave
 when_docker_dump_kurtosis_enclave: &when_docker_dump_kurtosis_enclave
   when:
     condition:
-      equal: [ "docker", << parameters.cli-cluster >> ]
+      equal: [ "docker", << parameters.cli-cluster-backend >> ]
     steps:
       - run: |
           cd /tmp
@@ -150,7 +149,7 @@ jobs:
   build_golang_testsuite:
     executor: ubuntu_vm
     parameters:
-      <<: *param_cli_cluster
+      <<: *param_cli_cluster_backend
     steps:
       - checkout
       - attach_workspace:
@@ -164,23 +163,23 @@ jobs:
       - run: "${KURTOSIS_BINPATH} config init dont-send-metrics"
       - when:
           condition:
-            equal: [ "minikube", << parameters.cli-cluster >> ]
+            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_k8s
       - run: "${KURTOSIS_BINPATH} engine start"
 
       # Run the testsuite for kubernetes and docker, but don't fail the job immediately so that we can upload the enclave dump
       - when:
           condition:
-            equal: [ "minikube", << parameters.cli-cluster >> ]
+            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                if ! ./internal_testsuites/golang/scripts/build-k8s.sh; then
+                if ! ./internal_testsuites/golang/scripts/build.sh minikube; then
                   touch /tmp/testsuite-failed
                 fi
 
       - when:
           condition:
-            equal: [ "docker", << parameters.cli-cluster >> ]
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
                 if ! ./internal_testsuites/golang/scripts/build.sh; then
@@ -200,7 +199,7 @@ jobs:
   build_typescript_testsuite:
     executor: ubuntu_vm
     parameters:
-      <<: *param_cli_cluster
+      <<: *param_cli_cluster_backend
     steps:
       - checkout
       - attach_workspace:
@@ -218,22 +217,22 @@ jobs:
       - run: "${KURTOSIS_BINPATH} config init dont-send-metrics"
       - when:
           condition:
-            equal: [ "minikube", << parameters.cli-cluster >> ]
+            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_k8s
       - run: "${KURTOSIS_BINPATH} engine start"
 
       # Run the testsuite for either docker or kubernetes, but don't fail the job immediately so that we can upload the enclave dump
       - when:
           condition:
-            equal: [ "minikube", << parameters.cli-cluster >> ]
+            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-               if ! ./internal_testsuites/typescript/scripts/build-k8s.sh; then
+               if ! ./internal_testsuites/typescript/scripts/build.sh minikube; then
                   touch /tmp/testsuite-failed
                fi
       - when:
           condition:
-           equal: [ "docker", << parameters.cli-cluster >> ]
+           equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
            - run: |
                if ! ./internal_testsuites/typescript/scripts/build.sh; then
@@ -317,7 +316,7 @@ jobs:
   test_basic_cli_functionality:
     executor: ubuntu_vm
     parameters:
-      <<: *param_cli_cluster
+      <<: *param_cli_cluster_backend
     steps:
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
@@ -336,7 +335,7 @@ jobs:
       # When backend is 'minikube' install minikube and start a Kurtosis gateway
       - when:
           condition:
-            equal: [ "minikube", << parameters.cli-cluster >> ]
+            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_k8s
       # Basic service add & rm
       - run: "${KURTOSIS_BINPATH} enclave new --id test-enclave"
@@ -357,7 +356,7 @@ jobs:
       # Ensure Kubernetes resources clean up successfully
       - when:
           condition:
-            equal: [ "minikube", << parameters.cli-cluster >> ]
+            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
           steps:
             - run:
                 name: "Verify no kurtosis pods are running after clean and stopping the engine"
@@ -370,7 +369,7 @@ jobs:
       # Ensure Docker resources cleaned up successfully
       - when:
           condition:
-            equal: [ "docker", << parameters.cli-cluster >> ]
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
             - run:
                 name: "Verify only the engine container remains after the clean"
@@ -478,7 +477,7 @@ workflows:
       # -- test Basic CLI Functionality
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Docker"
-          cli-cluster: "docker"
+          cli-cluster-backend: "docker"
           context:
             - docker-user
           requires:
@@ -486,7 +485,7 @@ workflows:
           <<: *filters_ignore_develop_master
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Kubernetes"
-          cli-cluster: "minikube"
+          cli-cluster-backend: "minikube"
           context:
             - docker-user
           requires:
@@ -495,7 +494,7 @@ workflows:
       # -- Build golang testsuite
       - build_golang_testsuite:
           name: "Build golang testsuite against Docker"
-          cli-cluster: "docker"
+          cli-cluster-backend: "docker"
           context:
             - docker-user
           requires:
@@ -503,7 +502,7 @@ workflows:
           <<: *filters_ignore_develop_master
       - build_golang_testsuite:
           name: "Build golang testsuite against Kubernetes"
-          cli-cluster: "minikube"
+          cli-cluster-backend: "minikube"
           context:
             - docker-user
           requires:
@@ -512,7 +511,7 @@ workflows:
       # -- Build typescript testsuite
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Docker"
-          cli-cluster: "docker"
+          cli-cluster-backend: "docker"
           context:
             - docker-user
           requires:
@@ -520,7 +519,7 @@ workflows:
           <<: *filters_ignore_develop_master
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Kubernetes"
-          cli-cluster: "minikube"
+          cli-cluster-backend: "minikube"
           context:
             - docker-user
           requires:

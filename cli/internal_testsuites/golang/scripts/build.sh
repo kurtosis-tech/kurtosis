@@ -13,10 +13,38 @@ lang_root_dirpath="$(dirname "${script_dirpath}")"
 PARALLELISM=2
 TIMEOUT="3m"   # This must be Go-parseable timeout
 
+TESTSUITE_CLUSTER_BACKEND_DOCKER="docker"
+TESTSUITE_CLUSTER_BACKEND_MINIKUBE="minikube"
+
+# By default, run testsuite against docker
+DEFAULT_TESTSUITE_CLUSTER_BACKEND="${TESTSUITE_CLUSTER_BACKEND_DOCKER}"
+
+# ==================================================================================================
+#                                       Arg Parsing & Validation
+# ==================================================================================================
+show_helptext_and_exit() {
+    echo "Usage: $(basename "${0}") cli_cluster_backend_arg"
+    echo ""
+    echo "  cli_cluster_backend_arg   Optional argument describing the cluster backend tests are running against. Must be one of 'docker', 'minikube' (default: ${DEFAULT_TESTSUITE_CLUSTER_BACKEND})"
+    echo ""
+    exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
+}
+
+testsuite_cluster_backend_arg="${1:-${DEFAULT_TESTSUITE_CLUSTER_BACKEND}}"
+if [ "${testsuite_cluster_backend_arg}" != "${TESTSUITE_CLUSTER_BACKEND_DOCKER}" ] &&
+   [ "${testsuite_cluster_backend_arg}" != "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}" ]; then
+    echo "Error: unknown cluster provided to run tests against. Must be one of 'docker', 'minikube'"
+    show_helptext_and_exit
+fi
 
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
+
+if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}" ]; then
+  export TESTING_KUBERNETES=1
+fi
+
 cd "${lang_root_dirpath}"
 go build ./...
 # The count=1 disables caching for the testsuite (which we want, because the engine server might have changed even though the test code didn't)
