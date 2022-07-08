@@ -15,8 +15,6 @@ source "${script_dirpath}/_constants.sh"
 
 DEFAULT_SHOULD_PUBLISH_ARG="false"
 
-GET_VERSION_SCRIPT_FILENAME="get-docker-images-tag.sh"
-
 # ==================================================================================================
 #                                       Arg Parsing & Validation
 # ==================================================================================================
@@ -37,9 +35,13 @@ fi
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
-get_version_script_filepath="${root_dirpath}/scripts/${GET_VERSION_SCRIPT_FILENAME}"
-if ! version="$("${get_version_script_filepath}")"; then
-    echo "Error: Couldn't get version using script '${get_version_script_filepath}'" >&2
+# Generate Docker image tag
+if ! cd "${root_dirpath}"; then
+  echo "Error: Couldn't cd to the git root dirpath '${server_root_dirpath}'" >&2
+  exit 1
+fi
+if ! version="$(kudet get-docker-tag)"; then
+    echo "Error: Couldn't get the version using kudet get-docker-tag" >&2
     exit 1
 fi
 
