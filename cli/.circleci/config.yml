@@ -40,7 +40,7 @@ run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
     cd /tmp
     output_dirname="enclave-dumps"
     mkdir "${output_dirname}"
-    for enclave_id in $("${KURTOSIS_BINPATH}" enclave ls | tail -n+2 | awk '{print $1}'); do
+    for enclave_id in $("${KURTOSIS_BINPATH}" enclave ls | grep "EnclaveContainersStatus" | awk '{print $1}'); do
       "${KURTOSIS_BINPATH}" enclave dump "${enclave_id}" "${output_dirname}/${enclave_id}"
     done
     zip -r "${output_dirname}.zip" "${output_dirname}"

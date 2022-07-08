@@ -42,12 +42,12 @@ fi
 # ==================================================================================================
 
 cd "${lang_root_dirpath}"
-
-if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}" ]; then
-  go build -tags=kubernetes ./...
-else
-  go build ./...
-fi
+go build ./...
 
 # The count=1 disables caching for the testsuite (which we want, because the engine server might have changed even though the test code didn't)
-CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${TIMEOUT}"
+if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}" ]; then
+  CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${TIMEOUT}" -tags minikube
+else
+  CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${TIMEOUT}"
+fi
+

@@ -1,5 +1,4 @@
-//go:build !kubernetes
-// +build !kubernetes
+//+build !minikube
 
 // We don't run this test in Kubernetes because, as of 2022-07-07, Kubernetes doesn't support container pause/unpause
 
