@@ -10,7 +10,6 @@ root_dirpath="$(dirname "${script_dirpath}")"
 #                                             Constants
 # ==================================================================================================
 SUPPORTED_LANGS_FILENAME="supported-languages.txt"
-UPDATE_VERSION_IN_FILE_CMD_NAME="kudet update-version-in-file" # NOTE: kudet should be installed by every Kurtosis dev
 SKIP_KEYWORD="SKIP" # Certain languages don't need any package replacement; they will use this keyword for their package file and replacement pattern
 
 # Per-language package filepaths that need version, RELATIVE TO THE LANG ROOT, that need version replacement
@@ -34,23 +33,13 @@ API_DIRNAME="api"
 show_helptext_and_exit() {
     echo "Usage: $(basename "${0}") repo_root_dirpath new_version"
     echo ""
-    echo "  repo_root_dirpath   The absolute dirpath of the root of the repo"
     echo "  new_version         The new version that the package files should contain"
     echo ""
     exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
 }
 
-repo_root_dirpath="${1:-}"
-new_version="${2:-}"
+new_version="${1:-}"
 
-if [ -z "${repo_root_dirpath}" ]; then
-    echo "Error: No repo root dirpath arg provided" >&2
-    show_helptext_and_exit
-fi
-if ! [ -d "${repo_root_dirpath}" ]; then
-    echo "Error: Repo root dirpath '${repo_root_dirpath}' isn't a valid directory" >&2
-    show_helptext_and_exit
-fi
 if [ -z "${new_version}" ]; then
     echo "Error: No new version provided" >&2
     show_helptext_and_exit
@@ -61,11 +50,11 @@ fi
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
-project_dirpath="${repo_root_dirpath}"
+project_dirpath="${root_dirpath}"
 # If the repository contains the API directory in the rootpath the project path will contains this directory too
-api_dirpath="${repo_root_dirpath}/${API_DIRNAME}"
+api_dirpath="${root_dirpath}/${API_DIRNAME}"
 if [ -d "${api_dirpath}" ]; then
-  project_dirpath="${repo_root_dirpath}/${API_DIRNAME}"
+  project_dirpath="${root_dirpath}/${API_DIRNAME}"
 fi
 
 echo "Updating versions in package files for all supported languages..."
@@ -95,7 +84,7 @@ for lang in $(cat "${supported_langs_filepath}"); do
         continue
     fi
 
-    if ! $("${UPDATE_VERSION_IN_FILE_CMD_NAME}") "${to_update_abs_filepath}" "${replacement_pattern}" "${new_version}"; then
+    if ! $(kudet update-version-in-file "${to_update_abs_filepath}" "${replacement_pattern}" "${new_version}"); then
         echo "Error: An error occurred setting new version '${new_version}' in '${lang}' package file '${to_update_abs_filepath}' using pattern '${replacement_pattern}'" >&2
         exit 1
     fi
