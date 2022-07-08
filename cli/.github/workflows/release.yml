@@ -5,13 +5,13 @@ on:
   workflow_dispatch:
     inputs:
       bump_major:
-        description: 'Do you want to bump the major version on this release?'
+        description: 'Do you want to bump the MAJOR version ("X" in "X.Y.Z") on this release?'
         required: true
         type: boolean
 
 jobs:
   release:
-    uses: kurtosis-tech/release/.github/workflows/release.yml@v0.1.1
+    uses: kurtosis-tech/release/.github/workflows/release.yml@master
     with:
       bump_major: ${{ inputs.bump_major }}
     secrets: inherit
