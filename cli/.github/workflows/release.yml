@@ -1,0 +1,17 @@
+# A wrapper workflow that calls down to Kurtosis Release workflow repo
+name: Release Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_major:
+        description: 'Do you want to bump the major version on this release?'
+        required: true
+        type: boolean
+
+jobs:
+  release:
+    uses: kurtosis-tech/release/.github/workflows/release.yml@v0.1.1
+    with:
+      bump_major: ${{ inputs.bump_major }}
+    secrets: inherit

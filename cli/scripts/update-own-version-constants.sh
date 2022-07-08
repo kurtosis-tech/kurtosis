@@ -10,8 +10,6 @@ root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
-UPDATE_VERSION_IN_FILE_CMD_NAME="kudet update-version-in-file" # NOTE: kudet should be installed by every Kurtosis dev
-
 CONSTANT_FILE_RELATIVE_FILEPATH="cli/kurtosis_cli_version/kurtosis_cli_version.go"
 CONSTANT_PATTERN="KurtosisCLIVersion = \"%s\""
 
@@ -40,7 +38,7 @@ fi
 #                                             Main Logic
 # ==================================================================================================
 constant_file_abs_filepath="${root_dirpath}/${CONSTANT_FILE_RELATIVE_FILEPATH}"
-    if ! $("${UPDATE_VERSION_IN_FILE_CMD_NAME}") "${constant_file_abs_filepath}" "${CONSTANT_PATTERN}" "${new_version}"; then
+    if ! $(kudet update-version-in-file "${constant_file_abs_filepath}" "${CONSTANT_PATTERN}" "${new_version}"); then
     echo "Error: Couldn't update file '${constant_file_abs_filepath}' with new version '${new_version}' using pattern '${CONSTANT_PATTERN}'" >&2
     exit 1
 fi

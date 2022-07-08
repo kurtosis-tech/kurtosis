@@ -363,7 +363,6 @@ workflows:
           filters:
             branches:
               ignore:
-                - develop
                 - master
       - build_cli:
           context:
@@ -371,7 +370,6 @@ workflows:
           filters:
             branches:
               ignore:
-                - develop
                 - master
       - build_golang_testsuite:
           context:
@@ -381,7 +379,6 @@ workflows:
           filters:
             branches:
               ignore:
-                - develop
                 - master
       - build_typescript_testsuite:
           context:
@@ -391,7 +388,6 @@ workflows:
           filters:
             branches:
               ignore:
-                - develop
                 - master
       - test_basic_cli_functionality:
           context:
@@ -401,7 +397,6 @@ workflows:
           filters:
             branches:
               ignore:
-                - develop
                 - master
       - test_old_enclave_continuity:
           context:
@@ -411,7 +406,6 @@ workflows:
           filters:
             branches:
               ignore:
-                - develop
                 - master
       - test_config_init_edge_cases:
           requires:
@@ -419,7 +413,6 @@ workflows:
           filters:
             branches:
               ignore:
-                - develop
                 - master
       # -- End build jobs ---------------------------------------
 

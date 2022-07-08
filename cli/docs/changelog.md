@@ -13,7 +13,7 @@
 * Updated `build cli script` and `cli launch script` to support the goamd64 env var
 * No longer run health checks against a created engine in a Kubernetes cluster
 * Migrated repo to use ineternal cli tool `kudet` for release process
-* Migrate repo to use internal cli tool, kudet to get docker image tags
+* Migrate repo to use internal cli tool, `kudet` to get docker image tags
 
 ### Features
 * The gateway will reconnect if the engine pod it's connected to is restarted
