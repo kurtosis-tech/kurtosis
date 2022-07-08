@@ -336,12 +336,12 @@ jobs:
 
   # -- Artifact-publishing jobs --------------------------------
   push_cli_artifacts:
-
     docker:
-      - image: "goreleaser/goreleaser:<< pipeline.parameters.goreleaser-version >>"
+      - image: "goreleaser/goreleaser-cross:<< pipeline.parameters.goreleaser-version >>"
     steps:
       # Install Kudet
       - run: |
+          apt-get update && apt-get -y install sudo
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
           sudo apt update
           sudo apt install kudet
