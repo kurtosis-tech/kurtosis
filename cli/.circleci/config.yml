@@ -1,12 +1,11 @@
 ##############
 # Yaml Anchors
 ##############
-# Don't run cli jobs on develop or master branches
-filters_ignore_develop_master: &filters_ignore_develop_master
+# Don't run cli jobs on  master branches
+filters_ignore_master: &filters_ignore_master
   filters:
     branches:
       ignore:
-        - develop
         - master
 
 
@@ -44,8 +43,8 @@ run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
       "${KURTOSIS_BINPATH}" enclave dump "${enclave_id}" "${output_dirname}/${enclave_id}"
     done
     zip -r "${output_dirname}.zip" "${output_dirname}"
-            
-        
+
+
 ##############
 # CircleCI
 ##############
@@ -214,17 +213,17 @@ jobs:
             equal: [ "minikube", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-               if ! ./internal_testsuites/typescript/scripts/build.sh minikube; then
-                  touch /tmp/testsuite-failed
-               fi
+                if ! ./internal_testsuites/typescript/scripts/build.sh minikube; then
+                   touch /tmp/testsuite-failed
+                fi
       - when:
           condition:
-           equal: [ "docker", << parameters.cli-cluster-backend >> ]
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
-           - run: |
-               if ! ./internal_testsuites/typescript/scripts/build.sh; then
-                  touch /tmp/testsuite-failed
-                fi
+            - run: |
+                if ! ./internal_testsuites/typescript/scripts/build.sh; then
+                   touch /tmp/testsuite-failed
+                 fi
       # Dump enclave data so we can debug any issues that arise
       - <<: *run_dump_kurtosis_enclaves
       - store_artifacts:
@@ -466,11 +465,11 @@ workflows:
       # -- Build jobs ------------------------------------------
       - kurtosis-docs-checker/check-docs:
           markdown-link-check-config-json: "{}"
-          <<: *filters_ignore_develop_master
+          <<: *filters_ignore_master
       - build_cli:
           context:
             - github-user
-          <<: *filters_ignore_develop_master
+          <<: *filters_ignore_master
       # -- test Basic CLI Functionality
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Docker"
@@ -479,7 +478,7 @@ workflows:
             - docker-user
           requires:
             - build_cli
-          <<: *filters_ignore_develop_master
+          <<: *filters_ignore_master
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Kubernetes"
           cli-cluster-backend: "minikube"
@@ -487,7 +486,7 @@ workflows:
             - docker-user
           requires:
             - build_cli
-          <<: *filters_ignore_develop_master
+          <<: *filters_ignore_master
       # -- Build golang testsuite
       - build_golang_testsuite:
           name: "Build golang testsuite against Docker"
@@ -496,7 +495,7 @@ workflows:
             - docker-user
           requires:
             - build_cli
-          <<: *filters_ignore_develop_master
+          <<: *filters_ignore_master
       - build_golang_testsuite:
           name: "Build golang testsuite against Kubernetes"
           cli-cluster-backend: "minikube"
@@ -504,7 +503,7 @@ workflows:
             - docker-user
           requires:
             - build_cli
-          <<: *filters_ignore_develop_master
+          <<: *filters_ignore_master
       # -- Build typescript testsuite
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Docker"
@@ -513,7 +512,7 @@ workflows:
             - docker-user
           requires:
             - build_cli
-          <<: *filters_ignore_develop_master
+          <<: *filters_ignore_master
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Kubernetes"
           cli-cluster-backend: "minikube"
@@ -521,18 +520,18 @@ workflows:
             - docker-user
           requires:
             - build_cli
-          <<: *filters_ignore_develop_master
+          <<: *filters_ignore_master
 
       - test_old_enclave_continuity:
           context:
             - docker-user
           requires:
             - build_cli
-          <<: *filters_ignore_develop_master
+          <<: *filters_ignore_master
       - test_config_init_edge_cases:
           requires:
             - build_cli
-          <<: *filters_ignore_develop_master
+          <<: *filters_ignore_master
       # -- End build jobs ---------------------------------------
 
       # -- Artifact-publishing jobs --------------------------------
