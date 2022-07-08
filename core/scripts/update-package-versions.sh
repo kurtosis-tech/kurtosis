@@ -31,7 +31,7 @@ API_DIRNAME="api"
 #                                       Arg Parsing & Validation
 # ==================================================================================================
 show_helptext_and_exit() {
-    echo "Usage: $(basename "${0}") repo_root_dirpath new_version"
+    echo "Usage: $(basename "${0}") new_version"
     echo ""
     echo "  new_version         The new version that the package files should contain"
     echo ""
