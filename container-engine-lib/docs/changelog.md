@@ -1,5 +1,7 @@
 # TBD
 
+* Migrate repo to use internal cli tool `kudet` for release process
+
 # 0.33.0
 ### Features
 * Added a temporary parameter `publicPorts` in `KurtosisBackend.StartUserService` to support defining static public ports

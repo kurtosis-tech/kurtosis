@@ -1,37 +1,17 @@
-# This is a basic workflow that is manually triggered
+# A wrapper workflow that calls down to Kurtosis Release workflow repo
+name: Release Workflow
 
-name: Manual workflow
-
-# Controls when the action will run. Workflow runs when manually triggered using the UI
-# or API.
 on:
   workflow_dispatch:
-    # Inputs the workflow accepts.
     inputs:
-      version:
-        # Friendly description to be shown in the UI instead of 'name'
-        description: 'Version to release (leave blank to autodetect)'
-        # Default value if no value is explicitly provided
-        default: ''
-        # Input has to be provided for the workflow to run
-        required: false
+      bump_major:
+        description: 'Do you want to bump the MAJOR version ("X" in "X.Y.Z") on this release?'
+        required: true
+        type: boolean
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "greet"
-  greet:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
-    steps:
-    - name: Configure checkout action
-      uses: actions/checkout@v3
-      with:
-        ref: 'develop'
-    - name: Echo CircleCI file
-      run: cat .circleci/config.yml
-    # Runs a single command using the runners shell
-    # - name: Bump the version
-    #  run: |
-    #    cat "Version we'd use: ${{ github.event.inputs.version }}"
+  release:
+    uses: kurtosis-tech/release/.github/workflows/release.yml@master
+    with:
+      bump_major: ${{ inputs.bump_major }}
+    secrets: inherit
