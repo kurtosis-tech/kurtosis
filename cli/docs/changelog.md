@@ -3,6 +3,10 @@
 * Upgraded core to 1.55.2
 * Upgraded engine to 1.27.1
 
+### Changes
+* Updated CI to test cluster setups
+  * Added `cluster-backend` argument to `build.sh` for golang and typescript testsuites
+
 ### Fixes
 * Fixed Consistency issues in API Container Gateway
 
