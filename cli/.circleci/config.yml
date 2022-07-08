@@ -16,9 +16,6 @@ parameters:
   cimg-base-version:
     type: string
     default: 2021.11-20.04
-  goreleaser-version:
-    type: string
-    default: "v1.18.3"
   # The dirpath in jobs that use the built CLI binary where the workspace containing the CLI binary will be attached
   workspace-with-cli-binary-mountpoint:
     type: string
@@ -47,12 +44,16 @@ jobs:
   # -- Build jobs ------------------------------------------
   build_cli:
     docker:
-      - image: "goreleaser/goreleaser-cross:<< pipeline.parameters.goreleaser-version >>"
+      - image: "cimg/base:<< pipeline.parameters.cimg-base-version >>"
     resource_class: large
     steps:
+      # Install goreleaser
+      - run: |
+          echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
+          sudo apt update
+          sudo apt install goreleaser
       # Install Kudet
       - run: |
-          apt-get update && apt-get -y install sudo
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
           sudo apt update
           sudo apt install kudet
@@ -337,8 +338,13 @@ jobs:
   # -- Artifact-publishing jobs --------------------------------
   push_cli_artifacts:
     docker:
-      - image: "goreleaser/goreleaser-cross:<< pipeline.parameters.goreleaser-version >>"
+      - image: "cimg/base:<< pipeline.parameters.cimg-base-version >>"
     steps:
+      # Install goreleaser
+      - run: |
+          echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
+          sudo apt update
+          sudo apt install goreleaser
       # Install Kudet
       - run: |
           apt-get update && apt-get -y install sudo
