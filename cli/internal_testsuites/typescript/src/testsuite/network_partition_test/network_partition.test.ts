@@ -30,7 +30,6 @@ const TEST_PERSON_ID = "46";
 const SECONDS_TO_WAIT_BEFORE_CALLING_GRPC_CALL_TIMED_OUT = 2;
 
 jest.setTimeout(180000)
-
 test("Test network partition", async () => {
      // ------------------------------------- ENGINE SETUP ----------------------------------------------
      const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)

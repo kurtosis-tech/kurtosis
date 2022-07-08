@@ -1,3 +1,7 @@
+//+build !minikube
+
+// We don't run this test in Kubernetes because, as of 2022-07-07, Kubernetes doesn't support network partitioning
+
 package network_soft_partition_test
 
 import (
@@ -33,8 +37,8 @@ const (
 
 	testServiceSleepMillisecondsStr = "300000"
 
-	percentageSign = "%"
-	zeroPacketLoss = float64(0)
+	percentageSign                    = "%"
+	zeroPacketLoss                    = float64(0)
 	softPartitionPacketLossPercentage = float32(99)
 
 	zeroElementsInMtrHubField = 0
@@ -50,7 +54,6 @@ type MtrReport struct {
 
 func TestNetworkSoftPartitions(t *testing.T) {
 	ctx := context.Background()
-
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
 	enclaveCtx, stopEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
@@ -94,7 +97,7 @@ func TestNetworkSoftPartitions(t *testing.T) {
 		"--report",
 		"--json",
 		"--report-cycles",
-		"2", // We set report cycles to 2 to generate the report faster because default is 10
+		"2",        // We set report cycles to 2 to generate the report faster because default is 10
 		"--no-dns", //No domain name resolution, also to improve velocity
 	}
 
