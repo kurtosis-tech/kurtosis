@@ -44,7 +44,7 @@ jobs:
   # -- Build jobs ------------------------------------------
   build_cli:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     resource_class: large
     steps:
       # Install goreleaser
@@ -338,7 +338,7 @@ jobs:
   # -- Artifact-publishing jobs --------------------------------
   push_cli_artifacts:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       # Install goreleaser
       - run: |
