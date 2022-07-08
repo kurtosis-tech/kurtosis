@@ -1,3 +1,8 @@
+//go:build !kubernetes
+// +build !kubernetes
+
+// We don't run this test in Kubernetes because, as of 2022-07-07, Kubernetes doesn't support network partitioning
+
 package network_soft_partition_test
 
 import (
@@ -49,9 +54,6 @@ type MtrReport struct {
 }
 
 func TestNetworkSoftPartitions(t *testing.T) {
-	// We don't run this test in Kubernetes because, as of 2022-07-07, Kubernetes doesn't support network partitioning
-	test_helpers.SkipTestInKubernetes(t)
-
 	ctx := context.Background()
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
 	enclaveCtx, stopEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)

@@ -34,35 +34,16 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
         command: "${KURTOSIS_BINPATH} gateway"
         background: true
 
-# Run steps to dump kurtosis enclaves from Kubernetes
-when_k8s_dump_kurtosis_enclave: &when_k8s_dump_kurtosis_enclave
-  when:
-    condition:
-      equal: [ "minikube", << parameters.cli-cluster-backend >> ]
-    steps:
-      - run: |
-            cd /tmp
-            output_dirname="enclave-dumps"
-            mkdir "${output_dirname}"
-            for enclave_id in $("${KURTOSIS_BINPATH}" enclave ls | tail -n+3 | awk '{print $1}'); do
-              "${KURTOSIS_BINPATH}" enclave dump "${enclave_id}" "${output_dirname}/${enclave_id}"
-            done
-            zip -r "${output_dirname}.zip" "${output_dirname}"
-
 # Run steps to dump kurtosis enclaves from docker
-when_docker_dump_kurtosis_enclave: &when_docker_dump_kurtosis_enclave
-  when:
-    condition:
-      equal: [ "docker", << parameters.cli-cluster-backend >> ]
-    steps:
-      - run: |
-          cd /tmp
-          output_dirname="enclave-dumps"
-          mkdir "${output_dirname}"
-          for enclave_id in $("${KURTOSIS_BINPATH}" enclave ls | tail -n+2 | awk '{print $1}'); do
-            "${KURTOSIS_BINPATH}" enclave dump "${enclave_id}" "${output_dirname}/${enclave_id}"
-          done
-          zip -r "${output_dirname}.zip" "${output_dirname}"
+run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
+  run: |
+    cd /tmp
+    output_dirname="enclave-dumps"
+    mkdir "${output_dirname}"
+    for enclave_id in $("${KURTOSIS_BINPATH}" enclave ls | tail -n+2 | awk '{print $1}'); do
+      "${KURTOSIS_BINPATH}" enclave dump "${enclave_id}" "${output_dirname}/${enclave_id}"
+    done
+    zip -r "${output_dirname}.zip" "${output_dirname}"
             
         
 ##############
@@ -187,8 +168,7 @@ jobs:
                  fi
 
       # Dump enclave data so we can debug any issues that arise
-      - <<: *when_k8s_dump_kurtosis_enclave
-      - <<: *when_docker_dump_kurtosis_enclave
+      - <<: *run_dump_kurtosis_enclaves
       - store_artifacts:
           path: /tmp/enclave-dumps.zip
           destination: enclave-dumps.zip
@@ -239,8 +219,7 @@ jobs:
                   touch /tmp/testsuite-failed
                 fi
       # Dump enclave data so we can debug any issues that arise
-      - <<: *when_k8s_dump_kurtosis_enclave
-      - <<: *when_docker_dump_kurtosis_enclave
+      - <<: *run_dump_kurtosis_enclaves
       - store_artifacts:
           path: /tmp/enclave-dumps.zip
           destination: enclave-dumps.zip
