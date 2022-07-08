@@ -1,0 +1,2 @@
+scripts/update-own-version-constants.sh
+scripts/update-package-versions.sh

@@ -1,8 +1,9 @@
 # TBD
 
 * Removed unused logging package in error reporting in `api_container_launcher`
-* Migrated repo to use ineternal cli tool `kudet` to retrieve image tags as opposed to script
-
+* Migrated repo to use internal cli tool `kudet` to retrieve image tags as opposed to script
+* Migrated repo to use internal cli tool `kudet` for release process
+* 
 # 1.55.2
 ### Fixes
 * Moved error reporting in `StartService`
