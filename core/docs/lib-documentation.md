@@ -241,6 +241,13 @@ You often won't control the container images that you'll be using in your testne
 ### Map\<String, String\> environmentVariableOverrides
 Defines environment variables that should be set inside the Docker container running the service. This can be necessary for starting containers from Docker images you don't control, as they'll often be parameterized with environment variables.
 
+### Uint32 cpuAllocation
+Allows you to set a constraint on CPU resources available in the underlying host container of a service. The metric used to measure `cpuAllocation`  is `cpus`, 1 CPU unit is equivalent to 1 CPU on the underlying machine. This metric is identical [Docker's measure of `cpus`](https://docs.docker.com/config/containers/resource_constraints/#:~:text=Description-,%2D%2Dcpus%3D%3Cvalue%3E,-Specify%20how%20much) and [Kubernetes measure of `cpus` for limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu). If set, the value must be a nonzero positive integer. If unset, there will be no constraints on CPU usage of the host container. 
+
+### Uint32 memoryAllocation
+Allows you to set a constraint on memory resources available in the underlying host container of a service. The metric used to measure `memoryAllocation` is `megabytes`. Setting `memoryAllocation=1000` is equivalent to setting the memory limit of the underlying host machine to `1e9 bytes` or `1GB`. If set, the value must be a nonzero positive integer of at least `6 megabytes` as Docker requires this as a minimum. If unset, there will be no constraints on memory usage of the host container.
+
+
 
 
 ContainerConfigBuilder
