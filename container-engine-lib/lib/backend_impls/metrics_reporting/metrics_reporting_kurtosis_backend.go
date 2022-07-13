@@ -328,7 +328,7 @@ func (backend *MetricsReportingKurtosisBackend) StartUserService(
 	cmdArgs []string,
 	envVars map[string]string,
 	filesArtifactExpansion *backend_interface.FilesArtifactsExpansion,
-	cpuAllocation uint64,
+	cpuAllocation string,
 	memoryAllocation uint64,
 ) (
 	newUserService *service.Service,

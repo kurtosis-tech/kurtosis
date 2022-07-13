@@ -227,7 +227,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	cmdArgs []string,
 	envVars map[string]string,
 	filesArtifactsExpansion *backend_interface.FilesArtifactsExpansion,
-	cpuAllocation uint64,
+	cpuAllocation string,
 	memoryAllocation uint64,
 ) (
 	resultUserService *service.Service,
@@ -1096,7 +1096,7 @@ func getUserServicePodContainerSpecs(
 	envVarStrs map[string]string,
 	privatePorts map[string]*port_spec.PortSpec,
 	containerMounts []apiv1.VolumeMount,
-	cpuAllocation uint64,
+	cpuAllocation string,
 	memoryAllocation uint64,
 ) (
 	[]apiv1.Container,
@@ -1118,8 +1118,12 @@ func getUserServicePodContainerSpecs(
 
 	resourceLimitsList := apiv1.ResourceList{}
 	// 0 is considered the empty value (meaning the field was never set), so if either fields are 0, that resource is left unbounded
-	if cpuAllocation > 0 {
-		resourceLimitsList[apiv1.ResourceCPU] = *resource.NewQuantity(int64(cpuAllocation), resource.DecimalSI)
+	if cpuAllocation != "" {
+		cpuQuantity, err := ParseCPUAllocation(cpuAllocation)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred parsing cpuAllocation string: %v.", cpuAllocation)
+		}
+		resourceLimitsList[apiv1.ResourceCPU] = *cpuQuantity
 	}
 	if memoryAllocation > 0 {
 		memoryAllocationInBytes := convertMemoryAllocationToBytes(memoryAllocation)
@@ -1264,4 +1268,12 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 
 func convertMemoryAllocationToBytes(memoryAllocation uint64) uint64 {
 	return memoryAllocation * megabytesToBytesFactor
+}
+
+func ParseCPUAllocation(value string) (*resource.Quantity, error){
+	cpuQuantity, err := resource.ParseQuantity(value)
+	if err != nil {
+		return nil, err
+	}
+	return &cpuQuantity, nil
 }

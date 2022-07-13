@@ -23,7 +23,7 @@ type CreateAndStartContainerArgs struct {
 	volumeMounts                   map[string]string
 	needsAccessToDockerHostMachine bool
 	labels                         map[string]string
-	cpuAllocation                  uint64
+	cpuAllocation                  string
 	memoryAllocation               uint64
 }
 
@@ -45,7 +45,7 @@ type CreateAndStartContainerArgsBuilder struct {
 	volumeMounts                   map[string]string
 	needsAccessToDockerHostMachine bool
 	labels                         map[string]string
-	cpuAllocation                  uint64
+	cpuAllocation                  string
 	memoryAllocation               uint64
 }
 
@@ -73,7 +73,7 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		volumeMounts:                   map[string]string{},
 		needsAccessToDockerHostMachine: false,
 		labels:                         map[string]string{},
-		cpuAllocation:                  0,
+		cpuAllocation:                  "",
 		memoryAllocation:               0,
 	}
 }
@@ -184,9 +184,9 @@ func (builder *CreateAndStartContainerArgsBuilder) WithLabels(labels map[string]
 }
 
 // Corresponds to `--cpus` limit in Docker, converted to NanoCPUs set in the underlying container
-// 0 is the empty value, meaning if the value is 0, this field is ignored
+// The empty string is the empty value, meaning if the value is "", this field is ignored
 // https://pkg.go.dev/github.com/docker/docker@v20.10.17+incompatible/api/types/container#Resources
-func (builder *CreateAndStartContainerArgsBuilder) WithCPUAllocation(cpuAllocation uint64) *CreateAndStartContainerArgsBuilder {
+func (builder *CreateAndStartContainerArgsBuilder) WithCPUAllocation(cpuAllocation string) *CreateAndStartContainerArgsBuilder {
 	builder.cpuAllocation = cpuAllocation
 	return builder
 }

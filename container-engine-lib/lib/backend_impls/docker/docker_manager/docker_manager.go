@@ -993,7 +993,7 @@ func (manager *DockerManager) getContainerHostConfig(
 	volumeMounts map[string]string,
 	usedPortsWithPublishSpec map[nat.Port]PortPublishSpec,
 	needsToAccessDockerHostMachine bool,
-	cpuAllocation uint64,
+	cpuAllocation string,
 	memoryAllocation uint64) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))
@@ -1057,7 +1057,7 @@ func (manager *DockerManager) getContainerHostConfig(
 
 	resources := container.Resources{}
 	// 0 is considered the empty value (meaning the field was never set), so if either fields are 0, that resource is left unbounded
-	if cpuAllocation != 0 {
+	if cpuAllocation != "" {
 		nanoCPUs, err := convertCPUAllocationToNanoCPUs(cpuAllocation)
 		if err != nil {
 			return nil, err
@@ -1343,11 +1343,14 @@ func convertMemoryAllocationToBytes(memoryAllocation uint64) uint64 {
 
 // Taken from Docker CLI's `ParseCPUs`
 // https://github.com/docker/cli/blob/c780f7c4abaf67034ecfaa0611e03695cf9e4a3e/opts/opts.go
-func convertCPUAllocationToNanoCPUs(cpuAllocation uint64) (int64, error) {
-	cpu := new(big.Rat).SetInt64(int64(cpuAllocation))
+func convertCPUAllocationToNanoCPUs(value string) (int64, error) {
+	cpu, ok := new(big.Rat).SetString(value)
+	if !ok {
+		return 0, stacktrace.NewError("An error occurred attempting to parse cpuAllocation, `%v`, as a rational number", value)
+	}
 	nano := cpu.Mul(cpu, big.NewRat(1e9, 1))
 	if !nano.IsInt() {
-		return 0, stacktrace.NewError("value is too precise")
+		return 0, stacktrace.NewError("The value of cpuAllocation, `%v`, is too precised to be expressed as an int of NanoCPUs.", value)
 	}
 	return nano.Num().Int64(), nil
 }

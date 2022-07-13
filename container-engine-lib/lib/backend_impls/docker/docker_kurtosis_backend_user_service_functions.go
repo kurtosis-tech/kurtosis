@@ -174,7 +174,7 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	cmdArgs []string,
 	envVars map[string]string,
 	filesArtifactsExpansion *backend_interface.FilesArtifactsExpansion,
-	cpuAllocation uint64,
+	cpuAllocation string,
 	memoryAllocation uint64,
 ) (*service.Service, error) {
 
