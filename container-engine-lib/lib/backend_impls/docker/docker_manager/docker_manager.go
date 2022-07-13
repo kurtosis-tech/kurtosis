@@ -95,6 +95,8 @@ const (
 	shouldAttachStderrWhenCreatingContainerExec               = true
 	shouldAttachStdoutWhenCreatingContainerExec               = true
 	shouldExecuteInDetachModeWhenCreatingContainerExec        = false
+
+	megabytesToBytesFactor = 1000000
 )
 
 /*
@@ -1336,7 +1338,7 @@ func (manager DockerManager) getFailedContainerLogsOrErrorString(ctx context.Con
 }
 
 func convertMemoryAllocationToBytes(memoryAllocation uint64) uint64 {
-	return memoryAllocation * 1000000
+	return memoryAllocation * megabytesToBytesFactor
 }
 
 // Taken from Docker CLI's `ParseCPUs`

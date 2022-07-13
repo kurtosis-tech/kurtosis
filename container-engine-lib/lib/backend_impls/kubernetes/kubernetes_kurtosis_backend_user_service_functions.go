@@ -86,6 +86,8 @@ const (
 	filesArtifactExpansionVolumeName = "files-artifact-expansion"
 
 	isFilesArtifactExpansionVolumeReadOnly = false
+
+	megabytesToBytesFactor = 1000000
 )
 
 // Kubernetes doesn't provide public IP or port information; this is instead handled by the Kurtosis gateway that the user uses
@@ -1261,5 +1263,5 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 }
 
 func convertMemoryAllocationToBytes(memoryAllocation uint64) uint64 {
-	return memoryAllocation * 1000000
+	return memoryAllocation * megabytesToBytesFactor
 }
