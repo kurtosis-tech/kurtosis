@@ -3184,7 +3184,7 @@ proto.api_container_api.StartServiceArgs.toObject = function(includeInstance, ms
     dockerEnvVarsMap: (f = msg.getDockerEnvVarsMap()) ? f.toObject(includeInstance, undefined) : [],
     filesArtifactMountpointsMap: (f = msg.getFilesArtifactMountpointsMap()) ? f.toObject(includeInstance, undefined) : [],
     publicPortsMap: (f = msg.getPublicPortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : [],
-    cpuAllocation: jspb.Message.getFieldWithDefault(msg, 10, 0),
+    cpuAllocation: jspb.Message.getFieldWithDefault(msg, 10, ""),
     memoryAllocation: jspb.Message.getFieldWithDefault(msg, 11, 0)
   };
 
@@ -3263,7 +3263,7 @@ proto.api_container_api.StartServiceArgs.deserializeBinaryFromReader = function(
          });
       break;
     case 10:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readString());
       msg.setCpuAllocation(value);
       break;
     case 11:
@@ -3344,8 +3344,8 @@ proto.api_container_api.StartServiceArgs.serializeBinaryToWriter = function(mess
     f.serializeBinary(9, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api_container_api.Port.serializeBinaryToWriter);
   }
   f = message.getCpuAllocation();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (f.length > 0) {
+    writer.writeString(
       10,
       f
     );
@@ -3559,20 +3559,20 @@ proto.api_container_api.StartServiceArgs.prototype.clearPublicPortsMap = functio
 
 
 /**
- * optional uint64 cpu_allocation = 10;
- * @return {number}
+ * optional string cpu_allocation = 10;
+ * @return {string}
  */
 proto.api_container_api.StartServiceArgs.prototype.getCpuAllocation = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 10, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 10, ""));
 };
 
 
 /**
- * @param {number} value
+ * @param {string} value
  * @return {!proto.api_container_api.StartServiceArgs} returns this
  */
 proto.api_container_api.StartServiceArgs.prototype.setCpuAllocation = function(value) {
-  return jspb.Message.setProto3IntField(this, 10, value);
+  return jspb.Message.setProto3StringField(this, 10, value);
 };
 
 

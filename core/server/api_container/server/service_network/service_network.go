@@ -228,7 +228,7 @@ func (network *ServiceNetwork) StartService(
 	cmdArgs []string,
 	dockerEnvVars map[string]string,
 	filesArtifactMountDirpaths map[enclave_data_directory.FilesArtifactUUID]string,
-	cpuAllocation uint64,
+	cpuAllocation string,
 	memoryAllocation uint64,
 ) (
 	resultService *service.Service,
@@ -714,7 +714,7 @@ func (network *ServiceNetwork) startService(
 	// Mapping of UUIDs of previously-registered files artifacts -> mountpoints on the container
 	// being launched
 	filesArtifactUuidsToMountpoints map[enclave_data_directory.FilesArtifactUUID]string,
-	cpuAllocation uint64,
+	cpuAllocation string,
 	memoryAllocation uint64,
 ) (
 	resultUserService *service.Service,

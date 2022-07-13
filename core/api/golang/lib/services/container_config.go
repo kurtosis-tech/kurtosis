@@ -32,7 +32,7 @@ type ContainerConfig struct {
 	entrypointOverrideArgs       []string
 	cmdOverrideArgs              []string
 	environmentVariableOverrides map[string]string
-	cpuAllocation                uint64
+	cpuAllocation                string
 	memoryAllocation             uint64
 }
 
@@ -60,7 +60,7 @@ func (config *ContainerConfig) GetEnvironmentVariableOverrides() map[string]stri
 	return config.environmentVariableOverrides
 }
 
-func (config *ContainerConfig) GetCPUAllocation() uint64 {
+func (config *ContainerConfig) GetCPUAllocation() string {
 	return config.cpuAllocation
 }
 
@@ -86,7 +86,7 @@ type ContainerConfigBuilder struct {
 	entrypointOverrideArgs       []string
 	cmdOverrideArgs              []string
 	environmentVariableOverrides map[string]string
-	cpuAllocation                uint64
+	cpuAllocation                string
 	memoryAllocation             uint64
 }
 
@@ -98,7 +98,7 @@ func NewContainerConfigBuilder(image string) *ContainerConfigBuilder {
 		entrypointOverrideArgs:       nil,
 		cmdOverrideArgs:              nil,
 		environmentVariableOverrides: map[string]string{},
-		cpuAllocation:                0,
+		cpuAllocation:                "",
 		memoryAllocation:             0,
 	}
 }
@@ -134,7 +134,7 @@ func (builder *ContainerConfigBuilder) WithPublicPorts(publicPorts map[string]*P
 	return builder
 }
 
-func (builder *ContainerConfigBuilder) WithCPUAllocation(cpuAllocation uint64) *ContainerConfigBuilder {
+func (builder *ContainerConfigBuilder) WithCPUAllocation(cpuAllocation string) *ContainerConfigBuilder {
 	builder.cpuAllocation = cpuAllocation
 	return builder
 }

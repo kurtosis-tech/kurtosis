@@ -156,7 +156,7 @@ export function newStartServiceArgs(
     cmdArgs: string[],
     dockerEnvVars: Map<string, string>,
     filesArtifactMountDirpaths: Map<string, string>,
-    cpuAllocation: number,
+    cpuAllocation: string,
     memoryAllocation: number,
 ): StartServiceArgs {
     const result: StartServiceArgs = new StartServiceArgs();

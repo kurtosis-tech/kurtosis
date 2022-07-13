@@ -892,9 +892,11 @@ type StartServiceArgs struct {
 	// Mapping of files_artifact_uuid -> filepath_on_container_to_mount_artifact_contents
 	FilesArtifactMountpoints map[string]string `protobuf:"bytes,8,rep,name=files_artifact_mountpoints,json=filesArtifactMountpoints,proto3" json:"files_artifact_mountpoints,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	PublicPorts      map[string]*Port `protobuf:"bytes,9,rep,name=public_ports,json=publicPorts,proto3" json:"public_ports,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	CpuAllocation    uint64           `protobuf:"varint,10,opt,name=cpu_allocation,json=cpuAllocation,proto3" json:"cpu_allocation,omitempty"`
-	MemoryAllocation uint64           `protobuf:"varint,11,opt,name=memory_allocation,json=memoryAllocation,proto3" json:"memory_allocation,omitempty"`
+	PublicPorts map[string]*Port `protobuf:"bytes,9,rep,name=public_ports,json=publicPorts,proto3" json:"public_ports,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	// Corresponds to `cpus` in both Docker and Kubernetes
+	CpuAllocation string `protobuf:"bytes,10,opt,name=cpu_allocation,json=cpuAllocation,proto3" json:"cpu_allocation,omitempty"`
+	// Corresponds to a memory limit in megabytes
+	MemoryAllocation uint64 `protobuf:"varint,11,opt,name=memory_allocation,json=memoryAllocation,proto3" json:"memory_allocation,omitempty"`
 }
 
 func (x *StartServiceArgs) Reset() {
@@ -985,11 +987,11 @@ func (x *StartServiceArgs) GetPublicPorts() map[string]*Port {
 	return nil
 }
 
-func (x *StartServiceArgs) GetCpuAllocation() uint64 {
+func (x *StartServiceArgs) GetCpuAllocation() string {
 	if x != nil {
 		return x.CpuAllocation
 	}
-	return 0
+	return ""
 }
 
 func (x *StartServiceArgs) GetMemoryAllocation() uint64 {
@@ -2475,7 +2477,7 @@ var file_api_container_service_proto_rawDesc = []byte{
 	0x69, 0x63, 0x50, 0x6f, 0x72, 0x74, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x0b, 0x70, 0x75,
 	0x62, 0x6c, 0x69, 0x63, 0x50, 0x6f, 0x72, 0x74, 0x73, 0x12, 0x25, 0x0a, 0x0e, 0x63, 0x70, 0x75,
 	0x5f, 0x61, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x0a, 0x20, 0x01, 0x28,
-	0x04, 0x52, 0x0d, 0x63, 0x70, 0x75, 0x41, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x09, 0x52, 0x0d, 0x63, 0x70, 0x75, 0x41, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
 	0x12, 0x2b, 0x0a, 0x11, 0x6d, 0x65, 0x6d, 0x6f, 0x72, 0x79, 0x5f, 0x61, 0x6c, 0x6c, 0x6f, 0x63,
 	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x04, 0x52, 0x10, 0x6d, 0x65, 0x6d,
 	0x6f, 0x72, 0x79, 0x41, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x1a, 0x58, 0x0a,

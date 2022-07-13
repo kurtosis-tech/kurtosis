@@ -17,7 +17,7 @@ export class ContainerConfig {
         public readonly entrypointOverrideArgs: string[],
         public readonly cmdOverrideArgs: string[],
         public readonly environmentVariableOverrides: Map<string,string>,
-        public readonly cpuAllocation: number,
+        public readonly cpuAllocation: string,
         public readonly memoryAllocation: number,
     ) {}
 
@@ -37,7 +37,7 @@ export class ContainerConfigBuilder {
     private entrypointOverrideArgs: string[];
 	private cmdOverrideArgs: string[];
 	private environmentVariableOverrides: Map<string,string>;
-    private cpuAllocation: number;
+    private cpuAllocation: string;
     private memoryAllocation: number;
 
     constructor (image: string) {
@@ -48,7 +48,7 @@ export class ContainerConfigBuilder {
         this.cmdOverrideArgs = [];
         this.environmentVariableOverrides = new Map();
         this.publicPorts = new Map(); //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-        this.cpuAllocation = 0;
+        this.cpuAllocation = "";
         this.memoryAllocation = 0;
     }
 
@@ -83,7 +83,7 @@ export class ContainerConfigBuilder {
         return this;
     }
 
-    public withCPUAllocation(cpuAllocation: number): ContainerConfigBuilder {
+    public withCPUAllocation(cpuAllocation: string): ContainerConfigBuilder {
         this.cpuAllocation = cpuAllocation;
         return this;
     }

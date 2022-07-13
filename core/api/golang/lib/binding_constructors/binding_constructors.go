@@ -136,7 +136,7 @@ func NewStartServiceArgs(
 	cmdArgs []string,
 	envVars map[string]string,
 	filesArtifactMountDirpaths map[string]string,
-	cpuAllocation uint64,
+	cpuAllocation string,
 	memoryAllocation uint64,
 ) *kurtosis_core_rpc_api_bindings.StartServiceArgs {
 	return &kurtosis_core_rpc_api_bindings.StartServiceArgs{
