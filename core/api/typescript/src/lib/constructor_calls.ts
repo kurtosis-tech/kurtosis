@@ -36,6 +36,7 @@ import {
 import { ServiceID } from './services/service';
 import { PartitionID } from './enclaves/enclave_context';
 import { ModuleID } from "./modules/module_context";
+import {c} from "tar";
 
 // ==============================================================================================
 //                           Shared Objects (Used By Multiple Endpoints)
@@ -155,6 +156,8 @@ export function newStartServiceArgs(
     cmdArgs: string[],
     dockerEnvVars: Map<string, string>,
     filesArtifactMountDirpaths: Map<string, string>,
+    cpuResourceAllocation: string,
+    memoryResourceAllocation: string,
 ): StartServiceArgs {
     const result: StartServiceArgs = new StartServiceArgs();
     result.setServiceId(String(serviceId));
@@ -186,7 +189,8 @@ export function newStartServiceArgs(
         publicPortsMap.set(portId, portSpec);
     }
     //TODO finish the hack
-
+    result.setCpuResourceAllocation(cpuResourceAllocation);
+    result.setMemoryResourceAllocation(memoryResourceAllocation);
     return result;
 }
 

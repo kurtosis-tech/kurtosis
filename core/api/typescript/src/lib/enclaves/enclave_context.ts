@@ -292,6 +292,8 @@ export class EnclaveContext {
             containerConfig.cmdOverrideArgs,
             containerConfig.environmentVariableOverrides,
             artifactIdStrToMountDirpath,
+            containerConfig.cpuResourceAllocation,
+            containerConfig.memoryResourceAllocation,
         );
 
         const startServiceResponseResult = await this.backend.startService(startServiceArgs)
