@@ -1053,7 +1053,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		)
 	}
 
-	resources := &container.Resources{}
+	resources := container.Resources{}
 	// 0 is considered the empty value (meaning the field was never set), so if either fields are 0, that resource is left unbounded
 	if cpuAllocation != 0 {
 		nanoCPUs, err := convertCPUAllocationToNanoCPUs(cpuAllocation)
@@ -1064,11 +1064,11 @@ func (manager *DockerManager) getContainerHostConfig(
 	}
 	if memoryAllocation != 0 {
 		memoryAllocationInBytes := convertMemoryAllocationToBytes(memoryAllocation)
-		resources.Memory = memoryAllocationInBytes
+		resources.Memory = int64(memoryAllocationInBytes)
 
 		// MemorySwap needs to be set to exactly memory to ensure memory is actually limited to memoryAllocationInBytes
 		// https://faun.pub/understanding-docker-container-memory-limit-behavior-41add155236c
-		resources.MemorySwap = memoryAllocationInBytes
+		resources.MemorySwap = int64(memoryAllocationInBytes)
 	}
 
 	// NOTE: Do NOT use PublishAllPorts here!!!! This will work if a Dockerfile doesn't have an EXPOSE directive, but
@@ -1080,7 +1080,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		NetworkMode:  container.NetworkMode(networkMode),
 		PortBindings: portMap,
 		ExtraHosts:   extraHosts,
-		Resources:    *resources,
+		Resources:    resources,
 	}
 	return containerHostConfigPtr, nil
 }
@@ -1335,8 +1335,8 @@ func (manager DockerManager) getFailedContainerLogsOrErrorString(ctx context.Con
 	return containerLogs
 }
 
-func convertMemoryAllocationToBytes(memoryAllocation uint64) int64 {
-	return int64(memoryAllocation) * 1000000
+func convertMemoryAllocationToBytes(memoryAllocation uint64) uint64 {
+	return memoryAllocation * 1000000
 }
 
 // Taken from Docker CLI's `ParseCPUs`
