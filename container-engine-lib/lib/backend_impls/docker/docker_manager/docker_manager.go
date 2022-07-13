@@ -23,6 +23,7 @@ import (
 	"io"
 	"io/ioutil"
 	"math"
+	"math/big"
 	"net"
 	"strings"
 	"time"
@@ -424,7 +425,9 @@ func (manager DockerManager) CreateAndStartContainer(
 		args.bindMounts,
 		args.volumeMounts,
 		args.usedPorts,
-		args.needsAccessToDockerHostMachine)
+		args.needsAccessToDockerHostMachine,
+		args.cpuAllocation,
+		args.memoryAllocation)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -987,7 +990,9 @@ func (manager *DockerManager) getContainerHostConfig(
 	bindMounts map[string]string,
 	volumeMounts map[string]string,
 	usedPortsWithPublishSpec map[nat.Port]PortPublishSpec,
-	needsToAccessDockerHostMachine bool) (hostConfig *container.HostConfig, err error) {
+	needsToAccessDockerHostMachine bool,
+	cpuAllocation uint64,
+	memoryAllocation uint64) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))
 	for hostFilepath, containerFilepath := range bindMounts {
@@ -1048,6 +1053,24 @@ func (manager *DockerManager) getContainerHostConfig(
 		)
 	}
 
+	resources := &container.Resources{}
+	// 0 is considered the empty value (meaning the field was never set), so if either fields are 0, that resource is left unbounded
+	if cpuAllocation != 0 {
+		nanoCPUs, err := convertCPUAllocationToNanoCPUs(cpuAllocation)
+		if err != nil {
+			return nil, err
+		}
+		resources.NanoCPUs = nanoCPUs
+	}
+	if memoryAllocation != 0 {
+		memoryAllocationInBytes := convertMemoryAllocationToBytes(memoryAllocation)
+		resources.Memory = memoryAllocationInBytes
+
+		// MemorySwap needs to be set to exactly memory to ensure memory is actually limited to memoryAllocationInBytes
+		// https://faun.pub/understanding-docker-container-memory-limit-behavior-41add155236c
+		resources.MemorySwap = memoryAllocationInBytes
+	}
+
 	// NOTE: Do NOT use PublishAllPorts here!!!! This will work if a Dockerfile doesn't have an EXPOSE directive, but
 	//  if the Dockerfile *does* have an EXPOSE directive then _only_ the ports with EXPOSE will be published
 	// See also: https://www.ctl.io/developers/blog/post/docker-networking-rules/
@@ -1057,6 +1080,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		NetworkMode:  container.NetworkMode(networkMode),
 		PortBindings: portMap,
 		ExtraHosts:   extraHosts,
+		Resources:    *resources,
 	}
 	return containerHostConfigPtr, nil
 }
@@ -1309,4 +1333,19 @@ func (manager DockerManager) getFailedContainerLogsOrErrorString(ctx context.Con
 		}
 	}
 	return containerLogs
+}
+
+func convertMemoryAllocationToBytes(memoryAllocation uint64) int64 {
+	return int64(memoryAllocation) * 1000000
+}
+
+// Taken from Docker CLI's `ParseCPUs`
+// https://github.com/docker/cli/blob/c780f7c4abaf67034ecfaa0611e03695cf9e4a3e/opts/opts.go
+func convertCPUAllocationToNanoCPUs(cpuAllocation uint64) (int64, error) {
+	cpu := new(big.Rat).SetInt64(int64(cpuAllocation))
+	nano := cpu.Mul(cpu, big.NewRat(1e9, 1))
+	if !nano.IsInt() {
+		return 0, stacktrace.NewError("value is too precise")
+	}
+	return nano.Num().Int64(), nil
 }

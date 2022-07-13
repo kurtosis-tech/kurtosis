@@ -304,7 +304,7 @@ func (backend *MetricsReportingKurtosisBackend) DestroyModules(
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID, ) (*service.ServiceRegistration, error, ) {
+func (backend *MetricsReportingKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
 	serviceIdStr := string(serviceId)
 	if len(strings.TrimSpace(serviceIdStr)) == 0 {
 		return nil, stacktrace.NewError("Service ID cannot be whitespace or empty")
@@ -328,6 +328,8 @@ func (backend *MetricsReportingKurtosisBackend) StartUserService(
 	cmdArgs []string,
 	envVars map[string]string,
 	filesArtifactExpansion *backend_interface.FilesArtifactsExpansion,
+	cpuAllocation uint64,
+	memoryAllocation uint64,
 ) (
 	newUserService *service.Service,
 	resultErr error,
@@ -343,6 +345,8 @@ func (backend *MetricsReportingKurtosisBackend) StartUserService(
 		cmdArgs,
 		envVars,
 		filesArtifactExpansion,
+		cpuAllocation,
+		memoryAllocation,
 	)
 	if err != nil {
 		filesArtifactMountDirpaths := []string{}
@@ -353,8 +357,8 @@ func (backend *MetricsReportingKurtosisBackend) StartUserService(
 		}
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred starting user service '%v' using image '%v' " +
-				"with private ports '%+v' and entry point args '%+v', command args '%+v', environment " +
+			"An error occurred starting user service '%v' using image '%v' "+
+				"with private ports '%+v' and entry point args '%+v', command args '%+v', environment "+
 				"vars '%+v', and file artifacts mount dirpaths '%v'",
 			guid,
 			containerImageName,
@@ -466,9 +470,7 @@ func (backend *MetricsReportingKurtosisBackend) CopyFilesFromUserService(
 	serviceGuid service.ServiceGUID,
 	srcPath string,
 	output io.Writer,
-) (
-	error,
-) {
+) error {
 	if err := backend.underlying.CopyFilesFromUserService(ctx, enclaveId, serviceGuid, srcPath, output); err != nil {
 		return stacktrace.Propagate(
 			err,

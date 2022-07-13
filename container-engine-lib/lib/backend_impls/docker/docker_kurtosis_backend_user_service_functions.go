@@ -1,4 +1,5 @@
 package docker
+
 import (
 	"bytes"
 	"context"
@@ -73,7 +74,7 @@ The benefits of this implementation:
 	to know their own IP when they start (e.g. Ethereum and Avalanche nodes require a flag to be passed in with their own IP)
 - We can stop a service and free its memory/CPU resources while still preserving the logs for users
 - We can call the GetServices method (that the CLI needs) without the API container running
- */
+*/
 
 const (
 	shouldGetStoppedContainersWhenGettingServiceInfo = true
@@ -83,14 +84,12 @@ const (
 	expanderContainerSuccessExitCode = 0
 )
 
-
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
 var commandToRunWhenCreatingUserServiceShell = []string{
 	"sh",
 	"-c",
 	"if command -v 'bash' > /dev/null; then echo \"Found bash on container; creating bash shell...\"; bash; else echo \"No bash found on container; dropping down to sh shell...\"; sh; fi",
 }
-
 
 // NOTE: Normally we'd have a "canonical" resource here, where that resource is always guaranteed to exist. For Kurtosis services,
 // we want this to be the container engine's representation of a user service registration. Unfortunately, Docker has no way
@@ -103,7 +102,7 @@ type userServiceDockerResources struct {
 	expanderVolumeNames []string
 }
 
-func (backend *DockerKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID, ) (*service.ServiceRegistration, error, ) {
+func (backend *DockerKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
 	backend.serviceRegistrationMutex.Lock()
 	defer backend.serviceRegistrationMutex.Unlock()
 
@@ -175,7 +174,9 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	cmdArgs []string,
 	envVars map[string]string,
 	filesArtifactsExpansion *backend_interface.FilesArtifactsExpansion,
-) (*service.Service, error, ) {
+	cpuAllocation uint64,
+	memoryAllocation uint64,
+) (*service.Service, error) {
 
 	//Sanity check for port bindings
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
@@ -234,7 +235,7 @@ func (backend *DockerKurtosisBackend) StartUserService(
 
 	// Find if a container has been associated with the registration yet
 	preexistingServicesFilters := &service.ServiceFilters{
-		GUIDs:    map[service.ServiceGUID]bool{
+		GUIDs: map[service.ServiceGUID]bool{
 			serviceGuid: true,
 		},
 	}
@@ -332,7 +333,12 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		labelStrs,
 	).WithAlias(
 		string(serviceId),
+	).WithCPUAllocation(
+		cpuAllocation,
+	).WithMemoryAllocation(
+		memoryAllocation,
 	)
+
 	if entrypointArgs != nil {
 		createAndStartArgsBuilder.WithEntrypointArgs(entrypointArgs)
 	}
@@ -594,9 +600,7 @@ func (backend *DockerKurtosisBackend) CopyFilesFromUserService(
 	serviceGuid service.ServiceGUID,
 	srcPathOnContainer string,
 	output io.Writer,
-)(
-	error,
-) {
+) error {
 	_, serviceDockerResources, err := backend.getSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting user service with GUID '%v' in enclave with ID '%v'", serviceGuid, enclaveId)
@@ -701,7 +705,7 @@ This code is INCREDIBLY tricky, as a result of:
 
         Be VERY careful when modifying this code, and ideally get Kevin's eyes on it!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- */
+*/
 func (backend *DockerKurtosisBackend) DestroyUserServices(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
@@ -718,7 +722,7 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 	freeIpAddrTrackerForEnclave, found := backend.enclaveFreeIpProviders[enclaveId]
 	if !found {
 		return nil, nil, stacktrace.NewError(
-			"Cannot destroy services in enclave '%v' because no free IP address tracker is registered for it; this likely " +
+			"Cannot destroy services in enclave '%v' because no free IP address tracker is registered for it; this likely "+
 				"means that the destroy user services call is being made from somewhere it shouldn't be (i.e. outside the API contianer)",
 			enclaveId,
 		)
@@ -775,7 +779,7 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 	for serviceGuid := range allServiceObjs {
 		if _, found := allDockerResources[serviceGuid]; !found {
 			return nil, nil, stacktrace.NewError(
-				"Have service object to remove '%v', which doesn't have corresponding Docker resources; this is a " +
+				"Have service object to remove '%v', which doesn't have corresponding Docker resources; this is a "+
 					"bug in Kurtosis",
 				serviceGuid,
 			)
@@ -885,7 +889,7 @@ func (backend *DockerKurtosisBackend) getMatchingUserServiceObjsAndDockerResourc
 			// This should never happen; the Services map and the Docker resources maps should have the same GUIDs
 			return nil, nil, stacktrace.Propagate(
 				err,
-				"Needed to return Docker resources for service with GUID '%v', but none was " +
+				"Needed to return Docker resources for service with GUID '%v', but none was "+
 					"found; this is a bug in Kurtosis",
 				guid,
 			)
@@ -927,7 +931,7 @@ func (backend *DockerKurtosisBackend) getMatchingUserServiceDockerResources(
 				continue
 			}
 		}
-		
+
 		resourceObj, found := result[serviceGuid]
 		if !found {
 			resourceObj = &userServiceDockerResources{}
@@ -938,8 +942,8 @@ func (backend *DockerKurtosisBackend) getMatchingUserServiceDockerResources(
 
 	// Grab volumes, INDEPENDENT OF whether there any containers
 	filesArtifactExpansionVolumeSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.EnclaveIDDockerLabelKey.GetString():     string(enclaveId),
+		label_key_consts.AppIDDockerLabelKey.GetString():      label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.EnclaveIDDockerLabelKey.GetString():  string(enclaveId),
 		label_key_consts.VolumeTypeDockerLabelKey.GetString(): label_value_consts.FilesArtifactExpansionVolumeTypeDockerLabelValue.GetString(),
 	}
 	matchingFilesArtifactExpansionVolumes, err := backend.dockerManager.GetVolumesByLabels(ctx, filesArtifactExpansionVolumeSearchLabels)
@@ -985,7 +989,7 @@ func getUserServiceObjsFromDockerResources(
 		// The only case where this would happen is if, during deletion, we delete the container but an error occurred deleting the volumes
 		if container == nil {
 			return nil, stacktrace.NewError(
-				"Service '%v' has Docker resources but not a container; this indicates that there the service's " +
+				"Service '%v' has Docker resources but not a container; this indicates that there the service's "+
 					"container was deleted but errors occurred deleting the rest of the resources",
 				serviceGuid,
 			)
@@ -1047,7 +1051,7 @@ func getIpAndPortInfoFromContainer(
 	resultPublicIp net.IP,
 	resultPublicPortSpecs map[string]*port_spec.PortSpec,
 	resultErr error,
-){
+) {
 	privateIpAddrStr, found := labels[label_key_consts.PrivateIPDockerLabelKey.GetString()]
 	if !found {
 		return nil, nil, nil, nil, stacktrace.NewError("Expected to find label '%v' on container '%v' but label was missing", label_key_consts.PrivateIPDockerLabelKey.GetString(), containerName)
@@ -1080,37 +1084,37 @@ func getIpAndPortInfoFromContainer(
 	}
 
 	for portId, privatePortSpec := range privatePortSpecs {
-		 portPublicIp, publicPortSpec, err := getPublicPortBindingFromPrivatePortSpec(privatePortSpec, hostMachinePortBindings)
-		 if err != nil {
-			 return nil, nil, nil, nil, stacktrace.Propagate(
-				 err,
-				 "An error occurred getting public port spec for private port '%v' with spec '%v/%v' on container '%v'",
-				 portId,
-				 privatePortSpec.GetNumber(),
-				 privatePortSpec.GetProtocol().String(),
-				 containerName,
-			 )
-		 }
+		portPublicIp, publicPortSpec, err := getPublicPortBindingFromPrivatePortSpec(privatePortSpec, hostMachinePortBindings)
+		if err != nil {
+			return nil, nil, nil, nil, stacktrace.Propagate(
+				err,
+				"An error occurred getting public port spec for private port '%v' with spec '%v/%v' on container '%v'",
+				portId,
+				privatePortSpec.GetNumber(),
+				privatePortSpec.GetProtocol().String(),
+				containerName,
+			)
+		}
 
-		 if containerPublicIp == nil {
-			 containerPublicIp = portPublicIp
-		 } else {
-			 if !containerPublicIp.Equal(portPublicIp) {
-				 return nil, nil, nil, nil, stacktrace.NewError(
-					  "Private port '%v' on container '%v' yielded a public IP '%v', which doesn't agree with "+
-						  "previously-seen public IP '%v'",
-					  portId,
-					  containerName,
-					  portPublicIp.String(),
-					  containerPublicIp.String(),
-				 )
-			 }
-		 }
+		if containerPublicIp == nil {
+			containerPublicIp = portPublicIp
+		} else {
+			if !containerPublicIp.Equal(portPublicIp) {
+				return nil, nil, nil, nil, stacktrace.NewError(
+					"Private port '%v' on container '%v' yielded a public IP '%v', which doesn't agree with "+
+						"previously-seen public IP '%v'",
+					portId,
+					containerName,
+					portPublicIp.String(),
+					containerPublicIp.String(),
+				)
+			}
+		}
 
-		 if publicPortSpecs == nil {
-			 publicPortSpecs = map[string]*port_spec.PortSpec{}
-		 }
-		 publicPortSpecs[portId] = publicPortSpec
+		if publicPortSpecs == nil {
+			publicPortSpecs = map[string]*port_spec.PortSpec{}
+		}
+		publicPortSpecs[portId] = publicPortSpec
 	}
 
 	return privateIp, privatePortSpecs, containerPublicIp, publicPortSpecs, nil
@@ -1144,10 +1148,12 @@ func (backend *DockerKurtosisBackend) getSingleUserServiceObjAndResourcesNoMutex
 	}
 
 	var resultService *service.Service
-	for _, resultService = range userServices {}
+	for _, resultService = range userServices {
+	}
 
 	var resultDockerResources *userServiceDockerResources
-	for _, resultDockerResources = range dockerResources {}
+	for _, resultDockerResources = range dockerResources {
+	}
 
 	return resultService, resultDockerResources, nil
 }
@@ -1222,7 +1228,7 @@ func (backend *DockerKurtosisBackend) doFilesArtifactExpansionAndGetUserServiceV
 		volumeName, found := expanderMountpointsToVolumeNames[expanderMountpoint]
 		if !found {
 			return nil, stacktrace.NewError(
-				"Found expander mountpoint '%v' for which no expansion volume was created; this should never happen " +
+				"Found expander mountpoint '%v' for which no expansion volume was created; this should never happen "+
 					"and is a bug in Kurtosis",
 				expanderMountpoint,
 			)
@@ -1266,7 +1272,6 @@ func (backend *DockerKurtosisBackend) runFilesArtifactsExpander(
 		return stacktrace.Propagate(err, "Couldn't get a free IP to give the expander container '%v'", containerName)
 	}
 	defer freeIpAddrProvider.ReleaseIpAddr(ipAddr)
-
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		image,
@@ -1321,7 +1326,7 @@ func (backend *DockerKurtosisBackend) runFilesArtifactsExpander(
 		)
 		if err != nil {
 			return stacktrace.NewError(
-				"Files artifacts expander container '%v' for service '%v' finished with non-%v exit code '%v' so we tried " +
+				"Files artifacts expander container '%v' for service '%v' finished with non-%v exit code '%v' so we tried "+
 					"to get the logs, but doing so failed with an error:\n%v",
 				containerName,
 				serviceGuid,
@@ -1363,11 +1368,11 @@ func (backend *DockerKurtosisBackend) getFilesArtifactsExpanderContainerLogsBloc
 	//  The only reason I'm not doing it right now is because we have the huge ETH deadline tomorrow and I don't have time for any
 	//  nice-to-have refactors (ktoday, 2022-05-22)
 	if _, err := stdcopy.StdCopy(concurrentBuffer, concurrentBuffer, containerLogsReadCloser); err != nil {
-		 return "", stacktrace.Propagate(
-			 err,
-			 "An error occurred copying logs to memory for files artifact expander container '%v'",
-			 containerId,
-		 )
+		return "", stacktrace.Propagate(
+			err,
+			"An error occurred copying logs to memory for files artifact expander container '%v'",
+			containerId,
+		)
 	}
 
 	wrappedContainerLogsStrBuilder := strings.Builder{}
@@ -1413,7 +1418,7 @@ func (backend *DockerKurtosisBackend) createFilesArtifactsExpansionVolumes(
 		); err != nil {
 			return nil, stacktrace.Propagate(
 				err,
-				"An error occurred creating files artifact expansion volume for service '%v' that's intended to be mounted " +
+				"An error occurred creating files artifact expansion volume for service '%v' that's intended to be mounted "+
 					"on the expander container at path '%v'",
 				serviceGuid,
 				mountpointExpanderWants,
@@ -1455,7 +1460,7 @@ possibility that some will get leaked! There's unfortunately no way around this 
 
 Therefore, we just make a best-effort attempt to clean up the volumes and leak the rest, though it's not THAT
 big of a deal since they'll be deleted when the enclave gets deleted.
- */
+*/
 func (backend *DockerKurtosisBackend) removeUserServiceDockerResources(
 	ctx context.Context,
 	serviceObjectsToRemove map[service.ServiceGUID]*service.Service,
@@ -1475,7 +1480,7 @@ func (backend *DockerKurtosisBackend) removeUserServiceDockerResources(
 	for serviceGuid := range serviceObjectsToRemove {
 		if _, found := resourcesToRemove[serviceGuid]; !found {
 			return nil, nil, stacktrace.NewError(
-				"Have service object to remove '%v', which doesn't have corresponding Docker resources; this is a " +
+				"Have service object to remove '%v', which doesn't have corresponding Docker resources; this is a "+
 					"bug in Kurtosis",
 				serviceGuid,
 			)
@@ -1533,17 +1538,17 @@ func (backend *DockerKurtosisBackend) removeUserServiceDockerResources(
 		failedVolumeErrStrs := []string{}
 		for _, volumeName := range resources.expanderVolumeNames {
 			/*
-			We try to delete as many volumes as we can here, rather than ejecting on failure, because any volumes not
-			deleted here will be leaked! There's unfortunately no way around this though because:
+				We try to delete as many volumes as we can here, rather than ejecting on failure, because any volumes not
+				deleted here will be leaked! There's unfortunately no way around this though because:
 
-			 1) we've already deleted the canonical resource (the user container) out of necessity
-			    since Docker won't let us delete volumes unless no containers are using them
-			 2) we can't undo container deletion
-			 3) normally whichever resource is created first (volumes) is the one we'd use as the canonical resource,
-			    but we can't do that since we're not guaranteed to have volumes
+				 1) we've already deleted the canonical resource (the user container) out of necessity
+				    since Docker won't let us delete volumes unless no containers are using them
+				 2) we can't undo container deletion
+				 3) normally whichever resource is created first (volumes) is the one we'd use as the canonical resource,
+				    but we can't do that since we're not guaranteed to have volumes
 
-			Therefore, we just make a best-effort attempt to clean up the volumes and leak the rest :(
-			 */
+				Therefore, we just make a best-effort attempt to clean up the volumes and leak the rest :(
+			*/
 			if err := backend.dockerManager.RemoveVolume(ctx, volumeName); err != nil {
 				errStrBuilder := strings.Builder{}
 				errStrBuilder.WriteString(fmt.Sprintf(
@@ -1562,9 +1567,9 @@ func (backend *DockerKurtosisBackend) removeUserServiceDockerResources(
 
 		if len(failedVolumeErrStrs) > 0 {
 			erroredGuids[serviceGuid] = stacktrace.NewError(
-				"Errors occurred removing volumes for service '%v'\n" +
-					 "ACTION REQUIRED: You will need to manually remove these volumes, else they will stay around until the enclave is destroyed!\n" +
-					 "%v",
+				"Errors occurred removing volumes for service '%v'\n"+
+					"ACTION REQUIRED: You will need to manually remove these volumes, else they will stay around until the enclave is destroyed!\n"+
+					"%v",
 				serviceGuid,
 				strings.Join(failedVolumeErrStrs, "\n\n"),
 			)

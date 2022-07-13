@@ -7,42 +7,46 @@ import (
 
 // See CreateAndStartContainerArgsBuilder for detailed documentation on the fields
 type CreateAndStartContainerArgs struct {
-	dockerImage            string
-	name                   string
-	alias                  string
-	interactiveModeTtySize *InteractiveModeTtySize // If nil interactive mode will be disabled; if non-nil then interactive mode will be enabled
-	networkId              string
-	staticIp               net.IP
-	addedCapabilities      map[ContainerCapability]bool
-	networkMode            DockerManagerNetworkMode
-	usedPorts              map[nat.Port]PortPublishSpec
-	entrypointArgs         []string
-	cmdArgs                []string
-	envVariables           map[string]string
-	bindMounts             map[string]string
-	volumeMounts           map[string]string
+	dockerImage                    string
+	name                           string
+	alias                          string
+	interactiveModeTtySize         *InteractiveModeTtySize // If nil interactive mode will be disabled; if non-nil then interactive mode will be enabled
+	networkId                      string
+	staticIp                       net.IP
+	addedCapabilities              map[ContainerCapability]bool
+	networkMode                    DockerManagerNetworkMode
+	usedPorts                      map[nat.Port]PortPublishSpec
+	entrypointArgs                 []string
+	cmdArgs                        []string
+	envVariables                   map[string]string
+	bindMounts                     map[string]string
+	volumeMounts                   map[string]string
 	needsAccessToDockerHostMachine bool
 	labels                         map[string]string
+	cpuAllocation                  uint64
+	memoryAllocation               uint64
 }
 
 // Builder for creating CreateAndStartContainerArgs object
 type CreateAndStartContainerArgsBuilder struct {
-	dockerImage            string
-	name                   string
-	alias                  string
-	interactiveModeTtySize *InteractiveModeTtySize // If nil interactive mode will be disabled; if non-nil then interactive mode will be enabled
-	networkId              string
-	staticIp               net.IP
-	addedCapabilities      map[ContainerCapability]bool
-	networkMode            DockerManagerNetworkMode
-	usedPorts              map[nat.Port]PortPublishSpec
-	entrypointArgs         []string
-	cmdArgs                []string
-	envVariables           map[string]string
-	bindMounts             map[string]string
-	volumeMounts           map[string]string
+	dockerImage                    string
+	name                           string
+	alias                          string
+	interactiveModeTtySize         *InteractiveModeTtySize // If nil interactive mode will be disabled; if non-nil then interactive mode will be enabled
+	networkId                      string
+	staticIp                       net.IP
+	addedCapabilities              map[ContainerCapability]bool
+	networkMode                    DockerManagerNetworkMode
+	usedPorts                      map[nat.Port]PortPublishSpec
+	entrypointArgs                 []string
+	cmdArgs                        []string
+	envVariables                   map[string]string
+	bindMounts                     map[string]string
+	volumeMounts                   map[string]string
 	needsAccessToDockerHostMachine bool
 	labels                         map[string]string
+	cpuAllocation                  uint64
+	memoryAllocation               uint64
 }
 
 /*
@@ -69,6 +73,8 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		volumeMounts:                   map[string]string{},
 		needsAccessToDockerHostMachine: false,
 		labels:                         map[string]string{},
+		cpuAllocation:                  0,
+		memoryAllocation:               0,
 	}
 }
 
@@ -90,6 +96,8 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		bindMounts:                     builder.bindMounts,
 		volumeMounts:                   builder.volumeMounts,
 		needsAccessToDockerHostMachine: builder.needsAccessToDockerHostMachine,
+		cpuAllocation:                  builder.cpuAllocation,
+		memoryAllocation:               builder.memoryAllocation,
 	}
 }
 
@@ -172,5 +180,21 @@ func (builder *CreateAndStartContainerArgsBuilder) NeedsAccessToDockerHostMachin
 // A key-value map that represents labels to give the container, for use in searching later
 func (builder *CreateAndStartContainerArgsBuilder) WithLabels(labels map[string]string) *CreateAndStartContainerArgsBuilder {
 	builder.labels = labels
+	return builder
+}
+
+// Corresponds to `--cpus` limit in Docker, converted to NanoCPUs set in the underlying container
+// 0 is the empty value, meaning if the value is 0, this field is ignored
+// https://pkg.go.dev/github.com/docker/docker@v20.10.17+incompatible/api/types/container#Resources
+func (builder *CreateAndStartContainerArgsBuilder) WithCPUAllocation(cpuAllocation uint64) *CreateAndStartContainerArgsBuilder {
+	builder.cpuAllocation = cpuAllocation
+	return builder
+}
+
+// Corresponds to `--memory` limit in Docker in megabytes, used to set Memory and MemorySwap resource in the underlying container
+// 0 is the empty value, meaning if the value is 0, this field is ignored
+// https://pkg.go.dev/github.com/docker/docker@v20.10.17+incompatible/api/types/container#Resources
+func (builder *CreateAndStartContainerArgsBuilder) WithMemoryAllocation(memoryAllocation uint64) *CreateAndStartContainerArgsBuilder {
+	builder.memoryAllocation = memoryAllocation
 	return builder
 }
