@@ -3184,8 +3184,8 @@ proto.api_container_api.StartServiceArgs.toObject = function(includeInstance, ms
     dockerEnvVarsMap: (f = msg.getDockerEnvVarsMap()) ? f.toObject(includeInstance, undefined) : [],
     filesArtifactMountpointsMap: (f = msg.getFilesArtifactMountpointsMap()) ? f.toObject(includeInstance, undefined) : [],
     publicPortsMap: (f = msg.getPublicPortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : [],
-    cpuResourceAllocation: jspb.Message.getFieldWithDefault(msg, 10, ""),
-    memoryResourceAllocation: jspb.Message.getFieldWithDefault(msg, 11, "")
+    cpuAllocation: jspb.Message.getFieldWithDefault(msg, 10, 0),
+    memoryAllocation: jspb.Message.getFieldWithDefault(msg, 11, 0)
   };
 
   if (includeInstance) {
@@ -3263,12 +3263,12 @@ proto.api_container_api.StartServiceArgs.deserializeBinaryFromReader = function(
          });
       break;
     case 10:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setCpuResourceAllocation(value);
+      var value = /** @type {number} */ (reader.readUint64());
+      msg.setCpuAllocation(value);
       break;
     case 11:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setMemoryResourceAllocation(value);
+      var value = /** @type {number} */ (reader.readUint64());
+      msg.setMemoryAllocation(value);
       break;
     default:
       reader.skipField();
@@ -3343,16 +3343,16 @@ proto.api_container_api.StartServiceArgs.serializeBinaryToWriter = function(mess
   if (f && f.getLength() > 0) {
     f.serializeBinary(9, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api_container_api.Port.serializeBinaryToWriter);
   }
-  f = message.getCpuResourceAllocation();
-  if (f.length > 0) {
-    writer.writeString(
+  f = message.getCpuAllocation();
+  if (f !== 0) {
+    writer.writeUint64(
       10,
       f
     );
   }
-  f = message.getMemoryResourceAllocation();
-  if (f.length > 0) {
-    writer.writeString(
+  f = message.getMemoryAllocation();
+  if (f !== 0) {
+    writer.writeUint64(
       11,
       f
     );
@@ -3559,38 +3559,38 @@ proto.api_container_api.StartServiceArgs.prototype.clearPublicPortsMap = functio
 
 
 /**
- * optional string cpu_resource_allocation = 10;
- * @return {string}
+ * optional uint64 cpu_allocation = 10;
+ * @return {number}
  */
-proto.api_container_api.StartServiceArgs.prototype.getCpuResourceAllocation = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 10, ""));
+proto.api_container_api.StartServiceArgs.prototype.getCpuAllocation = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 10, 0));
 };
 
 
 /**
- * @param {string} value
+ * @param {number} value
  * @return {!proto.api_container_api.StartServiceArgs} returns this
  */
-proto.api_container_api.StartServiceArgs.prototype.setCpuResourceAllocation = function(value) {
-  return jspb.Message.setProto3StringField(this, 10, value);
+proto.api_container_api.StartServiceArgs.prototype.setCpuAllocation = function(value) {
+  return jspb.Message.setProto3IntField(this, 10, value);
 };
 
 
 /**
- * optional string memory_resource_allocation = 11;
- * @return {string}
+ * optional uint64 memory_allocation = 11;
+ * @return {number}
  */
-proto.api_container_api.StartServiceArgs.prototype.getMemoryResourceAllocation = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 11, ""));
+proto.api_container_api.StartServiceArgs.prototype.getMemoryAllocation = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 11, 0));
 };
 
 
 /**
- * @param {string} value
+ * @param {number} value
  * @return {!proto.api_container_api.StartServiceArgs} returns this
  */
-proto.api_container_api.StartServiceArgs.prototype.setMemoryResourceAllocation = function(value) {
-  return jspb.Message.setProto3StringField(this, 11, value);
+proto.api_container_api.StartServiceArgs.prototype.setMemoryAllocation = function(value) {
+  return jspb.Message.setProto3IntField(this, 11, value);
 };
 
 

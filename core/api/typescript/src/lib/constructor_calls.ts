@@ -156,8 +156,8 @@ export function newStartServiceArgs(
     cmdArgs: string[],
     dockerEnvVars: Map<string, string>,
     filesArtifactMountDirpaths: Map<string, string>,
-    cpuResourceAllocation: string,
-    memoryResourceAllocation: string,
+    cpuAllocation: number,
+    memoryAllocation: number,
 ): StartServiceArgs {
     const result: StartServiceArgs = new StartServiceArgs();
     result.setServiceId(String(serviceId));
@@ -189,8 +189,8 @@ export function newStartServiceArgs(
         publicPortsMap.set(portId, portSpec);
     }
     //TODO finish the hack
-    result.setCpuResourceAllocation(cpuResourceAllocation);
-    result.setMemoryResourceAllocation(memoryResourceAllocation);
+    result.setCpuAllocation(cpuAllocation);
+    result.setMemoryAllocation(memoryAllocation);
     return result;
 }
 

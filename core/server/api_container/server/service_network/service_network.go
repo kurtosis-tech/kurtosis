@@ -228,8 +228,8 @@ func (network *ServiceNetwork) StartService(
 	cmdArgs []string,
 	dockerEnvVars map[string]string,
 	filesArtifactMountDirpaths map[enclave_data_directory.FilesArtifactUUID]string,
-	cpuResourceAllocation string,
-	memoryResourceAllocation string,
+	cpuAllocation uint64,
+	memoryAllocation uint64,
 ) (
 	resultService *service.Service,
 	resultErr error,
@@ -291,8 +291,8 @@ func (network *ServiceNetwork) StartService(
 		cmdArgs,
 		dockerEnvVars,
 		filesArtifactMountDirpaths,
-		cpuResourceAllocation,
-		memoryResourceAllocation,
+		cpuAllocation,
+		memoryAllocation,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -714,8 +714,8 @@ func (network *ServiceNetwork) startService(
 	// Mapping of UUIDs of previously-registered files artifacts -> mountpoints on the container
 	// being launched
 	filesArtifactUuidsToMountpoints map[enclave_data_directory.FilesArtifactUUID]string,
-	cpuResourceAllocation string,
-	memoryResourceAllocation string,
+	cpuAllocation uint64,
+	memoryAllocation uint64,
 ) (
 	resultUserService *service.Service,
 	resultErr error,
