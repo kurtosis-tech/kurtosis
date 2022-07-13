@@ -229,34 +229,29 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the modules
 	)
 
-
-
-
-
 	/*
-	                           KURTOSIS SERVICE STATE DIAGRAM
+			                           KURTOSIS SERVICE STATE DIAGRAM
 
-                                .-----------------DestroyServices--------------------.
-                               /                                                      \
-	  RegisterService--> REGISTERED ---StopServices---> STOPPED ---DestroyServices---> DESTROYED
-	                           \                          /                           /
-	                      StartService              StopServices                     /
-	                             \                      /                           /
-	                              '---------------> RUNNING ---DestroyServices-----'
+		                                .-----------------DestroyServices--------------------.
+		                               /                                                      \
+			  RegisterService--> REGISTERED ---StopServices---> STOPPED ---DestroyServices---> DESTROYED
+			                           \                          /                           /
+			                      StartService              StopServices                     /
+			                             \                      /                           /
+			                              '---------------> RUNNING ---DestroyServices-----'
 
-	Considerations:
-	- We have REGISTERED as a state separate from RUNNING because some user containers need to know their own
-		IP address when they start, which means we need to know the IP address of the container BEFORE it starts.
-	- As of 2022-05-15, Kurtosis services can never be restarted once stopped.
+			Considerations:
+			- We have REGISTERED as a state separate from RUNNING because some user containers need to know their own
+				IP address when they start, which means we need to know the IP address of the container BEFORE it starts.
+			- As of 2022-05-15, Kurtosis services can never be restarted once stopped.
 	*/
-
 
 	// Registers a user service, allocating it an IP and ServiceGUID
 	RegisterUserService(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
 		serviceId service.ServiceID,
-	) (*service.ServiceRegistration, error, )
+	) (*service.ServiceRegistration, error)
 
 	// StartUserService consumes a service registration to create a user container with the given parameters
 	StartUserService(
@@ -271,6 +266,8 @@ type KurtosisBackend interface {
 		envVars map[string]string,
 		// Leave as nil to not do any files artifact expansion
 		filesArtifactExpansion *FilesArtifactsExpansion,
+		cpuAllocation uint64,
+		memoryAllocation uint64,
 	) (
 		*service.Service,
 		error,
@@ -345,9 +342,7 @@ type KurtosisBackend interface {
 		serviceGuid service.ServiceGUID,
 		srcPathOnService string,
 		output io.Writer,
-	)(
-		error,
-	)
+	) error
 
 	// StopUserServices stops the user containers for the services matching the given filters
 	// A stopped service cannot be activated again as of 2022-05-14
