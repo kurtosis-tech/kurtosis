@@ -51,7 +51,7 @@ run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
 version: 2.1
 
 orbs:
-  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.0
+  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.1
 
 executors:
   ubuntu_vm:
