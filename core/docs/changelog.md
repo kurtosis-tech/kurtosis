@@ -3,6 +3,7 @@
 * Removed unused logging package in error reporting in `api_container_launcher`
 * Migrated repo to use internal cli tool `kudet` to retrieve image tags as opposed to script
 * Migrated repo to use internal cli tool `kudet` for release process
+* Merge `develop` branch into `master`
 * Exposed resource allocation fields, `cpuAllocation` and `memoryAllocation` through  `ContainerConfig` in SDK
 
 # 1.55.2
