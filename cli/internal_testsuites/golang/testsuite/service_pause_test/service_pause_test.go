@@ -1,3 +1,7 @@
+//+build !minikube
+
+// We don't run this test in Kubernetes because, as of 2022-07-07, Kubernetes doesn't support container pause/unpause
+
 package service_pause_test
 
 import (
@@ -14,10 +18,10 @@ import (
 )
 
 const (
-	testName                          = "pause-unpause"
-	isPartitioningEnabled             = false
-	pauseUnpauseTestImageName         = "alpine:3.12.4"
-	testServiceId                     = "test"
+	testName                       = "pause-unpause"
+	isPartitioningEnabled          = false
+	pauseUnpauseTestImageName      = "alpine:3.12.4"
+	testServiceId                  = "test"
 	testLogFilepath                = "/time.log"
 	delayBetweenCommandsInSeconds  = 4
 	minimumGapRequirementInSeconds = 3

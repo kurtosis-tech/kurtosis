@@ -5,20 +5,22 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
 	"github.com/stretchr/testify/require"
+	"strings"
 	"testing"
 )
 
 const (
-	testName = "duplicate-files-artifact-mount"
+	testName              = "duplicate-files-artifact-mount"
 	isPartitioningEnabled = false
 
 	image                        = "flashspys/nginx-static"
 	serviceId services.ServiceID = "file-server"
 
-	testFilesArtifactUrl                          = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
+	testFilesArtifactUrl = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
 
 	userServiceMountPointForTestFilesArtifact = "/static"
 
+	duplicateMountpointKubernetesErrMsgSentence   = "Invalid value: \"/static\": must be unique"
 	duplicateMountpointDockerDaemonErrMsgSentence = "Duplicate mount point"
 )
 
@@ -47,17 +49,15 @@ func TestStoreWebFiles(t *testing.T) {
 	require.Errorf(
 		t,
 		err,
-		"Adding service '%v' should have failed and did not, because duplicated files artifact mountpoints " +
+		"Adding service '%v' should have failed and did not, because duplicated files artifact mountpoints "+
 			"'%v' should throw an error",
 		serviceId,
 		filesArtifactMountpoints,
 	)
-	require.Contains(
-		t,
-		err.Error(),
-		duplicateMountpointDockerDaemonErrMsgSentence,
-		"Adding service '%v' has failed, but the error is not the duplicated-files-artifact-mountpoints error " +
-			"that we expected, this is throwing this error instead:\n%v",
+	isExpectedErrorMsg := strings.Contains(err.Error(), duplicateMountpointKubernetesErrMsgSentence) || strings.Contains(err.Error(), duplicateMountpointDockerDaemonErrMsgSentence)
+
+	require.True(t, isExpectedErrorMsg, "Adding service '%v' has failed, but the error is not the duplicated-files-artifact-mountpoints error "+
+		"that we expected, this is throwing this error instead:\n%v",
 		serviceId,
 		err.Error(),
 	)
@@ -67,7 +67,7 @@ func TestStoreWebFiles(t *testing.T) {
 //                                       Private helper functions
 // ====================================================================================================
 func getFileServerContainerConfigSupplier(filesArtifactMountpoints map[services.FilesArtifactUUID]string) func(ipAddr string) (*services.ContainerConfig, error) {
-	containerConfigSupplier  := func(ipAddr string) (*services.ContainerConfig, error) {
+	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
 
 		containerConfig := services.NewContainerConfigBuilder(
 			image,

@@ -46,7 +46,7 @@ const (
 	portNumberUintParsingBase   = 10
 	portNumberUintParsingBits   = 16
 
-	filesFlagKey                       = "files"
+	filesFlagKey                         = "files"
 	filesArtifactMountsDelimiter         = ","
 	filesArtifactUuidMountpointDelimiter = ":"
 
@@ -249,8 +249,9 @@ func run(
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
 	for portId, privatePortSpec := range privatePorts {
 		publicPortSpec, found := publicPorts[portId]
+		// With Kubernetes, it's possible for a private port not to have a corresponding public port
 		if !found {
-			return stacktrace.NewError("Found private port with ID '%v' that doesn't correspond to any public port; this is a bug in Kurtosis!", portId)
+			continue
 		}
 
 		apiProtocolEnum := kurtosis_core_rpc_api_bindings.Port_Protocol(publicPortSpec.GetProtocol())

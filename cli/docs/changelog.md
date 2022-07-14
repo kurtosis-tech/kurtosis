@@ -1,4 +1,27 @@
 # TBD
+### Breaking Changes
+* Upgraded core to 1.55.2
+* Upgraded engine to 1.27.1
+
+### Changes
+* Updated CI to test cluster setups
+  * Added `cluster-backend` argument to `build.sh` for golang and typescript testsuites
+* Merge `develop` into `master`
+
+### Fixes
+* Fixed Consistency issues in API Container Gateway
+
+### Changes
+* Changed enclave inspect to query the API container for module and service information
+* Upgraded Ubuntu machine image in Circle CI configuration to version `ubuntu-2004:202201-02`
+* Upgraded goreleaser to v1.9.1 in Circle CI config file
+* Updated `build cli script` and `cli launch script` to support the goamd64 env var
+* No longer run health checks against a created engine in a Kubernetes cluster
+* Migrated repo to use ineternal cli tool `kudet` for release process
+* Migrate repo to use internal cli tool, `kudet` to get docker image tags
+
+### Features
+* The gateway will reconnect if the engine pod it's connected to is restarted
 
 # 0.21.0
 ### Breaking Changes

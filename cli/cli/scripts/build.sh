@@ -15,8 +15,6 @@ source "${script_dirpath}/_constants.sh"
 
 DEFAULT_SHOULD_PUBLISH_ARG="false"
 
-GET_VERSION_SCRIPT_FILENAME="get-docker-images-tag.sh"
-
 # ==================================================================================================
 #                                       Arg Parsing & Validation
 # ==================================================================================================
@@ -37,9 +35,13 @@ fi
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
-get_version_script_filepath="${root_dirpath}/scripts/${GET_VERSION_SCRIPT_FILENAME}"
-if ! version="$("${get_version_script_filepath}")"; then
-    echo "Error: Couldn't get version using script '${get_version_script_filepath}'" >&2
+# Generate Docker image tag
+if ! cd "${root_dirpath}"; then
+  echo "Error: Couldn't cd to the git root dirpath '${server_root_dirpath}'" >&2
+  exit 1
+fi
+if ! version="$(kudet get-docker-tag)"; then
+    echo "Error: Couldn't get the version using kudet get-docker-tag" >&2
     exit 1
 fi
 
@@ -89,7 +91,17 @@ fi
 # Final verification
 goarch="$(go env GOARCH)"
 goos="$(go env GOOS)"
-cli_binary_filepath="${cli_module_dirpath}/${GORELEASER_OUTPUT_DIRNAME}/${GORELEASER_CLI_BUILD_ID}_${goos}_${goarch}/${CLI_BINARY_FILENAME}"
+architecture_dirname="${GORELEASER_CLI_BUILD_ID}_${goos}_${goarch}"
+
+if [ "${goarch}" == "${GO_ARCH_ENV_AMD64_VALUE}" ]; then
+  goamd64="$(go env GOAMD64)"
+  if [ "${goamd64}" == "" ]; then
+    goamd64="${GO_DEFAULT_AMD64_ENV}"
+  fi
+  architecture_dirname="${architecture_dirname}_${goamd64}"
+fi
+
+cli_binary_filepath="${cli_module_dirpath}/${GORELEASER_OUTPUT_DIRNAME}/${architecture_dirname}/${CLI_BINARY_FILENAME}"
 if ! [ -f "${cli_binary_filepath}" ]; then
     echo "Error: Expected a CLI binary to have been built by Goreleaser at '${cli_binary_filepath}' but none exists" >&2
     exit 1

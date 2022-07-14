@@ -23,6 +23,8 @@ const USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT  = "/static"
 
 const DUPLICATE_MOUNTPOINT_DOCKER_DAEMON_ERR_MSG  = "Duplicate mount point"
 
+const DUPLICATE_MOUNTPOINT_KUBERNETES_ERR_MSG = "mountPath: Invalid value: \"/static\": must be unique"
+
 jest.setTimeout(180000)
 
 test("Test two files artifacts mounted to the same location", async () => {
@@ -55,7 +57,7 @@ test("Test two files artifacts mounted to the same location", async () => {
                 `'${filesArtifactMountpoints}' should throw an error`)
         }
         const errMsg = addServiceResult.error.message
-        if(!errMsg.includes(DUPLICATE_MOUNTPOINT_DOCKER_DAEMON_ERR_MSG)){
+        if(!errMsg.includes(DUPLICATE_MOUNTPOINT_DOCKER_DAEMON_ERR_MSG) && !errMsg.includes(DUPLICATE_MOUNTPOINT_KUBERNETES_ERR_MSG)){
             throw new Error(`Adding service "${SERVICE_ID}" has failed, but the error is not the duplicated-files-artifact-mountpoints-error that we expected, this is throwing this error instead:\n "${errMsg}"`)
         }
     }finally{

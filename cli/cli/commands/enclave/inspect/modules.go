@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"sort"
 	"strings"
@@ -15,12 +16,17 @@ import (
 
 const (
 	moduleGUIDColHeader  = "GUID"
-	modulePortsColHeader = "Ports"
+	moduleIDColHeader = "ID"
+	modulePortsColHeader         = "Ports"
+	defaultEmptyIPAddrForModules = ""
 
 	grpcPortId = "grpc"
 )
 
-func printModules(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveId enclave.EnclaveID) error {
+// TODO TODO When gateway binds public ports for modules, use isAPIContainerRunning to know to query for public port bindings.
+func printModules(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo kurtosis_engine_rpc_api_bindings.EnclaveInfo, isAPIContainerRunning bool) error {
+	enclaveIdStr := enclaveInfo.GetEnclaveId()
+	enclaveId := enclave.EnclaveID(enclaveIdStr)
 	moduleFilters := &module.ModuleFilters{
 		Statuses: map[container_status.ContainerStatus]bool{
 			container_status.ContainerStatus_Stopped: true,
@@ -33,15 +39,16 @@ func printModules(ctx context.Context, kurtosisBackend backend_interface.Kurtosi
 		return stacktrace.Propagate(err, "An error occurred getting modules using filters '%+v'", moduleFilters)
 	}
 
-	tablePrinter := output_printers.NewTablePrinter(moduleGUIDColHeader, modulePortsColHeader)
+	tablePrinter := output_printers.NewTablePrinter(moduleGUIDColHeader, moduleIDColHeader, modulePortsColHeader)
 	sortedModules := getSortedModuleSliceFromModulesMap(modules)
 
 	for _, moduleObj := range sortedModules {
+		moduleGuidStr := string(moduleObj.GetGUID())
+		moduleIdStr := string(moduleObj.GetID())
+
 		portString := getModulePortBindingString(moduleObj)
 
-		moduleGuidStr := string(moduleObj.GetGUID())
-
-		if err := tablePrinter.AddRow(moduleGuidStr, portString); err != nil {
+		if err := tablePrinter.AddRow(moduleGuidStr, moduleIdStr, portString); err != nil {
 			return stacktrace.NewError(
 				"An error occurred adding row for module GUID '%v' to the table printer",
 				moduleGuidStr,
