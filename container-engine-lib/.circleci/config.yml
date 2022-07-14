@@ -2,7 +2,7 @@ version: 2.1
 
 orbs:
   npm-publisher: uraway/npm-publisher@0.2.0
-  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.0
+  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.1
 
 parameters:
   go-version:
@@ -31,7 +31,7 @@ jobs:
       # If the only changes are to the docs, don't run the slow (and expensive) code checks
       # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
       - run: |
-          if git --no-pager diff --exit-code origin/develop...HEAD -- . ':!docs'; then
+          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
             circleci-agent step halt
           fi
 
@@ -60,7 +60,6 @@ workflows:
           filters:
             branches:
               ignore:
-                - develop
                 - master
       - check_code:
           context:
@@ -69,7 +68,6 @@ workflows:
           filters:
             branches:
               ignore:
-                - develop
                 - master
       # -- End PR check jobs ---------------------------------------
 
