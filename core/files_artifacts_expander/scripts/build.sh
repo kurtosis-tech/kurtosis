@@ -6,6 +6,7 @@
 set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 expander_root_dirpath="$(dirname "${script_dirpath}")"
+git_repo_dirpath="$(dirname "${expander_root_dirpath}")"
 
 # ==================================================================================================
 #                                             Constants
@@ -48,8 +49,11 @@ fi
 echo "Successfully built files artifacts expander code"
 
 # Generate Docker image tag
-get_docker_image_tag_script_filepath="${script_dirpath}/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}"
-if ! docker_tag="$(bash "${get_docker_image_tag_script_filepath}")"; then
+if ! cd "${git_repo_dirpath}"; then
+  echo "Error: Couldn't cd to the git root dirpath '${server_root_dirpath}'" >&2
+  exit 1
+fi
+if ! docker_tag="$(kudet get-docker-tag)"; then
     echo "Error: Couldn't get the Docker image tag" >&2
     exit 1
 fi

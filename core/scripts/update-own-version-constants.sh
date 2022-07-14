@@ -9,8 +9,6 @@ root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
-UPDATE_VERSION_IN_FILE_SCRIPT_FILENAME="update-version-in-file.sh" # From devtools; expected to be on PATH
-
 API_DIRNAME="api"
 API_SUPPORTED_LANGS_REL_FILEPATH="${API_DIRNAME}/supported-languages.txt"
 
@@ -47,7 +45,7 @@ echo "Updating own-version constants..."
 for rel_filepath in "${!REL_FILEPATH_UPDATE_PATTERNS[@]}"; do
     replace_pattern="${REL_FILEPATH_UPDATE_PATTERNS["${rel_filepath}"]}"
     constant_file_abs_filepath="${root_dirpath}/${rel_filepath}"
-    if ! "${UPDATE_VERSION_IN_FILE_SCRIPT_FILENAME}" "${constant_file_abs_filepath}" "${replace_pattern}" "${new_version}"; then
+    if ! $(kudet update-version-in-file "${constant_file_abs_filepath}" "${replace_pattern}" "${new_version}"); then
         echo "Error: An error occurred setting new version '${new_version}' in constants file '${constant_file_abs_filepath}' using pattern '${replace_pattern}'" >&2
         exit 1
     fi
