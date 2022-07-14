@@ -1056,9 +1056,8 @@ func (manager *DockerManager) getContainerHostConfig(
 	}
 
 	resources := container.Resources{}
-	// 0 is considered the empty value (meaning the field was never set), so if either fields are 0, that resource is left unbounded
 	if cpuAllocation != "" {
-		nanoCPUs, err := convertCPUAllocationToNanoCPUs(cpuAllocation)
+		nanoCPUs, err := parseCPUAllocation(cpuAllocation)
 		if err != nil {
 			return nil, err
 		}
@@ -1337,13 +1336,15 @@ func (manager DockerManager) getFailedContainerLogsOrErrorString(ctx context.Con
 	return containerLogs
 }
 
+
 func convertMemoryAllocationToBytes(memoryAllocation uint64) uint64 {
 	return memoryAllocation * megabytesToBytesFactor
 }
 
 // Taken from Docker CLI's `ParseCPUs`
+// Parses `cpu` unit from string and converts to NanoCPUs
 // https://github.com/docker/cli/blob/c780f7c4abaf67034ecfaa0611e03695cf9e4a3e/opts/opts.go
-func convertCPUAllocationToNanoCPUs(value string) (int64, error) {
+func parseCPUAllocation(value string) (int64, error) {
 	cpu, ok := new(big.Rat).SetString(value)
 	if !ok {
 		return 0, stacktrace.NewError("An error occurred attempting to parse cpuAllocation, `%v`, as a rational number", value)

@@ -71,17 +71,24 @@ func TestGetContainerPortsFromPortSpecs(t *testing.T) {
 func TestParseCPUAllocationReturnsCorrectQuantityValue(t *testing.T){
 	cpuAllocationStr := "1.5"
 
-	cpuQuantity, err := ParseCPUAllocation(cpuAllocationStr)
+	cpuQuantity, err := parseCPUAllocation(cpuAllocationStr)
 	require.NoError(t, err)
 
 	// 1.5 cpus == 1500 millicpus
 	require.Equal(t, int64(1500), cpuQuantity.MilliValue()) // 1.5 cpus == 1500 millicpus
 }
 
-func TestParseCPUAllocationReturnsErrorForIncorrectFormat(t *testing.T){
+func TestParseCPUAllocationWithIncorrectFormatReturnsError(t *testing.T){
 	cpuAllocationStr := "1.5cpus"
 
-	_, err := ParseCPUAllocation(cpuAllocationStr)
+	_, err := parseCPUAllocation(cpuAllocationStr)
+	require.Error(t, err)
+}
+
+func TestParseCPUAllocationWithIncorrectCPUQuantityReturnsError(t *testing.T){
+	cpuAllocationStr := "1.5cpus"
+
+	_, err := parseCPUAllocation(cpuAllocationStr)
 	require.Error(t, err)
 }
 
