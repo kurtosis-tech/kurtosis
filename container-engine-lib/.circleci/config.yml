@@ -2,7 +2,7 @@ version: 2.1
 
 orbs:
   npm-publisher: uraway/npm-publisher@0.2.0
-  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.0
+  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.1
 
 parameters:
   go-version:
