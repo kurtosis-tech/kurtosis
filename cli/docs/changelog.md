@@ -6,6 +6,7 @@
 ### Changes
 * Updated CI to test cluster setups
   * Added `cluster-backend` argument to `build.sh` for golang and typescript testsuites
+* Merge `develop` into `master`
 
 ### Fixes
 * Fixed Consistency issues in API Container Gateway
