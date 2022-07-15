@@ -766,29 +766,6 @@ func (network *ServiceNetwork) startService(
 		}
 	}
 
-	/*
-		// First expand the files artifacts into volumes, so that any errors get caught early
-		// NOTE: if users don't need to investigate the volume contents, we could keep track of the volumes we create
-		//  and delete them at the end of the test to keep things cleaner
-		artifactUuidsToExpansionGUIDs, err := network.filesArtifactExpander.ExpandArtifacts(ctx, serviceGuid, usedArtifactUuidSet)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred expanding the requested files artifacts into volumes")
-		}
-
-		artifactVolumeMounts := map[files_artifact_expansion.FilesArtifactExpansionGUID]string{}
-		for artifactUuid, mountpoint := range filesArtifactUuidsToMountpoints {
-			artifactExpansionGUID, found := artifactUuidsToExpansionGUIDs[artifactUuid]
-			if !found {
-				return nil, stacktrace.NewError(
-					"Even though we declared that we need files artifact '%v' to be expanded, no expansion containing the "+
-						"expanded contents was found; this is a bug in Kurtosis",
-					artifactUuid,
-				)
-			}
-			artifactVolumeMounts[artifactExpansionGUID] = mountpoint
-		}
-	*/
-
 	launchedUserService, err := network.kurtosisBackend.StartUserService(
 		ctx,
 		network.enclaveId,
