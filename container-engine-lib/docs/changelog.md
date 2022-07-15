@@ -1,7 +1,7 @@
 # TBD
 
 * Migrate repo to use internal cli tool `kudet` for release process
-* Implemented setting `cpuAllocation` and `memoryAllocation` in both Docker and Kubernetes
+* Implemented setting `cpuAllocationMillicpus` and `memoryAllocationMegabytes` in both Docker and Kubernetes
 
 # 0.33.0
 ### Features
