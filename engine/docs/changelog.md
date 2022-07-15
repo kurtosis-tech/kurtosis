@@ -1,5 +1,7 @@
 # TBD
 
+# 1.27.2
+
 ### Changes
 * Migrated repo to use internal cli tool `kudet` to retrieve image tags as opposed to script
 * Migrated repo to use internal cli tool `kudet` to use new release workflow
