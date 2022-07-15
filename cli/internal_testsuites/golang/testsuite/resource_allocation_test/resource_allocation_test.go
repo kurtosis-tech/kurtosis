@@ -12,12 +12,12 @@ const (
 	testName              = "resource-allocation-test"
 	isPartitioningEnabled = false
 
-	resourceAllocationTestImageName = "alpine:3.12.4"
-	testServiceId                   = "test"
+	resourceAllocTestImageName = "alpine:3.12.4"
+	testServiceId              = "test"
 
-	testMemoryAllocationMegabytes        = 1000 // 10000 megabytes = 1 GB
-	testCpuAllocationMillicpus           = 5000 // 5000 millicpus = 1 CPU
-	testInvalidMemoryAllocationMegabytes = 0    // 6 megabytes is Dockers min, so this should throw error
+	testMemoryAllocMegabytes        = 1000 // 10000 megabytes = 1 GB
+	testCpuAllocMillicpus           = 1000 // 1000 millicpus = 1 CPU
+	testInvalidMemoryAllocMegabytes = 0    // 6 megabytes is Dockers min, so this should throw error
 )
 
 func TestSettingResourceAllocationFieldsAddsServiceWithNoError(t *testing.T) {
@@ -31,7 +31,7 @@ func TestSettingResourceAllocationFieldsAddsServiceWithNoError(t *testing.T) {
 	containerConfigSupplier := getContainerConfigSupplierWithCPUAndMemory()
 
 	_, err = enclaveCtx.AddService(testServiceId, containerConfigSupplier)
-	require.NoError(t, err, "An error occurred adding the file server service with the cpuAllocationMillicpus=`%d` and memoryAllocationMegabytes=`%d`", testCpuAllocationMillicpus, testMemoryAllocationMegabytes)
+	require.NoError(t, err, "An error occurred adding the file server service with the cpuAllocationMillicpus=`%d` and memoryAllocationMegabytes=`%d`", testCpuAllocMillicpus, testMemoryAllocMegabytes)
 }
 
 func TestSettingInvalidMemoryAllocationMegabytesReturnsError(t *testing.T) {
@@ -45,7 +45,7 @@ func TestSettingInvalidMemoryAllocationMegabytesReturnsError(t *testing.T) {
 	containerConfigSupplier := getContainerConfigSupplierWithInvalidMemory()
 
 	_, err = enclaveCtx.AddService(testServiceId, containerConfigSupplier)
-	require.Error(t, err, "An error should have occurred with the following invalid memory allocation: `%d`", testInvalidMemoryAllocationMegabytes)
+	require.Error(t, err, "An error should have occurred with the following invalid memory allocation: `%d`", testInvalidMemoryAllocMegabytes)
 }
 
 // ====================================================================================================
@@ -54,11 +54,11 @@ func TestSettingInvalidMemoryAllocationMegabytesReturnsError(t *testing.T) {
 func getContainerConfigSupplierWithCPUAndMemory() func(ipAddr string) (*services.ContainerConfig, error) {
 	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
 		containerConfig := services.NewContainerConfigBuilder(
-			resourceAllocationTestImageName,
+			resourceAllocTestImageName,
 		).WithCPUAllocationMillicpusMillicpus(
-			testMemoryAllocationMegabytes,
+			testMemoryAllocMegabytes,
 		).WithMemoryAllocationMegabytesMegabytes(
-			testMemoryAllocationMegabytes,
+			testMemoryAllocMegabytes,
 		).Build()
 		return containerConfig, nil
 	}
@@ -68,9 +68,9 @@ func getContainerConfigSupplierWithCPUAndMemory() func(ipAddr string) (*services
 func getContainerConfigSupplierWithInvalidMemory() func(ipAddr string) (*services.ContainerConfig, error) {
 	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
 		containerConfig := services.NewContainerConfigBuilder(
-			resourceAllocationTestImageName,
+			resourceAllocTestImageName,
 		).WithMemoryAllocationMegabytesMegabytes(
-			testInvalidMemoryAllocationMegabytes,
+			testInvalidMemoryAllocMegabytes,
 		).Build()
 		return containerConfig, nil
 	}
