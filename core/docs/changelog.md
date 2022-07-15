@@ -8,6 +8,7 @@
 * Migrated repo to use internal cli tool `kudet` to retrieve image tags as opposed to script
 * Migrated repo to use internal cli tool `kudet` for release process
 * Merge `develop` branch into `master`
+* Upgraded to container-engine-lib 0.33.1
 
 # 1.55.2
 ### Fixes
