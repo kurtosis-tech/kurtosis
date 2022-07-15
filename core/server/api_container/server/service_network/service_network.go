@@ -777,6 +777,8 @@ func (network *ServiceNetwork) startService(
 		cmdArgs,
 		envVars,
 		filesArtifactsExpansion,
+		cpuAllocationMillicpus,
+		memoryAllocationMegabytes,
 	)
 
 	if err != nil {
