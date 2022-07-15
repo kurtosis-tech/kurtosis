@@ -1,5 +1,7 @@
 # TBD
 
+# 0.33.1
+
 * Migrate repo to use internal cli tool `kudet` for release process
 * Merge `develop` into `master`
 * Implemented setting `cpuAllocationMillicpus` and `memoryAllocationMegabytes` in both Docker and Kubernetes
