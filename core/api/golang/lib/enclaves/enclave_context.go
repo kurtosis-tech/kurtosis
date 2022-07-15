@@ -211,8 +211,8 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 		containerConfig.GetCmdOverrideArgs(),
 		containerConfig.GetEnvironmentVariableOverrides(),
 		artifactIdStrToMountDirpath,
-		containerConfig.GetCPUAllocation(),
-		containerConfig.GetMemoryAllocation(),
+		containerConfig.GetCPUAllocationMillicpus(),
+		containerConfig.GetMemoryAllocationMegabytes(),
 	)
 	resp, err := enclaveCtx.client.StartService(ctx, startServiceArgs)
 	if err != nil {

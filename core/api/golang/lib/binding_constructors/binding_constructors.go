@@ -136,8 +136,8 @@ func NewStartServiceArgs(
 	cmdArgs []string,
 	envVars map[string]string,
 	filesArtifactMountDirpaths map[string]string,
-	cpuAllocation string,
-	memoryAllocation uint64,
+	cpuAllocationMillicpus uint64,
+	memoryAllocationMegabytes uint64,
 ) *kurtosis_core_rpc_api_bindings.StartServiceArgs {
 	return &kurtosis_core_rpc_api_bindings.StartServiceArgs{
 		ServiceId:                serviceId,
@@ -148,8 +148,8 @@ func NewStartServiceArgs(
 		DockerEnvVars:            envVars,
 		FilesArtifactMountpoints: filesArtifactMountDirpaths,
 		PublicPorts:              publicPorts, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-		CpuAllocation:            cpuAllocation,
-		MemoryAllocation:         memoryAllocation,
+		CpuAllocationMillicpus:            cpuAllocationMillicpus,
+		MemoryAllocationMegabytes:         memoryAllocationMegabytes,
 	}
 }
 

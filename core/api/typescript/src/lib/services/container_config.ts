@@ -17,8 +17,8 @@ export class ContainerConfig {
         public readonly entrypointOverrideArgs: string[],
         public readonly cmdOverrideArgs: string[],
         public readonly environmentVariableOverrides: Map<string,string>,
-        public readonly cpuAllocation: string,
-        public readonly memoryAllocation: number,
+        public readonly cpuAllocationMillicpus: number,
+        public readonly memoryAllocationMegabytes: number,
     ) {}
 
     // No need for getters because all the fields are 'readonly'
@@ -37,8 +37,8 @@ export class ContainerConfigBuilder {
     private entrypointOverrideArgs: string[];
 	private cmdOverrideArgs: string[];
 	private environmentVariableOverrides: Map<string,string>;
-    private cpuAllocation: string;
-    private memoryAllocation: number;
+    private cpuAllocationMillicpus: number;
+    private memoryAllocationMegabytes: number;
 
     constructor (image: string) {
         this.image = image;
@@ -48,8 +48,8 @@ export class ContainerConfigBuilder {
         this.cmdOverrideArgs = [];
         this.environmentVariableOverrides = new Map();
         this.publicPorts = new Map(); //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-        this.cpuAllocation = "";
-        this.memoryAllocation = 0;
+        this.cpuAllocationMillicpus = 0;
+        this.memoryAllocationMegabytes = 0;
     }
 
     public withUsedPorts(usedPorts: Map<string, PortSpec>): ContainerConfigBuilder {
@@ -83,13 +83,13 @@ export class ContainerConfigBuilder {
         return this;
     }
 
-    public withCPUAllocation(cpuAllocation: string): ContainerConfigBuilder {
-        this.cpuAllocation = cpuAllocation;
+    public withCpuAllocationMillicpus(cpuAllocationMillicpus: number): ContainerConfigBuilder {
+        this.cpuAllocationMillicpus = cpuAllocationMillicpus;
         return this;
     }
 
-    public withMemoryAllocation(memoryAllocation: number): ContainerConfigBuilder {
-        this.memoryAllocation = memoryAllocation;
+    public withMemoryAllocationMegabytes(memoryAllocationMegabytes: number): ContainerConfigBuilder {
+        this.memoryAllocationMegabytes = memoryAllocationMegabytes;
         return this;
     }
 
@@ -102,8 +102,8 @@ export class ContainerConfigBuilder {
             this.entrypointOverrideArgs,
             this.cmdOverrideArgs,
             this.environmentVariableOverrides,
-            this.cpuAllocation,
-            this.memoryAllocation,
+            this.cpuAllocationMillicpus,
+            this.memoryAllocationMegabytes,
         );
     }
 }

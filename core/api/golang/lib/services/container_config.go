@@ -32,8 +32,8 @@ type ContainerConfig struct {
 	entrypointOverrideArgs       []string
 	cmdOverrideArgs              []string
 	environmentVariableOverrides map[string]string
-	cpuAllocation                string
-	memoryAllocation             uint64
+	cpuAllocationMillicpus       uint64
+	memoryAllocationMegabytes    uint64
 }
 
 func (config *ContainerConfig) GetImage() string {
@@ -60,12 +60,12 @@ func (config *ContainerConfig) GetEnvironmentVariableOverrides() map[string]stri
 	return config.environmentVariableOverrides
 }
 
-func (config *ContainerConfig) GetCPUAllocation() string {
-	return config.cpuAllocation
+func (config *ContainerConfig) GetCPUAllocationMillicpus() uint64 {
+	return config.cpuAllocationMillicpus
 }
 
-func (config *ContainerConfig) GetMemoryAllocation() uint64 {
-	return config.memoryAllocation
+func (config *ContainerConfig) GetMemoryAllocationMegabytes() uint64 {
+	return config.memoryAllocationMegabytes
 }
 
 //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
@@ -86,8 +86,8 @@ type ContainerConfigBuilder struct {
 	entrypointOverrideArgs       []string
 	cmdOverrideArgs              []string
 	environmentVariableOverrides map[string]string
-	cpuAllocation                string
-	memoryAllocation             uint64
+	cpuAllocationMillicpus       uint64
+	memoryAllocationMegabytes    uint64
 }
 
 func NewContainerConfigBuilder(image string) *ContainerConfigBuilder {
@@ -98,8 +98,8 @@ func NewContainerConfigBuilder(image string) *ContainerConfigBuilder {
 		entrypointOverrideArgs:       nil,
 		cmdOverrideArgs:              nil,
 		environmentVariableOverrides: map[string]string{},
-		cpuAllocation:                "",
-		memoryAllocation:             0,
+		cpuAllocationMillicpus:       0,
+		memoryAllocationMegabytes:    0,
 	}
 }
 
@@ -134,13 +134,13 @@ func (builder *ContainerConfigBuilder) WithPublicPorts(publicPorts map[string]*P
 	return builder
 }
 
-func (builder *ContainerConfigBuilder) WithCPUAllocation(cpuAllocation string) *ContainerConfigBuilder {
-	builder.cpuAllocation = cpuAllocation
+func (builder *ContainerConfigBuilder) WithCPUAllocationMillicpusMillicpus(cpuAllocationMillicpus uint64) *ContainerConfigBuilder {
+	builder.cpuAllocationMillicpus = cpuAllocationMillicpus
 	return builder
 }
 
-func (builder *ContainerConfigBuilder) WithMemoryAllocation(memoryAllocation uint64) *ContainerConfigBuilder {
-	builder.memoryAllocation = memoryAllocation
+func (builder *ContainerConfigBuilder) WithMemoryAllocationMegabytesMegabytes(memoryAllocationMegabytes uint64) *ContainerConfigBuilder {
+	builder.memoryAllocationMegabytes = memoryAllocationMegabytes
 	return builder
 }
 
@@ -154,7 +154,7 @@ func (builder *ContainerConfigBuilder) Build() *ContainerConfig {
 		environmentVariableOverrides: builder.environmentVariableOverrides,
 		//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 		publicPorts:      builder.publicPorts,
-		cpuAllocation:    builder.cpuAllocation,
-		memoryAllocation: builder.memoryAllocation,
+		cpuAllocationMillicpus:    builder.cpuAllocationMillicpus,
+		memoryAllocationMegabytes: builder.memoryAllocationMegabytes,
 	}
 }
