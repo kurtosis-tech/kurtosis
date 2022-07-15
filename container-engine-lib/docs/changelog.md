@@ -1,5 +1,6 @@
 # TBD
 
+# 0.33.1
 ### Features
 * Implemented setting `cpuAllocationMillicpus` and `memoryAllocationMegabytes` in both Docker and Kubernetes
 
