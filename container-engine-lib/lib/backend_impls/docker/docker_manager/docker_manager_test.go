@@ -43,3 +43,17 @@ func TestGetLabelsFilterList(t *testing.T) {
 		containerTypeKey: containerTypeValue,
 	}))
 }
+
+func TestConvertCPUAllocationToNanoCPUsReturnsCorrectValue(t *testing.T){
+	cpuAllocation := uint64(1500)
+
+	nanoCPUs := convertMillicpusToNanoCPUs(cpuAllocation)
+	assert.Equal(t, uint64(1500000000), nanoCPUs)
+}
+
+func TestConvertMemoryAllocationToBytesReturnsCorrectValue(t *testing.T){
+	memoryAllocationMegabytes := uint64(400) // 400 megabytes
+
+	memoryAllocationBytes := convertMegabytesToBytes(memoryAllocationMegabytes)
+	assert.Equal(t, uint64(400000000), memoryAllocationBytes)
+}

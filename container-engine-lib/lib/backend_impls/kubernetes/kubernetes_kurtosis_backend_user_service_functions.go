@@ -24,6 +24,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	apiv1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"net"
 	"strconv"
@@ -77,7 +78,7 @@ const (
 	//  1) we've registered a service but haven't started a container yet (so ports are yet to come)
 	//  2) we've started a container that doesn't listen on any ports
 	// In these cases, we use these notional unbound ports
-	unboundPortName = "nonexistent-port"
+	unboundPortName   = "nonexistent-port"
 	unboundPortNumber = 1
 
 	tarSuccessExitCode = 0
@@ -85,6 +86,8 @@ const (
 	filesArtifactExpansionVolumeName = "files-artifact-expansion"
 
 	isFilesArtifactExpansionVolumeReadOnly = false
+
+	megabytesToBytesFactor = 1_000_000
 )
 
 // Kubernetes doesn't provide public IP or port information; this is instead handled by the Kurtosis gateway that the user uses
@@ -150,9 +153,9 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes pod match label value for the enclave ID '%v'", enclaveId)
 	}
 	matchedPodLabels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.AppIDKubernetesLabelKey: label_value_consts.AppIDKubernetesLabelValue,
+		label_key_consts.AppIDKubernetesLabelKey:     label_value_consts.AppIDKubernetesLabelValue,
 		label_key_consts.EnclaveIDKubernetesLabelKey: enclaveIdLabelValue,
-		label_key_consts.GUIDKubernetesLabelKey: serviceGuidLabelValue,
+		label_key_consts.GUIDKubernetesLabelKey:      serviceGuidLabelValue,
 	}
 	matchedPodLabelStrs := getStringMapFromLabelMap(matchedPodLabels)
 
@@ -160,8 +163,8 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 	// until the user calls StartService
 	notionalServicePorts := []apiv1.ServicePort{
 		{
-			Name:        unboundPortName,
-			Port:        unboundPortNumber,
+			Name: unboundPortName,
+			Port: unboundPortNumber,
 		},
 	}
 
@@ -202,7 +205,7 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 	objectsAndResources, found := convertedObjects[serviceGuid]
 	if !found {
 		return nil, stacktrace.NewError(
-			"Successfully converted the Kubernetes service representing registered service with GUID '%v' to a " +
+			"Successfully converted the Kubernetes service representing registered service with GUID '%v' to a "+
 				"Kurtosis object, but couldn't find that key in the resulting map; this is a bug in Kurtosis",
 			serviceGuid,
 		)
@@ -224,6 +227,8 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	cmdArgs []string,
 	envVars map[string]string,
 	filesArtifactsExpansion *backend_interface.FilesArtifactsExpansion,
+	cpuAllocationMillicpus uint64,
+	memoryAllocationMegabytes uint64,
 ) (
 	resultUserService *service.Service,
 	resultErr error,
@@ -235,7 +240,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	}
 
 	preexistingServiceFilters := &service.ServiceFilters{
-		GUIDs:    map[service.ServiceGUID]bool{
+		GUIDs: map[service.ServiceGUID]bool{
 			serviceGuid: true,
 		},
 	}
@@ -267,7 +272,6 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	namespaceName := kubernetesService.GetNamespace()
 	serviceRegistrationObj := matchingObjectAndResources.serviceRegistration
 
-
 	var podInitContainers []apiv1.Container
 	var podVolumes []apiv1.Volume
 	var userServiceContainerVolumeMounts []apiv1.VolumeMount
@@ -297,6 +301,8 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		envVars,
 		privatePorts,
 		userServiceContainerVolumeMounts,
+		cpuAllocationMillicpus,
+		memoryAllocationMegabytes,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the container specs for the user service pod with image '%v'", containerImageName)
@@ -352,7 +358,7 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	objectsAndResources, found := convertedObjects[serviceGuid]
 	if !found {
 		return nil, stacktrace.NewError(
-			"Successfully converted the Kubernetes service + pod representing a running service with GUID '%v' to a " +
+			"Successfully converted the Kubernetes service + pod representing a running service with GUID '%v' to a "+
 				"Kurtosis object, but couldn't find that key in the resulting map; this is a bug in Kurtosis",
 			serviceGuid,
 		)
@@ -525,7 +531,7 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 		if err != nil {
 			userServiceExecErr[serviceGuid] = stacktrace.Propagate(
 				err,
-				"Expected to be able to execute command '%+v' in user service container '%v' in Kubernetes pod '%v' " +
+				"Expected to be able to execute command '%+v' in user service container '%v' in Kubernetes pod '%v' "+
 					"for Kurtosis service with guid '%v', instead a non-nil error was returned",
 				serviceCommand,
 				userServiceContainerName,
@@ -544,14 +550,14 @@ func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx conte
 	/*
 		in := streams.NewIn(os.Stdin)
 		if err := in.SetRawTerminal(); err != nil{
-	                 // handle err
+					 // handle err
 		}
 		err = exec.Stream(remotecommand.StreamOptions{
 			Stdin:             in,
 			Stdout:           stdout,
 			Stderr:            stderr,
-	        }
-	 */
+		}
+	*/
 
 	// TODO IMPLEMENT
 	return nil, stacktrace.NewError("Getting a connection with a user service isn't yet implemented on Kubernetes")
@@ -607,22 +613,22 @@ func (backend *KubernetesKurtosisBackend) CopyFilesFromUserService(
 	// https://github.com/kubernetes/kubectl/blob/335090af6913fb1ebf4a1f9e2463c46248b3e68d/pkg/cmd/cp/cp.go#L345
 	stdErrOutput := &bytes.Buffer{}
 	exitCode, err := backend.kubernetesManager.RunExecCommand(
-		 namespaceName,
-		 pod.Name,
-		 userServiceContainerName,
-		 shWrappedCommandToRun,
-		 output,
-		 stdErrOutput,
+		namespaceName,
+		pod.Name,
+		userServiceContainerName,
+		shWrappedCommandToRun,
+		output,
+		stdErrOutput,
 	)
 	if err != nil {
-		 return stacktrace.Propagate(
-			 err,
-			 "An error occurred running command '%v' on pod '%v' for service '%v' in namespace '%v'",
-			 commandToRun,
-			 pod.Name,
-			 serviceGuid,
-			 namespaceName,
-		 )
+		return stacktrace.Propagate(
+			err,
+			"An error occurred running command '%v' on pod '%v' for service '%v' in namespace '%v'",
+			commandToRun,
+			pod.Name,
+			serviceGuid,
+			namespaceName,
+		)
 	}
 	if exitCode != tarSuccessExitCode {
 		return stacktrace.NewError(
@@ -723,7 +729,6 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 	}
 	return successfulGuids, erroredGuids, nil
 }
-
 
 // ====================================================================================================
 //                                     Private Helper Methods
@@ -837,8 +842,8 @@ func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatch
 	}
 
 	kubernetesResourceSearchLabels := map[string]string{
-		label_key_consts.AppIDKubernetesLabelKey.GetString(): label_value_consts.AppIDKubernetesLabelValue.GetString(),
-		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): string(enclaveId),
+		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		label_key_consts.EnclaveIDKubernetesLabelKey.GetString():            string(enclaveId),
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
 	}
 
@@ -1028,18 +1033,18 @@ func (backend *KubernetesKurtosisBackend) prepareFilesArtifactsExpansionResource
 		subdirName := strconv.Itoa(volumeSubdirIndex)
 
 		expanderContainerMount := apiv1.VolumeMount{
-			Name:             filesArtifactExpansionVolumeName,
-			ReadOnly:         isFilesArtifactExpansionVolumeReadOnly,
-			MountPath:        requestedExpanderDirpath,
-			SubPath:          subdirName,
+			Name:      filesArtifactExpansionVolumeName,
+			ReadOnly:  isFilesArtifactExpansionVolumeReadOnly,
+			MountPath: requestedExpanderDirpath,
+			SubPath:   subdirName,
 		}
 		volumeMountsOnExpanderContainer = append(volumeMountsOnExpanderContainer, expanderContainerMount)
 
 		userServiceContainerMount := apiv1.VolumeMount{
-			Name:             filesArtifactExpansionVolumeName,
-			ReadOnly:         isFilesArtifactExpansionVolumeReadOnly,
-			MountPath:        requestedUserServiceDirpath,
-			SubPath:          subdirName,
+			Name:      filesArtifactExpansionVolumeName,
+			ReadOnly:  isFilesArtifactExpansionVolumeReadOnly,
+			MountPath: requestedUserServiceDirpath,
+			SubPath:   subdirName,
 		}
 		volumeMountsOnUserServiceContainer = append(volumeMountsOnUserServiceContainer, userServiceContainerMount)
 
@@ -1067,17 +1072,17 @@ func getFilesArtifactExpansionInitContainerSpecs(
 	expanderEnvVars := []apiv1.EnvVar{}
 	for key, value := range envVars {
 		envVar := apiv1.EnvVar{
-			Name:      key,
+			Name:  key,
 			Value: value,
 		}
 		expanderEnvVars = append(expanderEnvVars, envVar)
 	}
 
 	filesArtifactExpansionInitContainer := apiv1.Container{
-		Name:          filesArtifactExpanderInitContainerName,
-		Image:         image,
-		Env:           expanderEnvVars,
-		VolumeMounts:  volumeMounts,
+		Name:         filesArtifactExpanderInitContainerName,
+		Image:        image,
+		Env:          expanderEnvVars,
+		VolumeMounts: volumeMounts,
 	}
 
 	return filesArtifactExpansionInitContainer
@@ -1091,10 +1096,12 @@ func getUserServicePodContainerSpecs(
 	envVarStrs map[string]string,
 	privatePorts map[string]*port_spec.PortSpec,
 	containerMounts []apiv1.VolumeMount,
+	cpuAllocationMillicpus uint64,
+	memoryAllocationMegabytes uint64,
 ) (
 	[]apiv1.Container,
 	error,
-){
+) {
 	var containerEnvVars []apiv1.EnvVar
 	for varName, varValue := range envVarStrs {
 		envVar := apiv1.EnvVar{
@@ -1109,17 +1116,35 @@ func getUserServicePodContainerSpecs(
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes container ports from the private port specs map")
 	}
 
+	resourceLimitsList := apiv1.ResourceList{}
+	resourceRequestsList := apiv1.ResourceList{}
+	// 0 is considered the empty value (meaning the field was never set), so if either fields are 0, that resource is left unbounded
+	if cpuAllocationMillicpus != 0 {
+		resourceLimitsList[apiv1.ResourceCPU] = *resource.NewMilliQuantity(int64(cpuAllocationMillicpus), resource.DecimalSI)
+		resourceRequestsList[apiv1.ResourceCPU] = *resource.NewMilliQuantity(int64(cpuAllocationMillicpus), resource.DecimalSI)
+	}
+	if memoryAllocationMegabytes != 0 {
+		memoryAllocationInBytes := convertMegabytesToBytes(memoryAllocationMegabytes)
+		resourceLimitsList[apiv1.ResourceMemory] = *resource.NewQuantity(int64(memoryAllocationInBytes), resource.DecimalSI)
+		resourceRequestsList[apiv1.ResourceMemory] = *resource.NewQuantity(int64(memoryAllocationInBytes), resource.DecimalSI)
+	}
+	resourceRequirements := apiv1.ResourceRequirements{
+		Limits: resourceLimitsList,
+		Requests: resourceRequestsList,
+	}
+
 	// TODO create networking sidecars here
 	containers := []apiv1.Container{
 		{
-			Name:                     userServiceContainerName,
-			Image:                    image,
+			Name:  userServiceContainerName,
+			Image: image,
 			// Yes, even though this is called "command" it actually corresponds to the Docker ENTRYPOINT
-			Command:                  entrypointArgs,
-			Args:                     cmdArgs,
-			Ports:                    kubernetesContainerPorts,
-			Env:                      containerEnvVars,
-			VolumeMounts:             containerMounts,
+			Command:      entrypointArgs,
+			Args:         cmdArgs,
+			Ports:        kubernetesContainerPorts,
+			Env:          containerEnvVars,
+			VolumeMounts: containerMounts,
+			Resources:    resourceRequirements,
 
 			// NOTE: There are a bunch of other interesting Container options that we omitted for now but might
 			// want to specify in the future
@@ -1176,8 +1201,8 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 			// on each loop so that we have a fixed moment-in-time value.
 			newServicePortCopy := newServicePort
 			portUpdateToApply := &applyconfigurationsv1.ServicePortApplyConfiguration{
-				Name:        &newServicePortCopy.Name,
-				Protocol:    &newServicePortCopy.Protocol,
+				Name:     &newServicePortCopy.Name,
+				Protocol: &newServicePortCopy.Protocol,
 				// TODO fill this out for an app port!
 				AppProtocol: nil,
 				Port:        &newServicePortCopy.Port,
@@ -1194,8 +1219,8 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 			specReversionToApply := applyconfigurationsv1.ServiceSpec()
 			for _, oldServicePort := range newServicePorts {
 				portUpdateToApply := &applyconfigurationsv1.ServicePortApplyConfiguration{
-					Name:        &oldServicePort.Name,
-					Protocol:    &oldServicePort.Protocol,
+					Name:     &oldServicePort.Name,
+					Protocol: &oldServicePort.Protocol,
 					// TODO fill this out for an app port!
 					AppProtocol: nil,
 					Port:        &oldServicePort.Port,
@@ -1208,9 +1233,9 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 		}
 		if _, err := backend.kubernetesManager.UpdateService(ctx, namespaceName, serviceName, undoingConfigurator); err != nil {
 			logrus.Errorf(
-				"An error occurred updating Kubernetes service '%v' in namespace '%v' to open the service ports " +
-					"and add the serialized private port specs annotation so we tried to revert the service to " +
-					"its values before the update, but an error occurred; this means the service is likely in " +
+				"An error occurred updating Kubernetes service '%v' in namespace '%v' to open the service ports "+
+					"and add the serialized private port specs annotation so we tried to revert the service to "+
+					"its values before the update, but an error occurred; this means the service is likely in "+
 					"an inconsistent state:\n%v",
 				serviceName,
 				namespaceName,
@@ -1224,7 +1249,7 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
 			err,
-			"An error occurred updating Kubernetes service '%v' in namespace '%v' to open the service ports and add " +
+			"An error occurred updating Kubernetes service '%v' in namespace '%v' to open the service ports and add "+
 				"the serialized private port specs annotation",
 			serviceName,
 			namespaceName,
@@ -1239,4 +1264,8 @@ func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 
 	shouldUndoUpdate = false
 	return updatedService, undoUpdateFunc, nil
+}
+
+func convertMegabytesToBytes(value uint64) uint64 {
+	return value * megabytesToBytesFactor
 }

@@ -67,3 +67,10 @@ func TestGetContainerPortsFromPortSpecs(t *testing.T) {
 	})
 	require.NoError(t, err)
 }
+
+func TestConvertMemoryAllocationToBytesReturnsCorrectValue(t *testing.T){
+	memoryAllocationMegabytes := uint64(400) // 400 megabytes
+
+	memoryAllocationBytes := convertMegabytesToBytes(memoryAllocationMegabytes)
+	require.Equal(t, uint64(400000000), memoryAllocationBytes)
+}

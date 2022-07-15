@@ -94,6 +94,11 @@ const (
 	shouldAttachStderrWhenCreatingContainerExec               = true
 	shouldAttachStdoutWhenCreatingContainerExec               = true
 	shouldExecuteInDetachModeWhenCreatingContainerExec        = false
+
+	megabytesToBytesFactor = 1_000_000
+	millicpusToNanoCPUsFactor = 1_000_000
+
+	minMemoryLimit = 6
 )
 
 /*
@@ -424,7 +429,9 @@ func (manager DockerManager) CreateAndStartContainer(
 		args.bindMounts,
 		args.volumeMounts,
 		args.usedPorts,
-		args.needsAccessToDockerHostMachine)
+		args.needsAccessToDockerHostMachine,
+		args.cpuAllocationMillicpus,
+		args.memoryAllocationMegabytes)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -987,7 +994,9 @@ func (manager *DockerManager) getContainerHostConfig(
 	bindMounts map[string]string,
 	volumeMounts map[string]string,
 	usedPortsWithPublishSpec map[nat.Port]PortPublishSpec,
-	needsToAccessDockerHostMachine bool) (hostConfig *container.HostConfig, err error) {
+	needsToAccessDockerHostMachine bool,
+	cpuAllocationMillicpus uint64,
+	memoryAllocationMegabytes uint64) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))
 	for hostFilepath, containerFilepath := range bindMounts {
@@ -1048,6 +1057,23 @@ func (manager *DockerManager) getContainerHostConfig(
 		)
 	}
 
+	resources := container.Resources{}
+	if cpuAllocationMillicpus != 0 {
+		nanoCPUs := convertMillicpusToNanoCPUs(cpuAllocationMillicpus)
+		resources.NanoCPUs = int64(nanoCPUs)
+	}
+	if memoryAllocationMegabytes != 0 {
+		if memoryAllocationMegabytes < minMemoryLimit {
+			return nil, stacktrace.NewError("Memory allocation, `%d`, is too low. Docker requires the memory limit to be at least `%d` megabytes.", memoryAllocationMegabytes, minMemoryLimit)
+		}
+		memoryAllocationBytes := convertMegabytesToBytes(memoryAllocationMegabytes)
+		resources.Memory = int64(memoryAllocationBytes)
+
+		// MemorySwap needs to be set to exactly memory to ensure memory is actually limited to memoryAllocationInBytes
+		// https://faun.pub/understanding-docker-container-memory-limit-behavior-41add155236c
+		resources.MemorySwap = int64(memoryAllocationBytes)
+	}
+
 	// NOTE: Do NOT use PublishAllPorts here!!!! This will work if a Dockerfile doesn't have an EXPOSE directive, but
 	//  if the Dockerfile *does* have an EXPOSE directive then _only_ the ports with EXPOSE will be published
 	// See also: https://www.ctl.io/developers/blog/post/docker-networking-rules/
@@ -1057,6 +1083,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		NetworkMode:  container.NetworkMode(networkMode),
 		PortBindings: portMap,
 		ExtraHosts:   extraHosts,
+		Resources:    resources,
 	}
 	return containerHostConfigPtr, nil
 }
@@ -1309,4 +1336,14 @@ func (manager DockerManager) getFailedContainerLogsOrErrorString(ctx context.Con
 		}
 	}
 	return containerLogs
+}
+
+func convertMegabytesToBytes(value uint64) uint64 {
+	return value * megabytesToBytesFactor
+}
+
+// Intakes millicpu unit and converts to NanoCPUs in Docker
+// In Docker 1 CPU = 1000 millicpus = 1000000000 NanoCPUs
+func convertMillicpusToNanoCPUs(value uint64) uint64 {
+	return value * millicpusToNanoCPUsFactor
 }
