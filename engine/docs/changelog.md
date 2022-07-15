@@ -1,5 +1,10 @@
 # TBD
 
+# Changes
+* Migrated repo to use internal cli tool `kudet` to retrieve image tags as opposed to script
+* Migrated repo to use internal cli tool `kudet` to use new release workflow
+* Merge `develop` into `master`
+
 # 1.27.1
 ### Changes
 * Upgraded to core 1.55.2

@@ -2,7 +2,7 @@ version: 2.1
 
 orbs:
   npm-publisher: uraway/npm-publisher@0.2.0
-  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.0
+  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.1
 
 parameters:
   # To upgrade the Docker Engine version, see which versions are supported at: https://circleci.com/docs/2.0/building-docker-images/#docker-version
@@ -41,7 +41,7 @@ jobs:
       # If the only changes are to the docs, don't run the slow (and expensive) code checks
       # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
       - run: |
-          if git --no-pager diff --exit-code origin/develop...HEAD -- . ':!docs'; then
+          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
             circleci-agent step halt
           fi
 
@@ -58,7 +58,7 @@ jobs:
       # If the only changes are to the docs, don't run the slow (and expensive) code checks
       # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
       - run: |
-          if git --no-pager diff --exit-code origin/develop...HEAD -- . ':!docs'; then
+          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
             circleci-agent step halt
           fi
 
@@ -73,7 +73,7 @@ jobs:
       # If the only changes are to the docs, don't run the slow (and expensive) code checks
       # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
       - run: |
-          if git --no-pager diff --exit-code origin/develop...HEAD -- . ':!docs'; then
+          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
             circleci-agent step halt
           fi
 
@@ -88,12 +88,18 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
+      # Install Kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
       - checkout
 
       # If the only changes are to the docs, don't run the slow (and expensive) code checks
       # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
       - run: |
-          if git --no-pager diff --exit-code origin/develop...HEAD -- . ':!docs'; then
+          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
             circleci-agent step halt
           fi
 
@@ -125,7 +131,14 @@ jobs:
     docker:
       - image: cimg/base:2021.10
     steps:
+      # Install Kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
       - checkout
+
       - run: |
           cd /tmp/
           git clone https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/kurtosis-tech/<< pipeline.parameters.source-repo-name >>.git
@@ -143,7 +156,7 @@ jobs:
       # Push the code up to the remote
       - run: |
           source server/scripts/_constants.env
-          version="$(bash "server/scripts/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}")"
+          version="$(kudet get-docker-tag)"
           cd /tmp/<< pipeline.parameters.source-repo-name >>
           git config --global user.name "${KURTOSISBOT_GITHUB_USERNAME}"
           git config --global user.email "${KURTOSISBOT_GITHUB_EMAIL}"
@@ -167,6 +180,12 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
+      # Install Kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
       - checkout
 
       - setup_remote_docker:
@@ -183,7 +202,7 @@ jobs:
       - run: |
           set -euo pipefail
           source server/scripts/_constants.env
-          version_to_publish="$(bash "server/scripts/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}")"
+          version_to_publish="$(kudet get-docker-tag)"
           echo "Version that will be published: ${version_to_publish}"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
@@ -208,7 +227,6 @@ workflows:
           filters:
             branches:
               ignore:
-                - develop
                 - master
       - check_api_golang:
           # NOTE: Do NOT add our private Github user here; the API must be publicly-accessible so must build without them
@@ -216,13 +234,11 @@ workflows:
           filters:
             branches:
               ignore:
-                - develop
                 - master
       - check_api_typescript:
           filters:
             branches:
               ignore:
-                - develop
                 - master
       - check_launcher:
           context:
@@ -231,7 +247,6 @@ workflows:
           filters:
             branches:
               ignore:
-                - develop
                 - master
       - check_server_code:
           context:
@@ -241,7 +256,6 @@ workflows:
           filters:
             branches:
               ignore:
-                - develop
                 - master
       # -- End PR check jobs ---------------------------------------
 
