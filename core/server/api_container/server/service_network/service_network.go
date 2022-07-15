@@ -49,10 +49,10 @@ This is the in-memory representation of the service network that the API contain
 */
 type ServiceNetwork struct {
 	enclaveId enclave.EnclaveID
-	
-	apiContainerIpAddress net.IP
+
+	apiContainerIpAddress   net.IP
 	apiContainerGrpcPortNum uint16
-	apiContainerVersion string
+	apiContainerVersion     string
 
 	mutex *sync.Mutex // VERY IMPORTANT TO CHECK AT THE START OF EVERY METHOD!
 
@@ -228,6 +228,8 @@ func (network *ServiceNetwork) StartService(
 	cmdArgs []string,
 	dockerEnvVars map[string]string,
 	filesArtifactMountDirpaths map[enclave_data_directory.FilesArtifactUUID]string,
+	cpuAllocationMillicpus uint64,
+	memoryAllocationMegabytes uint64,
 ) (
 	resultService *service.Service,
 	resultErr error,
@@ -273,7 +275,7 @@ func (network *ServiceNetwork) StartService(
 			return nil, stacktrace.Propagate(
 				err,
 				"An error occurred updating the traffic control configuration of all the other services "+
-					 "before adding the new service, meaning that the service wouldn't actually start in a partition",
+					"before adding the new service, meaning that the service wouldn't actually start in a partition",
 			)
 		}
 		// TODO defer an undo somehow???
@@ -289,6 +291,8 @@ func (network *ServiceNetwork) StartService(
 		cmdArgs,
 		dockerEnvVars,
 		filesArtifactMountDirpaths,
+		cpuAllocationMillicpus,
+		memoryAllocationMegabytes,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -350,7 +354,7 @@ func (network *ServiceNetwork) RemoveService(
 
 	// We stop the service, rather than destroying it, so that we can keep logs around
 	stopServiceFilters := &service.ServiceFilters{
-		GUIDs:    map[service.ServiceGUID]bool{
+		GUIDs: map[service.ServiceGUID]bool{
 			serviceGuid: true,
 		},
 	}
@@ -393,7 +397,7 @@ func (network *ServiceNetwork) PauseService(
 	}
 
 	if err := network.kurtosisBackend.PauseService(ctx, network.enclaveId, serviceObj.GetGUID()); err != nil {
-		return stacktrace.Propagate(err,"Failed to pause service '%v'", serviceId)
+		return stacktrace.Propagate(err, "Failed to pause service '%v'", serviceId)
 	}
 	return nil
 }
@@ -412,7 +416,7 @@ func (network *ServiceNetwork) UnpauseService(
 	}
 
 	if err := network.kurtosisBackend.UnpauseService(ctx, network.enclaveId, serviceObj.GetGUID()); err != nil {
-		return stacktrace.Propagate(err,"Failed to unpause service '%v'", serviceId)
+		return stacktrace.Propagate(err, "Failed to unpause service '%v'", serviceId)
 	}
 	return nil
 }
@@ -498,7 +502,7 @@ func (network *ServiceNetwork) GetService(ctx context.Context, serviceId service
 	serviceGuid := registration.GetGUID()
 
 	getServiceFilters := &service.ServiceFilters{
-		GUIDs:    map[service.ServiceGUID]bool{
+		GUIDs: map[service.ServiceGUID]bool{
 			registration.GetGUID(): true,
 		},
 	}
@@ -509,7 +513,7 @@ func (network *ServiceNetwork) GetService(ctx context.Context, serviceId service
 	if len(matchingServices) == 0 {
 		return nil, stacktrace.Propagate(
 			err,
-			"A registration exists for service GUID '%v' but no service objects were found; this indicates that the service was " +
+			"A registration exists for service GUID '%v' but no service objects were found; this indicates that the service was "+
 				"registered but not started",
 			serviceGuid,
 		)
@@ -569,7 +573,7 @@ func (network *ServiceNetwork) CopyFilesFromService(ctx context.Context, service
 		return "", stacktrace.Propagate(err, "An error occurred gzip'ing and pushing tar'd file bytes to the pipe")
 	}
 
-	storeFileResult := <- storeFilesArtifactResultChan
+	storeFileResult := <-storeFilesArtifactResultChan
 	if storeFileResult.err != nil {
 		return "", stacktrace.Propagate(
 			err,
@@ -666,7 +670,7 @@ func gzipCompressFile(readCloser io.Reader) (resultFilepath string, resultErr er
 	return tarGzipFileFilepath, nil
 }
 
- */
+*/
 
 func (network *ServiceNetwork) destroyServiceBestEffortAfterRegistrationFailure(
 	serviceGuid service.ServiceGUID,
@@ -686,7 +690,7 @@ func (network *ServiceNetwork) destroyServiceBestEffortAfterRegistrationFailure(
 	}
 	if errToPrint != nil {
 		logrus.Warnf(
-			"Registering service with ID '%v' didn't complete successfully so we tried to destroy the " +
+			"Registering service with ID '%v' didn't complete successfully so we tried to destroy the "+
 				"service that we created, but doing so threw an error:\n%v",
 			serviceGuid,
 			errToPrint,
@@ -710,11 +714,12 @@ func (network *ServiceNetwork) startService(
 	// Mapping of UUIDs of previously-registered files artifacts -> mountpoints on the container
 	// being launched
 	filesArtifactUuidsToMountpoints map[enclave_data_directory.FilesArtifactUUID]string,
+	cpuAllocationMillicpus uint64,
+	memoryAllocationMegabytes uint64,
 ) (
 	resultUserService *service.Service,
 	resultErr error,
 ) {
-
 	var filesArtifactsExpansion *backend_interface.FilesArtifactsExpansion
 	if len(filesArtifactUuidsToMountpoints) > 0 {
 		usedArtifactUuidSet := map[enclave_data_directory.FilesArtifactUUID]bool{}
@@ -753,36 +758,13 @@ func (network *ServiceNetwork) startService(
 			filesArtifactsExpanderImage,
 			network.apiContainerVersion,
 		)
-		
+
 		filesArtifactsExpansion = &backend_interface.FilesArtifactsExpansion{
 			ExpanderImage:                     expanderImageAndTag,
 			ExpanderEnvVars:                   expanderEnvVars,
 			ExpanderDirpathsToServiceDirpaths: expanderDirpathToUserServiceDirpathMap,
 		}
 	}
-
-	/*
-	// First expand the files artifacts into volumes, so that any errors get caught early
-	// NOTE: if users don't need to investigate the volume contents, we could keep track of the volumes we create
-	//  and delete them at the end of the test to keep things cleaner
-	artifactUuidsToExpansionGUIDs, err := network.filesArtifactExpander.ExpandArtifacts(ctx, serviceGuid, usedArtifactUuidSet)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred expanding the requested files artifacts into volumes")
-	}
-
-	artifactVolumeMounts := map[files_artifact_expansion.FilesArtifactExpansionGUID]string{}
-	for artifactUuid, mountpoint := range filesArtifactUuidsToMountpoints {
-		artifactExpansionGUID, found := artifactUuidsToExpansionGUIDs[artifactUuid]
-		if !found {
-			return nil, stacktrace.NewError(
-				"Even though we declared that we need files artifact '%v' to be expanded, no expansion containing the "+
-					"expanded contents was found; this is a bug in Kurtosis",
-				artifactUuid,
-			)
-		}
-		artifactVolumeMounts[artifactExpansionGUID] = mountpoint
-	}
-	 */
 
 	launchedUserService, err := network.kurtosisBackend.StartUserService(
 		ctx,
@@ -795,7 +777,10 @@ func (network *ServiceNetwork) startService(
 		cmdArgs,
 		envVars,
 		filesArtifactsExpansion,
+		cpuAllocationMillicpus,
+		memoryAllocationMegabytes,
 	)
+
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

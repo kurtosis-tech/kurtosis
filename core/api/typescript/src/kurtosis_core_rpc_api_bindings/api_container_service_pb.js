@@ -3183,7 +3183,9 @@ proto.api_container_api.StartServiceArgs.toObject = function(includeInstance, ms
     cmdArgsList: (f = jspb.Message.getRepeatedField(msg, 5)) == null ? undefined : f,
     dockerEnvVarsMap: (f = msg.getDockerEnvVarsMap()) ? f.toObject(includeInstance, undefined) : [],
     filesArtifactMountpointsMap: (f = msg.getFilesArtifactMountpointsMap()) ? f.toObject(includeInstance, undefined) : [],
-    publicPortsMap: (f = msg.getPublicPortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : []
+    publicPortsMap: (f = msg.getPublicPortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : [],
+    cpuAllocationMillicpus: jspb.Message.getFieldWithDefault(msg, 10, 0),
+    memoryAllocationMegabytes: jspb.Message.getFieldWithDefault(msg, 11, 0)
   };
 
   if (includeInstance) {
@@ -3260,6 +3262,14 @@ proto.api_container_api.StartServiceArgs.deserializeBinaryFromReader = function(
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api_container_api.Port.deserializeBinaryFromReader, "", new proto.api_container_api.Port());
          });
       break;
+    case 10:
+      var value = /** @type {number} */ (reader.readUint64());
+      msg.setCpuAllocationMillicpus(value);
+      break;
+    case 11:
+      var value = /** @type {number} */ (reader.readUint64());
+      msg.setMemoryAllocationMegabytes(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -3332,6 +3342,20 @@ proto.api_container_api.StartServiceArgs.serializeBinaryToWriter = function(mess
   f = message.getPublicPortsMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(9, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api_container_api.Port.serializeBinaryToWriter);
+  }
+  f = message.getCpuAllocationMillicpus();
+  if (f !== 0) {
+    writer.writeUint64(
+      10,
+      f
+    );
+  }
+  f = message.getMemoryAllocationMegabytes();
+  if (f !== 0) {
+    writer.writeUint64(
+      11,
+      f
+    );
   }
 };
 
@@ -3532,6 +3556,42 @@ proto.api_container_api.StartServiceArgs.prototype.getPublicPortsMap = function(
 proto.api_container_api.StartServiceArgs.prototype.clearPublicPortsMap = function() {
   this.getPublicPortsMap().clear();
   return this;};
+
+
+/**
+ * optional uint64 cpu_allocation_millicpus = 10;
+ * @return {number}
+ */
+proto.api_container_api.StartServiceArgs.prototype.getCpuAllocationMillicpus = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 10, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.api_container_api.StartServiceArgs} returns this
+ */
+proto.api_container_api.StartServiceArgs.prototype.setCpuAllocationMillicpus = function(value) {
+  return jspb.Message.setProto3IntField(this, 10, value);
+};
+
+
+/**
+ * optional uint64 memory_allocation_megabytes = 11;
+ * @return {number}
+ */
+proto.api_container_api.StartServiceArgs.prototype.getMemoryAllocationMegabytes = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 11, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.api_container_api.StartServiceArgs} returns this
+ */
+proto.api_container_api.StartServiceArgs.prototype.setMemoryAllocationMegabytes = function(value) {
+  return jspb.Message.setProto3IntField(this, 11, value);
+};
 
 
 

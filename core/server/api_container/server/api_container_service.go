@@ -228,6 +228,8 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 		args.CmdArgs,
 		args.DockerEnvVars,
 		filesArtifactMountpointsByArtifactUuid,
+		args.CpuAllocationMillicpus,
+		args.MemoryAllocationMegabytes,
 	)
 	if err != nil {
 		// TODO IP: Leaks internal information about the API container

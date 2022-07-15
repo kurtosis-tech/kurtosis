@@ -36,7 +36,7 @@ func NewLoadModuleResponse(
 	publicPort *kurtosis_core_rpc_api_bindings.Port,
 ) *kurtosis_core_rpc_api_bindings.LoadModuleResponse {
 	return &kurtosis_core_rpc_api_bindings.LoadModuleResponse{
-		Guid: guid,
+		Guid:          guid,
 		PrivateIpAddr: privateIpAddr,
 		PrivatePort:   privatePort,
 		PublicIpAddr:  publicIpAddr,
@@ -98,7 +98,7 @@ func NewModuleInfo(
 	privateGrpcPort *kurtosis_core_rpc_api_bindings.Port,
 	maybePublicIpAddr string,
 	maybePublicGrpcPort *kurtosis_core_rpc_api_bindings.Port,
-	) *kurtosis_core_rpc_api_bindings.ModuleInfo {
+) *kurtosis_core_rpc_api_bindings.ModuleInfo {
 	return &kurtosis_core_rpc_api_bindings.ModuleInfo{
 		Guid:                guid,
 		PrivateIpAddr:       privateIpAddr,
@@ -120,7 +120,7 @@ func NewRegisterServiceArgs(serviceId string, partitionId string) *kurtosis_core
 
 func NewRegisterServiceResponse(privateIpAddr string) *kurtosis_core_rpc_api_bindings.RegisterServiceResponse {
 	return &kurtosis_core_rpc_api_bindings.RegisterServiceResponse{
-		PrivateIpAddr:          privateIpAddr,
+		PrivateIpAddr: privateIpAddr,
 	}
 }
 
@@ -136,16 +136,20 @@ func NewStartServiceArgs(
 	cmdArgs []string,
 	envVars map[string]string,
 	filesArtifactMountDirpaths map[string]string,
+	cpuAllocationMillicpus uint64,
+	memoryAllocationMegabytes uint64,
 ) *kurtosis_core_rpc_api_bindings.StartServiceArgs {
 	return &kurtosis_core_rpc_api_bindings.StartServiceArgs{
-		ServiceId:                  serviceId,
-		DockerImage:                image,
-		PrivatePorts:               privatePorts,
-		EntrypointArgs:             entrypointArgs,
-		CmdArgs:                    cmdArgs,
-		DockerEnvVars:              envVars,
-		FilesArtifactMountpoints:   filesArtifactMountDirpaths,
-		PublicPorts: 				publicPorts, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+		ServiceId:                serviceId,
+		DockerImage:              image,
+		PrivatePorts:             privatePorts,
+		EntrypointArgs:           entrypointArgs,
+		CmdArgs:                  cmdArgs,
+		DockerEnvVars:            envVars,
+		FilesArtifactMountpoints: filesArtifactMountDirpaths,
+		PublicPorts:              publicPorts, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+		CpuAllocationMillicpus:            cpuAllocationMillicpus,
+		MemoryAllocationMegabytes:         memoryAllocationMegabytes,
 	}
 }
 
@@ -180,11 +184,11 @@ func NewServiceInfo(
 	maybePublicPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
 ) *kurtosis_core_rpc_api_bindings.ServiceInfo {
 	return &kurtosis_core_rpc_api_bindings.ServiceInfo{
-		ServiceGuid:                guid,
-		PrivateIpAddr:       		privateIpAddr,
-		PrivatePorts:     			privatePorts,
-		MaybePublicIpAddr:   		maybePublicIpAddr,
-		MaybePublicPorts: 			maybePublicPorts,
+		ServiceGuid:       guid,
+		PrivateIpAddr:     privateIpAddr,
+		PrivatePorts:      privatePorts,
+		MaybePublicIpAddr: maybePublicIpAddr,
+		MaybePublicPorts:  maybePublicPorts,
 	}
 }
 
@@ -208,9 +212,9 @@ func NewRemoveServiceResponse(serviceGuid string) *kurtosis_core_rpc_api_binding
 //                                          Repartition
 // ==============================================================================================
 func NewRepartitionArgs(
-		partitionServices map[string]*kurtosis_core_rpc_api_bindings.PartitionServices,
-		partitionConnections map[string]*kurtosis_core_rpc_api_bindings.PartitionConnections,
-		defaultConnection *kurtosis_core_rpc_api_bindings.PartitionConnectionInfo) *kurtosis_core_rpc_api_bindings.RepartitionArgs {
+	partitionServices map[string]*kurtosis_core_rpc_api_bindings.PartitionServices,
+	partitionConnections map[string]*kurtosis_core_rpc_api_bindings.PartitionConnections,
+	defaultConnection *kurtosis_core_rpc_api_bindings.PartitionConnectionInfo) *kurtosis_core_rpc_api_bindings.RepartitionArgs {
 	return &kurtosis_core_rpc_api_bindings.RepartitionArgs{
 		PartitionServices:    partitionServices,
 		PartitionConnections: partitionConnections,
@@ -242,13 +246,13 @@ func NewPartitionConnectionInfo(packetLossPercentage float32) *kurtosis_core_rpc
 
 func NewPauseServiceArgs(serviceId string) *kurtosis_core_rpc_api_bindings.PauseServiceArgs {
 	return &kurtosis_core_rpc_api_bindings.PauseServiceArgs{
-		ServiceId:   serviceId,
+		ServiceId: serviceId,
 	}
 }
 
 func NewUnpauseServiceArgs(serviceId string) *kurtosis_core_rpc_api_bindings.UnpauseServiceArgs {
 	return &kurtosis_core_rpc_api_bindings.UnpauseServiceArgs{
-		ServiceId:   serviceId,
+		ServiceId: serviceId,
 	}
 }
 
@@ -295,14 +299,14 @@ func NewWaitForHttpGetEndpointAvailabilityArgs(
 //                           Wait For Http Post Endpoint Availability
 // ==============================================================================================
 func NewWaitForHttpPostEndpointAvailabilityArgs(
-		serviceId string,
-		port uint32,
-		path string,
-		requestBody string,
-		initialDelayMilliseconds uint32,
-		retries uint32,
-		retriesDelayMilliseconds uint32,
-		bodyText string) *kurtosis_core_rpc_api_bindings.WaitForHttpPostEndpointAvailabilityArgs {
+	serviceId string,
+	port uint32,
+	path string,
+	requestBody string,
+	initialDelayMilliseconds uint32,
+	retries uint32,
+	retriesDelayMilliseconds uint32,
+	bodyText string) *kurtosis_core_rpc_api_bindings.WaitForHttpPostEndpointAvailabilityArgs {
 	return &kurtosis_core_rpc_api_bindings.WaitForHttpPostEndpointAvailabilityArgs{
 		ServiceId:                serviceId,
 		Port:                     port,
@@ -321,7 +325,6 @@ func NewWaitForHttpPostEndpointAvailabilityArgs(
 func NewUploadFilesArtifactArgs(data []byte) *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs {
 	return &kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs{Data: data}
 }
-
 
 // ==============================================================================================
 //                                 Store Web Files Artifact

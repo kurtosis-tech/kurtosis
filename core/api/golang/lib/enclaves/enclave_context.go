@@ -42,9 +42,9 @@ const (
 	//  or it was repartitioned away)
 	defaultPartitionId PartitionID = ""
 
-	grpcDataTransferLimit = 3999000 //3.999 Mb. 1kb wiggle room. 1kb being about the size of a simple 2 paragraph readme.
+	grpcDataTransferLimit     = 3999000 //3.999 Mb. 1kb wiggle room. 1kb being about the size of a simple 2 paragraph readme.
 	tempCompressionDirPattern = "upload-compression-cache-"
-	compressionExtension = ".tgz"
+	compressionExtension      = ".tgz"
 )
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -64,8 +64,8 @@ func NewEnclaveContext(
 	enclaveId EnclaveID,
 ) *EnclaveContext {
 	return &EnclaveContext{
-		client:             client,
-		enclaveId:          enclaveId,
+		client:    client,
+		enclaveId: enclaveId,
 	}
 }
 
@@ -211,6 +211,8 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 		containerConfig.GetCmdOverrideArgs(),
 		containerConfig.GetEnvironmentVariableOverrides(),
 		artifactIdStrToMountDirpath,
+		containerConfig.GetCPUAllocationMillicpus(),
+		containerConfig.GetMemoryAllocationMegabytes(),
 	)
 	resp, err := enclaveCtx.client.StartService(ctx, startServiceArgs)
 	if err != nil {
@@ -237,7 +239,7 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID) (*services.ServiceContext, error) {
-	serviceIdMapForArgs := map[string]bool{string(serviceId):true}
+	serviceIdMapForArgs := map[string]bool{string(serviceId): true}
 	getServiceInfoArgs := binding_constructors.NewGetServicesArgs(serviceIdMapForArgs)
 	response, err := enclaveCtx.client.GetServices(context.Background(), getServiceInfoArgs)
 	if err != nil {
@@ -458,7 +460,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 		return "", stacktrace.Propagate(err, "Failed to create temporary directory '%s' for compression.", tempDir)
 	}
 
-	compressedFilePath := filepath.Join(tempDir, filepath.Base(pathToUpload) + compressionExtension)
+	compressedFilePath := filepath.Join(tempDir, filepath.Base(pathToUpload)+compressionExtension)
 	if err = archiver.Archive([]string{pathToUpload}, compressedFilePath); err != nil {
 		return "", stacktrace.Propagate(err, "Failed to compress '%s'.", pathToUpload)
 	}
@@ -466,17 +468,17 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 	compressedFileInfo, err := os.Stat(compressedFilePath)
 	if err != nil {
 		return "", stacktrace.Propagate(err,
-			 "Failed to create a temporary archive file at '%s' during files upload for '%s'.",
+			"Failed to create a temporary archive file at '%s' during files upload for '%s'.",
 			tempDir, pathToUpload)
 	}
 
 	if compressedFileInfo.Size() >= grpcDataTransferLimit {
 		return "", stacktrace.Propagate(err,
-			"The files you are trying to upload, which are now compressed, exceed or reach 4mb, a limit imposed by gRPC. " +
+			"The files you are trying to upload, which are now compressed, exceed or reach 4mb, a limit imposed by gRPC. "+
 				"Please reduce the total file size and ensure it can compress to a size below 4mb.")
 	}
 	content, err := ioutil.ReadFile(compressedFilePath)
-	if err != nil{
+	if err != nil {
 		return "", stacktrace.Propagate(err,
 			"There was an error reading from the temporary tar file '%s' recently compressed for upload.",
 			compressedFileInfo.Name())
@@ -485,9 +487,9 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 	args := binding_constructors.NewUploadFilesArtifactArgs(content)
 	response, err := enclaveCtx.client.UploadFilesArtifact(context.Background(), args)
 	if err != nil {
-		return "", stacktrace.Propagate(err,"An error was encountered while uploading data to the API Container.")
+		return "", stacktrace.Propagate(err, "An error was encountered while uploading data to the API Container.")
 	}
-	return services.FilesArtifactUUID(response.Uuid), nil;
+	return services.FilesArtifactUUID(response.Uuid), nil
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation

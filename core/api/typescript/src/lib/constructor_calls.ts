@@ -155,6 +155,8 @@ export function newStartServiceArgs(
     cmdArgs: string[],
     dockerEnvVars: Map<string, string>,
     filesArtifactMountDirpaths: Map<string, string>,
+    cpuAllocationMillicpus: number,
+    memoryAllocationMegabytes: number,
 ): StartServiceArgs {
     const result: StartServiceArgs = new StartServiceArgs();
     result.setServiceId(String(serviceId));
@@ -179,6 +181,8 @@ export function newStartServiceArgs(
     for (const [artifactId, mountDirpath] of filesArtifactMountDirpaths.entries()) {
         filesArtificatMountDirpathsMap.set(artifactId, mountDirpath);
     }
+    result.setCpuAllocationMillicpus(cpuAllocationMillicpus);
+    result.setMemoryAllocationMegabytes(memoryAllocationMegabytes);
 
     //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
     const publicPortsMap: jspb.Map<string, Port> = result.getPublicPortsMap();

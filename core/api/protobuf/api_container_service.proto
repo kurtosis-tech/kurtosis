@@ -235,6 +235,12 @@ message StartServiceArgs {
 
   //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
   map<string, Port> public_ports  = 9;
+
+  // Corresponds to `millicpus`, 1000 millicpu = 1 CPU in both Docker and Kubernetes
+  uint64 cpu_allocation_millicpus = 10;
+
+  // Corresponds to available memory in megabytes in both Docker and Kubernetes
+  uint64 memory_allocation_megabytes = 11;
 }
 
 message StartServiceResponse {

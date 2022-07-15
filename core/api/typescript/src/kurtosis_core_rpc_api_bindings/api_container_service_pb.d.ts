@@ -348,6 +348,12 @@ export class StartServiceArgs extends jspb.Message {
   getPublicPortsMap(): jspb.Map<string, Port>;
   clearPublicPortsMap(): StartServiceArgs;
 
+  getCpuAllocationMillicpus(): number;
+  setCpuAllocationMillicpus(value: number): StartServiceArgs;
+
+  getMemoryAllocationMegabytes(): number;
+  setMemoryAllocationMegabytes(value: number): StartServiceArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StartServiceArgs.AsObject;
   static toObject(includeInstance: boolean, msg: StartServiceArgs): StartServiceArgs.AsObject;
@@ -366,6 +372,8 @@ export namespace StartServiceArgs {
     dockerEnvVarsMap: Array<[string, string]>,
     filesArtifactMountpointsMap: Array<[string, string]>,
     publicPortsMap: Array<[string, Port.AsObject]>,
+    cpuAllocationMillicpus: number,
+    memoryAllocationMegabytes: number,
   }
 }
 
