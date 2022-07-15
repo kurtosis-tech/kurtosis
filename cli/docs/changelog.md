@@ -1,5 +1,7 @@
 # TBD
 
+* Add test for setting resource allocations when adding a service to an enclave
+
 # 0.22.0
 ### Breaking Changes
 * Upgraded core to 1.55.3
