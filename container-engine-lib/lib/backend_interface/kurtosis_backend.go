@@ -264,8 +264,8 @@ type KurtosisBackend interface {
 		envVars map[string]string,
 		// Leave as nil to not do any files artifact expansion
 		filesArtifactExpansion *FilesArtifactsExpansion,
-		cpuAllocation string,
-		memoryAllocation uint64,
+		cpuAllocationMillicpus uint64,
+		memoryAllocationMegabytes uint64,
 	) (
 		*service.Service,
 		error,

@@ -23,7 +23,6 @@ import (
 	"io"
 	"io/ioutil"
 	"math"
-	"math/big"
 	"net"
 	"strings"
 	"time"
@@ -96,7 +95,10 @@ const (
 	shouldAttachStdoutWhenCreatingContainerExec               = true
 	shouldExecuteInDetachModeWhenCreatingContainerExec        = false
 
-	megabytesToBytesFactor = 1000000
+	megabytesToBytesFactor = 1_000_000
+	millicpusToNanoCPUsFactor = 1_000_000
+
+	minMemoryLimit = 6
 )
 
 /*
@@ -428,8 +430,8 @@ func (manager DockerManager) CreateAndStartContainer(
 		args.volumeMounts,
 		args.usedPorts,
 		args.needsAccessToDockerHostMachine,
-		args.cpuAllocation,
-		args.memoryAllocation)
+		args.cpuAllocationMillicpus,
+		args.memoryAllocationMegabytes)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -993,8 +995,8 @@ func (manager *DockerManager) getContainerHostConfig(
 	volumeMounts map[string]string,
 	usedPortsWithPublishSpec map[nat.Port]PortPublishSpec,
 	needsToAccessDockerHostMachine bool,
-	cpuAllocation string,
-	memoryAllocation uint64) (hostConfig *container.HostConfig, err error) {
+	cpuAllocationMillicpus uint64,
+	memoryAllocationMegabytes uint64) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))
 	for hostFilepath, containerFilepath := range bindMounts {
@@ -1056,20 +1058,20 @@ func (manager *DockerManager) getContainerHostConfig(
 	}
 
 	resources := container.Resources{}
-	if cpuAllocation != "" {
-		nanoCPUs, err := parseCPUAllocation(cpuAllocation)
-		if err != nil {
-			return nil, err
-		}
-		resources.NanoCPUs = nanoCPUs
+	if cpuAllocationMillicpus != 0 {
+		nanoCPUs := convertMillicpusToNanoCPUs(cpuAllocationMillicpus)
+		resources.NanoCPUs = int64(nanoCPUs)
 	}
-	if memoryAllocation != 0 {
-		memoryAllocationInBytes := convertMemoryAllocationToBytes(memoryAllocation)
-		resources.Memory = int64(memoryAllocationInBytes)
+	if memoryAllocationMegabytes != 0 {
+		if memoryAllocationMegabytes < minMemoryLimit {
+			return nil, stacktrace.NewError("Memory allocation, `%d`, is too low. Docker requires the memory limit to be at least `%d` megabytes.", memoryAllocationMegabytes, minMemoryLimit)
+		}
+		memoryAllocationBytes := convertMegabytesToBytes(memoryAllocationMegabytes)
+		resources.Memory = int64(memoryAllocationBytes)
 
 		// MemorySwap needs to be set to exactly memory to ensure memory is actually limited to memoryAllocationInBytes
 		// https://faun.pub/understanding-docker-container-memory-limit-behavior-41add155236c
-		resources.MemorySwap = int64(memoryAllocationInBytes)
+		resources.MemorySwap = int64(memoryAllocationBytes)
 	}
 
 	// NOTE: Do NOT use PublishAllPorts here!!!! This will work if a Dockerfile doesn't have an EXPOSE directive, but
@@ -1336,22 +1338,12 @@ func (manager DockerManager) getFailedContainerLogsOrErrorString(ctx context.Con
 	return containerLogs
 }
 
-
-func convertMemoryAllocationToBytes(memoryAllocation uint64) uint64 {
-	return memoryAllocation * megabytesToBytesFactor
+func convertMegabytesToBytes(value uint64) uint64 {
+	return value * megabytesToBytesFactor
 }
 
-// Taken from Docker CLI's `ParseCPUs`
-// Parses `cpu` unit from string and converts to NanoCPUs
-// https://github.com/docker/cli/blob/c780f7c4abaf67034ecfaa0611e03695cf9e4a3e/opts/opts.go
-func parseCPUAllocation(value string) (int64, error) {
-	cpu, ok := new(big.Rat).SetString(value)
-	if !ok {
-		return 0, stacktrace.NewError("An error occurred attempting to parse cpuAllocation, `%v`, as a rational number", value)
-	}
-	nano := cpu.Mul(cpu, big.NewRat(1e9, 1))
-	if !nano.IsInt() {
-		return 0, stacktrace.NewError("The value of cpuAllocation, `%v`, is too precised to be expressed as an int of NanoCPUs.", value)
-	}
-	return nano.Num().Int64(), nil
+// Intakes millicpu unit and converts to NanoCPUs in Docker
+// In Docker 1 CPU = 1000 millicpus = 1000000000 NanoCPUs
+func convertMillicpusToNanoCPUs(value uint64) uint64 {
+	return value * millicpusToNanoCPUsFactor
 }

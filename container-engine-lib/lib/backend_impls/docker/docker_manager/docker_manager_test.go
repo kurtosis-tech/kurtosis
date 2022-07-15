@@ -45,38 +45,15 @@ func TestGetLabelsFilterList(t *testing.T) {
 }
 
 func TestConvertCPUAllocationToNanoCPUsReturnsCorrectValue(t *testing.T){
-	cpuAllocationStr := "1.5"
+	cpuAllocation := uint64(1500)
 
-	nanoCPUs, err := parseCPUAllocation(cpuAllocationStr)
-	assert.NoError(t, err)
-
-	assert.Equal(t, int64(1500000000), nanoCPUs)
+	nanoCPUs := convertMillicpusToNanoCPUs(cpuAllocation)
+	assert.Equal(t, uint64(1500000000), nanoCPUs)
 }
-
-func TestConvertCPUAllocationToNanoCPUsWithFractionLessThanZeroReturnsCorrectValue(t *testing.T){
-	cpuAllocationStr := "0.5"
-	cpuAllocationStrNoZero := ".5"
-
-	nanoCPUs, err := parseCPUAllocation(cpuAllocationStr)
-	assert.NoError(t, err)
-	nanoCPUsNoZero, err := parseCPUAllocation(cpuAllocationStrNoZero)
-	assert.NoError(t, err)
-
-	assert.Equal(t, int64(500000000), nanoCPUs)
-	assert.Equal(t, int64(500000000), nanoCPUsNoZero)
-}
-
-func TestConvertCPUAllocationToNanoCPUsWithInvalidFormatReturnsError(t *testing.T){
-	cpuAllocationStr := "one point five"
-
-	_, err := parseCPUAllocation(cpuAllocationStr)
-	assert.Error(t, err)
-}
-
 
 func TestConvertMemoryAllocationToBytesReturnsCorrectValue(t *testing.T){
-	memoryAllocation := uint64(400) // 400 megabytes
+	memoryAllocationMegabytes := uint64(400) // 400 megabytes
 
-	memoryAllocationInBytes := convertMemoryAllocationToBytes(memoryAllocation)
-	assert.Equal(t, uint64(400000000), memoryAllocationInBytes)
+	memoryAllocationBytes := convertMegabytesToBytes(memoryAllocationMegabytes)
+	assert.Equal(t, uint64(400000000), memoryAllocationBytes)
 }

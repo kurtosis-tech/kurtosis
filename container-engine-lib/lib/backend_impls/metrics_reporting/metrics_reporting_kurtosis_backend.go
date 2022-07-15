@@ -328,8 +328,8 @@ func (backend *MetricsReportingKurtosisBackend) StartUserService(
 	cmdArgs []string,
 	envVars map[string]string,
 	filesArtifactExpansion *backend_interface.FilesArtifactsExpansion,
-	cpuAllocation string,
-	memoryAllocation uint64,
+	cpuAllocationMillicpus uint64,
+	memoryAllocationMegabytes uint64,
 ) (
 	newUserService *service.Service,
 	resultErr error,
@@ -345,8 +345,8 @@ func (backend *MetricsReportingKurtosisBackend) StartUserService(
 		cmdArgs,
 		envVars,
 		filesArtifactExpansion,
-		cpuAllocation,
-		memoryAllocation,
+		cpuAllocationMillicpus,
+		memoryAllocationMegabytes,
 	)
 	if err != nil {
 		filesArtifactMountDirpaths := []string{}

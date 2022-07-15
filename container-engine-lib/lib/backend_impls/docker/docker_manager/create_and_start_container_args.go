@@ -23,8 +23,8 @@ type CreateAndStartContainerArgs struct {
 	volumeMounts                   map[string]string
 	needsAccessToDockerHostMachine bool
 	labels                         map[string]string
-	cpuAllocation                  string
-	memoryAllocation               uint64
+	cpuAllocationMillicpus         uint64
+	memoryAllocationMegabytes      uint64
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -45,8 +45,8 @@ type CreateAndStartContainerArgsBuilder struct {
 	volumeMounts                   map[string]string
 	needsAccessToDockerHostMachine bool
 	labels                         map[string]string
-	cpuAllocation                  string
-	memoryAllocation               uint64
+	cpuAllocationMillicpus         uint64
+	memoryAllocationMegabytes      uint64
 }
 
 /*
@@ -73,8 +73,8 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		volumeMounts:                   map[string]string{},
 		needsAccessToDockerHostMachine: false,
 		labels:                         map[string]string{},
-		cpuAllocation:                  "",
-		memoryAllocation:               0,
+		cpuAllocationMillicpus:         0,
+		memoryAllocationMegabytes:      0,
 	}
 }
 
@@ -96,8 +96,8 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		bindMounts:                     builder.bindMounts,
 		volumeMounts:                   builder.volumeMounts,
 		needsAccessToDockerHostMachine: builder.needsAccessToDockerHostMachine,
-		cpuAllocation:                  builder.cpuAllocation,
-		memoryAllocation:               builder.memoryAllocation,
+		cpuAllocationMillicpus:         builder.cpuAllocationMillicpus,
+		memoryAllocationMegabytes:      builder.memoryAllocationMegabytes,
 	}
 }
 
@@ -183,18 +183,18 @@ func (builder *CreateAndStartContainerArgsBuilder) WithLabels(labels map[string]
 	return builder
 }
 
-// Corresponds to `--cpus` limit in Docker, converted to NanoCPUs set in the underlying container
-// The empty string is the empty value, meaning if the value is "", this field is ignored
+// Corresponds to millicpus where 1000 millicpus = 1 CPU in Docker, this gets converted and set to NanoCPUs in the underlying container
+// 0 is the empty value, meaning if the value is 0, this field is ignored
 // https://pkg.go.dev/github.com/docker/docker@v20.10.17+incompatible/api/types/container#Resources
-func (builder *CreateAndStartContainerArgsBuilder) WithCPUAllocation(cpuAllocation string) *CreateAndStartContainerArgsBuilder {
-	builder.cpuAllocation = cpuAllocation
+func (builder *CreateAndStartContainerArgsBuilder) WithCPUAllocationMillicpus(cpuAllocationMillicpus uint64) *CreateAndStartContainerArgsBuilder {
+	builder.cpuAllocationMillicpus = cpuAllocationMillicpus
 	return builder
 }
 
 // Corresponds to `--memory` limit in Docker in megabytes, used to set Memory and MemorySwap resource in the underlying container
 // 0 is the empty value, meaning if the value is 0, this field is ignored
 // https://pkg.go.dev/github.com/docker/docker@v20.10.17+incompatible/api/types/container#Resources
-func (builder *CreateAndStartContainerArgsBuilder) WithMemoryAllocation(memoryAllocation uint64) *CreateAndStartContainerArgsBuilder {
-	builder.memoryAllocation = memoryAllocation
+func (builder *CreateAndStartContainerArgsBuilder) WithMemoryAllocationMegabytes(memoryAllocationMegabytes uint64) *CreateAndStartContainerArgsBuilder {
+	builder.memoryAllocationMegabytes = memoryAllocationMegabytes
 	return builder
 }

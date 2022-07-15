@@ -174,8 +174,8 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	cmdArgs []string,
 	envVars map[string]string,
 	filesArtifactsExpansion *backend_interface.FilesArtifactsExpansion,
-	cpuAllocation string,
-	memoryAllocation uint64,
+	cpuAllocationMillicpus uint64,
+	memoryAllocationMegabytes uint64,
 ) (*service.Service, error) {
 
 	//Sanity check for port bindings
@@ -333,10 +333,10 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		labelStrs,
 	).WithAlias(
 		string(serviceId),
-	).WithCPUAllocation(
-		cpuAllocation,
-	).WithMemoryAllocation(
-		memoryAllocation,
+	).WithCPUAllocationMillicpus(
+		cpuAllocationMillicpus,
+	).WithMemoryAllocationMegabytes(
+		memoryAllocationMegabytes,
 	)
 
 	if entrypointArgs != nil {

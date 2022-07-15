@@ -68,33 +68,9 @@ func TestGetContainerPortsFromPortSpecs(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestParseCPUAllocationReturnsCorrectQuantityValue(t *testing.T){
-	cpuAllocationStr := "1.5"
-
-	cpuQuantity, err := parseCPUAllocation(cpuAllocationStr)
-	require.NoError(t, err)
-
-	// 1.5 cpus == 1500 millicpus
-	require.Equal(t, int64(1500), cpuQuantity.MilliValue()) // 1.5 cpus == 1500 millicpus
-}
-
-func TestParseCPUAllocationWithIncorrectFormatReturnsError(t *testing.T){
-	cpuAllocationStr := "1.5cpus"
-
-	_, err := parseCPUAllocation(cpuAllocationStr)
-	require.Error(t, err)
-}
-
-func TestParseCPUAllocationWithIncorrectCPUQuantityReturnsError(t *testing.T){
-	cpuAllocationStr := "1.5cpus"
-
-	_, err := parseCPUAllocation(cpuAllocationStr)
-	require.Error(t, err)
-}
-
 func TestConvertMemoryAllocationToBytesReturnsCorrectValue(t *testing.T){
-	memoryAllocation := uint64(400) // 400 megabytes
+	memoryAllocationMegabytes := uint64(400) // 400 megabytes
 
-	memoryAllocationInBytes := convertMemoryAllocationToBytes(memoryAllocation)
-	require.Equal(t, int64(400000000), int64(memoryAllocationInBytes))
+	memoryAllocationBytes := convertMegabytesToBytes(memoryAllocationMegabytes)
+	require.Equal(t, uint64(400000000), memoryAllocationBytes)
 }
