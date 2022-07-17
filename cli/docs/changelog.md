@@ -2,8 +2,8 @@
 
 # 0.22.0
 ### Breaking Changes
-* Upgraded core to 1.55.3
-* Upgraded engine to 1.27.2
+* Upgraded core to 1.55.2
+* Upgraded engine to 1.27.1
 
 ### Changes
 * Updated CI to test cluster setups

@@ -63,8 +63,6 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d // indirect
-	github.com/kurtosis-tech/kurtosis-core v1.55.3 // indirect
-	github.com/kurtosis-tech/kurtosis-engine-server v1.27.2 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/mholt/archiver v3.1.1+incompatible // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
