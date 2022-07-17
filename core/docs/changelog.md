@@ -2,6 +2,7 @@
 
 ### Fixes
 * Fix typos in `ContainerConfig`
+* Add a check for minimum allowed `memoryAllocationBytes`
 
 # 1.55.3
 
