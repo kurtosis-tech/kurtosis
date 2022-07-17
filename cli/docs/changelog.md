@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+* Undo upgrades to broken core and engine dependencies
+
 # 0.22.0
 ### Breaking Changes
 * Upgraded core to 1.55.2
