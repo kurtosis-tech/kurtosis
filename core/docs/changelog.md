@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+* Fix typos in `ContainerConfig`
+
 # 1.55.3
 
 ### Features
