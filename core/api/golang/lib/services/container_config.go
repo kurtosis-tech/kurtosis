@@ -134,12 +134,12 @@ func (builder *ContainerConfigBuilder) WithPublicPorts(publicPorts map[string]*P
 	return builder
 }
 
-func (builder *ContainerConfigBuilder) WithCPUAllocationMillicpusMillicpus(cpuAllocationMillicpus uint64) *ContainerConfigBuilder {
+func (builder *ContainerConfigBuilder) WithCPUAllocationMillicpus(cpuAllocationMillicpus uint64) *ContainerConfigBuilder {
 	builder.cpuAllocationMillicpus = cpuAllocationMillicpus
 	return builder
 }
 
-func (builder *ContainerConfigBuilder) WithMemoryAllocationMegabytesMegabytes(memoryAllocationMegabytes uint64) *ContainerConfigBuilder {
+func (builder *ContainerConfigBuilder) WithMemoryAllocationMegabytes(memoryAllocationMegabytes uint64) *ContainerConfigBuilder {
 	builder.memoryAllocationMegabytes = memoryAllocationMegabytes
 	return builder
 }
