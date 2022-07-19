@@ -36,6 +36,8 @@ const (
 
 	// TODO This should be populated from the build flow that builds the files-artifacts-expander Docker image
 	filesArtifactsExpanderImage = "kurtosistech/kurtosis-files-artifacts-expander"
+
+	minMemoryLimit = 6 // Docker doesn't allow memory limits less than 6 megabytes
 )
 
 type storeFilesArtifactResult struct {
@@ -764,6 +766,11 @@ func (network *ServiceNetwork) startService(
 			ExpanderEnvVars:                   expanderEnvVars,
 			ExpanderDirpathsToServiceDirpaths: expanderDirpathToUserServiceDirpathMap,
 		}
+	}
+
+	// Docker requires the minimum memory limit to be 6 megabytes to we make sure the allocation is at least that amount
+	if memoryAllocationMegabytes < minMemoryLimit {
+		return nil, stacktrace.NewError("Memory allocation, `%d`, is too low. Kurtosis requires the memory limit to be at least `%d` megabytes.", memoryAllocationMegabytes, minMemoryLimit)
 	}
 
 	launchedUserService, err := network.kurtosisBackend.StartUserService(
