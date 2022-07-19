@@ -222,7 +222,7 @@ Object containing information Kurtosis needs to create and run the container. Th
 ### String image
 The name of the container image that Kurtosis should use when creating the service's container (e.g. `my-repo/my-image:some-tag-name`).
 
-### Set\<String\> usedPorts
+### Map\<PortID, PortSpec\> usedPorts
 The ports that the container will be listening on, identified by a user-friendly ID that can be used to select the port again in the future (e.g. via [ServiceContext.getPublicPorts][servicecontext_getpublicports].
 
 ### Map\<String, String\> filesArtifactMountpoints
