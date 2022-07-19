@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+* Upgrade core to 1.56.0
+
 # 1.27.2
 
 ### Changes
