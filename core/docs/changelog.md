@@ -1,7 +1,10 @@
 # TBD
 
-### Fixes
+### Breaking Changes
 * Fix typos in `ContainerConfig`
+  * Golang SDK users should now update to use `ContainerConfigBuilder.WithCPUAllocationMillicpus` and `ContainerConfiBuilder.WithMemoryAllocationMegabytes`
+
+### Changes
 * Add a check for minimum allowed `memoryAllocationBytes`
 
 # 1.55.3
