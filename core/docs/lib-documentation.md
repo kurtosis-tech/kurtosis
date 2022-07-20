@@ -329,7 +329,7 @@ _Found a bug? File it on [the repo][issues]!_
 [enclavecontext_addservice]: #addserviceserviceid-serviceid--funcstring-ipaddr---containerconfigcontainerconfig-containerconfigsupplier---servicecontextservicecontext-servicecontext
 [enclavecontext_addservicetopartition]: #addservicetopartitionserviceid-serviceid-partitionid-partitionid-funcstring-ipaddr---containerconfigcontainerconfig-containerconfigsupplier---servicecontextservicecontext-servicecontext
 [enclavecontext_unpauseservice]: #unpauseserviceserviceid-serviceid
-[enclavecontext_repartitionnetwork]: #repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnection-partitionconnections-partitionconnection-defaultconnection
+[enclavecontext_repartitionnetwork]: #repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnectionpartitionconnection-partitionconnections-partitionconnectionpartitionconnection-defaultconnection
 [enclavecontext_uploadfiles]: #uploadfilesstring-pathtoupload
 
 [partitionconnection]: #partitionconnection
