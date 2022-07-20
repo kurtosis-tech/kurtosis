@@ -1,5 +1,7 @@
 # TBD
 
+# 1.29.0
+
 ### Breaking Changes
 * Upgrade core to 1.57.0
   * Users will have to restart their Kurtosis engine
