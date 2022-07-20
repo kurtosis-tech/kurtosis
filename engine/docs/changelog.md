@@ -2,6 +2,7 @@
 
 ### Changes
 * Add `v` prefixed version tag to api source
+* Upgrade core to 1.57.0
 
 # 1.28.0
 
