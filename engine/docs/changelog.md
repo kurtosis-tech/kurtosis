@@ -3,6 +3,12 @@
 ### Changes
 * Add `v` prefixed version tag to api source
 
+# 1.28.0
+
+### Breaking Changes
+* Upgrade core to 1.56.0, which fixes a typo
+  * Users will have to restart their enclaves
+
 # 1.27.2
 
 ### Changes
