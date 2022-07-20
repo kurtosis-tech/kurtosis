@@ -189,7 +189,7 @@ jobs:
           git commit -m "Committing ${version} files"
           git push origin master
           git tag "${version}"
-          git tag "v.${version}"
+          git tag "v${version}"
           git push --tags
 
   publish_api_typescript:
