@@ -1,8 +1,11 @@
 # TBD
 
+### Breaking Changes
+* Upgrade core to 1.57.0
+  * Users will have to restart their kurtosis engine
+
 ### Changes
 * Add `v` prefixed version tag to api source
-* Upgrade core to 1.57.0
 
 # 1.28.0
 
