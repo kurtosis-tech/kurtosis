@@ -2,7 +2,7 @@
 
 ### Breaking Changes
 * Upgrade core to 1.57.0
-  * Users will have to restart their kurtosis engine
+  * Users will have to restart their Kurtosis engine
 
 ### Changes
 * Add `v` prefixed version tag to api source
