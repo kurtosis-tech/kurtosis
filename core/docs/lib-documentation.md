@@ -327,7 +327,7 @@ _Found a bug? File it on [the repo][issues]!_
 [enclavecontext]: #enclavecontext
 [enclavecontext_registerfilesartifacts]: #registerfilesartifactsmapfilesartifactid-string-filesartifacturls
 [enclavecontext_addservice]: #addserviceserviceid-serviceid--funcstring-ipaddr---containerconfigcontainerconfig-containerconfigsupplier---servicecontextservicecontext-servicecontext
-[enclavecontext_addservicetopartition]: #addservicetopartitionserviceid-serviceid-partitionid-partitionid-funcstring-ipaddr---containerconfigcontainerconfig-containerconfigsupplier---servicecontextservicecontext-servicecontext
+[enclavecontext_addservicetopartition]: #addservicetopartitionserviceid-serviceid-partitionid-partitionid-funcstring-ipaddr---containerconfig-containerconfigsupplier---servicecontext-servicecontext
 [enclavecontext_unpauseservice]: #unpauseserviceserviceid-serviceid
 [enclavecontext_repartitionnetwork]: #repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnectionpartitionconnection-partitionconnections-partitionconnectionpartitionconnection-defaultconnection
 [enclavecontext_uploadfiles]: #uploadfilesstring-pathtoupload
