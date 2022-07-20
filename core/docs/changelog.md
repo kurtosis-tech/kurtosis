@@ -8,6 +8,7 @@
 
 ### Changes
 * Add a check for minimum allowed `memoryAllocationBytes`
+* Fix incorrect type for `usedPorts` in documentation, `Set<String>` -> `Map<PortID, PortSpec>`
 
 # 1.55.3
 
