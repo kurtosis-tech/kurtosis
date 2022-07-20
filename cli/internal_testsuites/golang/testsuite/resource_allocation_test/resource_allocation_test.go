@@ -55,9 +55,9 @@ func getContainerConfigSupplierWithCPUAndMemory() func(ipAddr string) (*services
 	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
 		containerConfig := services.NewContainerConfigBuilder(
 			resourceAllocTestImageName,
-		).WithCPUAllocationMillicpusMillicpus(
+		).WithCPUAllocationMillicpus(
 			testMemoryAllocMegabytes,
-		).WithMemoryAllocationMegabytesMegabytes(
+		).WithMemoryAllocationMegabytes(
 			testMemoryAllocMegabytes,
 		).Build()
 		return containerConfig, nil
@@ -69,7 +69,7 @@ func getContainerConfigSupplierWithInvalidMemory() func(ipAddr string) (*service
 	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
 		containerConfig := services.NewContainerConfigBuilder(
 			resourceAllocTestImageName,
-		).WithMemoryAllocationMegabytesMegabytes(
+		).WithMemoryAllocationMegabytes(
 			testInvalidMemoryAllocMegabytes,
 		).Build()
 		return containerConfig, nil

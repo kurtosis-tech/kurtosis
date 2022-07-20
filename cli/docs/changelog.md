@@ -1,5 +1,9 @@
 # TBD
 
+### Breaking Changes
+* Upgrade to core to 1.56.0 and engine to 1.28.0
+  * Users will need to run `kurtosis engine restart`
+  
 ### Changes
 * Add test for setting resource allocations when adding a service to an enclave to internal testsuite
 
