@@ -1,7 +1,7 @@
 # TBD
 
 ### Changes
-* Add `v.` prefixed version tag to api source
+* Add `v` prefixed version tag to api source
 
 # 1.27.2
 
