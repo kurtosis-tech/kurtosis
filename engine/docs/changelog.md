@@ -1,5 +1,7 @@
 # TBD
 
+# 1.28.0
+
 ### Breaking Changes
 * Upgrade core to 1.56.0, which fixes a typo
   * Users will have to restart their enclaves
