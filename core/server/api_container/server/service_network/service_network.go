@@ -38,7 +38,7 @@ const (
 	filesArtifactsExpanderImage = "kurtosistech/kurtosis-files-artifacts-expander"
 
 	minMemoryLimit = 6 // Docker doesn't allow memory limits less than 6 megabytes
-	defaultMemoryAlloc = 0
+	defaultMemoryAllocMegabytes = 0
 )
 
 type storeFilesArtifactResult struct {
@@ -771,7 +771,7 @@ func (network *ServiceNetwork) startService(
 
 	// Docker requires the minimum memory limit to be 6 megabytes to we make sure the allocation is at least that amount
 	// But first, we check that it's not the default value, meaning the user potentially didn't even set it
-	if memoryAllocationMegabytes != defaultMemoryAlloc && memoryAllocationMegabytes < minMemoryLimit {
+	if memoryAllocationMegabytes != defaultMemoryAllocMegabytes && memoryAllocationMegabytes < minMemoryLimit {
 		return nil, stacktrace.NewError("Memory allocation, `%d`, is too low. Kurtosis requires the memory limit to be at least `%d` megabytes.", memoryAllocationMegabytes, minMemoryLimit)
 	}
 
