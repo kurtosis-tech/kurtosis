@@ -2,6 +2,7 @@
 
 ### Breaking Changes 
 * Fix incorrect type for `usedPorts` in documentation, `Set<String>` -> `Map<PortID, PortSpec>`
+* Update docs to remove `hostPortBindings` from return of `EnclaveContext.AddService` and `EnclaveContext.AddServiceToPartition`
 
 # 1.56.0
 
