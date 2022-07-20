@@ -2,8 +2,10 @@
 
 ### Breaking Changes 
 * Fix incorrect type for `usedPorts` in documentation, `Set<String>` -> `Map<PortID, PortSpec>`
+  * Users will have to make sure any calls to `WithUsedPorts` are using proper type
 
 ### Changes
+* Add `v` prefixed version tag to api source
 * Fix check for minimum allowed `memoryAllocationMegabytes`
 
 # 1.56.0
