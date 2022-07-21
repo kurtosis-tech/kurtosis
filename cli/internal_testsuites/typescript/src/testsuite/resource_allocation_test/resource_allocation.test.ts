@@ -9,7 +9,7 @@ const RESOURCE_ALLOC_TEST_IMAGE =  "alpine:3.12.4"
 const TEST_SERVICE_ID = "test"
 const TEST_MEMORY_ALLOC_MEGABYTES = 1000 // 10000 megabytes = 1 GB
 const TEST_CPU_ALLOC_MILLICPUS = 1000 // 5000 millicpus = 1 CPU
-const TEST_INVALID_MEMORY_ALLOC_MEGABYTES = 0 // 6 megabytes is Dockers min, so this should throw error
+const TEST_INVALID_MEMORY_ALLOC_MEGABYTES = 4 // 6 megabytes is Dockers min, so this should throw error
 
 jest.setTimeout(180000)
 

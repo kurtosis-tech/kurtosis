@@ -17,7 +17,7 @@ const (
 
 	testMemoryAllocMegabytes        = 1000 // 10000 megabytes = 1 GB
 	testCpuAllocMillicpus           = 1000 // 1000 millicpus = 1 CPU
-	testInvalidMemoryAllocMegabytes = 0    // 6 megabytes is Dockers min, so this should throw error
+	testInvalidMemoryAllocMegabytes = 4    // 6 megabytes is Dockers min, so this should throw error
 )
 
 func TestSettingResourceAllocationFieldsAddsServiceWithNoError(t *testing.T) {
