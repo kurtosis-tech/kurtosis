@@ -8,6 +8,7 @@
 ### Changes
 * Add `v` prefixed version tag to api source
 * Fix check for minimum allowed `memoryAllocationMegabytes`
+* Implement stringer interface for `PortSpec`
 
 # 1.56.0
 
