@@ -12,7 +12,7 @@ const (
 	testName              = "resource-allocation-test"
 	isPartitioningEnabled = false
 
-	resourceAllocTestImageName = "alpine:3.12.4"
+	resourceAllocTestImageName = "flashspys/nginx-static"
 	testServiceId              = "test"
 
 	testMemoryAllocMegabytes        = 1000 // 10000 megabytes = 1 GB
@@ -23,9 +23,9 @@ const (
 func TestSettingResourceAllocationFieldsAddsServiceWithNoError(t *testing.T) {
 	ctx := context.Background()
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, destroyEnclaveFun, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
-	defer destroyEnclaveFunc()
+	defer destroyEnclaveFun()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	containerConfigSupplier := getContainerConfigSupplierWithCPUAndMemory()

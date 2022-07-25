@@ -5,7 +5,7 @@ import log from "loglevel";
 
 const TEST_NAME = "resource-allocation-test"
 const IS_PARTITIONING_ENABLED = false
-const RESOURCE_ALLOC_TEST_IMAGE =  "alpine:3.12.4"
+const RESOURCE_ALLOC_TEST_IMAGE =  "flashspys/nginx-static"
 const TEST_SERVICE_ID = "test"
 const TEST_MEMORY_ALLOC_MEGABYTES = 1000 // 10000 megabytes = 1 GB
 const TEST_CPU_ALLOC_MILLICPUS = 1000 // 5000 millicpus = 1 CPU
