@@ -251,6 +251,17 @@ type KurtosisBackend interface {
 		serviceId service.ServiceID,
 	) (*service.ServiceRegistration, error)
 
+	// Registers a user service for each given serviceId, allocating each an IP and ServiceGUID
+	RegisterUserServices(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		serviceIds map[service.ServiceID]bool,
+	) (
+		successfulUserServiceRegistrations map[service.ServiceID]*service.ServiceRegistration, // "set" of user service GUIDs that were successfully registered
+		erroredUserServiceIds map[service.ServiceID]error, // "set" of user service GUIDs that errored when attempting to register, with the error
+		resultErr error, // represents an error with the function itself, rather than the user services
+	)
+
 	// StartUserService consumes a service registration to create a user container with the given parameters
 	StartUserService(
 		ctx context.Context,

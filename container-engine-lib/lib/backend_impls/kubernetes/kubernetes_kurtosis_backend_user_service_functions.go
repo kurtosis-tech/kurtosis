@@ -216,6 +216,12 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 	return serviceRegistration, nil
 }
 
+// Registers a user service for each given serviceId, allocating each an IP and ServiceGUID
+func (backend *KubernetesKurtosisBackend)RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, serviceIds map[service.ServiceID]bool, ) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error){
+	return nil, nil, nil
+}
+
+
 func (backend *KubernetesKurtosisBackend) StartUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,

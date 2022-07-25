@@ -317,6 +317,11 @@ func (backend *MetricsReportingKurtosisBackend) RegisterUserService(ctx context.
 	return result, nil
 }
 
+// Registers a user service for each given serviceId, allocating each an IP and ServiceGUID
+func (backend *MetricsReportingKurtosisBackend) RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, serviceIds map[service.ServiceID]bool, ) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error){
+	return nil, nil, nil
+}
+
 func (backend *MetricsReportingKurtosisBackend) StartUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
