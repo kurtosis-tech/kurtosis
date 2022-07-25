@@ -56,7 +56,7 @@ func getContainerConfigSupplierWithCPUAndMemory() func(ipAddr string) (*services
 		containerConfig := services.NewContainerConfigBuilder(
 			resourceAllocTestImageName,
 		).WithCPUAllocationMillicpus(
-			testMemoryAllocMegabytes,
+			testCpuAllocMillicpus,
 		).WithMemoryAllocationMegabytes(
 			testMemoryAllocMegabytes,
 		).Build()
