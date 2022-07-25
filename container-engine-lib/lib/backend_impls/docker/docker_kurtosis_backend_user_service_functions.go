@@ -406,6 +406,10 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	return result, nil
 }
 
+func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]service.Service, map[service.ServiceGUID]error, error){
+	return nil, nil, nil
+}
+
 func (backend *DockerKurtosisBackend) GetUserServices(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,

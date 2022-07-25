@@ -269,6 +269,17 @@ type KurtosisBackend interface {
 		error,
 	)
 
+	// StartUserService consumes a service registration to create a user container with the given parameters
+	StartUserServices(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		services map[service.ServiceGUID]*service.ServiceConfig,
+	) (
+		successfulServices map[service.ServiceGUID]service.Service, // "set" of user service GUIDs that were successfully started
+		unsuccessfulServices map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when attempting to start, with the error
+		resultErr error, // represents an error with the function itself, rather than the user services
+	)
+
 	// Gets user services using the given filters, returning a map of matched user services identified by their GUID
 	GetUserServices(
 		ctx context.Context,
