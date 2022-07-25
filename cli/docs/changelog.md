@@ -4,7 +4,7 @@
 * Upgrade to core to 1.57.0 and engine to 1.29.0
   * Users will need to restart their Kurtosis engine
   
-### Changes
+### Feature
 * Add test for setting resource allocations when adding a service to an enclave to internal testsuite
 
 # 0.22.1
