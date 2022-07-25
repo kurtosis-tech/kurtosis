@@ -23,9 +23,9 @@ const (
 func TestSettingResourceAllocationFieldsAddsServiceWithNoError(t *testing.T) {
 	ctx := context.Background()
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFun, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
-	defer destroyEnclaveFun()
+	defer destroyEnclaveFunc()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	containerConfigSupplier := getContainerConfigSupplierWithCPUAndMemory()
