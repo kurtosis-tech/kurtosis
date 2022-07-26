@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -21,6 +20,20 @@ import (
 //  (e.g. GetUserServices to power 'enclave inspect', GetUserServiceLogs) because the Kurtosis
 //  APIs don't yet support them. Once the Kurtosis APIs support everything, we'll have the CLI
 //  use purely the Kurtosis SDK (as it should)
+
+type FilesArtifactsExpansion struct {
+	// The image that will run before the user service starts, to expand files artifacts into volumes
+	// so that the user service container has what it expects
+	ExpanderImage string
+
+	// The environment variables that the expander container will be passed in, to configure
+	// its operation
+	ExpanderEnvVars map[string]string
+
+	// Map of dirpaths that the expander container expects (which the expander will expand into), mapped to
+	// dirpaths on the user service container where those same directories should be made available
+	ExpanderDirpathsToServiceDirpaths map[string]string
+}
 
 // KurtosisBackend abstracts a Kurtosis backend, which will be a container engine (Docker or Kubernetes).
 // The heuristic for "do I need a method in KurtosisBackend?" here is "will I make one or more calls to
@@ -261,7 +274,7 @@ type KurtosisBackend interface {
 		cmdArgs []string,
 		envVars map[string]string,
 		// Leave as nil to not do any files artifact expansion
-		filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion,
+		filesArtifactExpansion *FilesArtifactsExpansion,
 		cpuAllocationMillicpus uint64,
 		memoryAllocationMegabytes uint64,
 	) (

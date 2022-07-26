@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -333,7 +332,7 @@ func (backend *MetricsReportingKurtosisBackend) StartUserService(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion,
+	filesArtifactExpansion *backend_interface.FilesArtifactsExpansion,
 	cpuAllocationMillicpus uint64,
 	memoryAllocationMegabytes uint64,
 ) (
