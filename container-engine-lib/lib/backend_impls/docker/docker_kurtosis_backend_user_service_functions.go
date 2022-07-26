@@ -187,6 +187,7 @@ func (backend *DockerKurtosisBackend) RegisterUserServices(ctx context.Context, 
 		)
 	}
 
+	// attempt to register each service with an allocated ip address
 	successfulRegistrations := map[service.ServiceID]*service.ServiceRegistration{}
 	unsuccessfulRegistrations := map[service.ServiceID]error{}
 	for serviceID, _ := range serviceIDs {

@@ -2,6 +2,7 @@
 
 ### Changes
 * Add `RegisterUserServices` and `StartUserServices` to `KurtosisBackend` interface
+* Implement `RegisterUserServices` in `DockerKurtosisBackend`
 
 # 0.33.1
 ### Features
