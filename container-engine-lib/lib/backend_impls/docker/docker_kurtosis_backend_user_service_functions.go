@@ -163,9 +163,72 @@ func (backend *DockerKurtosisBackend) RegisterUserService(ctx context.Context, e
 	return registration, nil
 }
 
-// Registers a user service for each given serviceId, allocating each an IP and ServiceGUID
-func (backend *DockerKurtosisBackend) RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, serviceIds map[service.ServiceID]bool, ) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error){
-	return nil, nil, stacktrace.NewError("REGISTER USER SERVICES METHOD IS UNIMPLEMENTED. DON'T USE IT")
+// Registers a user service for each given serviceID, allocating each an IP and ServiceGUID
+func (backend *DockerKurtosisBackend) RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, serviceIDs map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
+	backend.serviceRegistrationMutex.Lock()
+	defer backend.serviceRegistrationMutex.Unlock()
+
+	freeIpAddrProvider, found := backend.enclaveFreeIpProviders[enclaveId]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"Received a request to register services in enclave '%v', but no free IP address provider was "+
+				"defined for this enclave; this likely means that the registration request is being called where it shouldn't "+
+				"be (i.e. outside the API container)",
+			enclaveId,
+		)
+	}
+
+	registrationsForEnclave, found := backend.serviceRegistrations[enclaveId]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"No service registrations are being tracked for enclave '%v'; this likely means that the registration request is being called where it shouldn't "+
+				"be (i.e. outside the API container)",
+			enclaveId,
+		)
+	}
+
+	successfulRegistrations := map[service.ServiceID]*service.ServiceRegistration{}
+	failedRegistrations := map[service.ServiceID]error{}
+	for serviceID, _ := range serviceIDs {
+		ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
+		if err != nil {
+			failedRegistrations[serviceID] = stacktrace.Propagate(err, "An error occurred getting a free IP address to give to service '%v' in enclave '%v'", serviceID, enclaveId)
+			continue
+		}
+		shouldFreeIp := true
+		defer func() {
+			if shouldFreeIp {
+				freeIpAddrProvider.ReleaseIpAddr(ipAddr)
+			}
+		}()
+
+		guid := service.ServiceGUID(fmt.Sprintf(
+			"%v-%v",
+			serviceID,
+			time.Now().Unix(),
+		))
+		registration := service.NewServiceRegistration(
+			serviceID,
+			guid,
+			enclaveId,
+			ipAddr,
+		)
+
+		registrationsForEnclave[guid] = registration
+		shouldRemoveRegistration := true
+		defer func() {
+			if shouldRemoveRegistration {
+				delete(registrationsForEnclave, guid)
+
+			}
+		}()
+
+		shouldFreeIp = false
+		shouldRemoveRegistration = false
+		successfulRegistrations[serviceID] = registration
+	}
+
+	return successfulRegistrations, failedRegistrations, nil
 }
 
 func (backend *DockerKurtosisBackend) StartUserService(
