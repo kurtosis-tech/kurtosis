@@ -188,14 +188,19 @@ func (backend *DockerKurtosisBackend) RegisterUserServices(ctx context.Context, 
 	}
 
 	successfulRegistrations := map[service.ServiceID]*service.ServiceRegistration{}
-	unsuccessfulRegistrations := map[service.ServiceID]error
+	unsuccessfulRegistrations := map[service.ServiceID]error{}
 	for serviceID, _ := range serviceIDs {
 		ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
 		if err != nil {
-			unsuccessfulRegistrations[serviceID] = stacktrace.Propagate(err, "An error occurred getting a free IP address to give to service '%v' in enclave '%v'", serviceId, enclaveId)
+			unsuccessfulRegistrations[serviceID] = stacktrace.Propagate(err, "An error occurred getting a free IP address to give to service '%v' in enclave '%v'", serviceID, enclaveId)
 			continue
 		}
-		// think about how to release this ip in case of error
+		shouldFreeIp := true
+		defer func() {
+			if shouldFreeIp {
+				freeIpAddrProvider.ReleaseIpAddr(ipAddr)
+			}
+		}()
 
 		guid := service.ServiceGUID(fmt.Sprintf(
 			"%v-%v",
@@ -210,7 +215,13 @@ func (backend *DockerKurtosisBackend) RegisterUserServices(ctx context.Context, 
 		)
 
 		registrationsForEnclave[guid] = registration
-		// think about how to delete this registration in case of error
+		shouldRemoveRegistration := true
+		defer func() {
+			if shouldRemoveRegistration {
+				delete(registrationsForEnclave, guid)
+
+			}
+		}()
 		successfulRegistrations[serviceID] = registration
 	}
 
