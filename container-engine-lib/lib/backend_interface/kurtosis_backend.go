@@ -35,6 +35,28 @@ type FilesArtifactsExpansion struct {
 	ExpanderDirpathsToServiceDirpaths map[string]string
 }
 
+// Config options for the underlying container of a service
+type ServiceConfig struct {
+	containerImageName string
+
+	privatePorts map[string]*port_spec.PortSpec
+
+	publicPorts map[string]*port_spec.PortSpec //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+
+	entrypointArgs []string
+
+	cmdArgs []string
+
+	envVars map[string]string
+
+	// Leave as nil to not do any files artifact expansion
+	filesArtifactExpansion FilesArtifactsExpansion
+
+	cpuAllocationMillicpus uint64
+
+	memoryAllocationMegabytes uint64
+}
+
 // KurtosisBackend abstracts a Kurtosis backend, which will be a container engine (Docker or Kubernetes).
 // The heuristic for "do I need a method in KurtosisBackend?" here is "will I make one or more calls to
 // the underlying container engine?"
@@ -286,7 +308,7 @@ type KurtosisBackend interface {
 	StartUserServices(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		services map[service.ServiceGUID]*service.ServiceConfig,
+		services map[service.ServiceGUID]*ServiceConfig,
 	) (
 		successfulServices map[service.ServiceGUID]service.Service, // "set" of user service GUIDs that were successfully started
 		unsuccessfulServices map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when attempting to start, with the error
