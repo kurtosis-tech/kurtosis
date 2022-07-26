@@ -164,7 +164,7 @@ func (backend *DockerKurtosisBackend) RegisterUserService(ctx context.Context, e
 }
 
 // Registers a user service for each given serviceID, allocating each an IP and ServiceGUID
-func (backend *DockerKurtosisBackend) RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, serviceIDs map[service.ServiceID]bool, ) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
+func (backend *DockerKurtosisBackend) RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, serviceIDs map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
 	backend.serviceRegistrationMutex.Lock()
 	defer backend.serviceRegistrationMutex.Unlock()
 
@@ -187,13 +187,12 @@ func (backend *DockerKurtosisBackend) RegisterUserServices(ctx context.Context, 
 		)
 	}
 
-	// attempt to register each service with an allocated ip address
 	successfulRegistrations := map[service.ServiceID]*service.ServiceRegistration{}
-	unsuccessfulRegistrations := map[service.ServiceID]error{}
+	failedRegistrations := map[service.ServiceID]error{}
 	for serviceID, _ := range serviceIDs {
 		ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
 		if err != nil {
-			unsuccessfulRegistrations[serviceID] = stacktrace.Propagate(err, "An error occurred getting a free IP address to give to service '%v' in enclave '%v'", serviceID, enclaveId)
+			failedRegistrations[serviceID] = stacktrace.Propagate(err, "An error occurred getting a free IP address to give to service '%v' in enclave '%v'", serviceID, enclaveId)
 			continue
 		}
 		shouldFreeIp := true
@@ -223,10 +222,13 @@ func (backend *DockerKurtosisBackend) RegisterUserServices(ctx context.Context, 
 
 			}
 		}()
+
+		shouldFreeIp = false
+		shouldRemoveRegistration = false
 		successfulRegistrations[serviceID] = registration
 	}
 
-	return successfulRegistrations, unsuccessfulRegistrations, nil
+	return successfulRegistrations, failedRegistrations, nil
 }
 
 func (backend *DockerKurtosisBackend) StartUserService(
