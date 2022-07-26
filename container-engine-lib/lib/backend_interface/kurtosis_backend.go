@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -21,6 +20,42 @@ import (
 //  (e.g. GetUserServices to power 'enclave inspect', GetUserServiceLogs) because the Kurtosis
 //  APIs don't yet support them. Once the Kurtosis APIs support everything, we'll have the CLI
 //  use purely the Kurtosis SDK (as it should)
+
+type FilesArtifactsExpansion struct {
+	// The image that will run before the user service starts, to expand files artifacts into volumes
+	// so that the user service container has what it expects
+	ExpanderImage string
+
+	// The environment variables that the expander container will be passed in, to configure
+	// its operation
+	ExpanderEnvVars map[string]string
+
+	// Map of dirpaths that the expander container expects (which the expander will expand into), mapped to
+	// dirpaths on the user service container where those same directories should be made available
+	ExpanderDirpathsToServiceDirpaths map[string]string
+}
+
+// Config options for the underlying container of a service
+type ServiceConfig struct {
+	containerImageName string
+
+	privatePorts map[string]*port_spec.PortSpec
+
+	publicPorts map[string]*port_spec.PortSpec //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+
+	entrypointArgs []string
+
+	cmdArgs []string
+
+	envVars map[string]string
+
+	// Leave as nil to not do any files artifact expansion
+	filesArtifactExpansion FilesArtifactsExpansion
+
+	cpuAllocationMillicpus uint64
+
+	memoryAllocationMegabytes uint64
+}
 
 // KurtosisBackend abstracts a Kurtosis backend, which will be a container engine (Docker or Kubernetes).
 // The heuristic for "do I need a method in KurtosisBackend?" here is "will I make one or more calls to
@@ -244,8 +279,8 @@ type KurtosisBackend interface {
 		enclaveId enclave.EnclaveID,
 		serviceIds map[service.ServiceID]bool,
 	) (
-		successfulUserServiceRegistrations map[service.ServiceID]*service.ServiceRegistration, // "set" of user service GUIDs that were successfully registered
-		erroredUserServiceIds map[service.ServiceID]error, // "set" of user service GUIDs that errored when attempting to register, with the error
+		successfulUserServiceRegistrations map[service.ServiceID]*service.ServiceRegistration, // "set" of user service IDs that were successfully registered
+		erroredUserServiceIds map[service.ServiceID]error, // "set" of user service IDs that errored when attempting to register, with the error
 		resultErr error, // represents an error with the function itself, rather than the user services
 	)
 
@@ -261,7 +296,7 @@ type KurtosisBackend interface {
 		cmdArgs []string,
 		envVars map[string]string,
 		// Leave as nil to not do any files artifact expansion
-		filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion,
+		filesArtifactExpansion *FilesArtifactsExpansion,
 		cpuAllocationMillicpus uint64,
 		memoryAllocationMegabytes uint64,
 	) (
@@ -269,11 +304,11 @@ type KurtosisBackend interface {
 		error,
 	)
 
-	// StartUserService consumes a service registration to create a user container with the given parameters
+	// StartUserService consumes service registrations to create auser container for each registration, given each service config
 	StartUserServices(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		services map[service.ServiceGUID]*service.ServiceConfig,
+		services map[service.ServiceGUID]*ServiceConfig,
 	) (
 		successfulServices map[service.ServiceGUID]service.Service, // "set" of user service GUIDs that were successfully started
 		unsuccessfulServices map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when attempting to start, with the error
