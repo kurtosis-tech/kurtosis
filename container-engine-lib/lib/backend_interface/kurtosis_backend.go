@@ -244,8 +244,8 @@ type KurtosisBackend interface {
 		enclaveId enclave.EnclaveID,
 		serviceIds map[service.ServiceID]bool,
 	) (
-		successfulUserServiceRegistrations map[service.ServiceID]*service.ServiceRegistration, // "set" of user service GUIDs that were successfully registered
-		erroredUserServiceIds map[service.ServiceID]error, // "set" of user service GUIDs that errored when attempting to register, with the error
+		successfulUserServiceRegistrations map[service.ServiceID]*service.ServiceRegistration, // "set" of user service IDs that were successfully registered
+		erroredUserServiceIds map[service.ServiceID]error, // "set" of user service IDs that errored when attempting to register, with the error
 		resultErr error, // represents an error with the function itself, rather than the user services
 	)
 
@@ -269,7 +269,7 @@ type KurtosisBackend interface {
 		error,
 	)
 
-	// StartUserService consumes a service registration to create a user container with the given parameters
+	// StartUserService consumes service registrations to create auser container for each registration, given each service config
 	StartUserServices(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
