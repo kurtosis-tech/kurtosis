@@ -19,7 +19,6 @@ const (
 	maxNumConcurrentRequests = 25
 )
 
-// should operation be a reference?
 func RunOperationsInParallel(operations map[OperationID]Operation) (map[OperationID]bool, map[OperationID]error) {
 	workerPool := workerpool.New(maxNumConcurrentRequests)
 	resultsChan := make(chan OperationResult, len(operations))
