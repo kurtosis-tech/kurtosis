@@ -8,17 +8,18 @@ type OperationID string
 
 type OperationResult struct {
 	id OperationID
+
+	// Nil error indicates the operation executed successfully
 	resultErr error
 }
 
-type Operation struct {
-	Task func() error
-}
+type Operation func() error
 
 const (
 	maxNumConcurrentRequests = 25
 )
 
+// should operation be a reference?
 func RunOperationsInParallel(operations map[OperationID]Operation) (map[OperationID]bool, map[OperationID]error) {
 	workerPool := workerpool.New(maxNumConcurrentRequests)
 	resultsChan := make(chan OperationResult, len(operations))
@@ -47,7 +48,7 @@ func RunOperationsInParallel(operations map[OperationID]Operation) (map[Operatio
 
 func getWorkerTask(id OperationID, operation Operation, resultsChan chan OperationResult) func(){
 	return func() {
-		OperationResultErr := operation.Task()
+		OperationResultErr := operation()
 		resultsChan <- OperationResult{
 			id: id,
 			resultErr: OperationResultErr,
