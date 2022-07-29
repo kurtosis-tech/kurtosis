@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+* Implement stringer interface for `PortSpec`
+
 ### Breaking Changes 
 * Fix incorrect type for `usedPorts` in documentation, `Set<String>` -> `Map<PortID, PortSpec>`
 * Update docs to remove `hostPortBindings` from return of `EnclaveContext.AddService` and `EnclaveContext.AddServiceToPartition`
@@ -8,7 +11,6 @@
 ### Changes
 * Add `v` prefixed version tag to api source
 * Fix check for minimum allowed `memoryAllocationMegabytes`
-* Implement stringer interface for `PortSpec`
 
 # 1.56.0
 
