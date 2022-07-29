@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+* Implement stringer interface for `PortSpec`
+
 # 1.57.0
 
 ### Breaking Changes 

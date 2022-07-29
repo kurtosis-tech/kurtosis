@@ -5,7 +5,10 @@
 
 package services
 
-import "github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
+import (
+	"fmt"
+	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
+)
 
 // Use a type alias here to make this a bit more user-friendly
 type PortProtocol kurtosis_core_rpc_api_bindings.Port_Protocol
@@ -39,4 +42,8 @@ func (spec *PortSpec) GetNumber() uint16 {
 
 func (spec *PortSpec) GetProtocol() PortProtocol {
 	return spec.protocol
+}
+
+func (spec *PortSpec) String() string {
+	return fmt.Sprintf("%d/%v", spec.number, spec.protocol)
 }
