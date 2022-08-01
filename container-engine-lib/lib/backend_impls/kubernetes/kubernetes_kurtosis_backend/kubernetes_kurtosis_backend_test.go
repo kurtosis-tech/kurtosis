@@ -1,6 +1,7 @@
 package kubernetes_kurtosis_backend
 
 import (
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_functions"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/stretchr/testify/require"
 	apiv1 "k8s.io/api/core/v1"
@@ -71,6 +72,6 @@ func TestGetContainerPortsFromPortSpecs(t *testing.T) {
 func TestConvertMemoryAllocationToBytesReturnsCorrectValue(t *testing.T){
 	memoryAllocationMegabytes := uint64(400) // 400 megabytes
 
-	memoryAllocationBytes := convertMegabytesToBytes(memoryAllocationMegabytes)
+	memoryAllocationBytes := shared_functions.ConvertMegabytesToBytes(memoryAllocationMegabytes)
 	require.Equal(t, uint64(400000000), memoryAllocationBytes)
 }

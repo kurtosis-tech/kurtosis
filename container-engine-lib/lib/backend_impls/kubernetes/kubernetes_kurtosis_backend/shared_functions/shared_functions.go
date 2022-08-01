@@ -18,6 +18,10 @@ import (
 	"net"
 )
 
+const (
+	megabytesToBytesFactor = 1_000_000
+)
+
 // !!!WARNING!!!
 // This files contains functions that are shared by multiple DockerKurtosisBackend functions.
 // Generally, we want to prevent long utils folders with functionality that is difficult to find, so be careful
@@ -481,4 +485,8 @@ func getUserServiceObjectsFromKubernetesResources(
 	}
 
 	return results, nil
+}
+
+func ConvertMegabytesToBytes(value uint64) uint64 {
+	return value * megabytesToBytesFactor
 }

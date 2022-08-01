@@ -31,7 +31,7 @@ const (
 // Generally, we want to prevent long utils folders with functionality that is difficult to find, so be careful
 // when adding functionality in this folder.
 // Things to think about: Could this function be a private helper function that's scope is smaller than you think?
-// Eg. only used by start user services functions thus could go in start_user_services.goo
+// Eg. only used by start user services functions thus could go in start_user_services.go
 
 // This maps a Docker container's status to a binary "is the container considered running?" determiner
 // Its completeness is enforced via unit test
