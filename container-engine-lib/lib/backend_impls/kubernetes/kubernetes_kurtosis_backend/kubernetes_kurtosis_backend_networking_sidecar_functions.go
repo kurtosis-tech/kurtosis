@@ -9,6 +9,8 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
+// TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
+
 func (backend KubernetesKurtosisBackend) CreateNetworkingSidecar(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID) (*networking_sidecar.NetworkingSidecar, error) {
 	return nil, stacktrace.NewError("Networking sidecars aren't implemented for Kubernetes yet")
 }

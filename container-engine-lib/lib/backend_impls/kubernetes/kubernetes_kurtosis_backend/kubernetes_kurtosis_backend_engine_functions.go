@@ -29,6 +29,8 @@ const (
 	timeBetweenWaitForEngineContainerAvailabilityRetries = 1 * time.Second
 )
 
+// TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
+
 // Any of these values being nil indicates that the resource doesn't exist
 type engineKubernetesResources struct {
 	clusterRole *rbacv1.ClusterRole

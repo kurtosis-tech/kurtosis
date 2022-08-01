@@ -35,6 +35,8 @@ const (
 	enclaveDataDirVolumeName = "enclave-data"
 )
 
+// TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
+
 // Any of these values being nil indicates that the resource doesn't exist
 type apiContainerKubernetesResources struct {
 	// Will never be nil because an API container is defined by its service

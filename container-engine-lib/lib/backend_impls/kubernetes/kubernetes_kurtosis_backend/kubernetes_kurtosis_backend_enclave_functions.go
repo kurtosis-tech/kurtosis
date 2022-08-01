@@ -41,6 +41,8 @@ const (
 	dumpPodErrorTitle = "Pod"
 )
 
+// TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
+
 // Any of these values being nil indicates that the resource doesn't exist
 type enclaveKubernetesResources struct {
 	// Will never be nil because enclaves are defined by namespaces

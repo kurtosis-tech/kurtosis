@@ -33,6 +33,8 @@ const (
 	shouldAddTimestampsToModuleLogs = false
 )
 
+// TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
+
 type moduleObjectsAndKubernetesResources struct {
 	module *module.Module
 	kubernetesResources *moduleKubernetesResources
