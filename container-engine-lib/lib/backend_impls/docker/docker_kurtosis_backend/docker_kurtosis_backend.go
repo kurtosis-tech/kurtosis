@@ -260,6 +260,26 @@ func (backend DockerKurtosisBackend) StopUserServices(
 	return user_service_functions.StopUserServices(ctx, enclaveId, filters, backend.dockerManager)
 }
 
+func (backend *DockerKurtosisBackend) DestroyUserServices(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *service.ServiceFilters,
+) (
+	resultSuccessfulGuids map[service.ServiceGUID]bool,
+	resultErroredGuids map[service.ServiceGUID]error,
+	resultErr error,
+) {
+	return user_service_functions.DestroyUserServices(
+		ctx,
+		enclaveId,
+		filters,
+		backend.serviceRegistrations,
+		backend.serviceRegistrationMutex,
+		backend.enclaveFreeIpProviders,
+		backend.dockerManager)
+}
+
+
 // ====================================================================================================
 //                       Private helper functions shared by multiple subfunctions files
 // ====================================================================================================

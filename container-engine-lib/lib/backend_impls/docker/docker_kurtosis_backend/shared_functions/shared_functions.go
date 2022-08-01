@@ -56,11 +56,11 @@ var portSpecProtosToDockerPortProtos = map[port_spec.PortProtocol]string{
 // we want this to be the container engine's representation of a user service registration. Unfortunately, Docker has no way
 // of representing a user service registration, so we store them in an in-memory map on the DockerKurtosisBackend. Therefore, an
 // entry in that map is actually the canonical representation, which means that any of these fields could be nil!
-type userServiceDockerResources struct {
+type UserServiceDockerResources struct {
 	ServiceContainer *types.Container
 
 	// Will never be nil but may be empty if no expander volumes exist
-	expanderVolumeNames []string
+	ExpanderVolumeNames []string
 }
 
 func GetEnclaveNetworkByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID, dockerManager *docker_manager.DockerManager) (*types.Network, error) {
@@ -273,7 +273,7 @@ func GetMatchingUserServiceObjsAndDockerResourcesNoMutex(
 	dockerManager *docker_manager.DockerManager,
 ) (
 	map[service.ServiceGUID]*service.Service,
-	map[service.ServiceGUID]*userServiceDockerResources,
+	map[service.ServiceGUID]*UserServiceDockerResources,
 	error,
 ) {
 	matchingDockerResources, err := getMatchingUserServiceDockerResources(ctx, enclaveId, filters.GUIDs, dockerManager)
@@ -287,7 +287,7 @@ func GetMatchingUserServiceObjsAndDockerResourcesNoMutex(
 	}
 
 	resultServiceObjs := map[service.ServiceGUID]*service.Service{}
-	resultDockerResources := map[service.ServiceGUID]*userServiceDockerResources{}
+	resultDockerResources := map[service.ServiceGUID]*UserServiceDockerResources{}
 	for guid, serviceObj := range matchingServiceObjs {
 		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
 			if _, found := filters.GUIDs[serviceObj.GetRegistration().GetGUID()]; !found {
@@ -329,8 +329,8 @@ func getMatchingUserServiceDockerResources(
 	enclaveId enclave.EnclaveID,
 	maybeGuidsToMatch map[service.ServiceGUID]bool,
 	dockerManager *docker_manager.DockerManager,
-) (map[service.ServiceGUID]*userServiceDockerResources, error) {
-	result := map[service.ServiceGUID]*userServiceDockerResources{}
+) (map[service.ServiceGUID]*UserServiceDockerResources, error) {
+	result := map[service.ServiceGUID]*UserServiceDockerResources{}
 
 	// Grab services, INDEPENDENT OF volumes
 	userServiceContainerSearchLabels := map[string]string{
@@ -358,7 +358,7 @@ func getMatchingUserServiceDockerResources(
 
 		resourceObj, found := result[serviceGuid]
 		if !found {
-			resourceObj = &userServiceDockerResources{}
+			resourceObj = &UserServiceDockerResources{}
 		}
 		resourceObj.ServiceContainer = container
 		result[serviceGuid] = resourceObj
@@ -390,9 +390,9 @@ func getMatchingUserServiceDockerResources(
 
 		resourceObj, found := result[serviceGuid]
 		if !found {
-			resourceObj = &userServiceDockerResources{}
+			resourceObj = &UserServiceDockerResources{}
 		}
-		resourceObj.expanderVolumeNames = append(resourceObj.expanderVolumeNames, volume.Name)
+		resourceObj.ExpanderVolumeNames = append(resourceObj.ExpanderVolumeNames, volume.Name)
 		result[serviceGuid] = resourceObj
 	}
 
@@ -401,7 +401,7 @@ func getMatchingUserServiceDockerResources(
 
 func getUserServiceObjsFromDockerResources(
 	enclaveId enclave.EnclaveID,
-	allDockerResources map[service.ServiceGUID]*userServiceDockerResources,
+	allDockerResources map[service.ServiceGUID]*UserServiceDockerResources,
 ) (map[service.ServiceGUID]*service.Service, error) {
 	result := map[service.ServiceGUID]*service.Service{}
 
@@ -472,7 +472,7 @@ func GetSingleUserServiceObjAndResourcesNoMutex(
 	dockerManager *docker_manager.DockerManager,
 ) (
 	*service.Service,
-	*userServiceDockerResources,
+	*UserServiceDockerResources,
 	error,
 ) {
 	filters := &service.ServiceFilters{
@@ -496,7 +496,7 @@ func GetSingleUserServiceObjAndResourcesNoMutex(
 	for _, resultService = range userServices {
 	}
 
-	var resultDockerResources *userServiceDockerResources
+	var resultDockerResources *UserServiceDockerResources
 	for _, resultDockerResources = range dockerResources {
 	}
 
