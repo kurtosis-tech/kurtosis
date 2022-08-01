@@ -18,6 +18,13 @@ import (
 	"net"
 )
 
+// !!!WARNING!!!
+// This files contains functions that are shared by multiple DockerKurtosisBackend functions.
+// Generally, we want to prevent long utils folders with functionality that is difficult to find, so be careful
+// when adding functionality in this folder.
+// Things to think about: Could this function be a private helper function that's scope is smaller than you think?
+// Eg. only used by start user services functions thus could go in start_user_services.go
+
 // Kubernetes doesn't provide public IP or port information; this is instead handled by the Kurtosis gateway that the user uses
 // to connect to Kubernetes
 var servicePublicIp net.IP = nil
