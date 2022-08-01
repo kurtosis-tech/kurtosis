@@ -34,6 +34,8 @@ const (
 	timeBetweenWaitForModuleContainerAvailabilityRetries = 1 * time.Second
 )
 
+// TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
+
 func (backend DockerKurtosisBackend) CreateModule(
 	ctx context.Context,
 	image string,

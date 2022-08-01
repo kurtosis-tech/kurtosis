@@ -35,6 +35,8 @@ const (
 	pre_2022_03_28_IpAddrLabel = "com.kurtosistech.api-container-ip"
 )
 
+// TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
+
 func (backend DockerKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
 	image string,

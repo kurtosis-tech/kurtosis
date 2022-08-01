@@ -23,6 +23,8 @@ const (
 	succesfulExecCmdExitCode = 0
 )
 
+// TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
+
 // We sleep forever because all the commands this container will run will be executed
 //  via Docker exec
 var sidecarContainerCommand = []string{

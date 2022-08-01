@@ -40,6 +40,8 @@ const (
 	engineStopTimeout = 1 * time.Second
 )
 
+// TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
+
 // ====================================================================================================
 //                                     Engine CRUD Methods
 // ====================================================================================================
