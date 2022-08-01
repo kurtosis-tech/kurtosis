@@ -111,46 +111,6 @@ type userServiceKubernetesResources struct {
 	pod *apiv1.Pod
 }
 
-func (backend KubernetesKurtosisBackend) GetUserServiceLogs(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	filters *service.ServiceFilters,
-	shouldFollowLogs bool,
-) (successfulUserServiceLogs map[service.ServiceGUID]io.ReadCloser, erroredUserServiceGuids map[service.ServiceGUID]error, resultError error) {
-	serviceObjectsAndResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Expected to be able to get user services and Kubernetes resources, instead a non nil error was returned")
-	}
-	userServiceLogs := map[service.ServiceGUID]io.ReadCloser{}
-	erredServiceLogs := map[service.ServiceGUID]error{}
-	shouldCloseLogStreams := true
-	for _, serviceObjectAndResource := range serviceObjectsAndResources {
-		serviceGuid := serviceObjectAndResource.service.GetRegistration().GetGUID()
-		servicePod := serviceObjectAndResource.kubernetesResources.pod
-		if servicePod == nil {
-			erredServiceLogs[serviceGuid] = stacktrace.NewError("Expected to find a pod for Kurtosis service with GUID '%v', instead no pod was found", serviceGuid)
-			continue
-		}
-		serviceNamespaceName := serviceObjectAndResource.kubernetesResources.service.GetNamespace()
-		// Get logs
-		logReadCloser, err := backend.kubernetesManager.GetContainerLogs(ctx, serviceNamespaceName, servicePod.Name, userServiceContainerName, shouldFollowLogs, shouldAddTimestampsToUserServiceLogs)
-		if err != nil {
-			erredServiceLogs[serviceGuid] = stacktrace.Propagate(err, "Expected to be able to call Kubernetes to get logs for service with GUID '%v', instead a non-nil error was returned", serviceGuid)
-			continue
-		}
-		defer func() {
-			if shouldCloseLogStreams {
-				logReadCloser.Close()
-			}
-		}()
-
-		userServiceLogs[serviceGuid] = logReadCloser
-	}
-
-	shouldCloseLogStreams = false
-	return userServiceLogs, erredServiceLogs, nil
-}
-
 func (backend KubernetesKurtosisBackend) PauseService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,

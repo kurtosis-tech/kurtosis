@@ -25,6 +25,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
 	apiv1 "k8s.io/api/core/v1"
 	"strings"
 	"time"
@@ -217,6 +218,15 @@ func (backend KubernetesKurtosisBackend) GetUserServices(
 		backend.apiContainerModeArgs,
 		backend.engineServerModeArgs,
 		backend.kubernetesManager)
+}
+
+func (backend KubernetesKurtosisBackend) GetUserServiceLogs(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *service.ServiceFilters,
+	shouldFollowLogs bool,
+) (successfulUserServiceLogs map[service.ServiceGUID]io.ReadCloser, erroredUserServiceGuids map[service.ServiceGUID]error, resultError error) {
+	return nil, nil, nil
 }
 
 // ====================================================================================================
