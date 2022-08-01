@@ -111,32 +111,6 @@ type userServiceKubernetesResources struct {
 	pod *apiv1.Pod
 }
 
-func (backend KubernetesKurtosisBackend) GetUserServices(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	filters *service.ServiceFilters,
-) (successfulUserServices map[service.ServiceGUID]*service.Service, resultError error) {
-	allObjectsAndResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred getting user services in enclave '%v' matching filters: %+v",
-			enclaveId,
-			filters,
-		)
-	}
-	result := map[service.ServiceGUID]*service.Service{}
-	for guid, serviceObjsAndResources := range allObjectsAndResources {
-		serviceObj := serviceObjsAndResources.service
-		if serviceObj == nil {
-			// Indicates a registration-only service; skip
-			continue
-		}
-		result[guid] = serviceObj
-	}
-	return result, nil
-}
-
 func (backend KubernetesKurtosisBackend) GetUserServiceLogs(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
