@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -179,6 +180,29 @@ func (backend KubernetesKurtosisBackend)RegisterUserServices(ctx context.Context
 	return nil, nil, stacktrace.NewError("REGISTER USER SERVICES METHOD IS UNIMPLEMENTED. DON'T USE IT")
 }
 
+func (backend KubernetesKurtosisBackend) StartUserService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	containerImageName string,
+	privatePorts map[string]*port_spec.PortSpec,
+	publicPorts map[string]*port_spec.PortSpec, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	entrypointArgs []string,
+	cmdArgs []string,
+	envVars map[string]string,
+	filesArtifactsExpansion *backend_interface.FilesArtifactsExpansion,
+	cpuAllocationMillicpus uint64,
+	memoryAllocationMegabytes uint64,
+) (
+	resultUserService *service.Service,
+	resultErr error,
+) {
+	return nil, nil
+}
+
+func (backend KubernetesKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*backend_interface.ServiceConfig) (map[service.ServiceGUID]service.Service, map[service.ServiceGUID]error, error){
+	return nil, nil, stacktrace.NewError("START USER SERVICES METHOD IS UNIMPLEMENTED. DON'T USE IT")
+}
 
 // ====================================================================================================
 //                       Private helper functions shared by multiple subfunctions files

@@ -5,12 +5,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
@@ -111,163 +109,6 @@ type userServiceKubernetesResources struct {
 
 	// This can be nil if the user hasn't started a pod for the service yet, or if the pod was deleted
 	pod *apiv1.Pod
-}
-
-func (backend KubernetesKurtosisBackend) StartUserService(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceGuid service.ServiceGUID,
-	containerImageName string,
-	privatePorts map[string]*port_spec.PortSpec,
-	publicPorts map[string]*port_spec.PortSpec, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	entrypointArgs []string,
-	cmdArgs []string,
-	envVars map[string]string,
-	filesArtifactsExpansion *backend_interface.FilesArtifactsExpansion,
-	cpuAllocationMillicpus uint64,
-	memoryAllocationMegabytes uint64,
-) (
-	resultUserService *service.Service,
-	resultErr error,
-) {
-
-	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	if publicPorts != nil && len(publicPorts) > 0 {
-		logrus.Warn("The Kubernetes Kurtosis backend doesn't support defining static ports for services; the public ports will be ignored")
-	}
-
-	preexistingServiceFilters := &service.ServiceFilters{
-		GUIDs: map[service.ServiceGUID]bool{
-			serviceGuid: true,
-		},
-	}
-	preexistingObjectsAndResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(
-		ctx,
-		enclaveId,
-		preexistingServiceFilters,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user service objects and Kubernetes resources matching service GUID '%v'", serviceGuid)
-	}
-	if len(preexistingObjectsAndResources) == 0 {
-		return nil, stacktrace.NewError("Couldn't find any service registrations matching service GUID '%v'", serviceGuid)
-	}
-	if len(preexistingObjectsAndResources) > 1 {
-		// Should never happen because service GUIDs should be unique
-		return nil, stacktrace.NewError("Found more than one service registration matching service GUID '%v'; this is a bug in Kurtosis", serviceGuid)
-	}
-	matchingObjectAndResources, found := preexistingObjectsAndResources[serviceGuid]
-	if !found {
-		return nil, stacktrace.NewError("Even though we pulled back some Kubernetes resources, no Kubernetes resources were available for requested service GUID '%v'; this is a bug in Kurtosis", serviceGuid)
-	}
-	kubernetesService := matchingObjectAndResources.kubernetesResources.service
-	serviceObj := matchingObjectAndResources.service
-	if serviceObj != nil {
-		return nil, stacktrace.NewError("Cannot start service with GUID '%v' because the service has already been started previously", serviceGuid)
-	}
-
-	namespaceName := kubernetesService.GetNamespace()
-	serviceRegistrationObj := matchingObjectAndResources.serviceRegistration
-
-	var podInitContainers []apiv1.Container
-	var podVolumes []apiv1.Volume
-	var userServiceContainerVolumeMounts []apiv1.VolumeMount
-	if filesArtifactsExpansion != nil {
-		podVolumes, userServiceContainerVolumeMounts, podInitContainers, err = backend.prepareFilesArtifactsExpansionResources(
-			filesArtifactsExpansion.ExpanderImage,
-			filesArtifactsExpansion.ExpanderEnvVars,
-			filesArtifactsExpansion.ExpanderDirpathsToServiceDirpaths,
-		)
-	}
-
-	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
-	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
-
-	// Create the pod
-	podAttributes, err := enclaveObjAttributesProvider.ForUserServicePod(serviceGuid, serviceRegistrationObj.GetID(), privatePorts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting attributes for new pod for service with GUID '%v'", serviceGuid)
-	}
-	podLabelsStrs := getStringMapFromLabelMap(podAttributes.GetLabels())
-	podAnnotationsStrs := getStringMapFromAnnotationMap(podAttributes.GetAnnotations())
-
-	podContainers, err := getUserServicePodContainerSpecs(
-		containerImageName,
-		entrypointArgs,
-		cmdArgs,
-		envVars,
-		privatePorts,
-		userServiceContainerVolumeMounts,
-		cpuAllocationMillicpus,
-		memoryAllocationMegabytes,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the container specs for the user service pod with image '%v'", containerImageName)
-	}
-
-	podName := podAttributes.GetName().GetString()
-	createdPod, err := backend.kubernetesManager.CreatePod(
-		ctx,
-		namespaceName,
-		podName,
-		podLabelsStrs,
-		podAnnotationsStrs,
-		podInitContainers,
-		podContainers,
-		podVolumes,
-		userServiceServiceAccountName,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating pod '%v' using image '%v'", podName, containerImageName)
-	}
-	shouldDestroyPod := true
-	defer func() {
-		if shouldDestroyPod {
-			if err := backend.kubernetesManager.RemovePod(ctx, createdPod); err != nil {
-				logrus.Errorf("Starting service didn't complete successfully so we tried to remove the pod we created but doing so threw an error:\n%v", err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to remove pod '%v' in '%v' manually!!!", podName, namespaceName)
-			}
-		}
-	}()
-
-	updatedService, undoServiceUpdateFunc, err := backend.updateServiceWhenContainerStarted(ctx, namespaceName, kubernetesService, privatePorts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred updating service '%v' to reflect its new ports: %+v", kubernetesService.GetName(), privatePorts)
-	}
-	shouldUndoServiceUpdate := true
-	defer func() {
-		if shouldUndoServiceUpdate {
-			undoServiceUpdateFunc()
-		}
-	}()
-
-	kubernetesResources := map[service.ServiceGUID]*userServiceKubernetesResources{
-		serviceGuid: {
-			service: updatedService,
-			pod:     createdPod,
-		},
-	}
-
-	convertedObjects, err := getUserServiceObjectsFromKubernetesResources(enclaveId, kubernetesResources)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting a service object from the Kubernetes service and newly-created pod")
-	}
-	objectsAndResources, found := convertedObjects[serviceGuid]
-	if !found {
-		return nil, stacktrace.NewError(
-			"Successfully converted the Kubernetes service + pod representing a running service with GUID '%v' to a "+
-				"Kurtosis object, but couldn't find that key in the resulting map; this is a bug in Kurtosis",
-			serviceGuid,
-		)
-	}
-
-	shouldDestroyPod = false
-	shouldUndoServiceUpdate = false
-	return objectsAndResources.service, nil
-}
-
-func (backend KubernetesKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*backend_interface.ServiceConfig) (map[service.ServiceGUID]service.Service, map[service.ServiceGUID]error, error){
-	return nil, nil, stacktrace.NewError("START USER SERVICES METHOD IS UNIMPLEMENTED. DON'T USE IT")
 }
 
 func (backend KubernetesKurtosisBackend) GetUserServices(
