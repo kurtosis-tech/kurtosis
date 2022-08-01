@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
@@ -130,6 +131,45 @@ func (backend *DockerKurtosisBackend )RegisterUserServices(
 	) (successfulUserServiceRegistrations map[service.ServiceID]*service.ServiceRegistration, erroredUserServiceIds map[service.ServiceID]error, resultErr error) {
 	return user_service_functions.RegisterUserServices(ctx, enclaveId, serviceIds, backend.serviceRegistrations, backend.serviceRegistrationMutex, backend.enclaveFreeIpProviders)
 }
+
+func (backend DockerKurtosisBackend) StartUserService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	containerImageName string,
+	privatePorts map[string]*port_spec.PortSpec,
+	publicPorts map[string]*port_spec.PortSpec, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	entrypointArgs []string,
+	cmdArgs []string,
+	envVars map[string]string,
+	filesArtifactsExpansion *backend_interface.FilesArtifactsExpansion,
+	cpuAllocationMillicpus uint64,
+	memoryAllocationMegabytes uint64,
+) (*service.Service, error) {
+	return user_service_functions.StartUserService(
+		ctx,
+		enclaveId,
+		serviceGuid,
+		containerImageName,
+		privatePorts,
+		publicPorts,
+		entrypointArgs,
+		cmdArgs,
+		envVars,
+		filesArtifactsExpansion,
+		cpuAllocationMillicpus,
+		memoryAllocationMegabytes,
+		backend.serviceRegistrations,
+		backend.serviceRegistrationMutex,
+		backend.enclaveFreeIpProviders,
+		backend.dockerManager,
+		backend.objAttrsProvider)
+}
+
+func (backend DockerKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*backend_interface.ServiceConfig) (map[service.ServiceGUID]service.Service, map[service.ServiceGUID]error, error){
+	return nil, nil, stacktrace.NewError("START USER SERVICES METHOD IS UNIMPLEMENTED. DON'T USE IT")
+}
+
 
 // ====================================================================================================
 //                       Private helper functions shared by multiple subfunctions files
