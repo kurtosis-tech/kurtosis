@@ -1,5 +1,8 @@
 # TBD
 
+#### Breaking Changes
+* Refactor all `docker.DockerKurtosisBackend` functionality to `docker_kurtosis_backend` module
+
 ### Changes
 * Add `RegisterUserServices` and `StartUserServices` to `KurtosisBackend` interface
 * Implement `RegisterUserServices` in `DockerKurtosisBackend`
