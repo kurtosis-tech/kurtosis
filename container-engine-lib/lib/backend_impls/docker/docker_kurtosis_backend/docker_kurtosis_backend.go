@@ -203,6 +203,14 @@ func (backend DockerKurtosisBackend) PauseService(
 	return user_service_functions.PauseService(ctx, enclaveId, serviceGuid, backend.dockerManager)
 }
 
+func (backend DockerKurtosisBackend) UnpauseService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+) error {
+	return user_service_functions.UnpauseService(ctx, enclaveId, serviceGuid, backend.dockerManager)
+}
+
 // ====================================================================================================
 //                       Private helper functions shared by multiple subfunctions files
 // ====================================================================================================

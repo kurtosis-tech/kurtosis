@@ -99,25 +99,6 @@ type userServiceDockerResources struct {
 	expanderVolumeNames []string
 }
 
-func (backend DockerKurtosisBackend) UnpauseService(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceGuid service.ServiceGUID,
-) error {
-	_, dockerResources, err := backend.getSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to get information about service '%v' from Kurtosis backend.", serviceGuid)
-	}
-	container := dockerResources.serviceContainer
-	if container == nil {
-		return stacktrace.NewError("Cannot unpause service '%v' as it doesn't have a container to pause", serviceGuid)
-	}
-	if err = backend.dockerManager.UnpauseContainer(ctx, container.GetId()); err != nil {
-		return stacktrace.Propagate(err, "Failed to unppause container '%v' for service '%v' ", container.GetName(), serviceGuid)
-	}
-	return nil
-}
-
 // TODO Switch these to streaming so that huge command outputs don't blow up the API container memory
 // NOTE: This function will block while the exec is ongoing; if we need more perf we can make it async
 func (backend DockerKurtosisBackend) RunUserServiceExecCommands(
