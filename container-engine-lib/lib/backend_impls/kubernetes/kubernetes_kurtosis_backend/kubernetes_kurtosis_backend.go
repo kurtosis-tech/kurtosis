@@ -304,6 +304,17 @@ func (backend KubernetesKurtosisBackend) CopyFilesFromUserService(
 		backend.kubernetesManager)
 }
 
+func (backend KubernetesKurtosisBackend) StopUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
+	return user_services_functions.StopUserServices(
+		ctx,
+		enclaveId,
+		filters,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
+}
+
 // ====================================================================================================
 //                       Private helper functions shared by multiple subfunctions files
 // ====================================================================================================

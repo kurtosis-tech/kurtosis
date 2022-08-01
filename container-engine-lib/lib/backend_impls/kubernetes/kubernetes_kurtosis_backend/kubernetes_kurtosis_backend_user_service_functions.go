@@ -106,56 +106,6 @@ type userServiceKubernetesResources struct {
 	pod *apiv1.Pod
 }
 
-func (backend KubernetesKurtosisBackend) StopUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
-	namespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
-	}
-
-	allObjectsAndResources, err := backend.getMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' matching filters: %+v", enclaveId, filters)
-	}
-
-	successfulGuids := map[service.ServiceGUID]bool{}
-	erroredGuids := map[service.ServiceGUID]error{}
-	for serviceGuid, serviceObjsAndResources := range allObjectsAndResources {
-		resources := serviceObjsAndResources.kubernetesResources
-
-		pod := resources.pod
-		if pod != nil {
-			if err := backend.kubernetesManager.RemovePod(ctx, pod); err != nil {
-				erroredGuids[serviceGuid] = stacktrace.Propagate(
-					err,
-					"An error occurred removing Kubernetes pod '%v' in namespace '%v'",
-					pod.Name,
-					namespaceName,
-				)
-				continue
-			}
-		}
-
-		kubernetesService := resources.service
-		serviceName := kubernetesService.Name
-		updateConfigurator := func(updatesToApply *applyconfigurationsv1.ServiceApplyConfiguration) {
-			specUpdates := applyconfigurationsv1.ServiceSpec().WithSelector(nil)
-			updatesToApply.WithSpec(specUpdates)
-		}
-		if _, err := backend.kubernetesManager.UpdateService(ctx, namespaceName, serviceName, updateConfigurator); err != nil {
-			erroredGuids[serviceGuid] = stacktrace.Propagate(
-				err,
-				"An error occurred updating service '%v' in namespace '%v' to reflect that it's no longer running",
-				serviceName,
-				namespaceName,
-			)
-			continue
-		}
-
-		successfulGuids[serviceGuid] = true
-	}
-	return successfulGuids, erroredGuids, nil
-}
-
 func (backend KubernetesKurtosisBackend) DestroyUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
 	namespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
 	if err != nil {
