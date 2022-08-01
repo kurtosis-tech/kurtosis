@@ -1,4 +1,4 @@
-package docker
+package docker_kurtosis_backend
 
 import (
 	"bytes"
@@ -102,7 +102,7 @@ type userServiceDockerResources struct {
 	expanderVolumeNames []string
 }
 
-func (backend *DockerKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
+func (backend DockerKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
 	backend.serviceRegistrationMutex.Lock()
 	defer backend.serviceRegistrationMutex.Unlock()
 
@@ -164,7 +164,7 @@ func (backend *DockerKurtosisBackend) RegisterUserService(ctx context.Context, e
 }
 
 // Registers a user service for each given serviceID, allocating each an IP and ServiceGUID
-func (backend *DockerKurtosisBackend) RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, serviceIDs map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
+func (backend DockerKurtosisBackend) RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, serviceIDs map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
 	backend.serviceRegistrationMutex.Lock()
 	defer backend.serviceRegistrationMutex.Unlock()
 
@@ -231,7 +231,7 @@ func (backend *DockerKurtosisBackend) RegisterUserServices(ctx context.Context, 
 	return successfulRegistrations, failedRegistrations, nil
 }
 
-func (backend *DockerKurtosisBackend) StartUserService(
+func (backend DockerKurtosisBackend) StartUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
@@ -468,11 +468,11 @@ func (backend *DockerKurtosisBackend) StartUserService(
 	return result, nil
 }
 
-func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*backend_interface.ServiceConfig) (map[service.ServiceGUID]service.Service, map[service.ServiceGUID]error, error){
+func (backend DockerKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*backend_interface.ServiceConfig) (map[service.ServiceGUID]service.Service, map[service.ServiceGUID]error, error){
 	return nil, nil, stacktrace.NewError("START USER SERVICES METHOD IS UNIMPLEMENTED. DON'T USE IT")
 }
 
-func (backend *DockerKurtosisBackend) GetUserServices(
+func (backend DockerKurtosisBackend) GetUserServices(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
@@ -487,7 +487,7 @@ func (backend *DockerKurtosisBackend) GetUserServices(
 	return userServices, nil
 }
 
-func (backend *DockerKurtosisBackend) GetUserServiceLogs(
+func (backend DockerKurtosisBackend) GetUserServiceLogs(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
@@ -539,7 +539,7 @@ func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 	return successfulUserServicesLogs, erroredUserServices, nil
 }
 
-func (backend *DockerKurtosisBackend) PauseService(
+func (backend DockerKurtosisBackend) PauseService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
@@ -558,7 +558,7 @@ func (backend *DockerKurtosisBackend) PauseService(
 	return nil
 }
 
-func (backend *DockerKurtosisBackend) UnpauseService(
+func (backend DockerKurtosisBackend) UnpauseService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
@@ -579,7 +579,7 @@ func (backend *DockerKurtosisBackend) UnpauseService(
 
 // TODO Switch these to streaming so that huge command outputs don't blow up the API container memory
 // NOTE: This function will block while the exec is ongoing; if we need more perf we can make it async
-func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
+func (backend DockerKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	userServiceCommands map[service.ServiceGUID][]string,
@@ -641,7 +641,7 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	return succesfulUserServiceExecResults, erroredUserServiceGuids, nil
 }
 
-func (backend *DockerKurtosisBackend) GetConnectionWithUserService(
+func (backend DockerKurtosisBackend) GetConnectionWithUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
@@ -666,7 +666,7 @@ func (backend *DockerKurtosisBackend) GetConnectionWithUserService(
 }
 
 // It returns io.ReadCloser which is a tar stream. It's up to the caller to close the reader.
-func (backend *DockerKurtosisBackend) CopyFilesFromUserService(
+func (backend DockerKurtosisBackend) CopyFilesFromUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
@@ -704,7 +704,7 @@ func (backend *DockerKurtosisBackend) CopyFilesFromUserService(
 	return nil
 }
 
-func (backend *DockerKurtosisBackend) StopUserServices(
+func (backend DockerKurtosisBackend) StopUserServices(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
@@ -778,7 +778,7 @@ This code is INCREDIBLY tricky, as a result of:
         Be VERY careful when modifying this code, and ideally get Kevin's eyes on it!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
-func (backend *DockerKurtosisBackend) DestroyUserServices(
+func (backend DockerKurtosisBackend) DestroyUserServices(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
@@ -916,7 +916,7 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 // ====================================================================================================
 // Gets the service objects & Docker resources for services matching the given filters
 // NOTE: Does not use registration information so does not need the mutex!
-func (backend *DockerKurtosisBackend) getMatchingUserServiceObjsAndDockerResourcesNoMutex(
+func (backend DockerKurtosisBackend) getMatchingUserServiceObjsAndDockerResourcesNoMutex(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
@@ -973,7 +973,7 @@ func (backend *DockerKurtosisBackend) getMatchingUserServiceObjsAndDockerResourc
 	return resultServiceObjs, resultDockerResources, nil
 }
 
-func (backend *DockerKurtosisBackend) getMatchingUserServiceDockerResources(
+func (backend DockerKurtosisBackend) getMatchingUserServiceDockerResources(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	maybeGuidsToMatch map[service.ServiceGUID]bool,
@@ -1193,7 +1193,7 @@ func getIpAndPortInfoFromContainer(
 }
 
 // NOTE: Does not use registration information so does not need the mutex!
-func (backend *DockerKurtosisBackend) getSingleUserServiceObjAndResourcesNoMutex(
+func (backend DockerKurtosisBackend) getSingleUserServiceObjAndResourcesNoMutex(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	userServiceGuid service.ServiceGUID,
@@ -1238,7 +1238,7 @@ func extractServiceGUIDFromServiceObj(uncastedObj interface{}) (string, error) {
 	return string(castedObj.GetRegistration().GetGUID()), nil
 }
 
-func (backend *DockerKurtosisBackend) doFilesArtifactExpansionAndGetUserServiceVolumes(
+func (backend DockerKurtosisBackend) doFilesArtifactExpansionAndGetUserServiceVolumes(
 	ctx context.Context,
 	serviceGuid service.ServiceGUID,
 	objAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
@@ -1314,7 +1314,7 @@ func (backend *DockerKurtosisBackend) doFilesArtifactExpansionAndGetUserServiceV
 
 // Runs a single expander container which expands one or more files artifacts into multiple volumes
 // NOTE: It is the caller's responsibility to handle the volumes that get returned
-func (backend *DockerKurtosisBackend) runFilesArtifactsExpander(
+func (backend DockerKurtosisBackend) runFilesArtifactsExpander(
 	ctx context.Context,
 	serviceGuid service.ServiceGUID,
 	objAttrProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
@@ -1422,7 +1422,7 @@ func (backend *DockerKurtosisBackend) runFilesArtifactsExpander(
 
 // This seems like a lot of effort to go through to get the logs of a failed container, but easily seeing the reason an expander
 // container has failed has proven to be very useful
-func (backend *DockerKurtosisBackend) getFilesArtifactsExpanderContainerLogsBlockStr(
+func (backend DockerKurtosisBackend) getFilesArtifactsExpanderContainerLogsBlockStr(
 	ctx context.Context,
 	containerId string,
 ) (string, error) {
@@ -1465,7 +1465,7 @@ func (backend *DockerKurtosisBackend) getFilesArtifactsExpanderContainerLogsBloc
 // Takes in a list of mountpoints on the expander container that the expander container wants populated with volumes,
 // creates one volume per mountpoint location, and returns the volume_name -> mountpoint map that the container
 // can use when starting
-func (backend *DockerKurtosisBackend) createFilesArtifactsExpansionVolumes(
+func (backend DockerKurtosisBackend) createFilesArtifactsExpansionVolumes(
 	ctx context.Context,
 	serviceGuid service.ServiceGUID,
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
@@ -1533,7 +1533,7 @@ possibility that some will get leaked! There's unfortunately no way around this 
 Therefore, we just make a best-effort attempt to clean up the volumes and leak the rest, though it's not THAT
 big of a deal since they'll be deleted when the enclave gets deleted.
 */
-func (backend *DockerKurtosisBackend) removeUserServiceDockerResources(
+func (backend DockerKurtosisBackend) removeUserServiceDockerResources(
 	ctx context.Context,
 	serviceObjectsToRemove map[service.ServiceGUID]*service.Service,
 	resourcesToRemove map[service.ServiceGUID]*userServiceDockerResources,

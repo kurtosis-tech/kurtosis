@@ -1,4 +1,4 @@
-package docker
+package docker_kurtosis_backend
 
 import (
 	"bytes"
@@ -28,7 +28,7 @@ var sidecarContainerCommand = []string{
 	"sleep", "infinity",
 }
 
-func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
+func (backend DockerKurtosisBackend) CreateNetworkingSidecar(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
@@ -142,7 +142,7 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 
 }
 
-func (backend *DockerKurtosisBackend) GetNetworkingSidecars(
+func (backend DockerKurtosisBackend) GetNetworkingSidecars(
 	ctx context.Context,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 ) (
@@ -163,7 +163,7 @@ func (backend *DockerKurtosisBackend) GetNetworkingSidecars(
 	return successfulNetworkingSidecars, nil
 }
 
-func (backend *DockerKurtosisBackend) RunNetworkingSidecarExecCommands(
+func (backend DockerKurtosisBackend) RunNetworkingSidecarExecCommands(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	networkingSidecarsCommands map[service.ServiceGUID][]string,
@@ -237,7 +237,7 @@ func (backend *DockerKurtosisBackend) RunNetworkingSidecarExecCommands(
 	return successfulNetworkingSidecarExecResults, erroredUserServiceGuids, nil
 }
 
-func (backend *DockerKurtosisBackend) StopNetworkingSidecars(
+func (backend DockerKurtosisBackend) StopNetworkingSidecars(
 	ctx context.Context,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 ) (
@@ -290,7 +290,7 @@ func (backend *DockerKurtosisBackend) StopNetworkingSidecars(
 	return successfulServiceGuids, erroredGuids, nil
 }
 
-func (backend *DockerKurtosisBackend) DestroyNetworkingSidecars(
+func (backend DockerKurtosisBackend) DestroyNetworkingSidecars(
 	ctx context.Context,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 ) (
@@ -346,7 +346,7 @@ func (backend *DockerKurtosisBackend) DestroyNetworkingSidecars(
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func (backend *DockerKurtosisBackend) getMatchingNetworkingSidecars(
+func (backend DockerKurtosisBackend) getMatchingNetworkingSidecars(
 	ctx context.Context,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 ) (map[string]*networking_sidecar.NetworkingSidecar, error) {

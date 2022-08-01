@@ -1,4 +1,4 @@
-package docker
+package docker_kurtosis_backend
 
 import (
 	"context"
@@ -35,7 +35,7 @@ const (
 	pre_2022_03_28_IpAddrLabel = "com.kurtosistech.api-container-ip"
 )
 
-func (backend *DockerKurtosisBackend) CreateAPIContainer(
+func (backend DockerKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
 	image string,
 	enclaveId enclave.EnclaveID,
@@ -154,7 +154,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 
 	bindMounts := map[string]string{
 		// Necessary so that the API container can interact with the Docker engine
-		dockerSocketFilepath:            dockerSocketFilepath,
+		dockerSocketFilepath: dockerSocketFilepath,
 	}
 
 	volumeMounts := map[string]string{
@@ -241,7 +241,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	return result, nil
 }
 
-func (backend *DockerKurtosisBackend) GetAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[enclave.EnclaveID]*api_container.APIContainer, error) {
+func (backend DockerKurtosisBackend) GetAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[enclave.EnclaveID]*api_container.APIContainer, error) {
 	matchingApiContainers, err := backend.getMatchingApiContainers(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting API containers matching the following filters: %+v", filters)
@@ -255,7 +255,7 @@ func (backend *DockerKurtosisBackend) GetAPIContainers(ctx context.Context, filt
 	return matchingApiContainersByEnclaveID, nil
 }
 
-func (backend *DockerKurtosisBackend) StopAPIContainers(
+func (backend DockerKurtosisBackend) StopAPIContainers(
 	ctx context.Context,
 	filters *api_container.APIContainerFilters,
 ) (
@@ -308,7 +308,7 @@ func (backend *DockerKurtosisBackend) StopAPIContainers(
 	return successfulEnclaveIds, erroredEnclaveIds, nil
 }
 
-func (backend *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveID]bool, erroredApiContainerIds map[enclave.EnclaveID]error, resultErr error) {
+func (backend DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveID]bool, erroredApiContainerIds map[enclave.EnclaveID]error, resultErr error) {
 	matchingApiContainersByContainerId, err := backend.getMatchingApiContainers(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API containers matching the following filters: %+v", filters)
@@ -358,7 +358,7 @@ func (backend *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, 
 //                                      Private Helper Functions
 // ====================================================================================================
 // Gets API containers matching the search filters, indexed by their container ID
-func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[string]*api_container.APIContainer, error) {
+func (backend DockerKurtosisBackend) getMatchingApiContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[string]*api_container.APIContainer, error) {
 
 	apiContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
