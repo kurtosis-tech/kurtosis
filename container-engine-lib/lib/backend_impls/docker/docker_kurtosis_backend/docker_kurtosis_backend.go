@@ -192,7 +192,15 @@ func (backend DockerKurtosisBackend) GetUserServiceLogs(
 	map[service.ServiceGUID]error,
 	error,
 ) {
-	return nil, nil, nil
+	return user_service_functions.GetUserServiceLogs(ctx, enclaveId, filters, shouldFollowLogs, backend.dockerManager)
+}
+
+func (backend DockerKurtosisBackend) PauseService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+) error {
+	return user_service_functions.PauseService(ctx, enclaveId, serviceGuid, backend.dockerManager)
 }
 
 // ====================================================================================================

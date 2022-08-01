@@ -463,3 +463,42 @@ func getUserServiceObjsFromDockerResources(
 	}
 	return result, nil
 }
+
+// NOTE: Does not use registration information so does not need the mutex!
+func GetSingleUserServiceObjAndResourcesNoMutex(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	userServiceGuid service.ServiceGUID,
+	dockerManager *docker_manager.DockerManager,
+) (
+	*service.Service,
+	*userServiceDockerResources,
+	error,
+) {
+	filters := &service.ServiceFilters{
+		GUIDs: map[service.ServiceGUID]bool{
+			userServiceGuid: true,
+		},
+	}
+	userServices, dockerResources, err := GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters, dockerManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services using filters '%v'", filters)
+	}
+	numOfUserServices := len(userServices)
+	if numOfUserServices == 0 {
+		return nil, nil, stacktrace.NewError("No user service with GUID '%v' in enclave with ID '%v' was found", userServiceGuid, enclaveId)
+	}
+	if numOfUserServices > 1 {
+		return nil, nil, stacktrace.NewError("Expected to find only one user service with GUID '%v' in enclave with ID '%v', but '%v' was found", userServiceGuid, enclaveId, numOfUserServices)
+	}
+
+	var resultService *service.Service
+	for _, resultService = range userServices {
+	}
+
+	var resultDockerResources *userServiceDockerResources
+	for _, resultDockerResources = range dockerResources {
+	}
+
+	return resultService, resultDockerResources, nil
+}

@@ -99,25 +99,6 @@ type userServiceDockerResources struct {
 	expanderVolumeNames []string
 }
 
-func (backend DockerKurtosisBackend) PauseService(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceGuid service.ServiceGUID,
-) error {
-	_, dockerResources, err := backend.getSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to get information about service '%v' from Kurtosis backend.", serviceGuid)
-	}
-	container := dockerResources.serviceContainer
-	if container == nil {
-		return stacktrace.NewError("Cannot pause service '%v' as it doesn't have a container to pause", serviceGuid)
-	}
-	if err = backend.dockerManager.PauseContainer(ctx, container.GetId()); err != nil {
-		return stacktrace.Propagate(err, "Failed to pause container '%v' for service '%v' ", container.GetName(), serviceGuid)
-	}
-	return nil
-}
-
 func (backend DockerKurtosisBackend) UnpauseService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
