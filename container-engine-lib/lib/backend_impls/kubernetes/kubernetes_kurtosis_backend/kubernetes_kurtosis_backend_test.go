@@ -1,4 +1,4 @@
-package kubernetes
+package kubernetes_kurtosis_backend
 
 import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"

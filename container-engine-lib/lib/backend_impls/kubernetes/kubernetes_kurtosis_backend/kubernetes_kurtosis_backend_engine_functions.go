@@ -1,4 +1,4 @@
-package kubernetes
+package kubernetes_kurtosis_backend
 
 import (
 	"context"
@@ -51,7 +51,7 @@ type engineKubernetesResources struct {
 //                                     Engine CRUD Methods
 // ====================================================================================================
 
-func (backend *KubernetesKurtosisBackend) CreateEngine(
+func (backend KubernetesKurtosisBackend) CreateEngine(
 	ctx context.Context,
 	imageOrgAndRepo string,
 	imageVersionTag string,
@@ -87,7 +87,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 		)
 	}
 	privatePortSpecs := map[string]*port_spec.PortSpec{
-		kurtosisInternalContainerGrpcPortSpecId: privateGrpcPortSpec,
+		kurtosisInternalContainerGrpcPortSpecId:      privateGrpcPortSpec,
 		kurtosisInternalContainerGrpcProxyPortSpecId: privateGrpcProxyPortSpec,
 	}
 
@@ -239,7 +239,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	return resultEngine, nil
 }
 
-func (backend *KubernetesKurtosisBackend) GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[engine.EngineGUID]*engine.Engine, error) {
+func (backend KubernetesKurtosisBackend) GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[engine.EngineGUID]*engine.Engine, error) {
 	matchingEngines, _, err := backend.getMatchingEngineObjectsAndKubernetesResources(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
@@ -247,7 +247,7 @@ func (backend *KubernetesKurtosisBackend) GetEngines(ctx context.Context, filter
 	return matchingEngines, nil
 }
 
-func (backend *KubernetesKurtosisBackend) StopEngines(
+func (backend KubernetesKurtosisBackend) StopEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 ) (
@@ -309,7 +309,7 @@ func (backend *KubernetesKurtosisBackend) StopEngines(
 	return successfulEngineGuids, erroredEngineGuids, nil
 }
 
-func (backend *KubernetesKurtosisBackend) DestroyEngines(
+func (backend KubernetesKurtosisBackend) DestroyEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 ) (
@@ -375,7 +375,7 @@ func (backend *KubernetesKurtosisBackend) DestroyEngines(
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
-func (backend *KubernetesKurtosisBackend) getMatchingEngineObjectsAndKubernetesResources(
+func (backend KubernetesKurtosisBackend) getMatchingEngineObjectsAndKubernetesResources(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 ) (
@@ -418,7 +418,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEngineObjectsAndKubernetesR
 }
 
 // Get back any and all engine's Kubernetes resources matching the given GUIDs, where a nil or empty map == "match all GUIDs"
-func (backend *KubernetesKurtosisBackend) getMatchingEngineKubernetesResources(
+func (backend KubernetesKurtosisBackend) getMatchingEngineKubernetesResources(
 	ctx context.Context,
 	engineGuids map[engine.EngineGUID]bool,
 ) (
@@ -647,7 +647,7 @@ func getEngineMatchLabels() map[string]string {
 	return engineMatchLabels
 }
 
-func (backend *KubernetesKurtosisBackend) createEngineNamespace(
+func (backend KubernetesKurtosisBackend) createEngineNamespace(
 	ctx context.Context,
 	engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider,
 ) (*apiv1.Namespace, error) {
@@ -670,7 +670,7 @@ func (backend *KubernetesKurtosisBackend) createEngineNamespace(
 	return engineNamespace, nil
 }
 
-func (backend *KubernetesKurtosisBackend) createEngineServiceAccount(
+func (backend KubernetesKurtosisBackend) createEngineServiceAccount(
 	ctx context.Context,
 	namespace string,
 	engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider,
@@ -691,7 +691,7 @@ func (backend *KubernetesKurtosisBackend) createEngineServiceAccount(
 	return serviceAccount, nil
 }
 
-func (backend *KubernetesKurtosisBackend) createEngineClusterRole(
+func (backend KubernetesKurtosisBackend) createEngineClusterRole(
 	ctx context.Context,
 	engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider,
 ) (*rbacv1.ClusterRole, error) {
@@ -736,7 +736,7 @@ func (backend *KubernetesKurtosisBackend) createEngineClusterRole(
 	return clusterRole, nil
 }
 
-func (backend *KubernetesKurtosisBackend) createEngineClusterRoleBindings(
+func (backend KubernetesKurtosisBackend) createEngineClusterRoleBindings(
 	ctx context.Context,
 	engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider,
 	clusterRoleName string,
@@ -771,7 +771,7 @@ func (backend *KubernetesKurtosisBackend) createEngineClusterRoleBindings(
 	return clusterRoleBindings, nil
 }
 
-func (backend *KubernetesKurtosisBackend) createEnginePod(
+func (backend KubernetesKurtosisBackend) createEnginePod(
 	ctx context.Context,
 	namespace string,
 	engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider,
@@ -845,7 +845,7 @@ func (backend *KubernetesKurtosisBackend) createEnginePod(
 	return pod, enginePodLabels, nil
 }
 
-func (backend *KubernetesKurtosisBackend) createEngineService(
+func (backend KubernetesKurtosisBackend) createEngineService(
 	ctx context.Context,
 	namespace string,
 	engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider,
@@ -873,7 +873,7 @@ func (backend *KubernetesKurtosisBackend) createEngineService(
 
 	// Define service ports. These hook up to ports on the containers running in the engine pod
 	servicePorts, err := getKubernetesServicePortsFromPrivatePortSpecs(map[string]*port_spec.PortSpec{
-		kurtosisInternalContainerGrpcPortSpecId: privateGrpcPortSpec,
+		kurtosisInternalContainerGrpcPortSpecId:      privateGrpcPortSpec,
 		kurtosisInternalContainerGrpcProxyPortSpecId: privateGrpcProxyPortSpec,
 	})
 	if err != nil {

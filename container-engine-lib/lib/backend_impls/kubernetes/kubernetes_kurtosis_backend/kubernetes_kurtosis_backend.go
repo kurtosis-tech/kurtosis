@@ -1,4 +1,4 @@
-package kubernetes
+package kubernetes_kurtosis_backend
 
 import (
 	"bytes"

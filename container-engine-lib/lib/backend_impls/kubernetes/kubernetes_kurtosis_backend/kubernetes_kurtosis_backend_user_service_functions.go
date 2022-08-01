@@ -1,4 +1,4 @@
-package kubernetes
+package kubernetes_kurtosis_backend
 
 import (
 	"bytes"
@@ -116,7 +116,7 @@ type userServiceKubernetesResources struct {
 	pod *apiv1.Pod
 }
 
-func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
+func (backend KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
 	namespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
@@ -217,12 +217,12 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 }
 
 // Registers a user service for each given serviceId, allocating each an IP and ServiceGUID
-func (backend *KubernetesKurtosisBackend)RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, serviceIds map[service.ServiceID]bool, ) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error){
+func (backend KubernetesKurtosisBackend)RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, serviceIds map[service.ServiceID]bool, ) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error){
 	return nil, nil, stacktrace.NewError("REGISTER USER SERVICES METHOD IS UNIMPLEMENTED. DON'T USE IT")
 }
 
 
-func (backend *KubernetesKurtosisBackend) StartUserService(
+func (backend KubernetesKurtosisBackend) StartUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
@@ -375,11 +375,11 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	return objectsAndResources.service, nil
 }
 
-func (backend *KubernetesKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*backend_interface.ServiceConfig) (map[service.ServiceGUID]service.Service, map[service.ServiceGUID]error, error){
+func (backend KubernetesKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*backend_interface.ServiceConfig) (map[service.ServiceGUID]service.Service, map[service.ServiceGUID]error, error){
 	return nil, nil, stacktrace.NewError("START USER SERVICES METHOD IS UNIMPLEMENTED. DON'T USE IT")
 }
 
-func (backend *KubernetesKurtosisBackend) GetUserServices(
+func (backend KubernetesKurtosisBackend) GetUserServices(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
@@ -405,7 +405,7 @@ func (backend *KubernetesKurtosisBackend) GetUserServices(
 	return result, nil
 }
 
-func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
+func (backend KubernetesKurtosisBackend) GetUserServiceLogs(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
@@ -445,7 +445,7 @@ func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
 	return userServiceLogs, erredServiceLogs, nil
 }
 
-func (backend *KubernetesKurtosisBackend) PauseService(
+func (backend KubernetesKurtosisBackend) PauseService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceId service.ServiceGUID,
@@ -453,7 +453,7 @@ func (backend *KubernetesKurtosisBackend) PauseService(
 	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because pausing is not supported by Kubernetes", serviceId, enclaveId)
 }
 
-func (backend *KubernetesKurtosisBackend) UnpauseService(
+func (backend KubernetesKurtosisBackend) UnpauseService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceId service.ServiceGUID,
@@ -462,7 +462,7 @@ func (backend *KubernetesKurtosisBackend) UnpauseService(
 }
 
 // TODO Switch these to streaming methods, so that huge command outputs don't blow up the memory of the API container
-func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
+func (backend KubernetesKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	userServiceCommands map[service.ServiceGUID][]string,
@@ -555,7 +555,7 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 	return userServiceExecSuccess, userServiceExecErr, nil
 }
 
-func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGUID service.ServiceGUID) (resultConn net.Conn, resultErr error) {
+func (backend KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGUID service.ServiceGUID) (resultConn net.Conn, resultErr error) {
 	// See https://github.com/kubernetes/client-go/issues/912
 	/*
 		in := streams.NewIn(os.Stdin)
@@ -573,7 +573,7 @@ func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx conte
 	return nil, stacktrace.NewError("Getting a connection with a user service isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) CopyFilesFromUserService(
+func (backend KubernetesKurtosisBackend) CopyFilesFromUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
@@ -653,7 +653,7 @@ func (backend *KubernetesKurtosisBackend) CopyFilesFromUserService(
 	return nil
 }
 
-func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
+func (backend KubernetesKurtosisBackend) StopUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
 	namespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
@@ -703,7 +703,7 @@ func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, 
 	return successfulGuids, erroredGuids, nil
 }
 
-func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
+func (backend KubernetesKurtosisBackend) DestroyUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
 	namespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
@@ -743,7 +743,7 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
-func (backend *KubernetesKurtosisBackend) getMatchingUserServiceObjectsAndKubernetesResources(
+func (backend KubernetesKurtosisBackend) getMatchingUserServiceObjectsAndKubernetesResources(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
@@ -809,7 +809,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingUserServiceObjectsAndKubern
 	return results, nil
 }
 
-func (backend *KubernetesKurtosisBackend) getSingleUserServiceObjectsAndResources(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID) (*userServiceObjectsAndKubernetesResources, error) {
+func (backend KubernetesKurtosisBackend) getSingleUserServiceObjectsAndResources(ctx context.Context, enclaveId enclave.EnclaveID, serviceGuid service.ServiceGUID) (*userServiceObjectsAndKubernetesResources, error) {
 	searchFilters := &service.ServiceFilters{
 		GUIDs: map[service.ServiceGUID]bool{
 			serviceGuid: true,
@@ -832,7 +832,7 @@ func (backend *KubernetesKurtosisBackend) getSingleUserServiceObjectsAndResource
 	return result, nil
 }
 
-func (backend *KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatchingGuids(
+func (backend KubernetesKurtosisBackend) getUserServiceKubernetesResourcesMatchingGuids(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuids map[service.ServiceGUID]bool,
@@ -1017,7 +1017,7 @@ func getUserServiceObjectsFromKubernetesResources(
 	return results, nil
 }
 
-func (backend *KubernetesKurtosisBackend) prepareFilesArtifactsExpansionResources(
+func (backend KubernetesKurtosisBackend) prepareFilesArtifactsExpansionResources(
 	expanderImage string,
 	expanderEnvVars map[string]string,
 	expanderDirpathsToUserServiceDirpaths map[string]string,
@@ -1168,7 +1168,7 @@ func getUserServicePodContainerSpecs(
 // - Set the service ports appropriately
 // - Irrevocably record that a pod is bound to the service (so that even if the pod is deleted, the service won't
 // 	 be usable again
-func (backend *KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
+func (backend KubernetesKurtosisBackend) updateServiceWhenContainerStarted(
 	ctx context.Context,
 	namespaceName string,
 	kubernetesService *apiv1.Service,

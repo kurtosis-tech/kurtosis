@@ -1,4 +1,4 @@
-package kubernetes
+package kubernetes_kurtosis_backend
 
 import (
 	"context"
@@ -52,7 +52,7 @@ type moduleKubernetesResources struct {
 //                                     		Module CRUD Methods
 // ====================================================================================================
 
-func (backend *KubernetesKurtosisBackend) CreateModule(
+func (backend KubernetesKurtosisBackend) CreateModule(
 	ctx context.Context,
 	image string,
 	enclaveId enclave.EnclaveID,
@@ -242,7 +242,7 @@ func (backend *KubernetesKurtosisBackend) CreateModule(
 	return resultModule, nil
 }
 
-func (backend *KubernetesKurtosisBackend) GetModules(
+func (backend KubernetesKurtosisBackend) GetModules(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *module.ModuleFilters,
@@ -263,7 +263,7 @@ func (backend *KubernetesKurtosisBackend) GetModules(
 	return results, nil
 }
 
-func (backend *KubernetesKurtosisBackend) GetModuleLogs(
+func (backend KubernetesKurtosisBackend) GetModuleLogs(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *module.ModuleFilters,
@@ -314,7 +314,7 @@ func (backend *KubernetesKurtosisBackend) GetModuleLogs(
 	return moduleLogs, erroredModuleLogs, nil
 }
 
-func (backend *KubernetesKurtosisBackend) StopModules(
+func (backend KubernetesKurtosisBackend) StopModules(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *module.ModuleFilters,
@@ -373,7 +373,7 @@ func (backend *KubernetesKurtosisBackend) StopModules(
 	return successfulModuleGUIDs, erroredModuleGUIDs, nil
 }
 
-func (backend *KubernetesKurtosisBackend) DestroyModules(
+func (backend KubernetesKurtosisBackend) DestroyModules(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *module.ModuleFilters,
@@ -463,7 +463,7 @@ func getModuleContainers(
 	return containers
 }
 
-func (backend *KubernetesKurtosisBackend) getMatchingModuleObjectsAndKubernetesResources(
+func (backend KubernetesKurtosisBackend) getMatchingModuleObjectsAndKubernetesResources(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *module.ModuleFilters,
@@ -512,7 +512,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingModuleObjectsAndKubernetesR
 }
 
 // Get back any and all module's Kubernetes resources matching the given GUIDs, where a nil or empty map == "match all GUIDs"
-func (backend *KubernetesKurtosisBackend) getModuleKubernetesResourcesMatchingGuids(
+func (backend KubernetesKurtosisBackend) getModuleKubernetesResourcesMatchingGuids(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	moduleGuids map[module.ModuleGUID]bool,
