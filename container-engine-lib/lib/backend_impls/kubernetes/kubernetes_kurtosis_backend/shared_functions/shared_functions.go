@@ -308,6 +308,87 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 	return results, nil
 }
 
+// If no expected-ports list is passed in, no validation is done and all the ports are passed back as-is
+func GetPrivatePortsAndValidatePortExistence(kubernetesService *apiv1.Service, expectedPortIds map[string]bool) (map[string]*port_spec.PortSpec, error) {
+	portSpecsStr, found := kubernetesService.GetAnnotations()[kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString()]
+	if !found {
+		return nil, stacktrace.NewError(
+			"Couldn't find expected port specs annotation key '%v' on the Kubernetes service",
+			kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString(),
+		)
+	}
+	privatePortSpecs, err := kubernetes_port_spec_serializer.DeserializePortSpecs(portSpecsStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred deserializing private port specs string '%v'", privatePortSpecs)
+	}
+
+	if expectedPortIds != nil && len(expectedPortIds) > 0 {
+		for portId := range expectedPortIds {
+			if _, found := privatePortSpecs[portId]; !found {
+				return nil, stacktrace.NewError("Missing private port with ID '%v' in the private ports", portId)
+			}
+		}
+	}
+	return privatePortSpecs, nil
+}
+
+func GetContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus, error) {
+	// TODO Rename this; this shouldn't be called "ContainerStatus" since there's no longer a 1:1 mapping between container:kurtosis_object
+	status := container_status.ContainerStatus_Stopped
+
+	if pod != nil {
+		podPhase := pod.Status.Phase
+		isPodRunning, found := isPodRunningDeterminer[podPhase]
+		if !found {
+			// This should never happen because we enforce completeness in a unit test
+			return status, stacktrace.NewError("No is-pod-running determination found for pod phase '%v' on pod '%v'; this is a bug in Kurtosis", podPhase, pod.Name)
+		}
+		if isPodRunning {
+			status = container_status.ContainerStatus_Running
+		}
+	}
+	return status, nil
+}
+
+func GetSingleUserServiceObjectsAndResources(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	cliModeArgs *CliModeArgs,
+	apiContainerModeArgs *ApiContainerModeArgs,
+	engineServerModeArgs *EngineServerModeArgs,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	) (*UserServiceObjectsAndKubernetesResources, error) {
+	searchFilters := &service.ServiceFilters{
+		GUIDs: map[service.ServiceGUID]bool{
+			serviceGuid: true,
+		},
+	}
+	searchResults, err := GetMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, searchFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred finding services matching GUID '%v'", serviceGuid)
+	}
+	if len(searchResults) == 0 {
+		return nil, stacktrace.NewError("No services matched GUID '%v'", serviceGuid)
+	}
+	if len(searchResults) > 1 {
+		return nil, stacktrace.NewError("Expected one service to match GUID '%v' but found %v", serviceGuid, len(searchResults))
+	}
+	result, found := searchResults[serviceGuid]
+	if !found {
+		return nil, stacktrace.NewError("Got results from searching for service with GUID '%v', but no results by the GUID we searched for; this is a bug in Kurtosis", serviceGuid)
+	}
+	return result, nil
+}
+
+func getEnclaveMatchLabels() map[string]string {
+	matchLabels := map[string]string{
+		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue.GetString(),
+	}
+	return matchLabels
+}
+
 func getUserServiceObjectsFromKubernetesResources(
 	enclaveId enclave.EnclaveID,
 	allKubernetesResources map[service.ServiceGUID]*UserServiceKubernetesResources,
@@ -393,54 +474,4 @@ func getUserServiceObjectsFromKubernetesResources(
 	}
 
 	return results, nil
-}
-
-// If no expected-ports list is passed in, no validation is done and all the ports are passed back as-is
-func GetPrivatePortsAndValidatePortExistence(kubernetesService *apiv1.Service, expectedPortIds map[string]bool) (map[string]*port_spec.PortSpec, error) {
-	portSpecsStr, found := kubernetesService.GetAnnotations()[kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString()]
-	if !found {
-		return nil, stacktrace.NewError(
-			"Couldn't find expected port specs annotation key '%v' on the Kubernetes service",
-			kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString(),
-		)
-	}
-	privatePortSpecs, err := kubernetes_port_spec_serializer.DeserializePortSpecs(portSpecsStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred deserializing private port specs string '%v'", privatePortSpecs)
-	}
-
-	if expectedPortIds != nil && len(expectedPortIds) > 0 {
-		for portId := range expectedPortIds {
-			if _, found := privatePortSpecs[portId]; !found {
-				return nil, stacktrace.NewError("Missing private port with ID '%v' in the private ports", portId)
-			}
-		}
-	}
-	return privatePortSpecs, nil
-}
-
-func GetContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus, error) {
-	// TODO Rename this; this shouldn't be called "ContainerStatus" since there's no longer a 1:1 mapping between container:kurtosis_object
-	status := container_status.ContainerStatus_Stopped
-
-	if pod != nil {
-		podPhase := pod.Status.Phase
-		isPodRunning, found := isPodRunningDeterminer[podPhase]
-		if !found {
-			// This should never happen because we enforce completeness in a unit test
-			return status, stacktrace.NewError("No is-pod-running determination found for pod phase '%v' on pod '%v'; this is a bug in Kurtosis", podPhase, pod.Name)
-		}
-		if isPodRunning {
-			status = container_status.ContainerStatus_Running
-		}
-	}
-	return status, nil
-}
-
-func getEnclaveMatchLabels() map[string]string {
-	matchLabels := map[string]string{
-		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue.GetString(),
-	}
-	return matchLabels
 }

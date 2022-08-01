@@ -1,9 +1,7 @@
 package kubernetes_kurtosis_backend
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
@@ -15,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io"
 	apiv1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
@@ -107,104 +104,6 @@ type userServiceKubernetesResources struct {
 
 	// This can be nil if the user hasn't started a pod for the service yet, or if the pod was deleted
 	pod *apiv1.Pod
-}
-
-func (backend KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGUID service.ServiceGUID) (resultConn net.Conn, resultErr error) {
-	// See https://github.com/kubernetes/client-go/issues/912
-	/*
-		in := streams.NewIn(os.Stdin)
-		if err := in.SetRawTerminal(); err != nil{
-					 // handle err
-		}
-		err = exec.Stream(remotecommand.StreamOptions{
-			Stdin:             in,
-			Stdout:           stdout,
-			Stderr:            stderr,
-		}
-	*/
-
-	// TODO IMPLEMENT
-	return nil, stacktrace.NewError("Getting a connection with a user service isn't yet implemented on Kubernetes")
-}
-
-func (backend KubernetesKurtosisBackend) CopyFilesFromUserService(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceGuid service.ServiceGUID,
-	srcPath string,
-	output io.Writer,
-) error {
-	namespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
-	}
-
-	objectAndResources, err := backend.getSingleUserServiceObjectsAndResources(ctx, enclaveId, serviceGuid)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting user service object & Kubernetes resources for service '%v' in enclave '%v'", serviceGuid, enclaveId)
-	}
-	pod := objectAndResources.kubernetesResources.pod
-	if pod == nil {
-		return stacktrace.NewError(
-			"Cannot copy path '%v' on service '%v' in enclave '%v' because no pod exists for the service",
-			srcPath,
-			serviceGuid,
-			enclaveId,
-		)
-	}
-	if pod.Status.Phase != apiv1.PodRunning {
-		return stacktrace.NewError(
-			"Cannot copy path '%v' on service '%v' in enclave '%v' because the pod isn't running",
-			srcPath,
-			serviceGuid,
-			enclaveId,
-		)
-	}
-
-	commandToRun := fmt.Sprintf(
-		`if command -v 'tar' > /dev/null; then tar cf - '%v'; else echo "Cannot copy files from path '%v' because the tar binary doesn't exist on the machine" >&2; exit 1; fi`,
-		srcPath,
-		srcPath,
-	)
-	shWrappedCommandToRun := []string{
-		"sh",
-		"-c",
-		commandToRun,
-	}
-
-	// NOTE: If we hit problems with very large files and connections breaking before they do, 'kubectl cp' implements a retry
-	// mechanism that we could draw inspiration from:
-	// https://github.com/kubernetes/kubectl/blob/335090af6913fb1ebf4a1f9e2463c46248b3e68d/pkg/cmd/cp/cp.go#L345
-	stdErrOutput := &bytes.Buffer{}
-	exitCode, err := backend.kubernetesManager.RunExecCommand(
-		namespaceName,
-		pod.Name,
-		userServiceContainerName,
-		shWrappedCommandToRun,
-		output,
-		stdErrOutput,
-	)
-	if err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred running command '%v' on pod '%v' for service '%v' in namespace '%v'",
-			commandToRun,
-			pod.Name,
-			serviceGuid,
-			namespaceName,
-		)
-	}
-	if exitCode != tarSuccessExitCode {
-		return stacktrace.NewError(
-			"Command '%v' exited with non-%v exit code %v and the following STDERR:\n%v",
-			commandToRun,
-			tarSuccessExitCode,
-			exitCode,
-			stdErrOutput.String(),
-		)
-	}
-
-	return nil
 }
 
 func (backend KubernetesKurtosisBackend) StopUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {

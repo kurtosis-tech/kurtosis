@@ -28,6 +28,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	apiv1 "k8s.io/api/core/v1"
+	"net"
 	"strings"
 	"time"
 )
@@ -260,6 +261,43 @@ func (backend KubernetesKurtosisBackend) RunUserServiceExecCommands(
 		ctx,
 		enclaveId,
 		userServiceCommands,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
+}
+
+func (backend KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGUID service.ServiceGUID) (resultConn net.Conn, resultErr error) {
+	// See https://github.com/kubernetes/client-go/issues/912
+	/*
+		in := streams.NewIn(os.Stdin)
+		if err := in.SetRawTerminal(); err != nil{
+					 // handle err
+		}
+		err = exec.Stream(remotecommand.StreamOptions{
+			Stdin:             in,
+			Stdout:           stdout,
+			Stderr:            stderr,
+		}
+	*/
+
+	// TODO IMPLEMENT
+	return nil, stacktrace.NewError("Getting a connection with a user service isn't yet implemented on Kubernetes")
+}
+
+func (backend KubernetesKurtosisBackend) CopyFilesFromUserService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	srcPath string,
+	output io.Writer,
+) error {
+	return user_services_functions.CopyFilesFromUserService(
+		ctx,
+		enclaveId,
+		serviceGuid,
+		srcPath,
+		output,
 		backend.cliModeArgs,
 		backend.apiContainerModeArgs,
 		backend.engineServerModeArgs,
