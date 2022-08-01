@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
@@ -209,6 +210,20 @@ func (backend DockerKurtosisBackend) UnpauseService(
 	serviceGuid service.ServiceGUID,
 ) error {
 	return user_service_functions.UnpauseService(ctx, enclaveId, serviceGuid, backend.dockerManager)
+}
+
+// TODO Switch these to streaming so that huge command outputs don't blow up the API container memory
+// NOTE: This function will block while the exec is ongoing; if we need more perf we can make it async
+func (backend DockerKurtosisBackend) RunUserServiceExecCommands(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	userServiceCommands map[service.ServiceGUID][]string,
+) (
+	map[service.ServiceGUID]*exec_result.ExecResult,
+	map[service.ServiceGUID]error,
+	error,
+) {
+	return nil, nil, nil
 }
 
 // ====================================================================================================

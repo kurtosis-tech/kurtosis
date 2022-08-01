@@ -15,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/concurrent_writer"
@@ -97,70 +96,6 @@ type userServiceDockerResources struct {
 
 	// Will never be nil but may be empty if no expander volumes exist
 	expanderVolumeNames []string
-}
-
-// TODO Switch these to streaming so that huge command outputs don't blow up the API container memory
-// NOTE: This function will block while the exec is ongoing; if we need more perf we can make it async
-func (backend DockerKurtosisBackend) RunUserServiceExecCommands(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	userServiceCommands map[service.ServiceGUID][]string,
-) (
-	map[service.ServiceGUID]*exec_result.ExecResult,
-	map[service.ServiceGUID]error,
-	error,
-) {
-	userServiceGuids := map[service.ServiceGUID]bool{}
-	for userServiceGuid := range userServiceCommands {
-		userServiceGuids[userServiceGuid] = true
-	}
-
-	filters := &service.ServiceFilters{
-		GUIDs: userServiceGuids,
-	}
-	_, allDockerResources, err := backend.getMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
-	}
-
-	// TODO Parallelize to increase perf
-	succesfulUserServiceExecResults := map[service.ServiceGUID]*exec_result.ExecResult{}
-	erroredUserServiceGuids := map[service.ServiceGUID]error{}
-	for guid, commandArgs := range userServiceCommands {
-		dockerResources, found := allDockerResources[guid]
-		if !found {
-			erroredUserServiceGuids[guid] = stacktrace.NewError(
-				"Cannot execute command '%+v' on service '%v' because no Docker resources were found for it",
-				commandArgs,
-				guid,
-			)
-			continue
-		}
-		container := dockerResources.serviceContainer
-
-		execOutputBuf := &bytes.Buffer{}
-		exitCode, err := backend.dockerManager.RunExecCommand(
-			ctx,
-			container.GetId(),
-			commandArgs,
-			execOutputBuf,
-		)
-		if err != nil {
-			wrappedErr := stacktrace.Propagate(
-				err,
-				"An error occurred executing command '%+v' on container '%v' for user service '%v'",
-				commandArgs,
-				container.GetName(),
-				guid,
-			)
-			erroredUserServiceGuids[guid] = wrappedErr
-			continue
-		}
-		newExecResult := exec_result.NewExecResult(exitCode, execOutputBuf.String())
-		succesfulUserServiceExecResults[guid] = newExecResult
-	}
-
-	return succesfulUserServiceExecResults, erroredUserServiceGuids, nil
 }
 
 func (backend DockerKurtosisBackend) GetConnectionWithUserService(
