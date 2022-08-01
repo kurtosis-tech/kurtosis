@@ -20,6 +20,7 @@ import (
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
 	"net"
 	"strconv"
 	"strings"
@@ -179,6 +180,19 @@ func (backend DockerKurtosisBackend) GetUserServices(
 	error,
 ) {
 	return user_service_functions.GetUserServices(ctx, enclaveId, filters, backend.dockerManager)
+}
+
+func (backend DockerKurtosisBackend) GetUserServiceLogs(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *service.ServiceFilters,
+	shouldFollowLogs bool,
+) (
+	map[service.ServiceGUID]io.ReadCloser,
+	map[service.ServiceGUID]error,
+	error,
+) {
+	return nil, nil, nil
 }
 
 // ====================================================================================================

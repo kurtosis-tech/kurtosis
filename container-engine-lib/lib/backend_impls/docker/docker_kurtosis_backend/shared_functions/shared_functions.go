@@ -57,7 +57,7 @@ var portSpecProtosToDockerPortProtos = map[port_spec.PortProtocol]string{
 // of representing a user service registration, so we store them in an in-memory map on the DockerKurtosisBackend. Therefore, an
 // entry in that map is actually the canonical representation, which means that any of these fields could be nil!
 type userServiceDockerResources struct {
-	serviceContainer *types.Container
+	ServiceContainer *types.Container
 
 	// Will never be nil but may be empty if no expander volumes exist
 	expanderVolumeNames []string
@@ -360,7 +360,7 @@ func getMatchingUserServiceDockerResources(
 		if !found {
 			resourceObj = &userServiceDockerResources{}
 		}
-		resourceObj.serviceContainer = container
+		resourceObj.ServiceContainer = container
 		result[serviceGuid] = resourceObj
 	}
 
@@ -407,7 +407,7 @@ func getUserServiceObjsFromDockerResources(
 
 	// If we have an entry in the map, it means there's at least one Docker resource
 	for serviceGuid, resources := range allDockerResources {
-		container := resources.serviceContainer
+		container := resources.ServiceContainer
 
 		// If we don't have a container, we don't have the service ID label which means we can't actually construct a Service object
 		// The only case where this would happen is if, during deletion, we delete the container but an error occurred deleting the volumes
