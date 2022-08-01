@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/user_services_functions"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_network_allocator"
@@ -117,6 +118,18 @@ func (backend *DockerKurtosisBackend) PullImage(image string) error {
 	return stacktrace.NewError("PullImage isn't implemented for Docker yet")
 }
 
+func (backend *DockerKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
+	return user_service_functions.RegisterUserService(ctx, enclaveId, serviceId, backend.serviceRegistrations, backend.serviceRegistrationMutex, backend.enclaveFreeIpProviders)
+}
+
+// Registers a user service for each given serviceId, allocating each an IP and ServiceGUID
+func (backend *DockerKurtosisBackend )RegisterUserServices(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceIds map[service.ServiceID]bool,
+	) (successfulUserServiceRegistrations map[service.ServiceID]*service.ServiceRegistration, erroredUserServiceIds map[service.ServiceID]error, resultErr error) {
+	return user_service_functions.RegisterUserServices(ctx, enclaveId, serviceIds, backend.serviceRegistrations, backend.serviceRegistrationMutex, backend.enclaveFreeIpProviders)
+}
 
 // ====================================================================================================
 //                       Private helper functions shared by multiple subfunctions files
