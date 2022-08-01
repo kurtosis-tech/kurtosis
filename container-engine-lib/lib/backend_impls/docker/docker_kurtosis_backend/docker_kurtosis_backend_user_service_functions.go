@@ -98,30 +98,6 @@ type userServiceDockerResources struct {
 	expanderVolumeNames []string
 }
 
-func (backend DockerKurtosisBackend) GetConnectionWithUserService(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceGuid service.ServiceGUID,
-) (
-	net.Conn,
-	error,
-) {
-	_, serviceDockerResources, err := backend.getSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting service object and Docker resources for service '%v' in enclave '%v'", serviceGuid, enclaveId)
-	}
-	container := serviceDockerResources.serviceContainer
-
-	hijackedResponse, err := backend.dockerManager.CreateContainerExec(ctx, container.GetId(), commandToRunWhenCreatingUserServiceShell)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting a shell on user service with GUID '%v' in enclave '%v'", serviceGuid, enclaveId)
-	}
-
-	newConnection := hijackedResponse.Conn
-
-	return newConnection, nil
-}
-
 // It returns io.ReadCloser which is a tar stream. It's up to the caller to close the reader.
 func (backend DockerKurtosisBackend) CopyFilesFromUserService(
 	ctx context.Context,

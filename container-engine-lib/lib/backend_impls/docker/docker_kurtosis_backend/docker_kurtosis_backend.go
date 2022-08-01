@@ -223,9 +223,19 @@ func (backend DockerKurtosisBackend) RunUserServiceExecCommands(
 	map[service.ServiceGUID]error,
 	error,
 ) {
-	return nil, nil, nil
+	return user_service_functions.RunUserServiceExecCommands(ctx, enclaveId, userServiceCommands, backend.dockerManager)
 }
 
+func (backend DockerKurtosisBackend) GetConnectionWithUserService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+) (
+	net.Conn,
+	error,
+) {
+	return user_service_functions.GetConnectionWithUserService(ctx, enclaveId, serviceGuid, backend.dockerManager)
+}
 // ====================================================================================================
 //                       Private helper functions shared by multiple subfunctions files
 // ====================================================================================================
