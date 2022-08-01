@@ -21,7 +21,6 @@ import (
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io"
 	"net"
 	"strings"
 )
@@ -96,45 +95,6 @@ type userServiceDockerResources struct {
 
 	// Will never be nil but may be empty if no expander volumes exist
 	expanderVolumeNames []string
-}
-
-// It returns io.ReadCloser which is a tar stream. It's up to the caller to close the reader.
-func (backend DockerKurtosisBackend) CopyFilesFromUserService(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceGuid service.ServiceGUID,
-	srcPathOnContainer string,
-	output io.Writer,
-) error {
-	_, serviceDockerResources, err := backend.getSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting user service with GUID '%v' in enclave with ID '%v'", serviceGuid, enclaveId)
-	}
-	container := serviceDockerResources.serviceContainer
-
-	tarStreamReadCloser, err := backend.dockerManager.CopyFromContainer(ctx, container.GetId(), srcPathOnContainer)
-	if err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred copying content from sourcepath '%v' in container '%v' for user service '%v' in enclave '%v'",
-			srcPathOnContainer,
-			container.GetName(),
-			serviceGuid,
-			enclaveId,
-		)
-	}
-	defer tarStreamReadCloser.Close()
-
-	if _, err := io.Copy(output, tarStreamReadCloser); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred copying the bytes of TAR'd up files at '%v' on service '%v' to the output",
-			srcPathOnContainer,
-			serviceGuid,
-		)
-	}
-
-	return nil
 }
 
 func (backend DockerKurtosisBackend) StopUserServices(

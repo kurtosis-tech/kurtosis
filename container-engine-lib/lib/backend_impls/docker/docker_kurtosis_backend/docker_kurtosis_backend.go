@@ -236,6 +236,18 @@ func (backend DockerKurtosisBackend) GetConnectionWithUserService(
 ) {
 	return user_service_functions.GetConnectionWithUserService(ctx, enclaveId, serviceGuid, backend.dockerManager)
 }
+
+// It returns io.ReadCloser which is a tar stream. It's up to the caller to close the reader.
+func (backend DockerKurtosisBackend) CopyFilesFromUserService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	srcPathOnContainer string,
+	output io.Writer,
+) error {
+	return user_service_functions.CopyFilesFromUserService(ctx, enclaveId, serviceGuid, srcPathOnContainer, output, backend.dockerManager)
+}
+
 // ====================================================================================================
 //                       Private helper functions shared by multiple subfunctions files
 // ====================================================================================================
