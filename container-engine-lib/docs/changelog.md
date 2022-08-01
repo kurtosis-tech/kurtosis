@@ -7,6 +7,8 @@
   * All users of `container-engine-lib` need to upgrade to use this version
 * Refactor all `kubernetes.KubernetesKurtosisBackend` functionality to `kubernetes_kurtosis_backend` module
   * All users of `container-engine-lib` need to upgrade to use this version
+* Refactor all functions in `kubernetes_kurtosis_backend_user_services_functions.go` to `user_service_functions` module
+  * All users of `container-engine-lib` need to upgrade to use this version
 
 ### Changes
 * Add `RegisterUserServices` and `StartUserServices` to `KurtosisBackend` interface
