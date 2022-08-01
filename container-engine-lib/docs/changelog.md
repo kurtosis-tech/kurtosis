@@ -3,6 +3,8 @@
 #### Breaking Changes
 * Refactor all `docker.DockerKurtosisBackend` functionality to `docker_kurtosis_backend` module
   * Upgrade all clients of `container-engine-lib` to this version
+* Refactor all functions in `docker_kurtosis_backend_user_services_functions.go` to `user_service_functions` module
+  * Upgrade all clients of `container-engine-lib` to this version
 
 ### Changes
 * Add `RegisterUserServices` and `StartUserServices` to `KurtosisBackend` interface
