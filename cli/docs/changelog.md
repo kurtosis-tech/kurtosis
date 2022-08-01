@@ -7,6 +7,9 @@
 ### Feature
 * Add test for setting resource allocations when adding a service to an enclave to internal testsuite
 
+### Fixes
+- Fixed a bug with the CLI artifacts repo getting releases prefixed with `v`, which breaks our latest-version checks
+
 # 0.22.1
 ### Fixes
 * Undo upgrades to broken core and engine dependencies
