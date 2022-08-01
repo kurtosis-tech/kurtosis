@@ -248,6 +248,18 @@ func (backend DockerKurtosisBackend) CopyFilesFromUserService(
 	return user_service_functions.CopyFilesFromUserService(ctx, enclaveId, serviceGuid, srcPathOnContainer, output, backend.dockerManager)
 }
 
+func (backend DockerKurtosisBackend) StopUserServices(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *service.ServiceFilters,
+) (
+	resultSuccessfulServiceGUIDs map[service.ServiceGUID]bool,
+	resultErroredServiceGUIDs map[service.ServiceGUID]error,
+	resultErr error,
+) {
+	return user_service_functions.StopUserServices(ctx, enclaveId, filters, backend.dockerManager)
+}
+
 // ====================================================================================================
 //                       Private helper functions shared by multiple subfunctions files
 // ====================================================================================================
