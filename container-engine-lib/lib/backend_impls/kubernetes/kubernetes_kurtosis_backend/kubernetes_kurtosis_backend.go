@@ -20,6 +20,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/concurrent_writer"
@@ -227,6 +228,42 @@ func (backend KubernetesKurtosisBackend) GetUserServiceLogs(
 	shouldFollowLogs bool,
 ) (successfulUserServiceLogs map[service.ServiceGUID]io.ReadCloser, erroredUserServiceGuids map[service.ServiceGUID]error, resultError error) {
 	return nil, nil, nil
+}
+
+func (backend KubernetesKurtosisBackend) PauseService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceId service.ServiceGUID,
+) error {
+	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because pausing is not supported by Kubernetes", serviceId, enclaveId)
+}
+
+func (backend KubernetesKurtosisBackend) UnpauseService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceId service.ServiceGUID,
+) error {
+	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because unpausing is not supported by Kubernetes", serviceId, enclaveId)
+}
+
+// TODO Switch these to streaming methods, so that huge command outputs don't blow up the memory of the API container
+func (backend KubernetesKurtosisBackend) RunUserServiceExecCommands(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	userServiceCommands map[service.ServiceGUID][]string,
+) (
+	succesfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult,
+	erroredUserServiceGuids map[service.ServiceGUID]error,
+	resultErr error,
+) {
+	return user_services_functions.RunUserServiceExecCommands(
+		ctx,
+		enclaveId,
+		userServiceCommands,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
 }
 
 // ====================================================================================================
