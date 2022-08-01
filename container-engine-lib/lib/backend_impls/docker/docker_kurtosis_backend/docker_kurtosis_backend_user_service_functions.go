@@ -100,21 +100,6 @@ type userServiceDockerResources struct {
 	expanderVolumeNames []string
 }
 
-func (backend DockerKurtosisBackend) GetUserServices(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	filters *service.ServiceFilters,
-) (
-	map[service.ServiceGUID]*service.Service,
-	error,
-) {
-	userServices, _, err := backend.getMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
-	}
-	return userServices, nil
-}
-
 func (backend DockerKurtosisBackend) GetUserServiceLogs(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,

@@ -170,6 +170,16 @@ func (backend DockerKurtosisBackend) StartUserServices(ctx context.Context, encl
 	return nil, nil, stacktrace.NewError("START USER SERVICES METHOD IS UNIMPLEMENTED. DON'T USE IT")
 }
 
+func (backend DockerKurtosisBackend) GetUserServices(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *service.ServiceFilters,
+) (
+	map[service.ServiceGUID]*service.Service,
+	error,
+) {
+	return user_service_functions.GetUserServices(ctx, enclaveId, filters, backend.dockerManager)
+}
 
 // ====================================================================================================
 //                       Private helper functions shared by multiple subfunctions files

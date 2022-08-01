@@ -21,9 +21,7 @@ const (
 	expanderContainerSuccessExitCode = 0
 )
 
-// Containers functions required to do files artifacts expansion
-// should this be its own module?
-
+// Functions required to do files artifacts expansion
 func doFilesArtifactExpansionAndGetUserServiceVolumes(
 	ctx context.Context,
 	serviceGuid service.ServiceGUID,
