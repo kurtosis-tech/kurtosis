@@ -173,17 +173,20 @@ func RegisterUserServices(
 	failedRegistrations := map[service.ServiceID]error{}
 
 	for serviceReg := range serviceRegistrationsChan {
-		opID := operation_parallelizer.OperationID(serviceReg.GetID())
+		serviceID := serviceReg.GetID()
+		opID := operation_parallelizer.OperationID(serviceID)
 
 		if _, ok := successfulOps[opID]; ok {
-			successfulRegistrations[serviceReg.GetID()] = serviceReg
+			successfulRegistrations[serviceID] = serviceReg
 			delete(successfulOps, opID)
 		}
 	}
 
-	// This means there was a mismatch in the sets successfulOps and services retrieved from serviceResultsChan
+	// This means there was a mismatch in the set successfulOps and serviceRegistrations retrieved from serviceRegistrationsChan
 	if len(successfulOps) == 0 {
-		return nil, nil, stacktrace.NewError("An error occurred retrieving service objects of successfully started services. This means more service objects were returned than successful operations.")
+		return nil, nil, stacktrace.NewError(
+			"An error occurred retrieving service objects of successfully started services" +
+				"as serviceRegistrations that were not successful were returned. This should not occur and is a bug in Kurtosis")
 	}
 
 	for opID, err := range failedOps {
@@ -199,14 +202,14 @@ func RegisterUserServices(
 func createRegisterUserServiceOperations(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	serviceIds map[service.ServiceID]bool,
-	enclaveNamespaceName string,
+	allServiceIds map[service.ServiceID]bool,
+	namespaceName string,
 	enclaveObjAttributesProvider object_attributes_provider.KubernetesEnclaveObjectAttributesProvider,
 	serviceRegistrationsChan chan *service.ServiceRegistration,
-	kubernetesManager *kubernetes_manager.KubernetesManager) (map[operation_parallelizer.OperationID]operation_parallelizer.Operation){
+	kubernetesManager *kubernetes_manager.KubernetesManager) (map[operation_parallelizer.OperationID]operation_parallelizer.Operation) {
 	operations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
 
-	for serviceId, _ := range serviceIds {
+	for serviceId, _ := range allServiceIds {
 		var registerServiceOp operation_parallelizer.Operation = func() error {
 			serviceGuidStr, err := uuid_generator.GenerateUUIDString()
 			if err != nil {
@@ -252,7 +255,7 @@ func createRegisterUserServiceOperations(
 
 			createdService, err := kubernetesManager.CreateService(
 				ctx,
-				enclaveNamespaceName,
+				namespaceName,
 				serviceNameStr,
 				serviceLabelsStrs,
 				serviceAnnotationsStrs,
@@ -268,7 +271,7 @@ func createRegisterUserServiceOperations(
 				if shouldDeleteService {
 					if err := kubernetesManager.RemoveService(ctx, createdService); err != nil {
 						logrus.Errorf("Registering service '%v' didn't complete successfully so we tried to remove the Kubernetes service we created but doing so threw an error:\n%v", serviceId, err)
-						logrus.Errorf("ACTION REQUIRED: You'll need to remove service '%v' in namespace '%v' manually!!!", createdService.Name, enclaveNamespaceName)
+						logrus.Errorf("ACTION REQUIRED: You'll need to remove service '%v' in namespace '%v' manually!!!", createdService.Name, namespaceName)
 					}
 				}
 			}()
