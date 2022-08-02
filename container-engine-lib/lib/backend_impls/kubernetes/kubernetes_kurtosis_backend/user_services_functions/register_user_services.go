@@ -210,6 +210,8 @@ func createRegisterUserServiceOperations(
 	operations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
 
 	for serviceId, _ := range allServiceIds {
+		serviceId := serviceId // copy service ID to pass by value instead of passed by ref
+
 		var registerServiceOp operation_parallelizer.Operation = func() error {
 			serviceGuidStr, err := uuid_generator.GenerateUUIDString()
 			if err != nil {
