@@ -1,16 +1,22 @@
 # TBD
 
 #### Breaking Changes
-* Refactor all `docker.DockerKurtosisBackend` functionality to `docker_kurtosis_backend` module
-  * All users of `container-engine-lib` need to upgrade to use this version
-* Refactor all functions in `docker_kurtosis_backend_user_services_functions.go` to `user_service_functions` module
-  * All users of `container-engine-lib` need to upgrade to use this version
-* Refactor all `kubernetes.KubernetesKurtosisBackend` functionality to `kubernetes_kurtosis_backend` module
-  * All users of `container-engine-lib` need to upgrade to use this version
-* Refactor all functions in `kubernetes_kurtosis_backend_user_services_functions.go` to `user_service_functions` module
-  * All users of `container-engine-lib` need to upgrade to use this version
-* Move `ServiceConfig` and `FilesArtifactsExpansion` out of `backend_interface` module into respect files in `objects` module
-  *   * All users of `container-engine-lib` need to upgrade to use this version
+* Move all `docker.DockerKurtosisBackend` functionality to `docker_kurtosis_backend` module
+  * Users will need to replace their `github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker` import for
+`github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend`
+* Move all functions in `DockerKurtosisBackend` related to user services to `user_service_functions` module
+  * Users will need to replace their `github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker` import for
+`github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend`
+* Move all `kubernetes.KubernetesKurtosisBackend` functionality to `kubernetes_kurtosis_backend` module
+  * Users will need to replace their `github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes` import for
+`github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend`
+* Move all functions in `KubernetesKurtosisBackend` related to user services to `user_service_functions` module
+  * Users will need to replace their `github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes` import for
+`github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend`
+* Move `ServiceConfig` and `FilesArtifactsExpansion` out of `backend_interface` module into respective files in `objects` module
+  * Users will need to replace their `github.com/kurtosis-tech/container-engine-lib/lib/backend_interface` import for `ServiceConfig` 
+and `FilesArtifactsExpansion` to be `github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service` 
+and `github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion` respectively
 
 ### Changes
 * Add `RegisterUserServices` and `StartUserServices` to `KurtosisBackend` interface
