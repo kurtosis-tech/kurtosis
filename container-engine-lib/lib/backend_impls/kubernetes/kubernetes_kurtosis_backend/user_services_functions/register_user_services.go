@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -147,8 +148,30 @@ func RegisterUserServices(ctx context.Context,
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error){
+	// Get namespace name
+
+	// get enclave objects attributes provider for the enclave
+
+	// operations = createRegisterUserServiceOperations()
+
+	// RunOperationsInParallel(operations)
+
+	// deserialize results
 	return nil, nil, nil
 }
+
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
+func createRegisterUserServiceOperations(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceId map[service.ServiceID]bool,
+	enclaveNamespaceName string,
+	enclaveObjAttributesProvider object_attributes_provider.KubernetesEnclaveObjectAttributesProvider) (map[operation_parallelizer.OperationID]operation_parallelizer.Operation, error){
+	operations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
+
+
+
+	return operations, nil
+}
