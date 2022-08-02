@@ -58,6 +58,8 @@ const (
 	latestCLIReleaseCacheFileCreationDateTimeFormat = time.RFC3339
 
 	getLatestCLIReleaseCacheFilePermissions os.FileMode = 0644
+
+	optionalSemverPrefix = "v"
 )
 
 type GitHubReleaseReponse struct {
@@ -241,7 +243,7 @@ func getLatestCLIReleaseVersionFromGitHub() (string, error) {
 		return "", stacktrace.Propagate(err, "An error occurred deserializing the latest release body response")
 	}
 
-	latestVersion := responseObject.TagName
+	latestVersion := strings.TrimLeft(responseObject.TagName, optionalSemverPrefix)
 	if latestVersion == "" {
 		return "", stacktrace.Propagate(err, "The latest release version got from GitHub releases is empty")
 	}
