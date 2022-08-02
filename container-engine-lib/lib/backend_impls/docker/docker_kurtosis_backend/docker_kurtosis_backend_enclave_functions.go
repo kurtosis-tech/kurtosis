@@ -1,4 +1,4 @@
-package docker
+package docker_kurtosis_backend
 
 import (
 	"context"
@@ -41,6 +41,8 @@ const (
 	containerSpecJsonSerializationIndent = "  "
 	containerSpecJsonSerializationPrefix = ""
 )
+
+// TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
 
 type matchingNetworkInformation struct {
 	enclaveId enclave.EnclaveID

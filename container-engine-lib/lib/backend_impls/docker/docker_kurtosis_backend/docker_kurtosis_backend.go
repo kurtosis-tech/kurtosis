@@ -1,4 +1,4 @@
-package docker
+package docker_kurtosis_backend
 
 import (
 	"bytes"
@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/user_services_functions"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_network_allocator"
@@ -13,11 +14,14 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
 	"net"
 	"strconv"
 	"strings"
@@ -74,7 +78,7 @@ type DockerKurtosisBackend struct {
 
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider
 
-	// TODO This is ONLY relevant to internal-to-enclave functions, meaning that we now have a DockerKurtosisBackend
+	// TODO This is ONLY relevant to internal-to-enclave functions, meaning that we now have a *DockerKurtosisBackend
 	//  which takes in some values which are only useful for certain functions. What we should really do is split all
 	//  KurtosisBackend functions into API container, engine server, and CLI functions, and move the functionality there
 	//  (in essence creating APIContainerKurtosisBackend, EngineKurtosisBackend, CLIKurtosisBackend). That way, everything
@@ -85,7 +89,7 @@ type DockerKurtosisBackend struct {
 	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker
 
 	// TODO Migrate this to an on-disk database, so that the API container can be shut down & restarted!
-	// Canonical store of the registrations being tracked by this DockerKurtosisBackend instance
+	// Canonical store of the registrations being tracked by this *DockerKurtosisBackend instance
 	// NOTE: Unlike Kubernetes, Docker doesn't have a concrete object representing a service registration/IP address
 	//  allocation. We use this in-memory store to accomplish the same thing.
 	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration
@@ -115,6 +119,164 @@ func NewDockerKurtosisBackend(
 
 func (backend *DockerKurtosisBackend) PullImage(image string) error {
 	return stacktrace.NewError("PullImage isn't implemented for Docker yet")
+}
+
+func (backend *DockerKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
+	return user_service_functions.RegisterUserService(ctx, enclaveId, serviceId, backend.serviceRegistrations, backend.serviceRegistrationMutex, backend.enclaveFreeIpProviders)
+}
+
+// Registers a user service for each given serviceId, allocating each an IP and ServiceGUID
+func (backend *DockerKurtosisBackend )RegisterUserServices(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceIds map[service.ServiceID]bool,
+	) (successfulUserServiceRegistrations map[service.ServiceID]*service.ServiceRegistration, erroredUserServiceIds map[service.ServiceID]error, resultErr error) {
+	return user_service_functions.RegisterUserServices(ctx, enclaveId, serviceIds, backend.serviceRegistrations, backend.serviceRegistrationMutex, backend.enclaveFreeIpProviders)
+}
+
+func (backend *DockerKurtosisBackend) StartUserService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	containerImageName string,
+	privatePorts map[string]*port_spec.PortSpec,
+	publicPorts map[string]*port_spec.PortSpec, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	entrypointArgs []string,
+	cmdArgs []string,
+	envVars map[string]string,
+	filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion,
+	cpuAllocationMillicpus uint64,
+	memoryAllocationMegabytes uint64,
+) (*service.Service, error) {
+	return user_service_functions.StartUserService(
+		ctx,
+		enclaveId,
+		serviceGuid,
+		containerImageName,
+		privatePorts,
+		publicPorts,
+		entrypointArgs,
+		cmdArgs,
+		envVars,
+		filesArtifactsExpansion,
+		cpuAllocationMillicpus,
+		memoryAllocationMegabytes,
+		backend.serviceRegistrations,
+		backend.serviceRegistrationMutex,
+		backend.enclaveFreeIpProviders,
+		backend.dockerManager,
+		backend.objAttrsProvider)
+}
+
+func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]service.Service, map[service.ServiceGUID]error, error){
+	return nil, nil, stacktrace.NewError("START USER SERVICES METHOD IS UNIMPLEMENTED. DON'T USE IT")
+}
+
+func (backend *DockerKurtosisBackend) GetUserServices(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *service.ServiceFilters,
+) (
+	map[service.ServiceGUID]*service.Service,
+	error,
+) {
+	return user_service_functions.GetUserServices(ctx, enclaveId, filters, backend.dockerManager)
+}
+
+func (backend *DockerKurtosisBackend) GetUserServiceLogs(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *service.ServiceFilters,
+	shouldFollowLogs bool,
+) (
+	map[service.ServiceGUID]io.ReadCloser,
+	map[service.ServiceGUID]error,
+	error,
+) {
+	return user_service_functions.GetUserServiceLogs(ctx, enclaveId, filters, shouldFollowLogs, backend.dockerManager)
+}
+
+func (backend *DockerKurtosisBackend) PauseService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+) error {
+	return user_service_functions.PauseService(ctx, enclaveId, serviceGuid, backend.dockerManager)
+}
+
+func (backend *DockerKurtosisBackend) UnpauseService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+) error {
+	return user_service_functions.UnpauseService(ctx, enclaveId, serviceGuid, backend.dockerManager)
+}
+
+// TODO Switch these to streaming so that huge command outputs don't blow up the API container memory
+// NOTE: This function will block while the exec is ongoing; if we need more perf we can make it async
+func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	userServiceCommands map[service.ServiceGUID][]string,
+) (
+	map[service.ServiceGUID]*exec_result.ExecResult,
+	map[service.ServiceGUID]error,
+	error,
+) {
+	return user_service_functions.RunUserServiceExecCommands(ctx, enclaveId, userServiceCommands, backend.dockerManager)
+}
+
+func (backend *DockerKurtosisBackend) GetConnectionWithUserService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+) (
+	net.Conn,
+	error,
+) {
+	return user_service_functions.GetConnectionWithUserService(ctx, enclaveId, serviceGuid, backend.dockerManager)
+}
+
+// It returns io.ReadCloser which is a tar stream. It's up to the caller to close the reader.
+func (backend *DockerKurtosisBackend) CopyFilesFromUserService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	srcPathOnContainer string,
+	output io.Writer,
+) error {
+	return user_service_functions.CopyFilesFromUserService(ctx, enclaveId, serviceGuid, srcPathOnContainer, output, backend.dockerManager)
+}
+
+func (backend *DockerKurtosisBackend) StopUserServices(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *service.ServiceFilters,
+) (
+	resultSuccessfulServiceGUIDs map[service.ServiceGUID]bool,
+	resultErroredServiceGUIDs map[service.ServiceGUID]error,
+	resultErr error,
+) {
+	return user_service_functions.StopUserServices(ctx, enclaveId, filters, backend.dockerManager)
+}
+
+func (backend *DockerKurtosisBackend) DestroyUserServices(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *service.ServiceFilters,
+) (
+	resultSuccessfulGuids map[service.ServiceGUID]bool,
+	resultErroredGuids map[service.ServiceGUID]error,
+	resultErr error,
+) {
+	return user_service_functions.DestroyUserServices(
+		ctx,
+		enclaveId,
+		filters,
+		backend.serviceRegistrations,
+		backend.serviceRegistrationMutex,
+		backend.enclaveFreeIpProviders,
+		backend.dockerManager)
 }
 
 

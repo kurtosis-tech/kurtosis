@@ -2,7 +2,7 @@ package lib
 
 import (
 	"context"
-	kubernetes_backend "github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/metrics_reporting"
@@ -25,8 +25,8 @@ func GetCLIKubernetesKurtosisBackend(ctx context.Context) (backend_interface.Kur
 		return nil, stacktrace.Propagate(err, "An error occurred creating kubernetes configuration from flags in file '%v'", kubeConfigFileFilepath)
 	}
 
-	backendSupplier := func(_ context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*kubernetes_backend.KubernetesKurtosisBackend, error) {
-		return kubernetes_backend.NewCLIModeKubernetesKurtosisBackend(kubernetesManager), nil
+	backendSupplier := func(_ context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*kubernetes_kurtosis_backend.KubernetesKurtosisBackend, error) {
+		return kubernetes_kurtosis_backend.NewCLIModeKubernetesKurtosisBackend(kubernetesManager), nil
 	}
 
 	wrappedBackend, err:= getWrappedKubernetesKurtosisBackend(
@@ -50,8 +50,8 @@ func GetEngineServerKubernetesKurtosisBackend(
 		return nil, stacktrace.Propagate(err, "An error occurred getting in cluster Kubernetes config")
 	}
 
-	backendSupplier := func(_ context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*kubernetes_backend.KubernetesKurtosisBackend, error) {
-		return kubernetes_backend.NewEngineServerKubernetesKurtosisBackend(
+	backendSupplier := func(_ context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*kubernetes_kurtosis_backend.KubernetesKurtosisBackend, error) {
+		return kubernetes_kurtosis_backend.NewEngineServerKubernetesKurtosisBackend(
 			kubernetesManager,
 		), nil
 	}
@@ -76,12 +76,12 @@ func GetApiContainerKubernetesKurtosisBackend(
 		return nil, stacktrace.Propagate(err, "An error occurred getting in cluster Kubernetes config")
 	}
 
-	namespaceName := os.Getenv(kubernetes_backend.ApiContainerOwnNamespaceNameEnvVar)
+	namespaceName := os.Getenv(kubernetes_kurtosis_backend.ApiContainerOwnNamespaceNameEnvVar)
 	if namespaceName == "" {
-		return nil, stacktrace.NewError("Expected to find environment variable '%v' containing own namespace information when instantiating an API container Kurtosis backend, but none was found", kubernetes_backend.ApiContainerOwnNamespaceNameEnvVar)
+		return nil, stacktrace.NewError("Expected to find environment variable '%v' containing own namespace information when instantiating an API container Kurtosis backend, but none was found", kubernetes_kurtosis_backend.ApiContainerOwnNamespaceNameEnvVar)
 	}
 
-	backendSupplier := func(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*kubernetes_backend.KubernetesKurtosisBackend, error) {
+	backendSupplier := func(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*kubernetes_kurtosis_backend.KubernetesKurtosisBackend, error) {
 		namespace, err := kubernetesManager.GetNamespace(ctx, namespaceName)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the API container's own namespace '%v'", namespaceName)
@@ -98,7 +98,7 @@ func GetApiContainerKubernetesKurtosisBackend(
 		}
 		enclaveId := enclave.EnclaveID(enclaveIdStr)
 
-		return kubernetes_backend.NewAPIContainerKubernetesKurtosisBackend(
+		return kubernetes_kurtosis_backend.NewAPIContainerKubernetesKurtosisBackend(
 			kubernetesManager,
 			enclaveId,
 			namespaceName,
@@ -124,7 +124,7 @@ func GetApiContainerKubernetesKurtosisBackend(
 func getWrappedKubernetesKurtosisBackend(
 	ctx context.Context,
 	kubernetesConfig *rest.Config,
-	kurtosisBackendSupplier func(context.Context, *kubernetes_manager.KubernetesManager) (*kubernetes_backend.KubernetesKurtosisBackend, error),
+	kurtosisBackendSupplier func(context.Context, *kubernetes_manager.KubernetesManager) (*kubernetes_kurtosis_backend.KubernetesKurtosisBackend, error),
 ) (*metrics_reporting.MetricsReportingKurtosisBackend, error){
 	clientSet, err := kubernetes.NewForConfig(kubernetesConfig)
 	if err != nil {
