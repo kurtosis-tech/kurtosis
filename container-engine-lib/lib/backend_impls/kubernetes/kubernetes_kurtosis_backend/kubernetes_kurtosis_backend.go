@@ -177,7 +177,14 @@ func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Contex
 
 // Registers a user service for each given serviceId, allocating each an IP and ServiceGUID
 func (backend *KubernetesKurtosisBackend)RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, serviceIds map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error){
-	return nil, nil, stacktrace.NewError("REGISTER USER SERVICES METHOD IS UNIMPLEMENTED. DON'T USE IT")
+	return user_services_functions.RegisterUserServices(
+		ctx,
+		enclaveId,
+		serviceIds,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
 }
 
 func (backend *KubernetesKurtosisBackend) StartUserService(

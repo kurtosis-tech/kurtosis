@@ -139,3 +139,16 @@ func RegisterUserService(
 	shouldDeleteService = false
 	return serviceRegistration, nil
 }
+
+func RegisterUserServices(ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceId map[service.ServiceID]bool,
+	cliModeArgs *shared_helpers.CliModeArgs,
+	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
+	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
+	kubernetesManager *kubernetes_manager.KubernetesManager) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error){
+	return nil, nil, nil
+}
+// ====================================================================================================
+// 									   Private helper methods
+// ====================================================================================================
