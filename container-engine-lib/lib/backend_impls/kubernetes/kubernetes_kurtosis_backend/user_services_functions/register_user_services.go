@@ -158,7 +158,7 @@ func RegisterUserServices(
 	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
 
 	serviceRegistrationsChan := make(chan *service.ServiceRegistration)
-	operations, err := createRegisterUserServiceOperations(
+	operations := createRegisterUserServiceOperations(
 		ctx,
 		enclaveId,
 		serviceIds,
@@ -204,11 +204,10 @@ func createRegisterUserServiceOperations(
 	enclaveNamespaceName string,
 	enclaveObjAttributesProvider object_attributes_provider.KubernetesEnclaveObjectAttributesProvider,
 	serviceRegistrationsChan chan *service.ServiceRegistration,
-	kubernetesManager *kubernetes_manager.KubernetesManager) (map[operation_parallelizer.OperationID]operation_parallelizer.Operation, error){
+	kubernetesManager *kubernetes_manager.KubernetesManager) (map[operation_parallelizer.OperationID]operation_parallelizer.Operation){
 	operations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
 
 	for serviceId, _ := range serviceIds {
-		// do stuff
 		var registerServiceOp operation_parallelizer.Operation = func() error {
 			serviceGuidStr, err := uuid_generator.GenerateUUIDString()
 			if err != nil {
@@ -304,5 +303,5 @@ func createRegisterUserServiceOperations(
 		operations[operation_parallelizer.OperationID(serviceId)] = registerServiceOp
 	}
 
-	return operations, nil
+	return operations
 }
