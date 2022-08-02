@@ -126,3 +126,57 @@ func TestOperationsInParallelUsingSharedChannelReturnsCorrectResults(t *testing.
 		require.Equal(t, "Hello!", data)
 	}
 }
+
+func TestOperationsInParallelUsingDeferFunctionsExecuteDeferCorrectly(t *testing.T){
+	// create a resource
+	// induce an error in the function
+	operationData := make(chan int, 2)
+	var operationWithDeferError Operation = func() error {
+		var p int = 1
+		_ = 1 + p // just to make p used
+
+		undo := true
+		defer func() {
+			if undo {
+				p = 3
+				operationData <- p
+			}
+		}()
+
+		return randomError
+	}
+
+	var operationWithDeferNoError Operation = func() error {
+		p := 1
+		_ = 1 + p // just to make p used
+
+		undo := true
+		defer func() {
+			if undo {
+				p = 2
+			}
+		}()
+
+		return nil
+	}
+
+	operations := map[OperationID]Operation{
+		"first":  operationWithDeferError,
+		"second": operationWithDeferNoError,
+	}
+
+	success, failed := RunOperationsInParallel(operations)
+	numSucceeded := len(success)
+	numFailed := len(failed)
+
+	require.Equal(t, 1, numSucceeded)
+	require.Equal(t, 1, numFailed)
+	require.Equal(t, 1, len(operationData))
+
+	for opID, _ := range failed {
+		require.Equal(t, "first", string(opID))
+
+		data :=<- operationData
+		require.Equal(t, 3, data)
+	}
+}
