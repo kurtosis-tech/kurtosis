@@ -2,6 +2,9 @@
 ### Features
 - Added Go lib build caching to the `push_cli_artifacts` job, to speed up CLI pushes
 
+### Fixes
+- Actually remove the `v` prefix when comparing the latest-released CLI version to fix the CLI version check
+
 # 0.23.0
 ### Breaking Changes
 * Upgrade to core to 1.57.0 and engine to 1.29.0
