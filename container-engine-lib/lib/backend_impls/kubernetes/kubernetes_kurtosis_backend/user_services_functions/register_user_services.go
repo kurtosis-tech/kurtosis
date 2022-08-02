@@ -6,13 +6,11 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
@@ -126,7 +124,7 @@ func RegisterUserService(
 		},
 	}
 
-	convertedObjects, err := getUserServiceObjectsFromKubernetesResources(enclaveId, kubernetesResources)
+	convertedObjects, err := shared_helpers.GetUserServiceObjectsFromKubernetesResources(enclaveId, kubernetesResources)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting a service registration object from Kubernetes service")
 	}
@@ -144,6 +142,9 @@ func RegisterUserService(
 	return serviceRegistration, nil
 }
 
+// ====================================================================================================
+// 									   Private helper methods
+// ====================================================================================================
 func getStringMapFromLabelMap(labelMap map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue) map[string]string {
 	strMap := map[string]string{}
 	for labelKey, labelValue := range labelMap {
@@ -158,91 +159,4 @@ func getStringMapFromAnnotationMap(labelMap map[*kubernetes_annotation_key.Kuber
 		strMap[labelKey.GetString()] = labelValue.GetString()
 	}
 	return strMap
-}
-
-func getUserServiceObjectsFromKubernetesResources(
-	enclaveId enclave.EnclaveID,
-	allKubernetesResources map[service.ServiceGUID]*shared_helpers.UserServiceKubernetesResources,
-) (map[service.ServiceGUID]*shared_helpers.UserServiceObjectsAndKubernetesResources, error) {
-	results := map[service.ServiceGUID]*shared_helpers.UserServiceObjectsAndKubernetesResources{}
-	for serviceGuid, resources := range allKubernetesResources {
-		results[serviceGuid] = &shared_helpers.UserServiceObjectsAndKubernetesResources{
-			KubernetesResources: resources,
-			// The other fields will get filled in below
-		}
-	}
-
-	for serviceGuid, resultObj := range results {
-		resourcesToParse := resultObj.KubernetesResources
-		kubernetesService := resourcesToParse.Service
-		kubernetesPod := resourcesToParse.Pod
-
-		if kubernetesService == nil {
-			return nil, stacktrace.NewError(
-				"Service with GUID '%v' doesn't have a Kubernetes service; this indicates either a bug in Kurtosis or that the user manually deleted the Kubernetes service",
-				serviceGuid,
-			)
-		}
-
-		serviceLabels := kubernetesService.Labels
-		idLabelStr, found := serviceLabels[label_key_consts.IDKubernetesLabelKey.GetString()]
-		if !found {
-			return nil, stacktrace.NewError("Expected to find label '%v' on the Kubernetes service but none was found", label_key_consts.IDKubernetesLabelKey.GetString())
-		}
-		serviceId := service.ServiceID(idLabelStr)
-
-		serviceIpStr := kubernetesService.Spec.ClusterIP
-		privateIp := net.ParseIP(serviceIpStr)
-		if privateIp == nil {
-			return nil, stacktrace.NewError("An error occurred parsing service private IP string '%v' to an IP address object", serviceIpStr)
-		}
-
-		serviceRegistrationObj := service.NewServiceRegistration(serviceId, serviceGuid, enclaveId, privateIp)
-		resultObj.ServiceRegistration = serviceRegistrationObj
-
-		// A service with no ports annotation means that no pod has yet consumed the registration
-		if _, found := kubernetesService.Annotations[kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString()]; !found {
-			// If we're using the unbound port, no actual user ports have been set yet so there's no way we can
-			// return a service
-			resultObj.Service = nil
-			continue
-		}
-
-		// From this point onwards, we're guaranteed that a pod was started at _some_ point; it may or may not still be running
-		// Therefore, we know that there will be services registered
-
-		// The empty map means "don't validate any port existence"
-		privatePorts, err := shared_helpers.GetPrivatePortsAndValidatePortExistence(kubernetesService, map[string]bool{})
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred deserializing private ports from the user service's Kubernetes service")
-		}
-
-		if kubernetesPod == nil {
-			// No pod here means that a) a Service had private ports but b) now has no Pod
-			// This means that there  used to be a Pod but it was stopped/removed
-			resultObj.Service = service.NewService(
-				serviceRegistrationObj,
-				container_status.ContainerStatus_Stopped,
-				privatePorts,
-				servicePublicIp,
-				servicePublicPorts,
-			)
-			continue
-		}
-
-		containerStatus, err := shared_helpers.GetContainerStatusFromPod(resourcesToParse.Pod)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting container status from Kubernetes pod '%+v'", resourcesToParse.Pod)
-		}
-
-		resultObj.Service = service.NewService(
-			serviceRegistrationObj,
-			containerStatus,
-			privatePorts,
-			servicePublicIp,
-			servicePublicPorts,
-		)
-	}
-
-	return results, nil
 }
