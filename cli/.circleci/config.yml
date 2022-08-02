@@ -451,12 +451,25 @@ jobs:
           sudo apt update
           sudo apt install kudet
       - checkout
+
+      # Cache our dependencies
+      - restore_cache:
+          keys:
+            - << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/go.sum" }}
+
       # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           cli/scripts/build.sh true
+
+      - save_cache:
+          key: << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/go.sum" }}
+          paths:
+            - "/go/pkg/mod"   # Go module cache for the Goreleaser image, as reported by "go env GOMODCACHE"
+            - "/root/.cache/go-build"    # Go build cache for the Goreleaser image, as reported by "go env GOCACHE"
+
   # -- End artifact-publishing jobs ----------------------------
 
 workflows:
