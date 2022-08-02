@@ -164,7 +164,8 @@ func RegisterUserServices(
 		serviceIds,
 		namespaceName,
 		enclaveObjAttributesProvider,
-		serviceRegistrationsChan)
+		serviceRegistrationsChan,
+		kubernetesManager)
 
 	successfulOps, failedOps := operation_parallelizer.RunOperationsInParallel(operations)
 	close(serviceRegistrationsChan)
@@ -180,8 +181,8 @@ func RegisterUserServices(
 			delete(successfulOps, opID)
 		}
 	}
+
 	// This means there was a mismatch in the sets successfulOps and services retrieved from serviceResultsChan
-	// HOW SHOULD WE HANDLE THE MISMATCH BETWEEN SERVICE RESULTS CHAN AND SUCCESSFUL OPS??
 	if len(successfulOps) == 0 {
 		return nil, nil, stacktrace.NewError("An error occurred retrieving service objects of successfully started services. This means more service objects were returned than successful operations.")
 	}
@@ -202,12 +203,101 @@ func createRegisterUserServiceOperations(
 	serviceIds map[service.ServiceID]bool,
 	enclaveNamespaceName string,
 	enclaveObjAttributesProvider object_attributes_provider.KubernetesEnclaveObjectAttributesProvider,
-	serviceRegistrationsChan chan *service.ServiceRegistration) (map[operation_parallelizer.OperationID]operation_parallelizer.Operation, error){
+	serviceRegistrationsChan chan *service.ServiceRegistration,
+	kubernetesManager *kubernetes_manager.KubernetesManager) (map[operation_parallelizer.OperationID]operation_parallelizer.Operation, error){
 	operations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
 
 	for serviceId, _ := range serviceIds {
 		// do stuff
 		var registerServiceOp operation_parallelizer.Operation = func() error {
+			serviceGuidStr, err := uuid_generator.GenerateUUIDString()
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred generating a UUID to use for the service GUID")
+			}
+			serviceGuid := service.ServiceGUID(serviceGuidStr)
+			serviceAttributes, err := enclaveObjAttributesProvider.ForUserServiceService(serviceGuid, serviceId)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred getting attributes for the Kubernetes service for user service '%v'", serviceId)
+			}
+
+			serviceNameStr := serviceAttributes.GetName().GetString()
+
+			serviceLabelsStrs := shared_helpers.GetStringMapFromLabelMap(serviceAttributes.GetLabels())
+			serviceAnnotationsStrs := shared_helpers.GetStringMapFromAnnotationMap(serviceAttributes.GetAnnotations())
+
+			// Set up the labels that the pod will match (i.e. the labels of the pod-to-be)
+			// WARNING: We *cannot* use the labels of the Service itself because we're not guaranteed that the labels
+			//  between the two will be identical!
+			serviceGuidLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(string(serviceGuid))
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred creating a Kubernetes pod match label value for the service GUID '%v'", serviceGuid)
+			}
+			enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(string(enclaveId))
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred creating a Kubernetes pod match label value for the enclave ID '%v'", enclaveId)
+			}
+			matchedPodLabels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
+				label_key_consts.AppIDKubernetesLabelKey:     label_value_consts.AppIDKubernetesLabelValue,
+				label_key_consts.EnclaveIDKubernetesLabelKey: enclaveIdLabelValue,
+				label_key_consts.GUIDKubernetesLabelKey:      serviceGuidLabelValue,
+			}
+			matchedPodLabelStrs := shared_helpers.GetStringMapFromLabelMap(matchedPodLabels)
+
+			// Kubernetes doesn't allow us to create services without any ports, so we need to set this to a notional value
+			// until the user calls StartService
+			notionalServicePorts := []apiv1.ServicePort{
+				{
+					Name: unboundPortName,
+					Port: unboundPortNumber,
+				},
+			}
+
+			createdService, err := kubernetesManager.CreateService(
+				ctx,
+				enclaveNamespaceName,
+				serviceNameStr,
+				serviceLabelsStrs,
+				serviceAnnotationsStrs,
+				matchedPodLabelStrs,
+				apiv1.ServiceTypeClusterIP,
+				notionalServicePorts,
+			)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred creating Kubernetes service in enclave '%v' with ID '%v'", enclaveId, serviceId)
+			}
+			shouldDeleteService := true
+			defer func() {
+				if shouldDeleteService {
+					if err := kubernetesManager.RemoveService(ctx, createdService); err != nil {
+						logrus.Errorf("Registering service '%v' didn't complete successfully so we tried to remove the Kubernetes service we created but doing so threw an error:\n%v", serviceId, err)
+						logrus.Errorf("ACTION REQUIRED: You'll need to remove service '%v' in namespace '%v' manually!!!", createdService.Name, enclaveNamespaceName)
+					}
+				}
+			}()
+
+			kubernetesResources := map[service.ServiceGUID]*shared_helpers.UserServiceKubernetesResources{
+				serviceGuid: {
+					Service: createdService,
+					Pod:     nil, // No pod yet
+				},
+			}
+
+			convertedObjects, err := shared_helpers.GetUserServiceObjectsFromKubernetesResources(enclaveId, kubernetesResources)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred getting a service registration object from Kubernetes service")
+			}
+			objectsAndResources, found := convertedObjects[serviceGuid]
+			if !found {
+				return stacktrace.NewError(
+					"Successfully converted the Kubernetes service representing registered service with GUID '%v' to a "+
+						"Kurtosis object, but couldn't find that key in the resulting map; this is a bug in Kurtosis",
+					serviceGuid,
+				)
+			}
+
+			serviceRegistrationsChan <- objectsAndResources.ServiceRegistration
+
+			shouldDeleteService = false
 			return nil
 		}
 
