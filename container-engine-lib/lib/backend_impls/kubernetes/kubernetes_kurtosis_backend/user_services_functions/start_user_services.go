@@ -22,6 +22,8 @@ const(
 	userServiceContainerName = "user-service-container"
 	// Our user services don't need service accounts
 	userServiceServiceAccountName = ""
+
+	megabytesToBytesFactor = 1_000_000
 )
 
 // Completeness enforced via unit test
@@ -227,7 +229,7 @@ func getUserServicePodContainerSpecs(
 		resourceRequestsList[apiv1.ResourceCPU] = *resource.NewMilliQuantity(int64(cpuAllocationMillicpus), resource.DecimalSI)
 	}
 	if memoryAllocationMegabytes != 0 {
-		memoryAllocationInBytes := shared_helpers.ConvertMegabytesToBytes(memoryAllocationMegabytes)
+		memoryAllocationInBytes := convertMegabytesToBytes(memoryAllocationMegabytes)
 		resourceLimitsList[apiv1.ResourceMemory] = *resource.NewQuantity(int64(memoryAllocationInBytes), resource.DecimalSI)
 		resourceRequestsList[apiv1.ResourceMemory] = *resource.NewQuantity(int64(memoryAllocationInBytes), resource.DecimalSI)
 	}
@@ -412,4 +414,8 @@ func getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts map[string]*po
 		result = append(result, kubernetesPortObj)
 	}
 	return result, nil
+}
+
+func convertMegabytesToBytes(value uint64) uint64 {
+	return value * megabytesToBytesFactor
 }
