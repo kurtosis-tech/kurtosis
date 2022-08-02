@@ -36,7 +36,7 @@ const (
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
 
-func (backend DockerKurtosisBackend) CreateModule(
+func (backend *DockerKurtosisBackend) CreateModule(
 	ctx context.Context,
 	image string,
 	enclaveId enclave.EnclaveID,
@@ -194,7 +194,7 @@ func (backend DockerKurtosisBackend) CreateModule(
 	return result, nil
 }
 
-func (backend DockerKurtosisBackend) GetModules(
+func (backend *DockerKurtosisBackend) GetModules(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *module.ModuleFilters,
@@ -215,7 +215,7 @@ func (backend DockerKurtosisBackend) GetModules(
 	return matchingModuleContainersByModuleID, nil
 }
 
-func (backend DockerKurtosisBackend) GetModuleLogs(
+func (backend *DockerKurtosisBackend) GetModuleLogs(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *module.ModuleFilters,
@@ -262,7 +262,7 @@ func (backend DockerKurtosisBackend) GetModuleLogs(
 	return successfulModuleLogs, erroredModules, nil
 }
 
-func (backend DockerKurtosisBackend) StopModules(
+func (backend *DockerKurtosisBackend) StopModules(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *module.ModuleFilters,
@@ -316,7 +316,7 @@ func (backend DockerKurtosisBackend) StopModules(
 	return successfulGuids, erroredGuids, nil
 }
 
-func (backend DockerKurtosisBackend) DestroyModules(
+func (backend *DockerKurtosisBackend) DestroyModules(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *module.ModuleFilters,
@@ -374,7 +374,7 @@ func (backend DockerKurtosisBackend) DestroyModules(
 //                                     Private Helper Methods
 // ====================================================================================================
 // Gets modules matching the search filters, indexed by their container ID
-func (backend DockerKurtosisBackend) getMatchingModules(ctx context.Context, filters *module.ModuleFilters) (map[string]*module.Module, error) {
+func (backend *DockerKurtosisBackend) getMatchingModules(ctx context.Context, filters *module.ModuleFilters) (map[string]*module.Module, error) {
 
 	moduleContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),

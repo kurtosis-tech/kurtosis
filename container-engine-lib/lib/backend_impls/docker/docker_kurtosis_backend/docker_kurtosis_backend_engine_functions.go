@@ -46,7 +46,7 @@ const (
 //                                     Engine CRUD Methods
 // ====================================================================================================
 
-func (backend DockerKurtosisBackend) CreateEngine(
+func (backend *DockerKurtosisBackend) CreateEngine(
 	ctx context.Context,
 	imageOrgAndRepo string,
 	imageVersionTag string,
@@ -216,7 +216,7 @@ func (backend DockerKurtosisBackend) CreateEngine(
 	return result, nil
 }
 
-func (backend DockerKurtosisBackend) GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[engine.EngineGUID]*engine.Engine, error) {
+func (backend *DockerKurtosisBackend) GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[engine.EngineGUID]*engine.Engine, error) {
 	matchingEngines, err := backend.getMatchingEngines(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
@@ -230,7 +230,7 @@ func (backend DockerKurtosisBackend) GetEngines(ctx context.Context, filters *en
 	return matchingEnginesByEngineGuid, nil
 }
 
-func (backend DockerKurtosisBackend) StopEngines(
+func (backend *DockerKurtosisBackend) StopEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 ) (
@@ -288,7 +288,7 @@ func (backend DockerKurtosisBackend) StopEngines(
 	return successfulGuids, erroredGuids, nil
 }
 
-func (backend DockerKurtosisBackend) DestroyEngines(
+func (backend *DockerKurtosisBackend) DestroyEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 ) (
@@ -351,7 +351,7 @@ func (backend DockerKurtosisBackend) DestroyEngines(
 //                                     Private Helper Methods
 // ====================================================================================================
 // Gets engines matching the search filters, indexed by their container ID
-func (backend DockerKurtosisBackend) getMatchingEngines(ctx context.Context, filters *engine.EngineFilters) (map[string]*engine.Engine, error) {
+func (backend *DockerKurtosisBackend) getMatchingEngines(ctx context.Context, filters *engine.EngineFilters) (map[string]*engine.Engine, error) {
 	engineContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
 		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.EngineContainerTypeDockerLabelValue.GetString(),

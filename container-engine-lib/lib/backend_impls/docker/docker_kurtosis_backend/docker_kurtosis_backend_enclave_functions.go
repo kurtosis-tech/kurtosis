@@ -51,7 +51,7 @@ type matchingNetworkInformation struct {
 	containers []*types.Container
 }
 
-func (backend DockerKurtosisBackend) CreateEnclave(
+func (backend *DockerKurtosisBackend) CreateEnclave(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	isPartitioningEnabled bool,
@@ -172,7 +172,7 @@ func (backend DockerKurtosisBackend) CreateEnclave(
 }
 
 // Gets enclaves matching the given filters
-func (backend DockerKurtosisBackend) GetEnclaves(
+func (backend *DockerKurtosisBackend) GetEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
@@ -197,7 +197,7 @@ func (backend DockerKurtosisBackend) GetEnclaves(
 }
 
 // Stops enclaves matching the given filters
-func (backend DockerKurtosisBackend) StopEnclaves(
+func (backend *DockerKurtosisBackend) StopEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
@@ -272,7 +272,7 @@ func (backend DockerKurtosisBackend) StopEnclaves(
 	return successfulEnclaveIds, erroredEnclaveIds, nil
 }
 
-func (backend DockerKurtosisBackend) DumpEnclave(
+func (backend *DockerKurtosisBackend) DumpEnclave(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	outputDirpath string,
@@ -356,7 +356,7 @@ func (backend DockerKurtosisBackend) DumpEnclave(
 }
 
 // Destroys enclaves matching the given filters
-func (backend DockerKurtosisBackend) DestroyEnclaves(
+func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
@@ -429,7 +429,7 @@ func (backend DockerKurtosisBackend) DestroyEnclaves(
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func (backend DockerKurtosisBackend) getMatchingEnclaveNetworkInfo(
+func (backend *DockerKurtosisBackend) getMatchingEnclaveNetworkInfo(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
@@ -489,7 +489,7 @@ func (backend DockerKurtosisBackend) getMatchingEnclaveNetworkInfo(
 	return result, nil
 }
 
-func (backend DockerKurtosisBackend) getEnclaveStatusAndContainers(
+func (backend *DockerKurtosisBackend) getEnclaveStatusAndContainers(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 ) (
@@ -524,7 +524,7 @@ func (backend DockerKurtosisBackend) getEnclaveStatusAndContainers(
 	return resultEnclaveStatus, allEnclaveContainers, nil
 }
 
-func (backend DockerKurtosisBackend) getAllEnclaveContainers(
+func (backend *DockerKurtosisBackend) getAllEnclaveContainers(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 ) ([]*types.Container, error) {
@@ -674,7 +674,7 @@ func dumpContainerInfo(
 	return nil
 }
 
-func (backend DockerKurtosisBackend) waitForContainerExits(
+func (backend *DockerKurtosisBackend) waitForContainerExits(
 	ctx context.Context,
 	containers []*types.Container,
 ) (
