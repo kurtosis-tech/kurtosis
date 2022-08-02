@@ -3,7 +3,7 @@ package user_service_functions
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_functions"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -80,7 +80,7 @@ func DestroyUserServices(
 
 	// NOTE: This may end up with less results here than we have registrations, if the user registered but did not start a service,
 	// though we should never end up with _more_ Docker resources
-	allServiceObjs, allDockerResources, err := shared_functions.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters, dockerManager)
+	allServiceObjs, allDockerResources, err := shared_helpers.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters, dockerManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
@@ -181,7 +181,7 @@ big of a deal since they'll be deleted when the enclave gets deleted.
 func removeUserServiceDockerResources(
 	ctx context.Context,
 	serviceObjectsToRemove map[service.ServiceGUID]*service.Service,
-	resourcesToRemove map[service.ServiceGUID]*shared_functions.UserServiceDockerResources,
+	resourcesToRemove map[service.ServiceGUID]*shared_helpers.UserServiceDockerResources,
 	dockerManager *docker_manager.DockerManager,
 ) (map[service.ServiceGUID]bool, map[service.ServiceGUID]error, error) {
 

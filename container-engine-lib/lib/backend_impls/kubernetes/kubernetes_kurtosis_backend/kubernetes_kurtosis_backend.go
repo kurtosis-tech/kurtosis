@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_functions"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/user_services_functions"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
@@ -77,21 +77,21 @@ type KubernetesKurtosisBackend struct {
 
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider
 
-	cliModeArgs *shared_functions.CliModeArgs
+	cliModeArgs *shared_helpers.CliModeArgs
 
-	engineServerModeArgs *shared_functions.EngineServerModeArgs
+	engineServerModeArgs *shared_helpers.EngineServerModeArgs
 
 	// Will only be filled out for the API container
-	apiContainerModeArgs *shared_functions.ApiContainerModeArgs
+	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs
 }
 
 
 // Private constructor that the other public constructors will use
 func newKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
-	cliModeArgs *shared_functions.CliModeArgs,
-	engineServerModeArgs *shared_functions.EngineServerModeArgs,
-	apiContainerModeArgs *shared_functions.ApiContainerModeArgs,
+	cliModeArgs *shared_helpers.CliModeArgs,
+	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
+	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 ) *KubernetesKurtosisBackend {
 	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	return &KubernetesKurtosisBackend{
@@ -108,7 +108,7 @@ func NewAPIContainerKubernetesKurtosisBackend(
 	OwnEnclaveId enclave.EnclaveID,
 	OwnNamespaceName string,
 ) *KubernetesKurtosisBackend {
-	modeArgs := &shared_functions.ApiContainerModeArgs{
+	modeArgs := &shared_helpers.ApiContainerModeArgs{
 		OwnEnclaveId:     OwnEnclaveId,
 		OwnNamespaceName: OwnNamespaceName,
 	}
@@ -123,7 +123,7 @@ func NewAPIContainerKubernetesKurtosisBackend(
 func NewEngineServerKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) *KubernetesKurtosisBackend {
-	modeArgs := &shared_functions.EngineServerModeArgs{}
+	modeArgs := &shared_helpers.EngineServerModeArgs{}
 	return newKubernetesKurtosisBackend(
 		kubernetesManager,
 		nil,
@@ -135,7 +135,7 @@ func NewEngineServerKubernetesKurtosisBackend(
 func NewCLIModeKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) *KubernetesKurtosisBackend {
-	modeArgs := &shared_functions.CliModeArgs{}
+	modeArgs := &shared_helpers.CliModeArgs{}
 	return newKubernetesKurtosisBackend(
 		kubernetesManager,
 		modeArgs,
@@ -149,9 +149,9 @@ func NewKubernetesKurtosisBackend(
 	// TODO Remove the necessity for these different args by splitting the *KubernetesKurtosisBackend into multiple backends per consumer, e.g.
 	//  APIContainerKurtosisBackend, CLIKurtosisBackend, EngineKurtosisBackend, etc. This can only happen once the CLI
 	//  no longer uses the same functionality as API container, engine, etc. though
-	cliModeArgs *shared_functions.CliModeArgs,
-	engineServerModeArgs *shared_functions.EngineServerModeArgs,
-	apiContainerModeargs *shared_functions.ApiContainerModeArgs,
+	cliModeArgs *shared_helpers.CliModeArgs,
+	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
+	apiContainerModeargs *shared_helpers.ApiContainerModeArgs,
 ) *KubernetesKurtosisBackend {
 	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	return &KubernetesKurtosisBackend{

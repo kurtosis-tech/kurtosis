@@ -3,7 +3,7 @@ package docker_kurtosis_backend
 import (
 	"bytes"
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_functions"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
@@ -56,7 +56,7 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 		)
 	}
 
-	_, dockerResources, err := shared_functions.GetSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid, backend.dockerManager)
+	_, dockerResources, err := shared_helpers.GetSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid, backend.dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting network sidecar's user service '%v'", serviceGuid)
 	}

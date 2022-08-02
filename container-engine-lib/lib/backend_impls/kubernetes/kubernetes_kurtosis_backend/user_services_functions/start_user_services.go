@@ -2,7 +2,7 @@ package user_services_functions
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_functions"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
@@ -44,9 +44,9 @@ func StartUserService(
 	filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion,
 	cpuAllocationMillicpus uint64,
 	memoryAllocationMegabytes uint64,
-	cliModeArgs *shared_functions.CliModeArgs,
-	apiContainerModeArgs *shared_functions.ApiContainerModeArgs,
-	engineServerModeArgs *shared_functions.EngineServerModeArgs,
+	cliModeArgs *shared_helpers.CliModeArgs,
+	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
+	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (
 	resultUserService *service.Service,
@@ -63,7 +63,7 @@ func StartUserService(
 			serviceGuid: true,
 		},
 	}
-	preexistingObjectsAndResources, err := shared_functions.GetMatchingUserServiceObjectsAndKubernetesResources(
+	preexistingObjectsAndResources, err := shared_helpers.GetMatchingUserServiceObjectsAndKubernetesResources(
 		ctx,
 		enclaveId,
 		preexistingServiceFilters,
@@ -167,7 +167,7 @@ func StartUserService(
 		}
 	}()
 
-	kubernetesResources := map[service.ServiceGUID]*shared_functions.UserServiceKubernetesResources{
+	kubernetesResources := map[service.ServiceGUID]*shared_helpers.UserServiceKubernetesResources{
 		serviceGuid: {
 			Service: updatedService,
 			Pod:     createdPod,
@@ -227,7 +227,7 @@ func getUserServicePodContainerSpecs(
 		resourceRequestsList[apiv1.ResourceCPU] = *resource.NewMilliQuantity(int64(cpuAllocationMillicpus), resource.DecimalSI)
 	}
 	if memoryAllocationMegabytes != 0 {
-		memoryAllocationInBytes := shared_functions.ConvertMegabytesToBytes(memoryAllocationMegabytes)
+		memoryAllocationInBytes := shared_helpers.ConvertMegabytesToBytes(memoryAllocationMegabytes)
 		resourceLimitsList[apiv1.ResourceMemory] = *resource.NewQuantity(int64(memoryAllocationInBytes), resource.DecimalSI)
 		resourceRequestsList[apiv1.ResourceMemory] = *resource.NewQuantity(int64(memoryAllocationInBytes), resource.DecimalSI)
 	}

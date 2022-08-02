@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_functions"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
@@ -23,17 +23,17 @@ func CopyFilesFromUserService(
 	serviceGuid service.ServiceGUID,
 	srcPath string,
 	output io.Writer,
-	cliModeArgs *shared_functions.CliModeArgs,
-	apiContainerModeArgs *shared_functions.ApiContainerModeArgs,
-	engineServerModeArgs *shared_functions.EngineServerModeArgs,
+	cliModeArgs *shared_helpers.CliModeArgs,
+	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
+	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) error {
-	namespaceName, err := shared_functions.GetEnclaveNamespaceName(ctx, enclaveId, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+	namespaceName, err := shared_helpers.GetEnclaveNamespaceName(ctx, enclaveId, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
 	}
 
-	objectAndResources, err := shared_functions.GetSingleUserServiceObjectsAndResources(ctx, enclaveId, serviceGuid, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+	objectAndResources, err := shared_helpers.GetSingleUserServiceObjectsAndResources(ctx, enclaveId, serviceGuid, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting user service object & Kubernetes resources for service '%v' in enclave '%v'", serviceGuid, enclaveId)
 	}

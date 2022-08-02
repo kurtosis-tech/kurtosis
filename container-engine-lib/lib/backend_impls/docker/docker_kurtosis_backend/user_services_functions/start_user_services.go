@@ -3,7 +3,7 @@ package user_service_functions
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_functions"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
@@ -55,7 +55,7 @@ func StartUserService(
 	serviceRegistrationMutex.Lock()
 	defer serviceRegistrationMutex.Unlock()
 
-	enclaveNetwork, err := shared_functions.GetEnclaveNetworkByEnclaveId(ctx, enclaveId, dockerManager)
+	enclaveNetwork, err := shared_helpers.GetEnclaveNetworkByEnclaveId(ctx, enclaveId, dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
@@ -98,7 +98,7 @@ func StartUserService(
 			serviceGuid: true,
 		},
 	}
-	preexistingServices, _, err := shared_functions.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, preexistingServicesFilters, dockerManager)
+	preexistingServices, _, err := shared_helpers.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, preexistingServicesFilters, dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting preexisting containers for service '%v'", serviceGuid)
 	}
@@ -163,7 +163,7 @@ func StartUserService(
 
 	dockerUsedPorts := map[nat.Port]docker_manager.PortPublishSpec{}
 	for portId, privatePortSpec := range privatePorts {
-		dockerPort, err := shared_functions.TransformPortSpecToDockerPort(privatePortSpec)
+		dockerPort, err := shared_helpers.TransformPortSpecToDockerPort(privatePortSpec)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred converting private port spec '%v' to a Docker port", portId)
 		}
@@ -238,7 +238,7 @@ func StartUserService(
 		}
 	}()
 
-	_, _, maybePublicIp, maybePublicPortSpecs, err := shared_functions.GetIpAndPortInfoFromContainer(
+	_, _, maybePublicIp, maybePublicPortSpecs, err := shared_helpers.GetIpAndPortInfoFromContainer(
 		containerName.GetString(),
 		labelStrs,
 		hostMachinePortBindings,

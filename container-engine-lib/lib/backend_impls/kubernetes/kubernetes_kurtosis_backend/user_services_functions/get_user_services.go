@@ -2,7 +2,7 @@ package user_services_functions
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_functions"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
@@ -13,12 +13,12 @@ func GetUserServices(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
-	cliModeArgs *shared_functions.CliModeArgs,
-	apiContainerModeArgs *shared_functions.ApiContainerModeArgs,
-	engineServerModeArgs *shared_functions.EngineServerModeArgs,
+	cliModeArgs *shared_helpers.CliModeArgs,
+	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
+	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (successfulUserServices map[service.ServiceGUID]*service.Service, resultError error) {
-	allObjectsAndResources, err := shared_functions.GetMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+	allObjectsAndResources, err := shared_helpers.GetMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

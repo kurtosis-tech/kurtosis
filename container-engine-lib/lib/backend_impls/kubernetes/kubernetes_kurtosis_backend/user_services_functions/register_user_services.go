@@ -2,7 +2,7 @@ package user_services_functions
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_functions"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
@@ -41,11 +41,11 @@ func RegisterUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceId service.ServiceID,
-	cliModeArgs *shared_functions.CliModeArgs,
-	apiContainerModeArgs *shared_functions.ApiContainerModeArgs,
-	engineServerModeArgs *shared_functions.EngineServerModeArgs,
+	cliModeArgs *shared_helpers.CliModeArgs,
+	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
+	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager) (*service.ServiceRegistration, error) {
-	namespaceName, err := shared_functions.GetEnclaveNamespaceName(ctx, enclaveId, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+	namespaceName, err := shared_helpers.GetEnclaveNamespaceName(ctx, enclaveId, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
 	}
@@ -119,7 +119,7 @@ func RegisterUserService(
 		}
 	}()
 
-	kubernetesResources := map[service.ServiceGUID]*shared_functions.UserServiceKubernetesResources{
+	kubernetesResources := map[service.ServiceGUID]*shared_helpers.UserServiceKubernetesResources{
 		serviceGuid: {
 			Service: createdService,
 			Pod:     nil, // No pod yet
@@ -162,11 +162,11 @@ func getStringMapFromAnnotationMap(labelMap map[*kubernetes_annotation_key.Kuber
 
 func getUserServiceObjectsFromKubernetesResources(
 	enclaveId enclave.EnclaveID,
-	allKubernetesResources map[service.ServiceGUID]*shared_functions.UserServiceKubernetesResources,
-) (map[service.ServiceGUID]*shared_functions.UserServiceObjectsAndKubernetesResources, error) {
-	results := map[service.ServiceGUID]*shared_functions.UserServiceObjectsAndKubernetesResources{}
+	allKubernetesResources map[service.ServiceGUID]*shared_helpers.UserServiceKubernetesResources,
+) (map[service.ServiceGUID]*shared_helpers.UserServiceObjectsAndKubernetesResources, error) {
+	results := map[service.ServiceGUID]*shared_helpers.UserServiceObjectsAndKubernetesResources{}
 	for serviceGuid, resources := range allKubernetesResources {
-		results[serviceGuid] = &shared_functions.UserServiceObjectsAndKubernetesResources{
+		results[serviceGuid] = &shared_helpers.UserServiceObjectsAndKubernetesResources{
 			KubernetesResources: resources,
 			// The other fields will get filled in below
 		}
@@ -212,7 +212,7 @@ func getUserServiceObjectsFromKubernetesResources(
 		// Therefore, we know that there will be services registered
 
 		// The empty map means "don't validate any port existence"
-		privatePorts, err := shared_functions.GetPrivatePortsAndValidatePortExistence(kubernetesService, map[string]bool{})
+		privatePorts, err := shared_helpers.GetPrivatePortsAndValidatePortExistence(kubernetesService, map[string]bool{})
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred deserializing private ports from the user service's Kubernetes service")
 		}
@@ -230,7 +230,7 @@ func getUserServiceObjectsFromKubernetesResources(
 			continue
 		}
 
-		containerStatus, err := shared_functions.GetContainerStatusFromPod(resourcesToParse.Pod)
+		containerStatus, err := shared_helpers.GetContainerStatusFromPod(resourcesToParse.Pod)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting container status from Kubernetes pod '%+v'", resourcesToParse.Pod)
 		}

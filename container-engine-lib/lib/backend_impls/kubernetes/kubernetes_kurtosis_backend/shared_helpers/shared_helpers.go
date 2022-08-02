@@ -1,4 +1,4 @@
-package shared_functions
+package shared_helpers
 
 import (
 	"context"
