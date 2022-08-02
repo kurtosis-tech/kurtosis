@@ -157,8 +157,8 @@ func RegisterUserServices(
 	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
 
-	serviceRegistrationsChan := make(chan *service.ServiceRegistration)
-	operations := createRegisterUserServiceOperations(
+	serviceRegistrationsChan := make(chan *service.ServiceRegistration, len(serviceIds))
+	registerServicesOperations := createRegisterUserServiceOperations(
 		ctx,
 		enclaveId,
 		serviceIds,
@@ -167,8 +167,7 @@ func RegisterUserServices(
 		serviceRegistrationsChan,
 		kubernetesManager)
 
-	successfulOps, failedOps := operation_parallelizer.RunOperationsInParallel(operations)
-	close(serviceRegistrationsChan)
+	successfulOps, failedOps := operation_parallelizer.RunOperationsInParallel(registerServicesOperations)
 
 	successfulRegistrations := map[service.ServiceID]*service.ServiceRegistration{}
 	failedRegistrations := map[service.ServiceID]error{}
