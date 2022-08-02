@@ -45,9 +45,9 @@ var isPodRunningDeterminer = map[apiv1.PodPhase]bool{
 //  do once the CLI no longer makes any calls directly to the KurtosisBackend, and instead makes all its calls through
 //  the API container & engine APIs)
 
-// The *Args structs SHOULD be in kubernetes_kurtosis_backend because they are closely tied to the KubernetesKurtosisBackend
-// and private, however, due to the fact that GetEnclaveNamespaceName() works, these functions must exist here and made
-// public so that they're accessible to the function
+// The *Args structs SHOULD be private and in kubernetes_kurtosis_backend because they are closely tied to the KubernetesKurtosisBackend
+// however, due to the way that GetEnclaveNamespaceName() works, these functions must exist here and made
+// public so that they're accessible to that function
 type CliModeArgs struct {
 	// No CLI mode args needed for now
 }
