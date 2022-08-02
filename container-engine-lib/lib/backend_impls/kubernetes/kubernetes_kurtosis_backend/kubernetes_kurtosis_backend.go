@@ -241,7 +241,15 @@ func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
 	filters *service.ServiceFilters,
 	shouldFollowLogs bool,
 ) (successfulUserServiceLogs map[service.ServiceGUID]io.ReadCloser, erroredUserServiceGuids map[service.ServiceGUID]error, resultError error) {
-	return nil, nil, nil
+	return user_services_functions.GetUserServiceLogs(
+		ctx,
+		enclaveId,
+		filters,
+		shouldFollowLogs,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
 }
 
 func (backend *KubernetesKurtosisBackend) PauseService(
