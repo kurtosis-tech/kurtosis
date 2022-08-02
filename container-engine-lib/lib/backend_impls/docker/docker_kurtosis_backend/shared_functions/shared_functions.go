@@ -265,7 +265,6 @@ func GetIpAndPortInfoFromContainer(
 
 
 // Gets the service objects & Docker resources for services matching the given filters
-// NOTE: Does not use registration information so does not need the mutex!
 func GetMatchingUserServiceObjsAndDockerResourcesNoMutex(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
@@ -464,7 +463,7 @@ func getUserServiceObjsFromDockerResources(
 	return result, nil
 }
 
-// NOTE: Does not use registration information so does not need the mutex!
+
 func GetSingleUserServiceObjAndResourcesNoMutex(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,

@@ -24,7 +24,7 @@ import (
 
 const (
 	// This needs to be bind-mounted into the engine & API containers so they can manipulate Docker
-	dockerSocketFilepath = "/var/run/sock"
+	dockerSocketFilepath = "/var/run/docker.sock"
 
 	nameOfNetworkToStartEngineContainerIn = "bridge"
 
