@@ -5,8 +5,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
@@ -64,8 +62,8 @@ func RegisterUserService(
 
 	serviceNameStr := serviceAttributes.GetName().GetString()
 
-	serviceLabelsStrs := getStringMapFromLabelMap(serviceAttributes.GetLabels())
-	serviceAnnotationsStrs := getStringMapFromAnnotationMap(serviceAttributes.GetAnnotations())
+	serviceLabelsStrs := shared_helpers.GetStringMapFromLabelMap(serviceAttributes.GetLabels())
+	serviceAnnotationsStrs := shared_helpers.GetStringMapFromAnnotationMap(serviceAttributes.GetAnnotations())
 
 	// Set up the labels that the pod will match (i.e. the labels of the pod-to-be)
 	// WARNING: We *cannot* use the labels of the Service itself because we're not guaranteed that the labels
@@ -83,7 +81,7 @@ func RegisterUserService(
 		label_key_consts.EnclaveIDKubernetesLabelKey: enclaveIdLabelValue,
 		label_key_consts.GUIDKubernetesLabelKey:      serviceGuidLabelValue,
 	}
-	matchedPodLabelStrs := getStringMapFromLabelMap(matchedPodLabels)
+	matchedPodLabelStrs := shared_helpers.GetStringMapFromLabelMap(matchedPodLabels)
 
 	// Kubernetes doesn't allow us to create services without any ports, so we need to set this to a notional value
 	// until the user calls StartService
@@ -140,23 +138,4 @@ func RegisterUserService(
 
 	shouldDeleteService = false
 	return serviceRegistration, nil
-}
-
-// ====================================================================================================
-// 									   Private helper methods
-// ====================================================================================================
-func getStringMapFromLabelMap(labelMap map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue) map[string]string {
-	strMap := map[string]string{}
-	for labelKey, labelValue := range labelMap {
-		strMap[labelKey.GetString()] = labelValue.GetString()
-	}
-	return strMap
-}
-
-func getStringMapFromAnnotationMap(labelMap map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue) map[string]string {
-	strMap := map[string]string{}
-	for labelKey, labelValue := range labelMap {
-		strMap[labelKey.GetString()] = labelValue.GetString()
-	}
-	return strMap
 }

@@ -116,8 +116,8 @@ func StartUserService(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting attributes for new pod for service with GUID '%v'", serviceGuid)
 	}
-	podLabelsStrs := getStringMapFromLabelMap(podAttributes.GetLabels())
-	podAnnotationsStrs := getStringMapFromAnnotationMap(podAttributes.GetAnnotations())
+	podLabelsStrs := shared_helpers.GetStringMapFromLabelMap(podAttributes.GetLabels())
+	podAnnotationsStrs := shared_helpers.GetStringMapFromAnnotationMap(podAttributes.GetAnnotations())
 
 	podContainers, err := getUserServicePodContainerSpecs(
 		containerImageName,
@@ -176,7 +176,7 @@ func StartUserService(
 		},
 	}
 
-	convertedObjects, err := getUserServiceObjectsFromKubernetesResources(enclaveId, kubernetesResources)
+	convertedObjects, err := shared_helpers.GetUserServiceObjectsFromKubernetesResources(enclaveId, kubernetesResources)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting a service object from the Kubernetes service and newly-created pod")
 	}
