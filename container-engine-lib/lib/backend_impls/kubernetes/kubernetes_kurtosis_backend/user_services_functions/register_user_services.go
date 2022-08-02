@@ -141,23 +141,56 @@ func RegisterUserService(
 	return serviceRegistration, nil
 }
 
-func RegisterUserServices(ctx context.Context,
+func RegisterUserServices(
+	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	serviceId map[service.ServiceID]bool,
+	serviceIds map[service.ServiceID]bool,
 	cliModeArgs *shared_helpers.CliModeArgs,
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
-	kubernetesManager *kubernetes_manager.KubernetesManager) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error){
-	// Get namespace name
+	kubernetesManager *kubernetes_manager.KubernetesManager) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
+	namespaceName, err := shared_helpers.GetEnclaveNamespaceName(ctx, enclaveId, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveId)
+	}
 
-	// get enclave objects attributes provider for the enclave
+	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
+	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
 
-	// operations = createRegisterUserServiceOperations()
+	serviceRegistrationsChan := make(chan *service.ServiceRegistration)
+	operations, err := createRegisterUserServiceOperations(
+		ctx,
+		enclaveId,
+		serviceIds,
+		namespaceName,
+		enclaveObjAttributesProvider,
+		serviceRegistrationsChan)
 
-	// RunOperationsInParallel(operations)
+	successfulOps, failedOps := operation_parallelizer.RunOperationsInParallel(operations)
+	close(serviceRegistrationsChan)
 
-	// deserialize results
-	return nil, nil, nil
+	successfulRegistrations := map[service.ServiceID]*service.ServiceRegistration{}
+	failedRegistrations := map[service.ServiceID]error{}
+
+	for serviceReg := range serviceRegistrationsChan {
+		opID := operation_parallelizer.OperationID(serviceReg.GetID())
+
+		if _, ok := successfulOps[opID]; ok {
+			successfulRegistrations[serviceReg.GetID()] = serviceReg
+			delete(successfulOps, opID)
+		}
+	}
+	// This means there was a mismatch in the sets successfulOps and services retrieved from serviceResultsChan
+	// HOW SHOULD WE HANDLE THE MISMATCH BETWEEN SERVICE RESULTS CHAN AND SUCCESSFUL OPS??
+	if len(successfulOps) == 0 {
+		return nil, nil, stacktrace.NewError("An error occurred retrieving service objects of successfully started services. This means more service objects were returned than successful operations.")
+	}
+
+	for opID, err := range failedOps {
+		failedRegistrations[service.ServiceID(opID)] = err
+	}
+
+	return successfulRegistrations, failedRegistrations, nil
 }
 
 // ====================================================================================================
@@ -166,12 +199,20 @@ func RegisterUserServices(ctx context.Context,
 func createRegisterUserServiceOperations(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	serviceId map[service.ServiceID]bool,
+	serviceIds map[service.ServiceID]bool,
 	enclaveNamespaceName string,
-	enclaveObjAttributesProvider object_attributes_provider.KubernetesEnclaveObjectAttributesProvider) (map[operation_parallelizer.OperationID]operation_parallelizer.Operation, error){
+	enclaveObjAttributesProvider object_attributes_provider.KubernetesEnclaveObjectAttributesProvider,
+	serviceRegistrationsChan chan *service.ServiceRegistration) (map[operation_parallelizer.OperationID]operation_parallelizer.Operation, error){
 	operations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
 
+	for serviceId, _ := range serviceIds {
+		// do stuff
+		var registerServiceOp operation_parallelizer.Operation = func() error {
+			return nil
+		}
 
+		operations[operation_parallelizer.OperationID(serviceId)] = registerServiceOp
+	}
 
 	return operations, nil
 }
