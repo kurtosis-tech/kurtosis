@@ -1,4 +1,6 @@
 # TBD
+
+# 0.23.1
 ### Features
 - Added Go lib build caching to the `push_cli_artifacts` job, to speed up CLI pushes
 
