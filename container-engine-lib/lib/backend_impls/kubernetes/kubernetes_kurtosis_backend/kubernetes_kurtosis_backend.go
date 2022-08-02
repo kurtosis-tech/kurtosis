@@ -146,7 +146,7 @@ func NewCLIModeKubernetesKurtosisBackend(
 
 func NewKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
-	// TODO Remove the necessity for these different args by splitting the KubernetesKurtosisBackend into multiple backends per consumer, e.g.
+	// TODO Remove the necessity for these different args by splitting the *KubernetesKurtosisBackend into multiple backends per consumer, e.g.
 	//  APIContainerKurtosisBackend, CLIKurtosisBackend, EngineKurtosisBackend, etc. This can only happen once the CLI
 	//  no longer uses the same functionality as API container, engine, etc. though
 	cliModeArgs *shared_functions.CliModeArgs,
@@ -167,7 +167,7 @@ func (backend *KubernetesKurtosisBackend) PullImage(image string) error {
 	return stacktrace.NewError("PullImage isn't implemented for Kubernetes yet")
 }
 
-func (backend KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
+func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
 	return user_services_functions.RegisterUserService(
 		ctx,
 		enclaveId,
@@ -179,11 +179,11 @@ func (backend KubernetesKurtosisBackend) RegisterUserService(ctx context.Context
 }
 
 // Registers a user service for each given serviceId, allocating each an IP and ServiceGUID
-func (backend KubernetesKurtosisBackend)RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, serviceIds map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error){
+func (backend *KubernetesKurtosisBackend)RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, serviceIds map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error){
 	return nil, nil, stacktrace.NewError("REGISTER USER SERVICES METHOD IS UNIMPLEMENTED. DON'T USE IT")
 }
 
-func (backend KubernetesKurtosisBackend) StartUserService(
+func (backend *KubernetesKurtosisBackend) StartUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
@@ -203,11 +203,11 @@ func (backend KubernetesKurtosisBackend) StartUserService(
 	return nil, nil
 }
 
-func (backend KubernetesKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]service.Service, map[service.ServiceGUID]error, error){
+func (backend *KubernetesKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]service.Service, map[service.ServiceGUID]error, error){
 	return nil, nil, stacktrace.NewError("START USER SERVICES METHOD IS UNIMPLEMENTED. DON'T USE IT")
 }
 
-func (backend KubernetesKurtosisBackend) GetUserServices(
+func (backend *KubernetesKurtosisBackend) GetUserServices(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
@@ -222,7 +222,7 @@ func (backend KubernetesKurtosisBackend) GetUserServices(
 		backend.kubernetesManager)
 }
 
-func (backend KubernetesKurtosisBackend) GetUserServiceLogs(
+func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
@@ -231,7 +231,7 @@ func (backend KubernetesKurtosisBackend) GetUserServiceLogs(
 	return nil, nil, nil
 }
 
-func (backend KubernetesKurtosisBackend) PauseService(
+func (backend *KubernetesKurtosisBackend) PauseService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceId service.ServiceGUID,
@@ -239,7 +239,7 @@ func (backend KubernetesKurtosisBackend) PauseService(
 	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because pausing is not supported by Kubernetes", serviceId, enclaveId)
 }
 
-func (backend KubernetesKurtosisBackend) UnpauseService(
+func (backend *KubernetesKurtosisBackend) UnpauseService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceId service.ServiceGUID,
@@ -248,7 +248,7 @@ func (backend KubernetesKurtosisBackend) UnpauseService(
 }
 
 // TODO Switch these to streaming methods, so that huge command outputs don't blow up the memory of the API container
-func (backend KubernetesKurtosisBackend) RunUserServiceExecCommands(
+func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	userServiceCommands map[service.ServiceGUID][]string,
@@ -267,7 +267,7 @@ func (backend KubernetesKurtosisBackend) RunUserServiceExecCommands(
 		backend.kubernetesManager)
 }
 
-func (backend KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGUID service.ServiceGUID) (resultConn net.Conn, resultErr error) {
+func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGUID service.ServiceGUID) (resultConn net.Conn, resultErr error) {
 	// See https://github.com/kubernetes/client-go/issues/912
 	/*
 		in := streams.NewIn(os.Stdin)
@@ -285,7 +285,7 @@ func (backend KubernetesKurtosisBackend) GetConnectionWithUserService(ctx contex
 	return nil, stacktrace.NewError("Getting a connection with a user service isn't yet implemented on Kubernetes")
 }
 
-func (backend KubernetesKurtosisBackend) CopyFilesFromUserService(
+func (backend *KubernetesKurtosisBackend) CopyFilesFromUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
@@ -304,7 +304,7 @@ func (backend KubernetesKurtosisBackend) CopyFilesFromUserService(
 		backend.kubernetesManager)
 }
 
-func (backend KubernetesKurtosisBackend) StopUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
+func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
 	return user_services_functions.StopUserServices(
 		ctx,
 		enclaveId,
@@ -315,7 +315,7 @@ func (backend KubernetesKurtosisBackend) StopUserServices(ctx context.Context, e
 		backend.kubernetesManager)
 }
 
-func (backend KubernetesKurtosisBackend) DestroyUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
+func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
 	return user_services_functions.DestroyUserServices(
 		ctx,
 		enclaveId,
@@ -388,8 +388,8 @@ func getContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus
 }
 
 func (backend *KubernetesKurtosisBackend) getEnclaveNamespaceName(ctx context.Context, enclaveId enclave.EnclaveID) (string, error) {
-	// TODO This is a big janky hack that results from KubernetesKurtosisBackend containing functions for all of API containers, engines, and CLIs
-	//  We want to fix this by splitting the KubernetesKurtosisBackend into a bunch of different backends, one per user, but we can only
+	// TODO This is a big janky hack that results from *KubernetesKurtosisBackend containing functions for all of API containers, engines, and CLIs
+	//  We want to fix this by splitting the *KubernetesKurtosisBackend into a bunch of different backends, one per user, but we can only
 	//  do this once the CLI no longer uses API container functionality (e.g. GetServices)
 	// CLIs and engines can list namespaces so they'll be able to use the regular list-namespaces-and-find-the-one-matching-the-enclave-ID
 	// API containers can't list all namespaces due to being namespaced objects themselves (can only view their own namespace, so
