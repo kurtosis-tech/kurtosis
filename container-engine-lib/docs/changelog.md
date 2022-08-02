@@ -22,6 +22,7 @@ and `github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects
 * Add `RegisterUserServices` and `StartUserServices` to `KurtosisBackend` interface
 * Implement `RegisterUserServices` in `DockerKurtosisBackend`
 * Implement `RunOperationInParallel` module to abstract common use case of executing multiple operations and receiving successful and failed operations
+* Implement `RegisterUserServices` in `KubernetesKurtosisBackend`
 
 # 0.33.1
 ### Features
