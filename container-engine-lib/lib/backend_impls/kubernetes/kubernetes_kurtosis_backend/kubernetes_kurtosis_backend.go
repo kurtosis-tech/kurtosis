@@ -105,13 +105,10 @@ func newKubernetesKurtosisBackend(
 
 func NewAPIContainerKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
-	OwnEnclaveId enclave.EnclaveID,
-	OwnNamespaceName string,
+	ownEnclaveId enclave.EnclaveID,
+	ownNamespaceName string,
 ) *KubernetesKurtosisBackend {
-	modeArgs := &shared_helpers.ApiContainerModeArgs{
-		OwnEnclaveId:     OwnEnclaveId,
-		OwnNamespaceName: OwnNamespaceName,
-	}
+	modeArgs := shared_helpers.NewApiContainerModeArgs(ownEnclaveId, ownNamespaceName)
 	return newKubernetesKurtosisBackend(
 		kubernetesManager,
 		nil,
@@ -200,7 +197,23 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 	resultUserService *service.Service,
 	resultErr error,
 ) {
-	return nil, nil
+	return user_services_functions.StartUserService(
+		ctx,
+		enclaveId,
+		serviceGuid,
+		containerImageName,
+		privatePorts,
+		publicPorts,
+		entrypointArgs,
+		cmdArgs,
+		envVars,
+		filesArtifactsExpansion,
+		cpuAllocationMillicpus,
+		memoryAllocationMegabytes,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
 }
 
 func (backend *KubernetesKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]service.Service, map[service.ServiceGUID]error, error){
@@ -414,15 +427,15 @@ func (backend *KubernetesKurtosisBackend) getEnclaveNamespaceName(ctx context.Co
 
 		namespaceName = namespaces.Items[0].Name
 	} else if backend.apiContainerModeArgs != nil {
-		if enclaveId != backend.apiContainerModeArgs.OwnEnclaveId {
+		if enclaveId != backend.apiContainerModeArgs.GetOwnEnclaveId() {
 			return "", stacktrace.NewError(
 				"Received a request to get namespace for enclave '%v', but the Kubernetes Kurtosis backend is running in an API " +
 					"container in a different enclave '%v' (so Kubernetes would throw a permission error)",
 				enclaveId,
-				backend.apiContainerModeArgs.OwnEnclaveId,
+				backend.apiContainerModeArgs.GetOwnEnclaveId(),
 			)
 		}
-		namespaceName = backend.apiContainerModeArgs.OwnNamespaceName
+		namespaceName = backend.apiContainerModeArgs.GetOwnNamespaceName()
 	} else {
 		return "", stacktrace.NewError("Received a request to get an enclave namespace's name, but the Kubernetes Kurtosis backend isn't in any recognized mode; this is a bug in Kurtosis")
 	}

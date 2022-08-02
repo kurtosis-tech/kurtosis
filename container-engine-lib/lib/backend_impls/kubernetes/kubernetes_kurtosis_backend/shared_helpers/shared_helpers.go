@@ -40,22 +40,44 @@ var isPodRunningDeterminer = map[apiv1.PodPhase]bool{
 	apiv1.PodUnknown: false, //We cannot say that a pod is not running if we don't know the real state
 }
 
+
 // TODO Remove this once we split apart the KubernetesKurtosisBackend into multiple backends (which we can only
 //  do once the CLI no longer makes any calls directly to the KurtosisBackend, and instead makes all its calls through
 //  the API container & engine APIs)
+
+// The *Args structs SHOULD be in kubernetes_kurtosis_backend because they are closely tied to the KubernetesKurtosisBackend
+// and private, however, due to the fact that GetEnclaveNamespaceName() works, these functions must exist here and made
+// public so that they're accessible to the function
 type CliModeArgs struct {
 	// No CLI mode args needed for now
 }
 
 type ApiContainerModeArgs struct {
-	OwnEnclaveId enclave.EnclaveID
+	ownEnclaveId enclave.EnclaveID
 
-	OwnNamespaceName string
+	ownNamespaceName string
 
 	storageClassName string
 
 	// TODO make this more dynamic - maybe guess based on the files artifact size?
 	filesArtifactExpansionVolumeSizeInMegabytes uint
+}
+
+func NewApiContainerModeArgs(
+	ownEnclaveId enclave.EnclaveID,
+	ownNamespaceName string, ) *ApiContainerModeArgs {
+	return &ApiContainerModeArgs{
+		ownEnclaveId: ownEnclaveId,
+		ownNamespaceName: ownNamespaceName,
+	}
+}
+
+func (apiContainerModeArgs *ApiContainerModeArgs) GetOwnEnclaveId() enclave.EnclaveID {
+	return apiContainerModeArgs.ownEnclaveId
+}
+
+func (apiContainerModeArgs *ApiContainerModeArgs) GetOwnNamespaceName() string {
+	return apiContainerModeArgs.ownNamespaceName
 }
 
 type EngineServerModeArgs struct {
@@ -127,15 +149,15 @@ func GetEnclaveNamespaceName(
 
 		namespaceName = namespaces.Items[0].Name
 	} else if apiContainerModeArgs != nil {
-		if enclaveId != apiContainerModeArgs.OwnEnclaveId {
+		if enclaveId != apiContainerModeArgs.ownEnclaveId {
 			return "", stacktrace.NewError(
 				"Received a request to get namespace for enclave '%v', but the Kubernetes Kurtosis backend is running in an API " +
 					"container in a different enclave '%v' (so Kubernetes would throw a permission error)",
 				enclaveId,
-				apiContainerModeArgs.OwnEnclaveId,
+				apiContainerModeArgs.ownEnclaveId,
 			)
 		}
-		namespaceName = apiContainerModeArgs.OwnNamespaceName
+		namespaceName = apiContainerModeArgs.ownNamespaceName
 	} else {
 		return "", stacktrace.NewError("Received a request to get an enclave namespace's name, but the Kubernetes Kurtosis backend isn't in any recognized mode; this is a bug in Kurtosis")
 	}
