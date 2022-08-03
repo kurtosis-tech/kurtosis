@@ -271,7 +271,7 @@ func StartUserServices(
 	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 ) (
-	map[service.ServiceGUID]*service.Service,
+	map[service.ServiceGUID]service.Service,
 	map[service.ServiceGUID]error,
 	error,
 ) {
@@ -371,7 +371,7 @@ func RunStartServicesOperationInParallel(
 	freeIpAddrProvider *lib.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 ) (
-	map[service.ServiceGUID]*service.Service,
+	map[service.ServiceGUID]service.Service,
 	map[service.ServiceGUID]error,
 	error,
 ) {
@@ -389,7 +389,7 @@ func RunStartServicesOperationInParallel(
 
 	successfulOps, failedOps := operation_parallelizer.RunOperationsInParallel(operations)
 
-	successfulServices := map[service.ServiceGUID]*service.Service{}
+	successfulServices := map[service.ServiceGUID]service.Service{}
 	failedServices := map[service.ServiceGUID]error{}
 
 	for service := range serviceResultsChan {
@@ -398,7 +398,7 @@ func RunStartServicesOperationInParallel(
 
 		opID := operation_parallelizer.OperationID(guid)
 		if _, ok := successfulOps[opID]; ok {
-			successfulServices[guid] = service
+			successfulServices[guid] = *service
 			delete(successfulOps, opID)
 		}
 	}

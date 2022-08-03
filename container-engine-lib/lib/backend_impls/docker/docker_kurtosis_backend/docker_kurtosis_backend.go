@@ -168,7 +168,7 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		backend.objAttrsProvider)
 }
 
-func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]*service.Service, map[service.ServiceGUID]error, error){
+func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]service.Service, map[service.ServiceGUID]error, error){
 	return user_service_functions.StartUserServices(
 		ctx,
 		enclaveId,
