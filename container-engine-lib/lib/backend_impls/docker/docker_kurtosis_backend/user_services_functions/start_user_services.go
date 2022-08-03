@@ -307,28 +307,36 @@ func StartUserServices(
 		)
 	}
 
+	// Check that all services have valid registrations attached
 	for serviceGUID, _ := range services {
-		// Check that the registration is valid
-		serviceRegistration, found := registrationsForEnclave[serviceGUID]
+		_, found := registrationsForEnclave[serviceGUID]
 		if !found {
 			return nil, nil, stacktrace.NewError(
 				"Cannot start service '%v' because no preexisting registration has been made for the service",
 				serviceGUID,
 			)
 		}
-
-		// Find if a container has been associated with the registration yet
-		preexistingServicesFilters := &service.ServiceFilters{
-			GUIDs: map[service.ServiceGUID]bool{
-				serviceGUID: true,
-			},
-		}
-
-
 	}
 
-	// Find if a container has been associated with the registrations yet
-
+	// Find if a container has already been associated with any of the registrations yet
+	serviceGUIDs := map[service.ServiceGUID]bool{}
+	for guid := range services{
+		serviceGUIDs[guid] = true
+	}
+	preexistingServicesFilters := &service.ServiceFilters{
+		GUIDs: serviceGUIDs,
+	}
+	preexistingServices, _, err := shared_helpers.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveID, preexistingServicesFilters, dockerManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting preexisting containers for the services.")
+	}
+	if len(preexistingServices) > 0 {
+		var preexistingServiceGUIDs []service.ServiceGUID
+		for guid := range preexistingServices {
+			preexistingServiceGUIDs = append(preexistingServiceGUIDs, guid)
+		}
+		return nil, nil, stacktrace.Propagate(err, "Cannot start services '%v'; because containers already exists for those services.", preexistingServiceGUIDs)
+	}
 
 
 	enclaveObjAttrsProvider, err := objAttrsProvider.ForEnclave(enclaveID)
@@ -336,7 +344,19 @@ func StartUserServices(
 		return nil, nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveID)
 	}
 
-	return nil, nil, nil
+	successfulStarts, failedStarts, err := RunStartServicesOperationInParallel(
+		ctx,
+		enclaveNetworkId,
+		services,
+		registrationsForEnclave,
+		enclaveObjAttrsProvider,
+		freeIpAddrProvider,
+		dockerManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to start services in parallel.")
+	}
+
+	return successfulStarts, failedStarts, nil
 }
 
 // ====================================================================================================
@@ -345,11 +365,11 @@ func StartUserServices(
 func RunStartServicesOperationInParallel(
 	ctx context.Context,
 	enclaveNetworkId string,
-	dockerManager *docker_manager.DockerManager,
 	services map[service.ServiceGUID]*service.ServiceConfig,
 	serviceRegistrations map[service.ServiceGUID]*service.ServiceRegistration,
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
 	freeIpAddrProvider *lib.FreeIpAddrTracker,
+	dockerManager *docker_manager.DockerManager,
 ) (
 	map[service.ServiceGUID]*service.Service,
 	map[service.ServiceGUID]error,
