@@ -286,7 +286,7 @@ func StartUserServices(
 
 		for portId, privatePortSpec := range privatePorts {
 			if _, found := publicPorts[portId]; !found {
-				return nil, nil, stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portId, privatePortSpec.GetNumber())
+				return nil, nil, stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v' for service with guid `%v`, but it was not found", portId, privatePortSpec.GetNumber(), guid)
 			}
 
 		}
