@@ -185,7 +185,7 @@ func RegisterUserServices(
 	// This means there was a mismatch in the set successfulOps and serviceRegistrations retrieved from serviceRegistrationsChan
 	if len(successfulOps) == 0 {
 		return nil, nil, stacktrace.NewError(
-			"An error occurred retrieving service objects of successfully started services" +
+			"An error occurred retrieving service registrations of successfully registered services" +
 				"as serviceRegistrations that were not successful were returned. This should not occur and is a bug in Kurtosis")
 	}
 
