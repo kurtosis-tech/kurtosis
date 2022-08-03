@@ -176,7 +176,7 @@ func RegisterUserServices(
 		serviceID := serviceReg.GetID()
 		opID := operation_parallelizer.OperationID(serviceID)
 
-		if _, ok := successfulOps[opID]; ok {
+		if _, found := successfulOps[opID]; found {
 			successfulRegistrations[serviceID] = serviceReg
 			delete(successfulOps, opID)
 		}
@@ -210,7 +210,8 @@ func createRegisterUserServiceOperations(
 	operations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
 
 	for serviceId, _ := range allServiceIds {
-		serviceId := serviceId // copy service ID to pass by value instead of passed by ref
+		// copy service ID to pass by value instead of passed by ref, if not `serviceId` will be the last one in allServiceIds for all
+		serviceId := serviceId // in allServiceIds for all ops because the iteration variable is a ref thats reused in each iteration in golang
 
 		var registerServiceOp operation_parallelizer.Operation = func() error {
 			serviceGuidStr, err := uuid_generator.GenerateUUIDString()
