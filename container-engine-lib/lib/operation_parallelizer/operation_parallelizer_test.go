@@ -128,8 +128,6 @@ func TestOperationsInParallelUsingSharedChannelReturnsCorrectResults(t *testing.
 }
 
 func TestOperationsInParallelUsingDeferFunctionsExecuteDeferCorrectly(t *testing.T){
-	// create a resource
-	// induce an error in the function
 	operationData := make(chan int, 2)
 	var operationWithDeferError Operation = func() error {
 		var p int = 1
