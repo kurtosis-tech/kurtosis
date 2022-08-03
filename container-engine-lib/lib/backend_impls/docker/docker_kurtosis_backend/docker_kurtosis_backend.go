@@ -168,8 +168,16 @@ func (backend *DockerKurtosisBackend) StartUserService(
 		backend.objAttrsProvider)
 }
 
-func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]service.Service, map[service.ServiceGUID]error, error){
-	return nil, nil, stacktrace.NewError("START USER SERVICES METHOD IS UNIMPLEMENTED. DON'T USE IT")
+func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]*service.Service, map[service.ServiceGUID]error, error){
+	return user_service_functions.StartUserServices(
+		ctx,
+		enclaveId,
+		services,
+		backend.serviceRegistrations,
+		backend.serviceRegistrationMutex,
+		backend.objAttrsProvider,
+		backend.enclaveFreeIpProviders,
+		backend.dockerManager)
 }
 
 func (backend *DockerKurtosisBackend) GetUserServices(
