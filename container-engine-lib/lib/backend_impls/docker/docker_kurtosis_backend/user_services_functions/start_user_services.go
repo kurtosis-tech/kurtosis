@@ -298,10 +298,37 @@ func StartUserServices(
 	}
 
 	// Find the registrations
-	// ...
+	registrationsForEnclave, found := serviceRegistrations[enclaveID]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"No service registrations are being tracked for enclave '%v'; this likely means that the start service request is being called where it shouldn't "+
+				"be (i.e. outside the API container)",
+			enclaveID,
+		)
+	}
+
+	for serviceGUID, _ := range services {
+		// Check that the registration is valid
+		serviceRegistration, found := registrationsForEnclave[serviceGUID]
+		if !found {
+			return nil, nil, stacktrace.NewError(
+				"Cannot start service '%v' because no preexisting registration has been made for the service",
+				serviceGUID,
+			)
+		}
+
+		// Find if a container has been associated with the registration yet
+		preexistingServicesFilters := &service.ServiceFilters{
+			GUIDs: map[service.ServiceGUID]bool{
+				serviceGUID: true,
+			},
+		}
+
+
+	}
 
 	// Find if a container has been associated with the registrations yet
-	// ...
+
 
 
 	enclaveObjAttrsProvider, err := objAttrsProvider.ForEnclave(enclaveID)
