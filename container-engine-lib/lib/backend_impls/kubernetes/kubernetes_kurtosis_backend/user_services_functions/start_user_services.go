@@ -196,71 +196,6 @@ func StartUserService(
 	return objectsAndResources.Service, nil
 }
 
-func getUserServicePodContainerSpecs(
-	image string,
-	entrypointArgs []string,
-	cmdArgs []string,
-	envVarStrs map[string]string,
-	privatePorts map[string]*port_spec.PortSpec,
-	containerMounts []apiv1.VolumeMount,
-	cpuAllocationMillicpus uint64,
-	memoryAllocationMegabytes uint64,
-) (
-	[]apiv1.Container,
-	error,
-) {
-	var containerEnvVars []apiv1.EnvVar
-	for varName, varValue := range envVarStrs {
-		envVar := apiv1.EnvVar{
-			Name:  varName,
-			Value: varValue,
-		}
-		containerEnvVars = append(containerEnvVars, envVar)
-	}
-
-	kubernetesContainerPorts, err := getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes container ports from the private port specs map")
-	}
-
-	resourceLimitsList := apiv1.ResourceList{}
-	resourceRequestsList := apiv1.ResourceList{}
-	// 0 is considered the empty value (meaning the field was never set), so if either fields are 0, that resource is left unbounded
-	if cpuAllocationMillicpus != 0 {
-		resourceLimitsList[apiv1.ResourceCPU] = *resource.NewMilliQuantity(int64(cpuAllocationMillicpus), resource.DecimalSI)
-		resourceRequestsList[apiv1.ResourceCPU] = *resource.NewMilliQuantity(int64(cpuAllocationMillicpus), resource.DecimalSI)
-	}
-	if memoryAllocationMegabytes != 0 {
-		memoryAllocationInBytes := convertMegabytesToBytes(memoryAllocationMegabytes)
-		resourceLimitsList[apiv1.ResourceMemory] = *resource.NewQuantity(int64(memoryAllocationInBytes), resource.DecimalSI)
-		resourceRequestsList[apiv1.ResourceMemory] = *resource.NewQuantity(int64(memoryAllocationInBytes), resource.DecimalSI)
-	}
-	resourceRequirements := apiv1.ResourceRequirements{
-		Limits: resourceLimitsList,
-		Requests: resourceRequestsList,
-	}
-
-	// TODO create networking sidecars here
-	containers := []apiv1.Container{
-		{
-			Name:  userServiceContainerName,
-			Image: image,
-			// Yes, even though this is called "command" it actually corresponds to the Docker ENTRYPOINT
-			Command:      entrypointArgs,
-			Args:         cmdArgs,
-			Ports:        kubernetesContainerPorts,
-			Env:          containerEnvVars,
-			VolumeMounts: containerMounts,
-			Resources:    resourceRequirements,
-
-			// NOTE: There are a bunch of other interesting Container options that we omitted for now but might
-			// want to specify in the future
-		},
-	}
-
-	return containers, nil
-}
-
 func StartUserServices(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
@@ -274,7 +209,57 @@ func StartUserServices(
 	map[service.ServiceGUID]error,
 	error,
 ) {
-	return nil, nil, nil
+	// Sanity check for port bindings on all services
+	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	for _, config := range services {
+		publicPorts := config.GetPublicPorts()
+		if publicPorts != nil && len(publicPorts) > 0 {
+			logrus.Warn("The Kubernetes Kurtosis backend doesn't support defining static ports for services; the public ports will be ignored")
+		}
+	}
+
+	// Find if a container has already been associated with any of the registrations yet
+	serviceGUIDs := map[service.ServiceGUID]bool{}
+	for guid := range services{
+		serviceGUIDs[guid] = true
+	}
+	preexistingServicesFilters := &service.ServiceFilters{
+		GUIDs: serviceGUIDs,
+	}
+	preexistingObjectsAndResources, err := shared_helpers.GetMatchingUserServiceObjectsAndKubernetesResources(
+		ctx,
+		enclaveID,
+		preexistingServicesFilters,
+		cliModeArgs,
+		apiContainerModeArgs,
+		engineServerModeArgs,
+		kubernetesManager,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user service objects and Kubernetes resources matching service GUIDs '%v'", serviceGUIDs)
+	}
+	if len(preexistingObjectsAndResources) == 0 {
+		return nil, nil, stacktrace.NewError("Couldn't find any service registrations matching service GUID '%v'", serviceGuid)
+	}
+	if len(preexistingObjectsAndResources) > 1 {
+		// Should never happen because service GUIDs should be unique
+		return nil, nil, stacktrace.NewError("Found more than one service registration matching service GUID '%v'; this is a bug in Kurtosis", serviceGuid)
+	}
+
+	successfulStarts, failedStarts, err := runStartServicesOperationInParallel(
+		ctx,
+		"",
+		services,
+		preexistingObjectsAndResources,
+		cliModeArgs,
+		apiContainerModeArgs,
+		engineServerModeArgs,
+		kubernetesManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to start services in parallel.")
+	}
+
+	return successfulStarts, failedStarts, nil
 }
 
 // ====================================================================================================
@@ -284,6 +269,7 @@ func runStartServicesOperationInParallel(
 	ctx context.Context,
 	enclaveNetworkId string,
 	services map[service.ServiceGUID]*service.ServiceConfig,
+	servicesObjectsAndResources map[service.ServiceGUID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
 	cliModeArgs *shared_helpers.CliModeArgs,
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
@@ -293,6 +279,13 @@ func runStartServicesOperationInParallel(
 	map[service.ServiceGUID]error,
 	error,
 ) {
+	// create operations
+
+	// call run operations in parallel
+
+	// deserialize data
+
+	// return
 	return nil, nil, nil
 }
 
@@ -305,6 +298,8 @@ func createStartServiceOperations(
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	dockerManager *docker_manager.DockerManager) map[operation_parallelizer.OperationID]operation_parallelizer.Operation {
+
+	// create each individual operation
 	return nil
 }
 
@@ -419,6 +414,71 @@ func updateServiceWhenContainerStarted(
 
 	shouldUndoUpdate = false
 	return updatedService, undoUpdateFunc, nil
+}
+
+func getUserServicePodContainerSpecs(
+	image string,
+	entrypointArgs []string,
+	cmdArgs []string,
+	envVarStrs map[string]string,
+	privatePorts map[string]*port_spec.PortSpec,
+	containerMounts []apiv1.VolumeMount,
+	cpuAllocationMillicpus uint64,
+	memoryAllocationMegabytes uint64,
+) (
+	[]apiv1.Container,
+	error,
+) {
+	var containerEnvVars []apiv1.EnvVar
+	for varName, varValue := range envVarStrs {
+		envVar := apiv1.EnvVar{
+			Name:  varName,
+			Value: varValue,
+		}
+		containerEnvVars = append(containerEnvVars, envVar)
+	}
+
+	kubernetesContainerPorts, err := getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes container ports from the private port specs map")
+	}
+
+	resourceLimitsList := apiv1.ResourceList{}
+	resourceRequestsList := apiv1.ResourceList{}
+	// 0 is considered the empty value (meaning the field was never set), so if either fields are 0, that resource is left unbounded
+	if cpuAllocationMillicpus != 0 {
+		resourceLimitsList[apiv1.ResourceCPU] = *resource.NewMilliQuantity(int64(cpuAllocationMillicpus), resource.DecimalSI)
+		resourceRequestsList[apiv1.ResourceCPU] = *resource.NewMilliQuantity(int64(cpuAllocationMillicpus), resource.DecimalSI)
+	}
+	if memoryAllocationMegabytes != 0 {
+		memoryAllocationInBytes := convertMegabytesToBytes(memoryAllocationMegabytes)
+		resourceLimitsList[apiv1.ResourceMemory] = *resource.NewQuantity(int64(memoryAllocationInBytes), resource.DecimalSI)
+		resourceRequestsList[apiv1.ResourceMemory] = *resource.NewQuantity(int64(memoryAllocationInBytes), resource.DecimalSI)
+	}
+	resourceRequirements := apiv1.ResourceRequirements{
+		Limits: resourceLimitsList,
+		Requests: resourceRequestsList,
+	}
+
+	// TODO create networking sidecars here
+	containers := []apiv1.Container{
+		{
+			Name:  userServiceContainerName,
+			Image: image,
+			// Yes, even though this is called "command" it actually corresponds to the Docker ENTRYPOINT
+			Command:      entrypointArgs,
+			Args:         cmdArgs,
+			Ports:        kubernetesContainerPorts,
+			Env:          containerEnvVars,
+			VolumeMounts: containerMounts,
+			Resources:    resourceRequirements,
+
+			// NOTE: There are a bunch of other interesting Container options that we omitted for now but might
+			// want to specify in the future
+		},
+	}
+
+	return containers, nil
 }
 
 func getKubernetesServicePortsFromPrivatePortSpecs(privatePorts map[string]*port_spec.PortSpec) ([]apiv1.ServicePort, error) {
