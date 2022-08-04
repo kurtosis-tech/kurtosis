@@ -110,6 +110,73 @@ func TestOperationsInParallelUsingSharedVariablesReturnsCorrectResults(t *testin
 	require.Equal(t, 30, p) // p should equal three after all operations increase the counter 10 times
 }
 
+func TestOperationsInParallelReturnsDataCorrectly(t *testing.T) {
+	type CustomType string
+
+	var doSomethingWithData Operation = func(dataChan chan OperationData) error{
+		dataChan <- OperationData{ID: "first", Data: CustomType("Hello!")}
+		return nil
+	}
+
+	operations := map[OperationID]Operation{
+		"first": doSomethingWithData,
+	}
+
+	success, _, data, err := RunOperationsInParallel(operations)
+	require.NoError(t, err)
+
+	numSucceeded := len(success)
+
+	require.Equal(t, 1, numSucceeded)
+	require.Equal(t, 1, len(data))
+	dataVal, found := data[OperationID("first")]
+	require.True(t, found)
+	require.Equal(t, "Hello!", string(dataVal.Data.(CustomType)))
+}
+
+func TestOperationInParallaReturnsErrorIfNotAllOperationsSendData(t *testing.T) {
+	// breaks assumption 1
+	var doSomethingWithData Operation = func(dataChan chan OperationData) error{
+		dataChan <- OperationData{ID: "first", Data: "Hello!"}
+		return nil
+	}
+
+	operations := map[OperationID]Operation{
+		"first": doSomethingWithData,
+		"second": doSomething,
+	}
+
+	_, _, _, err := RunOperationsInParallel(operations)
+	require.ErrorIs(t, err, OperationDataInconsistencyError)
+}
+
+func TestOperationInParallaReturnsErrorIfNotAllDataIsNotSentInAllCases(t *testing.T) {
+	// breaks assumption 2
+	sendData := true
+	var sendDataOperation Operation = func(dataChan chan OperationData) error {
+
+		if sendData {
+			dataChan <- OperationData{ID: "first", Data: "Hello!"}
+		}
+		return nil
+	}
+
+	var dontSendDataOperation Operation = func(dataChan chan OperationData) error {
+		if !sendData {
+			dataChan <- OperationData{ID: "second", Data: "Hello!"}
+		}
+		return nil
+	}
+
+	operations := map[OperationID]Operation{
+		"first": sendDataOperation,
+		"second": dontSendDataOperation,
+	}
+
+	_, _, _, err := RunOperationsInParallel(operations)
+	require.ErrorIs(t, err, OperationDataInconsistencyError)
+}
+
 // We still test this case, however most users of RunOperationsInParallel should opt for using the [dataChan] that comes with the module
 func TestOperationsInParallelUsingSharedChannelReturnsCorrectResults(t *testing.T){
 	operationData := make(chan string, 3)
@@ -214,7 +281,3 @@ func TestIsDataOneToOneWithSuccessfulOpsReturnsCorrectResult(t *testing.T){
 	require.True(t, isDataOneToOneWithSuccessfulOps(successfulIDs, dataIDs))
 	require.False(t, isDataOneToOneWithSuccessfulOps(successfulIDs, moreDataIDs))
 }
-// add test to test data channel
-
-// test that is returns data correctly
-// test that it returns an error when assumptions are broken
