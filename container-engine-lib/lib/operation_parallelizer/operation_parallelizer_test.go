@@ -10,13 +10,13 @@ import (
 var (
 	randomError = errors.New("This error was random.")
 
-	doSomething Operation = func() error {
+	doSomething Operation = func(_ chan OperationData) error {
 		for i := 0; i < 5; i++ {
 			// doing something
 		}
 		return nil
 	}
-	doSomethingError Operation = func() error{
+	doSomethingError Operation = func(_ chan OperationData) error{
 		// do something
 		return randomError
 	}
@@ -30,7 +30,8 @@ func TestOperationsInParallelReturnsSuccessfulOperations(t *testing.T){
 		"third": doSomething,
 	}
 
-	success, failed := RunOperationsInParallel(operations)
+	success, failed, _, err := RunOperationsInParallel(operations)
+	require.NoError(t, err)
 
 	numSucceeded := len(success)
 	numFailed := len(failed)
@@ -46,7 +47,9 @@ func TestOperationInParallelReturnsFailedOperations(t *testing.T){
 		"third": doSomethingError,
 	}
 
-	success, failed := RunOperationsInParallel(operations)
+	success, failed, _, err := RunOperationsInParallel(operations)
+	require.NoError(t, err)
+
 	numSucceeded := len(success)
 	numFailed := len(failed)
 
@@ -65,7 +68,9 @@ func TestOperationInParallelReturnsBothSuccessAndFailedOperations(t *testing.T){
 		"third":  doSomething,
 	}
 
-	success, failed := RunOperationsInParallel(operations)
+	success, failed, _, err:= RunOperationsInParallel(operations)
+	require.NoError(t, err)
+
 	numSucceeded := len(success)
 	numFailed := len(failed)
 
@@ -81,7 +86,7 @@ func TestOperationInParallelReturnsBothSuccessAndFailedOperations(t *testing.T){
 func TestOperationsInParallelUsingSharedVariablesReturnsCorrectResults(t *testing.T){
 	p := 0
 	incLock := sync.Mutex{}
-	var doSomethingTogether Operation = func() error {
+	var doSomethingTogether Operation = func(_ chan OperationData) error {
 		for i := 0; i < 10; i++ {
 			incLock.Lock()
 			p++
@@ -96,7 +101,9 @@ func TestOperationsInParallelUsingSharedVariablesReturnsCorrectResults(t *testin
 		"third":  doSomethingTogether,
 	}
 
-	success, _ := RunOperationsInParallel(operations)
+	success, _, _, err := RunOperationsInParallel(operations)
+	require.NoError(t, err)
+
 	numSucceeded := len(success)
 
 	require.Equal(t, 3, numSucceeded)
@@ -105,7 +112,7 @@ func TestOperationsInParallelUsingSharedVariablesReturnsCorrectResults(t *testin
 
 func TestOperationsInParallelUsingSharedChannelReturnsCorrectResults(t *testing.T){
 	operationData := make(chan string, 3)
-	var sendDataInChannel Operation = func() error {
+	var sendDataInChannel Operation = func(_ chan OperationData) error {
 		operationData <- "Hello!"
 		return nil
 	}
@@ -116,7 +123,9 @@ func TestOperationsInParallelUsingSharedChannelReturnsCorrectResults(t *testing.
 		"third":  sendDataInChannel,
 	}
 
-	success, _ := RunOperationsInParallel(operations)
+	success, _, _, err := RunOperationsInParallel(operations)
+	require.NoError(t, err)
+
 	numSucceeded := len(success)
 
 	require.Equal(t, 3, numSucceeded)
@@ -129,7 +138,7 @@ func TestOperationsInParallelUsingSharedChannelReturnsCorrectResults(t *testing.
 
 func TestOperationsInParallelUsingDeferFunctionsExecuteDeferCorrectly(t *testing.T){
 	operationData := make(chan int, 2)
-	var operationWithDeferError Operation = func() error {
+	var operationWithDeferError Operation = func(_ chan OperationData) error {
 		var p int = 1
 		_ = 1 + p // just to make p used
 
@@ -144,7 +153,7 @@ func TestOperationsInParallelUsingDeferFunctionsExecuteDeferCorrectly(t *testing
 		return randomError
 	}
 
-	var operationWithDeferNoError Operation = func() error {
+	var operationWithDeferNoError Operation = func(_ chan OperationData) error {
 		p := 1
 		_ = 1 + p // just to make p used
 
@@ -163,7 +172,9 @@ func TestOperationsInParallelUsingDeferFunctionsExecuteDeferCorrectly(t *testing
 		"second": operationWithDeferNoError,
 	}
 
-	success, failed := RunOperationsInParallel(operations)
+	success, failed, _, err := RunOperationsInParallel(operations)
+	require.NoError(t, err)
+
 	numSucceeded := len(success)
 	numFailed := len(failed)
 
