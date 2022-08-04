@@ -8,6 +8,7 @@ import (
 	docker_types "github.com/docker/docker/api/types"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/gammazero/workerpool"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
@@ -509,7 +510,7 @@ func (backend *DockerKurtosisBackend) getEnclaveStatusAndContainers(
 	resultEnclaveStatus := enclave.EnclaveStatus_Stopped
 	for _, enclaveContainer := range allEnclaveContainers {
 		containerStatus := enclaveContainer.GetStatus()
-		isContainerRunning, found := isContainerRunningDeterminer[containerStatus]
+		isContainerRunning, found := shared_helpers.IsContainerRunningDeterminer[containerStatus]
 		if !found {
 			// This should never happen because we enforce completeness in a unit test
 			return 0, nil, stacktrace.NewError("No is-running designation found for enclave container status '%v'; this is a bug in Kurtosis!", containerStatus.String())

@@ -3,6 +3,8 @@ package docker_kurtosis_backend
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_log_streaming_readcloser"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -82,7 +84,7 @@ func (backend *DockerKurtosisBackend) CreateModule(
 			err,
 			"An error occurred creating the module container's private grpc port spec object using number '%v' and protocol '%v'",
 			grpcPortNum,
-			enginePortProtocol.String(),
+			consts.EnginePortProtocol.String(),
 		)
 	}
 
@@ -106,14 +108,14 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		ipAddr,
 		id,
 		guid,
-		kurtosisInternalContainerGrpcPortId,
+		consts.KurtosisInternalContainerGrpcPortId,
 		privateGrpcPortSpec,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the object attributes for the module container")
 	}
 
-	privateGrpcDockerPort, err := transformPortSpecToDockerPort(privateGrpcPortSpec)
+	privateGrpcDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(privateGrpcPortSpec)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc port spec to a Docker port")
 	}
@@ -173,7 +175,7 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		}
 	}()
 
-	if err := waitForPortAvailabilityUsingNetstat(
+	if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
 		ctx,
 		backend.dockerManager,
 		containerId,
@@ -380,7 +382,7 @@ func (backend *DockerKurtosisBackend) getMatchingModules(ctx context.Context, fi
 		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
 		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.ModuleContainerTypeDockerLabelValue.GetString(),
 	}
-	matchingModuleContainers, err := backend.dockerManager.GetContainersByLabels(ctx, moduleContainerSearchLabels, shouldFetchAllContainersWhenRetrievingContainers)
+	matchingModuleContainers, err := backend.dockerManager.GetContainersByLabels(ctx, moduleContainerSearchLabels, consts.ShouldFetchAllContainersWhenRetrievingContainers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred fetching module containers using labels: %+v", moduleContainerSearchLabels)
 	}
@@ -460,7 +462,7 @@ func getModuleObjectFromContainerInfo(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the module container's private port specs from container '%v' with labels: %+v", containerId, labels)
 	}
 
-	isContainerRunning, found := isContainerRunningDeterminer[containerStatus]
+	isContainerRunning, found := shared_helpers.IsContainerRunningDeterminer[containerStatus]
 	if !found {
 		// This should never happen because we enforce completeness in a unit test
 		return nil, stacktrace.NewError("No is-running designation found for module container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
@@ -475,7 +477,7 @@ func getModuleObjectFromContainerInfo(
 	var publicIpAddr net.IP
 	var publicGrpcPortSpec *port_spec.PortSpec
 	if moduleStatus == container_status.ContainerStatus_Running {
-		publicGrpcPortIpAddr, candidatePublicGrpcPortSpec, err := getPublicPortBindingFromPrivatePortSpec(privateGrpcPortSpec, allHostMachinePortBindings)
+		publicGrpcPortIpAddr, candidatePublicGrpcPortSpec, err := shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateGrpcPortSpec, allHostMachinePortBindings)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "The module is running, but an error occurred getting the public port spec for the module's grpc private port spec")
 		}
@@ -511,9 +513,9 @@ func getPrivateModulePorts(containerLabels map[string]string) (
 		return nil, stacktrace.Propagate(err, "An error occurred deserializing port specs string '%v'", serializedPortSpecs)
 	}
 
-	grpcPortSpec, foundGrpcPort := portSpecs[kurtosisInternalContainerGrpcPortId]
+	grpcPortSpec, foundGrpcPort := portSpecs[consts.KurtosisInternalContainerGrpcPortId]
 	if !foundGrpcPort {
-		return nil, stacktrace.NewError("No grpc port with ID '%v' found in the port specs", kurtosisInternalContainerGrpcPortId)
+		return nil, stacktrace.NewError("No grpc port with ID '%v' found in the port specs", consts.KurtosisInternalContainerGrpcPortId)
 	}
 
 	return grpcPortSpec, nil
