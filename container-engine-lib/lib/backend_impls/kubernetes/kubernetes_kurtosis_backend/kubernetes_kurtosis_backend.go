@@ -223,8 +223,23 @@ func (backend *KubernetesKurtosisBackend) StartUserService(
 		backend.kubernetesManager)
 }
 
-func (backend *KubernetesKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]service.Service, map[service.ServiceGUID]error, error){
-	return nil, nil, stacktrace.NewError("START USER SERVICES METHOD IS UNIMPLEMENTED. DON'T USE IT")
+func (backend *KubernetesKurtosisBackend) StartUserServices(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	services map[service.ServiceGUID]*service.ServiceConfig,
+) (
+		map[service.ServiceGUID]service.Service,
+		map[service.ServiceGUID]error,
+		error,
+) {
+	return user_services_functions.StartUserServices(
+		ctx,
+		enclaveId,
+		services,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
 }
 
 func (backend *KubernetesKurtosisBackend) GetUserServices(

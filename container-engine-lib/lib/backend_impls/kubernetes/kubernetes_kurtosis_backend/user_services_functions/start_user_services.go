@@ -2,6 +2,7 @@ package user_services_functions
 
 import (
 	"context"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
@@ -11,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/operation_parallelizer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
@@ -257,6 +259,53 @@ func getUserServicePodContainerSpecs(
 	}
 
 	return containers, nil
+}
+
+func StartUserServices(
+	ctx context.Context,
+	enclaveID enclave.EnclaveID,
+	services map[service.ServiceGUID]*service.ServiceConfig,
+	cliModeArgs *shared_helpers.CliModeArgs,
+	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
+	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) (
+	map[service.ServiceGUID]service.Service,
+	map[service.ServiceGUID]error,
+	error,
+) {
+	return nil, nil, nil
+}
+
+// ====================================================================================================
+//                       Private helper functions
+// ====================================================================================================
+func runStartServicesOperationInParallel(
+	ctx context.Context,
+	enclaveNetworkId string,
+	services map[service.ServiceGUID]*service.ServiceConfig,
+	cliModeArgs *shared_helpers.CliModeArgs,
+	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
+	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) (
+	map[service.ServiceGUID]service.Service,
+	map[service.ServiceGUID]error,
+	error,
+) {
+	return nil, nil, nil
+}
+
+func createStartServiceOperations(
+	ctx context.Context,
+	enclaveNetworkId string,
+	services map[service.ServiceGUID]*service.ServiceConfig,
+	cliModeArgs *shared_helpers.CliModeArgs,
+	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
+	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	dockerManager *docker_manager.DockerManager) map[operation_parallelizer.OperationID]operation_parallelizer.Operation {
+	return nil
 }
 
 // Update the service to:
