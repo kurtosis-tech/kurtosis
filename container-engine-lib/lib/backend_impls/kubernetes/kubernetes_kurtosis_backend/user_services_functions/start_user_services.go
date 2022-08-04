@@ -2,7 +2,6 @@ package user_services_functions
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
@@ -218,9 +217,9 @@ func StartUserServices(
 		}
 	}
 
-	// Find if a container has already been associated with any of the registrations yet
+	// Check all services already have registrations attached
 	serviceGUIDs := map[service.ServiceGUID]bool{}
-	for guid := range services{
+	for guid := range services {
 		serviceGUIDs[guid] = true
 	}
 	preexistingServicesFilters := &service.ServiceFilters{
@@ -238,17 +237,19 @@ func StartUserServices(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user service objects and Kubernetes resources matching service GUIDs '%v'", serviceGUIDs)
 	}
-	if len(preexistingObjectsAndResources) == 0 {
-		return nil, nil, stacktrace.NewError("Couldn't find any service registrations matching service GUID '%v'", serviceGuid)
+	for guid, _ := range serviceGUIDs {
+		if _, found := preexistingObjectsAndResources[guid]; !found {
+			return nil, nil, stacktrace.NewError("Couldn't find any service registrations matching service GUID '%v'", guid)
+		}
 	}
-	if len(preexistingObjectsAndResources) > 1 {
+	if len(preexistingObjectsAndResources) > len(serviceGUIDs) {
 		// Should never happen because service GUIDs should be unique
-		return nil, nil, stacktrace.NewError("Found more than one service registration matching service GUID '%v'; this is a bug in Kurtosis", serviceGuid)
+		return nil, nil, stacktrace.NewError("Found more than one service registration matching service GUIDs; this is a bug in Kurtosis")
 	}
 
 	successfulStarts, failedStarts, err := runStartServicesOperationInParallel(
 		ctx,
-		"",
+		enclaveID,
 		services,
 		preexistingObjectsAndResources,
 		cliModeArgs,
@@ -267,7 +268,7 @@ func StartUserServices(
 // ====================================================================================================
 func runStartServicesOperationInParallel(
 	ctx context.Context,
-	enclaveNetworkId string,
+	enclaveID enclave.EnclaveID,
 	services map[service.ServiceGUID]*service.ServiceConfig,
 	servicesObjectsAndResources map[service.ServiceGUID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
 	cliModeArgs *shared_helpers.CliModeArgs,
@@ -279,27 +280,175 @@ func runStartServicesOperationInParallel(
 	map[service.ServiceGUID]error,
 	error,
 ) {
-	// create operations
+ 	operations := createStartServiceOperations(
+		 ctx,
+		 enclaveID,
+		 services,
+		 servicesObjectsAndResources,
+		 cliModeArgs,
+		 apiContainerModeArgs,
+		 engineServerModeArgs,
+		 kubernetesManager)
 
-	// call run operations in parallel
+	_, failedOps, successfulServicesData, err := operation_parallelizer.RunOperationsInParallel(operations)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to run start services operation in parallel.")
+	}
 
-	// deserialize data
+	successfulServices := map[service.ServiceGUID]service.Service{}
+	failedServices := map[service.ServiceGUID]error{}
 
-	// return
-	return nil, nil, nil
+	for id, data := range successfulServicesData {
+		serviceGUID := service.ServiceGUID(id)
+		serviceObj := data.Data.(service.Service)
+		successfulServices[serviceGUID] = serviceObj
+	}
+
+	for id, err := range failedOps {
+		failedServices[service.ServiceGUID(id)] = err
+	}
+
+	return successfulServices, failedServices, nil
 }
 
 func createStartServiceOperations(
 	ctx context.Context,
-	enclaveNetworkId string,
+	enclaveID enclave.EnclaveID,
 	services map[service.ServiceGUID]*service.ServiceConfig,
+	servicesObjectsAndResources map[service.ServiceGUID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
 	cliModeArgs *shared_helpers.CliModeArgs,
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
-	kubernetesManager *kubernetes_manager.KubernetesManager,
-	dockerManager *docker_manager.DockerManager) map[operation_parallelizer.OperationID]operation_parallelizer.Operation {
+	kubernetesManager *kubernetes_manager.KubernetesManager) map[operation_parallelizer.OperationID]operation_parallelizer.Operation {
+	operations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
 
-	// create each individual operation
+	for guid, config := range services {
+		guid := guid
+		config := config
+
+		var startServiceOp operation_parallelizer.Operation = func(dataChan chan operation_parallelizer.OperationData) error {
+			filesArtifactsExpansion := config.GetFilesArtifactsExpansion()
+			containerImageName := config.GetContainerImageName()
+			privatePorts := config.GetPrivatePorts()
+			entrypointArgs := config.GetEntrypointArgs()
+			cmdArgs := config.GetCmdArgs()
+			envVars := config.GetEnvVars()
+			cpuAllocationMillicpus := config.GetCPUAllocationMillicpus()
+			memoryAllocationMegabytes := config.GetMemoryAllocationMegabytes()
+
+			matchingObjectAndResources, found := servicesObjectsAndResources[guid]
+			if !found {
+				return stacktrace.NewError("Even though we pulled back some Kubernetes resources, no Kubernetes resources were available for requested service GUID '%v'; this is a bug in Kurtosis", guid)
+			}
+			kubernetesService := matchingObjectAndResources.KubernetesResources.Service
+			serviceObj := matchingObjectAndResources.Service
+			if serviceObj != nil {
+				return stacktrace.NewError("Cannot start service with GUID '%v' because the service has already been started previously", guid)
+			}
+
+			namespaceName := kubernetesService.GetNamespace()
+			serviceRegistrationObj := matchingObjectAndResources.ServiceRegistration
+
+			var podInitContainers []apiv1.Container
+			var podVolumes []apiv1.Volume
+			var userServiceContainerVolumeMounts []apiv1.VolumeMount
+			if filesArtifactsExpansion != nil {
+				podVolumes, userServiceContainerVolumeMounts, podInitContainers, _ = prepareFilesArtifactsExpansionResources(
+					filesArtifactsExpansion.ExpanderImage,
+					filesArtifactsExpansion.ExpanderEnvVars,
+					filesArtifactsExpansion.ExpanderDirpathsToServiceDirpaths,
+				)
+			}
+
+			objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
+			enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveID)
+
+			// Create the pod
+			podAttributes, err := enclaveObjAttributesProvider.ForUserServicePod(guid, serviceRegistrationObj.GetID(), privatePorts)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred getting attributes for new pod for service with GUID '%v'", guid)
+			}
+			podLabelsStrs := shared_helpers.GetStringMapFromLabelMap(podAttributes.GetLabels())
+			podAnnotationsStrs := shared_helpers.GetStringMapFromAnnotationMap(podAttributes.GetAnnotations())
+
+			podContainers, err := getUserServicePodContainerSpecs(
+				containerImageName,
+				entrypointArgs,
+				cmdArgs,
+				envVars,
+				privatePorts,
+				userServiceContainerVolumeMounts,
+				cpuAllocationMillicpus,
+				memoryAllocationMegabytes,
+			)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred creating the container specs for the user service pod with image '%v'", containerImageName)
+			}
+
+			podName := podAttributes.GetName().GetString()
+			createdPod, err := kubernetesManager.CreatePod(
+				ctx,
+				namespaceName,
+				podName,
+				podLabelsStrs,
+				podAnnotationsStrs,
+				podInitContainers,
+				podContainers,
+				podVolumes,
+				userServiceServiceAccountName,
+			)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred creating pod '%v' using image '%v'", podName, containerImageName)
+			}
+			shouldDestroyPod := true
+			defer func() {
+				if shouldDestroyPod {
+					if err := kubernetesManager.RemovePod(ctx, createdPod); err != nil {
+						logrus.Errorf("Starting service didn't complete successfully so we tried to remove the pod we created but doing so threw an error:\n%v", err)
+						logrus.Errorf("ACTION REQUIRED: You'll need to remove pod '%v' in '%v' manually!!!", podName, namespaceName)
+					}
+				}
+			}()
+
+			updatedService, undoServiceUpdateFunc, err := updateServiceWhenContainerStarted(ctx, namespaceName, kubernetesService, privatePorts, kubernetesManager)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred updating service '%v' to reflect its new ports: %+v", kubernetesService.GetName(), privatePorts)
+			}
+			shouldUndoServiceUpdate := true
+			defer func() {
+				if shouldUndoServiceUpdate {
+					undoServiceUpdateFunc()
+				}
+			}()
+
+			kubernetesResources := map[service.ServiceGUID]*shared_helpers.UserServiceKubernetesResources{
+				guid: {
+					Service: updatedService,
+					Pod:     createdPod,
+				},
+			}
+
+			convertedObjects, err := shared_helpers.GetUserServiceObjectsFromKubernetesResources(enclaveID, kubernetesResources)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred getting a service object from the Kubernetes service and newly-created pod")
+			}
+			objectsAndResources, found := convertedObjects[guid]
+			if !found {
+				return stacktrace.NewError(
+					"Successfully converted the Kubernetes service + pod representing a running service with GUID '%v' to a "+
+						"Kurtosis object, but couldn't find that key in the resulting map; this is a bug in Kurtosis",
+					guid,
+				)
+			}
+
+			dataChan <- operation_parallelizer.OperationData{ID: operation_parallelizer.OperationID(guid), Data: objectsAndResources.Service}
+
+			shouldDestroyPod = false
+			shouldUndoServiceUpdate = false
+			return nil
+		}
+		operations[operation_parallelizer.OperationID(guid)] = startServiceOp
+	}
 	return nil
 }
 
