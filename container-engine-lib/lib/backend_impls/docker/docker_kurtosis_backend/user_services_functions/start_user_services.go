@@ -358,7 +358,7 @@ func StartUserServices(
 		return nil, nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveID)
 	}
 
-	successfulStarts, failedStarts, err := RunStartServicesOperationInParallel(
+	successfulStarts, failedStarts, err := runStartServicesOperationInParallel(
 		ctx,
 		enclaveNetworkId,
 		services,
@@ -376,7 +376,7 @@ func StartUserServices(
 // ====================================================================================================
 //                       Private helper functions
 // ====================================================================================================
-func RunStartServicesOperationInParallel(
+func runStartServicesOperationInParallel(
 	ctx context.Context,
 	enclaveNetworkId string,
 	services map[service.ServiceGUID]*service.ServiceConfig,
