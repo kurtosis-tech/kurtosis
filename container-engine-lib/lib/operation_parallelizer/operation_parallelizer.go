@@ -1,6 +1,7 @@
 package operation_parallelizer
 
 import (
+	"errors"
 	"github.com/gammazero/workerpool"
 )
 
@@ -17,18 +18,44 @@ type operationResult struct {
 	resultErr error
 }
 
-type Operation func() error
+// Users can attach any data to this struct and downcast to their desired type when consuming this data.
+type OperationData struct {
+	ID OperationID
 
-func RunOperationsInParallel(operations map[OperationID]Operation) (map[OperationID]bool, map[OperationID]error) {
+	Data interface{}
+}
+
+var (
+	OperationDataInconsistencyError = errors.New(
+		"set of OperationIDs sent over the data channel is not 1:1 with set of OperationIDs of successful operations,"+
+		"this could mean two things: 1. an error occurred in operation logic. or 2. one of the assumptions was broken")
+)
+
+type Operation func(dataChan chan OperationData) error
+
+// In order to allow users to safely send and retrieve data in parallel operations, we gurantee that if err is nil, then
+//// all data returned come from successful operations.  To do that, we make the following assumptions:
+// 1. If data is sent through [dataChan] in an operation, the operation will send data in all cases of that operations logic.
+//	(meaning its not the case that data is not sent in some cases and not others)
+// 2. If any operation in [operations] sends data, then all operations send data. (meaning its not the case that one operation does send data and another does not)
+func RunOperationsInParallel(operations map[OperationID]Operation) (map[OperationID]bool, map[OperationID]error, map[OperationID]OperationData, error) {
 	workerPool := workerpool.New(maxNumConcurrentRequests)
 	resultsChan := make(chan operationResult, len(operations))
+	dataChan := make(chan OperationData, len(operations))
 
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// It's VERY important that we call a function to generate the lambda, rather than inlining a lambda,
+	// because if we don't then 'id' will be the same for all tasks (and it will be the
+	// value of the last iteration of the loop)
+	// https://medium.com/swlh/use-pointer-of-for-range-loop-variable-in-go-3d3481f7ffc9
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	for id, op := range operations {
-		workerPool.Submit(getWorkerTask(id, op, resultsChan))
+		workerPool.Submit(getWorkerTask(id, op, resultsChan, dataChan))
 	}
 
 	workerPool.StopWait()
 	close(resultsChan)
+	close(dataChan)
 
 	successfulOperationIDs := map[OperationID]bool{}
 	failedOperationIDs := map[OperationID]error{}
@@ -42,21 +69,50 @@ func RunOperationsInParallel(operations map[OperationID]Operation) (map[Operatio
 		}
 	}
 
-	return successfulOperationIDs, failedOperationIDs
+	data := map[OperationID]OperationData{}
+	for d := range dataChan {
+		data[d.ID] = d
+	}
+
+	// If data has been sent, make sure that data comes from successful operations
+	if len(data) > 0 {
+		dataIDs := map[OperationID]bool{}
+		for id, _ := range data {
+			dataIDs[id] = true
+		}
+		if !isDataOneToOneWithSuccessfulOps(dataIDs, successfulOperationIDs) {
+			// return success, failed, and, data chan operation anyways in case user still wants to consume
+			return successfulOperationIDs, failedOperationIDs, data, OperationDataInconsistencyError
+		}
+	}
+
+	return successfulOperationIDs, failedOperationIDs, data, nil
 }
 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// It's VERY important that we call a function to generate the lambda, rather than inlining a lambda,
-// because if we don't then 'dockerObjectId' will be the same for all tasks (and it will be the
-// value of the last iteration of the loop)
-// https://medium.com/swlh/use-pointer-of-for-range-loop-variable-in-go-3d3481f7ffc9
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-func getWorkerTask(id OperationID, operation Operation, resultsChan chan operationResult) func(){
+func getWorkerTask(id OperationID, operation Operation, resultsChan chan operationResult, dataChan chan OperationData) func(){
 	return func() {
-		operationResultErr := operation()
+		operationResultErr := operation(dataChan)
 		resultsChan <- operationResult{
 			id: id,
 			resultErr: operationResultErr,
 		}
 	}
 }
+
+// This is to ensure two things:
+//	1. If data is returned to the [dataChan], it comes from a successful operation, so the user does not consume data from failed operations.
+//  2. If an operation is successful and should have returned data, it does.
+func isDataOneToOneWithSuccessfulOps(successfulIDs map[OperationID]bool, dataIDs map[OperationID]bool) bool {
+	// Check if [dataIDs] is a subset of [successfulIDs]
+	for dataID := range dataIDs {
+		if _, found := successfulIDs[dataID]; !found {
+			return false
+		}
+	}
+	// Check if len of sets are equal (ensuring 1:1)
+	if len(successfulIDs) != len(dataIDs) {
+		return false
+	}
+	return true
+}
+
