@@ -280,15 +280,16 @@ func StartUserServices(
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 		publicPorts := config.GetPublicPorts()
 		privatePorts := config.GetPrivatePorts()
-		if len(publicPorts) != len(privatePorts) {
-			return nil, nil, stacktrace.NewError("The received private ports length and the public ports length are not equal for service with guid `%v`. Received '%v' private ports and '%v' public ports", guid, len(privatePorts), len(publicPorts))
-		}
-
-		for portId, privatePortSpec := range privatePorts {
-			if _, found := publicPorts[portId]; !found {
-				return nil, nil, stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v' for service with guid `%v`, but it was not found", portId, privatePortSpec.GetNumber(), guid)
+		if publicPorts != nil && len(publicPorts) > 0 {
+			if len(privatePorts) != len(publicPorts) {
+				return nil, nil, stacktrace.NewError("The received private ports length and the public ports length are not equal for service with guid `%v`. Received '%v' private ports and '%v' public ports", guid, len(privatePorts), len(publicPorts))
 			}
 
+			for portId, privatePortSpec := range privatePorts {
+				if _, found := publicPorts[portId]; !found {
+					return nil, nil, stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v' for service with guid `%v`, but it was not found", portId, privatePortSpec.GetNumber(), guid)
+				}
+			}
 		}
 	}
 	serviceRegistrationMutex.Lock()
