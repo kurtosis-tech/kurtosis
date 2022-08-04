@@ -388,8 +388,6 @@ func RunStartServicesOperationInParallel(
 	map[service.ServiceGUID]error,
 	error,
 ) {
-	serviceResultsChan := make(chan *service.Service)
-
 	operations := createStartServiceOperations(
 		ctx,
 		enclaveNetworkId,
@@ -397,32 +395,21 @@ func RunStartServicesOperationInParallel(
 		serviceRegistrations,
 		enclaveObjAttrsProvider,
 		freeIpAddrProvider,
-		serviceResultsChan,
 		dockerManager)
 
-	successfulOps, failedOps := operation_parallelizer.RunOperationsInParallel(operations)
+	_, failedOps, successfulServicesData, err := operation_parallelizer.RunOperationsInParallel(operations)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to run start services operation in parallel.")
+	}
 
 	successfulServices := map[service.ServiceGUID]service.Service{}
 	failedServices := map[service.ServiceGUID]error{}
 
-	for service := range serviceResultsChan {
-		reg := service.GetRegistration()
-		guid := reg.GetGUID()
-
-		opID := operation_parallelizer.OperationID(guid)
-		if _, ok := successfulOps[opID]; ok {
-			successfulServices[guid] = *service
-			delete(successfulOps, opID)
-		}
+	for id, data := range successfulServicesData {
+		serviceGUID := service.ServiceGUID(id)
+		serviceObj := data.Data.(service.Service)
+		successfulServices[serviceGUID] = serviceObj
 	}
-
-	// This means there was a mismatch in the sets successfulOps and services retrieved from serviceResultsChan
-	if len(successfulOps) == 0 {
-		return nil, nil, stacktrace.NewError(
-			"An error occurred retrieving service objects of successfully started services" +
-				"as service objects that were not a part of the set of successful operations were returned. This should not occur and is a bug in Kurtosis")
-	}
-
 
 	for id, err := range failedOps {
 		failedServices[service.ServiceGUID(id)] = err
@@ -438,7 +425,6 @@ func createStartServiceOperations(
 	serviceRegistrations map[service.ServiceGUID]*service.ServiceRegistration,
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
 	freeIpAddrProvider *lib.FreeIpAddrTracker,
-	serviceResultsChan chan *service.Service,
 	dockerManager *docker_manager.DockerManager) map[operation_parallelizer.OperationID]operation_parallelizer.Operation {
 	operations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
 
@@ -449,7 +435,7 @@ func createStartServiceOperations(
 		id := registration.GetID()
 		privateIpAddr := registration.GetPrivateIP()
 
-		var startServiceOp operation_parallelizer.Operation = func() error {
+		var startServiceOp operation_parallelizer.Operation = func(dataChan chan operation_parallelizer.OperationData) error {
 			filesArtifactsExpansion := config.GetFilesArtifactsExpansion()
 			containerImageName := config.GetContainerImageName()
 			privatePorts := config.GetPrivatePorts()
@@ -594,13 +580,14 @@ func createStartServiceOperations(
 				return stacktrace.Propagate(err, "An error occurred getting the public IP and ports from container '%v'", containerName)
 			}
 
-			serviceResultsChan <- service.NewService(
+			serviceObj := service.NewService(
 				registration,
 				container_status.ContainerStatus_Running,
 				privatePorts,
 				maybePublicIp,
-				maybePublicPortSpecs,
-			)
+				maybePublicPortSpecs)
+
+			dataChan <- operation_parallelizer.OperationData{ID: operation_parallelizer.OperationID(guid), Data: serviceObj}
 
 			shouldDeleteVolumes = false
 			shouldKillContainer = false
