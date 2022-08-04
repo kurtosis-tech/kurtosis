@@ -33,12 +33,12 @@ var (
 
 type Operation func(dataChan chan OperationData) error
 
-// In order to allow users to safely send and retrieve data in parallel operations, we gurantee that all data returned come from
-// successful operations. To do that, we make the following assumptions:
+// In order to allow users to safely send and retrieve data in parallel operations, we gurantee that if err is nil, then
+//// all data returned come from successful operations.  To do that, we make the following assumptions:
 // 1. If data is sent through [dataChan] in an operation, the operation will send data in all cases of that operations logic.
 //	(meaning its not the case that data is not sent in some cases and not others)
 // 2. If any operation in [operations] sends data, then all operations send data. (meaning its not the case that one operation does send data and another does not)
-func RunOperationsInParallel(operations map[OperationID]Operation) (map[OperationID]bool, map[OperationID]error, chan OperationData, error) {
+func RunOperationsInParallel(operations map[OperationID]Operation) (map[OperationID]bool, map[OperationID]error, map[OperationID]OperationData, error) {
 	workerPool := workerpool.New(maxNumConcurrentRequests)
 	resultsChan := make(chan operationResult, len(operations))
 	dataChan := make(chan OperationData, len(operations))
@@ -69,18 +69,24 @@ func RunOperationsInParallel(operations map[OperationID]Operation) (map[Operatio
 		}
 	}
 
+	data := map[OperationID]OperationData{}
+	for d := range dataChan {
+		data[d.ID] = d
+	}
+
 	// If data has been sent, make sure that data comes from successful operations
-	if len(dataChan) > 0 {
+	if len(data) > 0 {
 		dataIDs := map[OperationID]bool{}
-		for data := range dataChan {
-			dataIDs[data.ID] = true
+		for id, _ := range data {
+			dataIDs[id] = true
 		}
 		if !isDataOneToOneWithSuccessfulOps(dataIDs, successfulOperationIDs) {
-			return nil, nil, nil, OperationDataInconsistencyError
+			// return success, failed, and, data chan operation anyways in case user still wants to consume
+			return successfulOperationIDs, failedOperationIDs, data, OperationDataInconsistencyError
 		}
 	}
 
-	return successfulOperationIDs, failedOperationIDs, dataChan, nil
+	return successfulOperationIDs, failedOperationIDs, data, nil
 }
 
 func getWorkerTask(id OperationID, operation Operation, resultsChan chan operationResult, dataChan chan OperationData) func(){

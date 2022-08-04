@@ -173,8 +173,8 @@ func RegisterUserServices(
 	successfulRegistrations := map[service.ServiceID]*service.ServiceRegistration{}
 	failedRegistrations := map[service.ServiceID]error{}
 
-	for data := range successfulRegistrationData {
-		serviceID := service.ServiceID(data.ID)
+	for id, data := range successfulRegistrationData {
+		serviceID := service.ServiceID(id)
 		serviceRegistration := data.Data.(*service.ServiceRegistration)
 		successfulRegistrations[serviceID] = serviceRegistration
 	}

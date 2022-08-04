@@ -110,6 +110,7 @@ func TestOperationsInParallelUsingSharedVariablesReturnsCorrectResults(t *testin
 	require.Equal(t, 30, p) // p should equal three after all operations increase the counter 10 times
 }
 
+// We still test this case, however most users of RunOperationsInParallel should opt for using the [dataChan] that comes with the module
 func TestOperationsInParallelUsingSharedChannelReturnsCorrectResults(t *testing.T){
 	operationData := make(chan string, 3)
 	var sendDataInChannel Operation = func(_ chan OperationData) error {
@@ -137,8 +138,7 @@ func TestOperationsInParallelUsingSharedChannelReturnsCorrectResults(t *testing.
 }
 
 func TestOperationsInParallelUsingDeferFunctionsExecuteDeferCorrectly(t *testing.T){
-	operationData := make(chan int, 2)
-	var operationWithDeferError Operation = func(_ chan OperationData) error {
+	var operationWithDeferError Operation = func(dataChan chan OperationData) error {
 		var p int = 1
 		_ = 1 + p // just to make p used
 
@@ -146,24 +146,26 @@ func TestOperationsInParallelUsingDeferFunctionsExecuteDeferCorrectly(t *testing
 		defer func() {
 			if undo {
 				p = 3
-				operationData <- p
+				dataChan <- OperationData{ID: OperationID("first"), Data: p}
 			}
 		}()
 
 		return randomError
 	}
 
-	var operationWithDeferNoError Operation = func(_ chan OperationData) error {
-		p := 1
+	var operationWithDeferNoError Operation = func(dataChan chan OperationData) error {
+		var p int = 1
 		_ = 1 + p // just to make p used
 
 		undo := true
 		defer func() {
 			if undo {
 				p = 2
+				dataChan <- OperationData{ID: OperationID("second"), Data: p}
 			}
 		}()
 
+		undo = false
 		return nil
 	}
 
@@ -172,20 +174,47 @@ func TestOperationsInParallelUsingDeferFunctionsExecuteDeferCorrectly(t *testing
 		"second": operationWithDeferNoError,
 	}
 
-	success, failed, _, err := RunOperationsInParallel(operations)
-	require.NoError(t, err)
+	success, failed, data, err := RunOperationsInParallel(operations)
+	// should return error because a failed operation returned data, thus successful IDs and data IDs are not 1:1)
+	require.ErrorIs(t, err, OperationDataInconsistencyError)
 
 	numSucceeded := len(success)
 	numFailed := len(failed)
 
 	require.Equal(t, 1, numSucceeded)
 	require.Equal(t, 1, numFailed)
-	require.Equal(t, 1, len(operationData))
+	require.Equal(t, 1, len(data))
 
-	for opID, _ := range failed {
+	for opID, err := range failed {
 		require.Equal(t, "first", string(opID))
+		require.ErrorIs(t, err, randomError)
 
-		data :=<- operationData
-		require.Equal(t, 3, data)
+		dataVal, found := data[OperationID("first")]
+		require.True(t, found)
+		require.Equal(t, "first", string(dataVal.ID))
+		require.Equal(t, 3, dataVal.Data.(int))
 	}
 }
+
+func TestIsDataOneToOneWithSuccessfulOpsReturnsCorrectResult(t *testing.T){
+	successfulIDs:= map[OperationID]bool{
+		"first":  true,
+		"second": true,
+	}
+	dataIDs := map[OperationID]bool{
+		"first":  true,
+		"second": true,
+	}
+
+	// successfulIDs is not a subset of more data IDs, not 1:1
+	moreDataIDs := map[OperationID]bool{
+		"first": true,
+	}
+
+	require.True(t, isDataOneToOneWithSuccessfulOps(successfulIDs, dataIDs))
+	require.False(t, isDataOneToOneWithSuccessfulOps(successfulIDs, moreDataIDs))
+}
+// add test to test data channel
+
+// test that is returns data correctly
+// test that it returns an error when assumptions are broken
