@@ -157,36 +157,26 @@ func RegisterUserServices(
 	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
 
-	serviceRegistrationsChan := make(chan *service.ServiceRegistration, len(serviceIds))
 	registerServicesOperations := createRegisterUserServiceOperations(
 		ctx,
 		enclaveId,
 		serviceIds,
 		namespaceName,
 		enclaveObjAttributesProvider,
-		serviceRegistrationsChan,
 		kubernetesManager)
 
-	successfulOps, failedOps := operation_parallelizer.RunOperationsInParallel(registerServicesOperations)
+	_, failedOps, successfulRegistrationData, err := operation_parallelizer.RunOperationsInParallel(registerServicesOperations)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to run register services operations in parallel.")
+	}
 
 	successfulRegistrations := map[service.ServiceID]*service.ServiceRegistration{}
 	failedRegistrations := map[service.ServiceID]error{}
 
-	for serviceReg := range serviceRegistrationsChan {
-		serviceID := serviceReg.GetID()
-		opID := operation_parallelizer.OperationID(serviceID)
-
-		if _, found := successfulOps[opID]; found {
-			successfulRegistrations[serviceID] = serviceReg
-			delete(successfulOps, opID)
-		}
-	}
-
-	// This means there was a mismatch in the set successfulOps and serviceRegistrations retrieved from serviceRegistrationsChan
-	if len(successfulOps) == 0 {
-		return nil, nil, stacktrace.NewError(
-			"An error occurred retrieving service registrations of successfully registered services" +
-				"as serviceRegistrations that were not successful were returned. This should not occur and is a bug in Kurtosis")
+	for data := range successfulRegistrationData {
+		serviceID := service.ServiceID(data.ID)
+		serviceRegistration := data.Data.(*service.ServiceRegistration)
+		successfulRegistrations[serviceID] = serviceRegistration
 	}
 
 	for opID, err := range failedOps {
@@ -205,7 +195,6 @@ func createRegisterUserServiceOperations(
 	allServiceIds map[service.ServiceID]bool,
 	namespaceName string,
 	enclaveObjAttributesProvider object_attributes_provider.KubernetesEnclaveObjectAttributesProvider,
-	serviceRegistrationsChan chan *service.ServiceRegistration,
 	kubernetesManager *kubernetes_manager.KubernetesManager) (map[operation_parallelizer.OperationID]operation_parallelizer.Operation) {
 	operations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
 
@@ -216,7 +205,7 @@ func createRegisterUserServiceOperations(
 		// so at the time of calling the function(after the loop has finished), the iteration variable would refer to the last iteration
 		serviceId := serviceId
 
-		var registerServiceOp operation_parallelizer.Operation = func() error {
+		var registerServiceOp operation_parallelizer.Operation = func(dataChan chan operation_parallelizer.OperationData) error {
 			serviceGuidStr, err := uuid_generator.GenerateUUIDString()
 			if err != nil {
 				return stacktrace.Propagate(err, "An error occurred generating a UUID to use for the service GUID")
@@ -302,7 +291,11 @@ func createRegisterUserServiceOperations(
 				)
 			}
 
-			serviceRegistrationsChan <- objectsAndResources.ServiceRegistration
+			dataChan <- operation_parallelizer.OperationData{
+				ID: operation_parallelizer.OperationID(serviceId),
+				Data: objectsAndResources.ServiceRegistration,
+			}
+
 
 			shouldDeleteService = false
 			return nil

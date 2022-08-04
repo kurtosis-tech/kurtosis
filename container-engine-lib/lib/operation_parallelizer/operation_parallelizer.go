@@ -1,6 +1,7 @@
 package operation_parallelizer
 
 import (
+	"errors"
 	"github.com/gammazero/workerpool"
 )
 
@@ -17,18 +18,37 @@ type operationResult struct {
 	resultErr error
 }
 
-type Operation func() error
+// Users can attach any data to this struct and downcast to their desired type when consuming this data.
+type OperationData struct {
+	ID OperationID
 
-func RunOperationsInParallel(operations map[OperationID]Operation) (map[OperationID]bool, map[OperationID]error) {
+	Data interface{}
+}
+
+var (
+	OperationDataInconsistencyError = errors.New(
+		"set of OperationIDs sent over the data channel is not 1:1 with set of OperationIDs of successful operations,"+
+		"this could mean two things: 1. an error occurred in operation logic. or 2. one of the assumptions was broken")
+)
+
+type Operation func(dataChan chan OperationData) error
+
+// In order to allow users to gurantee that all data returned came from successful operations, we make the following assumptions:
+// 1. If data is sent through [dataChan] in an operation, the operation will send data in all cases of that operations logic.
+//	(meaning its not the case that data is not sent in some cases and not others)
+// 2. If any op in [operations] send data, then all operations send data. (meaning its not the case that one operation does send data and another does not)
+func RunOperationsInParallel(operations map[OperationID]Operation) (map[OperationID]bool, map[OperationID]error, chan OperationData, error) {
 	workerPool := workerpool.New(maxNumConcurrentRequests)
 	resultsChan := make(chan operationResult, len(operations))
+	dataChan := make(chan OperationData, len(operations))
 
 	for id, op := range operations {
-		workerPool.Submit(getWorkerTask(id, op, resultsChan))
+		workerPool.Submit(getWorkerTask(id, op, resultsChan, dataChan))
 	}
 
 	workerPool.StopWait()
 	close(resultsChan)
+	close(dataChan)
 
 	successfulOperationIDs := map[OperationID]bool{}
 	failedOperationIDs := map[OperationID]error{}
@@ -42,7 +62,18 @@ func RunOperationsInParallel(operations map[OperationID]Operation) (map[Operatio
 		}
 	}
 
-	return successfulOperationIDs, failedOperationIDs
+	// If data has been sent, make sure that data is one to one with successful ops
+	if len(dataChan) > 0 {
+		dataIDs := map[OperationID]bool{}
+		for data := range dataChan {
+			dataIDs[data.ID] = true
+		}
+		if !isDataOneToOneWithSuccessfulOps(dataIDs, successfulOperationIDs) {
+			return nil, nil, nil, OperationDataInconsistencyError
+		}
+	}
+
+	return successfulOperationIDs, failedOperationIDs, dataChan, nil
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -51,12 +82,30 @@ func RunOperationsInParallel(operations map[OperationID]Operation) (map[Operatio
 // value of the last iteration of the loop)
 // https://medium.com/swlh/use-pointer-of-for-range-loop-variable-in-go-3d3481f7ffc9
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-func getWorkerTask(id OperationID, operation Operation, resultsChan chan operationResult) func(){
+func getWorkerTask(id OperationID, operation Operation, resultsChan chan operationResult, dataChan chan OperationData) func(){
 	return func() {
-		operationResultErr := operation()
+		operationResultErr := operation(dataChan)
 		resultsChan <- operationResult{
 			id: id,
 			resultErr: operationResultErr,
 		}
 	}
 }
+
+// This is to ensure two things:
+//	1. If data is returned to the dataChan, it comes from a successful operation, so the user does not consume data from failed operations.
+//  2. If an operation is successful and should have returned data, it does.
+func isDataOneToOneWithSuccessfulOps(successfulIDs map[OperationID]bool, dataIDs map[OperationID]bool) bool {
+	// Check if [dataIDs] is a subset of [successfulIDs]
+	for dataID := range dataIDs {
+		if _, found := successfulIDs[dataID]; !found {
+			return false
+		}
+	}
+	// Check if len of sets are equal (ensuring 1:1)
+	if len(successfulIDs) != len(dataIDs) {
+		return false
+	}
+	return true
+}
+
