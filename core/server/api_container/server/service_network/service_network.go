@@ -214,6 +214,19 @@ func (network ServiceNetwork) RegisterService(
 	return userService.GetPrivateIP(), nil
 }
 
+// Registers a service for use with the network (creating the IPs and so forth), but doesn't start it
+// If the partition ID is empty, registers the service with the default partition
+func (network ServiceNetwork) RegisterServices(
+	ctx context.Context,
+	serviceIDs map[service.ServiceID]bool,
+	partitionID service_network_types.PartitionID,
+) (net.IP, error) {
+	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	return nil, nil
+}
+
 // TODO add tests for this
 /*
 Starts a previously-registered but not-started service by creating it in a container
@@ -336,6 +349,22 @@ func (network *ServiceNetwork) StartService(
 	}
 
 	return userService, nil
+}
+
+//Returns:
+//Mapping of port-used-by-service -> port-on-the-Docker-host-machine where the user can make requests to the port
+//to access the port. If a used port doesn't have a host port bound, then the value will be nil.
+func (network *ServiceNetwork) StartServices(
+	ctx context.Context,
+	services map[service.ServiceID]*service.ServiceConfig,
+) (
+	resultService *service.Service,
+	resultErr error,
+) {
+	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	return nil, nil
 }
 
 func (network *ServiceNetwork) RemoveService(
