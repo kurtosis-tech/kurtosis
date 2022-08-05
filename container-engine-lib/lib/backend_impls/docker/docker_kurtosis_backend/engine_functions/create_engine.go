@@ -24,9 +24,13 @@ const (
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
 
-	// We leave a relatively short timeout so that the engine gets a chance to gracefully clean up, but the
-	// user isn't stuck waiting on a long-running operation when they tell the engine to stop
-	engineStopTimeout = 1 * time.Second
+	// We use the FluentBit image created by Grafana because it comes with Loki output plugin pre-installed, more here: https://grafana.com/docs/loki/latest/clients/fluentbit/#docker
+	fluentbitContainerImage = "grafana/fluent-bit-plugin-loki:main"
+
+	// The por for receiving the container logs, check more here: https://docs.docker.com/config/containers/logging/fluentd/#fluentd-address and here: https://docs.fluentbit.io/manual/pipeline/outputs/forward
+	fluentbitForwardPortId              = "forward"
+	fluentbitForwardPortNumber   uint16 = 24224
+	fluentbitForwardPortProtocol        = port_spec.PortProtocol_TCP
 )
 
 func CreateEngine(
@@ -197,7 +201,64 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating an engine object from container with GUID '%v'", containerId)
 	}
 
+	err := createCentralizedLogsComponents()
+
 	shouldKillEngineContainer = false
 	return result, nil
 }
 
+// ====================================================================================================
+// 									   Private helper methods
+// ====================================================================================================
+func createCentralizedLogsComponents(
+	engineGuid engine.EngineGUID,
+	targetNetworkId string,
+	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
+) error {
+
+}
+
+func createLogsCollectorContainer(
+	engineGuid engine.EngineGUID,
+	targetNetworkId string,
+	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
+) error {
+	privateFluentBitForwardPortSpec, err := port_spec.NewPortSpec(fluentbitForwardPortNumber, fluentbitForwardPortProtocol)
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred creating the logs collector's private forward port spec object using number '%v' and protocol '%v'",
+			fluentbitForwardPortNumber,
+			fluentbitForwardPortProtocol,
+		)
+	}
+
+	logsCollectorAttrs, err := objAttrsProvider.ForLogsCollectorServer(
+		engineGuid,
+		fluentbitForwardPortId,
+		privateFluentBitForwardPortSpec,
+	)
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred getting the logs collector container attributes using GUID '%v', the forward port num '%v'",
+			engineGuid,
+			fluentbitForwardPortNumber,
+		)
+	}
+
+
+	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
+		fluentbitContainerImage,
+		logsCollectorAttrs.GetName().GetString(),
+		targetNetworkId,
+	).WithEnvironmentVariables(
+		envVars,
+	).WithBindMounts(
+		bindMounts,
+	).WithUsedPorts(
+		usedPorts,
+	).WithLabels(
+		labelStrs,
+	).Build()
+}

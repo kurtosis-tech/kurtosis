@@ -16,6 +16,7 @@ import (
 
 const (
 	engineServerNamePrefix                   = "kurtosis-engine"
+	logsCollectorServerNamePrefix            = "kurtosis-logs-collector"
 )
 
 type DockerObjectAttributesProvider interface {
@@ -27,6 +28,11 @@ type DockerObjectAttributesProvider interface {
 		grpcProxyPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
 	ForEnclave(enclaveId enclave.EnclaveID) (DockerEnclaveObjectAttributesProvider, error)
+	ForLogsCollectorServer(
+		guid engine.EngineGUID,
+		forwardPortId string,
+		forwardPortSpec *port_spec.PortSpec,
+	) (DockerObjectAttributes, error)
 }
 
 func GetDockerObjectAttributesProvider() DockerObjectAttributesProvider {
@@ -100,4 +106,53 @@ func (provider *dockerObjectAttributesProviderImpl) ForEnclave(enclaveId enclave
 	}
 
 	return newDockerEnclaveObjectAttributesProviderImpl(enclaveIdLabelValue), nil
+}
+
+func (provider *dockerObjectAttributesProviderImpl) ForLogsCollectorServer(
+	guid engine.EngineGUID,
+	forwardPortId string,
+	forwardPortSpec *port_spec.PortSpec,
+) (DockerObjectAttributes, error) {
+	nameStr := strings.Join(
+		[]string{
+			logsCollectorServerNamePrefix,
+			string(guid),
+		},
+		objectNameElementSeparator,
+	)
+	name, err := docker_object_name.CreateNewDockerObjectName(nameStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", nameStr)
+	}
+
+	idLabelValue, err := docker_label_value.CreateNewDockerLabelValue(string(guid))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine GUID Docker label from string '%v'", guid)
+	}
+	guidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(string(guid))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine GUID Docker label from string '%v'", guid)
+	}
+
+	usedPorts := map[string]*port_spec.PortSpec{
+		forwardPortId: forwardPortSpec,
+	}
+	serializedPortsSpec, err := docker_port_spec_serializer.SerializePortSpecs(usedPorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred serializing the following engine server ports to a string for storing in the ports label: %+v", usedPorts)
+	}
+
+	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
+		label_key_consts.ContainerTypeDockerLabelKey: label_value_consts.EngineContainerTypeDockerLabelValue,
+		label_key_consts.PortSpecsDockerLabelKey:     serializedPortsSpec,
+		label_key_consts.IDDockerLabelKey:            idLabelValue,
+		label_key_consts.GUIDDockerLabelKey:          guidLabelValue,
+	}
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
+	}
+
+	return objectAttributes, nil
 }
