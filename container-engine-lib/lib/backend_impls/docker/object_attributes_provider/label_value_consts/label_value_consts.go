@@ -11,13 +11,15 @@ const (
 	//
 	//   If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
 	//
-	appIdLabelValueStr               = "kurtosis"
-	engineContainerTypeLabelValueStr = "kurtosis-engine"
+	appIdLabelValueStr                      = "kurtosis"
+	engineContainerTypeLabelValueStr        = "kurtosis-engine"
+	logsDatabaseContainerTypeLabelValueStr  = "kurtosis-logs-db"
+	logsCollectorContainerTypeLabelValueStr = "kurtosis-logs-collector"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	apiContainerContainerTypeLabelValueStr          = "api-container"
-	userServiceContainerTypeLabelValueStr           = "user-service"
-	networkingSidecarContainerTypeLabelValueStr     = "networking-sidecar"
+	apiContainerContainerTypeLabelValueStr           = "api-container"
+	userServiceContainerTypeLabelValueStr            = "user-service"
+	networkingSidecarContainerTypeLabelValueStr      = "networking-sidecar"
 	moduleContainerTypeLabelValueStr                 = "module"
 	filesArtifactsExpanderContainerTypeLabelValueStr = "files-artifacts-expander"
 
@@ -36,8 +38,9 @@ const (
 //
 var AppIDDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(appIdLabelValueStr)
 var EngineContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(engineContainerTypeLabelValueStr)
+var LogsDatabaseTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(logsDatabaseContainerTypeLabelValueStr)
+var LogsCollectorTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(logsCollectorContainerTypeLabelValueStr)
 var ModuleContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(moduleContainerTypeLabelValueStr)
-
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 var APIContainerContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(apiContainerContainerTypeLabelValueStr)
