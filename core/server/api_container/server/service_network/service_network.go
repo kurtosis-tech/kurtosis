@@ -253,11 +253,11 @@ func (network ServiceNetwork) RegisterServices(
 		return nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", serviceIDs)
 	}
 	if len(failedServices) > 0 {
-		return nil, stacktrace.Propagate(err, "An error occurred stopping services '%v'", failedServices)
+		return nil, stacktrace.Propagate(err, "Failed to register services with IDs '%v'", failedServices)
 	}
-	shouldDestroyService := true
+	shouldDestroyServices := true
 	defer func() {
-		if shouldDestroyService {
+		if shouldDestroyServices {
 			for _, serviceRegistration:= range successfulServices {
 				network.destroyServiceBestEffortAfterRegistrationFailure(serviceRegistration.GetGUID())
 			}
@@ -266,7 +266,7 @@ func (network ServiceNetwork) RegisterServices(
 
 	serviceIPs := map[*net.IP]bool{}
 	shouldRemoveFromServiceMap := true
-	shouldRemoveTopologyAddition := true
+	shouldRemoveTopologyAdditions := true
 	for serviceID, serviceRegistration := range successfulServices {
 		network.registeredServiceInfo[serviceID] = serviceRegistration
 		defer func() {
@@ -284,7 +284,7 @@ func (network ServiceNetwork) RegisterServices(
 			)
 		}
 		defer func() {
-			if shouldRemoveTopologyAddition {
+			if shouldRemoveTopologyAdditions {
 				network.topology.RemoveService(serviceID)
 			}
 		}()
@@ -293,9 +293,9 @@ func (network ServiceNetwork) RegisterServices(
 		serviceIPs[&ip] = true
 	}
 
-	shouldDestroyService = false
+	shouldDestroyServices = false
 	shouldRemoveFromServiceMap = false
-	shouldRemoveTopologyAddition = false
+	shouldRemoveTopologyAdditions = false
 	return serviceIPs, nil
 }
 
