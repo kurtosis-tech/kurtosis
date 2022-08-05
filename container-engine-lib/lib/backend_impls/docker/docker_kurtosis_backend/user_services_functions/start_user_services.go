@@ -403,7 +403,7 @@ func runStartServiceOperationsInParallel(
 			dockerManager)
 	}
 
-	successfulServicesObjs, failedOps := operation_parallelizer.RunOperationsInParallel(operations)
+	successfulServicesObjs, failedOperations := operation_parallelizer.RunOperationsInParallel(operations)
 
 	successfulServices := map[service.ServiceGUID]service.Service{}
 	failedServices := map[service.ServiceGUID]error{}
@@ -417,7 +417,7 @@ func runStartServiceOperationsInParallel(
 		successfulServices[serviceGUID] = serviceObj
 	}
 
-	for id, err := range failedOps {
+	for id, err := range failedOperations {
 		serviceGUID := service.ServiceGUID(id)
 		failedServices[serviceGUID] = err
 	}
