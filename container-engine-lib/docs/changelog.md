@@ -3,19 +3,19 @@
 #### Breaking Changes
 * Move all `docker.DockerKurtosisBackend` functionality to `docker_kurtosis_backend` module
   * Users will need to replace their `github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker` import for
-`github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend`
+`github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend` (same with corresponding `kubernetes` packages)
 * Move all functions in `DockerKurtosisBackend` related to user services to `user_service_functions` module
   * Users will need to replace their `github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker` import for
-`github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend`
+`github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend` (same with corresponding `kubernetes` packages)
 * Move all `kubernetes.KubernetesKurtosisBackend` functionality to `kubernetes_kurtosis_backend` module
   * Users will need to replace their `github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes` import for
-`github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend`
+`github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend` (same with corresponding `kubernetes` packages)
 * Move all functions in `KubernetesKurtosisBackend` related to user services to `user_service_functions` module
   * Users will need to replace their `github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes` import for
-`github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend`
+`github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend` (same with corresponding `kubernetes` packages)
 * Move `ServiceConfig` and `FilesArtifactsExpansion` out of `backend_interface` module into respective files in `objects` module
   * Users will need to replace their `github.com/kurtosis-tech/container-engine-lib/lib/backend_interface` import for `ServiceConfig` 
-and `FilesArtifactsExpansion` to be `github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service` 
+and `FilesArtifactsExpansion` to be `github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service` (same with corresponding `kubernetes` packages)
 and `github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion` respectively
 
 ### Changes
@@ -23,6 +23,7 @@ and `github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects
 * Implement `RegisterUserServices` in `DockerKurtosisBackend`
 * Implement `RunOperationInParallel` module to abstract common use case of executing multiple operations and receiving successful and failed operations
 * Implement `RegisterUserServices` in `KubernetesKurtosisBackend`
+* Implement `StartUserServices` in `DockerKurtosisBackend`
 
 # 0.33.1
 ### Features
