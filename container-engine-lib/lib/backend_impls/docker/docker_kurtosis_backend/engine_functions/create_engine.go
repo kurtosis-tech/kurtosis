@@ -25,7 +25,7 @@ const (
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
 
 	// We use the FluentBit image created by Grafana because it comes with Loki output plugin pre-installed, more here: https://grafana.com/docs/loki/latest/clients/fluentbit/#docker
-	fluentbitContainerImage = "grafana/fluent-bit-plugin-loki:main"
+	fluentbitContainerImage = "grafana/fluent-bit-plugin-loki:main-19c7315-amd64"
 
 	// The por for receiving the container logs, check more here: https://docs.docker.com/config/containers/logging/fluentd/#fluentd-address and here: https://docs.fluentbit.io/manual/pipeline/outputs/forward
 	fluentbitForwardPortId              = "forward"
@@ -216,6 +216,22 @@ func createCentralizedLogsComponents(
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 ) error {
 
+}
+
+func createLogsDatabaseContainer(
+	engineGuid engine.EngineGUID,
+	targetNetworkId string,
+	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
+) error {
+	privateLokiHttpPortSpec, err := port_spec.NewPortSpec(fluentbitForwardPortNumber, fluentbitForwardPortProtocol)
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred creating the logs collector's private forward port spec object using number '%v' and protocol '%v'",
+			fluentbitForwardPortNumber,
+			fluentbitForwardPortProtocol,
+		)
+	}
 }
 
 func createLogsCollectorContainer(
