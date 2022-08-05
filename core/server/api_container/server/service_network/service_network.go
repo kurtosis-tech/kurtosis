@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-core/files_artifacts_expander/args"
@@ -723,7 +724,7 @@ func (network *ServiceNetwork) startService(
 	resultUserService *service.Service,
 	resultErr error,
 ) {
-	var filesArtifactsExpansion *backend_interface.FilesArtifactsExpansion
+	var filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion
 	if len(filesArtifactUuidsToMountpoints) > 0 {
 		usedArtifactUuidSet := map[enclave_data_directory.FilesArtifactUUID]bool{}
 		for artifactUuid := range filesArtifactUuidsToMountpoints {
@@ -762,7 +763,7 @@ func (network *ServiceNetwork) startService(
 			network.apiContainerVersion,
 		)
 
-		filesArtifactsExpansion = &backend_interface.FilesArtifactsExpansion{
+		filesArtifactsExpansion = &files_artifacts_expansion.FilesArtifactsExpansion{
 			ExpanderImage:                     expanderImageAndTag,
 			ExpanderEnvVars:                   expanderEnvVars,
 			ExpanderDirpathsToServiceDirpaths: expanderDirpathToUserServiceDirpathMap,
