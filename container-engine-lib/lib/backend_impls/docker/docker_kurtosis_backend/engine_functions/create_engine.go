@@ -27,14 +27,7 @@ const (
 	lokiHttpApiPortId              = "http"
 	lokiHttpApiPortNumber   uint16 = 3100 // Default Loki HTTP API port number, more here: https://grafana.com/docs/loki/latest/api/
 	lokiHttpApiPortProtocol        = port_spec.PortProtocol_TCP
-
-	// We use the FluentBit image created by Grafana because it comes with Loki output plugin pre-installed, more here: https://grafana.com/docs/loki/latest/clients/fluentbit/#docker
-	fluentbitContainerImage = "grafana/fluent-bit-plugin-loki:main-19c7315-amd64"
-
-	// The por for receiving the container logs, check more here: https://docs.docker.com/config/containers/logging/fluentd/#fluentd-address and here: https://docs.fluentbit.io/manual/pipeline/outputs/forward
-	fluentbitForwardPortId              = "forward"
-	fluentbitForwardPortNumber   uint16 = 24224
-	fluentbitForwardPortProtocol        = port_spec.PortProtocol_TCP
+	lokiDefaultDirpath = "/loki"
 )
 
 func CreateEngine(
@@ -205,25 +198,51 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating an engine object from container with GUID '%v'", containerId)
 	}
 
-	err := createCentralizedLogsComponents()
+	killLogsDatabaseContainerFunc, err := createCentralizedLogsComponents(
+		ctx,
+		engineGuid,
+		targetNetworkId,
+		objAttrsProvider,
+		dockerManager,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the centralized logs components for the engine with GUID '%v' and network ID '%v'", engineGuid, targetNetworkId)
+	}
+	shouldKillLogsDatabaseContainer := true
+	defer func() {
+		if shouldKillLogsDatabaseContainer {
+			killLogsDatabaseContainerFunc()
+		}
+	}()
 
 	shouldKillEngineContainer = false
+	shouldKillLogsDatabaseContainer = false
 	return result, nil
 }
 
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-//TODO we can run it in parallel after the network creation
-//TODO and we can wait for the result at the end
+//TODO we can run it in parallel after the network creation, and we can wait before returnin the EngineInfo object
 func createCentralizedLogsComponents(
 	ctx context.Context,
 	engineGuid engine.EngineGUID,
 	targetNetworkId string,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
-) error {
+) (func(), error) {
+	killLogsDatabaseContainerFunc, err := createLogsDatabaseContainer(
+		ctx,
+		engineGuid,
+		targetNetworkId,
+		objAttrsProvider,
+		dockerManager,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database container")
+	}
 
+	return killLogsDatabaseContainerFunc, nil
 }
 
 func createLogsDatabaseContainer(
@@ -271,17 +290,28 @@ func createLogsDatabaseContainer(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
+	logsDbVolumeName, err := objAttrsProvider.ForEnclaveDataVolume(engineGuid)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database volume for engine with GUID '%v'", engineGuid)
+	}
+
+	volumeMounts := map[string]string{
+		logsDbVolumeName.GetName().GetString(): lokiDefaultDirpath,
+	}
+
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		lokiContainerImage,
 		logsDatabaseAttrs.GetName().GetString(),
 		targetNetworkId,
 	).WithUsedPorts(
 		usedPorts,
+	).WithVolumeMounts(
+		volumeMounts,
 	).WithLabels(
 		labelStrs,
 	).Build()
 
-	containerId, hostMachinePortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	containerId, _, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred starting the logs database container")
 	}
@@ -299,49 +329,4 @@ func createLogsDatabaseContainer(
 	}
 
 	return killContainerFunc, nil
-}
-
-func createLogsCollectorContainer(
-	engineGuid engine.EngineGUID,
-	targetNetworkId string,
-	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
-) error {
-	privateFluentBitForwardPortSpec, err := port_spec.NewPortSpec(fluentbitForwardPortNumber, fluentbitForwardPortProtocol)
-	if err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred creating the logs collector's private forward port spec object using number '%v' and protocol '%v'",
-			fluentbitForwardPortNumber,
-			fluentbitForwardPortProtocol,
-		)
-	}
-
-	logsCollectorAttrs, err := objAttrsProvider.ForLogsCollectorServer(
-		engineGuid,
-		fluentbitForwardPortId,
-		privateFluentBitForwardPortSpec,
-	)
-	if err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred getting the logs collector container attributes using GUID '%v', the forward port num '%v'",
-			engineGuid,
-			fluentbitForwardPortNumber,
-		)
-	}
-
-
-	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
-		fluentbitContainerImage,
-		logsCollectorAttrs.GetName().GetString(),
-		targetNetworkId,
-	).WithEnvironmentVariables(
-		envVars,
-	).WithBindMounts(
-		bindMounts,
-	).WithUsedPorts(
-		usedPorts,
-	).WithLabels(
-		labelStrs,
-	).Build()
 }
