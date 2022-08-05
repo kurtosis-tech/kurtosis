@@ -433,11 +433,11 @@ func createStartServiceOperation(
 	enclaveNetworkId string,
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
 	freeIpAddrProvider *lib.FreeIpAddrTracker,
-	dockerManager *docker_manager.DockerManager) func() (interface{}, error) {
+	dockerManager *docker_manager.DockerManager) operation_parallelizer.Operation {
 	id := serviceRegistration.GetID()
 	privateIpAddr := serviceRegistration.GetPrivateIP()
 
-	var startServiceOp operation_parallelizer.Operation = func() (interface{}, error) {
+	return func() (interface{}, error) {
 		filesArtifactsExpansion := serviceConfig.GetFilesArtifactsExpansion()
 		containerImageName := serviceConfig.GetContainerImageName()
 		privatePorts := serviceConfig.GetPrivatePorts()
@@ -593,5 +593,4 @@ func createStartServiceOperation(
 		shouldKillContainer = false
 		return serviceObj, nil
 	}
-	return startServiceOp
 }
