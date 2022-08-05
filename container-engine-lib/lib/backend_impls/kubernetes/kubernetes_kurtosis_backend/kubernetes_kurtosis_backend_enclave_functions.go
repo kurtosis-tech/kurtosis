@@ -115,58 +115,6 @@ func (backend KubernetesKurtosisBackend) CreateEnclave(
 		}
 	}()
 
-<<<<<<< HEAD:lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/kubernetes_kurtosis_backend_enclave_functions.go
-=======
-	enclaveDataVolumeAttrs, err := enclaveObjAttrsProvider.ForEnclaveDataPersistentVolumeClaim()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave data volume attributes for the enclave with ID '%v'", enclaveId)
-	}
-
-	persistentVolumeClaimName := enclaveDataVolumeAttrs.GetName().GetString()
-	persistentVolumeClaimLabels := getStringMapFromLabelMap(enclaveDataVolumeAttrs.GetLabels())
-	persistentVolumeClaimAnnotations := getStringMapFromAnnotationMap(enclaveDataVolumeAttrs.GetAnnotations())
-
-	foundVolumes, err := backend.kubernetesManager.GetPersistentVolumeClaimsByLabels(ctx, enclaveNamespaceName, persistentVolumeClaimLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave data volumes matching labels '%+v'", persistentVolumeClaimLabels)
-	}
-	if len(foundVolumes.Items) > 0 {
-		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because one or more enclave data volumes for that enclave already exists", enclaveId)
-	}
-
-	persistentVolumeClaim, err := backend.kubernetesManager.CreatePersistentVolumeClaim(ctx,
-		enclaveNamespaceName,
-		persistentVolumeClaimName,
-		persistentVolumeClaimLabels,
-		persistentVolumeClaimAnnotations,
-		enclaveDataVolumeSizeInMegabytes,
-		enclaveDataVolumeStorageClass,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err,
-			"Failed to create persistent volume claim in enclave '%v' with name '%v', size '%v', and storage class name '%v'",
-			enclaveNamespaceName,
-			persistentVolumeClaimName,
-			enclaveDataVolumeSizeInMegabytes,
-			enclaveDataVolumeStorageClass,
-		)
-	}
-	shouldDeleteVolume := true
-	defer func() {
-		if shouldDeleteVolume {
-			if err := backend.kubernetesManager.RemovePersistentVolumeClaim(teardownContext, persistentVolumeClaim); err != nil {
-				logrus.Errorf(
-					"Creating the enclave didn't complete successfully, so we tried to delete enclave persistent volume claim '%v' " +
-						"that we created but an error was thrown:\n%v",
-					persistentVolumeClaimName,
-					err,
-				)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove persistent volume claim with name '%v'!!!!!!!", persistentVolumeClaimName)
-			}
-		}
-	}()
-
->>>>>>> 52f3d95 (Fix compile breaks):lib/backend_impls/kubernetes/kubernetes_kurtosis_backend_enclave_functions.go
 	enclaveResources := &enclaveKubernetesResources{
 		namespace: enclaveNamespace,
 		pods: []apiv1.Pod{},
