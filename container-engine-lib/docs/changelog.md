@@ -24,6 +24,7 @@ and `github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects
 * Implement `RegisterUserServices` in `DockerKurtosisBackend`
 * Implement `RegisterUserServices` in `KubernetesKurtosisBackend`
 * Implement `StartUserServices` in `DockerKurtosisBackend`
+* Implement BulkAPI in `MetricsReportingKurtosisBackend`
 
 # 0.33.1
 ### Features
