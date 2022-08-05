@@ -214,17 +214,89 @@ func (network ServiceNetwork) RegisterService(
 	return userService.GetPrivateIP(), nil
 }
 
-// Registers a service for use with the network (creating the IPs and so forth), but doesn't start it
-// If the partition ID is empty, registers the service with the default partition
+// Registers services for use within the network (creating the IPs and so forth), but doesn't start them
+// If the partition ID is empty, registers the services with the default partition
 func (network ServiceNetwork) RegisterServices(
 	ctx context.Context,
 	serviceIDs map[service.ServiceID]bool,
 	partitionID service_network_types.PartitionID,
-) (net.IP, error) {
+) (map[*net.IP]bool, error) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
-	return nil, nil
+
+	for serviceID, _ := range serviceIDs {
+		if _, found := network.registeredServiceInfo[serviceID]; found {
+			return nil, stacktrace.NewError(
+				"Cannot register service '%v' because it already exists in the network",
+				serviceID,
+			)
+		}
+	}
+
+	if partitionID == "" {
+		partitionID = defaultPartitionId
+	}
+	if _, found := network.topology.GetPartitionServices()[partitionID]; !found {
+		return nil, stacktrace.NewError(
+			"No partition with ID '%v' exists in the current partition topology",
+			partitionID,
+		)
+	}
+
+	successfulServices, failedServices, err := network.kurtosisBackend.RegisterUserServices(
+		ctx,
+		network.enclaveId,
+		serviceIDs,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", serviceIDs)
+	}
+	if len(failedServices) > 0 {
+		return nil, stacktrace.Propagate(err, "An error occurred stopping services '%v'", failedServices)
+	}
+	shouldDestroyService := true
+	defer func() {
+		if shouldDestroyService {
+			for _, serviceRegistration:= range successfulServices {
+				network.destroyServiceBestEffortAfterRegistrationFailure(serviceRegistration.GetGUID())
+			}
+		}
+	}()
+
+	serviceIPs := map[*net.IP]bool{}
+	shouldRemoveFromServiceMap := true
+	shouldRemoveTopologyAddition := true
+	for serviceID, serviceRegistration := range successfulServices {
+		network.registeredServiceInfo[serviceID] = serviceRegistration
+		defer func() {
+			if shouldRemoveFromServiceMap {
+				delete(network.registeredServiceInfo, serviceID)
+			}
+		}()
+
+		if err := network.topology.AddService(serviceID, partitionID); err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred adding service with ID '%v' to partition '%v' in the topology",
+				serviceID,
+				partitionID,
+			)
+		}
+		defer func() {
+			if shouldRemoveTopologyAddition {
+				network.topology.RemoveService(serviceID)
+			}
+		}()
+
+		ip := serviceRegistration.GetPrivateIP()
+		serviceIPs[&ip] = true
+	}
+
+	shouldDestroyService = false
+	shouldRemoveFromServiceMap = false
+	shouldRemoveTopologyAddition = false
+	return serviceIPs, nil
 }
 
 // TODO add tests for this
@@ -349,22 +421,6 @@ func (network *ServiceNetwork) StartService(
 	}
 
 	return userService, nil
-}
-
-//Returns:
-//Mapping of port-used-by-service -> port-on-the-Docker-host-machine where the user can make requests to the port
-//to access the port. If a used port doesn't have a host port bound, then the value will be nil.
-func (network *ServiceNetwork) StartServices(
-	ctx context.Context,
-	services map[service.ServiceID]*service.ServiceConfig,
-) (
-	resultService *service.Service,
-	resultErr error,
-) {
-	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-	return nil, nil
 }
 
 func (network *ServiceNetwork) RemoveService(
