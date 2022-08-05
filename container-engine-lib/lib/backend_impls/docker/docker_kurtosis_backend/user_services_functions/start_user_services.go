@@ -390,9 +390,9 @@ func runStartServiceOperationsInParallel(
 	map[service.ServiceGUID]error,
 	error,
 ) {
-	operations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
+	startServiceOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
 	for guid, config := range serviceConfigs {
-		operations[operation_parallelizer.OperationID(guid)] = createStartServiceOperation(
+		startServiceOperations[operation_parallelizer.OperationID(guid)] = createStartServiceOperation(
 			ctx,
 			guid,
 			config,
@@ -403,7 +403,7 @@ func runStartServiceOperationsInParallel(
 			dockerManager)
 	}
 
-	successfulServicesObjs, failedOps := operation_parallelizer.RunOperationsInParallel(operations)
+	successfulServicesObjs, failedOperations := operation_parallelizer.RunOperationsInParallel(startServiceOperations)
 
 	successfulServices := map[service.ServiceGUID]service.Service{}
 	failedServices := map[service.ServiceGUID]error{}
@@ -417,7 +417,7 @@ func runStartServiceOperationsInParallel(
 		successfulServices[serviceGUID] = serviceObj
 	}
 
-	for id, err := range failedOps {
+	for id, err := range failedOperations {
 		serviceGUID := service.ServiceGUID(id)
 		failedServices[serviceGUID] = err
 	}
@@ -433,11 +433,11 @@ func createStartServiceOperation(
 	enclaveNetworkId string,
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
 	freeIpAddrProvider *lib.FreeIpAddrTracker,
-	dockerManager *docker_manager.DockerManager) func() (interface{}, error) {
+	dockerManager *docker_manager.DockerManager) operation_parallelizer.Operation {
 	id := serviceRegistration.GetID()
 	privateIpAddr := serviceRegistration.GetPrivateIP()
 
-	var startServiceOp operation_parallelizer.Operation = func() (interface{}, error) {
+	return func() (interface{}, error) {
 		filesArtifactsExpansion := serviceConfig.GetFilesArtifactsExpansion()
 		containerImageName := serviceConfig.GetContainerImageName()
 		privatePorts := serviceConfig.GetPrivatePorts()
@@ -593,5 +593,4 @@ func createStartServiceOperation(
 		shouldKillContainer = false
 		return serviceObj, nil
 	}
-	return startServiceOp
 }

@@ -18,10 +18,10 @@
 and `FilesArtifactsExpansion` to be `github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service` (same with corresponding `kubernetes` packages)
 and `github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion` respectively
 
-### Changes
-* Add `RegisterUserServices` and `StartUserServices` to `KurtosisBackend` interface
+### Features
+* Implement `operation_parallelizer` module to abstract common use case of executing multiple operations and receiving successful and failed operations
+* Implement `RegisterUserServices` and `StartUserServices` to `KurtosisBackend` interface
 * Implement `RegisterUserServices` in `DockerKurtosisBackend`
-* Implement `RunOperationInParallel` module to abstract common use case of executing multiple operations and receiving successful and failed operations
 * Implement `RegisterUserServices` in `KubernetesKurtosisBackend`
 * Implement `StartUserServices` in `DockerKurtosisBackend`
 
