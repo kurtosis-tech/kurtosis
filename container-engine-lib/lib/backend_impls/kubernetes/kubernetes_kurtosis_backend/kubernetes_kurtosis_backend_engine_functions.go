@@ -60,7 +60,6 @@ func (backend KubernetesKurtosisBackend) CreateEngine(
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
 	envVars map[string]string,
-	logsDbVolumeDirpath string,
 ) (
 	*engine.Engine,
 	error,
