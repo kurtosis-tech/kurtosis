@@ -274,9 +274,9 @@ func runStartServiceOperationsInParallel(
 	map[service.ServiceGUID]error,
 	error,
 ) {
-	operations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
+	startServiceOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
 	for guid, config := range services {
-		operations[operation_parallelizer.OperationID(guid)] = createStartServiceOperation(
+		startServiceOperations[operation_parallelizer.OperationID(guid)] = createStartServiceOperation(
 			ctx,
 			guid,
 			config,
@@ -285,7 +285,7 @@ func runStartServiceOperationsInParallel(
 			kubernetesManager)
 	}
 
-	successfulServiceObjs, failedOperations := operation_parallelizer.RunOperationsInParallel(operations)
+	successfulServiceObjs, failedOperations := operation_parallelizer.RunOperationsInParallel(startServiceOperations)
 
 	successfulServices := map[service.ServiceGUID]service.Service{}
 	failedServices := map[service.ServiceGUID]error{}
