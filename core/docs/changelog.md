@@ -2,6 +2,7 @@
 
 ### Features
 * Implement stringer interface for `PortSpec`
+* Implement `ServiceNetwork.RegisterServices`
 
 # 1.57.0
 
