@@ -1,5 +1,7 @@
 # TBD
 
+# 0.34.0
+
 #### Breaking Changes
 * Move all `docker.DockerKurtosisBackend` functionality to `docker_kurtosis_backend` module
   * Users will need to replace their `github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker` import for
