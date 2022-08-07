@@ -337,7 +337,7 @@ func (network *ServiceNetwork) StartService(
 	//   a) we need to start the service before we can launch the sidecar but
 	//   b) we can't modify the qdisc configuration until the sidecar container is launched.
 	// This means that there's a period of time at startup where the container might not be partitioned. We solve
-	//  this by setting the packet loss config of the new service in the already-existing services' qdisc.
+	// t his by setting the packet loss config of the new service in the already-existing services' qdisc.
 	// This means that when the new service is launched, even if its own qdisc isn't yet updated, all the services
 	//  it would communicate are already dropping traffic to it before it even starts.
 	if network.isPartitioningEnabled {
@@ -421,6 +421,44 @@ func (network *ServiceNetwork) StartService(
 	}
 
 	return userService, nil
+}
+
+func(network *ServiceNetwork) StartServices(
+	ctx context.Context,
+	serviceConfigs map[service.ServiceID]*service.ServiceConfig,
+	serviceGUIDsToFilesArtifactUuidsToMountpoints map[service.ServiceGUID]map[enclave_data_directory.FilesArtifactUUID]string,
+) (
+	successfulServices map[service.ServiceGUID]service.Service,
+	failedServices map[service.ServiceGUID]error,
+	resultErr error,
+) {
+	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+
+	// Check that all services are registered beforehand
+	serviceGUIDTOConfigs := map[service.ServiceGUID]*service.ServiceConfig{}
+	for id, _ := range serviceConfigs {
+		registration, found := network.registeredServiceInfo[id]
+		if !found {
+			return nil, nil, stacktrace.NewError("Cannot start service ; no registration exists for service with ID '%v'", id)
+		}
+		serviceGUIDTOConfigs[registration.GetGUID()] = serviceConfigs[id]
+	}
+
+	// If network partitioning enabled
+	//		Tell all existing services to block off all services-to-be
+
+	// ServiceNetwork.start the services
+	//	creates the files artifacts expansions
+	//	kurtosisBackend.StartUserServices()
+	successfulServices, failedServices, err := network.startServices(ctx, serviceGUIDTOConfigs, serviceGUIDsToFilesArtifactUuidsToMountpoints)
+
+	// Phase 3:
+	// If network partitioning enabled
+	//		Tell all successfully started services to block connections to existing services
+
+	return successfulServices, failedServices, err
 }
 
 func (network *ServiceNetwork) RemoveService(
@@ -886,6 +924,85 @@ func (network *ServiceNetwork) startService(
 		)
 	}
 	return launchedUserService, nil
+}
+
+func (network *ServiceNetwork) startServices(
+	ctx context.Context,
+	serviceConfigs map[service.ServiceGUID]*service.ServiceConfig,
+// Mapping of UUIDs of previously-registered files artifacts -> mountpoints on the container
+// being launched
+	serviceGUIDsToFilesArtifactUuidsToMountpoints map[service.ServiceGUID]map[enclave_data_directory.FilesArtifactUUID]string,
+) (
+	successfulServices map[service.ServiceGUID]service.Service,
+	failedServices map[service.ServiceGUID]error,
+	resultErr error,
+) {
+	for guid, config := range serviceConfigs {
+		filesArtifactUuidsToMountpoints, found := serviceGUIDsToFilesArtifactUuidsToMountpoints[guid]
+		if !found {
+			return nil, nil, stacktrace.NewError("Couldn't find a mapping between service with GUID `%v` and a mapping of files artifacts UUIDs to mountpoints.", guid)
+		}
+		var filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion
+
+		if len(filesArtifactUuidsToMountpoints) > 0 {
+			usedArtifactUUIDSet := map[enclave_data_directory.FilesArtifactUUID]bool{}
+			for artifactUUID := range filesArtifactUuidsToMountpoints {
+				usedArtifactUUIDSet[artifactUUID] = true
+			}
+
+			filesArtifactsExpansions := []args.FilesArtifactExpansion{}
+			expanderDirpathToUserServiceDirpathMap := map[string]string{}
+			for filesArtifactUUID, mountpointOnUserService := range filesArtifactUuidsToMountpoints {
+				dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, string(filesArtifactUUID))
+				expansion := args.FilesArtifactExpansion{
+					FilesArtifactUUID: string(filesArtifactUUID),
+					DirPathToExpandTo: dirpathToExpandTo,
+				}
+				filesArtifactsExpansions = append(filesArtifactsExpansions, expansion)
+
+				expanderDirpathToUserServiceDirpathMap[dirpathToExpandTo] = mountpointOnUserService
+			}
+
+			filesArtifactsExpanderArgs, err := args.NewFilesArtifactsExpanderArgs(
+				network.apiContainerIpAddress.String(),
+				network.apiContainerGrpcPortNum,
+				filesArtifactsExpansions,
+			)
+			if err != nil {
+				return nil, nil, stacktrace.Propagate(err, "An error occurred creating files artifacts expander args for service `%v`", guid)
+			}
+			expanderEnvVars, err := args.GetEnvFromArgs(filesArtifactsExpanderArgs)
+			if err != nil {
+				return nil, nil, stacktrace.Propagate(err, "An error occurred getting files artifacts expander environment variables using args: %+v", filesArtifactsExpanderArgs)
+			}
+
+			expanderImageAndTag := fmt.Sprintf(
+				"%v:%v",
+				filesArtifactsExpanderImage,
+				network.apiContainerVersion,
+			)
+
+			filesArtifactsExpansion = &files_artifacts_expansion.FilesArtifactsExpansion{
+				ExpanderImage:                     expanderImageAndTag,
+				ExpanderEnvVars:                   expanderEnvVars,
+				ExpanderDirpathsToServiceDirpaths: expanderDirpathToUserServiceDirpathMap,
+			}
+			// Create a new service config WITH files artifacts expansion for this service
+			serviceConfigs[guid] = service.NewServiceConfig(
+				config.GetContainerImageName(),
+				config.GetPrivatePorts(),
+				config.GetPublicPorts(),
+				config.GetEntrypointArgs(),
+				config.GetCmdArgs(),
+				config.GetEnvVars(),
+				filesArtifactsExpansion,
+				config.GetCPUAllocationMillicpus(),
+				config.GetMemoryAllocationMegabytes())
+		}
+	}
+
+	successfulServices, failedServices, err := network.kurtosisBackend.StartUserServices(ctx, network.enclaveId, serviceConfigs)
+	return successfulServices, failedServices, err
 }
 
 func (network *ServiceNetwork) gzipAndPushTarredFileBytesToOutput(

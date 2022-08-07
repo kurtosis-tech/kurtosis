@@ -2,6 +2,7 @@
 
 ### Features
 * Implement stringer interface for `PortSpec`
+* Upgrade `container-engine-lib` to 0.34.0
 * Implement `ServiceNetwork.RegisterServices`
 
 # 1.57.0
