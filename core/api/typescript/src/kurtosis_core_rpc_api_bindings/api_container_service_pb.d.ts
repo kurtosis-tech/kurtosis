@@ -396,11 +396,8 @@ export namespace RegisterServiceResponse {
 }
 
 export class RegisterServicesResponse extends jspb.Message {
-  getSuccessfulServiceIdsToPrivateIpAddressesMap(): jspb.Map<string, string>;
-  clearSuccessfulServiceIdsToPrivateIpAddressesMap(): RegisterServicesResponse;
-
-  getFailedServiceIdsToErrorMap(): jspb.Map<string, string>;
-  clearFailedServiceIdsToErrorMap(): RegisterServicesResponse;
+  getServiceIdsToPrivateIpAddressesMap(): jspb.Map<string, string>;
+  clearServiceIdsToPrivateIpAddressesMap(): RegisterServicesResponse;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RegisterServicesResponse.AsObject;
@@ -412,8 +409,7 @@ export class RegisterServicesResponse extends jspb.Message {
 
 export namespace RegisterServicesResponse {
   export type AsObject = {
-    successfulServiceIdsToPrivateIpAddressesMap: Array<[string, string]>,
-    failedServiceIdsToErrorMap: Array<[string, string]>,
+    serviceIdsToPrivateIpAddressesMap: Array<[string, string]>,
   }
 }
 

@@ -220,7 +220,7 @@ func (network ServiceNetwork) RegisterServices(
 	ctx context.Context,
 	serviceIDs map[service.ServiceID]bool,
 	partitionID service_network_types.PartitionID,
-) (map[*net.IP]bool, error) {
+) (map[service.ServiceID]net.IP, error) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
@@ -264,7 +264,7 @@ func (network ServiceNetwork) RegisterServices(
 		}
 	}()
 
-	serviceIPs := map[*net.IP]bool{}
+	serviceIPs := map[service.ServiceID]net.IP{}
 	shouldRemoveFromServiceMap := true
 	shouldRemoveTopologyAdditions := true
 	for serviceID, serviceRegistration := range successfulServices {
@@ -290,7 +290,7 @@ func (network ServiceNetwork) RegisterServices(
 		}()
 
 		ip := serviceRegistration.GetPrivateIP()
-		serviceIPs[&ip] = true
+		serviceIPs[serviceID] = ip
 	}
 
 	shouldDestroyServices = false

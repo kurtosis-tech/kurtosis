@@ -176,10 +176,26 @@ func (apicService ApiContainerService) RegisterService(ctx context.Context, args
 	}, nil
 }
 
-func (apicService ApiContainerService) RegisterServics(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServicesArgs) (*kurtosis_core_rpc_api_bindings.RegisterServicesResponse, error) {
-	// register the service
+func (apicService ApiContainerService) RegisterServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServicesArgs) (*kurtosis_core_rpc_api_bindings.RegisterServicesResponse, error) {
+	serviceIDs := map[kurtosis_backend_service.ServiceID]bool{}
+	for id := range args.ServiceIdSet {
+		serviceIDs[kurtosis_backend_service.ServiceID(id)] = true
+	}
+	partitionId := service_network_types.PartitionID(args.PartitionId)
+	serviceIDsToIPs, err := apicService.serviceNetwork.RegisterServices(ctx, serviceIDs, partitionId)
+	if err != nil {
+		// TODO IP: Leaks internal information about API container
+		return nil, stacktrace.Propagate(err, "An error occurred registering services '%v' in the service network", serviceIDs)
+	}
 
-	return nil, nil
+	serviceIDsToIPsStringMap := map[string]string{}
+	for id, ip := range serviceIDsToIPs {
+		serviceIDsToIPsStringMap[string(id)] = ip.String()
+	}
+
+	return &kurtosis_core_rpc_api_bindings.RegisterServicesResponse{
+		ServiceIdsToPrivateIpAddresses: serviceIDsToIPsStringMap,
+	}, nil
 }
 
 func (apicService ApiContainerService) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
