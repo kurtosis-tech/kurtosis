@@ -7,15 +7,12 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	"net"
-	"strings"
 )
 
 // TODO CALL THE METRICS LIBRARY EVENT-REGISTRATION FUNCTIONS HERE!!!!
@@ -305,19 +302,6 @@ func (backend *MetricsReportingKurtosisBackend) DestroyModules(
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
-	serviceIdStr := string(serviceId)
-	if len(strings.TrimSpace(serviceIdStr)) == 0 {
-		return nil, stacktrace.NewError("Service ID cannot be whitespace or empty")
-	}
-
-	result, err := backend.underlying.RegisterUserService(ctx, enclaveId, serviceId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred registering user service '%v' in enclave '%v'", serviceId, enclaveId)
-	}
-	return result, nil
-}
-
 // Registers a user service for each given serviceId, allocating each an IP and ServiceGUID
 func (backend *MetricsReportingKurtosisBackend) RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, serviceIds map[service.ServiceID]bool, ) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error){
 	successes, failures, err := backend.underlying.RegisterUserServices(ctx, enclaveId, serviceIds)
@@ -325,61 +309,6 @@ func (backend *MetricsReportingKurtosisBackend) RegisterUserServices(ctx context
 		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services in enclave '%v' with the following service ids: %+v", enclaveId, serviceIds)
 	}
 	return successes, failures, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) StartUserService(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	guid service.ServiceGUID,
-	containerImageName string,
-	privatePorts map[string]*port_spec.PortSpec,
-	publicPorts map[string]*port_spec.PortSpec, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	entrypointArgs []string,
-	cmdArgs []string,
-	envVars map[string]string,
-	filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion,
-	cpuAllocationMillicpus uint64,
-	memoryAllocationMegabytes uint64,
-) (
-	newUserService *service.Service,
-	resultErr error,
-) {
-	userService, err := backend.underlying.StartUserService(
-		ctx,
-		enclaveId,
-		guid,
-		containerImageName,
-		privatePorts,
-		publicPorts,
-		entrypointArgs,
-		cmdArgs,
-		envVars,
-		filesArtifactExpansion,
-		cpuAllocationMillicpus,
-		memoryAllocationMegabytes,
-	)
-	if err != nil {
-		filesArtifactMountDirpaths := []string{}
-		if filesArtifactExpansion != nil {
-			for _, mountpointOnUserService := range filesArtifactExpansion.ExpanderDirpathsToServiceDirpaths {
-				filesArtifactMountDirpaths = append(filesArtifactMountDirpaths, mountpointOnUserService)
-			}
-		}
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred starting user service '%v' using image '%v' "+
-				"with private ports '%+v' and entry point args '%+v', command args '%+v', environment "+
-				"vars '%+v', and file artifacts mount dirpaths '%v'",
-			guid,
-			containerImageName,
-			privatePorts,
-			entrypointArgs,
-			cmdArgs,
-			envVars,
-			strings.Join(filesArtifactMountDirpaths, ", "),
-		)
-	}
-	return userService, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]service.Service, map[service.ServiceGUID]error, error){

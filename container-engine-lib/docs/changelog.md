@@ -1,5 +1,11 @@
 # TBD
 
+### Breaking Changes 
+* Remove `RegisterUserService` and `StartUserService` from `KurtosisBackend` interface
+  * Users will need to remove all references to `RegisterUserService` and `StartUserService` in favor of `RegisterUserServices` and `StartUserServices`
+* Remove `RegisterUserService` and `StartUserService` in `backend_impls`
+  * Users will need to remove all references to `RegisterUserService` and `StartUserService` in favor of `RegisterUserServices` and `StartUserServices`
+
 ### Changes
 * Refactor `DockerOperationParallelizer` to use `operation_parallelizer` module
 
