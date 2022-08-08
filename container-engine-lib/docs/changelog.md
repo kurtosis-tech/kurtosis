@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+* Refactor `DockerOperationParallelizer` to use `operation_parallelizer` module
+
 # 0.34.0
 
 #### Breaking Changes
