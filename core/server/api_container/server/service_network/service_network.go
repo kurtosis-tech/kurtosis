@@ -448,17 +448,89 @@ func(network *ServiceNetwork) StartServices(
 
 	// If network partitioning enabled
 	//		Tell all existing services to block off all services-to-be
+	// When partitioning is enabled, there's a race condition where:
+	//   a) we need to start the services before we can launch the sidecar but
+	//   b) we can't modify the qdisc configurations until the sidecar container is launched.
+	// This means that there's a period of time at startup where the containers might not be partitioned. We solve
+	// this by setting the packet loss config of the new services in the already-existing services' qdisc.
+	// This means that when the new services are launched, even if their own qdisc isn't yet updated, all the services
+	// it would communicate are already dropping traffic to it before it even starts.
+	if network.isPartitioningEnabled {
+		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
+				" to know what packet loss updates to apply on the new node")
+		}
+
+		servicesPacketLossConfigurationsWithoutNewNodes := map[service.ServiceID]map[service.ServiceID]float32{}
+		for serviceIdInTopology, otherServicesPacketLossConfigs := range servicePacketLossConfigurationsByServiceID {
+			if _, found := serviceConfigs[serviceIdInTopology]; found {
+				continue
+			}
+			servicesPacketLossConfigurationsWithoutNewNodes[serviceIdInTopology] = otherServicesPacketLossConfigs
+		}
+
+		// TODO: ADD COMMENT ABOUT WHY ITS OKAY TO DO EVEN IF SOME OF THE SERVICES THAT WERE BLOCKED OFF FAIL
+		if err := updateTrafficControlConfiguration(
+			ctx,
+			servicesPacketLossConfigurationsWithoutNewNodes,
+			network.registeredServiceInfo,
+			network.networkingSidecars,
+		); err != nil {
+			return nil, nil, stacktrace.Propagate(
+				err,
+				"An error occurred updating the traffic control configuration of all the other services "+
+					"before adding the new service, meaning that the service wouldn't actually start in a partition",
+			)
+		}
+	}
 
 	// ServiceNetwork.start the services
 	//	creates the files artifacts expansions
 	//	kurtosisBackend.StartUserServices()
-	successfulServices, failedServices, err := network.startServices(ctx, serviceGUIDTOConfigs, serviceGUIDsToFilesArtifactUuidsToMountpoints)
+	successfulServices, failedServices, resultErr = network.startServices(ctx, serviceGUIDTOConfigs, serviceGUIDsToFilesArtifactUuidsToMountpoints)
 
 	// Phase 3:
 	// If network partitioning enabled
 	//		Tell all successfully started services to block connections to existing services
+	if network.isPartitioningEnabled {
+		// TODO Getting packet loss configuration by service ID is an expensive call and, as of 2021-11-23, we do it twice - the solution is to make
+		//  Getting packet loss configuration by service ID not an expensive call
+		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
+				" to know what packet loss updates to apply on the new node")
+		}
+		updatesToApply := map[service.ServiceID]map[service.ServiceID]float32{}
 
-	return successfulServices, failedServices, err
+		// In the initial phase, we blocked services in the network from the services that were about to be started.
+		// Here, we are now blocking off successfully started services from the rest of the network to further gurantee network partitioning.
+		// We don't undo the blocking off of failed services by the rest of the network because the services in the network are blocking traffic
+		// from containers that don't exist anyways.
+		for guid, service := range successfulServices {
+			serviceRegistration := service.GetRegistration()
+			serviceID := serviceRegistration.GetID()
+
+			sidecar, err := network.networkingSidecarManager.Add(ctx, guid)
+			if err != nil {
+				return nil, nil, stacktrace.Propagate(err, "An error occurred adding the networking sidecar for service `%v`",guid)
+			}
+			network.networkingSidecars[serviceID] = sidecar
+
+			if err := sidecar.InitializeTrafficControl(ctx); err != nil {
+				return nil, nil, stacktrace.Propagate(err, "An error occurred initializing the newly-created networking-sidecar-traffic-control-qdisc-configuration for service `%v`", guid)
+			}
+
+			newNodeServicePacketLossConfiguration := servicePacketLossConfigurationsByServiceID[serviceID]
+			updatesToApply[serviceID] = newNodeServicePacketLossConfiguration
+		}
+
+		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.registeredServiceInfo, network.networkingSidecars); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration on the new nodes to partition them "+
+				"off from other nodes")
+		}
+	}
+	return
 }
 
 func (network *ServiceNetwork) RemoveService(
@@ -929,16 +1001,16 @@ func (network *ServiceNetwork) startService(
 func (network *ServiceNetwork) startServices(
 	ctx context.Context,
 	serviceConfigs map[service.ServiceGUID]*service.ServiceConfig,
-// Mapping of UUIDs of previously-registered files artifacts -> mountpoints on the container
+// Mapping of service GUIDs to UUIDs of previously-registered files artifacts -> mountpoints on the container
 // being launched
-	serviceGUIDsToFilesArtifactUuidsToMountpoints map[service.ServiceGUID]map[enclave_data_directory.FilesArtifactUUID]string,
+	serviceGUIDsToFilesArtifactUUIDsToMountpoints map[service.ServiceGUID]map[enclave_data_directory.FilesArtifactUUID]string,
 ) (
 	successfulServices map[service.ServiceGUID]service.Service,
 	failedServices map[service.ServiceGUID]error,
 	resultErr error,
 ) {
 	for guid, config := range serviceConfigs {
-		filesArtifactUuidsToMountpoints, found := serviceGUIDsToFilesArtifactUuidsToMountpoints[guid]
+		filesArtifactUuidsToMountpoints, found := serviceGUIDsToFilesArtifactUUIDsToMountpoints[guid]
 		if !found {
 			return nil, nil, stacktrace.NewError("Couldn't find a mapping between service with GUID `%v` and a mapping of files artifacts UUIDs to mountpoints.", guid)
 		}
@@ -1001,8 +1073,8 @@ func (network *ServiceNetwork) startServices(
 		}
 	}
 
-	successfulServices, failedServices, err := network.kurtosisBackend.StartUserServices(ctx, network.enclaveId, serviceConfigs)
-	return successfulServices, failedServices, err
+	successfulServices, failedServices, resultErr = network.kurtosisBackend.StartUserServices(ctx, network.enclaveId, serviceConfigs)
+	return
 }
 
 func (network *ServiceNetwork) gzipAndPushTarredFileBytesToOutput(
