@@ -66,11 +66,14 @@ export namespace ServiceInfo {
 }
 
 export class ServiceConfig extends jspb.Message {
-  getDockerImage(): string;
-  setDockerImage(value: string): ServiceConfig;
+  getContainerImageName(): string;
+  setContainerImageName(value: string): ServiceConfig;
 
   getPrivatePortsMap(): jspb.Map<string, Port>;
   clearPrivatePortsMap(): ServiceConfig;
+
+  getPublicPortsMap(): jspb.Map<string, Port>;
+  clearPublicPortsMap(): ServiceConfig;
 
   getEntrypointArgsList(): Array<string>;
   setEntrypointArgsList(value: Array<string>): ServiceConfig;
@@ -82,14 +85,11 @@ export class ServiceConfig extends jspb.Message {
   clearCmdArgsList(): ServiceConfig;
   addCmdArgs(value: string, index?: number): ServiceConfig;
 
-  getDockerEnvVarsMap(): jspb.Map<string, string>;
-  clearDockerEnvVarsMap(): ServiceConfig;
+  getEnvVarsMap(): jspb.Map<string, string>;
+  clearEnvVarsMap(): ServiceConfig;
 
   getFilesArtifactMountpointsMap(): jspb.Map<string, string>;
   clearFilesArtifactMountpointsMap(): ServiceConfig;
-
-  getPublicPortsMap(): jspb.Map<string, Port>;
-  clearPublicPortsMap(): ServiceConfig;
 
   getCpuAllocationMillicpus(): number;
   setCpuAllocationMillicpus(value: number): ServiceConfig;
@@ -107,13 +107,13 @@ export class ServiceConfig extends jspb.Message {
 
 export namespace ServiceConfig {
   export type AsObject = {
-    dockerImage: string,
+    containerImageName: string,
     privatePortsMap: Array<[string, Port.AsObject]>,
+    publicPortsMap: Array<[string, Port.AsObject]>,
     entrypointArgsList: Array<string>,
     cmdArgsList: Array<string>,
-    dockerEnvVarsMap: Array<[string, string]>,
+    envVarsMap: Array<[string, string]>,
     filesArtifactMountpointsMap: Array<[string, string]>,
-    publicPortsMap: Array<[string, Port.AsObject]>,
     cpuAllocationMillicpus: number,
     memoryAllocationMegabytes: number,
   }

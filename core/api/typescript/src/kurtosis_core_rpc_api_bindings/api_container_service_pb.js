@@ -1406,15 +1406,15 @@ proto.api_container_api.ServiceConfig.prototype.toObject = function(opt_includeI
  */
 proto.api_container_api.ServiceConfig.toObject = function(includeInstance, msg) {
   var f, obj = {
-    dockerImage: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    containerImageName: jspb.Message.getFieldWithDefault(msg, 1, ""),
     privatePortsMap: (f = msg.getPrivatePortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : [],
+    publicPortsMap: (f = msg.getPublicPortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : [],
     entrypointArgsList: (f = jspb.Message.getRepeatedField(msg, 4)) == null ? undefined : f,
     cmdArgsList: (f = jspb.Message.getRepeatedField(msg, 5)) == null ? undefined : f,
-    dockerEnvVarsMap: (f = msg.getDockerEnvVarsMap()) ? f.toObject(includeInstance, undefined) : [],
+    envVarsMap: (f = msg.getEnvVarsMap()) ? f.toObject(includeInstance, undefined) : [],
     filesArtifactMountpointsMap: (f = msg.getFilesArtifactMountpointsMap()) ? f.toObject(includeInstance, undefined) : [],
-    publicPortsMap: (f = msg.getPublicPortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : [],
-    cpuAllocationMillicpus: jspb.Message.getFieldWithDefault(msg, 10, 0),
-    memoryAllocationMegabytes: jspb.Message.getFieldWithDefault(msg, 11, 0)
+    cpuAllocationMillicpus: jspb.Message.getFieldWithDefault(msg, 8, 0),
+    memoryAllocationMegabytes: jspb.Message.getFieldWithDefault(msg, 9, 0)
   };
 
   if (includeInstance) {
@@ -1451,12 +1451,18 @@ proto.api_container_api.ServiceConfig.deserializeBinaryFromReader = function(msg
     }
     var field = reader.getFieldNumber();
     switch (field) {
-    case 2:
+    case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setDockerImage(value);
+      msg.setContainerImageName(value);
+      break;
+    case 2:
+      var value = msg.getPrivatePortsMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api_container_api.Port.deserializeBinaryFromReader, "", new proto.api_container_api.Port());
+         });
       break;
     case 3:
-      var value = msg.getPrivatePortsMap();
+      var value = msg.getPublicPortsMap();
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api_container_api.Port.deserializeBinaryFromReader, "", new proto.api_container_api.Port());
          });
@@ -1470,28 +1476,22 @@ proto.api_container_api.ServiceConfig.deserializeBinaryFromReader = function(msg
       msg.addCmdArgs(value);
       break;
     case 6:
-      var value = msg.getDockerEnvVarsMap();
+      var value = msg.getEnvVarsMap();
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
          });
       break;
-    case 8:
+    case 7:
       var value = msg.getFilesArtifactMountpointsMap();
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
          });
       break;
-    case 9:
-      var value = msg.getPublicPortsMap();
-      reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api_container_api.Port.deserializeBinaryFromReader, "", new proto.api_container_api.Port());
-         });
-      break;
-    case 10:
+    case 8:
       var value = /** @type {number} */ (reader.readUint64());
       msg.setCpuAllocationMillicpus(value);
       break;
-    case 11:
+    case 9:
       var value = /** @type {number} */ (reader.readUint64());
       msg.setMemoryAllocationMegabytes(value);
       break;
@@ -1524,14 +1524,18 @@ proto.api_container_api.ServiceConfig.prototype.serializeBinary = function() {
  */
 proto.api_container_api.ServiceConfig.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getDockerImage();
+  f = message.getContainerImageName();
   if (f.length > 0) {
     writer.writeString(
-      2,
+      1,
       f
     );
   }
   f = message.getPrivatePortsMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api_container_api.Port.serializeBinaryToWriter);
+  }
+  f = message.getPublicPortsMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(3, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api_container_api.Port.serializeBinaryToWriter);
   }
@@ -1549,29 +1553,25 @@ proto.api_container_api.ServiceConfig.serializeBinaryToWriter = function(message
       f
     );
   }
-  f = message.getDockerEnvVarsMap(true);
+  f = message.getEnvVarsMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(6, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
   }
   f = message.getFilesArtifactMountpointsMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(8, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
-  }
-  f = message.getPublicPortsMap(true);
-  if (f && f.getLength() > 0) {
-    f.serializeBinary(9, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api_container_api.Port.serializeBinaryToWriter);
+    f.serializeBinary(7, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
   }
   f = message.getCpuAllocationMillicpus();
   if (f !== 0) {
     writer.writeUint64(
-      10,
+      8,
       f
     );
   }
   f = message.getMemoryAllocationMegabytes();
   if (f !== 0) {
     writer.writeUint64(
-      11,
+      9,
       f
     );
   }
@@ -1579,11 +1579,11 @@ proto.api_container_api.ServiceConfig.serializeBinaryToWriter = function(message
 
 
 /**
- * optional string docker_image = 2;
+ * optional string container_image_name = 1;
  * @return {string}
  */
-proto.api_container_api.ServiceConfig.prototype.getDockerImage = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+proto.api_container_api.ServiceConfig.prototype.getContainerImageName = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
 
@@ -1591,20 +1591,20 @@ proto.api_container_api.ServiceConfig.prototype.getDockerImage = function() {
  * @param {string} value
  * @return {!proto.api_container_api.ServiceConfig} returns this
  */
-proto.api_container_api.ServiceConfig.prototype.setDockerImage = function(value) {
-  return jspb.Message.setProto3StringField(this, 2, value);
+proto.api_container_api.ServiceConfig.prototype.setContainerImageName = function(value) {
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
 
 
 /**
- * map<string, Port> private_ports = 3;
+ * map<string, Port> private_ports = 2;
  * @param {boolean=} opt_noLazyCreate Do not create the map if
  * empty, instead returning `undefined`
  * @return {!jspb.Map<string,!proto.api_container_api.Port>}
  */
 proto.api_container_api.ServiceConfig.prototype.getPrivatePortsMap = function(opt_noLazyCreate) {
   return /** @type {!jspb.Map<string,!proto.api_container_api.Port>} */ (
-      jspb.Message.getMapField(this, 3, opt_noLazyCreate,
+      jspb.Message.getMapField(this, 2, opt_noLazyCreate,
       proto.api_container_api.Port));
 };
 
@@ -1615,6 +1615,28 @@ proto.api_container_api.ServiceConfig.prototype.getPrivatePortsMap = function(op
  */
 proto.api_container_api.ServiceConfig.prototype.clearPrivatePortsMap = function() {
   this.getPrivatePortsMap().clear();
+  return this;};
+
+
+/**
+ * map<string, Port> public_ports = 3;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<string,!proto.api_container_api.Port>}
+ */
+proto.api_container_api.ServiceConfig.prototype.getPublicPortsMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<string,!proto.api_container_api.Port>} */ (
+      jspb.Message.getMapField(this, 3, opt_noLazyCreate,
+      proto.api_container_api.Port));
+};
+
+
+/**
+ * Clears values from the map. The map will be non-null.
+ * @return {!proto.api_container_api.ServiceConfig} returns this
+ */
+proto.api_container_api.ServiceConfig.prototype.clearPublicPortsMap = function() {
+  this.getPublicPortsMap().clear();
   return this;};
 
 
@@ -1693,12 +1715,12 @@ proto.api_container_api.ServiceConfig.prototype.clearCmdArgsList = function() {
 
 
 /**
- * map<string, string> docker_env_vars = 6;
+ * map<string, string> env_vars = 6;
  * @param {boolean=} opt_noLazyCreate Do not create the map if
  * empty, instead returning `undefined`
  * @return {!jspb.Map<string,string>}
  */
-proto.api_container_api.ServiceConfig.prototype.getDockerEnvVarsMap = function(opt_noLazyCreate) {
+proto.api_container_api.ServiceConfig.prototype.getEnvVarsMap = function(opt_noLazyCreate) {
   return /** @type {!jspb.Map<string,string>} */ (
       jspb.Message.getMapField(this, 6, opt_noLazyCreate,
       null));
@@ -1709,20 +1731,20 @@ proto.api_container_api.ServiceConfig.prototype.getDockerEnvVarsMap = function(o
  * Clears values from the map. The map will be non-null.
  * @return {!proto.api_container_api.ServiceConfig} returns this
  */
-proto.api_container_api.ServiceConfig.prototype.clearDockerEnvVarsMap = function() {
-  this.getDockerEnvVarsMap().clear();
+proto.api_container_api.ServiceConfig.prototype.clearEnvVarsMap = function() {
+  this.getEnvVarsMap().clear();
   return this;};
 
 
 /**
- * map<string, string> files_artifact_mountpoints = 8;
+ * map<string, string> files_artifact_mountpoints = 7;
  * @param {boolean=} opt_noLazyCreate Do not create the map if
  * empty, instead returning `undefined`
  * @return {!jspb.Map<string,string>}
  */
 proto.api_container_api.ServiceConfig.prototype.getFilesArtifactMountpointsMap = function(opt_noLazyCreate) {
   return /** @type {!jspb.Map<string,string>} */ (
-      jspb.Message.getMapField(this, 8, opt_noLazyCreate,
+      jspb.Message.getMapField(this, 7, opt_noLazyCreate,
       null));
 };
 
@@ -1737,33 +1759,11 @@ proto.api_container_api.ServiceConfig.prototype.clearFilesArtifactMountpointsMap
 
 
 /**
- * map<string, Port> public_ports = 9;
- * @param {boolean=} opt_noLazyCreate Do not create the map if
- * empty, instead returning `undefined`
- * @return {!jspb.Map<string,!proto.api_container_api.Port>}
- */
-proto.api_container_api.ServiceConfig.prototype.getPublicPortsMap = function(opt_noLazyCreate) {
-  return /** @type {!jspb.Map<string,!proto.api_container_api.Port>} */ (
-      jspb.Message.getMapField(this, 9, opt_noLazyCreate,
-      proto.api_container_api.Port));
-};
-
-
-/**
- * Clears values from the map. The map will be non-null.
- * @return {!proto.api_container_api.ServiceConfig} returns this
- */
-proto.api_container_api.ServiceConfig.prototype.clearPublicPortsMap = function() {
-  this.getPublicPortsMap().clear();
-  return this;};
-
-
-/**
- * optional uint64 cpu_allocation_millicpus = 10;
+ * optional uint64 cpu_allocation_millicpus = 8;
  * @return {number}
  */
 proto.api_container_api.ServiceConfig.prototype.getCpuAllocationMillicpus = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 10, 0));
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 8, 0));
 };
 
 
@@ -1772,16 +1772,16 @@ proto.api_container_api.ServiceConfig.prototype.getCpuAllocationMillicpus = func
  * @return {!proto.api_container_api.ServiceConfig} returns this
  */
 proto.api_container_api.ServiceConfig.prototype.setCpuAllocationMillicpus = function(value) {
-  return jspb.Message.setProto3IntField(this, 10, value);
+  return jspb.Message.setProto3IntField(this, 8, value);
 };
 
 
 /**
- * optional uint64 memory_allocation_megabytes = 11;
+ * optional uint64 memory_allocation_megabytes = 9;
  * @return {number}
  */
 proto.api_container_api.ServiceConfig.prototype.getMemoryAllocationMegabytes = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 11, 0));
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 9, 0));
 };
 
 
@@ -1790,7 +1790,7 @@ proto.api_container_api.ServiceConfig.prototype.getMemoryAllocationMegabytes = f
  * @return {!proto.api_container_api.ServiceConfig} returns this
  */
 proto.api_container_api.ServiceConfig.prototype.setMemoryAllocationMegabytes = function(value) {
-  return jspb.Message.setProto3IntField(this, 11, value);
+  return jspb.Message.setProto3IntField(this, 9, value);
 };
 
 

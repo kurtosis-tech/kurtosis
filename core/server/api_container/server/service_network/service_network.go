@@ -289,8 +289,8 @@ func (network ServiceNetwork) RegisterServices(
 			}
 		}()
 
-		ip := serviceRegistration.GetPrivateIP()
-		serviceIPs[serviceID] = ip
+		privateIP := serviceRegistration.GetPrivateIP()
+		serviceIPs[serviceID] = privateIP
 	}
 
 	shouldDestroyServices = false
@@ -426,7 +426,7 @@ func (network *ServiceNetwork) StartService(
 func(network *ServiceNetwork) StartServices(
 	ctx context.Context,
 	serviceConfigs map[service.ServiceID]*service.ServiceConfig,
-	serviceGUIDsToFilesArtifactUUIDsToMountpoints map[service.ServiceGUID]map[enclave_data_directory.FilesArtifactUUID]string,
+	serviceIDsToFilesArtifactUUIDsToMountpoints map[service.ServiceID]map[enclave_data_directory.FilesArtifactUUID]string,
 ) (
 	successfulServices map[service.ServiceGUID]service.Service,
 	failedServices map[service.ServiceGUID]error,
@@ -436,13 +436,16 @@ func(network *ServiceNetwork) StartServices(
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
+	// TODO: Sanity Check here to make sure keys of maps are 1:1
 	serviceGUIDTOConfigs := map[service.ServiceGUID]*service.ServiceConfig{}
+	serviceGUIDsToFilesArtifactUUIDsToMountpoints := map[service.ServiceGUID]map[enclave_data_directory.FilesArtifactUUID]string{}
 	for id, _ := range serviceConfigs {
 		registration, found := network.registeredServiceInfo[id]
 		if !found {
 			return nil, nil, stacktrace.NewError("Cannot start service ; no registration exists for service with ID '%v'", id)
 		}
 		serviceGUIDTOConfigs[registration.GetGUID()] = serviceConfigs[id]
+		serviceGUIDsToFilesArtifactUUIDsToMountpoints[registration.GetGUID()] = serviceIDsToFilesArtifactUUIDsToMountpoints[id]
 	}
 
 	// When partitioning is enabled, there's a race condition where:
