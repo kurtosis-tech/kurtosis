@@ -331,8 +331,7 @@ export class EnclaveContext {
         serviceConfigSuppliers: Map<ServiceID, (ipAddr: string) => Result<ContainerConfig, Error>>,
         partitionId: PartitionID,
     ): Promise<Result<Map<ServiceID, ServiceContext>, Error>> {
-        // Create RegisterServicesArgs
-        log.trace("Registering new service ID with Kurtosis API...");
+        log.trace("Registering new services with Kurtosis API...");
         const registerServicesArgs = new RegisterServicesArgs();
         const serviceIdSet: jspb.Map<string, boolean> = registerServicesArgs.getServiceIdSetMap();
         for (const [serviceId, _] of serviceConfigSuppliers) {
@@ -340,7 +339,6 @@ export class EnclaveContext {
         }
         registerServicesArgs.setPartitionId(String(partitionId));
 
-        // enclaveCtx.client.RegisterServices(ctx, registerServicesArgs)
         const registerServicesResponseResult = await this.backend.registerServices(registerServicesArgs)
         if(registerServicesResponseResult.isErr()){
             return err(registerServicesResponseResult.error)
@@ -349,25 +347,28 @@ export class EnclaveContext {
         const registerServicesResponse = registerServicesResponseResult.value
 
         log.trace("New services successfully registered with Kurtosis API");
-        // Create ServiceConfig protobuf objects
         const serviceConfigs = new Map<string, ServiceConfig>();
-        const serviceIdToPrivateIpAddresses :  jspb.Map<string, string> = registerServicesResponse.getServiceIdsToPrivateIpAddressesMap();
-        for (const[serviceId,  privateIpAddr] of serviceIdToPrivateIpAddresses){
-            log.trace("Generating container config object using the container config supplier for service with Id '%v'...", serviceId);
-            const containerConfigSupplier : (ipAddr: string) => Result<ContainerConfig, Error> = serviceConfigSuppliers.get(serviceId);
+        const serviceIdToPrivateIpAddresses : jspb.Map<string, string> = registerServicesResponse.getServiceIdsToPrivateIpAddressesMap();
+        for (const[serviceId,  privateIpAddr] of serviceIdToPrivateIpAddresses.entries()){
+            log.trace(`Generating container config object using the container config supplier for service with Id '${serviceId}'`);
+            const containerConfigSupplier : ((ipAddr: string) => Result<ContainerConfig, Error>) | undefined = serviceConfigSuppliers.get(<ServiceID>serviceId);
+            if (containerConfigSupplier == undefined) {
+                const errorMsg : string = `Expected serviceConfigSuppliers to contain a value associated with service Id ${serviceId}, bud no such value was found`;
+                return err(new Error(errorMsg))
+            }
             const containerConfigSupplierResult: Result<ContainerConfig, Error> = containerConfigSupplier(privateIpAddr);
             if (containerConfigSupplierResult.isErr()){
                 return err(containerConfigSupplierResult.error);
             }
             const containerConfig: ContainerConfig = containerConfigSupplierResult.value;
-            log.trace("Container config object successfully generated for service with Id '%v'", serviceId);
+            log.trace(`Container config object successfully generated for service with Id '${serviceId}'`);
 
-            log.trace("Creating files artifact ID str -> mount dirpaths map for service with Id '%v'...", serviceId);
+            log.trace(`Creating files artifact ID str -> mount dirpaths map for service with Id '${serviceId}'...`);
             const artifactIdStrToMountDirpath: Map<string, string> = new Map();
             for (const [filesArtifactId, mountDirpath] of containerConfig.filesArtifactMountpoints.entries()) {
                 artifactIdStrToMountDirpath.set(String(filesArtifactId), mountDirpath);
             }
-            log.trace("Successfully created files artifact ID str -> mount dirpaths map for service with Id '%v'", serviceId);
+            log.trace(`Successfully created files artifact ID str -> mount dirpaths map for service with Id '${serviceId}'`);
 
             log.trace("Starting new service with Kurtosis API...");
             const privatePorts = containerConfig.usedPorts;
@@ -425,7 +426,7 @@ export class EnclaveContext {
 
             serviceConfigs.set(serviceId, serviceConfig);
         }
-        // Create StartServicesArgs
+
         const startServicesArgs = new StartServicesArgs();
         const serviceIdsToConfigs : jspb.Map<string, ServiceConfig> = startServicesArgs.getServiceIdsToConfigsMap();
         for (const [serviceId, serviceConfig] of serviceConfigs) {
@@ -439,22 +440,21 @@ export class EnclaveContext {
         }
 
         const startServicesResponse = startServicesResponseResult.value;
-        const successfulServicesInfo :  jspb.Map<String, ServiceInfo> = startServicesResponse.getSuccessfulServiceIdsToServiceInfoMap();
+        const successfulServicesInfo :  jspb.Map<String, ServiceInfo> | undefined = startServicesResponse.getSuccessfulServiceIdsToServiceInfoMap();
         if(successfulServicesInfo == undefined) {
             return err(new Error("Expected StartServicseResponse to contain a successful_service_ids_to_service_info, instead no such field was found"))
         }
-        const failedServices :  jspb.Map<String, String> = startServicesResponse.getFailedServiceIdsToErrorMap();
+        const failedServices :  jspb.Map<String, String> | undefined = startServicesResponse.getFailedServiceIdsToErrorMap();
         if(failedServices == undefined) {
             return err(new Error("Expected StartServicseResponse to contain a failed_service_ids_to_error, instead no such field was found"))
         }
 
-        for (const[serviceIdStr, serviceErr] of failedServices){
-            log.error("The following error occurred trying to start service with ID '%v': %v", serviceIdStr, serviceErr)
+        for (const[serviceIdStr, serviceErr] of failedServices.entries()){
+            log.error(`The following error occurred trying to start service with ID '${serviceIdStr}': ${serviceErr}`)
         }
 
-        // create ServiceContexts
         const successfulServiceContexts : Map<ServiceID, ServiceContext> = new Map<ServiceID, ServiceContext>();
-        for (const[serviceIdStr, serviceInfo] of successfulServicesInfo){
+        for (const[serviceIdStr, serviceInfo] of successfulServicesInfo.entries()){
             const serviceId : ServiceID = <ServiceID>serviceIdStr;
             const serviceCtxPrivatePorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
                 serviceInfo.getPrivatePortsMap(),
@@ -472,7 +472,7 @@ export class EnclaveContext {
                 serviceCtxPublicPorts,
             );
             successfulServiceContexts.set(serviceId, serviceContext)
-            log.trace("Successfully started service with ID '%v' with Kurtosis API", serviceIdStr);
+            log.trace(`Successfully started service with ID '${serviceId}' with Kurtosis API`);
         }
 
         return ok(successfulServiceContexts)
