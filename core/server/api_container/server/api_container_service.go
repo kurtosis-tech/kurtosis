@@ -176,6 +176,12 @@ func (apicService ApiContainerService) RegisterService(ctx context.Context, args
 	}, nil
 }
 
+func (apicService ApiContainerService) RegisterServics(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServicesArgs) (*kurtosis_core_rpc_api_bindings.RegisterServicesResponse, error) {
+	// register the service
+
+	return nil, nil
+}
+
 func (apicService ApiContainerService) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
 	logrus.Debugf("Received request to start service with the following args: %+v", args)
 	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
@@ -259,6 +265,10 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 	logrus.Infof("Started service '%v'%v", serviceId, serviceStartLoglineSuffix)
 
 	return response, nil
+}
+
+func (apicService ApiContainerService) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error){
+	return nil, nil
 }
 
 func (apicService ApiContainerService) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*kurtosis_core_rpc_api_bindings.RemoveServiceResponse, error) {

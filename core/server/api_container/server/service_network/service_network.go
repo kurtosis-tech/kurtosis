@@ -426,7 +426,7 @@ func (network *ServiceNetwork) StartService(
 func(network *ServiceNetwork) StartServices(
 	ctx context.Context,
 	serviceConfigs map[service.ServiceID]*service.ServiceConfig,
-	serviceGUIDsToFilesArtifactUuidsToMountpoints map[service.ServiceGUID]map[enclave_data_directory.FilesArtifactUUID]string,
+	serviceGUIDsToFilesArtifactUUIDsToMountpoints map[service.ServiceGUID]map[enclave_data_directory.FilesArtifactUUID]string,
 ) (
 	successfulServices map[service.ServiceGUID]service.Service,
 	failedServices map[service.ServiceGUID]error,
@@ -436,7 +436,6 @@ func(network *ServiceNetwork) StartServices(
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	// Check that all services are registered beforehand
 	serviceGUIDTOConfigs := map[service.ServiceGUID]*service.ServiceConfig{}
 	for id, _ := range serviceConfigs {
 		registration, found := network.registeredServiceInfo[id]
@@ -446,8 +445,6 @@ func(network *ServiceNetwork) StartServices(
 		serviceGUIDTOConfigs[registration.GetGUID()] = serviceConfigs[id]
 	}
 
-	// If network partitioning enabled
-	//		Tell all existing services to block off all services-to-be
 	// When partitioning is enabled, there's a race condition where:
 	//   a) we need to start the services before we can launch the sidecar but
 	//   b) we can't modify the qdisc configurations until the sidecar container is launched.
@@ -485,14 +482,8 @@ func(network *ServiceNetwork) StartServices(
 		}
 	}
 
-	// ServiceNetwork.start the services
-	//	creates the files artifacts expansions
-	//	kurtosisBackend.StartUserServices()
-	successfulServices, failedServices, resultErr = network.startServices(ctx, serviceGUIDTOConfigs, serviceGUIDsToFilesArtifactUuidsToMountpoints)
+	successfulServices, failedServices, resultErr = network.startServices(ctx, serviceGUIDTOConfigs, serviceGUIDsToFilesArtifactUUIDsToMountpoints)
 
-	// Phase 3:
-	// If network partitioning enabled
-	//		Tell all successfully started services to block connections to existing services
 	if network.isPartitioningEnabled {
 		// TODO Getting packet loss configuration by service ID is an expensive call and, as of 2021-11-23, we do it twice - the solution is to make
 		//  Getting packet loss configuration by service ID not an expensive call
