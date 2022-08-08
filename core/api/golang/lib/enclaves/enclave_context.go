@@ -237,6 +237,12 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	return serviceContext, nil
 }
 
+func AddServicesToPartition(
+	serviceConfigSuppliers map[services.ServiceID]func(ipAddr string) (*services.ContainerConfig, error),
+	partitionID PartitionID) (map[services.ServiceID]*services.ServiceContext, error) {
+	return nil, nil
+}
+
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID) (*services.ServiceContext, error) {
 	serviceIdMapForArgs := map[string]bool{string(serviceId): true}
