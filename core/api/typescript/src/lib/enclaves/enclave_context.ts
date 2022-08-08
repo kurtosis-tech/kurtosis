@@ -229,6 +229,22 @@ export class EnclaveContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    public async addServices(
+            serviceConfigSuppliers: Map<ServiceID, (ipAddr: string) => Result<ContainerConfig, Error>>
+        ): Promise<Result<Map<ServiceID, ServiceContext>, Error>> {
+
+        const resultAddServicesToPartition : Result<Map<ServiceID, ServiceContext>, Error> = await this.addServicesToPartition(
+            serviceConfigSuppliers,
+            DEFAULT_PARTITION_ID,
+        );
+        if (resultAddServicesToPartition.isErr()) {
+            return err(resultAddServicesToPartition.error);
+        }
+
+        return ok(resultAddServicesToPartition.value);
+    }
+
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async addServiceToPartition(
             serviceId: ServiceID,
             partitionId: PartitionID,
