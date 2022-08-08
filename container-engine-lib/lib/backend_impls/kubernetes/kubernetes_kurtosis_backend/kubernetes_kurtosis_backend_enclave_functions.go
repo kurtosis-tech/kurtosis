@@ -1,4 +1,4 @@
-package kubernetes
+package kubernetes_kurtosis_backend
 
 import (
 	"context"
@@ -41,6 +41,8 @@ const (
 	dumpPodErrorTitle = "Pod"
 )
 
+// TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
+
 // Any of these values being nil indicates that the resource doesn't exist
 type enclaveKubernetesResources struct {
 	// Will never be nil because enclaves are defined by namespaces
@@ -64,7 +66,7 @@ type dumpPodResult struct {
 //                                     		Enclave CRUD Methods
 // ====================================================================================================
 
-func (backend *KubernetesKurtosisBackend) CreateEnclave(
+func (backend KubernetesKurtosisBackend) CreateEnclave(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	isPartitioningEnabled bool,
@@ -132,7 +134,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	return resultEnclave, nil
 }
 
-func (backend *KubernetesKurtosisBackend) GetEnclaves(
+func (backend KubernetesKurtosisBackend) GetEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
@@ -146,7 +148,7 @@ func (backend *KubernetesKurtosisBackend) GetEnclaves(
 	return matchingEnclaves, nil
 }
 
-func (backend *KubernetesKurtosisBackend) StopEnclaves(
+func (backend KubernetesKurtosisBackend) StopEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
@@ -224,7 +226,7 @@ func (backend *KubernetesKurtosisBackend) StopEnclaves(
 	return successfulEnclaveIds, erroredEnclaveIds, nil
 }
 
-func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, enclaveId enclave.EnclaveID, outputDirpath string) error {
+func (backend KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, enclaveId enclave.EnclaveID, outputDirpath string) error {
 	_, kubernetesResources, err := backend.getSingleEnclaveAndKubernetesResources(ctx, enclaveId)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting enclave object and Kubernetes resources for enclave ID '%v'", enclaveId)
@@ -288,7 +290,7 @@ func (backend *KubernetesKurtosisBackend) DumpEnclave(ctx context.Context, encla
 	return nil
 }
 
-func (backend *KubernetesKurtosisBackend) DestroyEnclaves(
+func (backend KubernetesKurtosisBackend) DestroyEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
@@ -326,7 +328,7 @@ func (backend *KubernetesKurtosisBackend) DestroyEnclaves(
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
-func (backend *KubernetesKurtosisBackend) getMatchingEnclaveObjectsAndKubernetesResources(
+func (backend KubernetesKurtosisBackend) getMatchingEnclaveObjectsAndKubernetesResources(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
@@ -371,7 +373,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveObjectsAndKubernetes
 	return resultEnclaveObjs, resultKubernetesResources, nil
 }
 
-func (backend *KubernetesKurtosisBackend) getSingleEnclaveAndKubernetesResources(ctx context.Context, enclaveId enclave.EnclaveID) (*enclave.Enclave, *enclaveKubernetesResources, error) {
+func (backend KubernetesKurtosisBackend) getSingleEnclaveAndKubernetesResources(ctx context.Context, enclaveId enclave.EnclaveID) (*enclave.Enclave, *enclaveKubernetesResources, error) {
 	enclaveSearchFilters := &enclave.EnclaveFilters{
 		IDs: map[enclave.EnclaveID]bool{
 			enclaveId: true,
@@ -402,7 +404,7 @@ func (backend *KubernetesKurtosisBackend) getSingleEnclaveAndKubernetesResources
 }
 
 // Get back any and all enclave's Kubernetes resources matching the given enclave IDs, where a nil or empty map == "match all enclave IDs"
-func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(ctx context.Context, enclaveIds map[enclave.EnclaveID]bool) (
+func (backend KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(ctx context.Context, enclaveIds map[enclave.EnclaveID]bool) (
 	map[enclave.EnclaveID]*enclaveKubernetesResources,
 	error,
 ) {
@@ -595,7 +597,7 @@ func dumpPodInfo(
 		containerName := container.Name
 
 		// Make container output directory
-		containerLogsFilepath := path.Join(podOutputDirpath, containerName + containerLogsFilenameSuffix)
+		containerLogsFilepath := path.Join(podOutputDirpath, containerName +containerLogsFilenameSuffix)
 		containerLogsOutputFp, err := os.Create(containerLogsFilepath)
 		if err != nil {
 			return stacktrace.Propagate(

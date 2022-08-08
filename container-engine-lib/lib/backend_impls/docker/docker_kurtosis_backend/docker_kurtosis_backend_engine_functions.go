@@ -1,4 +1,4 @@
-package docker
+package docker_kurtosis_backend
 
 import (
 	"context"
@@ -39,6 +39,8 @@ const (
 	// user isn't stuck waiting on a long-running operation when they tell the engine to stop
 	engineStopTimeout = 1 * time.Second
 )
+
+// TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
 
 // ====================================================================================================
 //                                     Engine CRUD Methods
@@ -133,7 +135,7 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 
 	bindMounts := map[string]string{
 		// Necessary so that the engine server can interact with the Docker engine
-		dockerSocketFilepath:           dockerSocketFilepath,
+		dockerSocketFilepath: dockerSocketFilepath,
 	}
 
 	containerImageAndTag := fmt.Sprintf(

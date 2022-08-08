@@ -3,7 +3,7 @@ package backend_creator
 import (
 	"context"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
@@ -83,7 +83,7 @@ func GetLocalDockerKurtosisBackend(
 		enclaveFreeIpAddrTrackers[enclaveId] = freeIpAddrProvider
 	}
 
-	dockerKurtosisBackend := docker.NewDockerKurtosisBackend(dockerManager, enclaveFreeIpAddrTrackers)
+	dockerKurtosisBackend := docker_kurtosis_backend.NewDockerKurtosisBackend(dockerManager, enclaveFreeIpAddrTrackers)
 
 	wrappedBackend := metrics_reporting.NewMetricsReportingKurtosisBackend(dockerKurtosisBackend)
 

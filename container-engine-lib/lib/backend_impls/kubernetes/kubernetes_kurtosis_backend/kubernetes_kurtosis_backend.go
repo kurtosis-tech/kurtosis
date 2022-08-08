@@ -1,10 +1,12 @@
-package kubernetes
+package kubernetes_kurtosis_backend
 
 import (
 	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/user_services_functions"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
@@ -17,11 +19,16 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
 	apiv1 "k8s.io/api/core/v1"
+	"net"
 	"strings"
 	"time"
 )
@@ -65,56 +72,26 @@ var kurtosisPortProtocolToKubernetesPortProtocolTranslator = map[port_spec.PortP
 	port_spec.PortProtocol_SCTP: apiv1.ProtocolSCTP,
 }
 
-// TODO Remove this once we split apart the KubernetesKurtosisBackend into multiple backends (which we can only
-//  do once the CLI no longer makes any calls directly to the KurtosisBackend, and instead makes all its calls through
-//  the API container & engine APIs)
-type cliModeArgs struct {
-	// No CLI mode args needed for now
-}
-type apiContainerModeArgs struct {
-	ownEnclaveId enclave.EnclaveID
-
-	ownNamespaceName string
-
-	storageClassName string
-
-	// TODO make this more dynamic - maybe guess based on the files artifact size?
-	filesArtifactExpansionVolumeSizeInMegabytes uint
-}
-type engineServerModeArgs struct {
-	/*
-		StorageClass name to be used for volumes in the cluster
-		StorageClasses must be defined by a cluster administrator.
-		passes this in when starting Kurtosis with Kubernetes.
-	*/
-	storageClassName string
-
-	/*
-		Enclave availability must be set and defined by a cluster administrator.
-		The user passes this in when starting Kurtosis with Kubernetes.
-	*/
-	enclaveDataVolumeSizeInMegabytes uint
-}
-
 type KubernetesKurtosisBackend struct {
 	kubernetesManager *kubernetes_manager.KubernetesManager
 
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider
 
-	cliModeArgs *cliModeArgs
+	cliModeArgs *shared_helpers.CliModeArgs
 
-	engineServerModeArgs *engineServerModeArgs
+	engineServerModeArgs *shared_helpers.EngineServerModeArgs
 
 	// Will only be filled out for the API container
-	apiContainerModeArgs *apiContainerModeArgs
+	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs
 }
+
 
 // Private constructor that the other public constructors will use
 func newKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
-	cliModeArgs *cliModeArgs,
-	engineServerModeArgs *engineServerModeArgs,
-	apiContainerModeArgs *apiContainerModeArgs,
+	cliModeArgs *shared_helpers.CliModeArgs,
+	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
+	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 ) *KubernetesKurtosisBackend {
 	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	return &KubernetesKurtosisBackend{
@@ -131,10 +108,7 @@ func NewAPIContainerKubernetesKurtosisBackend(
 	ownEnclaveId enclave.EnclaveID,
 	ownNamespaceName string,
 ) *KubernetesKurtosisBackend {
-	modeArgs := &apiContainerModeArgs{
-		ownEnclaveId:     ownEnclaveId,
-		ownNamespaceName: ownNamespaceName,
-	}
+	modeArgs := shared_helpers.NewApiContainerModeArgs(ownEnclaveId, ownNamespaceName)
 	return newKubernetesKurtosisBackend(
 		kubernetesManager,
 		nil,
@@ -146,7 +120,7 @@ func NewAPIContainerKubernetesKurtosisBackend(
 func NewEngineServerKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) *KubernetesKurtosisBackend {
-	modeArgs := &engineServerModeArgs{}
+	modeArgs := &shared_helpers.EngineServerModeArgs{}
 	return newKubernetesKurtosisBackend(
 		kubernetesManager,
 		nil,
@@ -158,7 +132,7 @@ func NewEngineServerKubernetesKurtosisBackend(
 func NewCLIModeKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) *KubernetesKurtosisBackend {
-	modeArgs := &cliModeArgs{}
+	modeArgs := &shared_helpers.CliModeArgs{}
 	return newKubernetesKurtosisBackend(
 		kubernetesManager,
 		modeArgs,
@@ -169,12 +143,12 @@ func NewCLIModeKubernetesKurtosisBackend(
 
 func NewKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
-	// TODO Remove the necessity for these different args by splitting the KubernetesKurtosisBackend into multiple backends per consumer, e.g.
+	// TODO Remove the necessity for these different args by splitting the *KubernetesKurtosisBackend into multiple backends per consumer, e.g.
 	//  APIContainerKurtosisBackend, CLIKurtosisBackend, EngineKurtosisBackend, etc. This can only happen once the CLI
 	//  no longer uses the same functionality as API container, engine, etc. though
-	cliModeArgs *cliModeArgs,
-	engineServerModeArgs *engineServerModeArgs,
-	apiContainerModeargs *apiContainerModeArgs,
+	cliModeArgs *shared_helpers.CliModeArgs,
+	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
+	apiContainerModeargs *shared_helpers.ApiContainerModeArgs,
 ) *KubernetesKurtosisBackend {
 	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	return &KubernetesKurtosisBackend{
@@ -190,6 +164,210 @@ func (backend *KubernetesKurtosisBackend) PullImage(image string) error {
 	return stacktrace.NewError("PullImage isn't implemented for Kubernetes yet")
 }
 
+func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
+	return user_services_functions.RegisterUserService(
+		ctx,
+		enclaveId,
+		serviceId,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
+}
+
+// Registers a user service for each given serviceId, allocating each an IP and ServiceGUID
+func (backend *KubernetesKurtosisBackend) RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, serviceIds map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error){
+	return user_services_functions.RegisterUserServices(
+		ctx,
+		enclaveId,
+		serviceIds,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
+}
+
+func (backend *KubernetesKurtosisBackend) StartUserService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	containerImageName string,
+	privatePorts map[string]*port_spec.PortSpec,
+	publicPorts map[string]*port_spec.PortSpec, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	entrypointArgs []string,
+	cmdArgs []string,
+	envVars map[string]string,
+	filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion,
+	cpuAllocationMillicpus uint64,
+	memoryAllocationMegabytes uint64,
+) (
+	resultUserService *service.Service,
+	resultErr error,
+) {
+	return user_services_functions.StartUserService(
+		ctx,
+		enclaveId,
+		serviceGuid,
+		containerImageName,
+		privatePorts,
+		publicPorts,
+		entrypointArgs,
+		cmdArgs,
+		envVars,
+		filesArtifactsExpansion,
+		cpuAllocationMillicpus,
+		memoryAllocationMegabytes,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
+}
+
+func (backend *KubernetesKurtosisBackend) StartUserServices(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	services map[service.ServiceGUID]*service.ServiceConfig,
+) (
+		map[service.ServiceGUID]service.Service,
+		map[service.ServiceGUID]error,
+		error,
+) {
+	return user_services_functions.StartUserServices(
+		ctx,
+		enclaveId,
+		services,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
+}
+
+func (backend *KubernetesKurtosisBackend) GetUserServices(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *service.ServiceFilters,
+) (successfulUserServices map[service.ServiceGUID]*service.Service, resultError error) {
+	return user_services_functions.GetUserServices(
+		ctx,
+		enclaveId,
+		filters,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
+}
+
+func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *service.ServiceFilters,
+	shouldFollowLogs bool,
+) (successfulUserServiceLogs map[service.ServiceGUID]io.ReadCloser, erroredUserServiceGuids map[service.ServiceGUID]error, resultError error) {
+	return user_services_functions.GetUserServiceLogs(
+		ctx,
+		enclaveId,
+		filters,
+		shouldFollowLogs,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
+}
+
+func (backend *KubernetesKurtosisBackend) PauseService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceId service.ServiceGUID,
+) error {
+	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because pausing is not supported by Kubernetes", serviceId, enclaveId)
+}
+
+func (backend *KubernetesKurtosisBackend) UnpauseService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceId service.ServiceGUID,
+) error {
+	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because unpausing is not supported by Kubernetes", serviceId, enclaveId)
+}
+
+// TODO Switch these to streaming methods, so that huge command outputs don't blow up the memory of the API container
+func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	userServiceCommands map[service.ServiceGUID][]string,
+) (
+	succesfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult,
+	erroredUserServiceGuids map[service.ServiceGUID]error,
+	resultErr error,
+) {
+	return user_services_functions.RunUserServiceExecCommands(
+		ctx,
+		enclaveId,
+		userServiceCommands,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
+}
+
+func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceGUID service.ServiceGUID) (resultConn net.Conn, resultErr error) {
+	// See https://github.com/kubernetes/client-go/issues/912
+	/*
+		in := streams.NewIn(os.Stdin)
+		if err := in.SetRawTerminal(); err != nil{
+					 // handle err
+		}
+		err = exec.Stream(remotecommand.StreamOptions{
+			Stdin:             in,
+			Stdout:           stdout,
+			Stderr:            stderr,
+		}
+	*/
+
+	// TODO IMPLEMENT
+	return nil, stacktrace.NewError("Getting a connection with a user service isn't yet implemented on Kubernetes")
+}
+
+func (backend *KubernetesKurtosisBackend) CopyFilesFromUserService(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	srcPath string,
+	output io.Writer,
+) error {
+	return user_services_functions.CopyFilesFromUserService(
+		ctx,
+		enclaveId,
+		serviceGuid,
+		srcPath,
+		output,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
+}
+
+func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
+	return user_services_functions.StopUserServices(
+		ctx,
+		enclaveId,
+		filters,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
+}
+
+func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Context, enclaveId enclave.EnclaveID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceGUID]bool, resultErroredGuids map[service.ServiceGUID]error, resultErr error) {
+	return user_services_functions.DestroyUserServices(
+		ctx,
+		enclaveId,
+		filters,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
+}
 
 // ====================================================================================================
 //                       Private helper functions shared by multiple subfunctions files
@@ -253,8 +431,8 @@ func getContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus
 }
 
 func (backend *KubernetesKurtosisBackend) getEnclaveNamespaceName(ctx context.Context, enclaveId enclave.EnclaveID) (string, error) {
-	// TODO This is a big janky hack that results from KubernetesKurtosisBackend containing functions for all of API containers, engines, and CLIs
-	//  We want to fix this by splitting the KubernetesKurtosisBackend into a bunch of different backends, one per user, but we can only
+	// TODO This is a big janky hack that results from *KubernetesKurtosisBackend containing functions for all of API containers, engines, and CLIs
+	//  We want to fix this by splitting the *KubernetesKurtosisBackend into a bunch of different backends, one per user, but we can only
 	//  do this once the CLI no longer uses API container functionality (e.g. GetServices)
 	// CLIs and engines can list namespaces so they'll be able to use the regular list-namespaces-and-find-the-one-matching-the-enclave-ID
 	// API containers can't list all namespaces due to being namespaced objects themselves (can only view their own namespace, so
@@ -279,15 +457,15 @@ func (backend *KubernetesKurtosisBackend) getEnclaveNamespaceName(ctx context.Co
 
 		namespaceName = namespaces.Items[0].Name
 	} else if backend.apiContainerModeArgs != nil {
-		if enclaveId != backend.apiContainerModeArgs.ownEnclaveId {
+		if enclaveId != backend.apiContainerModeArgs.GetOwnEnclaveId() {
 			return "", stacktrace.NewError(
 				"Received a request to get namespace for enclave '%v', but the Kubernetes Kurtosis backend is running in an API " +
 					"container in a different enclave '%v' (so Kubernetes would throw a permission error)",
 				enclaveId,
-				backend.apiContainerModeArgs.ownEnclaveId,
+				backend.apiContainerModeArgs.GetOwnEnclaveId(),
 			)
 		}
-		namespaceName = backend.apiContainerModeArgs.ownNamespaceName
+		namespaceName = backend.apiContainerModeArgs.GetOwnNamespaceName()
 	} else {
 		return "", stacktrace.NewError("Received a request to get an enclave namespace's name, but the Kubernetes Kurtosis backend isn't in any recognized mode; this is a bug in Kurtosis")
 	}

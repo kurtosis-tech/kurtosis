@@ -1,4 +1,4 @@
-package docker
+package docker_kurtosis_backend
 
 import (
 	"context"
@@ -34,6 +34,8 @@ const (
 	// TODO Delete this after 2022-05-28
 	pre_2022_03_28_IpAddrLabel = "com.kurtosistech.api-container-ip"
 )
+
+// TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
 
 func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
@@ -154,7 +156,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 
 	bindMounts := map[string]string{
 		// Necessary so that the API container can interact with the Docker engine
-		dockerSocketFilepath:            dockerSocketFilepath,
+		dockerSocketFilepath: dockerSocketFilepath,
 	}
 
 	volumeMounts := map[string]string{

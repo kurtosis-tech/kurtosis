@@ -4,26 +4,34 @@ import (
 	"github.com/gammazero/workerpool"
 )
 
+const (
+	maxNumConcurrentRequests = 25
+)
+
 type OperationID string
 
-type OperationResult struct {
+type operationResult struct {
 	id OperationID
+
+	data interface{}
 
 	// Nil error indicates the operation executed successfully
 	resultErr error
 }
 
-type Operation func() error
+// Users can return any data to this through interface{} and downcast to their desired type when consuming the data in [successfulOps] or leave nil
+type Operation func() (interface{}, error)
 
-const (
-	maxNumConcurrentRequests = 25
-)
-
-// should operation be a reference?
-func RunOperationsInParallel(operations map[OperationID]Operation) (map[OperationID]bool, map[OperationID]error) {
+func RunOperationsInParallel(operations map[OperationID]Operation) (map[OperationID]interface{}, map[OperationID]error) {
 	workerPool := workerpool.New(maxNumConcurrentRequests)
-	resultsChan := make(chan OperationResult, len(operations))
+	resultsChan := make(chan operationResult, len(operations))
 
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// It's VERY important that we call a function to generate the lambda, rather than inlining a lambda,
+	// because if we don't then 'id' will be the same for all tasks (and it will be the
+	// value of the last iteration of the loop)
+	// https://medium.com/swlh/use-pointer-of-for-range-loop-variable-in-go-3d3481f7ffc9
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	for id, op := range operations {
 		workerPool.Submit(getWorkerTask(id, op, resultsChan))
 	}
@@ -31,27 +39,29 @@ func RunOperationsInParallel(operations map[OperationID]Operation) (map[Operatio
 	workerPool.StopWait()
 	close(resultsChan)
 
-	successfulOperationIDs := map[OperationID]bool{}
-	failedOperationIDs := map[OperationID]error{}
+	successfulOperations := map[OperationID]interface{}{}
+	failedOperations := map[OperationID]error{}
 	for taskResult := range resultsChan {
 		id := taskResult.id
+		data := taskResult.data
 		err := taskResult.resultErr
 		if err == nil {
-			successfulOperationIDs[id] = true
+			successfulOperations[id] = data
 		} else {
-			failedOperationIDs[id] = err
+			failedOperations[id] = err
 		}
 	}
 
-	return successfulOperationIDs, failedOperationIDs
+	return successfulOperations, failedOperations
 }
 
-func getWorkerTask(id OperationID, operation Operation, resultsChan chan OperationResult) func(){
+func getWorkerTask(id OperationID, operation Operation, resultsChan chan operationResult) func(){
 	return func() {
-		OperationResultErr := operation()
-		resultsChan <- OperationResult{
+		data, err := operation()
+		resultsChan <- operationResult{
 			id: id,
-			resultErr: OperationResultErr,
+			data: data,
+			resultErr: err,
 		}
 	}
 }

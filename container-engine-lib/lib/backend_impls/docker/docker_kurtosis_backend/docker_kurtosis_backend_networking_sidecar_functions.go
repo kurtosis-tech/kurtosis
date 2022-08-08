@@ -1,8 +1,9 @@
-package docker
+package docker_kurtosis_backend
 
 import (
 	"bytes"
 	"context"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
@@ -21,6 +22,8 @@ const (
 	networkingSidecarImageName = "kurtosistech/iproute2"
 	succesfulExecCmdExitCode = 0
 )
+
+// TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
 
 // We sleep forever because all the commands this container will run will be executed
 //  via Docker exec
@@ -53,11 +56,11 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 		)
 	}
 
-	_, dockerResources, err := backend.getSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid)
+	_, dockerResources, err := shared_helpers.GetSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid, backend.dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting network sidecar's user service '%v'", serviceGuid)
 	}
-	container := dockerResources.serviceContainer
+	container := dockerResources.ServiceContainer
 
 	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
 	if err != nil {

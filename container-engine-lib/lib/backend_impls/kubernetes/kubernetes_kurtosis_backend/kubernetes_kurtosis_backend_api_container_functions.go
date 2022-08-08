@@ -1,4 +1,4 @@
-package kubernetes
+package kubernetes_kurtosis_backend
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager/consts"
@@ -35,6 +35,8 @@ const (
 	enclaveDataDirVolumeName = "enclave-data"
 )
 
+// TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
+
 // Any of these values being nil indicates that the resource doesn't exist
 type apiContainerKubernetesResources struct {
 	// Will never be nil because an API container is defined by its service
@@ -53,7 +55,7 @@ type apiContainerKubernetesResources struct {
 //                                     API Container CRUD Methods
 // ====================================================================================================
 
-func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
+func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
 	image string,
 	enclaveId enclave.EnclaveID,
@@ -104,7 +106,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		)
 	}
 	privatePortSpecs := map[string]*port_spec.PortSpec{
-		kurtosisInternalContainerGrpcPortSpecId: privateGrpcPortSpec,
+		kurtosisInternalContainerGrpcPortSpecId:      privateGrpcPortSpec,
 		kurtosisInternalContainerGrpcProxyPortSpecId: privateGrpcProxyPortSpec,
 	}
 
@@ -400,7 +402,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	return resultApiContainer, nil
 }
 
-func (backend *KubernetesKurtosisBackend) GetAPIContainers(
+func (backend KubernetesKurtosisBackend) GetAPIContainers(
 	ctx context.Context,
 	filters *api_container.APIContainerFilters,
 ) (
@@ -414,7 +416,7 @@ func (backend *KubernetesKurtosisBackend) GetAPIContainers(
 	return matchingApiContainers, nil
 }
 
-func (backend *KubernetesKurtosisBackend) StopAPIContainers(
+func (backend KubernetesKurtosisBackend) StopAPIContainers(
 	ctx context.Context,
 	filters *api_container.APIContainerFilters,
 ) (
@@ -472,7 +474,7 @@ func (backend *KubernetesKurtosisBackend) StopAPIContainers(
 	return successfulEnclaveIds, erroredEnclaveIds, nil
 }
 
-func (backend *KubernetesKurtosisBackend) DestroyAPIContainers(
+func (backend KubernetesKurtosisBackend) DestroyAPIContainers(
 	ctx context.Context,
 	filters *api_container.APIContainerFilters,
 ) (
@@ -569,7 +571,7 @@ func (backend *KubernetesKurtosisBackend) DestroyAPIContainers(
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
-func (backend *KubernetesKurtosisBackend) getMatchingApiContainerObjectsAndKubernetesResources(
+func (backend KubernetesKurtosisBackend) getMatchingApiContainerObjectsAndKubernetesResources(
 	ctx context.Context,
 	filters *api_container.APIContainerFilters,
 ) (
@@ -612,7 +614,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerObjectsAndKuber
 }
 
 // Get back any and all API container's Kubernetes resources matching the given enclave IDs, where a nil or empty map == "match all enclave IDs"
-func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResources(ctx context.Context, enclaveIds map[enclave.EnclaveID]bool) (
+func (backend KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResources(ctx context.Context, enclaveIds map[enclave.EnclaveID]bool) (
 	map[enclave.EnclaveID]*apiContainerKubernetesResources,
 	error,
 ) {
@@ -875,7 +877,7 @@ func getApiContainerObjectsFromKubernetesResources(
 		privatePorts, err := getPrivatePortsAndValidatePortExistence(
 			kubernetesService,
 			map[string]bool{
-				kurtosisInternalContainerGrpcPortSpecId: true,
+				kurtosisInternalContainerGrpcPortSpecId:      true,
 				kurtosisInternalContainerGrpcProxyPortSpecId: true,
 			},
 		)
