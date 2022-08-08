@@ -247,10 +247,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	for id, _ := range serviceConfigSuppliers {
 		serviceIDs[string(id)] = true
 	}
-	registerServicesArgs := &kurtosis_core_rpc_api_bindings.RegisterServicesArgs{
-		ServiceIdSet: serviceIDs,
-		PartitionId: string(partitionID),
-	}
+	registerServicesArgs := binding_constructors.NewRegisterServicesArgs(serviceIDs, string(partitionID))
 
 	registerServicesResp, err := enclaveCtx.client.RegisterServices(ctx, registerServicesArgs)
 	if err != nil {
@@ -262,7 +259,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 
 	logrus.Trace("New services successfully registered with Kurtosis API")
 	serviceConfigs := map[string]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
-	for serviceID, privateIPAddr := range registerServicesResp.ServiceIdsToPrivateIpAddresses {
+	for serviceID, privateIPAddr := range registerServicesResp.GetServiceIdsToPrivateIpAddresses() {
 		logrus.Tracef("Generating container config object using the container config supplier for service '%v'...", serviceID)
 		containerConfigSupplier := serviceConfigSuppliers[services.ServiceID(serviceID)]
 		containerConfig, err := containerConfigSupplier(privateIPAddr)
@@ -298,22 +295,19 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 		}
 		//TODO finish the hack
 
-		serviceConfigs[serviceID] = &kurtosis_core_rpc_api_bindings.ServiceConfig{
-			ContainerImageName:        containerConfig.GetImage(),
-			PrivatePorts:              privatePortsForApi,
-			PublicPorts:               publicPortsForApi,
-			EntrypointArgs:            containerConfig.GetEntrypointOverrideArgs(),
-			CmdArgs:                   containerConfig.GetCmdOverrideArgs(),
-			EnvVars:                   containerConfig.GetEnvironmentVariableOverrides(),
-			FilesArtifactMountpoints:  artifactIdStrToMountDirpath,
-			CpuAllocationMillicpus:    containerConfig.GetCPUAllocationMillicpus(),
-			MemoryAllocationMegabytes: containerConfig.GetMemoryAllocationMegabytes(),
-		}
+		serviceConfigs[serviceID] = binding_constructors.NewServiceConfig(
+			containerConfig.GetImage(),
+			privatePortsForApi,
+			publicPortsForApi,
+			containerConfig.GetEntrypointOverrideArgs(),
+			containerConfig.GetCmdOverrideArgs(),
+			containerConfig.GetEnvironmentVariableOverrides(),
+			artifactIdStrToMountDirpath,
+			containerConfig.GetCPUAllocationMillicpus(),
+			containerConfig.GetMemoryAllocationMegabytes())
 	}
 
-	startServiceArgs := &kurtosis_core_rpc_api_bindings.StartServicesArgs{
-		ServiceIdsToConfigs: serviceConfigs,
-	}
+	startServiceArgs := binding_constructors.NewStartServicesArgs(serviceConfigs)
 
 	logrus.Trace("Starting new service with Kurtosis API...")
 	resp, err := enclaveCtx.client.StartServices(ctx, startServiceArgs)

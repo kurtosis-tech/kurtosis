@@ -171,9 +171,7 @@ func (apicService ApiContainerService) RegisterService(ctx context.Context, args
 		return nil, stacktrace.Propagate(err, "An error occurred registering service '%v' in the service network", serviceId)
 	}
 
-	return &kurtosis_core_rpc_api_bindings.RegisterServiceResponse{
-		PrivateIpAddr: privateIpAddr.String(),
-	}, nil
+	return binding_constructors.NewRegisterServiceResponse(privateIpAddr.String()), nil
 }
 
 func (apicService ApiContainerService) RegisterServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServicesArgs) (*kurtosis_core_rpc_api_bindings.RegisterServicesResponse, error) {
@@ -193,9 +191,7 @@ func (apicService ApiContainerService) RegisterServices(ctx context.Context, arg
 		serviceIDsToIPsStringMap[string(id)] = ip.String()
 	}
 
-	return &kurtosis_core_rpc_api_bindings.RegisterServicesResponse{
-		ServiceIdsToPrivateIpAddresses: serviceIDsToIPsStringMap,
-	}, nil
+	return binding_constructors.NewRegisterServicesResponse(serviceIDsToIPsStringMap), nil
 }
 
 func (apicService ApiContainerService) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
@@ -389,10 +385,7 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 		logrus.Debugf("Failed to start service with GUID '%v'", guid)
 	}
 
-	return &kurtosis_core_rpc_api_bindings.StartServicesResponse{
-		SuccessfulServiceIdsToServiceInfo: serviceGUIDsToServiceInfo,
-		FailedServiceIdsToError: failedServiceIDsToErrorStr,
-	}, nil
+	return binding_constructors.NewStartServicesResponse(serviceGUIDsToServiceInfo, failedServiceIDsToErrorStr), nil
 }
 
 func (apicService ApiContainerService) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*kurtosis_core_rpc_api_bindings.RemoveServiceResponse, error) {
