@@ -12,13 +12,14 @@ import type {
     PartitionServices,
     Port,
     RemoveServiceArgs,
+    RegisterServiceArgs,
     RepartitionArgs,
+    ServiceConfig,
     StartServiceArgs,
     PartitionConnections,
     LoadModuleArgs,
     UnloadModuleArgs,
     GetModulesArgs,
-    RegisterServiceArgs,
     GetServicesArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
     WaitForHttpPostEndpointAvailabilityArgs,
@@ -35,15 +36,18 @@ import {
     newPartitionServices,
     newPort,
     newRegisterServiceArgs,
+    newRegisterServicesArgs,
     newRemoveServiceArgs,
     newRepartitionArgs,
+    newServiceConfig,
     newStartServiceArgs,
+    newStartServicesArgs,
     newStoreWebFilesArtifactArgs,
     newStoreFilesArtifactFromServiceArgs,
     newUnloadModuleArgs,
     newWaitForHttpGetEndpointAvailabilityArgs,
     newWaitForHttpPostEndpointAvailabilityArgs,
-    newUploadFilesArtifactArgs, newPauseServiceArgs, newUnpauseServiceArgs
+    newUploadFilesArtifactArgs, newPauseServiceArgs, newUnpauseServiceArgs,
 } from "../constructor_calls";
 import type { ContainerConfig, FilesArtifactUUID } from "../services/container_config";
 import type { ServiceID } from "../services/service";
@@ -54,7 +58,6 @@ import type { PartitionConnection } from "./partition_connection";
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
 import {
     ModuleInfo,
-    ServiceConfig,
     PauseServiceArgs, RegisterServicesArgs, ServiceInfo, UnloadModuleResponse,
     UnpauseServiceArgs,
     StartServicesArgs,
@@ -332,13 +335,11 @@ export class EnclaveContext {
         partitionId: PartitionID,
     ): Promise<Result<Map<ServiceID, ServiceContext>, Error>> {
         log.trace("Registering new services with Kurtosis API...");
-        const registerServicesArgs = new RegisterServicesArgs();
-        const serviceIdSet: jspb.Map<string, boolean> = registerServicesArgs.getServiceIdSetMap();
+        const serviceIdSet: Map<string, boolean> = new Map<ServiceID, boolean>();
         for (const [serviceId, _] of serviceConfigSuppliers) {
             serviceIdSet.set(serviceId, true);
         }
-        registerServicesArgs.setPartitionId(String(partitionId));
-
+        const registerServicesArgs : RegisterServicesArgs = newRegisterServicesArgs(serviceIdSet, partitionId)
         const registerServicesResponseResult = await this.backend.registerServices(registerServicesArgs)
         if(registerServicesResponseResult.isErr()){
             return err(registerServicesResponseResult.error)
@@ -347,7 +348,7 @@ export class EnclaveContext {
         const registerServicesResponse = registerServicesResponseResult.value
 
         log.trace("New services successfully registered with Kurtosis API");
-        const serviceConfigs = new Map<string, ServiceConfig>();
+        const serviceConfigs = new Map<ServiceID, ServiceConfig>();
         const serviceIdToPrivateIpAddresses : jspb.Map<string, string> = registerServicesResponse.getServiceIdsToPrivateIpAddressesMap();
         for (const[serviceId,  privateIpAddr] of serviceIdToPrivateIpAddresses.entries()){
             log.trace(`Generating container config object using the container config supplier for service with Id '${serviceId}'`);
@@ -393,45 +394,21 @@ export class EnclaveContext {
             }
             //TODO finish the hack
 
-            const serviceConfig : ServiceConfig = new ServiceConfig();
-            serviceConfig.setContainerImageName(containerConfig.image);
-            const usedPortsMap: jspb.Map<string, Port> = serviceConfig.getPrivatePortsMap();
-            for (const [portId, portSpec] of privatePortsForApi) {
-                usedPortsMap.set(portId, portSpec);
-            }
-            //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-            const publicPortsMap: jspb.Map<string, Port> = serviceConfig.getPublicPortsMap();
-            for (const [portId, portSpec] of publicPortsForApi) {
-                publicPortsMap.set(portId, portSpec);
-            }
-            //TODO finish the hack
-            const entrypointArgsArray: string[] = serviceConfig.getEntrypointArgsList();
-            for (const entryPoint of containerConfig.entrypointOverrideArgs) {
-                entrypointArgsArray.push(entryPoint);
-            }
-            const cmdArgsArray: string[] = serviceConfig.getCmdArgsList();
-            for (const cmdArg of containerConfig.cmdOverrideArgs) {
-                cmdArgsArray.push(cmdArg);
-            }
-            const envVarArray: jspb.Map<string, string> = serviceConfig.getEnvVarsMap();
-            for (const [name, value] of containerConfig.environmentVariableOverrides.entries()) {
-                envVarArray.set(name, value);
-            }
-            const filesArtificatMountDirpathsMap: jspb.Map<string, string> = serviceConfig.getFilesArtifactMountpointsMap();
-            for (const [artifactId, mountDirpath] of artifactIdStrToMountDirpath.entries()) {
-                filesArtificatMountDirpathsMap.set(artifactId, mountDirpath);
-            }
-            serviceConfig.setCpuAllocationMillicpus(containerConfig.cpuAllocationMillicpus);
-            serviceConfig.setMemoryAllocationMegabytes(containerConfig.memoryAllocationMegabytes);
-
+            const serviceConfig : ServiceConfig = newServiceConfig(
+                containerConfig.image,
+                privatePortsForApi,
+                publicPortsForApi,
+                containerConfig.entrypointOverrideArgs,
+                containerConfig.cmdOverrideArgs,
+                containerConfig.environmentVariableOverrides,
+                artifactIdStrToMountDirpath,
+                containerConfig.cpuAllocationMillicpus,
+                containerConfig.memoryAllocationMegabytes,
+            )
             serviceConfigs.set(serviceId, serviceConfig);
         }
 
-        const startServicesArgs = new StartServicesArgs();
-        const serviceIdsToConfigs : jspb.Map<string, ServiceConfig> = startServicesArgs.getServiceIdsToConfigsMap();
-        for (const [serviceId, serviceConfig] of serviceConfigs) {
-            serviceIdsToConfigs.set(serviceId, serviceConfig);
-        }
+        const startServicesArgs : StartServicesArgs = newStartServicesArgs(serviceConfigs)
 
         log.trace("Starting new services with Kurtosis API...");
         const startServicesResponseResult = await this.backend.startServices(startServicesArgs)
