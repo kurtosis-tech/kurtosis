@@ -11,7 +11,7 @@ type DockerOperation func(ctx context.Context, dockerManager *docker_manager.Doc
 
 // RunDockerOperationInParallel will run a Docker operation on each of the object IDs, in parallel
 // NOTE: Each call to this will get its own threadpool, so it's possible overwhelm Docker with many calls to this;
-//   we can fix this if it becomes problematic
+// we can fix this if it becomes problematic
 func RunDockerOperationInParallel(
 	ctx context.Context,
 // The IDs of the Docker objects to operate on
@@ -22,16 +22,16 @@ func RunDockerOperationInParallel(
 	map[string]bool,
 	map[string]error,
 ){
-	operations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
+	dockerOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
 
 	for dockerObjectId, _ := range dockerObjectIdSet {
 		opID := operation_parallelizer.OperationID(dockerObjectId)
-		operations[opID] = func() error {
-			return operationToApplyToAllDockerObjects(ctx, dockerManager, dockerObjectId)
+		dockerOperations[opID] = func() (interface{}, error) {
+			return nil, operationToApplyToAllDockerObjects(ctx, dockerManager, dockerObjectId)
 		}
 	}
 
-	successfulOps, failedOps := operation_parallelizer.RunOperationsInParallel(operations)
+	successfulOps, failedOps := operation_parallelizer.RunOperationsInParallel(dockerOperations)
 
 	success := map[string]bool{}
 	failed := map[string]error{}
