@@ -243,25 +243,111 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	ctx := context.Background()
 
 	logrus.Trace("Registering new services with Kurtosis API...")
-	// Create RegisterServicesArgs
 	serviceIDs := map[string]bool{}
 	for id, _ := range serviceConfigSuppliers {
 		serviceIDs[string(id)] = true
 	}
-	registerServicesArgs := kurtosis_core_rpc_api_bindings.RegisterServicesArgs{
+	registerServicesArgs := &kurtosis_core_rpc_api_bindings.RegisterServicesArgs{
 		ServiceIdSet: serviceIDs,
+		PartitionId: string(partitionID),
 	}
 
 	registerServicesResp, err := enclaveCtx.client.RegisterServices(ctx, registerServicesArgs)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred registering service with IDs '%v' with the Kurtosis API",
+			serviceIDs)
+	}
 
-	// Create ServiceConfig protobuf objects
+	logrus.Trace("New services successfully registered with Kurtosis API")
+	serviceConfigs := map[string]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
+	for serviceID, privateIPAddr := range registerServicesResp.ServiceIdsToPrivateIpAddresses {
+		logrus.Tracef("Generating container config object using the container config supplier for service '%v'...", serviceID)
+		containerConfigSupplier := serviceConfigSuppliers[services.ServiceID(serviceID)]
+		containerConfig, err := containerConfigSupplier(privateIPAddr)
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred executing the container config supplier for service with ID '%v'",
+				serviceID)
+		}
+		logrus.Tracef("Container config object successfully generated for service with ID '%v'", serviceID)
+		artifactIdStrToMountDirpath := map[string]string{}
+		for filesArtifactID, mountDirpath := range containerConfig.GetFilesArtifactMountpoints() {
+			artifactIdStrToMountDirpath[string(filesArtifactID)] = mountDirpath
+		}
+		logrus.Tracef("Successfully created files artifact ID str -> mount dirpaths map for service with ID '%v'", serviceID)
+		privatePorts := containerConfig.GetUsedPorts()
+		privatePortsForApi := map[string]*kurtosis_core_rpc_api_bindings.Port{}
+		for portId, portSpec := range privatePorts {
+			privatePortsForApi[portId] = &kurtosis_core_rpc_api_bindings.Port{
+				Number:   uint32(portSpec.GetNumber()),
+				Protocol: kurtosis_core_rpc_api_bindings.Port_Protocol(portSpec.GetProtocol()),
+			}
+		}
 
-	// Create StartServicesARs
+		//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+		publicPorts := containerConfig.GetPublicPorts()
+		publicPortsForApi := map[string]*kurtosis_core_rpc_api_bindings.Port{}
+		for portId, portSpec := range publicPorts {
+			publicPortsForApi[portId] = &kurtosis_core_rpc_api_bindings.Port{
+				Number:   uint32(portSpec.GetNumber()),
+				Protocol: kurtosis_core_rpc_api_bindings.Port_Protocol(portSpec.GetProtocol()),
+			}
+		}
+		//TODO finish the hack
 
-	// enclaveCtx.client.StartServices(ctx, startServicesArgs)
+		serviceConfigs[serviceID] = &kurtosis_core_rpc_api_bindings.ServiceConfig{
+			ContainerImageName:        containerConfig.GetImage(),
+			PrivatePorts:              privatePortsForApi,
+			PublicPorts:               publicPortsForApi,
+			EntrypointArgs:            containerConfig.GetEntrypointOverrideArgs(),
+			CmdArgs:                   containerConfig.GetCmdOverrideArgs(),
+			EnvVars:                   containerConfig.GetEnvironmentVariableOverrides(),
+			FilesArtifactMountpoints:  artifactIdStrToMountDirpath,
+			CpuAllocationMillicpus:    containerConfig.GetCPUAllocationMillicpus(),
+			MemoryAllocationMegabytes: containerConfig.GetMemoryAllocationMegabytes(),
+		}
+	}
 
-	// create ServiceContexts
-	return nil, nil
+	startServiceArgs := &kurtosis_core_rpc_api_bindings.StartServicesArgs{
+		ServiceIdsToConfigs: serviceConfigs,
+	}
+
+	logrus.Trace("Starting new service with Kurtosis API...")
+	resp, err := enclaveCtx.client.StartServices(ctx, startServiceArgs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred starting services with the Kurtosis API")
+	}
+
+	for serviceID, serviceErr := range resp.GetFailedServiceIdsToError() {
+		logrus.Errorf("The following error occurred trying to start service with ID '%v': %v", serviceID, serviceErr)
+	}
+
+	successfulServices := map[services.ServiceID]*services.ServiceContext{}
+	for serviceID, serviceInfo := range resp.GetSuccessfulServiceIdsToServiceInfo() {
+		serviceCtxPrivatePorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetPrivatePorts())
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred converting the private ports returned by the API to ports usable by the service context")
+		}
+		serviceCtxPublicPorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetMaybePublicPorts())
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred converting the public ports returned by the API to ports usable by the service context")
+		}
+
+		serviceContext := services.NewServiceContext(
+			enclaveCtx.client,
+			services.ServiceID(serviceID),
+			serviceInfo.GetPrivateIpAddr(),
+			serviceCtxPrivatePorts,
+			serviceInfo.GetMaybePublicIpAddr(),
+			serviceCtxPublicPorts,
+		)
+		successfulServices[services.ServiceID(serviceID)] = serviceContext
+	}
+
+	return successfulServices, nil
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
