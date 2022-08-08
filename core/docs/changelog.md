@@ -8,8 +8,8 @@
 * Add `StartServicesArgs`, `StartServicesResponse`, `RegisterServicesArgs, `RegisterServicesResponse, and `ServiceConfig` to protobuf
 * Implement `APIContainer.RegisterServices`
 * Implement `APIContainer.StartServices`
-* Implement `AddServicesToPartition` in golang
-* Implement `AddServicesToPartition` in typescript
+* Implement `AddServices` and `AddServicesToPartition` in golang
+* Implement `AddServices` and `AddServicesToPartition` in typescript
 
 # 1.57.0
 
