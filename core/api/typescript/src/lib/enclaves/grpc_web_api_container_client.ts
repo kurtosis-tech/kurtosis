@@ -2,14 +2,14 @@ import {ok, err, Result, Err} from "neverthrow";
 import * as grpc_web from "grpc-web";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import {
-    RegisterServiceArgs,
-    RegisterServiceResponse,
-    StartServiceArgs,
+    RegisterServiceArgs, RegisterServicesArgs,
+    RegisterServiceResponse, RegisterServicesResponse,
+    StartServiceArgs, StartServicesArgs,
+    StartServiceResponse, StartServicesResponse,
     RemoveServiceArgs,
     RepartitionArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
     WaitForHttpPostEndpointAvailabilityArgs,
-    StartServiceResponse,
     GetServicesResponse,
     LoadModuleArgs,
     UnloadModuleArgs,
@@ -113,6 +113,29 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         return ok(registerServiceResponse)
     }
 
+    public async registerServices(registerServicesArgs: RegisterServicesArgs): Promise<Result<RegisterServicesResponse, Error>>{
+        const registerServicesPromise: Promise<Result<RegisterServicesResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.registerServices(registerServicesArgs, {}, (error: grpc_web.RpcError | null, response?: RegisterServicesResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+        const registerServicesPromiseResult: Result<RegisterServicesResponse, Error> = await registerServicesPromise;
+        if (registerServicesPromiseResult.isErr()) {
+            return err(registerServicesPromiseResult.error);
+        }
+
+        const registerServicesResponse = registerServicesPromiseResult.value;
+        return ok(registerServicesResponse)
+    }
+
     public async startService(startServiceArgs: StartServiceArgs): Promise<Result<StartServiceResponse, Error>>{
         const promiseStartService: Promise<Result<StartServiceResponse, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.startService(startServiceArgs, {}, (error: grpc_web.RpcError | null, response?: StartServiceResponse) => {
@@ -134,6 +157,29 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
 
         const startServiceResponse: StartServiceResponse = resultStartService.value;
         return ok(startServiceResponse)
+    }
+
+    public async startServices(startServicesArgs: StartServicesArgs): Promise<Result<StartServicesResponse, Error>>{
+        const promiseStartServices: Promise<Result<StartServicesResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.startServices(startServicesArgs, {}, (error: grpc_web.RpcError | null, response?: StartServicesResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+        const resultStartServices: Result<StartServicesResponse, Error> = await promiseStartServices;
+        if (resultStartServices.isErr()) {
+            return err(resultStartServices.error);
+        }
+
+        const startServicesResponse: StartServicesResponse = resultStartServices.value;
+        return ok(startServicesResponse)
     }
 
     public async removeService(args: RemoveServiceArgs): Promise<Result<RemoveServiceResponse, Error>> {

@@ -54,7 +54,7 @@ import type { PartitionConnection } from "./partition_connection";
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
 import {
     ModuleInfo,
-    PauseServiceArgs, ServiceInfo, UnloadModuleResponse,
+    PauseServiceArgs, RegisterServicesArgs, ServiceInfo, UnloadModuleResponse,
     UnpauseServiceArgs
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
@@ -321,6 +321,40 @@ export class EnclaveContext {
             serviceCtxPublicPorts,
         );
 
+        return ok(serviceContext)
+    }
+
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    public async addServicesToPartition(
+        serviceConfigSuppliers: Map<ServiceID, (ipAddr: string) => Result<ContainerConfig, Error>>,
+        partitionId: PartitionID,
+    ): Promise<Result<Map<ServiceID, ServiceContext>, Error>> {
+        // Create RegisterServicesArgs
+        log.trace("Registering new service ID with Kurtosis API...");
+        const registerServicesArgs = new RegisterServicesArgs();
+        const serviceIdSet: jspb.Map<string, boolean> = registerServicesArgs.getServiceIdSetMap();
+        for (const [serviceId, _] of serviceConfigSuppliers) {
+            serviceIdSet.set(serviceId, true);
+        }
+        registerServicesArgs.setPartitionId(String(partitionId));
+
+        const registerServicesResponseResult = await this.backend.registerService()
+        if(registerServicesResponseResult.isErr()){
+            return err(registerServicesResponseResult.error)
+        }
+
+        const registerServiceResponse = registerServicesResponseResult.value
+
+        log.trace("New service successfully registered with Kurtosis API");
+        // enclaveCtx.client.RegisterServices(ctx, registerServicesArgs)
+
+        // Create ServiceConfig protobuf objects
+
+        // Create StartServicesARs
+
+        // enclaveCtx.client.StartServices(ctx, startServicesArgs)
+
+        // create ServiceContexts
         return ok(serviceContext)
     }
 
