@@ -237,9 +237,30 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	return serviceContext, nil
 }
 
-func AddServicesToPartition(
+func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	serviceConfigSuppliers map[services.ServiceID]func(ipAddr string) (*services.ContainerConfig, error),
 	partitionID PartitionID) (map[services.ServiceID]*services.ServiceContext, error) {
+	ctx := context.Background()
+
+	logrus.Trace("Registering new services with Kurtosis API...")
+	// Create RegisterServicesArgs
+	serviceIDs := map[string]bool{}
+	for id, _ := range serviceConfigSuppliers {
+		serviceIDs[string(id)] = true
+	}
+	registerServicesArgs := kurtosis_core_rpc_api_bindings.RegisterServicesArgs{
+		ServiceIdSet: serviceIDs,
+	}
+
+	registerServicesResp, err := enclaveCtx.client.RegisterServices(ctx, registerServicesArgs)
+
+	// Create ServiceConfig protobuf objects
+
+	// Create StartServicesARs
+
+	// enclaveCtx.client.StartServices(ctx, startServicesArgs)
+
+	// create ServiceContexts
 	return nil, nil
 }
 
