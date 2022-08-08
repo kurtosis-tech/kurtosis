@@ -10,6 +10,7 @@
 * Implement `APIContainer.StartServices`
 * Implement `AddServices` and `AddServicesToPartition` in golang
 * Implement `AddServices` and `AddServicesToPartition` in typescript
+* Remove `RegisterService` and `StartService` from `APIContainer` and `ServiceNetwork`
 
 # 1.57.0
 

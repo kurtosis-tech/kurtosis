@@ -12,7 +12,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-core/files_artifacts_expander/args"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
@@ -142,78 +141,6 @@ func (network *ServiceNetwork) Repartition(
 	return nil
 }
 
-// Registers a service for use with the network (creating the IPs and so forth), but doesn't start it
-// If the partition ID is empty, registers the service with the default partition
-func (network ServiceNetwork) RegisterService(
-	ctx context.Context,
-	serviceId service.ServiceID,
-	partitionId service_network_types.PartitionID,
-) (net.IP, error) {
-	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-
-	if _, found := network.registeredServiceInfo[serviceId]; found {
-		return nil, stacktrace.NewError(
-			"Cannot register service '%v' because it already exists in the network",
-			serviceId,
-		)
-	}
-
-	if partitionId == "" {
-		partitionId = defaultPartitionId
-	}
-	if _, found := network.topology.GetPartitionServices()[partitionId]; !found {
-		return nil, stacktrace.NewError(
-			"No partition with ID '%v' exists in the current partition topology",
-			partitionId,
-		)
-	}
-
-	userService, err := network.kurtosisBackend.RegisterUserService(
-		ctx,
-		network.enclaveId,
-		serviceId,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred registering service with ID '%v'", serviceId)
-	}
-	shouldDestroyService := true
-	defer func() {
-		if shouldDestroyService {
-			network.destroyServiceBestEffortAfterRegistrationFailure(userService.GetGUID())
-		}
-	}()
-
-	network.registeredServiceInfo[serviceId] = userService
-	shouldRemoveFromServiceMap := true
-	defer func() {
-		if shouldRemoveFromServiceMap {
-			delete(network.registeredServiceInfo, serviceId)
-		}
-	}()
-
-	if err := network.topology.AddService(serviceId, partitionId); err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred adding service with ID '%v' to partition '%v' in the topology",
-			serviceId,
-			partitionId,
-		)
-	}
-	shouldRemoveTopologyAddition := true
-	defer func() {
-		if shouldRemoveTopologyAddition {
-			network.topology.RemoveService(serviceId)
-		}
-	}()
-
-	shouldDestroyService = false
-	shouldRemoveFromServiceMap = false
-	shouldRemoveTopologyAddition = false
-	return userService.GetPrivateIP(), nil
-}
-
 // Registers services for use within the network (creating the IPs and so forth), but doesn't start them
 // If the partition ID is empty, registers the services with the default partition
 func (network ServiceNetwork) RegisterServices(
@@ -301,128 +228,12 @@ func (network ServiceNetwork) RegisterServices(
 
 // TODO add tests for this
 /*
-Starts a previously-registered but not-started service by creating it in a container
+Starts previously-registered but not-started servicse by creating them in containers
 
 Returns:
-	Mapping of port-used-by-service -> port-on-the-Docker-host-machine where the user can make requests to the port
+	Mapping of serviceIDs to port-used-by-service -> port-on-the-Docker-host-machine where the user can make requests to the port
 		to access the port. If a used port doesn't have a host port bound, then the value will be nil.
 */
-func (network *ServiceNetwork) StartService(
-	ctx context.Context,
-	serviceId service.ServiceID,
-	imageName string,
-	privatePorts map[string]*port_spec.PortSpec,
-	publicPorts map[string]*port_spec.PortSpec, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	entrypointArgs []string,
-	cmdArgs []string,
-	dockerEnvVars map[string]string,
-	filesArtifactMountDirpaths map[enclave_data_directory.FilesArtifactUUID]string,
-	cpuAllocationMillicpus uint64,
-	memoryAllocationMegabytes uint64,
-) (
-	resultService *service.Service,
-	resultErr error,
-) {
-	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-
-	registration, found := network.registeredServiceInfo[serviceId]
-	if !found {
-		return nil, stacktrace.NewError("Cannot start service; no registration exists for service with ID '%v'", serviceId)
-	}
-	serviceGuid := registration.GetGUID()
-
-	// When partitioning is enabled, there's a race condition where:
-	//   a) we need to start the service before we can launch the sidecar but
-	//   b) we can't modify the qdisc configuration until the sidecar container is launched.
-	// This means that there's a period of time at startup where the container might not be partitioned. We solve
-	// t his by setting the packet loss config of the new service in the already-existing services' qdisc.
-	// This means that when the new service is launched, even if its own qdisc isn't yet updated, all the services
-	//  it would communicate are already dropping traffic to it before it even starts.
-	if network.isPartitioningEnabled {
-		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
-				" to know what packet loss updates to apply on the new node")
-		}
-
-		servicesPacketLossConfigurationsWithoutNewNode := map[service.ServiceID]map[service.ServiceID]float32{}
-		for serviceIdInTopology, otherServicesPacketLossConfigs := range servicePacketLossConfigurationsByServiceID {
-			if serviceId == serviceIdInTopology {
-				continue
-			}
-			servicesPacketLossConfigurationsWithoutNewNode[serviceIdInTopology] = otherServicesPacketLossConfigs
-		}
-
-		if err := updateTrafficControlConfiguration(
-			ctx,
-			servicesPacketLossConfigurationsWithoutNewNode,
-			network.registeredServiceInfo,
-			network.networkingSidecars,
-		); err != nil {
-			return nil, stacktrace.Propagate(
-				err,
-				"An error occurred updating the traffic control configuration of all the other services "+
-					"before adding the new service, meaning that the service wouldn't actually start in a partition",
-			)
-		}
-		// TODO defer an undo somehow???
-	}
-
-	userService, err := network.startService(
-		ctx,
-		serviceGuid,
-		imageName,
-		privatePorts,
-		publicPorts,
-		entrypointArgs,
-		cmdArgs,
-		dockerEnvVars,
-		filesArtifactMountDirpaths,
-		cpuAllocationMillicpus,
-		memoryAllocationMegabytes,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred starting service '%v'",
-			serviceId,
-		)
-	}
-	// NOTE: There's no real way to defer-undo the service start
-
-	if network.isPartitioningEnabled {
-		sidecar, err := network.networkingSidecarManager.Add(ctx, registration.GetGUID())
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred adding the networking sidecar")
-		}
-		network.networkingSidecars[serviceId] = sidecar
-
-		if err := sidecar.InitializeTrafficControl(ctx); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred initializing the newly-created networking-sidecar-traffic-control-qdisc-configuration")
-		}
-
-		// TODO Getting packet loss configuration by service ID is an expensive call and, as of 2021-11-23, we do it twice - the solution is to make
-		//  Getting packet loss configuration by service ID not an expensive call
-		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
-				" to know what packet loss updates to apply on the new node")
-		}
-		newNodeServicePacketLossConfiguration := servicePacketLossConfigurationsByServiceID[serviceId]
-		updatesToApply := map[service.ServiceID]map[service.ServiceID]float32{
-			serviceId: newNodeServicePacketLossConfiguration,
-		}
-		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.registeredServiceInfo, network.networkingSidecars); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration on the new node to partition it "+
-				"off from other nodes")
-		}
-	}
-
-	return userService, nil
-}
-
 func(network *ServiceNetwork) StartServices(
 	ctx context.Context,
 	serviceConfigs map[service.ServiceID]*service.ServiceConfig,
@@ -893,103 +704,6 @@ func (network *ServiceNetwork) destroyServiceBestEffortAfterRegistrationFailure(
 			serviceGuid,
 		)
 	}
-}
-
-func (network *ServiceNetwork) startService(
-	ctx context.Context,
-	serviceGuid service.ServiceGUID,
-	imageName string,
-	privatePorts map[string]*port_spec.PortSpec,
-	publicPorts map[string]*port_spec.PortSpec, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	entrypointArgs []string,
-	cmdArgs []string,
-	envVars map[string]string,
-	// Mapping of UUIDs of previously-registered files artifacts -> mountpoints on the container
-	// being launched
-	filesArtifactUuidsToMountpoints map[enclave_data_directory.FilesArtifactUUID]string,
-	cpuAllocationMillicpus uint64,
-	memoryAllocationMegabytes uint64,
-) (
-	resultUserService *service.Service,
-	resultErr error,
-) {
-	var filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion
-	if len(filesArtifactUuidsToMountpoints) > 0 {
-		usedArtifactUuidSet := map[enclave_data_directory.FilesArtifactUUID]bool{}
-		for artifactUuid := range filesArtifactUuidsToMountpoints {
-			usedArtifactUuidSet[artifactUuid] = true
-		}
-
-		filesArtifactsExpansions := []args.FilesArtifactExpansion{}
-		expanderDirpathToUserServiceDirpathMap := map[string]string{}
-		for filesArtifactUuid, mountpointOnUserService := range filesArtifactUuidsToMountpoints {
-			dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, string(filesArtifactUuid))
-			expansion := args.FilesArtifactExpansion{
-				FilesArtifactUUID: string(filesArtifactUuid),
-				DirPathToExpandTo: dirpathToExpandTo,
-			}
-			filesArtifactsExpansions = append(filesArtifactsExpansions, expansion)
-
-			expanderDirpathToUserServiceDirpathMap[dirpathToExpandTo] = mountpointOnUserService
-		}
-
-		filesArtifactsExpanderArgs, err := args.NewFilesArtifactsExpanderArgs(
-			network.apiContainerIpAddress.String(),
-			network.apiContainerGrpcPortNum,
-			filesArtifactsExpansions,
-		)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating files artifacts expander args")
-		}
-		expanderEnvVars, err := args.GetEnvFromArgs(filesArtifactsExpanderArgs)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting files artifacts expander environment variables using args: %+v", filesArtifactsExpanderArgs)
-		}
-
-		expanderImageAndTag := fmt.Sprintf(
-			"%v:%v",
-			filesArtifactsExpanderImage,
-			network.apiContainerVersion,
-		)
-
-		filesArtifactsExpansion = &files_artifacts_expansion.FilesArtifactsExpansion{
-			ExpanderImage:                     expanderImageAndTag,
-			ExpanderEnvVars:                   expanderEnvVars,
-			ExpanderDirpathsToServiceDirpaths: expanderDirpathToUserServiceDirpathMap,
-		}
-	}
-
-	// Docker requires the minimum memory limit to be 6 megabytes to we make sure the allocation is at least that amount
-	// But first, we check that it's not the default value, meaning the user potentially didn't even set it
-	if memoryAllocationMegabytes != defaultMemoryAllocMegabytes && memoryAllocationMegabytes < minMemoryLimit {
-		return nil, stacktrace.NewError("Memory allocation, `%d`, is too low. Kurtosis requires the memory limit to be at least `%d` megabytes.", memoryAllocationMegabytes, minMemoryLimit)
-	}
-
-	launchedUserService, err := network.kurtosisBackend.StartUserService(
-		ctx,
-		network.enclaveId,
-		serviceGuid,
-		imageName,
-		privatePorts,
-		publicPorts,
-		entrypointArgs,
-		cmdArgs,
-		envVars,
-		filesArtifactsExpansion,
-		cpuAllocationMillicpus,
-		memoryAllocationMegabytes,
-	)
-
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred starting service '%v' with image '%v' and files artifacts expansions '%+v'",
-			serviceGuid,
-			imageName,
-			filesArtifactsExpansion,
-		)
-	}
-	return launchedUserService, nil
 }
 
 func (network *ServiceNetwork) startServices(
