@@ -54,8 +54,10 @@ import type { PartitionConnection } from "./partition_connection";
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
 import {
     ModuleInfo,
+    ServiceConfig,
     PauseServiceArgs, RegisterServicesArgs, ServiceInfo, UnloadModuleResponse,
-    UnpauseServiceArgs
+    UnpauseServiceArgs,
+    StartServicesArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
 export type EnclaveID = string;
@@ -338,24 +340,142 @@ export class EnclaveContext {
         }
         registerServicesArgs.setPartitionId(String(partitionId));
 
-        const registerServicesResponseResult = await this.backend.registerService()
+        // enclaveCtx.client.RegisterServices(ctx, registerServicesArgs)
+        const registerServicesResponseResult = await this.backend.registerServices(registerServicesArgs)
         if(registerServicesResponseResult.isErr()){
             return err(registerServicesResponseResult.error)
         }
 
-        const registerServiceResponse = registerServicesResponseResult.value
+        const registerServicesResponse = registerServicesResponseResult.value
 
-        log.trace("New service successfully registered with Kurtosis API");
-        // enclaveCtx.client.RegisterServices(ctx, registerServicesArgs)
-
+        log.trace("New services successfully registered with Kurtosis API");
         // Create ServiceConfig protobuf objects
+        const serviceConfigs = new Map<string, ServiceConfig>();
+        const serviceIdToPrivateIpAddresses :  jspb.Map<string, string> = registerServicesResponse.getServiceIdsToPrivateIpAddressesMap();
+        for (const[serviceId,  privateIpAddr] of serviceIdToPrivateIpAddresses){
+            log.trace("Generating container config object using the container config supplier for service with Id '%v'...", serviceId);
+            const containerConfigSupplier : (ipAddr: string) => Result<ContainerConfig, Error> = serviceConfigSuppliers.get(serviceId);
+            const containerConfigSupplierResult: Result<ContainerConfig, Error> = containerConfigSupplier(privateIpAddr);
+            if (containerConfigSupplierResult.isErr()){
+                return err(containerConfigSupplierResult.error);
+            }
+            const containerConfig: ContainerConfig = containerConfigSupplierResult.value;
+            log.trace("Container config object successfully generated for service with Id '%v'", serviceId);
 
-        // Create StartServicesARs
+            log.trace("Creating files artifact ID str -> mount dirpaths map for service with Id '%v'...", serviceId);
+            const artifactIdStrToMountDirpath: Map<string, string> = new Map();
+            for (const [filesArtifactId, mountDirpath] of containerConfig.filesArtifactMountpoints.entries()) {
+                artifactIdStrToMountDirpath.set(String(filesArtifactId), mountDirpath);
+            }
+            log.trace("Successfully created files artifact ID str -> mount dirpaths map for service with Id '%v'", serviceId);
 
-        // enclaveCtx.client.StartServices(ctx, startServicesArgs)
+            log.trace("Starting new service with Kurtosis API...");
+            const privatePorts = containerConfig.usedPorts;
+            const privatePortsForApi: Map<string, Port> = new Map();
+            for (const [portId, portSpec] of privatePorts.entries()) {
+                const portSpecForApi: Port = newPort(
+                    portSpec.number,
+                    portSpec.protocol,
+                )
+                privatePortsForApi.set(portId, portSpecForApi);
+            }
+
+            //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+            const publicPorts = containerConfig.publicPorts;
+            const publicPortsForApi: Map<string, Port> = new Map();
+            for (const [portId, portSpec] of publicPorts.entries()) {
+                const portSpecForApi: Port = newPort(
+                    portSpec.number,
+                    portSpec.protocol,
+                )
+                publicPortsForApi.set(portId, portSpecForApi);
+            }
+            //TODO finish the hack
+
+            const serviceConfig : ServiceConfig = new ServiceConfig();
+            serviceConfig.setContainerImageName(containerConfig.image);
+            const usedPortsMap: jspb.Map<string, Port> = serviceConfig.getPrivatePortsMap();
+            for (const [portId, portSpec] of privatePortsForApi) {
+                usedPortsMap.set(portId, portSpec);
+            }
+            //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+            const publicPortsMap: jspb.Map<string, Port> = serviceConfig.getPublicPortsMap();
+            for (const [portId, portSpec] of publicPortsForApi) {
+                publicPortsMap.set(portId, portSpec);
+            }
+            //TODO finish the hack
+            const entrypointArgsArray: string[] = serviceConfig.getEntrypointArgsList();
+            for (const entryPoint of containerConfig.entrypointOverrideArgs) {
+                entrypointArgsArray.push(entryPoint);
+            }
+            const cmdArgsArray: string[] = serviceConfig.getCmdArgsList();
+            for (const cmdArg of containerConfig.cmdOverrideArgs) {
+                cmdArgsArray.push(cmdArg);
+            }
+            const envVarArray: jspb.Map<string, string> = serviceConfig.getEnvVarsMap();
+            for (const [name, value] of containerConfig.environmentVariableOverrides.entries()) {
+                envVarArray.set(name, value);
+            }
+            const filesArtificatMountDirpathsMap: jspb.Map<string, string> = serviceConfig.getFilesArtifactMountpointsMap();
+            for (const [artifactId, mountDirpath] of artifactIdStrToMountDirpath.entries()) {
+                filesArtificatMountDirpathsMap.set(artifactId, mountDirpath);
+            }
+            serviceConfig.setCpuAllocationMillicpus(containerConfig.cpuAllocationMillicpus);
+            serviceConfig.setMemoryAllocationMegabytes(containerConfig.memoryAllocationMegabytes);
+
+            serviceConfigs.set(serviceId, serviceConfig);
+        }
+        // Create StartServicesArgs
+        const startServicesArgs = new StartServicesArgs();
+        const serviceIdsToConfigs : jspb.Map<string, ServiceConfig> = startServicesArgs.getServiceIdsToConfigsMap();
+        for (const [serviceId, serviceConfig] of serviceConfigs) {
+            serviceIdsToConfigs.set(serviceId, serviceConfig);
+        }
+
+        log.trace("Starting new services with Kurtosis API...");
+        const startServicesResponseResult = await this.backend.startServices(startServicesArgs)
+        if(startServicesResponseResult.isErr()){
+            return err(startServicesResponseResult.error)
+        }
+
+        const startServicesResponse = startServicesResponseResult.value;
+        const successfulServicesInfo :  jspb.Map<String, ServiceInfo> = startServicesResponse.getSuccessfulServiceIdsToServiceInfoMap();
+        if(successfulServicesInfo == undefined) {
+            return err(new Error("Expected StartServicseResponse to contain a successful_service_ids_to_service_info, instead no such field was found"))
+        }
+        const failedServices :  jspb.Map<String, String> = startServicesResponse.getFailedServiceIdsToErrorMap();
+        if(failedServices == undefined) {
+            return err(new Error("Expected StartServicseResponse to contain a failed_service_ids_to_error, instead no such field was found"))
+        }
+
+        for (const[serviceIdStr, serviceErr] of failedServices){
+            log.error("The following error occurred trying to start service with ID '%v': %v", serviceIdStr, serviceErr)
+        }
 
         // create ServiceContexts
-        return ok(serviceContext)
+        const successfulServiceContexts : Map<ServiceID, ServiceContext> = new Map<ServiceID, ServiceContext>();
+        for (const[serviceIdStr, serviceInfo] of successfulServicesInfo){
+            const serviceId : ServiceID = <ServiceID>serviceIdStr;
+            const serviceCtxPrivatePorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
+                serviceInfo.getPrivatePortsMap(),
+            );
+            const serviceCtxPublicPorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
+                serviceInfo.getMaybePublicPortsMap(),
+            );
+
+            const serviceContext: ServiceContext = new ServiceContext(
+                this.backend,
+                serviceId,
+                serviceInfo.getPrivateIpAddr(),
+                serviceCtxPrivatePorts,
+                serviceInfo.getMaybePublicIpAddr(),
+                serviceCtxPublicPorts,
+            );
+            successfulServiceContexts.set(serviceId, serviceContext)
+            log.trace("Successfully started service with ID '%v' with Kurtosis API", serviceIdStr);
+        }
+
+        return ok(successfulServiceContexts)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
