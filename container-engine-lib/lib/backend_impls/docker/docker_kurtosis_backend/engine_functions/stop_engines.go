@@ -64,5 +64,7 @@ func StopEngines(
 		)
 	}
 
+	//TODO what happens with centralized logs components (logs database and logs collector) containers when the engine is stopped?
+
 	return successfulGuids, erroredGuids, nil
 }

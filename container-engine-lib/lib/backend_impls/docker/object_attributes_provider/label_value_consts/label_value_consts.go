@@ -25,7 +25,7 @@ const (
 
 	enclaveDataVolumeTypeLabelValueStr            = "enclave-data"
 	filesArtifactExpansionVolumeTypeLabelValueStr = "files-artifacts-expansion"
-	logsDbDataVolumeTypeLabelValueStr             = "logs-db"
+	logsDatabaseVolumeTypeLabelValueStr           = "logs-db"
 
 	trueValueStr  = "true"
 	falseValueStr = "false"
@@ -54,4 +54,4 @@ var FilesArtifactExpanderContainerTypeDockerLabelValue = docker_label_value.Must
 
 var EnclaveDataVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(enclaveDataVolumeTypeLabelValueStr)
 var FilesArtifactExpansionVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(filesArtifactExpansionVolumeTypeLabelValueStr)
-var LogsDbDataVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(logsDbDataVolumeTypeLabelValueStr)
+var LogsDatabaseVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(logsDatabaseVolumeTypeLabelValueStr)

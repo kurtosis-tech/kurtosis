@@ -34,13 +34,13 @@ type DockerObjectAttributesProvider interface {
 	) (DockerObjectAttributes, error)
 	ForEnclave(enclaveId enclave.EnclaveID) (DockerEnclaveObjectAttributesProvider, error)
 	ForLogsDatabaseServer(
-		guid engine.EngineGUID,
+		engineGUID engine.EngineGUID,
 		httpApiPortId string,
 		httpApiPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
-	ForEnclaveDataVolume(engineGUID engine.EngineGUID) (DockerObjectAttributes, error)
+	ForLogsDatabaseVolume(engineGUID engine.EngineGUID) (DockerObjectAttributes, error)
 	ForLogsCollectorServer(
-		guid engine.EngineGUID,
+		engineGUID engine.EngineGUID,
 		forwardPortId string,
 		forwardPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
@@ -208,7 +208,7 @@ func (provider *dockerObjectAttributesProviderImpl) ForLogsCollectorServer(
 	return objectAttributes, nil
 }
 
-func (provider *dockerObjectAttributesProviderImpl) ForEnclaveDataVolume(engineGUID engine.EngineGUID) (DockerObjectAttributes, error) {
+func (provider *dockerObjectAttributesProviderImpl) ForLogsDatabaseVolume(engineGUID engine.EngineGUID) (DockerObjectAttributes, error) {
 	nameStr := logsDatabaseVolumeName
 	name, err := docker_object_name.CreateNewDockerObjectName(nameStr)
 	if err != nil {
@@ -222,7 +222,7 @@ func (provider *dockerObjectAttributesProviderImpl) ForEnclaveDataVolume(engineG
 
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
 		label_key_consts.EngineGUIDDockerLabelKey: engineGuidLabelValue,
-		label_key_consts.VolumeTypeDockerLabelKey: label_value_consts.LogsDbDataVolumeTypeDockerLabelValue,
+		label_key_consts.VolumeTypeDockerLabelKey: label_value_consts.LogsDatabaseVolumeTypeDockerLabelValue,
 	}
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
