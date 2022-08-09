@@ -1,76 +1,27 @@
 package kubernetes_kurtosis_backend
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/engine_functions"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/user_services_functions"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"io"
-	apiv1 "k8s.io/api/core/v1"
 	"net"
 	"strings"
-	"time"
 )
-
-const (
-	// The Kurtosis servers (Engine and API Container) use gRPC so MUST listen on TCP (no other protocols are supported), which also
-	// means that its grpc-proxy must listen on TCP
-	kurtosisServersPortProtocol = port_spec.PortProtocol_TCP
-
-	// The ID of the GRPC port for Kurtosis-internal containers (e.g. API container, engine, modules, etc.) which will
-	//  be stored in the port spec label
-	kurtosisInternalContainerGrpcPortSpecId = "grpc"
-
-	// The ID of the GRPC proxy port for Kurtosis-internal containers. This is necessary because
-	// Typescript's grpc-web cannot communicate directly with GRPC ports, so Kurtosis-internal containers
-	// need a proxy  that will translate grpc-web requests before they hit the main GRPC server
-	kurtosisInternalContainerGrpcProxyPortSpecId = "grpc-proxy"
-
-	// Port number string parsing constants
-	portNumStrParsingBase = 10
-	portNumStrParsingBits = 16
-
-	netstatSuccessExitCode = 0
-
-)
-
-// This maps a Kubernetes pod's phase to a binary "is the pod considered running?" determiner
-// Its completeness is enforced via unit test
-var isPodRunningDeterminer = map[apiv1.PodPhase]bool{
-	apiv1.PodPending: true,
-	apiv1.PodRunning: true,
-	apiv1.PodSucceeded: false,
-	apiv1.PodFailed: false,
-	apiv1.PodUnknown: false, //We cannot say that a pod is not running if we don't know the real state
-}
-
-// Completeness enforced via unit test
-var kurtosisPortProtocolToKubernetesPortProtocolTranslator = map[port_spec.PortProtocol]apiv1.Protocol{
-	port_spec.PortProtocol_TCP: apiv1.ProtocolTCP,
-	port_spec.PortProtocol_UDP: apiv1.ProtocolUDP,
-	port_spec.PortProtocol_SCTP: apiv1.ProtocolSCTP,
-}
 
 type KubernetesKurtosisBackend struct {
 	kubernetesManager *kubernetes_manager.KubernetesManager
@@ -162,6 +113,58 @@ func NewKubernetesKurtosisBackend(
 
 func (backend *KubernetesKurtosisBackend) PullImage(image string) error {
 	return stacktrace.NewError("PullImage isn't implemented for Kubernetes yet")
+}
+
+func (backend KubernetesKurtosisBackend) CreateEngine(
+	ctx context.Context,
+	imageOrgAndRepo string,
+	imageVersionTag string,
+	grpcPortNum uint16,
+	grpcProxyPortNum uint16,
+	envVars map[string]string,
+) (
+	*engine.Engine,
+	error,
+) {
+	return engine_functions.CreateEngine(
+		ctx,
+		imageOrgAndRepo,
+		imageVersionTag,
+		grpcPortNum,
+		grpcProxyPortNum,
+		envVars,
+		backend.kubernetesManager,
+		backend.objAttrsProvider,
+	)
+}
+
+func (backend KubernetesKurtosisBackend) GetEngines(
+	ctx context.Context,
+	filters *engine.EngineFilters,
+) (map[engine.EngineGUID]*engine.Engine, error) {
+	return engine_functions.GetEngines(ctx, filters, backend.kubernetesManager)
+}
+
+func (backend KubernetesKurtosisBackend) StopEngines(
+	ctx context.Context,
+	filters *engine.EngineFilters,
+) (
+	resultSuccessfulEngineGuids map[engine.EngineGUID]bool,
+	resultErroredEngineGuids map[engine.EngineGUID]error,
+	resultErr error,
+) {
+	return engine_functions.StopEngines(ctx, filters, backend.kubernetesManager)
+}
+
+func (backend KubernetesKurtosisBackend) DestroyEngines(
+	ctx context.Context,
+	filters *engine.EngineFilters,
+) (
+	resultSuccessfulEngineGuids map[engine.EngineGUID]bool,
+	resultErroredEngineGuids map[engine.EngineGUID]error,
+	resultErr error,
+) {
+	return engine_functions.DestroyEngines(ctx, filters, backend.kubernetesManager)
 }
 
 func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
@@ -369,67 +372,6 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 		backend.kubernetesManager)
 }
 
-// ====================================================================================================
-//                       Private helper functions shared by multiple subfunctions files
-// ====================================================================================================
-func getStringMapFromLabelMap(labelMap map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue) map[string]string {
-	strMap := map[string]string{}
-	for labelKey, labelValue := range labelMap {
-		strMap[labelKey.GetString()] = labelValue.GetString()
-	}
-	return strMap
-}
-
-func getStringMapFromAnnotationMap(labelMap map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue) map[string]string {
-	strMap := map[string]string{}
-	for labelKey, labelValue := range labelMap {
-		strMap[labelKey.GetString()] = labelValue.GetString()
-	}
-	return strMap
-}
-
-// If no expected-ports list is passed in, no validation is done and all the ports are passed back as-is
-func getPrivatePortsAndValidatePortExistence(kubernetesService *apiv1.Service, expectedPortIds map[string]bool) (map[string]*port_spec.PortSpec, error) {
-	portSpecsStr, found := kubernetesService.GetAnnotations()[kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString()]
-	if !found {
-		return nil, stacktrace.NewError(
-			"Couldn't find expected port specs annotation key '%v' on the Kubernetes service",
-			kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString(),
-		)
-	}
-	privatePortSpecs, err := kubernetes_port_spec_serializer.DeserializePortSpecs(portSpecsStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred deserializing private port specs string '%v'", privatePortSpecs)
-	}
-
-	if expectedPortIds != nil && len(expectedPortIds) > 0 {
-		for portId := range expectedPortIds {
-			if _, found := privatePortSpecs[portId]; !found {
-				return nil, stacktrace.NewError("Missing private port with ID '%v' in the private ports", portId)
-			}
-		}
-	}
-	return privatePortSpecs, nil
-}
-
-func getContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus, error) {
-	// TODO Rename this; this shouldn't be called "ContainerStatus" since there's no longer a 1:1 mapping between container:kurtosis_object
-	status := container_status.ContainerStatus_Stopped
-
-	if pod != nil {
-		podPhase := pod.Status.Phase
-		isPodRunning, found := isPodRunningDeterminer[podPhase]
-		if !found {
-			// This should never happen because we enforce completeness in a unit test
-			return status, stacktrace.NewError("No is-pod-running determination found for pod phase '%v' on pod '%v'; this is a bug in Kurtosis", podPhase, pod.Name)
-		}
-		if isPodRunning {
-			status = container_status.ContainerStatus_Running
-		}
-	}
-	return status, nil
-}
-
 func (backend *KubernetesKurtosisBackend) getEnclaveNamespaceName(ctx context.Context, enclaveId enclave.EnclaveID) (string, error) {
 	// TODO This is a big janky hack that results from *KubernetesKurtosisBackend containing functions for all of API containers, engines, and CLIs
 	//  We want to fix this by splitting the *KubernetesKurtosisBackend into a bunch of different backends, one per user, but we can only
@@ -481,50 +423,6 @@ func getEnclaveMatchLabels() map[string]string {
 	return matchLabels
 }
 
-func getKubernetesServicePortsFromPrivatePortSpecs(privatePorts map[string]*port_spec.PortSpec) ([]apiv1.ServicePort, error) {
-	result := []apiv1.ServicePort{}
-	for portId, portSpec := range privatePorts {
-		kurtosisProtocol := portSpec.GetProtocol()
-		kubernetesProtocol, found := kurtosisPortProtocolToKubernetesPortProtocolTranslator[kurtosisProtocol]
-		if !found {
-			// Should never happen because we enforce completeness via unit test
-			return nil, stacktrace.NewError("No Kubernetes port protocol was defined for Kurtosis port protocol '%v'; this is a bug in Kurtosis", kurtosisProtocol)
-		}
-
-		kubernetesPortObj := apiv1.ServicePort{
-			Name:        portId,
-			Protocol:    kubernetesProtocol,
-			// TODO Specify this!!! Will make for a really nice user interface (e.g. "https")
-			AppProtocol: nil,
-			// Safe to cast because max uint16 < int32
-			Port:        int32(portSpec.GetNumber()),
-		}
-		result = append(result, kubernetesPortObj)
-	}
-	return result, nil
-}
-
-func getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts map[string]*port_spec.PortSpec) ([]apiv1.ContainerPort, error) {
-	result := []apiv1.ContainerPort{}
-	for portId, portSpec := range privatePorts {
-		kurtosisProtocol := portSpec.GetProtocol()
-		kubernetesProtocol, found := kurtosisPortProtocolToKubernetesPortProtocolTranslator[kurtosisProtocol]
-		if !found {
-			// Should never happen because we enforce completeness via unit test
-			return nil, stacktrace.NewError("No Kubernetes port protocol was defined for Kurtosis port protocol '%v'; this is a bug in Kurtosis", kurtosisProtocol)
-		}
-
-		kubernetesPortObj := apiv1.ContainerPort{
-			Name:          portId,
-			// Safe to do because max uint16 < int32
-			ContainerPort: int32(portSpec.GetNumber()),
-			Protocol:      kubernetesProtocol,
-		}
-		result = append(result, kubernetesPortObj)
-	}
-	return result, nil
-}
-
 // This is a helper function that will take multiple errors, each identified by an ID, and format them together
 // If no errors are returned, this function returns nil
 func buildCombinedError(errorsById map[string]error, titleStr string) error {
@@ -557,65 +455,3 @@ func buildCombinedError(errorsById map[string]error, titleStr string) error {
 	return nil
 }
 
-func waitForPortAvailabilityUsingNetstat(
-	kubernetesManager *kubernetes_manager.KubernetesManager,
-	namespaceName string,
-	podName string,
-	containerName string,
-	portSpec *port_spec.PortSpec,
-	maxRetries uint,
-	timeBetweenRetries time.Duration,
-) error {
-	commandStr := fmt.Sprintf(
-		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
-		strings.ToLower(portSpec.GetProtocol().String()),
-		portSpec.GetNumber(),
-	)
-	execCmd := []string{
-		"sh",
-		"-c",
-		commandStr,
-	}
-	for i := uint(0); i < maxRetries; i++ {
-		outputBuffer := &bytes.Buffer{}
-		concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
-		exitCode, err := kubernetesManager.RunExecCommand(
-			namespaceName,
-			podName,
-			containerName,
-			execCmd,
-			concurrentBuffer,
-			concurrentBuffer,
-		)
-		if err == nil {
-			if exitCode == netstatSuccessExitCode {
-				return nil
-			}
-			logrus.Debugf(
-				"Netstat availability-waiting command '%v' returned without a Kubernetes error, but exited with non-%v exit code '%v' and logs:\n%v",
-				commandStr,
-				netstatSuccessExitCode,
-				exitCode,
-				outputBuffer.String(),
-			)
-		} else {
-			logrus.Debugf(
-				"Netstat availability-waiting command '%v' experienced a Kubernetes error:\n%v",
-				commandStr,
-				err,
-			)
-		}
-
-		// Tiny optimization to not sleep if we're not going to run the loop again
-		if i < maxRetries {
-			time.Sleep(timeBetweenRetries)
-		}
-	}
-
-	return stacktrace.NewError(
-		"The port didn't become available (as measured by the command '%v') even after retrying %v times with %v between retries",
-		commandStr,
-		maxRetries,
-		timeBetweenRetries,
-	)
-}

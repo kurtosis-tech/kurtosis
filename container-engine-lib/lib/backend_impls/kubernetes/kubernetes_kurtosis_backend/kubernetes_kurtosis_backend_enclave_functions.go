@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gammazero/workerpool"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
@@ -99,7 +100,7 @@ func (backend KubernetesKurtosisBackend) CreateEnclave(
 	}
 
 	enclaveNamespaceName := enclaveNamespaceAttrs.GetName().GetString()
-	enclaveNamespaceLabels := getStringMapFromLabelMap(enclaveNamespaceAttrs.GetLabels())
+	enclaveNamespaceLabels := shared_helpers.GetStringMapFromLabelMap(enclaveNamespaceAttrs.GetLabels())
 
 	enclaveNamespace, err := backend.kubernetesManager.CreateNamespace(ctx, enclaveNamespaceName, enclaveNamespaceLabels)
 	if err != nil {
@@ -526,7 +527,7 @@ func getEnclaveStatusFromEnclavePods(enclavePods []apiv1.Pod) (enclave.EnclaveSt
 		resultEnclaveStatus = enclave.EnclaveStatus_Stopped
 	}
 	for _, enclavePod := range enclavePods {
-		podStatus, err := getContainerStatusFromPod(&enclavePod)
+		podStatus, err := shared_helpers.GetContainerStatusFromPod(&enclavePod)
 		if err != nil {
 			return 0, stacktrace.Propagate(err, "An error occurred getting status from pod '%v'", enclavePod.Name)
 		}

@@ -1,7 +1,10 @@
 package shared_helpers
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
@@ -16,10 +19,13 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
 	"net"
+	"strings"
+	"time"
 )
 
 // !!!WARNING!!!
@@ -29,21 +35,14 @@ import (
 // Things to think about: Could this function be a private helper function that's scope is smaller than you think?
 // Eg. only used by start user services functions thus could go in start_user_services.go
 
+const (
+	netstatSuccessExitCode = 0
+)
+
 // Kubernetes doesn't provide public IP or port information; this is instead handled by the Kurtosis gateway that the user uses
 // to connect to Kubernetes
 var servicePublicIp net.IP = nil
 var servicePublicPorts map[string]*port_spec.PortSpec = nil
-
-// This maps a Kubernetes pod's phase to a binary "is the pod considered running?" determiner
-// Its completeness is enforced via unit test
-var isPodRunningDeterminer = map[apiv1.PodPhase]bool{
-	apiv1.PodPending: true,
-	apiv1.PodRunning: true,
-	apiv1.PodSucceeded: false,
-	apiv1.PodFailed: false,
-	apiv1.PodUnknown: false, //We cannot say that a pod is not running if we don't know the real state
-}
-
 
 // TODO Remove this once we split apart the KubernetesKurtosisBackend into multiple backends (which we can only
 //  do once the CLI no longer makes any calls directly to the KurtosisBackend, and instead makes all its calls through
@@ -489,7 +488,7 @@ func GetContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus
 
 	if pod != nil {
 		podPhase := pod.Status.Phase
-		isPodRunning, found := isPodRunningDeterminer[podPhase]
+		isPodRunning, found := consts.IsPodRunningDeterminer[podPhase]
 		if !found {
 			// This should never happen because we enforce completeness in a unit test
 			return status, stacktrace.NewError("No is-pod-running determination found for pod phase '%v' on pod '%v'; this is a bug in Kurtosis", podPhase, pod.Name)
@@ -517,6 +516,116 @@ func GetStringMapFromAnnotationMap(labelMap map[*kubernetes_annotation_key.Kuber
 	return strMap
 }
 
+func GetKubernetesServicePortsFromPrivatePortSpecs(privatePorts map[string]*port_spec.PortSpec) ([]apiv1.ServicePort, error) {
+	result := []apiv1.ServicePort{}
+	for portId, portSpec := range privatePorts {
+		kurtosisProtocol := portSpec.GetProtocol()
+		kubernetesProtocol, found := consts.KurtosisPortProtocolToKubernetesPortProtocolTranslator[kurtosisProtocol]
+		if !found {
+			// Should never happen because we enforce completeness via unit test
+			return nil, stacktrace.NewError("No Kubernetes port protocol was defined for Kurtosis port protocol '%v'; this is a bug in Kurtosis", kurtosisProtocol)
+		}
+
+		kubernetesPortObj := apiv1.ServicePort{
+			Name:     portId,
+			Protocol: kubernetesProtocol,
+			// TODO Specify this!!! Will make for a really nice user interface (e.g. "https")
+			AppProtocol: nil,
+			// Safe to cast because max uint16 < int32
+			Port: int32(portSpec.GetNumber()),
+		}
+		result = append(result, kubernetesPortObj)
+	}
+	return result, nil
+}
+
+func GetKubernetesContainerPortsFromPrivatePortSpecs(privatePorts map[string]*port_spec.PortSpec) ([]apiv1.ContainerPort, error) {
+	result := []apiv1.ContainerPort{}
+	for portId, portSpec := range privatePorts {
+		kurtosisProtocol := portSpec.GetProtocol()
+		kubernetesProtocol, found := consts.KurtosisPortProtocolToKubernetesPortProtocolTranslator[kurtosisProtocol]
+		if !found {
+			// Should never happen because we enforce completeness via unit test
+			return nil, stacktrace.NewError("No Kubernetes port protocol was defined for Kurtosis port protocol '%v'; this is a bug in Kurtosis", kurtosisProtocol)
+		}
+
+		kubernetesPortObj := apiv1.ContainerPort{
+			Name: portId,
+			// Safe to do because max uint16 < int32
+			ContainerPort: int32(portSpec.GetNumber()),
+			Protocol:      kubernetesProtocol,
+		}
+		result = append(result, kubernetesPortObj)
+	}
+	return result, nil
+}
+
+func WaitForPortAvailabilityUsingNetstat(
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	namespaceName string,
+	podName string,
+	containerName string,
+	portSpec *port_spec.PortSpec,
+	maxRetries uint,
+	timeBetweenRetries time.Duration,
+) error {
+	commandStr := fmt.Sprintf(
+		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
+		strings.ToLower(portSpec.GetProtocol().String()),
+		portSpec.GetNumber(),
+	)
+	execCmd := []string{
+		"sh",
+		"-c",
+		commandStr,
+	}
+	for i := uint(0); i < maxRetries; i++ {
+		outputBuffer := &bytes.Buffer{}
+		concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
+		exitCode, err := kubernetesManager.RunExecCommand(
+			namespaceName,
+			podName,
+			containerName,
+			execCmd,
+			concurrentBuffer,
+			concurrentBuffer,
+		)
+		if err == nil {
+			if exitCode == netstatSuccessExitCode {
+				return nil
+			}
+			logrus.Debugf(
+				"Netstat availability-waiting command '%v' returned without a Kubernetes error, but exited with non-%v exit code '%v' and logs:\n%v",
+				commandStr,
+				netstatSuccessExitCode,
+				exitCode,
+				outputBuffer.String(),
+			)
+		} else {
+			logrus.Debugf(
+				"Netstat availability-waiting command '%v' experienced a Kubernetes error:\n%v",
+				commandStr,
+				err,
+			)
+		}
+
+		// Tiny optimization to not sleep if we're not going to run the loop again
+		if i < maxRetries {
+			time.Sleep(timeBetweenRetries)
+		}
+	}
+
+	return stacktrace.NewError(
+		"The port didn't become available (as measured by the command '%v') even after retrying %v times with %v between retries",
+		commandStr,
+		maxRetries,
+		timeBetweenRetries,
+	)
+}
+
+// ====================================================================================================
+//                                     Private Helper Methods
+// ====================================================================================================
 func getEnclaveMatchLabels() map[string]string {
 	matchLabels := map[string]string{
 		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
