@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_database_server_config"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -14,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 	"time"
 )
 
@@ -27,7 +29,14 @@ const (
 	lokiHttpApiPortId              = "http"
 	lokiHttpApiPortNumber   uint16 = 3100 // Default Loki HTTP API port number, more here: https://grafana.com/docs/loki/latest/api/
 	lokiHttpApiPortProtocol        = port_spec.PortProtocol_TCP
-	lokiDefaultDirpath = "/loki"
+
+	lokiConfigDefaultFilepath = "/etc/loki/local-config.yaml"
+	lokiBinaryFilepath = "/usr/bin/loki"
+	lokiConfigFileFlag = "-config.file"
+
+	shBinaryFilepath = "/bin/sh"
+	shCmdFlag        = "-c"
+	printfCmdName    = "printf"
 )
 
 func CreateEngine(
@@ -296,19 +305,46 @@ func createLogsDatabaseContainer(
 	}
 
 	volumeMounts := map[string]string{
-		logsDbVolumeName.GetName().GetString(): lokiDefaultDirpath,
+		logsDbVolumeName.GetName().GetString(): logs_database_server_config.LokiDefaultDirpath,
+	}
+
+	lokiConfig := logs_database_server_config.NewDefaultKurtosisLokiConfig(lokiHttpApiPortNumber)
+
+	lokiConfigYAMLContent, err := yaml.Marshal(lokiConfig)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred marshalling Loki config '%+v'", lokiConfig)
+	}
+	lokiConfigYAMLContentStr := string(lokiConfigYAMLContent)
+
+	overrideCmd := []string{
+		shCmdFlag,
+		fmt.Sprintf(
+			"%v '%v' > %v && %v %v=%v",
+			printfCmdName,
+			lokiConfigYAMLContentStr,
+			lokiConfigDefaultFilepath,
+			lokiBinaryFilepath,
+			lokiConfigFileFlag,
+			lokiConfigDefaultFilepath,
+		),
 	}
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		lokiContainerImage,
 		logsDatabaseAttrs.GetName().GetString(),
 		targetNetworkId,
-	).WithUsedPorts(
-		usedPorts,
 	).WithVolumeMounts(
 		volumeMounts,
 	).WithLabels(
 		labelStrs,
+	).WithUsedPorts(
+		usedPorts,
+	).WithEntrypointArgs(
+		[]string{
+			shBinaryFilepath,
+		},
+	).WithCmdArgs(
+		overrideCmd,
 	).Build()
 
 	containerId, _, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
