@@ -10,7 +10,6 @@ import {
     PartitionServices,
     PartitionConnections,
     PartitionConnectionInfo,
-    RegisterServiceArgs,
     RemoveServiceArgs,
     RepartitionArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
@@ -28,7 +27,6 @@ import {
     ModuleInfo,
     ServiceInfo,
     ServiceConfig,
-    StartServiceArgs,
     RemoveServiceResponse,
     UnloadModuleResponse,
     GetModulesResponse,
@@ -179,14 +177,6 @@ export function newModuleInfo(
 // ==============================================================================================
 //                                     Register Service
 // ==============================================================================================
-export function newRegisterServiceArgs(serviceId: ServiceID, partitionId: PartitionID): RegisterServiceArgs {
-    const result: RegisterServiceArgs = new RegisterServiceArgs();
-    result.setServiceId(String(serviceId));
-    result.setPartitionId(String(partitionId));
-
-    return result;
-}
-
 export function newRegisterServicesArgs(serviceIds: Map<ServiceID, boolean>, partitionId: PartitionID): RegisterServicesArgs {
     const result : RegisterServicesArgs = new RegisterServicesArgs();
     const serviceIdSet: jspb.Map<string, boolean> = result.getServiceIdSetMap();
@@ -202,54 +192,6 @@ export function newRegisterServicesArgs(serviceIds: Map<ServiceID, boolean>, par
 // ==============================================================================================
 //                                        Start Service
 // ==============================================================================================
-export function newStartServiceArgs(
-    serviceId: ServiceID,
-    dockerImage: string,
-    privatePorts: Map<string, Port>,
-    publicPorts:  Map<string, Port>, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-    entrypointArgs: string[],
-    cmdArgs: string[],
-    dockerEnvVars: Map<string, string>,
-    filesArtifactMountDirpaths: Map<string, string>,
-    cpuAllocationMillicpus: number,
-    memoryAllocationMegabytes: number,
-): StartServiceArgs {
-    const result: StartServiceArgs = new StartServiceArgs();
-    result.setServiceId(String(serviceId));
-    result.setDockerImage(dockerImage);
-    const usedPortsMap: jspb.Map<string, Port> = result.getPrivatePortsMap();
-    for (const [portId, portSpec] of privatePorts) {
-        usedPortsMap.set(portId, portSpec);
-    }
-    const entrypointArgsArray: string[] = result.getEntrypointArgsList();
-    for (const entryPoint of entrypointArgs) {
-        entrypointArgsArray.push(entryPoint);
-    }
-    const cmdArgsArray: string[] = result.getCmdArgsList();
-    for (const cmdArg of cmdArgs) {
-        cmdArgsArray.push(cmdArg);
-    }
-    const dockerEnvVarArray: jspb.Map<string, string> = result.getDockerEnvVarsMap();
-    for (const [name, value] of dockerEnvVars.entries()) {
-        dockerEnvVarArray.set(name, value);
-    }
-    const filesArtificatMountDirpathsMap: jspb.Map<string, string> = result.getFilesArtifactMountpointsMap();
-    for (const [artifactId, mountDirpath] of filesArtifactMountDirpaths.entries()) {
-        filesArtificatMountDirpathsMap.set(artifactId, mountDirpath);
-    }
-    result.setCpuAllocationMillicpus(cpuAllocationMillicpus);
-    result.setMemoryAllocationMegabytes(memoryAllocationMegabytes);
-
-    //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-    const publicPortsMap: jspb.Map<string, Port> = result.getPublicPortsMap();
-    for (const [portId, portSpec] of publicPorts) {
-        publicPortsMap.set(portId, portSpec);
-    }
-    //TODO finish the hack
-
-    return result;
-}
-
 export function newStartServicesArgs(serviceConfigs : Map<ServiceID, ServiceConfig>) : StartServicesArgs {
     const result : StartServicesArgs = new StartServicesArgs();
     const serviceIdsToConfigs : jspb.Map<string, ServiceConfig> = result.getServiceIdsToConfigsMap();

@@ -13,12 +13,12 @@ import {
     GetServicesResponse,
     LoadModuleArgs,
     PauseServiceArgs,
-    RegisterServiceArgs, RegisterServicesArgs,
-    RegisterServiceResponse, RegisterServicesResponse,
+    RegisterServicesArgs,
+    RegisterServicesResponse,
     RemoveServiceArgs, RemoveServiceResponse,
     RepartitionArgs,
-    StartServiceArgs, StartServicesArgs,
-    StartServiceResponse, StartServicesResponse,
+    StartServicesArgs,
+    StartServicesResponse,
     StoreFilesArtifactFromServiceArgs, StoreWebFilesArtifactArgs, StoreWebFilesArtifactResponse,
     UnloadModuleArgs, UnloadModuleResponse,
     UnpauseServiceArgs,
@@ -33,9 +33,7 @@ export interface GenericApiContainerClient {
     getEnclaveId(): EnclaveID
     loadModule(loadModuleArgs: LoadModuleArgs): Promise<Result<null, Error>>
     unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<UnloadModuleResponse,Error>>
-    registerService(registerServiceArgs: RegisterServiceArgs): Promise<Result<RegisterServiceResponse, Error>>
     registerServices(registerServicesArgs: RegisterServicesArgs): Promise<Result<RegisterServicesResponse, Error>>
-    startService(startServiceArgs: StartServiceArgs): Promise<Result<StartServiceResponse, Error>>
     startServices(startServicesArgs: StartServicesArgs): Promise<Result<StartServicesResponse, Error>>
     removeService(args: RemoveServiceArgs): Promise<Result<RemoveServiceResponse, Error>>
     repartitionNetwork(repartitionArgs: RepartitionArgs): Promise<Result<null, Error>>
