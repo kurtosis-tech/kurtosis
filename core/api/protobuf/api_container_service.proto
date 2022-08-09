@@ -23,13 +23,13 @@ service ApiContainerService {
   // Registers a service with the API container but doesn't start the container for it
   rpc RegisterService(RegisterServiceArgs) returns (RegisterServiceResponse) {};
 
-  // Registers a service with the API container but doesn't start the container for it
+  // Registers services with the API container but doesn't start the containers for them
   rpc RegisterServices(RegisterServicesArgs) returns (RegisterServicesResponse) {};
 
   // Starts a previously-registered service by creating a Docker container for it
   rpc StartService(StartServiceArgs) returns (StartServiceResponse) {};
 
-  // Starts a previously-registered service by creating a Docker container for it
+  // Starts previously-registered services by creating containers for them
   rpc StartServices(StartServicesArgs) returns (StartServicesResponse) {};
 
   // Returns the IDs of the current services in the enclave

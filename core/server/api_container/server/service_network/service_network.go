@@ -220,7 +220,7 @@ func (network ServiceNetwork) RegisterServices(
 	ctx context.Context,
 	serviceIDs map[service.ServiceID]bool,
 	partitionID service_network_types.PartitionID,
-) (map[service.ServiceID]net.IP, error) {
+) (map[service.ServiceID]net.IP, map[service.ServiceID]error, error) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
@@ -337,7 +337,7 @@ func (network *ServiceNetwork) StartService(
 	//   a) we need to start the service before we can launch the sidecar but
 	//   b) we can't modify the qdisc configuration until the sidecar container is launched.
 	// This means that there's a period of time at startup where the container might not be partitioned. We solve
-	// t his by setting the packet loss config of the new service in the already-existing services' qdisc.
+	// this by setting the packet loss config of the new service in the already-existing services' qdisc.
 	// This means that when the new service is launched, even if its own qdisc isn't yet updated, all the services
 	//  it would communicate are already dropping traffic to it before it even starts.
 	if network.isPartitioningEnabled {
@@ -428,24 +428,29 @@ func(network *ServiceNetwork) StartServices(
 	serviceConfigs map[service.ServiceID]*service.ServiceConfig,
 	serviceIDsToFilesArtifactUUIDsToMountpoints map[service.ServiceID]map[enclave_data_directory.FilesArtifactUUID]string,
 ) (
-	successfulServices map[service.ServiceGUID]service.Service,
-	failedServices map[service.ServiceGUID]error,
+	resultSuccessfulServices map[service.ServiceGUID]service.Service,
+	resultFailedServices map[service.ServiceGUID]error,
 	resultErr error,
 ) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	// TODO: Sanity Check here to make sure keys of maps are 1:1
-	serviceGUIDTOConfigs := map[service.ServiceGUID]*service.ServiceConfig{}
+	serviceGUIDToConfigs := map[service.ServiceGUID]*service.ServiceConfig{}
 	serviceGUIDsToFilesArtifactUUIDsToMountpoints := map[service.ServiceGUID]map[enclave_data_directory.FilesArtifactUUID]string{}
-	for id, _ := range serviceConfigs {
+	for id, serviceConfig := range serviceConfigs {
 		registration, found := network.registeredServiceInfo[id]
 		if !found {
-			return nil, nil, stacktrace.NewError("Cannot start service ; no registration exists for service with ID '%v'", id)
+			return nil, nil, stacktrace.NewError("Cannot start service; no registration exists for service with ID '%v'", id)
 		}
-		serviceGUIDTOConfigs[registration.GetGUID()] = serviceConfigs[id]
-		serviceGUIDsToFilesArtifactUUIDsToMountpoints[registration.GetGUID()] = serviceIDsToFilesArtifactUUIDsToMountpoints[id]
+		serviceGUIDToConfigs[registration.GetGUID()] = serviceConfig
+		filesArtifactsUUIDsToMountpoints, found := serviceIDsToFilesArtifactUUIDsToMountpoints[id]
+		if !found {
+			return nil, nil, stacktrace.NewError(
+				"Could not find mapping from files artifacts UUIDs to mountpoints for service with ID '%v'." +
+				"This is a bug in Kurtosis. Make sure the keys of service configs map and service ids to files artifacts uuids to mountpoints map are 1:1.", id)
+		}
+		serviceGUIDsToFilesArtifactUUIDsToMountpoints[registration.GetGUID()] = filesArtifactsUUIDsToMountpoints
 	}
 
 	// When partitioning is enabled, there's a race condition where:
@@ -456,6 +461,7 @@ func(network *ServiceNetwork) StartServices(
 	// This means that when the new services are launched, even if their own qdisc isn't yet updated, all the services
 	// it would communicate are already dropping traffic to it before it even starts.
 	if network.isPartitioningEnabled {
+		// The services being started should have been added to the network topology when they were registered
 		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
@@ -470,7 +476,6 @@ func(network *ServiceNetwork) StartServices(
 			servicesPacketLossConfigurationsWithoutNewNodes[serviceIdInTopology] = otherServicesPacketLossConfigs
 		}
 
-		// TODO: ADD COMMENT ABOUT WHY ITS OKAY TO DO EVEN IF SOME OF THE SERVICES THAT WERE BLOCKED OFF FAIL
 		if err := updateTrafficControlConfiguration(
 			ctx,
 			servicesPacketLossConfigurationsWithoutNewNodes,
@@ -485,7 +490,10 @@ func(network *ServiceNetwork) StartServices(
 		}
 	}
 
-	successfulServices, failedServices, resultErr = network.startServices(ctx, serviceGUIDTOConfigs, serviceGUIDsToFilesArtifactUUIDsToMountpoints)
+	successfulServices, failedServices, err := network.startServices(ctx, serviceGUIDToConfigs, serviceGUIDsToFilesArtifactUUIDsToMountpoints)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred attempting to add services to the service network.")
+	}
 
 	if network.isPartitioningEnabled {
 		// TODO Getting packet loss configuration by service ID is an expensive call and, as of 2021-11-23, we do it twice - the solution is to make
@@ -501,8 +509,8 @@ func(network *ServiceNetwork) StartServices(
 		// Here, we are now blocking off successfully started services from the rest of the network to further gurantee network partitioning.
 		// We don't undo the blocking off of failed services by the rest of the network because the services in the network are blocking traffic
 		// from containers that don't exist anyways.
-		for guid, service := range successfulServices {
-			serviceRegistration := service.GetRegistration()
+		for guid, serviceInfo := range successfulServices {
+			serviceRegistration := serviceInfo.GetRegistration()
 			serviceID := serviceRegistration.GetID()
 
 			sidecar, err := network.networkingSidecarManager.Add(ctx, guid)
@@ -524,7 +532,7 @@ func(network *ServiceNetwork) StartServices(
 				"off from other nodes")
 		}
 	}
-	return
+	return successfulServices, failedServices, nil
 }
 
 func (network *ServiceNetwork) RemoveService(

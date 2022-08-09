@@ -304,7 +304,7 @@ export class EnclaveContext {
         }
         //TODO finish the hack
 
-        const startServiceArgs: StartServiceArgs = newStartServiceArgs(
+        const startServicesArgs: StartServiceArgs = newStartServiceArgs(
             serviceId,
             containerConfig.image,
             privatePortsForApi,
@@ -317,7 +317,7 @@ export class EnclaveContext {
             containerConfig.memoryAllocationMegabytes,
         );
 
-        const startServiceResponseResult = await this.backend.startService(startServiceArgs)
+        const startServiceResponseResult = await this.backend.startService(startServicesArgs)
         if(startServiceResponseResult.isErr()){
             return err(startServiceResponseResult.error)
         }

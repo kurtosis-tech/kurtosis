@@ -141,8 +141,8 @@ func (enclaveCtx *EnclaveContext) AddService(
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) AddServices(
-	serviceConfigSuppliers map[services.ServiceID]func(ipAddr string) (*services.ContainerConfig, error)) (map[services.ServiceID]*services.ServiceContext, error) {
-
+	serviceConfigSuppliers map[services.ServiceID]func(ipAddr string) (*services.ContainerConfig, error)
+) (map[services.ServiceID]*services.ServiceContext, error) {
 	serviceContext, err := enclaveCtx.AddServicesToPartition(serviceConfigSuppliers,defaultPartitionId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding services to the enclave in the default partition.")
@@ -318,16 +318,16 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 			containerConfig.GetMemoryAllocationMegabytes())
 	}
 
-	startServiceArgs := binding_constructors.NewStartServicesArgs(serviceConfigs)
+	startServicesArgs := binding_constructors.NewStartServicesArgs(serviceConfigs)
 
-	logrus.Trace("Starting new service with Kurtosis API...")
-	resp, err := enclaveCtx.client.StartServices(ctx, startServiceArgs)
+	logrus.Trace("Starting new services with Kurtosis API...")
+	resp, err := enclaveCtx.client.StartServices(ctx, startServicesArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred starting services with the Kurtosis API")
 	}
 
 	for serviceID, serviceErr := range resp.GetFailedServiceIdsToError() {
-		logrus.Errorf("The following error occurred trying to start service with ID '%v': %v", serviceID, serviceErr)
+		logrus.Errorf("The following error occurred trying to start service with ID '%v':\n %v", serviceID, serviceErr)
 	}
 
 	successfulServices := map[services.ServiceID]*services.ServiceContext{}
