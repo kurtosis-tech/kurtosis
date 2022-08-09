@@ -241,11 +241,21 @@ func createCentralizedLogsComponents(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database container")
 	}
+	shouldKillLogsDatabaseContainer := true
+	defer func() {
+		if shouldKillLogsDatabaseContainer {
+			killLogsDatabaseContainerFunc()
+		}
+	}()
+
+	//TODO add createLogsCollectorContainer and handle killing function
 
 	killCentralizedLogsComponentsContainersFunc := func(){
 		killLogsDatabaseContainerFunc()
+		//TODO call killLogsCollectorContainerFunc()
 	}
 
+	shouldKillLogsDatabaseContainer = false
 	return killCentralizedLogsComponentsContainersFunc, nil
 }
 
