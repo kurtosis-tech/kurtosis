@@ -18,15 +18,16 @@ import (
 )
 
 const (
-
 	nameOfNetworkToStartEngineContainerIn = "bridge"
 
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
 
-	// We leave a relatively short timeout so that the engine gets a chance to gracefully clean up, but the
-	// user isn't stuck waiting on a long-running operation when they tell the engine to stop
-	engineStopTimeout = 1 * time.Second
+	lokiContainerImage             = "grafana/loki:main-19c7315"
+	lokiHttpApiPortId              = "http"
+	lokiHttpApiPortNumber   uint16 = 3100 // Default Loki HTTP API port number, more here: https://grafana.com/docs/loki/latest/api/
+	lokiHttpApiPortProtocol        = port_spec.PortProtocol_TCP
+	lokiDefaultDirpath = "/loki"
 )
 
 func CreateEngine(
@@ -164,7 +165,7 @@ func CreateEngine(
 			// the failure was the original context being cancelled
 			if err := dockerManager.KillContainer(context.Background(), containerId); err != nil {
 				logrus.Errorf(
-					"Launching the engine server with GUID '%v' and container GUID '%v' didn't complete successfully so we "+
+					"Launching the engine server with GUID '%v' and container ID '%v' didn't complete successfully so we "+
 						"tried to kill the container we started, but doing so exited with an error:\n%v",
 					engineGuid,
 					containerId,
@@ -197,7 +198,139 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating an engine object from container with GUID '%v'", containerId)
 	}
 
+	killCentralizedLogsComponentsContainersFunc, err := createCentralizedLogsComponents(
+		ctx,
+		engineGuid,
+		targetNetworkId,
+		objAttrsProvider,
+		dockerManager,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the centralized logs components for the engine with GUID '%v' and network ID '%v'", engineGuid, targetNetworkId)
+	}
+	shouldKillCentralizedLogsComponentsContainers := true
+	defer func() {
+		if shouldKillCentralizedLogsComponentsContainers {
+			killCentralizedLogsComponentsContainersFunc()
+		}
+	}()
+
 	shouldKillEngineContainer = false
+	shouldKillCentralizedLogsComponentsContainers = false
 	return result, nil
 }
 
+// ====================================================================================================
+// 									   Private helper methods
+// ====================================================================================================
+//TODO we can run it in parallel after the network creation, and we can wait before returnin the EngineInfo object
+func createCentralizedLogsComponents(
+	ctx context.Context,
+	engineGuid engine.EngineGUID,
+	targetNetworkId string,
+	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
+	dockerManager *docker_manager.DockerManager,
+) (func(), error) {
+	killLogsDatabaseContainerFunc, err := createLogsDatabaseContainer(
+		ctx,
+		engineGuid,
+		targetNetworkId,
+		objAttrsProvider,
+		dockerManager,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database container")
+	}
+
+	killCentralizedLogsComponentsContainersFunc := func(){
+		killLogsDatabaseContainerFunc()
+	}
+
+	return killCentralizedLogsComponentsContainersFunc, nil
+}
+
+func createLogsDatabaseContainer(
+	ctx context.Context,
+	engineGuid engine.EngineGUID,
+	targetNetworkId string,
+	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
+	dockerManager *docker_manager.DockerManager,
+) (func(), error) {
+	privateHttpApiPortSpec, err := port_spec.NewPortSpec(lokiHttpApiPortNumber, lokiHttpApiPortProtocol)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the logs database's private HTTP API port spec object using number '%v' and protocol '%v'",
+			lokiHttpApiPortNumber,
+			lokiHttpApiPortProtocol,
+		)
+	}
+
+	logsDatabaseAttrs, err := objAttrsProvider.ForLogsDatabaseServer(
+		engineGuid,
+		lokiHttpApiPortId,
+		privateHttpApiPortSpec,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting the logs database container attributes using GUID '%v', the HTTP API port num '%v'",
+			engineGuid,
+			lokiHttpApiPortNumber,
+		)
+	}
+
+	privateHttpApiDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(privateHttpApiPortSpec)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the private HTTP API port spec to a Docker port")
+	}
+
+	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
+		privateHttpApiDockerPort: docker_manager.NewManualPublishingSpec(lokiHttpApiPortNumber),
+	}
+
+	labelStrs := map[string]string{}
+	for labelKey, labelValue := range logsDatabaseAttrs.GetLabels() {
+		labelStrs[labelKey.GetString()] = labelValue.GetString()
+	}
+
+	logsDbVolumeAttrs, err := objAttrsProvider.ForLogsDatabaseVolume(engineGuid)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database volume for engine with GUID %v", engineGuid)
+	}
+
+	volumeMounts := map[string]string{
+		logsDbVolumeAttrs.GetName().GetString(): lokiDefaultDirpath,
+	}
+
+	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
+		lokiContainerImage,
+		logsDatabaseAttrs.GetName().GetString(),
+		targetNetworkId,
+	).WithUsedPorts(
+		usedPorts,
+	).WithVolumeMounts(
+		volumeMounts,
+	).WithLabels(
+		labelStrs,
+	).Build()
+
+	containerId, _, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred starting the logs database container")
+	}
+
+	killContainerFunc := func() {
+		if err := dockerManager.KillContainer(context.Background(), containerId); err != nil {
+			logrus.Errorf(
+				"Launching the logs database server with GUID '%v' and container ID '%v' didn't complete successfully so we "+
+					"tried to kill the container we started, but doing so exited with an error:\n%v",
+				engineGuid,
+				containerId,
+				err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually stop the logs database server with GUID '%v' and Docker container ID '%v'!!!!!!", engineGuid, containerId)
+		}
+	}
+
+	return killContainerFunc, nil
+}

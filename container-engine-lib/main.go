@@ -29,7 +29,7 @@ func runMain() error {
 		return err
 	}
 
-	 */
+	*/
 
 	/*
 	if err := runKubernetesManagerTesting(); err != nil {
@@ -95,7 +95,7 @@ func runKurtosisBackendTesting() error {
 		return err
 	}
 
-	 */
+	*/
 
 
 	_, err := lib.GetCLIKubernetesKurtosisBackend(ctx)
@@ -114,7 +114,7 @@ func runKurtosisBackendTesting() error {
 	}
 	fmt.Println(results)
 
-	 */
+	*/
 
 
 	return nil

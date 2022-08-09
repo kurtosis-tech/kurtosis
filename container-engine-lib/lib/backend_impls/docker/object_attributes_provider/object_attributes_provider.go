@@ -15,7 +15,13 @@ import (
 )
 
 const (
-	engineServerNamePrefix                   = "kurtosis-engine"
+	engineServerNamePrefix        = "kurtosis-engine"
+	logsDatabaseServerNamePrefix  = "kurtosis-logs-db"
+	logsCollectorServerNamePrefix = "kurtosis-logs-collector"
+
+	//We always use the same name because we are going to have only one instance of this volume,
+	//so when the engine is restarted it mounts the same volume with the previous logs
+	logsDatabaseVolumeName = logsDatabaseServerNamePrefix + "-vol"
 )
 
 type DockerObjectAttributesProvider interface {
@@ -27,6 +33,17 @@ type DockerObjectAttributesProvider interface {
 		grpcProxyPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
 	ForEnclave(enclaveId enclave.EnclaveID) (DockerEnclaveObjectAttributesProvider, error)
+	ForLogsDatabaseServer(
+		engineGUID engine.EngineGUID,
+		httpApiPortId string,
+		httpApiPortSpec *port_spec.PortSpec,
+	) (DockerObjectAttributes, error)
+	ForLogsDatabaseVolume(engineGUID engine.EngineGUID) (DockerObjectAttributes, error)
+	ForLogsCollectorServer(
+		engineGUID engine.EngineGUID,
+		forwardPortId string,
+		forwardPortSpec *port_spec.PortSpec,
+	) (DockerObjectAttributes, error)
 }
 
 func GetDockerObjectAttributesProvider() DockerObjectAttributesProvider {
@@ -35,6 +52,7 @@ func GetDockerObjectAttributesProvider() DockerObjectAttributesProvider {
 
 // Private so it can't be instantiated
 type dockerObjectAttributesProviderImpl struct{}
+
 func newDockerObjectAttributesProviderImpl() *dockerObjectAttributesProviderImpl {
 	return &dockerObjectAttributesProviderImpl{}
 }
@@ -69,7 +87,7 @@ func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(
 	}
 
 	usedPorts := map[string]*port_spec.PortSpec{
-		grpcPortId: grpcPortSpec,
+		grpcPortId:      grpcPortSpec,
 		grpcProxyPortId: grpcProxyPortSpec,
 	}
 	serializedPortsSpec, err := docker_port_spec_serializer.SerializePortSpecs(usedPorts)
@@ -100,4 +118,117 @@ func (provider *dockerObjectAttributesProviderImpl) ForEnclave(enclaveId enclave
 	}
 
 	return newDockerEnclaveObjectAttributesProviderImpl(enclaveIdLabelValue), nil
+}
+
+func (provider *dockerObjectAttributesProviderImpl) ForLogsDatabaseServer(
+	engineGUID engine.EngineGUID,
+	httpApiPortId string,
+	httpApiPortSpec *port_spec.PortSpec,
+) (DockerObjectAttributes, error) {
+	nameStr := strings.Join(
+		[]string{
+			logsDatabaseServerNamePrefix,
+			string(engineGUID),
+		},
+		objectNameElementSeparator,
+	)
+	name, err := docker_object_name.CreateNewDockerObjectName(nameStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", nameStr)
+	}
+
+	engineGuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(string(engineGUID))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine GUID Docker label from string '%v'", engineGUID)
+	}
+
+	usedPorts := map[string]*port_spec.PortSpec{
+		httpApiPortId: httpApiPortSpec,
+	}
+	serializedPortsSpec, err := docker_port_spec_serializer.SerializePortSpecs(usedPorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred serializing the following logs-database-server-ports to a string for storing in the ports label: %+v", usedPorts)
+	}
+
+	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
+		label_key_consts.ContainerTypeDockerLabelKey: label_value_consts.LogsDatabaseTypeDockerLabelValue,
+		label_key_consts.PortSpecsDockerLabelKey:     serializedPortsSpec,
+		label_key_consts.EngineGUIDDockerLabelKey:    engineGuidLabelValue,
+	}
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
+	}
+
+	return objectAttributes, nil
+}
+
+func (provider *dockerObjectAttributesProviderImpl) ForLogsCollectorServer(
+	engineGUID engine.EngineGUID,
+	forwardPortId string,
+	forwardPortSpec *port_spec.PortSpec,
+) (DockerObjectAttributes, error) {
+	nameStr := strings.Join(
+		[]string{
+			logsCollectorServerNamePrefix,
+			string(engineGUID),
+		},
+		objectNameElementSeparator,
+	)
+	name, err := docker_object_name.CreateNewDockerObjectName(nameStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", nameStr)
+	}
+
+	engineGuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(string(engineGUID))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine GUID Docker label from string '%v'", engineGUID)
+	}
+
+	usedPorts := map[string]*port_spec.PortSpec{
+		forwardPortId: forwardPortSpec,
+	}
+	serializedPortsSpec, err := docker_port_spec_serializer.SerializePortSpecs(usedPorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred serializing the following logs-collector-server-ports to a string for storing in the ports label: %+v", usedPorts)
+	}
+
+	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
+		label_key_consts.ContainerTypeDockerLabelKey: label_value_consts.LogsCollectorTypeDockerLabelValue,
+		label_key_consts.PortSpecsDockerLabelKey:     serializedPortsSpec,
+		label_key_consts.EngineGUIDDockerLabelKey:    engineGuidLabelValue,
+	}
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
+	}
+
+	return objectAttributes, nil
+}
+
+func (provider *dockerObjectAttributesProviderImpl) ForLogsDatabaseVolume(engineGUID engine.EngineGUID) (DockerObjectAttributes, error) {
+	nameStr := logsDatabaseVolumeName
+	name, err := docker_object_name.CreateNewDockerObjectName(nameStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", nameStr)
+	}
+
+	engineGuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(string(engineGUID))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine GUID Docker label from string '%v'", engineGUID)
+	}
+
+	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
+		label_key_consts.EngineGUIDDockerLabelKey: engineGuidLabelValue,
+		label_key_consts.VolumeTypeDockerLabelKey: label_value_consts.LogsDatabaseVolumeTypeDockerLabelValue,
+	}
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
+	}
+
+	return objectAttributes, nil
 }
