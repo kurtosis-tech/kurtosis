@@ -215,7 +215,17 @@ func (network ServiceNetwork) RegisterService(
 }
 
 // Registers services for use within the network (creating the IPs and so forth), but doesn't start them
-// If the partition ID is empty, registers the services with the default partition
+// If the partition ID is empty, registers the services with the default partition.
+//
+// This is a bulk operation that follows a funnel/rollback approach.
+// This means that when an error occurs, for an indvidiual operation (service in this case), we add it to a set of
+// failed service ids to errors, and return that to the client of this function. At the sametime we rollback/undo any
+// resources that were created during the failed operation, thus narrowing the funnel of operations
+// that were successful. Thus, this function:
+// Returns:
+//	- successfulService - mapping of successful service ids to private ip address of the service
+//	- failedServices - mapping of failed service ids to errors causing those failures
+//	- error	- if error occurred with bulk operation as a whole
 func (network ServiceNetwork) RegisterServices(
 	ctx context.Context,
 	serviceIDs map[service.ServiceID]bool,
@@ -224,7 +234,7 @@ func (network ServiceNetwork) RegisterServices(
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
-
+	failedServices := map[service.ServiceID]error{}
 	for serviceID, _ := range serviceIDs {
 		if _, found := network.registeredServiceInfo[serviceID]; found {
 			return nil, stacktrace.NewError(
@@ -423,6 +433,17 @@ func (network *ServiceNetwork) StartService(
 	return userService, nil
 }
 
+// Starts a previously-registered but not-started service by creating it in a container.
+//
+// This is a bulk operation that follows a funnel/rollback approach.
+// This means that when an error occurs, for an indvidiual operation (service in this case), we add it to a set of
+// failed service ids to errors, and return that to the client of this function. At the sametime we rollback/undo any
+// resources that were created during the failed operation, thus narrowing the funnel of operations
+// that were successful. Thus, this function:
+// Returns:
+//	- successfulService - mapping of successful service ids to service objects with info about that service
+//	- failedServices - mapping of failed service ids to errors causing those failures
+//	- error	- if error occurred with bulk operation as a whole
 func(network *ServiceNetwork) StartServices(
 	ctx context.Context,
 	serviceConfigs map[service.ServiceID]*service.ServiceConfig,
