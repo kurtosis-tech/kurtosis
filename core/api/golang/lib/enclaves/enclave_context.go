@@ -356,13 +356,13 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	startServicesArgs := binding_constructors.NewStartServicesArgs(serviceConfigs)
 
 	logrus.Trace("Starting new services with Kurtosis API...")
-	resp, err := enclaveCtx.client.StartServices(ctx, startServicesArgs)
+	startServicesResp, err := enclaveCtx.client.StartServices(ctx, startServicesArgs)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred starting services with the Kurtosis API")
 	}
 
 	// Remove the registration resources for services that failed to start
-	for serviceIDStr, errStr := range registerServicesResp.GetFailedServiceIdsToError() {
+	for serviceIDStr, errStr := range startServicesResp.GetFailedServiceIdsToError() {
 		serviceID := services.ServiceID(serviceIDStr)
 		failedServicesPool[services.ServiceID(serviceID)] = stacktrace.NewError("The following error occurred trying to start service with ID '%v':\n %v", serviceID, errStr)
 
@@ -377,7 +377,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	}
 
 	successfulServices := map[services.ServiceID]*services.ServiceContext{}
-	for serviceIDStr, serviceInfo := range resp.GetSuccessfulServiceIdsToServiceInfo() {
+	for serviceIDStr, serviceInfo := range startServicesResp.GetSuccessfulServiceIdsToServiceInfo() {
 		serviceID := services.ServiceID(serviceIDStr)
 		// If anything goes wrong while trying to setup the service context, we need to remove the registration created for this service.
 		shouldRemoveRegistration := true
