@@ -557,7 +557,7 @@ func(network *ServiceNetwork) StartServices(
 		}
 		updatesToApply := map[service.ServiceID]map[service.ServiceID]float32{}
 
-		// In the initial phase, we blocked services in the network from the services that were about to be started.
+		// In the initial phase, network packets of services in the network were blocked from services that were about to be started.
 		// Here, we are now blocking off successfully started services from the rest of the network to further gurantee network partitioning.
 		// We don't undo the blocking off of failed services by the rest of the network because the services in the network are blocking traffic
 		// from containers that don't exist anyways.
@@ -1059,8 +1059,8 @@ func (network *ServiceNetwork) startService(
 func (network *ServiceNetwork) startServices(
 	ctx context.Context,
 	serviceConfigs map[service.ServiceGUID]*service.ServiceConfig,
-// Mapping of service GUIDs to UUIDs of previously-registered files artifacts -> mountpoints on the container
-// being launched
+	// Mapping of service GUIDs to UUIDs of previously-registered files artifacts -> mountpoints on the container
+	// being launched
 	serviceGUIDsToFilesArtifactUUIDsToMountpoints map[service.ServiceGUID]map[enclave_data_directory.FilesArtifactUUID]string,
 ) (
 	resultSuccessfulServices map[service.ServiceGUID]service.Service,
@@ -1069,67 +1069,68 @@ func (network *ServiceNetwork) startServices(
 ) {
 
 	for guid, config := range serviceConfigs {
-		filesArtifactUuidsToMountpoints, found := serviceGUIDsToFilesArtifactUUIDsToMountpoints[guid]
+		filesArtifactUUIDsToMountpoints, found := serviceGUIDsToFilesArtifactUUIDsToMountpoints[guid]
 		if !found {
 			return nil, nil, stacktrace.NewError("Couldn't find a mapping between service with GUID `%v` and a mapping of files artifacts UUIDs to mountpoints.", guid)
 		}
 		var filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion
 
-		if len(filesArtifactUuidsToMountpoints) > 0 {
-			usedArtifactUUIDSet := map[enclave_data_directory.FilesArtifactUUID]bool{}
-			for artifactUUID := range filesArtifactUuidsToMountpoints {
-				usedArtifactUUIDSet[artifactUUID] = true
-			}
-
-			filesArtifactsExpansions := []args.FilesArtifactExpansion{}
-			expanderDirpathToUserServiceDirpathMap := map[string]string{}
-			for filesArtifactUUID, mountpointOnUserService := range filesArtifactUuidsToMountpoints {
-				dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, string(filesArtifactUUID))
-				expansion := args.FilesArtifactExpansion{
-					FilesArtifactUUID: string(filesArtifactUUID),
-					DirPathToExpandTo: dirpathToExpandTo,
-				}
-				filesArtifactsExpansions = append(filesArtifactsExpansions, expansion)
-
-				expanderDirpathToUserServiceDirpathMap[dirpathToExpandTo] = mountpointOnUserService
-			}
-
-			filesArtifactsExpanderArgs, err := args.NewFilesArtifactsExpanderArgs(
-				network.apiContainerIpAddress.String(),
-				network.apiContainerGrpcPortNum,
-				filesArtifactsExpansions,
-			)
-			if err != nil {
-				return nil, nil, stacktrace.Propagate(err, "An error occurred creating files artifacts expander args for service `%v`", guid)
-			}
-			expanderEnvVars, err := args.GetEnvFromArgs(filesArtifactsExpanderArgs)
-			if err != nil {
-				return nil, nil, stacktrace.Propagate(err, "An error occurred getting files artifacts expander environment variables using args: %+v", filesArtifactsExpanderArgs)
-			}
-
-			expanderImageAndTag := fmt.Sprintf(
-				"%v:%v",
-				filesArtifactsExpanderImage,
-				network.apiContainerVersion,
-			)
-
-			filesArtifactsExpansion = &files_artifacts_expansion.FilesArtifactsExpansion{
-				ExpanderImage:                     expanderImageAndTag,
-				ExpanderEnvVars:                   expanderEnvVars,
-				ExpanderDirpathsToServiceDirpaths: expanderDirpathToUserServiceDirpathMap,
-			}
-			// Create a new service config WITH files artifacts expansion for this service
-			serviceConfigs[guid] = service.NewServiceConfig(
-				config.GetContainerImageName(),
-				config.GetPrivatePorts(),
-				config.GetPublicPorts(),
-				config.GetEntrypointArgs(),
-				config.GetCmdArgs(),
-				config.GetEnvVars(),
-				filesArtifactsExpansion,
-				config.GetCPUAllocationMillicpus(),
-				config.GetMemoryAllocationMegabytes())
+		if len(filesArtifactUUIDsToMountpoints) == 0 {
+			continue
 		}
+		usedArtifactUUIDSet := map[enclave_data_directory.FilesArtifactUUID]bool{}
+		for artifactUUID := range filesArtifactUUIDsToMountpoints {
+			usedArtifactUUIDSet[artifactUUID] = true
+		}
+
+		filesArtifactsExpansions := []args.FilesArtifactExpansion{}
+		expanderDirpathToUserServiceDirpathMap := map[string]string{}
+		for filesArtifactUUID, mountpointOnUserService := range filesArtifactUUIDsToMountpoints {
+			dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, string(filesArtifactUUID))
+			expansion := args.FilesArtifactExpansion{
+				FilesArtifactUUID: string(filesArtifactUUID),
+				DirPathToExpandTo: dirpathToExpandTo,
+			}
+			filesArtifactsExpansions = append(filesArtifactsExpansions, expansion)
+
+			expanderDirpathToUserServiceDirpathMap[dirpathToExpandTo] = mountpointOnUserService
+		}
+
+		filesArtifactsExpanderArgs, err := args.NewFilesArtifactsExpanderArgs(
+			network.apiContainerIpAddress.String(),
+			network.apiContainerGrpcPortNum,
+			filesArtifactsExpansions,
+		)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred creating files artifacts expander args for service `%v`", guid)
+		}
+		expanderEnvVars, err := args.GetEnvFromArgs(filesArtifactsExpanderArgs)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting files artifacts expander environment variables using args: %+v", filesArtifactsExpanderArgs)
+		}
+
+		expanderImageAndTag := fmt.Sprintf(
+			"%v:%v",
+			filesArtifactsExpanderImage,
+			network.apiContainerVersion,
+		)
+
+		filesArtifactsExpansion = &files_artifacts_expansion.FilesArtifactsExpansion{
+			ExpanderImage:                     expanderImageAndTag,
+			ExpanderEnvVars:                   expanderEnvVars,
+			ExpanderDirpathsToServiceDirpaths: expanderDirpathToUserServiceDirpathMap,
+		}
+		// Create a new service config WITH files artifacts expansion for this service
+		serviceConfigs[guid] = service.NewServiceConfig(
+			config.GetContainerImageName(),
+			config.GetPrivatePorts(),
+			config.GetPublicPorts(),
+			config.GetEntrypointArgs(),
+			config.GetCmdArgs(),
+			config.GetEnvVars(),
+			filesArtifactsExpansion,
+			config.GetCPUAllocationMillicpus(),
+			config.GetMemoryAllocationMegabytes())
 	}
 
 	successfulServices, failedServices, err := network.kurtosisBackend.StartUserServices(ctx, network.enclaveId, serviceConfigs)

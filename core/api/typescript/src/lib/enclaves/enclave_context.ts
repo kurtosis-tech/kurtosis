@@ -62,6 +62,7 @@ import {
     UnpauseServiceArgs,
     StartServicesArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
+import {ServiceError} from "@grpc/grpc-js";
 
 export type EnclaveID = string;
 export type PartitionID = string;
@@ -349,7 +350,8 @@ export class EnclaveContext {
     public async addServicesToPartition(
         serviceConfigSuppliers: Map<ServiceID, (ipAddr: string) => Result<ContainerConfig, Error>>,
         partitionId: PartitionID,
-    ): Promise<Result<Map<ServiceID, ServiceContext>, Error>> {
+    ): Promise<Result<Map<ServiceID, ServiceContext>, Map<ServiceID, Error>, Error>> {
+        const failedServicesPool : Map<ServiceID, Error> = new Map<ServiceID, Error>();
         log.trace("Registering new services with Kurtosis API...");
         const serviceIdSet: Map<string, boolean> = new Map<ServiceID, boolean>();
         for (const [serviceId, _] of serviceConfigSuppliers) {
@@ -363,6 +365,12 @@ export class EnclaveContext {
 
         const registerServicesResponse = registerServicesResponseResult.value
 
+        const failedRegistrations : jspb.Map<string, string> = registerServicesResponse.getServiceIdsToPrivateIpAddressesMap();
+        for (const[serviceId,  privateIpAddr] of failedRegistrations.entries()){
+
+
+
+        }
         log.trace("New services successfully registered with Kurtosis API");
         const serviceConfigs = new Map<ServiceID, ServiceConfig>();
         const serviceIdToPrivateIpAddresses : jspb.Map<string, string> = registerServicesResponse.getServiceIdsToPrivateIpAddressesMap();

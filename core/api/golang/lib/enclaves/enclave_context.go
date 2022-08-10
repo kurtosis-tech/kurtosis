@@ -348,7 +348,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 
 		// Do a best effort attempt to remove registration resources for this object to clean up after it failed in the start phase
 		// TODO: Migrate this to a bulk remove services call
-		err = enclaveCtx.RemoveService(services.ServiceID(serviceID),defaultContainerStopTimeoutSeconds)
+		err = enclaveCtx.RemoveService(services.ServiceID(serviceID), defaultContainerStopTimeoutSeconds)
 		if err != nil {
 			failedServicesPool[services.ServiceID(serviceID)] = stacktrace.Propagate(err,
 				"Attempted to remove service '%v' to delete its resources after it failed to start, but an error occurred" +
