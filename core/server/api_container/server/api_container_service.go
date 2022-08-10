@@ -190,8 +190,12 @@ func (apicService ApiContainerService) RegisterServices(ctx context.Context, arg
 	for id, ip := range serviceIDsToIPs {
 		serviceIDsToIPsStringMap[string(id)] = ip.String()
 	}
+	failedServiceIDsToErrStrs := map[string]string{}
+	for id, err := range failedServiceErrors {
+		failedServiceIDsToErrStrs[string(id)] = err.Error()
+	}
 
-	return binding_constructors.NewRegisterServicesResponse(serviceIDsToIPsStringMap), nil
+	return binding_constructors.NewRegisterServicesResponse(serviceIDsToIPsStringMap, failedServiceIDsToErrStrs), nil
 }
 
 func (apicService ApiContainerService) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {

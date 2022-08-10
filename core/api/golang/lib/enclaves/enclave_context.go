@@ -141,7 +141,7 @@ func (enclaveCtx *EnclaveContext) AddService(
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) AddServices(
-	serviceConfigSuppliers map[services.ServiceID]func(ipAddr string) (*services.ContainerConfig, error)
+	serviceConfigSuppliers map[services.ServiceID]func(ipAddr string) (*services.ContainerConfig, error),
 ) (map[services.ServiceID]*services.ServiceContext, error) {
 	serviceContext, err := enclaveCtx.AddServicesToPartition(serviceConfigSuppliers,defaultPartitionId)
 	if err != nil {

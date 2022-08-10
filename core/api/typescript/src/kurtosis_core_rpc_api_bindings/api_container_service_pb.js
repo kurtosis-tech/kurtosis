@@ -3869,7 +3869,8 @@ proto.api_container_api.RegisterServicesResponse.prototype.toObject = function(o
  */
 proto.api_container_api.RegisterServicesResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    serviceIdsToPrivateIpAddressesMap: (f = msg.getServiceIdsToPrivateIpAddressesMap()) ? f.toObject(includeInstance, undefined) : []
+    serviceIdsToPrivateIpAddressesMap: (f = msg.getServiceIdsToPrivateIpAddressesMap()) ? f.toObject(includeInstance, undefined) : [],
+    failedServiceIdsToErrorMap: (f = msg.getFailedServiceIdsToErrorMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
   if (includeInstance) {
@@ -3912,6 +3913,12 @@ proto.api_container_api.RegisterServicesResponse.deserializeBinaryFromReader = f
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
          });
       break;
+    case 2:
+      var value = msg.getFailedServiceIdsToErrorMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
+         });
+      break;
     default:
       reader.skipField();
       break;
@@ -3945,6 +3952,10 @@ proto.api_container_api.RegisterServicesResponse.serializeBinaryToWriter = funct
   if (f && f.getLength() > 0) {
     f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
   }
+  f = message.getFailedServiceIdsToErrorMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
+  }
 };
 
 
@@ -3967,6 +3978,28 @@ proto.api_container_api.RegisterServicesResponse.prototype.getServiceIdsToPrivat
  */
 proto.api_container_api.RegisterServicesResponse.prototype.clearServiceIdsToPrivateIpAddressesMap = function() {
   this.getServiceIdsToPrivateIpAddressesMap().clear();
+  return this;};
+
+
+/**
+ * map<string, string> failed_service_ids_to_error = 2;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<string,string>}
+ */
+proto.api_container_api.RegisterServicesResponse.prototype.getFailedServiceIdsToErrorMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<string,string>} */ (
+      jspb.Message.getMapField(this, 2, opt_noLazyCreate,
+      null));
+};
+
+
+/**
+ * Clears values from the map. The map will be non-null.
+ * @return {!proto.api_container_api.RegisterServicesResponse} returns this
+ */
+proto.api_container_api.RegisterServicesResponse.prototype.clearFailedServiceIdsToErrorMap = function() {
+  this.getFailedServiceIdsToErrorMap().clear();
   return this;};
 
 
