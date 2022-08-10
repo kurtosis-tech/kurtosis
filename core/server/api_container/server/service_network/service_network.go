@@ -40,6 +40,8 @@ const (
 
 	minMemoryLimit = 6 // Docker doesn't allow memory limits less than 6 megabytes
 	defaultMemoryAllocMegabytes = 0
+
+	defaultContainerStopTimeoutSeconds = 10
 )
 
 type storeFilesArtifactResult struct {
@@ -238,11 +240,11 @@ func (network ServiceNetwork) RegisterServices(
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
-	failedServiceRegistrations := map[service.ServiceID]error{}
+	failedServicePool := map[service.ServiceID]error{}
 
 	for serviceID, _ := range serviceIDs {
 		if _, found := network.registeredServiceInfo[serviceID]; found {
-			failedServiceRegistrations[serviceID] = stacktrace.NewError(
+			failedServicePool[serviceID] = stacktrace.NewError(
 				"Cannot register service '%v' because it already exists in the network",
 				serviceID,
 			)
@@ -259,7 +261,7 @@ func (network ServiceNetwork) RegisterServices(
 		)
 	}
 
-	successfulServices, failedServices, err := network.kurtosisBackend.RegisterUserServices(
+	successfulRegistrations, failedRegistrations, err := network.kurtosisBackend.RegisterUserServices(
 		ctx,
 		network.enclaveId,
 		serviceIDs,
@@ -267,23 +269,21 @@ func (network ServiceNetwork) RegisterServices(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", serviceIDs)
 	}
-	for id, err := range failedServices {
-		failedServiceRegistrations[id] = stacktrace.Propagate(err, "Failed to register service with ID '%v'", id)
+	for id, err := range failedRegistrations {
+		failedServicePool[id] = stacktrace.Propagate(err, "Failed to register service with ID '%v'", id)
 	}
-	shouldDestroyServices := true
-	defer func() {
-		if shouldDestroyServices {
-			for _, serviceRegistration:= range successfulServices {
-				network.destroyServiceBestEffortAfterRegistrationFailure(serviceRegistration.GetGUID())
-			}
-		}
-	}()
 
 	successfulServiceIPs := map[service.ServiceID]net.IP{}
-	shouldRemoveFromServicesMap := true
-	shouldRemoveFromTopology := true
-	for serviceID, serviceRegistration := range successfulServices {
+	for serviceID, serviceRegistration := range successfulRegistrations {
+		shouldDestroyService := true
+		defer func() {
+			if shouldDestroyService {
+				network.destroyServiceBestEffortAfterRegistrationFailure(serviceRegistration.GetGUID())
+			}
+		}()
+
 		network.registeredServiceInfo[serviceID] = serviceRegistration
+		shouldRemoveFromServicesMap := true
 		defer func() {
 			if shouldRemoveFromServicesMap {
 				delete(network.registeredServiceInfo, serviceID)
@@ -291,30 +291,30 @@ func (network ServiceNetwork) RegisterServices(
 		}()
 
 		if err := network.topology.AddService(serviceID, partitionID); err != nil {
-			failedServiceRegistrations[serviceID] = stacktrace.Propagate(
+			failedServicePool[serviceID] = stacktrace.Propagate(
 				err,
 				"An error occurred adding service with ID '%v' to partition '%v' in the topology",
 				serviceID,
 				partitionID,
 			)
-			delete(network.registeredServiceInfo, serviceID)
+			network.destroyServiceBestEffortAfterRegistrationFailure(serviceRegistration.GetGUID())
 			continue
 		}
-
+		shouldRemoveFromTopology := true
 		defer func() {
 			if shouldRemoveFromTopology {
 				network.topology.RemoveService(serviceID)
 			}
 		}()
 
+		shouldRemoveFromServicesMap = false
+		shouldRemoveFromTopology = false
+		shouldDestroyService = false
 		privateIP := serviceRegistration.GetPrivateIP()
 		successfulServiceIPs[serviceID] = privateIP
 	}
 
-	shouldDestroyServices = false
-	shouldRemoveFromServicesMap = false
-	shouldRemoveFromTopology = false
-	return successfulServiceIPs, failedServiceRegistrations, nil
+	return successfulServiceIPs, failedServicePool, nil
 }
 
 // TODO add tests for this
@@ -422,7 +422,7 @@ func (network *ServiceNetwork) StartService(
 		}
 
 		// TODO Getting packet loss configuration by service ID is an expensive call and, as of 2021-11-23, we do it twice - the solution is to make
-		//  Getting packet loss configuration by service ID not an expensive call
+		//  Getting packet loss configura	tion by service ID not an expensive call
 		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
@@ -558,27 +558,48 @@ func(network *ServiceNetwork) StartServices(
 		updatesToApply := map[service.ServiceID]map[service.ServiceID]float32{}
 
 		// In the initial phase, network packets of services in the network were blocked from services that were about to be started.
-		// Here, we are now blocking off successfully started services from the rest of the network to further gurantee network partitioning.
+		// Here, we are now blocking off successfully started services from the rest of the network to further guarantee network partitioning.
 		// We don't undo the blocking off of failed services by the rest of the network because the services in the network are blocking traffic
 		// from containers that don't exist anyways.
 		for id, serviceInfo := range successfulServices {
 			serviceRegistration := serviceInfo.GetRegistration()
 			serviceGUID := serviceRegistration.GetGUID()
+			// If anything goes wrong while trying to set up the traffic configurations, we need to remove the successfully started service.
+			shouldRemoveService := true
+			defer func() {
+				if shouldRemoveService {
+					network.destroyServiceBestEffortAfterFailure(serviceGUID)
+				}
+			}()
 
 			sidecar, err := network.networkingSidecarManager.Add(ctx, serviceGUID)
 			if err != nil {
 				failedServicesPool[id] = stacktrace.Propagate(err, "An error occurred adding the networking sidecar for service `%v`", id)
 				continue
 			}
+			shouldRemoveSidecar := true
+			defer func(){
+				if shouldRemoveSidecar {
+					network.networkingSidecarManager.Remove(ctx, sidecar)
+				}
+			}()
+
 			network.networkingSidecars[id] = sidecar
+			shouldRemoveSidecarFromMap := true
+			defer func() {
+				if shouldRemoveSidecarFromMap {
+					delete(network.networkingSidecars, id)
+				}
+			}()
 
 			if err := sidecar.InitializeTrafficControl(ctx); err != nil {
 				failedServicesPool[id] = stacktrace.Propagate(err, "An error occurred initializing the newly-created networking-sidecar-traffic-control-qdisc-configuration for service `%v`", id)
-				network.networkingSidecarManager.Remove(ctx, sidecar)
-				delete(network.networkingSidecars, id)
 				continue
 			}
 
+			shouldRemoveSidecar = false
+			shouldRemoveSidecarFromMap = false
+			shouldRemoveService = false
 			newNodeServicePacketLossConfiguration := servicePacketLossConfigurationsByServiceID[id]
 			updatesToApply[id] = newNodeServicePacketLossConfiguration
 		}
@@ -959,6 +980,36 @@ func (network *ServiceNetwork) destroyServiceBestEffortAfterRegistrationFailure(
 	}
 }
 
+func (network *ServiceNetwork) destroyServiceBestEffortAfterFailure(
+	serviceGuid service.ServiceGUID,
+) {
+	destroyServiceFilters := &service.ServiceFilters{
+		GUIDs: map[service.ServiceGUID]bool{
+			serviceGuid: true,
+		},
+	}
+	// Use background context in case the input one is cancelled
+	_, erroredRegistrations, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveId, destroyServiceFilters)
+	var errToPrint error
+	if err != nil {
+		errToPrint = err
+	} else if destroyErr, found := erroredRegistrations[serviceGuid]; found {
+		errToPrint = destroyErr
+	}
+	if errToPrint != nil {
+		logrus.Warnf(
+			"Starting this service didn't complete successfully so we tried to destroy the "+
+				"service that we created, but doing so threw an error:\n%v",
+			serviceGuid,
+			errToPrint,
+		)
+		logrus.Warnf(
+			"!!! ACTION REQUIRED !!! You'll need to manually destroy service with GUID '%v'!!!",
+			serviceGuid,
+		)
+	}
+}
+
 func (network *ServiceNetwork) startService(
 	ctx context.Context,
 	serviceGuid service.ServiceGUID,
@@ -1067,7 +1118,9 @@ func (network *ServiceNetwork) startServices(
 	resultFailedServices map[service.ServiceGUID]error,
 	resultErr error,
 ) {
+	failedServicesPool := map[service.ServiceGUID]error{}
 
+	serviceConfigsWithFilesArtifactsExpansion := map[service.ServiceGUID]*service.ServiceConfig{}
 	for guid, config := range serviceConfigs {
 		filesArtifactUUIDsToMountpoints, found := serviceGUIDsToFilesArtifactUUIDsToMountpoints[guid]
 		if !found {
@@ -1076,6 +1129,7 @@ func (network *ServiceNetwork) startServices(
 		var filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion
 
 		if len(filesArtifactUUIDsToMountpoints) == 0 {
+			serviceConfigsWithFilesArtifactsExpansion[guid] = serviceConfigs[guid]
 			continue
 		}
 		usedArtifactUUIDSet := map[enclave_data_directory.FilesArtifactUUID]bool{}
@@ -1102,11 +1156,13 @@ func (network *ServiceNetwork) startServices(
 			filesArtifactsExpansions,
 		)
 		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred creating files artifacts expander args for service `%v`", guid)
+			failedServicesPool[guid] = stacktrace.Propagate(err, "An error occurred creating files artifacts expander args for service `%v`", guid)
+			continue
 		}
 		expanderEnvVars, err := args.GetEnvFromArgs(filesArtifactsExpanderArgs)
 		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred getting files artifacts expander environment variables using args: %+v", filesArtifactsExpanderArgs)
+			failedServicesPool[guid] =  stacktrace.Propagate(err, "An error occurred getting files artifacts expander environment variables using args: %+v", filesArtifactsExpanderArgs)
+			continue
 		}
 
 		expanderImageAndTag := fmt.Sprintf(
@@ -1121,7 +1177,7 @@ func (network *ServiceNetwork) startServices(
 			ExpanderDirpathsToServiceDirpaths: expanderDirpathToUserServiceDirpathMap,
 		}
 		// Create a new service config WITH files artifacts expansion for this service
-		serviceConfigs[guid] = service.NewServiceConfig(
+		serviceConfigsWithFilesArtifactsExpansion[guid] = service.NewServiceConfig(
 			config.GetContainerImageName(),
 			config.GetPrivatePorts(),
 			config.GetPublicPorts(),
@@ -1133,9 +1189,14 @@ func (network *ServiceNetwork) startServices(
 			config.GetMemoryAllocationMegabytes())
 	}
 
-	successfulServices, failedServices, err := network.kurtosisBackend.StartUserServices(ctx, network.enclaveId, serviceConfigs)
+	successfulServices, failedServices, err := network.kurtosisBackend.StartUserServices(ctx, network.enclaveId, serviceConfigsWithFilesArtifactsExpansion)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred starting user services in underlying container engine.")
+	}
+
+	// Add services that failed to start to failed services pool
+	for guid, serviceErr := range failedServices {
+		failedServicesPool[guid] = serviceErr
 	}
 
 	return successfulServices, failedServices, nil
