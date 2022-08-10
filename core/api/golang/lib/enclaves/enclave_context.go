@@ -281,20 +281,30 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 
 	for serviceID, errStr := range registerServicesResp.GetFailedServiceIdsToError() {
 		failedServicesPool[services.ServiceID(serviceID)] = stacktrace.NewError("The following error occurred when trying to register service '%v':\n %v", serviceID, errStr)
-		// No resources to remove after register phase
 	}
 
 	logrus.Trace("New services successfully registered with Kurtosis API")
 	serviceConfigs := map[string]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
 	for serviceID, privateIPAddr := range registerServicesResp.GetServiceIdsToPrivateIpAddresses() {
+		shouldRemoveRegistration := true
+		defer func() {
+			if shouldRemoveRegistration {
+				// TODO: Migrate this to a bulk remove services call
+				err = enclaveCtx.RemoveService(services.ServiceID(serviceID), defaultContainerStopTimeoutSeconds)
+				if err != nil {
+					failedServicesPool[services.ServiceID(serviceID)] = stacktrace.Propagate(err,
+						"Attempted to remove service '%v' to delete its resources after it failed, but an error occurred" +
+							"while attempting to remove the service.", serviceID)
+				}
+			}
+		}()
+
 		logrus.Tracef("Generating container config object using the container config supplier for service '%v'...", serviceID)
 		containerConfigSupplier := serviceConfigSuppliers[services.ServiceID(serviceID)]
 		containerConfig, err := containerConfigSupplier(privateIPAddr)
 		if err != nil {
-			return nil, nil, stacktrace.Propagate(
-				err,
-				"An error occurred executing the container config supplier for service with ID '%v'",
-				serviceID)
+			failedServicesPool[services.ServiceID(serviceID)] = stacktrace.Propagate(err, "An error occurred executing the container config supplier for service with ID '%v'", serviceID)
+			continue
 		}
 		logrus.Tracef("Container config object successfully generated for service with ID '%v'", serviceID)
 
@@ -323,6 +333,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 		}
 		//TODO finish the hack
 
+		shouldRemoveRegistration = false
 		serviceConfigs[serviceID] = binding_constructors.NewServiceConfig(
 			containerConfig.GetImage(),
 			privatePortsForApi,
@@ -343,6 +354,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred starting services with the Kurtosis API")
 	}
 
+	// Remove the registration resources for services that failed to start
 	for serviceID, errStr := range registerServicesResp.GetFailedServiceIdsToError() {
 		failedServicesPool[services.ServiceID(serviceID)] = stacktrace.NewError("The following error occurred trying to start service with ID '%v':\n %v", serviceID, errStr)
 
@@ -358,13 +370,28 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 
 	successfulServices := map[services.ServiceID]*services.ServiceContext{}
 	for serviceID, serviceInfo := range resp.GetSuccessfulServiceIdsToServiceInfo() {
+		shouldRemoveService := true
+		defer func() {
+			if shouldRemoveService {
+				// TODO: Migrate this to a bulk remove services call
+				err = enclaveCtx.RemoveService(services.ServiceID(serviceID), defaultContainerStopTimeoutSeconds)
+				if err != nil {
+					failedServicesPool[services.ServiceID(serviceID)] = stacktrace.Propagate(err,
+						"Attempted to remove service '%v' to delete its resources after it failed, but an error occurred" +
+							"while attempting to remove the service.", serviceID)
+				}
+			}
+		}()
+
 		serviceCtxPrivatePorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetPrivatePorts())
 		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred converting the private ports returned by the API to ports usable by the service context")
+			failedServicesPool[services.ServiceID(serviceID)] = stacktrace.Propagate(err, "An error occurred converting the private ports returned by the API to ports usable by the service context.")
+			continue
 		}
 		serviceCtxPublicPorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetMaybePublicPorts())
 		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred converting the public ports returned by the API to ports usable by the service context")
+			failedServicesPool[services.ServiceID(serviceID)] = stacktrace.Propagate(err, "An error occurred converting the public ports returned by the API to ports usable by the service context.")
+			continue
 		}
 
 		serviceContext := services.NewServiceContext(
@@ -375,6 +402,8 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 			serviceInfo.GetMaybePublicIpAddr(),
 			serviceCtxPublicPorts,
 		)
+
+		shouldRemoveService = false
 		successfulServices[services.ServiceID(serviceID)] = serviceContext
 	}
 
