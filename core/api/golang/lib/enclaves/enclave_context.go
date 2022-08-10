@@ -45,6 +45,8 @@ const (
 	grpcDataTransferLimit     = 3999000 //3.999 Mb. 1kb wiggle room. 1kb being about the size of a simple 2 paragraph readme.
 	tempCompressionDirPattern = "upload-compression-cache-"
 	compressionExtension      = ".tgz"
+
+	defaultContainerStopTimeoutSeconds = 10
 )
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -142,12 +144,16 @@ func (enclaveCtx *EnclaveContext) AddService(
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) AddServices(
 	serviceConfigSuppliers map[services.ServiceID]func(ipAddr string) (*services.ContainerConfig, error),
-) (map[services.ServiceID]*services.ServiceContext, error) {
-	serviceContext, err := enclaveCtx.AddServicesToPartition(serviceConfigSuppliers,defaultPartitionId)
+) (
+	resultSuccessfulServices map[services.ServiceID]*services.ServiceContext,
+	resultFailedServices map[services.ServiceID]error,
+	resultErr error,
+) {
+	succcessfulServices, failedServices, err := enclaveCtx.AddServicesToPartition(serviceConfigSuppliers, defaultPartitionId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred adding services to the enclave in the default partition.")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred adding services to the enclave in the default partition.")
 	}
-	return serviceContext, nil
+	return succcessfulServices, failedServices, err
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -250,8 +256,14 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 
 func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	serviceConfigSuppliers map[services.ServiceID]func(ipAddr string) (*services.ContainerConfig, error),
-	partitionID PartitionID) (map[services.ServiceID]*services.ServiceContext, error) {
+	partitionID PartitionID,
+) (
+	resultSuccessfulServices map[services.ServiceID]*services.ServiceContext,
+	resultFailedServices map[services.ServiceID]error,
+	resultErr error,
+) {
 	ctx := context.Background()
+	failedServicesPool := map[services.ServiceID]error{}
 
 	logrus.Trace("Registering new services with Kurtosis API...")
 	serviceIDs := map[string]bool{}
@@ -259,13 +271,17 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 		serviceIDs[string(id)] = true
 	}
 	registerServicesArgs := binding_constructors.NewRegisterServicesArgs(serviceIDs, string(partitionID))
-
 	registerServicesResp, err := enclaveCtx.client.RegisterServices(ctx, registerServicesArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(
+		return nil, nil, stacktrace.Propagate(
 			err,
 			"An error occurred registering service with IDs '%v' with the Kurtosis API",
 			serviceIDs)
+	}
+
+	for serviceID, errStr := range registerServicesResp.GetFailedServiceIdsToError() {
+		failedServicesPool[services.ServiceID(serviceID)] = stacktrace.NewError("The following error occurred when trying to register service '%v':\n %v", serviceID, errStr)
+		// No resources to remove after register phase
 	}
 
 	logrus.Trace("New services successfully registered with Kurtosis API")
@@ -275,7 +291,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 		containerConfigSupplier := serviceConfigSuppliers[services.ServiceID(serviceID)]
 		containerConfig, err := containerConfigSupplier(privateIPAddr)
 		if err != nil {
-			return nil, stacktrace.Propagate(
+			return nil, nil, stacktrace.Propagate(
 				err,
 				"An error occurred executing the container config supplier for service with ID '%v'",
 				serviceID)
@@ -323,22 +339,32 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	logrus.Trace("Starting new services with Kurtosis API...")
 	resp, err := enclaveCtx.client.StartServices(ctx, startServicesArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred starting services with the Kurtosis API")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred starting services with the Kurtosis API")
 	}
 
-	for serviceID, serviceErr := range resp.GetFailedServiceIdsToError() {
-		logrus.Errorf("The following error occurred trying to start service with ID '%v':\n %v", serviceID, serviceErr)
+
+	for serviceID, errStr := range registerServicesResp.GetFailedServiceIdsToError() {
+		failedServicesPool[services.ServiceID(serviceID)] = stacktrace.NewError("The following error occurred trying to start service with ID '%v':\n %v", serviceID, errStr)
+
+		// Do a best effort attempt to remove registration resources for this object to clean up after it failed in the start phase
+		// TODO: Migrate this to a bulk remove services call
+		err = enclaveCtx.RemoveService(services.ServiceID(serviceID),defaultContainerStopTimeoutSeconds)
+		if err != nil {
+			failedServicesPool[services.ServiceID(serviceID)] = stacktrace.Propagate(err,
+				"Attempted to remove service '%v' to delete its resources after it failed to start, but an error occurred" +
+				"while attempting to remove the service.", serviceID)
+		}
 	}
 
 	successfulServices := map[services.ServiceID]*services.ServiceContext{}
 	for serviceID, serviceInfo := range resp.GetSuccessfulServiceIdsToServiceInfo() {
 		serviceCtxPrivatePorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetPrivatePorts())
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred converting the private ports returned by the API to ports usable by the service context")
+			return nil, nil, stacktrace.Propagate(err, "An error occurred converting the private ports returned by the API to ports usable by the service context")
 		}
 		serviceCtxPublicPorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetMaybePublicPorts())
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred converting the public ports returned by the API to ports usable by the service context")
+			return nil, nil, stacktrace.Propagate(err, "An error occurred converting the public ports returned by the API to ports usable by the service context")
 		}
 
 		serviceContext := services.NewServiceContext(
@@ -352,7 +378,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 		successfulServices[services.ServiceID(serviceID)] = serviceContext
 	}
 
-	return successfulServices, nil
+	return successfulServices, failedServicesPool, nil
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
