@@ -467,7 +467,7 @@ func(network *ServiceNetwork) StartServices(
 	failedServicesPool := map[service.ServiceID]error{}
 	serviceGUIDsToIDs := map[service.ServiceGUID]service.ServiceID{}
 
-	serviceGUIDToConfigs := map[service.ServiceGUID]*service.ServiceConfig{}
+	serviceGUIDsToConfigs := map[service.ServiceGUID]*service.ServiceConfig{}
 	serviceGUIDsToFilesArtifactUUIDsToMountpoints := map[service.ServiceGUID]map[enclave_data_directory.FilesArtifactUUID]string{}
 	for id, serviceConfig := range serviceConfigs {
 		registration, found := network.registeredServiceInfo[id]
@@ -478,7 +478,7 @@ func(network *ServiceNetwork) StartServices(
 		guid := registration.GetGUID()
 
 		serviceGUIDsToIDs[guid] = id
-		serviceGUIDToConfigs[guid] = serviceConfig
+		serviceGUIDsToConfigs[guid] = serviceConfig
 		filesArtifactsUUIDsToMountpoints, found := serviceIDsToFilesArtifactUUIDsToMountpoints[id]
 		if !found {
 			return nil, nil, stacktrace.NewError(
@@ -525,7 +525,7 @@ func(network *ServiceNetwork) StartServices(
 		}
 	}
 
-	successfulServiceGUIDs, failedServiceGUIDs, err := network.startServices(ctx, serviceGUIDToConfigs, serviceGUIDsToFilesArtifactUUIDsToMountpoints)
+	successfulServiceGUIDs, failedServiceGUIDs, err := network.startServices(ctx, serviceGUIDsToConfigs, serviceGUIDsToFilesArtifactUUIDsToMountpoints)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred attempting to add services to the service network.")
 	}
@@ -567,13 +567,15 @@ func(network *ServiceNetwork) StartServices(
 
 			sidecar, err := network.networkingSidecarManager.Add(ctx, serviceGUID)
 			if err != nil {
-				failedServicesPool[id] = stacktrace.Propagate(err, "An error occurred adding the networking sidecar for service `%v`",id)
+				failedServicesPool[id] = stacktrace.Propagate(err, "An error occurred adding the networking sidecar for service `%v`", id)
 				continue
 			}
 			network.networkingSidecars[id] = sidecar
 
 			if err := sidecar.InitializeTrafficControl(ctx); err != nil {
 				failedServicesPool[id] = stacktrace.Propagate(err, "An error occurred initializing the newly-created networking-sidecar-traffic-control-qdisc-configuration for service `%v`", id)
+				network.networkingSidecarManager.Remove(ctx, sidecar)
+				delete(network.networkingSidecars, id)
 				continue
 			}
 
