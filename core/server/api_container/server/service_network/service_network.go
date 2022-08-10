@@ -230,14 +230,19 @@ func (network ServiceNetwork) RegisterServices(
 	ctx context.Context,
 	serviceIDs map[service.ServiceID]bool,
 	partitionID service_network_types.PartitionID,
-) (map[service.ServiceID]net.IP, map[service.ServiceID]error, error) {
+) (
+	resultSuccessfulServiceRegistrations map[service.ServiceID]net.IP,
+	resultFailedServiceRegistrations map[service.ServiceID]error,
+	resultErr error,
+) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
-	failedServices := map[service.ServiceID]error{}
+	failedServiceRegistrations := map[service.ServiceID]error{}
+
 	for serviceID, _ := range serviceIDs {
 		if _, found := network.registeredServiceInfo[serviceID]; found {
-			return nil, stacktrace.NewError(
+			failedServiceRegistrations[serviceID] = stacktrace.NewError(
 				"Cannot register service '%v' because it already exists in the network",
 				serviceID,
 			)
@@ -248,7 +253,7 @@ func (network ServiceNetwork) RegisterServices(
 		partitionID = defaultPartitionId
 	}
 	if _, found := network.topology.GetPartitionServices()[partitionID]; !found {
-		return nil, stacktrace.NewError(
+		return nil, nil, stacktrace.NewError(
 			"No partition with ID '%v' exists in the current partition topology",
 			partitionID,
 		)
@@ -260,10 +265,10 @@ func (network ServiceNetwork) RegisterServices(
 		serviceIDs,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", serviceIDs)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", serviceIDs)
 	}
-	if len(failedServices) > 0 {
-		return nil, stacktrace.Propagate(err, "Failed to register services with IDs '%v'", failedServices)
+	for id, err := range failedServices {
+		failedServiceRegistrations[id] = stacktrace.Propagate(err, "Failed to register service with ID '%v'", id)
 	}
 	shouldDestroyServices := true
 	defer func() {
@@ -274,39 +279,42 @@ func (network ServiceNetwork) RegisterServices(
 		}
 	}()
 
-	serviceIPs := map[service.ServiceID]net.IP{}
-	shouldRemoveFromServiceMap := true
-	shouldRemoveTopologyAdditions := true
+	successfulServiceIPs := map[service.ServiceID]net.IP{}
+	shouldRemoveFromServicesMap := true
+	shouldRemoveFromTopology := true
 	for serviceID, serviceRegistration := range successfulServices {
 		network.registeredServiceInfo[serviceID] = serviceRegistration
 		defer func() {
-			if shouldRemoveFromServiceMap {
+			if shouldRemoveFromServicesMap {
 				delete(network.registeredServiceInfo, serviceID)
 			}
 		}()
 
 		if err := network.topology.AddService(serviceID, partitionID); err != nil {
-			return nil, stacktrace.Propagate(
+			failedServiceRegistrations[serviceID] = stacktrace.Propagate(
 				err,
 				"An error occurred adding service with ID '%v' to partition '%v' in the topology",
 				serviceID,
 				partitionID,
 			)
+			delete(network.registeredServiceInfo, serviceID)
+			continue
 		}
+
 		defer func() {
-			if shouldRemoveTopologyAdditions {
+			if shouldRemoveFromTopology {
 				network.topology.RemoveService(serviceID)
 			}
 		}()
 
 		privateIP := serviceRegistration.GetPrivateIP()
-		serviceIPs[serviceID] = privateIP
+		successfulServiceIPs[serviceID] = privateIP
 	}
 
 	shouldDestroyServices = false
-	shouldRemoveFromServiceMap = false
-	shouldRemoveTopologyAdditions = false
-	return serviceIPs, nil
+	shouldRemoveFromServicesMap = false
+	shouldRemoveFromTopology = false
+	return successfulServiceIPs, failedServiceRegistrations, nil
 }
 
 // TODO add tests for this
@@ -449,29 +457,35 @@ func(network *ServiceNetwork) StartServices(
 	serviceConfigs map[service.ServiceID]*service.ServiceConfig,
 	serviceIDsToFilesArtifactUUIDsToMountpoints map[service.ServiceID]map[enclave_data_directory.FilesArtifactUUID]string,
 ) (
-	resultSuccessfulServices map[service.ServiceGUID]service.Service,
-	resultFailedServices map[service.ServiceGUID]error,
+	resultSuccessfulServices map[service.ServiceID]service.Service,
+	resultFailedServices map[service.ServiceID]error,
 	resultErr error,
 ) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
+	failedServicesPool := map[service.ServiceID]error{}
+	serviceGUIDsToIDs := map[service.ServiceGUID]service.ServiceID{}
 
 	serviceGUIDToConfigs := map[service.ServiceGUID]*service.ServiceConfig{}
 	serviceGUIDsToFilesArtifactUUIDsToMountpoints := map[service.ServiceGUID]map[enclave_data_directory.FilesArtifactUUID]string{}
 	for id, serviceConfig := range serviceConfigs {
 		registration, found := network.registeredServiceInfo[id]
 		if !found {
-			return nil, nil, stacktrace.NewError("Cannot start service; no registration exists for service with ID '%v'", id)
+			failedServicesPool[id] = stacktrace.NewError("Cannot start service; no registration exists for service with ID '%v'", id)
+			continue
 		}
-		serviceGUIDToConfigs[registration.GetGUID()] = serviceConfig
+		guid := registration.GetGUID()
+
+		serviceGUIDsToIDs[guid] = id
+		serviceGUIDToConfigs[guid] = serviceConfig
 		filesArtifactsUUIDsToMountpoints, found := serviceIDsToFilesArtifactUUIDsToMountpoints[id]
 		if !found {
 			return nil, nil, stacktrace.NewError(
 				"Could not find mapping from files artifacts UUIDs to mountpoints for service with ID '%v'." +
 				"This is a bug in Kurtosis. Make sure the keys of service configs map and service ids to files artifacts uuids to mountpoints map are 1:1.", id)
 		}
-		serviceGUIDsToFilesArtifactUUIDsToMountpoints[registration.GetGUID()] = filesArtifactsUUIDsToMountpoints
+		serviceGUIDsToFilesArtifactUUIDsToMountpoints[guid] = filesArtifactsUUIDsToMountpoints
 	}
 
 	// When partitioning is enabled, there's a race condition where:
@@ -511,9 +525,26 @@ func(network *ServiceNetwork) StartServices(
 		}
 	}
 
-	successfulServices, failedServices, err := network.startServices(ctx, serviceGUIDToConfigs, serviceGUIDsToFilesArtifactUUIDsToMountpoints)
+	successfulServiceGUIDs, failedServiceGUIDs, err := network.startServices(ctx, serviceGUIDToConfigs, serviceGUIDsToFilesArtifactUUIDsToMountpoints)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred attempting to add services to the service network.")
+	}
+
+	// Convert from GUID maps to ID maps
+	successfulServices := map[service.ServiceID]service.Service{}
+	for serviceGUID, serviceInfo := range successfulServiceGUIDs {
+		serviceID, found := serviceGUIDsToIDs[serviceGUID]
+		if !found {
+			return nil, nil, stacktrace.NewError("Could not find a service ID associated with the service GUID '%v'. This should not happen and is a bug in Kurtosis.", serviceGUID)
+		}
+		successfulServices[serviceID] = serviceInfo
+	}
+	for serviceGUID, err := range failedServiceGUIDs {
+		serviceID, found := serviceGUIDsToIDs[serviceGUID]
+		if !found {
+			return nil, nil, stacktrace.NewError("Could not find a service ID associated with the service GUID '%v'. This should not happen and is a bug in Kurtosis.", serviceGUID)
+		}
+		failedServicesPool[serviceID] = err
 	}
 
 	if network.isPartitioningEnabled {
@@ -530,22 +561,24 @@ func(network *ServiceNetwork) StartServices(
 		// Here, we are now blocking off successfully started services from the rest of the network to further gurantee network partitioning.
 		// We don't undo the blocking off of failed services by the rest of the network because the services in the network are blocking traffic
 		// from containers that don't exist anyways.
-		for guid, serviceInfo := range successfulServices {
+		for id, serviceInfo := range successfulServices {
 			serviceRegistration := serviceInfo.GetRegistration()
-			serviceID := serviceRegistration.GetID()
+			serviceGUID := serviceRegistration.GetGUID()
 
-			sidecar, err := network.networkingSidecarManager.Add(ctx, guid)
+			sidecar, err := network.networkingSidecarManager.Add(ctx, serviceGUID)
 			if err != nil {
-				return nil, nil, stacktrace.Propagate(err, "An error occurred adding the networking sidecar for service `%v`",guid)
+				failedServicesPool[id] = stacktrace.Propagate(err, "An error occurred adding the networking sidecar for service `%v`",id)
+				continue
 			}
-			network.networkingSidecars[serviceID] = sidecar
+			network.networkingSidecars[id] = sidecar
 
 			if err := sidecar.InitializeTrafficControl(ctx); err != nil {
-				return nil, nil, stacktrace.Propagate(err, "An error occurred initializing the newly-created networking-sidecar-traffic-control-qdisc-configuration for service `%v`", guid)
+				failedServicesPool[id] = stacktrace.Propagate(err, "An error occurred initializing the newly-created networking-sidecar-traffic-control-qdisc-configuration for service `%v`", id)
+				continue
 			}
 
-			newNodeServicePacketLossConfiguration := servicePacketLossConfigurationsByServiceID[serviceID]
-			updatesToApply[serviceID] = newNodeServicePacketLossConfiguration
+			newNodeServicePacketLossConfiguration := servicePacketLossConfigurationsByServiceID[id]
+			updatesToApply[id] = newNodeServicePacketLossConfiguration
 		}
 
 		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.registeredServiceInfo, network.networkingSidecars); err != nil {
@@ -553,7 +586,7 @@ func(network *ServiceNetwork) StartServices(
 				"off from other nodes")
 		}
 	}
-	return successfulServices, failedServices, nil
+	return successfulServices, failedServicesPool, nil
 }
 
 func (network *ServiceNetwork) RemoveService(
@@ -1028,10 +1061,11 @@ func (network *ServiceNetwork) startServices(
 // being launched
 	serviceGUIDsToFilesArtifactUUIDsToMountpoints map[service.ServiceGUID]map[enclave_data_directory.FilesArtifactUUID]string,
 ) (
-	successfulServices map[service.ServiceGUID]service.Service,
-	failedServices map[service.ServiceGUID]error,
+	resultSuccessfulServices map[service.ServiceGUID]service.Service,
+	resultFailedServices map[service.ServiceGUID]error,
 	resultErr error,
 ) {
+
 	for guid, config := range serviceConfigs {
 		filesArtifactUuidsToMountpoints, found := serviceGUIDsToFilesArtifactUUIDsToMountpoints[guid]
 		if !found {
@@ -1096,8 +1130,12 @@ func (network *ServiceNetwork) startServices(
 		}
 	}
 
-	successfulServices, failedServices, resultErr = network.kurtosisBackend.StartUserServices(ctx, network.enclaveId, serviceConfigs)
-	return
+	successfulServices, failedServices, err := network.kurtosisBackend.StartUserServices(ctx, network.enclaveId, serviceConfigs)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred starting user services in underlying container engine.")
+	}
+
+	return successfulServices, failedServices, nil
 }
 
 func (network *ServiceNetwork) gzipAndPushTarredFileBytesToOutput(
