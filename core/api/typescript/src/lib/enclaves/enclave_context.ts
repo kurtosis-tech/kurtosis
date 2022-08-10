@@ -70,6 +70,9 @@ export type PartitionID = string;
 //  or it was repartitioned away)
 const DEFAULT_PARTITION_ID: PartitionID = "";
 
+// For removing services in rollback operations
+const DEFAULT_CONTAINER_STOP_TIMEOUT_SECONDS = 10;
+
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class EnclaveContext {
 
@@ -375,59 +378,76 @@ export class EnclaveContext {
         const serviceConfigs = new Map<ServiceID, ServiceConfig>();
         const serviceIdToPrivateIpAddresses : jspb.Map<string, string> = registerServicesResponse.getServiceIdsToPrivateIpAddressesMap();
         for (const[serviceId,  privateIpAddr] of serviceIdToPrivateIpAddresses.entries()){
-            log.trace(`Generating container config object using the container config supplier for service with Id '${serviceId}'`);
-            const containerConfigSupplier : ((ipAddr: string) => Result<ContainerConfig, Error>) | undefined = serviceConfigSuppliers.get(<ServiceID>serviceId);
-            if (containerConfigSupplier == undefined) {
-                const errorMsg : string = `Expected serviceConfigSuppliers to contain a value associated with service Id ${serviceId}, bud no such value was found`;
-                return err(new Error(errorMsg))
-            }
-            const containerConfigSupplierResult: Result<ContainerConfig, Error> = containerConfigSupplier(privateIpAddr);
-            if (containerConfigSupplierResult.isErr()){
-                return err(containerConfigSupplierResult.error);
-            }
-            const containerConfig: ContainerConfig = containerConfigSupplierResult.value;
-            log.trace(`Container config object successfully generated for service with Id '${serviceId}'`);
+            try {
+                log.trace(`Generating container config object using the container config supplier for service with Id '${serviceId}'`);
+                const containerConfigSupplier : ((ipAddr: string) => Result<ContainerConfig, Error>) | undefined = serviceConfigSuppliers.get(<ServiceID>serviceId);
+                if (containerConfigSupplier == undefined) {
+                    const undefinedContainerConfigSupplierErrStr =
+                        `Expected serviceConfigSuppliers to contain a value associated with service Id ${serviceId}, but no such value was found`;
+                    const undefinedContainerConfigSupplierErr = new Error(undefinedContainerConfigSupplierErrStr);
+                    failedServicesPool.set(serviceId, undefinedContainerConfigSupplierErr);
+                    throw undefinedContainerConfigSupplierErr
+                }
+                const containerConfigSupplierResult: Result<ContainerConfig, Error> = containerConfigSupplier(privateIpAddr);
+                if (containerConfigSupplierResult.isErr()){
+                    failedServicesPool.set(serviceId, containerConfigSupplierResult.error);
+                    throw containerConfigSupplierResult.error
+                }
+                const containerConfig: ContainerConfig = containerConfigSupplierResult.value;
+                log.trace(`Container config object successfully generated for service with Id '${serviceId}'`);
 
-            log.trace(`Creating files artifact ID str -> mount dirpaths map for service with Id '${serviceId}'...`);
-            const artifactIdStrToMountDirpath: Map<string, string> = new Map<string, string>();
-            for (const [filesArtifactId, mountDirpath] of containerConfig.filesArtifactMountpoints) {
-                artifactIdStrToMountDirpath.set(filesArtifactId, mountDirpath);
-            }
-            log.trace(`Successfully created files artifact ID str -> mount dirpaths map for service with Id '${serviceId}'`);
+                log.trace(`Creating files artifact ID str -> mount dirpaths map for service with Id '${serviceId}'...`);
+                const artifactIdStrToMountDirpath: Map<string, string> = new Map<string, string>();
+                for (const [filesArtifactId, mountDirpath] of containerConfig.filesArtifactMountpoints) {
+                    artifactIdStrToMountDirpath.set(filesArtifactId, mountDirpath);
+                }
+                log.trace(`Successfully created files artifact ID str -> mount dirpaths map for service with Id '${serviceId}'`);
 
-            const privatePorts = containerConfig.usedPorts;
-            const privatePortsForApi: Map<string, Port> = new Map();
-            for (const [portId, portSpec] of privatePorts.entries()) {
-                const portSpecForApi: Port = newPort(
-                    portSpec.number,
-                    portSpec.protocol,
+                const privatePorts = containerConfig.usedPorts;
+                const privatePortsForApi: Map<string, Port> = new Map();
+                for (const [portId, portSpec] of privatePorts.entries()) {
+                    const portSpecForApi: Port = newPort(
+                        portSpec.number,
+                        portSpec.protocol,
+                    )
+                    privatePortsForApi.set(portId, portSpecForApi);
+                }
+                //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+                const publicPorts = containerConfig.publicPorts;
+                const publicPortsForApi: Map<string, Port> = new Map();
+                for (const [portId, portSpec] of publicPorts.entries()) {
+                    const portSpecForApi: Port = newPort(
+                        portSpec.number,
+                        portSpec.protocol,
+                    )
+                    publicPortsForApi.set(portId, portSpecForApi);
+                }
+                //TODO finish the hack
+
+                const serviceConfig : ServiceConfig = newServiceConfig(
+                    containerConfig.image,
+                    privatePortsForApi,
+                    publicPortsForApi,
+                    containerConfig.entrypointOverrideArgs,
+                    containerConfig.cmdOverrideArgs,
+                    containerConfig.environmentVariableOverrides,
+                    artifactIdStrToMountDirpath,
+                    containerConfig.cpuAllocationMillicpus,
+                    containerConfig.memoryAllocationMegabytes,
                 )
-                privatePortsForApi.set(portId, portSpecForApi);
-            }
-            //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-            const publicPorts = containerConfig.publicPorts;
-            const publicPortsForApi: Map<string, Port> = new Map();
-            for (const [portId, portSpec] of publicPorts.entries()) {
-                const portSpecForApi: Port = newPort(
-                    portSpec.number,
-                    portSpec.protocol,
-                )
-                publicPortsForApi.set(portId, portSpecForApi);
-            }
-            //TODO finish the hack
+                serviceConfigs.set(serviceId, serviceConfig);
+            } catch (err) {
+                failedServicesPool.set(serviceId, err)
 
-            const serviceConfig : ServiceConfig = newServiceConfig(
-                containerConfig.image,
-                privatePortsForApi,
-                publicPortsForApi,
-                containerConfig.entrypointOverrideArgs,
-                containerConfig.cmdOverrideArgs,
-                containerConfig.environmentVariableOverrides,
-                artifactIdStrToMountDirpath,
-                containerConfig.cpuAllocationMillicpus,
-                containerConfig.memoryAllocationMegabytes,
-            )
-            serviceConfigs.set(serviceId, serviceConfig);
+                // Do a best effort attempt to remove registration resources for this object to clean up after it failed in the start phase
+                // TODO: Migrate this to a bulk remove services call
+                const removeServiceResult = await this.removeService(serviceId, 10);
+                if (removeServiceResult.isErr()){
+                    const errMsg = `"Attempted to remove service '${serviceId}' to delete its resources after it failed to start, but the following error occurred" +
+				"while attempting to remove the service:\n ${removeServiceResult.error}`
+                    failedServicesPool.set(serviceId, new Error(errMsg))
+                }
+            }
         }
 
         const startServicesArgs : StartServicesArgs = newStartServicesArgs(serviceConfigs)
@@ -445,15 +465,16 @@ export class EnclaveContext {
             return err(new Error("Expected StartServicesResponse to contain a failed_service_ids_to_error, instead no such field was found"))
         }
         for (const[serviceIdStr, errStr] of failedServices.entries()){
-            failedServicesPool.set(<ServiceID>serviceIdStr, new Error(errStr))
+            const serviceId : ServiceID = <ServiceID>serviceIdStr;
+            failedServicesPool.set(serviceId, new Error(errStr))
 
             // Do a best effort attempt to remove registration resources for this object to clean up after it failed in the start phase
             // TODO: Migrate this to a bulk remove services call
-            const removeServiceResult = await this.removeService(<ServiceID>serviceIdStr, 10);
+            const removeServiceResult = await this.removeService(serviceId, DEFAULT_CONTAINER_STOP_TIMEOUT_SECONDS);
             if (removeServiceResult.isErr()){
-                const errMsg = `"Attempted to remove service '${serviceIdStr}' to delete its resources after it failed to start, but the following error occurred" +
+                const errMsg = `"Attempted to remove service '${serviceId}' to delete its resources after it failed to start, but the following error occurred" +
 				"while attempting to remove the service:\n ${removeServiceResult.error}`
-                failedServicesPool.set(<ServiceID>serviceIdStr, new Error(errMsg))
+                failedServicesPool.set(serviceId, new Error(errMsg))
             }
         }
 
