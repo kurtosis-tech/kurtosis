@@ -297,6 +297,8 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 				serviceID)
 		}
 		logrus.Tracef("Container config object successfully generated for service with ID '%v'", serviceID)
+
+		logrus.Tracef("Creating files artifact ID str -> mount dirpaths map for service with Id '%v'...", serviceID)
 		artifactIdStrToMountDirpath := map[string]string{}
 		for filesArtifactID, mountDirpath := range containerConfig.GetFilesArtifactMountpoints() {
 			artifactIdStrToMountDirpath[string(filesArtifactID)] = mountDirpath
@@ -310,7 +312,6 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 				Protocol: kurtosis_core_rpc_api_bindings.Port_Protocol(portSpec.GetProtocol()),
 			}
 		}
-
 		//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 		publicPorts := containerConfig.GetPublicPorts()
 		publicPortsForApi := map[string]*kurtosis_core_rpc_api_bindings.Port{}
@@ -341,7 +342,6 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred starting services with the Kurtosis API")
 	}
-
 
 	for serviceID, errStr := range registerServicesResp.GetFailedServiceIdsToError() {
 		failedServicesPool[services.ServiceID(serviceID)] = stacktrace.NewError("The following error occurred trying to start service with ID '%v':\n %v", serviceID, errStr)
