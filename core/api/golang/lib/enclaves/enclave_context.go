@@ -301,7 +301,13 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 		}()
 
 		logrus.Tracef("Generating container config object using the container config supplier for service '%v'...", serviceID)
-		containerConfigSupplier := serviceConfigSuppliers[services.ServiceID(serviceID)]
+		containerConfigSupplier, found := serviceConfigSuppliers[services.ServiceID(serviceID)]
+		if !found {
+			failedServicesPool[services.ServiceID(serviceID)] = stacktrace.NewError(
+				"A container config was not found for the registered service ID." +
+				"This should not have happened as it means a service ID that was not requested was registered. This is a bug in Kurtosis.")
+			continue
+		}
 		containerConfig, err := containerConfigSupplier(privateIPAddr)
 		if err != nil {
 			failedServicesPool[services.ServiceID(serviceID)] = stacktrace.Propagate(err, "An error occurred executing the container config supplier for service with ID '%v'", serviceID)
@@ -379,8 +385,8 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 				err = enclaveCtx.RemoveService(services.ServiceID(serviceID), defaultContainerStopTimeoutSeconds)
 				if err != nil {
 					failedServicesPool[services.ServiceID(serviceID)] = stacktrace.Propagate(err,
-						"Attempted to remove service '%v' to delete its resources after it failed, but an error occurred" +
-							"while attempting to remove the service.", serviceID)
+						"WARNING: Attempted to remove service '%v' to delete its resources after it failed to setup service context, but an error occurred" +
+							"while attempting to remove the service. This means there exists a service that should not have been started!", serviceID)
 				}
 			}
 		}()
