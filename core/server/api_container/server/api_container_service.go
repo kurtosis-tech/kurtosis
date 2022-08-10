@@ -187,16 +187,16 @@ func (apicService ApiContainerService) RegisterServices(ctx context.Context, arg
 		return nil, stacktrace.Propagate(err, "An error occurred registering services '%v' in the service network", serviceIDs)
 	}
 
-	serviceIDsToIPsStringMap := map[string]string{}
+	serviceIDsToIPsStrs := map[string]string{}
 	for id, ip := range serviceIDsToIPs {
-		serviceIDsToIPsStringMap[string(id)] = ip.String()
+		serviceIDsToIPsStrs[string(id)] = ip.String()
 	}
 	failedServiceIDsToErrStrs := map[string]string{}
-	for id, err := range failedServiceErrors {
-		failedServiceIDsToErrStrs[string(id)] = err.Error()
+	for id, serviceErr := range failedServiceErrors {
+		failedServiceIDsToErrStrs[string(id)] = serviceErr.Error()
 	}
 
-	return binding_constructors.NewRegisterServicesResponse(serviceIDsToIPsStringMap, failedServiceIDsToErrStrs), nil
+	return binding_constructors.NewRegisterServicesResponse(serviceIDsToIPsStrs, failedServiceIDsToErrStrs), nil
 }
 
 func (apicService ApiContainerService) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
@@ -290,8 +290,8 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 	serviceIDsToFilesArtifactUUIDsToMountpoints := map[kurtosis_backend_service.ServiceID]map[enclave_data_directory.FilesArtifactUUID]string{}
 	for serviceIDStr, serviceConfig := range args.ServiceIdsToConfigs {
 		shouldContinue := false
-		logrus.Debugf("Received request to start service with the following args: %+v", serviceConfig)
 		serviceID := kurtosis_backend_service.ServiceID(serviceIDStr)
+		logrus.Debugf("Received request to start service with the following args: %+v", serviceConfig)
 
 		privateApiPorts := serviceConfig.PrivatePorts
 		privateServicePortSpecs := map[string]*port_spec.PortSpec{}
@@ -363,7 +363,6 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 		serviceIDsToConfigs[serviceID] = serviceConfigObj
 	}
 
-
 	successfulServices, failedServices, err := apicService.serviceNetwork.StartServices(ctx, serviceIDsToConfigs, serviceIDsToFilesArtifactUUIDsToMountpoints)
 	if err != nil {
 		// TODO IP: Leaks internal information about the API container
@@ -390,8 +389,9 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 			}
 		}()
 
-		serviceGuidStr := string(startedService.GetRegistration().GetGUID())
-		privateServiceIpStr := startedService.GetRegistration().GetPrivateIP().String()
+		serviceRegistration := startedService.GetRegistration()
+		serviceGuidStr := string(serviceRegistration.GetGUID())
+		privateServiceIpStr := serviceRegistration.GetPrivateIP().String()
 		privateServicePortSpecs := startedService.GetPrivatePorts()
 		privateApiPorts, err := transformPortSpecMapToApiPortsMap(privateServicePortSpecs)
 		if err != nil {
@@ -423,8 +423,8 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 	}
 
 	failedServiceIDsToErrorStr := map[string]string{}
-	for id, error := range failedServicesPool {
-		failedServiceIDsToErrorStr[string(id)] = error.Error()
+	for id, serviceErr := range failedServicesPool {
+		failedServiceIDsToErrorStr[string(id)] = serviceErr.Error()
 	}
 	return binding_constructors.NewStartServicesResponse(serviceIDsToServiceInfo, failedServiceIDsToErrorStr), nil
 }

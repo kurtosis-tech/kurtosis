@@ -362,29 +362,31 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	}
 
 	// Remove the registration resources for services that failed to start
-	for serviceID, errStr := range registerServicesResp.GetFailedServiceIdsToError() {
+	for serviceIDStr, errStr := range registerServicesResp.GetFailedServiceIdsToError() {
+		serviceID := services.ServiceID(serviceIDStr)
 		failedServicesPool[services.ServiceID(serviceID)] = stacktrace.NewError("The following error occurred trying to start service with ID '%v':\n %v", serviceID, errStr)
 
 		// Do a best effort attempt to remove registration resources for this service, if not, add it
 		// TODO: Migrate this to a bulk remove services call
-		err = enclaveCtx.RemoveService(services.ServiceID(serviceID), defaultContainerStopTimeoutSeconds)
+		err = enclaveCtx.RemoveService(serviceID, defaultContainerStopTimeoutSeconds)
 		if err != nil {
-			failedServicesPool[services.ServiceID(serviceID)] = stacktrace.Propagate(err,
+			failedServicesPool[serviceID] = stacktrace.Propagate(err,
 				"WARNING: Attempted to remove service '%v' to delete its resources after it failed to start, but an error occurred" +
 				"while attempting to remove the service. This means there exists a registration for a service that has yet to be started!.", serviceID)
 		}
 	}
 
 	successfulServices := map[services.ServiceID]*services.ServiceContext{}
-	for serviceID, serviceInfo := range resp.GetSuccessfulServiceIdsToServiceInfo() {
+	for serviceIDStr, serviceInfo := range resp.GetSuccessfulServiceIdsToServiceInfo() {
+		serviceID := services.ServiceID(serviceIDStr)
 		// If anything goes wrong while trying to setup the service context, we need to remove the registration created for this service.
 		shouldRemoveRegistration := true
 		defer func() {
 			if shouldRemoveRegistration {
 				// TODO: Migrate this to a bulk remove services call
-				err = enclaveCtx.RemoveService(services.ServiceID(serviceID), defaultContainerStopTimeoutSeconds)
+				err = enclaveCtx.RemoveService(serviceID, defaultContainerStopTimeoutSeconds)
 				if err != nil {
-					failedServicesPool[services.ServiceID(serviceID)] = stacktrace.Propagate(err,
+					failedServicesPool[serviceID] = stacktrace.Propagate(err,
 						"WARNING: Attempted to remove service '%v' to delete its resources after it failed to setup service context, but an error occurred" +
 							"while attempting to remove the service. This means there exists a service that should not have been started!", serviceID)
 				}
@@ -393,18 +395,18 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 
 		serviceCtxPrivatePorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetPrivatePorts())
 		if err != nil {
-			failedServicesPool[services.ServiceID(serviceID)] = stacktrace.Propagate(err, "An error occurred converting the private ports returned by the API to ports usable by the service context.")
+			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred converting the private ports returned by the API to ports usable by the service context.")
 			continue
 		}
 		serviceCtxPublicPorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetMaybePublicPorts())
 		if err != nil {
-			failedServicesPool[services.ServiceID(serviceID)] = stacktrace.Propagate(err, "An error occurred converting the public ports returned by the API to ports usable by the service context.")
+			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred converting the public ports returned by the API to ports usable by the service context.")
 			continue
 		}
 
 		serviceContext := services.NewServiceContext(
 			enclaveCtx.client,
-			services.ServiceID(serviceID),
+			serviceID,
 			serviceInfo.GetPrivateIpAddr(),
 			serviceCtxPrivatePorts,
 			serviceInfo.GetMaybePublicIpAddr(),
@@ -412,7 +414,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 		)
 
 		shouldRemoveRegistration = false
-		successfulServices[services.ServiceID(serviceID)] = serviceContext
+		successfulServices[serviceID] = serviceContext
 	}
 
 	return successfulServices, failedServicesPool, nil

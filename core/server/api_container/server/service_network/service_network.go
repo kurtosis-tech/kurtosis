@@ -269,12 +269,13 @@ func (network ServiceNetwork) RegisterServices(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", serviceIDs)
 	}
-	for id, err := range failedRegistrations {
-		failedServicePool[id] = stacktrace.Propagate(err, "Failed to register service with ID '%v'", id)
+	for id, registrationErr := range failedRegistrations {
+		failedServicePool[id] = stacktrace.Propagate(registrationErr, "Failed to register service with ID '%v'", id)
 	}
 
 	successfulServiceIPs := map[service.ServiceID]net.IP{}
 	for serviceID, serviceRegistration := range successfulRegistrations {
+		// If any error occurs configuring the newly registered service, we destroy the service to rollback created resources
 		shouldDestroyService := true
 		defer func() {
 			if shouldDestroyService {
@@ -297,7 +298,6 @@ func (network ServiceNetwork) RegisterServices(
 				serviceID,
 				partitionID,
 			)
-			network.destroyServiceBestEffortAfterRegistrationFailure(serviceRegistration.GetGUID())
 			continue
 		}
 		shouldRemoveFromTopology := true
@@ -465,26 +465,27 @@ func(network *ServiceNetwork) StartServices(
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	failedServicesPool := map[service.ServiceID]error{}
-	serviceGUIDsToIDs := map[service.ServiceGUID]service.ServiceID{}
 
+	serviceGUIDsToIDs := map[service.ServiceGUID]service.ServiceID{}
 	serviceGUIDsToConfigs := map[service.ServiceGUID]*service.ServiceConfig{}
 	serviceGUIDsToFilesArtifactUUIDsToMountpoints := map[service.ServiceGUID]map[enclave_data_directory.FilesArtifactUUID]string{}
-	for id, serviceConfig := range serviceConfigs {
-		registration, found := network.registeredServiceInfo[id]
+	for serviceID, serviceConfig := range serviceConfigs {
+		registration, found := network.registeredServiceInfo[serviceID]
 		if !found {
-			failedServicesPool[id] = stacktrace.NewError("Cannot start service; no registration exists for service with ID '%v'", id)
+			failedServicesPool[serviceID] = stacktrace.NewError("Cannot start service; no registration exists for service with ID '%v'", serviceID)
 			continue
 		}
-		guid := registration.GetGUID()
-
-		serviceGUIDsToIDs[guid] = id
-		serviceGUIDsToConfigs[guid] = serviceConfig
-		filesArtifactsUUIDsToMountpoints, found := serviceIDsToFilesArtifactUUIDsToMountpoints[id]
+		filesArtifactsUUIDsToMountpoints, found := serviceIDsToFilesArtifactUUIDsToMountpoints[serviceID]
 		if !found {
-			return nil, nil, stacktrace.NewError(
+			failedServicesPool[serviceID] = stacktrace.NewError(
 				"Could not find mapping from files artifacts UUIDs to mountpoints for service with ID '%v'." +
-				"This is a bug in Kurtosis. Make sure the keys of service configs map and service ids to files artifacts uuids to mountpoints map are 1:1.", id)
+					"This is a bug in Kurtosis. Make sure the keys of service configs map and service ids to files artifacts uuids to mountpoints map are 1:1.", serviceID)
+			continue
 		}
+
+		guid := registration.GetGUID()
+		serviceGUIDsToIDs[guid] = serviceID
+		serviceGUIDsToConfigs[guid] = serviceConfig
 		serviceGUIDsToFilesArtifactUUIDsToMountpoints[guid] = filesArtifactsUUIDsToMountpoints
 	}
 
@@ -535,16 +536,18 @@ func(network *ServiceNetwork) StartServices(
 	for serviceGUID, serviceInfo := range successfulServiceGUIDs {
 		serviceID, found := serviceGUIDsToIDs[serviceGUID]
 		if !found {
-			return nil, nil, stacktrace.NewError("Could not find a service ID associated with the service GUID '%v'. This should not happen and is a bug in Kurtosis.", serviceGUID)
+			failedServicesPool[serviceID] = stacktrace.NewError("Could not find a service ID associated with the service GUID '%v'. This should not happen and is a bug in Kurtosis.", serviceGUID)
+			continue
 		}
 		successfulServices[serviceID] = serviceInfo
 	}
-	for serviceGUID, err := range failedServiceGUIDs {
+	for serviceGUID, serviceErr := range failedServiceGUIDs {
 		serviceID, found := serviceGUIDsToIDs[serviceGUID]
 		if !found {
-			return nil, nil, stacktrace.NewError("Could not find a service ID associated with the service GUID '%v'. This should not happen and is a bug in Kurtosis.", serviceGUID)
+			failedServicesPool[serviceID] = stacktrace.NewError("Could not find a service ID associated with the service GUID '%v'. This should not happen and is a bug in Kurtosis.", serviceGUID)
+			continue
 		}
-		failedServicesPool[serviceID] = err
+		failedServicesPool[serviceID] = serviceErr
 	}
 
 	if network.isPartitioningEnabled {
@@ -561,7 +564,7 @@ func(network *ServiceNetwork) StartServices(
 		// Here, we are now blocking off successfully started services from the rest of the network to further guarantee network partitioning.
 		// We don't undo the blocking off of failed services by the rest of the network because the services in the network are blocking traffic
 		// from containers that don't exist anyways.
-		for id, serviceInfo := range successfulServices {
+		for serviceID, serviceInfo := range successfulServices {
 			serviceRegistration := serviceInfo.GetRegistration()
 			serviceGUID := serviceRegistration.GetGUID()
 			// If anything goes wrong while trying to set up the traffic configurations, we need to remove the successfully started service.
@@ -574,7 +577,7 @@ func(network *ServiceNetwork) StartServices(
 
 			sidecar, err := network.networkingSidecarManager.Add(ctx, serviceGUID)
 			if err != nil {
-				failedServicesPool[id] = stacktrace.Propagate(err, "An error occurred adding the networking sidecar for service `%v`", id)
+				failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred adding the networking sidecar for service `%v`", serviceID)
 				continue
 			}
 			shouldRemoveSidecar := true
@@ -584,24 +587,24 @@ func(network *ServiceNetwork) StartServices(
 				}
 			}()
 
-			network.networkingSidecars[id] = sidecar
+			network.networkingSidecars[serviceID] = sidecar
 			shouldRemoveSidecarFromMap := true
 			defer func() {
 				if shouldRemoveSidecarFromMap {
-					delete(network.networkingSidecars, id)
+					delete(network.networkingSidecars, serviceID)
 				}
 			}()
 
 			if err := sidecar.InitializeTrafficControl(ctx); err != nil {
-				failedServicesPool[id] = stacktrace.Propagate(err, "An error occurred initializing the newly-created networking-sidecar-traffic-control-qdisc-configuration for service `%v`", id)
+				failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred initializing the newly-created networking-sidecar-traffic-control-qdisc-configuration for service `%v`", serviceID)
 				continue
 			}
 
 			shouldRemoveSidecar = false
 			shouldRemoveSidecarFromMap = false
 			shouldRemoveService = false
-			newNodeServicePacketLossConfiguration := servicePacketLossConfigurationsByServiceID[id]
-			updatesToApply[id] = newNodeServicePacketLossConfiguration
+			newNodeServicePacketLossConfiguration := servicePacketLossConfigurationsByServiceID[serviceID]
+			updatesToApply[serviceID] = newNodeServicePacketLossConfiguration
 		}
 
 		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.registeredServiceInfo, network.networkingSidecars); err != nil {
@@ -998,7 +1001,7 @@ func (network *ServiceNetwork) destroyServiceBestEffortAfterFailure(
 	}
 	if errToPrint != nil {
 		logrus.Warnf(
-			"Starting this service didn't complete successfully so we tried to destroy the "+
+			"Starting service with GUID '%v' didn't complete successfully so we tried to destroy the "+
 				"service that we created, but doing so threw an error:\n%v",
 			serviceGuid,
 			errToPrint,
@@ -1129,7 +1132,7 @@ func (network *ServiceNetwork) startServices(
 		var filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion
 
 		if len(filesArtifactUUIDsToMountpoints) == 0 {
-			serviceConfigsWithFilesArtifactsExpansion[guid] = serviceConfigs[guid]
+			serviceConfigsWithFilesArtifactsExpansion[guid] = config
 			continue
 		}
 		usedArtifactUUIDSet := map[enclave_data_directory.FilesArtifactUUID]bool{}
