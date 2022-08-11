@@ -67,7 +67,7 @@ export type PartitionID = string;
 const DEFAULT_PARTITION_ID: PartitionID = "";
 
 // For removing services in rollback operations
-const DEFAULT_CONTAINER_STOP_TIMEOUT_SECONDS = 10;
+const DEFAULT_CONTAINER_STOP_TIMEOUT_SECONDS = 0;
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class EnclaveContext {
@@ -299,18 +299,20 @@ export class EnclaveContext {
         const registerServicesResponse = registerServicesResponseResult.value
 
         const failedRegistrations : jspb.Map<string, string> = registerServicesResponse.getFailedServiceIdsToErrorMap();
-        for (const[serviceId,  errStr] of failedRegistrations.entries()){
-            const registrationErrMsg = `The following error occurred when trying to register service '${serviceId}':\n ${errStr}`
+        for (const[serviceIdStr,  registrationErrStr] of failedRegistrations.entries()){
+            const serviceId : ServiceID = <ServiceID>serviceIdStr;
+            const registrationErrMsg = `The following error occurred when trying to register service '${serviceIdStr}':\n ${registrationErrStr}`
             failedServicesPool.set(serviceId, new Error(registrationErrMsg));
         }
 
         log.trace("New services successfully registered with Kurtosis API");
         const serviceConfigs = new Map<ServiceID, ServiceConfig>();
         const serviceIdToPrivateIpAddresses : jspb.Map<string, string> = registerServicesResponse.getServiceIdsToPrivateIpAddressesMap();
-        for (const[serviceId,  privateIpAddr] of serviceIdToPrivateIpAddresses.entries()){
+        for (const[serviceIdStr,  privateIpAddr] of serviceIdToPrivateIpAddresses.entries()){
+            const serviceId : ServiceID = <ServiceID>serviceIdStr;
             try {
                 log.trace(`Generating container config object using the container config supplier for service with Id '${serviceId}'`);
-                const containerConfigSupplier : ((ipAddr: string) => Result<ContainerConfig, Error>) | undefined = serviceConfigSuppliers.get(<ServiceID>serviceId);
+                const containerConfigSupplier : ((ipAddr: string) => Result<ContainerConfig, Error>) | undefined = serviceConfigSuppliers.get(serviceId);
                 if (containerConfigSupplier == undefined) {
                     const undefinedContainerConfigSupplierErrStr =
                         `Expected serviceConfigSuppliers to contain a value associated with service Id ${serviceId}, but no such value was found`;
@@ -371,7 +373,7 @@ export class EnclaveContext {
 
                 // Do a best effort attempt to remove registration resources for this object to clean up after it failed in the start phase
                 // TODO: Migrate this to a bulk remove services call
-                const removeServiceResult = await this.removeService(serviceId, 10);
+                const removeServiceResult = await this.removeService(serviceId, DEFAULT_CONTAINER_STOP_TIMEOUT_SECONDS);
                 if (removeServiceResult.isErr()){
                     const errMsg = `"Attempted to remove service '${serviceId}' to delete its resources after it failed to start, but the following error occurred" +
 				"while attempting to remove the service:\n ${removeServiceResult.error}`
@@ -394,9 +396,9 @@ export class EnclaveContext {
         if(failedServices == undefined) {
             return err(new Error("Expected StartServicesResponse to contain a failed_service_ids_to_error, instead no such field was found"))
         }
-        for (const[serviceIdStr, errStr] of failedServices.entries()){
+        for (const[serviceIdStr, serviceErrStr] of failedServices.entries()){
             const serviceId : ServiceID = <ServiceID>serviceIdStr;
-            failedServicesPool.set(serviceId, new Error(errStr))
+            failedServicesPool.set(serviceId, new Error(serviceErrStr))
 
             // Do a best effort attempt to remove registration resources for this object to clean up after it failed in the start phase
             // TODO: Migrate this to a bulk remove services call

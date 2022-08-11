@@ -46,7 +46,7 @@ const (
 	tempCompressionDirPattern = "upload-compression-cache-"
 	compressionExtension      = ".tgz"
 
-	defaultContainerStopTimeoutSeconds = 10
+	defaultContainerStopTimeoutSeconds = 0
 )
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
