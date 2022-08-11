@@ -181,12 +181,12 @@ func (apicService ApiContainerService) RegisterServices(ctx context.Context, arg
 		serviceIDs[kurtosis_backend_service.ServiceID(id)] = true
 	}
 	partitionId := service_network_types.PartitionID(args.PartitionId)
+
 	serviceIDsToIPs, failedServiceErrors, err := apicService.serviceNetwork.RegisterServices(ctx, serviceIDs, partitionId)
 	if err != nil {
 		// TODO IP: Leaks internal information about API container
 		return nil, stacktrace.Propagate(err, "An error occurred registering services '%v' in the service network", serviceIDs)
 	}
-
 	serviceIDsToIPsStrs := map[string]string{}
 	for id, ip := range serviceIDsToIPs {
 		serviceIDsToIPsStrs[string(id)] = ip.String()
@@ -322,7 +322,21 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "An error occurred starting services in the service network")
 	}
-
+	// Defer an undo to all the successful registrations in case an error occurs in future phases
+	shouldRemoveServices := map[kurtosis_backend_service.ServiceID]bool{}
+	for serviceID, _ := range successfulServices {
+		shouldRemoveServices[serviceID] = true
+		defer func() {
+			if shouldRemoveServices[serviceID] {
+				_, err := apicService.serviceNetwork.RemoveService(ctx, serviceID, defaultContainerStopTimeoutSeconds)
+				if err != nil {
+					failedServicesPool[serviceID] = stacktrace.NewError(
+						"WARNING: Attempted to remove service '%v' it failed to start, but an error occurred while doing so" +
+							"Must remove the service manually.", serviceID)
+				}
+			}
+		}()
+	}
 	for serviceID, serviceErr := range failedServices {
 		failedServicesPool[serviceID] = serviceErr
 		logrus.Debugf("Failed to start service '%v'", serviceID)
@@ -330,19 +344,6 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 
 	serviceIDsToServiceInfo := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
 	for serviceID, startedService := range successfulServices {
-		// If anything goes wrong while trying to set up the service object, we need to remove the successfully started service
-		shouldRemoveService := true
-		defer func() {
-			if shouldRemoveService {
-				_, err := apicService.serviceNetwork.RemoveService(ctx, serviceID, defaultContainerStopTimeoutSeconds)
-				if err != nil {
-					failedServicesPool[serviceID] = stacktrace.NewError(
-						"WARNING: Attempted to remove service '%v' to delete its resources after it failed to create service object, but an error occurred" +
-					"while attempting to remove the service. This means there exists a service that should not have been started!.", serviceID)
-				}
-			}
-		}()
-
 		serviceRegistration := startedService.GetRegistration()
 		serviceGuidStr := string(serviceRegistration.GetGUID())
 		privateServiceIpStr := serviceRegistration.GetPrivateIP().String()
@@ -364,7 +365,6 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 			publicIpAddrStr = maybePublicIpAddr.String()
 		}
 
-		shouldRemoveService = false
 		serviceIDsToServiceInfo[string(serviceID)] = binding_constructors.NewServiceInfo(serviceGuidStr, privateServiceIpStr, privateApiPorts, publicIpAddrStr, publicApiPorts)
 		serviceStartLoglineSuffix := ""
 		if len(publicServicePortSpecs) > 0 {
@@ -379,6 +379,11 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 	failedServiceIDsToErrorStr := map[string]string{}
 	for id, serviceErr := range failedServicesPool {
 		failedServiceIDsToErrorStr[string(id)] = serviceErr.Error()
+	}
+
+	// Do not remove services that were successful
+	for serviceIDStr, _ := range serviceIDsToServiceInfo {
+		shouldRemoveServices[kurtosis_backend_service.ServiceID(serviceIDStr)] = false
 	}
 	return binding_constructors.NewStartServicesResponse(serviceIDsToServiceInfo, failedServiceIDsToErrorStr), nil
 }

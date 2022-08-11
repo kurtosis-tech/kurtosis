@@ -241,7 +241,10 @@ func (network ServiceNetwork) RegisterServices(
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	failedServicePool := map[service.ServiceID]error{}
-	serviceIDsToRegister := serviceIDs
+	serviceIDsToRegister := map[service.ServiceID]bool{}
+	for id, _ := range serviceIDs {
+		serviceIDsToRegister[id] = true
+	}
 
 	for serviceID, _ := range serviceIDs {
 		if _, found := network.registeredServiceInfo[serviceID]; found {
@@ -271,20 +274,27 @@ func (network ServiceNetwork) RegisterServices(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", serviceIDs)
 	}
-	for id, registrationErr := range failedRegistrations {
-		failedServicePool[id] = stacktrace.Propagate(registrationErr, "Failed to register service with ID '%v'", id)
+	// Defer an undo to all the successful registrations in case an error occurs in future phases
+	shouldRemoveServices := map[service.ServiceID]bool{}
+	for serviceID, serviceRegistration := range successfulRegistrations {
+		shouldRemoveServices[serviceID] = true
+		defer func() {
+			if shouldRemoveServices[serviceID] {
+				err = network.destroyServiceAfterFailure(serviceRegistration.GetGUID())
+				if err != nil {
+					failedServicePool[serviceID] = stacktrace.Propagate(err,
+						"WARNING: Attempted to remove service '%v' after it failed to register but an error occurredwhile doing so." +
+						"Must destroy service manually!", serviceID)
+				}
+			}
+		}()
+	}
+	for serviceID, registrationErr := range failedRegistrations {
+		failedServicePool[serviceID] = stacktrace.Propagate(registrationErr, "Failed to register service with ID '%v'", serviceID)
 	}
 
 	successfulServiceIPs := map[service.ServiceID]net.IP{}
 	for serviceID, serviceRegistration := range successfulRegistrations {
-		// If any error occurs configuring the newly registered service, we destroy the service to rollback created resources
-		shouldDestroyService := true
-		defer func() {
-			if shouldDestroyService {
-				network.destroyServiceBestEffortAfterRegistrationFailure(serviceRegistration.GetGUID())
-			}
-		}()
-
 		network.registeredServiceInfo[serviceID] = serviceRegistration
 		shouldRemoveFromServicesMap := true
 		defer func() {
@@ -311,11 +321,14 @@ func (network ServiceNetwork) RegisterServices(
 
 		shouldRemoveFromServicesMap = false
 		shouldRemoveFromTopology = false
-		shouldDestroyService = false
 		privateIP := serviceRegistration.GetPrivateIP()
 		successfulServiceIPs[serviceID] = privateIP
 	}
 
+	// Do not remove services that were successful
+	for serviceID, _ := range successfulServiceIPs {
+		shouldRemoveServices[serviceID] = false
+	}
 	return successfulServiceIPs, failedServicePool, nil
 }
 
@@ -531,16 +544,25 @@ func(network *ServiceNetwork) StartServices(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred attempting to add services to the service network.")
 	}
-
 	// Convert from GUID maps to ID maps
 	successfulServices := map[service.ServiceID]service.Service{}
+	shouldRemoveServices := map[service.ServiceID]bool{}
 	for serviceGUID, serviceInfo := range successfulServiceGUIDs {
 		serviceID, found := serviceGUIDsToIDs[serviceGUID]
 		if !found {
 			return nil, nil, stacktrace.NewError("Could not find a service ID associated with the service GUID '%v'. This should not happen and is a bug in Kurtosis.", serviceGUID)
 		}
 		successfulServices[serviceID] = serviceInfo
+		// Defer an undo to all the successful registrations in case an error occurs in future phases
+		shouldRemoveServices[serviceID] = true
+		defer func() {
+			err = network.destroyServiceAfterFailure(serviceGUID)
+			if err != nil {
+				failedServicesPool[serviceID] = stacktrace.Propagate(err, "WARNING: Attempted to remove service '%v' but after it failed to start but an error occurred while doing so. Must destroy service manually!", serviceID)
+			}
+		}()
 	}
+	// Add services that failed to start to failed service pool
 	for serviceGUID, serviceErr := range failedServiceGUIDs {
 		serviceID, found := serviceGUIDsToIDs[serviceGUID]
 		if !found {
@@ -566,13 +588,6 @@ func(network *ServiceNetwork) StartServices(
 		for serviceID, serviceInfo := range successfulServices {
 			serviceRegistration := serviceInfo.GetRegistration()
 			serviceGUID := serviceRegistration.GetGUID()
-			// If anything goes wrong while trying to set up the traffic configurations, we need to remove the successfully started service.
-			shouldRemoveService := true
-			defer func() {
-				if shouldRemoveService {
-					network.destroyServiceBestEffortAfterFailure(serviceGUID)
-				}
-			}()
 
 			sidecar, err := network.networkingSidecarManager.Add(ctx, serviceGUID)
 			if err != nil {
@@ -603,7 +618,6 @@ func(network *ServiceNetwork) StartServices(
 
 			shouldRemoveSidecar = false
 			shouldRemoveSidecarFromMap = false
-			shouldRemoveService = false
 			newNodeServicePacketLossConfiguration := servicePacketLossConfigurationsByServiceID[serviceID]
 			updatesToApply[serviceID] = newNodeServicePacketLossConfiguration
 		}
@@ -612,6 +626,11 @@ func(network *ServiceNetwork) StartServices(
 			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration on the new nodes to partition them "+
 				"off from other nodes")
 		}
+	}
+
+	// Do not remove services that were successful
+	for serviceID, _ := range successfulServices {
+		shouldRemoveServices[serviceID] = false
 	}
 	return successfulServices, failedServicesPool, nil
 }
@@ -984,34 +1003,24 @@ func (network *ServiceNetwork) destroyServiceBestEffortAfterRegistrationFailure(
 	}
 }
 
-func (network *ServiceNetwork) destroyServiceBestEffortAfterFailure(
-	serviceGuid service.ServiceGUID,
-) {
+func (network *ServiceNetwork) destroyServiceAfterFailure(serviceGUID service.ServiceGUID) error {
 	destroyServiceFilters := &service.ServiceFilters{
 		GUIDs: map[service.ServiceGUID]bool{
-			serviceGuid: true,
+			serviceGUID: true,
 		},
 	}
 	// Use background context in case the input one is cancelled
 	_, erroredRegistrations, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveId, destroyServiceFilters)
-	var errToPrint error
+	var errToReturn error
 	if err != nil {
-		errToPrint = err
-	} else if destroyErr, found := erroredRegistrations[serviceGuid]; found {
-		errToPrint = destroyErr
+		errToReturn = err
+	} else if destroyErr, found := erroredRegistrations[serviceGUID]; found {
+		errToReturn = destroyErr
 	}
-	if errToPrint != nil {
-		logrus.Warnf(
-			"Starting service with GUID '%v' didn't complete successfully so we tried to destroy the "+
-				"service that we created, but doing so threw an error:\n%v",
-			serviceGuid,
-			errToPrint,
-		)
-		logrus.Warnf(
-			"!!! ACTION REQUIRED !!! You'll need to manually destroy service with GUID '%v'!!!",
-			serviceGuid,
-		)
+	if errToReturn != nil {
+		return stacktrace.NewError("Attempted to destroy the service with GUID'%v', but doing so threw an error:\n%v", serviceGUID, errToReturn)
 	}
+	return nil
 }
 
 func (network *ServiceNetwork) startService(
@@ -1198,7 +1207,6 @@ func (network *ServiceNetwork) startServices(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred starting user services in underlying container engine.")
 	}
-
 	// Add services that failed to start to failed services pool
 	for guid, serviceErr := range failedServices {
 		failedServicesPool[guid] = serviceErr
