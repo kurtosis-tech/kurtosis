@@ -303,7 +303,9 @@ func runStartServiceOperationsInParallel(
 		serviceGUID := service.ServiceGUID(id)
 		serviceObj, ok := data.(service.Service)
 		if !ok {
-			return nil, nil, stacktrace.NewError("Casting to a service object on data returned from the operation to start service with guid `%v` failed.", serviceGUID)
+			return nil, nil, stacktrace.NewError(
+				"An error occurred downcasting data returned from the start user service operation for service with GUID: %v." +
+					"This is a Kurtosis bug. Make sure the desired type is actually being returned in the corresponding Operation.", serviceGUID)
 		}
 		successfulServices[serviceGUID] = serviceObj
 	}
