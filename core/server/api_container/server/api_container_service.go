@@ -674,14 +674,9 @@ func convertAPIPortsToPortSpecs(
 
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	if len(publicAPIPorts) > 0 {
-		if len(privateAPIPorts) != len(publicAPIPorts) {
-			return nil, nil, stacktrace.NewError("The received private ports length and the public ports length are not equal. Received '%v' private ports and '%v' public ports", len(privateAPIPorts), len(publicAPIPorts))
-		}
-
-		for portID, privateAPIPort := range privateAPIPorts {
-			if _, found := publicAPIPorts[portID]; !found {
-				return nil, nil, stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portID, privateAPIPort.GetNumber())
-			}
+		err := checkPrivateAndPublicPortsAreOneToOne(privateAPIPorts, publicAPIPorts)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "Provided public and private ports are not one to one.")
 		}
 	}
 
@@ -754,6 +749,23 @@ func transformPortSpecMapToApiPortsMap(apiPorts map[string]*port_spec.PortSpec) 
 		result[portId] = publicApiPort
 	}
 	return result, nil
+}
+
+// Ensure that provided [privatePorts] and [publicPorts] are one to one by checking:
+// - There is a matching publicPort for every portID in privatePorts
+// - There are the same amount of private and public ports
+// If error is nil, the public and private ports are one to one.
+func checkPrivateAndPublicPortsAreOneToOne(privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port, publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port) error {
+	if len(privatePorts) != len(publicPorts) {
+		return stacktrace.NewError("The received private ports length and the public ports length are not equal. Received '%v' private ports and '%v' public ports", len(privatePorts), len(publicPorts))
+	}
+
+	for portID, privatePortSpec := range privatePorts {
+		if _, found := publicPorts[portID]; !found {
+			return stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portID, privatePortSpec.GetNumber())
+		}
+	}
+	return nil
 }
 
 func (apicService ApiContainerService) waitForEndpointAvailability(
