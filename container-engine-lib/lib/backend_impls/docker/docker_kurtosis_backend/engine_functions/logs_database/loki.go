@@ -1,4 +1,4 @@
-package logs_database_server_config
+package logs_database
 
 import (
 	"github.com/kurtosis-tech/stacktrace"

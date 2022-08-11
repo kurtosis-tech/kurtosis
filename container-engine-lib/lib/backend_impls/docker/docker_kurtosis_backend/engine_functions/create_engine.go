@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_database_server_config"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_database"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -206,7 +206,7 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating an engine object from container with GUID '%v'", containerId)
 	}
 
-	lokiConfig := logs_database_server_config.NewDefaultLokiConfigForKurtosisCentralizedLogs(lokiHttpApiPortNumber)
+	lokiConfig := logs_database.NewDefaultLokiConfigForKurtosisCentralizedLogs(lokiHttpApiPortNumber)
 
 	killCentralizedLogsComponentsContainersFunc, err := createCentralizedLogsComponents(
 		ctx,
@@ -241,7 +241,7 @@ func createCentralizedLogsComponents(
 	targetNetworkId string,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
-	logsDatabaseConfigProvider logs_database_server_config.LogsDatabaseConfigProvider,
+	logsDatabaseConfigProvider logs_database.LogsDatabase,
 ) (func(), error) {
 	killLogsDatabaseContainerFunc, err := createLogsDatabaseContainer(
 		ctx,
@@ -278,7 +278,7 @@ func createLogsDatabaseContainer(
 	targetNetworkId string,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
-	logsDatabaseConfigProvider logs_database_server_config.LogsDatabaseConfigProvider,
+	logsDatabaseConfigProvider logs_database.LogsDatabase,
 ) (func(), error) {
 	privateHttpApiPortSpec, err := port_spec.NewPortSpec(lokiHttpApiPortNumber, lokiHttpApiPortProtocol)
 	if err != nil {
@@ -324,7 +324,7 @@ func createLogsDatabaseContainer(
 	}
 
 	volumeMounts := map[string]string{
-		logsDbVolumeAttrs.GetName().GetString(): logs_database_server_config.LokiDefaultDirpath,
+		logsDbVolumeAttrs.GetName().GetString(): logs_database.LokiDefaultDirpath,
 	}
 
 	logsDatabaseConfigContentStr, err := logsDatabaseConfigProvider.GetConfigContent()
