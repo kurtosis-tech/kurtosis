@@ -278,7 +278,10 @@ func StartUserServices(
 	serviceRegistrationMutex.Lock()
 	defer serviceRegistrationMutex.Unlock()
 	failedServicesPool := map[service.ServiceGUID]error{}
-	serviceConfigsToStart := services
+	serviceConfigsToStart := map[service.ServiceGUID]*service.ServiceConfig{}
+	for guid, config:= range services {
+		serviceConfigsToStart[guid] = config
+	}
 
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	// Sanity check for port bindings on all services
