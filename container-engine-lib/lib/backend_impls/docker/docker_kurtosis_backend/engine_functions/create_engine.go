@@ -15,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
 	"time"
 )
 
@@ -207,12 +206,15 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating an engine object from container with GUID '%v'", containerId)
 	}
 
+	lokiConfig := logs_database_server_config.NewDefaultLokiConfigForKurtosisCentralizedLogs(lokiHttpApiPortNumber)
+
 	killCentralizedLogsComponentsContainersFunc, err := createCentralizedLogsComponents(
 		ctx,
 		engineGuid,
 		targetNetworkId,
 		objAttrsProvider,
 		dockerManager,
+		lokiConfig,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the centralized logs components for the engine with GUID '%v' and network ID '%v'", engineGuid, targetNetworkId)
@@ -239,6 +241,7 @@ func createCentralizedLogsComponents(
 	targetNetworkId string,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
+	logsDatabaseConfigProvider logs_database_server_config.LogsDatabaseConfigProvider,
 ) (func(), error) {
 	killLogsDatabaseContainerFunc, err := createLogsDatabaseContainer(
 		ctx,
@@ -246,6 +249,7 @@ func createCentralizedLogsComponents(
 		targetNetworkId,
 		objAttrsProvider,
 		dockerManager,
+		logsDatabaseConfigProvider,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database container")
@@ -274,6 +278,7 @@ func createLogsDatabaseContainer(
 	targetNetworkId string,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
+	logsDatabaseConfigProvider logs_database_server_config.LogsDatabaseConfigProvider,
 ) (func(), error) {
 	privateHttpApiPortSpec, err := port_spec.NewPortSpec(lokiHttpApiPortNumber, lokiHttpApiPortProtocol)
 	if err != nil {
@@ -322,20 +327,17 @@ func createLogsDatabaseContainer(
 		logsDbVolumeAttrs.GetName().GetString(): logs_database_server_config.LokiDefaultDirpath,
 	}
 
-	lokiConfig := logs_database_server_config.NewDefaultKurtosisLokiConfig(lokiHttpApiPortNumber)
-
-	lokiConfigYAMLContent, err := yaml.Marshal(lokiConfig)
+	logsDatabaseConfigContentStr, err := logsDatabaseConfigProvider.GetConfigContent()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred marshalling Loki config '%+v'", lokiConfig)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs-database-config-content from logs-database-config-provider '%+v'", logsDatabaseConfigProvider)
 	}
-	lokiConfigYAMLContentStr := string(lokiConfigYAMLContent)
 
 	overrideCmd := []string{
 		shCmdFlag,
 		fmt.Sprintf(
 			"%v '%v' > %v && %v %v=%v",
 			printfCmdName,
-			lokiConfigYAMLContentStr,
+			logsDatabaseConfigContentStr,
 			lokiConfigDefaultFilepath,
 			lokiBinaryFilepath,
 			lokiConfigFileFlag,

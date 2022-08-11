@@ -1,5 +1,10 @@
 package logs_database_server_config
 
+import (
+	"github.com/kurtosis-tech/stacktrace"
+	"gopkg.in/yaml.v3"
+)
+
 const (
 	//The following configuration values are the default ones suggested by the
 	//Loki's documentation and this video: https://grafana.com/go/webinar/logging-with-loki-essential-configuration-settings/?pg=docs-loki&plcmt=footer-resources-2
@@ -123,7 +128,7 @@ type Analytics struct {
 	ReportingEnabled bool `yaml:"reporting_enabled"`
 }
 
-func NewDefaultKurtosisLokiConfig(
+func NewDefaultLokiConfigForKurtosisCentralizedLogs(
 	httpListenPort uint16,
 ) *LokiConfig {
 
@@ -181,4 +186,13 @@ func NewDefaultKurtosisLokiConfig(
 	}
 
 	return newConfig
+}
+
+func (config *LokiConfig) GetConfigContent() (string, error) {
+	lokiConfigYAMLContent, err := yaml.Marshal(config)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred marshalling Loki config '%+v'", config)
+	}
+	lokiConfigYAMLContentStr := string(lokiConfigYAMLContent)
+	return lokiConfigYAMLContentStr, nil
 }
