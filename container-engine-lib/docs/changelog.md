@@ -6,7 +6,8 @@
 * Added the `ForLogsDatabaseServer` and the `ForLogsCollectorServer` Docker objects attribute
 * Added `LogsCollectorTypeDockerLabelValue`, `ModuleContainerTypeDockerLabelValue` and `LogsDbDataVolumeTypeDockerLabelValue` Docker labels
 * Added `EngineGUIDDockerLabelKey` Docker label key
-* Added `LogsDatabaseConfigProvider` interface for getting logs database config content
+* Added `LogsDatabase` interface for defining centralized logs database behaviour
+* Added `Loki` logs database implementation and the Kurtosis configuration values
 
 # 0.34.0
 #### Breaking Changes
