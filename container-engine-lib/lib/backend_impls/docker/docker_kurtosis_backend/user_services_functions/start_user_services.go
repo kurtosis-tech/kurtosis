@@ -298,6 +298,7 @@ func StartUserServices(
 					failedServicesPool[serviceGUID] = stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v' for service with guid `%v`, but it was not found", portId, privatePortSpec.GetNumber(), serviceGUID)
 					delete(serviceConfigsToStart, serviceGUID)
 					shouldContinue = true
+					break
 				}
 			}
 			if shouldContinue {
