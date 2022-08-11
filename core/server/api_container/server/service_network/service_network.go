@@ -424,7 +424,7 @@ func (network *ServiceNetwork) StartService(
 		}
 
 		// TODO Getting packet loss configuration by service ID is an expensive call and, as of 2021-11-23, we do it twice - the solution is to make
-		//  Getting packet loss configura	tion by service ID not an expensive call
+		//  Getting packet loss configuration by service ID not an expensive call
 		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
@@ -1134,12 +1134,12 @@ func (network *ServiceNetwork) startServices(
 			failedServicesPool[guid] = stacktrace.NewError("Couldn't find a mapping between service with GUID `%v` and a mapping of files artifacts UUIDs to mountpoints.", guid)
 			continue
 		}
-		var filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion
-
 		if len(filesArtifactUUIDsToMountpoints) == 0 {
 			serviceConfigsWithFilesArtifactsExpansion[guid] = config
 			continue
 		}
+
+		var filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion
 		usedArtifactUUIDSet := map[enclave_data_directory.FilesArtifactUUID]bool{}
 		for artifactUUID := range filesArtifactUUIDsToMountpoints {
 			usedArtifactUUIDSet[artifactUUID] = true
