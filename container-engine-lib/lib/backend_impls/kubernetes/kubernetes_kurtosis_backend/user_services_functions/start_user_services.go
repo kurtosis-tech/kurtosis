@@ -208,6 +208,8 @@ func StartUserServices(
 	map[service.ServiceGUID]error,
 	error,
 ) {
+	failedServicesPool := map[service.ServiceGUID]error{}
+	serviceConfigsToStart := services
 	// Sanity check for port bindings on all services
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	for _, config := range services {
@@ -239,7 +241,8 @@ func StartUserServices(
 	}
 	for guid, _ := range serviceGUIDs {
 		if _, found := preexistingObjectsAndResources[guid]; !found {
-			return nil, nil, stacktrace.NewError("Couldn't find any service registrations matching service GUID '%v'", guid)
+			failedServicesPool[guid] = stacktrace.NewError("Couldn't find any service registrations matching service GUID '%v'", guid)
+			delete(serviceConfigsToStart, guid)
 		}
 	}
 	if len(preexistingObjectsAndResources) > len(serviceGUIDs) {
@@ -250,14 +253,19 @@ func StartUserServices(
 	successfulStarts, failedStarts, err := runStartServiceOperationsInParallel(
 		ctx,
 		enclaveID,
-		services,
+		serviceConfigsToStart,
 		preexistingObjectsAndResources,
 		kubernetesManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to start services in parallel.")
 	}
 
-	return successfulStarts, failedStarts, nil
+	// Add failed starts to failed services pool
+	for serviceGUID, serviceErr := range failedStarts {
+		failedServicesPool[serviceGUID] = serviceErr
+	}
+
+	return successfulStarts, failedServicesPool, nil
 }
 
 // ====================================================================================================

@@ -277,21 +277,31 @@ func StartUserServices(
 ) {
 	serviceRegistrationMutex.Lock()
 	defer serviceRegistrationMutex.Unlock()
+	failedServicesPool := map[service.ServiceGUID]error{}
+	serviceConfigsToStart := services
 
 	// Sanity check for port bindings on all services
-	for guid, config := range services {
+	for serviceGUID, serviceConfig := range services {
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-		publicPorts := config.GetPublicPorts()
-		privatePorts := config.GetPrivatePorts()
+		shouldContinue := false
+		publicPorts := serviceConfig.GetPublicPorts()
+		privatePorts := serviceConfig.GetPrivatePorts()
 		if publicPorts != nil && len(publicPorts) > 0 {
 			if len(privatePorts) != len(publicPorts) {
-				return nil, nil, stacktrace.NewError("The received private ports length and the public ports length are not equal for service with guid `%v`. Received '%v' private ports and '%v' public ports", guid, len(privatePorts), len(publicPorts))
+				failedServicesPool[serviceGUID] = stacktrace.NewError("The received private ports length and the public ports length are not equal for service with guid `%v`. Received '%v' private ports and '%v' public ports", serviceGUID, len(privatePorts), len(publicPorts))
+				delete(serviceConfigsToStart, serviceGUID)
+				continue
 			}
 
 			for portId, privatePortSpec := range privatePorts {
 				if _, found := publicPorts[portId]; !found {
-					return nil, nil, stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v' for service with guid `%v`, but it was not found", portId, privatePortSpec.GetNumber(), guid)
+					failedServicesPool[serviceGUID] = stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v' for service with guid `%v`, but it was not found", portId, privatePortSpec.GetNumber(), serviceGUID)
+					delete(serviceConfigsToStart, serviceGUID)
+					shouldContinue = true
 				}
+			}
+			if shouldContinue {
+				continue
 			}
 		}
 	}
@@ -326,16 +336,17 @@ func StartUserServices(
 	for serviceGUID, _ := range services {
 		_, found := registrationsForEnclave[serviceGUID]
 		if !found {
-			return nil, nil, stacktrace.NewError(
+			failedServicesPool[serviceGUID] = stacktrace.NewError(
 				"Cannot start service '%v' because no preexisting registration has been made for the service",
 				serviceGUID,
 			)
+			delete(serviceConfigsToStart, serviceGUID)
 		}
 	}
 
 	// Find if a container has already been associated with any of the registrations yet
 	serviceGUIDs := map[service.ServiceGUID]bool{}
-	for guid := range services{
+	for guid := range serviceConfigsToStart {
 		serviceGUIDs[guid] = true
 	}
 	preexistingServicesFilters := &service.ServiceFilters{
@@ -345,14 +356,10 @@ func StartUserServices(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting preexisting containers for the services.")
 	}
-	if len(preexistingServices) > 0 {
-		var preexistingServiceGUIDs []service.ServiceGUID
-		for guid := range preexistingServices {
-			preexistingServiceGUIDs = append(preexistingServiceGUIDs, guid)
-		}
-		return nil, nil, stacktrace.Propagate(err, "Cannot start services '%v'; because containers already exists for those services.", preexistingServiceGUIDs)
+	for serviceGUID := range preexistingServices {
+		failedServicesPool[serviceGUID] = stacktrace.NewError( "Cannot start services '%v'; because containers already exists for those services.", serviceGUID)
+		delete(serviceConfigsToStart, serviceGUID)
 	}
-
 
 	enclaveObjAttrsProvider, err := objAttrsProvider.ForEnclave(enclaveID)
 	if err != nil {
@@ -362,7 +369,7 @@ func StartUserServices(
 	successfulStarts, failedStarts, err := runStartServiceOperationsInParallel(
 		ctx,
 		enclaveNetworkId,
-		services,
+		serviceConfigsToStart,
 		registrationsForEnclave,
 		enclaveObjAttrsProvider,
 		freeIpAddrProvider,
@@ -371,7 +378,12 @@ func StartUserServices(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to start services in parallel.")
 	}
 
-	return successfulStarts, failedStarts, nil
+	// Add failed starts to failed services pool
+	for serviceGUID, serviceErr := range failedStarts {
+		failedServicesPool[serviceGUID] = serviceErr
+	}
+
+	return successfulStarts, failedServicesPool, nil
 }
 
 // ====================================================================================================
