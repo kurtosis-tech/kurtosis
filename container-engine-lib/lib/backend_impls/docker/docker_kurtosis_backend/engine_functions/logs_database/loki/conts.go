@@ -34,6 +34,7 @@ const (
 	schemaConfigFrom = "2022-08-01"
 	//Boltdb-shipper is the adapter used to store the index in the chunk store (https://grafana.com/docs/loki/latest/fundamentals/architecture/#single-store)
 	//we use boltdb-shipper because it is the only one that allows us to set the Compactor's retention logs byt Tenant (https://grafana.com/docs/loki/latest/operations/storage/retention/)
+	//another benefit of using boltdb-shipper is that the Log entry deletion is supported only when the BoltDB Shipper is configured for the index store. (https://grafana.com/docs/loki/latest/operations/storage/logs-deletion/#log-entry-deletion)
 	schemaConfigStore = "boltdb-shipper"
 	//We are going to store the data in the container's filesystem (https://grafana.com/docs/loki/latest/operations/storage/filesystem)
 	schemaConfigObjectStore = "filesystem"

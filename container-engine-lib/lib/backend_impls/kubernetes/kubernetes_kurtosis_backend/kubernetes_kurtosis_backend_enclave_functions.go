@@ -130,6 +130,8 @@ func (backend KubernetesKurtosisBackend) CreateEnclave(
 		return nil, stacktrace.NewError("Successfully converted the new enclave's Kubernetes resources to an enclave object, but the resulting map didn't have an entry for enclave ID '%v'", enclaveId)
 	}
 
+	//TODO add the logic for create the logs retention period for the enclave, taking the retention period param sent by the user
+
 	shouldDeleteNamespace = false
 	return resultEnclave, nil
 }
@@ -322,6 +324,10 @@ func (backend KubernetesKurtosisBackend) DestroyEnclaves(
 
 		successfulEnclaveIds[enclaveId] = true
 	}
+	//TODO add the logic for removing the logs retention period configuration for the enclave
+
+	//TODO add the logic for removing the logs stored in the centralized logs database, using the Lokis´endpoint /loki/api/v1/delete (https://grafana.com/docs/loki/latest/api/#request-log-deletion
+
 	return successfulEnclaveIds, erroredEnclaveIds, nil
 }
 
