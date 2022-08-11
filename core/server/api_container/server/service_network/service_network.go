@@ -41,7 +41,7 @@ const (
 	minMemoryLimit = 6 // Docker doesn't allow memory limits less than 6 megabytes
 	defaultMemoryAllocMegabytes = 0
 
-	defaultContainerStopTimeoutSeconds = 10
+	defaultContainerStopTimeoutSeconds = 0
 )
 
 type storeFilesArtifactResult struct {

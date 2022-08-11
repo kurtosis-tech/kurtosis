@@ -41,7 +41,7 @@ const (
 
 	// The string returned by the API if a service's public IP address doesn't exist
 	missingPublicIpAddrStr = ""
-	defaultContainerStopTimeoutSeconds = 10
+	defaultContainerStopTimeoutSeconds = 0
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos

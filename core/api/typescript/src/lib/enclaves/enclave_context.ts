@@ -71,7 +71,7 @@ export type PartitionID = string;
 const DEFAULT_PARTITION_ID: PartitionID = "";
 
 // For removing services in rollback operations
-const DEFAULT_CONTAINER_STOP_TIMEOUT_SECONDS = 10;
+const DEFAULT_CONTAINER_STOP_TIMEOUT_SECONDS = 0;
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class EnclaveContext {
