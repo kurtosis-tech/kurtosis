@@ -419,7 +419,7 @@ registerServices: {
     responseSerialize: serialize_api_container_api_RegisterServicesResponse,
     responseDeserialize: deserialize_api_container_api_RegisterServicesResponse,
   },
-  // Starts a previously-registered service by creating a Docker container for it
+  // Starts previously-registered services by creating containers for them
 startServices: {
     path: '/api_container_api.ApiContainerService/StartServices',
     requestStream: false,

@@ -33,7 +33,7 @@ type ApiContainerServiceClient interface {
 	ExecuteModule(ctx context.Context, in *ExecuteModuleArgs, opts ...grpc.CallOption) (*ExecuteModuleResponse, error)
 	// Registers a service with the API container but doesn't start the container for it
 	RegisterServices(ctx context.Context, in *RegisterServicesArgs, opts ...grpc.CallOption) (*RegisterServicesResponse, error)
-	// Starts a previously-registered service by creating a Docker container for it
+	// Starts previously-registered services by creating containers for them
 	StartServices(ctx context.Context, in *StartServicesArgs, opts ...grpc.CallOption) (*StartServicesResponse, error)
 	// Returns the IDs of the current services in the enclave
 	GetServices(ctx context.Context, in *GetServicesArgs, opts ...grpc.CallOption) (*GetServicesResponse, error)
@@ -246,7 +246,7 @@ type ApiContainerServiceServer interface {
 	ExecuteModule(context.Context, *ExecuteModuleArgs) (*ExecuteModuleResponse, error)
 	// Registers a service with the API container but doesn't start the container for it
 	RegisterServices(context.Context, *RegisterServicesArgs) (*RegisterServicesResponse, error)
-	// Starts a previously-registered service by creating a Docker container for it
+	// Starts previously-registered services by creating containers for them
 	StartServices(context.Context, *StartServicesArgs) (*StartServicesResponse, error)
 	// Returns the IDs of the current services in the enclave
 	GetServices(context.Context, *GetServicesArgs) (*GetServicesResponse, error)

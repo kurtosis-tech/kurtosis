@@ -66,6 +66,9 @@ export type PartitionID = string;
 //  or it was repartitioned away)
 const DEFAULT_PARTITION_ID: PartitionID = "";
 
+// For removing services in rollback operations
+const DEFAULT_CONTAINER_STOP_TIMEOUT_SECONDS = 10;
+
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class EnclaveContext {
 
@@ -213,14 +216,19 @@ export class EnclaveContext {
         ): Promise<Result<ServiceContext, Error>> {
         const serviceConfigSuppliers : Map<ServiceID, (ipAddr: string) => Result<ContainerConfig, Error>> = new Map<ServiceID, (ipAddr: string) => Result<ContainerConfig, Error>>();
         serviceConfigSuppliers.set(serviceId, containerConfigSupplier)
-        const resultAddServiceToPartition : Result<Map<ServiceID, ServiceContext>, Error> = await this.addServicesToPartition(
+        const resultAddServiceToPartition : Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error> = await this.addServicesToPartition(
             serviceConfigSuppliers,
             DEFAULT_PARTITION_ID,
         );
         if (resultAddServiceToPartition.isErr()) {
             return err(resultAddServiceToPartition.error);
         }
-        const serviceCtx : ServiceContext | undefined = resultAddServiceToPartition.value.get(serviceId);
+        const [successfulServices, failedService] = resultAddServiceToPartition.value
+        const serviceErr : Error | undefined = failedService.get(serviceId);
+        if (serviceErr != undefined) {
+            return err(new Error(`An error occurred adding service '${serviceId}' to the enclave in the default partition`))
+        }
+        const serviceCtx : ServiceContext | undefined = successfulServices.get(serviceId);
         if (serviceCtx == undefined){
             return err(new Error(`An error occurred retrieving the service context of service with ID ${serviceId} from result of adding service to partition. This should not happen and is a bug in Kurtosis.`))
         }
@@ -230,9 +238,9 @@ export class EnclaveContext {
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async addServices(
             serviceConfigSuppliers: Map<ServiceID, (ipAddr: string) => Result<ContainerConfig, Error>>
-        ): Promise<Result<Map<ServiceID, ServiceContext>, Error>> {
+        ): Promise<Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error>> {
 
-        const resultAddServicesToPartition : Result<Map<ServiceID, ServiceContext>, Error> = await this.addServicesToPartition(
+        const resultAddServicesToPartition : Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error> = await this.addServicesToPartition(
             serviceConfigSuppliers,
             DEFAULT_PARTITION_ID,
         );
@@ -251,14 +259,19 @@ export class EnclaveContext {
         ): Promise<Result<ServiceContext, Error>> {
         const serviceConfigSuppliers : Map<ServiceID, (ipAddr: string) => Result<ContainerConfig, Error>> = new Map<ServiceID, (ipAddr: string) => Result<ContainerConfig, Error>>();
         serviceConfigSuppliers.set(serviceId, containerConfigSupplier)
-        const resultAddServiceToPartition : Result<Map<ServiceID, ServiceContext>, Error> = await this.addServicesToPartition(
+        const resultAddServiceToPartition : Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error> = await this.addServicesToPartition(
             serviceConfigSuppliers,
             partitionId,
         );
         if (resultAddServiceToPartition.isErr()) {
             return err(resultAddServiceToPartition.error);
         }
-        const serviceCtx : ServiceContext | undefined = resultAddServiceToPartition.value.get(serviceId);
+        const [successfulServices, failedService] = resultAddServiceToPartition.value
+        const serviceErr : Error | undefined = failedService.get(serviceId);
+        if (serviceErr != undefined) {
+            return err(new Error(`An error occurred adding service '${serviceId}' to the enclave in the default partition`))
+        }
+        const serviceCtx : ServiceContext | undefined = successfulServices.get(serviceId);
         if (serviceCtx == undefined){
             return err(new Error(`An error occurred retrieving the service context of service with ID ${serviceId} from result of adding service to partition. This should not happen and is a bug in Kurtosis.`))
         }
@@ -269,7 +282,9 @@ export class EnclaveContext {
     public async addServicesToPartition(
         serviceConfigSuppliers: Map<ServiceID, (ipAddr: string) => Result<ContainerConfig, Error>>,
         partitionId: PartitionID,
-    ): Promise<Result<Map<ServiceID, ServiceContext>, Error>> {
+    ): Promise<Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error>> {
+        const failedServicesPool : Map<ServiceID, Error> = new Map<ServiceID, Error>();
+
         log.trace("Registering new services with Kurtosis API...");
         const serviceIdSet: Map<string, boolean> = new Map<ServiceID, boolean>();
         for (const [serviceId, _] of serviceConfigSuppliers) {
@@ -283,65 +298,86 @@ export class EnclaveContext {
 
         const registerServicesResponse = registerServicesResponseResult.value
 
+        const failedRegistrations : jspb.Map<string, string> = registerServicesResponse.getFailedServiceIdsToErrorMap();
+        for (const[serviceId,  errStr] of failedRegistrations.entries()){
+            const errMsg = `The following error occurred when trying to register service '${serviceId}':\n ${errStr}`
+            failedServicesPool.set(serviceId, new Error(errMsg));
+        }
+
         log.trace("New services successfully registered with Kurtosis API");
         const serviceConfigs = new Map<ServiceID, ServiceConfig>();
         const serviceIdToPrivateIpAddresses : jspb.Map<string, string> = registerServicesResponse.getServiceIdsToPrivateIpAddressesMap();
         for (const[serviceId,  privateIpAddr] of serviceIdToPrivateIpAddresses.entries()){
-            log.trace(`Generating container config object using the container config supplier for service with Id '${serviceId}'`);
-            const containerConfigSupplier : ((ipAddr: string) => Result<ContainerConfig, Error>) | undefined = serviceConfigSuppliers.get(<ServiceID>serviceId);
-            if (containerConfigSupplier == undefined) {
-                const errorMsg : string = `Expected serviceConfigSuppliers to contain a value associated with service Id ${serviceId}, bud no such value was found`;
-                return err(new Error(errorMsg))
-            }
-            const containerConfigSupplierResult: Result<ContainerConfig, Error> = containerConfigSupplier(privateIpAddr);
-            if (containerConfigSupplierResult.isErr()){
-                return err(containerConfigSupplierResult.error);
-            }
-            const containerConfig: ContainerConfig = containerConfigSupplierResult.value;
-            log.trace(`Container config object successfully generated for service with Id '${serviceId}'`);
+            try {
+                log.trace(`Generating container config object using the container config supplier for service with Id '${serviceId}'`);
+                const containerConfigSupplier : ((ipAddr: string) => Result<ContainerConfig, Error>) | undefined = serviceConfigSuppliers.get(<ServiceID>serviceId);
+                if (containerConfigSupplier == undefined) {
+                    const undefinedContainerConfigSupplierErrStr =
+                        `Expected serviceConfigSuppliers to contain a value associated with service Id ${serviceId}, but no such value was found`;
+                    const undefinedContainerConfigSupplierErr = new Error(undefinedContainerConfigSupplierErrStr);
+                    failedServicesPool.set(serviceId, undefinedContainerConfigSupplierErr);
+                    throw undefinedContainerConfigSupplierErr
+                }
+                const containerConfigSupplierResult: Result<ContainerConfig, Error> = containerConfigSupplier(privateIpAddr);
+                if (containerConfigSupplierResult.isErr()){
+                    failedServicesPool.set(serviceId, containerConfigSupplierResult.error);
+                    throw containerConfigSupplierResult.error
+                }
+                const containerConfig: ContainerConfig = containerConfigSupplierResult.value;
+                log.trace(`Container config object successfully generated for service with Id '${serviceId}'`);
 
-            log.trace(`Creating files artifact ID str -> mount dirpaths map for service with Id '${serviceId}'...`);
-            const artifactIdStrToMountDirpath: Map<string, string> = new Map();
-            for (const [filesArtifactId, mountDirpath] of containerConfig.filesArtifactMountpoints.entries()) {
-                artifactIdStrToMountDirpath.set(String(filesArtifactId), mountDirpath);
-            }
-            log.trace(`Successfully created files artifact ID str -> mount dirpaths map for service with Id '${serviceId}'`);
+                log.trace(`Creating files artifact ID str -> mount dirpaths map for service with Id '${serviceId}'...`);
+                const artifactIdStrToMountDirpath: Map<string, string> = new Map<string, string>();
+                for (const [filesArtifactId, mountDirpath] of containerConfig.filesArtifactMountpoints) {
+                    artifactIdStrToMountDirpath.set(filesArtifactId, mountDirpath);
+                }
+                log.trace(`Successfully created files artifact ID str -> mount dirpaths map for service with Id '${serviceId}'`);
 
-            log.trace("Starting new service with Kurtosis API...");
-            const privatePorts = containerConfig.usedPorts;
-            const privatePortsForApi: Map<string, Port> = new Map();
-            for (const [portId, portSpec] of privatePorts.entries()) {
-                const portSpecForApi: Port = newPort(
-                    portSpec.number,
-                    portSpec.protocol,
+                const privatePorts = containerConfig.usedPorts;
+                const privatePortsForApi: Map<string, Port> = new Map();
+                for (const [portId, portSpec] of privatePorts.entries()) {
+                    const portSpecForApi: Port = newPort(
+                        portSpec.number,
+                        portSpec.protocol,
+                    )
+                    privatePortsForApi.set(portId, portSpecForApi);
+                }
+                //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+                const publicPorts = containerConfig.publicPorts;
+                const publicPortsForApi: Map<string, Port> = new Map();
+                for (const [portId, portSpec] of publicPorts.entries()) {
+                    const portSpecForApi: Port = newPort(
+                        portSpec.number,
+                        portSpec.protocol,
+                    )
+                    publicPortsForApi.set(portId, portSpecForApi);
+                }
+                //TODO finish the hack
+
+                const serviceConfig : ServiceConfig = newServiceConfig(
+                    containerConfig.image,
+                    privatePortsForApi,
+                    publicPortsForApi,
+                    containerConfig.entrypointOverrideArgs,
+                    containerConfig.cmdOverrideArgs,
+                    containerConfig.environmentVariableOverrides,
+                    artifactIdStrToMountDirpath,
+                    containerConfig.cpuAllocationMillicpus,
+                    containerConfig.memoryAllocationMegabytes,
                 )
-                privatePortsForApi.set(portId, portSpecForApi);
-            }
+                serviceConfigs.set(serviceId, serviceConfig);
+            } catch (err) {
+                failedServicesPool.set(serviceId, err)
 
-            //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-            const publicPorts = containerConfig.publicPorts;
-            const publicPortsForApi: Map<string, Port> = new Map();
-            for (const [portId, portSpec] of publicPorts.entries()) {
-                const portSpecForApi: Port = newPort(
-                    portSpec.number,
-                    portSpec.protocol,
-                )
-                publicPortsForApi.set(portId, portSpecForApi);
+                // Do a best effort attempt to remove registration resources for this object to clean up after it failed in the start phase
+                // TODO: Migrate this to a bulk remove services call
+                const removeServiceResult = await this.removeService(serviceId, 10);
+                if (removeServiceResult.isErr()){
+                    const errMsg = `"Attempted to remove service '${serviceId}' to delete its resources after it failed to start, but the following error occurred" +
+				"while attempting to remove the service:\n ${removeServiceResult.error}`
+                    failedServicesPool.set(serviceId, new Error(errMsg))
+                }
             }
-            //TODO finish the hack
-
-            const serviceConfig : ServiceConfig = newServiceConfig(
-                containerConfig.image,
-                privatePortsForApi,
-                publicPortsForApi,
-                containerConfig.entrypointOverrideArgs,
-                containerConfig.cmdOverrideArgs,
-                containerConfig.environmentVariableOverrides,
-                artifactIdStrToMountDirpath,
-                containerConfig.cpuAllocationMillicpus,
-                containerConfig.memoryAllocationMegabytes,
-            )
-            serviceConfigs.set(serviceId, serviceConfig);
         }
 
         const startServicesArgs : StartServicesArgs = newStartServicesArgs(serviceConfigs)
@@ -353,20 +389,30 @@ export class EnclaveContext {
         }
 
         const startServicesResponse = startServicesResponseResult.value;
+
+        const failedServices :  jspb.Map<string, string> | undefined = startServicesResponse.getFailedServiceIdsToErrorMap();
+        if(failedServices == undefined) {
+            return err(new Error("Expected StartServicesResponse to contain a failed_service_ids_to_error, instead no such field was found"))
+        }
+        for (const[serviceIdStr, errStr] of failedServices.entries()){
+            const serviceId : ServiceID = <ServiceID>serviceIdStr;
+            failedServicesPool.set(serviceId, new Error(errStr))
+
+            // Do a best effort attempt to remove registration resources for this object to clean up after it failed in the start phase
+            // TODO: Migrate this to a bulk remove services call
+            const removeServiceResult = await this.removeService(serviceId, DEFAULT_CONTAINER_STOP_TIMEOUT_SECONDS);
+            if (removeServiceResult.isErr()){
+                const errMsg = `"Attempted to remove service '${serviceId}' to delete its resources after it failed to start, but the following error occurred" +
+				"while attempting to remove the service:\n ${removeServiceResult.error}`
+                failedServicesPool.set(serviceId, new Error(errMsg))
+            }
+        }
+
         const successfulServicesInfo :  jspb.Map<String, ServiceInfo> | undefined = startServicesResponse.getSuccessfulServiceIdsToServiceInfoMap();
         if(successfulServicesInfo == undefined) {
-            return err(new Error("Expected StartServicseResponse to contain a successful_service_ids_to_service_info, instead no such field was found"))
+            return err(new Error("Expected StartServicesResponse to contain a successful_service_ids_to_service_info, instead no such field was found"))
         }
-        const failedServices :  jspb.Map<String, String> | undefined = startServicesResponse.getFailedServiceIdsToErrorMap();
-        if(failedServices == undefined) {
-            return err(new Error("Expected StartServicseResponse to contain a failed_service_ids_to_error, instead no such field was found"))
-        }
-
-        for (const[serviceIdStr, serviceErr] of failedServices.entries()){
-            log.error(`The following error occurred trying to start service with ID '${serviceIdStr}': ${serviceErr}`)
-        }
-
-        const successfulServiceContexts : Map<ServiceID, ServiceContext> = new Map<ServiceID, ServiceContext>();
+        const successfulServices : Map<ServiceID, ServiceContext> = new Map<ServiceID, ServiceContext>();
         for (const[serviceIdStr, serviceInfo] of successfulServicesInfo.entries()){
             const serviceId : ServiceID = <ServiceID>serviceIdStr;
             const serviceCtxPrivatePorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
@@ -384,11 +430,11 @@ export class EnclaveContext {
                 serviceInfo.getMaybePublicIpAddr(),
                 serviceCtxPublicPorts,
             );
-            successfulServiceContexts.set(serviceId, serviceContext)
+            successfulServices.set(serviceId, serviceContext)
             log.trace(`Successfully started service with ID '${serviceId}' with Kurtosis API`);
         }
 
-        return ok(successfulServiceContexts)
+        return ok([successfulServices, failedServicesPool])
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation

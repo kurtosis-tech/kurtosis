@@ -141,9 +141,10 @@ func NewRegisterServicesArgs(serviceIDSet map[string]bool, partitionID string) *
 	}
 }
 
-func NewRegisterServicesResponse(serviceIDsToIPsMap map[string]string) *kurtosis_core_rpc_api_bindings.RegisterServicesResponse {
+func NewRegisterServicesResponse(serviceIDsToIPsMap map[string]string, failedServicesErrors map[string]string) *kurtosis_core_rpc_api_bindings.RegisterServicesResponse {
 	return &kurtosis_core_rpc_api_bindings.RegisterServicesResponse{
 		ServiceIdsToPrivateIpAddresses: serviceIDsToIPsMap,
+		FailedServiceIdsToError: failedServicesErrors,
 	}
 }
 

@@ -45,6 +45,8 @@ const (
 	grpcDataTransferLimit     = 3999000 //3.999 Mb. 1kb wiggle room. 1kb being about the size of a simple 2 paragraph readme.
 	tempCompressionDirPattern = "upload-compression-cache-"
 	compressionExtension      = ".tgz"
+
+	defaultContainerStopTimeoutSeconds = 10
 )
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -128,29 +130,37 @@ func (enclaveCtx *EnclaveContext) AddService(
 ) (*services.ServiceContext, error) {
 	serviceConfigSuppliers := map[services.ServiceID]func(ipAddr string) (*services.ContainerConfig, error){}
 	serviceConfigSuppliers[serviceID] = containerConfigSupplier
-	serviceContexts, err := enclaveCtx.AddServicesToPartition(
+	serviceContexts, failedServices, err := enclaveCtx.AddServicesToPartition(
 		serviceConfigSuppliers,
 		defaultPartitionId,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding service '%v' to the enclave in the default partition", serviceID)
 	}
+	serviceErr, found := failedServices[serviceID]
+	if found {
+		return nil, stacktrace.Propagate(serviceErr, "An error occurred adding service '%v' to the enclave in the default partition", serviceID)
+	}
 	serviceCtx, found := serviceContexts[serviceID]
 	if !found {
-		return nil, stacktrace.NewError("An error occurred retrieving the sevice context of service with ID '%v' from result of adding service to partition. This should not happen and is a bug in Kurtosis.", serviceID)
+		return nil, stacktrace.NewError("An error occurred retrieving the service context of service with ID '%v' from result of adding service to partition. This should not happen and is a bug in Kurtosis.", serviceID)
 	}
 	return serviceCtx, nil
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) AddServices(
-	serviceConfigSuppliers map[services.ServiceID]func(ipAddr string) (*services.ContainerConfig, error)) (map[services.ServiceID]*services.ServiceContext, error) {
-
-	serviceContext, err := enclaveCtx.AddServicesToPartition(serviceConfigSuppliers,defaultPartitionId)
+	serviceConfigSuppliers map[services.ServiceID]func(ipAddr string) (*services.ContainerConfig, error),
+) (
+	resultSuccessfulServices map[services.ServiceID]*services.ServiceContext,
+	resultFailedServices map[services.ServiceID]error,
+	resultErr error,
+) {
+	succcessfulServices, failedServices, err := enclaveCtx.AddServicesToPartition(serviceConfigSuppliers, defaultPartitionId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred adding services to the enclave in the default partition.")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred adding services to the enclave in the default partition.")
 	}
-	return serviceContext, nil
+	return succcessfulServices, failedServices, err
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -161,12 +171,16 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 ) (*services.ServiceContext, error) {
 	serviceConfigSuppliers := map[services.ServiceID]func(ipAddr string) (*services.ContainerConfig, error){}
 	serviceConfigSuppliers[serviceID] = containerConfigSupplier
-	serviceContexts, err := enclaveCtx.AddServicesToPartition(
+	serviceContexts, failedServices, err := enclaveCtx.AddServicesToPartition(
 		serviceConfigSuppliers,
 		partitionID,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding service '%v' to the enclave in the default partition", serviceID)
+	}
+	serviceErr, found := failedServices[serviceID]
+	if found {
+		return nil, stacktrace.Propagate(serviceErr, "An error occurred adding service '%v' to the enclave in the default partition", serviceID)
 	}
 	serviceCtx, found := serviceContexts[serviceID]
 	if !found {
@@ -178,8 +192,14 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 
 func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	serviceConfigSuppliers map[services.ServiceID]func(ipAddr string) (*services.ContainerConfig, error),
-	partitionID PartitionID) (map[services.ServiceID]*services.ServiceContext, error) {
+	partitionID PartitionID,
+) (
+	resultSuccessfulServices map[services.ServiceID]*services.ServiceContext,
+	resultFailedServices map[services.ServiceID]error,
+	resultErr error,
+) {
 	ctx := context.Background()
+	failedServicesPool := map[services.ServiceID]error{}
 
 	logrus.Trace("Registering new services with Kurtosis API...")
 	serviceIDs := map[string]bool{}
@@ -187,28 +207,51 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 		serviceIDs[string(id)] = true
 	}
 	registerServicesArgs := binding_constructors.NewRegisterServicesArgs(serviceIDs, string(partitionID))
-
 	registerServicesResp, err := enclaveCtx.client.RegisterServices(ctx, registerServicesArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(
+		return nil, nil, stacktrace.Propagate(
 			err,
 			"An error occurred registering service with IDs '%v' with the Kurtosis API",
 			serviceIDs)
 	}
 
+	for serviceID, errStr := range registerServicesResp.GetFailedServiceIdsToError() {
+		failedServicesPool[services.ServiceID(serviceID)] = stacktrace.NewError("The following error occurred when trying to register service '%v':\n %v", serviceID, errStr)
+	}
+
 	logrus.Trace("New services successfully registered with Kurtosis API")
 	serviceConfigs := map[string]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
 	for serviceID, privateIPAddr := range registerServicesResp.GetServiceIdsToPrivateIpAddresses() {
+		// If anything goes wrong while trying to setup the service config, we need to remove the registration created for this service.
+		shouldRemoveRegistration := true
+		defer func() {
+			if shouldRemoveRegistration {
+				// TODO: Migrate this to a bulk remove services call
+				err = enclaveCtx.RemoveService(services.ServiceID(serviceID), defaultContainerStopTimeoutSeconds)
+				if err != nil {
+					failedServicesPool[services.ServiceID(serviceID)] = stacktrace.Propagate(err,
+						"Attempted to remove service '%v' to delete its resources after it failed, but an error occurred" +
+							"while attempting to remove the service.", serviceID)
+				}
+			}
+		}()
+
 		logrus.Tracef("Generating container config object using the container config supplier for service '%v'...", serviceID)
-		containerConfigSupplier := serviceConfigSuppliers[services.ServiceID(serviceID)]
+		containerConfigSupplier, found := serviceConfigSuppliers[services.ServiceID(serviceID)]
+		if !found {
+			failedServicesPool[services.ServiceID(serviceID)] = stacktrace.NewError(
+				"A container config was not found for the registered service ID." +
+				"This should not have happened as it means a service ID that was not requested was registered. This is a bug in Kurtosis.")
+			continue
+		}
 		containerConfig, err := containerConfigSupplier(privateIPAddr)
 		if err != nil {
-			return nil, stacktrace.Propagate(
-				err,
-				"An error occurred executing the container config supplier for service with ID '%v'",
-				serviceID)
+			failedServicesPool[services.ServiceID(serviceID)] = stacktrace.Propagate(err, "An error occurred executing the container config supplier for service with ID '%v'", serviceID)
+			continue
 		}
 		logrus.Tracef("Container config object successfully generated for service with ID '%v'", serviceID)
+
+		logrus.Tracef("Creating files artifact ID str -> mount dirpaths map for service with Id '%v'...", serviceID)
 		artifactIdStrToMountDirpath := map[string]string{}
 		for filesArtifactID, mountDirpath := range containerConfig.GetFilesArtifactMountpoints() {
 			artifactIdStrToMountDirpath[string(filesArtifactID)] = mountDirpath
@@ -222,7 +265,6 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 				Protocol: kurtosis_core_rpc_api_bindings.Port_Protocol(portSpec.GetProtocol()),
 			}
 		}
-
 		//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 		publicPorts := containerConfig.GetPublicPorts()
 		publicPortsForApi := map[string]*kurtosis_core_rpc_api_bindings.Port{}
@@ -234,6 +276,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 		}
 		//TODO finish the hack
 
+		shouldRemoveRegistration = false
 		serviceConfigs[serviceID] = binding_constructors.NewServiceConfig(
 			containerConfig.GetImage(),
 			privatePortsForApi,
@@ -246,41 +289,71 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 			containerConfig.GetMemoryAllocationMegabytes())
 	}
 
-	startServiceArgs := binding_constructors.NewStartServicesArgs(serviceConfigs)
+	startServicesArgs := binding_constructors.NewStartServicesArgs(serviceConfigs)
 
-	logrus.Trace("Starting new service with Kurtosis API...")
-	resp, err := enclaveCtx.client.StartServices(ctx, startServiceArgs)
+	logrus.Trace("Starting new services with Kurtosis API...")
+	startServicesResp, err := enclaveCtx.client.StartServices(ctx, startServicesArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred starting services with the Kurtosis API")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred starting services with the Kurtosis API")
 	}
 
-	for serviceID, serviceErr := range resp.GetFailedServiceIdsToError() {
-		logrus.Errorf("The following error occurred trying to start service with ID '%v': %v", serviceID, serviceErr)
+	// Remove the registration resources for services that failed to start
+	for serviceIDStr, errStr := range startServicesResp.GetFailedServiceIdsToError() {
+		serviceID := services.ServiceID(serviceIDStr)
+		failedServicesPool[services.ServiceID(serviceID)] = stacktrace.NewError("The following error occurred trying to start service with ID '%v':\n %v", serviceID, errStr)
+
+		// Do a best effort attempt to remove registration resources for this service, if not, add it
+		// TODO: Migrate this to a bulk remove services call
+		err = enclaveCtx.RemoveService(serviceID, defaultContainerStopTimeoutSeconds)
+		if err != nil {
+			failedServicesPool[serviceID] = stacktrace.Propagate(err,
+				"WARNING: Attempted to remove service '%v' to delete its resources after it failed to start, but an error occurred" +
+				"while attempting to remove the service. This means there exists a registration for a service that has yet to be started!.", serviceID)
+		}
 	}
 
 	successfulServices := map[services.ServiceID]*services.ServiceContext{}
-	for serviceID, serviceInfo := range resp.GetSuccessfulServiceIdsToServiceInfo() {
+	for serviceIDStr, serviceInfo := range startServicesResp.GetSuccessfulServiceIdsToServiceInfo() {
+		serviceID := services.ServiceID(serviceIDStr)
+		// If anything goes wrong while trying to setup the service context, we need to remove the registration created for this service.
+		shouldRemoveRegistration := true
+		defer func() {
+			if shouldRemoveRegistration {
+				// TODO: Migrate this to a bulk remove services call
+				err = enclaveCtx.RemoveService(serviceID, defaultContainerStopTimeoutSeconds)
+				if err != nil {
+					failedServicesPool[serviceID] = stacktrace.Propagate(err,
+						"WARNING: Attempted to remove service '%v' to delete its resources after it failed to setup service context, but an error occurred" +
+							"while attempting to remove the service. This means there exists a service that should not have been started!", serviceID)
+				}
+			}
+		}()
+
 		serviceCtxPrivatePorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetPrivatePorts())
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred converting the private ports returned by the API to ports usable by the service context")
+			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred converting the private ports returned by the API to ports usable by the service context.")
+			continue
 		}
 		serviceCtxPublicPorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetMaybePublicPorts())
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred converting the public ports returned by the API to ports usable by the service context")
+			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred converting the public ports returned by the API to ports usable by the service context.")
+			continue
 		}
 
 		serviceContext := services.NewServiceContext(
 			enclaveCtx.client,
-			services.ServiceID(serviceID),
+			serviceID,
 			serviceInfo.GetPrivateIpAddr(),
 			serviceCtxPrivatePorts,
 			serviceInfo.GetMaybePublicIpAddr(),
 			serviceCtxPublicPorts,
 		)
-		successfulServices[services.ServiceID(serviceID)] = serviceContext
+
+		shouldRemoveRegistration = false
+		successfulServices[serviceID] = serviceContext
 	}
 
-	return successfulServices, nil
+	return successfulServices, failedServicesPool, nil
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation

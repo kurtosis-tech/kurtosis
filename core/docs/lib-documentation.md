@@ -82,8 +82,24 @@ Starts a new service in the enclave with the given service ID, inside the partit
 
 * `serviceContext`: The [ServiceContext][servicecontext] representation of a service running in a Docker container. Port information can be found in `ServiceContext.GetPublicPorts()`. The port spec strings that the service declared (as defined in [ContainerConfig.usedPorts][containerconfig_usedports]), mapped to the port on the host machine where the port has been bound to. This allows you to make requests to a service running in Kurtosis by making requests to a port on your local machine. If a port was not bound to a host machine port, it will not be present in the map (and if no ports were bound to host machine ports, the map will be empty).
 
+### addServicesToPartition(Map\<ServiceID, Func(String ipAddr) -\> [ContainerConfig][containerconfig]\> serviceConfigSuppliers, PartitionID partitionId) -\> (Map\<ServiceID, [ServiceContext][servicecontext]\> successfulServices, Map\<ServiceID, Error\> failedServices)
+Starts a services in bulk in the enclave with the given service IDs, inside the partition with the given ID, using the given config suppliers.
+
+**Args**
+
+* `serviceConfigSuppliers`: A mapping of service IDs that to start in the enclave to their respective `containerConfigSupplier`'s indicating how to configure the service.
+* `partitionId`: The ID of the partition that the new service should be started in. This can be left blank to start the service in the default partition if it exists (i.e. if the enclave hasn't been repartitioned and the default partition removed).
+
+**Returns**
+
+* `successfulServices`: A mapping of service IDs that were successfully started in the enclave to their respective [ServiceContext][servicecontext] representation. 
+* `failedServices`: A mapping of service IDs to the errors the caused that prevented the services from being added successfully to the enclave. 
+
 ### addService(ServiceID serviceId,  Func(String ipAddr) -\> [ContainerConfig][containerconfig] containerConfigSupplier) -\> ([ServiceContext][servicecontext] serviceContext)
 Convenience wrapper around [EnclaveContext.addServiceToPartition][enclavecontext_addservicetopartition], that adds the service to the default partition. Note that if the enclave has been repartitioned and the default partition doesn't exist anymore, this method will fail.
+
+### addServices(Map\<ServiceID, Func(String ipAddr) -\> [ContainerConfig][containerconfig]\> serviceConfigSuppliers) -\> (Map\<ServiceID, [ServiceContext][servicecontext]\> successfulServices, Map\<ServiceID, Error\> failedServices)
+Convenience wrapper around [EnclaveContext.addServicesToPartition][enclavecontext_addservicestopartition], that adds the services to the default partition. Note that if the enclave has been repartitioned and the default partition doesn't exist anymore, this method will fail.
 
 ### getServiceContext(ServiceID serviceId) -\> [ServiceContext][servicecontext]
 Gets relevant information about a service (identified by the given service ID) that is running in the enclave.
@@ -328,6 +344,7 @@ _Found a bug? File it on [the repo][issues]!_
 [enclavecontext_registerfilesartifacts]: #registerfilesartifactsmapfilesartifactid-string-filesartifacturls
 [enclavecontext_addservice]: #addserviceserviceid-serviceid--funcstring-ipaddr---containerconfigcontainerconfig-containerconfigsupplier---servicecontextservicecontext-servicecontext
 [enclavecontext_addservicetopartition]: #addservicetopartitionserviceid-serviceid-partitionid-partitionid-funcstring-ipaddr---containerconfig-containerconfigsupplier---servicecontext-servicecontext
+[enclavecontext_addservicestopartition]: #addservicestopartitionmapserviceid-funcstring-ipaddr---containerconfig-serviceconfigsuppliers-partitionid-partitionid---mapserviceid-servicecontext-successfulservices-mapserviceid-error-failedservices
 [enclavecontext_unpauseservice]: #unpauseserviceserviceid-serviceid
 [enclavecontext_repartitionnetwork]: #repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnectionpartitionconnection-partitionconnections-partitionconnectionpartitionconnection-defaultconnection
 [enclavecontext_uploadfiles]: #uploadfilesstring-pathtoupload
