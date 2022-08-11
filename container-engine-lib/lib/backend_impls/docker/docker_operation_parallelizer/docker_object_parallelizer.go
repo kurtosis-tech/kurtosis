@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/operation_parallelizer"
+	"github.com/sirupsen/logrus"
 )
 
 // DockerOperation represents an operation done on a Docker object (identified by Docker object ID)
@@ -14,14 +15,14 @@ type DockerOperation func(ctx context.Context, dockerManager *docker_manager.Doc
 // we can fix this if it becomes problematic
 func RunDockerOperationInParallel(
 	ctx context.Context,
-// The IDs of the Docker objects to operate on
-	dockerObjectIdSet map[string]bool,
+	dockerObjectIdSet map[string]bool, // The IDs of the Docker objects to operate on
 	dockerManager *docker_manager.DockerManager,
 	operationToApplyToAllDockerObjects DockerOperation,
 ) (
 	map[string]bool,
 	map[string]error,
 ){
+	logrus.Debugf("Called RunDockerOperationInParallel on the following Docker object IDs: %+v", dockerObjectIdSet)
 	dockerOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
 
 	for dockerObjectId, _ := range dockerObjectIdSet {
@@ -31,17 +32,17 @@ func RunDockerOperationInParallel(
 		}
 	}
 
-	successfulOps, failedOps := operation_parallelizer.RunOperationsInParallel(dockerOperations)
+	successfulOperations, failedOperations := operation_parallelizer.RunOperationsInParallel(dockerOperations)
 
-	success := map[string]bool{}
-	failed := map[string]error{}
+	successfulOperationIDStrs := map[string]bool{}
+	failedOperationIDStrs := map[string]error{}
 
-	for opID, _ := range successfulOps {
-		success[string(opID)] = true
+	for opID, _ := range successfulOperations {
+		successfulOperationIDStrs[string(opID)] = true
 	}
-	for opID, _ := range failedOps {
-		failed[string(opID)] = failedOps[opID]
+	for opID, _ := range failedOperations {
+		failedOperationIDStrs[string(opID)] = failedOperations[opID]
 	}
 
-	return success, failed
+	return successfulOperationIDStrs, failedOperationIDStrs
 }
