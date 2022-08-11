@@ -300,7 +300,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	// Remove the registration resources for services that failed to start
 	for serviceIDStr, errStr := range startServicesResp.GetFailedServiceIdsToError() {
 		serviceID := services.ServiceID(serviceIDStr)
-		failedServicesPool[services.ServiceID(serviceID)] = stacktrace.NewError("The following error occurred trying to start service with ID '%v':\n %v", serviceID, errStr)
+		failedServicesPool[serviceID] = stacktrace.NewError("The following error occurred trying to start service with ID '%v':\n %v", serviceID, errStr)
 
 		// Do a best effort attempt to remove registration resources for this service, if not, add it
 		// TODO: Migrate this to a bulk remove services call

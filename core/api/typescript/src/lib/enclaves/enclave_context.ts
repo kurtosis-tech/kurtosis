@@ -300,8 +300,8 @@ export class EnclaveContext {
 
         const failedRegistrations : jspb.Map<string, string> = registerServicesResponse.getFailedServiceIdsToErrorMap();
         for (const[serviceId,  errStr] of failedRegistrations.entries()){
-            const errMsg = `The following error occurred when trying to register service '${serviceId}':\n ${errStr}`
-            failedServicesPool.set(serviceId, new Error(errMsg));
+            const registrationErrMsg = `The following error occurred when trying to register service '${serviceId}':\n ${errStr}`
+            failedServicesPool.set(serviceId, new Error(registrationErrMsg));
         }
 
         log.trace("New services successfully registered with Kurtosis API");
