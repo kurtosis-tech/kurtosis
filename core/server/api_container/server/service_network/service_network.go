@@ -479,10 +479,9 @@ func(network *ServiceNetwork) StartServices(
 		}
 		filesArtifactsUUIDsToMountpoints, found := serviceIDsToFilesArtifactUUIDsToMountpoints[serviceID]
 		if !found {
-			failedServicesPool[serviceID] = stacktrace.NewError(
+			return nil, nil, stacktrace.NewError(
 				"Could not find mapping from files artifacts UUIDs to mountpoints for service with ID '%v'." +
 					"This is a bug in Kurtosis. Make sure the keys of service configs map and service ids to files artifacts uuids to mountpoints map are 1:1.", serviceID)
-			continue
 		}
 
 		guid := registration.GetGUID()
@@ -538,16 +537,14 @@ func(network *ServiceNetwork) StartServices(
 	for serviceGUID, serviceInfo := range successfulServiceGUIDs {
 		serviceID, found := serviceGUIDsToIDs[serviceGUID]
 		if !found {
-			failedServicesPool[serviceID] = stacktrace.NewError("Could not find a service ID associated with the service GUID '%v'. This should not happen and is a bug in Kurtosis.", serviceGUID)
-			continue
+			return nil, nil, stacktrace.NewError("Could not find a service ID associated with the service GUID '%v'. This should not happen and is a bug in Kurtosis.", serviceGUID)
 		}
 		successfulServices[serviceID] = serviceInfo
 	}
 	for serviceGUID, serviceErr := range failedServiceGUIDs {
 		serviceID, found := serviceGUIDsToIDs[serviceGUID]
 		if !found {
-			failedServicesPool[serviceID] = stacktrace.NewError("Could not find a service ID associated with the service GUID '%v'. This should not happen and is a bug in Kurtosis.", serviceGUID)
-			continue
+			return nil, nil, stacktrace.NewError("Could not find a service ID associated with the service GUID '%v'. This should not happen and is a bug in Kurtosis.", serviceGUID)
 		}
 		failedServicesPool[serviceID] = serviceErr
 	}
