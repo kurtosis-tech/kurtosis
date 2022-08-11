@@ -70,7 +70,10 @@ func (loki *Loki) GetContainerArgs(
 	overrideCmd := []string{
 		shCmdFlag,
 		fmt.Sprintf(
-			"%v '%v' > %v && %v %v=%v",
+			"%v %v > %v && %v '%v' > %v && %v %v=%v",
+			printfCmdName,
+			runtimeConfigFileInitialContent,
+			runtimeConfigFilepath,
 			printfCmdName,
 			logsDatabaseConfigContentStr,
 			configFilepath,
@@ -100,7 +103,6 @@ func (loki *Loki) GetContainerArgs(
 
 	return createAndStartArgs, nil
 }
-
 
 func (loki *Loki) GetConfigContent() (string, error) {
 	lokiConfigYAMLContent, err := yaml.Marshal(loki.config)

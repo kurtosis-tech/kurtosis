@@ -62,5 +62,6 @@ const (
 	runtimeConfigFilepath = configDirpath + "runtime-config.yaml"
 	//How often to check the file.
 	runtimeConfigPeriod = "20s"
+	runtimeConfigFileInitialContent = "overrides:"
 	////////////////////////--FINISH--LOKI CONFIGURATION SECTION--/////////////////////////////
 )
