@@ -168,6 +168,7 @@ func (network ServiceNetwork) RegisterServices(
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	failedServicePool := map[service.ServiceID]error{}
+	serviceIDsToRegister := serviceIDs
 
 	for serviceID, _ := range serviceIDs {
 		if _, found := network.registeredServiceInfo[serviceID]; found {
@@ -175,6 +176,7 @@ func (network ServiceNetwork) RegisterServices(
 				"Cannot register service '%v' because it already exists in the network",
 				serviceID,
 			)
+			delete(serviceIDsToRegister, serviceID)
 		}
 	}
 
@@ -191,7 +193,7 @@ func (network ServiceNetwork) RegisterServices(
 	successfulRegistrations, failedRegistrations, err := network.kurtosisBackend.RegisterUserServices(
 		ctx,
 		network.enclaveId,
-		serviceIDs,
+		serviceIDsToRegister,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", serviceIDs)
@@ -381,6 +383,7 @@ func(network *ServiceNetwork) StartServices(
 			sidecar, err := network.networkingSidecarManager.Add(ctx, serviceGUID)
 			if err != nil {
 				failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred adding the networking sidecar for service `%v`", serviceID)
+				delete(successfulServices, serviceID)
 				continue
 			}
 			shouldRemoveSidecar := true
@@ -400,6 +403,7 @@ func(network *ServiceNetwork) StartServices(
 
 			if err := sidecar.InitializeTrafficControl(ctx); err != nil {
 				failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred initializing the newly-created networking-sidecar-traffic-control-qdisc-configuration for service `%v`", serviceID)
+				delete(successfulServices, serviceID)
 				continue
 			}
 
@@ -827,12 +831,13 @@ func (network *ServiceNetwork) startServices(
 	resultErr error,
 ) {
 	failedServicesPool := map[service.ServiceGUID]error{}
-
 	serviceConfigsWithFilesArtifactsExpansion := map[service.ServiceGUID]*service.ServiceConfig{}
+
 	for guid, config := range serviceConfigs {
 		filesArtifactUUIDsToMountpoints, found := serviceGUIDsToFilesArtifactUUIDsToMountpoints[guid]
 		if !found {
-			return nil, nil, stacktrace.NewError("Couldn't find a mapping between service with GUID `%v` and a mapping of files artifacts UUIDs to mountpoints.", guid)
+			failedServicesPool[guid] = stacktrace.NewError("Couldn't find a mapping between service with GUID `%v` and a mapping of files artifacts UUIDs to mountpoints.", guid)
+			continue
 		}
 		var filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion
 
