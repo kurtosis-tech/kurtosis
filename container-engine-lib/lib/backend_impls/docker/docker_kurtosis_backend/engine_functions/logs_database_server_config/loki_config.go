@@ -4,6 +4,8 @@ const (
 	//The following configuration values are the default ones suggested by the
 	//Loki's documentation and this video: https://grafana.com/go/webinar/logging-with-loki-essential-configuration-settings/?pg=docs-loki&plcmt=footer-resources-2
 
+	//We enable multi-tenancy mode and we scope enclaves as tenants EnclaveId = TenantID (see more about multi-tenancy here: https://grafana.com/docs/loki/latest/operations/multi-tenancy/)
+	lokiDefaultAuthEnabled = true
 	//The destinations path where the index, chnunks and rules will be saved
 	LokiDefaultDirpath               = "/loki"
 	lokiDefaultChunksDirectory = LokiDefaultDirpath + "/chunks"
@@ -126,7 +128,7 @@ func NewDefaultKurtosisLokiConfig(
 ) *LokiConfig {
 
 	newConfig := &LokiConfig{
-		AuthEnabled: false,
+		AuthEnabled: lokiDefaultAuthEnabled,
 		Server: Server{
 			HTTPListenPort: httpListenPort,
 		},
