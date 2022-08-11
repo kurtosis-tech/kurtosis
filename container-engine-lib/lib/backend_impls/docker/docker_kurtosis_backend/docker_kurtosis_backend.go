@@ -144,7 +144,7 @@ func (backend *DockerKurtosisBackend) RegisterUserService(ctx context.Context, e
 }
 
 // Registers a user service for each given serviceId, allocating each an IP and ServiceGUID
-func (backend *DockerKurtosisBackend )RegisterUserServices(
+func (backend *DockerKurtosisBackend ) RegisterUserServices(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceIds map[service.ServiceID]bool,
