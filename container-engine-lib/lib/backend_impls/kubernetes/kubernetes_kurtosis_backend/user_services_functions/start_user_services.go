@@ -210,12 +210,13 @@ func StartUserServices(
 ) {
 	failedServicesPool := map[service.ServiceGUID]error{}
 	serviceConfigsToStart := services
+
 	// Sanity check for port bindings on all services
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	for _, config := range services {
 		publicPorts := config.GetPublicPorts()
 		if publicPorts != nil && len(publicPorts) > 0 {
-			logrus.Warn("The Kubernetes Kurtosis backend doesn't support defining static ports for services; the public ports will be ignored")
+			logrus.Warn("The Kubernetes Kurtosis backend doesn't support defining static ports for services; the public ports will be ignored.")
 		}
 	}
 

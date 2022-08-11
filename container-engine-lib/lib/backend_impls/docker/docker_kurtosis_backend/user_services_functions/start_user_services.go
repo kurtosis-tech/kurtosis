@@ -282,28 +282,12 @@ func StartUserServices(
 
 	// Sanity check for port bindings on all services
 	for serviceGUID, serviceConfig := range services {
-	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-		shouldContinue := false
-		publicPorts := serviceConfig.GetPublicPorts()
 		privatePorts := serviceConfig.GetPrivatePorts()
-		if publicPorts != nil && len(publicPorts) > 0 {
-			if len(privatePorts) != len(publicPorts) {
-				failedServicesPool[serviceGUID] = stacktrace.NewError("The received private ports length and the public ports length are not equal for service with guid `%v`. Received '%v' private ports and '%v' public ports", serviceGUID, len(privatePorts), len(publicPorts))
-				delete(serviceConfigsToStart, serviceGUID)
-				continue
-			}
-
-			for portId, privatePortSpec := range privatePorts {
-				if _, found := publicPorts[portId]; !found {
-					failedServicesPool[serviceGUID] = stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v' for service with guid `%v`, but it was not found", portId, privatePortSpec.GetNumber(), serviceGUID)
-					delete(serviceConfigsToStart, serviceGUID)
-					shouldContinue = true
-					break
-				}
-			}
-			if shouldContinue {
-				continue
-			}
+		publicPorts := serviceConfig.GetPublicPorts()
+		err := checkPrivateAndPublicPortsAreOneToOne(privatePorts, publicPorts)
+		if err != nil {
+			failedServicesPool[serviceGUID] = stacktrace.Propagate(err, "Private and public ports are for service with GUID '%v' are not one to one.", serviceGUID)
+			delete(serviceConfigsToStart, serviceGUID)
 		}
 	}
 
@@ -606,4 +590,25 @@ func createStartServiceOperation(
 		shouldKillContainer = false
 		return serviceObj, nil
 	}
+}
+
+// Ensure that provided [privatePorts] and [publicPorts] are one to one by checking:
+// - There is a matching publicPort for every portID in privatePorts
+// - There are the same amount of private and public ports
+// If error is nil, the public and private ports are one to one.
+func checkPrivateAndPublicPortsAreOneToOne(privatePorts map[string]*port_spec.PortSpec, publicPorts map[string]*port_spec.PortSpec) error {
+	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	if publicPorts != nil && len(publicPorts) > 0 {
+		if len(privatePorts) != len(publicPorts) {
+			return stacktrace.NewError("The received private ports length and the public ports length are not equal. Received '%v' private ports and '%v' public ports", len(privatePorts), len(publicPorts))
+		}
+
+		for portID, privatePortSpec := range privatePorts {
+			if _, found := publicPorts[portID]; !found {
+				return stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portID, privatePortSpec.GetNumber())
+			}
+		}
+	}
+	return nil
+	//TODO END this is a huge hack to temporarily enable static ports for NEAR
 }
