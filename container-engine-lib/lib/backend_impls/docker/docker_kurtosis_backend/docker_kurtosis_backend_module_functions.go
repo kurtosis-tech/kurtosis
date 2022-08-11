@@ -462,7 +462,7 @@ func getModuleObjectFromContainerInfo(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the module container's private port specs from container '%v' with labels: %+v", containerId, labels)
 	}
 
-	isContainerRunning, found := shared_helpers.IsContainerRunningDeterminer[containerStatus]
+	isContainerRunning, found := consts.IsContainerRunningDeterminer[containerStatus]
 	if !found {
 		// This should never happen because we enforce completeness in a unit test
 		return nil, stacktrace.NewError("No is-running designation found for module container status '%v'; this is a bug in Kurtosis!", containerStatus.String())

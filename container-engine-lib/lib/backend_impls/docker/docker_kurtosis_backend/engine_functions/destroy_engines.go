@@ -64,6 +64,8 @@ func DestroyEngines(
 	)
 	}
 
+	//TODO destroy centralized logs components (logs database and logs collector) containers also
+
 	return successfulGuids, erroredGuids, nil
 }
 

@@ -207,7 +207,7 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating an engine object from container with GUID '%v'", containerId)
 	}
 
-	killLogsDatabaseContainerFunc, err := createCentralizedLogsComponents(
+	killCentralizedLogsComponentsContainersFunc, err := createCentralizedLogsComponents(
 		ctx,
 		engineGuid,
 		targetNetworkId,
@@ -217,15 +217,15 @@ func CreateEngine(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the centralized logs components for the engine with GUID '%v' and network ID '%v'", engineGuid, targetNetworkId)
 	}
-	shouldKillLogsDatabaseContainer := true
+	shouldKillCentralizedLogsComponentsContainers := true
 	defer func() {
-		if shouldKillLogsDatabaseContainer {
-			killLogsDatabaseContainerFunc()
+		if shouldKillCentralizedLogsComponentsContainers {
+			killCentralizedLogsComponentsContainersFunc()
 		}
 	}()
 
 	shouldKillEngineContainer = false
-	shouldKillLogsDatabaseContainer = false
+	shouldKillCentralizedLogsComponentsContainers = false
 	return result, nil
 }
 
@@ -250,8 +250,22 @@ func createCentralizedLogsComponents(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database container")
 	}
+	shouldKillLogsDatabaseContainer := true
+	defer func() {
+		if shouldKillLogsDatabaseContainer {
+			killLogsDatabaseContainerFunc()
+		}
+	}()
 
-	return killLogsDatabaseContainerFunc, nil
+	//TODO add createLogsCollectorContainer and handle killing function
+
+	killCentralizedLogsComponentsContainersFunc := func(){
+		killLogsDatabaseContainerFunc()
+		//TODO call killLogsCollectorContainerFunc()
+	}
+
+	shouldKillLogsDatabaseContainer = false
+	return killCentralizedLogsComponentsContainersFunc, nil
 }
 
 func createLogsDatabaseContainer(
@@ -299,13 +313,13 @@ func createLogsDatabaseContainer(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
-	logsDbVolumeName, err := objAttrsProvider.ForEnclaveDataVolume(engineGuid)
+	logsDbVolumeAttrs, err := objAttrsProvider.ForLogsDatabaseVolume(engineGuid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database volume for engine with GUID '%v'", engineGuid)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database volume for engine with GUID %v", engineGuid)
 	}
 
 	volumeMounts := map[string]string{
-		logsDbVolumeName.GetName().GetString(): logs_database_server_config.LokiDefaultDirpath,
+		logsDbVolumeAttrs.GetName().GetString(): logs_database_server_config.LokiDefaultDirpath,
 	}
 
 	lokiConfig := logs_database_server_config.NewDefaultKurtosisLokiConfig(lokiHttpApiPortNumber)

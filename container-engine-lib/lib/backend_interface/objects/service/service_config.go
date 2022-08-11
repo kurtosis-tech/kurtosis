@@ -48,3 +48,39 @@ func NewServiceConfig(
 		cpuAllocationMillicpus: cpuAllocationMillicpus,
 		memoryAllocationMegabytes: memoryAllocationMegabytes}
 }
+
+func (serviceConfig *ServiceConfig) GetContainerImageName() string {
+	return serviceConfig.containerImageName
+}
+
+func (serviceConfig *ServiceConfig) GetPrivatePorts() map[string]*port_spec.PortSpec {
+	return serviceConfig.privatePorts
+}
+
+func (serviceConfig *ServiceConfig) GetPublicPorts() map[string]*port_spec.PortSpec {
+	return serviceConfig.publicPorts
+}
+
+func (serviceConfig *ServiceConfig) GetEntrypointArgs() []string {
+	return serviceConfig.entrypointArgs
+}
+
+func (serviceConfig *ServiceConfig) GetCmdArgs() []string {
+	return serviceConfig.cmdArgs
+}
+
+func (serviceConfig *ServiceConfig) GetEnvVars() map[string]string {
+	return serviceConfig.envVars
+}
+
+func (serviceConfig *ServiceConfig) GetFilesArtifactsExpansion() *files_artifacts_expansion.FilesArtifactsExpansion {
+	return serviceConfig.filesArtifactExpansion
+}
+
+func (serviceConfig *ServiceConfig) GetCPUAllocationMillicpus() uint64 {
+	return serviceConfig.cpuAllocationMillicpus
+}
+
+func (serviceConfig *ServiceConfig) GetMemoryAllocationMegabytes() uint64 {
+	return serviceConfig.memoryAllocationMegabytes
+}
