@@ -3,12 +3,15 @@ package loki
 import "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 
 const (
+	configDirpath = "/etc/loki/"
+
 	////////////////////////--LOKI CONTAINER CONFIGURATION SECTION--/////////////////////////////
 	containerImage           = "grafana/loki:main-19c7315"
 	httpPortNumber uint16 = 3100 // Default Loki HTTP API port number, more here: https://grafana.com/docs/loki/latest/api/
 	httpPortProtocol        = port_spec.PortProtocol_TCP
 
-	configFilepath = "/etc/loki/local-config.yaml"
+
+	configFilepath = configDirpath + "local-config.yaml"
 	binaryFilepath = "/usr/bin/loki"
 	configFileFlag = "-config.file"
 	////////////////////////--FINISH LOKI CONTAINER CONFIGURATION SECTION--/////////////////////////////
@@ -53,5 +56,11 @@ const (
 	//It's the global retention period then we will set retention periods by TenantID that overrides this value
 	//the global retention period store logs for 1 week = 168h.
 	limitsRetentionPeriod = "168h"
+
+	//The filepath of the runtime configuration that we are going to use for limits retention period by TenantID
+	//see more here: https://grafana.com/docs/loki/latest/configuration/#runtime-configuration-file
+	runtimeConfigFilepath = configDirpath + "runtime-config.yaml"
+	//How often to check the file.
+	runtimeConfigPeriod = "20s"
 	////////////////////////--FINISH--LOKI CONFIGURATION SECTION--/////////////////////////////
 )

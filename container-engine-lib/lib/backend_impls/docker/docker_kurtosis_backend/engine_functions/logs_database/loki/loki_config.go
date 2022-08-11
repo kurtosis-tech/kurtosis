@@ -136,6 +136,10 @@ func newDefaultLokiConfigForKurtosisCentralizedLogs() *LokiConfig {
 		Analytics: Analytics{
 			ReportingEnabled: analyticsEnabled,
 		},
+		RuntimeConfig: RuntimeConfig{
+			File: runtimeConfigFilepath,
+			Period: runtimeConfigPeriod,
+		},
 
 	}
 	return newConfig
