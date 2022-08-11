@@ -494,15 +494,17 @@ export class EnclaveContext {
             }
             return ok([successfulServices, failedServicesPool])
         } finally {
-            for (const[serviceId, _] of shouldRemoveServices){
+            for (const[serviceId, shouldRemove] of shouldRemoveServices){
                 // Do a best effort attempt to remove resources for this object to clean up after it failed
                 // TODO: Migrate this to a bulk remove services call
-                const removeServiceArgs : RemoveServiceArgs = newRemoveServiceArgs(serviceId, DEFAULT_CONTAINER_STOP_TIMEOUT_SECONDS)
-                const removeServiceResult = await this.backend.removeService(removeServiceArgs);
-                if (removeServiceResult.isErr()){
-                    const errMsg = `"Attempted to remove service '${serviceId}' to delete its resources after it failed to start, but the following error occurred" +
+                if (shouldRemove){
+                    const removeServiceArgs : RemoveServiceArgs = newRemoveServiceArgs(serviceId, DEFAULT_CONTAINER_STOP_TIMEOUT_SECONDS)
+                    const removeServiceResult = await this.backend.removeService(removeServiceArgs);
+                    if (removeServiceResult.isErr()){
+                        const errMsg = `"Attempted to remove service '${serviceId}' to delete its resources after it failed to start, but the following error occurred" +
 				"while attempting to remove the service:\n ${removeServiceResult.error}`
-                    failedServicesPool.set(serviceId, new Error(errMsg))
+                        failedServicesPool.set(serviceId, new Error(errMsg))
+                    }
                 }
             }
         }
