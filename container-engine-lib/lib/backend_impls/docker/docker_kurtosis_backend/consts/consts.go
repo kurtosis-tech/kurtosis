@@ -1,6 +1,9 @@
 package consts
 
-import "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+import (
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+)
 
 const (
 	// The Docker API's default is to return just containers whose status is "running"
@@ -25,4 +28,15 @@ const (
 	DockerSocketFilepath = "/var/run/docker.sock"
 )
 
+// This maps a Docker container's status to a binary "is the container considered running?" determiner
+// Its completeness is enforced via unit test
+var IsContainerRunningDeterminer = map[types.ContainerStatus]bool{
+	types.ContainerStatus_Paused:     false,
+	types.ContainerStatus_Restarting: true,
+	types.ContainerStatus_Running:    true,
+	types.ContainerStatus_Removing:   false,
+	types.ContainerStatus_Dead:       false,
+	types.ContainerStatus_Created:    false,
+	types.ContainerStatus_Exited:     false,
+}
 

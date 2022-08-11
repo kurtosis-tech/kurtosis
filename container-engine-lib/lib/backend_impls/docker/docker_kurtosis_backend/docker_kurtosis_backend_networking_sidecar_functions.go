@@ -414,7 +414,7 @@ func getNetworkingSidecarObjectFromContainerInfo(
 		return nil, stacktrace.NewError("Expected to find GUID label key '%v' but none was found", label_key_consts.GUIDDockerLabelKey.GetString())
 	}
 
-	isContainerRunning, found := shared_helpers.IsContainerRunningDeterminer[containerStatus]
+	isContainerRunning, found := consts.IsContainerRunningDeterminer[containerStatus]
 	if !found {
 		// This should never happen because we enforce completeness in a unit test
 		return nil, stacktrace.NewError("No is-running designation found for networking sidecar container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
