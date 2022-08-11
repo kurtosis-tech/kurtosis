@@ -6,6 +6,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_database"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_database/loki"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -206,7 +207,7 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating an engine object from container with GUID '%v'", containerId)
 	}
 
-	lokiConfig := logs_database.NewDefaultLokiConfigForKurtosisCentralizedLogs(lokiHttpApiPortNumber)
+	loki := loki.NewLoki(lokiHttpApiPortNumber)
 
 	killCentralizedLogsComponentsContainersFunc, err := createCentralizedLogsComponents(
 		ctx,
@@ -214,7 +215,7 @@ func CreateEngine(
 		targetNetworkId,
 		objAttrsProvider,
 		dockerManager,
-		lokiConfig,
+		loki,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the centralized logs components for the engine with GUID '%v' and network ID '%v'", engineGuid, targetNetworkId)
@@ -241,7 +242,7 @@ func createCentralizedLogsComponents(
 	targetNetworkId string,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
-	logsDatabaseConfigProvider logs_database.LogsDatabase,
+	logsDatabase logs_database.LogsDatabase,
 ) (func(), error) {
 	killLogsDatabaseContainerFunc, err := createLogsDatabaseContainer(
 		ctx,
@@ -249,7 +250,7 @@ func createCentralizedLogsComponents(
 		targetNetworkId,
 		objAttrsProvider,
 		dockerManager,
-		logsDatabaseConfigProvider,
+		logsDatabase,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database container")
@@ -278,7 +279,7 @@ func createLogsDatabaseContainer(
 	targetNetworkId string,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
-	logsDatabaseConfigProvider logs_database.LogsDatabase,
+	logsDatabase logs_database.LogsDatabase,
 ) (func(), error) {
 	privateHttpApiPortSpec, err := port_spec.NewPortSpec(lokiHttpApiPortNumber, lokiHttpApiPortProtocol)
 	if err != nil {
@@ -324,12 +325,12 @@ func createLogsDatabaseContainer(
 	}
 
 	volumeMounts := map[string]string{
-		logsDbVolumeAttrs.GetName().GetString(): logs_database.LokiDefaultDirpath,
+		logsDbVolumeAttrs.GetName().GetString(): loki.LokiDefaultDirpath,
 	}
 
-	logsDatabaseConfigContentStr, err := logsDatabaseConfigProvider.GetConfigContent()
+	logsDatabaseConfigContentStr, err := logsDatabase.GetConfigContent()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs-database-config-content from logs-database-config-provider '%+v'", logsDatabaseConfigProvider)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs-database-config-content from logs-database '%+v'", logsDatabase)
 	}
 
 	overrideCmd := []string{

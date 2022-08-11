@@ -1,9 +1,4 @@
-package logs_database
-
-import (
-	"github.com/kurtosis-tech/stacktrace"
-	"gopkg.in/yaml.v3"
-)
+package loki
 
 const (
 	//The following configuration values are the default ones suggested by the
@@ -46,16 +41,18 @@ const (
 	lokiDefaultLimitsRetentionPeriod = "168h"
 )
 
+
+
 type LokiConfig struct {
-	AuthEnabled  bool         `yaml:"auth_enabled"`
-	Server       Server       `yaml:"server"`
-	Common       Common       `yaml:"common"`
+	AuthEnabled   bool          `yaml:"auth_enabled"`
+	Server        Server        `yaml:"server"`
+	Common        Common        `yaml:"common"`
 	StorageConfig StorageConfig `yaml:"storage_config"`
-	SchemaConfig SchemaConfig `yaml:"schema_config"`
-	Ruler        Ruler        `yaml:"ruler"`
-	Compactor    Compactor    `yaml:"compactor"`
-	LimitsConfig LimitsConfig `yaml:"limits_config"`
-	Analytics    Analytics    `yaml:"analytics"`
+	SchemaConfig  SchemaConfig  `yaml:"schema_config"`
+	Ruler         Ruler         `yaml:"ruler"`
+	Compactor     Compactor     `yaml:"compactor"`
+	LimitsConfig  LimitsConfig  `yaml:"limits_config"`
+	Analytics     Analytics     `yaml:"analytics"`
 }
 
 type Server struct {
@@ -68,7 +65,7 @@ type Filesystem struct {
 }
 
 type Storage struct {
-	Filesystem               Filesystem `yaml:"filesystem"`
+	Filesystem Filesystem `yaml:"filesystem"`
 }
 
 type Kvstore struct {
@@ -99,8 +96,8 @@ type Configs struct {
 	From        string   `yaml:"from"`
 	Store       string `yaml:"store"`
 	ObjectStore string `yaml:"object_store"`
-	Schema      string `yaml:"schema"`
-	Index       Index  `yaml:"index"`
+	Schema string `yaml:"schema"`
+	Index  Index  `yaml:"index"`
 }
 
 type SchemaConfig struct {
@@ -128,7 +125,7 @@ type Analytics struct {
 	ReportingEnabled bool `yaml:"reporting_enabled"`
 }
 
-func NewDefaultLokiConfigForKurtosisCentralizedLogs(
+func newDefaultLokiConfigForKurtosisCentralizedLogs(
 	httpListenPort uint16,
 ) *LokiConfig {
 
@@ -140,9 +137,9 @@ func NewDefaultLokiConfigForKurtosisCentralizedLogs(
 		Common: Common{
 			PathPrefix: LokiDefaultDirpath,
 			Storage: Storage{
-				Filesystem: Filesystem {
+				Filesystem: Filesystem{
 					ChunksDirectory: lokiDefaultChunksDirectory,
-					RulesDirectory: lokiDefaultRulesDirectory,
+					RulesDirectory:  lokiDefaultRulesDirectory,
 				},
 			},
 			ReplicationFactor: lokiDefaultReplicationFactor,
@@ -158,10 +155,10 @@ func NewDefaultLokiConfigForKurtosisCentralizedLogs(
 		SchemaConfig: SchemaConfig{
 			Configs: []Configs{
 				{
-					From: lokiDefaultSchemaConfigFrom,
-					Store: lokiDefaultSchemaConfigStore,
+					From:        lokiDefaultSchemaConfigFrom,
+					Store:       lokiDefaultSchemaConfigStore,
 					ObjectStore: lokiDefaultSchemaConfigObjectStore,
-					Schema: lokiDefaultSchemaConfigSchemaVersion,
+					Schema:      lokiDefaultSchemaConfigSchemaVersion,
 					Index: Index{
 						Prefix: lokiDefaultSchemaConfigIndexPrefix,
 						Period: lokiDefaultSchemaConfigIndexPeriod,
@@ -170,11 +167,11 @@ func NewDefaultLokiConfigForKurtosisCentralizedLogs(
 			},
 		},
 		Compactor: Compactor{
-			WorkingDirectory: lokiDefaultCompactorWorkingDirectory,
-			SharedStore: lokiDefaultCompactorSharedStore,
-			CompactionInterval: lokiDefaultCompactorCompactionInterval,
-			RetentionEnabled: lokiDefaultCompactorRetentionEnabled,
-			RetentionDeleteDelay: lokiDefaultCompactorRetentionDeleteDelay,
+			WorkingDirectory:           lokiDefaultCompactorWorkingDirectory,
+			SharedStore:                lokiDefaultCompactorSharedStore,
+			CompactionInterval:         lokiDefaultCompactorCompactionInterval,
+			RetentionEnabled:           lokiDefaultCompactorRetentionEnabled,
+			RetentionDeleteDelay:       lokiDefaultCompactorRetentionDeleteDelay,
 			RetentionDeleteWorkerCount: lokiDefaultCompactorRetentionDeleteWorkerCount,
 		},
 		LimitsConfig: LimitsConfig{
@@ -186,13 +183,4 @@ func NewDefaultLokiConfigForKurtosisCentralizedLogs(
 	}
 
 	return newConfig
-}
-
-func (config *LokiConfig) GetConfigContent() (string, error) {
-	lokiConfigYAMLContent, err := yaml.Marshal(config)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred marshalling Loki config '%+v'", config)
-	}
-	lokiConfigYAMLContentStr := string(lokiConfigYAMLContent)
-	return lokiConfigYAMLContentStr, nil
 }
