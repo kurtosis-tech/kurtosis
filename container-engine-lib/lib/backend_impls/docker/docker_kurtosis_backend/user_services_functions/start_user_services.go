@@ -280,16 +280,20 @@ func StartUserServices(
 	failedServicesPool := map[service.ServiceGUID]error{}
 	serviceConfigsToStart := services
 
+	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	// Sanity check for port bindings on all services
 	for serviceGUID, serviceConfig := range services {
-		privatePorts := serviceConfig.GetPrivatePorts()
 		publicPorts := serviceConfig.GetPublicPorts()
-		err := checkPrivateAndPublicPortsAreOneToOne(privatePorts, publicPorts)
-		if err != nil {
-			failedServicesPool[serviceGUID] = stacktrace.Propagate(err, "Private and public ports are for service with GUID '%v' are not one to one.", serviceGUID)
-			delete(serviceConfigsToStart, serviceGUID)
+		if publicPorts != nil && len(publicPorts) > 0 {
+			privatePorts := serviceConfig.GetPrivatePorts()
+			err := checkPrivateAndPublicPortsAreOneToOne(privatePorts, publicPorts)
+			if err != nil {
+				failedServicesPool[serviceGUID] = stacktrace.Propagate(err, "Private and public ports are for service with GUID '%v' are not one to one.", serviceGUID)
+				delete(serviceConfigsToStart, serviceGUID)
+			}
 		}
 	}
+	//TODO END huge hack to temporarily enable static ports for NEAR
 
 	enclaveNetwork, err := shared_helpers.GetEnclaveNetworkByEnclaveId(ctx, enclaveID, dockerManager)
 	if err != nil {
@@ -597,18 +601,14 @@ func createStartServiceOperation(
 // - There are the same amount of private and public ports
 // If error is nil, the public and private ports are one to one.
 func checkPrivateAndPublicPortsAreOneToOne(privatePorts map[string]*port_spec.PortSpec, publicPorts map[string]*port_spec.PortSpec) error {
-	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	if publicPorts != nil && len(publicPorts) > 0 {
-		if len(privatePorts) != len(publicPorts) {
-			return stacktrace.NewError("The received private ports length and the public ports length are not equal. Received '%v' private ports and '%v' public ports", len(privatePorts), len(publicPorts))
-		}
+	if len(privatePorts) != len(publicPorts) {
+		return stacktrace.NewError("The received private ports length and the public ports length are not equal. Received '%v' private ports and '%v' public ports", len(privatePorts), len(publicPorts))
+	}
 
-		for portID, privatePortSpec := range privatePorts {
-			if _, found := publicPorts[portID]; !found {
-				return stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portID, privatePortSpec.GetNumber())
-			}
+	for portID, privatePortSpec := range privatePorts {
+		if _, found := publicPorts[portID]; !found {
+			return stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portID, privatePortSpec.GetNumber())
 		}
 	}
 	return nil
-	//TODO END this is a huge hack to temporarily enable static ports for NEAR
 }
