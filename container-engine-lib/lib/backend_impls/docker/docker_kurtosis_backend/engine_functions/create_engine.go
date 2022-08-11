@@ -25,18 +25,8 @@ const (
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
 
-	lokiContainerImage             = "grafana/loki:main-19c7315"
-	lokiHttpApiPortId              = "http"
-	lokiHttpApiPortNumber   uint16 = 3100 // Default Loki HTTP API port number, more here: https://grafana.com/docs/loki/latest/api/
-	lokiHttpApiPortProtocol        = port_spec.PortProtocol_TCP
+	logsDatabaseHttpPortId = "http"
 
-	lokiConfigDefaultFilepath = "/etc/loki/local-config.yaml"
-	lokiBinaryFilepath = "/usr/bin/loki"
-	lokiConfigFileFlag = "-config.file"
-
-	shBinaryFilepath = "/bin/sh"
-	shCmdFlag        = "-c"
-	printfCmdName    = "printf"
 )
 
 func CreateEngine(
@@ -207,7 +197,7 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating an engine object from container with GUID '%v'", containerId)
 	}
 
-	loki := loki.NewLoki(lokiHttpApiPortNumber)
+	loki := loki.CreateLokiConfiguredForKurtosis()
 
 	killCentralizedLogsComponentsContainersFunc, err := createCentralizedLogsComponents(
 		ctx,
@@ -281,37 +271,27 @@ func createLogsDatabaseContainer(
 	dockerManager *docker_manager.DockerManager,
 	logsDatabase logs_database.LogsDatabase,
 ) (func(), error) {
-	privateHttpApiPortSpec, err := port_spec.NewPortSpec(lokiHttpApiPortNumber, lokiHttpApiPortProtocol)
+	privateHttpPortSpec, err := logsDatabase.GetPrivateHttpPortSpec()
 	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating the logs database's private HTTP API port spec object using number '%v' and protocol '%v'",
-			lokiHttpApiPortNumber,
-			lokiHttpApiPortProtocol,
-		)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database private port spec")
 	}
 
 	logsDatabaseAttrs, err := objAttrsProvider.ForLogsDatabaseServer(
 		engineGuid,
-		lokiHttpApiPortId,
-		privateHttpApiPortSpec,
+		logsDatabaseHttpPortId,
+		privateHttpPortSpec,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred getting the logs database container attributes using GUID '%v', the HTTP API port num '%v'",
+			"An error occurred getting the logs database container attributes using GUID '%v' and the HTTP port spec '%+v'",
 			engineGuid,
-			lokiHttpApiPortNumber,
+			privateHttpPortSpec,
 		)
 	}
-
-	privateHttpApiDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(privateHttpApiPortSpec)
+	logsDbVolumeAttrs, err := objAttrsProvider.ForLogsDatabaseVolume(engineGuid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the private HTTP API port spec to a Docker port")
-	}
-
-	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
-		privateHttpApiDockerPort: docker_manager.NewManualPublishingSpec(lokiHttpApiPortNumber),
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database volume for engine with GUID %v", engineGuid)
 	}
 
 	labelStrs := map[string]string{}
@@ -319,50 +299,21 @@ func createLogsDatabaseContainer(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
-	logsDbVolumeAttrs, err := objAttrsProvider.ForLogsDatabaseVolume(engineGuid)
+	containerName := logsDbVolumeAttrs.GetName().GetString()
+	volumeName := logsDbVolumeAttrs.GetName().GetString()
+
+	createAndStartArgs, err := logsDatabase.GetContainerArgs(containerName, labelStrs, volumeName, targetNetworkId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database volume for engine with GUID %v", engineGuid)
+		return nil,
+		stacktrace.Propagate(
+			err,
+			"An error occurred getting the logs-database-container-args with container name '%v', labels '%+v', volume name '%v' and network ID '%v",
+			containerName,
+			labelStrs,
+			volumeName,
+			targetNetworkId,
+		)
 	}
-
-	volumeMounts := map[string]string{
-		logsDbVolumeAttrs.GetName().GetString(): loki.LokiDefaultDirpath,
-	}
-
-	logsDatabaseConfigContentStr, err := logsDatabase.GetConfigContent()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs-database-config-content from logs-database '%+v'", logsDatabase)
-	}
-
-	overrideCmd := []string{
-		shCmdFlag,
-		fmt.Sprintf(
-			"%v '%v' > %v && %v %v=%v",
-			printfCmdName,
-			logsDatabaseConfigContentStr,
-			lokiConfigDefaultFilepath,
-			lokiBinaryFilepath,
-			lokiConfigFileFlag,
-			lokiConfigDefaultFilepath,
-		),
-	}
-
-	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
-		lokiContainerImage,
-		logsDatabaseAttrs.GetName().GetString(),
-		targetNetworkId,
-	).WithVolumeMounts(
-		volumeMounts,
-	).WithLabels(
-		labelStrs,
-	).WithUsedPorts(
-		usedPorts,
-	).WithEntrypointArgs(
-		[]string{
-			shBinaryFilepath,
-		},
-	).WithCmdArgs(
-		overrideCmd,
-	).Build()
 
 	containerId, _, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {

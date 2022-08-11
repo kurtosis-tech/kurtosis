@@ -1,48 +1,5 @@
 package loki
 
-const (
-	//The following configuration values are the default ones suggested by the
-	//Loki's documentation and this video: https://grafana.com/go/webinar/logging-with-loki-essential-configuration-settings/?pg=docs-loki&plcmt=footer-resources-2
-
-	//We enable multi-tenancy mode and we scope enclaves as tenants EnclaveId = TenantID (see more about multi-tenancy here: https://grafana.com/docs/loki/latest/operations/multi-tenancy/)
-	lokiDefaultAuthEnabled = true
-	//The destinations path where the index, chnunks and rules will be saved
-	LokiDefaultDirpath               = "/loki"
-	lokiDefaultChunksDirectory = LokiDefaultDirpath + "/chunks"
-	lokiDefaultRulesDirectory = LokiDefaultDirpath + "/rules"
-	//We are going to run only one instance of Loki because we are using the filesystem storage, and it's ok for our current use case (https://grafana.com/docs/loki/latest/operations/storage/filesystem/#high-availability)
-	lokiDefaultReplicationFactor = 1
-	//it's the backend storage used for the ring
-	lokiDefaultRingKvStore = "inmemory"
-	//It's the default date when we started implementing Loki in Kurtosis
-	lokiDefaultSchemaConfigFrom = "2022-08-01"
-	//Boltdb-shipper is the adapter used to store the index in the chunk store (https://grafana.com/docs/loki/latest/fundamentals/architecture/#single-store)
-	lokiDefaultSchemaConfigStore = "boltdb-shipper"
-	//We are going to store the data in the container's filesystem (https://grafana.com/docs/loki/latest/operations/storage/filesystem)
-	lokiDefaultSchemaConfigObjectStore = "filesystem"
-	//The v12 generate lighter files compare with the previous versions (see video min 10:34)
-	lokiDefaultSchemaConfigSchemaVersion = "v12"
-	lokiDefaultSchemaConfigIndexPrefix = "index_"
-	//24h is the max value allowed for boltdb-shipper
-	lokiDefaultSchemaConfigIndexPeriod = "24h"
-	//Enabled this feature because we are using boltdb-shipper index type, it helps to improve performance in expensive queries (see video min 40:00)
-	lokiDefaultStorageConfigDisabledBroadIndexQueries = true
-	//We don't want to send analytics metrics to Loki because it will be used pretty much for developing and testing purpose
-	lokiDefaultAnalyticsEnabled = false
-
-	//The next values are used to configure the retention period which is the method that we can use to delete old logs
-	//We are going to store logs for 1 week = 168h. See more here: https://grafana.com/docs/loki/latest/operations/storage/retention/
-	lokiDefaultCompactorWorkingDirectory = LokiDefaultDirpath + "/compactor"
-	lokiDefaultCompactorSharedStore = "filesystem"
-	lokiDefaultCompactorCompactionInterval = "10m"
-	lokiDefaultCompactorRetentionEnabled = true
-	lokiDefaultCompactorRetentionDeleteDelay = "2h"
-	lokiDefaultCompactorRetentionDeleteWorkerCount = 150
-	lokiDefaultLimitsRetentionPeriod = "168h"
-)
-
-
-
 type LokiConfig struct {
 	AuthEnabled   bool          `yaml:"auth_enabled"`
 	Server        Server        `yaml:"server"`
@@ -53,6 +10,7 @@ type LokiConfig struct {
 	Compactor     Compactor     `yaml:"compactor"`
 	LimitsConfig  LimitsConfig  `yaml:"limits_config"`
 	Analytics     Analytics     `yaml:"analytics"`
+	RuntimeConfig RuntimeConfig `yaml:"runtime_config"`
 }
 
 type Server struct {
@@ -110,8 +68,6 @@ type Ruler struct {
 
 type Compactor struct {
 	WorkingDirectory           string `yaml:"working_directory"`
-	SharedStore                string `yaml:"shared_store"`
-	CompactionInterval         string `yaml:"compaction_interval"`
 	RetentionEnabled           bool   `yaml:"retention_enabled"`
 	RetentionDeleteDelay       string `yaml:"retention_delete_delay"`
 	RetentionDeleteWorkerCount int    `yaml:"retention_delete_worker_count"`
@@ -125,62 +81,62 @@ type Analytics struct {
 	ReportingEnabled bool `yaml:"reporting_enabled"`
 }
 
-func newDefaultLokiConfigForKurtosisCentralizedLogs(
-	httpListenPort uint16,
-) *LokiConfig {
+type RuntimeConfig struct {
+	File   string `yaml:"file"`
+	Period string `yaml:"period"`
+}
 
+func newDefaultLokiConfigForKurtosisCentralizedLogs() *LokiConfig {
 	newConfig := &LokiConfig{
-		AuthEnabled: lokiDefaultAuthEnabled,
+		AuthEnabled: authEnabled,
 		Server: Server{
-			HTTPListenPort: httpListenPort,
+			HTTPListenPort: httpPortNumber,
 		},
 		Common: Common{
-			PathPrefix: LokiDefaultDirpath,
+			PathPrefix: dirpath,
 			Storage: Storage{
 				Filesystem: Filesystem{
-					ChunksDirectory: lokiDefaultChunksDirectory,
-					RulesDirectory:  lokiDefaultRulesDirectory,
+					ChunksDirectory: chunksDirpath,
+					RulesDirectory:  rulesDirpath,
 				},
 			},
-			ReplicationFactor: lokiDefaultReplicationFactor,
+			ReplicationFactor: replicationFactor,
 			Ring: Ring{
 				Kvstore: Kvstore{
-					Store: lokiDefaultRingKvStore,
+					Store: ringKvStore,
 				},
 			},
 		},
 		StorageConfig: StorageConfig{
-			DisableBroadIndexQueries: lokiDefaultStorageConfigDisabledBroadIndexQueries,
+			DisableBroadIndexQueries: storageConfigDisabledBroadIndexQueries,
 		},
 		SchemaConfig: SchemaConfig{
 			Configs: []Configs{
 				{
-					From:        lokiDefaultSchemaConfigFrom,
-					Store:       lokiDefaultSchemaConfigStore,
-					ObjectStore: lokiDefaultSchemaConfigObjectStore,
-					Schema:      lokiDefaultSchemaConfigSchemaVersion,
+					From:        schemaConfigFrom,
+					Store:       schemaConfigStore,
+					ObjectStore: schemaConfigObjectStore,
+					Schema:      schemaConfigSchemaVersion,
 					Index: Index{
-						Prefix: lokiDefaultSchemaConfigIndexPrefix,
-						Period: lokiDefaultSchemaConfigIndexPeriod,
+						Prefix: schemaConfigIndexPrefix,
+						Period: schemaConfigIndexPeriod,
 					},
 				},
 			},
 		},
 		Compactor: Compactor{
-			WorkingDirectory:           lokiDefaultCompactorWorkingDirectory,
-			SharedStore:                lokiDefaultCompactorSharedStore,
-			CompactionInterval:         lokiDefaultCompactorCompactionInterval,
-			RetentionEnabled:           lokiDefaultCompactorRetentionEnabled,
-			RetentionDeleteDelay:       lokiDefaultCompactorRetentionDeleteDelay,
-			RetentionDeleteWorkerCount: lokiDefaultCompactorRetentionDeleteWorkerCount,
+			WorkingDirectory:           compactorWorkingDirectory,
+			RetentionEnabled:           compactorRetentionEnabled,
+			RetentionDeleteDelay:       compactorRetentionDeleteDelay,
+			RetentionDeleteWorkerCount: compactorRetentionDeleteWorkerCount,
 		},
 		LimitsConfig: LimitsConfig{
-			RetentionPeriod: lokiDefaultLimitsRetentionPeriod,
+			RetentionPeriod: limitsRetentionPeriod,
 		},
 		Analytics: Analytics{
-			ReportingEnabled: lokiDefaultAnalyticsEnabled,
+			ReportingEnabled: analyticsEnabled,
 		},
-	}
 
+	}
 	return newConfig
 }
