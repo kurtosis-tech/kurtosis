@@ -839,12 +839,12 @@ func (network *ServiceNetwork) startServices(
 			failedServicesPool[guid] = stacktrace.NewError("Couldn't find a mapping between service with GUID `%v` and a mapping of files artifacts UUIDs to mountpoints.", guid)
 			continue
 		}
-		var filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion
-
 		if len(filesArtifactUUIDsToMountpoints) == 0 {
 			serviceConfigsWithFilesArtifactsExpansion[guid] = config
 			continue
 		}
+
+		var filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion
 		usedArtifactUUIDSet := map[enclave_data_directory.FilesArtifactUUID]bool{}
 		for artifactUUID := range filesArtifactUUIDsToMountpoints {
 			usedArtifactUUIDSet[artifactUUID] = true

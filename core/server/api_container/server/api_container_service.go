@@ -278,7 +278,7 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 
 	serviceIDsToServiceInfo := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
 	for serviceID, startedService := range successfulServices {
-		// If anything goes wrong while trying to set up the service object, we need to remove the successfully started service.
+		// If anything goes wrong while trying to set up the service object, we need to remove the successfully started service
 		shouldRemoveService := true
 		defer func() {
 			if shouldRemoveService {
