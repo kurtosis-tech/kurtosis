@@ -51,11 +51,11 @@ type Index struct {
 }
 
 type Configs struct {
-	From        string   `yaml:"from"`
+	From        string `yaml:"from"`
 	Store       string `yaml:"store"`
 	ObjectStore string `yaml:"object_store"`
-	Schema string `yaml:"schema"`
-	Index  Index  `yaml:"index"`
+	Schema      string `yaml:"schema"`
+	Index       Index  `yaml:"index"`
 }
 
 type SchemaConfig struct {
@@ -71,6 +71,7 @@ type Compactor struct {
 	RetentionEnabled           bool   `yaml:"retention_enabled"`
 	RetentionDeleteDelay       string `yaml:"retention_delete_delay"`
 	RetentionDeleteWorkerCount int    `yaml:"retention_delete_worker_count"`
+	DeletionMode               string `yaml:"deletion_mode"`
 }
 
 type LimitsConfig struct {
@@ -129,6 +130,7 @@ func newDefaultLokiConfigForKurtosisCentralizedLogs() *LokiConfig {
 			RetentionEnabled:           compactorRetentionEnabled,
 			RetentionDeleteDelay:       compactorRetentionDeleteDelay,
 			RetentionDeleteWorkerCount: compactorRetentionDeleteWorkerCount,
+			DeletionMode:               compactorDeletionMode,
 		},
 		LimitsConfig: LimitsConfig{
 			RetentionPeriod: limitsRetentionPeriod,
@@ -137,10 +139,9 @@ func newDefaultLokiConfigForKurtosisCentralizedLogs() *LokiConfig {
 			ReportingEnabled: analyticsEnabled,
 		},
 		RuntimeConfig: RuntimeConfig{
-			File: runtimeConfigFilepath,
+			File:   runtimeConfigFilepath,
 			Period: runtimeConfigPeriod,
 		},
-
 	}
 	return newConfig
 }

@@ -6,10 +6,9 @@ const (
 	configDirpath = "/etc/loki/"
 
 	////////////////////////--LOKI CONTAINER CONFIGURATION SECTION--/////////////////////////////
-	containerImage           = "grafana/loki:main-19c7315"
-	httpPortNumber uint16 = 3100 // Default Loki HTTP API port number, more here: https://grafana.com/docs/loki/latest/api/
+	containerImage          = "grafana/loki:main-19c7315"
+	httpPortNumber   uint16 = 3100 // Default Loki HTTP API port number, more here: https://grafana.com/docs/loki/latest/api/
 	httpPortProtocol        = port_spec.PortProtocol_TCP
-
 
 	configFilepath = configDirpath + "local-config.yaml"
 	binaryFilepath = "/usr/bin/loki"
@@ -23,7 +22,7 @@ const (
 	//We enable multi-tenancy mode, and we scope enclaves as tenants EnclaveId = TenantID (see more about multi-tenancy here: https://grafana.com/docs/loki/latest/operations/multi-tenancy/)
 	authEnabled = true
 	//The destinations path where the index, chnunks and rules will be saved
-	dirpath            = "/loki"
+	dirpath       = "/loki"
 	chunksDirpath = dirpath + "/chunks"
 	rulesDirpath  = dirpath + "/rules"
 	//We are going to run only one instance of Loki because we are using the filesystem storage, it's ok for our current use case (https://grafana.com/docs/loki/latest/operations/storage/filesystem/#high-availability)
@@ -42,6 +41,7 @@ const (
 	schemaConfigSchemaVersion = "v12"
 	schemaConfigIndexPrefix   = "index_"
 	//24h is the max value allowed for boltdb-shipper
+	//This value is also need because retention is only available if the index period is 24h. (see more here: https://grafana.com/docs/loki/latest/operations/storage/retention/#compactor)
 	schemaConfigIndexPeriod = "24h"
 	//Enabled this feature because we are using boltdb-shipper index type, it helps to improve performance in expensive queries (see video min 40:00)
 	storageConfigDisabledBroadIndexQueries = true
@@ -50,10 +50,13 @@ const (
 
 	//The next values are used to configure the Compactor component which allows us to enable the retention period
 	//See more here: https://grafana.com/docs/loki/latest/operations/storage/retention/
-	compactorWorkingDirectory                = dirpath + "/compactor"
-	compactorRetentionEnabled                      = true
-	compactorRetentionDeleteDelay       = "2h"
+	compactorWorkingDirectory           = dirpath + "/compactor"
+	compactorRetentionEnabled           = true
+	//More about retention delete delay here: https://grafana.com/docs/loki/latest/operations/storage/retention/#compactor
+	compactorRetentionDeleteDelay       = "1h"
 	compactorRetentionDeleteWorkerCount = 150
+	//The "filter-and-delete" mode remove the logs from the storage (see more here: https://grafana.com/docs/loki/latest/configuration/#compactor and here: https://grafana.com/docs/loki/latest/operations/storage/logs-deletion/#configuration)
+	compactorDeletionMode = "filter-and-delete"
 	//It's the global retention period then we will set retention periods by TenantID that overrides this value
 	//the global retention period store logs for 1 week = 168h.
 	limitsRetentionPeriod = "168h"
@@ -62,7 +65,7 @@ const (
 	//see more here: https://grafana.com/docs/loki/latest/configuration/#runtime-configuration-file
 	runtimeConfigFilepath = configDirpath + "runtime-config.yaml"
 	//How often to check the file.
-	runtimeConfigPeriod = "20s"
+	runtimeConfigPeriod             = "20s"
 	runtimeConfigFileInitialContent = "overrides:"
 	////////////////////////--FINISH--LOKI CONFIGURATION SECTION--/////////////////////////////
 )
