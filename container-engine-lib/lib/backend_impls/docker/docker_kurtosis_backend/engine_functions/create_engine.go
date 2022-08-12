@@ -252,6 +252,7 @@ func createCentralizedLogsComponents(
 		}
 	}()
 
+
 	//TODO add createLogsCollectorContainer and handle killing function
 
 	killCentralizedLogsComponentsContainersFunc := func(){
@@ -330,6 +331,17 @@ func createLogsDatabaseContainer(
 				err)
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually stop the logs database server with GUID '%v' and Docker container ID '%v'!!!!!!", engineGuid, containerId)
 		}
+	}
+
+	if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
+		ctx,
+		dockerManager,
+		containerId,
+		privateHttpPortSpec,
+		maxWaitForEngineAvailabilityRetries,
+		timeBetweenWaitForEngineAvailabilityRetries,
+	); err != nil {
+		return killContainerFunc, stacktrace.Propagate(err, "An error occurred waiting for the log database's HTTP port to become available")
 	}
 
 	return killContainerFunc, nil
