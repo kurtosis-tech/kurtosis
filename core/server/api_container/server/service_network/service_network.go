@@ -11,8 +11,10 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/files_artifacts_expander/args"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
@@ -21,11 +23,11 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
+	"math"
 	"net"
 	"path"
 	"strings"
 	"sync"
-	"time"
 )
 
 const (
@@ -40,6 +42,13 @@ const (
 	minMemoryLimit = 6 // Docker doesn't allow memory limits less than 6 megabytes
 	defaultMemoryAllocMegabytes = 0
 )
+
+// Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
+var apiContainerPortProtoToPortSpecPortProto = map[kurtosis_core_rpc_api_bindings.Port_Protocol]port_spec.PortProtocol{
+	kurtosis_core_rpc_api_bindings.Port_TCP:  port_spec.PortProtocol_TCP,
+	kurtosis_core_rpc_api_bindings.Port_SCTP: port_spec.PortProtocol_SCTP,
+	kurtosis_core_rpc_api_bindings.Port_UDP:  port_spec.PortProtocol_UDP,
+}
 
 type storeFilesArtifactResult struct {
 	filesArtifactUuid enclave_data_directory.FilesArtifactUUID
@@ -213,6 +222,122 @@ func (network ServiceNetwork) RegisterService(
 	return userService.GetPrivateIP(), nil
 }
 
+// Registers services for use within the network (creating the IPs and so forth), but doesn't start them
+// If the partition ID is empty, registers the services with the default partition.
+//
+// This is a bulk operation that follows a funnel/rollback approach.
+// This means that when an error occurs, for an indvidiual operation (service in this case), we add it to a set of
+// failed service ids to errors, and return that to the client of this function. At the sametime we rollback/undo any
+// resources that were created during the failed operation, thus narrowing the funnel of operations
+// that were successful. Thus, this function:
+// Returns:
+//	- successfulService - mapping of successful service ids to private ip address of the service
+//	- failedServices - mapping of failed service ids to errors causing those failures
+//	- error	- if error occurred with bulk operation as a whole
+func (network ServiceNetwork) RegisterServices(
+	ctx context.Context,
+	serviceIDs map[service.ServiceID]bool,
+	partitionID service_network_types.PartitionID,
+) (
+	resultSuccessfulServiceRegistrations map[service.ServiceID]net.IP,
+	resultFailedServiceRegistrations map[service.ServiceID]error,
+	resultErr error,
+) {
+	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	failedServicePool := map[service.ServiceID]error{}
+	serviceIDsToRegister := map[service.ServiceID]bool{}
+	for id, _ := range serviceIDs {
+		serviceIDsToRegister[id] = true
+	}
+
+	for serviceID, _ := range serviceIDs {
+		if _, found := network.registeredServiceInfo[serviceID]; found {
+			failedServicePool[serviceID] = stacktrace.NewError(
+				"Cannot register service '%v' because it already exists in the network",
+				serviceID,
+			)
+			delete(serviceIDsToRegister, serviceID)
+		}
+	}
+
+	if partitionID == "" {
+		partitionID = defaultPartitionId
+	}
+	if _, found := network.topology.GetPartitionServices()[partitionID]; !found {
+		return nil, nil, stacktrace.NewError(
+			"No partition with ID '%v' exists in the current partition topology",
+			partitionID,
+		)
+	}
+
+	successfulRegistrations, failedRegistrations, err := network.kurtosisBackend.RegisterUserServices(
+		ctx,
+		network.enclaveId,
+		serviceIDsToRegister,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", serviceIDs)
+	}
+	// Defer an undo to all the successful registrations in case an error occurs in future phases
+	shouldRemoveServices := map[service.ServiceID]bool{}
+	for serviceID, serviceRegistration := range successfulRegistrations {
+		shouldRemoveServices[serviceID] = true
+		defer func() {
+			if shouldRemoveServices[serviceID] {
+				err = network.destroyServiceAfterFailure(context.Background(), serviceRegistration.GetGUID())
+				if err != nil {
+					failedServicePool[serviceID] = stacktrace.Propagate(err,
+						"WARNING: Attempted to remove service '%v' after it failed to register but an error occurredwhile doing so." +
+						"Must destroy service manually!", serviceID)
+				}
+			}
+		}()
+	}
+	for serviceID, registrationErr := range failedRegistrations {
+		failedServicePool[serviceID] = stacktrace.Propagate(registrationErr, "Failed to register service with ID '%v'", serviceID)
+	}
+
+	successfulServiceIPs := map[service.ServiceID]net.IP{}
+	for serviceID, serviceRegistration := range successfulRegistrations {
+		network.registeredServiceInfo[serviceID] = serviceRegistration
+		shouldRemoveFromServicesMap := true
+		defer func() {
+			if shouldRemoveFromServicesMap {
+				delete(network.registeredServiceInfo, serviceID)
+			}
+		}()
+
+		if err := network.topology.AddService(serviceID, partitionID); err != nil {
+			failedServicePool[serviceID] = stacktrace.Propagate(
+				err,
+				"An error occurred adding service with ID '%v' to partition '%v' in the topology",
+				serviceID,
+				partitionID,
+			)
+			continue
+		}
+		shouldRemoveFromTopology := true
+		defer func() {
+			if shouldRemoveFromTopology {
+				network.topology.RemoveService(serviceID)
+			}
+		}()
+
+		shouldRemoveFromServicesMap = false
+		shouldRemoveFromTopology = false
+		privateIP := serviceRegistration.GetPrivateIP()
+		successfulServiceIPs[serviceID] = privateIP
+	}
+
+	// Do not remove services that were successful
+	for serviceID, _ := range successfulServiceIPs {
+		shouldRemoveServices[serviceID] = false
+	}
+	return successfulServiceIPs, failedServicePool, nil
+}
+
 // TODO add tests for this
 /*
 Starts a previously-registered but not-started service by creating it in a container
@@ -251,7 +376,7 @@ func (network *ServiceNetwork) StartService(
 	//   a) we need to start the service before we can launch the sidecar but
 	//   b) we can't modify the qdisc configuration until the sidecar container is launched.
 	// This means that there's a period of time at startup where the container might not be partitioned. We solve
-	//  this by setting the packet loss config of the new service in the already-existing services' qdisc.
+	// this by setting the packet loss config of the new service in the already-existing services' qdisc.
 	// This means that when the new service is launched, even if its own qdisc isn't yet updated, all the services
 	//  it would communicate are already dropping traffic to it before it even starts.
 	if network.isPartitioningEnabled {
@@ -337,10 +462,158 @@ func (network *ServiceNetwork) StartService(
 	return userService, nil
 }
 
+// Starts a previously-registered but not-started service by creating it in a container.
+//
+// This is a bulk operation that follows a funnel/rollback approach.
+// This means that when an error occurs, for an indvidiual operation (service in this case), we add it to a set of
+// failed service ids to errors, and return that to the client of this function. At the sametime we rollback/undo any
+// resources that were created during the failed operation, thus narrowing the funnel of operations
+// that were successful. Thus, this function:
+// Returns:
+//	- successfulService - mapping of successful service ids to service objects with info about that service
+//	- failedServices - mapping of failed service ids to errors causing those failures
+//	- error	- if error occurred with bulk operation as a whole
+func(network *ServiceNetwork) StartServices(
+	ctx context.Context,
+	apiServiceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
+) (
+	resultSuccessfulServices map[service.ServiceID]service.Service,
+	resultFailedServices map[service.ServiceID]error,
+	resultErr error,
+) {
+	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	failedServicesPool := map[service.ServiceID]error{}
+
+	serviceGUIDsToIDs := map[service.ServiceGUID]service.ServiceID{}
+	serviceGUIDsToConfigs := map[service.ServiceGUID]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
+	for serviceID, apiServiceConfig := range apiServiceConfigs {
+		registration, found := network.registeredServiceInfo[serviceID]
+		if !found {
+			failedServicesPool[serviceID] = stacktrace.NewError("Cannot start service; no registration exists for service with ID '%v'", serviceID)
+			continue
+		}
+
+		guid := registration.GetGUID()
+		serviceGUIDsToIDs[guid] = serviceID
+		serviceGUIDsToConfigs[guid] = apiServiceConfig
+	}
+
+	// When partitioning is enabled, there's a race condition where:
+	//   a) we need to start the services before we can launch the sidecar but
+	//   b) we can't modify the qdisc configurations until the sidecar container is launched.
+	// This means that there's a period of time at startup where the containers might not be partitioned. We solve
+	// this by setting the packet loss config of the new services in the already-existing services' qdisc.
+	// This means that when the new services are launched, even if their own qdisc isn't yet updated, all the services
+	// it would communicate are already dropping traffic to it before it even starts.
+	if network.isPartitioningEnabled {
+		// The services being started should have been added to the network topology when they were registered
+		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
+				" to know what packet loss updates to apply on the new node")
+		}
+
+		servicesPacketLossConfigurationsWithoutNewNodes := map[service.ServiceID]map[service.ServiceID]float32{}
+		for serviceIdInTopology, otherServicesPacketLossConfigs := range servicePacketLossConfigurationsByServiceID {
+			if _, found := apiServiceConfigs[serviceIdInTopology]; found {
+				continue
+			}
+			servicesPacketLossConfigurationsWithoutNewNodes[serviceIdInTopology] = otherServicesPacketLossConfigs
+		}
+
+		if err := updateTrafficControlConfiguration(
+			ctx,
+			servicesPacketLossConfigurationsWithoutNewNodes,
+			network.registeredServiceInfo,
+			network.networkingSidecars,
+		); err != nil {
+			return nil, nil, stacktrace.Propagate(
+				err,
+				"An error occurred updating the traffic control configuration of all the other services "+
+					"before adding the new service, meaning that the service wouldn't actually start in a partition",
+			)
+		}
+	}
+
+	successfulServiceGUIDs, failedServiceGUIDs, err := network.startServices(ctx, serviceGUIDsToConfigs)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred attempting to add services to the service network.")
+	}
+	// TODO We SHOULD defer an undo to undo the service-starting resource that we did here, but we don't have a way to just undo
+	// that and leave the registration intact (since we only have RemoveService as of 2022-08-11, but that also deletes the registration,
+	//which would mean deleting a resource we don't own here)
+
+	// Convert from GUID maps to ID maps
+	successfulServices := map[service.ServiceID]service.Service{}
+	for serviceGUID, serviceInfo := range successfulServiceGUIDs {
+		serviceID, found := serviceGUIDsToIDs[serviceGUID]
+		if !found {
+			return nil, nil, stacktrace.NewError("Could not find a service ID associated with the service GUID '%v'. This should not happen and is a bug in Kurtosis.", serviceGUID)
+		}
+		successfulServices[serviceID] = serviceInfo
+	}
+	// Add services that failed to start to failed service pool
+	for serviceGUID, serviceErr := range failedServiceGUIDs {
+		serviceID, found := serviceGUIDsToIDs[serviceGUID]
+		if !found {
+			return nil, nil, stacktrace.NewError("Could not find a service ID associated with the service GUID '%v'. This should not happen and is a bug in Kurtosis.", serviceGUID)
+		}
+		failedServicesPool[serviceID] = serviceErr
+	}
+
+	if network.isPartitioningEnabled {
+		// TODO Getting packet loss configuration by service ID is an expensive call and, as of 2021-11-23, we do it twice - the solution is to make
+		//  Getting packet loss configuration by service ID not an expensive call
+		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
+				" to know what packet loss updates to apply on the new node")
+		}
+		updatesToApply := map[service.ServiceID]map[service.ServiceID]float32{}
+
+		// In the initial phase, network packets of services in the network were blocked from services that were about to be started.
+		// Here, we are now blocking off successfully started services from the rest of the network to further guarantee network partitioning.
+		// We don't undo the blocking off of failed services by the rest of the network because the services in the network are blocking traffic
+		// from containers that don't exist anyways.
+		for serviceID, serviceInfo := range successfulServices {
+			serviceRegistration := serviceInfo.GetRegistration()
+			serviceGUID := serviceRegistration.GetGUID()
+
+			sidecar, err := network.networkingSidecarManager.Add(ctx, serviceGUID)
+			if err != nil {
+				failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred adding the networking sidecar for service `%v`", serviceID)
+				delete(successfulServices, serviceID)
+				continue
+			}
+			// TODO: When atomicity is implemented for StartServices, add a defer to undo creation of sidecar in case of failure
+
+			network.networkingSidecars[serviceID] = sidecar
+			// TODO: When atomicity is implemented for StartServices, add a defer to undo addition of sidecar to map
+
+			if err := sidecar.InitializeTrafficControl(ctx); err != nil {
+				failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred initializing the newly-created networking-sidecar-traffic-control-qdisc-configuration for service `%v`", serviceID)
+				delete(successfulServices, serviceID)
+				continue
+			}
+
+			newNodeServicePacketLossConfiguration := servicePacketLossConfigurationsByServiceID[serviceID]
+			updatesToApply[serviceID] = newNodeServicePacketLossConfiguration
+		}
+
+		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.registeredServiceInfo, network.networkingSidecars); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration on the new nodes to partition them "+
+				"off from other nodes")
+		}
+	}
+
+	return successfulServices, failedServicesPool, nil
+}
+
 func (network *ServiceNetwork) RemoveService(
 	ctx context.Context,
 	serviceId service.ServiceID,
-	containerStopTimeout time.Duration,
 ) (service.ServiceGUID, error) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
@@ -705,6 +978,26 @@ func (network *ServiceNetwork) destroyServiceBestEffortAfterRegistrationFailure(
 	}
 }
 
+func (network *ServiceNetwork) destroyServiceAfterFailure(ctx context.Context, serviceGUID service.ServiceGUID) error {
+	destroyServiceFilters := &service.ServiceFilters{
+		GUIDs: map[service.ServiceGUID]bool{
+			serviceGUID: true,
+		},
+	}
+	// Use background context in case the input one is cancelled
+	_, erroredRegistrations, err := network.kurtosisBackend.DestroyUserServices(ctx, network.enclaveId, destroyServiceFilters)
+	var errToReturn error
+	if err != nil {
+		errToReturn = err
+	} else if destroyErr, found := erroredRegistrations[serviceGUID]; found {
+		errToReturn = destroyErr
+	}
+	if errToReturn != nil {
+		return stacktrace.NewError("Attempted to destroy the service with GUID'%v', but doing so threw an error:\n%v", serviceGUID, errToReturn)
+	}
+	return nil
+}
+
 func (network *ServiceNetwork) startService(
 	ctx context.Context,
 	serviceGuid service.ServiceGUID,
@@ -723,7 +1016,7 @@ func (network *ServiceNetwork) startService(
 	resultUserService *service.Service,
 	resultErr error,
 ) {
-	var filesArtifactsExpansion *backend_interface.FilesArtifactsExpansion
+	var filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion
 	if len(filesArtifactUuidsToMountpoints) > 0 {
 		usedArtifactUuidSet := map[enclave_data_directory.FilesArtifactUUID]bool{}
 		for artifactUuid := range filesArtifactUuidsToMountpoints {
@@ -762,7 +1055,7 @@ func (network *ServiceNetwork) startService(
 			network.apiContainerVersion,
 		)
 
-		filesArtifactsExpansion = &backend_interface.FilesArtifactsExpansion{
+		filesArtifactsExpansion = &files_artifacts_expansion.FilesArtifactsExpansion{
 			ExpanderImage:                     expanderImageAndTag,
 			ExpanderEnvVars:                   expanderEnvVars,
 			ExpanderDirpathsToServiceDirpaths: expanderDirpathToUserServiceDirpathMap,
@@ -802,6 +1095,111 @@ func (network *ServiceNetwork) startService(
 	return launchedUserService, nil
 }
 
+func (network *ServiceNetwork) startServices(
+	ctx context.Context,
+	APIServiceConfigs map[service.ServiceGUID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
+) (
+	resultSuccessfulServices map[service.ServiceGUID]service.Service,
+	resultFailedServices map[service.ServiceGUID]error,
+	resultErr error,
+) {
+	failedServicesPool := map[service.ServiceGUID]error{}
+	serviceConfigs := map[service.ServiceGUID]*service.ServiceConfig{}
+
+	// Convert API ServiceConfig's to service.ServiceConfig's by:
+	// - converting API Ports to PortSpec's
+	// - converting files artifacts mountpoints to FilesArtifactsExpansion's'
+	// - passing down other data (eg. container image name, args, etc.)
+	for guid, config := range APIServiceConfigs {
+		// Convert ports
+		privateServicePortSpecs, requestedPublicServicePortSpecs, err := convertAPIPortsToPortSpecs(config.PrivatePorts, config.PublicPorts)
+		if err != nil {
+			failedServicesPool[guid] = stacktrace.Propagate(err, "An error occurred while trying to convert public and private API ports to port specs for service with GUID '%v'", guid)
+			continue
+		}
+
+		// Creates files artifacts expansions
+		var filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion
+		if len(config.FilesArtifactMountpoints) == 0 {
+			// Create service config with empty filesArtifactsExpansion if no files artifacts mountpoints for this service
+			serviceConfigs[guid] = service.NewServiceConfig(
+				config.ContainerImageName,
+				privateServicePortSpecs,
+				requestedPublicServicePortSpecs,
+				config.EntrypointArgs,
+				config.CmdArgs,
+				config.EnvVars,
+				filesArtifactsExpansion,
+				config.CpuAllocationMillicpus,
+				config.MemoryAllocationMegabytes)
+			continue
+		}
+
+		filesArtifactsExpansions := []args.FilesArtifactExpansion{}
+		expanderDirpathToUserServiceDirpathMap := map[string]string{}
+		for filesArtifactUUIDStr, mountpointOnUserService := range config.FilesArtifactMountpoints {
+			dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, filesArtifactUUIDStr)
+			expansion := args.FilesArtifactExpansion{
+				FilesArtifactUUID: filesArtifactUUIDStr,
+				DirPathToExpandTo: dirpathToExpandTo,
+			}
+			filesArtifactsExpansions = append(filesArtifactsExpansions, expansion)
+
+			expanderDirpathToUserServiceDirpathMap[dirpathToExpandTo] = mountpointOnUserService
+		}
+
+		filesArtifactsExpanderArgs, err := args.NewFilesArtifactsExpanderArgs(
+			network.apiContainerIpAddress.String(),
+			network.apiContainerGrpcPortNum,
+			filesArtifactsExpansions,
+		)
+		if err != nil {
+			failedServicesPool[guid] = stacktrace.Propagate(err, "An error occurred creating files artifacts expander args for service `%v`", guid)
+			continue
+		}
+		expanderEnvVars, err := args.GetEnvFromArgs(filesArtifactsExpanderArgs)
+		if err != nil {
+			failedServicesPool[guid] =  stacktrace.Propagate(err, "An error occurred getting files artifacts expander environment variables using args: %+v", filesArtifactsExpanderArgs)
+			continue
+		}
+
+		expanderImageAndTag := fmt.Sprintf(
+			"%v:%v",
+			filesArtifactsExpanderImage,
+			network.apiContainerVersion,
+		)
+
+		filesArtifactsExpansion = &files_artifacts_expansion.FilesArtifactsExpansion{
+			ExpanderImage:                     expanderImageAndTag,
+			ExpanderEnvVars:                   expanderEnvVars,
+			ExpanderDirpathsToServiceDirpaths: expanderDirpathToUserServiceDirpathMap,
+		}
+
+		serviceConfigs[guid] = service.NewServiceConfig(
+			config.ContainerImageName,
+			privateServicePortSpecs,
+			requestedPublicServicePortSpecs,
+			config.EntrypointArgs,
+			config.CmdArgs,
+			config.EnvVars,
+			filesArtifactsExpansion,
+			config.CpuAllocationMillicpus,
+			config.MemoryAllocationMegabytes)
+	}
+
+	successfulServices, failedServices, err := network.kurtosisBackend.StartUserServices(ctx, network.enclaveId, serviceConfigs)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred starting user services in underlying container engine.")
+	}
+
+	// Add services that failed to start to failed services pool
+	for guid, serviceErr := range failedServices {
+		failedServicesPool[guid] = serviceErr
+	}
+
+	return successfulServices, failedServices, nil
+}
+
 func (network *ServiceNetwork) gzipAndPushTarredFileBytesToOutput(
 	ctx context.Context,
 	output io.WriteCloser,
@@ -818,5 +1216,86 @@ func (network *ServiceNetwork) gzipAndPushTarredFileBytesToOutput(
 		return stacktrace.Propagate(err, "An error occurred copying source '%v' from user service with GUID '%v' in enclave with ID '%v'", srcPathOnContainer, serviceGuid, network.enclaveId)
 	}
 
+	return nil
+}
+
+func convertAPIPortsToPortSpecs(
+	privateAPIPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
+	publicAPIPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
+) (
+	resultPrivatePortSpecs map[string]*port_spec.PortSpec,
+	resultPublicPortSpecs map[string]*port_spec.PortSpec,
+	resultErr error,
+) {
+	privatePortSpecs := map[string]*port_spec.PortSpec{}
+	for portID, privateAPIPort := range privateAPIPorts {
+		privatePortSpec, err := transformApiPortToPortSpec(privateAPIPort)
+		if err != nil {
+			return nil, nil, stacktrace.NewError("An error occurred transforming the API port for private port '%v' into a port spec port", portID)
+		}
+		privatePortSpecs[portID] = privatePortSpec
+	}
+
+	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	if len(publicAPIPorts) > 0 {
+		err := checkPrivateAndPublicPortsAreOneToOne(privateAPIPorts, publicAPIPorts)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "Provided public and private ports are not one to one.")
+		}
+	}
+
+	publicPortSpecs := map[string]*port_spec.PortSpec{}
+	for portID, publicAPIPort := range publicAPIPorts {
+		publicPortSpec, err := transformApiPortToPortSpec(publicAPIPort)
+		if err != nil {
+			return nil, nil, stacktrace.NewError("An error occurred transforming the API port for public port '%v' into a port spec port", portID)
+		}
+		publicPortSpecs[portID] = publicPortSpec
+	}
+	//TODO Finished the huge hack to temporarily enable static ports for NEAR
+	return privatePortSpecs, publicPortSpecs, nil
+}
+
+func transformApiPortToPortSpec(port *kurtosis_core_rpc_api_bindings.Port) (*port_spec.PortSpec, error) {
+	portNumUint32 := port.GetNumber()
+	apiProto := port.GetProtocol()
+	if portNumUint32 > math.MaxUint16 {
+		return nil, stacktrace.NewError(
+			"API port num '%v' is bigger than max allowed port spec port num '%v'",
+			portNumUint32,
+			math.MaxUint16,
+		)
+	}
+	portNumUint16 := uint16(portNumUint32)
+	portSpecProto, found := apiContainerPortProtoToPortSpecPortProto[apiProto]
+	if !found {
+		return nil, stacktrace.NewError("Couldn't find a port spec proto for API port proto '%v'; this should never happen, and is a bug in Kurtosis!", apiProto.String())
+	}
+	result, err := port_spec.NewPortSpec(portNumUint16, portSpecProto)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating port spec object with port num '%v' and protocol '%v'",
+			portNumUint16,
+			portSpecProto,
+		)
+	}
+	return result, nil
+}
+
+// Ensure that provided [privatePorts] and [publicPorts] are one to one by checking:
+// - There is a matching publicPort for every portID in privatePorts
+// - There are the same amount of private and public ports
+// If error is nil, the public and private ports are one to one.
+func checkPrivateAndPublicPortsAreOneToOne(privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port, publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port) error {
+	if len(privatePorts) != len(publicPorts) {
+		return stacktrace.NewError("The received private ports length and the public ports length are not equal. Received '%v' private ports and '%v' public ports", len(privatePorts), len(publicPorts))
+	}
+
+	for portID, privatePortSpec := range privatePorts {
+		if _, found := publicPorts[portID]; !found {
+			return stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portID, privatePortSpec.GetNumber())
+		}
+	}
 	return nil
 }

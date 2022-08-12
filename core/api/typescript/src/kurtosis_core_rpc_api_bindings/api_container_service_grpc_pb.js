@@ -170,6 +170,28 @@ function deserialize_api_container_api_RegisterServiceResponse(buffer_arg) {
   return api_container_service_pb.RegisterServiceResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_RegisterServicesArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.RegisterServicesArgs)) {
+    throw new Error('Expected argument of type api_container_api.RegisterServicesArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_RegisterServicesArgs(buffer_arg) {
+  return api_container_service_pb.RegisterServicesArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_RegisterServicesResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.RegisterServicesResponse)) {
+    throw new Error('Expected argument of type api_container_api.RegisterServicesResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_RegisterServicesResponse(buffer_arg) {
+  return api_container_service_pb.RegisterServicesResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_RemoveServiceArgs(arg) {
   if (!(arg instanceof api_container_service_pb.RemoveServiceArgs)) {
     throw new Error('Expected argument of type api_container_api.RemoveServiceArgs');
@@ -223,6 +245,28 @@ function serialize_api_container_api_StartServiceResponse(arg) {
 
 function deserialize_api_container_api_StartServiceResponse(buffer_arg) {
   return api_container_service_pb.StartServiceResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_StartServicesArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.StartServicesArgs)) {
+    throw new Error('Expected argument of type api_container_api.StartServicesArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_StartServicesArgs(buffer_arg) {
+  return api_container_service_pb.StartServicesArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_StartServicesResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.StartServicesResponse)) {
+    throw new Error('Expected argument of type api_container_api.StartServicesResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_StartServicesResponse(buffer_arg) {
+  return api_container_service_pb.StartServicesResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_StoreFilesArtifactFromServiceArgs(arg) {
@@ -419,6 +463,18 @@ registerService: {
     responseSerialize: serialize_api_container_api_RegisterServiceResponse,
     responseDeserialize: deserialize_api_container_api_RegisterServiceResponse,
   },
+  // Registers services with the API container but doesn't start the containers for them
+registerServices: {
+    path: '/api_container_api.ApiContainerService/RegisterServices',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.RegisterServicesArgs,
+    responseType: api_container_service_pb.RegisterServicesResponse,
+    requestSerialize: serialize_api_container_api_RegisterServicesArgs,
+    requestDeserialize: deserialize_api_container_api_RegisterServicesArgs,
+    responseSerialize: serialize_api_container_api_RegisterServicesResponse,
+    responseDeserialize: deserialize_api_container_api_RegisterServicesResponse,
+  },
   // Starts a previously-registered service by creating a Docker container for it
 startService: {
     path: '/api_container_api.ApiContainerService/StartService',
@@ -430,6 +486,18 @@ startService: {
     requestDeserialize: deserialize_api_container_api_StartServiceArgs,
     responseSerialize: serialize_api_container_api_StartServiceResponse,
     responseDeserialize: deserialize_api_container_api_StartServiceResponse,
+  },
+  // Starts previously-registered services by creating containers for them
+startServices: {
+    path: '/api_container_api.ApiContainerService/StartServices',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.StartServicesArgs,
+    responseType: api_container_service_pb.StartServicesResponse,
+    requestSerialize: serialize_api_container_api_StartServicesArgs,
+    requestDeserialize: deserialize_api_container_api_StartServicesArgs,
+    responseSerialize: serialize_api_container_api_StartServicesResponse,
+    responseDeserialize: deserialize_api_container_api_StartServicesResponse,
   },
   // Returns the IDs of the current services in the enclave
 getServices: {

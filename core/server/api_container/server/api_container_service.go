@@ -171,9 +171,54 @@ func (apicService ApiContainerService) RegisterService(ctx context.Context, args
 		return nil, stacktrace.Propagate(err, "An error occurred registering service '%v' in the service network", serviceId)
 	}
 
-	return &kurtosis_core_rpc_api_bindings.RegisterServiceResponse{
-		PrivateIpAddr: privateIpAddr.String(),
-	}, nil
+	return binding_constructors.NewRegisterServiceResponse(privateIpAddr.String()), nil
+}
+
+func (apicService ApiContainerService) RegisterServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServicesArgs) (*kurtosis_core_rpc_api_bindings.RegisterServicesResponse, error) {
+	failedServicesPool := map[kurtosis_backend_service.ServiceID]error{}
+	serviceIDs := map[kurtosis_backend_service.ServiceID]bool{}
+
+	for id := range args.ServiceIdSet {
+		serviceIDs[kurtosis_backend_service.ServiceID(id)] = true
+	}
+	partitionId := service_network_types.PartitionID(args.PartitionId)
+	serviceIDsToIPs, failedServiceErrors, err := apicService.serviceNetwork.RegisterServices(ctx, serviceIDs, partitionId)
+	if err != nil {
+		// TODO IP: Leaks internal information about API container
+		return nil, stacktrace.Propagate(err, "An error occurred registering services '%v' in the service network", serviceIDs)
+	}
+	// Defer an undo of successfully created resource in case anything goes wrong in remainder of function
+	shouldRemoveRegistrations := map[kurtosis_backend_service.ServiceID]bool{}
+	for serviceID, _ := range serviceIDsToIPs {
+		shouldRemoveRegistrations[serviceID] = true
+	}
+	defer func() {
+		for serviceID, _ := range shouldRemoveRegistrations {
+			_, err := apicService.serviceNetwork.RemoveService(context.Background(), serviceID)
+			failedServicesPool[serviceID] = stacktrace.Propagate(err,
+				"Attempted to remove service '%v' to delete its resources after it failed, but an error occurred" +
+					"while attempting to remove the service.", serviceID)
+		}
+	}()
+	// Add failed services to failed services pool
+	for serviceID, registrationError := range failedServiceErrors {
+		failedServicesPool[serviceID] = registrationError
+	}
+
+	serviceIDsToIPsStrs := map[string]string{}
+	for id, ip := range serviceIDsToIPs {
+		serviceIDsToIPsStrs[string(id)] = ip.String()
+	}
+	failedServiceIDsToErrStrs := map[string]string{}
+	for id, serviceErr := range failedServicesPool {
+		failedServiceIDsToErrStrs[string(id)] = serviceErr.Error()
+	}
+
+	// Do not remove services that were successful
+	for serviceIDStr, _ :=  range serviceIDsToIPsStrs {
+		delete(shouldRemoveRegistrations, kurtosis_backend_service.ServiceID(serviceIDStr))
+	}
+	return binding_constructors.NewRegisterServicesResponse(serviceIDsToIPsStrs, failedServiceIDsToErrStrs), nil
 }
 
 func (apicService ApiContainerService) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
@@ -261,13 +306,75 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 	return response, nil
 }
 
+func (apicService ApiContainerService) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error){
+	failedServicesPool := map[kurtosis_backend_service.ServiceID]error{}
+	serviceIDsToAPIConfigs := map[kurtosis_backend_service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
+
+	for serviceIDStr, apiServiceConfig := range args.ServiceIdsToConfigs {
+		logrus.Debugf("Received request to start service with the following args: %+v", apiServiceConfig)
+		serviceIDsToAPIConfigs[kurtosis_backend_service.ServiceID(serviceIDStr)] = apiServiceConfig
+	}
+
+	successfulServices, failedServices, err := apicService.serviceNetwork.StartServices(ctx, serviceIDsToAPIConfigs)
+	if err != nil {
+		// TODO IP: Leaks internal information about the API container
+		return nil, stacktrace.Propagate(err, "An error occurred starting services in the service network")
+	}
+	// TODO We SHOULD defer an undo to undo the service-starting resource that we did here, but we don't have a way to just undo
+	// that and leave the registration intact (since we only have RemoveService as of 2022-08-11, but that also deletes the registration,
+	// which would mean deleting a resource we don't own here)
+
+	for serviceID, serviceErr := range failedServices {
+		failedServicesPool[serviceID] = serviceErr
+		logrus.Debugf("Failed to start service '%v'", serviceID)
+	}
+
+	serviceIDsToServiceInfo := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
+	for serviceID, startedService := range successfulServices {
+		serviceRegistration := startedService.GetRegistration()
+		serviceGuidStr := string(serviceRegistration.GetGUID())
+		privateServiceIpStr := serviceRegistration.GetPrivateIP().String()
+		privateServicePortSpecs := startedService.GetPrivatePorts()
+		privateApiPorts, err := transformPortSpecMapToApiPortsMap(privateServicePortSpecs)
+		if err != nil {
+			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred transforming the service '%v' private port specs to API ports", serviceID)
+			continue
+		}
+		publicServicePortSpecs := startedService.GetMaybePublicPorts()
+		publicApiPorts, err := transformPortSpecMapToApiPortsMap(publicServicePortSpecs)
+		if err != nil {
+			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred transforming the service '%v' public port specs to API ports.", serviceID)
+			continue
+		}
+		maybePublicIpAddr := startedService.GetMaybePublicIP()
+		publicIpAddrStr := missingPublicIpAddrStr
+		if maybePublicIpAddr != nil {
+			publicIpAddrStr = maybePublicIpAddr.String()
+		}
+
+		serviceIDsToServiceInfo[string(serviceID)] = binding_constructors.NewServiceInfo(serviceGuidStr, privateServiceIpStr, privateApiPorts, publicIpAddrStr, publicApiPorts)
+		serviceStartLoglineSuffix := ""
+		if len(publicServicePortSpecs) > 0 {
+			serviceStartLoglineSuffix = fmt.Sprintf(
+				" with the following public ports: %+v",
+				publicServicePortSpecs,
+			)
+		}
+		logrus.Infof("Started service '%v'%v", serviceID, serviceStartLoglineSuffix)
+	}
+
+	failedServiceIDsToErrorStr := map[string]string{}
+	for id, serviceErr := range failedServicesPool {
+		failedServiceIDsToErrorStr[string(id)] = serviceErr.Error()
+	}
+
+	return binding_constructors.NewStartServicesResponse(serviceIDsToServiceInfo, failedServiceIDsToErrorStr), nil
+}
+
 func (apicService ApiContainerService) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*kurtosis_core_rpc_api_bindings.RemoveServiceResponse, error) {
 	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
 
-	containerStopTimeoutSeconds := args.ContainerStopTimeoutSeconds
-	containerStopTimeout := time.Duration(containerStopTimeoutSeconds) * time.Second
-
-	serviceGuid, err := apicService.serviceNetwork.RemoveService(ctx, serviceId, containerStopTimeout)
+	serviceGuid, err := apicService.serviceNetwork.RemoveService(ctx, serviceId)
 	if err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "An error occurred removing service with ID '%v'", serviceId)

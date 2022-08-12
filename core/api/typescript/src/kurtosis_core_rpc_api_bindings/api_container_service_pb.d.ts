@@ -65,6 +65,60 @@ export namespace ServiceInfo {
   }
 }
 
+export class ServiceConfig extends jspb.Message {
+  getContainerImageName(): string;
+  setContainerImageName(value: string): ServiceConfig;
+
+  getPrivatePortsMap(): jspb.Map<string, Port>;
+  clearPrivatePortsMap(): ServiceConfig;
+
+  getPublicPortsMap(): jspb.Map<string, Port>;
+  clearPublicPortsMap(): ServiceConfig;
+
+  getEntrypointArgsList(): Array<string>;
+  setEntrypointArgsList(value: Array<string>): ServiceConfig;
+  clearEntrypointArgsList(): ServiceConfig;
+  addEntrypointArgs(value: string, index?: number): ServiceConfig;
+
+  getCmdArgsList(): Array<string>;
+  setCmdArgsList(value: Array<string>): ServiceConfig;
+  clearCmdArgsList(): ServiceConfig;
+  addCmdArgs(value: string, index?: number): ServiceConfig;
+
+  getEnvVarsMap(): jspb.Map<string, string>;
+  clearEnvVarsMap(): ServiceConfig;
+
+  getFilesArtifactMountpointsMap(): jspb.Map<string, string>;
+  clearFilesArtifactMountpointsMap(): ServiceConfig;
+
+  getCpuAllocationMillicpus(): number;
+  setCpuAllocationMillicpus(value: number): ServiceConfig;
+
+  getMemoryAllocationMegabytes(): number;
+  setMemoryAllocationMegabytes(value: number): ServiceConfig;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ServiceConfig.AsObject;
+  static toObject(includeInstance: boolean, msg: ServiceConfig): ServiceConfig.AsObject;
+  static serializeBinaryToWriter(message: ServiceConfig, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ServiceConfig;
+  static deserializeBinaryFromReader(message: ServiceConfig, reader: jspb.BinaryReader): ServiceConfig;
+}
+
+export namespace ServiceConfig {
+  export type AsObject = {
+    containerImageName: string,
+    privatePortsMap: Array<[string, Port.AsObject]>,
+    publicPortsMap: Array<[string, Port.AsObject]>,
+    entrypointArgsList: Array<string>,
+    cmdArgsList: Array<string>,
+    envVarsMap: Array<[string, string]>,
+    filesArtifactMountpointsMap: Array<[string, string]>,
+    cpuAllocationMillicpus: number,
+    memoryAllocationMegabytes: number,
+  }
+}
+
 export class ModuleInfo extends jspb.Message {
   getGuid(): string;
   setGuid(value: string): ModuleInfo;
@@ -301,6 +355,28 @@ export namespace RegisterServiceArgs {
   }
 }
 
+export class RegisterServicesArgs extends jspb.Message {
+  getServiceIdSetMap(): jspb.Map<string, boolean>;
+  clearServiceIdSetMap(): RegisterServicesArgs;
+
+  getPartitionId(): string;
+  setPartitionId(value: string): RegisterServicesArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RegisterServicesArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: RegisterServicesArgs): RegisterServicesArgs.AsObject;
+  static serializeBinaryToWriter(message: RegisterServicesArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RegisterServicesArgs;
+  static deserializeBinaryFromReader(message: RegisterServicesArgs, reader: jspb.BinaryReader): RegisterServicesArgs;
+}
+
+export namespace RegisterServicesArgs {
+  export type AsObject = {
+    serviceIdSetMap: Array<[string, boolean]>,
+    partitionId: string,
+  }
+}
+
 export class RegisterServiceResponse extends jspb.Message {
   getPrivateIpAddr(): string;
   setPrivateIpAddr(value: string): RegisterServiceResponse;
@@ -316,6 +392,28 @@ export class RegisterServiceResponse extends jspb.Message {
 export namespace RegisterServiceResponse {
   export type AsObject = {
     privateIpAddr: string,
+  }
+}
+
+export class RegisterServicesResponse extends jspb.Message {
+  getServiceIdsToPrivateIpAddressesMap(): jspb.Map<string, string>;
+  clearServiceIdsToPrivateIpAddressesMap(): RegisterServicesResponse;
+
+  getFailedServiceIdsToErrorMap(): jspb.Map<string, string>;
+  clearFailedServiceIdsToErrorMap(): RegisterServicesResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RegisterServicesResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: RegisterServicesResponse): RegisterServicesResponse.AsObject;
+  static serializeBinaryToWriter(message: RegisterServicesResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RegisterServicesResponse;
+  static deserializeBinaryFromReader(message: RegisterServicesResponse, reader: jspb.BinaryReader): RegisterServicesResponse;
+}
+
+export namespace RegisterServicesResponse {
+  export type AsObject = {
+    serviceIdsToPrivateIpAddressesMap: Array<[string, string]>,
+    failedServiceIdsToErrorMap: Array<[string, string]>,
   }
 }
 
@@ -377,6 +475,24 @@ export namespace StartServiceArgs {
   }
 }
 
+export class StartServicesArgs extends jspb.Message {
+  getServiceIdsToConfigsMap(): jspb.Map<string, ServiceConfig>;
+  clearServiceIdsToConfigsMap(): StartServicesArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StartServicesArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: StartServicesArgs): StartServicesArgs.AsObject;
+  static serializeBinaryToWriter(message: StartServicesArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StartServicesArgs;
+  static deserializeBinaryFromReader(message: StartServicesArgs, reader: jspb.BinaryReader): StartServicesArgs;
+}
+
+export namespace StartServicesArgs {
+  export type AsObject = {
+    serviceIdsToConfigsMap: Array<[string, ServiceConfig.AsObject]>,
+  }
+}
+
 export class StartServiceResponse extends jspb.Message {
   getServiceInfo(): ServiceInfo | undefined;
   setServiceInfo(value?: ServiceInfo): StartServiceResponse;
@@ -394,6 +510,28 @@ export class StartServiceResponse extends jspb.Message {
 export namespace StartServiceResponse {
   export type AsObject = {
     serviceInfo?: ServiceInfo.AsObject,
+  }
+}
+
+export class StartServicesResponse extends jspb.Message {
+  getSuccessfulServiceIdsToServiceInfoMap(): jspb.Map<string, ServiceInfo>;
+  clearSuccessfulServiceIdsToServiceInfoMap(): StartServicesResponse;
+
+  getFailedServiceIdsToErrorMap(): jspb.Map<string, string>;
+  clearFailedServiceIdsToErrorMap(): StartServicesResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StartServicesResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: StartServicesResponse): StartServicesResponse.AsObject;
+  static serializeBinaryToWriter(message: StartServicesResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StartServicesResponse;
+  static deserializeBinaryFromReader(message: StartServicesResponse, reader: jspb.BinaryReader): StartServicesResponse;
+}
+
+export namespace StartServicesResponse {
+  export type AsObject = {
+    successfulServiceIdsToServiceInfoMap: Array<[string, ServiceInfo.AsObject]>,
+    failedServiceIdsToErrorMap: Array<[string, string]>,
   }
 }
 
@@ -437,9 +575,6 @@ export class RemoveServiceArgs extends jspb.Message {
   getServiceId(): string;
   setServiceId(value: string): RemoveServiceArgs;
 
-  getContainerStopTimeoutSeconds(): number;
-  setContainerStopTimeoutSeconds(value: number): RemoveServiceArgs;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RemoveServiceArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RemoveServiceArgs): RemoveServiceArgs.AsObject;
@@ -451,7 +586,6 @@ export class RemoveServiceArgs extends jspb.Message {
 export namespace RemoveServiceArgs {
   export type AsObject = {
     serviceId: string,
-    containerStopTimeoutSeconds: number,
   }
 }
 

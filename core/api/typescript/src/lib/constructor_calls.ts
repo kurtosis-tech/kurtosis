@@ -11,7 +11,6 @@ import {
     PartitionConnections,
     PartitionConnectionInfo,
     RegisterServiceArgs,
-    StartServiceArgs,
     RemoveServiceArgs,
     RepartitionArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
@@ -28,10 +27,12 @@ import {
     UnpauseServiceArgs,
     ModuleInfo,
     ServiceInfo,
+    ServiceConfig,
+    StartServiceArgs,
     RemoveServiceResponse,
     UnloadModuleResponse,
     GetModulesResponse,
-    GetServicesResponse
+    GetServicesResponse, RegisterServicesArgs, StartServicesArgs
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceID } from './services/service';
 import { PartitionID } from './enclaves/enclave_context';
@@ -44,6 +45,50 @@ export function newPort(number: number, protocol: Port.Protocol) {
     const result: Port = new Port();
     result.setNumber(number);
     result.setProtocol(protocol);
+    return result;
+}
+
+export function newServiceConfig(
+    containerImageName : string,
+    privatePorts : Map<string, Port>,
+    publicPorts : Map<string, Port>,
+    entrypointOverrideArgs: string[],
+    cmdOverrideArgs: string[],
+    environmentVariableOverrides : Map<string, string>,
+    filesArtifactMountDirpaths : Map<string, string>,
+    cpuAllocationMillicpus : number,
+    memoryAllocationMegabytes : number
+) {
+    const result : ServiceConfig = new ServiceConfig();
+    result.setContainerImageName(containerImageName);
+    const usedPortsMap: jspb.Map<string, Port> = result.getPrivatePortsMap();
+    for (const [portId, portSpec] of privatePorts) {
+        usedPortsMap.set(portId, portSpec);
+    }
+    //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+    const publicPortsMap: jspb.Map<string, Port> = result.getPublicPortsMap();
+    for (const [portId, portSpec] of publicPorts) {
+        publicPortsMap.set(portId, portSpec);
+    }
+    //TODO finish the hack
+    const entrypointArgsArray: string[] = result.getEntrypointArgsList();
+    for (const entryPoint of entrypointOverrideArgs) {
+        entrypointArgsArray.push(entryPoint);
+    }
+    const cmdArgsArray: string[] = result.getCmdArgsList();
+    for (const cmdArg of cmdOverrideArgs) {
+        cmdArgsArray.push(cmdArg);
+    }
+    const envVarArray: jspb.Map<string, string> = result.getEnvVarsMap();
+    for (const [name, value] of environmentVariableOverrides) {
+        envVarArray.set(name, value);
+    }
+    const filesArtifactMountDirpathsMap: jspb.Map<string, string> = result.getFilesArtifactMountpointsMap();
+    for (const [artifactId, mountDirpath] of filesArtifactMountDirpaths) {
+        filesArtifactMountDirpathsMap.set(artifactId, mountDirpath);
+    }
+    result.setCpuAllocationMillicpus(cpuAllocationMillicpus);
+    result.setMemoryAllocationMegabytes(memoryAllocationMegabytes);
     return result;
 }
 
@@ -142,6 +187,17 @@ export function newRegisterServiceArgs(serviceId: ServiceID, partitionId: Partit
     return result;
 }
 
+export function newRegisterServicesArgs(serviceIds: Map<ServiceID, boolean>, partitionId: PartitionID): RegisterServicesArgs {
+    const result : RegisterServicesArgs = new RegisterServicesArgs();
+    const serviceIdSet: jspb.Map<string, boolean> = result.getServiceIdSetMap();
+    for (const [serviceId, _] of serviceIds) {
+        serviceIdSet.set(String(serviceId), true);
+    }
+    result.setPartitionId(String(partitionId));
+
+    return result;
+}
+
 
 // ==============================================================================================
 //                                        Start Service
@@ -190,6 +246,16 @@ export function newStartServiceArgs(
         publicPortsMap.set(portId, portSpec);
     }
     //TODO finish the hack
+
+    return result;
+}
+
+export function newStartServicesArgs(serviceConfigs : Map<ServiceID, ServiceConfig>) : StartServicesArgs {
+    const result : StartServicesArgs = new StartServicesArgs();
+    const serviceIdsToConfigs : jspb.Map<string, ServiceConfig> = result.getServiceIdsToConfigsMap();
+    for (const [serviceId, serviceConfig] of serviceConfigs) {
+        serviceIdsToConfigs.set(String(serviceId), serviceConfig);
+    }
 
     return result;
 }
@@ -245,10 +311,9 @@ export function newServiceInfo(
 // ==============================================================================================
 //                                        Remove Service
 // ==============================================================================================
-export function newRemoveServiceArgs(serviceId: ServiceID, containerStopTimeoutSeconds: number): RemoveServiceArgs {
+export function newRemoveServiceArgs(serviceId: ServiceID): RemoveServiceArgs {
     const result: RemoveServiceArgs = new RemoveServiceArgs();
     result.setServiceId(serviceId);
-    result.setContainerStopTimeoutSeconds(containerStopTimeoutSeconds);
 
     return result;
 }

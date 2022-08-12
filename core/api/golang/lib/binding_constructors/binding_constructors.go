@@ -17,6 +17,29 @@ func NewPort(number uint32, protocol kurtosis_core_rpc_api_bindings.Port_Protoco
 	}
 }
 
+func NewServiceConfig(
+	containerImageName string,
+	privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
+	publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	entrypointArgs []string,
+	cmdArgs []string,
+	envVars map[string]string,
+	filesArtifactMountDirpaths map[string]string,
+	cpuAllocationMillicpus uint64,
+	memoryAllocationMegabytes uint64) *kurtosis_core_rpc_api_bindings.ServiceConfig {
+	return &kurtosis_core_rpc_api_bindings.ServiceConfig{
+		ContainerImageName:        containerImageName,
+		PrivatePorts:              privatePorts,
+		PublicPorts:               publicPorts,
+		EntrypointArgs:            entrypointArgs,
+		CmdArgs:                   cmdArgs,
+		EnvVars:                   envVars,
+		FilesArtifactMountpoints:  filesArtifactMountDirpaths,
+		CpuAllocationMillicpus:    cpuAllocationMillicpus,
+		MemoryAllocationMegabytes: memoryAllocationMegabytes,
+	}
+}
+
 // ==============================================================================================
 //                                     Load Module
 // ==============================================================================================
@@ -118,9 +141,23 @@ func NewRegisterServiceArgs(serviceId string, partitionId string) *kurtosis_core
 	}
 }
 
+func NewRegisterServicesArgs(serviceIDSet map[string]bool, partitionID string) *kurtosis_core_rpc_api_bindings.RegisterServicesArgs{
+	return &kurtosis_core_rpc_api_bindings.RegisterServicesArgs{
+		ServiceIdSet: serviceIDSet,
+		PartitionId: partitionID,
+	}
+}
+
 func NewRegisterServiceResponse(privateIpAddr string) *kurtosis_core_rpc_api_bindings.RegisterServiceResponse {
 	return &kurtosis_core_rpc_api_bindings.RegisterServiceResponse{
 		PrivateIpAddr: privateIpAddr,
+	}
+}
+
+func NewRegisterServicesResponse(serviceIDsToIPsMap map[string]string, failedServicesErrors map[string]string) *kurtosis_core_rpc_api_bindings.RegisterServicesResponse {
+	return &kurtosis_core_rpc_api_bindings.RegisterServicesResponse{
+		ServiceIdsToPrivateIpAddresses: serviceIDsToIPsMap,
+		FailedServiceIdsToError: failedServicesErrors,
 	}
 }
 
@@ -153,12 +190,26 @@ func NewStartServiceArgs(
 	}
 }
 
+func NewStartServicesArgs(serviceConfigs map[string]*kurtosis_core_rpc_api_bindings.ServiceConfig) *kurtosis_core_rpc_api_bindings.StartServicesArgs {
+	return &kurtosis_core_rpc_api_bindings.StartServicesArgs{
+		ServiceIdsToConfigs: serviceConfigs,
+	}
+}
+
 func NewStartServiceResponse(privateIpAddr string, privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port, publicIpAddr string, publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port, serviceGuid string) *kurtosis_core_rpc_api_bindings.StartServiceResponse {
 	return &kurtosis_core_rpc_api_bindings.StartServiceResponse{
 		ServiceInfo: NewServiceInfo(serviceGuid, privateIpAddr, privatePorts, publicIpAddr, publicPorts),
 	}
 }
 
+func NewStartServicesResponse(
+	successfulServicesInfo map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo,
+	failedServicesErrors map[string]string) *kurtosis_core_rpc_api_bindings.StartServicesResponse {
+	return &kurtosis_core_rpc_api_bindings.StartServicesResponse{
+		SuccessfulServiceIdsToServiceInfo: successfulServicesInfo,
+		FailedServiceIdsToError: failedServicesErrors,
+	}
+}
 // ==============================================================================================
 //                                       Get Service Info
 // ==============================================================================================
@@ -195,10 +246,9 @@ func NewServiceInfo(
 // ==============================================================================================
 //                                        Remove Service
 // ==============================================================================================
-func NewRemoveServiceArgs(serviceId string, containerStopTimeoutSeconds uint64) *kurtosis_core_rpc_api_bindings.RemoveServiceArgs {
+func NewRemoveServiceArgs(serviceId string) *kurtosis_core_rpc_api_bindings.RemoveServiceArgs {
 	return &kurtosis_core_rpc_api_bindings.RemoveServiceArgs{
 		ServiceId:                   serviceId,
-		ContainerStopTimeoutSeconds: containerStopTimeoutSeconds,
 	}
 }
 

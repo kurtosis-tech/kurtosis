@@ -44,12 +44,26 @@ export class ApiContainerServiceClient {
                response: api_container_service_pb.RegisterServiceResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.RegisterServiceResponse>;
 
+  registerServices(
+    request: api_container_service_pb.RegisterServicesArgs,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: api_container_service_pb.RegisterServicesResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.RegisterServicesResponse>;
+
   startService(
     request: api_container_service_pb.StartServiceArgs,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
                response: api_container_service_pb.StartServiceResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.StartServiceResponse>;
+
+  startServices(
+    request: api_container_service_pb.StartServicesArgs,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: api_container_service_pb.StartServicesResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.StartServicesResponse>;
 
   getServices(
     request: api_container_service_pb.GetServicesArgs,
@@ -167,10 +181,20 @@ export class ApiContainerServicePromiseClient {
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.RegisterServiceResponse>;
 
+  registerServices(
+    request: api_container_service_pb.RegisterServicesArgs,
+    metadata?: grpcWeb.Metadata
+  ): Promise<api_container_service_pb.RegisterServicesResponse>;
+
   startService(
     request: api_container_service_pb.StartServiceArgs,
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.StartServiceResponse>;
+
+  startServices(
+    request: api_container_service_pb.StartServicesArgs,
+    metadata?: grpcWeb.Metadata
+  ): Promise<api_container_service_pb.StartServicesResponse>;
 
   getServices(
     request: api_container_service_pb.GetServicesArgs,
