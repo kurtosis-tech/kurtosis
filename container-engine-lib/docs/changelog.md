@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+* Refactor `DockerOperationParallelizer` to use `operation_parallelizer` module
+
 # 0.34.1
 ### Changes
 * Migrated the `engine functions` from `docker_kurtosis_backend` package to the `engine_functions` package
