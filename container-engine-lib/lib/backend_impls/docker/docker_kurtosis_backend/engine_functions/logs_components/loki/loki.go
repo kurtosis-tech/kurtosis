@@ -17,10 +17,10 @@ const (
 )
 
 type Loki struct {
-	config *LokiConfig
+	config *Config
 }
 
-func NewLoki(config *LokiConfig) *Loki {
+func NewLoki(config *Config) *Loki {
 	return &Loki{config: config}
 }
 

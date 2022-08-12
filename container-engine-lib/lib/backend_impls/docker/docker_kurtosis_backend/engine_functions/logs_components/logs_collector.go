@@ -1,17 +1,15 @@
-package logs_database
+package logs_components
 
 import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 )
 
-type LogsDatabase interface {
-	GetPrivateHttpPortSpec() (*port_spec.PortSpec, error)
+type LogsCollector interface {
+	GetPrivateTcpPortSpec() (*port_spec.PortSpec, error)
 	GetContainerArgs(
 		containerName string,
 		containerLabels map[string]string,
-		volumeName string,
 		networkId string,
 	) (*docker_manager.CreateAndStartContainerArgs, error)
-	GetConfigContent() (string, error)
 }

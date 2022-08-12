@@ -1,6 +1,6 @@
 package loki
 
-type LokiConfig struct {
+type Config struct {
 	AuthEnabled   bool          `yaml:"auth_enabled"`
 	Server        Server        `yaml:"server"`
 	Common        Common        `yaml:"common"`
@@ -54,8 +54,8 @@ type Configs struct {
 	From        string `yaml:"from"`
 	Store       string `yaml:"store"`
 	ObjectStore string `yaml:"object_store"`
-	Schema      string `yaml:"schema"`
-	Index       Index  `yaml:"index"`
+	Schema string `yaml:"schema"`
+	Index  Index  `yaml:"index"`
 }
 
 type SchemaConfig struct {
@@ -88,8 +88,8 @@ type RuntimeConfig struct {
 	Period string `yaml:"period"`
 }
 
-func newDefaultLokiConfigForKurtosisCentralizedLogs() *LokiConfig {
-	newConfig := &LokiConfig{
+func newDefaultConfigForKurtosisCentralizedLogs() *Config {
+	newConfig := &Config{
 		AuthEnabled: authEnabled,
 		Server: Server{
 			HTTPListenPort: httpPortNumber,
@@ -135,7 +135,7 @@ func newDefaultLokiConfigForKurtosisCentralizedLogs() *LokiConfig {
 		},
 		LimitsConfig: LimitsConfig{
 			RetentionPeriod: limitsRetentionPeriod,
-			AllowDeletes: allowDeletes,
+			AllowDeletes:    allowDeletes,
 		},
 		Analytics: Analytics{
 			ReportingEnabled: analyticsEnabled,
