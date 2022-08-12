@@ -1,5 +1,7 @@
 # TBD
 
+# 1.30.0
+
 ### Breaking Changes
 * Upgrade container-engine-lib to 0.34.1
   * Users will have to restart their Kurtosis engine
