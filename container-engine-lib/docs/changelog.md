@@ -1,4 +1,6 @@
 # TBD
+
+# 0.34.1
 ### Changes
 * Migrated the `engine functions` from `docker_kurtosis_backend` package to the `engine_functions` package
 * Removed duplicated shared functions that where present in the both the `docker_kurtosis_backend` package and the `shared_helpers` package
