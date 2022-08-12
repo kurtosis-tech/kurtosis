@@ -60,6 +60,8 @@ const (
 	//It's the global retention period then we will set retention periods by TenantID that overrides this value
 	//the global retention period store logs for 1 week = 168h.
 	limitsRetentionPeriod = "168h"
+	//This value enables the deletion API
+	allowDeletes = true
 
 	//The filepath of the runtime configuration that we are going to use for limits retention period by TenantID
 	//see more here: https://grafana.com/docs/loki/latest/configuration/#runtime-configuration-file

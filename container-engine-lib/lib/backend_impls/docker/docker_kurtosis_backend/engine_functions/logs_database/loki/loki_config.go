@@ -76,6 +76,7 @@ type Compactor struct {
 
 type LimitsConfig struct {
 	RetentionPeriod string `yaml:"retention_period"`
+	AllowDeletes    bool   `yaml:"allow_deletes"`
 }
 
 type Analytics struct {
@@ -134,6 +135,7 @@ func newDefaultLokiConfigForKurtosisCentralizedLogs() *LokiConfig {
 		},
 		LimitsConfig: LimitsConfig{
 			RetentionPeriod: limitsRetentionPeriod,
+			AllowDeletes: allowDeletes,
 		},
 		Analytics: Analytics{
 			ReportingEnabled: analyticsEnabled,
