@@ -41,7 +41,6 @@ const (
 
 	// The string returned by the API if a service's public IP address doesn't exist
 	missingPublicIpAddrStr = ""
-	defaultContainerStopTimeoutSeconds = 0
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -163,7 +162,9 @@ func (apicService ApiContainerService) ExecuteModule(ctx context.Context, args *
 }
 
 func (apicService ApiContainerService) RegisterServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServicesArgs) (*kurtosis_core_rpc_api_bindings.RegisterServicesResponse, error) {
+	failedServicesPool := map[kurtosis_backend_service.ServiceID]error{}
 	serviceIDs := map[kurtosis_backend_service.ServiceID]bool{}
+
 	for id := range args.ServiceIdSet {
 		serviceIDs[kurtosis_backend_service.ServiceID(id)] = true
 	}
@@ -173,57 +174,57 @@ func (apicService ApiContainerService) RegisterServices(ctx context.Context, arg
 		// TODO IP: Leaks internal information about API container
 		return nil, stacktrace.Propagate(err, "An error occurred registering services '%v' in the service network", serviceIDs)
 	}
+	// Defer an undo of successfully created resource in case anything goes wrong in remainder of function
+	shouldRemoveRegistrations := map[kurtosis_backend_service.ServiceID]bool{}
+	for serviceID, _ := range serviceIDsToIPs {
+		shouldRemoveRegistrations[serviceID] = true
+	}
+	defer func() {
+		for serviceID, _ := range shouldRemoveRegistrations {
+			_, err := apicService.serviceNetwork.RemoveService(context.Background(), serviceID)
+			failedServicesPool[serviceID] = stacktrace.Propagate(err,
+				"Attempted to remove service '%v' to delete its resources after it failed, but an error occurred" +
+					"while attempting to remove the service.", serviceID)
+		}
+	}()
+	// Add failed services to failed services pool
+	for serviceID, registrationError := range failedServiceErrors {
+		failedServicesPool[serviceID] = registrationError
+	}
 
 	serviceIDsToIPsStrs := map[string]string{}
 	for id, ip := range serviceIDsToIPs {
 		serviceIDsToIPsStrs[string(id)] = ip.String()
 	}
 	failedServiceIDsToErrStrs := map[string]string{}
-	for id, serviceErr := range failedServiceErrors {
+	for id, serviceErr := range failedServicesPool {
 		failedServiceIDsToErrStrs[string(id)] = serviceErr.Error()
 	}
 
+	// Do not remove services that were successful
+	for serviceIDStr, _ :=  range serviceIDsToIPsStrs {
+		delete(shouldRemoveRegistrations, kurtosis_backend_service.ServiceID(serviceIDStr))
+	}
 	return binding_constructors.NewRegisterServicesResponse(serviceIDsToIPsStrs, failedServiceIDsToErrStrs), nil
 }
 
 func (apicService ApiContainerService) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error){
 	failedServicesPool := map[kurtosis_backend_service.ServiceID]error{}
-	serviceIDsToConfigs := map[kurtosis_backend_service.ServiceID]*kurtosis_backend_service.ServiceConfig{}
-	serviceIDsToFilesArtifactUUIDsToMountpoints := map[kurtosis_backend_service.ServiceID]map[enclave_data_directory.FilesArtifactUUID]string{}
-	for serviceIDStr, serviceConfig := range args.ServiceIdsToConfigs {
-		serviceID := kurtosis_backend_service.ServiceID(serviceIDStr)
-		logrus.Debugf("Received request to start service with the following args: %+v", serviceConfig)
-		privateServicePortSpecs, requestedPublicServicePortSpecs, err := convertAPIPortsToPortSpecs(serviceConfig.PrivatePorts, serviceConfig.PublicPorts)
-		if err != nil {
-			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while trying to convert public and private API ports to port specs for service '%v'", serviceID)
-			continue
-		}
+	serviceIDsToAPIConfigs := map[kurtosis_backend_service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
 
-		filesArtifactMountpointsByArtifactUUID := map[enclave_data_directory.FilesArtifactUUID]string{}
-		for filesArtifactUUIDStr, mountDirPath := range serviceConfig.FilesArtifactMountpoints {
-			filesArtifactMountpointsByArtifactUUID[enclave_data_directory.FilesArtifactUUID(filesArtifactUUIDStr)] = mountDirPath
-		}
-		serviceIDsToFilesArtifactUUIDsToMountpoints[serviceID] = filesArtifactMountpointsByArtifactUUID
-
-		serviceConfigObj := kurtosis_backend_service.NewServiceConfig(
-			serviceConfig.ContainerImageName,
-			privateServicePortSpecs,
-			requestedPublicServicePortSpecs,
-			serviceConfig.EntrypointArgs,
-			serviceConfig.CmdArgs,
-			serviceConfig.EnvVars,
-			nil, // Will get set later if needed
-			serviceConfig.CpuAllocationMillicpus,
-			serviceConfig.MemoryAllocationMegabytes,
-		)
-		serviceIDsToConfigs[serviceID] = serviceConfigObj
+	for serviceIDStr, apiServiceConfig := range args.ServiceIdsToConfigs {
+		logrus.Debugf("Received request to start service with the following args: %+v", apiServiceConfig)
+		serviceIDsToAPIConfigs[kurtosis_backend_service.ServiceID(serviceIDStr)] = apiServiceConfig
 	}
 
-	successfulServices, failedServices, err := apicService.serviceNetwork.StartServices(ctx, serviceIDsToConfigs, serviceIDsToFilesArtifactUUIDsToMountpoints)
+	successfulServices, failedServices, err := apicService.serviceNetwork.StartServices(ctx, serviceIDsToAPIConfigs)
 	if err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "An error occurred starting services in the service network")
 	}
+	// TODO We SHOULD defer an undo to undo the service-starting resource that we did here, but we don't have a way to just undo
+	// that and leave the registration intact (since we only have RemoveService as of 2022-08-11, but that also deletes the registration,
+	// which would mean deleting a resource we don't own here)
 
 	for serviceID, serviceErr := range failedServices {
 		failedServicesPool[serviceID] = serviceErr
@@ -232,19 +233,6 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 
 	serviceIDsToServiceInfo := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
 	for serviceID, startedService := range successfulServices {
-		// If anything goes wrong while trying to set up the service object, we need to remove the successfully started service
-		shouldRemoveService := true
-		defer func() {
-			if shouldRemoveService {
-				_, err := apicService.serviceNetwork.RemoveService(ctx, serviceID, defaultContainerStopTimeoutSeconds)
-				if err != nil {
-					failedServicesPool[serviceID] = stacktrace.NewError(
-						"WARNING: Attempted to remove service '%v' to delete its resources after it failed to create service object, but an error occurred" +
-					"while attempting to remove the service. This means there exists a service that should not have been started!.", serviceID)
-				}
-			}
-		}()
-
 		serviceRegistration := startedService.GetRegistration()
 		serviceGuidStr := string(serviceRegistration.GetGUID())
 		privateServiceIpStr := serviceRegistration.GetPrivateIP().String()
@@ -266,7 +254,6 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 			publicIpAddrStr = maybePublicIpAddr.String()
 		}
 
-		shouldRemoveService = false
 		serviceIDsToServiceInfo[string(serviceID)] = binding_constructors.NewServiceInfo(serviceGuidStr, privateServiceIpStr, privateApiPorts, publicIpAddrStr, publicApiPorts)
 		serviceStartLoglineSuffix := ""
 		if len(publicServicePortSpecs) > 0 {
@@ -282,16 +269,14 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 	for id, serviceErr := range failedServicesPool {
 		failedServiceIDsToErrorStr[string(id)] = serviceErr.Error()
 	}
+
 	return binding_constructors.NewStartServicesResponse(serviceIDsToServiceInfo, failedServiceIDsToErrorStr), nil
 }
 
 func (apicService ApiContainerService) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*kurtosis_core_rpc_api_bindings.RemoveServiceResponse, error) {
 	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
 
-	containerStopTimeoutSeconds := args.ContainerStopTimeoutSeconds
-	containerStopTimeout := time.Duration(containerStopTimeoutSeconds) * time.Second
-
-	serviceGuid, err := apicService.serviceNetwork.RemoveService(ctx, serviceId, containerStopTimeout)
+	serviceGuid, err := apicService.serviceNetwork.RemoveService(ctx, serviceId)
 	if err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "An error occurred removing service with ID '%v'", serviceId)
@@ -557,43 +542,6 @@ func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func convertAPIPortsToPortSpecs(
-	privateAPIPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-	publicAPIPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-) (
-	resultPrivatePortSpecs map[string]*port_spec.PortSpec,
-	resultPublicPortSpecs map[string]*port_spec.PortSpec,
-	resultErr error,
-) {
-	privatePortSpecs := map[string]*port_spec.PortSpec{}
-	for portID, privateAPIPort := range privateAPIPorts {
-		privatePortSpec, err := transformApiPortToPortSpec(privateAPIPort)
-		if err != nil {
-			return nil, nil, stacktrace.NewError("An error occurred transforming the API port for private port '%v' into a port spec port", portID)
-		}
-		privatePortSpecs[portID] = privatePortSpec
-	}
-
-	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	if len(publicAPIPorts) > 0 {
-		err := checkPrivateAndPublicPortsAreOneToOne(privateAPIPorts, publicAPIPorts)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "Provided public and private ports are not one to one.")
-		}
-	}
-
-	publicPortSpecs := map[string]*port_spec.PortSpec{}
-	for portID, publicAPIPort := range publicAPIPorts {
-		publicPortSpec, err := transformApiPortToPortSpec(publicAPIPort)
-		if err != nil {
-			return nil, nil, stacktrace.NewError("An error occurred transforming the API port for public port '%v' into a port spec port", portID)
-		}
-		publicPortSpecs[portID] = publicPortSpec
-	}
-	//TODO Finished the huge hack to temporarily enable static ports for NEAR
-	return privatePortSpecs, publicPortSpecs, nil
-}
-
 func transformApiPortToPortSpec(port *kurtosis_core_rpc_api_bindings.Port) (*port_spec.PortSpec, error) {
 	portNumUint32 := port.GetNumber()
 	apiProto := port.GetProtocol()
@@ -651,23 +599,6 @@ func transformPortSpecMapToApiPortsMap(apiPorts map[string]*port_spec.PortSpec) 
 		result[portId] = publicApiPort
 	}
 	return result, nil
-}
-
-// Ensure that provided [privatePorts] and [publicPorts] are one to one by checking:
-// - There is a matching publicPort for every portID in privatePorts
-// - There are the same amount of private and public ports
-// If error is nil, the public and private ports are one to one.
-func checkPrivateAndPublicPortsAreOneToOne(privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port, publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port) error {
-	if len(privatePorts) != len(publicPorts) {
-		return stacktrace.NewError("The received private ports length and the public ports length are not equal. Received '%v' private ports and '%v' public ports", len(privatePorts), len(publicPorts))
-	}
-
-	for portID, privatePortSpec := range privatePorts {
-		if _, found := publicPorts[portID]; !found {
-			return stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portID, privatePortSpec.GetNumber())
-		}
-	}
-	return nil
 }
 
 func (apicService ApiContainerService) waitForEndpointAvailability(

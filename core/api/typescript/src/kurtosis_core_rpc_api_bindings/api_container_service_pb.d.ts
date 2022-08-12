@@ -457,9 +457,6 @@ export class RemoveServiceArgs extends jspb.Message {
   getServiceId(): string;
   setServiceId(value: string): RemoveServiceArgs;
 
-  getContainerStopTimeoutSeconds(): number;
-  setContainerStopTimeoutSeconds(value: number): RemoveServiceArgs;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RemoveServiceArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RemoveServiceArgs): RemoveServiceArgs.AsObject;
@@ -471,7 +468,6 @@ export class RemoveServiceArgs extends jspb.Message {
 export namespace RemoveServiceArgs {
   export type AsObject = {
     serviceId: string,
-    containerStopTimeoutSeconds: number,
   }
 }
 

@@ -58,6 +58,7 @@ import {
     UnpauseServiceArgs,
     StartServicesArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
+import {should} from "chai";
 
 export type EnclaveID = string;
 export type PartitionID = string;
@@ -65,9 +66,6 @@ export type PartitionID = string;
 // This will always resolve to the default partition ID (regardless of whether such a partition exists in the enclave,
 //  or it was repartitioned away)
 const DEFAULT_PARTITION_ID: PartitionID = "";
-
-// For removing services in rollback operations
-const DEFAULT_CONTAINER_STOP_TIMEOUT_SECONDS = 0;
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class EnclaveContext {
@@ -283,47 +281,54 @@ export class EnclaveContext {
         serviceConfigSuppliers: Map<ServiceID, (ipAddr: string) => Result<ContainerConfig, Error>>,
         partitionId: PartitionID,
     ): Promise<Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error>> {
-        const failedServicesPool : Map<ServiceID, Error> = new Map<ServiceID, Error>();
+        const failedServicesPool: Map<ServiceID, Error> = new Map<ServiceID, Error>();
+        const successfulServices: Map<ServiceID, ServiceContext> = new Map<ServiceID, ServiceContext>();
 
         log.trace("Registering new services with Kurtosis API...");
         const serviceIdSet: Map<string, boolean> = new Map<ServiceID, boolean>();
         for (const [serviceId, _] of serviceConfigSuppliers) {
             serviceIdSet.set(serviceId, true);
         }
-        const registerServicesArgs : RegisterServicesArgs = newRegisterServicesArgs(serviceIdSet, partitionId)
+
+        const registerServicesArgs: RegisterServicesArgs = newRegisterServicesArgs(serviceIdSet, partitionId)
         const registerServicesResponseResult = await this.backend.registerServices(registerServicesArgs)
-        if(registerServicesResponseResult.isErr()){
+        if (registerServicesResponseResult.isErr()) {
             return err(registerServicesResponseResult.error)
         }
-
         const registerServicesResponse = registerServicesResponseResult.value
-
-        const failedRegistrations : jspb.Map<string, string> = registerServicesResponse.getFailedServiceIdsToErrorMap();
-        for (const[serviceIdStr,  registrationErrStr] of failedRegistrations.entries()){
-            const serviceId : ServiceID = <ServiceID>serviceIdStr;
-            const registrationErrMsg = `The following error occurred when trying to register service '${serviceIdStr}':\n ${registrationErrStr}`
-            failedServicesPool.set(serviceId, new Error(registrationErrMsg));
+        // Defer undos to remove all registration resources of successful registrations, in case of errors in following phases
+        const successfulRegistrations: jspb.Map<string, string> = registerServicesResponse.getServiceIdsToPrivateIpAddressesMap();
+        const shouldRemoveServices: Map<ServiceID, boolean> = new Map<ServiceID, boolean>();
+        for (const [serviceIdStr, _] of successfulRegistrations.entries()) {
+            shouldRemoveServices.set(<ServiceID>serviceIdStr, true);
         }
+        try {
+            // Add failed registrations to failed services pool
+            const failedRegistrations: jspb.Map<string, string> = registerServicesResponse.getFailedServiceIdsToErrorMap();
+            for (const [serviceIdStr, registrationErrStr] of failedRegistrations.entries()) {
+                const serviceId: ServiceID = <ServiceID>serviceIdStr;
+                const registrationErrMsg = `The following error occurred when trying to register service '${serviceIdStr}':\n ${registrationErrStr}`
+                failedServicesPool.set(serviceId, new Error(registrationErrMsg));
+            }
 
-        log.trace("New services successfully registered with Kurtosis API");
-        const serviceConfigs = new Map<ServiceID, ServiceConfig>();
-        const serviceIdToPrivateIpAddresses : jspb.Map<string, string> = registerServicesResponse.getServiceIdsToPrivateIpAddressesMap();
-        for (const[serviceIdStr,  privateIpAddr] of serviceIdToPrivateIpAddresses.entries()){
-            const serviceId : ServiceID = <ServiceID>serviceIdStr;
-            try {
+            log.trace("New services successfully registered with Kurtosis API");
+            const serviceConfigs = new Map<ServiceID, ServiceConfig>();
+            const serviceIdToPrivateIpAddresses: jspb.Map<string, string> = registerServicesResponse.getServiceIdsToPrivateIpAddressesMap();
+            for (const [serviceIdStr, privateIpAddr] of serviceIdToPrivateIpAddresses.entries()) {
+                const serviceId: ServiceID = <ServiceID>serviceIdStr;
                 log.trace(`Generating container config object using the container config supplier for service with Id '${serviceId}'`);
-                const containerConfigSupplier : ((ipAddr: string) => Result<ContainerConfig, Error>) | undefined = serviceConfigSuppliers.get(serviceId);
+                const containerConfigSupplier: ((ipAddr: string) => Result<ContainerConfig, Error>) | undefined = serviceConfigSuppliers.get(serviceId);
                 if (containerConfigSupplier == undefined) {
                     const undefinedContainerConfigSupplierErrStr =
                         `Expected serviceConfigSuppliers to contain a value associated with service Id ${serviceId}, but no such value was found`;
-                    const undefinedContainerConfigSupplierErr = new Error(undefinedContainerConfigSupplierErrStr);
-                    failedServicesPool.set(serviceId, undefinedContainerConfigSupplierErr);
-                    throw undefinedContainerConfigSupplierErr
+                    new Error(undefinedContainerConfigSupplierErrStr);
+                    failedServicesPool.set(serviceId, new Error(undefinedContainerConfigSupplierErrStr));
+                    continue
                 }
                 const containerConfigSupplierResult: Result<ContainerConfig, Error> = containerConfigSupplier(privateIpAddr);
-                if (containerConfigSupplierResult.isErr()){
+                if (containerConfigSupplierResult.isErr()) {
                     failedServicesPool.set(serviceId, containerConfigSupplierResult.error);
-                    throw containerConfigSupplierResult.error
+                    continue
                 }
                 const containerConfig: ContainerConfig = containerConfigSupplierResult.value;
                 log.trace(`Container config object successfully generated for service with Id '${serviceId}'`);
@@ -356,7 +361,7 @@ export class EnclaveContext {
                 }
                 //TODO finish the hack
 
-                const serviceConfig : ServiceConfig = newServiceConfig(
+                const serviceConfig: ServiceConfig = newServiceConfig(
                     containerConfig.image,
                     privatePortsForApi,
                     publicPortsForApi,
@@ -368,74 +373,69 @@ export class EnclaveContext {
                     containerConfig.memoryAllocationMegabytes,
                 )
                 serviceConfigs.set(serviceId, serviceConfig);
-            } catch (err) {
-                failedServicesPool.set(serviceId, err)
+            }
+            log.trace("Starting new services with Kurtosis API...");
+            const startServicesArgs: StartServicesArgs = newStartServicesArgs(serviceConfigs)
+            const startServicesResponseResult = await this.backend.startServices(startServicesArgs)
+            if (startServicesResponseResult.isErr()) {
+                return err(startServicesResponseResult.error)
+            }
+            const startServicesResponse = startServicesResponseResult.value;
+            // Don't need to defer a removal of successfully started services here because it was done right after register phase
+            // This is the correct way to do it because we want to defer undos of resources, right after the function gains responsibility of
+            // the resource, which in this case, is after they successfully returned from the successful phase.
 
-                // Do a best effort attempt to remove registration resources for this object to clean up after it failed in the start phase
+            // Add services that failed to start to failed services pool
+            const failedServices: jspb.Map<string, string> | undefined = startServicesResponse.getFailedServiceIdsToErrorMap();
+            if (failedServices == undefined) {
+                return err(new Error("Expected StartServicesResponse to contain a field that does not exist."))
+            }
+            for (const [serviceIdStr, serviceErrStr] of failedServices.entries()) {
+                const serviceId: ServiceID = <ServiceID>serviceIdStr;
+                failedServicesPool.set(serviceId, new Error(serviceErrStr))
+            }
+            const successfulServicesInfo: jspb.Map<String, ServiceInfo> | undefined = startServicesResponse.getSuccessfulServiceIdsToServiceInfoMap();
+            if (successfulServicesInfo == undefined) {
+                return err(new Error("Expected StartServicesResponse to contain a field that does not exist."))
+            }
+            for (const [serviceIdStr, serviceInfo] of successfulServicesInfo.entries()) {
+                const serviceId: ServiceID = <ServiceID>serviceIdStr;
+                const serviceCtxPrivatePorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
+                    serviceInfo.getPrivatePortsMap(),
+                );
+                const serviceCtxPublicPorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
+                    serviceInfo.getMaybePublicPortsMap(),
+                );
+
+                const serviceContext: ServiceContext = new ServiceContext(
+                    this.backend,
+                    serviceId,
+                    serviceInfo.getPrivateIpAddr(),
+                    serviceCtxPrivatePorts,
+                    serviceInfo.getMaybePublicIpAddr(),
+                    serviceCtxPublicPorts,
+                );
+                successfulServices.set(serviceId, serviceContext)
+                log.trace(`Successfully started service with ID '${serviceId}' with Kurtosis API`);
+            }
+
+            // Do not remove resources for successful services
+            for (const [serviceId, _] of successfulServices) {
+                shouldRemoveServices.delete(serviceId)
+            }
+        } finally {
+           for (const[serviceId, _] of shouldRemoveServices) {
+                // Do a best effort attempt to remove resources for this object to clean up after it failed
                 // TODO: Migrate this to a bulk remove services call
-                const removeServiceResult = await this.removeService(serviceId, DEFAULT_CONTAINER_STOP_TIMEOUT_SECONDS);
+                const removeServiceArgs : RemoveServiceArgs = newRemoveServiceArgs(serviceId)
+                const removeServiceResult = await this.backend.removeService(removeServiceArgs);
                 if (removeServiceResult.isErr()){
                     const errMsg = `"Attempted to remove service '${serviceId}' to delete its resources after it failed to start, but the following error occurred" +
-				"while attempting to remove the service:\n ${removeServiceResult.error}`
+                    "while attempting to remove the service:\n ${removeServiceResult.error}`
                     failedServicesPool.set(serviceId, new Error(errMsg))
                 }
             }
-        }
-
-        const startServicesArgs : StartServicesArgs = newStartServicesArgs(serviceConfigs)
-
-        log.trace("Starting new services with Kurtosis API...");
-        const startServicesResponseResult = await this.backend.startServices(startServicesArgs)
-        if(startServicesResponseResult.isErr()){
-            return err(startServicesResponseResult.error)
-        }
-
-        const startServicesResponse = startServicesResponseResult.value;
-
-        const failedServices :  jspb.Map<string, string> | undefined = startServicesResponse.getFailedServiceIdsToErrorMap();
-        if(failedServices == undefined) {
-            return err(new Error("Expected StartServicesResponse to contain a failed_service_ids_to_error, instead no such field was found"))
-        }
-        for (const[serviceIdStr, serviceErrStr] of failedServices.entries()){
-            const serviceId : ServiceID = <ServiceID>serviceIdStr;
-            failedServicesPool.set(serviceId, new Error(serviceErrStr))
-
-            // Do a best effort attempt to remove registration resources for this object to clean up after it failed in the start phase
-            // TODO: Migrate this to a bulk remove services call
-            const removeServiceResult = await this.removeService(serviceId, DEFAULT_CONTAINER_STOP_TIMEOUT_SECONDS);
-            if (removeServiceResult.isErr()){
-                const errMsg = `"Attempted to remove service '${serviceId}' to delete its resources after it failed to start, but the following error occurred" +
-				"while attempting to remove the service:\n ${removeServiceResult.error}`
-                failedServicesPool.set(serviceId, new Error(errMsg))
-            }
-        }
-
-        const successfulServicesInfo :  jspb.Map<String, ServiceInfo> | undefined = startServicesResponse.getSuccessfulServiceIdsToServiceInfoMap();
-        if(successfulServicesInfo == undefined) {
-            return err(new Error("Expected StartServicesResponse to contain a successful_service_ids_to_service_info, instead no such field was found"))
-        }
-        const successfulServices : Map<ServiceID, ServiceContext> = new Map<ServiceID, ServiceContext>();
-        for (const[serviceIdStr, serviceInfo] of successfulServicesInfo.entries()){
-            const serviceId : ServiceID = <ServiceID>serviceIdStr;
-            const serviceCtxPrivatePorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
-                serviceInfo.getPrivatePortsMap(),
-            );
-            const serviceCtxPublicPorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
-                serviceInfo.getMaybePublicPortsMap(),
-            );
-
-            const serviceContext: ServiceContext = new ServiceContext(
-                this.backend,
-                serviceId,
-                serviceInfo.getPrivateIpAddr(),
-                serviceCtxPrivatePorts,
-                serviceInfo.getMaybePublicIpAddr(),
-                serviceCtxPublicPorts,
-            );
-            successfulServices.set(serviceId, serviceContext)
-            log.trace(`Successfully started service with ID '${serviceId}' with Kurtosis API`);
-        }
-
+       }
         return ok([successfulServices, failedServicesPool])
     }
 
@@ -489,12 +489,9 @@ export class EnclaveContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public async removeService(serviceId: ServiceID, containerStopTimeoutSeconds: number): Promise<Result<null, Error>> {
+    public async removeService(serviceId: ServiceID): Promise<Result<null, Error>> {
         log.debug("Removing service '" + serviceId + "'...");
-        // NOTE: This is kinda weird - when we remove a service we can never get it back so having a container
-        //  stop timeout doesn't make much sense. It will make more sense when we can stop/start containers
-        // Independent of adding/removing them from the enclave
-        const removeServiceArgs: RemoveServiceArgs = newRemoveServiceArgs(serviceId, containerStopTimeoutSeconds);
+        const removeServiceArgs: RemoveServiceArgs = newRemoveServiceArgs(serviceId);
 
         const removeServiceResult = await this.backend.removeService(removeServiceArgs)
         if(removeServiceResult.isErr()){

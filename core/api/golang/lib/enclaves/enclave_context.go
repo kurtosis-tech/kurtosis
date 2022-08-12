@@ -19,6 +19,7 @@ package enclaves
 
 import (
 	"context"
+	"errors"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/modules"
@@ -45,8 +46,6 @@ const (
 	grpcDataTransferLimit     = 3999000 //3.999 Mb. 1kb wiggle room. 1kb being about the size of a simple 2 paragraph readme.
 	tempCompressionDirPattern = "upload-compression-cache-"
 	compressionExtension      = ".tgz"
-
-	defaultContainerStopTimeoutSeconds = 0
 )
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -214,35 +213,38 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 			"An error occurred registering service with IDs '%v' with the Kurtosis API",
 			serviceIDs)
 	}
-
+	// Defer undos to remove all registration resources of successful registrations, in case of errors in following phases
+	shouldRemoveServices := map[services.ServiceID]bool{}
+	for serviceIDStr, _ := range registerServicesResp.GetServiceIdsToPrivateIpAddresses() {
+		shouldRemoveServices[services.ServiceID(serviceIDStr)] = true
+	}
+	defer func() {
+		for serviceID, _ := range shouldRemoveServices {
+			// TODO: Migrate this to a bulk remove services call
+			removeServiceArgs := binding_constructors.NewRemoveServiceArgs(string(serviceID))
+			_, err = enclaveCtx.client.RemoveService(context.Background(), removeServiceArgs)
+			if err != nil {
+				failedServicesPool[serviceID] = stacktrace.Propagate(err,
+					"Attempted to remove service '%v' to delete its resources after registering it failed, but an error occurred" +
+						"while attempting to remove the service.", serviceID)
+			}
+		}
+	}()
 	for serviceIDStr, errStr := range registerServicesResp.GetFailedServiceIdsToError() {
 		serviceID := services.ServiceID(serviceIDStr)
-		failedServicesPool[serviceID] = stacktrace.NewError("The following error occurred when trying to register service '%v':\n %v", serviceID, errStr)
+		failedServicesPool[serviceID] = stacktrace.Propagate(errors.New(errStr), "The following error occurred when trying to register service '%v'", serviceID)
 	}
 
 	logrus.Trace("New services successfully registered with Kurtosis API")
 	serviceConfigs := map[string]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
 	for serviceIDStr, privateIPAddr := range registerServicesResp.GetServiceIdsToPrivateIpAddresses() {
 		serviceID := services.ServiceID(serviceIDStr)
-		// If anything goes wrong while trying to setup the service config, we need to remove the registration created for this service
-		shouldRemoveRegistration := true
-		defer func() {
-			if shouldRemoveRegistration {
-				// TODO: Migrate this to a bulk remove services call
-				err = enclaveCtx.RemoveService(services.ServiceID(serviceID), defaultContainerStopTimeoutSeconds)
-				if err != nil {
-					failedServicesPool[serviceID] = stacktrace.Propagate(err,
-						"Attempted to remove service '%v' to delete its resources after it failed, but an error occurred" +
-							"while attempting to remove the service.", serviceID)
-				}
-			}
-		}()
 
 		logrus.Tracef("Generating container config object using the container config supplier for service '%v'...", serviceID)
 		containerConfigSupplier, found := serviceConfigSuppliers[serviceID]
 		if !found {
 			failedServicesPool[serviceID] = stacktrace.NewError(
-				"A container config was not found for the registered service ID." +
+				"A container config was not found for the registered service ID. " +
 				"This should not have happened as it means a service ID that was not requested was registered. This is a bug in Kurtosis.")
 			continue
 		}
@@ -278,7 +280,6 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 		}
 		//TODO finish the hack
 
-		shouldRemoveRegistration = false
 		serviceConfigs[serviceIDStr] = binding_constructors.NewServiceConfig(
 			containerConfig.GetImage(),
 			privatePortsForApi,
@@ -298,38 +299,18 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred starting services with the Kurtosis API")
 	}
+	// Don't need to defer a removal of successfully started services here because it was done right after register phase
+	// This is the correct way to do it because we want to defer undos of resources, right after the function gains responsibility of
+	// the resource, which in this case, is after they successfully returned from the successful phase.
 
-	// Remove the registration resources for services that failed to start
 	for serviceIDStr, errStr := range startServicesResp.GetFailedServiceIdsToError() {
 		serviceID := services.ServiceID(serviceIDStr)
-		failedServicesPool[serviceID] = stacktrace.NewError("The following error occurred trying to start service with ID '%v':\n %v", serviceID, errStr)
-
-		// Do a best effort attempt to remove registration resources for this service, if not, add it to the failed services pool
-		// TODO: Migrate this to a bulk remove services call
-		err = enclaveCtx.RemoveService(serviceID, defaultContainerStopTimeoutSeconds)
-		if err != nil {
-			failedServicesPool[serviceID] = stacktrace.Propagate(err,
-				"WARNING: Attempted to remove service '%v' to delete its resources after it failed to start, but an error occurred" +
-				"while attempting to remove the service. This means there exists a registration for a service that has yet to be started!.", serviceID)
-		}
+		failedServicesPool[serviceID] = stacktrace.Propagate(errors.New(errStr), "The following error occurred when trying to start service '%v'", serviceID)
 	}
 
 	successfulServices := map[services.ServiceID]*services.ServiceContext{}
 	for serviceIDStr, serviceInfo := range startServicesResp.GetSuccessfulServiceIdsToServiceInfo() {
 		serviceID := services.ServiceID(serviceIDStr)
-		// If anything goes wrong while trying to setup the service context, we need to remove the registration created for this service
-		shouldRemoveRegistration := true
-		defer func() {
-			if shouldRemoveRegistration {
-				// TODO: Migrate this to a bulk remove services call
-				err = enclaveCtx.RemoveService(serviceID, defaultContainerStopTimeoutSeconds)
-				if err != nil {
-					failedServicesPool[serviceID] = stacktrace.Propagate(err,
-						"WARNING: Attempted to remove service '%v' to delete its resources after it failed to setup service context, but an error occurred" +
-							"while attempting to remove the service. This means there exists a service that should not have been started!", serviceID)
-				}
-			}
-		}()
 
 		serviceCtxPrivatePorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetPrivatePorts())
 		if err != nil {
@@ -350,11 +331,13 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 			serviceInfo.GetMaybePublicIpAddr(),
 			serviceCtxPublicPorts,
 		)
-
-		shouldRemoveRegistration = false
 		successfulServices[serviceID] = serviceContext
 	}
 
+	// Do not remove resources for successful services
+	for serviceID, _ := range successfulServices {
+		delete(shouldRemoveServices, serviceID)
+	}
 	return successfulServices, failedServicesPool, nil
 }
 
@@ -412,7 +395,7 @@ func (enclaveCtx *EnclaveContext) RemoveService(serviceId services.ServiceID, co
 	// NOTE: This is kinda weird - when we remove a service we can never get it back so having a container
 	//  stop timeout doesn't make much sense. It will make more sense when we can stop/start containers
 	// Independent of adding/removing them from the enclave
-	args := binding_constructors.NewRemoveServiceArgs(string(serviceId), containerStopTimeoutSeconds)
+	args := binding_constructors.NewRemoveServiceArgs(string(serviceId))
 	if _, err := enclaveCtx.client.RemoveService(context.Background(), args); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing service '%v' from the enclave", serviceId)
 	}
