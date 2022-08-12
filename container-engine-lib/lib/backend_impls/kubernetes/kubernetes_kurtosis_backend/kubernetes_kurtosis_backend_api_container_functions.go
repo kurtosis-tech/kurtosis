@@ -1,7 +1,9 @@
 package kubernetes_kurtosis_backend
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager/consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
+	kubernetes_manager_consts "github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager/consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
@@ -87,27 +89,27 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.NewError("Found existing API container(s) in enclave '%v'; cannot start a new one", enclaveId)
 	}
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, kurtosisServersPortProtocol)
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersPortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the API container's private grpc port spec object using number '%v' and protocol '%v'",
 			grpcPortNum,
-			kurtosisServersPortProtocol.String(),
+			consts.KurtosisServersPortProtocol.String(),
 		)
 	}
-	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, kurtosisServersPortProtocol)
+	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, consts.KurtosisServersPortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the API container's private grpc proxy port spec object using number '%v' and protocol '%v'",
 			grpcProxyPortNum,
-			kurtosisServersPortProtocol.String(),
+			consts.KurtosisServersPortProtocol.String(),
 		)
 	}
 	privatePortSpecs := map[string]*port_spec.PortSpec{
-		kurtosisInternalContainerGrpcPortSpecId:      privateGrpcPortSpec,
-		kurtosisInternalContainerGrpcProxyPortSpecId: privateGrpcProxyPortSpec,
+		consts.KurtosisInternalContainerGrpcPortSpecId:      privateGrpcPortSpec,
+		consts.KurtosisInternalContainerGrpcProxyPortSpecId: privateGrpcProxyPortSpec,
 	}
 
 	enclaveAttributesProvider := backend.objAttrsProvider.ForEnclave(enclaveId)
@@ -128,14 +130,14 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 		)
 	}
 	apiContainerPodName := apiContainerPodAttributes.GetName().GetString()
-	apiContainerPodLabels := getStringMapFromLabelMap(apiContainerPodAttributes.GetLabels())
-	apiContainerPodAnnotations := getStringMapFromAnnotationMap(apiContainerPodAttributes.GetAnnotations())
+	apiContainerPodLabels := shared_helpers.GetStringMapFromLabelMap(apiContainerPodAttributes.GetLabels())
+	apiContainerPodAnnotations := shared_helpers.GetStringMapFromAnnotationMap(apiContainerPodAttributes.GetAnnotations())
 
 	// Get Service Attributes
 	apiContainerServiceAttributes, err := apiContainerAttributesProvider.ForApiContainerService(
-		kurtosisInternalContainerGrpcPortSpecId,
+		consts.KurtosisInternalContainerGrpcPortSpecId,
 		privateGrpcPortSpec,
-		kurtosisInternalContainerGrpcProxyPortSpecId,
+		consts.KurtosisInternalContainerGrpcProxyPortSpecId,
 		privateGrpcProxyPortSpec)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -147,13 +149,13 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 		)
 	}
 	apiContainerServiceName := apiContainerServiceAttributes.GetName().GetString()
-	apiContainerServiceLabels := getStringMapFromLabelMap(apiContainerServiceAttributes.GetLabels())
-	apiContainerServiceAnnotations := getStringMapFromAnnotationMap(apiContainerServiceAttributes.GetAnnotations())
+	apiContainerServiceLabels := shared_helpers.GetStringMapFromLabelMap(apiContainerServiceAttributes.GetLabels())
+	apiContainerServiceAnnotations := shared_helpers.GetStringMapFromAnnotationMap(apiContainerServiceAttributes.GetAnnotations())
 
 	// Define service ports. These hook up to ports on the containers running in the API container pod
 	// Kubernetes will assign a public port number to them
 
-	servicePorts, err := getKubernetesServicePortsFromPrivatePortSpecs(privatePortSpecs)
+	servicePorts, err := shared_helpers.GetKubernetesServicePortsFromPrivatePortSpecs(privatePortSpecs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating Kubernetes service ports from the API container's private port specs")
 	}
@@ -203,7 +205,7 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 	}
 
 	serviceAccountName := serviceAccountAttributes.GetName().GetString()
-	serviceAccountLabels := getStringMapFromLabelMap(serviceAccountAttributes.GetLabels())
+	serviceAccountLabels := shared_helpers.GetStringMapFromLabelMap(serviceAccountAttributes.GetLabels())
 	apiContainerServiceAccount, err := backend.kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, enclaveNamespaceName, serviceAccountLabels)
 	if err != nil {
 		return nil,  stacktrace.Propagate(err, "An error occurred creating service account '%v' with labels '%+v' in namespace '%v'", serviceAccountName, serviceAccountLabels, enclaveNamespaceName)
@@ -230,32 +232,32 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 	}
 
 	roleName := rolesAttributes.GetName().GetString()
-	roleLabels := getStringMapFromLabelMap(rolesAttributes.GetLabels())
+	roleLabels := shared_helpers.GetStringMapFromLabelMap(rolesAttributes.GetLabels())
 	rolePolicyRules := []rbacv1.PolicyRule{
 		{
 			Verbs: []string{
-				consts.CreateKubernetesVerb,
-				consts.UpdateKubernetesVerb,
-				consts.PatchKubernetesVerb,
-				consts.DeleteKubernetesVerb,
-				consts.GetKubernetesVerb,
-				consts.ListKubernetesVerb,
-				consts.WatchKubernetesVerb,
+				kubernetes_manager_consts.CreateKubernetesVerb,
+				kubernetes_manager_consts.UpdateKubernetesVerb,
+				kubernetes_manager_consts.PatchKubernetesVerb,
+				kubernetes_manager_consts.DeleteKubernetesVerb,
+				kubernetes_manager_consts.GetKubernetesVerb,
+				kubernetes_manager_consts.ListKubernetesVerb,
+				kubernetes_manager_consts.WatchKubernetesVerb,
 			},
 			APIGroups: []string{rbacv1.APIGroupAll},
 			Resources: []string{
-				consts.PodsKubernetesResource,
-				consts.PodExecsKubernetesResource,
-				consts.PodLogsKubernetesResource,
-				consts.ServicesKubernetesResource,
-				consts.JobsKubernetesResource,
+				kubernetes_manager_consts.PodsKubernetesResource,
+				kubernetes_manager_consts.PodExecsKubernetesResource,
+				kubernetes_manager_consts.PodLogsKubernetesResource,
+				kubernetes_manager_consts.ServicesKubernetesResource,
+				kubernetes_manager_consts.JobsKubernetesResource,
 			},
 		},
 		{
 			// Necessary for the API container to get its own namespace
-			Verbs: []string{consts.GetKubernetesVerb},
+			Verbs: []string{kubernetes_manager_consts.GetKubernetesVerb},
 			APIGroups: []string{rbacv1.APIGroupAll},
-			Resources: []string{consts.NamespacesKubernetesResource},
+			Resources: []string{kubernetes_manager_consts.NamespacesKubernetesResource},
 		},
 	}
 
@@ -285,7 +287,7 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 	}
 
 	roleBindingName := roleBindingsAttributes.GetName().GetString()
-	roleBindingsLabels := getStringMapFromLabelMap(roleBindingsAttributes.GetLabels())
+	roleBindingsLabels := shared_helpers.GetStringMapFromLabelMap(roleBindingsAttributes.GetLabels())
 	roleBindingsSubjects := []rbacv1.Subject{
 		{
 			Kind:      rbacv1.ServiceAccountKind,
@@ -295,8 +297,8 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 	}
 
 	roleBindingsRoleRef := rbacv1.RoleRef{
-		APIGroup: consts.RbacAuthorizationApiGroup,
-		Kind:     consts.RoleKubernetesResourceType,
+		APIGroup: kubernetes_manager_consts.RbacAuthorizationApiGroup,
+		Kind:     kubernetes_manager_consts.RoleKubernetesResourceType,
 		Name:     roleName,
 	}
 
@@ -315,7 +317,7 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 		}
 	}()
 
-	containerPorts, err := getKubernetesContainerPortsFromPrivatePortSpecs(privatePortSpecs)
+	containerPorts, err := shared_helpers.GetKubernetesContainerPortsFromPrivatePortSpecs(privatePortSpecs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting container ports from the API container's private port specs")
 	}
@@ -370,7 +372,7 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.NewError("Successfully converted the new API container's Kubernetes resources to an API container object, but the resulting map didn't have an entry for enclave ID '%v'", enclaveId)
 	}
 
-	if err := waitForPortAvailabilityUsingNetstat(
+	if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
 		backend.kubernetesManager,
 		enclaveNamespaceName,
 		apiContainerPodName,
@@ -382,7 +384,7 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container grpc port '%v/%v' to become available", privateGrpcPortSpec.GetProtocol(), privateGrpcPortSpec.GetNumber())
 	}
 
-	if err := waitForPortAvailabilityUsingNetstat(
+	if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
 		backend.kubernetesManager,
 		enclaveNamespaceName,
 		apiContainerPodName,
@@ -864,7 +866,7 @@ func getApiContainerObjectsFromKubernetesResources(
 			return nil, stacktrace.NewError("Expected a Kubernetes service for API container in enclave '%v'", enclaveId)
 		}
 
-		status, err := getContainerStatusFromPod(resourcesForEnclaveId.pod)
+		status, err := shared_helpers.GetContainerStatusFromPod(resourcesForEnclaveId.pod)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting container status from Kubernetes pod '%+v'", resourcesForEnclaveId.pod)
 		}
@@ -874,18 +876,18 @@ func getApiContainerObjectsFromKubernetesResources(
 			return nil, stacktrace.NewError("Expected to be able to get the cluster ip of the API container service, instead parsing the cluster ip of service '%v' returned nil", resourcesForEnclaveId.service.Name)
 		}
 
-		privatePorts, err := getPrivatePortsAndValidatePortExistence(
+		privatePorts, err := shared_helpers.GetPrivatePortsAndValidatePortExistence(
 			kubernetesService,
 			map[string]bool{
-				kurtosisInternalContainerGrpcPortSpecId:      true,
-				kurtosisInternalContainerGrpcProxyPortSpecId: true,
+				consts.KurtosisInternalContainerGrpcPortSpecId:      true,
+				consts.KurtosisInternalContainerGrpcProxyPortSpecId: true,
 			},
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred parsing the API container private port specs and validating gRPC and gRPC proxy port existence")
 		}
-		privateGrpcPortSpec := privatePorts[kurtosisInternalContainerGrpcPortSpecId]
-		privateGrpcProxyPortSpec := privatePorts[kurtosisInternalContainerGrpcProxyPortSpecId]
+		privateGrpcPortSpec := privatePorts[consts.KurtosisInternalContainerGrpcPortSpecId]
+		privateGrpcProxyPortSpec := privatePorts[consts.KurtosisInternalContainerGrpcProxyPortSpecId]
 
 		// NOTE: We set these to nil because in Kubernetes we have no way of knowing what the public info is!
 		var publicIpAddr net.IP = nil
