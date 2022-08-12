@@ -289,14 +289,14 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 			_, err = enclaveCtx.client.RemoveService(context.Background(), removeServiceArgs)
 			if err != nil {
 				failedServicesPool[serviceID] = stacktrace.Propagate(err,
-					"Attempted to remove service '%v' to delete its resources after it failed, but an error occurred" +
+					"Attempted to remove service '%v' to delete its resources after registering it failed, but an error occurred" +
 						"while attempting to remove the service.", serviceID)
 			}
 		}
 	}()
 	for serviceIDStr, errStr := range registerServicesResp.GetFailedServiceIdsToError() {
 		serviceID := services.ServiceID(serviceIDStr)
-		failedServicesPool[serviceID] = stacktrace.NewError("The following error occurred when trying to register service '%v':\n %v", serviceID, errStr)
+		failedServicesPool[serviceID] = stacktrace.Propagate(errors.New(errStr), "The following error occurred when trying to register service '%v'", serviceID)
 	}
 
 	logrus.Trace("New services successfully registered with Kurtosis API")
