@@ -581,7 +581,6 @@ func(network *ServiceNetwork) StartServices(
 		// We don't undo the blocking off of failed services by the rest of the network because the services in the network are blocking traffic
 		// from containers that don't exist anyways.
 		for serviceID, serviceInfo := range successfulServices {
-			serviceID := serviceID
 			serviceRegistration := serviceInfo.GetRegistration()
 			serviceGUID := serviceRegistration.GetGUID()
 
@@ -591,20 +590,10 @@ func(network *ServiceNetwork) StartServices(
 				delete(successfulServices, serviceID)
 				continue
 			}
-			shouldRemoveSidecar := true
-			defer func(){
-				if shouldRemoveSidecar {
-					network.networkingSidecarManager.Remove(ctx, sidecar)
-				}
-			}()
+			// TODO: When atomicity is implemented for StartServices, add a defer to undo creation of sidecar in case of failure
 
 			network.networkingSidecars[serviceID] = sidecar
-			shouldRemoveSidecarFromMap := true
-			defer func() {
-				if shouldRemoveSidecarFromMap {
-					delete(network.networkingSidecars, serviceID)
-				}
-			}()
+			// TODO: When atomicity is implemented for StartServices, add a defer to undo addition of sidecar to map
 
 			if err := sidecar.InitializeTrafficControl(ctx); err != nil {
 				failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred initializing the newly-created networking-sidecar-traffic-control-qdisc-configuration for service `%v`", serviceID)
@@ -612,8 +601,6 @@ func(network *ServiceNetwork) StartServices(
 				continue
 			}
 
-			shouldRemoveSidecar = false
-			shouldRemoveSidecarFromMap = false
 			newNodeServicePacketLossConfiguration := servicePacketLossConfigurationsByServiceID[serviceID]
 			updatesToApply[serviceID] = newNodeServicePacketLossConfiguration
 		}
