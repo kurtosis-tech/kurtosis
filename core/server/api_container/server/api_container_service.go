@@ -195,7 +195,7 @@ func (apicService ApiContainerService) RegisterServices(ctx context.Context, arg
 	}
 	defer func() {
 		for serviceID, _ := range shouldRemoveRegistrations {
-			_, err := apicService.serviceNetwork.RemoveService(ctx, serviceID, defaultContainerStopTimeoutSeconds)
+			_, err := apicService.serviceNetwork.RemoveService(context.Background(), serviceID, defaultContainerStopTimeoutSeconds)
 			failedServicesPool[serviceID] = stacktrace.Propagate(err,
 				"Attempted to remove service '%v' to delete its resources after it failed, but an error occurred" +
 					"while attempting to remove the service.", serviceID)

@@ -289,7 +289,7 @@ func (network ServiceNetwork) RegisterServices(
 		shouldRemoveServices[serviceID] = true
 		defer func() {
 			if shouldRemoveServices[serviceID] {
-				err = network.destroyServiceAfterFailure(serviceRegistration.GetGUID())
+				err = network.destroyServiceAfterFailure(context.Background(), serviceRegistration.GetGUID())
 				if err != nil {
 					failedServicePool[serviceID] = stacktrace.Propagate(err,
 						"WARNING: Attempted to remove service '%v' after it failed to register but an error occurredwhile doing so." +
@@ -982,14 +982,14 @@ func (network *ServiceNetwork) destroyServiceBestEffortAfterRegistrationFailure(
 	}
 }
 
-func (network *ServiceNetwork) destroyServiceAfterFailure(serviceGUID service.ServiceGUID) error {
+func (network *ServiceNetwork) destroyServiceAfterFailure(ctx context.Context, serviceGUID service.ServiceGUID) error {
 	destroyServiceFilters := &service.ServiceFilters{
 		GUIDs: map[service.ServiceGUID]bool{
 			serviceGUID: true,
 		},
 	}
 	// Use background context in case the input one is cancelled
-	_, erroredRegistrations, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveId, destroyServiceFilters)
+	_, erroredRegistrations, err := network.kurtosisBackend.DestroyUserServices(ctx, network.enclaveId, destroyServiceFilters)
 	var errToReturn error
 	if err != nil {
 		errToReturn = err

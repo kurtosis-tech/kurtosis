@@ -288,7 +288,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 		for serviceID, _ := range shouldRemoveServices {
 			// TODO: Migrate this to a bulk remove services call
 			removeServiceArgs := binding_constructors.NewRemoveServiceArgs(string(serviceID), defaultContainerStopTimeoutSeconds)
-			_, err = enclaveCtx.client.RemoveService(ctx, removeServiceArgs)
+			_, err = enclaveCtx.client.RemoveService(context.Background(), removeServiceArgs)
 			if err != nil {
 				failedServicesPool[serviceID] = stacktrace.Propagate(err,
 					"Attempted to remove service '%v' to delete its resources after it failed, but an error occurred" +
