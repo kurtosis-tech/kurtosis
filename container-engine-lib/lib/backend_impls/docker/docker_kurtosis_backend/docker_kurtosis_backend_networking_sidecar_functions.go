@@ -3,6 +3,7 @@ package docker_kurtosis_backend
 import (
 	"bytes"
 	"context"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -358,7 +359,7 @@ func (backend *DockerKurtosisBackend) getMatchingNetworkingSidecars(
 		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
 		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.NetworkingSidecarContainerTypeDockerLabelValue.GetString(),
 	}
-	matchingContainers, err := backend.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchAllContainersWhenRetrievingContainers)
+	matchingContainers, err := backend.dockerManager.GetContainersByLabels(ctx, searchLabels, consts.ShouldFetchAllContainersWhenRetrievingContainers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred fetching containers using labels: %+v", searchLabels)
 	}
@@ -413,7 +414,7 @@ func getNetworkingSidecarObjectFromContainerInfo(
 		return nil, stacktrace.NewError("Expected to find GUID label key '%v' but none was found", label_key_consts.GUIDDockerLabelKey.GetString())
 	}
 
-	isContainerRunning, found := isContainerRunningDeterminer[containerStatus]
+	isContainerRunning, found := consts.IsContainerRunningDeterminer[containerStatus]
 	if !found {
 		// This should never happen because we enforce completeness in a unit test
 		return nil, stacktrace.NewError("No is-running designation found for networking sidecar container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
