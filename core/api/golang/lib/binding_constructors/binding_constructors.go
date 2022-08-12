@@ -246,10 +246,9 @@ func NewServiceInfo(
 // ==============================================================================================
 //                                        Remove Service
 // ==============================================================================================
-func NewRemoveServiceArgs(serviceId string, containerStopTimeoutSeconds uint64) *kurtosis_core_rpc_api_bindings.RemoveServiceArgs {
+func NewRemoveServiceArgs(serviceId string) *kurtosis_core_rpc_api_bindings.RemoveServiceArgs {
 	return &kurtosis_core_rpc_api_bindings.RemoveServiceArgs{
 		ServiceId:                   serviceId,
-		ContainerStopTimeoutSeconds: containerStopTimeoutSeconds,
 	}
 }
 

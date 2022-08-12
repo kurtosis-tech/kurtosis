@@ -311,10 +311,9 @@ export function newServiceInfo(
 // ==============================================================================================
 //                                        Remove Service
 // ==============================================================================================
-export function newRemoveServiceArgs(serviceId: ServiceID, containerStopTimeoutSeconds: number): RemoveServiceArgs {
+export function newRemoveServiceArgs(serviceId: ServiceID): RemoveServiceArgs {
     const result: RemoveServiceArgs = new RemoveServiceArgs();
     result.setServiceId(serviceId);
-    result.setContainerStopTimeoutSeconds(containerStopTimeoutSeconds);
 
     return result;
 }

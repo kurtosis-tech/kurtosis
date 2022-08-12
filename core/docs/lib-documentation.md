@@ -83,11 +83,11 @@ Starts a new service in the enclave with the given service ID, inside the partit
 * `serviceContext`: The [ServiceContext][servicecontext] representation of a service running in a Docker container. Port information can be found in `ServiceContext.GetPublicPorts()`. The port spec strings that the service declared (as defined in [ContainerConfig.usedPorts][containerconfig_usedports]), mapped to the port on the host machine where the port has been bound to. This allows you to make requests to a service running in Kurtosis by making requests to a port on your local machine. If a port was not bound to a host machine port, it will not be present in the map (and if no ports were bound to host machine ports, the map will be empty).
 
 ### addServicesToPartition(Map\<ServiceID, Func(String ipAddr) -\> [ContainerConfig][containerconfig]\> serviceConfigSuppliers, PartitionID partitionId) -\> (Map\<ServiceID, [ServiceContext][servicecontext]\> successfulServices, Map\<ServiceID, Error\> failedServices)
-Starts a services in bulk in the enclave with the given service IDs, inside the partition with the given ID, using the given config suppliers.
+Start services in bulk in the enclave with the given service IDs, inside the partition with the given ID, using the given config suppliers.
 
 **Args**
 
-* `serviceConfigSuppliers`: A mapping of service IDs that to start in the enclave to their respective `containerConfigSupplier`'s indicating how to configure the service.
+* `serviceConfigSuppliers`: A mapping of service IDs to start in the enclave to their respective `containerConfigSupplier`'s indicating how to configure the service.
 * `partitionId`: The ID of the partition that the new service should be started in. This can be left blank to start the service in the default partition if it exists (i.e. if the enclave hasn't been repartitioned and the default partition removed).
 
 **Returns**

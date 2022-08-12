@@ -329,9 +329,6 @@ message GetServicesResponse {
 // ==============================================================================================
 message RemoveServiceArgs {
   string service_id = 1;
-
-  // How long to wait for the service to gracefully stop before hard killing it
-  uint64 container_stop_timeout_seconds = 2;
 }
 
 message RemoveServiceResponse {
