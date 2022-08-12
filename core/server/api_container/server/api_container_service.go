@@ -41,7 +41,6 @@ const (
 
 	// The string returned by the API if a service's public IP address doesn't exist
 	missingPublicIpAddrStr = ""
-	defaultContainerStopTimeoutSeconds = 0
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -195,7 +194,7 @@ func (apicService ApiContainerService) RegisterServices(ctx context.Context, arg
 	}
 	defer func() {
 		for serviceID, _ := range shouldRemoveRegistrations {
-			_, err := apicService.serviceNetwork.RemoveService(context.Background(), serviceID, defaultContainerStopTimeoutSeconds)
+			_, err := apicService.serviceNetwork.RemoveService(context.Background(), serviceID)
 			failedServicesPool[serviceID] = stacktrace.Propagate(err,
 				"Attempted to remove service '%v' to delete its resources after it failed, but an error occurred" +
 					"while attempting to remove the service.", serviceID)
@@ -375,10 +374,7 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 func (apicService ApiContainerService) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*kurtosis_core_rpc_api_bindings.RemoveServiceResponse, error) {
 	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
 
-	containerStopTimeoutSeconds := args.ContainerStopTimeoutSeconds
-	containerStopTimeout := time.Duration(containerStopTimeoutSeconds) * time.Second
-
-	serviceGuid, err := apicService.serviceNetwork.RemoveService(ctx, serviceId, containerStopTimeout)
+	serviceGuid, err := apicService.serviceNetwork.RemoveService(ctx, serviceId)
 	if err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "An error occurred removing service with ID '%v'", serviceId)

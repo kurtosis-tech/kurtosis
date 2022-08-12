@@ -71,9 +71,6 @@ export type PartitionID = string;
 //  or it was repartitioned away)
 const DEFAULT_PARTITION_ID: PartitionID = "";
 
-// For removing services in rollback operations
-const DEFAULT_CONTAINER_STOP_TIMEOUT_SECONDS = 0;
-
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class EnclaveContext {
 
@@ -498,7 +495,7 @@ export class EnclaveContext {
                 // Do a best effort attempt to remove resources for this object to clean up after it failed
                 // TODO: Migrate this to a bulk remove services call
                 if (shouldRemove){
-                    const removeServiceArgs : RemoveServiceArgs = newRemoveServiceArgs(serviceId, DEFAULT_CONTAINER_STOP_TIMEOUT_SECONDS)
+                    const removeServiceArgs : RemoveServiceArgs = newRemoveServiceArgs(serviceId)
                     const removeServiceResult = await this.backend.removeService(removeServiceArgs);
                     if (removeServiceResult.isErr()){
                         const errMsg = `"Attempted to remove service '${serviceId}' to delete its resources after it failed to start, but the following error occurred" +
@@ -560,12 +557,9 @@ export class EnclaveContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public async removeService(serviceId: ServiceID, containerStopTimeoutSeconds: number): Promise<Result<null, Error>> {
+    public async removeService(serviceId: ServiceID): Promise<Result<null, Error>> {
         log.debug("Removing service '" + serviceId + "'...");
-        // NOTE: This is kinda weird - when we remove a service we can never get it back so having a container
-        //  stop timeout doesn't make much sense. It will make more sense when we can stop/start containers
-        // Independent of adding/removing them from the enclave
-        const removeServiceArgs: RemoveServiceArgs = newRemoveServiceArgs(serviceId, containerStopTimeoutSeconds);
+        const removeServiceArgs: RemoveServiceArgs = newRemoveServiceArgs(serviceId);
 
         const removeServiceResult = await this.backend.removeService(removeServiceArgs)
         if(removeServiceResult.isErr()){

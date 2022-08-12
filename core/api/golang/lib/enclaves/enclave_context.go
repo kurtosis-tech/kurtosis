@@ -46,8 +46,6 @@ const (
 	grpcDataTransferLimit     = 3999000 //3.999 Mb. 1kb wiggle room. 1kb being about the size of a simple 2 paragraph readme.
 	tempCompressionDirPattern = "upload-compression-cache-"
 	compressionExtension      = ".tgz"
-
-	defaultContainerStopTimeoutSeconds = 0
 )
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -287,7 +285,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	defer func() {
 		for serviceID, _ := range shouldRemoveServices {
 			// TODO: Migrate this to a bulk remove services call
-			removeServiceArgs := binding_constructors.NewRemoveServiceArgs(string(serviceID), defaultContainerStopTimeoutSeconds)
+			removeServiceArgs := binding_constructors.NewRemoveServiceArgs(string(serviceID))
 			_, err = enclaveCtx.client.RemoveService(context.Background(), removeServiceArgs)
 			if err != nil {
 				failedServicesPool[serviceID] = stacktrace.Propagate(err,
@@ -461,7 +459,7 @@ func (enclaveCtx *EnclaveContext) RemoveService(serviceId services.ServiceID, co
 	// NOTE: This is kinda weird - when we remove a service we can never get it back so having a container
 	//  stop timeout doesn't make much sense. It will make more sense when we can stop/start containers
 	// Independent of adding/removing them from the enclave
-	args := binding_constructors.NewRemoveServiceArgs(string(serviceId), containerStopTimeoutSeconds)
+	args := binding_constructors.NewRemoveServiceArgs(string(serviceId))
 	if _, err := enclaveCtx.client.RemoveService(context.Background(), args); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing service '%v' from the enclave", serviceId)
 	}

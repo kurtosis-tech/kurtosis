@@ -28,7 +28,6 @@ import (
 	"path"
 	"strings"
 	"sync"
-	"time"
 )
 
 const (
@@ -42,8 +41,6 @@ const (
 
 	minMemoryLimit = 6 // Docker doesn't allow memory limits less than 6 megabytes
 	defaultMemoryAllocMegabytes = 0
-
-	defaultContainerStopTimeoutSeconds = 0
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -617,7 +614,6 @@ func(network *ServiceNetwork) StartServices(
 func (network *ServiceNetwork) RemoveService(
 	ctx context.Context,
 	serviceId service.ServiceID,
-	containerStopTimeout time.Duration,
 ) (service.ServiceGUID, error) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()

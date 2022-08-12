@@ -5208,8 +5208,7 @@ proto.api_container_api.RemoveServiceArgs.prototype.toObject = function(opt_incl
  */
 proto.api_container_api.RemoveServiceArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    serviceId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    containerStopTimeoutSeconds: jspb.Message.getFieldWithDefault(msg, 2, 0)
+    serviceId: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -5250,10 +5249,6 @@ proto.api_container_api.RemoveServiceArgs.deserializeBinaryFromReader = function
       var value = /** @type {string} */ (reader.readString());
       msg.setServiceId(value);
       break;
-    case 2:
-      var value = /** @type {number} */ (reader.readUint64());
-      msg.setContainerStopTimeoutSeconds(value);
-      break;
     default:
       reader.skipField();
       break;
@@ -5290,13 +5285,6 @@ proto.api_container_api.RemoveServiceArgs.serializeBinaryToWriter = function(mes
       f
     );
   }
-  f = message.getContainerStopTimeoutSeconds();
-  if (f !== 0) {
-    writer.writeUint64(
-      2,
-      f
-    );
-  }
 };
 
 
@@ -5315,24 +5303,6 @@ proto.api_container_api.RemoveServiceArgs.prototype.getServiceId = function() {
  */
 proto.api_container_api.RemoveServiceArgs.prototype.setServiceId = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
-};
-
-
-/**
- * optional uint64 container_stop_timeout_seconds = 2;
- * @return {number}
- */
-proto.api_container_api.RemoveServiceArgs.prototype.getContainerStopTimeoutSeconds = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
-};
-
-
-/**
- * @param {number} value
- * @return {!proto.api_container_api.RemoveServiceArgs} returns this
- */
-proto.api_container_api.RemoveServiceArgs.prototype.setContainerStopTimeoutSeconds = function(value) {
-  return jspb.Message.setProto3IntField(this, 2, value);
 };
 
 
