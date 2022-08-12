@@ -32,24 +32,26 @@ func StartUserServices(
 ) {
 	serviceRegistrationMutex.Lock()
 	defer serviceRegistrationMutex.Unlock()
+	failedServicesPool := map[service.ServiceGUID]error{}
+	serviceConfigsToStart := map[service.ServiceGUID]*service.ServiceConfig{}
+	for guid, config:= range services {
+		serviceConfigsToStart[guid] = config
+	}
 
-	// Sanity check for port bindings on all services
-	for guid, config := range services {
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-		publicPorts := config.GetPublicPorts()
-		privatePorts := config.GetPrivatePorts()
+	// Sanity check for port bindings on all services
+	for serviceGUID, serviceConfig := range services {
+		publicPorts := serviceConfig.GetPublicPorts()
 		if publicPorts != nil && len(publicPorts) > 0 {
-			if len(privatePorts) != len(publicPorts) {
-				return nil, nil, stacktrace.NewError("The received private ports length and the public ports length are not equal for service with guid `%v`. Received '%v' private ports and '%v' public ports", guid, len(privatePorts), len(publicPorts))
-			}
-
-			for portId, privatePortSpec := range privatePorts {
-				if _, found := publicPorts[portId]; !found {
-					return nil, nil, stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v' for service with guid `%v`, but it was not found", portId, privatePortSpec.GetNumber(), guid)
-				}
+			privatePorts := serviceConfig.GetPrivatePorts()
+			err := checkPrivateAndPublicPortsAreOneToOne(privatePorts, publicPorts)
+			if err != nil {
+				failedServicesPool[serviceGUID] = stacktrace.Propagate(err, "Private and public ports are for service with GUID '%v' are not one to one.", serviceGUID)
+				delete(serviceConfigsToStart, serviceGUID)
 			}
 		}
 	}
+	//TODO END huge hack to temporarily enable static ports for NEAR
 
 	enclaveNetwork, err := shared_helpers.GetEnclaveNetworkByEnclaveId(ctx, enclaveID, dockerManager)
 	if err != nil {
@@ -81,16 +83,17 @@ func StartUserServices(
 	for serviceGUID, _ := range services {
 		_, found := registrationsForEnclave[serviceGUID]
 		if !found {
-			return nil, nil, stacktrace.NewError(
+			failedServicesPool[serviceGUID] = stacktrace.NewError(
 				"Cannot start service '%v' because no preexisting registration has been made for the service",
 				serviceGUID,
 			)
+			delete(serviceConfigsToStart, serviceGUID)
 		}
 	}
 
 	// Find if a container has already been associated with any of the registrations yet
 	serviceGUIDs := map[service.ServiceGUID]bool{}
-	for guid := range services{
+	for guid := range serviceConfigsToStart {
 		serviceGUIDs[guid] = true
 	}
 	preexistingServicesFilters := &service.ServiceFilters{
@@ -100,14 +103,10 @@ func StartUserServices(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting preexisting containers for the services.")
 	}
-	if len(preexistingServices) > 0 {
-		var preexistingServiceGUIDs []service.ServiceGUID
-		for guid := range preexistingServices {
-			preexistingServiceGUIDs = append(preexistingServiceGUIDs, guid)
-		}
-		return nil, nil, stacktrace.Propagate(err, "Cannot start services '%v'; because containers already exists for those services.", preexistingServiceGUIDs)
+	for serviceGUID := range preexistingServices {
+		failedServicesPool[serviceGUID] = stacktrace.NewError( "Cannot start services '%v'; because containers already exists for those services.", serviceGUID)
+		delete(serviceConfigsToStart, serviceGUID)
 	}
-
 
 	enclaveObjAttrsProvider, err := objAttrsProvider.ForEnclave(enclaveID)
 	if err != nil {
@@ -117,7 +116,7 @@ func StartUserServices(
 	successfulStarts, failedStarts, err := runStartServiceOperationsInParallel(
 		ctx,
 		enclaveNetworkId,
-		services,
+		serviceConfigsToStart,
 		registrationsForEnclave,
 		enclaveObjAttrsProvider,
 		freeIpAddrProvider,
@@ -126,7 +125,12 @@ func StartUserServices(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to start services in parallel.")
 	}
 
-	return successfulStarts, failedStarts, nil
+	// Add failed starts to failed services pool
+	for serviceGUID, serviceErr := range failedStarts {
+		failedServicesPool[serviceGUID] = serviceErr
+	}
+
+	return successfulStarts, failedServicesPool, nil
 }
 
 // ====================================================================================================
@@ -167,7 +171,9 @@ func runStartServiceOperationsInParallel(
 		serviceGUID := service.ServiceGUID(id)
 		serviceObj, ok := data.(service.Service)
 		if !ok {
-			return nil, nil, stacktrace.NewError("Casting to a service object on data returned from the operation to start service with guid `%v` failed.", serviceGUID)
+			return nil, nil, stacktrace.NewError(
+				"An error occurred downcasting data returned from the start user service operation for service with GUID: %v." +
+					"This is a Kurtosis bug. Make sure the desired type is actually being returned in the corresponding Operation.", serviceGUID)
 		}
 		successfulServices[serviceGUID] = serviceObj
 	}
@@ -348,4 +354,21 @@ func createStartServiceOperation(
 		shouldKillContainer = false
 		return serviceObj, nil
 	}
+}
+
+// Ensure that provided [privatePorts] and [publicPorts] are one to one by checking:
+// - There is a matching publicPort for every portID in privatePorts
+// - There are the same amount of private and public ports
+// If error is nil, the public and private ports are one to one.
+func checkPrivateAndPublicPortsAreOneToOne(privatePorts map[string]*port_spec.PortSpec, publicPorts map[string]*port_spec.PortSpec) error {
+	if len(privatePorts) != len(publicPorts) {
+		return stacktrace.NewError("The received private ports length and the public ports length are not equal. Received '%v' private ports and '%v' public ports", len(privatePorts), len(publicPorts))
+	}
+
+	for portID, privatePortSpec := range privatePorts {
+		if _, found := publicPorts[portID]; !found {
+			return stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portID, privatePortSpec.GetNumber())
+		}
+	}
+	return nil
 }

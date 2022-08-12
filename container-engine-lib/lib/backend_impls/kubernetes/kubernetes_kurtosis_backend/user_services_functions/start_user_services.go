@@ -46,12 +46,18 @@ func StartUserServices(
 	map[service.ServiceGUID]error,
 	error,
 ) {
+	failedServicesPool := map[service.ServiceGUID]error{}
+	serviceConfigsToStart := map[service.ServiceGUID]*service.ServiceConfig{}
+	for guid, config:= range services {
+		serviceConfigsToStart[guid] = config
+	}
+
 	// Sanity check for port bindings on all services
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	for _, config := range services {
 		publicPorts := config.GetPublicPorts()
 		if publicPorts != nil && len(publicPorts) > 0 {
-			logrus.Warn("The Kubernetes Kurtosis backend doesn't support defining static ports for services; the public ports will be ignored")
+			logrus.Warn("The Kubernetes Kurtosis backend doesn't support defining static ports for services; the public ports will be ignored.")
 		}
 	}
 
@@ -77,7 +83,8 @@ func StartUserServices(
 	}
 	for guid, _ := range serviceGUIDs {
 		if _, found := preexistingObjectsAndResources[guid]; !found {
-			return nil, nil, stacktrace.NewError("Couldn't find any service registrations matching service GUID '%v'", guid)
+			failedServicesPool[guid] = stacktrace.NewError("Couldn't find any service registrations matching service GUID '%v'", guid)
+			delete(serviceConfigsToStart, guid)
 		}
 	}
 	if len(preexistingObjectsAndResources) > len(serviceGUIDs) {
@@ -88,14 +95,19 @@ func StartUserServices(
 	successfulStarts, failedStarts, err := runStartServiceOperationsInParallel(
 		ctx,
 		enclaveID,
-		services,
+		serviceConfigsToStart,
 		preexistingObjectsAndResources,
 		kubernetesManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to start services in parallel.")
 	}
 
-	return successfulStarts, failedStarts, nil
+	// Add failed starts to failed services pool
+	for serviceGUID, serviceErr := range failedStarts {
+		failedServicesPool[serviceGUID] = serviceErr
+	}
+
+	return successfulStarts, failedServicesPool, nil
 }
 
 // ====================================================================================================
@@ -132,7 +144,9 @@ func runStartServiceOperationsInParallel(
 		serviceGUID := service.ServiceGUID(id)
 		serviceObj, ok := data.(service.Service)
 		if !ok {
-			return nil, nil, stacktrace.NewError("Casting to a service object on data returned from the operation to start service with guid `%v` failed.", serviceGUID)
+			return nil, nil, stacktrace.NewError(
+				"An error occurred downcasting data returned from the start user service operation for service with GUID: %v." +
+					"This is a Kurtosis bug. Make sure the desired type is actually being returned in the corresponding Operation.", serviceGUID)
 		}
 		successfulServices[serviceGUID] = serviceObj
 	}

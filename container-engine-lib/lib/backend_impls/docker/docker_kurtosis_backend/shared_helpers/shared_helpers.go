@@ -1,9 +1,11 @@
 package shared_helpers
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
@@ -14,8 +16,11 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"net"
 	"strconv"
+	"strings"
+	"time"
 )
 
 const (
@@ -32,18 +37,6 @@ const (
 // when adding functionality in this folder.
 // Things to think about: Could this function be a private helper function that's scope is smaller than you think?
 // Eg. only used by start user services functions thus could go in start_user_services.go
-
-// This maps a Docker container's status to a binary "is the container considered running?" determiner
-// Its completeness is enforced via unit test
-var IsContainerRunningDeterminer = map[types.ContainerStatus]bool{
-	types.ContainerStatus_Paused:     false,
-	types.ContainerStatus_Restarting: true,
-	types.ContainerStatus_Running:    true,
-	types.ContainerStatus_Removing:   false,
-	types.ContainerStatus_Dead:       false,
-	types.ContainerStatus_Created:    false,
-	types.ContainerStatus_Exited:     false,
-}
 
 // Unfortunately, Docker doesn't have an enum for the protocols it supports, so we have to create this translation map
 var portSpecProtosToDockerPortProtos = map[port_spec.PortProtocol]string{
@@ -443,7 +436,7 @@ func getUserServiceObjsFromDockerResources(
 		)
 
 		containerStatus := container.GetStatus()
-		isContainerRunning, found := IsContainerRunningDeterminer[containerStatus]
+		isContainerRunning, found := consts.IsContainerRunningDeterminer[containerStatus]
 		if !found {
 			return nil, stacktrace.NewError("No is-running determination found for status '%v' for container '%v'", containerStatus.String(), containerName)
 		}
@@ -462,7 +455,6 @@ func getUserServiceObjsFromDockerResources(
 	}
 	return result, nil
 }
-
 
 func GetSingleUserServiceObjAndResourcesNoMutex(
 	ctx context.Context,
@@ -501,3 +493,60 @@ func GetSingleUserServiceObjAndResourcesNoMutex(
 
 	return resultService, resultDockerResources, nil
 }
+
+const netstatSuccessExitCode = 0
+
+func WaitForPortAvailabilityUsingNetstat(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	containerId string,
+	portSpec *port_spec.PortSpec,
+	maxRetries uint,
+	timeBetweenRetries time.Duration,
+) error {
+	commandStr := fmt.Sprintf(
+		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
+		strings.ToLower(portSpec.GetProtocol().String()),
+		portSpec.GetNumber(),
+	)
+	execCmd := []string{
+		"sh",
+		"-c",
+		commandStr,
+	}
+	for i := uint(0); i < maxRetries; i++ {
+		outputBuffer := &bytes.Buffer{}
+		exitCode, err := dockerManager.RunExecCommand(ctx, containerId, execCmd, outputBuffer)
+		if err == nil {
+			if exitCode == netstatSuccessExitCode {
+				return nil
+			}
+			logrus.Debugf(
+				"Netstat availability-waiting command '%v' returned without a Docker error, but exited with non-%v exit code '%v' and logs:\n%v",
+				commandStr,
+				netstatSuccessExitCode,
+				exitCode,
+				outputBuffer.String(),
+			)
+		} else {
+			logrus.Debugf(
+				"Netstat availability-waiting command '%v' experienced a Docker error:\n%v",
+				commandStr,
+				err,
+			)
+		}
+
+		// Tiny optimization to not sleep if we're not going to run the loop again
+		if i < maxRetries {
+			time.Sleep(timeBetweenRetries)
+		}
+	}
+
+	return stacktrace.NewError(
+		"The port didn't become available (as measured by the command '%v') even after retrying %v times with %v between retries",
+		commandStr,
+		maxRetries,
+		timeBetweenRetries,
+	)
+}
+

@@ -71,8 +71,8 @@ func RegisterUserServices(
 		serviceRegistration, ok := data.(*service.ServiceRegistration)
 		if !ok {
 			return nil, nil, stacktrace.NewError(
-				`An error occurred downcasting data returned from the register user service operation for service with id: %v.
-					This is a Kurtosis bug. Make sure the desired type is actually being returned in the corresponding Operation.`, serviceID)
+				"An error occurred downcasting data returned from the register user service operation for service with id: %v." +
+					"This is a Kurtosis bug. Make sure the desired type is actually being returned in the corresponding Operation.", serviceID)
 		}
 		successfulRegistrations[serviceID] = serviceRegistration
 	}
