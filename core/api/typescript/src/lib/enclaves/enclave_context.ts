@@ -352,7 +352,6 @@ export class EnclaveContext {
         partitionId: PartitionID,
     ): Promise<Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error>> {
         const failedServicesPool: Map<ServiceID, Error> = new Map<ServiceID, Error>();
-        const shouldRemoveServices: Map<ServiceID, boolean> = new Map<ServiceID, boolean>();
 
         log.trace("Registering new services with Kurtosis API...");
         const serviceIdSet: Map<string, boolean> = new Map<ServiceID, boolean>();
@@ -368,6 +367,7 @@ export class EnclaveContext {
         const registerServicesResponse = registerServicesResponseResult.value
         // Defer undos to remove all registration resources of successful registrations, in case of errors in following phases
         const successfulRegistrations: jspb.Map<string, string> = registerServicesResponse.getServiceIdsToPrivateIpAddressesMap();
+        const shouldRemoveServices: Map<ServiceID, boolean> = new Map<ServiceID, boolean>();
         for (const [serviceIdStr, _] of successfulRegistrations.entries()) {
             shouldRemoveServices.set(<ServiceID>serviceIdStr, true);
         }
@@ -491,21 +491,19 @@ export class EnclaveContext {
 
             // Do not remove resources for successful services
             for (const [serviceId, _] of successfulServices) {
-                shouldRemoveServices.set(serviceId, false)
+                shouldRemoveServices.delete(serviceId)
             }
             return ok([successfulServices, failedServicesPool])
         } finally {
-           for (const[serviceId, shouldRemove] of shouldRemoveServices) {
+           for (const[serviceId, _] of shouldRemoveServices) {
                 // Do a best effort attempt to remove resources for this object to clean up after it failed
                 // TODO: Migrate this to a bulk remove services call
-                if (shouldRemove){
-                    const removeServiceArgs : RemoveServiceArgs = newRemoveServiceArgs(serviceId)
-                    const removeServiceResult = await this.backend.removeService(removeServiceArgs);
-                    if (removeServiceResult.isErr()){
-                        const errMsg = `"Attempted to remove service '${serviceId}' to delete its resources after it failed to start, but the following error occurred" +
-                        "while attempting to remove the service:\n ${removeServiceResult.error}`
-                        failedServicesPool.set(serviceId, new Error(errMsg))
-                    }
+                const removeServiceArgs : RemoveServiceArgs = newRemoveServiceArgs(serviceId)
+                const removeServiceResult = await this.backend.removeService(removeServiceArgs);
+                if (removeServiceResult.isErr()){
+                    const errMsg = `"Attempted to remove service '${serviceId}' to delete its resources after it failed to start, but the following error occurred" +
+                    "while attempting to remove the service:\n ${removeServiceResult.error}`
+                    failedServicesPool.set(serviceId, new Error(errMsg))
                 }
             }
        }
