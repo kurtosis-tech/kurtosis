@@ -2,7 +2,7 @@
 
 ### Features
 * Implement stringer interface for `PortSpec`
-* Upgrade `container-engine-lib` to 0.34.0
+* Upgrade `container-engine-lib` to 0.34.1
 * Implement `ServiceNetwork.RegisterServices`
 * Implement `ServiceNetwork.StartServices`
 * Add `StartServicesArgs`, `StartServicesResponse`, `RegisterServicesArgs, `RegisterServicesResponse, and `ServiceConfig` to protobuf
