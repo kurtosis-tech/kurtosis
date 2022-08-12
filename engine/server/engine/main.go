@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/backend_creator"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
@@ -122,7 +122,7 @@ func runMain() error {
 	return nil
 }
 
-func getEnclaveManager(ctx context.Context, kurtosisBackendType args.KurtosisBackendType, backendConfig interface{}) (*enclave_manager.EnclaveManager, error){
+func getEnclaveManager(ctx context.Context, kurtosisBackendType args.KurtosisBackendType, backendConfig interface{}) (*enclave_manager.EnclaveManager, error) {
 	var kurtosisBackend backend_interface.KurtosisBackend
 	var err error
 	var apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
