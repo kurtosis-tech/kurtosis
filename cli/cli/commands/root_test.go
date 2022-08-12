@@ -59,6 +59,23 @@ func TestGetLatestCLIReleaseVersionFromCacheFile_SaveVersionInCacheFileAndGetVer
 	require.NoError(t, err, "An error occurred removing the cache file for test")
 }
 
+func TestParseVersionStrToSemVer_CanParseValidVersions(t *testing.T){
+	validStrictSemanticVersionStr := "0.23.1" //Semantic Versioning 2.0.0
+
+	validPrefixedSemanticVersionStr := "v0.23.1" //Semantic Versioning 1.0.0 (tagging specification)
+
+	invalidSemanticVersionStr := "v0.23.1v"
+
+	_, err := parseVersionStrToSemVer(validStrictSemanticVersionStr)
+	require.NoError(t, err, "The version string '%' can't be parsed to a valid semantic version", validStrictSemanticVersionStr)
+
+	_, err = parseVersionStrToSemVer(validPrefixedSemanticVersionStr)
+	require.NoError(t, err, "The version string '%' can't be parsed to a valid semantic version", validPrefixedSemanticVersionStr)
+
+	_, err = parseVersionStrToSemVer(invalidSemanticVersionStr)
+	require.Error(t, err, "The version string '%' was successfully parse and it is wrong because it is an invalid version string", invalidSemanticVersionStr)
+}
+
 func createNewTempFileAndGetFilepath() (string, func() error, error) {
 
 	tempFile, err := ioutil.TempFile("", temporaryTestFileFilename)
