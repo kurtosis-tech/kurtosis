@@ -352,6 +352,7 @@ export class EnclaveContext {
         partitionId: PartitionID,
     ): Promise<Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error>> {
         const failedServicesPool: Map<ServiceID, Error> = new Map<ServiceID, Error>();
+        const successfulServices: Map<ServiceID, ServiceContext> = new Map<ServiceID, ServiceContext>();
 
         log.trace("Registering new services with Kurtosis API...");
         const serviceIdSet: Map<string, boolean> = new Map<ServiceID, boolean>();
@@ -467,7 +468,6 @@ export class EnclaveContext {
             if (successfulServicesInfo == undefined) {
                 return err(new Error("Expected StartServicesResponse to contain a field that does not exist."))
             }
-            const successfulServices: Map<ServiceID, ServiceContext> = new Map<ServiceID, ServiceContext>();
             for (const [serviceIdStr, serviceInfo] of successfulServicesInfo.entries()) {
                 const serviceId: ServiceID = <ServiceID>serviceIdStr;
                 const serviceCtxPrivatePorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
@@ -493,7 +493,6 @@ export class EnclaveContext {
             for (const [serviceId, _] of successfulServices) {
                 shouldRemoveServices.delete(serviceId)
             }
-            return ok([successfulServices, failedServicesPool])
         } finally {
            for (const[serviceId, _] of shouldRemoveServices) {
                 // Do a best effort attempt to remove resources for this object to clean up after it failed
@@ -507,6 +506,7 @@ export class EnclaveContext {
                 }
             }
        }
+        return ok([successfulServices, failedServicesPool])
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
