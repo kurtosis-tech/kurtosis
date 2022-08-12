@@ -2,6 +2,8 @@ package kubernetes_kurtosis_backend
 
 import (
 	"context"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
@@ -89,7 +91,7 @@ func (backend KubernetesKurtosisBackend) CreateModule(
 	}
 
 	privatePorts := map[string]*port_spec.PortSpec{
-		kurtosisInternalContainerGrpcPortSpecId: privateGrpcPortSpec,
+		consts.KurtosisInternalContainerGrpcPortSpecId: privateGrpcPortSpec,
 	}
 
 	// Get Pod Attributes so that we can select them with the Service
@@ -104,8 +106,8 @@ func (backend KubernetesKurtosisBackend) CreateModule(
 		)
 	}
 	modulePodName := modulePodAttributes.GetName().GetString()
-	modulePodLabels := getStringMapFromLabelMap(modulePodAttributes.GetLabels())
-	modulePodAnnotations := getStringMapFromAnnotationMap(modulePodAttributes.GetAnnotations())
+	modulePodLabels := shared_helpers.GetStringMapFromLabelMap(modulePodAttributes.GetLabels())
+	modulePodAnnotations := shared_helpers.GetStringMapFromAnnotationMap(modulePodAttributes.GetAnnotations())
 
 	// Get Service Attributes
 	moduleServiceAttributes, err := enclaveAttributesProvider.ForModuleService(
@@ -121,12 +123,12 @@ func (backend KubernetesKurtosisBackend) CreateModule(
 		)
 	}
 	moduleServiceName := moduleServiceAttributes.GetName().GetString()
-	moduleServiceLabels := getStringMapFromLabelMap(moduleServiceAttributes.GetLabels())
-	moduleServiceAnnotations := getStringMapFromAnnotationMap(moduleServiceAttributes.GetAnnotations())
+	moduleServiceLabels := shared_helpers.GetStringMapFromLabelMap(moduleServiceAttributes.GetLabels())
+	moduleServiceAnnotations := shared_helpers.GetStringMapFromAnnotationMap(moduleServiceAttributes.GetAnnotations())
 
 	// Define service ports. These hook up to ports on the containers running in the module pod
 	// Kubernetes will assign a public port number to them
-	servicePorts, err := getKubernetesServicePortsFromPrivatePortSpecs(privatePorts)
+	servicePorts, err := shared_helpers.GetKubernetesServicePortsFromPrivatePortSpecs(privatePorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes service ports from the private port specs map '%+v'", privatePorts)
 	}
@@ -165,7 +167,7 @@ func (backend KubernetesKurtosisBackend) CreateModule(
 	}()
 
 	// Create the Pod
-	containerPorts, err := getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts)
+	containerPorts, err := shared_helpers.GetKubernetesContainerPortsFromPrivatePortSpecs(privatePorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes container ports from the private port specs map '%+v'", privatePorts)
 	}
@@ -227,7 +229,7 @@ func (backend KubernetesKurtosisBackend) CreateModule(
 
 	resultModule := resultModuleObjectAndResources.module
 
-	if err := waitForPortAvailabilityUsingNetstat(
+	if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
 		backend.kubernetesManager,
 		enclaveNamespaceName,
 		modulePodName,
@@ -653,16 +655,16 @@ func getModuleObjectsFromKubernetesResources(
 			return nil, stacktrace.NewError("Expected to be able to get the cluster ip of the module service, instead parsing the cluster ip of service '%v' returned nil", kubernetesService.Name)
 		}
 
-		privatePorts, err := getPrivatePortsAndValidatePortExistence(
+		privatePorts, err := shared_helpers.GetPrivatePortsAndValidatePortExistence(
 			kubernetesService,
 			map[string]bool{
-				kurtosisInternalContainerGrpcPortSpecId: true,
+				consts.KurtosisInternalContainerGrpcPortSpecId: true,
 			},
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting private module ports and validating gRPC port existence from the module service")
 		}
-		privateGrpcPortSpec := privatePorts[kurtosisInternalContainerGrpcPortSpecId]
+		privateGrpcPortSpec := privatePorts[consts.KurtosisInternalContainerGrpcPortSpecId]
 
 		// NOTE: We set these to nil because in Kubernetes we have no way of knowing what the public info is!
 		var publicIpAddr net.IP = nil
@@ -685,7 +687,7 @@ func getModuleObjectsFromKubernetesResources(
 			continue
 		}
 
-		status, err := getContainerStatusFromPod(resourcesToParse.pod)
+		status, err := shared_helpers.GetContainerStatusFromPod(resourcesToParse.pod)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting container status from Kubernetes pod '%+v'", resourcesToParse.pod)
 		}

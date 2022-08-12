@@ -1,14 +1,16 @@
 # TBD
 ### Changes
-* Migrated the `engine functions` from `docker_kurtosis_backend` package to the `engine_functions` package
+* Migrated the `engine functions` from `docker_kurtosis_backend` and `kubernetes_kurtosis_backned` package to the `engine_functions` package in both implementations
 * Removed duplicated shared functions that where present in the both the `docker_kurtosis_backend` package and the `shared_helpers` package
-* Added the `consts` package to group the general constants used in the Docker Kurtosis backend
+* Added the `consts` package to group the general constants used in the Docker Kurtosis backend and Kubernetes Kurtosis backend
 * Added the `ForLogsDatabaseServer` and the `ForLogsCollectorServer` Docker objects attribute
 * Added `LogsCollectorTypeDockerLabelValue`, `ModuleContainerTypeDockerLabelValue` and `LogsDbDataVolumeTypeDockerLabelValue` Docker labels
 * Added `EngineGUIDDockerLabelKey` Docker label key
 
-# 0.34.0
+### Fixes
+* Fix `StartUserServices` in `DockerKurtosisBackend` and `KubernetesKurtosisBackend` to use funnel/rollback approach for bulk operations correctly
 
+# 0.34.0
 #### Breaking Changes
 * Move all `docker.DockerKurtosisBackend` functionality to `docker_kurtosis_backend` module
   * Users will need to replace their `github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker` import for
