@@ -544,23 +544,18 @@ func(network *ServiceNetwork) StartServices(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred attempting to add services to the service network.")
 	}
+	// TODO We SHOULD defer an undo to undo the service-starting resource that we did here, but we don't have a way to just undo
+	// that and leave the registration intact (since we only have RemoveService as of 2022-08-11, but that also deletes the registration,
+	//which would mean deleting a resource we don't own here)
+
 	// Convert from GUID maps to ID maps
 	successfulServices := map[service.ServiceID]service.Service{}
-	shouldRemoveServices := map[service.ServiceID]bool{}
 	for serviceGUID, serviceInfo := range successfulServiceGUIDs {
 		serviceID, found := serviceGUIDsToIDs[serviceGUID]
 		if !found {
 			return nil, nil, stacktrace.NewError("Could not find a service ID associated with the service GUID '%v'. This should not happen and is a bug in Kurtosis.", serviceGUID)
 		}
 		successfulServices[serviceID] = serviceInfo
-		// Defer an undo to all the successful registrations in case an error occurs in future phases
-		shouldRemoveServices[serviceID] = true
-		defer func() {
-			err = network.destroyServiceAfterFailure(serviceGUID)
-			if err != nil {
-				failedServicesPool[serviceID] = stacktrace.Propagate(err, "WARNING: Attempted to remove service '%v' but after it failed to start but an error occurred while doing so. Must destroy service manually!", serviceID)
-			}
-		}()
 	}
 	// Add services that failed to start to failed service pool
 	for serviceGUID, serviceErr := range failedServiceGUIDs {
@@ -586,6 +581,7 @@ func(network *ServiceNetwork) StartServices(
 		// We don't undo the blocking off of failed services by the rest of the network because the services in the network are blocking traffic
 		// from containers that don't exist anyways.
 		for serviceID, serviceInfo := range successfulServices {
+			serviceID := serviceID
 			serviceRegistration := serviceInfo.GetRegistration()
 			serviceGUID := serviceRegistration.GetGUID()
 
@@ -628,10 +624,6 @@ func(network *ServiceNetwork) StartServices(
 		}
 	}
 
-	// Do not remove services that were successful
-	for serviceID, _ := range successfulServices {
-		shouldRemoveServices[serviceID] = false
-	}
 	return successfulServices, failedServicesPool, nil
 }
 

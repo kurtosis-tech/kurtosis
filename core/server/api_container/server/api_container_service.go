@@ -322,21 +322,10 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "An error occurred starting services in the service network")
 	}
-	// Defer an undo to all the successful registrations in case an error occurs in future phases
-	shouldRemoveServices := map[kurtosis_backend_service.ServiceID]bool{}
-	for serviceID, _ := range successfulServices {
-		shouldRemoveServices[serviceID] = true
-		defer func() {
-			if shouldRemoveServices[serviceID] {
-				_, err := apicService.serviceNetwork.RemoveService(ctx, serviceID, defaultContainerStopTimeoutSeconds)
-				if err != nil {
-					failedServicesPool[serviceID] = stacktrace.NewError(
-						"WARNING: Attempted to remove service '%v' it failed to start, but an error occurred while doing so" +
-							"Must remove the service manually.", serviceID)
-				}
-			}
-		}()
-	}
+	// TODO We SHOULD defer an undo to undo the service-starting resource that we did here, but we don't have a way to just undo
+	// that and leave the registration intact (since we only have RemoveService as of 2022-08-11, but that also deletes the registration,
+	// which would mean deleting a resource we don't own here)
+
 	for serviceID, serviceErr := range failedServices {
 		failedServicesPool[serviceID] = serviceErr
 		logrus.Debugf("Failed to start service '%v'", serviceID)
@@ -381,10 +370,6 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 		failedServiceIDsToErrorStr[string(id)] = serviceErr.Error()
 	}
 
-	// Do not remove services that were successful
-	for serviceIDStr, _ := range serviceIDsToServiceInfo {
-		shouldRemoveServices[kurtosis_backend_service.ServiceID(serviceIDStr)] = false
-	}
 	return binding_constructors.NewStartServicesResponse(serviceIDsToServiceInfo, failedServiceIDsToErrorStr), nil
 }
 
