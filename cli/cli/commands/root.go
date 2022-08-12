@@ -157,12 +157,12 @@ func isLatestCLIVersion() (bool, string, error) {
 		return false, "", stacktrace.Propagate(err, "An error occurred getting the latest release version number from the GitHub public API")
 	}
 
-	ownSemver, err := semver.StrictNewVersion(ownVersionStr)
+	ownSemver, err := parseVersionStrToSemVer(ownVersionStr)
 	if err != nil {
 		return false, "", stacktrace.Propagate(err, "An error occurred parsing own version string '%v' to sem version", ownVersionStr)
 	}
 
-	latestSemver, err := semver.StrictNewVersion(latestVersionStr)
+	latestSemver, err := parseVersionStrToSemVer(latestVersionStr)
 	if err != nil {
 		return false, "", stacktrace.Propagate(err, "An error occurred parsing latest version string '%v' to sem version", latestVersionStr)
 	}
@@ -175,6 +175,14 @@ func isLatestCLIVersion() (bool, string, error) {
 	}
 
 	return false, latestVersionStr, nil
+}
+
+func parseVersionStrToSemVer(versionStr string) (*semver.Version, error)  {
+	semVer, err := semver.NewVersion(versionStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred parsing version string '%v' to sem version", versionStr)
+	}
+	return semVer, nil
 }
 
 func getLatestCLIReleaseVersion() (string, error) {
