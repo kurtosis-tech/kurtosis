@@ -286,38 +286,14 @@ func (apicService ApiContainerService) StartService(ctx context.Context, args *k
 
 func (apicService ApiContainerService) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error){
 	failedServicesPool := map[kurtosis_backend_service.ServiceID]error{}
-	serviceIDsToConfigs := map[kurtosis_backend_service.ServiceID]*kurtosis_backend_service.ServiceConfig{}
-	serviceIDsToFilesArtifactUUIDsToMountpoints := map[kurtosis_backend_service.ServiceID]map[enclave_data_directory.FilesArtifactUUID]string{}
-	for serviceIDStr, serviceConfig := range args.ServiceIdsToConfigs {
-		serviceID := kurtosis_backend_service.ServiceID(serviceIDStr)
-		logrus.Debugf("Received request to start service with the following args: %+v", serviceConfig)
-		privateServicePortSpecs, requestedPublicServicePortSpecs, err := convertAPIPortsToPortSpecs(serviceConfig.PrivatePorts, serviceConfig.PublicPorts)
-		if err != nil {
-			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while trying to convert public and private API ports to port specs for service '%v'", serviceID)
-			continue
-		}
+	serviceIDsToAPIConfigs := map[kurtosis_backend_service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
 
-		filesArtifactMountpointsByArtifactUUID := map[enclave_data_directory.FilesArtifactUUID]string{}
-		for filesArtifactUUIDStr, mountDirPath := range serviceConfig.FilesArtifactMountpoints {
-			filesArtifactMountpointsByArtifactUUID[enclave_data_directory.FilesArtifactUUID(filesArtifactUUIDStr)] = mountDirPath
-		}
-		serviceIDsToFilesArtifactUUIDsToMountpoints[serviceID] = filesArtifactMountpointsByArtifactUUID
-
-		serviceConfigObj := kurtosis_backend_service.NewServiceConfig(
-			serviceConfig.ContainerImageName,
-			privateServicePortSpecs,
-			requestedPublicServicePortSpecs,
-			serviceConfig.EntrypointArgs,
-			serviceConfig.CmdArgs,
-			serviceConfig.EnvVars,
-			nil, // Will get set later if needed
-			serviceConfig.CpuAllocationMillicpus,
-			serviceConfig.MemoryAllocationMegabytes,
-		)
-		serviceIDsToConfigs[serviceID] = serviceConfigObj
+	for serviceIDStr, apiServiceConfig := range args.ServiceIdsToConfigs {
+		logrus.Debugf("Received request to start service with the following args: %+v", apiServiceConfig)
+		serviceIDsToAPIConfigs[kurtosis_backend_service.ServiceID(serviceIDStr)] = apiServiceConfig
 	}
 
-	successfulServices, failedServices, err := apicService.serviceNetwork.StartServices(ctx, serviceIDsToConfigs, serviceIDsToFilesArtifactUUIDsToMountpoints)
+	successfulServices, failedServices, err := apicService.serviceNetwork.StartServices(ctx, serviceIDsToAPIConfigs)
 	if err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "An error occurred starting services in the service network")
@@ -645,43 +621,6 @@ func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func convertAPIPortsToPortSpecs(
-	privateAPIPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-	publicAPIPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-) (
-	resultPrivatePortSpecs map[string]*port_spec.PortSpec,
-	resultPublicPortSpecs map[string]*port_spec.PortSpec,
-	resultErr error,
-) {
-	privatePortSpecs := map[string]*port_spec.PortSpec{}
-	for portID, privateAPIPort := range privateAPIPorts {
-		privatePortSpec, err := transformApiPortToPortSpec(privateAPIPort)
-		if err != nil {
-			return nil, nil, stacktrace.NewError("An error occurred transforming the API port for private port '%v' into a port spec port", portID)
-		}
-		privatePortSpecs[portID] = privatePortSpec
-	}
-
-	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	if len(publicAPIPorts) > 0 {
-		err := checkPrivateAndPublicPortsAreOneToOne(privateAPIPorts, publicAPIPorts)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "Provided public and private ports are not one to one.")
-		}
-	}
-
-	publicPortSpecs := map[string]*port_spec.PortSpec{}
-	for portID, publicAPIPort := range publicAPIPorts {
-		publicPortSpec, err := transformApiPortToPortSpec(publicAPIPort)
-		if err != nil {
-			return nil, nil, stacktrace.NewError("An error occurred transforming the API port for public port '%v' into a port spec port", portID)
-		}
-		publicPortSpecs[portID] = publicPortSpec
-	}
-	//TODO Finished the huge hack to temporarily enable static ports for NEAR
-	return privatePortSpecs, publicPortSpecs, nil
-}
-
 func transformApiPortToPortSpec(port *kurtosis_core_rpc_api_bindings.Port) (*port_spec.PortSpec, error) {
 	portNumUint32 := port.GetNumber()
 	apiProto := port.GetProtocol()
@@ -739,23 +678,6 @@ func transformPortSpecMapToApiPortsMap(apiPorts map[string]*port_spec.PortSpec) 
 		result[portId] = publicApiPort
 	}
 	return result, nil
-}
-
-// Ensure that provided [privatePorts] and [publicPorts] are one to one by checking:
-// - There is a matching publicPort for every portID in privatePorts
-// - There are the same amount of private and public ports
-// If error is nil, the public and private ports are one to one.
-func checkPrivateAndPublicPortsAreOneToOne(privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port, publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port) error {
-	if len(privatePorts) != len(publicPorts) {
-		return stacktrace.NewError("The received private ports length and the public ports length are not equal. Received '%v' private ports and '%v' public ports", len(privatePorts), len(publicPorts))
-	}
-
-	for portID, privatePortSpec := range privatePorts {
-		if _, found := publicPorts[portID]; !found {
-			return stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portID, privatePortSpec.GetNumber())
-		}
-	}
-	return nil
 }
 
 func (apicService ApiContainerService) waitForEndpointAvailability(

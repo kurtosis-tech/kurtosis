@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/files_artifacts_expander/args"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
@@ -22,6 +23,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
+	"math"
 	"net"
 	"path"
 	"strings"
@@ -43,6 +45,13 @@ const (
 
 	defaultContainerStopTimeoutSeconds = 0
 )
+
+// Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
+var apiContainerPortProtoToPortSpecPortProto = map[kurtosis_core_rpc_api_bindings.Port_Protocol]port_spec.PortProtocol{
+	kurtosis_core_rpc_api_bindings.Port_TCP:  port_spec.PortProtocol_TCP,
+	kurtosis_core_rpc_api_bindings.Port_SCTP: port_spec.PortProtocol_SCTP,
+	kurtosis_core_rpc_api_bindings.Port_UDP:  port_spec.PortProtocol_UDP,
+}
 
 type storeFilesArtifactResult struct {
 	filesArtifactUuid enclave_data_directory.FilesArtifactUUID
@@ -469,8 +478,7 @@ func (network *ServiceNetwork) StartService(
 //	- error	- if error occurred with bulk operation as a whole
 func(network *ServiceNetwork) StartServices(
 	ctx context.Context,
-	serviceConfigs map[service.ServiceID]*service.ServiceConfig,
-	serviceIDsToFilesArtifactUUIDsToMountpoints map[service.ServiceID]map[enclave_data_directory.FilesArtifactUUID]string,
+	apiServiceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
 ) (
 	resultSuccessfulServices map[service.ServiceID]service.Service,
 	resultFailedServices map[service.ServiceID]error,
@@ -482,25 +490,17 @@ func(network *ServiceNetwork) StartServices(
 	failedServicesPool := map[service.ServiceID]error{}
 
 	serviceGUIDsToIDs := map[service.ServiceGUID]service.ServiceID{}
-	serviceGUIDsToConfigs := map[service.ServiceGUID]*service.ServiceConfig{}
-	serviceGUIDsToFilesArtifactUUIDsToMountpoints := map[service.ServiceGUID]map[enclave_data_directory.FilesArtifactUUID]string{}
-	for serviceID, serviceConfig := range serviceConfigs {
+	serviceGUIDsToConfigs := map[service.ServiceGUID]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
+	for serviceID, apiServiceConfig := range apiServiceConfigs {
 		registration, found := network.registeredServiceInfo[serviceID]
 		if !found {
 			failedServicesPool[serviceID] = stacktrace.NewError("Cannot start service; no registration exists for service with ID '%v'", serviceID)
 			continue
 		}
-		filesArtifactsUUIDsToMountpoints, found := serviceIDsToFilesArtifactUUIDsToMountpoints[serviceID]
-		if !found {
-			return nil, nil, stacktrace.NewError(
-				"Could not find mapping from files artifacts UUIDs to mountpoints for service with ID '%v'." +
-					"This is a bug in Kurtosis. Make sure the keys of service configs map and service ids to files artifacts uuids to mountpoints map are 1:1.", serviceID)
-		}
 
 		guid := registration.GetGUID()
 		serviceGUIDsToIDs[guid] = serviceID
-		serviceGUIDsToConfigs[guid] = serviceConfig
-		serviceGUIDsToFilesArtifactUUIDsToMountpoints[guid] = filesArtifactsUUIDsToMountpoints
+		serviceGUIDsToConfigs[guid] = apiServiceConfig
 	}
 
 	// When partitioning is enabled, there's a race condition where:
@@ -520,7 +520,7 @@ func(network *ServiceNetwork) StartServices(
 
 		servicesPacketLossConfigurationsWithoutNewNodes := map[service.ServiceID]map[service.ServiceID]float32{}
 		for serviceIdInTopology, otherServicesPacketLossConfigs := range servicePacketLossConfigurationsByServiceID {
-			if _, found := serviceConfigs[serviceIdInTopology]; found {
+			if _, found := apiServiceConfigs[serviceIdInTopology]; found {
 				continue
 			}
 			servicesPacketLossConfigurationsWithoutNewNodes[serviceIdInTopology] = otherServicesPacketLossConfigs
@@ -540,7 +540,7 @@ func(network *ServiceNetwork) StartServices(
 		}
 	}
 
-	successfulServiceGUIDs, failedServiceGUIDs, err := network.startServices(ctx, serviceGUIDsToConfigs, serviceGUIDsToFilesArtifactUUIDsToMountpoints)
+	successfulServiceGUIDs, failedServiceGUIDs, err := network.startServices(ctx, serviceGUIDsToConfigs)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred attempting to add services to the service network.")
 	}
@@ -1114,41 +1114,50 @@ func (network *ServiceNetwork) startService(
 
 func (network *ServiceNetwork) startServices(
 	ctx context.Context,
-	serviceConfigs map[service.ServiceGUID]*service.ServiceConfig,
-	// Mapping of service GUIDs to UUIDs of previously-registered files artifacts -> mountpoints on the container
-	// being launched
-	serviceGUIDsToFilesArtifactUUIDsToMountpoints map[service.ServiceGUID]map[enclave_data_directory.FilesArtifactUUID]string,
+	APIServiceConfigs map[service.ServiceGUID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
 ) (
 	resultSuccessfulServices map[service.ServiceGUID]service.Service,
 	resultFailedServices map[service.ServiceGUID]error,
 	resultErr error,
 ) {
 	failedServicesPool := map[service.ServiceGUID]error{}
-	serviceConfigsWithFilesArtifactsExpansion := map[service.ServiceGUID]*service.ServiceConfig{}
+	serviceConfigs := map[service.ServiceGUID]*service.ServiceConfig{}
 
-	for guid, config := range serviceConfigs {
-		filesArtifactUUIDsToMountpoints, found := serviceGUIDsToFilesArtifactUUIDsToMountpoints[guid]
-		if !found {
-			failedServicesPool[guid] = stacktrace.NewError("Couldn't find a mapping between service with GUID `%v` and a mapping of files artifacts UUIDs to mountpoints.", guid)
+	// Convert API ServiceConfig's to service.ServiceConfig's by:
+	// - converting API Ports to PortSpec's
+	// - converting files artifacts mountpoints to FilesArtifactsExpansion's'
+	// - passing down other data (eg. container image name, args, etc.)
+	for guid, config := range APIServiceConfigs {
+		// Convert ports
+		privateServicePortSpecs, requestedPublicServicePortSpecs, err := convertAPIPortsToPortSpecs(config.PrivatePorts, config.PublicPorts)
+		if err != nil {
+			failedServicesPool[guid] = stacktrace.Propagate(err, "An error occurred while trying to convert public and private API ports to port specs for service with GUID '%v'", guid)
 			continue
 		}
-		if len(filesArtifactUUIDsToMountpoints) == 0 {
-			serviceConfigsWithFilesArtifactsExpansion[guid] = config
-			continue
-		}
 
+		// Creates files artifacts expansions
 		var filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion
-		usedArtifactUUIDSet := map[enclave_data_directory.FilesArtifactUUID]bool{}
-		for artifactUUID := range filesArtifactUUIDsToMountpoints {
-			usedArtifactUUIDSet[artifactUUID] = true
+		if len(config.FilesArtifactMountpoints) == 0 {
+			// Create service config with empty filesArtifactsExpansion if no files artifacts mountpoints for this service
+			serviceConfigs[guid] = service.NewServiceConfig(
+				config.ContainerImageName,
+				privateServicePortSpecs,
+				requestedPublicServicePortSpecs,
+				config.EntrypointArgs,
+				config.CmdArgs,
+				config.EnvVars,
+				filesArtifactsExpansion,
+				config.CpuAllocationMillicpus,
+				config.MemoryAllocationMegabytes)
+			continue
 		}
 
 		filesArtifactsExpansions := []args.FilesArtifactExpansion{}
 		expanderDirpathToUserServiceDirpathMap := map[string]string{}
-		for filesArtifactUUID, mountpointOnUserService := range filesArtifactUUIDsToMountpoints {
-			dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, string(filesArtifactUUID))
+		for filesArtifactUUIDStr, mountpointOnUserService := range config.FilesArtifactMountpoints {
+			dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, filesArtifactUUIDStr)
 			expansion := args.FilesArtifactExpansion{
-				FilesArtifactUUID: string(filesArtifactUUID),
+				FilesArtifactUUID: filesArtifactUUIDStr,
 				DirPathToExpandTo: dirpathToExpandTo,
 			}
 			filesArtifactsExpansions = append(filesArtifactsExpansions, expansion)
@@ -1182,23 +1191,24 @@ func (network *ServiceNetwork) startServices(
 			ExpanderEnvVars:                   expanderEnvVars,
 			ExpanderDirpathsToServiceDirpaths: expanderDirpathToUserServiceDirpathMap,
 		}
-		// Create a new service config WITH files artifacts expansion for this service
-		serviceConfigsWithFilesArtifactsExpansion[guid] = service.NewServiceConfig(
-			config.GetContainerImageName(),
-			config.GetPrivatePorts(),
-			config.GetPublicPorts(),
-			config.GetEntrypointArgs(),
-			config.GetCmdArgs(),
-			config.GetEnvVars(),
+
+		serviceConfigs[guid] = service.NewServiceConfig(
+			config.ContainerImageName,
+			privateServicePortSpecs,
+			requestedPublicServicePortSpecs,
+			config.EntrypointArgs,
+			config.CmdArgs,
+			config.EnvVars,
 			filesArtifactsExpansion,
-			config.GetCPUAllocationMillicpus(),
-			config.GetMemoryAllocationMegabytes())
+			config.CpuAllocationMillicpus,
+			config.MemoryAllocationMegabytes)
 	}
 
-	successfulServices, failedServices, err := network.kurtosisBackend.StartUserServices(ctx, network.enclaveId, serviceConfigsWithFilesArtifactsExpansion)
+	successfulServices, failedServices, err := network.kurtosisBackend.StartUserServices(ctx, network.enclaveId, serviceConfigs)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred starting user services in underlying container engine.")
 	}
+
 	// Add services that failed to start to failed services pool
 	for guid, serviceErr := range failedServices {
 		failedServicesPool[guid] = serviceErr
@@ -1223,5 +1233,86 @@ func (network *ServiceNetwork) gzipAndPushTarredFileBytesToOutput(
 		return stacktrace.Propagate(err, "An error occurred copying source '%v' from user service with GUID '%v' in enclave with ID '%v'", srcPathOnContainer, serviceGuid, network.enclaveId)
 	}
 
+	return nil
+}
+
+func convertAPIPortsToPortSpecs(
+	privateAPIPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
+	publicAPIPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
+) (
+	resultPrivatePortSpecs map[string]*port_spec.PortSpec,
+	resultPublicPortSpecs map[string]*port_spec.PortSpec,
+	resultErr error,
+) {
+	privatePortSpecs := map[string]*port_spec.PortSpec{}
+	for portID, privateAPIPort := range privateAPIPorts {
+		privatePortSpec, err := transformApiPortToPortSpec(privateAPIPort)
+		if err != nil {
+			return nil, nil, stacktrace.NewError("An error occurred transforming the API port for private port '%v' into a port spec port", portID)
+		}
+		privatePortSpecs[portID] = privatePortSpec
+	}
+
+	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	if len(publicAPIPorts) > 0 {
+		err := checkPrivateAndPublicPortsAreOneToOne(privateAPIPorts, publicAPIPorts)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "Provided public and private ports are not one to one.")
+		}
+	}
+
+	publicPortSpecs := map[string]*port_spec.PortSpec{}
+	for portID, publicAPIPort := range publicAPIPorts {
+		publicPortSpec, err := transformApiPortToPortSpec(publicAPIPort)
+		if err != nil {
+			return nil, nil, stacktrace.NewError("An error occurred transforming the API port for public port '%v' into a port spec port", portID)
+		}
+		publicPortSpecs[portID] = publicPortSpec
+	}
+	//TODO Finished the huge hack to temporarily enable static ports for NEAR
+	return privatePortSpecs, publicPortSpecs, nil
+}
+
+func transformApiPortToPortSpec(port *kurtosis_core_rpc_api_bindings.Port) (*port_spec.PortSpec, error) {
+	portNumUint32 := port.GetNumber()
+	apiProto := port.GetProtocol()
+	if portNumUint32 > math.MaxUint16 {
+		return nil, stacktrace.NewError(
+			"API port num '%v' is bigger than max allowed port spec port num '%v'",
+			portNumUint32,
+			math.MaxUint16,
+		)
+	}
+	portNumUint16 := uint16(portNumUint32)
+	portSpecProto, found := apiContainerPortProtoToPortSpecPortProto[apiProto]
+	if !found {
+		return nil, stacktrace.NewError("Couldn't find a port spec proto for API port proto '%v'; this should never happen, and is a bug in Kurtosis!", apiProto.String())
+	}
+	result, err := port_spec.NewPortSpec(portNumUint16, portSpecProto)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating port spec object with port num '%v' and protocol '%v'",
+			portNumUint16,
+			portSpecProto,
+		)
+	}
+	return result, nil
+}
+
+// Ensure that provided [privatePorts] and [publicPorts] are one to one by checking:
+// - There is a matching publicPort for every portID in privatePorts
+// - There are the same amount of private and public ports
+// If error is nil, the public and private ports are one to one.
+func checkPrivateAndPublicPortsAreOneToOne(privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port, publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port) error {
+	if len(privatePorts) != len(publicPorts) {
+		return stacktrace.NewError("The received private ports length and the public ports length are not equal. Received '%v' private ports and '%v' public ports", len(privatePorts), len(publicPorts))
+	}
+
+	for portID, privatePortSpec := range privatePorts {
+		if _, found := publicPorts[portID]; !found {
+			return stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portID, privatePortSpec.GetNumber())
+		}
+	}
 	return nil
 }
