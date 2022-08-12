@@ -1,4 +1,6 @@
 # TBD
+
+# 0.23.2
 ### Fixes
 - Fix a bug when the CLI checks if it's the latest version
 
