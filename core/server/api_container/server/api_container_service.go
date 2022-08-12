@@ -26,7 +26,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io/ioutil"
-	"math"
 	"net/http"
 	"strings"
 	"time"
@@ -542,33 +541,6 @@ func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func transformApiPortToPortSpec(port *kurtosis_core_rpc_api_bindings.Port) (*port_spec.PortSpec, error) {
-	portNumUint32 := port.GetNumber()
-	apiProto := port.GetProtocol()
-	if portNumUint32 > math.MaxUint16 {
-		return nil, stacktrace.NewError(
-			"API port num '%v' is bigger than max allowed port spec port num '%v'",
-			portNumUint32,
-			math.MaxUint16,
-		)
-	}
-	portNumUint16 := uint16(portNumUint32)
-	portSpecProto, found := apiContainerPortProtoToPortSpecPortProto[apiProto]
-	if !found {
-		return nil, stacktrace.NewError("Couldn't find a port spec proto for API port proto '%v'; this should never happen, and is a bug in Kurtosis!", apiProto.String())
-	}
-	result, err := port_spec.NewPortSpec(portNumUint16, portSpecProto)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating port spec object with port num '%v' and protocol '%v'",
-			portNumUint16,
-			portSpecProto,
-		)
-	}
-	return result, nil
-}
-
 func transformPortSpecToApiPort(port *port_spec.PortSpec) (*kurtosis_core_rpc_api_bindings.Port, error) {
 	portNumUint16 := port.GetNumber()
 	portSpecProto := port.GetProtocol()

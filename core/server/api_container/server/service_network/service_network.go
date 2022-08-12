@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/files_artifacts_expander/args"
@@ -749,36 +750,6 @@ func gzipCompressFile(readCloser io.Reader) (resultFilepath string, resultErr er
 	return tarGzipFileFilepath, nil
 }
 */
-
-func (network *ServiceNetwork) destroyServiceBestEffortAfterRegistrationFailure(
-	serviceGuid service.ServiceGUID,
-) {
-	destroyServiceFilters := &service.ServiceFilters{
-		GUIDs: map[service.ServiceGUID]bool{
-			serviceGuid: true,
-		},
-	}
-	// Use background context in case the input one is cancelled
-	_, erroredRegistrations, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveId, destroyServiceFilters)
-	var errToPrint error
-	if err != nil {
-		errToPrint = err
-	} else if destroyErr, found := erroredRegistrations[serviceGuid]; found {
-		errToPrint = destroyErr
-	}
-	if errToPrint != nil {
-		logrus.Warnf(
-			"Registering service with ID '%v' didn't complete successfully so we tried to destroy the "+
-				"service that we created, but doing so threw an error:\n%v",
-			serviceGuid,
-			errToPrint,
-		)
-		logrus.Warnf(
-			"!!! ACTION REQUIRED !!! You'll need to manually destroy service with GUID '%v'!!!",
-			serviceGuid,
-		)
-	}
-}
 
 func (network *ServiceNetwork) destroyServiceAfterFailure(ctx context.Context, serviceGUID service.ServiceGUID) error {
 	destroyServiceFilters := &service.ServiceFilters{
