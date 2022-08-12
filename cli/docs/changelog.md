@@ -1,5 +1,9 @@
 # TBD
 
+### Breaking Changes
+* Upgrade core to 1.57.1 and engine to 1.30.0 and container engine lib to 0.34.1
+  * Users will need to restart their engines
+
 # 0.23.2
 ### Fixes
 - Fix a bug when the CLI checks if it's the latest version
