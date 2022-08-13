@@ -588,7 +588,7 @@ func createStartServiceOperation(
 			return nil, stacktrace.Propagate(err, "An error occurred getting the public IP and ports from container '%v'", containerName)
 		}
 
-		serviceObj := service.NewService(
+		serviceObjectPtr := service.NewService(
 			serviceRegistration,
 			container_status.ContainerStatus_Running,
 			privatePorts,
@@ -597,7 +597,7 @@ func createStartServiceOperation(
 
 		shouldDeleteVolumes = false
 		shouldKillContainer = false
-		return serviceObj, nil
+		return serviceObjectPtr, nil
 	}
 }
 
