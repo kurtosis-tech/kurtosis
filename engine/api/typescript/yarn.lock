@@ -486,10 +486,10 @@ json5@^1.0.1:
   dependencies:
     minimist "^1.2.0"
 
-kurtosis-core-api-lib@1.57.1:
-  version "1.57.1"
-  resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.57.1.tgz#4b5a68286f8c0d8eea3312dbbb67c32d806e59a3"
-  integrity sha512-ymf152bG1eLeSJFmjwf0p6gcjbMqsUznrwcV2iaBxXtAHk/Iou51XrAW0D1fzDyAGYEGEZtmopQG79n+7JD1sA==
+kurtosis-core-api-lib@1.57.2:
+  version "1.57.2"
+  resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.57.2.tgz#d8f2bef3b59732aac18c6fe019dfa1412fb041e8"
+  integrity sha512-Mmila2JQnFxqZCPYAp3G6sbrWMD65ohWxHEvOHF+Kxm4fvdnqLmLBMDW66kmfBK3nPq57BOHMMdaSNd4fo7Tgg==
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
     "@types/google-protobuf" "^3.15.5"
