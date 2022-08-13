@@ -1,5 +1,9 @@
 # TBD
 
+### Breaking Changes 
+* Return map of `*service.Service` instead of `service.Service` in `DockerKurtosisBackend.StartUserServices` and Kubernetes equivalent
+  * Users will need to ensure they are consuming `*service.Service` objects from `DockerKurtosisBackend.StartUserServices` and Kubernetes equivalent instead of `service.Service` objects
+
 ### Changes
 * Refactor `DockerOperationParallelizer` to use `operation_parallelizer` module
 
