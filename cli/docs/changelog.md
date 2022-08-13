@@ -1,7 +1,7 @@
 # TBD
 
 ### Breaking Changes
-* Upgrade core to 1.57.1 and engine to 1.30.0 and container engine lib to 0.34.1
+* Upgrade core to 1.57.2 and engine to 1.30.1 and container engine lib to 0.35.0
   * Users will need to restart their engines
 
 # 0.23.2
