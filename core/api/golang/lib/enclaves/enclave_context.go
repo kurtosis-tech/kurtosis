@@ -183,7 +183,7 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	}
 	serviceCtx, found := serviceContexts[serviceID]
 	if !found {
-		return nil, stacktrace.NewError("An error occurred retrieving the sevice context of service with ID '%v' from result of adding service to partition. This should not happen and is a bug in Kurtosis.", serviceID)
+		return nil, stacktrace.NewError("An error occurred retrieving the service context of service with ID '%v' from result of adding service to partition. This should not happen and is a bug in Kurtosis.", serviceID)
 	}
 	return serviceCtx, nil
 }

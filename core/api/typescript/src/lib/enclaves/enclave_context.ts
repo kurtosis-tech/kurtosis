@@ -224,7 +224,7 @@ export class EnclaveContext {
         const [successfulServices, failedService] = resultAddServiceToPartition.value
         const serviceErr : Error | undefined = failedService.get(serviceId);
         if (serviceErr != undefined) {
-            return err(new Error(`An error occurred adding service '${serviceId}' to the enclave in the default partition`))
+            return err(new Error(`An error occurred adding service '${serviceId}' to the enclave in the default partition:\n${serviceErr}`))
         }
         const serviceCtx : ServiceContext | undefined = successfulServices.get(serviceId);
         if (serviceCtx == undefined){
@@ -267,7 +267,7 @@ export class EnclaveContext {
         const [successfulServices, failedService] = resultAddServiceToPartition.value
         const serviceErr : Error | undefined = failedService.get(serviceId);
         if (serviceErr != undefined) {
-            return err(new Error(`An error occurred adding service '${serviceId}' to the enclave in the default partition`))
+            return err(new Error(`An error occurred adding service '${serviceId}' to the enclave in the default partition:\n${serviceErr}`))
         }
         const serviceCtx : ServiceContext | undefined = successfulServices.get(serviceId);
         if (serviceCtx == undefined){
