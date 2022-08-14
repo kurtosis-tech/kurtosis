@@ -7,6 +7,9 @@
 * Remove `RegisterUserService` and `StartUserService` in `backend_impls`
   * Users will need to remove all references to `RegisterUserService` and `StartUserService` in favor of `RegisterUserServices` and `StartUserServices`
 
+### Changes
+* Fix bug where `DockerObjectParallelizer` was using iteration variable for all `dockerObjectID` on all operations
+
 # 0.35.0
 ### Breaking Changes 
 * Return map of `*service.Service` instead of `service.Service` in `DockerKurtosisBackend.StartUserServices` and Kubernetes equivalent
