@@ -1,5 +1,7 @@
 # TBD
 
+# 0.36.0
+
 
 ### Breaking Changes 
 * Remove `RegisterUserService` and `StartUserService` from `KurtosisBackend` interface
