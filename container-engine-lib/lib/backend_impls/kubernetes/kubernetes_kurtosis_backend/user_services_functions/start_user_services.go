@@ -42,7 +42,7 @@ func StartUserServices(
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (
-	map[service.ServiceGUID]service.Service,
+	map[service.ServiceGUID]*service.Service,
 	map[service.ServiceGUID]error,
 	error,
 ) {
@@ -120,7 +120,7 @@ func runStartServiceOperationsInParallel(
 	servicesObjectsAndResources map[service.ServiceGUID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (
-	map[service.ServiceGUID]service.Service,
+	map[service.ServiceGUID]*service.Service,
 	map[service.ServiceGUID]error,
 	error,
 ) {
@@ -137,18 +137,18 @@ func runStartServiceOperationsInParallel(
 
 	successfulServiceObjs, failedOperations := operation_parallelizer.RunOperationsInParallel(startServiceOperations)
 
-	successfulServices := map[service.ServiceGUID]service.Service{}
+	successfulServices := map[service.ServiceGUID]*service.Service{}
 	failedServices := map[service.ServiceGUID]error{}
 
 	for id, data := range successfulServiceObjs {
 		serviceGUID := service.ServiceGUID(id)
-		serviceObj, ok := data.(service.Service)
+		serviceObjectPtr, ok := data.(*service.Service)
 		if !ok {
 			return nil, nil, stacktrace.NewError(
 				"An error occurred downcasting data returned from the start user service operation for service with GUID: %v." +
 					"This is a Kurtosis bug. Make sure the desired type is actually being returned in the corresponding Operation.", serviceGUID)
 		}
-		successfulServices[serviceGUID] = serviceObj
+		successfulServices[serviceGUID] = serviceObjectPtr
 	}
 
 	for id, err := range failedOperations {

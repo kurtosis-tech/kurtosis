@@ -145,7 +145,7 @@ func (backend *DockerKurtosisBackend ) RegisterUserServices(
 	return user_service_functions.RegisterUserServices(ctx, enclaveId, serviceIds, backend.serviceRegistrations, backend.serviceRegistrationMutex, backend.enclaveFreeIpProviders)
 }
 
-func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]service.Service, map[service.ServiceGUID]error, error){
+func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]*service.Service, map[service.ServiceGUID]error, error){
 	return user_service_functions.StartUserServices(
 		ctx,
 		enclaveId,

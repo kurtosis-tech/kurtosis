@@ -180,7 +180,7 @@ func (backend *KubernetesKurtosisBackend) StartUserServices(
 	enclaveId enclave.EnclaveID,
 	services map[service.ServiceGUID]*service.ServiceConfig,
 ) (
-		map[service.ServiceGUID]service.Service,
+		map[service.ServiceGUID]*service.Service,
 		map[service.ServiceGUID]error,
 		error,
 ) {

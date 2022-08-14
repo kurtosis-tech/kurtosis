@@ -311,7 +311,7 @@ func (backend *MetricsReportingKurtosisBackend) RegisterUserServices(ctx context
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]service.Service, map[service.ServiceGUID]error, error){
+func (backend *MetricsReportingKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]*service.Service, map[service.ServiceGUID]error, error){
 	successes, failures, err := backend.underlying.StartUserServices(ctx, enclaveId, services)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred starting services in enclave '%v' with the following service ids: %+v", enclaveId, services)

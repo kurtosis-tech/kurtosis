@@ -27,7 +27,7 @@ func StartUserServices(
 	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 ) (
-	map[service.ServiceGUID]service.Service,
+	map[service.ServiceGUID]*service.Service,
 	map[service.ServiceGUID]error,
 	error,
 ) {
@@ -146,7 +146,7 @@ func runStartServiceOperationsInParallel(
 	freeIpAddrProvider *lib.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 ) (
-	map[service.ServiceGUID]service.Service,
+	map[service.ServiceGUID]*service.Service,
 	map[service.ServiceGUID]error,
 	error,
 ) {
@@ -165,12 +165,12 @@ func runStartServiceOperationsInParallel(
 
 	successfulServicesObjs, failedOperations := operation_parallelizer.RunOperationsInParallel(startServiceOperations)
 
-	successfulServices := map[service.ServiceGUID]service.Service{}
+	successfulServices := map[service.ServiceGUID]*service.Service{}
 	failedServices := map[service.ServiceGUID]error{}
 
 	for id, data := range successfulServicesObjs {
 		serviceGUID := service.ServiceGUID(id)
-		serviceObj, ok := data.(service.Service)
+		serviceObj, ok := data.(*service.Service)
 		if !ok {
 			return nil, nil, stacktrace.NewError(
 				"An error occurred downcasting data returned from the start user service operation for service with GUID: %v." +
@@ -344,7 +344,7 @@ func createStartServiceOperation(
 			return nil, stacktrace.Propagate(err, "An error occurred getting the public IP and ports from container '%v'", containerName)
 		}
 
-		serviceObj := service.NewService(
+		serviceObjectPtr := service.NewService(
 			serviceRegistration,
 			container_status.ContainerStatus_Running,
 			privatePorts,
@@ -353,7 +353,7 @@ func createStartServiceOperation(
 
 		shouldDeleteVolumes = false
 		shouldKillContainer = false
-		return serviceObj, nil
+		return serviceObjectPtr, nil
 	}
 }
 
