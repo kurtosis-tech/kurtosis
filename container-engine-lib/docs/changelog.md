@@ -1,7 +1,13 @@
 # TBD
 
-# 0.35.0
 
+### Breaking Changes 
+* Remove `RegisterUserService` and `StartUserService` from `KurtosisBackend` interface
+  * Users will need to remove all references to `RegisterUserService` and `StartUserService` in favor of `RegisterUserServices` and `StartUserServices`
+* Remove `RegisterUserService` and `StartUserService` in `backend_impls`
+  * Users will need to remove all references to `RegisterUserService` and `StartUserService` in favor of `RegisterUserServices` and `StartUserServices`
+
+# 0.35.0
 ### Breaking Changes 
 * Return map of `*service.Service` instead of `service.Service` in `DockerKurtosisBackend.StartUserServices` and Kubernetes equivalent
   * Users will need to ensure they are consuming `*service.Service` objects from `DockerKurtosisBackend.StartUserServices` and Kubernetes equivalent instead of `service.Service` objects

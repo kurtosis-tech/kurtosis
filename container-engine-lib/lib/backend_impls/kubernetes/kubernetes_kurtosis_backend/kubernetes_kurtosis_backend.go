@@ -20,7 +20,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/concurrent_writer"
@@ -164,59 +163,12 @@ func (backend *KubernetesKurtosisBackend) PullImage(image string) error {
 	return stacktrace.NewError("PullImage isn't implemented for Kubernetes yet")
 }
 
-func (backend *KubernetesKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
-	return user_services_functions.RegisterUserService(
-		ctx,
-		enclaveId,
-		serviceId,
-		backend.cliModeArgs,
-		backend.apiContainerModeArgs,
-		backend.engineServerModeArgs,
-		backend.kubernetesManager)
-}
-
 // Registers a user service for each given serviceId, allocating each an IP and ServiceGUID
 func (backend *KubernetesKurtosisBackend) RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, serviceIds map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error){
 	return user_services_functions.RegisterUserServices(
 		ctx,
 		enclaveId,
 		serviceIds,
-		backend.cliModeArgs,
-		backend.apiContainerModeArgs,
-		backend.engineServerModeArgs,
-		backend.kubernetesManager)
-}
-
-func (backend *KubernetesKurtosisBackend) StartUserService(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceGuid service.ServiceGUID,
-	containerImageName string,
-	privatePorts map[string]*port_spec.PortSpec,
-	publicPorts map[string]*port_spec.PortSpec, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	entrypointArgs []string,
-	cmdArgs []string,
-	envVars map[string]string,
-	filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion,
-	cpuAllocationMillicpus uint64,
-	memoryAllocationMegabytes uint64,
-) (
-	resultUserService *service.Service,
-	resultErr error,
-) {
-	return user_services_functions.StartUserService(
-		ctx,
-		enclaveId,
-		serviceGuid,
-		containerImageName,
-		privatePorts,
-		publicPorts,
-		entrypointArgs,
-		cmdArgs,
-		envVars,
-		filesArtifactsExpansion,
-		cpuAllocationMillicpus,
-		memoryAllocationMegabytes,
 		backend.cliModeArgs,
 		backend.apiContainerModeArgs,
 		backend.engineServerModeArgs,
