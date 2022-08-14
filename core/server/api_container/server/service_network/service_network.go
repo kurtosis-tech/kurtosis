@@ -281,7 +281,7 @@ func(network *ServiceNetwork) StartServices(
 	ctx context.Context,
 	apiServiceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
 ) (
-	resultSuccessfulServices map[service.ServiceID]service.Service,
+	resultSuccessfulServices map[service.ServiceID]*service.Service,
 	resultFailedServices map[service.ServiceID]error,
 	resultErr error,
 ) {
@@ -350,7 +350,7 @@ func(network *ServiceNetwork) StartServices(
 	//which would mean deleting a resource we don't own here)
 
 	// Convert from GUID maps to ID maps
-	successfulServices := map[service.ServiceID]service.Service{}
+	successfulServices := map[service.ServiceID]*service.Service{}
 	for serviceGUID, serviceInfo := range successfulServiceGUIDs {
 		serviceID, found := serviceGUIDsToIDs[serviceGUID]
 		if !found {
@@ -775,7 +775,7 @@ func (network *ServiceNetwork) startServices(
 	ctx context.Context,
 	APIServiceConfigs map[service.ServiceGUID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
 ) (
-	resultSuccessfulServices map[service.ServiceGUID]service.Service,
+	resultSuccessfulServices map[service.ServiceGUID]*service.Service,
 	resultFailedServices map[service.ServiceGUID]error,
 	resultErr error,
 ) {
