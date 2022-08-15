@@ -291,30 +291,14 @@ github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
 github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
-<<<<<<< HEAD
-github.com/kurtosis-tech/container-engine-lib v0.35.0/go.mod h1:wAbd+szEfvDSMi48sQcoNfmJOQ8zv0e14j5yao00AQo=
-=======
->>>>>>> tedi/bulkapigateway
 github.com/kurtosis-tech/container-engine-lib v0.36.0 h1:I0RIB3uwtPpsKVoJkxjVQHAj0wm0m3MMn0xIS2c0WB0=
 github.com/kurtosis-tech/container-engine-lib v0.36.0/go.mod h1:wAbd+szEfvDSMi48sQcoNfmJOQ8zv0e14j5yao00AQo=
 github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d h1:IWFwJfg2EhA/9Anv+VyG3LSTEZ/TZL30tUaVCFrzWK0=
 github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d/go.mod h1:1PoW/0l4K80JRSj7A13aONsnaTdTM+dM36DIfDbYmVs=
-<<<<<<< HEAD
-github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220813151101-2fbe11e0d58f/go.mod h1:Sp+fZHIHtfQRVD7D6agQp5GqEbGzJDrKseJsm2HYxJk=
-github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220815013724-723b2e851677 h1:QY73zVdW6iVTOnn9SS1kUTJGnQvcosXW+syC6XbucIg=
-github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220815013724-723b2e851677/go.mod h1:Sp+fZHIHtfQRVD7D6agQp5GqEbGzJDrKseJsm2HYxJk=
-github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220813151836-9c2097bbf1f7 h1:rVvgQspmc0YKunUssMlszEXWPDbaHF42j+H3E14QPYU=
-github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220813151836-9c2097bbf1f7/go.mod h1:4cWNYfgbWFJzw6HNv5z+TL+PCsGt3po7Ccuoy5DMfpQ=
-github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220815032345-3049ebd255ef h1:wKTI5bQy0/drGl7tMlYBW/Qh/KECcB1r2omJKtmbXxE=
-github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220815032345-3049ebd255ef/go.mod h1:hgMUQ8NAkW3XLnHQlLeDmKVApw2HQirTdQ052luWuK0=
-github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220813151817-f6cee6000159 h1:p7yV9PAsGb8+WU4x+trDlg/m9JtcYXSuIz6mdit1CXI=
-github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220813151817-f6cee6000159/go.mod h1:iVy4VewKM/flVmfqhA/7y10/Vo+hd1DM3tpo0r/42K4=
-=======
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220815013724-723b2e851677 h1:QY73zVdW6iVTOnn9SS1kUTJGnQvcosXW+syC6XbucIg=
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220815013724-723b2e851677/go.mod h1:Sp+fZHIHtfQRVD7D6agQp5GqEbGzJDrKseJsm2HYxJk=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220815032345-3049ebd255ef h1:wKTI5bQy0/drGl7tMlYBW/Qh/KECcB1r2omJKtmbXxE=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220815032345-3049ebd255ef/go.mod h1:hgMUQ8NAkW3XLnHQlLeDmKVApw2HQirTdQ052luWuK0=
->>>>>>> tedi/bulkapigateway
 github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220815032327-2fea3e481395 h1:KzjM4PzWJOj42LQa36L7PbUjCottLH5ON2hXmR3Gweo=
 github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220815032327-2fea3e481395/go.mod h1:1SDd7yDDj9KiYZSIXNSuMmycBtJeYurdRALr1r2te1Q=
 github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739 h1:iRUB05IfjPxizmRwsyjZ+jXaFRQ7atj3E+/aiK1nLcE=
