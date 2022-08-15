@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+* Add back in minimum memory alloc check that was removed during BulkAPI migration
+
 # 1.57.2
 
 ### Changes
