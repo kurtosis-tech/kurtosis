@@ -787,6 +787,13 @@ func (network *ServiceNetwork) startServices(
 	// - converting files artifacts mountpoints to FilesArtifactsExpansion's'
 	// - passing down other data (eg. container image name, args, etc.)
 	for guid, config := range APIServiceConfigs {
+		// Docker and K8s requires the minimum memory limit to be 6 megabytes to we make sure the allocation is at least that amount
+		// But first, we check that it's not the default value, meaning the user potentially didn't even set it
+		if config.MemoryAllocationMegabytes != defaultMemoryAllocMegabytes && config.MemoryAllocationMegabytes < minMemoryLimit {
+			failedServicesPool[guid] = stacktrace.NewError("Memory allocation, `%d`, is too low. Kurtosis requires the memory limit to be at least `%d` megabytes for service with GUID '%v'.", config.MemoryAllocationMegabytes, minMemoryLimit, guid)
+			continue
+		}
+
 		// Convert ports
 		privateServicePortSpecs, requestedPublicServicePortSpecs, err := convertAPIPortsToPortSpecs(config.PrivatePorts, config.PublicPorts)
 		if err != nil {
