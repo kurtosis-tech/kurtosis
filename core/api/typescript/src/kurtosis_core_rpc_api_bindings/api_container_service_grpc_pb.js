@@ -148,28 +148,6 @@ function deserialize_api_container_api_PauseServiceArgs(buffer_arg) {
   return api_container_service_pb.PauseServiceArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_RegisterServiceArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.RegisterServiceArgs)) {
-    throw new Error('Expected argument of type api_container_api.RegisterServiceArgs');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_RegisterServiceArgs(buffer_arg) {
-  return api_container_service_pb.RegisterServiceArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_RegisterServiceResponse(arg) {
-  if (!(arg instanceof api_container_service_pb.RegisterServiceResponse)) {
-    throw new Error('Expected argument of type api_container_api.RegisterServiceResponse');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_RegisterServiceResponse(buffer_arg) {
-  return api_container_service_pb.RegisterServiceResponse.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
 function serialize_api_container_api_RegisterServicesArgs(arg) {
   if (!(arg instanceof api_container_service_pb.RegisterServicesArgs)) {
     throw new Error('Expected argument of type api_container_api.RegisterServicesArgs');
@@ -223,28 +201,6 @@ function serialize_api_container_api_RepartitionArgs(arg) {
 
 function deserialize_api_container_api_RepartitionArgs(buffer_arg) {
   return api_container_service_pb.RepartitionArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_StartServiceArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.StartServiceArgs)) {
-    throw new Error('Expected argument of type api_container_api.StartServiceArgs');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_StartServiceArgs(buffer_arg) {
-  return api_container_service_pb.StartServiceArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_StartServiceResponse(arg) {
-  if (!(arg instanceof api_container_service_pb.StartServiceResponse)) {
-    throw new Error('Expected argument of type api_container_api.StartServiceResponse');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_StartServiceResponse(buffer_arg) {
-  return api_container_service_pb.StartServiceResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_StartServicesArgs(arg) {
@@ -452,18 +408,6 @@ executeModule: {
     responseDeserialize: deserialize_api_container_api_ExecuteModuleResponse,
   },
   // Registers a service with the API container but doesn't start the container for it
-registerService: {
-    path: '/api_container_api.ApiContainerService/RegisterService',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.RegisterServiceArgs,
-    responseType: api_container_service_pb.RegisterServiceResponse,
-    requestSerialize: serialize_api_container_api_RegisterServiceArgs,
-    requestDeserialize: deserialize_api_container_api_RegisterServiceArgs,
-    responseSerialize: serialize_api_container_api_RegisterServiceResponse,
-    responseDeserialize: deserialize_api_container_api_RegisterServiceResponse,
-  },
-  // Registers services with the API container but doesn't start the containers for them
 registerServices: {
     path: '/api_container_api.ApiContainerService/RegisterServices',
     requestStream: false,
@@ -474,18 +418,6 @@ registerServices: {
     requestDeserialize: deserialize_api_container_api_RegisterServicesArgs,
     responseSerialize: serialize_api_container_api_RegisterServicesResponse,
     responseDeserialize: deserialize_api_container_api_RegisterServicesResponse,
-  },
-  // Starts a previously-registered service by creating a Docker container for it
-startService: {
-    path: '/api_container_api.ApiContainerService/StartService',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.StartServiceArgs,
-    responseType: api_container_service_pb.StartServiceResponse,
-    requestSerialize: serialize_api_container_api_StartServiceArgs,
-    requestDeserialize: deserialize_api_container_api_StartServiceArgs,
-    responseSerialize: serialize_api_container_api_StartServiceResponse,
-    responseDeserialize: deserialize_api_container_api_StartServiceResponse,
   },
   // Starts previously-registered services by creating containers for them
 startServices: {

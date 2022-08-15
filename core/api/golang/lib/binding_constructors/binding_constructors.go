@@ -134,23 +134,10 @@ func NewModuleInfo(
 // ==============================================================================================
 //                                     Register Service
 // ==============================================================================================
-func NewRegisterServiceArgs(serviceId string, partitionId string) *kurtosis_core_rpc_api_bindings.RegisterServiceArgs {
-	return &kurtosis_core_rpc_api_bindings.RegisterServiceArgs{
-		ServiceId:   serviceId,
-		PartitionId: partitionId,
-	}
-}
-
 func NewRegisterServicesArgs(serviceIDSet map[string]bool, partitionID string) *kurtosis_core_rpc_api_bindings.RegisterServicesArgs{
 	return &kurtosis_core_rpc_api_bindings.RegisterServicesArgs{
 		ServiceIdSet: serviceIDSet,
 		PartitionId: partitionID,
-	}
-}
-
-func NewRegisterServiceResponse(privateIpAddr string) *kurtosis_core_rpc_api_bindings.RegisterServiceResponse {
-	return &kurtosis_core_rpc_api_bindings.RegisterServiceResponse{
-		PrivateIpAddr: privateIpAddr,
 	}
 }
 
@@ -164,41 +151,9 @@ func NewRegisterServicesResponse(serviceIDsToIPsMap map[string]string, failedSer
 // ==============================================================================================
 //                                        Start Service
 // ==============================================================================================
-func NewStartServiceArgs(
-	serviceId string,
-	image string,
-	privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-	publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	entrypointArgs []string,
-	cmdArgs []string,
-	envVars map[string]string,
-	filesArtifactMountDirpaths map[string]string,
-	cpuAllocationMillicpus uint64,
-	memoryAllocationMegabytes uint64,
-) *kurtosis_core_rpc_api_bindings.StartServiceArgs {
-	return &kurtosis_core_rpc_api_bindings.StartServiceArgs{
-		ServiceId:                serviceId,
-		DockerImage:              image,
-		PrivatePorts:             privatePorts,
-		EntrypointArgs:           entrypointArgs,
-		CmdArgs:                  cmdArgs,
-		DockerEnvVars:            envVars,
-		FilesArtifactMountpoints: filesArtifactMountDirpaths,
-		PublicPorts:              publicPorts, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-		CpuAllocationMillicpus:            cpuAllocationMillicpus,
-		MemoryAllocationMegabytes:         memoryAllocationMegabytes,
-	}
-}
-
 func NewStartServicesArgs(serviceConfigs map[string]*kurtosis_core_rpc_api_bindings.ServiceConfig) *kurtosis_core_rpc_api_bindings.StartServicesArgs {
 	return &kurtosis_core_rpc_api_bindings.StartServicesArgs{
 		ServiceIdsToConfigs: serviceConfigs,
-	}
-}
-
-func NewStartServiceResponse(privateIpAddr string, privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port, publicIpAddr string, publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port, serviceGuid string) *kurtosis_core_rpc_api_bindings.StartServiceResponse {
-	return &kurtosis_core_rpc_api_bindings.StartServiceResponse{
-		ServiceInfo: NewServiceInfo(serviceGuid, privateIpAddr, privatePorts, publicIpAddr, publicPorts),
 	}
 }
 

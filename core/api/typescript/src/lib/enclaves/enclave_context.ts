@@ -12,10 +12,8 @@ import type {
     PartitionServices,
     Port,
     RemoveServiceArgs,
-    RegisterServiceArgs,
     RepartitionArgs,
     ServiceConfig,
-    StartServiceArgs,
     PartitionConnections,
     LoadModuleArgs,
     UnloadModuleArgs,
@@ -35,12 +33,10 @@ import {
     newPartitionConnections,
     newPartitionServices,
     newPort,
-    newRegisterServiceArgs,
     newRegisterServicesArgs,
     newRemoveServiceArgs,
     newRepartitionArgs,
     newServiceConfig,
-    newStartServiceArgs,
     newStartServicesArgs,
     newStoreWebFilesArtifactArgs,
     newStoreFilesArtifactFromServiceArgs,
@@ -216,17 +212,25 @@ export class EnclaveContext {
             serviceId: ServiceID,
             containerConfigSupplier: (ipAddr: string) => Result<ContainerConfig, Error>
         ): Promise<Result<ServiceContext, Error>> {
-
-        const resultAddServiceToPartition: Result<ServiceContext, Error> = await this.addServiceToPartition(
-            serviceId,
+        const serviceConfigSuppliers : Map<ServiceID, (ipAddr: string) => Result<ContainerConfig, Error>> = new Map<ServiceID, (ipAddr: string) => Result<ContainerConfig, Error>>();
+        serviceConfigSuppliers.set(serviceId, containerConfigSupplier)
+        const resultAddServiceToPartition : Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error> = await this.addServicesToPartition(
+            serviceConfigSuppliers,
             DEFAULT_PARTITION_ID,
-            containerConfigSupplier,
         );
         if (resultAddServiceToPartition.isErr()) {
             return err(resultAddServiceToPartition.error);
         }
-
-        return ok(resultAddServiceToPartition.value);
+        const [successfulServices, failedService] = resultAddServiceToPartition.value
+        const serviceErr : Error | undefined = failedService.get(serviceId);
+        if (serviceErr != undefined) {
+            return err(new Error(`An error occurred adding service '${serviceId}' to the enclave in the default partition:\n${serviceErr}`))
+        }
+        const serviceCtx : ServiceContext | undefined = successfulServices.get(serviceId);
+        if (serviceCtx == undefined){
+            return err(new Error(`An error occurred retrieving the service context of service with ID ${serviceId} from result of adding service to partition. This should not happen and is a bug in Kurtosis.`))
+        }
+        return ok(serviceCtx);
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -251,99 +255,25 @@ export class EnclaveContext {
             partitionId: PartitionID,
             containerConfigSupplier: (ipAddr: string) => Result<ContainerConfig, Error>
         ): Promise<Result<ServiceContext, Error>> {
-
-        log.trace("Registering new service ID with Kurtosis API...");
-
-        const registerServiceArgs: RegisterServiceArgs = newRegisterServiceArgs(serviceId, partitionId);
-
-        const registerServiceResponseResult = await this.backend.registerService(registerServiceArgs)
-        if(registerServiceResponseResult.isErr()){
-            return err(registerServiceResponseResult.error)
-        }
-
-        const registerServiceResponse = registerServiceResponseResult.value
-
-        log.trace("New service successfully registered with Kurtosis API");
-
-        const privateIpAddr: string = registerServiceResponse.getPrivateIpAddr();
-
-        log.trace("Generating container config object using the container config supplier...")
-        const containerConfigSupplierResult: Result<ContainerConfig, Error> = containerConfigSupplier(privateIpAddr);
-        if (containerConfigSupplierResult.isErr()){
-            return err(containerConfigSupplierResult.error);
-        }
-        const containerConfig: ContainerConfig = containerConfigSupplierResult.value;
-        log.trace("Container config object successfully generated")
-
-        log.trace("Creating files artifact ID str -> mount dirpaths map...");
-        const artifactIdStrToMountDirpath: Map<string, string> = new Map();
-        for (const [filesArtifactId, mountDirpath] of containerConfig.filesArtifactMountpoints.entries()) {
-            artifactIdStrToMountDirpath.set(String(filesArtifactId), mountDirpath);
-        }
-        log.trace("Successfully created files artifact ID str -> mount dirpaths map");
-
-        log.trace("Starting new service with Kurtosis API...");
-        const privatePorts = containerConfig.usedPorts;
-        const privatePortsForApi: Map<string, Port> = new Map();
-        for (const [portId, portSpec] of privatePorts.entries()) {
-            const portSpecForApi: Port = newPort(
-                portSpec.number,
-                portSpec.protocol,
-            )
-            privatePortsForApi.set(portId, portSpecForApi);
-        }
-
-        //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-        const publicPorts = containerConfig.publicPorts;
-        const publicPortsForApi: Map<string, Port> = new Map();
-        for (const [portId, portSpec] of publicPorts.entries()) {
-            const portSpecForApi: Port = newPort(
-                portSpec.number,
-                portSpec.protocol,
-            )
-            publicPortsForApi.set(portId, portSpecForApi);
-        }
-        //TODO finish the hack
-
-        const startServicesArgs: StartServiceArgs = newStartServiceArgs(
-            serviceId,
-            containerConfig.image,
-            privatePortsForApi,
-            publicPortsForApi,
-            containerConfig.entrypointOverrideArgs,
-            containerConfig.cmdOverrideArgs,
-            containerConfig.environmentVariableOverrides,
-            artifactIdStrToMountDirpath,
-            containerConfig.cpuAllocationMillicpus,
-            containerConfig.memoryAllocationMegabytes,
+        const serviceConfigSuppliers : Map<ServiceID, (ipAddr: string) => Result<ContainerConfig, Error>> = new Map<ServiceID, (ipAddr: string) => Result<ContainerConfig, Error>>();
+        serviceConfigSuppliers.set(serviceId, containerConfigSupplier)
+        const resultAddServiceToPartition : Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error> = await this.addServicesToPartition(
+            serviceConfigSuppliers,
+            partitionId,
         );
-
-        const startServiceResponseResult = await this.backend.startService(startServicesArgs)
-        if(startServiceResponseResult.isErr()){
-            return err(startServiceResponseResult.error)
+        if (resultAddServiceToPartition.isErr()) {
+            return err(resultAddServiceToPartition.error);
         }
-
-        const startServiceResponse = startServiceResponseResult.value
-        const startedServiceInfo = startServiceResponse.getServiceInfo()
-        if(startedServiceInfo == undefined) {
-            return err(new Error("Expected StartServiceResponse to contain a service_info field, instead no such field was found"))
+        const [successfulServices, failedService] = resultAddServiceToPartition.value
+        const serviceErr : Error | undefined = failedService.get(serviceId);
+        if (serviceErr != undefined) {
+            return err(new Error(`An error occurred adding service '${serviceId}' to the enclave in the default partition:\n${serviceErr}`))
         }
-        log.trace("Successfully started service with Kurtosis API");
-
-        const serviceCtxPublicPorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
-            startedServiceInfo.getMaybePublicPortsMap(),
-        );
-
-        const serviceContext: ServiceContext = new ServiceContext(
-            this.backend,
-            serviceId,
-            privateIpAddr,
-            privatePorts,
-            startedServiceInfo.getMaybePublicIpAddr(),
-            serviceCtxPublicPorts,
-        );
-
-        return ok(serviceContext)
+        const serviceCtx : ServiceContext | undefined = successfulServices.get(serviceId);
+        if (serviceCtx == undefined){
+            return err(new Error(`An error occurred retrieving the service context of service with ID ${serviceId} from result of adding service to partition. This should not happen and is a bug in Kurtosis.`))
+        }
+        return ok(serviceCtx);
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation

@@ -3,7 +3,7 @@
 # 1.57.2
 
 ### Changes
-* Upgrade `container-engine-lib` to 0.35.0
+* Upgrade `container-engine-lib` to 0.36.0
 
 # 1.57.1
 
@@ -17,6 +17,8 @@
 * Implement `APIContainer.StartServices`
 * Implement `AddServices` and `AddServicesToPartition` in golang
 * Implement `AddServices` and `AddServicesToPartition` in typescript
+* Remove `RegisterService` and `StartService` from server, specifically `APIContainer` and `ServiceNetwork`
+* Migrate `AddService` to call down to `AddServicesToPartition` in golang and typescript
 
 # 1.57.0
 

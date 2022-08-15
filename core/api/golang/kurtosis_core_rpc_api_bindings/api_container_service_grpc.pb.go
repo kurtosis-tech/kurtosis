@@ -32,11 +32,7 @@ type ApiContainerServiceClient interface {
 	// Executes an executable module on the user's behalf
 	ExecuteModule(ctx context.Context, in *ExecuteModuleArgs, opts ...grpc.CallOption) (*ExecuteModuleResponse, error)
 	// Registers a service with the API container but doesn't start the container for it
-	RegisterService(ctx context.Context, in *RegisterServiceArgs, opts ...grpc.CallOption) (*RegisterServiceResponse, error)
-	// Registers services with the API container but doesn't start the containers for them
 	RegisterServices(ctx context.Context, in *RegisterServicesArgs, opts ...grpc.CallOption) (*RegisterServicesResponse, error)
-	// Starts a previously-registered service by creating a Docker container for it
-	StartService(ctx context.Context, in *StartServiceArgs, opts ...grpc.CallOption) (*StartServiceResponse, error)
 	// Starts previously-registered services by creating containers for them
 	StartServices(ctx context.Context, in *StartServicesArgs, opts ...grpc.CallOption) (*StartServicesResponse, error)
 	// Returns the IDs of the current services in the enclave
@@ -110,27 +106,9 @@ func (c *apiContainerServiceClient) ExecuteModule(ctx context.Context, in *Execu
 	return out, nil
 }
 
-func (c *apiContainerServiceClient) RegisterService(ctx context.Context, in *RegisterServiceArgs, opts ...grpc.CallOption) (*RegisterServiceResponse, error) {
-	out := new(RegisterServiceResponse)
-	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/RegisterService", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *apiContainerServiceClient) RegisterServices(ctx context.Context, in *RegisterServicesArgs, opts ...grpc.CallOption) (*RegisterServicesResponse, error) {
 	out := new(RegisterServicesResponse)
 	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/RegisterServices", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiContainerServiceClient) StartService(ctx context.Context, in *StartServiceArgs, opts ...grpc.CallOption) (*StartServiceResponse, error) {
-	out := new(StartServiceResponse)
-	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/StartService", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -267,11 +245,7 @@ type ApiContainerServiceServer interface {
 	// Executes an executable module on the user's behalf
 	ExecuteModule(context.Context, *ExecuteModuleArgs) (*ExecuteModuleResponse, error)
 	// Registers a service with the API container but doesn't start the container for it
-	RegisterService(context.Context, *RegisterServiceArgs) (*RegisterServiceResponse, error)
-	// Registers services with the API container but doesn't start the containers for them
 	RegisterServices(context.Context, *RegisterServicesArgs) (*RegisterServicesResponse, error)
-	// Starts a previously-registered service by creating a Docker container for it
-	StartService(context.Context, *StartServiceArgs) (*StartServiceResponse, error)
 	// Starts previously-registered services by creating containers for them
 	StartServices(context.Context, *StartServicesArgs) (*StartServicesResponse, error)
 	// Returns the IDs of the current services in the enclave
@@ -318,14 +292,8 @@ func (UnimplementedApiContainerServiceServer) UnloadModule(context.Context, *Unl
 func (UnimplementedApiContainerServiceServer) ExecuteModule(context.Context, *ExecuteModuleArgs) (*ExecuteModuleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecuteModule not implemented")
 }
-func (UnimplementedApiContainerServiceServer) RegisterService(context.Context, *RegisterServiceArgs) (*RegisterServiceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RegisterService not implemented")
-}
 func (UnimplementedApiContainerServiceServer) RegisterServices(context.Context, *RegisterServicesArgs) (*RegisterServicesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterServices not implemented")
-}
-func (UnimplementedApiContainerServiceServer) StartService(context.Context, *StartServiceArgs) (*StartServiceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method StartService not implemented")
 }
 func (UnimplementedApiContainerServiceServer) StartServices(context.Context, *StartServicesArgs) (*StartServicesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartServices not implemented")
@@ -451,24 +419,6 @@ func _ApiContainerService_ExecuteModule_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApiContainerService_RegisterService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RegisterServiceArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).RegisterService(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api_container_api.ApiContainerService/RegisterService",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).RegisterService(ctx, req.(*RegisterServiceArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ApiContainerService_RegisterServices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegisterServicesArgs)
 	if err := dec(in); err != nil {
@@ -483,24 +433,6 @@ func _ApiContainerService_RegisterServices_Handler(srv interface{}, ctx context.
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ApiContainerServiceServer).RegisterServices(ctx, req.(*RegisterServicesArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiContainerService_StartService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StartServiceArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).StartService(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api_container_api.ApiContainerService/StartService",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).StartService(ctx, req.(*StartServiceArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -763,16 +695,8 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ApiContainerService_ExecuteModule_Handler,
 		},
 		{
-			MethodName: "RegisterService",
-			Handler:    _ApiContainerService_RegisterService_Handler,
-		},
-		{
 			MethodName: "RegisterServices",
 			Handler:    _ApiContainerService_RegisterServices_Handler,
-		},
-		{
-			MethodName: "StartService",
-			Handler:    _ApiContainerService_StartService_Handler,
 		},
 		{
 			MethodName: "StartServices",

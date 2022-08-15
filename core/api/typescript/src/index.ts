@@ -18,7 +18,7 @@ export type { ModuleID } from "./lib/modules/module_context";
 export { ModuleContext } from "./lib/modules/module_context";
 
 // Constructor Calls
-export { newExecCommandArgs, newLoadModuleArgs, newRegisterServiceArgs, newStartServiceArgs, newGetServicesArgs, newRemoveServiceArgs, newPartitionServices, newRepartitionArgs, newPartitionConnections, newPartitionConnectionInfo, newWaitForHttpGetEndpointAvailabilityArgs, newWaitForHttpPostEndpointAvailabilityArgs, newExecuteModuleArgs, newGetModulesArgs } from "./lib/constructor_calls";
+export { newExecCommandArgs, newLoadModuleArgs, newRegisterServicesArgs, newStartServicesArgs, newGetServicesArgs, newRemoveServiceArgs, newPartitionServices, newRepartitionArgs, newPartitionConnections, newPartitionConnectionInfo, newWaitForHttpGetEndpointAvailabilityArgs, newWaitForHttpPostEndpointAvailabilityArgs, newExecuteModuleArgs, newGetModulesArgs } from "./lib/constructor_calls";
 
 // Module Launch API
 export { ModuleContainerArgs } from "./module_launch_api/module_container_args";

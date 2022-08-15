@@ -21,13 +21,7 @@ service ApiContainerService {
   rpc ExecuteModule(ExecuteModuleArgs) returns (ExecuteModuleResponse) {};
 
   // Registers a service with the API container but doesn't start the container for it
-  rpc RegisterService(RegisterServiceArgs) returns (RegisterServiceResponse) {};
-
-  // Registers services with the API container but doesn't start the containers for them
   rpc RegisterServices(RegisterServicesArgs) returns (RegisterServicesResponse) {};
-
-  // Starts a previously-registered service by creating a Docker container for it
-  rpc StartService(StartServiceArgs) returns (StartServiceResponse) {};
 
   // Starts previously-registered services by creating containers for them
   rpc StartServices(StartServicesArgs) returns (StartServicesResponse) {};
@@ -230,25 +224,12 @@ message ExecuteModuleResponse {
 // ==============================================================================================
 //                                     Register Service
 // ==============================================================================================
-message RegisterServiceArgs {
-  // ID that will be used to identify the service going forward
-  string service_id = 1;
-
-  // If emptystring, the default partition ID will be used
-  string partition_id = 2;
-}
-
 message RegisterServicesArgs {
   // IDs that will be used to identify services going forward
   map<string, bool> service_id_set = 1;
 
   // If emptystring, the default partition ID will be used
   string partition_id = 2;
-}
-
-message RegisterServiceResponse {
-  // The IP address *inside* the enclave that the service will receive when it starts
-  string private_ip_addr = 1;
 }
 
 message RegisterServicesResponse {
@@ -262,44 +243,8 @@ message RegisterServicesResponse {
 // ==============================================================================================
 //                                        Start Service
 // ==============================================================================================
-message StartServiceArgs {
-  // ID of the previously-registered service that should be started
-  string service_id = 1;
-
-  string docker_image = 2;
-
-  // Definition of the ports *inside* the enclave that the container should have exposed, specified as user_friendly_port_id -> port_definition
-  map<string, Port> private_ports = 3;
-
-  // Corresponds to a Dockerfile's ENTRYPOINT directive; leave blank to do no overriding
-  repeated string entrypoint_args = 4;
-
-  // Corresponds to a Dockerfile's CMD directive; leave blank to do no overriding
-  repeated string cmd_args = 5;
-
-  // Docker environment variables that should be set in the service's container
-  map<string, string> docker_env_vars = 6;
-
-  // Mapping of files_artifact_uuid -> filepath_on_container_to_mount_artifact_contents
-  map<string, string> files_artifact_mountpoints = 8;
-
-  //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-  map<string, Port> public_ports  = 9;
-
-  // Corresponds to `millicpus`, 1000 millicpu = 1 CPU in both Docker and Kubernetes
-  uint64 cpu_allocation_millicpus = 10;
-
-  // Corresponds to available memory in megabytes in both Docker and Kubernetes
-  uint64 memory_allocation_megabytes = 11;
-}
-
 message StartServicesArgs {
   map<string, ServiceConfig> service_ids_to_configs = 1;
-}
-
-message StartServiceResponse {
-  // Info describing the newly started service
-  ServiceInfo service_info = 1;
 }
 
 message StartServicesResponse {

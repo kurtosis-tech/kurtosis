@@ -319,67 +319,6 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeModule
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
- *   !proto.api_container_api.RegisterServiceArgs,
- *   !proto.api_container_api.RegisterServiceResponse>}
- */
-const methodDescriptor_ApiContainerService_RegisterService = new grpc.web.MethodDescriptor(
-  '/api_container_api.ApiContainerService/RegisterService',
-  grpc.web.MethodType.UNARY,
-  proto.api_container_api.RegisterServiceArgs,
-  proto.api_container_api.RegisterServiceResponse,
-  /**
-   * @param {!proto.api_container_api.RegisterServiceArgs} request
-   * @return {!Uint8Array}
-   */
-  function(request) {
-    return request.serializeBinary();
-  },
-  proto.api_container_api.RegisterServiceResponse.deserializeBinary
-);
-
-
-/**
- * @param {!proto.api_container_api.RegisterServiceArgs} request The
- *     request proto
- * @param {?Object<string, string>} metadata User defined
- *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.api_container_api.RegisterServiceResponse)}
- *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.RegisterServiceResponse>|undefined}
- *     The XHR Node Readable Stream
- */
-proto.api_container_api.ApiContainerServiceClient.prototype.registerService =
-    function(request, metadata, callback) {
-  return this.client_.rpcCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/RegisterService',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_RegisterService,
-      callback);
-};
-
-
-/**
- * @param {!proto.api_container_api.RegisterServiceArgs} request The
- *     request proto
- * @param {?Object<string, string>=} metadata User defined
- *     call metadata
- * @return {!Promise<!proto.api_container_api.RegisterServiceResponse>}
- *     Promise that resolves to the response
- */
-proto.api_container_api.ApiContainerServicePromiseClient.prototype.registerService =
-    function(request, metadata) {
-  return this.client_.unaryCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/RegisterService',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_RegisterService);
-};
-
-
-/**
- * @const
- * @type {!grpc.web.MethodDescriptor<
  *   !proto.api_container_api.RegisterServicesArgs,
  *   !proto.api_container_api.RegisterServicesResponse>}
  */
@@ -435,67 +374,6 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.registerServi
       request,
       metadata || {},
       methodDescriptor_ApiContainerService_RegisterServices);
-};
-
-
-/**
- * @const
- * @type {!grpc.web.MethodDescriptor<
- *   !proto.api_container_api.StartServiceArgs,
- *   !proto.api_container_api.StartServiceResponse>}
- */
-const methodDescriptor_ApiContainerService_StartService = new grpc.web.MethodDescriptor(
-  '/api_container_api.ApiContainerService/StartService',
-  grpc.web.MethodType.UNARY,
-  proto.api_container_api.StartServiceArgs,
-  proto.api_container_api.StartServiceResponse,
-  /**
-   * @param {!proto.api_container_api.StartServiceArgs} request
-   * @return {!Uint8Array}
-   */
-  function(request) {
-    return request.serializeBinary();
-  },
-  proto.api_container_api.StartServiceResponse.deserializeBinary
-);
-
-
-/**
- * @param {!proto.api_container_api.StartServiceArgs} request The
- *     request proto
- * @param {?Object<string, string>} metadata User defined
- *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.api_container_api.StartServiceResponse)}
- *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StartServiceResponse>|undefined}
- *     The XHR Node Readable Stream
- */
-proto.api_container_api.ApiContainerServiceClient.prototype.startService =
-    function(request, metadata, callback) {
-  return this.client_.rpcCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/StartService',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_StartService,
-      callback);
-};
-
-
-/**
- * @param {!proto.api_container_api.StartServiceArgs} request The
- *     request proto
- * @param {?Object<string, string>=} metadata User defined
- *     call metadata
- * @return {!Promise<!proto.api_container_api.StartServiceResponse>}
- *     Promise that resolves to the response
- */
-proto.api_container_api.ApiContainerServicePromiseClient.prototype.startService =
-    function(request, metadata) {
-  return this.client_.unaryCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/StartService',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_StartService);
 };
 
 
