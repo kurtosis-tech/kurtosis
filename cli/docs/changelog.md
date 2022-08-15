@@ -1,8 +1,7 @@
 # TBD
 
-### Breaking Changes
-* Upgrade core to 1.57.2 and engine to 1.30.1 and container engine lib to 0.35.0
-  * Users will need to restart their engines
+* Upgrade to core to 1.57.3 and engine to 1.31.0 and container-engine-lib to 0.36.0
+  * Users will need to restart their Kurtosis engine
 
 # 0.23.2
 ### Fixes

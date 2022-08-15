@@ -83,47 +83,12 @@ func (service *ApiContainerGatewayServiceServer) ExecuteModule(ctx context.Conte
 
 	return remoteApiContainerResponse, nil
 }
-func (service *ApiContainerGatewayServiceServer) RegisterService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServiceArgs) (*kurtosis_core_rpc_api_bindings.RegisterServiceResponse, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.RegisterService(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
-	}
-
-	return remoteApiContainerResponse, nil
-
-}
 
 func (service *ApiContainerGatewayServiceServer) RegisterServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServicesArgs) (*kurtosis_core_rpc_api_bindings.RegisterServicesResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.RegisterServices(ctx, args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
 	}
-	return remoteApiContainerResponse, nil
-}
-
-func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
-	service.mutex.Lock()
-	defer service.mutex.Unlock()
-	cleanUpService := true
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.StartService(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
-	}
-	defer func() {
-		if cleanUpService {
-			removeServiceArgs := &kurtosis_core_rpc_api_bindings.RemoveServiceArgs{ServiceId: args.GetServiceId()}
-			if _, err := service.remoteApiContainerClient.RemoveService(ctx, removeServiceArgs); err != nil {
-				logrus.Errorf("Connecting to the service running in the remote cluster failed, expected to be able to cleanup the created service, but an error occurred calling the backend to remove the service we created:\v%v", err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the service with id '%v'", args.GetServiceId())
-			}
-		}
-	}()
-
-	// Write over the PublicIp and Public Ports fields so the service can be accessed through local port forwarding
-	if err := service.writeOverServiceInfoFieldsWithLocalConnectionInformation(remoteApiContainerResponse.ServiceInfo); err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to write over service info fields for service '%v', instead a non-nil error was returned", args.GetServiceId())
-	}
-	cleanUpService = false
 	return remoteApiContainerResponse, nil
 }
 
