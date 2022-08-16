@@ -1,8 +1,9 @@
 # TBD
 
 ### Breaking changes
-* Upgrade to core to 1.57.3 and engine to 1.31.0 and container-engine-lib to 0.36.0
+* Upgrade to core to 1.57.4 and engine to 1.31.1 and container-engine-lib to 0.36.0
   * Users will need to restart their Kurtosis engine
+
 # 0.23.2
 ### Fixes
 - Fix a bug when the CLI checks if it's the latest version
