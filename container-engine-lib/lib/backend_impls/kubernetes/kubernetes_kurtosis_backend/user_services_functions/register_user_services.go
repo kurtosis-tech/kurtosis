@@ -42,12 +42,12 @@ func RegisterUserServices(
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
-	successfulRegistrations := map[service.ServiceID]*service.ServiceRegistration{}
-	failedRegistrations := map[service.ServiceID]error{}
+	successfulServicesPool := map[service.ServiceID]*service.ServiceRegistration{}
+	failedServicesPool := map[service.ServiceID]error{}
 
 	// If no services were passed in to register, return empty maps
 	if len(serviceIDs) == 0 {
-		return successfulRegistrations, failedRegistrations, nil
+		return successfulServicesPool, failedServicesPool, nil
 	}
 
 	namespaceName, err := shared_helpers.GetEnclaveNamespaceName(ctx, enclaveID, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
@@ -69,9 +69,9 @@ func RegisterUserServices(
 			kubernetesManager)
 	}
 
-	successfulOperations, failedOperations := operation_parallelizer.RunOperationsInParallel(registerServiceOperations)
+	successfulRegistrations, failedRegistrations := operation_parallelizer.RunOperationsInParallel(registerServiceOperations)
 
-	for id, data := range successfulOperations {
+	for id, data := range successfulRegistrations {
 		serviceID := service.ServiceID(id)
 		serviceRegistration, ok := data.(*service.ServiceRegistration)
 		if !ok {
@@ -79,14 +79,14 @@ func RegisterUserServices(
 				"An error occurred downcasting data returned from the register user service operation for service with id: %v." +
 					"This is a Kurtosis bug. Make sure the desired type is actually being returned in the corresponding Operation.", serviceID)
 		}
-		successfulRegistrations[serviceID] = serviceRegistration
+		successfulServicesPool[serviceID] = serviceRegistration
 	}
 
-	for opID, err := range failedOperations {
-		failedRegistrations[service.ServiceID(opID)] = err
+	for opID, err := range failedRegistrations {
+		failedServicesPool[service.ServiceID(opID)] = err
 	}
 
-	return successfulRegistrations, failedRegistrations, nil
+	return successfulServicesPool, failedServicesPool, nil
 }
 
 // ====================================================================================================

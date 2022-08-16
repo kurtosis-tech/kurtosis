@@ -40,7 +40,7 @@ func StartUserServices(
 		serviceConfigsToStart[guid] = config
 	}
 
-	// If no services were passed in to register, return empty maps
+	// If no services were passed in to start, return empty maps
 	// This is to prevent an empty filter being used to query for matching objects and resources, returning all services
 	// and causing logic to break (eg. check for duplicate service GUIDs)
 	// Making this check allows us to eject early and maintain a guarantee that objects and resources returned
