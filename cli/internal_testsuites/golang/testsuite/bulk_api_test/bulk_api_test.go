@@ -1,4 +1,4 @@
-package basic_datastore_and_api_test
+package bulk_api_test
 
 import (
 	"context"
