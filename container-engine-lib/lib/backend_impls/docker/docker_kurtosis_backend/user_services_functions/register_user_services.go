@@ -21,6 +21,13 @@ func RegisterUserServices(
 	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
 	serviceRegistrationMutex.Lock()
 	defer serviceRegistrationMutex.Unlock()
+	successfulServicesPool := map[service.ServiceID]*service.ServiceRegistration{}
+	failedServicesPool := map[service.ServiceID]error{}
+
+	// If no service IDs passed in, return empty maps
+	if len(serviceIDs) == 0 {
+		return successfulServicesPool, failedServicesPool, nil
+	}
 
 	freeIpAddrProvider, found := enclaveFreeIpProviders[enclaveId]
 	if !found {
@@ -80,6 +87,15 @@ func RegisterUserServices(
 		shouldFreeIp = false
 		shouldRemoveRegistration = false
 		successfulRegistrations[serviceID] = registration
+	}
+
+	// Add operations to their respective pools
+	for serviceID, serviceRegistration := range successfulRegistrations {
+		successfulServicesPool[serviceID] = serviceRegistration
+	}
+
+	for serviceID, serviceErr := range failedRegistrations {
+		failedServicesPool[serviceID] = serviceErr
 	}
 
 	return successfulRegistrations, failedRegistrations, nil
