@@ -33,10 +33,20 @@ func StartUserServices(
 ) {
 	serviceRegistrationMutex.Lock()
 	defer serviceRegistrationMutex.Unlock()
+	successfulServicesPool := map[service.ServiceGUID]*service.Service{}
 	failedServicesPool := map[service.ServiceGUID]error{}
 	serviceConfigsToStart := map[service.ServiceGUID]*service.ServiceConfig{}
 	for guid, config:= range services {
 		serviceConfigsToStart[guid] = config
+	}
+
+	// If no services were passed in to register, return empty maps
+	// This is to prevent an empty filter being used to query for matching objects and resources, returning all services
+	// and causing logic to break (eg. check for duplicate service GUIDs)
+	// Making this check allows us to eject early and maintain a guarantee that objects and resources returned
+	// are 1:1 with serviceGUIDs
+	if len(services) == 0 {
+		return successfulServicesPool, failedServicesPool, nil
 	}
 
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
@@ -126,12 +136,16 @@ func StartUserServices(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to start services in parallel.")
 	}
 
-	// Add failed starts to failed services pool
+	// Add operations to their respective pools
+	for serviceGUID, service := range successfulStarts {
+		successfulServicesPool[serviceGUID] = service
+	}
+
 	for serviceGUID, serviceErr := range failedStarts {
 		failedServicesPool[serviceGUID] = serviceErr
 	}
 
-	return successfulStarts, failedServicesPool, nil
+	return successfulServicesPool, failedServicesPool, nil
 }
 
 // ====================================================================================================

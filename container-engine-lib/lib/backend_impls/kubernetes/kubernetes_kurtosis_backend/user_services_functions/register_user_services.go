@@ -42,6 +42,14 @@ func RegisterUserServices(
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
+	successfulRegistrations := map[service.ServiceID]*service.ServiceRegistration{}
+	failedRegistrations := map[service.ServiceID]error{}
+
+	// If no services were passed in to register, return empty maps
+	if len(serviceIDs) == 0 {
+		return successfulRegistrations, failedRegistrations, nil
+	}
+
 	namespaceName, err := shared_helpers.GetEnclaveNamespaceName(ctx, enclaveID, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveID)
@@ -62,9 +70,6 @@ func RegisterUserServices(
 	}
 
 	successfulOperations, failedOperations := operation_parallelizer.RunOperationsInParallel(registerServiceOperations)
-
-	successfulRegistrations := map[service.ServiceID]*service.ServiceRegistration{}
-	failedRegistrations := map[service.ServiceID]error{}
 
 	for id, data := range successfulOperations {
 		serviceID := service.ServiceID(id)

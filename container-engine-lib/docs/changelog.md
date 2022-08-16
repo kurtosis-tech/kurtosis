@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+* Add checks to all Bulk API service operations to return empty maps, given an empty input
+
 # 0.36.0
 
 
