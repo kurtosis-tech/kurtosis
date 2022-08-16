@@ -1,4 +1,26 @@
 # TBD
+
+# 0.36.0
+
+
+### Breaking Changes 
+* Remove `RegisterUserService` and `StartUserService` from `KurtosisBackend` interface
+  * Users will need to remove all references to `RegisterUserService` and `StartUserService` in favor of `RegisterUserServices` and `StartUserServices`
+* Remove `RegisterUserService` and `StartUserService` in `backend_impls`
+  * Users will need to remove all references to `RegisterUserService` and `StartUserService` in favor of `RegisterUserServices` and `StartUserServices`
+
+### Changes
+* Fix bug where `DockerObjectParallelizer` was using iteration variable for all `dockerObjectID` on all operations
+
+# 0.35.0
+### Breaking Changes 
+* Return map of `*service.Service` instead of `service.Service` in `DockerKurtosisBackend.StartUserServices` and Kubernetes equivalent
+  * Users will need to ensure they are consuming `*service.Service` objects from `DockerKurtosisBackend.StartUserServices` and Kubernetes equivalent instead of `service.Service` objects
+
+### Changes
+* Refactor `DockerOperationParallelizer` to use `operation_parallelizer` module
+
+# 0.34.1
 ### Changes
 * Migrated the `engine functions` from `docker_kurtosis_backend` and `kubernetes_kurtosis_backned` package to the `engine_functions` package in both implementations
 * Removed duplicated shared functions that where present in the both the `docker_kurtosis_backend` package and the `shared_helpers` package

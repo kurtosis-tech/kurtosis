@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/operation_parallelizer"
@@ -34,167 +33,6 @@ var kurtosisPortProtocolToKubernetesPortProtocolTranslator = map[port_spec.PortP
 	port_spec.PortProtocol_SCTP: apiv1.ProtocolSCTP,
 }
 
-func StartUserService(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceGuid service.ServiceGUID,
-	containerImageName string,
-	privatePorts map[string]*port_spec.PortSpec,
-	publicPorts map[string]*port_spec.PortSpec, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	entrypointArgs []string,
-	cmdArgs []string,
-	envVars map[string]string,
-	filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion,
-	cpuAllocationMillicpus uint64,
-	memoryAllocationMegabytes uint64,
-	cliModeArgs *shared_helpers.CliModeArgs,
-	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
-	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
-	kubernetesManager *kubernetes_manager.KubernetesManager,
-) (
-	resultUserService *service.Service,
-	resultErr error,
-) {
-
-	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	if publicPorts != nil && len(publicPorts) > 0 {
-		logrus.Warn("The Kubernetes Kurtosis backend doesn't support defining static ports for services; the public ports will be ignored")
-	}
-
-	preexistingServiceFilters := &service.ServiceFilters{
-		GUIDs: map[service.ServiceGUID]bool{
-			serviceGuid: true,
-		},
-	}
-	preexistingObjectsAndResources, err := shared_helpers.GetMatchingUserServiceObjectsAndKubernetesResources(
-		ctx,
-		enclaveId,
-		preexistingServiceFilters,
-		cliModeArgs,
-		apiContainerModeArgs,
-		engineServerModeArgs,
-		kubernetesManager,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user service objects and Kubernetes resources matching service GUID '%v'", serviceGuid)
-	}
-	if len(preexistingObjectsAndResources) == 0 {
-		return nil, stacktrace.NewError("Couldn't find any service registrations matching service GUID '%v'", serviceGuid)
-	}
-	if len(preexistingObjectsAndResources) > 1 {
-		// Should never happen because service GUIDs should be unique
-		return nil, stacktrace.NewError("Found more than one service registration matching service GUID '%v'; this is a bug in Kurtosis", serviceGuid)
-	}
-	matchingObjectAndResources, found := preexistingObjectsAndResources[serviceGuid]
-	if !found {
-		return nil, stacktrace.NewError("Even though we pulled back some Kubernetes resources, no Kubernetes resources were available for requested service GUID '%v'; this is a bug in Kurtosis", serviceGuid)
-	}
-	kubernetesService := matchingObjectAndResources.KubernetesResources.Service
-	serviceObj := matchingObjectAndResources.Service
-	if serviceObj != nil {
-		return nil, stacktrace.NewError("Cannot start service with GUID '%v' because the service has already been started previously", serviceGuid)
-	}
-
-	namespaceName := kubernetesService.GetNamespace()
-	serviceRegistrationObj := matchingObjectAndResources.ServiceRegistration
-
-	var podInitContainers []apiv1.Container
-	var podVolumes []apiv1.Volume
-	var userServiceContainerVolumeMounts []apiv1.VolumeMount
-	if filesArtifactsExpansion != nil {
-		podVolumes, userServiceContainerVolumeMounts, podInitContainers, err = prepareFilesArtifactsExpansionResources(
-			filesArtifactsExpansion.ExpanderImage,
-			filesArtifactsExpansion.ExpanderEnvVars,
-			filesArtifactsExpansion.ExpanderDirpathsToServiceDirpaths,
-		)
-	}
-
-	objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
-	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveId)
-
-	// Create the pod
-	podAttributes, err := enclaveObjAttributesProvider.ForUserServicePod(serviceGuid, serviceRegistrationObj.GetID(), privatePorts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting attributes for new pod for service with GUID '%v'", serviceGuid)
-	}
-	podLabelsStrs := shared_helpers.GetStringMapFromLabelMap(podAttributes.GetLabels())
-	podAnnotationsStrs := shared_helpers.GetStringMapFromAnnotationMap(podAttributes.GetAnnotations())
-
-	podContainers, err := getUserServicePodContainerSpecs(
-		containerImageName,
-		entrypointArgs,
-		cmdArgs,
-		envVars,
-		privatePorts,
-		userServiceContainerVolumeMounts,
-		cpuAllocationMillicpus,
-		memoryAllocationMegabytes,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the container specs for the user service pod with image '%v'", containerImageName)
-	}
-
-	podName := podAttributes.GetName().GetString()
-	createdPod, err := kubernetesManager.CreatePod(
-		ctx,
-		namespaceName,
-		podName,
-		podLabelsStrs,
-		podAnnotationsStrs,
-		podInitContainers,
-		podContainers,
-		podVolumes,
-		userServiceServiceAccountName,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating pod '%v' using image '%v'", podName, containerImageName)
-	}
-	shouldDestroyPod := true
-	defer func() {
-		if shouldDestroyPod {
-			if err := kubernetesManager.RemovePod(ctx, createdPod); err != nil {
-				logrus.Errorf("Starting service didn't complete successfully so we tried to remove the pod we created but doing so threw an error:\n%v", err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to remove pod '%v' in '%v' manually!!!", podName, namespaceName)
-			}
-		}
-	}()
-
-	updatedService, undoServiceUpdateFunc, err := updateServiceWhenContainerStarted(ctx, namespaceName, kubernetesService, privatePorts, kubernetesManager)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred updating service '%v' to reflect its new ports: %+v", kubernetesService.GetName(), privatePorts)
-	}
-	shouldUndoServiceUpdate := true
-	defer func() {
-		if shouldUndoServiceUpdate {
-			undoServiceUpdateFunc()
-		}
-	}()
-
-	kubernetesResources := map[service.ServiceGUID]*shared_helpers.UserServiceKubernetesResources{
-		serviceGuid: {
-			Service: updatedService,
-			Pod:     createdPod,
-		},
-	}
-
-	convertedObjects, err := shared_helpers.GetUserServiceObjectsFromKubernetesResources(enclaveId, kubernetesResources)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting a service object from the Kubernetes service and newly-created pod")
-	}
-	objectsAndResources, found := convertedObjects[serviceGuid]
-	if !found {
-		return nil, stacktrace.NewError(
-			"Successfully converted the Kubernetes service + pod representing a running service with GUID '%v' to a "+
-				"Kurtosis object, but couldn't find that key in the resulting map; this is a bug in Kurtosis",
-			serviceGuid,
-		)
-	}
-
-	shouldDestroyPod = false
-	shouldUndoServiceUpdate = false
-	return objectsAndResources.Service, nil
-}
-
 func StartUserServices(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
@@ -204,7 +42,7 @@ func StartUserServices(
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (
-	map[service.ServiceGUID]service.Service,
+	map[service.ServiceGUID]*service.Service,
 	map[service.ServiceGUID]error,
 	error,
 ) {
@@ -282,7 +120,7 @@ func runStartServiceOperationsInParallel(
 	servicesObjectsAndResources map[service.ServiceGUID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (
-	map[service.ServiceGUID]service.Service,
+	map[service.ServiceGUID]*service.Service,
 	map[service.ServiceGUID]error,
 	error,
 ) {
@@ -299,18 +137,18 @@ func runStartServiceOperationsInParallel(
 
 	successfulServiceObjs, failedOperations := operation_parallelizer.RunOperationsInParallel(startServiceOperations)
 
-	successfulServices := map[service.ServiceGUID]service.Service{}
+	successfulServices := map[service.ServiceGUID]*service.Service{}
 	failedServices := map[service.ServiceGUID]error{}
 
 	for id, data := range successfulServiceObjs {
 		serviceGUID := service.ServiceGUID(id)
-		serviceObj, ok := data.(service.Service)
+		serviceObjectPtr, ok := data.(*service.Service)
 		if !ok {
 			return nil, nil, stacktrace.NewError(
 				"An error occurred downcasting data returned from the start user service operation for service with GUID: %v." +
 					"This is a Kurtosis bug. Make sure the desired type is actually being returned in the corresponding Operation.", serviceGUID)
 		}
-		successfulServices[serviceGUID] = serviceObj
+		successfulServices[serviceGUID] = serviceObjectPtr
 	}
 
 	for id, err := range failedOperations {
