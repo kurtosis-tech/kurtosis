@@ -1,5 +1,7 @@
 # TBD
 
+# 1.31.2
+
 * Upgrade to core 1.57.5
 # 1.31.1
 
