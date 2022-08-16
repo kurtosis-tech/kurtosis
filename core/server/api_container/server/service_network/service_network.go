@@ -880,7 +880,7 @@ func (network *ServiceNetwork) startServices(
 		failedServicesPool[guid] = serviceErr
 	}
 
-	return successfulServices, failedServices, nil
+	return successfulServices, failedServicesPool, nil
 }
 
 func (network *ServiceNetwork) gzipAndPushTarredFileBytesToOutput(
