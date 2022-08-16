@@ -251,8 +251,10 @@ jobs:
       - run: kurtosis config init dont-send-metrics
 
       # Start up an enclave with a module and some services inside
-      - run: kurtosis module exec --enclave-id running-old-enclave kurtosistech/datastore-army-module --execute-params '{"numDatastores":2}'
-      - run: kurtosis module exec --enclave-id stopped-old-enclave kurtosistech/datastore-army-module --execute-params '{"numDatastores":2}'
+      - run: kurtosis enclave add running-old-enclave
+      - run: kurtosis enclave add stopped-old-enclave
+      - run: kurtosis service add running-old-enclave test-datastore-one kurtosistech/example-datastore-server
+      - run: kurtosis service add stopped-old-enclave test-datastore-two kurtosistech/example-datastore-server
       - run: kurtosis enclave stop stopped-old-enclave
       - run: kurtosis engine stop
 
