@@ -4,6 +4,9 @@
 * Upgrade to core to 1.57.6 and engine to 1.31.3 and container-engine-lib to 0.36.1
   * Users will need to restart their Kurtosis engine
 
+### Features
+* Add tests for Bulk API
+
 # 0.23.2
 ### Fixes
 - Fix a bug when the CLI checks if it's the latest version
