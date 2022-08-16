@@ -45,7 +45,7 @@ func TestSettingInvalidMemoryAllocationMegabytesReturnsError(t *testing.T) {
 	containerConfigSupplier := getContainerConfigSupplierWithInvalidMemory()
 
 	_, err = enclaveCtx.AddService(testServiceId, containerConfigSupplier)
-	require.NoError(t, err, "An error should have occurred with the following invalid memory allocation: `%d`", testInvalidMemoryAllocMegabytes)
+	require.Error(t, err, "An error should have occurred with the following invalid memory allocation: `%d`", testInvalidMemoryAllocMegabytes)
 }
 
 // ====================================================================================================
