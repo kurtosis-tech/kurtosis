@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/connection"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/binding_constructors"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -82,39 +83,59 @@ func (service *ApiContainerGatewayServiceServer) ExecuteModule(ctx context.Conte
 
 	return remoteApiContainerResponse, nil
 }
-func (service *ApiContainerGatewayServiceServer) RegisterService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServiceArgs) (*kurtosis_core_rpc_api_bindings.RegisterServiceResponse, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.RegisterService(ctx, args)
+
+func (service *ApiContainerGatewayServiceServer) RegisterServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServicesArgs) (*kurtosis_core_rpc_api_bindings.RegisterServicesResponse, error) {
+	remoteApiContainerResponse, err := service.remoteApiContainerClient.RegisterServices(ctx, args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
 	}
-
 	return remoteApiContainerResponse, nil
-
 }
-func (service *ApiContainerGatewayServiceServer) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
+
+func (service *ApiContainerGatewayServiceServer) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {
 	service.mutex.Lock()
 	defer service.mutex.Unlock()
-	cleanUpService := true
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.StartService(ctx, args)
+	failedServicesPool := map[string]string{}
+	remoteApiContainerResponse, err := service.remoteApiContainerClient.StartServices(ctx, args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
 	}
+	shouldRemoveServices := map[string]bool{}
+	for serviceID, _ := range remoteApiContainerResponse.GetSuccessfulServiceIdsToServiceInfo() {
+		shouldRemoveServices[serviceID] = true
+	}
 	defer func() {
-		if cleanUpService {
-			removeServiceArgs := &kurtosis_core_rpc_api_bindings.RemoveServiceArgs{ServiceId: args.GetServiceId()}
+		for serviceIDStr, _ := range shouldRemoveServices {
+			removeServiceArgs := &kurtosis_core_rpc_api_bindings.RemoveServiceArgs{ServiceId: serviceIDStr}
 			if _, err := service.remoteApiContainerClient.RemoveService(ctx, removeServiceArgs); err != nil {
-				logrus.Errorf("Connecting to the service running in the remote cluster failed, expected to be able to cleanup the created service, but an error occurred calling the backend to remove the service we created:\v%v", err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the service with id '%v'", args.GetServiceId())
+				err = stacktrace.Propagate(err,
+					"Connecting to the service running in the remote cluster failed, expected to be able to cleanup the created service, but an error occurred calling the backend to remove the service we created. "+
+						"ACTION REQUIRED: You'll need to manually remove the service with id '%v'", serviceIDStr)
+				failedServicesPool[serviceIDStr] = err.Error()
 			}
 		}
 	}()
+	successfulServices := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
+	// Add failed services to failed services pool
+	for serviceIDStr, errStr := range remoteApiContainerResponse.GetFailedServiceIdsToError() {
+		failedServicesPool[serviceIDStr] = errStr
+	}
 
 	// Write over the PublicIp and Public Ports fields so the service can be accessed through local port forwarding
-	if err := service.writeOverServiceInfoFieldsWithLocalConnectionInformation(remoteApiContainerResponse.ServiceInfo); err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to write over service info fields for service '%v', instead a non-nil error was returned", args.GetServiceId())
+	for serviceIDStr, serviceInfo := range remoteApiContainerResponse.GetSuccessfulServiceIdsToServiceInfo() {
+		if err := service.writeOverServiceInfoFieldsWithLocalConnectionInformation(serviceInfo); err != nil {
+			err = stacktrace.Propagate(err, "Expected to be able to write over service info fields for service '%v', instead a non-nil error was returned", serviceIDStr)
+			failedServicesPool[serviceIDStr] = err.Error()
+		}
+		successfulServices[serviceIDStr] = serviceInfo
 	}
-	cleanUpService = false
-	return remoteApiContainerResponse, nil
+
+	// Do not remove successful services
+	for serviceIDStr, _ := range successfulServices {
+		delete(shouldRemoveServices, serviceIDStr)
+	}
+	startServicesResp := binding_constructors.NewStartServicesResponse(successfulServices, failedServicesPool)
+	return startServicesResp, nil
 }
 
 func (service *ApiContainerGatewayServiceServer) GetServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServicesArgs) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
