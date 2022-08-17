@@ -22,6 +22,7 @@ const (
 	//We always use the same name because we are going to have only one instance of this volume,
 	//so when the engine is restarted it mounts the same volume with the previous logs
 	logsDatabaseVolumeName = logsDatabaseServerNamePrefix + "-vol"
+	logsCollectorVolumeName = logsCollectorServerNamePrefix + "-vol"
 )
 
 type DockerObjectAttributesProvider interface {
@@ -43,7 +44,10 @@ type DockerObjectAttributesProvider interface {
 		engineGUID engine.EngineGUID,
 		tcpPortId string,
 		tcpPortSpec *port_spec.PortSpec,
+		httpPortId string,
+		httpPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
+	ForLogsCollectorVolume(engineGUID engine.EngineGUID) (DockerObjectAttributes, error)
 }
 
 func GetDockerObjectAttributesProvider() DockerObjectAttributesProvider {
@@ -193,6 +197,8 @@ func (provider *dockerObjectAttributesProviderImpl) ForLogsCollector(
 	engineGUID engine.EngineGUID,
 	tcpPortId string,
 	tcpPortSpec *port_spec.PortSpec,
+	httpPortId string,
+	httpPortSpec *port_spec.PortSpec,
 ) (DockerObjectAttributes, error) {
 	nameStr := strings.Join(
 		[]string{
@@ -213,6 +219,7 @@ func (provider *dockerObjectAttributesProviderImpl) ForLogsCollector(
 
 	usedPorts := map[string]*port_spec.PortSpec{
 		tcpPortId: tcpPortSpec,
+		httpPortId: httpPortSpec,
 	}
 	serializedPortsSpec, err := docker_port_spec_serializer.SerializePortSpecs(usedPorts)
 	if err != nil {
@@ -223,6 +230,31 @@ func (provider *dockerObjectAttributesProviderImpl) ForLogsCollector(
 		label_key_consts.ContainerTypeDockerLabelKey: label_value_consts.LogsCollectorTypeDockerLabelValue,
 		label_key_consts.PortSpecsDockerLabelKey:     serializedPortsSpec,
 		label_key_consts.EngineGUIDDockerLabelKey:    engineGuidLabelValue,
+	}
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
+	}
+
+	return objectAttributes, nil
+}
+
+func (provider *dockerObjectAttributesProviderImpl) ForLogsCollectorVolume(engineGUID engine.EngineGUID) (DockerObjectAttributes, error) {
+	nameStr := logsCollectorVolumeName
+	name, err := docker_object_name.CreateNewDockerObjectName(nameStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", nameStr)
+	}
+
+	engineGuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(string(engineGUID))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine GUID Docker label from string '%v'", engineGUID)
+	}
+
+	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
+		label_key_consts.EngineGUIDDockerLabelKey: engineGuidLabelValue,
+		label_key_consts.VolumeTypeDockerLabelKey: label_value_consts.LogsCollectorVolumeTypeDockerLabelValue,
 	}
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)

@@ -5,6 +5,8 @@
 * Added `EngineGUIDDockerLabelKey` Docker label key
 * Added `LogsDatabase` interface for defining centralized logs database behaviour
 * Added `Loki` logs database implementation and the Kurtosis configuration values
+* Added `LogsCollector` interface for defining centralized logs collector behaviour
+* Added `Fluentbit` logs collector implementation and the Kurtosis configuration values
 
 ### Changes
 * Migrated the `engine functions` from `docker_kurtosis_backend` and `kubernetes_kurtosis_backned` package to the `engine_functions` package in both implementations

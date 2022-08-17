@@ -55,14 +55,14 @@ func (loki *Loki) GetContainerArgs(
 	}
 
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
-		privateHttpDockerPort: docker_manager.NewManualPublishingSpec(httpPortNumber),
+		privateHttpDockerPort: docker_manager.NewNoPublishingSpec(),
 	}
 
 	volumeMounts := map[string]string{
 		volumeName: dirpath,
 	}
 
-	logsDatabaseConfigContentStr, err := loki.GetConfigContent()
+	logsDatabaseConfigContentStr, err := loki.getConfigContent()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the Loki's configuration content")
 	}
@@ -104,7 +104,7 @@ func (loki *Loki) GetContainerArgs(
 	return createAndStartArgs, nil
 }
 
-func (loki *Loki) GetConfigContent() (string, error) {
+func (loki *Loki) getConfigContent() (string, error) {
 	lokiConfigYAMLContent, err := yaml.Marshal(loki.config)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred marshalling Loki config '%+v'", loki.config)

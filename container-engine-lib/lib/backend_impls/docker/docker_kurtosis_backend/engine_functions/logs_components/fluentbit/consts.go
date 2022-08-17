@@ -1,48 +1,59 @@
 package fluentbit
 
-import "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+import (
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+)
 
 const (
-
 	rootDirpath = "/fluent-bit"
 
 	////////////////////////--LOKI CONTAINER CONFIGURATION SECTION--/////////////////////////////
-	containerImage          = "fluent/fluent-bit:1.9.7-debug"
-	tcpPortNumber   uint16 = 24224 // Default Fluentbit TCP port number, more here: https://docs.fluentbit.io/manual/pipeline/outputs/forward
-	tcpPortProtocol        = port_spec.PortProtocol_TCP
+	containerImage          = "fluent/fluent-bit:1.9.7"
+	tcpPortNumber    uint16 = 24224 // Default Fluentbit TCP port number, more here: https://docs.fluentbit.io/manual/pipeline/outputs/forward
+	tcpPortProtocol         = port_spec.PortProtocol_TCP
+	httpPortNumber   uint16 = 9712 // It's a custom port number that we create to publish it
+	httpPortProtocol        = port_spec.PortProtocol_TCP
 
-	binaryFilepath = rootDirpath + "/bin/fluent-bit"
-	configFilepath = rootDirpath + "/etc/fluent-bit.conf"
-	configFileFlag = "--config"
+	lokiOutputTypeName = "loki"
 
-	configContentTemplate = `
-		[INPUT]
-			name        forward
-			listen      0.0.0.0
-			port        24224
-		[FILTER]
-			name modify
-			match *
-			rename com.kurtosistech.guid kurtosisGUID
-			rename com.kurtosistech.container-type kurtosisContainerType`
-	/*configContentTemplate = `
-		[INPUT]
-			name        forward
-			listen      0.0.0.0
-			port        24224
-		[FILTER]
-			name modify
-			match *
-			rename com.kurtosistech.guid kurtosisGUID
-			rename com.kurtosistech.container-type kurtosisContainerType
-		[OUTPUT]
-			name loki
-			match *
-			host ${LOKI_HOST}
-			port ${LOKI_PORT}
-			remove_keys source
-			labels job=fluent-bit, $kurtosisContainerType, $kurtosisGUID
-			line_format json
-			tenant_id_key com.kurtosistech.enclave-id`*/
+	configDirpathInContainer = rootDirpath + "/etc"
+	configFilepathInContainer = configDirpathInContainer + "/fluent-bit.conf"
+
+	configFileTemplateName = "fluentbitConfigFileTemplate"
+	configFileTemplate = `
+[SERVICE]
+	log_level {{.Service.LogLevel}}
+	http_server {{.Service.HttpServerEnabled}}
+	http_listen {{.Service.HttpServerHost}}
+	http_port {{.Service.HttpServerPort}}
+[INPUT]
+	name {{.Input.Name}}
+	listen {{.Input.Listen}}
+	port {{.Input.Port}}
+[FILTER]
+	name {{.Filter.Name}}
+	match {{.Filter.Match}}
+	{{.Filter.GetRulesStr}}
+[OUTPUT]
+	name {{.Output.Name}}
+	match {{.Output.Match}}
+	host {{.Output.Host}}
+	port {{.Output.Port}}
+	labels {{.Output.GetLabelsStr}}
+	line_format {{.Output.LineFormat}}
+	tenant_id_key {{.Output.TenantIDKey}}`
+
+	healthCheckEndpointPath = "api/v1/health"
 	////////////////////////--FINISH LOKI CONTAINER CONFIGURATION SECTION--/////////////////////////////
+
+	////////////////////////--FLUENTBIT CONFIGURATION SECTION--/////////////////////////////
+	logLevel               = "debug"
+	httpServerEnabledValue = "On"
+	httpServerLocalhost    = "0.0.0.0"
+	inputName              = "forward"
+	inputListenIP          = "0.0.0.0"
+	modifyFilterName       = "modify"
+	matchAllRegex          = "*"
+	jsonLineFormat         = "json"
+	////////////////////////--FINISH FLUENTBIT CONFIGURATION SECTION--/////////////////////////////
 )

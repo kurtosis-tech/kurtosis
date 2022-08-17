@@ -13,5 +13,4 @@ type LogsDatabase interface {
 		volumeName string,
 		networkId string,
 	) (*docker_manager.CreateAndStartContainerArgs, error)
-	GetConfigContent() (string, error)
 }
