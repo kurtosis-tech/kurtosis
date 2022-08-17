@@ -72,7 +72,7 @@ test("Test adding services to an enclave simultaneously", async () => {
         if (<number>successfulDatastoreServiceContexts.size != NUM_SERVICES_TO_ADD){
             throw new Error(`Expected number of successful datastore services added to be ${NUM_SERVICES_TO_ADD}, but the actual number of successful datastore services added was '${successfulDatastoreServiceContexts.size}'`)
         }
-        if (<number>failedDatastoreServiceErrs.size == 0){
+        if (<number>failedDatastoreServiceErrs.size != 0){
             throw new Error(`Expected no failed datastore services but the actual number of failed datastore services was '${failedDatastoreServiceErrs.size}'`)
         }
 
