@@ -69,10 +69,10 @@ test("Test adding services to an enclave simultaneously", async () => {
         const successfulDatastoreServiceContexts = addDatastoreServicesResult.value[0]
         const failedDatastoreServiceErrs = addDatastoreServicesResult.value[1]
 
-        if (!(successfulDatastoreServiceContexts.size == NUM_SERVICES_TO_ADD)){
+        if (<number>successfulDatastoreServiceContexts.size != NUM_SERVICES_TO_ADD){
             throw new Error(`Expected number of successful datastore services added to be ${NUM_SERVICES_TO_ADD}, but the actual number of successful datastore services added was '${successfulDatastoreServiceContexts.size}'`)
         }
-        if (!(failedDatastoreServiceErrs.size == 0)){
+        if (<number>failedDatastoreServiceErrs.size == 0){
             throw new Error(`Expected no failed datastore services but the actual number of failed datastore services was '${failedDatastoreServiceErrs.size}'`)
         }
 
@@ -108,10 +108,10 @@ test("Test adding services to an enclave simultaneously", async () => {
         const successfulApiServiceContexts = addApiServicesResult.value[0]
         const failedApiServiceErrs = addApiServicesResult.value[1]
 
-        if (!(successfulApiServiceContexts.size == NUM_SERVICES_TO_ADD)){
+        if (<number>successfulApiServiceContexts.size != NUM_SERVICES_TO_ADD){
             throw new Error(`Expected number of successful api services added to be ${NUM_SERVICES_TO_ADD}, but the actual number of successful api services added was '${successfulDatastoreServiceContexts.size}'`)
         }
-        if (!(failedApiServiceErrs.size == 0)){
+        if (<number>failedApiServiceErrs.size != 0){
             throw new Error(`Expected no failed api services, but the actual number of failed api services was '${failedApiServiceErrs.size}'`)
         }
     }finally{
