@@ -25,16 +25,16 @@ func main() {
 // You can comment out various sections to test various parts of the lib
 func runMain() error {
 	/*
-	if err := runDockerManagerTesting(); err != nil {
-		return err
-	}
+		if err := runDockerManagerTesting(); err != nil {
+			return err
+		}
 
 	*/
 
 	/*
-	if err := runKubernetesManagerTesting(); err != nil {
-		return err
-	}
+		if err := runKubernetesManagerTesting(); err != nil {
+			return err
+		}
 	*/
 
 	if err := runKurtosisBackendTesting(); err != nil {
@@ -90,10 +90,10 @@ func runKurtosisBackendTesting() error {
 	ctx := context.Background()
 
 	/*
-	backend, err := backend_creator.GetLocalDockerKurtosisBackend(nil)
-	if err != nil {
-		return err
-	}
+		backend, err := backend_creator.GetLocalDockerKurtosisBackend(nil)
+		if err != nil {
+			return err
+		}
 
 	*/
 
@@ -108,11 +108,11 @@ func runKurtosisBackendTesting() error {
 	// enclaveId := enclave.EnclaveID("test")  // TODO Make this whatever you need
 	// serviceGuid := service.ServiceGUID("TODO")
 	/*
-	results, err := backend.CreateFilesArtifactExpansion(ctx, "test", "TODO", "/foo/bar")
-	if err != nil {
-		return err
-	}
-	fmt.Println(results)
+		results, err := backend.CreateFilesArtifactExpansion(ctx, "test", "TODO", "/foo/bar")
+		if err != nil {
+			return err
+		}
+		fmt.Println(results)
 
 	*/
 

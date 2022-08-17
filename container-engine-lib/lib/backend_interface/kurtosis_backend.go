@@ -6,10 +6,8 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"io"
 	"net"
@@ -231,13 +229,6 @@ type KurtosisBackend interface {
 		- As of 2022-05-15, Kurtosis services can never be restarted once stopped.
 	*/
 
-	// Registers a user service, allocating it an IP and ServiceGUID
-	RegisterUserService(
-		ctx context.Context,
-		enclaveId enclave.EnclaveID,
-		serviceId service.ServiceID,
-	) (*service.ServiceRegistration, error)
-
 	// Registers a user service for each given serviceId, allocating each an IP and ServiceGUID
 	RegisterUserServices(
 		ctx context.Context,
@@ -249,33 +240,13 @@ type KurtosisBackend interface {
 		resultErr error, // represents an error with the function itself, rather than the user services
 	)
 
-	// StartUserService consumes a service registration to create a user container with the given parameters
-	StartUserService(
-		ctx context.Context,
-		enclaveId enclave.EnclaveID,
-		serviceGuid service.ServiceGUID,
-		containerImageName string,
-		privatePorts map[string]*port_spec.PortSpec,
-		publicPorts map[string]*port_spec.PortSpec, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-		entrypointArgs []string,
-		cmdArgs []string,
-		envVars map[string]string,
-		// Leave as nil to not do any files artifact expansion
-		filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion,
-		cpuAllocationMillicpus uint64,
-		memoryAllocationMegabytes uint64,
-	) (
-		*service.Service,
-		error,
-	)
-
 	// StartUserService consumes service registrations to create auser container for each registration, given each service config
 	StartUserServices(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
 		services map[service.ServiceGUID]*service.ServiceConfig,
 	) (
-		successfulServices map[service.ServiceGUID]service.Service, // "set" of user service GUIDs that were successfully started
+		successfulServices map[service.ServiceGUID]*service.Service, // "set" of user service GUIDs that were successfully started
 		unsuccessfulServices map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when attempting to start, with the error
 		resultErr error, // represents an error with the function itself, rather than the user services
 	)
