@@ -30,7 +30,7 @@ const API_SERVICE_IMAGE = "kurtosistech/example-api-server";
 const DATASTORE_PORT_ID = "rpc";
 const API_PORT_ID = "rpc";
 
-const NUM_SERVICES_TO_ADD = 3
+const NUM_SERVICES_TO_ADD : number = 3
 
 
 const DATASTORE_PORT_SPEC = new PortSpec(
@@ -47,10 +47,9 @@ jest.setTimeout(180000)
 test("Test adding services to an enclave simultaneously", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
     const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
-
     if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
-
     const { enclaveContext, stopEnclaveFunction } = createEnclaveResult.value
+
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
         log.info("Adding three datastore services simulataneously")
@@ -70,11 +69,11 @@ test("Test adding services to an enclave simultaneously", async () => {
         const successfulDatastoreServiceContexts = addDatastoreServicesResult.value[0]
         const failedDatastoreServiceErrs = addDatastoreServicesResult.value[1]
 
-        if (successfulDatastoreServiceContexts.size != NUM_SERVICES_TO_ADD){
-            throw new Error(`Expected number of successful datastore services added to be ${NUM_SERVICES_TO_ADD} != actual number of successful datastore services added ${successfulDatastoreServiceContexts.size}`)
+        if (successfulDatastoreServiceContexts.size !== NUM_SERVICES_TO_ADD){
+            throw new Error(`Expected number of successful datastore services added to be ${NUM_SERVICES_TO_ADD}, but the actual number of successful datastore services added was '${successfulDatastoreServiceContexts.size}'`)
         }
-        if (failedDatastoreServiceErrs.size != 0){
-            throw new Error(`Expected number of failed datastore services to be ${0} != actual number of failed datastore services ${failedDatastoreServiceErrs.size}`)
+        if (failedDatastoreServiceErrs.size !== 0){
+            throw new Error(`Expected no failed datastore services but the actual number of failed datastore services was '${failedDatastoreServiceErrs.size}'`)
         }
 
         const apiServiceConfigSuppliers  = new Map<ServiceID,( ipAddr: string) => Result<ContainerConfig, Error>>();
@@ -109,11 +108,11 @@ test("Test adding services to an enclave simultaneously", async () => {
         const successfulApiServiceContexts = addApiServicesResult.value[0]
         const failedApiServiceErrs = addApiServicesResult.value[1]
 
-        if (successfulApiServiceContexts.size != NUM_SERVICES_TO_ADD){
-            throw new Error(`Expected number of successful api services added to be ${NUM_SERVICES_TO_ADD} != actual number of successful api services added ${successfulDatastoreServiceContexts.size}`)
+        if (successfulApiServiceContexts.size !== NUM_SERVICES_TO_ADD){
+            throw new Error(`Expected number of successful api services added to be ${NUM_SERVICES_TO_ADD}, but the actual number of successful api services added was '${successfulDatastoreServiceContexts.size}'`)
         }
-        if (failedApiServiceErrs.size != 0){
-            throw new Error(`Expected number of failed api services to be ${0} != actual number of failed api services ${failedApiServiceErrs.size}`)
+        if (failedApiServiceErrs.size !== 0){
+            throw new Error(`Expected no failed api services, but the actual number of failed api services was '${failedApiServiceErrs.size}'`)
         }
     }finally{
         stopEnclaveFunction()
