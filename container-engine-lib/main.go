@@ -4,11 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
+	"github.com/kurtosis-tech/container-engine-lib/lib"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"os"
@@ -90,36 +89,19 @@ func runKubernetesManagerTesting() error {
 func runKurtosisBackendTesting() error {
 	ctx := context.Background()
 
-
-	backend, err := backend_creator.GetLocalDockerKurtosisBackend(nil)
-	if err != nil {
-		return err
-	}
-
-	serializedArgs := map[string]string{
-		"SERIALIZED_ARGS": `{"grpcListenPortNum":9710,"grpcProxyListenPortNum":9711,"logLevelStr":"debug","imageVersionTag":"1.29.0","metricsUserId":"552f","didUserAcceptSendingMetrics":false,"kurtosisBackendType":"docker","kurtosisBackendConfig":{}}`,
-	}
-
-	engine, err := backend.CreateEngine(
-		ctx,
-		"kurtosistech/kurtosis-engine-server",
-		"1.29.0",
-		9710,
-		9810,
-		serializedArgs,
-	)
-	if err != nil {
-		return err
-	}
-
-	logrus.Infof("Engine info: %+v", engine)
-
 	/*
-		_, err := lib.GetCLIKubernetesKurtosisBackend(ctx)
+		backend, err := backend_creator.GetLocalDockerKurtosisBackend(nil)
 		if err != nil {
 			return err
 		}
+
 	*/
+
+
+	_, err := lib.GetCLIKubernetesKurtosisBackend(ctx)
+	if err != nil {
+		return err
+	}
 
 
 	// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv Arbitrary logic goes here vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -137,4 +119,3 @@ func runKurtosisBackendTesting() error {
 
 	return nil
 }
-

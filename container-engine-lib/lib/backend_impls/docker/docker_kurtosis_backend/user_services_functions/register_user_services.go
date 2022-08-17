@@ -11,73 +11,6 @@ import (
 	"time"
 )
 
-func RegisterUserService(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceId service.ServiceID,
-	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration,
-	serviceRegistrationMutex *sync.Mutex,
-	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker) (*service.ServiceRegistration, error) {
-	serviceRegistrationMutex.Lock()
-	defer serviceRegistrationMutex.Unlock()
-
-	freeIpAddrProvider, found := enclaveFreeIpProviders[enclaveId]
-	if !found {
-		return nil, stacktrace.NewError(
-			"Received a request to register service with ID '%v' in enclave '%v', but no free IP address provider was "+
-				"defined for this enclave; this likely means that the registration request is being called where it shouldn't "+
-				"be (i.e. outside the API container)",
-			serviceId,
-			enclaveId,
-		)
-	}
-
-	registrationsForEnclave, found := serviceRegistrations[enclaveId]
-	if !found {
-		return nil, stacktrace.NewError(
-			"No service registrations are being tracked for enclave '%v'; this likely means that the registration request is being called where it shouldn't "+
-				"be (i.e. outside the API container)",
-			enclaveId,
-		)
-	}
-
-	ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting a free IP address to give to service '%v' in enclave '%v'", serviceId, enclaveId)
-	}
-	shouldFreeIp := true
-	defer func() {
-		if shouldFreeIp {
-			freeIpAddrProvider.ReleaseIpAddr(ipAddr)
-		}
-	}()
-
-	// TODO Switch this, and all other GUIDs, to a UUID??
-	guid := service.ServiceGUID(fmt.Sprintf(
-		"%v-%v",
-		serviceId,
-		time.Now().Unix(),
-	))
-	registration := service.NewServiceRegistration(
-		serviceId,
-		guid,
-		enclaveId,
-		ipAddr,
-	)
-
-	registrationsForEnclave[guid] = registration
-	shouldRemoveRegistration := true
-	defer func() {
-		if shouldRemoveRegistration {
-			delete(registrationsForEnclave, guid)
-		}
-	}()
-
-	shouldFreeIp = false
-	shouldRemoveRegistration = false
-	return registration, nil
-}
-
 // Registers a user service for each given serviceID, allocating each an IP and ServiceGUID
 func RegisterUserServices(
 	ctx context.Context, 
@@ -88,6 +21,13 @@ func RegisterUserServices(
 	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
 	serviceRegistrationMutex.Lock()
 	defer serviceRegistrationMutex.Unlock()
+	successfulServicesPool := map[service.ServiceID]*service.ServiceRegistration{}
+	failedServicesPool := map[service.ServiceID]error{}
+
+	// If no service IDs passed in, return empty maps
+	if len(serviceIDs) == 0 {
+		return successfulServicesPool, failedServicesPool, nil
+	}
 
 	freeIpAddrProvider, found := enclaveFreeIpProviders[enclaveId]
 	if !found {
@@ -147,6 +87,15 @@ func RegisterUserServices(
 		shouldFreeIp = false
 		shouldRemoveRegistration = false
 		successfulRegistrations[serviceID] = registration
+	}
+
+	// Add operations to their respective pools
+	for serviceID, serviceRegistration := range successfulRegistrations {
+		successfulServicesPool[serviceID] = serviceRegistration
+	}
+
+	for serviceID, serviceErr := range failedRegistrations {
+		failedServicesPool[serviceID] = serviceErr
 	}
 
 	return successfulRegistrations, failedRegistrations, nil

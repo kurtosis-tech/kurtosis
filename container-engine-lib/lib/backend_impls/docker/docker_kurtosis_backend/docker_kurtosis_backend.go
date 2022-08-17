@@ -15,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
@@ -138,12 +137,6 @@ func (backend *DockerKurtosisBackend) DestroyEngines(
 	return engine_functions.DestroyEngines(ctx, filters, backend.dockerManager)
 }
 
-
-func (backend *DockerKurtosisBackend) RegisterUserService(ctx context.Context, enclaveId enclave.EnclaveID, serviceId service.ServiceID) (*service.ServiceRegistration, error) {
-	return user_service_functions.RegisterUserService(ctx, enclaveId, serviceId, backend.serviceRegistrations, backend.serviceRegistrationMutex, backend.enclaveFreeIpProviders)
-}
-
-// Registers a user service for each given serviceId, allocating each an IP and ServiceGUID
 func (backend *DockerKurtosisBackend ) RegisterUserServices(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
@@ -152,41 +145,7 @@ func (backend *DockerKurtosisBackend ) RegisterUserServices(
 	return user_service_functions.RegisterUserServices(ctx, enclaveId, serviceIds, backend.serviceRegistrations, backend.serviceRegistrationMutex, backend.enclaveFreeIpProviders)
 }
 
-func (backend *DockerKurtosisBackend) StartUserService(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceGuid service.ServiceGUID,
-	containerImageName string,
-	privatePorts map[string]*port_spec.PortSpec,
-	publicPorts map[string]*port_spec.PortSpec, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	entrypointArgs []string,
-	cmdArgs []string,
-	envVars map[string]string,
-	filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion,
-	cpuAllocationMillicpus uint64,
-	memoryAllocationMegabytes uint64,
-) (*service.Service, error) {
-	return user_service_functions.StartUserService(
-		ctx,
-		enclaveId,
-		serviceGuid,
-		containerImageName,
-		privatePorts,
-		publicPorts,
-		entrypointArgs,
-		cmdArgs,
-		envVars,
-		filesArtifactsExpansion,
-		cpuAllocationMillicpus,
-		memoryAllocationMegabytes,
-		backend.serviceRegistrations,
-		backend.serviceRegistrationMutex,
-		backend.enclaveFreeIpProviders,
-		backend.dockerManager,
-		backend.objAttrsProvider)
-}
-
-func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]service.Service, map[service.ServiceGUID]error, error){
+func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]*service.Service, map[service.ServiceGUID]error, error){
 	return user_service_functions.StartUserServices(
 		ctx,
 		enclaveId,
