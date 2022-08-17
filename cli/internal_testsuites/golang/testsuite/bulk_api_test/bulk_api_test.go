@@ -32,6 +32,7 @@ const (
 
 	datastoreServiceId services.ServiceID = "datastore"
 	apiServiceID       services.ServiceID = "api-service"
+	numServicesToAdd                      = 3
 )
 
 var datastorePortSpec = services.NewPortSpec(
@@ -59,36 +60,33 @@ func TestAddingDatastoreServicesInBulk(t *testing.T) {
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	datastoreServiceIDs := map[int]services.ServiceID{}
 	datastoreServiceConfigSuppliers := map[services.ServiceID]func(string) (*services.ContainerConfig, error){}
-	for i := 0; i < 3; i++ {
+	for i := 0; i < numServicesToAdd; i++ {
 		serviceID := services.ServiceID(fmt.Sprintf("%v-%v", datastoreServiceId, i))
 		datastoreServiceIDs[i] = serviceID
 		datastoreServiceConfigSuppliers[serviceID] = getDatastoreContainerConfigSupplier()
 	}
 
 	logrus.Infof("Adding three datastore services simultaneously...")
-	successfulDatastoreServiceContexts, failedDatatstoreErrs, err := enclaveCtx.AddServices(datastoreServiceConfigSuppliers)
+	successfulDatastoreServiceContexts, failedDatastoreServiceErrs, err := enclaveCtx.AddServices(datastoreServiceConfigSuppliers)
 	require.NoError(t, err, "An error occurred adding the datastore services to the enclave")
 	logrus.Infof("Added datastore service")
-	require.Equal(t, 3, len(successfulDatastoreServiceContexts))
-	require.Equal(t, 0, len(failedDatatstoreErrs))
+	require.Equal(t, numServicesToAdd, len(successfulDatastoreServiceContexts))
+	require.Equal(t, 0, len(failedDatastoreServiceErrs))
 
 	apiServiceConfigSuppliers := map[services.ServiceID]func(string) (*services.ContainerConfig, error){}
-	for i := 0; i < 3; i++ {
+	for i := 0; i < numServicesToAdd; i++ {
 		datastoreServiceCtx := successfulDatastoreServiceContexts[datastoreServiceIDs[i]]
 		configFilepath, err := createApiConfigFile(datastoreServiceCtx.GetPrivateIPAddress())
 		require.NoError(t, err, "An error occurred creating api config file for service.")
-		datastoreConfigArtifactUuid, err := enclaveCtx.UploadFiles(configFilepath)
+		datastoreConfigArtifactUUID, err := enclaveCtx.UploadFiles(configFilepath)
 		require.NoError(t, err, "An error occurred uploading files to enclave for service.\"")
 		serviceID := fmt.Sprintf("%v-%v", apiServiceID, i)
-		apiServiceConfigSuppliers[services.ServiceID(serviceID)] = getApiServiceContainerConfigSupplier(datastoreConfigArtifactUuid)
+		apiServiceConfigSuppliers[services.ServiceID(serviceID)] = getApiServiceContainerConfigSupplier(datastoreConfigArtifactUUID)
 	}
 	logrus.Infof("Adding three api services simultaneously...")
 	successfulAPIServiceCtx, failedAPIServiceErrs, err := enclaveCtx.AddServices(apiServiceConfigSuppliers)
 	require.NoError(t, err, "An error occurred adding the api services to the enclave")
-	logrus.Infof("Added datastore service")
-
-	// ------------------------------------- TEST RUN ----------------------------------------------
-	require.Equal(t, 3, len(successfulAPIServiceCtx))
+	require.Equal(t, numServicesToAdd, len(successfulAPIServiceCtx))
 	require.Equal(t, 0, len(failedAPIServiceErrs))
 }
 
