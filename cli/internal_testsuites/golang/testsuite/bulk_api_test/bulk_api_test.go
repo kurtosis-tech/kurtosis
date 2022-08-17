@@ -75,11 +75,14 @@ func TestAddingDatastoreServicesInBulk(t *testing.T) {
 
 	apiServiceConfigSuppliers := map[services.ServiceID]func(string) (*services.ContainerConfig, error){}
 	for i := 0; i < numServicesToAdd; i++ {
-		datastoreServiceCtx := successfulDatastoreServiceContexts[datastoreServiceIDs[i]]
+		datastoreServiceID, found := datastoreServiceIDs[i]
+		require.True(t, found)
+		datastoreServiceCtx, found := successfulDatastoreServiceContexts[datastoreServiceID]
+		require.True(t, found)
 		configFilepath, err := createApiConfigFile(datastoreServiceCtx.GetPrivateIPAddress())
-		require.NoError(t, err, "An error occurred creating api config file for service.")
+		require.NoErrorf(t, err, "An error occurred creating api config file for service '%v'", datastoreServiceID)
 		datastoreConfigArtifactUUID, err := enclaveCtx.UploadFiles(configFilepath)
-		require.NoError(t, err, "An error occurred uploading files to enclave for service.\"")
+		require.NoErrorf(t, err, "An error occurred uploading files to enclave for service '%v'", datastoreServiceID)
 		serviceID := fmt.Sprintf("%v-%v", apiServiceID, i)
 		apiServiceConfigSuppliers[services.ServiceID(serviceID)] = getApiServiceContainerConfigSupplier(datastoreConfigArtifactUUID)
 	}
