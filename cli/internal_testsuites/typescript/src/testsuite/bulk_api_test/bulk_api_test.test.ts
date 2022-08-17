@@ -102,7 +102,7 @@ test("Test adding services to an enclave simultaneously", async () => {
 
         // ------------------------------------- TEST RUN ----------------------------------------------
         const addApiServicesResult : Result<[Map<string, ServiceContext>, Map<string, Error>], Error>
-            = await enclaveContext.addServices(datastoreServiceConfigSuppliers)
+            = await enclaveContext.addServices(apiServiceConfigSuppliers)
         if(addApiServicesResult.isErr()){ throw addApiServicesResult.error }
 
         const successfulApiServiceContexts = addApiServicesResult.value[0]
