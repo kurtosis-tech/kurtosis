@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_log_streaming_readcloser"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -137,6 +138,25 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		logrus.Warnf("Failed to pull the latest version of module container image '%v'; you may be running an out-of-date version", image)
 	}
 
+	logsCollectorAddress, err := shared_helpers.GetLogsCollectorAddress(ctx, enclaveNetwork.GetName(), backend.dockerManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector address")
+	}
+
+	//The following docker labels will be added into the logs stream which is necessary for create new tags
+	//in the logs database and then use it for querying it to get the specific module's logs
+	logsCollectorLabels := logs_components.LogsCollectorLabels{
+		label_key_consts.EnclaveIDDockerLabelKey.GetString(),
+		label_key_consts.GUIDDockerLabelKey.GetString(),
+		label_key_consts.ContainerTypeDockerLabelKey.GetString(),
+	}
+
+	//The container will be configured to send the logs to the Fluentbit logs collector server
+	fluentdLoggingDriverCnfg := docker_manager.NewFluentdLoggingDriver(
+		*logsCollectorAddress,
+		logsCollectorLabels,
+	)
+
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		image,
 		moduleContainerAttrs.GetName().GetString(),
@@ -151,6 +171,8 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		usedPorts,
 	).WithLabels(
 		labelStrs,
+	).WithLoggingDriver(
+		fluentdLoggingDriverCnfg,
 	).Build()
 
 	containerId, hostMachinePortBindings, err := backend.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)

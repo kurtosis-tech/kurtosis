@@ -25,11 +25,6 @@ const (
 
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
-
-	logsDatabaseHttpPortId = "http"
-
-	logsCollectorTcpPortId  = "tcp"
-	logsCollectorHttpPortId = "http"
 )
 
 func CreateEngine(
@@ -307,7 +302,7 @@ func createLogsDatabaseContainer(
 
 	logsDatabaseAttrs, err := objAttrsProvider.ForLogsDatabase(
 		engineGuid,
-		logsDatabaseHttpPortId,
+		consts.LogsDatabaseHttpPortId,
 		privateHttpPortSpec,
 	)
 	if err != nil {
@@ -416,9 +411,9 @@ func createLogsCollectorContainer(
 
 	logsCollectorAttrs, err := objAttrsProvider.ForLogsCollector(
 		engineGuid,
-		logsCollectorTcpPortId,
+		consts.LogsCollectorTcpPortId,
 		privateTcpPortSpec,
-		logsCollectorHttpPortId,
+		consts.LogsCollectorHttpPortId,
 		privateHttpPortSpec,
 	)
 	if err != nil {

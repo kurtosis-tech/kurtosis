@@ -26,6 +26,11 @@ const (
 
 	// This needs to be bind-mounted into the engine & API containers so they can manipulate Docker
 	DockerSocketFilepath = "/var/run/docker.sock"
+
+	//Centralized logs component port IDs
+	LogsDatabaseHttpPortId = "http"
+	LogsCollectorTcpPortId = "tcp"
+	LogsCollectorHttpPortId = "http"
 )
 
 // This maps a Docker container's status to a binary "is the container considered running?" determiner
@@ -39,4 +44,3 @@ var IsContainerRunningDeterminer = map[types.ContainerStatus]bool{
 	types.ContainerStatus_Created:    false,
 	types.ContainerStatus_Exited:     false,
 }
-
