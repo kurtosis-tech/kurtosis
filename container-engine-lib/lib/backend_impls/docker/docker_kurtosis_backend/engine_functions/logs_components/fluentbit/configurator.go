@@ -26,7 +26,7 @@ const (
 	configFileCreationCmdDelayInRetries = 200 * time.Millisecond
 )
 
-func (fluent *Fluentbit) createConfiguratorContainer(
+func (fluent *Fluentbit) runConfigurator(
 	ctx context.Context,
 	targetNetworkId string,
 	volumeMounts map[string]string,
@@ -47,13 +47,13 @@ func (fluent *Fluentbit) createConfiguratorContainer(
 	}
 	//The killing step has to be executed always in the success and also in the failed case
 	defer func() {
-		if dockerManager.KillContainer(context.Background(), containerId); err != nil {
+		if dockerManager.RemoveContainer(context.Background(), containerId); err != nil {
 			logrus.Errorf(
 				"Launching the Fluenbit configurator container with container ID '%v' didn't complete successfully so we "+
-					"tried to kill the container we started, but doing so exited with an error:\n%v",
+					"tried to remove the container we started, but doing so exited with an error:\n%v",
 				containerId,
 				err)
-			logrus.Errorf("ACTION REQUIRED: You'll need to manually stop the container with Docker container ID '%v'!!!!!!", containerId)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the container with ID '%v'!!!!!!", containerId)
 		}
 	}()
 
