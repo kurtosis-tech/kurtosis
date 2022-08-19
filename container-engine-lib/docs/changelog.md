@@ -10,6 +10,7 @@
 * Added `LoggingDriver` interface in the `docker_manager` package to define the behaviour for different logging driver implementations
 * Added `FluentdLoggingDriver` implementation that can be used to send the container's logs to the Fluentbit server
 * Added the `WithLoggingDriver` method in `CreateAndStartContainerArgsBuilder` to set the container's logging driver
+* Updated `StopEngines` now the `LogsDatabase` and `LogsCollector` containers are also stopped
 
 ### Changes
 * Changed the user service and modules container's logging driver to the `fluentd` type

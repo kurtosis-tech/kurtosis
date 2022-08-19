@@ -255,3 +255,86 @@ func extractEngineGuidFromUncastedEngineObj(uncastedEngineObj interface{}) (stri
 	}
 	return string(castedObj.GetGUID()), nil
 }
+
+func getLogsDatabaseContainersMatchingEnginesGUIDs(
+	ctx context.Context,
+	matchedEngineGUIDs map[engine.EngineGUID]bool,
+	dockerManager *docker_manager.DockerManager,
+) (map[engine.EngineGUID]*types.Container, error){
+
+	allLogsDatabaseContainers, err := getAllLogsDatabaseContainers(ctx, dockerManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting all logs database containers")
+	}
+
+	allMatchingLogsDatabaseContainersByEngineGUIDs := map[engine.EngineGUID]*types.Container{}
+	for _, logsDatabaseContainer := range allLogsDatabaseContainers {
+		containerLabels := logsDatabaseContainer.GetLabels()
+
+		engineGuidStr, found := containerLabels[label_key_consts.EngineGUIDDockerLabelKey.GetString()]
+		if !found {
+			return nil, stacktrace.NewError("Expected to find engine label '%v' but none was found", label_key_consts.EngineGUIDDockerLabelKey.GetString())
+		}
+
+		engineGuid := engine.EngineGUID(engineGuidStr)
+
+		//Drop containers not matching engine GUID
+		if matchedEngineGUIDs != nil && len(matchedEngineGUIDs) > 0 {
+			if _, found := matchedEngineGUIDs[engineGuid]; !found {
+				continue
+			}
+		}
+		allMatchingLogsDatabaseContainersByEngineGUIDs[engineGuid] = logsDatabaseContainer
+	}
+
+	return allMatchingLogsDatabaseContainersByEngineGUIDs, nil
+}
+
+func getLogsCollectorContainersMatchingEnginesGUIDs(
+	ctx context.Context,
+	matchedEngineGUIDs map[engine.EngineGUID]bool,
+	dockerManager *docker_manager.DockerManager,
+) (map[engine.EngineGUID]*types.Container, error){
+
+	allLogsCollectorContainers, err := shared_helpers.GetAllLogsCollectorContainers(ctx, dockerManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting all logs collector containers")
+	}
+
+	allMatchingLogsCollectorContainersByEngineGUIDs := map[engine.EngineGUID]*types.Container{}
+	for _, logsCollectorContainer := range allLogsCollectorContainers {
+		containerLabels := logsCollectorContainer.GetLabels()
+
+		engineGuidStr, found := containerLabels[label_key_consts.EngineGUIDDockerLabelKey.GetString()]
+		if !found {
+			return nil, stacktrace.NewError("Expected to find engine label '%v' but none was found", label_key_consts.EngineGUIDDockerLabelKey.GetString())
+		}
+
+		engineGuid := engine.EngineGUID(engineGuidStr)
+
+		//Drop containers not matching engine GUID
+		if matchedEngineGUIDs != nil && len(matchedEngineGUIDs) > 0 {
+			if _, found := matchedEngineGUIDs[engineGuid]; !found {
+				continue
+			}
+		}
+		allMatchingLogsCollectorContainersByEngineGUIDs[engineGuid] = logsCollectorContainer
+	}
+
+	return allMatchingLogsCollectorContainersByEngineGUIDs, nil
+}
+
+func getAllLogsDatabaseContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]*types.Container, error) {
+	allLogsDatabaseContainers := []*types.Container{}
+
+	logsDatabaseContainerSearchLabels := map[string]string{
+		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.LogsDatabaseTypeDockerLabelValue.GetString(),
+	}
+	shouldShowStoppedLogsDatabaseContainers := true
+	allLogsDatabaseContainers, err := dockerManager.GetContainersByLabels(ctx, logsDatabaseContainerSearchLabels, shouldShowStoppedLogsDatabaseContainers)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred fetching logs database containers using labels: %+v", logsDatabaseContainerSearchLabels)
+	}
+	return allLogsDatabaseContainers, nil
+}

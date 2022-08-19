@@ -415,12 +415,9 @@ func GetLogsCollectorAddress(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 ) (logs_components.LogsCollectorAddress, error) {
-	logsCollectorContainer, err := getLogsCollectorContainer(ctx, dockerManager)
+	logsCollectorContainer, err := getRunningLogsCollectorContainer(ctx, dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector container")
-	}
-	if logsCollectorContainer == nil {
-		return nil, stacktrace.Propagate(err, "There isn't logs collector container running in the Kurtosis cluster")
 	}
 
 	privateIpStr, err := dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineContainersIn, logsCollectorContainer.GetId())
@@ -450,6 +447,20 @@ func GetLogsCollectorAddress(
 	return &logsCollectorAddress, nil
 }
 
+func GetAllLogsCollectorContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]*types.Container, error) {
+	allLogsCollectorContainers := []*types.Container{}
+
+	logsCollectorContainerSearchLabels := map[string]string{
+		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.LogsCollectorTypeDockerLabelValue.GetString(),
+	}
+	shouldShowStoppedLogsCollectorContainers := true
+	allLogsCollectorContainers, err := dockerManager.GetContainersByLabels(ctx, logsCollectorContainerSearchLabels, shouldShowStoppedLogsCollectorContainers)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred fetching logs collector containers using labels: %+v", logsCollectorContainerSearchLabels)
+	}
+	return allLogsCollectorContainers, nil
+}
 
 // ====================================================================================================
 //                                      Private Helper Functions
@@ -594,25 +605,32 @@ func getUserServiceObjsFromDockerResources(
 	return result, nil
 }
 
-func getLogsCollectorContainer(ctx context.Context, dockerManager *docker_manager.DockerManager) (*types.Container, error) {
+func getRunningLogsCollectorContainer(ctx context.Context, dockerManager *docker_manager.DockerManager) (*types.Container, error) {
 
-	logsCollectorContainerSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.LogsCollectorTypeDockerLabelValue.GetString(),
-	}
-	shouldShowStoppedLogsCollectorContainers := false
-	allLogsCollectorContainers, err := dockerManager.GetContainersByLabels(ctx, logsCollectorContainerSearchLabels, shouldShowStoppedLogsCollectorContainers)
+	allLogsCollectorContainers, err := GetAllLogsCollectorContainers(ctx, dockerManager)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred fetching logs collector containers using labels: %+v", logsCollectorContainerSearchLabels)
+		return nil, stacktrace.Propagate(err, "An error occurred getting all logs collector containers")
 	}
-	if allLogsCollectorContainers == nil || len(allLogsCollectorContainers) == 0 {
-		return nil, nil
+	if len(allLogsCollectorContainers) == 0 {
+		return nil, stacktrace.Propagate(err, "There isn't logs collector container running in the Kurtosis cluster")
 	}
-	if len(allLogsCollectorContainers) > 1 {
-		return nil, stacktrace.Propagate(err, "There should be only one logs collector server running in the Kurtosis cluster but '%v' were found; it's a bug in Kurtosis", len(allLogsCollectorContainers))
+	runningLogsCollectorContainers := []*types.Container{}
+	for _, logsCollectorContainer := range allLogsCollectorContainers {
+		isContainerRunning, found := consts.IsContainerRunningDeterminer[logsCollectorContainer.GetStatus()]
+		if !found {
+			// This should never happen because we enforce completeness in a unit test
+			return nil, stacktrace.NewError("No is-running designation found for enclave container status '%v'; this is a bug in Kurtosis!", logsCollectorContainer.GetStatus().String())
+		}
+		if isContainerRunning {
+			runningLogsCollectorContainers = append(runningLogsCollectorContainers, logsCollectorContainer)
+		}
 	}
 
-	logsCollectorContainer := allLogsCollectorContainers[0]
+	if len(runningLogsCollectorContainers) > 1 {
+		return nil, stacktrace.Propagate(err, "There should be only one logs collector server running in the Kurtosis cluster but '%v' were found; it's a bug in Kurtosis", len(runningLogsCollectorContainers))
+	}
+
+	logsCollectorContainer := runningLogsCollectorContainers[0]
 
 	return logsCollectorContainer, nil
 }

@@ -8,6 +8,11 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
+type logsComponentsContainerIDs struct {
+	logsDatabaseContainerId string
+	logsCollectorContainerId string
+}
+
 func StopEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
@@ -22,6 +27,36 @@ func StopEngines(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engines matching filters '%+v'", filters)
 	}
 
+	matchedEngineGUIDs := map[engine.EngineGUID]bool{}
+	for _, matchedEngineObj := range matchingEnginesByContainerId {
+		matchedEngineGUIDs[matchedEngineObj.GetGUID()] = true
+	}
+
+	logsDatabaseContainersByEngineGUIDs, err := getLogsDatabaseContainersMatchingEnginesGUIDs(ctx, matchedEngineGUIDs, dockerManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs database containers matching engine GUIDs '%+v'", matchedEngineGUIDs)
+	}
+
+	logsCollectorContainersByEngineGUIDs, err := getLogsCollectorContainersMatchingEnginesGUIDs(ctx, matchedEngineGUIDs, dockerManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs collector containers matching engine GUIDs '%+v'", matchedEngineGUIDs)
+	}
+
+	logsComponentsContainersByEngineContainerId := map[string]logsComponentsContainerIDs{}
+	for engineContainerId, matchedEngineObj := range matchingEnginesByContainerId {
+		engineGUID := matchedEngineObj.GetGUID()
+		logsComponentsContainerIds := logsComponentsContainerIDs{}
+		logsDatabaseContainer, found := logsDatabaseContainersByEngineGUIDs[engineGUID]
+		if found {
+			logsComponentsContainerIds.logsDatabaseContainerId = logsDatabaseContainer.GetId()
+		}
+		logsCollectorContainer, found := logsCollectorContainersByEngineGUIDs[engineGUID]
+		if found {
+			logsComponentsContainerIds.logsCollectorContainerId = logsCollectorContainer.GetId()
+		}
+		logsComponentsContainersByEngineContainerId[engineContainerId] = logsComponentsContainerIds
+	}
+
 	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
 	matchingUncastedEnginesByContainerId := map[string]interface{}{}
 	for containerId, engineObj := range matchingEnginesByContainerId {
@@ -33,9 +68,27 @@ func StopEngines(
 		dockerManager *docker_manager.DockerManager,
 		dockerObjectId string,
 	) error {
-		if err := dockerManager.KillContainer(ctx, dockerObjectId); err != nil {
+		engineContainerId := dockerObjectId
+		if err := dockerManager.KillContainer(ctx, engineContainerId); err != nil {
 			return stacktrace.Propagate(err, "An error occurred killing engine container with GUID '%v'", dockerObjectId)
 		}
+		logsComponentsToKillContainerIDs, found := logsComponentsContainersByEngineContainerId[engineContainerId]
+		if !found {
+			return nil
+		}
+
+		if logsComponentsToKillContainerIDs.logsDatabaseContainerId != "" {
+			if err := dockerManager.KillContainer(ctx, logsComponentsToKillContainerIDs.logsDatabaseContainerId); err != nil {
+				return stacktrace.Propagate(err, "An error occurred killing logs database container with ID '%v'", logsComponentsToKillContainerIDs.logsDatabaseContainerId)
+			}
+		}
+
+		if logsComponentsToKillContainerIDs.logsCollectorContainerId != "" {
+			if err := dockerManager.KillContainer(ctx, logsComponentsToKillContainerIDs.logsCollectorContainerId); err != nil {
+				return stacktrace.Propagate(err, "An error occurred killing logs collector container with ID '%v'", logsComponentsToKillContainerIDs.logsDatabaseContainerId)
+			}
+		}
+
 		return nil
 	}
 
