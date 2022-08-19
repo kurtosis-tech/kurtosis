@@ -328,7 +328,7 @@ func createLogsDatabaseContainer(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
-	containerName := logsDbVolumeAttrs.GetName().GetString()
+	containerName := logsDatabaseAttrs.GetName().GetString()
 	volumeName := logsDbVolumeAttrs.GetName().GetString()
 
 	createAndStartArgs, err := logsDatabase.GetContainerArgs(containerName, labelStrs, volumeName, targetNetworkId)
