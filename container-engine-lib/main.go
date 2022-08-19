@@ -4,13 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
+	"github.com/kurtosis-tech/container-engine-lib/lib"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
-	enclave2 "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"os"
@@ -92,89 +89,19 @@ func runKubernetesManagerTesting() error {
 func runKurtosisBackendTesting() error {
 	ctx := context.Background()
 
-
-	backend, err := backend_creator.GetLocalDockerKurtosisBackend(nil)
-	if err != nil {
-		return err
-	}
-
-	serializedArgs := map[string]string{
-		"SERIALIZED_ARGS": `{"grpcListenPortNum":9710,"grpcProxyListenPortNum":9711,"logLevelStr":"debug","imageVersionTag":"1.29.0","metricsUserId":"552f","didUserAcceptSendingMetrics":false,"kurtosisBackendType":"docker","kurtosisBackendConfig":{}}`,
-	}
-
-	engine, err := backend.CreateEngine(
-		ctx,
-		"kurtosistech/kurtosis-engine-server",
-		"1.29.0",
-		9710,
-		9810,
-		serializedArgs,
-	)
-	if err != nil {
-		return err
-	}
-	logrus.Infof("Engine info: %+v", engine)
-
-	enclaveID := enclave2.EnclaveID("enclave-for-test")
-	enclave, err := backend.CreateEnclave(
-		ctx,
-		enclaveID,
-		false,
-	)
-	if err != nil {
-		return err
-	}
-	logrus.Infof("Enclave info: %+v", enclave)
-
-	userServiceID := service.ServiceID("user-service-test")
-	serviceIds := map[service.ServiceID]bool {
-		userServiceID: true,
-	}
-	successfulUserServiceRegistrations, erroredUserServiceRegistrations, err := backend.RegisterUserServices(
-		ctx,
-		enclaveID,
-		serviceIds,
-	)
-	if err != nil {
-		return err
-	}
-	logrus.Infof("Successfull user service registrations: %+v", successfulUserServiceRegistrations)
-	logrus.Infof("Errored user service registrations: %+v", erroredUserServiceRegistrations)
-
-	serviceConfig := service.NewServiceConfig(
-		"alpine:3.12.4",
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		0,
-		0,
-		)
-
-	serviceToStart := map[service.ServiceGUID]*service.ServiceConfig{
-		successfulUserServiceRegistrations[userServiceID].GetGUID(): serviceConfig,
-	}
-
-	successfulUserServiceStarted, erroredUserServiceStarted, err := backend.StartUserServices(
-		ctx,
-		enclaveID,
-		serviceToStart,
-	)
-	if err != nil {
-		return err
-	}
-	logrus.Infof("Successfull user service started: %+v", successfulUserServiceStarted)
-	logrus.Infof("Errored user service started: %+v", erroredUserServiceStarted)
-
-
 	/*
-		_, err := lib.GetCLIKubernetesKurtosisBackend(ctx)
+		backend, err := backend_creator.GetLocalDockerKurtosisBackend(nil)
 		if err != nil {
 			return err
 		}
+
 	*/
+
+
+	_, err := lib.GetCLIKubernetesKurtosisBackend(ctx)
+	if err != nil {
+		return err
+	}
 
 
 	// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv Arbitrary logic goes here vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -192,4 +119,3 @@ func runKurtosisBackendTesting() error {
 
 	return nil
 }
-
