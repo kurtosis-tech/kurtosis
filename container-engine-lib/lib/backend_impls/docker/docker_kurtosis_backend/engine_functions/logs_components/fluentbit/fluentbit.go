@@ -94,8 +94,13 @@ func (fluent *Fluentbit) GetContainerArgs(
 		volumeName: configDirpathInContainer,
 	}
 
-	if err := fluent.createConfiguratorContainer(context.Background(), networkId, volumeMounts, dockerManager); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the Fluenbit init container in network ID '%v'", networkId)
+	if err := fluent.runConfigurator(context.Background(), networkId, volumeMounts, dockerManager); err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred running the Fluenbit configurator in network ID '%v' and with volume mounts '%+v'",
+			networkId,
+			volumeMounts,
+		)
 	}
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
