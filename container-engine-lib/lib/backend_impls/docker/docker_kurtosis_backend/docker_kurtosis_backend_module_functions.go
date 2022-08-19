@@ -138,7 +138,7 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		logrus.Warnf("Failed to pull the latest version of module container image '%v'; you may be running an out-of-date version", image)
 	}
 
-	logsCollectorAddress, err := shared_helpers.GetLogsCollectorAddress(ctx, enclaveNetwork.GetName(), backend.dockerManager)
+	logsCollectorAddress, err := shared_helpers.GetLogsCollectorAddress(ctx, backend.dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector address")
 	}

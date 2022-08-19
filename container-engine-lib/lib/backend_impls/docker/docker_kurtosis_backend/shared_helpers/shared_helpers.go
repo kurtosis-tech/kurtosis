@@ -413,7 +413,6 @@ func WaitForPortAvailabilityUsingNetstat(
 
 func GetLogsCollectorAddress(
 	ctx context.Context,
-	networkName string,
 	dockerManager *docker_manager.DockerManager,
 ) (logs_components.LogsCollectorAddress, error) {
 	logsCollectorContainer, err := getLogsCollectorContainer(ctx, dockerManager)
@@ -424,9 +423,9 @@ func GetLogsCollectorAddress(
 		return nil, stacktrace.Propagate(err, "There isn't logs collector container running in the Kurtosis cluster")
 	}
 
-	privateIpStr, err := dockerManager.GetContainerIP(ctx, networkName, logsCollectorContainer.GetId())
+	privateIpStr, err := dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineContainersIn, logsCollectorContainer.GetId())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector private IP in Docker network '%v'", networkName)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector private IP in Docker network '%v'", consts.NameOfNetworkToStartEngineContainersIn)
 	}
 
 	containerLabels := logsCollectorContainer.GetLabels()
@@ -446,7 +445,7 @@ func GetLogsCollectorAddress(
 		return nil, stacktrace.NewError("No tcp port with ID '%v' found in the port specs", consts.LogsCollectorTcpPortId)
 	}
 
-	logsCollectorAddress := fmt.Sprintf("http://%v:%v", privateIpStr, tcpPortSpec.GetNumber())
+	logsCollectorAddress := fmt.Sprintf("%v:%v", privateIpStr, tcpPortSpec.GetNumber())
 
 	return &logsCollectorAddress, nil
 }

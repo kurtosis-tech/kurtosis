@@ -21,8 +21,6 @@ import (
 )
 
 const (
-	nameOfNetworkToStartEngineContainersIn = "bridge"
-
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
 )
@@ -40,19 +38,19 @@ func CreateEngine(
 	*engine.Engine,
 	error,
 ) {
-	matchingNetworks, err := dockerManager.GetNetworksByName(ctx, nameOfNetworkToStartEngineContainersIn)
+	matchingNetworks, err := dockerManager.GetNetworksByName(ctx, consts.NameOfNetworkToStartEngineContainersIn)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred getting networks matching the network we want to start the engine in, '%v'",
-			nameOfNetworkToStartEngineContainersIn,
+			consts.NameOfNetworkToStartEngineContainersIn,
 		)
 	}
 	numMatchingNetworks := len(matchingNetworks)
 	if numMatchingNetworks == 0 && numMatchingNetworks > 1 {
 		return nil, stacktrace.NewError(
 			"Expected exactly one network matching the name of the network that we want to start the engine in, '%v', but got %v",
-			nameOfNetworkToStartEngineContainersIn,
+			consts.NameOfNetworkToStartEngineContainersIn,
 			numMatchingNetworks,
 		)
 	}
@@ -381,7 +379,7 @@ func createLogsDatabaseContainer(
 		return "", 0, nil, stacktrace.Propagate(err, "An error occurred waiting for the log database's HTTP port to become available")
 	}
 
-	logsDatabaseIP, err := dockerManager.GetContainerIP(ctx, nameOfNetworkToStartEngineContainersIn, containerId)
+	logsDatabaseIP, err := dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineContainersIn, containerId)
 	if err != nil {
 		return "", 0, nil, stacktrace.Propagate(err, "An error occurred ")
 	}

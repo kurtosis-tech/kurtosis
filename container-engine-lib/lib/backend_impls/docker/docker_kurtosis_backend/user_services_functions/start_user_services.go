@@ -126,7 +126,7 @@ func StartUserServices(
 		return nil, nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveID)
 	}
 
-	logsCollectorAddress, err := shared_helpers.GetLogsCollectorAddress(ctx, enclaveNetwork.GetName(), dockerManager)
+	logsCollectorAddress, err := shared_helpers.GetLogsCollectorAddress(ctx, dockerManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector address")
 	}
@@ -316,7 +316,7 @@ func createStartServiceOperation(
 			}
 		}
 
-		if logsCollectorAddress != nil {
+		if logsCollectorAddress == nil {
 			return nil, stacktrace.NewError("Expected to have a logs collector server address to send the user service logs but it wasn't get")
 		}
 		//The container will be configured to send the logs to the Fluentbit logs collector server

@@ -31,6 +31,9 @@ const (
 	LogsDatabaseHttpPortId = "http"
 	LogsCollectorTcpPortId = "tcp"
 	LogsCollectorHttpPortId = "http"
+
+	//The Docker network name where all the containers in the engine context will be added
+	NameOfNetworkToStartEngineContainersIn = "bridge"
 )
 
 // This maps a Docker container's status to a binary "is the container considered running?" determiner
