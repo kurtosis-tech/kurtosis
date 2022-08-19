@@ -8,11 +8,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-type logsComponentsContainerIDs struct {
-	logsDatabaseContainerId string
-	logsCollectorContainerId string
-}
-
 func StopEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
@@ -27,34 +22,9 @@ func StopEngines(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engines matching filters '%+v'", filters)
 	}
 
-	matchedEngineGUIDs := map[engine.EngineGUID]bool{}
-	for _, matchedEngineObj := range matchingEnginesByContainerId {
-		matchedEngineGUIDs[matchedEngineObj.GetGUID()] = true
-	}
-
-	logsDatabaseContainersByEngineGUIDs, err := getLogsDatabaseContainersMatchingEnginesGUIDs(ctx, matchedEngineGUIDs, dockerManager)
+	logsComponentsContainersByEngineContainerId, err := getLogsComponentsContainerIdsByEngineContainerIds(ctx, matchingEnginesByContainerId, dockerManager)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs database containers matching engine GUIDs '%+v'", matchedEngineGUIDs)
-	}
-
-	logsCollectorContainersByEngineGUIDs, err := getLogsCollectorContainersMatchingEnginesGUIDs(ctx, matchedEngineGUIDs, dockerManager)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs collector containers matching engine GUIDs '%+v'", matchedEngineGUIDs)
-	}
-
-	logsComponentsContainersByEngineContainerId := map[string]logsComponentsContainerIDs{}
-	for engineContainerId, matchedEngineObj := range matchingEnginesByContainerId {
-		engineGUID := matchedEngineObj.GetGUID()
-		logsComponentsContainerIds := logsComponentsContainerIDs{}
-		logsDatabaseContainer, found := logsDatabaseContainersByEngineGUIDs[engineGUID]
-		if found {
-			logsComponentsContainerIds.logsDatabaseContainerId = logsDatabaseContainer.GetId()
-		}
-		logsCollectorContainer, found := logsCollectorContainersByEngineGUIDs[engineGUID]
-		if found {
-			logsComponentsContainerIds.logsCollectorContainerId = logsCollectorContainer.GetId()
-		}
-		logsComponentsContainersByEngineContainerId[engineContainerId] = logsComponentsContainerIds
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs componentes containers by engine container IDs '%+v'", matchingEnginesByContainerId)
 	}
 
 	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
@@ -70,7 +40,7 @@ func StopEngines(
 	) error {
 		engineContainerId := dockerObjectId
 		if err := dockerManager.KillContainer(ctx, engineContainerId); err != nil {
-			return stacktrace.Propagate(err, "An error occurred killing engine container with GUID '%v'", dockerObjectId)
+			return stacktrace.Propagate(err, "An error occurred killing engine container with ID '%v'", dockerObjectId)
 		}
 		logsComponentsToKillContainerIDs, found := logsComponentsContainersByEngineContainerId[engineContainerId]
 		if !found {

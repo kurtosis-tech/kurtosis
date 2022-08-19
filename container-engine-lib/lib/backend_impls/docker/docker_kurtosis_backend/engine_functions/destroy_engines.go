@@ -22,6 +22,11 @@ func DestroyEngines(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
 	}
 
+	logsComponentsContainersByEngineContainerId, err := getLogsComponentsContainerIdsByEngineContainerIds(ctx, matchingEnginesByContainerId, dockerManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs componentes containers by engine container IDs '%+v'", matchingEnginesByContainerId)
+	}
+
 	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
 	matchingUncastedEnginesByContainerId := map[string]interface{}{}
 	for containerId, engineObj := range matchingEnginesByContainerId {
@@ -33,9 +38,28 @@ func DestroyEngines(
 		dockerManager *docker_manager.DockerManager,
 		dockerObjectId string,
 	) error {
-		if err := dockerManager.RemoveContainer(ctx, dockerObjectId); err != nil {
-			return stacktrace.Propagate(err, "An error occurred removing engine container with GUID '%v'", dockerObjectId)
+		engineContainerId := dockerObjectId
+		if err := dockerManager.RemoveContainer(ctx, engineContainerId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing engine container with ID '%v'", engineContainerId)
 		}
+
+		logsComponentsToRemoveContainerIDs, found := logsComponentsContainersByEngineContainerId[engineContainerId]
+		if !found {
+			return nil
+		}
+
+		if logsComponentsToRemoveContainerIDs.logsDatabaseContainerId != "" {
+			if err := dockerManager.RemoveContainer(ctx, logsComponentsToRemoveContainerIDs.logsDatabaseContainerId); err != nil {
+				return stacktrace.Propagate(err, "An error occurred removing logs database container with ID '%v'", logsComponentsToRemoveContainerIDs.logsDatabaseContainerId)
+			}
+		}
+
+		if logsComponentsToRemoveContainerIDs.logsCollectorContainerId != "" {
+			if err := dockerManager.RemoveContainer(ctx, logsComponentsToRemoveContainerIDs.logsCollectorContainerId); err != nil {
+				return stacktrace.Propagate(err, "An error occurred removing logs collector container with ID '%v'", logsComponentsToRemoveContainerIDs.logsCollectorContainerId)
+			}
+		}
+
 		return nil
 	}
 

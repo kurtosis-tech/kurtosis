@@ -19,9 +19,16 @@ import (
 	"strings"
 )
 
-// ====================================================================================================
-//                                     Private Helper Methods
-// ====================================================================================================
+type logsComponentsContainerIDs struct {
+	logsDatabaseContainerId string
+	logsCollectorContainerId string
+}
+
+type logsComponentsVolumesNames struct {
+	logsDatabaseVolumeName string
+	logsCollectorVolumeName string
+}
+
 // Gets engines matching the search filters, indexed by their container ID
 func getMatchingEngines(ctx context.Context, filters *engine.EngineFilters, dockerManager *docker_manager.DockerManager) (map[string]*engine.Engine, error) {
 	engineContainerSearchLabels := map[string]string{
@@ -337,4 +344,50 @@ func getAllLogsDatabaseContainers(ctx context.Context, dockerManager *docker_man
 		return nil, stacktrace.Propagate(err, "An error occurred fetching logs database containers using labels: %+v", logsDatabaseContainerSearchLabels)
 	}
 	return allLogsDatabaseContainers, nil
+}
+
+func getLogsComponentsVolumeNames(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+)(*logsComponentsVolumesNames, error) {
+	//TODO complete this guy
+}
+
+func getLogsComponentsContainerIdsByEngineContainerIds(
+	ctx context.Context,
+	enginesByContainersId map[string]*engine.Engine,
+	dockerManager *docker_manager.DockerManager,
+)(map[string]logsComponentsContainerIDs, error) {
+
+	engineGUIDs := map[engine.EngineGUID]bool{}
+	for _, matchedEngineObj := range enginesByContainersId {
+		engineGUIDs[matchedEngineObj.GetGUID()] = true
+	}
+
+	logsDatabaseContainersByEngineGUIDs, err := getLogsDatabaseContainersMatchingEnginesGUIDs(ctx, engineGUIDs, dockerManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting logs database containers matching engine GUIDs '%+v'", engineGUIDs)
+	}
+
+	logsCollectorContainersByEngineGUIDs, err := getLogsCollectorContainersMatchingEnginesGUIDs(ctx, engineGUIDs, dockerManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector containers matching engine GUIDs '%+v'", engineGUIDs)
+	}
+
+	logsComponentsContainersByEngineContainerId := map[string]logsComponentsContainerIDs{}
+	for engineContainerId, matchedEngineObj := range enginesByContainersId {
+		engineGUID := matchedEngineObj.GetGUID()
+		logsComponentsContainerIds := logsComponentsContainerIDs{}
+		logsDatabaseContainer, found := logsDatabaseContainersByEngineGUIDs[engineGUID]
+		if found {
+			logsComponentsContainerIds.logsDatabaseContainerId = logsDatabaseContainer.GetId()
+		}
+		logsCollectorContainer, found := logsCollectorContainersByEngineGUIDs[engineGUID]
+		if found {
+			logsComponentsContainerIds.logsCollectorContainerId = logsCollectorContainer.GetId()
+		}
+		logsComponentsContainersByEngineContainerId[engineContainerId] = logsComponentsContainerIds
+	}
+
+	return logsComponentsContainersByEngineContainerId, nil
 }
