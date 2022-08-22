@@ -124,7 +124,7 @@ func (backend KubernetesKurtosisBackend) CreateEngine(
 	*engine.Engine,
 	error,
 ) {
-	return engine_functions.CreateEngine(
+	engine, err := engine_functions.CreateEngine(
 		ctx,
 		imageOrgAndRepo,
 		imageVersionTag,
@@ -134,13 +134,29 @@ func (backend KubernetesKurtosisBackend) CreateEngine(
 		backend.kubernetesManager,
 		backend.objAttrsProvider,
 	)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating engine using image '%v:%v', grpc port number '%v', grpc proxy port number '%v' and environment variables '%+v'",
+			imageOrgAndRepo,
+			imageVersionTag,
+			grpcPortNum,
+			grpcProxyPortNum,
+			envVars,
+		)
+	}
+	return engine, nil
 }
 
 func (backend KubernetesKurtosisBackend) GetEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 ) (map[engine.EngineGUID]*engine.Engine, error) {
-	return engine_functions.GetEngines(ctx, filters, backend.kubernetesManager)
+	engines, err := engine_functions.GetEngines(ctx, filters, backend.kubernetesManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting engines using filters '%+v'", filters)
+	}
+	return engines, nil
 }
 
 func (backend KubernetesKurtosisBackend) StopEngines(
@@ -151,7 +167,11 @@ func (backend KubernetesKurtosisBackend) StopEngines(
 	resultErroredEngineGuids map[engine.EngineGUID]error,
 	resultErr error,
 ) {
-	return engine_functions.StopEngines(ctx, filters, backend.kubernetesManager)
+	successfulEngineGuids, erroredEngineGuids, err := engine_functions.StopEngines(ctx, filters, backend.kubernetesManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping engines using filters '%+v'", filters)
+	}
+	return successfulEngineGuids, erroredEngineGuids, nil
 }
 
 func (backend KubernetesKurtosisBackend) DestroyEngines(
@@ -162,7 +182,11 @@ func (backend KubernetesKurtosisBackend) DestroyEngines(
 	resultErroredEngineGuids map[engine.EngineGUID]error,
 	resultErr error,
 ) {
-	return engine_functions.DestroyEngines(ctx, filters, backend.kubernetesManager)
+	successfulEngineGuids, erroredEngineGuids, err := engine_functions.DestroyEngines(ctx, filters, backend.kubernetesManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying engines using filters '%+v'", filters)
+	}
+	return successfulEngineGuids, erroredEngineGuids, nil
 }
 
 // Registers a user service for each given serviceId, allocating each an IP and ServiceGUID
