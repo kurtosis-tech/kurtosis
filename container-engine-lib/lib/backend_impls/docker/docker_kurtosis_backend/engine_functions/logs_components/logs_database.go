@@ -5,7 +5,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 )
 
-type LogsDatabase interface {
+type LogsDatabaseContainerConfigProvider interface {
 	GetPrivateHttpPortSpec() (*port_spec.PortSpec, error)
 	GetContainerArgs(
 		containerName string,

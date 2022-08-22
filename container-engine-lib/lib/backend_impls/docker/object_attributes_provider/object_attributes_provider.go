@@ -15,14 +15,15 @@ import (
 )
 
 const (
-	engineServerNamePrefix        = "kurtosis-engine"
-	logsDatabaseServerNamePrefix  = "kurtosis-logs-db"
-	logsCollectorServerNamePrefix = "kurtosis-logs-collector"
+	engineServerNamePrefix  = "kurtosis-engine"
+	logsDatabaseNamePrefix  = "kurtosis-logs-db"
+	logsCollectorNamePrefix = "kurtosis-logs-collector"
 
 	//We always use the same name because we are going to have only one instance of this volume,
 	//so when the engine is restarted it mounts the same volume with the previous logs
-	logsDatabaseVolumeName = logsDatabaseServerNamePrefix + "-vol"
-	logsCollectorVolumeName = logsCollectorServerNamePrefix + "-vol"
+	logsDatabaseVolumeName = logsDatabaseNamePrefix + "-vol"
+	logsCollectorVolumeName = logsCollectorNamePrefix + "-vol"
+
 )
 
 type DockerObjectAttributesProvider interface {
@@ -131,7 +132,7 @@ func (provider *dockerObjectAttributesProviderImpl) ForLogsDatabase(
 ) (DockerObjectAttributes, error) {
 	nameStr := strings.Join(
 		[]string{
-			logsDatabaseServerNamePrefix,
+			logsDatabaseNamePrefix,
 			string(engineGUID),
 		},
 		objectNameElementSeparator,
@@ -202,7 +203,7 @@ func (provider *dockerObjectAttributesProviderImpl) ForLogsCollector(
 ) (DockerObjectAttributes, error) {
 	nameStr := strings.Join(
 		[]string{
-			logsCollectorServerNamePrefix,
+			logsCollectorNamePrefix,
 			string(engineGUID),
 		},
 		objectNameElementSeparator,
