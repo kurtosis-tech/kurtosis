@@ -277,7 +277,7 @@ func createLogsDatabaseContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database private port spec")
 	}
 
-	logsDatabaseAttrs, err := objAttrsProvider.ForLogsDatabaseServer(
+	logsDatabaseAttrs, err := objAttrsProvider.ForLogsDatabase(
 		engineGuid,
 		logsDatabaseHttpPortId,
 		privateHttpPortSpec,
@@ -290,7 +290,14 @@ func createLogsDatabaseContainer(
 			privateHttpPortSpec,
 		)
 	}
-	logsDbVolumeAttrs, err := objAttrsProvider.ForLogsDatabaseVolume(engineGuid)
+
+	//we don't use the engine guid because the volumes can be switched between engines. For instance in engine restart
+	logsDbVolumeGuidStr, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID string for the logs database volume")
+	}
+
+	logsDbVolumeAttrs, err := objAttrsProvider.ForLogsDatabaseVolume(logsDbVolumeGuidStr, engineGuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database volume for engine with GUID %v", engineGuid)
 	}
