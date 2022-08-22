@@ -346,13 +346,6 @@ func getAllLogsDatabaseContainers(ctx context.Context, dockerManager *docker_man
 	return allLogsDatabaseContainers, nil
 }
 
-func getLogsComponentsVolumeNames(
-	ctx context.Context,
-	dockerManager *docker_manager.DockerManager,
-)(*logsComponentsVolumesNames, error) {
-	//TODO complete this guy
-}
-
 func getLogsComponentsContainerIdsByEngineContainerIds(
 	ctx context.Context,
 	enginesByContainersId map[string]*engine.Engine,
