@@ -227,7 +227,7 @@ func createCentralizedLogsComponents(
 	dockerManager *docker_manager.DockerManager,
 ) (func(), error) {
 
-	logsDatabase := loki.CreateLokiConfiguredForKurtosis()
+	logsDatabaseContainerConfigProvider := loki.CreateLokiContainerConfigProviderForKurtosis()
 
 	logsDatabaseHost, logsDatabasePort, killLogsDatabaseContainerAndVolumeFunc, err := createLogsDatabaseContainer(
 		ctx,
@@ -235,7 +235,7 @@ func createCentralizedLogsComponents(
 		targetNetworkId,
 		objAttrsProvider,
 		dockerManager,
-		logsDatabase,
+		logsDatabaseContainerConfigProvider,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -286,16 +286,16 @@ func createLogsDatabaseContainer(
 	targetNetworkId string,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
-	logsDatabase logs_components.LogsDatabase,
+	logsDatabaseContainerConfigProvider logs_components.LogsDatabaseContainerConfigProvider,
 ) (
 	resultLogsDatabasePrivateHost string,
 	resultLogsDatabasePrivatePort uint16,
 	resultKillLogsDatabaseContainerFunc func(),
 	resultErr error,
 ) {
-	privateHttpPortSpec, err := logsDatabase.GetPrivateHttpPortSpec()
+	privateHttpPortSpec, err := logsDatabaseContainerConfigProvider.GetPrivateHttpPortSpec()
 	if err != nil {
-		return "", 0, nil, stacktrace.Propagate(err, "An error occurred getting the logs database private port spec")
+		return "", 0, nil, stacktrace.Propagate(err, "An error occurred getting the logs database container's private port spec")
 	}
 
 	logsDatabaseAttrs, err := objAttrsProvider.ForLogsDatabase(
@@ -311,14 +311,7 @@ func createLogsDatabaseContainer(
 			privateHttpPortSpec,
 		)
 	}
-
-	//we don't use the engine guid because the volumes can be switched between engines. For instance in engine restart
-	logsDbVolumeGuidStr, err := uuid_generator.GenerateUUIDString()
-	if err != nil {
-		return "", 0, nil, stacktrace.Propagate(err, "An error occurred generating a UUID string for the logs database volume")
-	}
-
-	logsDbVolumeAttrs, err := objAttrsProvider.ForLogsDatabaseVolume(logsDbVolumeGuidStr, engineGuid)
+	logsDbVolumeAttrs, err := objAttrsProvider.ForLogsDatabaseVolume(engineGuid)
 	if err != nil {
 		return "", 0, nil, stacktrace.Propagate(err, "An error occurred getting the logs database volume attributes for engine with GUID %v", engineGuid)
 	}
@@ -331,12 +324,12 @@ func createLogsDatabaseContainer(
 	containerName := logsDatabaseAttrs.GetName().GetString()
 	volumeName := logsDbVolumeAttrs.GetName().GetString()
 
-	createAndStartArgs, err := logsDatabase.GetContainerArgs(containerName, labelStrs, volumeName, targetNetworkId)
+	createAndStartArgs, err := logsDatabaseContainerConfigProvider.GetContainerArgs(containerName, labelStrs, volumeName, targetNetworkId)
 	if err != nil {
 		return "", 0, nil,
 			stacktrace.Propagate(
 				err,
-				"An error occurred getting the logs-database-container-args with container name '%v', labels '%+v', volume name '%v' and network ID '%v",
+				"An error occurred getting the logs database container args with container name '%v', labels '%+v', volume name '%v' and network ID '%v",
 				containerName,
 				labelStrs,
 				volumeName,
@@ -495,5 +488,4 @@ func createLogsCollectorContainer(
 	shouldKillLogsCollectorContainer = false
 	return killContainerFunc, nil
 }
-
 
