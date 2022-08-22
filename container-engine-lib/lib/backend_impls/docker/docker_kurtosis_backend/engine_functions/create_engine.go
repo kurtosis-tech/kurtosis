@@ -293,6 +293,44 @@ func createLogsDatabaseContainer(
 	resultKillLogsDatabaseContainerFunc func(),
 	resultErr error,
 ) {
+
+	//Create the volume first
+	logsDbVolumeAttrs, err := objAttrsProvider.ForLogsDatabaseVolume()
+	if err != nil {
+		return "", 0, nil, stacktrace.Propagate(err, "An error occurred getting the logs database volume attributes for engine with GUID %v", engineGuid)
+	}
+	volumeName := logsDbVolumeAttrs.GetName().GetString()
+	volumeLabelStrs := map[string]string{}
+	for labelKey, labelValue := range logsDbVolumeAttrs.GetLabels() {
+		volumeLabelStrs[labelKey.GetString()] = labelValue.GetString()
+	}
+
+	if err := dockerManager.CreateVolume(ctx, volumeName, volumeLabelStrs); err != nil {
+		return "", 0, nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating logs database volume with name '%v' and labels '%+v'",
+			volumeName,
+			volumeLabelStrs,
+		)
+	}
+	deleteVolumeFunc := func() {
+		if err := dockerManager.RemoveVolume(ctx, volumeName); err != nil {
+			logrus.Errorf(
+				"Launching the logs database server for the engine with GUID '%v' didn't complete successfully so we "+
+					"tried to remove the associated logs database volume '%v' we started, but doing so exited with an error:\n%v",
+				engineGuid,
+				volumeName,
+				err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs database volume '%v'!!!!!!", volumeName)
+		}
+	}
+	shouldDeleteLogsDatabaseVolume := true
+	defer func() {
+		if shouldDeleteLogsDatabaseVolume {
+			deleteVolumeFunc()
+		}
+	}()
+
 	privateHttpPortSpec, err := logsDatabaseContainerConfigProvider.GetPrivateHttpPortSpec()
 	if err != nil {
 		return "", 0, nil, stacktrace.Propagate(err, "An error occurred getting the logs database container's private port spec")
@@ -311,27 +349,22 @@ func createLogsDatabaseContainer(
 			privateHttpPortSpec,
 		)
 	}
-	logsDbVolumeAttrs, err := objAttrsProvider.ForLogsDatabaseVolume(engineGuid)
-	if err != nil {
-		return "", 0, nil, stacktrace.Propagate(err, "An error occurred getting the logs database volume attributes for engine with GUID %v", engineGuid)
-	}
 
-	labelStrs := map[string]string{}
+	containerlabelStrs := map[string]string{}
 	for labelKey, labelValue := range logsDatabaseAttrs.GetLabels() {
-		labelStrs[labelKey.GetString()] = labelValue.GetString()
+		containerlabelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
 	containerName := logsDatabaseAttrs.GetName().GetString()
-	volumeName := logsDbVolumeAttrs.GetName().GetString()
 
-	createAndStartArgs, err := logsDatabaseContainerConfigProvider.GetContainerArgs(containerName, labelStrs, volumeName, targetNetworkId)
+	createAndStartArgs, err := logsDatabaseContainerConfigProvider.GetContainerArgs(containerName, containerlabelStrs, volumeName, targetNetworkId)
 	if err != nil {
 		return "", 0, nil,
 			stacktrace.Propagate(
 				err,
 				"An error occurred getting the logs database container args with container name '%v', labels '%+v', volume name '%v' and network ID '%v",
 				containerName,
-				labelStrs,
+				containerlabelStrs,
 				volumeName,
 				targetNetworkId,
 			)
@@ -351,19 +384,10 @@ func createLogsDatabaseContainer(
 				err)
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually stop the logs database server with GUID '%v' and Docker container ID '%v'!!!!!!", engineGuid, containerId)
 		}
-		if err := dockerManager.RemoveVolume(ctx, volumeName); err != nil {
-			logrus.Errorf(
-				"Launching the logs database server with GUID '%v' and container ID '%v' didn't complete successfully so we "+
-					"tried to remove the associated volume we started, but doing so exited with an error:\n%v",
-				engineGuid,
-				containerId,
-				err)
-			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs database volume '%v'!!!!!!", volumeName)
-		}
 	}
-	shouldKillLogsDbContainerAndVolume := true
+	shouldKillLogsDbContainer := true
 	defer func() {
-		if shouldKillLogsDbContainerAndVolume {
+		if shouldKillLogsDbContainer {
 			killContainerFunc()
 		}
 	}()
@@ -384,8 +408,14 @@ func createLogsDatabaseContainer(
 		return "", 0, nil, stacktrace.Propagate(err, "An error occurred ")
 	}
 
-	shouldKillLogsDbContainerAndVolume = false
-	return logsDatabaseIP, privateHttpPortSpec.GetNumber(), killContainerFunc, nil
+	killContainerAndDeleteVolumeFunc := func() {
+		killContainerFunc()
+		deleteVolumeFunc()
+	}
+
+	shouldDeleteLogsDatabaseVolume = false
+	shouldKillLogsDbContainer = false
+	return logsDatabaseIP, privateHttpPortSpec.GetNumber(), killContainerAndDeleteVolumeFunc, nil
 }
 
 func createLogsCollectorContainer(
@@ -396,6 +426,43 @@ func createLogsCollectorContainer(
 	dockerManager *docker_manager.DockerManager,
 	logsCollector logs_components.LogsCollector,
 ) (func(), error) {
+
+	//Create the volume first
+	logsDbVolumeAttrs, err := objAttrsProvider.ForLogsCollectorVolume()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector volume attributes for engine with GUID %v", engineGuid)
+	}
+	volumeName := logsDbVolumeAttrs.GetName().GetString()
+	volumeLabelStrs := map[string]string{}
+	for labelKey, labelValue := range logsDbVolumeAttrs.GetLabels() {
+		volumeLabelStrs[labelKey.GetString()] = labelValue.GetString()
+	}
+
+	if err := dockerManager.CreateVolume(ctx, volumeName, volumeLabelStrs); err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating logs collector volume with name '%v' and labels '%+v'",
+			volumeName,
+			volumeLabelStrs,
+		)
+	}
+	deleteVolumeFunc := func() {
+		if err := dockerManager.RemoveVolume(ctx, volumeName); err != nil {
+			logrus.Errorf(
+				"Launching the logs collector server for the engine with GUID '%v' didn't complete successfully so we "+
+					"tried to remove the associated logs collector volume '%v' we started, but doing so exited with an error:\n%v",
+				engineGuid,
+				volumeName,
+				err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector volume '%v'!!!!!!", volumeName)
+		}
+	}
+	shouldDeleteLogsCollectorVolume := true
+	defer func() {
+		if shouldDeleteLogsCollectorVolume {
+			deleteVolumeFunc()
+		}
+	}()
 
 	privateTcpPortSpec, err := logsCollector.GetPrivateTcpPortSpec()
 	if err != nil {
@@ -430,13 +497,6 @@ func createLogsCollectorContainer(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
-	logsCollectorVolumeAttrs, err := objAttrsProvider.ForLogsCollectorVolume(engineGuid)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector volume attributes for engine with GUID %v", engineGuid)
-	}
-
-	volumeName := logsCollectorVolumeAttrs.GetName().GetString()
-
 	createAndStartArgs, err := logsCollector.GetContainerArgs(containerName, labelStrs, volumeName, targetNetworkId, dockerManager)
 	if err != nil {
 		return nil,
@@ -463,15 +523,6 @@ func createLogsCollectorContainer(
 				err)
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually stop the logs controller server for engine with GUID '%v' and Docker container ID '%v'!!!!!!", engineGuid, containerId)
 		}
-		if err := dockerManager.RemoveVolume(ctx, volumeName); err != nil {
-			logrus.Errorf(
-				"Launching the logs controller server for engine with GUID '%v' and container ID '%v' didn't complete successfully so we "+
-					"tried to remove the associated volume we started, but doing so exited with an error:\n%v",
-				engineGuid,
-				containerId,
-				err)
-			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector volume '%v'!!!!!!", volumeName)
-		}
 	}
 	shouldKillLogsCollectorContainer := true
 	defer func() {
@@ -480,12 +531,17 @@ func createLogsCollectorContainer(
 		}
 	}()
 
-
 	if err := logsCollector.WaitForAvailability(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the log collector's to become available")
 	}
 
+	killContainerAndDeleteVolumeFunc := func() {
+		killContainerFunc()
+		deleteVolumeFunc()
+	}
+
+	shouldDeleteLogsCollectorVolume = false
 	shouldKillLogsCollectorContainer = false
-	return killContainerFunc, nil
+	return killContainerAndDeleteVolumeFunc, nil
 }
 

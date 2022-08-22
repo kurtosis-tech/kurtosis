@@ -24,11 +24,6 @@ type logsComponentsContainerIDs struct {
 	logsCollectorContainerId string
 }
 
-type logsComponentsVolumesNames struct {
-	logsDatabaseVolumeName string
-	logsCollectorVolumeName string
-}
-
 // Gets engines matching the search filters, indexed by their container ID
 func getMatchingEngines(ctx context.Context, filters *engine.EngineFilters, dockerManager *docker_manager.DockerManager) (map[string]*engine.Engine, error) {
 	engineContainerSearchLabels := map[string]string{
