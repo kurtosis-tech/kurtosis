@@ -16,20 +16,20 @@ const (
 	printfCmdName    = "printf"
 )
 
-type Loki struct {
+type LokiContainerConfigProvider struct {
 	config *LokiConfig
 }
 
-func NewLoki(config *LokiConfig) *Loki {
-	return &Loki{config: config}
+func NewLokiContainerConfigProvider(config *LokiConfig) *LokiContainerConfigProvider {
+	return &LokiContainerConfigProvider{config: config}
 }
 
-func (loki *Loki) GetPrivateHttpPortSpec() (*port_spec.PortSpec, error) {
+func (loki *LokiContainerConfigProvider) GetPrivateHttpPortSpec() (*port_spec.PortSpec, error) {
 	privateHttpPortSpec, err := port_spec.NewPortSpec(httpPortNumber, httpPortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating the Loki's private HTTP port spec object using number '%v' and protocol '%v'",
+			"An error occurred creating the Loki container's private HTTP port spec object using number '%v' and protocol '%v'",
 			httpPortNumber,
 			httpPortProtocol,
 		)
@@ -37,16 +37,16 @@ func (loki *Loki) GetPrivateHttpPortSpec() (*port_spec.PortSpec, error) {
 	return privateHttpPortSpec, nil
 }
 
-func (loki *Loki) GetContainerArgs(
+func (loki *LokiContainerConfigProvider) GetContainerArgs(
 	containerName string,
 	containerLabels map[string]string,
-	volumeName string,
+	logsDatabaseVolumeName string,
 	networkId string,
 ) (*docker_manager.CreateAndStartContainerArgs, error) {
 
 	privateHttpPortSpec, err := loki.GetPrivateHttpPortSpec()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the Loki's private port spec")
+		return nil, stacktrace.Propagate(err, "An error occurred getting the Loki container's private port spec")
 	}
 
 	privateHttpDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(privateHttpPortSpec)
@@ -59,12 +59,12 @@ func (loki *Loki) GetContainerArgs(
 	}
 
 	volumeMounts := map[string]string{
-		volumeName: dirpath,
+		logsDatabaseVolumeName: dirpath,
 	}
 
 	logsDatabaseConfigContentStr, err := loki.GetConfigContent()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the Loki's configuration content")
+		return nil, stacktrace.Propagate(err, "An error occurred getting the Loki server's configuration content")
 	}
 
 	overrideCmd := []string{
@@ -104,7 +104,7 @@ func (loki *Loki) GetContainerArgs(
 	return createAndStartArgs, nil
 }
 
-func (loki *Loki) GetConfigContent() (string, error) {
+func (loki *LokiContainerConfigProvider) GetConfigContent() (string, error) {
 	lokiConfigYAMLContent, err := yaml.Marshal(loki.config)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred marshalling Loki config '%+v'", loki.config)

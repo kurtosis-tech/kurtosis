@@ -21,7 +21,7 @@ const (
 
 	//We enable multi-tenancy mode, and we scope enclaves as tenants EnclaveId = TenantID (see more about multi-tenancy here: https://grafana.com/docs/loki/latest/operations/multi-tenancy/)
 	authEnabled = true
-	//The destinations path where the index, chnunks and rules will be saved
+	//The destinations path where the index, chunks and rules will be saved
 	dirpath       = "/loki"
 	chunksDirpath = dirpath + "/chunks"
 	rulesDirpath  = dirpath + "/rules"
@@ -37,14 +37,14 @@ const (
 	schemaConfigStore = "boltdb-shipper"
 	//We are going to store the data in the container's filesystem (https://grafana.com/docs/loki/latest/operations/storage/filesystem)
 	schemaConfigObjectStore = "filesystem"
-	//The v12 generate lighter files compare with the previous versions (see video min 10:34)
+	//The v12 generate lighter files compare with the previous versions (see min 40:00 of this video: https://grafana.com/go/webinar/logging-with-loki-essential-configuration-settings/?pg=docs-loki&plcmt=footer-resources-2)
 	schemaConfigSchemaVersion = "v12"
 	schemaConfigIndexPrefix   = "index_"
 	//24h is the max value allowed for boltdb-shipper
 	//This value is also need because retention is only available if the index period is 24h. (see more here: https://grafana.com/docs/loki/latest/operations/storage/retention/#compactor)
 	schemaConfigIndexPeriod = "24h"
-	//Enabled this feature because we are using boltdb-shipper index type, it helps to improve performance in expensive queries (see video min 40:00)
-	storageConfigDisabledBroadIndexQueries = true
+	//Enabled this feature because we are using boltdb-shipper index type, it helps to improve performance in expensive queries (see min 10:34 of this video: https://grafana.com/go/webinar/logging-with-loki-essential-configuration-settings/?pg=docs-loki&plcmt=footer-resources-2))
+	storageConfigShouldDisableBroadIndexQueries = true
 	//We don't want to send analytics metrics to Loki because it will be used pretty much for developing and testing purpose
 	analyticsEnabled = false
 
@@ -57,9 +57,9 @@ const (
 	compactorRetentionDeleteWorkerCount = 150
 	//The "filter-and-delete" mode remove the logs from the storage (see more here: https://grafana.com/docs/loki/latest/configuration/#compactor and here: https://grafana.com/docs/loki/latest/operations/storage/logs-deletion/#configuration)
 	compactorDeletionMode = "filter-and-delete"
-	//It's the global retention period then we will set retention periods by TenantID that overrides this value
-	//the global retention period store logs for 1 week = 168h.
-	limitsRetentionPeriod = "168h"
+	//It's the global retention period (the retention period by TenantID overrides this value)
+	//the global retention period store logs for 30 days = 720h.
+	limitsRetentionPeriod = "720h"
 	//This value enables the deletion API
 	allowDeletes = true
 

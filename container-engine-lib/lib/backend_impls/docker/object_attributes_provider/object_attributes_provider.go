@@ -19,7 +19,7 @@ const (
 	logsDatabaseNamePrefix  = "kurtosis-logs-db"
 	logsCollectorNamePrefix = "kurtosis-logs-collector"
 
-	logsDatabaseVolumeNamePrefix = logsDatabaseNamePrefix + "-vol"
+	logsDatabaseVolumeName = logsDatabaseNamePrefix + "-vol"
 )
 
 type DockerObjectAttributesProvider interface {
@@ -36,7 +36,7 @@ type DockerObjectAttributesProvider interface {
 		httpApiPortId string,
 		httpApiPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
-	ForLogsDatabaseVolume(guid string, engineGUID engine.EngineGUID) (DockerObjectAttributes, error)
+	ForLogsDatabaseVolume(engineGUID engine.EngineGUID) (DockerObjectAttributes, error)
 	ForLogsCollector(
 		engineGUID engine.EngineGUID,
 		forwardPortId string,
@@ -206,32 +206,17 @@ func (provider *dockerObjectAttributesProviderImpl) ForLogsCollector(
 	return objectAttributes, nil
 }
 
-func (provider *dockerObjectAttributesProviderImpl) ForLogsDatabaseVolume(guid string, engineGUID engine.EngineGUID) (DockerObjectAttributes, error) {
-	nameStr := strings.Join(
-		[]string{
-			logsDatabaseVolumeNamePrefix,
-			guid,
-		},
-		objectNameElementSeparator,
-	)
-
-	name, err := docker_object_name.CreateNewDockerObjectName(nameStr)
+func (provider *dockerObjectAttributesProviderImpl) ForLogsDatabaseVolume(engineGUID engine.EngineGUID) (DockerObjectAttributes, error) {
+	name, err := docker_object_name.CreateNewDockerObjectName(logsDatabaseVolumeName)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", nameStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", logsDatabaseVolumeName)
 	}
-
-	guidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(guid)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database GUID Docker label from string '%v'", guid)
-	}
-
 	engineGuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(string(engineGUID))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the engine GUID Docker label from string '%v'", engineGUID)
 	}
 
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
-		label_key_consts.GUIDDockerLabelKey: guidLabelValue,
 		label_key_consts.EngineGUIDDockerLabelKey: engineGuidLabelValue,
 		label_key_consts.VolumeTypeDockerLabelKey: label_value_consts.LogsDatabaseVolumeTypeDockerLabelValue,
 	}

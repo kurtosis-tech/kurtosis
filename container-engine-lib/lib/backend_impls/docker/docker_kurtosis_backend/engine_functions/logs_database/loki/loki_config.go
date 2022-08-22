@@ -88,6 +88,8 @@ type RuntimeConfig struct {
 	Period string `yaml:"period"`
 }
 
+//The following Loki configuration values are specific for the Kurtosis centralized logs Loki implementation
+//some values were suggested by the Loki's documentation and this video: https://grafana.com/go/webinar/logging-with-loki-essential-configuration-settings/?pg=docs-loki&plcmt=footer-resources-2
 func newDefaultLokiConfigForKurtosisCentralizedLogs() *LokiConfig {
 	newConfig := &LokiConfig{
 		AuthEnabled: authEnabled,
@@ -110,7 +112,7 @@ func newDefaultLokiConfigForKurtosisCentralizedLogs() *LokiConfig {
 			},
 		},
 		StorageConfig: StorageConfig{
-			DisableBroadIndexQueries: storageConfigDisabledBroadIndexQueries,
+			DisableBroadIndexQueries: storageConfigShouldDisableBroadIndexQueries,
 		},
 		SchemaConfig: SchemaConfig{
 			Configs: []Configs{
