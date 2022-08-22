@@ -1,6 +1,6 @@
 package loki
 
-type Config struct {
+type LokiConfig struct {
 	AuthEnabled   bool          `yaml:"auth_enabled"`
 	Server        Server        `yaml:"server"`
 	Common        Common        `yaml:"common"`
@@ -88,8 +88,10 @@ type RuntimeConfig struct {
 	Period string `yaml:"period"`
 }
 
-func newDefaultConfigForKurtosisCentralizedLogs() *Config {
-	newConfig := &Config{
+//The following Loki configuration values are specific for the Kurtosis centralized logs Loki implementation
+//some values were suggested by the Loki's documentation and this video: https://grafana.com/go/webinar/logging-with-loki-essential-configuration-settings/?pg=docs-loki&plcmt=footer-resources-2
+func newDefaultLokiConfigForKurtosisCentralizedLogs() *LokiConfig {
+	newConfig := &LokiConfig{
 		AuthEnabled: authEnabled,
 		Server: Server{
 			HTTPListenPort: httpPortNumber,
@@ -110,7 +112,7 @@ func newDefaultConfigForKurtosisCentralizedLogs() *Config {
 			},
 		},
 		StorageConfig: StorageConfig{
-			DisableBroadIndexQueries: storageConfigDisabledBroadIndexQueries,
+			DisableBroadIndexQueries: storageConfigShouldDisableBroadIndexQueries,
 		},
 		SchemaConfig: SchemaConfig{
 			Configs: []Configs{
