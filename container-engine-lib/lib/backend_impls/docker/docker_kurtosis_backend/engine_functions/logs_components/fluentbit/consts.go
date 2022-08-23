@@ -11,7 +11,6 @@ const (
 	containerImage          = "fluent/fluent-bit:1.9.7"
 	tcpPortNumber    uint16 = 24224 // Default Fluentbit TCP port number, more here: https://docs.fluentbit.io/manual/pipeline/outputs/forward
 	tcpPortProtocol         = port_spec.PortProtocol_TCP
-	httpPortNumber   uint16 = 9712 // It's a custom port number that we create to publish it
 	httpPortProtocol        = port_spec.PortProtocol_TCP
 
 	lokiOutputTypeName = "loki"

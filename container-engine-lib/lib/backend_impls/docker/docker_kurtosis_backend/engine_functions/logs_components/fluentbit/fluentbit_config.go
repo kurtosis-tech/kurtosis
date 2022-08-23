@@ -11,7 +11,7 @@ const (
 	outputLabelsSeparator = ", "
 )
 
-type Config struct{
+type FluentbitConfig struct{
 	Service *Service
 	Input *Input
 	Filter *Filter
@@ -48,16 +48,17 @@ type Output struct {
 	TenantIDKey string
 }
 
-func newDefaultConfigForKurtosisCentralizedLogsForDocker(
+func newDefaultFluentbitConfigForKurtosisCentralizedLogs(
 	lokiHost string,
 	lokiPort uint16,
-) *Config {
-	return &Config{
+	httpPortNumber uint16,
+) *FluentbitConfig {
+	return &FluentbitConfig{
 		Service: &Service {
-			LogLevel: logLevel,
+			LogLevel:          logLevel,
 			HttpServerEnabled: httpServerEnabledValue,
-			HttpServerHost: httpServerLocalhost,
-			HttpServerPort: httpPortNumber,
+			HttpServerHost:    httpServerLocalhost,
+			HttpServerPort:    httpPortNumber,
 		},
 		Input: &Input{
 			Name: inputName,
