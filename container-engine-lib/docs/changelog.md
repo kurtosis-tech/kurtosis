@@ -8,6 +8,10 @@
 * Added `LogsCollector` interface for defining centralized logs collector behaviour
 * Added `Fluentbit` logs collector implementation and the Kurtosis configuration values
 
+### Breaking Changes
+* Updated `CreateEngine` method, added the `logsCollectorHttpPortNumber` param
+  * Users will need to update all the `CreateEngine` calls adding this new param
+
 # 0.36.1
 ### Changes
 * Add checks to all Bulk API service operations to return empty maps, given an empty input

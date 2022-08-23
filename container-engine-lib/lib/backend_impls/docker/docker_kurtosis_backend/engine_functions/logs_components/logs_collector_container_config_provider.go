@@ -5,7 +5,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 )
 
-type LogsCollector interface {
+type LogsCollectorContainerConfigProvider interface {
 	GetPrivateTcpPortSpec() (*port_spec.PortSpec, error)
 	GetPrivateHttpPortSpec() (*port_spec.PortSpec, error)
 	GetContainerArgs(
@@ -15,5 +15,5 @@ type LogsCollector interface {
 		networkId string,
 		dockerManager *docker_manager.DockerManager,
 	) (*docker_manager.CreateAndStartContainerArgs, error)
-	WaitForAvailability() error
+
 }

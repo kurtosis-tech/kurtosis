@@ -38,6 +38,7 @@ func CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
+	logsCollectorHttpPortNumber uint16,
 	envVars map[string]string,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
@@ -204,6 +205,7 @@ func CreateEngine(
 		ctx,
 		engineGuid,
 		targetNetworkId,
+		logsCollectorHttpPortNumber,
 		objAttrsProvider,
 		dockerManager,
 	)
@@ -230,6 +232,7 @@ func createCentralizedLogsComponents(
 	ctx context.Context,
 	engineGuid engine.EngineGUID,
 	targetNetworkId string,
+	logsCollectorHttpPortNumber uint16,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
 ) (func(), error) {
@@ -259,7 +262,7 @@ func createCentralizedLogsComponents(
 		}
 	}()
 
-	logsCollector := fluentbit.CreateFluentbitConfiguredForKurtosis(logsDatabaseHost, logsDatabasePort)
+	logsCollectorContainerConfigProvider := fluentbit.CreateFluentbitContainerConfigProviderForKurtosis(logsDatabaseHost, logsDatabasePort, logsCollectorHttpPortNumber)
 
 	killLogsCollectorContainerAndVolumeFunc, err := createLogsCollectorContainer(
 		ctx,
@@ -267,7 +270,7 @@ func createCentralizedLogsComponents(
 		targetNetworkId,
 		objAttrsProvider,
 		dockerManager,
-		logsCollector,
+		logsCollectorContainerConfigProvider,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -401,15 +404,15 @@ func createLogsCollectorContainer(
 	targetNetworkId string,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
-	logsCollector logs_components.LogsCollector,
+	logsCollectorContainerConfigProvider logs_components.LogsCollectorContainerConfigProvider,
 ) (func(), error) {
 
-	privateTcpPortSpec, err := logsCollector.GetPrivateTcpPortSpec()
+	privateTcpPortSpec, err := logsCollectorContainerConfigProvider.GetPrivateTcpPortSpec()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector private TCP port spec")
 	}
 
-	privateHttpPortSpec, err := logsCollector.GetPrivateHttpPortSpec()
+	privateHttpPortSpec, err := logsCollectorContainerConfigProvider.GetPrivateHttpPortSpec()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector private HTTP port spec")
 	}
@@ -444,7 +447,7 @@ func createLogsCollectorContainer(
 
 	volumeName := logsCollectorVolumeAttrs.GetName().GetString()
 
-	createAndStartArgs, err := logsCollector.GetContainerArgs(containerName, labelStrs, volumeName, targetNetworkId, dockerManager)
+	createAndStartArgs, err := logsCollectorContainerConfigProvider.GetContainerArgs(containerName, labelStrs, volumeName, targetNetworkId, dockerManager)
 	if err != nil {
 		return nil,
 			stacktrace.Propagate(
@@ -487,12 +490,12 @@ func createLogsCollectorContainer(
 		}
 	}()
 
+	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(privateHttpPortSpec.GetNumber())
 
-	if err := logsCollector.WaitForAvailability(); err != nil {
+	if err := logsCollectorAvailabilityChecker.WaitForAvailability(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the log collector's to become available")
 	}
 
 	shouldKillLogsCollectorContainer = false
 	return killContainerFunc, nil
 }
-
