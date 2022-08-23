@@ -14,6 +14,7 @@
 * Added the `WithLoggingDriver` method in `CreateAndStartContainerArgsBuilder` to set the container's logging driver
 * Updated `StopEngines` now the `LogsDatabase` and `LogsCollector` containers are also stopped
 * Updated `DestroyEngines` now the `LogsDatabase` and `LogsCollector` containers and the respective volumes are destroyed
+* Added a validation into the `CreateEngine` fo checking any previous engine or logs components container existence before creating a new engine
 
 ### Breaking Changes
 * Updated `CreateEngine` method, added the `logsCollectorHttpPortNumber` param
