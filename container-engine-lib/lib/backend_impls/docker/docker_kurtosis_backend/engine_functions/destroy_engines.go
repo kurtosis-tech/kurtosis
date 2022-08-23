@@ -2,6 +2,7 @@ package engine_functions
 
 import (
 	"context"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
@@ -35,8 +36,6 @@ func DestroyEngines(
 	for containerId, engineObj := range matchingEnginesByContainerId {
 		matchingUncastedEnginesByContainerId[containerId] = interface{}(engineObj)
 	}
-
-
 
 	var removeEngineOperation docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
@@ -93,22 +92,35 @@ func DestroyEngines(
 		)
 	}
 
-	logsDatabaseVolumeName, err := getLogsDatabaseVolumeName(ctx, dockerManager)
+	//Remove the logs components volumes only if are not in use
+	allLogsDatabaseContainers, err := getAllLogsDatabaseContainers(ctx, dockerManager)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs database volume name")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting all logs database containers")
+	}
+	if len(allLogsDatabaseContainers) == 0 {
+		logsDatabaseVolumeName, err := getLogsDatabaseVolumeName(ctx, dockerManager)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs database volume name")
+		}
+
+		if err := dockerManager.RemoveVolume(ctx, logsDatabaseVolumeName); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred removing logs database volume '%v'", logsDatabaseVolumeName)
+		}
 	}
 
-	logsCollectorVolumeName, err := getLogsCollectorVolumeName(ctx, dockerManager)
+	allLogsCollectorContainers, err := shared_helpers.GetAllLogsCollectorContainers(ctx, dockerManager)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs collector volume name")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting all logs collector containers")
 	}
+	if len(allLogsCollectorContainers) == 0 {
+		logsCollectorVolumeName, err := getLogsCollectorVolumeName(ctx, dockerManager)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs collector volume name")
+		}
 
-	if err := dockerManager.RemoveVolume(ctx, logsDatabaseVolumeName); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred removing logs database volume '%v'", logsDatabaseVolumeName)
-	}
-
-	if err := dockerManager.RemoveVolume(ctx, logsCollectorVolumeName); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred removing logs database volume '%v'", logsDatabaseVolumeName)
+		if err := dockerManager.RemoveVolume(ctx, logsCollectorVolumeName); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred removing logs collector volume '%v'", logsCollectorVolumeName)
+		}
 	}
 
 	return successfulGuids, erroredGuids, nil

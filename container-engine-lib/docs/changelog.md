@@ -11,6 +11,7 @@
 * Added `FluentdLoggingDriver` implementation that can be used to send the container's logs to the Fluentbit server
 * Added the `WithLoggingDriver` method in `CreateAndStartContainerArgsBuilder` to set the container's logging driver
 * Updated `StopEngines` now the `LogsDatabase` and `LogsCollector` containers are also stopped
+* Updated `DestroyEngines` now the `LogsDatabase` and `LogsCollector` containers and the respective volumes are destroyed
 
 ### Changes
 * Changed the user service and modules container's logging driver to the `fluentd` type

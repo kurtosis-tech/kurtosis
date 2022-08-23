@@ -305,6 +305,9 @@ func createLogsDatabaseContainer(
 		volumeLabelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
+	//This method will create the volume if it doesn't exist, or it will get it if it exists
+	//From Docker docs: If you specify a volume name already in use on the current driver, Docker assumes you want to re-use the existing volume and does not return an error.
+	//https://docs.docker.com/engine/reference/commandline/volume_create/
 	if err := dockerManager.CreateVolume(ctx, volumeName, volumeLabelStrs); err != nil {
 		return "", 0, nil, stacktrace.Propagate(
 			err,
@@ -350,21 +353,21 @@ func createLogsDatabaseContainer(
 		)
 	}
 
-	containerlabelStrs := map[string]string{}
+	containerLabelStrs := map[string]string{}
 	for labelKey, labelValue := range logsDatabaseAttrs.GetLabels() {
-		containerlabelStrs[labelKey.GetString()] = labelValue.GetString()
+		containerLabelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
 	containerName := logsDatabaseAttrs.GetName().GetString()
 
-	createAndStartArgs, err := logsDatabaseContainerConfigProvider.GetContainerArgs(containerName, containerlabelStrs, volumeName, targetNetworkId)
+	createAndStartArgs, err := logsDatabaseContainerConfigProvider.GetContainerArgs(containerName, containerLabelStrs, volumeName, targetNetworkId)
 	if err != nil {
 		return "", 0, nil,
 			stacktrace.Propagate(
 				err,
 				"An error occurred getting the logs database container args with container name '%v', labels '%+v', volume name '%v' and network ID '%v",
 				containerName,
-				containerlabelStrs,
+				containerLabelStrs,
 				volumeName,
 				targetNetworkId,
 			)
@@ -438,6 +441,9 @@ func createLogsCollectorContainer(
 		volumeLabelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
+	//This method will create the volume if it doesn't exist, or it will get it if it exists
+	//From Docker docs: If you specify a volume name already in use on the current driver, Docker assumes you want to re-use the existing volume and does not return an error.
+	//https://docs.docker.com/engine/reference/commandline/volume_create/
 	if err := dockerManager.CreateVolume(ctx, volumeName, volumeLabelStrs); err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -544,4 +550,3 @@ func createLogsCollectorContainer(
 	shouldKillLogsCollectorContainer = false
 	return killContainerAndDeleteVolumeFunc, nil
 }
-
