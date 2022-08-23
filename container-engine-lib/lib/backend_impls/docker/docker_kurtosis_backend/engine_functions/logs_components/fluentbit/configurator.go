@@ -26,7 +26,7 @@ const (
 	configFileCreationCmdDelayInRetries = 200 * time.Millisecond
 )
 
-func (fluent *Fluentbit) runConfigurator(
+func (fluent *FluentbitContainerConfigProvider) runConfigurator(
 	ctx context.Context,
 	targetNetworkId string,
 	volumeMounts map[string]string,
@@ -70,7 +70,7 @@ func (fluent *Fluentbit) runConfigurator(
 	return nil
 }
 
-func (fluent *Fluentbit)  createFluentbitConfigFileInVolume(
+func (fluent *FluentbitContainerConfigProvider)  createFluentbitConfigFileInVolume(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 	containerId string,

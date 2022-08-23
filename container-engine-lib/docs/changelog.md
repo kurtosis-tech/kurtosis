@@ -3,13 +3,19 @@
 * Added the `ForLogsDatabaseServer` and the `ForLogsCollectorServer` Docker objects attribute
 * Added `LogsCollectorTypeDockerLabelValue`, `ModuleContainerTypeDockerLabelValue` and `LogsDbDataVolumeTypeDockerLabelValue` Docker labels
 * Added `EngineGUIDDockerLabelKey` Docker label key
-* Added `LogsDatabase` interface for defining centralized logs database behaviour
-* Added `Loki` logs database implementation and the Kurtosis configuration values
-* Added `LogsCollector` interface for defining centralized logs collector behaviour
-* Added `Fluentbit` logs collector implementation and the Kurtosis configuration values
+* Added `LogsDatabaseContainerConfigProvider` interface for defining centralized logs database container config behaviour
+* Added `LokiContainerConfigProvider` implementation and the Kurtosis configuration values
+* Added `LogsCollectorContainerConfigProvider` interface for defining centralized logs collector container config behaviour
+* Added `FluentbitContainerConfigProvider`  implementation and the Kurtosis configuration values
+* Added `LogsCollectorAvailabilityChecker` implementation for defining centralized logs collector availability checker behaviour
+* Added `FluentbitAvailabilityChecker` which implements `LogsCollectorAvailabilityChecker` for the `Fluentbit` http server
 * Added `LoggingDriver` interface in the `docker_manager` package to define the behaviour for different logging driver implementations
 * Added `FluentdLoggingDriver` implementation that can be used to send the container's logs to the Fluentbit server
 * Added the `WithLoggingDriver` method in `CreateAndStartContainerArgsBuilder` to set the container's logging driver
+
+### Breaking Changes
+* Updated `CreateEngine` method, added the `logsCollectorHttpPortNumber` param
+  * Users will need to update all the `CreateEngine` calls adding this new param
 
 ### Changes
 * Changed the user service and modules container's logging driver to the `fluentd` type

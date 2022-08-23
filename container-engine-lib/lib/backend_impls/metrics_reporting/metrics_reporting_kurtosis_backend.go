@@ -31,13 +31,22 @@ func (backend *MetricsReportingKurtosisBackend) PullImage(image string) error {
 	return nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) CreateEngine(ctx context.Context, imageOrgAndRepo string, imageVersionTag string, grpcPortNum uint16, grpcProxyPortNum uint16, envVars map[string]string) (*engine.Engine, error) {
+func (backend *MetricsReportingKurtosisBackend) CreateEngine(
+	ctx context.Context,
+	imageOrgAndRepo string,
+	imageVersionTag string,
+	grpcPortNum uint16,
+	grpcProxyPortNum uint16,
+	logsCollectorHttpPortNumber uint16,
+	envVars map[string]string,
+) (*engine.Engine, error) {
 	result, err := backend.underlying.CreateEngine(
 		ctx,
 		imageOrgAndRepo,
 		imageVersionTag,
 		grpcPortNum,
 		grpcProxyPortNum,
+		logsCollectorHttpPortNumber,
 		envVars,
 	)
 	if err != nil {

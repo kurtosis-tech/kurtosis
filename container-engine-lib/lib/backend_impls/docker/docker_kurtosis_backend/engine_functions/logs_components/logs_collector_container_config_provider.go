@@ -8,7 +8,7 @@ import (
 type LogsCollectorAddress *string
 type LogsCollectorLabels []string
 
-type LogsCollector interface {
+type LogsCollectorContainerConfigProvider interface {
 	GetPrivateTcpPortSpec() (*port_spec.PortSpec, error)
 	GetPrivateHttpPortSpec() (*port_spec.PortSpec, error)
 	GetContainerArgs(
@@ -18,7 +18,7 @@ type LogsCollector interface {
 		networkId string,
 		dockerManager *docker_manager.DockerManager,
 	) (*docker_manager.CreateAndStartContainerArgs, error)
-	WaitForAvailability() error
+
 }
 
 
