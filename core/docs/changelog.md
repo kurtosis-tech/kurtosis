@@ -1,4 +1,6 @@
 # TBD
+
+# 1.57.7
 ### Fixes
 * Fix bug in `standardSidecarExecCmdExecutor.exec()` where there weren't a successful exit code control after executing the command
 
