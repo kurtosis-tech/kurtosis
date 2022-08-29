@@ -1,33 +1,29 @@
 # TBD
+### Changes
+* Upgraded to Core 1.57.7 which fixes a bug related to not handling exit codes in network partitioning
 
 # 1.31.3
-
 ### Changes
 * Upgrade to core 1.57.6, container-engine-lib to 0.36.1
 
 # 1.31.2
-
 ### Changes
 * Upgrade to core 1.57.5
 
 # 1.31.1
-
 ### Changes 
 * Upgrade core to 1.57.4
 
 # 1.31.0
-
 ### Breaking Changes
 * Upgrade container-engine-lib 0.36.0 and core to 1.57.3
   * Users will have to restart their Kurtosis engine
 
 # 1.30.1
-
 ### Changes
 * Upgrade container-engine-lib 0.35.0 and core to 1.57.2
 
 # 1.30.0
-
 ### Breaking Changes
 * Upgrade container-engine-lib to 0.34.1
   * Users will have to restart their Kurtosis engine
@@ -35,7 +31,6 @@
   * Users will have to restart their Kurtosis engine
 
 # 1.29.0
-
 ### Breaking Changes
 * Upgrade core to 1.57.0
   * Users will have to restart their Kurtosis engine
@@ -44,13 +39,11 @@
 * Add `v` prefixed version tag to api source
 
 # 1.28.0
-
 ### Breaking Changes
 * Upgrade core to 1.56.0, which fixes a typo
   * Users will have to restart their enclaves
 
 # 1.27.2
-
 ### Changes
 * Migrated repo to use internal cli tool `kudet` to retrieve image tags as opposed to script
 * Migrated repo to use internal cli tool `kudet` to use new release workflow
