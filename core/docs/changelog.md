@@ -1,29 +1,26 @@
 # TBD
+### Fixes
+* Fix bug in `standardSidecarExecCmdExecutor.exec()` where there weren't a successful exit code control after executing the command
 
 # 1.57.6
-
 ### Changes 
 * Upgrade `container-engine-lib` to 0.36.1
 
 # 1.57.5
-
 ### Changes
 * Fix bug where `ServiceNetwork.startServices` was returning incorrect data
 
 # 1.57.4
-
 ### Changes
 * Add back in minimum memory alloc check that was removed during BulkAPI migration
 
 # 1.57.3
 
 # 1.57.2
-
 ### Changes
 * Upgrade `container-engine-lib` to 0.36.0
 
 # 1.57.1
-
 ### Features
 * Implement stringer interface for `PortSpec`
 * Upgrade `container-engine-lib` to 0.34.1
@@ -38,7 +35,6 @@
 * Migrate `AddService` to call down to `AddServicesToPartition` in golang and typescript
 
 # 1.57.0
-
 ### Breaking Changes 
 * Fix incorrect type for `usedPorts` in documentation, `Set<String>` -> `Map<PortID, PortSpec>`
 * Update docs to remove `hostPortBindings` from return of `EnclaveContext.AddService` and `EnclaveContext.AddServiceToPartition`
@@ -49,7 +45,6 @@
 * Fix check for minimum allowed `memoryAllocationMegabytes`
 
 # 1.56.0
-
 ### Breaking Changes
 * Fix typos in `ContainerConfig`
   * Golang SDK users should now update to use `ContainerConfigBuilder.WithCPUAllocationMillicpus` and `ContainerConfiBuilder.WithMemoryAllocationMegabytes`
@@ -58,7 +53,6 @@
 * Add a check for minimum allowed `memoryAllocationBytes`
 
 # 1.55.3
-
 ### Features
 * Exposed resource allocation fields, `cpuAllocationMillicpus` and `memoryAllocationMegabytes` through  `ContainerConfig` in SDK
 

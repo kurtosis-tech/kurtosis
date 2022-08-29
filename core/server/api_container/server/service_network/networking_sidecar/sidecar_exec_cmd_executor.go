@@ -14,6 +14,10 @@ import (
 	"strings"
 )
 
+const (
+	successExitCode = 0
+)
+
 // ==========================================================================================
 //                                  Interface
 // ==========================================================================================
@@ -49,7 +53,7 @@ func (executor standardSidecarExecCmdExecutor) exec(ctx context.Context, notShWr
 		}
 	)
 
-	_, erroredNetworkingSidecars, err := executor.kurtosisBackend.RunNetworkingSidecarExecCommands(
+	successfulNetworkingSidecarExecResults, erroredNetworkingSidecars, err := executor.kurtosisBackend.RunNetworkingSidecarExecCommands(
 		ctx,
 		executor.enclaveId,
 		networkingSidecarCommands,
@@ -64,6 +68,14 @@ func (executor standardSidecarExecCmdExecutor) exec(ctx context.Context, notShWr
 		}
 
 		return stacktrace.Propagate(sidecarError, "An error occurred running exec command in networking sidecar with GUID '%v'", executor.serviceGUID)
+	}
+	execResult, found := successfulNetworkingSidecarExecResults[executor.serviceGUID]
+	if !found {
+		return stacktrace.NewError("Expected to receive the execution result information after running commands from '%+v' for service with GUID '%v'; but none was found", successfulNetworkingSidecarExecResults, executor.serviceGUID)
+	}
+
+	if execResult.GetExitCode() != successExitCode {
+		return stacktrace.NewError("Executing commands '%+v' returned an failing exit code with output:\n%v", networkingSidecarCommands, execResult.GetOutput())
 	}
 
 	return nil
