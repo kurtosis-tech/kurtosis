@@ -47,6 +47,9 @@ export class NodeTgzArchiver implements GenericTgzArchiver{
          const destFilepath = path.join(tempDirpath, destFilename)
 
          const fileList = isSrcDirectory ? filesystem.readdirSync(pathToArchive) : [srcFilename]
+         if (fileList.length == 0) {
+            return err(new Error(`The directory ${pathToArchive} you are trying to upload is empty`))
+         }
          const targzPromise = tar.create(
              {
                  cwd: isSrcDirectory? pathToArchive : srcParentDirpath,
