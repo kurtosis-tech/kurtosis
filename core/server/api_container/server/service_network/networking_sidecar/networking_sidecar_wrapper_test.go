@@ -28,7 +28,7 @@ const (
 
 	expectedCommandsForExecutingInitTrafficControl = "tc qdisc add dev eth1 root handle 1: htb && tc class add dev" +
 		" eth1 parent 1: classid 1:1 htb rate 100% && tc class add dev eth1 parent 1: classid 1:2 htb rate 100% &&" +
-		" tc filter add dev eth1 parent 1: handle 1:0 matchall flowid 1:1 && tc qdisc add dev eth1 parent 1:1 handle" +
+		" tc filter add dev eth1 parent 1: handle 1:0 basic flowid 1:1 && tc qdisc add dev eth1 parent 1:1 handle" +
 		" 2: htb && tc qdisc add dev eth1 parent 1:2 handle 3: htb"
 
 	expectedCommandsForExecutingBlockedPartitionInQdiscB = "tc qdisc del dev eth1 parent 1:2 handle 3: htb && tc qdisc " +
@@ -40,7 +40,7 @@ const (
 		" && tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:3 match ip dst 3.3.3.3 && tc qdisc add" +
 		" dev eth1 parent 3:3 handle 9: netem loss 100% && tc class add dev eth1 parent 3: classid 3:4 htb rate 100%" +
 		" && tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:4 match ip dst 4.4.4.4 && tc qdisc add" +
-		" dev eth1 parent 3:4 handle b: netem loss 100% && tc filter replace dev eth1 parent 1: handle 1:0 matchall" +
+		" dev eth1 parent 3:4 handle b: netem loss 100% && tc filter replace dev eth1 parent 1: handle 1:0 basic" +
 		" flowid 1:2"
 
 	expectedCommandsForExecutingSoftPartitionInQdiscA = "tc qdisc del dev eth1 parent 1:1 handle 2: htb && tc qdisc " +
@@ -52,7 +52,7 @@ const (
 		" filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:3 match ip dst 3.3.3.3 && tc qdisc add dev " +
 		"eth1 parent 2:3 handle 8: netem loss 25% && tc class add dev eth1 parent 2: classid 2:4 htb rate 100% && tc " +
 		"filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:4 match ip dst 4.4.4.4 && tc qdisc add dev eth1" +
-		" parent 2:4 handle a: netem loss 25% && tc filter replace dev eth1 parent 1: handle 1:0 matchall flowid 1:1"
+		" parent 2:4 handle a: netem loss 25% && tc filter replace dev eth1 parent 1: handle 1:0 basic flowid 1:1"
 
 	expectedCommandsForExecutingSoftPartitionInQdiscB = "tc qdisc del dev eth1 parent 1:2 handle 3: htb && tc qdisc add dev" +
 		" eth1 parent 1:2 handle 3: htb && tc class add dev eth1 parent 3: classid 3:1 htb rate 100% && tc filter add" +
@@ -63,7 +63,7 @@ const (
 		" dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:3 match ip dst 3.3.3.3 && tc qdisc add dev eth1 parent " +
 		"3:3 handle 9: netem loss 25% && tc class add dev eth1 parent 3: classid 3:4 htb rate 100% && tc filter add " +
 		"dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:4 match ip dst 4.4.4.4 && tc qdisc add dev eth1 parent 3:4" +
-		" handle b: netem loss 25% && tc filter replace dev eth1 parent 1: handle 1:0 matchall flowid 1:2"
+		" handle b: netem loss 25% && tc filter replace dev eth1 parent 1: handle 1:0 basic flowid 1:2"
 
 	expectedCommandsForExecutingUnblockedPartition = "tc qdisc del dev eth1 parent 1:1 handle 2: htb && tc qdisc del" +
 		" dev eth1 parent 1:2 handle 3: htb && tc qdisc add dev eth1 parent 1:1 handle 2: htb && tc qdisc add dev " +
