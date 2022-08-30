@@ -188,7 +188,6 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	return serviceCtx, nil
 }
 
-
 func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	serviceConfigSuppliers map[services.ServiceID]func(ipAddr string) (*services.ContainerConfig, error),
 	partitionID PartitionID,
@@ -225,7 +224,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 			_, err = enclaveCtx.client.RemoveService(context.Background(), removeServiceArgs)
 			if err != nil {
 				failedServicesPool[serviceID] = stacktrace.Propagate(err,
-					"Attempted to remove service '%v' to delete its resources after registering it failed, but an error occurred" +
+					"Attempted to remove service '%v' to delete its resources after registering it failed, but an error occurred"+
 						"while attempting to remove the service.", serviceID)
 			}
 		}
@@ -245,7 +244,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 		if !found {
 			failedServicesPool[serviceID] = stacktrace.NewError(
 				"A container config was not found for the registered service ID. " +
-				"This should not have happened as it means a service ID that was not requested was registered. This is a bug in Kurtosis.")
+					"This should not have happened as it means a service ID that was not requested was registered. This is a bug in Kurtosis.")
 			continue
 		}
 		containerConfig, err := containerConfigSupplier(privateIPAddr)
@@ -555,8 +554,28 @@ func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.FilesArtifactUUID, error) {
 	pathToUpload = strings.TrimRight(pathToUpload, string(filepath.Separator))
-	if _, err := os.Stat(pathToUpload); err != nil {
+	uploadFileInfo, err := os.Stat(pathToUpload)
+	if err != nil {
 		return "", stacktrace.Propagate(err, "There was a path error for '%s' during file uploading.", pathToUpload)
+	}
+
+	// This allows us to archive contents of dirs in root instead of nesting
+	var filepathsToUpload []string
+	if uploadFileInfo.IsDir() {
+		filesInDirectory, err := ioutil.ReadDir(pathToUpload)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "There was an error in getting a list of files in the directory '%s' provided", pathToUpload)
+		}
+		if len(filesInDirectory) == 0 {
+			return "", stacktrace.NewError("The directory '%s' you are trying to upload is empty", pathToUpload)
+		}
+
+		for _, fileInDirectory := range filesInDirectory {
+			filepathToUpload := filepath.Join(pathToUpload, fileInDirectory.Name())
+			filepathsToUpload = append(filepathsToUpload, filepathToUpload)
+		}
+	} else {
+		filepathsToUpload = append(filepathsToUpload, pathToUpload)
 	}
 
 	tempDir, err := ioutil.TempDir("", tempCompressionDirPattern)
@@ -565,7 +584,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 	}
 
 	compressedFilePath := filepath.Join(tempDir, filepath.Base(pathToUpload)+compressionExtension)
-	if err = archiver.Archive([]string{pathToUpload}, compressedFilePath); err != nil {
+	if err = archiver.Archive(filepathsToUpload, compressedFilePath); err != nil {
 		return "", stacktrace.Propagate(err, "Failed to compress '%s'.", pathToUpload)
 	}
 
@@ -638,7 +657,9 @@ func (enclaveContext *EnclaveContext) UnpauseService(serviceId services.ServiceI
 }
 
 // ====================================================================================================
-// 									   Private helper methods
+//
+//	Private helper methods
+//
 // ====================================================================================================
 func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc_api_bindings.Port) (map[string]*services.PortSpec, error) {
 	result := map[string]*services.PortSpec{}
