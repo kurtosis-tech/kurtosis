@@ -564,7 +564,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 	if fileInfo.IsDir() {
 		dirEntries, err := ioutil.ReadDir(pathToUpload)
 		if err != nil {
-			return "", stacktrace.Propagate(err, "There was an error in getting a list of files in the directory %s provided", pathToUpload)
+			return "", stacktrace.Propagate(err, "There was an error in getting a list of files in the directory '%s' provided", pathToUpload)
 		}
 		for _, dirEntry := range dirEntries {
 			filesToUpload = append(filesToUpload, filepath.Join(pathToUpload, dirEntry.Name()))
