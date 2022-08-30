@@ -27,7 +27,7 @@ export class NodeTgzArchiver implements GenericTgzArchiver{
 
          const srcParentDirpath = path.dirname(pathToArchive)
          const srcFilename = path.basename(pathToArchive)
-         const isSrcDirectory = filesystem.lstatSync(pathToArchive).isDirectory()
+         const isPathToArchiveDirectory = filesystem.lstatSync(pathToArchive).isDirectory()
 
          //Make directory for usage.
          const osTempDirpath = os.tmpdir()
@@ -46,13 +46,13 @@ export class NodeTgzArchiver implements GenericTgzArchiver{
          const destFilename = srcFilename + COMPRESSION_EXTENSION
          const destFilepath = path.join(tempDirpath, destFilename)
 
-         const fileList = isSrcDirectory ? filesystem.readdirSync(pathToArchive) : [srcFilename]
+         const fileList = isPathToArchiveDirectory ? filesystem.readdirSync(pathToArchive) : [srcFilename]
          if (fileList.length == 0) {
             return err(new Error(`The directory '${pathToArchive}' you are trying to upload is empty`))
          }
          const targzPromise = tar.create(
              {
-                 cwd: isSrcDirectory? pathToArchive : srcParentDirpath,
+                 cwd: isPathToArchiveDirectory? pathToArchive : srcParentDirpath,
                  gzip: true,
                  file: destFilepath,
              },
