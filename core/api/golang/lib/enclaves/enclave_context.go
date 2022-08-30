@@ -573,7 +573,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 		filesToUpload = append(filesToUpload, pathToUpload)
 	}
 	if len(filesToUpload) == 0 {
-		return "", stacktrace.NewError("The directory you are trying to upload is empty %s", pathToUpload)
+		return "", stacktrace.NewError("The directory '%s' you are trying to upload is empty", pathToUpload)
 	}
 
 	tempDir, err := ioutil.TempDir("", tempCompressionDirPattern)
