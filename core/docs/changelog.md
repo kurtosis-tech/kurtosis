@@ -1,5 +1,9 @@
 # TBD
 
+# 1.58.0
+### Breaking Changes
+* `EnclaveContext.UploadFiles` adds the contents of the directory to the root of the archive instead of nesting contents inside the directory inside the archive.
+
 # 1.57.7
 ### Fixes
 * Fix bug in `standardSidecarExecCmdExecutor.exec()` where there weren't a successful exit code control after executing the command
