@@ -21,12 +21,13 @@ const (
 	//    server's changelog whenever a breaking Core API version change happens
 	//  * Therefore, this constant must be manually updated to the X.Y version of the Core version you just
 	//    bumped to, which will remind you to update the "Breaking Change" section of the changelog.
-	expectedCoreMajorMinorVersion = "1.57"
+	expectedCoreMajorMinorVersion = "1.58"
 	// !!!!!! BEFORE YOU UPDATE THIS CONSTANT TO FIX THE TEST, ADD A "BREAKING CHANGE" SECTION IN THE CHANGELOG !!!!!!
 )
 
 // This test ensures that when you bump to a Kurt Core version that has an API break, you're reminded to add a "Breaking Changes"
-//  entry to the engine server's changelog as well (since a Kurt Core API break is an engine server API break)
+//
+//	entry to the engine server's changelog as well (since a Kurt Core API break is an engine server API break)
 func TestYouHaveBeenRemindedToAddABreakingChangelogEntryOnKurtCoreAPIBreak(t *testing.T) {
 	actualKurtCoreSemver, err := semver.Parse(api_container_launcher.DefaultVersion)
 	require.NoError(t, err, "An unexpected error occurred parsing Kurt Core version string '%v'", api_container_launcher.DefaultVersion)
