@@ -5,7 +5,7 @@
 
 import "neverthrow"
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
-import {ok, err, Result, fromSafePromise} from "neverthrow";
+import {ok, err, Result} from "neverthrow";
 import * as filesystem from "fs"
 import * as path from "path"
 import * as os from "os";
