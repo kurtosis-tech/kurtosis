@@ -562,12 +562,12 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 	// This allows us to archive contents of dirs in root instead of nesting
 	var filesToUpload []string
 	if fileInfo.IsDir() {
-		dirEntry, err := ioutil.ReadDir(pathToUpload)
+		dirEntries, err := ioutil.ReadDir(pathToUpload)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "There was an error in getting a list of files in the directory %s provided", pathToUpload)
 		}
-		for _, entry := range dirEntry {
-			filesToUpload = append(filesToUpload, filepath.Join(pathToUpload, entry.Name()))
+		for _, dirEntry := range dirEntries {
+			filesToUpload = append(filesToUpload, filepath.Join(pathToUpload, dirEntry.Name()))
 		}
 	} else {
 		filesToUpload = append(filesToUpload, pathToUpload)
