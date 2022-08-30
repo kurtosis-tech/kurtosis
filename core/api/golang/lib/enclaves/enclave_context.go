@@ -571,8 +571,8 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 		}
 
 		for _, dirFileInfo := range dirFileInfoList {
-			filePathToUpload := filepath.Join(pathToUpload, dirFileInfo.Name())
-			filepathsToUpload = append(filepathsToUpload, filePathToUpload)
+			filepathToUpload := filepath.Join(pathToUpload, dirFileInfo.Name())
+			filepathsToUpload = append(filepathsToUpload, filepathToUpload)
 		}
 	} else {
 		filepathsToUpload = append(filepathsToUpload, pathToUpload)
