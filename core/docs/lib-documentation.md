@@ -176,7 +176,7 @@ Gets the IDs of the Kurtosis modules that have been loaded into the enclave.
 Takes a filepath or directory path that will be compressed and uploaded to the Kurtosis filestore for use with [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
 The compressed directory will have the contents of the directory in the root of the
-archive without additional nesting.
+archive without additional nesting. It doesn't accept empty directories.
 
 
 **Args**

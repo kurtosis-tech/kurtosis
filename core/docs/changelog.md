@@ -5,7 +5,8 @@
 
 ### Breaking Changes
 * `EnclaveContext.UploadFiles` adds the contents of the directory to the root of the archive instead of nesting contents inside the directory inside the archive.
-  * Users of the sdk should remove references to the nested directory and directly access the files 
+  * Users of the sdk should remove references to the nested directory and directly access the files
+  * Users of the sdk should note that they can't upload empty directories
 
 # 1.57.7
 ### Fixes
