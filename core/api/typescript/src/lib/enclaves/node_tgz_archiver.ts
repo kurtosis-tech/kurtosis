@@ -49,7 +49,7 @@ export class NodeTgzArchiver implements GenericTgzArchiver{
          const fileList = isSrcDirectory ? filesystem.readdirSync(pathToArchive) : [srcFilename]
          const targzPromise = tar.create(
              {
-                 cwd: isSrcDirectory? pathToArchive : srcFilename,
+                 cwd: isSrcDirectory? pathToArchive : srcParentDirpath,
                  gzip: true,
                  file: destFilepath,
              },
