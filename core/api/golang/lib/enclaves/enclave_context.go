@@ -559,19 +559,27 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 		return "", stacktrace.Propagate(err, "There was a path error for '%s' during file uploading.", pathToUpload)
 	}
 
-	// We append the file separator to a dir so that we compress the contents and not the dir
-	// This prevents nesting, and you get the contents of the directory in root
+	// This allows us to archive contents of dirs in root instead of nesting
+	var filesToUpload []string
 	if fileInfo.IsDir() {
-		pathToUpload = filepath.Join(pathToUpload, string(filepath.Separator))
+		dirEntry, err := os.ReadDir(pathToUpload)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "There was an error in getting a list of files in the directory %s provided", pathToUpload)
+		}
+		for _, entry := range dirEntry {
+			filesToUpload = append(filesToUpload, filepath.Join(pathToUpload, entry.Name()))
+		}
+	} else {
+		filesToUpload = append(filesToUpload, pathToUpload)
 	}
 
-	tempDir, err := ioutil.TempDir("", tempCompressionDirPattern)
+	tempDir, err := os.MkdirTemp("", tempCompressionDirPattern)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to create temporary directory '%s' for compression.", tempDir)
 	}
 
 	compressedFilePath := filepath.Join(tempDir, filepath.Base(pathToUpload)+compressionExtension)
-	if err = archiver.Archive([]string{pathToUpload}, compressedFilePath); err != nil {
+	if err = archiver.Archive(filesToUpload, compressedFilePath); err != nil {
 		return "", stacktrace.Propagate(err, "Failed to compress '%s'.", pathToUpload)
 	}
 
