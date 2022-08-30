@@ -554,26 +554,28 @@ func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.FilesArtifactUUID, error) {
 	pathToUpload = strings.TrimRight(pathToUpload, string(filepath.Separator))
-	fileInfo, err := os.Stat(pathToUpload)
+	uploadFileInfo, err := os.Stat(pathToUpload)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was a path error for '%s' during file uploading.", pathToUpload)
 	}
 
 	// This allows us to archive contents of dirs in root instead of nesting
-	var filesToUpload []string
-	if fileInfo.IsDir() {
-		dirEntries, err := ioutil.ReadDir(pathToUpload)
+	var filepathsToUpload []string
+	if uploadFileInfo.IsDir() {
+		dirFileInfoList, err := ioutil.ReadDir(pathToUpload)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "There was an error in getting a list of files in the directory '%s' provided", pathToUpload)
 		}
-		for _, dirEntry := range dirEntries {
-			filesToUpload = append(filesToUpload, filepath.Join(pathToUpload, dirEntry.Name()))
+		if len(dirFileInfoList) == 0 {
+			return "", stacktrace.NewError("The directory '%s' you are trying to upload is empty", pathToUpload)
+		}
+
+		for _, dirFileInfo := range dirFileInfoList {
+			filePathToUpload := filepath.Join(pathToUpload, dirFileInfo.Name())
+			filepathsToUpload = append(filepathsToUpload, filePathToUpload)
 		}
 	} else {
-		filesToUpload = append(filesToUpload, pathToUpload)
-	}
-	if len(filesToUpload) == 0 {
-		return "", stacktrace.NewError("The directory '%s' you are trying to upload is empty", pathToUpload)
+		filepathsToUpload = append(filepathsToUpload, pathToUpload)
 	}
 
 	tempDir, err := ioutil.TempDir("", tempCompressionDirPattern)
@@ -582,7 +584,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 	}
 
 	compressedFilePath := filepath.Join(tempDir, filepath.Base(pathToUpload)+compressionExtension)
-	if err = archiver.Archive(filesToUpload, compressedFilePath); err != nil {
+	if err = archiver.Archive(filepathsToUpload, compressedFilePath); err != nil {
 		return "", stacktrace.Propagate(err, "Failed to compress '%s'.", pathToUpload)
 	}
 
