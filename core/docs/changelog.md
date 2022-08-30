@@ -1,5 +1,7 @@
 # TBD
 
+# 1.58.0
+
 ### Changes
 * Changed the behavior of `EnclaveContext.UploadFiles` for directories 
 
