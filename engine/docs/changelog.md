@@ -1,5 +1,12 @@
 # TBD
 
+## Changes
+* Upgraded core to 1.58.0
+
+### Breaking Changes
+* Upgraded core to 1.58.0 which archives the contents of the directory into the root of the archive without additional nesting
+ * Users will have to restart their kurtosis engine via `kurtosis engine restart`
+
 # 1.31.4
 ### Changes
 * Upgraded to Core 1.57.7 which fixes a bug related to not handling exit codes in network partitioning
