@@ -5,7 +5,7 @@
 
 import "neverthrow"
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
-import {ok, err, Result} from "neverthrow";
+import {ok, err, Result, fromSafePromise} from "neverthrow";
 import * as filesystem from "fs"
 import * as path from "path"
 import * as os from "os";
@@ -27,6 +27,7 @@ export class NodeTgzArchiver implements GenericTgzArchiver{
 
          const srcParentDirpath = path.dirname(pathToArchive)
          const srcFilename = path.basename(pathToArchive)
+         const isSrcDirectory = filesystem.lstatSync(pathToArchive).isDirectory()
 
          //Make directory for usage.
          const osTempDirpath = os.tmpdir()
@@ -45,13 +46,14 @@ export class NodeTgzArchiver implements GenericTgzArchiver{
          const destFilename = srcFilename + COMPRESSION_EXTENSION
          const destFilepath = path.join(tempDirpath, destFilename)
 
+         const fileList = isSrcDirectory ? filesystem.readdirSync(pathToArchive) : [srcFilename]
          const targzPromise = tar.create(
              {
-                 cwd: srcParentDirpath,
+                 cwd: isSrcDirectory? pathToArchive : srcFilename,
                  gzip: true,
                  file: destFilepath,
              },
-             [srcFilename],
+             fileList,
          ).then((_) => {
              return ok(null)
          }).catch((err: any) => {

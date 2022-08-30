@@ -188,7 +188,6 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	return serviceCtx, nil
 }
 
-
 func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	serviceConfigSuppliers map[services.ServiceID]func(ipAddr string) (*services.ContainerConfig, error),
 	partitionID PartitionID,
@@ -225,7 +224,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 			_, err = enclaveCtx.client.RemoveService(context.Background(), removeServiceArgs)
 			if err != nil {
 				failedServicesPool[serviceID] = stacktrace.Propagate(err,
-					"Attempted to remove service '%v' to delete its resources after registering it failed, but an error occurred" +
+					"Attempted to remove service '%v' to delete its resources after registering it failed, but an error occurred"+
 						"while attempting to remove the service.", serviceID)
 			}
 		}
@@ -245,7 +244,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 		if !found {
 			failedServicesPool[serviceID] = stacktrace.NewError(
 				"A container config was not found for the registered service ID. " +
-				"This should not have happened as it means a service ID that was not requested was registered. This is a bug in Kurtosis.")
+					"This should not have happened as it means a service ID that was not requested was registered. This is a bug in Kurtosis.")
 			continue
 		}
 		containerConfig, err := containerConfigSupplier(privateIPAddr)
@@ -555,8 +554,15 @@ func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.FilesArtifactUUID, error) {
 	pathToUpload = strings.TrimRight(pathToUpload, string(filepath.Separator))
-	if _, err := os.Stat(pathToUpload); err != nil {
+	fileInfo, err := os.Stat(pathToUpload)
+	if err != nil {
 		return "", stacktrace.Propagate(err, "There was a path error for '%s' during file uploading.", pathToUpload)
+	}
+
+	// We append the file separator to a dir so that we compress the contents and not the dir
+	// This prevents nesting, and you get the contents of the directory in root
+	if fileInfo.IsDir() {
+		pathToUpload = filepath.Join(pathToUpload, string(filepath.Separator))
 	}
 
 	tempDir, err := ioutil.TempDir("", tempCompressionDirPattern)
@@ -638,7 +644,9 @@ func (enclaveContext *EnclaveContext) UnpauseService(serviceId services.ServiceI
 }
 
 // ====================================================================================================
-// 									   Private helper methods
+//
+//	Private helper methods
+//
 // ====================================================================================================
 func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc_api_bindings.Port) (map[string]*services.PortSpec, error) {
 	result := map[string]*services.PortSpec{}
