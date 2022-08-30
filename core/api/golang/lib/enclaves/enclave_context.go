@@ -562,7 +562,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 	// This allows us to archive contents of dirs in root instead of nesting
 	var filesToUpload []string
 	if fileInfo.IsDir() {
-		dirEntry, err := os.ReadDir(pathToUpload)
+		dirEntry, err := ioutil.ReadDir(pathToUpload)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "There was an error in getting a list of files in the directory %s provided", pathToUpload)
 		}
@@ -576,7 +576,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.Fil
 		return "", stacktrace.NewError("The directory you are trying to upload is empty %s", pathToUpload)
 	}
 
-	tempDir, err := os.MkdirTemp("", tempCompressionDirPattern)
+	tempDir, err := ioutil.TempDir("", tempCompressionDirPattern)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to create temporary directory '%s' for compression.", tempDir)
 	}
