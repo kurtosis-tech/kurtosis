@@ -7,9 +7,6 @@ This repo contains:
 Developing
 ----------
 * Run `scripts/build.sh` to build the CLI into a binary & testsuite into a Docker image
-* Run `scripts/launch-cli.sh` to run arbitrary CLI commands with the locally-built binary
-* Run `scripts/run-one-internal-testsuite.sh LANG` (replacing `LANG` with a language from the `supported-languages.txt` file) to run `kurtosis test` using the locally-built binary to run the internal testuite
-* Run `scripts/run-all-internal-testsuites.sh` to run the internal testsuites in all languages
 * Run `internal_testsuites/golang/scripts/build.sh minikube` to build golang test suites against Kubernetes. Replace `golang` with `typescript` to run typescript tests against kubernetes
 
 Debugging User Issues
