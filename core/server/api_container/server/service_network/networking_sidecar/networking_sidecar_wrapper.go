@@ -32,7 +32,7 @@ const (
 	tcFilterPrioCommand         = "prio"
 	tcFilterFlowIDCommand       = "flowid"
 	tcFilterMatchCommand        = "match"
-	tcFilterMatchAllTypeCommand = "matchall"
+	tcFilterBasicTypeCommand    = "basic"
 	tcFilterIPMatchTypeCommand  = "ip"
 	tcFilterIPDestCommand       = "dst"
 	tcU32FilterTypeCommand      = "u32"
@@ -103,10 +103,10 @@ type StandardNetworkingSidecarWrapper struct {
 func NewStandardNetworkingSidecarWrapper(
 	networkingSidecar *networking_sidecar.NetworkingSidecar,
 	execCmdExecutor sidecarExecCmdExecutor,
-)(
+) (
 	*StandardNetworkingSidecarWrapper,
 	error,
-){
+) {
 	if networkingSidecar == nil {
 		return nil, stacktrace.NewError("The networking sidecar parameter must not be nil")
 	}
@@ -114,8 +114,8 @@ func NewStandardNetworkingSidecarWrapper(
 	return &StandardNetworkingSidecarWrapper{
 		mutex:             &sync.Mutex{},
 		networkingSidecar: networkingSidecar,
-		qdiscInUse: undefinedQdiscId,
-		execCmdExecutor: execCmdExecutor,
+		qdiscInUse:        undefinedQdiscId,
+		execCmdExecutor:   execCmdExecutor,
 	}, nil
 }
 
@@ -337,7 +337,7 @@ func generateTcAddRootFilterCmd() []string {
 		string(rootQdiscID),
 		tcHandleCommand,
 		string(rootFilterID),
-		tcFilterMatchAllTypeCommand,
+		tcFilterBasicTypeCommand,
 		tcFilterFlowIDCommand,
 		string(rootClassAClassID),
 	}
@@ -464,7 +464,7 @@ func generateTCReplaceRootFilterCmd(classId classID) []string {
 		string(rootQdiscID),
 		tcHandleCommand,
 		string(rootFilterID),
-		tcFilterMatchAllTypeCommand,
+		tcFilterBasicTypeCommand,
 		tcFilterFlowIDCommand,
 		string(classId),
 	}
