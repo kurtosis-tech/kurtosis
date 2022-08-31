@@ -159,7 +159,7 @@ func testDirectoryContents(
 
 // Compare the file contents of the directories against archiveTestFileContent and see if they match.
 func testFileContents(serverIP string, port uint16, relativeFilepath string) error {
-	fileContents, err := getFileContents(serverIP, port, strings.Replace(relativeFilepath, diskDirKeyword, "", 1))
+	fileContents, err := getFileContents(serverIP, port, relativeFilepath)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting '%s' contents", relativeFilepath)
 	}
@@ -262,8 +262,7 @@ func createTestFolderToUpload() (map[string]string, error) {
 	for i := 0; i < len(archiveRootFilenames); i++ {
 		keyword := fmt.Sprintf("%s%v", archiveRootFileKeywordPattern, i)
 		basename := filepath.Base(archiveRootFilenames[i])
-		relativePath := filepath.Join(basename)
-		relativeDiskPaths[keyword] = relativePath
+		relativeDiskPaths[keyword] = basename
 	}
 	return relativeDiskPaths, nil
 }
