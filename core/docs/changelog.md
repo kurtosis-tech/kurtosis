@@ -1,6 +1,6 @@
 # TBD
 ### Changes
-* Replaced the `matchall` filter type with the `basic` filter type in network partitioning commands due some OS (e.g.: Apache Linux distribution) doesn't contain the `cls_matchall` Linux kernel's module
+* Replaced the `matchall` filter type with the `basic` filter type in network partitioning commands due to some OSs (e.g.: Apache Linux distribution) not having the `cls_matchall` Linux kernel's module
 
 # 1.58.0
 ### Changes
