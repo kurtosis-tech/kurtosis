@@ -83,7 +83,8 @@ async function TestUploadFiles() {
 
         const fileServerPublicIp = serviceContext.getMaybePublicIPAddress();
         const fileServerPublicPortNum = publicPort.number
-        const firstArchiveRootFilename = `${filePathsMap.get(ARCHIVE_DIR_KEYWORD)}/${ARCHIVE_ROOT_FILE_KEYWORD_PATTERN}0`
+        const firstArchiveRootKeyWord = `${ARCHIVE_ROOT_FILE_KEYWORD_PATTERN}0`
+        const firstArchiveRootFilename = `${filePathsMap.get(firstArchiveRootKeyWord)}`
 
         const waitForHttpGetEndpointAvailabilityResult = await enclaveCtx.waitForHttpGetEndpointAvailability(
             FILE_SERVER_SERVICE_ID,
@@ -211,7 +212,7 @@ async function createTestFolderToUpload(): Promise<Result<Map<string,string>, Er
     if(subDirTestFileResult.isErr()){ return err(subDirTestFileResult.error)}
 
     //Create NUMBER_OF_TEMP_FILES_IN_ROOT_DIRECTORY
-    const rootDirTestFileResults = await createTestFiles(testDirectory, NUMBER_OF_TEMP_FILES_IN_ROOT_DIRECTORY)
+    const rootDirTestFileResults = await createTestFiles(baseTempDirPath, NUMBER_OF_TEMP_FILES_IN_ROOT_DIRECTORY)
     if(rootDirTestFileResults.isErr()) { return err(rootDirTestFileResults.error) }
 
     //Set folder permissions.
