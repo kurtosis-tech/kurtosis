@@ -1,5 +1,13 @@
 # TBD
 
+### Changes
+* Upgraded core to 1.58.0 and engine to 1.32.0
+* Changed `upload_file` tests in golang & typescript to reflect new behavior from 1.58.0. They now look for files in the root of the service mount point instead of in a folder inside the root.
+
+### Fixes
+* Renamed `upload_file` and `duplicate_files_artifact_mount` tests in typescript so that jest detects them.
+* Fixed some bugs in the `upload_file` test in typescript around file creation and permissions.
+
 ### Breaking changes
 * Upgraded core to 1.58.0 and engine to 1.32.0
  * Users will have to restart their Kurtosis Engine
