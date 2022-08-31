@@ -43,8 +43,8 @@ const SUB_FILE_KEYWORD_PATTERN                          = "subFile"
 const ARCHIVE_ROOT_FILE_KEYWORD_PATTERN                 = "archiveRootFile"
 const USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT  = "/static"
 
-const FOLDER_PERMISSION = 755
-const FILE_PERMISSION   = 644
+const FOLDER_PERMISSION = 0o755
+const FILE_PERMISSION   = 0o644
 
 const FILE_SERVER_PRIVATE_PORT_NUM      = 80
 const FILE_SERVER_PORT_SPEC             = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, PortProtocol.TCP )
