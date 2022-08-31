@@ -235,14 +235,14 @@ async function createTestFolderToUpload(): Promise<Result<Map<string,string>, Er
     for(let i = 0; i < subDirFilenames.length; i++){
         let keyword = `${SUB_FILE_KEYWORD_PATTERN}${i}`
         let basename = path.basename(subDirFilenames[i])
-        let relativeSubFile = `${archiveRootDir}/${subDir}/${basename}`
+        let relativeSubFile = `${subDir}/${basename}`
         relativeDiskPaths.set(keyword, relativeSubFile)
     }
 
     for(let i = 0; i < archiveRootFilenames.length; i++){
         let keyword = `${ARCHIVE_ROOT_FILE_KEYWORD_PATTERN}${i}`
         let basename = path.basename(archiveRootFilenames[i])
-        let relativeRootFile = `${archiveRootDir}/${basename}`
+        let relativeRootFile = `${basename}`
         relativeDiskPaths.set(keyword, relativeRootFile)
     }
     return ok(relativeDiskPaths)
