@@ -12,7 +12,10 @@ Developing
 * Run `internal_testsuites/golang/scripts/build.sh` to run only `golang` tests. Replace `golang` with `typescript` to run typescript tests.
 * Run `internal_testsuites/golang/scripts/build.sh minikube` to build golang test suites against Kubernetes. Replace `golang` with `typescript` to run typescript tests against kubernetes
 
-Launching the built `cli` before running the tests is recommended as it pulls the latest `kurtosis-engine` if you need one. 
+Launching the built `cli` before running the tests is recommended as it pulls the latest `kurtosis-engine` if you need one.
+
+Developers should be able to run and debug tests within Goland in both `typescript` and `golang` just click the play button on
+the single test you'd like to run.
 
 Debugging User Issues
 ---------------------
