@@ -1,6 +1,6 @@
 # TBD
 
-## Changes
+### Changes
 * Added `ts-jest` as a dev dependency and  the relevant config file, allows you to run & debug tests from Goland.
 
 # 0.26.0
