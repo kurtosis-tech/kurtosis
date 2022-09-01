@@ -105,9 +105,9 @@ func TestUploadFiles(t *testing.T) {
 	require.NoError(t, err)
 }
 
-//========================================================================
+// ========================================================================
 // Helpers
-//========================================================================
+// ========================================================================
 func testAllContents(pathMap map[string]string, ipAddress string, portNum uint16) error {
 	//Test files in archive root directory.
 	if err := testDirectoryContents(
@@ -135,7 +135,7 @@ func testAllContents(pathMap map[string]string, ipAddress string, portNum uint16
 	return nil
 }
 
-//Check all a directories mapped files and ensure they contain the same content as archiveTestFileContent
+// Check all a directories mapped files and ensure they contain the same content as archiveTestFileContent
 func testDirectoryContents(
 	pathsMap map[string]string,
 	fileCount int,
@@ -157,7 +157,7 @@ func testDirectoryContents(
 	return nil
 }
 
-//Compare the file contents of the directories against archiveTestFileContent and see if they match.
+// Compare the file contents of the directories against archiveTestFileContent and see if they match.
 func testFileContents(serverIP string, port uint16, relativeFilepath string) error {
 	fileContents, err := getFileContents(serverIP, port, relativeFilepath)
 	if err != nil {
@@ -202,9 +202,9 @@ func createTestFiles(pathToCreateAt string, fileCount int) ([]string, error) {
 	return filenames, nil
 }
 
-//Creates a temporary folder with x files and 1 sub folder that has y files each.
-//Where x is numberOfTempTestFilesToCreateInArchiveDir
-//Where y is numberOfTempTestFilesToCreateInSubDir
+// Creates a temporary folder with x files and 1 sub folder that has y files each.
+// Where x is numberOfTempTestFilesToCreateInArchiveDir
+// Where y is numberOfTempTestFilesToCreateInSubDir
 func createTestFolderToUpload() (map[string]string, error) {
 	//Create base directory.
 	baseTempDirPath, err := ioutil.TempDir("", archiveDirectoryTestPattern)
@@ -256,14 +256,13 @@ func createTestFolderToUpload() (map[string]string, error) {
 	for i := 0; i < len(subDirFilenames); i++ {
 		keyword := fmt.Sprintf("%s%v", subFileKeywordPattern, i)
 		basename := filepath.Base(subDirFilenames[i])
-		relativePath := filepath.Join(archiveRootDir, subDir, basename)
+		relativePath := filepath.Join(subDir, basename)
 		relativeDiskPaths[keyword] = relativePath
 	}
 	for i := 0; i < len(archiveRootFilenames); i++ {
 		keyword := fmt.Sprintf("%s%v", archiveRootFileKeywordPattern, i)
 		basename := filepath.Base(archiveRootFilenames[i])
-		relativePath := filepath.Join(archiveRootDir, basename)
-		relativeDiskPaths[keyword] = relativePath
+		relativeDiskPaths[keyword] = basename
 	}
 	return relativeDiskPaths, nil
 }

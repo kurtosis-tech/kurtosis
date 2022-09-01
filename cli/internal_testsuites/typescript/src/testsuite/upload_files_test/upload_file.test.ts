@@ -43,8 +43,8 @@ const SUB_FILE_KEYWORD_PATTERN                          = "subFile"
 const ARCHIVE_ROOT_FILE_KEYWORD_PATTERN                 = "archiveRootFile"
 const USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT  = "/static"
 
-const FOLDER_PERMISSION = 755
-const FILE_PERMISSION   = 644
+const FOLDER_PERMISSION = 0o755
+const FILE_PERMISSION   = 0o644
 
 const FILE_SERVER_PRIVATE_PORT_NUM      = 80
 const FILE_SERVER_PORT_SPEC             = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, PortProtocol.TCP )
@@ -83,7 +83,8 @@ async function TestUploadFiles() {
 
         const fileServerPublicIp = serviceContext.getMaybePublicIPAddress();
         const fileServerPublicPortNum = publicPort.number
-        const firstArchiveRootFilename = `${filePathsMap.get(ARCHIVE_DIR_KEYWORD)}/${ARCHIVE_ROOT_FILE_KEYWORD_PATTERN}0`
+        const firstArchiveRootKeyWord = `${ARCHIVE_ROOT_FILE_KEYWORD_PATTERN}0`
+        const firstArchiveRootFilename = `${filePathsMap.get(firstArchiveRootKeyWord)}`
 
         const waitForHttpGetEndpointAvailabilityResult = await enclaveCtx.waitForHttpGetEndpointAvailability(
             FILE_SERVER_SERVICE_ID,
@@ -211,7 +212,7 @@ async function createTestFolderToUpload(): Promise<Result<Map<string,string>, Er
     if(subDirTestFileResult.isErr()){ return err(subDirTestFileResult.error)}
 
     //Create NUMBER_OF_TEMP_FILES_IN_ROOT_DIRECTORY
-    const rootDirTestFileResults = await createTestFiles(testDirectory, NUMBER_OF_TEMP_FILES_IN_ROOT_DIRECTORY)
+    const rootDirTestFileResults = await createTestFiles(baseTempDirPath, NUMBER_OF_TEMP_FILES_IN_ROOT_DIRECTORY)
     if(rootDirTestFileResults.isErr()) { return err(rootDirTestFileResults.error) }
 
     //Set folder permissions.
@@ -235,15 +236,14 @@ async function createTestFolderToUpload(): Promise<Result<Map<string,string>, Er
     for(let i = 0; i < subDirFilenames.length; i++){
         let keyword = `${SUB_FILE_KEYWORD_PATTERN}${i}`
         let basename = path.basename(subDirFilenames[i])
-        let relativeSubFile = `${archiveRootDir}/${subDir}/${basename}`
+        let relativeSubFile = `${subDir}/${basename}`
         relativeDiskPaths.set(keyword, relativeSubFile)
     }
 
     for(let i = 0; i < archiveRootFilenames.length; i++){
         let keyword = `${ARCHIVE_ROOT_FILE_KEYWORD_PATTERN}${i}`
         let basename = path.basename(archiveRootFilenames[i])
-        let relativeRootFile = `${archiveRootDir}/${basename}`
-        relativeDiskPaths.set(keyword, relativeRootFile)
+        relativeDiskPaths.set(keyword, basename)
     }
     return ok(relativeDiskPaths)
 }
