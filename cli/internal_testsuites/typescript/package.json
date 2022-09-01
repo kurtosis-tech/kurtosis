@@ -4,7 +4,7 @@
     "test": "jest --maxWorkers 2 ./build"
   },
   "devDependencies": {
-    "@types/jest": "^27.0.3",
+    "@types/jest": "^29.0.0",
     "@types/node": "^16.11.11",
     "@types/utf8": "^3.0.0",
     "axios": "^0.24.0",
@@ -15,6 +15,7 @@
     "kurtosis-engine-api-lib": "1.32.0",
     "loglevel": "^1.8.0",
     "neverthrow": "^4.3.1",
+    "ts-jest": "^28.0.8",
     "typescript": "^4.5.2",
     "utf8": "^3.0.0"
   }
