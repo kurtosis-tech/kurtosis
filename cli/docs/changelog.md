@@ -1,4 +1,7 @@
 # TBD
+### Breaking changes
+* Upgrade to core to 1.58.1 and engine to 1.32.1
+  * Users will need to restart their Kurtosis engine
 
 ### Changes
 * Added `ts-jest` as a dev dependency and  the relevant config file, allows you to run & debug tests from Goland.
