@@ -23,8 +23,7 @@ const (
 )
 
 // This test ensures that when you bump to a Kurt Core version that has an API break, you're reminded to add a "Breaking Changes"
-//
-//	entry to the engine server's changelog as well (since a Kurt Core API break is an engine server API break)
+// entry to the engine server's changelog as well (since a Kurt Core API break is an engine server API break)
 func TestYouHaveBeenRemindedToAddABreakingChangelogEntryOnKurtCoreAPIBreak(t *testing.T) {
 	actualEngineSemver, err := semver.Parse(engine_server_launcher.KurtosisEngineVersion)
 	require.NoError(t, err, "An unexpected error occurred parsing engine server version string '%v'", engine_server_launcher.KurtosisEngineVersion)
