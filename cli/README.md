@@ -14,8 +14,7 @@ Developing
 
 Launching the built `cli` before running the tests is recommended as it pulls the latest `kurtosis-engine` if you need one.
 
-Developers should be able to run and debug tests within Goland in both `typescript` and `golang`. Just click the play button on
-the single test that needs to be run.
+Developers should be able to run and debug tests within Goland in both `typescript` and `golang`. Just click the play button on the single test that needs to be run.
 
 Debugging User Issues
 ---------------------
