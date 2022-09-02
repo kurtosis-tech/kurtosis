@@ -563,8 +563,7 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 		templateDataAsJson := templateAndData.DataAsJson
 
 		var templateData map[string]interface{}
-		err = json.Unmarshal(templateDataAsJson, &templateData)
-		if err != nil {
+		if err = json.Unmarshal(templateDataAsJson, &templateData); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while unmarshalling the template data json '%v' for file '%v'", string(templateDataAsJson), destinationFilename)
 		}
 
