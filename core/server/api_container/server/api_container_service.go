@@ -550,7 +550,7 @@ func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context
 }
 
 func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse, error) {
-	templatesAndDataByFilename := args.TemplatesAndDataByFilename
+	templatesAndDataByDestinationFilename := args.TemplatesAndDataByDestinationFilename
 
 	tempDirForRenderedTemplates, err := os.MkdirTemp("", tempDirForRenderedTemplatesPrefix)
 	if err != nil {
@@ -558,21 +558,21 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 	}
 
 	var filePathsToArchive []string
-	for filename, templateAndData := range templatesAndDataByFilename {
+	for destinationFilename, templateAndData := range templatesAndDataByDestinationFilename {
 		templateAsAString := templateAndData.Template
 		templateDataAsJson := templateAndData.DataAsJson
 
 		var templateData map[string]interface{}
-		err = json.Unmarshal(templateDataAsJson, templateData)
+		err = json.Unmarshal(templateDataAsJson, &templateData)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred while unmarshalling the template data json for file '%v'", filename)
+			return nil, stacktrace.Propagate(err, "An error occurred while unmarshalling the template data json '%v' for file '%v'", string(templateDataAsJson), destinationFilename)
 		}
 
-		renderedTemplateFilepath := path.Join(tempDirForRenderedTemplates, filename)
-		if err = renderTemplateToFile(templateAsAString, templateData, renderedTemplateFilepath); err != nil {
-			return nil, stacktrace.Propagate(err, "There was an error in rendering template for file '%v'", filename)
+		destinationFilepath := path.Join(tempDirForRenderedTemplates, destinationFilename)
+		if err = renderTemplateToFile(templateAsAString, templateData, destinationFilepath); err != nil {
+			return nil, stacktrace.Propagate(err, "There was an error in rendering template for file '%v'", destinationFilename)
 		}
-		filePathsToArchive = append(filePathsToArchive, renderedTemplateFilepath)
+		filePathsToArchive = append(filePathsToArchive, destinationFilepath)
 	}
 
 	tempDirForCompressedRenderedTemplates, err := os.MkdirTemp("", tempDirForCompressedRenderedTemplatesPrefix)
@@ -804,20 +804,20 @@ func (apicService ApiContainerService) getModuleInfo(ctx context.Context, module
 	return response, nil
 }
 
-func renderTemplateToFile(templateAsAString string, templateData map[string]interface{}, renderedTemplateFilepath string) error {
-	parsedTemplate, err := template.New(path.Base(renderedTemplateFilepath)).Parse(templateAsAString)
+func renderTemplateToFile(templateAsAString string, templateData map[string]interface{}, destinationFilepath string) error {
+	parsedTemplate, err := template.New(path.Base(destinationFilepath)).Parse(templateAsAString)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred in parsing the template string")
+		return stacktrace.Propagate(err, "An error occurred in parsing the template string '%v'", destinationFilepath)
 	}
 
-	renderedTemplateFile, err := os.Create(renderedTemplateFilepath)
+	renderedTemplateFile, err := os.Create(destinationFilepath)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while creating temporary file to render template into for file '%v'.", renderedTemplateFilepath)
+		return stacktrace.Propagate(err, "An error occurred while creating temporary file to render template into for file '%v'.", destinationFilepath)
 	}
 	defer renderedTemplateFile.Close()
 
 	if parsedTemplate.Execute(renderedTemplateFile, templateData) != nil {
-		return stacktrace.Propagate(err, "An error occurred while writing data into the template")
+		return stacktrace.Propagate(err, "An error occurred while writing the rendered template to destination '%v'", destinationFilepath)
 	}
 	return nil
 }
