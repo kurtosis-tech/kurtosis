@@ -555,7 +555,7 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 		return nil, stacktrace.Propagate(err, "An error occurred while creating temp dir for rendered templates '%v'", tempDirForRenderedTemplates)
 	}
 	var filePathsToArchive []string
-	for filename, templateAndDataAsJsonString := range args.TemplateAndDataByFilename {
+	for filename, templateAndDataAsJsonString := range args.TemplatesAndDataByFilename {
 		parsedTemplate, err := template.ParseGlob(templateAndDataAsJsonString.Template)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while parsing template for file '%v'", filename)
