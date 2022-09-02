@@ -571,7 +571,7 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 			return nil, stacktrace.Propagate(err, "An error occurred while creating temporary file to render template into for file '%v'.", renderedTemplateFile)
 		}
 		err = parsedTemplate.Execute(renderedTemplateFile, templateData)
-		if err !=nil {
+		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while rendering template for file '%v'", filename)
 		}
 		filePathsToArchive = append(filePathsToArchive, renderedTemplateFilePath)
@@ -579,7 +579,7 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 
 	tempDirForCompressedRenderedTemplates, err := os.MkdirTemp("", tempDirForCompressedRenderedTemplatesPrefix)
 	if err != nil {
-		return nil, stacktrace.Propagate(err,"Failed to create temporary directory '%v' for compression", tempDirForCompressedRenderedTemplates)
+		return nil, stacktrace.Propagate(err, "Failed to create temporary directory '%v' for compression", tempDirForCompressedRenderedTemplates)
 	}
 
 	compressedFilePath := path.Join(tempDirForCompressedRenderedTemplates, compressedRenderedTemplatesFilename)
