@@ -28,6 +28,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"text/template"
 	"time"
 )
 
@@ -536,6 +537,12 @@ func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context
 
 	response := &kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceResponse{Uuid: string(filesArtifactId)}
 	return response, nil
+}
+
+func (apiService ApiContainerService) RenderTemplatesToFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse, error) {
+	for filename, templateAndDataAsJsonString := range args.TemplateAndDataByFilename {
+		parsedTemplate := template.ParseGlob(templateAndDataAsJsonString.Template)
+	}
 }
 
 // ====================================================================================================
