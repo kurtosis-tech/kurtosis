@@ -550,13 +550,15 @@ func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context
 }
 
 func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse, error) {
+	templatesAndDataByFilename := args.TemplatesAndDataByFilename
+
 	tempDirForRenderedTemplates, err := os.MkdirTemp("", tempDirForRenderedTemplatesPrefix)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating temp dir for rendered templates '%v'", tempDirForRenderedTemplates)
+		return nil, stacktrace.Propagate(err, "An error occurred while creating a temp dir for rendered templates '%v'", tempDirForRenderedTemplates)
 	}
 
 	var filePathsToArchive []string
-	for filename, templateAndData := range args.TemplatesAndDataByFilename {
+	for filename, templateAndData := range templatesAndDataByFilename {
 		templateAsAString := templateAndData.Template
 		templateDataAsJson := templateAndData.DataAsJson
 
@@ -566,11 +568,11 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 			return nil, stacktrace.Propagate(err, "An error occurred while unmarshalling the template data json for file '%v'", filename)
 		}
 
-		renderedTemplateFilePath := path.Join(tempDirForRenderedTemplates, filename)
-		if err = renderTemplateToFile(templateAsAString, templateData, renderedTemplateFilePath); err != nil {
-			return nil, stacktrace.Propagate(err,"There was an error in rendering template for file '%v'", filename)
+		renderedTemplateFilepath := path.Join(tempDirForRenderedTemplates, filename)
+		if err = renderTemplateToFile(templateAsAString, templateData, renderedTemplateFilepath); err != nil {
+			return nil, stacktrace.Propagate(err, "There was an error in rendering template for file '%v'", filename)
 		}
-		filePathsToArchive = append(filePathsToArchive, renderedTemplateFilePath)
+		filePathsToArchive = append(filePathsToArchive, renderedTemplateFilepath)
 	}
 
 	tempDirForCompressedRenderedTemplates, err := os.MkdirTemp("", tempDirForCompressedRenderedTemplatesPrefix)
@@ -591,7 +593,7 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 
 	filesArtifactUuId, err := apicService.filesArtifactStore.StoreFile(compressedFile)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred storing the file '%v' in the files artifact store", compressedFilePath)
+		return nil, stacktrace.Propagate(err, "An error occurred while storing the file '%v' in the files artifact store", compressedFilePath)
 	}
 
 	response := &kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse{Uuid: string(filesArtifactUuId)}
