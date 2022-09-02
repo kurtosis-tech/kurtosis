@@ -579,7 +579,7 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 
 	tempDirForCompressedRenderedTemplates, err := os.MkdirTemp("", tempDirForCompressedRenderedTemplatesPrefix)
 	if err != nil {
-		return nil, stacktrace.Propagate(err,"Failed to create temporary directory '%v' for compression", tempDirForCompressedFiles)
+		return nil, stacktrace.Propagate(err,"Failed to create temporary directory '%v' for compression", tempDirForCompressedRenderedTemplates)
 	}
 
 	compressedFilePath := path.Join(tempDirForCompressedRenderedTemplates, compressedRenderedTemplatesFilename)
