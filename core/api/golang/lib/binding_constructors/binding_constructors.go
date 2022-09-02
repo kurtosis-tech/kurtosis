@@ -344,3 +344,9 @@ func NewStoreWebFilesArtifactArgs(url string) *kurtosis_core_rpc_api_bindings.St
 func NewStoreFilesArtifactFromServiceArgs(serviceId string, sourcePath string) *kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs {
 	return &kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs{ServiceId: serviceId, SourcePath: sourcePath}
 }
+
+
+// ==============================================================================================
+//                              Store Files Artifact From Service
+// ==============================================================================================
+func TEmp

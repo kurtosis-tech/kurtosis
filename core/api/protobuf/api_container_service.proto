@@ -445,7 +445,7 @@ message StoreFilesArtifactFromServiceResponse {
 }
 
 // ==============================================================================================
-//                               Render Template To Files Artifact
+//                               Render Templates To Files Artifact
 // ==============================================================================================
 
 message RenderTemplateToFilesArtifactArgs {
