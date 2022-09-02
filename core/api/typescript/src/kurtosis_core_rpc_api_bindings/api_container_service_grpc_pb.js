@@ -192,26 +192,26 @@ function deserialize_api_container_api_RemoveServiceResponse(buffer_arg) {
   return api_container_service_pb.RemoveServiceResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_RenderTemplateToFilesArtifactArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.RenderTemplateToFilesArtifactArgs)) {
-    throw new Error('Expected argument of type api_container_api.RenderTemplateToFilesArtifactArgs');
+function serialize_api_container_api_RenderTemplatesToFilesArtifactArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.RenderTemplatesToFilesArtifactArgs)) {
+    throw new Error('Expected argument of type api_container_api.RenderTemplatesToFilesArtifactArgs');
   }
   return Buffer.from(arg.serializeBinary());
 }
 
-function deserialize_api_container_api_RenderTemplateToFilesArtifactArgs(buffer_arg) {
-  return api_container_service_pb.RenderTemplateToFilesArtifactArgs.deserializeBinary(new Uint8Array(buffer_arg));
+function deserialize_api_container_api_RenderTemplatesToFilesArtifactArgs(buffer_arg) {
+  return api_container_service_pb.RenderTemplatesToFilesArtifactArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_RenderTemplateToFilesArtifactResponse(arg) {
-  if (!(arg instanceof api_container_service_pb.RenderTemplateToFilesArtifactResponse)) {
-    throw new Error('Expected argument of type api_container_api.RenderTemplateToFilesArtifactResponse');
+function serialize_api_container_api_RenderTemplatesToFilesArtifactResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.RenderTemplatesToFilesArtifactResponse)) {
+    throw new Error('Expected argument of type api_container_api.RenderTemplatesToFilesArtifactResponse');
   }
   return Buffer.from(arg.serializeBinary());
 }
 
-function deserialize_api_container_api_RenderTemplateToFilesArtifactResponse(buffer_arg) {
-  return api_container_service_pb.RenderTemplateToFilesArtifactResponse.deserializeBinary(new Uint8Array(buffer_arg));
+function deserialize_api_container_api_RenderTemplatesToFilesArtifactResponse(buffer_arg) {
+  return api_container_service_pb.RenderTemplatesToFilesArtifactResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_RepartitionArgs(arg) {
@@ -603,12 +603,12 @@ renderTemplateToFilesArtifact: {
     path: '/api_container_api.ApiContainerService/RenderTemplateToFilesArtifact',
     requestStream: false,
     responseStream: false,
-    requestType: api_container_service_pb.RenderTemplateToFilesArtifactArgs,
-    responseType: api_container_service_pb.RenderTemplateToFilesArtifactResponse,
-    requestSerialize: serialize_api_container_api_RenderTemplateToFilesArtifactArgs,
-    requestDeserialize: deserialize_api_container_api_RenderTemplateToFilesArtifactArgs,
-    responseSerialize: serialize_api_container_api_RenderTemplateToFilesArtifactResponse,
-    responseDeserialize: deserialize_api_container_api_RenderTemplateToFilesArtifactResponse,
+    requestType: api_container_service_pb.RenderTemplatesToFilesArtifactArgs,
+    responseType: api_container_service_pb.RenderTemplatesToFilesArtifactResponse,
+    requestSerialize: serialize_api_container_api_RenderTemplatesToFilesArtifactArgs,
+    requestDeserialize: deserialize_api_container_api_RenderTemplatesToFilesArtifactArgs,
+    responseSerialize: serialize_api_container_api_RenderTemplatesToFilesArtifactResponse,
+    responseDeserialize: deserialize_api_container_api_RenderTemplatesToFilesArtifactResponse,
   },
 };
 

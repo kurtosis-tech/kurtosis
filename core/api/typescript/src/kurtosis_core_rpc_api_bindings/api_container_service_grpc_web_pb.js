@@ -1173,33 +1173,33 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.storeFilesArt
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
- *   !proto.api_container_api.RenderTemplateToFilesArtifactArgs,
- *   !proto.api_container_api.RenderTemplateToFilesArtifactResponse>}
+ *   !proto.api_container_api.RenderTemplatesToFilesArtifactArgs,
+ *   !proto.api_container_api.RenderTemplatesToFilesArtifactResponse>}
  */
 const methodDescriptor_ApiContainerService_RenderTemplateToFilesArtifact = new grpc.web.MethodDescriptor(
   '/api_container_api.ApiContainerService/RenderTemplateToFilesArtifact',
   grpc.web.MethodType.UNARY,
-  proto.api_container_api.RenderTemplateToFilesArtifactArgs,
-  proto.api_container_api.RenderTemplateToFilesArtifactResponse,
+  proto.api_container_api.RenderTemplatesToFilesArtifactArgs,
+  proto.api_container_api.RenderTemplatesToFilesArtifactResponse,
   /**
-   * @param {!proto.api_container_api.RenderTemplateToFilesArtifactArgs} request
+   * @param {!proto.api_container_api.RenderTemplatesToFilesArtifactArgs} request
    * @return {!Uint8Array}
    */
   function(request) {
     return request.serializeBinary();
   },
-  proto.api_container_api.RenderTemplateToFilesArtifactResponse.deserializeBinary
+  proto.api_container_api.RenderTemplatesToFilesArtifactResponse.deserializeBinary
 );
 
 
 /**
- * @param {!proto.api_container_api.RenderTemplateToFilesArtifactArgs} request The
+ * @param {!proto.api_container_api.RenderTemplatesToFilesArtifactArgs} request The
  *     request proto
  * @param {?Object<string, string>} metadata User defined
  *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.api_container_api.RenderTemplateToFilesArtifactResponse)}
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.RenderTemplatesToFilesArtifactResponse)}
  *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.RenderTemplateToFilesArtifactResponse>|undefined}
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.RenderTemplatesToFilesArtifactResponse>|undefined}
  *     The XHR Node Readable Stream
  */
 proto.api_container_api.ApiContainerServiceClient.prototype.renderTemplateToFilesArtifact =
@@ -1214,11 +1214,11 @@ proto.api_container_api.ApiContainerServiceClient.prototype.renderTemplateToFile
 
 
 /**
- * @param {!proto.api_container_api.RenderTemplateToFilesArtifactArgs} request The
+ * @param {!proto.api_container_api.RenderTemplatesToFilesArtifactArgs} request The
  *     request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!Promise<!proto.api_container_api.RenderTemplateToFilesArtifactResponse>}
+ * @return {!Promise<!proto.api_container_api.RenderTemplatesToFilesArtifactResponse>}
  *     Promise that resolves to the response
  */
 proto.api_container_api.ApiContainerServicePromiseClient.prototype.renderTemplateToFilesArtifact =
