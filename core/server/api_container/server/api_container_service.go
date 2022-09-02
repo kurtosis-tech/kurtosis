@@ -556,28 +556,19 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 	}
 
 	var filePathsToArchive []string
-	for filename, templateAndDataAsJsonString := range args.TemplatesAndDataByFilename {
-		parsedTemplate, err := template.ParseGlob(templateAndDataAsJsonString.Template)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred while parsing template for file '%v'", filename)
-		}
+	for filename, templateAndData := range args.TemplatesAndDataByFilename {
+		templateAsAString := templateAndData.Template
+		templateDataAsJson := templateAndData.DataAsJson
 
 		var templateData map[string]interface{}
-		err = json.Unmarshal(templateAndDataAsJsonString.DataAsJson, templateData)
+		err = json.Unmarshal(templateDataAsJson, templateData)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while unmarshalling the template data json for file '%v'", filename)
 		}
 
 		renderedTemplateFilePath := path.Join(tempDirForRenderedTemplates, filename)
-		renderedTemplateFile, err := os.Create(renderedTemplateFilePath)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred while creating temporary file to render template into for file '%v'.", renderedTemplateFile)
-		}
-		defer renderedTemplateFile.Close()
-
-		err = parsedTemplate.Execute(renderedTemplateFile, templateData)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred while rendering template for file '%v'", filename)
+		if err = renderTemplateToFile(templateAsAString, templateData, renderedTemplateFilePath); err != nil {
+			return nil, stacktrace.Propagate(err,"There was an error in rendering template for file '%v'", filename)
 		}
 		filePathsToArchive = append(filePathsToArchive, renderedTemplateFilePath)
 	}
@@ -809,4 +800,22 @@ func (apicService ApiContainerService) getModuleInfo(ctx context.Context, module
 		publicApiPort,
 	)
 	return response, nil
+}
+
+func renderTemplateToFile(templateAsAString string, templateData map[string]interface{}, renderedTemplateFilepath string) error {
+	parsedTemplate, err := template.New(path.Base(renderedTemplateFilepath)).Parse(templateAsAString)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred in parsing the template string")
+	}
+
+	renderedTemplateFile, err := os.Create(renderedTemplateFilepath)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while creating temporary file to render template into for file '%v'.", renderedTemplateFilepath)
+	}
+	defer renderedTemplateFile.Close()
+
+	if parsedTemplate.Execute(renderedTemplateFile, templateData) != nil {
+		return stacktrace.Propagate(err, "An error occurred while writing data into the template")
+	}
+	return nil
 }
