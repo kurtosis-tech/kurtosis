@@ -1170,5 +1170,66 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.storeFilesArt
 };
 
 
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.RenderTemplateToFilesArtifactArgs,
+ *   !proto.api_container_api.RenderTemplateToFilesArtifactResponse>}
+ */
+const methodDescriptor_ApiContainerService_RenderTemplateToFilesArtifact = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/RenderTemplateToFilesArtifact',
+  grpc.web.MethodType.UNARY,
+  proto.api_container_api.RenderTemplateToFilesArtifactArgs,
+  proto.api_container_api.RenderTemplateToFilesArtifactResponse,
+  /**
+   * @param {!proto.api_container_api.RenderTemplateToFilesArtifactArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.RenderTemplateToFilesArtifactResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.RenderTemplateToFilesArtifactArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.RenderTemplateToFilesArtifactResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.RenderTemplateToFilesArtifactResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.renderTemplateToFilesArtifact =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/RenderTemplateToFilesArtifact',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_RenderTemplateToFilesArtifact,
+      callback);
+};
+
+
+/**
+ * @param {!proto.api_container_api.RenderTemplateToFilesArtifactArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.api_container_api.RenderTemplateToFilesArtifactResponse>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.renderTemplateToFilesArtifact =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/RenderTemplateToFilesArtifact',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_RenderTemplateToFilesArtifact);
+};
+
+
 module.exports = proto.api_container_api;
 

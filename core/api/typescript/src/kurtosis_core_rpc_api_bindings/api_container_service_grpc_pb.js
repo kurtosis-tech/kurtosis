@@ -192,6 +192,28 @@ function deserialize_api_container_api_RemoveServiceResponse(buffer_arg) {
   return api_container_service_pb.RemoveServiceResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_RenderTemplateToFilesArtifactArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.RenderTemplateToFilesArtifactArgs)) {
+    throw new Error('Expected argument of type api_container_api.RenderTemplateToFilesArtifactArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_RenderTemplateToFilesArtifactArgs(buffer_arg) {
+  return api_container_service_pb.RenderTemplateToFilesArtifactArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_RenderTemplateToFilesArtifactResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.RenderTemplateToFilesArtifactResponse)) {
+    throw new Error('Expected argument of type api_container_api.RenderTemplateToFilesArtifactResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_RenderTemplateToFilesArtifactResponse(buffer_arg) {
+  return api_container_service_pb.RenderTemplateToFilesArtifactResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_RepartitionArgs(arg) {
   if (!(arg instanceof api_container_service_pb.RepartitionArgs)) {
     throw new Error('Expected argument of type api_container_api.RepartitionArgs');
@@ -575,6 +597,18 @@ storeFilesArtifactFromService: {
     requestDeserialize: deserialize_api_container_api_StoreFilesArtifactFromServiceArgs,
     responseSerialize: serialize_api_container_api_StoreFilesArtifactFromServiceResponse,
     responseDeserialize: deserialize_api_container_api_StoreFilesArtifactFromServiceResponse,
+  },
+  // Renders the template and its data to a files artifact in the Kurtosis File System
+renderTemplateToFilesArtifact: {
+    path: '/api_container_api.ApiContainerService/RenderTemplateToFilesArtifact',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.RenderTemplateToFilesArtifactArgs,
+    responseType: api_container_service_pb.RenderTemplateToFilesArtifactResponse,
+    requestSerialize: serialize_api_container_api_RenderTemplateToFilesArtifactArgs,
+    requestDeserialize: deserialize_api_container_api_RenderTemplateToFilesArtifactArgs,
+    responseSerialize: serialize_api_container_api_RenderTemplateToFilesArtifactResponse,
+    responseDeserialize: deserialize_api_container_api_RenderTemplateToFilesArtifactResponse,
   },
 };
 

@@ -893,3 +893,62 @@ export namespace StoreFilesArtifactFromServiceResponse {
   }
 }
 
+export class RenderTemplateToFilesArtifactArgs extends jspb.Message {
+  getTemplateAndDataByFilenameMap(): jspb.Map<string, RenderTemplateToFilesArtifactArgs.TemplateAndDataAsJsonString>;
+  clearTemplateAndDataByFilenameMap(): RenderTemplateToFilesArtifactArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RenderTemplateToFilesArtifactArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: RenderTemplateToFilesArtifactArgs): RenderTemplateToFilesArtifactArgs.AsObject;
+  static serializeBinaryToWriter(message: RenderTemplateToFilesArtifactArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RenderTemplateToFilesArtifactArgs;
+  static deserializeBinaryFromReader(message: RenderTemplateToFilesArtifactArgs, reader: jspb.BinaryReader): RenderTemplateToFilesArtifactArgs;
+}
+
+export namespace RenderTemplateToFilesArtifactArgs {
+  export type AsObject = {
+    templateAndDataByFilenameMap: Array<[string, RenderTemplateToFilesArtifactArgs.TemplateAndDataAsJsonString.AsObject]>,
+  }
+
+  export class TemplateAndDataAsJsonString extends jspb.Message {
+    getTemplate(): string;
+    setTemplate(value: string): TemplateAndDataAsJsonString;
+
+    getDataAsJson(): string;
+    setDataAsJson(value: string): TemplateAndDataAsJsonString;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): TemplateAndDataAsJsonString.AsObject;
+    static toObject(includeInstance: boolean, msg: TemplateAndDataAsJsonString): TemplateAndDataAsJsonString.AsObject;
+    static serializeBinaryToWriter(message: TemplateAndDataAsJsonString, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): TemplateAndDataAsJsonString;
+    static deserializeBinaryFromReader(message: TemplateAndDataAsJsonString, reader: jspb.BinaryReader): TemplateAndDataAsJsonString;
+  }
+
+  export namespace TemplateAndDataAsJsonString {
+    export type AsObject = {
+      template: string,
+      dataAsJson: string,
+    }
+  }
+
+}
+
+export class RenderTemplateToFilesArtifactResponse extends jspb.Message {
+  getUuid(): string;
+  setUuid(value: string): RenderTemplateToFilesArtifactResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RenderTemplateToFilesArtifactResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: RenderTemplateToFilesArtifactResponse): RenderTemplateToFilesArtifactResponse.AsObject;
+  static serializeBinaryToWriter(message: RenderTemplateToFilesArtifactResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RenderTemplateToFilesArtifactResponse;
+  static deserializeBinaryFromReader(message: RenderTemplateToFilesArtifactResponse, reader: jspb.BinaryReader): RenderTemplateToFilesArtifactResponse;
+}
+
+export namespace RenderTemplateToFilesArtifactResponse {
+  export type AsObject = {
+    uuid: string,
+  }
+}
+
