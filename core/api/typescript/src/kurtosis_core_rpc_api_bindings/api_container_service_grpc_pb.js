@@ -598,9 +598,9 @@ storeFilesArtifactFromService: {
     responseSerialize: serialize_api_container_api_StoreFilesArtifactFromServiceResponse,
     responseDeserialize: deserialize_api_container_api_StoreFilesArtifactFromServiceResponse,
   },
-  // Renders the template and its data to a files artifact in the Kurtosis File System
-renderTemplateToFilesArtifact: {
-    path: '/api_container_api.ApiContainerService/RenderTemplateToFilesArtifact',
+  // Renders the templates and their data to a files artifact in the Kurtosis File System
+renderTemplatesToFilesArtifact: {
+    path: '/api_container_api.ApiContainerService/RenderTemplatesToFilesArtifact',
     requestStream: false,
     responseStream: false,
     requestType: api_container_service_pb.RenderTemplatesToFilesArtifactArgs,

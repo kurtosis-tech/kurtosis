@@ -60,8 +60,8 @@ type ApiContainerServiceClient interface {
 	StoreWebFilesArtifact(ctx context.Context, in *StoreWebFilesArtifactArgs, opts ...grpc.CallOption) (*StoreWebFilesArtifactResponse, error)
 	// Tells the API container to copy a files artifact from a service to the Kurtosis File System
 	StoreFilesArtifactFromService(ctx context.Context, in *StoreFilesArtifactFromServiceArgs, opts ...grpc.CallOption) (*StoreFilesArtifactFromServiceResponse, error)
-	// Renders the template and its data to a files artifact in the Kurtosis File System
-	RenderTemplateToFilesArtifact(ctx context.Context, in *RenderTemplatesToFilesArtifactArgs, opts ...grpc.CallOption) (*RenderTemplatesToFilesArtifactResponse, error)
+	// Renders the templates and their data to a files artifact in the Kurtosis File System
+	RenderTemplatesToFilesArtifact(ctx context.Context, in *RenderTemplatesToFilesArtifactArgs, opts ...grpc.CallOption) (*RenderTemplatesToFilesArtifactResponse, error)
 }
 
 type apiContainerServiceClient struct {
@@ -234,9 +234,9 @@ func (c *apiContainerServiceClient) StoreFilesArtifactFromService(ctx context.Co
 	return out, nil
 }
 
-func (c *apiContainerServiceClient) RenderTemplateToFilesArtifact(ctx context.Context, in *RenderTemplatesToFilesArtifactArgs, opts ...grpc.CallOption) (*RenderTemplatesToFilesArtifactResponse, error) {
+func (c *apiContainerServiceClient) RenderTemplatesToFilesArtifact(ctx context.Context, in *RenderTemplatesToFilesArtifactArgs, opts ...grpc.CallOption) (*RenderTemplatesToFilesArtifactResponse, error) {
 	out := new(RenderTemplatesToFilesArtifactResponse)
-	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/RenderTemplateToFilesArtifact", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/RenderTemplatesToFilesArtifact", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -284,8 +284,8 @@ type ApiContainerServiceServer interface {
 	StoreWebFilesArtifact(context.Context, *StoreWebFilesArtifactArgs) (*StoreWebFilesArtifactResponse, error)
 	// Tells the API container to copy a files artifact from a service to the Kurtosis File System
 	StoreFilesArtifactFromService(context.Context, *StoreFilesArtifactFromServiceArgs) (*StoreFilesArtifactFromServiceResponse, error)
-	// Renders the template and its data to a files artifact in the Kurtosis File System
-	RenderTemplateToFilesArtifact(context.Context, *RenderTemplatesToFilesArtifactArgs) (*RenderTemplatesToFilesArtifactResponse, error)
+	// Renders the templates and their data to a files artifact in the Kurtosis File System
+	RenderTemplatesToFilesArtifact(context.Context, *RenderTemplatesToFilesArtifactArgs) (*RenderTemplatesToFilesArtifactResponse, error)
 	mustEmbedUnimplementedApiContainerServiceServer()
 }
 
@@ -347,8 +347,8 @@ func (UnimplementedApiContainerServiceServer) StoreWebFilesArtifact(context.Cont
 func (UnimplementedApiContainerServiceServer) StoreFilesArtifactFromService(context.Context, *StoreFilesArtifactFromServiceArgs) (*StoreFilesArtifactFromServiceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StoreFilesArtifactFromService not implemented")
 }
-func (UnimplementedApiContainerServiceServer) RenderTemplateToFilesArtifact(context.Context, *RenderTemplatesToFilesArtifactArgs) (*RenderTemplatesToFilesArtifactResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RenderTemplateToFilesArtifact not implemented")
+func (UnimplementedApiContainerServiceServer) RenderTemplatesToFilesArtifact(context.Context, *RenderTemplatesToFilesArtifactArgs) (*RenderTemplatesToFilesArtifactResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RenderTemplatesToFilesArtifact not implemented")
 }
 func (UnimplementedApiContainerServiceServer) mustEmbedUnimplementedApiContainerServiceServer() {}
 
@@ -687,20 +687,20 @@ func _ApiContainerService_StoreFilesArtifactFromService_Handler(srv interface{},
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApiContainerService_RenderTemplateToFilesArtifact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ApiContainerService_RenderTemplatesToFilesArtifact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RenderTemplatesToFilesArtifactArgs)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).RenderTemplateToFilesArtifact(ctx, in)
+		return srv.(ApiContainerServiceServer).RenderTemplatesToFilesArtifact(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api_container_api.ApiContainerService/RenderTemplateToFilesArtifact",
+		FullMethod: "/api_container_api.ApiContainerService/RenderTemplatesToFilesArtifact",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).RenderTemplateToFilesArtifact(ctx, req.(*RenderTemplatesToFilesArtifactArgs))
+		return srv.(ApiContainerServiceServer).RenderTemplatesToFilesArtifact(ctx, req.(*RenderTemplatesToFilesArtifactArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -785,8 +785,8 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ApiContainerService_StoreFilesArtifactFromService_Handler,
 		},
 		{
-			MethodName: "RenderTemplateToFilesArtifact",
-			Handler:    _ApiContainerService_RenderTemplateToFilesArtifact_Handler,
+			MethodName: "RenderTemplatesToFilesArtifact",
+			Handler:    _ApiContainerService_RenderTemplatesToFilesArtifact_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

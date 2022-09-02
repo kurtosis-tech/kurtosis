@@ -63,8 +63,8 @@ service ApiContainerService {
   // Tells the API container to copy a files artifact from a service to the Kurtosis File System
   rpc StoreFilesArtifactFromService(StoreFilesArtifactFromServiceArgs) returns (StoreFilesArtifactFromServiceResponse) {}
 
-  // Renders the template and its data to a files artifact in the Kurtosis File System
-  rpc RenderTemplateToFilesArtifact(RenderTemplatesToFilesArtifactArgs) returns (RenderTemplatesToFilesArtifactResponse) {}
+  // Renders the templates and their data to a files artifact in the Kurtosis File System
+  rpc RenderTemplatesToFilesArtifact(RenderTemplatesToFilesArtifactArgs) returns (RenderTemplatesToFilesArtifactResponse) {}
 }
 
 // ==============================================================================================
