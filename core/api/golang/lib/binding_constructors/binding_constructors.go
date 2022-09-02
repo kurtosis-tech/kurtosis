@@ -345,8 +345,18 @@ func NewStoreFilesArtifactFromServiceArgs(serviceId string, sourcePath string) *
 	return &kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs{ServiceId: serviceId, SourcePath: sourcePath}
 }
 
-
 // ==============================================================================================
 //                              Store Files Artifact From Service
 // ==============================================================================================
-func TEmp
+func NewTemplateAndDataAsJsonStrong(template string, dataAsJson string) *kurtosis_core_rpc_api_bindings.RenderTemplateToFilesArtifactArgs_TemplateAndDataAsJsonString {
+	return &kurtosis_core_rpc_api_bindings.RenderTemplateToFilesArtifactArgs_TemplateAndDataAsJsonString{
+		Template:   template,
+		DataAsJson: dataAsJson,
+	}
+}
+
+func NewRenderTemplatesToFilesArtifactArgs(templateAndDataByFilename map[string]*kurtosis_core_rpc_api_bindings.RenderTemplateToFilesArtifactArgs_TemplateAndDataAsJsonString) *kurtosis_core_rpc_api_bindings.RenderTemplateToFilesArtifactArgs {
+	return &kurtosis_core_rpc_api_bindings.RenderTemplateToFilesArtifactArgs{
+		TemplateAndDataByFilename: templateAndDataByFilename,
+	}
+}
