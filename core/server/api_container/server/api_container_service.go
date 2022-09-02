@@ -9,6 +9,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
@@ -23,10 +24,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/mholt/archiver"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"path"
 	"strings"
 	"text/template"
 	"time"
@@ -41,6 +45,12 @@ const (
 
 	// The string returned by the API if a service's public IP address doesn't exist
 	missingPublicIpAddrStr = ""
+
+	tempDirForRenderedTemplatesPrefix = "temp-dir-for-rendered-templates"
+
+	tempDirForCompressedRenderedTemplatesPrefix = "temp-dir-for-compressed-rendered-templates"
+
+	compressedRenderedTemplatesFilename = "compressed-rendered-templates.tgz"
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -539,10 +549,56 @@ func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context
 	return response, nil
 }
 
-func (apiService ApiContainerService) RenderTemplatesToFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse, error) {
-	for filename, templateAndDataAsJsonString := range args.TemplateAndDataByFilename {
-		parsedTemplate := template.ParseGlob(templateAndDataAsJsonString.Template)
+func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse, error) {
+	tempDirForRenderedTemplates, err := os.MkdirTemp("", tempDirForRenderedTemplatesPrefix)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating temp dir for rendered templates '%v'", tempDirForRenderedTemplates)
 	}
+	var filePathsToArchive []string
+	for filename, templateAndDataAsJsonString := range args.TemplateAndDataByFilename {
+		parsedTemplate, err := template.ParseGlob(templateAndDataAsJsonString.Template)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while parsing template for file '%v'", filename)
+		}
+		var templateData map[string]interface{}
+		err = json.Unmarshal(templateAndDataAsJsonString.DataAsJson, templateData)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while unmarshalling the template data json for file '%v'", filename)
+		}
+		renderedTemplateFilePath := path.Join(tempDirForRenderedTemplates, filename)
+		renderedTemplateFile, err := os.Create(renderedTemplateFilePath)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while creating temporary file to render template into for file '%v'.", renderedTemplateFile)
+		}
+		err = parsedTemplate.Execute(renderedTemplateFile, templateData)
+		if err !=nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while rendering template for file '%v'", filename)
+		}
+		filePathsToArchive = append(filePathsToArchive, renderedTemplateFilePath)
+	}
+
+	tempDirForCompressedRenderedTemplates, err := os.MkdirTemp("", tempDirForCompressedRenderedTemplatesPrefix)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,"Failed to create temporary directory '%v' for compression", tempDirForCompressedFiles)
+	}
+
+	compressedFilePath := path.Join(tempDirForCompressedRenderedTemplates, compressedRenderedTemplatesFilename)
+	if err = archiver.Archive(filePathsToArchive, compressedFilePath); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to compress rendered template files into one archive at '%v'", compressedFilePath)
+	}
+
+	content, err := os.Open(compressedFilePath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "There was an error in opening the compressed file '%v'", compressedFilePath)
+	}
+
+	filesArtifactUuId, err := apicService.filesArtifactStore.StoreFile(content)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred storing the file '%v' in the files artifact store", compressedFilePath)
+	}
+
+	response := &kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse{Uuid: string(filesArtifactUuId)}
+	return response, nil
 }
 
 // ====================================================================================================
