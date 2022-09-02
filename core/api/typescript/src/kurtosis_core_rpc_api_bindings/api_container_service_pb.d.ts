@@ -894,7 +894,7 @@ export namespace StoreFilesArtifactFromServiceResponse {
 }
 
 export class RenderTemplatesToFilesArtifactArgs extends jspb.Message {
-  getTemplateAndDataByFilenameMap(): jspb.Map<string, RenderTemplatesToFilesArtifactArgs.TemplateAndDataAsJsonString>;
+  getTemplateAndDataByFilenameMap(): jspb.Map<string, RenderTemplatesToFilesArtifactArgs.TemplateAndData>;
   clearTemplateAndDataByFilenameMap(): RenderTemplatesToFilesArtifactArgs;
 
   serializeBinary(): Uint8Array;
@@ -907,28 +907,30 @@ export class RenderTemplatesToFilesArtifactArgs extends jspb.Message {
 
 export namespace RenderTemplatesToFilesArtifactArgs {
   export type AsObject = {
-    templateAndDataByFilenameMap: Array<[string, RenderTemplatesToFilesArtifactArgs.TemplateAndDataAsJsonString.AsObject]>,
+    templateAndDataByFilenameMap: Array<[string, RenderTemplatesToFilesArtifactArgs.TemplateAndData.AsObject]>,
   }
 
-  export class TemplateAndDataAsJsonString extends jspb.Message {
+  export class TemplateAndData extends jspb.Message {
     getTemplate(): string;
-    setTemplate(value: string): TemplateAndDataAsJsonString;
+    setTemplate(value: string): TemplateAndData;
 
-    getDataAsJson(): string;
-    setDataAsJson(value: string): TemplateAndDataAsJsonString;
+    getDataAsJson(): Uint8Array | string;
+    getDataAsJson_asU8(): Uint8Array;
+    getDataAsJson_asB64(): string;
+    setDataAsJson(value: Uint8Array | string): TemplateAndData;
 
     serializeBinary(): Uint8Array;
-    toObject(includeInstance?: boolean): TemplateAndDataAsJsonString.AsObject;
-    static toObject(includeInstance: boolean, msg: TemplateAndDataAsJsonString): TemplateAndDataAsJsonString.AsObject;
-    static serializeBinaryToWriter(message: TemplateAndDataAsJsonString, writer: jspb.BinaryWriter): void;
-    static deserializeBinary(bytes: Uint8Array): TemplateAndDataAsJsonString;
-    static deserializeBinaryFromReader(message: TemplateAndDataAsJsonString, reader: jspb.BinaryReader): TemplateAndDataAsJsonString;
+    toObject(includeInstance?: boolean): TemplateAndData.AsObject;
+    static toObject(includeInstance: boolean, msg: TemplateAndData): TemplateAndData.AsObject;
+    static serializeBinaryToWriter(message: TemplateAndData, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): TemplateAndData;
+    static deserializeBinaryFromReader(message: TemplateAndData, reader: jspb.BinaryReader): TemplateAndData;
   }
 
-  export namespace TemplateAndDataAsJsonString {
+  export namespace TemplateAndData {
     export type AsObject = {
       template: string,
-      dataAsJson: string,
+      dataAsJson: Uint8Array | string,
     }
   }
 

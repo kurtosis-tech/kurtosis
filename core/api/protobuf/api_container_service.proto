@@ -450,16 +450,16 @@ message StoreFilesArtifactFromServiceResponse {
 
 message RenderTemplatesToFilesArtifactArgs {
   // An object representing the template and the data that needs to be inserted as strings
-  message TemplateAndDataAsJsonString {
+  message TemplateAndData {
     // A string representation of the template file
     string template = 1;
 
-    // A string representation of the data to be written into the template as json
-    string data_as_json = 2;
+    // A json bytes representation of the data to be written to template
+    bytes data_as_json = 2;
   }
 
   // A map of template and its data indexed by the name of the file it will be written into.
-  map <string, TemplateAndDataAsJsonString> template_and_data_by_filename = 1;
+  map <string, TemplateAndData> template_and_data_by_filename = 1;
 }
 
 message RenderTemplatesToFilesArtifactResponse {
