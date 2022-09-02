@@ -554,22 +554,27 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating temp dir for rendered templates '%v'", tempDirForRenderedTemplates)
 	}
+
 	var filePathsToArchive []string
 	for filename, templateAndDataAsJsonString := range args.TemplatesAndDataByFilename {
 		parsedTemplate, err := template.ParseGlob(templateAndDataAsJsonString.Template)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while parsing template for file '%v'", filename)
 		}
+
 		var templateData map[string]interface{}
 		err = json.Unmarshal(templateAndDataAsJsonString.DataAsJson, templateData)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while unmarshalling the template data json for file '%v'", filename)
 		}
+
 		renderedTemplateFilePath := path.Join(tempDirForRenderedTemplates, filename)
 		renderedTemplateFile, err := os.Create(renderedTemplateFilePath)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while creating temporary file to render template into for file '%v'.", renderedTemplateFile)
 		}
+		defer renderedTemplateFile.Close()
+
 		err = parsedTemplate.Execute(renderedTemplateFile, templateData)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while rendering template for file '%v'", filename)
@@ -587,12 +592,13 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 		return nil, stacktrace.Propagate(err, "Failed to compress rendered template files into one archive at '%v'", compressedFilePath)
 	}
 
-	content, err := os.Open(compressedFilePath)
+	compressedFile, err := os.Open(compressedFilePath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "There was an error in opening the compressed file '%v'", compressedFilePath)
 	}
+	defer compressedFile.Close()
 
-	filesArtifactUuId, err := apicService.filesArtifactStore.StoreFile(content)
+	filesArtifactUuId, err := apicService.filesArtifactStore.StoreFile(compressedFile)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred storing the file '%v' in the files artifact store", compressedFilePath)
 	}
