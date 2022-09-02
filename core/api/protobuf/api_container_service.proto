@@ -459,7 +459,7 @@ message RenderTemplatesToFilesArtifactArgs {
   }
 
   // A map of template and its data indexed by the name of the file it will be written into.
-  map <string, TemplateAndData> template_and_data_by_filename = 1;
+  map <string, TemplateAndData> templates_and_data_by_filename = 1;
 }
 
 message RenderTemplatesToFilesArtifactResponse {

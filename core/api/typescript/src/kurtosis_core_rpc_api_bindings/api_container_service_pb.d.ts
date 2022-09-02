@@ -894,8 +894,8 @@ export namespace StoreFilesArtifactFromServiceResponse {
 }
 
 export class RenderTemplatesToFilesArtifactArgs extends jspb.Message {
-  getTemplateAndDataByFilenameMap(): jspb.Map<string, RenderTemplatesToFilesArtifactArgs.TemplateAndData>;
-  clearTemplateAndDataByFilenameMap(): RenderTemplatesToFilesArtifactArgs;
+  getTemplatesAndDataByFilenameMap(): jspb.Map<string, RenderTemplatesToFilesArtifactArgs.TemplateAndData>;
+  clearTemplatesAndDataByFilenameMap(): RenderTemplatesToFilesArtifactArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RenderTemplatesToFilesArtifactArgs.AsObject;
@@ -907,7 +907,7 @@ export class RenderTemplatesToFilesArtifactArgs extends jspb.Message {
 
 export namespace RenderTemplatesToFilesArtifactArgs {
   export type AsObject = {
-    templateAndDataByFilenameMap: Array<[string, RenderTemplatesToFilesArtifactArgs.TemplateAndData.AsObject]>,
+    templatesAndDataByFilenameMap: Array<[string, RenderTemplatesToFilesArtifactArgs.TemplateAndData.AsObject]>,
   }
 
   export class TemplateAndData extends jspb.Message {

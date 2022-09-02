@@ -7535,7 +7535,7 @@ proto.api_container_api.RenderTemplatesToFilesArtifactArgs.prototype.toObject = 
  */
 proto.api_container_api.RenderTemplatesToFilesArtifactArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
-    templateAndDataByFilenameMap: (f = msg.getTemplateAndDataByFilenameMap()) ? f.toObject(includeInstance, proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData.toObject) : []
+    templatesAndDataByFilenameMap: (f = msg.getTemplatesAndDataByFilenameMap()) ? f.toObject(includeInstance, proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData.toObject) : []
   };
 
   if (includeInstance) {
@@ -7573,7 +7573,7 @@ proto.api_container_api.RenderTemplatesToFilesArtifactArgs.deserializeBinaryFrom
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = msg.getTemplateAndDataByFilenameMap();
+      var value = msg.getTemplatesAndDataByFilenameMap();
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData.deserializeBinaryFromReader, "", new proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData());
          });
@@ -7607,7 +7607,7 @@ proto.api_container_api.RenderTemplatesToFilesArtifactArgs.prototype.serializeBi
  */
 proto.api_container_api.RenderTemplatesToFilesArtifactArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getTemplateAndDataByFilenameMap(true);
+  f = message.getTemplatesAndDataByFilenameMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData.serializeBinaryToWriter);
   }
@@ -7799,12 +7799,12 @@ proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData.proto
 
 
 /**
- * map<string, TemplateAndData> template_and_data_by_filename = 1;
+ * map<string, TemplateAndData> templates_and_data_by_filename = 1;
  * @param {boolean=} opt_noLazyCreate Do not create the map if
  * empty, instead returning `undefined`
  * @return {!jspb.Map<string,!proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData>}
  */
-proto.api_container_api.RenderTemplatesToFilesArtifactArgs.prototype.getTemplateAndDataByFilenameMap = function(opt_noLazyCreate) {
+proto.api_container_api.RenderTemplatesToFilesArtifactArgs.prototype.getTemplatesAndDataByFilenameMap = function(opt_noLazyCreate) {
   return /** @type {!jspb.Map<string,!proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData>} */ (
       jspb.Message.getMapField(this, 1, opt_noLazyCreate,
       proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData));
@@ -7815,8 +7815,8 @@ proto.api_container_api.RenderTemplatesToFilesArtifactArgs.prototype.getTemplate
  * Clears values from the map. The map will be non-null.
  * @return {!proto.api_container_api.RenderTemplatesToFilesArtifactArgs} returns this
  */
-proto.api_container_api.RenderTemplatesToFilesArtifactArgs.prototype.clearTemplateAndDataByFilenameMap = function() {
-  this.getTemplateAndDataByFilenameMap().clear();
+proto.api_container_api.RenderTemplatesToFilesArtifactArgs.prototype.clearTemplatesAndDataByFilenameMap = function() {
+  this.getTemplatesAndDataByFilenameMap().clear();
   return this;};
 
 
