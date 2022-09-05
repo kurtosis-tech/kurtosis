@@ -70,8 +70,7 @@ func (store FilesArtifactStore) RemoveFile(filesArtifactUuid FilesArtifactUUID) 
 		".",
 	)
 
-	err := store.fileCache.RemoveFile(filename)
-	if err != nil {
+	if err := store.fileCache.RemoveFile(filename); err != nil {
 		return stacktrace.Propagate(err, "There was an error in removing '%v' from the file store", filename)
 	}
 
