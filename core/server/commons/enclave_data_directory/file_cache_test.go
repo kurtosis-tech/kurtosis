@@ -87,7 +87,7 @@ func TestFileCache_FileDeletedOnReaderError(t *testing.T) {
 	assert.Equal(t, 0, len(files))
 }
 
-func TestFileCache_RemoveFileFromCacheThatDoesntExists(t *testing.T) {
+func TestFileCache_RemoveFileFailsForNonExistingKeys(t *testing.T) {
 	fileCache := getTestFileCache(t)
 	testKey := "test-key"
 
