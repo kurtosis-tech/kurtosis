@@ -62,3 +62,18 @@ func (store FilesArtifactStore) GetFile(filesArtifactUuid FilesArtifactUUID) (*E
 	}
 	return enclaveDataDirFile, nil
 }
+
+// RemoveFile: Remove the file by uuid
+func (store FilesArtifactStore) RemoveFile(filesArtifactUuid FilesArtifactUUID) error {
+	filename := strings.Join(
+		[]string{string(filesArtifactUuid), artifactExtension},
+		".",
+	)
+
+	err := store.fileCache.RemoveFile(filename)
+	if err != nil {
+		return stacktrace.Propagate(err, "There was an error in removing '%v' from the file store", filename)
+	}
+
+	return nil
+}

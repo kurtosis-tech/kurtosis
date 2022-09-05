@@ -6,13 +6,13 @@
 package enclave_data_directory
 
 import (
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path"
-	"testing"
 	"strings"
-	"github.com/kurtosis-tech/stacktrace"
+	"testing"
 )
 
 type failedReader struct {}
@@ -22,7 +22,7 @@ func (reader failedReader) Read(b []byte) (int, error) {
 		 "You are not supposed to see this test failure. Please contact developers if you are.")
 }
 
-func TestFileCache_AddAndGetArtifact(t *testing.T) {
+func TestFileCache_AddAndGetAndRemoveArtifact(t *testing.T) {
 	fileCache := getTestFileCache(t)
 	testKey := "test-key"
 	testContents := "test-file-contents"
@@ -46,6 +46,13 @@ func TestFileCache_AddAndGetArtifact(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, addedFileObj.GetAbsoluteFilepath(), retrievedFileObj.GetAbsoluteFilepath())
 	assert.Equal(t, addedFileObj.GetFilepathRelativeToDataDirRoot(), retrievedFileObj.GetFilepathRelativeToDataDirRoot())
+
+	// Verify that remove file works on the key and removes the file
+	err = fileCache.RemoveFile(testKey)
+	assert.Nil(t, err)
+	_, err = os.Stat(addedFileObj.GetAbsoluteFilepath())
+	assert.NotNil(t, err)
+	assert.True(t, os.IsNotExist(err))
 }
 
 func TestFileCache_GetErrorsOnNonexistentKey(t *testing.T) {
@@ -78,6 +85,14 @@ func TestFileCache_FileDeletedOnReaderError(t *testing.T) {
 	files, err := ioutil.ReadDir(fileCache.absoluteDirpath)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(files))
+}
+
+func TestFileCache_RemoveFileFromCacheThatDoesntExists(t *testing.T) {
+	fileCache := getTestFileCache(t)
+	testKey := "test-key"
+
+	err := fileCache.RemoveFile(testKey)
+	assert.NotNil(t, err)
 }
 
 func getTestFileCache(t *testing.T) *FileCache {

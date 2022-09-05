@@ -83,6 +83,22 @@ func (cache *FileCache) GetFile(key string) (*EnclaveDataDirFile, error) {
 	return fileObj, nil
 }
 
+func (cache *FileCache) RemoveFile(key string) error {
+	cache.mutex.Lock()
+	defer cache.mutex.Unlock()
+
+	fileObj := cache.getFileObjFromKey(key)
+	if _, err := os.Stat(fileObj.absoluteFilepath); os.IsNotExist(err) {
+		return stacktrace.NewError("No file with key '%v' exists in the cache", key)
+	}
+
+	if err := os.Remove(fileObj.absoluteFilepath); err != nil {
+		return stacktrace.Propagate(err, "There was an error in removing file with key '%v' from cache", key)
+	}
+
+	return nil
+}
+
 func (cache *FileCache) getFileObjFromKey(key string) *EnclaveDataDirFile {
 	absoluteFilepath := path.Join(cache.absoluteDirpath, key)
 	relativeFilepath := path.Join(cache.dirpathRelativeToDataDirRoot, key)

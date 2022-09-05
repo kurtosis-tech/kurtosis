@@ -6,6 +6,7 @@
 package enclave_data_directory
 
 import (
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"os"
@@ -80,6 +81,33 @@ func TestFileStore_StoreFilesUniquely(t *testing.T){
 	anotherFile, readErr := ioutil.ReadFile(anotherFilepath.absoluteFilepath)
 	require.Nil(t, readErr)
 	require.NotEqual(t, file, anotherFile)
+}
+
+func TestFileStore_RemoveFileRemovesFileFromDisk(t *testing.T) {
+	fileStore := getTestFileStore(t)
+	testContent := "Long Live Kurtosis!"
+	reader := strings.NewReader(testContent)
+	uuid, err := fileStore.StoreFile(reader)
+	require.Nil(t, err)
+
+	enclaveDataFile, err := fileStore.GetFile(uuid)
+	require.Nil(t, err)
+
+	err = fileStore.RemoveFile(uuid)
+	require.Nil(t, err)
+
+	_, err = os.Stat(enclaveDataFile.absoluteFilepath)
+	require.NotNil(t, err)
+	require.True(t, os.IsNotExist(err))
+}
+
+func TestFileStore_RemoveFileFailsForNonExistentUuid(t *testing.T) {
+	fileStore := getTestFileStore(t)
+	nonExistentUuid, err := newFilesArtifactUUID()
+	assert.Nil(t, err)
+
+	err = fileStore.RemoveFile(nonExistentUuid)
+	require.NotNil(t, err)
 }
 
 func getTestFileStore(t *testing.T) *FilesArtifactStore {
