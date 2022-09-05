@@ -201,7 +201,7 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating an engine object from container with GUID '%v'", containerId)
 	}
 
-	killCentralizedLogsComponentsContainersAndVolumesFunc, err := createCentralizedLogsComponents(
+	killCentralizedLogsComponentsContainersFunc, err := createCentralizedLogsComponents(
 		ctx,
 		engineGuid,
 		targetNetworkId,
@@ -215,7 +215,7 @@ func CreateEngine(
 	shouldKillCentralizedLogsComponentsContainers := true
 	defer func() {
 		if shouldKillCentralizedLogsComponentsContainers {
-			killCentralizedLogsComponentsContainersAndVolumesFunc()
+			killCentralizedLogsComponentsContainersFunc()
 		}
 	}()
 
@@ -239,7 +239,7 @@ func createCentralizedLogsComponents(
 
 	logsDatabaseContainerConfigProvider := loki.CreateLokiContainerConfigProviderForKurtosis()
 
-	logsDatabaseHost, logsDatabasePort, killLogsDatabaseContainerAndVolumeFunc, err := createLogsDatabaseContainer(
+	logsDatabaseHost, logsDatabasePort, killLogsDatabaseContainerFunc, err := createLogsDatabaseContainer(
 		ctx,
 		engineGuid,
 		targetNetworkId,
@@ -255,16 +255,16 @@ func createCentralizedLogsComponents(
 			targetNetworkId,
 		)
 	}
-	shouldKillLogsDatabaseContainerAndVolume := true
+	shouldKillLogsDatabaseContainer := true
 	defer func() {
-		if shouldKillLogsDatabaseContainerAndVolume {
-			killLogsDatabaseContainerAndVolumeFunc()
+		if shouldKillLogsDatabaseContainer {
+			killLogsDatabaseContainerFunc()
 		}
 	}()
 
 	logsCollectorContainerConfigProvider := fluentbit.CreateFluentbitContainerConfigProviderForKurtosis(logsDatabaseHost, logsDatabasePort, logsCollectorHttpPortNumber)
 
-	killLogsCollectorContainerAndVolumeFunc, err := createLogsCollectorContainer(
+	killLogsCollectorContainerFunc, err := createLogsCollectorContainer(
 		ctx,
 		engineGuid,
 		targetNetworkId,
@@ -281,13 +281,13 @@ func createCentralizedLogsComponents(
 		)
 	}
 
-	killCentralizedLogsComponentsContainersAndVolumesFunc := func() {
-		killLogsDatabaseContainerAndVolumeFunc()
-		killLogsCollectorContainerAndVolumeFunc()
+	killCentralizedLogsComponentsContainersFunc := func() {
+		killLogsDatabaseContainerFunc()
+		killLogsCollectorContainerFunc()
 	}
 
-	shouldKillLogsDatabaseContainerAndVolume = false
-	return killCentralizedLogsComponentsContainersAndVolumesFunc, nil
+	shouldKillLogsDatabaseContainer = false
+	return killCentralizedLogsComponentsContainersFunc, nil
 }
 
 func createLogsDatabaseContainer(
@@ -361,22 +361,15 @@ func createLogsDatabaseContainer(
 				err)
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually stop the logs database server with GUID '%v' and Docker container ID '%v'!!!!!!", engineGuid, containerId)
 		}
-		if err := dockerManager.RemoveVolume(ctx, volumeName); err != nil {
-			logrus.Errorf(
-				"Launching the logs database server with GUID '%v' and container ID '%v' didn't complete successfully so we "+
-					"tried to remove the associated volume we started, but doing so exited with an error:\n%v",
-				engineGuid,
-				containerId,
-				err)
-			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs database volume '%v'!!!!!!", volumeName)
-		}
 	}
-	shouldKillLogsDbContainerAndVolume := true
+	shouldKillLogsDbContainer := true
 	defer func() {
-		if shouldKillLogsDbContainerAndVolume {
+		if shouldKillLogsDbContainer {
 			killContainerFunc()
 		}
 	}()
+	//We do not delete the volume because the volume could already exist from previous engine executions
+	//for this reason the logs database volume creation has to be idempotent, we ALWAYS want to create it if it doesn't exist, no matter what
 
 	if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
 		ctx,
@@ -394,7 +387,7 @@ func createLogsDatabaseContainer(
 		return "", 0, nil, stacktrace.Propagate(err, "An error occurred ")
 	}
 
-	shouldKillLogsDbContainerAndVolume = false
+	shouldKillLogsDbContainer = false
 	return logsDatabaseIP, privateHttpPortSpec.GetNumber(), killContainerFunc, nil
 }
 
@@ -473,15 +466,6 @@ func createLogsCollectorContainer(
 				err)
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually stop the logs controller server for engine with GUID '%v' and Docker container ID '%v'!!!!!!", engineGuid, containerId)
 		}
-		if err := dockerManager.RemoveVolume(ctx, volumeName); err != nil {
-			logrus.Errorf(
-				"Launching the logs controller server for engine with GUID '%v' and container ID '%v' didn't complete successfully so we "+
-					"tried to remove the associated volume we started, but doing so exited with an error:\n%v",
-				engineGuid,
-				containerId,
-				err)
-			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector volume '%v'!!!!!!", volumeName)
-		}
 	}
 	shouldKillLogsCollectorContainer := true
 	defer func() {
@@ -489,6 +473,7 @@ func createLogsCollectorContainer(
 			killContainerFunc()
 		}
 	}()
+	//We can't remove the volume because the container is killed not destroyed, so it will still mounted to the volume
 
 	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(privateHttpPortSpec.GetNumber())
 
