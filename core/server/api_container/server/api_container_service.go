@@ -579,26 +579,15 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 		filePathsToArchive = append(filePathsToArchive, destinationFilepath)
 	}
 
-	compressedFile, err := os.CreateTemp("", compressedRenderedTemplatesFilenamePattern)
-	if err!= nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating temporary file to archive rendered templates")
-	}
-	compressedFilename := compressedFile.Name()
-	// We close the file immediately as the archiver creates a new file handle to the same file
-	if err = compressedFile.Close(); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while closing the temporary archive file '%v'", compressedFilename)
-	}
-	defer os.Remove(compressedFilename)
-
-	tarArchiver := archiver.NewTarGz()
-	tarArchiver.OverwriteExisting = true
-	if err = tarArchiver.Archive(filePathsToArchive, compressedFilename) ; err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while archiving the rendered template files to archive '%v'", compressedFilename)
-	}
-
-	compressedFile, err = os.Open(compressedFilename)
+	compressedFilepath, err := compressFilesToTemporaryArchive(filePathsToArchive)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while opening the compressed file '%v'", compressedFilename)
+		return nil, stacktrace.Propagate(err, "There was an error archiving rendered templates to a temporary file")
+	}
+	os.Remove(compressedFilepath)
+
+	compressedFile, err := os.Open(compressedFilepath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while opening the compressed file '%v'", compressedFilepath)
 	}
 	defer compressedFile.Close()
 
@@ -837,4 +826,20 @@ func renderTemplateToFile(templateAsAString string, templateData interface{}, de
 		return stacktrace.Propagate(err, "An error occurred while writing the rendered template to destination '%v'", destinationFilepath)
 	}
 	return nil
+}
+
+func compressFilesToTemporaryArchive(filePathsToArchive []string) (string, error) {
+	compressedFile, err := os.CreateTemp("", compressedRenderedTemplatesFilenamePattern)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while creating temporary file to archive rendered templates")
+	}
+	defer compressedFile.Close()
+
+	compressedFilepath := compressedFile.Name()
+	tarArchiver := archiver.NewTarGz()
+	tarArchiver.OverwriteExisting = true
+	if err = tarArchiver.Archive(filePathsToArchive, compressedFilepath); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while archiving the rendered template files to '%v'", compressedFilepath)
+	}
+	return compressedFilepath, nil
 }
