@@ -602,7 +602,6 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 	}()
 
 	response := &kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse{Uuid: string(filesArtifactUuId)}
-
 	shouldDeleteFilesArtifact = false
 	return response, nil
 }
