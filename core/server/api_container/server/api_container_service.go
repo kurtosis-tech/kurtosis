@@ -46,6 +46,8 @@ const (
 	// The string returned by the API if a service's public IP address doesn't exist
 	missingPublicIpAddrStr = ""
 
+	folderPermission = 0755
+
 	tempDirForRenderedTemplatesPrefix = "temp-dir-for-rendered-templates"
 
 	tempDirForCompressedRenderedTemplatesPrefix = "temp-dir-for-compressed-rendered-templates"
@@ -568,9 +570,15 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 		}
 
 		destinationFilepath := path.Join(tempDirForRenderedTemplates, destinationRelFilepath)
+		destinationFileDir := path.Dir(destinationFilepath)
+		if err = os.MkdirAll(destinationFileDir, folderPermission); err != nil {
+			return nil, stacktrace.Propagate(err, "There was an error in creating the parent directory '%v' to write the file '%v' into.", destinationFileDir, destinationRelFilepath)
+		}
+
 		if err = renderTemplateToFile(templateAsAString, templateData, destinationFilepath); err != nil {
 			return nil, stacktrace.Propagate(err, "There was an error in rendering template for file '%v'", destinationRelFilepath)
 		}
+
 		filePathsToArchive = append(filePathsToArchive, destinationFilepath)
 	}
 
