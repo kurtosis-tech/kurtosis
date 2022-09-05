@@ -815,7 +815,7 @@ func renderTemplateToFile(templateAsAString string, templateData map[string]inte
 	}
 	defer renderedTemplateFile.Close()
 
-	if parsedTemplate.Execute(renderedTemplateFile, templateData) != nil {
+	if err = parsedTemplate.Execute(renderedTemplateFile, templateData) ; err != nil {
 		return stacktrace.Propagate(err, "An error occurred while writing the rendered template to destination '%v'", destinationFilepath)
 	}
 	return nil
