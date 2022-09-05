@@ -826,7 +826,7 @@ func renderTemplateToFile(templateAsAString string, templateData interface{}, de
 	}
 	defer renderedTemplateFile.Close()
 
-	if err = parsedTemplate.Execute(renderedTemplateFile, templateData) ; err != nil {
+	if err = parsedTemplate.Execute(renderedTemplateFile, templateData); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while writing the rendered template to destination '%v'", destinationFilepath)
 	}
 	return nil
@@ -837,9 +837,9 @@ func compressDirToTemporaryTarGzFile(tempDirForRenderedTemplates string) (string
 	// the list of path will contain absolute paths to all files & dirs in the temp dir
 	// this allows us to preserve the intended nesting
 	var pathsToArchive []string
-	filesInTempDirForRenderedTemplates, err:= os.ReadDir(tempDirForRenderedTemplates)
+	filesInTempDirForRenderedTemplates, err := os.ReadDir(tempDirForRenderedTemplates)
 	if err != nil {
-		return "", stacktrace.Propagate(err,"There was an error in reading the contents of the temp dir for rendered templates '%v'", tempDirForRenderedTemplates)
+		return "", stacktrace.Propagate(err, "There was an error in reading the contents of the temp dir for rendered templates '%v'", tempDirForRenderedTemplates)
 	}
 	for _, fileInTempDirForRenderedTemplates := range filesInTempDirForRenderedTemplates {
 		pathToArchive := path.Join(tempDirForRenderedTemplates, fileInTempDirForRenderedTemplates.Name())

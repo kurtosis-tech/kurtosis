@@ -2356,8 +2356,7 @@ type RenderTemplatesToFilesArtifactArgs struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A map of template and its data indexed by the path of the file relative to the root of the it
-	// files artifact it will be written into.
+	// A map of template and its data by the path of the file relative to the root of the files artifact it will be rendered into.
 	TemplatesAndDataByDestinationRelFilepath map[string]*RenderTemplatesToFilesArtifactArgs_TemplateAndData `protobuf:"bytes,1,rep,name=templates_and_data_by_destination_rel_filepath,json=templatesAndDataByDestinationRelFilepath,proto3" json:"templates_and_data_by_destination_rel_filepath,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -2448,7 +2447,7 @@ func (x *RenderTemplatesToFilesArtifactResponse) GetUuid() string {
 	return ""
 }
 
-// An object representing the template and the data that needs to be inserted as strings
+// An object representing the template and the data that needs to be inserted
 type RenderTemplatesToFilesArtifactArgs_TemplateAndData struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
