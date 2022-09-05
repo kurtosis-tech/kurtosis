@@ -578,7 +578,7 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "There was an error archiving rendered templates to a temporary file")
 	}
-	os.Remove(compressedFilepath)
+	defer os.Remove(compressedFilepath)
 
 	compressedFile, err := os.Open(compressedFilepath)
 	if err != nil {
