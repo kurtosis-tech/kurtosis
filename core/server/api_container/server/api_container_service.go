@@ -596,7 +596,7 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 	defer func() {
 		if shouldDeleteFilesArtifact {
 			if err = apicService.filesArtifactStore.RemoveFile(filesArtifactUuId); err != nil {
-				logrus.Errorf("We tried to clean up the files artifact '%v' we had stored in the files artifact but failed:\n%v", filesArtifactUuId, err)
+				logrus.Errorf("We tried to clean up the files artifact '%v' we had stored but failed:\n%v", filesArtifactUuId, err)
 			}
 		}
 	}()
