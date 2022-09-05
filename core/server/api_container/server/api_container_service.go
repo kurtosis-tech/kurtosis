@@ -50,8 +50,6 @@ const (
 
 	tempDirForRenderedTemplatesPrefix = "temp-dir-for-rendered-templates"
 
-	tempDirForCompressedRenderedTemplatesPrefix = "temp-dir-for-compressed-rendered-templates"
-
 	compressedRenderedTemplatesFilenamePattern = "compressed-rendered-templates-*.tgz"
 )
 
