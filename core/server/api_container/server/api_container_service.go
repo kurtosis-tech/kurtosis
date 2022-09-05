@@ -571,11 +571,6 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 		}
 
 		destinationFilepath := path.Join(tempDirForRenderedTemplates, destinationRelFilepath)
-		destinationFileDir := path.Dir(destinationFilepath)
-		if err = os.MkdirAll(destinationFileDir, folderPermission); err != nil {
-			return nil, stacktrace.Propagate(err, "There was an error in creating the parent directory '%v' to write the file '%v' into.", destinationFileDir, destinationRelFilepath)
-		}
-
 		if err = renderTemplateToFile(templateAsAString, templateData, destinationFilepath); err != nil {
 			return nil, stacktrace.Propagate(err, "There was an error in rendering template for file '%v'", destinationRelFilepath)
 		}
@@ -816,6 +811,12 @@ func renderTemplateToFile(templateAsAString string, templateData interface{}, de
 	parsedTemplate, err := template.New(path.Base(destinationFilepath)).Parse(templateAsAString)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred in parsing the template string '%v'", destinationFilepath)
+	}
+
+	// Creat all parent directories to account for nesting
+	destinationFileDir := path.Dir(destinationFilepath)
+	if err = os.MkdirAll(destinationFileDir, folderPermission); err != nil {
+		return stacktrace.Propagate(err, "There was an error in creating the parent directory '%v' to write the file '%v' into.", destinationFileDir, destinationFilepath)
 	}
 
 	renderedTemplateFile, err := os.Create(destinationFilepath)
