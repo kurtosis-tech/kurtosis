@@ -344,3 +344,25 @@ func NewStoreWebFilesArtifactArgs(url string) *kurtosis_core_rpc_api_bindings.St
 func NewStoreFilesArtifactFromServiceArgs(serviceId string, sourcePath string) *kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs {
 	return &kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs{ServiceId: serviceId, SourcePath: sourcePath}
 }
+
+// ==============================================================================================
+//                              Render Templates To Files Artifact
+// ==============================================================================================
+func NewTemplateAndData(template string, dataAsJson string) *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData {
+	return &kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
+		Template:   template,
+		DataAsJson: dataAsJson,
+	}
+}
+
+func NewRenderTemplatesToFilesArtifactArgs(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData) *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs {
+	return &kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs{
+		TemplatesAndDataByDestinationRelFilepath: templatesAndDataByDestinationRelFilepath,
+	}
+}
+
+func NewRenderTemplatesToFilesArtifactResponse(filesArtifactUuid string) *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse {
+	return &kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse{
+		Uuid: filesArtifactUuid,
+	}
+}

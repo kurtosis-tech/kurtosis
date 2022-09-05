@@ -82,6 +82,32 @@ func TestFileStore_StoreFilesUniquely(t *testing.T){
 	require.NotEqual(t, file, anotherFile)
 }
 
+func TestFileStore_RemoveFileRemovesFileFromDisk(t *testing.T) {
+	fileStore := getTestFileStore(t)
+	testContent := "Long Live Kurtosis!"
+	reader := strings.NewReader(testContent)
+	uuid, err := fileStore.StoreFile(reader)
+	require.Nil(t, err)
+
+	enclaveDataFile, err := fileStore.GetFile(uuid)
+	require.Nil(t, err)
+
+	err = fileStore.RemoveFile(uuid)
+	require.Nil(t, err)
+
+	_, err = os.Stat(enclaveDataFile.absoluteFilepath)
+	require.NotNil(t, err)
+	require.True(t, os.IsNotExist(err))
+}
+
+func TestFileStore_RemoveFileFailsForNonExistentUuid(t *testing.T) {
+	fileStore := getTestFileStore(t)
+	nonExistentUuid, err := newFilesArtifactUUID()
+
+	err = fileStore.RemoveFile(nonExistentUuid)
+	require.NotNil(t, err)
+}
+
 func getTestFileStore(t *testing.T) *FilesArtifactStore {
 	absDirpath, err := ioutil.TempDir("", "")
 	require.Nil(t, err)

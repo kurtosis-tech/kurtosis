@@ -62,6 +62,9 @@ service ApiContainerService {
 
   // Tells the API container to copy a files artifact from a service to the Kurtosis File System
   rpc StoreFilesArtifactFromService(StoreFilesArtifactFromServiceArgs) returns (StoreFilesArtifactFromServiceResponse) {}
+
+  // Renders the templates and their data to a files artifact in the Kurtosis File System
+  rpc RenderTemplatesToFilesArtifact(RenderTemplatesToFilesArtifactArgs) returns (RenderTemplatesToFilesArtifactResponse) {}
 }
 
 // ==============================================================================================
@@ -437,6 +440,29 @@ message StoreFilesArtifactFromServiceArgs {
 }
 
 message StoreFilesArtifactFromServiceResponse {
+  // UUID of the files artifact, for use when referencing it in the future
+  string uuid = 1;
+}
+
+// ==============================================================================================
+//                               Render Templates To Files Artifact
+// ==============================================================================================
+
+message RenderTemplatesToFilesArtifactArgs {
+  // An object representing the template and the data that needs to be inserted
+  message TemplateAndData {
+    // A string representation of the template file
+    string template = 1;
+
+    // A json string representation of the data to be written to template
+    string data_as_json = 2;
+  }
+
+  // A map of template and its data by the path of the file relative to the root of the files artifact it will be rendered into.
+  map <string, TemplateAndData> templates_and_data_by_destination_rel_filepath = 1;
+}
+
+message RenderTemplatesToFilesArtifactResponse {
   // UUID of the files artifact, for use when referencing it in the future
   string uuid = 1;
 }

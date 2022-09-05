@@ -26,6 +26,7 @@ interface IApiContainerServiceService extends grpc.ServiceDefinition<grpc.Untype
   downloadFilesArtifact: grpc.MethodDefinition<api_container_service_pb.DownloadFilesArtifactArgs, api_container_service_pb.DownloadFilesArtifactResponse>;
   storeWebFilesArtifact: grpc.MethodDefinition<api_container_service_pb.StoreWebFilesArtifactArgs, api_container_service_pb.StoreWebFilesArtifactResponse>;
   storeFilesArtifactFromService: grpc.MethodDefinition<api_container_service_pb.StoreFilesArtifactFromServiceArgs, api_container_service_pb.StoreFilesArtifactFromServiceResponse>;
+  renderTemplatesToFilesArtifact: grpc.MethodDefinition<api_container_service_pb.RenderTemplatesToFilesArtifactArgs, api_container_service_pb.RenderTemplatesToFilesArtifactResponse>;
 }
 
 export const ApiContainerServiceService: IApiContainerServiceService;
@@ -49,6 +50,7 @@ export interface IApiContainerServiceServer extends grpc.UntypedServiceImplement
   downloadFilesArtifact: grpc.handleUnaryCall<api_container_service_pb.DownloadFilesArtifactArgs, api_container_service_pb.DownloadFilesArtifactResponse>;
   storeWebFilesArtifact: grpc.handleUnaryCall<api_container_service_pb.StoreWebFilesArtifactArgs, api_container_service_pb.StoreWebFilesArtifactResponse>;
   storeFilesArtifactFromService: grpc.handleUnaryCall<api_container_service_pb.StoreFilesArtifactFromServiceArgs, api_container_service_pb.StoreFilesArtifactFromServiceResponse>;
+  renderTemplatesToFilesArtifact: grpc.handleUnaryCall<api_container_service_pb.RenderTemplatesToFilesArtifactArgs, api_container_service_pb.RenderTemplatesToFilesArtifactResponse>;
 }
 
 export class ApiContainerServiceClient extends grpc.Client {
@@ -107,4 +109,7 @@ export class ApiContainerServiceClient extends grpc.Client {
   storeFilesArtifactFromService(argument: api_container_service_pb.StoreFilesArtifactFromServiceArgs, callback: grpc.requestCallback<api_container_service_pb.StoreFilesArtifactFromServiceResponse>): grpc.ClientUnaryCall;
   storeFilesArtifactFromService(argument: api_container_service_pb.StoreFilesArtifactFromServiceArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.StoreFilesArtifactFromServiceResponse>): grpc.ClientUnaryCall;
   storeFilesArtifactFromService(argument: api_container_service_pb.StoreFilesArtifactFromServiceArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.StoreFilesArtifactFromServiceResponse>): grpc.ClientUnaryCall;
+  renderTemplatesToFilesArtifact(argument: api_container_service_pb.RenderTemplatesToFilesArtifactArgs, callback: grpc.requestCallback<api_container_service_pb.RenderTemplatesToFilesArtifactResponse>): grpc.ClientUnaryCall;
+  renderTemplatesToFilesArtifact(argument: api_container_service_pb.RenderTemplatesToFilesArtifactArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.RenderTemplatesToFilesArtifactResponse>): grpc.ClientUnaryCall;
+  renderTemplatesToFilesArtifact(argument: api_container_service_pb.RenderTemplatesToFilesArtifactArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.RenderTemplatesToFilesArtifactResponse>): grpc.ClientUnaryCall;
 }
