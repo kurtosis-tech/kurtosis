@@ -193,7 +193,7 @@ func (apicService ApiContainerService) RegisterServices(ctx context.Context, arg
 		for serviceID, _ := range shouldRemoveRegistrations {
 			_, err := apicService.serviceNetwork.RemoveService(context.Background(), serviceID)
 			failedServicesPool[serviceID] = stacktrace.Propagate(err,
-				"Attempted to remove service '%v' to delete its resources after it failed, but an error occurred" +
+				"Attempted to remove service '%v' to delete its resources after it failed, but an error occurred"+
 					"while attempting to remove the service.", serviceID)
 		}
 	}()
@@ -212,13 +212,13 @@ func (apicService ApiContainerService) RegisterServices(ctx context.Context, arg
 	}
 
 	// Do not remove services that were successful
-	for serviceIDStr, _ :=  range serviceIDsToIPsStrs {
+	for serviceIDStr, _ := range serviceIDsToIPsStrs {
 		delete(shouldRemoveRegistrations, kurtosis_backend_service.ServiceID(serviceIDStr))
 	}
 	return binding_constructors.NewRegisterServicesResponse(serviceIDsToIPsStrs, failedServiceIDsToErrStrs), nil
 }
 
-func (apicService ApiContainerService) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error){
+func (apicService ApiContainerService) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {
 	failedServicesPool := map[kurtosis_backend_service.ServiceID]error{}
 	serviceIDsToAPIConfigs := map[kurtosis_backend_service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
 
@@ -605,7 +605,9 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 }
 
 // ====================================================================================================
-// 									   Private helper methods
+//
+//	Private helper methods
+//
 // ====================================================================================================
 func transformPortSpecToApiPort(port *port_spec.PortSpec) (*kurtosis_core_rpc_api_bindings.Port, error) {
 	portNumUint16 := port.GetNumber()
@@ -846,6 +848,17 @@ func compressDirToTemporaryTarGzFile(tempDirForRenderedTemplates string) (string
 		pathsToArchive = append(pathsToArchive, pathToArchive)
 	}
 
+	compressedFilepath, err := getPathForTemporaryCompressedFile()
+
+	tarArchiver := archiver.NewTarGz()
+	tarArchiver.OverwriteExisting = true
+	if err = tarArchiver.Archive(pathsToArchive, compressedFilepath); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while archiving the rendered template files to '%v'", compressedFilepath)
+	}
+	return compressedFilepath, nil
+}
+
+func getPathForTemporaryCompressedFile() (string, error) {
 	compressedFile, err := os.CreateTemp("", compressedRenderedTemplatesFilenamePattern)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while creating temporary file to archive rendered templates")
@@ -853,10 +866,5 @@ func compressDirToTemporaryTarGzFile(tempDirForRenderedTemplates string) (string
 	defer compressedFile.Close()
 
 	compressedFilepath := compressedFile.Name()
-	tarArchiver := archiver.NewTarGz()
-	tarArchiver.OverwriteExisting = true
-	if err = tarArchiver.Archive(pathsToArchive, compressedFilepath); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while archiving the rendered template files to '%v'", compressedFilepath)
-	}
 	return compressedFilepath, nil
 }
