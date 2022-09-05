@@ -558,6 +558,7 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating a temp dir for rendered templates '%v'", tempDirForRenderedTemplates)
 	}
+	defer os.RemoveAll(tempDirForRenderedTemplates)
 
 	var filePathsToArchive []string
 	for destinationRelFilepath, templateAndData := range templatesAndDataByDestinationRelFilepath {
