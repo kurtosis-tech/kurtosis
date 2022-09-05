@@ -2456,7 +2456,7 @@ type RenderTemplatesToFilesArtifactArgs_TemplateAndData struct {
 
 	// A string representation of the template file
 	Template string `protobuf:"bytes,1,opt,name=template,proto3" json:"template,omitempty"`
-	// A json bytes representation of the data to be written to template
+	// A json string representation of the data to be written to template
 	DataAsJson string `protobuf:"bytes,2,opt,name=data_as_json,json=dataAsJson,proto3" json:"data_as_json,omitempty"`
 }
 

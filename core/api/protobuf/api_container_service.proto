@@ -454,7 +454,7 @@ message RenderTemplatesToFilesArtifactArgs {
     // A string representation of the template file
     string template = 1;
 
-    // A json bytes representation of the data to be written to template
+    // A json string representation of the data to be written to template
     string data_as_json = 2;
   }
 
