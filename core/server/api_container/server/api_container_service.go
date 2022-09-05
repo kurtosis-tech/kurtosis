@@ -586,20 +586,20 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 	}
 	defer compressedFile.Close()
 
-	filesArtifactUuId, err := apicService.filesArtifactStore.StoreFile(compressedFile)
+	filesArtifactUuid, err := apicService.filesArtifactStore.StoreFile(compressedFile)
 	shouldDeleteFilesArtifact := true
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while storing the file '%v' in the files artifact store", compressedFile)
 	}
 	defer func() {
 		if shouldDeleteFilesArtifact {
-			if err = apicService.filesArtifactStore.RemoveFile(filesArtifactUuId); err != nil {
-				logrus.Errorf("We tried to clean up the files artifact '%v' we had stored but failed:\n%v", filesArtifactUuId, err)
+			if err = apicService.filesArtifactStore.RemoveFile(filesArtifactUuid); err != nil {
+				logrus.Errorf("We tried to clean up the files artifact '%v' we had stored but failed:\n%v", filesArtifactUuid, err)
 			}
 		}
 	}()
 
-	response := &kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse{Uuid: string(filesArtifactUuId)}
+	response := binding_constructors.NewRenderTemplatesToFilesArtifactResponse(string(filesArtifactUuid))
 	shouldDeleteFilesArtifact = false
 	return response, nil
 }
