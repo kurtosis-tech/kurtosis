@@ -48,7 +48,7 @@ const (
 
 	folderPermission = 0755
 
-	tempDirForRenderedTemplatesPrefix = "temp-dir-for-rendered-templates"
+	tempDirForRenderedTemplatesPrefix = "temp-dir-for-rendered-templates-"
 
 	compressedRenderedTemplatesFilenamePattern = "compressed-rendered-templates-*.tgz"
 )
@@ -565,7 +565,7 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 		templateDataJsonAsBytes := []byte(templateDataAsJson)
 		var templateData interface{}
 		if err = json.Unmarshal(templateDataJsonAsBytes, &templateData); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred while unmarshalling the template data json '%v' for file '%v'", string(templateDataAsJson), destinationRelFilepath)
+			return nil, stacktrace.Propagate(err, "An error occurred while unmarshalling the template data json '%v' for file '%v'", templateDataAsJson, destinationRelFilepath)
 		}
 
 		destinationFilepath := path.Join(tempDirForRenderedTemplates, destinationRelFilepath)
@@ -587,10 +587,10 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 	defer compressedFile.Close()
 
 	filesArtifactUuid, err := apicService.filesArtifactStore.StoreFile(compressedFile)
-	shouldDeleteFilesArtifact := true
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while storing the file '%v' in the files artifact store", compressedFile)
 	}
+	shouldDeleteFilesArtifact := true
 	defer func() {
 		if shouldDeleteFilesArtifact {
 			if err = apicService.filesArtifactStore.RemoveFile(filesArtifactUuid); err != nil {
@@ -836,7 +836,7 @@ func renderTemplateToFile(templateAsAString string, templateData interface{}, de
 
 func compressDirToTemporaryTarGzFile(tempDirForRenderedTemplates string) (string, error) {
 
-	// the list of path will contain absolute paths to all files & dirs in the temp dir
+	// the list of path will contain absolute paths to all files & dirs in the root of the temp dir
 	// this allows us to preserve the intended nesting
 	var pathsToArchive []string
 	filesInTempDirForRenderedTemplates, err := os.ReadDir(tempDirForRenderedTemplates)
