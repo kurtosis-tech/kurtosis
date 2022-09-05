@@ -449,7 +449,7 @@ message StoreFilesArtifactFromServiceResponse {
 // ==============================================================================================
 
 message RenderTemplatesToFilesArtifactArgs {
-  // An object representing the template and the data that needs to be inserted as strings
+  // An object representing the template and the data that needs to be inserted
   message TemplateAndData {
     // A string representation of the template file
     string template = 1;
@@ -458,8 +458,7 @@ message RenderTemplatesToFilesArtifactArgs {
     string data_as_json = 2;
   }
 
-  // A map of template and its data indexed by the path of the file relative to the root of the it
-  // files artifact it will be written into.
+  // A map of template and its data by the path of the file relative to the root of the files artifact it will be rendered into.
   map <string, TemplateAndData> templates_and_data_by_destination_rel_filepath = 1;
 }
 
