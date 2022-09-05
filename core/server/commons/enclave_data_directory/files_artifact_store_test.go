@@ -6,7 +6,6 @@
 package enclave_data_directory
 
 import (
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"os"
@@ -104,7 +103,6 @@ func TestFileStore_RemoveFileRemovesFileFromDisk(t *testing.T) {
 func TestFileStore_RemoveFileFailsForNonExistentUuid(t *testing.T) {
 	fileStore := getTestFileStore(t)
 	nonExistentUuid, err := newFilesArtifactUUID()
-	assert.Nil(t, err)
 
 	err = fileStore.RemoveFile(nonExistentUuid)
 	require.NotNil(t, err)
