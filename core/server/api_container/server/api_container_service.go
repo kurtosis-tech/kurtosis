@@ -812,7 +812,7 @@ func (apicService ApiContainerService) getModuleInfo(ctx context.Context, module
 	return response, nil
 }
 
-func renderTemplateToFile(templateAsAString string, templateData map[string]interface{}, destinationFilepath string) error {
+func renderTemplateToFile(templateAsAString string, templateData interface{}, destinationFilepath string) error {
 	parsedTemplate, err := template.New(path.Base(destinationFilepath)).Parse(templateAsAString)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred in parsing the template string '%v'", destinationFilepath)
