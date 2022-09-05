@@ -7647,7 +7647,7 @@ proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData.proto
 proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData.toObject = function(includeInstance, msg) {
   var f, obj = {
     template: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    dataAsJson: msg.getDataAsJson_asB64()
+    dataAsJson: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -7689,7 +7689,7 @@ proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData.deser
       msg.setTemplate(value);
       break;
     case 2:
-      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDataAsJson(value);
       break;
     default:
@@ -7728,9 +7728,9 @@ proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData.seria
       f
     );
   }
-  f = message.getDataAsJson_asU8();
+  f = message.getDataAsJson();
   if (f.length > 0) {
-    writer.writeBytes(
+    writer.writeString(
       2,
       f
     );
@@ -7757,7 +7757,7 @@ proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData.proto
 
 
 /**
- * optional bytes data_as_json = 2;
+ * optional string data_as_json = 2;
  * @return {string}
  */
 proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData.prototype.getDataAsJson = function() {
@@ -7766,35 +7766,11 @@ proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData.proto
 
 
 /**
- * optional bytes data_as_json = 2;
- * This is a type-conversion wrapper around `getDataAsJson()`
- * @return {string}
- */
-proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData.prototype.getDataAsJson_asB64 = function() {
-  return /** @type {string} */ (jspb.Message.bytesAsB64(
-      this.getDataAsJson()));
-};
-
-
-/**
- * optional bytes data_as_json = 2;
- * Note that Uint8Array is not supported on all browsers.
- * @see http://caniuse.com/Uint8Array
- * This is a type-conversion wrapper around `getDataAsJson()`
- * @return {!Uint8Array}
- */
-proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData.prototype.getDataAsJson_asU8 = function() {
-  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
-      this.getDataAsJson()));
-};
-
-
-/**
- * @param {!(string|Uint8Array)} value
+ * @param {string} value
  * @return {!proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData} returns this
  */
 proto.api_container_api.RenderTemplatesToFilesArtifactArgs.TemplateAndData.prototype.setDataAsJson = function(value) {
-  return jspb.Message.setProto3BytesField(this, 2, value);
+  return jspb.Message.setProto3StringField(this, 2, value);
 };
 
 

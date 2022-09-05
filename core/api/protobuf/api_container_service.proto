@@ -455,7 +455,7 @@ message RenderTemplatesToFilesArtifactArgs {
     string template = 1;
 
     // A json bytes representation of the data to be written to template
-    bytes data_as_json = 2;
+    string data_as_json = 2;
   }
 
   // A map of template and its data indexed by the path of the file relative to the root of the it

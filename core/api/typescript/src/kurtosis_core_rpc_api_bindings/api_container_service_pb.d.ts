@@ -914,10 +914,8 @@ export namespace RenderTemplatesToFilesArtifactArgs {
     getTemplate(): string;
     setTemplate(value: string): TemplateAndData;
 
-    getDataAsJson(): Uint8Array | string;
-    getDataAsJson_asU8(): Uint8Array;
-    getDataAsJson_asB64(): string;
-    setDataAsJson(value: Uint8Array | string): TemplateAndData;
+    getDataAsJson(): string;
+    setDataAsJson(value: string): TemplateAndData;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): TemplateAndData.AsObject;
@@ -930,7 +928,7 @@ export namespace RenderTemplatesToFilesArtifactArgs {
   export namespace TemplateAndData {
     export type AsObject = {
       template: string,
-      dataAsJson: Uint8Array | string,
+      dataAsJson: string,
     }
   }
 

@@ -348,7 +348,7 @@ func NewStoreFilesArtifactFromServiceArgs(serviceId string, sourcePath string) *
 // ==============================================================================================
 //                              Render Templates To Files Artifact
 // ==============================================================================================
-func NewTemplateAndData(template string, dataAsJson []byte) *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData {
+func NewTemplateAndData(template string, dataAsJson string) *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData {
 	return &kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
 		Template:   template,
 		DataAsJson: dataAsJson,
