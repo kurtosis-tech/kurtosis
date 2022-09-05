@@ -560,7 +560,6 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 	}
 	defer os.RemoveAll(tempDirForRenderedTemplates)
 
-	var filePathsToArchive []string
 	for destinationRelFilepath, templateAndData := range templatesAndDataByDestinationRelFilepath {
 		templateAsAString := templateAndData.Template
 		templateDataAsJson := templateAndData.DataAsJson
@@ -575,11 +574,9 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 		if err = renderTemplateToFile(templateAsAString, templateData, destinationFilepath); err != nil {
 			return nil, stacktrace.Propagate(err, "There was an error in rendering template for file '%v'", destinationRelFilepath)
 		}
-
-		filePathsToArchive = append(filePathsToArchive, destinationFilepath)
 	}
 
-	compressedFilepath, err := compressFilesToTemporaryArchive(filePathsToArchive)
+	compressedFilepath, err := compressDirToTemporaryTarGzFile(tempDirForRenderedTemplates)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "There was an error archiving rendered templates to a temporary file")
 	}
@@ -828,7 +825,20 @@ func renderTemplateToFile(templateAsAString string, templateData interface{}, de
 	return nil
 }
 
-func compressFilesToTemporaryArchive(filePathsToArchive []string) (string, error) {
+func compressDirToTemporaryTarGzFile(tempDirForRenderedTemplates string) (string, error) {
+
+	// the list of path will contain absolute paths to all files & dirs in the temp dir
+	// this allows us to preserve the intended nesting
+	var pathsToArchive []string
+	filesInTempDirForRenderedTemplates, err:= os.ReadDir(tempDirForRenderedTemplates)
+	if err != nil {
+		return "", stacktrace.Propagate(err,"There was an error in reading the contents of the temp dir for rendered templates '%v'", tempDirForRenderedTemplates)
+	}
+	for _, fileInTempDirForRenderedTemplates := range filesInTempDirForRenderedTemplates {
+		pathToArchive := path.Join(tempDirForRenderedTemplates, fileInTempDirForRenderedTemplates.Name())
+		pathsToArchive = append(pathsToArchive, pathToArchive)
+	}
+
 	compressedFile, err := os.CreateTemp("", compressedRenderedTemplatesFilenamePattern)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while creating temporary file to archive rendered templates")
@@ -838,7 +848,7 @@ func compressFilesToTemporaryArchive(filePathsToArchive []string) (string, error
 	compressedFilepath := compressedFile.Name()
 	tarArchiver := archiver.NewTarGz()
 	tarArchiver.OverwriteExisting = true
-	if err = tarArchiver.Archive(filePathsToArchive, compressedFilepath); err != nil {
+	if err = tarArchiver.Archive(pathsToArchive, compressedFilepath); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while archiving the rendered template files to '%v'", compressedFilepath)
 	}
 	return compressedFilepath, nil
