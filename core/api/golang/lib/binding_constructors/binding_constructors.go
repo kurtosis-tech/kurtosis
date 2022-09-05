@@ -355,9 +355,9 @@ func NewTemplateAndData(template string, dataAsJson []byte) *kurtosis_core_rpc_a
 	}
 }
 
-func NewRenderTemplatesToFilesArtifactArgs(templatesAndDataByDestinationFilename map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData) *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs {
+func NewRenderTemplatesToFilesArtifactArgs(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData) *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs {
 	return &kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs{
-		TemplatesAndDataByDestinationFilename: templatesAndDataByDestinationFilename,
+		TemplatesAndDataByDestinationRelFilepath: templatesAndDataByDestinationRelFilepath,
 	}
 }
 

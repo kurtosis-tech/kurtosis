@@ -550,7 +550,7 @@ func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context
 }
 
 func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse, error) {
-	templatesAndDataByDestinationFilename := args.TemplatesAndDataByDestinationFilename
+	templatesAndDataByDestinationRelFilepath := args.TemplatesAndDataByDestinationRelFilepath
 
 	tempDirForRenderedTemplates, err := os.MkdirTemp("", tempDirForRenderedTemplatesPrefix)
 	if err != nil {
@@ -558,18 +558,18 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 	}
 
 	var filePathsToArchive []string
-	for destinationFilename, templateAndData := range templatesAndDataByDestinationFilename {
+	for destinationRelFilepath, templateAndData := range templatesAndDataByDestinationRelFilepath {
 		templateAsAString := templateAndData.Template
 		templateDataAsJson := templateAndData.DataAsJson
 
 		var templateData map[string]interface{}
 		if err = json.Unmarshal(templateDataAsJson, &templateData); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred while unmarshalling the template data json '%v' for file '%v'", string(templateDataAsJson), destinationFilename)
+			return nil, stacktrace.Propagate(err, "An error occurred while unmarshalling the template data json '%v' for file '%v'", string(templateDataAsJson), destinationRelFilepath)
 		}
 
-		destinationFilepath := path.Join(tempDirForRenderedTemplates, destinationFilename)
+		destinationFilepath := path.Join(tempDirForRenderedTemplates, destinationRelFilepath)
 		if err = renderTemplateToFile(templateAsAString, templateData, destinationFilepath); err != nil {
-			return nil, stacktrace.Propagate(err, "There was an error in rendering template for file '%v'", destinationFilename)
+			return nil, stacktrace.Propagate(err, "There was an error in rendering template for file '%v'", destinationRelFilepath)
 		}
 		filePathsToArchive = append(filePathsToArchive, destinationFilepath)
 	}

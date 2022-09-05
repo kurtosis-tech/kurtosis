@@ -458,8 +458,9 @@ message RenderTemplatesToFilesArtifactArgs {
     bytes data_as_json = 2;
   }
 
-  // A map of template and its data indexed by the name of the file it will be written into.
-  map <string, TemplateAndData> templates_and_data_by_destination_filename = 1;
+  // A map of template and its data indexed by the path of the file relative to the root of the it
+  // files artifact it will be written into.
+  map <string, TemplateAndData> templates_and_data_by_destination_rel_filepath = 1;
 }
 
 message RenderTemplatesToFilesArtifactResponse {
