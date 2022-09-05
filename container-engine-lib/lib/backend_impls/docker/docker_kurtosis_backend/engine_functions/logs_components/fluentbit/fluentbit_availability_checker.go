@@ -7,15 +7,21 @@ import (
 	"time"
 )
 
-type FluentbitAvailabilityChecker struct {
+const (
+	waitForAvailabilityInitialDelayMilliseconds = 100
+	waitForAvailabilityMaxRetries               = 20
+	waitForAvailabilityRetriesDelayMilliseconds = 50
+)
+
+type fluentbitAvailabilityChecker struct {
 	httpPortNumber uint16
 }
 
-func NewFluentbitAvailabilityChecker(httpPortNumber uint16) *FluentbitAvailabilityChecker{
-	return &FluentbitAvailabilityChecker{httpPortNumber: httpPortNumber}
+func newFluentbitAvailabilityChecker(httpPortNumber uint16) *fluentbitAvailabilityChecker {
+	return &fluentbitAvailabilityChecker{httpPortNumber: httpPortNumber}
 }
 
-func (fluent *FluentbitAvailabilityChecker) WaitForAvailability() error {
+func (fluent *fluentbitAvailabilityChecker) WaitForAvailability() error {
 	return waitForEndpointAvailability(
 		localhostStr,
 		fluent.httpPortNumber,
