@@ -52,7 +52,7 @@ const (
 
 	tempDirForCompressedRenderedTemplatesPrefix = "temp-dir-for-compressed-rendered-templates"
 
-	compressedRenderedTemplatesFilename = "compressed-rendered-templates.tgz"
+	compressedRenderedTemplatesFilenamePattern = "compressed-rendered-templates-*.tgz"
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -579,25 +579,32 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 		filePathsToArchive = append(filePathsToArchive, destinationFilepath)
 	}
 
-	tempDirForCompressedRenderedTemplates, err := os.MkdirTemp("", tempDirForCompressedRenderedTemplatesPrefix)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create temporary directory '%v' for compression", tempDirForCompressedRenderedTemplates)
+	compressedFile, err := os.CreateTemp("", compressedRenderedTemplatesFilenamePattern)
+	if err!= nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating temporary file to archive rendered templates")
+	}
+	compressedFilename := compressedFile.Name()
+	// We close the file immediately as the archiver creates a new file handle to the same file
+	if err = compressedFile.Close(); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while closing the temporary archive file '%v'", compressedFilename)
+	}
+	defer os.Remove(compressedFilename)
+
+	tarArchiver := archiver.NewTarGz()
+	tarArchiver.OverwriteExisting = true
+	if err = tarArchiver.Archive(filePathsToArchive, compressedFilename) ; err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while archiving the rendered template files to archive '%v'", compressedFilename)
 	}
 
-	compressedFilePath := path.Join(tempDirForCompressedRenderedTemplates, compressedRenderedTemplatesFilename)
-	if err = archiver.Archive(filePathsToArchive, compressedFilePath); err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to compress rendered template files into one archive at '%v'", compressedFilePath)
-	}
-
-	compressedFile, err := os.Open(compressedFilePath)
+	compressedFile, err = os.Open(compressedFilename)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "There was an error in opening the compressed file '%v'", compressedFilePath)
+		return nil, stacktrace.Propagate(err, "An error occurred while opening the compressed file '%v'", compressedFilename)
 	}
 	defer compressedFile.Close()
 
 	filesArtifactUuId, err := apicService.filesArtifactStore.StoreFile(compressedFile)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while storing the file '%v' in the files artifact store", compressedFilePath)
+		return nil, stacktrace.Propagate(err, "An error occurred while storing the file '%v' in the files artifact store", compressedFile)
 	}
 
 	response := &kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse{Uuid: string(filesArtifactUuId)}
