@@ -733,7 +733,7 @@ export class EnclaveContext {
         for (let index = 0; index < templates.length; index++) {
             const template = templates[index]
             const templateData = templatesData[index]
-            const destinationRelFilepath = templatesData[index]
+            const destinationRelFilepath = destinationRelFilepaths[index]
 
             const templateDataAsJsonString = JSON.stringify(templateData)
             const templateAndData = newTemplateAndData(template, templateDataAsJsonString)
