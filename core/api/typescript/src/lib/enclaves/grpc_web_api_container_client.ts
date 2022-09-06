@@ -30,7 +30,8 @@ import {
     GetModulesArgs,
     UnloadModuleResponse,
     RemoveServiceResponse,
-    RenderTemplatesToFilesArtifactArgs, RenderTemplatesToFilesArtifactResponse,
+    RenderTemplatesToFilesArtifactArgs,
+    RenderTemplatesToFilesArtifactResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";

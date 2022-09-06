@@ -29,7 +29,8 @@ import {
     GetServicesArgs,
     GetModulesArgs,
     UnloadModuleResponse,
-    RenderTemplatesToFilesArtifactArgs, RenderTemplatesToFilesArtifactResponse,
+    RenderTemplatesToFilesArtifactArgs,
+    RenderTemplatesToFilesArtifactResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
