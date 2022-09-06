@@ -63,6 +63,7 @@ import {
     StartServicesArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {should} from "chai";
+import {TemplateAndData} from "./template_and_data";
 
 export type EnclaveID = string;
 export type PartitionID = string;
@@ -717,28 +718,21 @@ export class EnclaveContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public async renderTemplates(templates: Array<string>, templatesData: Array<any>, destinationRelFilepaths: Array<string>): Promise<Result<FilesArtifactUUID, Error>> {
-        if (templates.length !== templatesData.length || templatesData.length !== destinationRelFilepaths.length) {
-            const errMsg = `There should be equal number of templates '${templates.length}', templates data '${templatesData.length}' and destination relative file paths '${destinationRelFilepaths.length}'`
-            return err(new Error(errMsg))
-        }
+    public async renderTemplates(templateAndDataByDestinationRelFilepath: Map<string, TemplateAndData>): Promise<Result<FilesArtifactUUID, Error>> {
 
-        if (templates.length === 0) {
+        if (templateAndDataByDestinationRelFilepath.size === 0) {
             return err(new Error("Expected at least one template got 0"))
         }
 
         let renderTemplatesToFilesArtifactArgs = newRenderTemplatesToFilesArtifactArgs()
         let templateAndDataByRelDestinationFilepath = renderTemplatesToFilesArtifactArgs.getTemplatesAndDataByDestinationRelFilepathMap()
 
-        for (let index = 0; index < templates.length; index++) {
-            const template = templates[index]
-            const templateData = templatesData[index]
-            const destinationRelFilepath = destinationRelFilepaths[index]
+        for(let [destinationRelFilepath, templateAndData] of templateAndDataByDestinationRelFilepath) {
 
-            const templateDataAsJsonString = JSON.stringify(templateData)
-            const templateAndData = newTemplateAndData(template, templateDataAsJsonString)
+            const templateDataAsJsonString = JSON.stringify(templateAndData.templateData)
+            const templateAndDataAsJson = newTemplateAndData(templateAndData.template, templateDataAsJsonString)
 
-            templateAndDataByRelDestinationFilepath.set(destinationRelFilepath, templateAndData)
+            templateAndDataByRelDestinationFilepath.set(destinationRelFilepath, templateAndDataAsJson)
         }
 
         const renderTemplatesToFilesArtifactResult = await this.backend.renderTemplatesToFilesArtifact(renderTemplatesToFilesArtifactArgs)
