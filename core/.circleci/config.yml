@@ -279,7 +279,7 @@ workflows:
                 ],
                 "ignorePatterns": [
                     {
-                        "pattern": "https://github.com/kurtosis-tech/kurtosis-internal-docs/.*",
+                        "pattern": "https://github.com/kurtosis-tech/kurtosis-internal-docs/.*"
                     }
                 ]
             }
