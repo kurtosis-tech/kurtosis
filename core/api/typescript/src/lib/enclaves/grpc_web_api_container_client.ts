@@ -414,7 +414,7 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
     }
 
     public async renderTemplatesToFilesArtifact(renderTemplatesToFilesArtifactArgs: RenderTemplatesToFilesArtifactArgs): Promise<Result<RenderTemplatesToFilesArtifactResponse, Error>> {
-        const renderTemplatesToFilesArtifactPromise: Promise<Result<StoreFilesArtifactFromServiceResponse, Error>> = new Promise( (resolve, _unusedReject) => {
+        const renderTemplatesToFilesArtifactPromise: Promise<Result<RenderTemplatesToFilesArtifactResponse, Error>> = new Promise( (resolve, _unusedReject) => {
             this.client.renderTemplatesToFilesArtifact(renderTemplatesToFilesArtifactArgs, {}, (error: grpc_web.RpcError | null, response?: RenderTemplatesToFilesArtifactResponse) => {
                 if (error === null) {
                     if (!response) {

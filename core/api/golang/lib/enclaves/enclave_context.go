@@ -666,7 +666,7 @@ func (enclaveCtx *EnclaveContext) RenderTemplates(templates []string, templatesD
 		return "", stacktrace.NewError("Expected at least one template got 0")
 	}
 
-	var templateAndDataByRelDestinationFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData
+	templateAndDataByRelDestinationFilepath := make(map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData)
 
 	for index := 0; index < len(templates); index++ {
 		template := templates[index]
