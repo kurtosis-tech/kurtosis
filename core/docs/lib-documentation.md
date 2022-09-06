@@ -224,15 +224,16 @@ Unpauses all paused processes in the specified service. Specified service must h
 
 * `serviceId`: The ID of the service to unpause.
 
-### renderTemplates([]String templates, []Any templateData, []String destinationRelFilepaths)
+### renderTemplates([]String templates, []Any templatesData, []String destinationRelFilepaths)
 Renders templates and stores them in an archive that gets uploaded to the Kurtosis filestore for use with [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+
 The three input parameters need to be of the same non-zero length, it renders data at index `i` to the template at index `i` and stores the rendered file at the relative file path at index `i`.
 The destination relative paths are relative to the root of the archive.
 
 **Args**
 
 * `templates`: An array of go [templates](https://pkg.go.dev/text/template) as strings
-* `templateData`: An array of type `any` containing values that need to be rendered into the template.
+* `templatesData`: An array of type `any` containing values that need to be rendered into the template.
 * `destinationRelFilepaths`: An array of relative file paths to which the rendered template will be stored.
 
 **Returns**
