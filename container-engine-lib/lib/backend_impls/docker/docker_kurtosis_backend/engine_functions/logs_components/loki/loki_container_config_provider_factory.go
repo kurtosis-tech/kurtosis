@@ -1,7 +1,7 @@
 package loki
 
-func CreateLokiContainerConfigProviderForKurtosis() *LokiContainerConfigProvider {
+func createLokiContainerConfigProviderForKurtosis() *lokiContainerConfigProvider {
 	lokiConfig := newDefaultLokiConfigForKurtosisCentralizedLogs()
-	lokiContainerConfigProvider := NewLokiContainerConfigProvider(lokiConfig)
-	return lokiContainerConfigProvider
+	lokiContainerConfigProviderObj := newLokiContainerConfigProvider(lokiConfig)
+	return lokiContainerConfigProviderObj
 }

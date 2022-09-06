@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"text/template"
 	"time"
 )
 
@@ -24,32 +25,55 @@ const (
 
 	configFileCreationCmdMaxRetries     = 2
 	configFileCreationCmdDelayInRetries = 200 * time.Millisecond
+
+	sleepSeconds = 1800
 )
 
-func (fluent *FluentbitContainerConfigProvider) runConfigurator(
+type fluentbitConfigurationCreator struct {
+	config *FluentbitConfig
+}
+
+func newFluentbitConfigurationCreator(config *FluentbitConfig) *fluentbitConfigurationCreator {
+	return &fluentbitConfigurationCreator{config: config}
+}
+
+
+func (fluent *fluentbitConfigurationCreator) CreateConfiguration(
 	ctx context.Context,
 	targetNetworkId string,
-	volumeMounts map[string]string,
+	volumeName string,
 	dockerManager *docker_manager.DockerManager,
 ) error {
+
+	entrypointArgs := []string{
+		shBinaryFilepath,
+		shCmdFlag,
+		fmt.Sprintf("sleep %v", sleepSeconds),
+	}
+
+	volumeMounts := map[string]string{
+		volumeName: configDirpathInContainer,
+	}
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		configuratorContainerImage,
 		configuratorContainerName,
 		targetNetworkId,
+	).WithEntrypointArgs(
+		entrypointArgs,
 	).WithVolumeMounts(
 		volumeMounts,
 	).Build()
 
 	containerId, _, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred starting the Fluenbit configurator container with these args '%+v'", createAndStartArgs)
+		return stacktrace.Propagate(err, "An error occurred starting the Fluentbit configurator container with these args '%+v'", createAndStartArgs)
 	}
 	//The killing step has to be executed always in the success and also in the failed case
 	defer func() {
 		if dockerManager.RemoveContainer(context.Background(), containerId); err != nil {
 			logrus.Errorf(
-				"Launching the Fluenbit configurator container with container ID '%v' didn't complete successfully so we "+
+				"Launching the Fluentbit configurator container with container ID '%v' didn't complete successfully so we "+
 					"tried to remove the container we started, but doing so exited with an error:\n%v",
 				containerId,
 				err)
@@ -70,7 +94,7 @@ func (fluent *FluentbitContainerConfigProvider) runConfigurator(
 	return nil
 }
 
-func (fluent *FluentbitContainerConfigProvider)  createFluentbitConfigFileInVolume(
+func (fluent *fluentbitConfigurationCreator)  createFluentbitConfigFileInVolume(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 	containerId string,
@@ -125,9 +149,27 @@ func (fluent *FluentbitContainerConfigProvider)  createFluentbitConfigFileInVolu
 	}
 
 	return stacktrace.NewError(
-		"The Fluentbit config file creation didn't success (as measured by the command '%v') even after retrying %v times with %v between retries",
+		"The Fluentbit config file creation didn't return success (as measured by the command '%v') even after retrying %v times with %v between retries",
 		commandStr,
 		maxRetries,
 		timeBetweenRetries,
 	)
+}
+
+func (fluent *fluentbitConfigurationCreator) getConfigFileContent() (string, error) {
+
+	cngFileTemplate, err := template.New(configFileTemplateName).Parse(configFileTemplate)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred parsing Fluentbit config template '%v'", configFileTemplate)
+	}
+
+	templateStrBuffer := &bytes.Buffer{}
+
+	if err := cngFileTemplate.Execute(templateStrBuffer, fluent.config); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred executing the Fluentbit config file template")
+	}
+
+	templateStr := templateStrBuffer.String()
+
+	return templateStr, nil
 }
