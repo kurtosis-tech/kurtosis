@@ -626,10 +626,10 @@ func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreW
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveContext *EnclaveContext) StoreServiceFiles(ctx context.Context, serviceId services.ServiceID, absoluteFilepathOnServiceContainer string) (services.FilesArtifactUUID, error) {
+func (enclaveCtx *EnclaveContext) StoreServiceFiles(ctx context.Context, serviceId services.ServiceID, absoluteFilepathOnServiceContainer string) (services.FilesArtifactUUID, error) {
 	serviceIdStr := string(serviceId)
 	args := binding_constructors.NewStoreFilesArtifactFromServiceArgs(serviceIdStr, absoluteFilepathOnServiceContainer)
-	response, err := enclaveContext.client.StoreFilesArtifactFromService(ctx, args)
+	response, err := enclaveCtx.client.StoreFilesArtifactFromService(ctx, args)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred copying source content from absolute filepath '%v' in service container with ID '%v'", absoluteFilepathOnServiceContainer, serviceIdStr)
 	}
@@ -637,9 +637,9 @@ func (enclaveContext *EnclaveContext) StoreServiceFiles(ctx context.Context, ser
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveContext *EnclaveContext) PauseService(serviceId services.ServiceID) error {
+func (enclaveCtx *EnclaveContext) PauseService(serviceId services.ServiceID) error {
 	args := binding_constructors.NewPauseServiceArgs(string(serviceId))
-	_, err := enclaveContext.client.PauseService(context.Background(), args)
+	_, err := enclaveCtx.client.PauseService(context.Background(), args)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to pause service '%v'", serviceId)
 	}
