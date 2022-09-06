@@ -9,6 +9,16 @@ import (
 const (
 	filterRulesSeparator  = "\n	"
 	outputLabelsSeparator = ", "
+
+	renameModifyFilterRuleAction = "rename"
+
+	labelsVarPrefix = "$"
+
+	notAllowedCharInLabels = " .-"
+	noSeparationChar = ""
+
+	shouldChangeNextCharToUpperCaseInitialValue = false
+	shouldChangeCharToUpperCaseInitialValue = false
 )
 
 type FluentbitConfig struct{
@@ -94,12 +104,10 @@ func getModifyFilterRulesKurtosisLabels() []string {
 
 	modifyFilterRules := []string{}
 
-	modifyFilterRuleAction := "rename"
-
 	kurtosisLabelsForLogs := getTrackedKurtosisLabelsForLogs()
 	for _, kurtosisLabel := range kurtosisLabelsForLogs {
 		validFormatLabelValue := newValidFormatLabelValue(kurtosisLabel)
-		modifyFilterRule := fmt.Sprintf("%v %v %v", modifyFilterRuleAction, kurtosisLabel, validFormatLabelValue)
+		modifyFilterRule := fmt.Sprintf("%v %v %v", renameModifyFilterRuleAction, kurtosisLabel, validFormatLabelValue)
 		modifyFilterRules = append(modifyFilterRules, modifyFilterRule)
 	}
 	return modifyFilterRules
@@ -107,7 +115,6 @@ func getModifyFilterRulesKurtosisLabels() []string {
 
 func getOutputKurtosisLabelsForLogs() []string {
 	outputLabels := []string{}
-	labelsVarPrefix := "$"
 
 	kurtosisLabelsForLogs := getTrackedKurtosisLabelsForLogs()
 	for _, kurtosisLabel := range kurtosisLabelsForLogs {
@@ -130,15 +137,13 @@ func getTenantIdKeyFromKurtosisLabels() string {
 	return label_key_consts.EnclaveIDDockerLabelKey.GetString()
 }
 
-
+//improve this manual steps using a regex of disallowed characters and https://pkg.go.dev/regexp#Regexp.ReplaceAllString
 func newValidFormatLabelValue(stringToModify string) string {
-	notAllowedCharInLabels := " .-"
-	noSeparationChar := ""
-	lowerString := strings.ToLower(stringToModify)
-	shouldChangeNextCharToUpperCase := false
-	shouldChangeCharToUpperCase := false
+	stringToModifyInLowerCase := strings.ToLower(stringToModify)
+	shouldChangeNextCharToUpperCase := shouldChangeNextCharToUpperCaseInitialValue
+	shouldChangeCharToUpperCase := shouldChangeCharToUpperCaseInitialValue
 	var newString string
-	for _, currenChar := range strings.Split(lowerString, noSeparationChar) {
+	for _, currenChar := range strings.Split(stringToModifyInLowerCase, noSeparationChar) {
 		newChar := currenChar
 		shouldChangeCharToUpperCase = shouldChangeNextCharToUpperCase
 		if shouldChangeCharToUpperCase {

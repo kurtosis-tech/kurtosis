@@ -1,35 +1,28 @@
 package fluentbit
 
 import (
-	"bytes"
-	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
-	"text/template"
 )
 
 const (
 	localhostStr    = "localhost"
 	httpProtocolStr = "http"
-
-	waitForAvailabilityInitialDelayMilliseconds = 100
-	waitForAvailabilityMaxRetries               = 20
-	waitForAvailabilityRetriesDelayMilliseconds = 50
 )
 
-type FluentbitContainerConfigProvider struct {
+type fluentbitContainerConfigProvider struct {
 	config         *FluentbitConfig
 	httpPortNumber uint16
 }
 
-func NewFluentbitContainerConfigProvider(config *FluentbitConfig, httpPortNumber uint16) *FluentbitContainerConfigProvider {
-	return &FluentbitContainerConfigProvider{config: config, httpPortNumber: httpPortNumber}
+func newFluentbitContainerConfigProvider(config *FluentbitConfig, httpPortNumber uint16) *fluentbitContainerConfigProvider {
+	return &fluentbitContainerConfigProvider{config: config, httpPortNumber: httpPortNumber}
 }
 
-func (fluent *FluentbitContainerConfigProvider) GetPrivateTcpPortSpec() (*port_spec.PortSpec, error) {
+func (fluent *fluentbitContainerConfigProvider) GetPrivateTcpPortSpec() (*port_spec.PortSpec, error) {
 	privateTcpPortSpec, err := port_spec.NewPortSpec(tcpPortNumber, tcpPortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -42,7 +35,7 @@ func (fluent *FluentbitContainerConfigProvider) GetPrivateTcpPortSpec() (*port_s
 	return privateTcpPortSpec, nil
 }
 
-func (fluent *FluentbitContainerConfigProvider) GetPrivateHttpPortSpec() (*port_spec.PortSpec, error) {
+func (fluent *fluentbitContainerConfigProvider) GetPrivateHttpPortSpec() (*port_spec.PortSpec, error) {
 	privateHttpPortSpec, err := port_spec.NewPortSpec(fluent.httpPortNumber, httpPortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -55,12 +48,11 @@ func (fluent *FluentbitContainerConfigProvider) GetPrivateHttpPortSpec() (*port_
 	return privateHttpPortSpec, nil
 }
 
-func (fluent *FluentbitContainerConfigProvider) GetContainerArgs(
+func (fluent *fluentbitContainerConfigProvider) GetContainerArgs(
 	containerName string,
 	containerLabels map[string]string,
 	volumeName string,
 	networkId string,
-	dockerManager *docker_manager.DockerManager,
 ) (*docker_manager.CreateAndStartContainerArgs, error) {
 
 	privateTcpPortSpec, err := fluent.GetPrivateTcpPortSpec()
@@ -92,15 +84,6 @@ func (fluent *FluentbitContainerConfigProvider) GetContainerArgs(
 		volumeName: configDirpathInContainer,
 	}
 
-	if err := fluent.runConfigurator(context.Background(), networkId, volumeMounts, dockerManager); err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred running the Fluenbit configurator in network ID '%v' and with volume mounts '%+v'",
-			networkId,
-			volumeMounts,
-		)
-	}
-
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImage,
 		containerName,
@@ -114,20 +97,4 @@ func (fluent *FluentbitContainerConfigProvider) GetContainerArgs(
 	).Build()
 
 	return createAndStartArgs, nil
-}
-
-func (fluent *FluentbitContainerConfigProvider) getConfigFileContent() (string, error) {
-
-	template, err := template.New(configFileTemplateName).Parse(configFileTemplate)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred parsing Fluenbit config template '%v'", configFileTemplate)
-	}
-
-	templateStrBuffer := &bytes.Buffer{}
-
-	template.Execute(templateStrBuffer, fluent.config)
-
-	templateStr := templateStrBuffer.String()
-
-	return templateStr, nil
 }
