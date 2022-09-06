@@ -224,7 +224,7 @@ Unpauses all paused processes in the specified service. Specified service must h
 
 * `serviceId`: The ID of the service to unpause.
 
-### renderTemplates([]String templates, []Any templatesData, []String destinationRelFilepaths)
+### renderTemplates(Map<String, TemplateAndData> templateAndDataByDestinationRelFilepaths)
 Renders templates and stores them in an archive that gets uploaded to the Kurtosis filestore for use with [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
 
 The three input parameters need to be of the same non-zero length. This renders data at index `i` to the template at index `i` and stores the rendered file at the relative file path at index `i`.

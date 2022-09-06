@@ -657,14 +657,14 @@ func (enclaveCtx *EnclaveContext) UnpauseService(serviceId services.ServiceID) e
 	return nil
 }
 
-func (enclaveCtx *EnclaveContext) RenderTemplates(templateAndDataByDestinationRelFilepath map[string]*TemplateAndData) (services.FilesArtifactUUID, error) {
-	if len(templateAndDataByDestinationRelFilepath) == 0 {
+func (enclaveCtx *EnclaveContext) RenderTemplates(templateAndDataByDestinationRelFilepaths map[string]*TemplateAndData) (services.FilesArtifactUUID, error) {
+	if len(templateAndDataByDestinationRelFilepaths) == 0 {
 		return "", stacktrace.NewError("Expected at least one template got 0")
 	}
 
 	templateAndDataByRelDestinationFilepathArgs := make(map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData)
 
-	for destinationRelFilepath, templateAndData := range templateAndDataByDestinationRelFilepath {
+	for destinationRelFilepath, templateAndData := range templateAndDataByDestinationRelFilepaths {
 		template := templateAndData.Template
 		templateData := templateAndData.TemplateData
 
