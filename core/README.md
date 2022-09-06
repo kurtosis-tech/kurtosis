@@ -41,3 +41,7 @@ Stop running containers:
 docker container ls    # See which Docker containers are left around - these will depend on the containers spun up
 docker stop $(docker ps -a --quiet --filter ancestor="IMAGENAME" --format="{{.ID}}")
 ```
+
+### Testing the API Container Server
+
+Use this [guide](https://github.com/kurtosis-tech/kurtosis-internal-docs/blob/master/testing-grpc-services.md) to test the API Container server.
