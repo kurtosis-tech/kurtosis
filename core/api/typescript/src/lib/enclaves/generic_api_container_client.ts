@@ -8,19 +8,27 @@ import {
     ExecCommandArgs,
     ExecCommandResponse,
     ExecuteModuleArgs,
-    ExecuteModuleResponse, GetModulesArgs,
-    GetModulesResponse, GetServicesArgs,
+    ExecuteModuleResponse,
+    GetModulesArgs,
+    GetModulesResponse,
+    GetServicesArgs,
     GetServicesResponse,
     LoadModuleArgs,
     PauseServiceArgs,
     RegisterServicesArgs,
     RegisterServicesResponse,
-    RemoveServiceArgs, RemoveServiceResponse,
+    RemoveServiceArgs,
+    RemoveServiceResponse,
+    RenderTemplatesToFilesArtifactArgs,
+    RenderTemplatesToFilesArtifactResponse,
     RepartitionArgs,
     StartServicesArgs,
     StartServicesResponse,
-    StoreFilesArtifactFromServiceArgs, StoreWebFilesArtifactArgs, StoreWebFilesArtifactResponse,
-    UnloadModuleArgs, UnloadModuleResponse,
+    StoreFilesArtifactFromServiceArgs,
+    StoreWebFilesArtifactArgs,
+    StoreWebFilesArtifactResponse,
+    UnloadModuleArgs,
+    UnloadModuleResponse,
     UnpauseServiceArgs,
     UploadFilesArtifactArgs,
     UploadFilesArtifactResponse,
@@ -48,4 +56,5 @@ export interface GenericApiContainerClient {
     uploadFiles(uploadFilesArtifactArgs: UploadFilesArtifactArgs): Promise<Result<UploadFilesArtifactResponse, Error>>
     storeWebFilesArtifact(storeWebFilesArtifactArgs: StoreWebFilesArtifactArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>>
     storeFilesArtifactFromService(storeFilesArtifactFromServiceArgs: StoreFilesArtifactFromServiceArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>>
+    renderTemplatesToFilesArtifact(renderTemplatesToFilesArtifactArgs: RenderTemplatesToFilesArtifactArgs): Promise<Result<RenderTemplatesToFilesArtifactResponse, Error>>
 }

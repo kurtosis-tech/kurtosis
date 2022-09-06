@@ -43,7 +43,11 @@ import {
     newUnloadModuleArgs,
     newWaitForHttpGetEndpointAvailabilityArgs,
     newWaitForHttpPostEndpointAvailabilityArgs,
-    newUploadFilesArtifactArgs, newPauseServiceArgs, newUnpauseServiceArgs,
+    newUploadFilesArtifactArgs,
+    newPauseServiceArgs,
+    newUnpauseServiceArgs,
+    newTemplateAndData,
+    newRenderTemplatesToFilesArtifactArgs,
 } from "../constructor_calls";
 import type { ContainerConfig, FilesArtifactUUID } from "../services/container_config";
 import type { ServiceID } from "../services/service";
@@ -710,6 +714,38 @@ export class EnclaveContext {
         }
         const pauseServiceResponse = unpauseServiceResult.value
         return ok(null)
+    }
+
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    public async renderTemplates(templates: Array<string>, templatesData: Array<any>, destinationRelFilepaths: Array<string>): Promise<Result<FilesArtifactUUID, Error>> {
+        if (templates.length !== templatesData.length || templatesData.length !== destinationRelFilepaths.length) {
+            const errMsg = `There should be equal number of templates '${templates.length}', template data '${templatesData.length}' and destination relative file paths '${destinationRelFilepaths.length}'`
+            return err(new Error(errMsg))
+        }
+
+        if (templates.length == 0) {
+            return err(new Error("Expected at least one template got 0"))
+        }
+
+        let renderTemplatesToFilesArtifactArgs = newRenderTemplatesToFilesArtifactArgs()
+
+        for (let index = 0; index < templates.length; index++) {
+            const template = templates[index]
+            const templateData = templatesData[index]
+            const destinationRelFilepath = templatesData[index]
+
+            const templateDataAsJsonString = JSON.stringify(templateData)
+            const templateAndData = newTemplateAndData(template, templateDataAsJsonString)
+
+            renderTemplatesToFilesArtifactArgs.getTemplatesAndDataByDestinationRelFilepathMap().set(destinationRelFilepath, templateAndData)
+        }
+
+        const renderTemplatesToFilesArtifactResult = await this.backend.renderTemplatesToFilesArtifact(renderTemplatesToFilesArtifactArgs)
+        if (renderTemplatesToFilesArtifactResult.isErr()) {
+            return err(renderTemplatesToFilesArtifactResult.error)
+        }
+
+        return ok(renderTemplatesToFilesArtifactResult.value.getUuid())
     }
   
     // ====================================================================================================
