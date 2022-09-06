@@ -348,9 +348,9 @@ TemplateAndData
 This is an object that gets used by the [renderTemplates](#rendertemplatesmapstring-templateanddata-templateanddatabydestinationrelfilepaths) function.
 It has two properties.
 
-### Template -> String
+### String Template
 The template that needs to be rendered
-### TemplateData -> Any
+### Any TemplateData
 The data that needs to be rendered in the template
 
 ---
