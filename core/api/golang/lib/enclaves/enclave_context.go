@@ -659,7 +659,7 @@ func (enclaveCtx *EnclaveContext) UnpauseService(serviceId services.ServiceID) e
 
 func (enclaveCtx *EnclaveContext) RenderTemplates(templates []string, templatesData []interface{}, destinationRelFilepaths []string) (services.FilesArtifactUUID, error) {
 	if len(templates) != len(templatesData) || len(templatesData) != len(destinationRelFilepaths) {
-		return "", stacktrace.NewError("There should be equal number of templates '%v', templatesData '%v' and destination relative file paths '%v'", len(templates), len(templatesData), len(destinationRelFilepaths))
+		return "", stacktrace.NewError("There should be equal number of templates '%v', templates data '%v' and destination relative file paths '%v'", len(templates), len(templatesData), len(destinationRelFilepaths))
 	}
 
 	if len(templates) == 0 {

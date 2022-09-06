@@ -719,7 +719,7 @@ export class EnclaveContext {
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async renderTemplates(templates: Array<string>, templatesData: Array<any>, destinationRelFilepaths: Array<string>): Promise<Result<FilesArtifactUUID, Error>> {
         if (templates.length !== templatesData.length || templatesData.length !== destinationRelFilepaths.length) {
-            const errMsg = `There should be equal number of templates '${templates.length}', template data '${templatesData.length}' and destination relative file paths '${destinationRelFilepaths.length}'`
+            const errMsg = `There should be equal number of templates '${templates.length}', templates data '${templatesData.length}' and destination relative file paths '${destinationRelFilepaths.length}'`
             return err(new Error(errMsg))
         }
 
