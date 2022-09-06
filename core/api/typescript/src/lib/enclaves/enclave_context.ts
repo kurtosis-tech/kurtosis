@@ -728,6 +728,7 @@ export class EnclaveContext {
         }
 
         let renderTemplatesToFilesArtifactArgs = newRenderTemplatesToFilesArtifactArgs()
+        let templateAndDataByRelDestinationFilepath = renderTemplatesToFilesArtifactArgs.getTemplatesAndDataByDestinationRelFilepathMap()
 
         for (let index = 0; index < templates.length; index++) {
             const template = templates[index]
@@ -737,7 +738,7 @@ export class EnclaveContext {
             const templateDataAsJsonString = JSON.stringify(templateData)
             const templateAndData = newTemplateAndData(template, templateDataAsJsonString)
 
-            renderTemplatesToFilesArtifactArgs.getTemplatesAndDataByDestinationRelFilepathMap().set(destinationRelFilepath, templateAndData)
+            templateAndDataByRelDestinationFilepath.set(destinationRelFilepath, templateAndData)
         }
 
         const renderTemplatesToFilesArtifactResult = await this.backend.renderTemplatesToFilesArtifact(renderTemplatesToFilesArtifactArgs)

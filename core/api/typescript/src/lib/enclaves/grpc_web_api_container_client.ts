@@ -427,7 +427,7 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
                 }
             })
         });
-        const renderTemplatesToFilesArtifactResponseResult: Result<StoreFilesArtifactFromServiceResponse, Error> = await renderTemplatesToFilesArtifactPromise;
+        const renderTemplatesToFilesArtifactResponseResult: Result<RenderTemplatesToFilesArtifactResponse, Error> = await renderTemplatesToFilesArtifactPromise;
         if (renderTemplatesToFilesArtifactResponseResult.isErr()) {
             return err(renderTemplatesToFilesArtifactResponseResult.error)
         }
