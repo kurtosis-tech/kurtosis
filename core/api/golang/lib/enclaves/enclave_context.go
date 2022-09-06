@@ -666,7 +666,7 @@ func (enclaveCtx *EnclaveContext) RenderTemplates(templates []string, templatesD
 		return "", stacktrace.NewError("Expected at least one template got 0")
 	}
 
-	var templateAndDataByRelDestFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData
+	var templateAndDataByRelDestinationFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData
 
 	for index := 0; index < len(templates); index++ {
 		template := templates[index]
@@ -675,18 +675,19 @@ func (enclaveCtx *EnclaveContext) RenderTemplates(templates []string, templatesD
 
 		templateDataAsJson, err := json.Marshal(templateData)
 		if err != nil {
-			return "", stacktrace.Propagate(err,"Failed to jsonify templatesData '%v' at index '%v'", templatesData[index], index)
+			return "", stacktrace.Propagate(err, "Failed to jsonify templateData '%v' at index '%v'", templateData, index)
 		}
+
 		templateAndData := binding_constructors.NewTemplateAndData(
 			template,
 			string(templateDataAsJson),
 		)
-		templateAndDataByRelDestFilepath[destinationRelFilepath] = templateAndData
+		templateAndDataByRelDestinationFilepath[destinationRelFilepath] = templateAndData
 	}
 
-	renderTemplatesToFilesArtifactArgs := binding_constructors.NewRenderTemplatesToFilesArtifactArgs(templateAndDataByRelDestFilepath)
-	response, err := enclaveCtx.client.RenderTemplatesToFilesArtifact(context.Background(), renderTemplatesToFilesArtifactArgs)
+	renderTemplatesToFilesArtifactArgs := binding_constructors.NewRenderTemplatesToFilesArtifactArgs(templateAndDataByRelDestinationFilepath)
 
+	response, err := enclaveCtx.client.RenderTemplatesToFilesArtifact(context.Background(), renderTemplatesToFilesArtifactArgs)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error in rendering templates")
 	}
