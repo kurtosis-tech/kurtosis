@@ -349,9 +349,9 @@ This is an object that gets used by the [renderTemplates](#rendertemplatesmapstr
 It has two properties.
 
 ### String Template
-The template that needs to be rendered
+The template that needs to be rendered.
 ### Any TemplateData
-The data that needs to be rendered in the template
+The data that needs to be rendered in the template.
 
 ---
 
