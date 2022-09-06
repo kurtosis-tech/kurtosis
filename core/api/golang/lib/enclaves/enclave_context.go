@@ -19,6 +19,7 @@ package enclaves
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/binding_constructors"
@@ -647,13 +648,50 @@ func (enclaveCtx *EnclaveContext) PauseService(serviceId services.ServiceID) err
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveContext *EnclaveContext) UnpauseService(serviceId services.ServiceID) error {
+func (enclaveCtx *EnclaveContext) UnpauseService(serviceId services.ServiceID) error {
 	args := binding_constructors.NewUnpauseServiceArgs(string(serviceId))
-	_, err := enclaveContext.client.UnpauseService(context.Background(), args)
+	_, err := enclaveCtx.client.UnpauseService(context.Background(), args)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to unpause service '%v'", serviceId)
 	}
 	return nil
+}
+
+func (enclaveCtx *EnclaveContext) RenderTemplates(templates []string, templatesData []interface{}, destinationRelFilepaths []string) (services.FilesArtifactUUID, error) {
+	if len(templates) != len(templatesData) && len(templatesData) != len(destinationRelFilepaths) {
+		return "", stacktrace.NewError("There should be equal number of templates '%v', templatesData '%v' and destination relative file paths '%v'", len(templates), len(templatesData), len(destinationRelFilepaths))
+	}
+
+	if len(templates) < 0 {
+		return "", stacktrace.NewError("Expected at least one template got 0")
+	}
+
+	var templateAndDataByRelDestFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData
+
+	for index := 0; index < len(templates); index++ {
+		template := templates[index]
+		templateData := templatesData[index]
+		destinationRelFilepath := destinationRelFilepaths[index]
+
+		templateDataAsJson, err := json.Marshal(templateData)
+		if err != nil {
+			return "", stacktrace.Propagate(err,"Failed to jsonify templatesData '%v' at index '%v'", templatesData[index], index)
+		}
+		templateAndData := binding_constructors.NewTemplateAndData(
+			template,
+			string(templateDataAsJson),
+		)
+		templateAndDataByRelDestFilepath[destinationRelFilepath] = templateAndData
+	}
+
+	renderTemplatesToFilesArtifactArgs := binding_constructors.NewRenderTemplatesToFilesArtifactArgs(templateAndDataByRelDestFilepath)
+	response, err := enclaveCtx.client().RenderTemplatesToFilesArtifact(context.Background(), renderTemplatesToFilesArtifactArgs)
+
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Error in rendering templates")
+	}
+
+	return services.FilesArtifactUUID(response.Uuid), nil
 }
 
 // ====================================================================================================
