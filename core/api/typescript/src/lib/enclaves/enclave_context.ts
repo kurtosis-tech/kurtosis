@@ -723,7 +723,7 @@ export class EnclaveContext {
             return err(new Error(errMsg))
         }
 
-        if (templates.length == 0) {
+        if (templates.length === 0) {
             return err(new Error("Expected at least one template got 0"))
         }
 
