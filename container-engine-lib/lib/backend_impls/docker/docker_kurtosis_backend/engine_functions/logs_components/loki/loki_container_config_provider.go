@@ -16,15 +16,15 @@ const (
 	printfCmdName    = "printf"
 )
 
-type LokiContainerConfigProvider struct {
+type lokiContainerConfigProvider struct {
 	config *LokiConfig
 }
 
-func NewLokiContainerConfigProvider(config *LokiConfig) *LokiContainerConfigProvider {
-	return &LokiContainerConfigProvider{config: config}
+func newLokiContainerConfigProvider(config *LokiConfig) *lokiContainerConfigProvider {
+	return &lokiContainerConfigProvider{config: config}
 }
 
-func (loki *LokiContainerConfigProvider) GetPrivateHttpPortSpec() (*port_spec.PortSpec, error) {
+func (loki *lokiContainerConfigProvider) GetPrivateHttpPortSpec() (*port_spec.PortSpec, error) {
 	privateHttpPortSpec, err := port_spec.NewPortSpec(httpPortNumber, httpPortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -37,7 +37,7 @@ func (loki *LokiContainerConfigProvider) GetPrivateHttpPortSpec() (*port_spec.Po
 	return privateHttpPortSpec, nil
 }
 
-func (loki *LokiContainerConfigProvider) GetContainerArgs(
+func (loki *lokiContainerConfigProvider) GetContainerArgs(
 	containerName string,
 	containerLabels map[string]string,
 	logsDatabaseVolumeName string,
@@ -62,7 +62,7 @@ func (loki *LokiContainerConfigProvider) GetContainerArgs(
 		logsDatabaseVolumeName: dirpath,
 	}
 
-	logsDatabaseConfigContentStr, err := loki.GetConfigContent()
+	logsDatabaseConfigContentStr, err := loki.getConfigContent()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the Loki server's configuration content")
 	}
@@ -104,7 +104,7 @@ func (loki *LokiContainerConfigProvider) GetContainerArgs(
 	return createAndStartArgs, nil
 }
 
-func (loki *LokiContainerConfigProvider) GetConfigContent() (string, error) {
+func (loki *lokiContainerConfigProvider) getConfigContent() (string, error) {
 	lokiConfigYAMLContent, err := yaml.Marshal(loki.config)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred marshalling Loki config '%+v'", loki.config)

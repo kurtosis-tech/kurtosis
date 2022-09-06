@@ -3,8 +3,14 @@
 * Added the `ForLogsDatabaseServer` and the `ForLogsCollectorServer` Docker objects attribute
 * Added `LogsCollectorTypeDockerLabelValue`, `ModuleContainerTypeDockerLabelValue` and `LogsDbDataVolumeTypeDockerLabelValue` Docker labels
 * Added `EngineGUIDDockerLabelKey` Docker label key
-* Added `LogsDatabase` interface for defining centralized logs database behaviour
-* Added `Loki` logs database implementation and the Kurtosis configuration values
+* Added `LogsDatabaseContainer` interface for defining centralized logs database container behaviour
+* Added `LokiLogsDatabaseContainer` implementation and the Kurtosis configuration values
+* Added `LogsCollectorContainer` interface for defining centralized logs collector container behaviour
+* Added `FluentbitLogsCollectorContainer`  implementation and the Kurtosis configuration values
+
+### Breaking Changes
+* Updated `CreateEngine` method, added the `logsCollectorHttpPortNumber` param
+  * Users will need to update all the `CreateEngine` calls adding this new param
 
 # 0.36.1
 ### Changes
