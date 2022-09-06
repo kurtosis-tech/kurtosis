@@ -427,7 +427,6 @@ export function newUploadFilesArtifactArgs(data: Uint8Array) : UploadFilesArtifa
 // ==============================================================================================
 //                                      Render Templates
 // ==============================================================================================
-
 export function newTemplateAndData(template: string, templateData: string) : TemplateAndData {
     const templateAndData : TemplateAndData = new TemplateAndData()
     templateAndData.setDataAsJson(templateData)
