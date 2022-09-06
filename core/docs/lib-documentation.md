@@ -346,14 +346,12 @@ TemplateAndData
 ------------------
 
 This is an object that gets used by the [renderTemplates](#rendertemplatesmapstring-templateanddata-templateanddatabydestinationrelfilepaths) function.
-It has two properties
+It has two properties.
 
 ### Template -> String
 The template that needs to be rendered
 ### TemplateData -> Any
 The data that needs to be rendered in the template
-
-In Golang, it exposes a `NewTemplateAndData` constructor that the users of the SDK may use.
 
 ---
 
