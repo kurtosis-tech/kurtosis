@@ -685,7 +685,7 @@ func (enclaveCtx *EnclaveContext) RenderTemplates(templates []string, templatesD
 	}
 
 	renderTemplatesToFilesArtifactArgs := binding_constructors.NewRenderTemplatesToFilesArtifactArgs(templateAndDataByRelDestFilepath)
-	response, err := enclaveCtx.client().RenderTemplatesToFilesArtifact(context.Background(), renderTemplatesToFilesArtifactArgs)
+	response, err := enclaveCtx.client.RenderTemplatesToFilesArtifact(context.Background(), renderTemplatesToFilesArtifactArgs)
 
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error in rendering templates")
