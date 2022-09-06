@@ -231,7 +231,7 @@ The destination relative filepaths are relative to the root of the archive that 
 
 **Args**
 
-* `templateAndDataByDestinationRelFilepaths`: A map of [TemplateAndData](#templateanddata) by the `destinationRelFilepaths` string.
+* `templateAndDataByDestinationRelFilepaths`: A map of [TemplateAndData](#templateanddata) by the destination relative file path.
 
 **Returns**
 
