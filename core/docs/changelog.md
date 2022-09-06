@@ -3,6 +3,7 @@
 ### Features
 * Container engine server exposes a `RenderTemplatesToFilesArtifact` endpoint that takes in templates & data and returns a file artifact.
 * Added `RemoveFile` to both `FileCache` and `FilesArtifactStore` to support removing files from the cache and store.
+* Added `EnclaveContext.RenderTemplates` to the golang & typescript sdks which allows you to render templates into a files artifact.  
 
 # 1.58.1
 ### Changes
