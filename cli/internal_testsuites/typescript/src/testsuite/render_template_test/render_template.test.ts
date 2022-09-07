@@ -56,14 +56,14 @@ async function testRenderedTemplates(
 }
 
 function getTemplateAndDataByDestRelFilepath() : Map<string, TemplateAndData> {
-    let templateDataByDestinationFilepath = new Map<string, TemplateAndData>()
+    let templateDataByDestinationRelFilepath = new Map<string, TemplateAndData>()
 
     const template = "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}."
     const templateData  = {"Name": "Stranger", "Answer": 6, "Numbers": [1, 2, 3], "UnixTimeStamp": 1257894000, "LargeFloat": 1231231243.43}
     const templateAndData = new TemplateAndData(template, templateData)
 
-    templateDataByDestinationFilepath.set(NESTED_REL_FILEPATH, templateAndData)
-    templateDataByDestinationFilepath.set(ROOT_FILENAME, templateAndData)
+    templateDataByDestinationRelFilepath.set(NESTED_REL_FILEPATH, templateAndData)
+    templateDataByDestinationRelFilepath.set(ROOT_FILENAME, templateAndData)
 
-    return templateDataByDestinationFilepath
+    return templateDataByDestinationRelFilepath
 }

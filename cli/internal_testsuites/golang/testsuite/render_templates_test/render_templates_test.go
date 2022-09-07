@@ -56,14 +56,14 @@ func testRenderedTemplates(
 }
 
 func getTemplateAndDataByDestRelFilepath() map[string]*enclaves.TemplateAndData {
-	templateDataByDestinationFilepath := make(map[string]*enclaves.TemplateAndData)
+	templateAndDataByDestRelFilepath := make(map[string]*enclaves.TemplateAndData)
 
 	template := "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}."
 	templateData := map[string]interface{}{"Name": "Stranger", "Answer": 6, "Numbers": []int{1, 2, 3}, "UnixTimeStamp": 1257894000, "LargeFloat": 1231231243.43}
 	templateAndData := enclaves.NewTemplateAndData(template, templateData)
 
-	templateDataByDestinationFilepath[nestedRelFilepath] = templateAndData
-	templateDataByDestinationFilepath[rootFilename] = templateAndData
+	templateAndDataByDestRelFilepath[nestedRelFilepath] = templateAndData
+	templateAndDataByDestRelFilepath[rootFilename] = templateAndData
 
-	return templateDataByDestinationFilepath
+	return templateAndDataByDestRelFilepath
 }
