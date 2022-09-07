@@ -1,5 +1,7 @@
 # TBD
 
+# 1.32.2
+
 ### Fixes
 * Upgraded core to 1.58.3 which fixes how we handle json in the `RenderTemplatesToFilesArtifact` end point.
 
