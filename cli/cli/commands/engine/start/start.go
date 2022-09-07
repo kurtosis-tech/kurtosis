@@ -17,7 +17,7 @@ const (
 	engineVersionArg = "version"
 	logLevelArg      = "log-level"
 
-	defaultEngineVersion = ""
+	defaultEngineVersion = "latest"
 )
 
 var engineVersion string
