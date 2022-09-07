@@ -267,7 +267,7 @@ export async function checkFileContents(ipAddress: string, portNum: number, file
 
     let dataAsString = String(fileContentResults.value)
     if (dataAsString !== expectedContents){
-        return err(new Error(`The contents of '${filename}' do not match the test contents of ${expectedContents}.\n`))
+        return err(new Error(`The contents of '${filename}' do not match the expected contents of ${expectedContents}.\n`))
     }
     return ok(null)
 }

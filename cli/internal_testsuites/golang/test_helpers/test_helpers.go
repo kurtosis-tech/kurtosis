@@ -251,7 +251,7 @@ func CheckFileContents(serverIP string, port uint16, relativeFilepath string, ex
 	}
 	if expectedContents != fileContents {
 		return stacktrace.NewError(
-			"The contents of '%s' do not match the test content '%s'",
+			"The contents of '%s' do not match the expected content '%s'",
 			fileContents,
 			expectedContents,
 		)
@@ -260,9 +260,7 @@ func CheckFileContents(serverIP string, port uint16, relativeFilepath string, ex
 }
 
 // ====================================================================================================
-//
-//	Private Helper Methods
-//
+//                                      Private Helper Methods
 // ====================================================================================================
 func getDatastoreContainerConfigSupplier() func(ipAddr string) (*services.ContainerConfig, error) {
 	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
