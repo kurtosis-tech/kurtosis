@@ -3,16 +3,7 @@ import * as filesystem from "fs"
 import * as path from "path"
 import * as os from "os";
 import {createEnclave} from "../../test_helpers/enclave_setup";
-import {
-    ContainerConfig,
-    ContainerConfigBuilder,
-    FilesArtifactUUID,
-    PortProtocol,
-    PortSpec,
-    ServiceID
-} from "kurtosis-core-api-lib";
-import axios from "axios";
-import log from "loglevel";
+import {checkFileContents, startFileServer} from "../../test_helpers/test_helpers";
 
 const ARCHIVE_DIRECTORY_TEST_PATTERN   = "upload-test-typescript-"
 const ARCHIVE_SUBDIRECTORY_TEST_PATTERN     = "sub-folder-"
@@ -26,14 +17,6 @@ const NUMBER_OF_TEMP_FILES_IN_ROOT_DIRECTORY    = 1
 const ENCLAVE_TEST_NAME         = "upload-files-test"
 const IS_PARTITIONING_ENABLED   = false
 
-const FILE_SERVER_SERVICE_IMAGE         = "flashspys/nginx-static"
-const FILE_SERVER_SERVICE_ID: ServiceID = "file-server"
-const FILE_SERVER_PORT_ID               = "http"
-
-const WAIT_FOR_STARTUP_TIME_BETWEEN_POLLS = 500
-const WAIT_FOR_STARTUP_MAX_RETRIES        = 15
-const WAIT_INITIAL_DELAY_MILLISECONDS     = 0
-const WAIT_FOR_AVAILABILITY_BODY_TEXT     = ""
 
 //Keywords for mapping paths for file integrity checking.
 const DISK_DIR_KEYWORD                                  = "diskDir"
@@ -41,13 +24,10 @@ const ARCHIVE_DIR_KEYWORD                               = "archiveDir"
 const SUB_DIR_KEYWORD                                   = "subDir"
 const SUB_FILE_KEYWORD_PATTERN                          = "subFile"
 const ARCHIVE_ROOT_FILE_KEYWORD_PATTERN                 = "archiveRootFile"
-const USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT  = "/static"
+
 
 const FOLDER_PERMISSION = 0o755
 const FILE_PERMISSION   = 0o644
-
-const FILE_SERVER_PRIVATE_PORT_NUM      = 80
-const FILE_SERVER_PORT_SPEC             = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, PortProtocol.TCP )
 
 jest.setTimeout(180000)
 
@@ -60,52 +40,24 @@ async function TestUploadFiles() {
 
     const createEnclaveResult = await createEnclave(ENCLAVE_TEST_NAME, IS_PARTITIONING_ENABLED)
     if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
-    const enclaveCtx = createEnclaveResult.value.enclaveContext
+    const {enclaveContext, stopEnclaveFunction} = createEnclaveResult.value
     try {
         const pathToUpload = filePathsMap.get(DISK_DIR_KEYWORD)
         if (typeof pathToUpload === "undefined") {throw new Error("Failed to store uploadable path in path map.")}
-        const uploadResults = await enclaveCtx.uploadFiles(pathToUpload)
+        const uploadResults = await enclaveContext.uploadFiles(pathToUpload)
         if(uploadResults.isErr()) { throw uploadResults.error }
         const filesArtifactUuid = uploadResults.value
-
-        const filesArtifactsMountPoints = new Map<FilesArtifactUUID, string>()
-        filesArtifactsMountPoints.set(filesArtifactUuid, USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT)
-
-        const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier(filesArtifactsMountPoints)
-        const addServiceResult = await enclaveCtx.addService(FILE_SERVER_SERVICE_ID, fileServerContainerConfigSupplier)
-        if(addServiceResult.isErr()){ throw addServiceResult.error }
-
-        const serviceContext = addServiceResult.value
-        const publicPort = serviceContext.getPublicPorts().get(FILE_SERVER_PORT_ID)
-        if(publicPort === undefined){
-            throw new Error(`Expected to find public port for ID "${FILE_SERVER_PORT_ID}", but none was found`)
-        }
-
-        const fileServerPublicIp = serviceContext.getMaybePublicIPAddress();
-        const fileServerPublicPortNum = publicPort.number
         const firstArchiveRootKeyWord = `${ARCHIVE_ROOT_FILE_KEYWORD_PATTERN}0`
         const firstArchiveRootFilename = `${filePathsMap.get(firstArchiveRootKeyWord)}`
 
-        const waitForHttpGetEndpointAvailabilityResult = await enclaveCtx.waitForHttpGetEndpointAvailability(
-            FILE_SERVER_SERVICE_ID,
-            FILE_SERVER_PRIVATE_PORT_NUM,
-            firstArchiveRootFilename,
-            WAIT_INITIAL_DELAY_MILLISECONDS,
-            WAIT_FOR_STARTUP_MAX_RETRIES,
-            WAIT_FOR_STARTUP_TIME_BETWEEN_POLLS,
-            WAIT_FOR_AVAILABILITY_BODY_TEXT
-        );
-
-        if(waitForHttpGetEndpointAvailabilityResult.isErr()){
-            log.error("An error occurred waiting for the file server service to become available")
-            throw waitForHttpGetEndpointAvailabilityResult.error
-        }
-        log.info(`Added file server service with public IP "${fileServerPublicIp}" and port "${fileServerPublicPortNum}"`)
+        const startFileServerResult = await startFileServer(filesArtifactUuid, firstArchiveRootFilename, enclaveContext)
+        if (startFileServerResult.isErr()){throw startFileServerResult.error}
+        const {fileServerPublicIp, fileServerPublicPortNum} = startFileServerResult.value
 
         const allContentTestResults = await testAllContent(filePathsMap, fileServerPublicIp, fileServerPublicPortNum)
         if(allContentTestResults.isErr()) { throw allContentTestResults.error}
-    } catch (err) {
-        throw err
+    } finally {
+        stopEnclaveFunction()
     }
     jest.clearAllTimers()
 }
@@ -117,8 +69,8 @@ async function testAllContent(
     allPaths: Map<string,string>,
     ipAddress: string,
     portNum: number
-): Promise<Result<null, Error>>{
     //Test files in archive root directory.
+): Promise<Result<null, Error>>{
     const rootDirTestResults = await testDirectoryContents(
         allPaths,
         ARCHIVE_ROOT_FILE_KEYWORD_PATTERN,
@@ -156,20 +108,8 @@ async function testDirectoryContents(
         if (typeof relativePath === "undefined"){
             return err(new Error(`The file for keyword ${fileKeyword} was not mapped in the paths map.`))
         }
-        let testContentResults = await testFileContents(ipAddress, portNum, relativePath)
+        let testContentResults = await checkFileContents(ipAddress, portNum, relativePath, ARCHIVE_TEST_CONTENT)
         if (testContentResults.isErr()) { return  err(testContentResults.error) }
-    }
-    return ok(null)
-}
-
-//Test file contents against the ARCHIVE_TEST_CONTENT string.
-async function testFileContents(ipAddress: string, portNum: number, filename: string): Promise<Result<null, Error>> {
-    let fileContentResults = await getFileContents(ipAddress, portNum, filename)
-    if(fileContentResults.isErr()) { return err(fileContentResults.error)}
-
-    let dataAsString = String(fileContentResults.value)
-    if (dataAsString !== ARCHIVE_TEST_CONTENT){
-        return err(new Error(`The contents of '${filename}' do not match the test contents of ${ARCHIVE_TEST_CONTENT}.\n`))
     }
     return ok(null)
 }
@@ -263,36 +203,4 @@ async function createTempDirectory(directoryBase: string, directoryPattern: stri
         return err(new Error("Failed to create temporary directory for 'uploadFiles' testing."))
     }
     return ok(tempDirPathResult.value)
-}
-
-function getFileServerContainerConfigSupplier(filesArtifactMountPoints: Map<FilesArtifactUUID, string>): (ipAddr: string) => Result<ContainerConfig, Error> {
-    const containerConfigSupplier = (ipAddr:string): Result<ContainerConfig, Error> => {
-        const usedPorts = new Map<string, PortSpec>()
-        usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
-
-        const containerConfig = new ContainerConfigBuilder(FILE_SERVER_SERVICE_IMAGE)
-            .withUsedPorts(usedPorts)
-            .withFiles(filesArtifactMountPoints)
-            .build()
-
-        return ok(containerConfig)
-    }
-    return containerConfigSupplier
-}
-
-async function getFileContents(ipAddress: string, portNum: number, relativeFilepath: string): Promise<Result<any, Error>> {
-    let response;
-    try {
-        response = await axios(`http://${ipAddress}:${portNum}/${relativeFilepath}`)
-    } catch(error){
-        log.error(`An error occurred getting the contents of file "${relativeFilepath}"`)
-        if(error instanceof Error){
-            return err(error)
-        }else{
-            return err(new Error("An error occurred getting the contents of file, but the error wasn't of type Error"))
-        }
-    }
-
-    const bodyStr = String(response.data)
-    return ok(bodyStr)
 }

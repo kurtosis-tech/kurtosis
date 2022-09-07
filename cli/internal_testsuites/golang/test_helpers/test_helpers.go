@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path"
 	"time"
@@ -38,6 +39,23 @@ const (
 	apiWaitForStartupDelayMilliseconds = 1000
 
 	defaultPartitionId = ""
+
+	fileServerServiceId      services.ServiceID = "file-server"
+	fileServerServiceImage                      = "flashspys/nginx-static"
+	fileServerPortId                            = "http"
+	fileServerPrivatePortNum                    = 80
+
+	waitForStartupTimeBetweenPolls = 500
+	waitForStartupMaxRetries       = 15
+	waitInitialDelayMilliseconds   = 0
+	waitForAvailabilityBodyText    = ""
+
+	userServiceMountPointForTestFilesArtifact = "/static"
+)
+
+var fileServerPortSpec = services.NewPortSpec(
+	fileServerPrivatePortNum,
+	services.PortProtocol_TCP,
 )
 
 var datastorePortSpec = services.NewPortSpec(
@@ -187,8 +205,64 @@ func WaitForHealthy(ctx context.Context, client GrpcAvailabilityChecker, retries
 	return nil
 }
 
+func StartFileServer(filesArtifactUUID services.FilesArtifactUUID, pathToCheckOnFileServer string, enclaveCtx *enclaves.EnclaveContext) (string, uint16, error) {
+	filesArtifactMountPoints := map[services.FilesArtifactUUID]string{
+		filesArtifactUUID: userServiceMountPointForTestFilesArtifact,
+	}
+	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactMountPoints)
+	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
+	if err != nil {
+		return "", 0, stacktrace.Propagate(err, "An error occurred adding the file server service")
+	}
+
+	publicPort, found := serviceCtx.GetPublicPorts()[fileServerPortId]
+	if !found {
+		return "", 0, stacktrace.NewError("Expected to find public port for ID '%v', but none was found", fileServerPortId)
+	}
+
+	fileServerPublicIp := serviceCtx.GetMaybePublicIPAddress()
+	fileServerPublicPortNum := publicPort.GetNumber()
+
+	err = enclaveCtx.WaitForHttpGetEndpointAvailability(
+		fileServerServiceId,
+		fileServerPrivatePortNum,
+		pathToCheckOnFileServer,
+		waitInitialDelayMilliseconds,
+		waitForStartupMaxRetries,
+		waitForStartupTimeBetweenPolls,
+		waitForAvailabilityBodyText,
+	)
+
+	if err != nil {
+		return "", 0, stacktrace.NewError("An error occurred waiting for the file server service to become available.")
+	}
+
+	logrus.Infof("Added file server service with public IP '%v' and port '%v'", fileServerPublicIp,
+		fileServerPublicPortNum)
+
+	return fileServerPublicIp, fileServerPublicPortNum, nil
+}
+
+// Compare the file contents of the directories against expectedContent and see if they match.
+func CheckFileContents(serverIP string, port uint16, relativeFilepath string, expectedContents string) error {
+	fileContents, err := getFileContents(serverIP, port, relativeFilepath)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting '%s' contents", relativeFilepath)
+	}
+	if expectedContents != fileContents {
+		return stacktrace.NewError(
+			"The contents of '%s' do not match the test content '%s'",
+			fileContents,
+			expectedContents,
+		)
+	}
+	return nil
+}
+
 // ====================================================================================================
-//                                      Private Helper Methods
+//
+//	Private Helper Methods
+//
 // ====================================================================================================
 func getDatastoreContainerConfigSupplier() func(ipAddr string) (*services.ContainerConfig, error) {
 	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
@@ -245,4 +319,40 @@ func createApiConfigFile(datastoreIP string) (string, error) {
 	}
 
 	return tempFilepath, nil
+}
+
+func getFileContents(ipAddress string, portNum uint16, realtiveFilepath string) (string, error) {
+	resp, err := http.Get(fmt.Sprintf("http://%v:%v/%v", ipAddress, portNum, realtiveFilepath))
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the contents of file '%v'", realtiveFilepath)
+	}
+	body := resp.Body
+	defer func() {
+		if err := body.Close(); err != nil {
+			logrus.Warnf("We tried to close the response body, but doing so threw an error:\n%v", err)
+		}
+	}()
+
+	bodyBytes, err := ioutil.ReadAll(body)
+	if err != nil {
+		return "", stacktrace.Propagate(err,
+			"An error occurred reading the response body when getting the contents of file '%v'", realtiveFilepath)
+	}
+
+	bodyStr := string(bodyBytes)
+	return bodyStr, nil
+}
+
+func getFileServerContainerConfigSupplier(filesArtifactMountPoints map[services.FilesArtifactUUID]string) func(ipAddr string) (*services.ContainerConfig, error) {
+	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
+		containerConfig := services.NewContainerConfigBuilder(
+			fileServerServiceImage,
+		).WithUsedPorts(map[string]*services.PortSpec{
+			fileServerPortId: fileServerPortSpec,
+		}).WithFiles(
+			filesArtifactMountPoints,
+		).Build()
+		return containerConfig, nil
+	}
+	return containerConfigSupplier
 }

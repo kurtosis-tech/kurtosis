@@ -19,6 +19,8 @@ import * as fs from 'fs';
 import * as path from "path";
 import {create} from "domain";
 import * as os from "os";
+import exp = require("constants");
+import axios from "axios";
 
 const CONFIG_FILENAME = "config.json"
 const CONFIG_MOUNTPATH_ON_API_CONTAINER = "/config"
@@ -45,6 +47,29 @@ const API_PORT_SPEC = new PortSpec(
     serverApi.LISTEN_PORT,
     PortProtocol.TCP,
 )
+const FILE_SERVER_SERVICE_IMAGE         = "flashspys/nginx-static"
+const FILE_SERVER_PORT_ID               = "http"
+const FILE_SERVER_SERVICE_ID: ServiceID = "file-server"
+
+const USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT  = "/static"
+
+const WAIT_FOR_STARTUP_TIME_BETWEEN_POLLS = 500
+const WAIT_FOR_STARTUP_MAX_RETRIES        = 15
+const WAIT_INITIAL_DELAY_MILLISECONDS     = 0
+const WAIT_FOR_AVAILABILITY_BODY_TEXT     = ""
+
+const FILE_SERVER_PRIVATE_PORT_NUM      = 80
+const FILE_SERVER_PORT_SPEC             = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, PortProtocol.TCP )
+
+export class StartFileServerResponse  {
+    fileServerPublicIp: string
+    fileServerPublicPortNum: number
+
+    constructor(fileServerPublicIp: string, fileServerPublicPortNum: number) {
+        this.fileServerPublicIp = fileServerPublicIp
+        this.fileServerPublicPortNum = fileServerPublicPortNum
+    }
+}
 
 export async function addDatastoreService(serviceId: ServiceID, enclaveContext: EnclaveContext):
     Promise<Result<{
@@ -198,6 +223,55 @@ export async function waitForHealthy(
 
 }
 
+export async function startFileServer(filesArtifactUuid: string, pathToCheckOnFileServer: string, enclaveCtx: EnclaveContext) : Promise<Result<StartFileServerResponse, Error>> {
+    const filesArtifactsMountPoints = new Map<FilesArtifactUUID, string>()
+    filesArtifactsMountPoints.set(filesArtifactUuid, USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT)
+
+    const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier(filesArtifactsMountPoints)
+    const addServiceResult = await enclaveCtx.addService(FILE_SERVER_SERVICE_ID, fileServerContainerConfigSupplier)
+    if(addServiceResult.isErr()){ throw addServiceResult.error }
+
+    const serviceContext = addServiceResult.value
+    const publicPort = serviceContext.getPublicPorts().get(FILE_SERVER_PORT_ID)
+    if(publicPort === undefined){
+        throw new Error(`Expected to find public port for ID "${FILE_SERVER_PORT_ID}", but none was found`)
+    }
+
+    const fileServerPublicIp = serviceContext.getMaybePublicIPAddress();
+    const fileServerPublicPortNum = publicPort.number
+
+    const waitForHttpGetEndpointAvailabilityResult = await enclaveCtx.waitForHttpGetEndpointAvailability(
+        FILE_SERVER_SERVICE_ID,
+        FILE_SERVER_PRIVATE_PORT_NUM,
+        pathToCheckOnFileServer,
+        WAIT_INITIAL_DELAY_MILLISECONDS,
+        WAIT_FOR_STARTUP_MAX_RETRIES,
+        WAIT_FOR_STARTUP_TIME_BETWEEN_POLLS,
+        WAIT_FOR_AVAILABILITY_BODY_TEXT
+    );
+
+    if(waitForHttpGetEndpointAvailabilityResult.isErr()){
+        log.error("An error occurred waiting for the file server service to become available")
+        throw waitForHttpGetEndpointAvailabilityResult.error
+    }
+    log.info(`Added file server service with public IP "${fileServerPublicIp}" and port "${fileServerPublicPortNum}"`)
+
+    return ok(new StartFileServerResponse(fileServerPublicIp, fileServerPublicPortNum))
+}
+
+
+//Test file contents against the ARCHIVE_TEST_CONTENT string.
+export async function checkFileContents(ipAddress: string, portNum: number, filename: string, expectedContents: string): Promise<Result<null, Error>> {
+    let fileContentResults = await getFileContents(ipAddress, portNum, filename)
+    if(fileContentResults.isErr()) { return err(fileContentResults.error)}
+
+    let dataAsString = String(fileContentResults.value)
+    if (dataAsString !== expectedContents){
+        return err(new Error(`The contents of '${filename}' do not match the test contents of ${expectedContents}.\n`))
+    }
+    return ok(null)
+}
+
 // ====================================================================================================
 //                                      Private Helper Methods
 // ====================================================================================================
@@ -284,3 +358,34 @@ async function createApiConfigFile(datastoreIP: string): Promise<Result<string, 
 
 }
 
+function getFileServerContainerConfigSupplier(filesArtifactMountPoints: Map<FilesArtifactUUID, string>): (ipAddr: string) => Result<ContainerConfig, Error> {
+    const containerConfigSupplier = (ipAddr:string): Result<ContainerConfig, Error> => {
+        const usedPorts = new Map<string, PortSpec>()
+        usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
+
+        const containerConfig = new ContainerConfigBuilder(FILE_SERVER_SERVICE_IMAGE)
+            .withUsedPorts(usedPorts)
+            .withFiles(filesArtifactMountPoints)
+            .build()
+
+        return ok(containerConfig)
+    }
+    return containerConfigSupplier
+}
+
+async function getFileContents(ipAddress: string, portNum: number, relativeFilepath: string): Promise<Result<any, Error>> {
+    let response;
+    try {
+        response = await axios(`http://${ipAddress}:${portNum}/${relativeFilepath}`)
+    } catch(error){
+        log.error(`An error occurred getting the contents of file "${relativeFilepath}"`)
+        if(error instanceof Error){
+            return err(error)
+        }else{
+            return err(new Error("An error occurred getting the contents of file, but the error wasn't of type Error"))
+        }
+    }
+
+    const bodyStr = String(response.data)
+    return ok(bodyStr)
+}
