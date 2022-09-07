@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components/fluentbit"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components/loki"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
@@ -80,6 +81,10 @@ func CreateEngine(
 	}
 	engineGuid := engine.EngineGUID(engineGuidStr)
 
+	//Declaring the centralized logs stack
+	logsDatabaseContainer := loki.NewLokiLogDatabaseContainer()
+	logsCollectorContainer := fluentbit.NewFluentbitLogsCollectorContainer()
+
 	killCentralizedLogsComponentsContainersFunc, err := createCentralizedLogsComponents(
 		ctx,
 		engineGuid,
@@ -88,6 +93,8 @@ func CreateEngine(
 		logsCollectorHttpPortNumber,
 		objAttrsProvider,
 		dockerManager,
+		logsDatabaseContainer,
+		logsCollectorContainer,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the centralized logs components for the engine with GUID '%v' and network ID '%v'", engineGuid, targetNetworkId)
@@ -248,9 +255,9 @@ func createCentralizedLogsComponents(
 	logsCollectorHttpPortNumber uint16,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
+	logsDatabaseContainer logs_components.LogsDatabaseContainer,
+	logsCollectorContainer logs_components.LogsCollectorContainer,
 ) (func(), error) {
-
-	logsDatabaseContainer := loki.NewLokiLogDatabaseContainer()
 
 	logsDatabaseHost, logsDatabasePort, killLogsDatabaseContainerFunc, err := logsDatabaseContainer.CreateAndStart(
 		ctx,
@@ -276,8 +283,6 @@ func createCentralizedLogsComponents(
 			killLogsDatabaseContainerFunc()
 		}
 	}()
-
-	logsCollectorContainer := fluentbit.NewFluentbitLogsCollectorContainer()
 
 	killLogsCollectorContainerFunc, err := logsCollectorContainer.CreateAndStart(
 		ctx,
