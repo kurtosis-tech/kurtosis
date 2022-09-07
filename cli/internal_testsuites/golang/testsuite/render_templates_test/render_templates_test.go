@@ -15,7 +15,7 @@ const (
 
 	rootFile         = "config.yml"
 	nestedFile       = "grafana/config.yml"
-	expectedContents = "Hello Stranger. The sum of [1 2 3] is 6."
+	expectedContents = "Hello Stranger. The sum of [1 2 3] is 6. My favorite moment in history 1257894000. My favorite number 1231231243.43."
 )
 
 func TestRenderTemplates(t *testing.T) {
@@ -58,8 +58,8 @@ func testRenderedTemplates(
 func getTemplateAndDataByDestRelFilepath() map[string]*enclaves.TemplateAndData {
 	templateDataByDestinationFilepath := make(map[string]*enclaves.TemplateAndData)
 
-	template := "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}."
-	templateData := map[string]interface{}{"Name": "Stranger", "Answer": 6, "Numbers": []int{1, 2, 3}}
+	template := "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}."
+	templateData := map[string]interface{}{"Name": "Stranger", "Answer": 6, "Numbers": []int{1, 2, 3}, "UnixTimeStamp": 1257894000, "LargeFloat": 1231231243.43}
 	templateAndData := enclaves.NewTemplateAndData(template, templateData)
 
 	templateDataByDestinationFilepath[nestedFile] = templateAndData

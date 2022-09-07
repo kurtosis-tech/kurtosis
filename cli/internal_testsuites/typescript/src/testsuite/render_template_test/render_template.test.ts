@@ -8,7 +8,7 @@ const IS_PARTITIONING_ENABLED   = false
 
 const ROOT_FILE         = "config.yml"
 const NESTED_FILE       = "grafana/config.yml"
-const EXPECTED_CONTENTS = "Hello Stranger. The sum of [1 2 3] is 6."
+const EXPECTED_CONTENTS = "Hello Stranger. The sum of [1 2 3] is 6. My favorite moment in history 1257894000. My favorite number 1231231243.43."
 
 jest.setTimeout(180000)
 
@@ -58,8 +58,8 @@ async function testRenderedTemplates(
 function getTemplateAndDataByDestRelFilepath() : Map<string, TemplateAndData> {
     let templateDataByDestinationFilepath = new Map<string, TemplateAndData>()
 
-    const template = "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}."
-    const templateData  = {"Name": "Stranger", "Answer": 6, "Numbers": [1, 2, 3]}
+    const template = "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}."
+    const templateData  = {"Name": "Stranger", "Answer": 6, "Numbers": [1, 2, 3], "UnixTimeStamp": 1257894000, "LargeFloat": 1231231243.43}
     const templateAndData = new TemplateAndData(template, templateData)
 
     templateDataByDestinationFilepath.set(NESTED_FILE, templateAndData)
