@@ -1,11 +1,14 @@
 # TBD
 
+### Changes
+* Upgraded core to 1.58.2 which exposes a `EnclaveContext.RenderTemplates` method in the SDK. It also exposes a `RenderTemplatesToFilesArtifact` endpoint in the api container server.
+
 # 1.32.1
-## Changes
+### Changes
 * Upgraded core to 1.58.1
 
 # 1.32.0
-## Changes
+### Changes
 * Upgraded core to 1.58.0
 
 ### Breaking Changes
