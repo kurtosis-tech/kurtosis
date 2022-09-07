@@ -138,9 +138,9 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		logrus.Warnf("Failed to pull the latest version of module container image '%v'; you may be running an out-of-date version", image)
 	}
 
-	logsCollectorAddress, err := shared_helpers.GetLogsCollectorAddress(ctx, backend.dockerManager)
+	logsCollectorServiceAddress, err := shared_helpers.GetLogsCollectorServiceAddress(ctx, backend.dockerManager)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector address")
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector service address")
 	}
 
 	//The following docker labels will be added into the logs stream which is necessary for creating new tags
@@ -151,7 +151,7 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		label_key_consts.ContainerTypeDockerLabelKey.GetString(),
 	}
 
-	logsCollectorAddressStr := string(logsCollectorAddress)
+	logsCollectorAddressStr := string(logsCollectorServiceAddress)
 
 	//The container will be configured to send the logs to the Fluentbit logs collector server
 	fluentdLoggingDriverCnfg := docker_manager.NewFluentdLoggingDriver(

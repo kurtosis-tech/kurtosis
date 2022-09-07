@@ -44,7 +44,6 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 	}
 
 	logsCollectorAttrs, err := objAttrsProvider.ForLogsCollector(
-		engineGuid,
 		logsCollectorTcpPortId,
 		privateTcpPortSpec,
 		logsCollectorHttpPortId,

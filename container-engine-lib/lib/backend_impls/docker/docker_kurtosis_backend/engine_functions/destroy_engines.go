@@ -5,8 +5,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/stacktrace"
 )
@@ -26,11 +24,6 @@ func DestroyEngines(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
 	}
 
-	logsComponentsContainersByEngineContainerId, err := getLogsComponentsContainerIdsByEngineContainerIds(ctx, matchingEnginesByContainerId, dockerManager)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs componentes containers by engine container IDs '%+v'", matchingEnginesByContainerId)
-	}
-
 	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
 	matchingUncastedEnginesByContainerId := map[string]interface{}{}
 	for containerId, engineObj := range matchingEnginesByContainerId {
@@ -45,23 +38,6 @@ func DestroyEngines(
 		engineContainerId := dockerObjectId
 		if err := dockerManager.RemoveContainer(ctx, engineContainerId); err != nil {
 			return stacktrace.Propagate(err, "An error occurred removing engine container with ID '%v'", engineContainerId)
-		}
-
-		logsComponentsToRemoveContainerIDs, found := logsComponentsContainersByEngineContainerId[engineContainerId]
-		if !found {
-			return nil
-		}
-
-		if logsComponentsToRemoveContainerIDs.logsDatabaseContainerId != "" {
-			if err := dockerManager.RemoveContainer(ctx, logsComponentsToRemoveContainerIDs.logsDatabaseContainerId); err != nil {
-				return stacktrace.Propagate(err, "An error occurred removing logs database container with ID '%v'", logsComponentsToRemoveContainerIDs.logsDatabaseContainerId)
-			}
-		}
-
-		if logsComponentsToRemoveContainerIDs.logsCollectorContainerId != "" {
-			if err := dockerManager.RemoveContainer(ctx, logsComponentsToRemoveContainerIDs.logsCollectorContainerId); err != nil {
-				return stacktrace.Propagate(err, "An error occurred removing logs collector container with ID '%v'", logsComponentsToRemoveContainerIDs.logsCollectorContainerId)
-			}
 		}
 
 		return nil
@@ -93,82 +69,23 @@ func DestroyEngines(
 	}
 
 	//Remove the logs components volumes only if are not in use
-	allLogsDatabaseContainers, err := getAllLogsDatabaseContainers(ctx, dockerManager)
+	logsDatabaseContainer, err := getLogsDatabaseContainer(ctx, dockerManager)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting all logs database containers")
-	}
-	if len(allLogsDatabaseContainers) == 0 {
-		logsDatabaseVolumeName, err := getLogsDatabaseVolumeName(ctx, dockerManager)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs database volume name")
-		}
-
-		if err := dockerManager.RemoveVolume(ctx, logsDatabaseVolumeName); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred removing logs database volume '%v'", logsDatabaseVolumeName)
-		}
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs database container")
 	}
 
-	allLogsCollectorContainers, err := shared_helpers.GetAllLogsCollectorContainers(ctx, dockerManager)
+	if err := dockerManager.RemoveContainer(ctx, logsDatabaseContainer.GetId()); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing logs database container with ID '%v'", logsDatabaseContainer.GetId())
+	}
+
+	logsCollectorContainer, err := shared_helpers.GetLogsCollectorContainer(ctx, dockerManager)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting all logs collector containers")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector container")
 	}
-	if len(allLogsCollectorContainers) == 0 {
-		logsCollectorVolumeName, err := getLogsCollectorVolumeName(ctx, dockerManager)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs collector volume name")
-		}
 
-		if err := dockerManager.RemoveVolume(ctx, logsCollectorVolumeName); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred removing logs collector volume '%v'", logsCollectorVolumeName)
-		}
+	if err := dockerManager.RemoveContainer(ctx, logsCollectorContainer.GetId()); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing logs collector container with ID '%v'", logsCollectorContainer.GetId())
 	}
 
 	return successfulGuids, erroredGuids, nil
 }
-
-func getLogsDatabaseVolumeName(
-	ctx context.Context,
-	dockerManager *docker_manager.DockerManager,
-) (string, error) {
-	volumeSearchLabels :=  map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():      label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.VolumeTypeDockerLabelKey.GetString(): label_value_consts.LogsDatabaseVolumeTypeDockerLabelValue.GetString(),
-	}
-	foundVolumes, err := dockerManager.GetVolumesByLabels(ctx, volumeSearchLabels)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting logs database volumes matching labels '%+v'", volumeSearchLabels)
-	}
-	if len(foundVolumes) > 1 {
-		return "", stacktrace.NewError("Found multiple logs database volumes; this should never happen")
-	}
-	if len(foundVolumes) == 0 {
-		return "", stacktrace.NewError("No logs database volume found")
-	}
-	volume := foundVolumes[0]
-	return volume.Name, nil
-}
-
-func getLogsCollectorVolumeName(
-	ctx context.Context,
-	dockerManager *docker_manager.DockerManager,
-) (string, error) {
-	volumeSearchLabels :=  map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():      label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.VolumeTypeDockerLabelKey.GetString(): label_value_consts.LogsCollectorVolumeTypeDockerLabelValue.GetString(),
-	}
-	foundVolumes, err := dockerManager.GetVolumesByLabels(ctx, volumeSearchLabels)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting logs collector volumes matching labels '%+v'", volumeSearchLabels)
-	}
-	if len(foundVolumes) > 1 {
-		return "", stacktrace.NewError("Found multiple logs collector volumes; this should never happen")
-	}
-	if len(foundVolumes) == 0 {
-		return "", stacktrace.NewError("No logs collector volume found")
-	}
-	volume := foundVolumes[0]
-	return volume.Name, nil
-}
-
-
-
