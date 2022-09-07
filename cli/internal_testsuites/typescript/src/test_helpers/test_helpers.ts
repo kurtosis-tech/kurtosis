@@ -17,9 +17,7 @@ import * as grpc from "@grpc/grpc-js";
 import log from "loglevel";
 import * as fs from 'fs';
 import * as path from "path";
-import {create} from "domain";
 import * as os from "os";
-import exp = require("constants");
 import axios from "axios";
 
 const CONFIG_FILENAME = "config.json"
