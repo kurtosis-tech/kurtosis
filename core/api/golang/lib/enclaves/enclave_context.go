@@ -19,6 +19,7 @@ package enclaves
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/binding_constructors"
@@ -626,10 +627,10 @@ func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreW
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveContext *EnclaveContext) StoreServiceFiles(ctx context.Context, serviceId services.ServiceID, absoluteFilepathOnServiceContainer string) (services.FilesArtifactUUID, error) {
+func (enclaveCtx *EnclaveContext) StoreServiceFiles(ctx context.Context, serviceId services.ServiceID, absoluteFilepathOnServiceContainer string) (services.FilesArtifactUUID, error) {
 	serviceIdStr := string(serviceId)
 	args := binding_constructors.NewStoreFilesArtifactFromServiceArgs(serviceIdStr, absoluteFilepathOnServiceContainer)
-	response, err := enclaveContext.client.StoreFilesArtifactFromService(ctx, args)
+	response, err := enclaveCtx.client.StoreFilesArtifactFromService(ctx, args)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred copying source content from absolute filepath '%v' in service container with ID '%v'", absoluteFilepathOnServiceContainer, serviceIdStr)
 	}
@@ -637,9 +638,9 @@ func (enclaveContext *EnclaveContext) StoreServiceFiles(ctx context.Context, ser
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveContext *EnclaveContext) PauseService(serviceId services.ServiceID) error {
+func (enclaveCtx *EnclaveContext) PauseService(serviceId services.ServiceID) error {
 	args := binding_constructors.NewPauseServiceArgs(string(serviceId))
-	_, err := enclaveContext.client.PauseService(context.Background(), args)
+	_, err := enclaveCtx.client.PauseService(context.Background(), args)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to pause service '%v'", serviceId)
 	}
@@ -647,13 +648,46 @@ func (enclaveContext *EnclaveContext) PauseService(serviceId services.ServiceID)
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveContext *EnclaveContext) UnpauseService(serviceId services.ServiceID) error {
+func (enclaveCtx *EnclaveContext) UnpauseService(serviceId services.ServiceID) error {
 	args := binding_constructors.NewUnpauseServiceArgs(string(serviceId))
-	_, err := enclaveContext.client.UnpauseService(context.Background(), args)
+	_, err := enclaveCtx.client.UnpauseService(context.Background(), args)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to unpause service '%v'", serviceId)
 	}
 	return nil
+}
+
+func (enclaveCtx *EnclaveContext) RenderTemplates(templateAndDataByDestinationRelFilepaths map[string]*TemplateAndData) (services.FilesArtifactUUID, error) {
+	if len(templateAndDataByDestinationRelFilepaths) == 0 {
+		return "", stacktrace.NewError("Expected at least one template got 0")
+	}
+
+	templateAndDataByRelDestinationFilepathArgs := make(map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData)
+
+	for destinationRelFilepath, templateAndData := range templateAndDataByDestinationRelFilepaths {
+		template := templateAndData.template
+		templateData := templateAndData.templateData
+
+		templateDataAsJson, err := json.Marshal(templateData)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "Failed to jsonify templateData '%v' for filename '%v'", templateData, destinationRelFilepath)
+		}
+
+		templateAndDataAsJsonString := binding_constructors.NewTemplateAndData(
+			template,
+			string(templateDataAsJson),
+		)
+		templateAndDataByRelDestinationFilepathArgs[destinationRelFilepath] = templateAndDataAsJsonString
+	}
+
+	renderTemplatesToFilesArtifactArgs := binding_constructors.NewRenderTemplatesToFilesArtifactArgs(templateAndDataByRelDestinationFilepathArgs)
+
+	response, err := enclaveCtx.client.RenderTemplatesToFilesArtifact(context.Background(), renderTemplatesToFilesArtifactArgs)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Error in rendering templates")
+	}
+
+	return services.FilesArtifactUUID(response.Uuid), nil
 }
 
 // ====================================================================================================

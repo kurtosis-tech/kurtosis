@@ -30,11 +30,13 @@ import {
     RemoveServiceResponse,
     UnloadModuleResponse,
     GetModulesResponse,
-    GetServicesResponse, RegisterServicesArgs, StartServicesArgs
+    GetServicesResponse, RegisterServicesArgs, StartServicesArgs,
+    RenderTemplatesToFilesArtifactArgs,
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceID } from './services/service';
 import { PartitionID } from './enclaves/enclave_context';
 import { ModuleID } from "./modules/module_context";
+import TemplateAndData = RenderTemplatesToFilesArtifactArgs.TemplateAndData;
 
 // ==============================================================================================
 //                           Shared Objects (Used By Multiple Endpoints)
@@ -420,4 +422,19 @@ export function newUploadFilesArtifactArgs(data: Uint8Array) : UploadFilesArtifa
     const result: UploadFilesArtifactArgs = new UploadFilesArtifactArgs()
     result.setData(data)
     return result
+}
+
+// ==============================================================================================
+//                                      Render Templates
+// ==============================================================================================
+export function newTemplateAndData(template: string, templateData: string) : TemplateAndData {
+    const templateAndData : TemplateAndData = new TemplateAndData()
+    templateAndData.setDataAsJson(templateData)
+    templateAndData.setTemplate(template)
+    return templateAndData
+}
+
+export function newRenderTemplatesToFilesArtifactArgs() : RenderTemplatesToFilesArtifactArgs {
+    const renderTemplatesToFilesArtifactArgs : RenderTemplatesToFilesArtifactArgs = new RenderTemplatesToFilesArtifactArgs()
+    return renderTemplatesToFilesArtifactArgs
 }

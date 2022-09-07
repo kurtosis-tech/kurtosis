@@ -224,6 +224,19 @@ Unpauses all paused processes in the specified service. Specified service must h
 
 * `serviceId`: The ID of the service to unpause.
 
+### renderTemplates(Map<String, TemplateAndData> templateAndDataByDestinationRelFilepaths)
+Renders templates and stores them in an archive that gets uploaded to the Kurtosis filestore for use with [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+
+The destination relative filepaths are relative to the root of the archive that gets stored in the filestore.
+
+**Args**
+
+* `templateAndDataByDestinationRelFilepaths`: A map of [TemplateAndData](#templateanddata) by the destination relative file path.
+
+**Returns**
+
+* `uuid`: A unique ID as a string identifying the archived rendered templates, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+
 PartitionConnection
 -------------------
 This interface represents the network state between two partitions (e.g. whether network traffic is blocked, being partially dropped, etc.).
@@ -326,6 +339,20 @@ Uses [Docker exec](https://docs.docker.com/engine/reference/commandline/exec/) f
 * `exitCode`: The exit code of the command.
 * `logs`: The output of the run command, assuming a UTF-8 encoding. **NOTE:** Commands that output non-UTF-8 output will likely be garbled!
 
+
+
+
+TemplateAndData
+------------------
+
+This is an object that gets used by the [renderTemplates](#rendertemplatesmapstring-templateanddata-templateanddatabydestinationrelfilepaths) function.
+It has two properties.
+
+### String template
+The template that needs to be rendered. We support Golang [templates](https://pkg.go.dev/text/template). The casing of the keys inside the template and data doesn't matter.
+### Any templateData
+The data that needs to be rendered in the template. This will be converted into a JSON string before it gets sent over the wire. The elements inside the object should exactly match the keys in the template. 
+
 ---
 
 _Found a bug? File it on [the repo][issues]!_
@@ -352,10 +379,13 @@ _Found a bug? File it on [the repo][issues]!_
 [enclavecontext_unpauseservice]: #unpauseserviceserviceid-serviceid
 [enclavecontext_repartitionnetwork]: #repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnectionpartitionconnection-partitionconnections-partitionconnectionpartitionconnection-defaultconnection
 [enclavecontext_uploadfiles]: #uploadfilesstring-pathtoupload
+[enclavecontext_rendertemplates]: #rendertemplatesmapstring-templateanddata-templateanddatabydestinationrelfilepaths
 
 [partitionconnection]: #partitionconnection
 
 [servicecontext]: #servicecontext
 [servicecontext_getpublicports]: #getpublicports---mapportid-portspec
+
+[templateanddata]: #templateanddata
 
 [kurtosiscontext_createenclave]: ../kurtosis-engine-server/lib-documentation#lib-documentation.md#createenclaveenclaveid-enclaveid-boolean-ispartitioningenabled---enclavecontext-enclavecontext

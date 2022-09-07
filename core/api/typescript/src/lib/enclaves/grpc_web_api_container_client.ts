@@ -25,7 +25,13 @@ import {
     StoreWebFilesArtifactResponse,
     StoreWebFilesArtifactArgs,
     StoreFilesArtifactFromServiceArgs,
-    StoreFilesArtifactFromServiceResponse, GetServicesArgs, GetModulesArgs, UnloadModuleResponse, RemoveServiceResponse,
+    StoreFilesArtifactFromServiceResponse,
+    GetServicesArgs,
+    GetModulesArgs,
+    UnloadModuleResponse,
+    RemoveServiceResponse,
+    RenderTemplatesToFilesArtifactArgs,
+    RenderTemplatesToFilesArtifactResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -405,5 +411,27 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         }
         const storeFilesArtifactFromServiceResponse = storeFilesArtifactFromServiceResponseResult.value;
         return ok(storeFilesArtifactFromServiceResponse);
+    }
+
+    public async renderTemplatesToFilesArtifact(renderTemplatesToFilesArtifactArgs: RenderTemplatesToFilesArtifactArgs): Promise<Result<RenderTemplatesToFilesArtifactResponse, Error>> {
+        const renderTemplatesToFilesArtifactPromise: Promise<Result<RenderTemplatesToFilesArtifactResponse, Error>> = new Promise( (resolve, _unusedReject) => {
+            this.client.renderTemplatesToFilesArtifact(renderTemplatesToFilesArtifactArgs, {}, (error: grpc_web.RpcError | null, response?: RenderTemplatesToFilesArtifactResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+        const renderTemplatesToFilesArtifactResponseResult: Result<RenderTemplatesToFilesArtifactResponse, Error> = await renderTemplatesToFilesArtifactPromise;
+        if (renderTemplatesToFilesArtifactResponseResult.isErr()) {
+            return err(renderTemplatesToFilesArtifactResponseResult.error)
+        }
+        const renderTemplatesToFilesArtifactResponse = renderTemplatesToFilesArtifactResponseResult.value;
+        return ok(renderTemplatesToFilesArtifactResponse);
     }
 }

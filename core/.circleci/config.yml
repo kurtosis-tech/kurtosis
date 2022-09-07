@@ -276,6 +276,11 @@ workflows:
                         "pattern": "^../kurtosis-engine-server",
                         "replacement": "https://docs.kurtosistech.com/kurtosis-engine-server"
                     }
+                ],
+                "ignorePatterns": [
+                    {
+                        "pattern": "https://github.com/kurtosis-tech/kurtosis-internal-docs/.*"
+                    }
                 ]
             }
           filters:
