@@ -563,9 +563,17 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 		templateDataAsJson := templateAndData.DataAsJson
 
 		templateDataJsonAsBytes := []byte(templateDataAsJson)
+		templateDataJsonReader := bytes.NewReader(templateDataJsonAsBytes)
+
+		// We don't use standard json.Unmarshal as that converts large integers to floats
+		// Using this custom decoder we get the json.Number representation which is closer to other json implementations
+		// This talks about the issue further https://github.com/square/go-jose/issues/351#issuecomment-847193900
+		decoder := json.NewDecoder(templateDataJsonReader)
+		decoder.UseNumber()
+
 		var templateData interface{}
-		if err = json.Unmarshal(templateDataJsonAsBytes, &templateData); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred while unmarshalling the template data json '%v' for file '%v'", templateDataAsJson, destinationRelFilepath)
+		if err = decoder.Decode(&templateData); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while decoding the template data json '%v' for file '%v'", templateDataAsJson, destinationRelFilepath)
 		}
 
 		destinationFilepath := path.Join(tempDirForRenderedTemplates, destinationRelFilepath)
