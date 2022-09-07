@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+* Upgraded core to 1.58.3 which fixes how we handle json in the `RenderTemplatesToFilesArtifact` end point.
+
 ### Changes
 * Upgraded core to 1.58.2 which exposes a `EnclaveContext.RenderTemplates` method in the SDK. It also exposes a `RenderTemplatesToFilesArtifact` endpoint in the api container server.
 
