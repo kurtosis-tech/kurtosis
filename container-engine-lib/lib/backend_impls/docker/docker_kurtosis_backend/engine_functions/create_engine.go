@@ -63,6 +63,25 @@ func CreateEngine(
 	}
 	engineGuid := engine.EngineGUID(engineGuidStr)
 
+	killCentralizedLogsComponentsContainersFunc, err := createCentralizedLogsComponents(
+		ctx,
+		engineGuid,
+		targetNetworkId,
+		targetNetwork.GetName(),
+		logsCollectorHttpPortNumber,
+		objAttrsProvider,
+		dockerManager,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the centralized logs components for the engine with GUID '%v' and network ID '%v'", engineGuid, targetNetworkId)
+	}
+	shouldKillCentralizedLogsComponentsContainers := true
+	defer func() {
+		if shouldKillCentralizedLogsComponentsContainers {
+			killCentralizedLogsComponentsContainersFunc()
+		}
+	}()
+
 	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.EnginePortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -193,24 +212,7 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating an engine object from container with GUID '%v'", containerId)
 	}
 
-	killCentralizedLogsComponentsContainersFunc, err := createCentralizedLogsComponents(
-		ctx,
-		engineGuid,
-		targetNetworkId,
-		targetNetwork.GetName(),
-		logsCollectorHttpPortNumber,
-		objAttrsProvider,
-		dockerManager,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the centralized logs components for the engine with GUID '%v' and network ID '%v'", engineGuid, targetNetworkId)
-	}
-	shouldKillCentralizedLogsComponentsContainers := true
-	defer func() {
-		if shouldKillCentralizedLogsComponentsContainers {
-			killCentralizedLogsComponentsContainersFunc()
-		}
-	}()
+
 
 	shouldKillEngineContainer = false
 	shouldKillCentralizedLogsComponentsContainers = false

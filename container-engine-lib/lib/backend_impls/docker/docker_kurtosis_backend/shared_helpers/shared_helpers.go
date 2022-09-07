@@ -417,34 +417,35 @@ func GetLogsCollectorAddress(
 ) (logs_components.LogsCollectorAddress, error) {
 	logsCollectorContainer, err := getRunningLogsCollectorContainer(ctx, dockerManager)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector container")
+		return "", stacktrace.Propagate(err, "An error occurred getting logs collector container")
 	}
 
 	privateIpStr, err := dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineContainersIn, logsCollectorContainer.GetId())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector private IP in Docker network '%v'", consts.NameOfNetworkToStartEngineContainersIn)
+		return "", stacktrace.Propagate(err, "An error occurred getting the logs collector private IP in Docker network '%v'", consts.NameOfNetworkToStartEngineContainersIn)
 	}
 
 	containerLabels := logsCollectorContainer.GetLabels()
 
 	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsDockerLabelKey.GetString()]
 	if !found {
-		return nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsDockerLabelKey.GetString())
+		return "", stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsDockerLabelKey.GetString())
 	}
 
 	portSpecs, err := docker_port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred deserializing port specs string '%v'", serializedPortSpecs)
+		return "", stacktrace.Propagate(err, "An error occurred deserializing port specs string '%v'", serializedPortSpecs)
 	}
 
 	tcpPortSpec, foundPortSpec := portSpecs[consts.LogsCollectorTcpPortId]
 	if !foundPortSpec {
-		return nil, stacktrace.NewError("No tcp port with ID '%v' found in the port specs", consts.LogsCollectorTcpPortId)
+		return "", stacktrace.NewError("No tcp port with ID '%v' found in the port specs", consts.LogsCollectorTcpPortId)
 	}
 
-	logsCollectorAddress := fmt.Sprintf("%v:%v", privateIpStr, tcpPortSpec.GetNumber())
+	logsCollectorAddressStr := fmt.Sprintf("%v:%v", privateIpStr, tcpPortSpec.GetNumber())
+	logsCollectorAddress := logs_components.LogsCollectorAddress(logsCollectorAddressStr)
 
-	return &logsCollectorAddress, nil
+	return logsCollectorAddress, nil
 }
 
 func GetAllLogsCollectorContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]*types.Container, error) {

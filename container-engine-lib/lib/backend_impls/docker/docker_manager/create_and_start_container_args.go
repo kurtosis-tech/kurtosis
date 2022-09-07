@@ -24,8 +24,8 @@ type CreateAndStartContainerArgs struct {
 	needsAccessToDockerHostMachine bool
 	labels                         map[string]string
 	cpuAllocationMillicpus         uint64
-	memoryAllocationMegabytes      uint64
-	loggingDriverCnfg			   loggingDriver
+	memoryAllocationMegabytes uint64
+	loggingDriverCnfg         LoggingDriver
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -47,8 +47,8 @@ type CreateAndStartContainerArgsBuilder struct {
 	needsAccessToDockerHostMachine bool
 	labels                         map[string]string
 	cpuAllocationMillicpus         uint64
-	memoryAllocationMegabytes      uint64
-	loggingDriverCnfg			   loggingDriver
+	memoryAllocationMegabytes uint64
+	loggingDriverCnfg         LoggingDriver
 }
 
 /*
@@ -204,7 +204,7 @@ func (builder *CreateAndStartContainerArgsBuilder) WithMemoryAllocationMegabytes
 }
 
 //Will configure the container to use and specific logging driver which can be configured using the different implementations
-func (builder *CreateAndStartContainerArgsBuilder) WithLoggingDriver(loggingDriverConfig loggingDriver) *CreateAndStartContainerArgsBuilder {
+func (builder *CreateAndStartContainerArgsBuilder) WithLoggingDriver(loggingDriverConfig LoggingDriver) *CreateAndStartContainerArgsBuilder {
 	builder.loggingDriverCnfg = loggingDriverConfig
 	return builder
 }
