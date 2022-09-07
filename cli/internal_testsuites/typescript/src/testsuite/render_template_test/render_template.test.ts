@@ -41,7 +41,7 @@ async function TestRenderTemplates() {
 // Helpers
 //========================================================================
 
-// Checks rendered templates are rendered correctly and to the right files in the right subdirectories
+// Checks templates are rendered correctly and to the right files in the right subdirectories
 async function testRenderedTemplates(
     templateDataByDestinationFilepath : Map<string, TemplateAndData>,
     ipAddress: string,

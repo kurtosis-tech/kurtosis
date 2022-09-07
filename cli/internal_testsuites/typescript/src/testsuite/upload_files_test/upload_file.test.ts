@@ -17,14 +17,12 @@ const NUMBER_OF_TEMP_FILES_IN_ROOT_DIRECTORY    = 1
 const ENCLAVE_TEST_NAME         = "upload-files-test"
 const IS_PARTITIONING_ENABLED   = false
 
-
 //Keywords for mapping paths for file integrity checking.
 const DISK_DIR_KEYWORD                                  = "diskDir"
 const ARCHIVE_DIR_KEYWORD                               = "archiveDir"
 const SUB_DIR_KEYWORD                                   = "subDir"
 const SUB_FILE_KEYWORD_PATTERN                          = "subFile"
 const ARCHIVE_ROOT_FILE_KEYWORD_PATTERN                 = "archiveRootFile"
-
 
 const FOLDER_PERMISSION = 0o755
 const FILE_PERMISSION   = 0o644
@@ -69,8 +67,8 @@ async function testAllContent(
     allPaths: Map<string,string>,
     ipAddress: string,
     portNum: number
-    //Test files in archive root directory.
 ): Promise<Result<null, Error>>{
+    //Test files in archive root directory.
     const rootDirTestResults = await testDirectoryContents(
         allPaths,
         ARCHIVE_ROOT_FILE_KEYWORD_PATTERN,
