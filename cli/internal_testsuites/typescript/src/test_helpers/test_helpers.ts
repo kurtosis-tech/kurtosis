@@ -45,19 +45,20 @@ const API_PORT_SPEC = new PortSpec(
     serverApi.LISTEN_PORT,
     PortProtocol.TCP,
 )
+
+const FILE_SERVER_SERVICE_ID: ServiceID = "file-server"
 const FILE_SERVER_SERVICE_IMAGE         = "flashspys/nginx-static"
 const FILE_SERVER_PORT_ID               = "http"
-const FILE_SERVER_SERVICE_ID: ServiceID = "file-server"
-
-const USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT  = "/static"
+const FILE_SERVER_PRIVATE_PORT_NUM      = 80
 
 const WAIT_FOR_STARTUP_TIME_BETWEEN_POLLS = 500
 const WAIT_FOR_STARTUP_MAX_RETRIES        = 15
 const WAIT_INITIAL_DELAY_MILLISECONDS     = 0
 const WAIT_FOR_AVAILABILITY_BODY_TEXT     = ""
 
-const FILE_SERVER_PRIVATE_PORT_NUM      = 80
-const FILE_SERVER_PORT_SPEC             = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, PortProtocol.TCP )
+const USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT  = "/static"
+
+const FILE_SERVER_PORT_SPEC = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, PortProtocol.TCP )
 
 export class StartFileServerResponse  {
     fileServerPublicIp: string
