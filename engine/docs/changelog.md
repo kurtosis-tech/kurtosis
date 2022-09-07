@@ -1,11 +1,14 @@
 # TBD
 
-# 1.32.1
 ## Changes
+* Upgraded core to 1.58.2
+
+# 1.32.1
+### Changes
 * Upgraded core to 1.58.1
 
 # 1.32.0
-## Changes
+### Changes
 * Upgraded core to 1.58.0
 
 ### Breaking Changes
