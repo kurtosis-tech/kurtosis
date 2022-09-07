@@ -570,7 +570,7 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 		decoder.UseNumber()
 
 		if err = decoder.Decode(&templateData); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred while unmarshalling the template data json '%v' for file '%v'", templateDataAsJson, destinationRelFilepath)
+			return nil, stacktrace.Propagate(err, "An error occurred while decoding the template data json '%v' for file '%v'", templateDataAsJson, destinationRelFilepath)
 		}
 
 		destinationFilepath := path.Join(tempDirForRenderedTemplates, destinationRelFilepath)
