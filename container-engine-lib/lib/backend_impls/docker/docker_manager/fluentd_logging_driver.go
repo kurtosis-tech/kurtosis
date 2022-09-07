@@ -2,11 +2,12 @@ package docker_manager
 
 import (
 	"github.com/docker/docker/api/types/container"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components"
 	"strings"
 )
 
 const (
-	//We get these values front the Docker package github.com/docker/docker/daemon/logger/fluentd but, those are private so, we have to redeclare it
+	//We almost could have gotten these values from the Docker package github.com/docker/docker/daemon/logger/fluentd but, those are private so, we have to redeclare it
 	fluentdLoggingDriverTypeName         = "fluentd"
 	fluentdLoggingDriverAddressConfigKey = "fluentd-address"
 	loggingDriverLabelsKey = "labels"
@@ -15,19 +16,22 @@ const (
 )
 
 type fluentdLoggingDriver struct {
-	address string
-	labels []string
+	address logs_components.LogsCollectorAddress
+	labels logs_components.LogsCollectorLabels
 }
 
-func NewFluentdLoggingDriver(address string, labels []string) *fluentdLoggingDriver {
-	return &fluentdLoggingDriver{address: address, labels: labels}
+func NewFluentdLoggingDriver(logsCollectorAddress logs_components.LogsCollectorAddress, labels logs_components.LogsCollectorLabels) *fluentdLoggingDriver {
+	return &fluentdLoggingDriver{
+		address: logsCollectorAddress,
+		labels: labels,
+	}
 }
 
 func (config *fluentdLoggingDriver) GetLogConfig() container.LogConfig {
 	return container.LogConfig{
 		Type: fluentdLoggingDriverTypeName,
 		Config: map[string]string{
-			fluentdLoggingDriverAddressConfigKey: config.address,
+			fluentdLoggingDriverAddressConfigKey: string(config.address),
 			loggingDriverLabelsKey: config.getLabelsStr(),
 		},
 	}

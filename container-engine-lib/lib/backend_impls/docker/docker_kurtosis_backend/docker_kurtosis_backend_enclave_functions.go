@@ -167,7 +167,7 @@ func (backend *DockerKurtosisBackend) CreateEnclave(
 
 	newEnclave := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty)
 
-	//TODO add the logic for create the logs retention period for the enclave, taking the retention period param sent by the user
+	//TODO add the logic for creating the logs retention period for the enclave, taking the retention period param sent by the user
 
 	shouldDeleteNetwork = false
 	shouldDeleteVolume = false
