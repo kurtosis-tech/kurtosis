@@ -2,6 +2,7 @@ package engine_functions
 
 import (
 	"context"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
@@ -22,11 +23,6 @@ func StopEngines(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engines matching filters '%+v'", filters)
 	}
 
-	logsComponentsContainersByEngineContainerId, err := getLogsComponentsContainerIdsByEngineContainerIds(ctx, matchingEnginesByContainerId, dockerManager)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs componentes containers by engine container IDs '%+v'", matchingEnginesByContainerId)
-	}
-
 	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
 	matchingUncastedEnginesByContainerId := map[string]interface{}{}
 	for containerId, engineObj := range matchingEnginesByContainerId {
@@ -42,23 +38,6 @@ func StopEngines(
 		if err := dockerManager.KillContainer(ctx, engineContainerId); err != nil {
 			return stacktrace.Propagate(err, "An error occurred killing engine container with ID '%v'", dockerObjectId)
 		}
-		logsComponentsToKillContainerIDs, found := logsComponentsContainersByEngineContainerId[engineContainerId]
-		if !found {
-			return nil
-		}
-
-		if logsComponentsToKillContainerIDs.logsDatabaseContainerId != "" {
-			if err := dockerManager.KillContainer(ctx, logsComponentsToKillContainerIDs.logsDatabaseContainerId); err != nil {
-				return stacktrace.Propagate(err, "An error occurred killing logs database container with ID '%v'", logsComponentsToKillContainerIDs.logsDatabaseContainerId)
-			}
-		}
-
-		if logsComponentsToKillContainerIDs.logsCollectorContainerId != "" {
-			if err := dockerManager.KillContainer(ctx, logsComponentsToKillContainerIDs.logsCollectorContainerId); err != nil {
-				return stacktrace.Propagate(err, "An error occurred killing logs collector container with ID '%v'", logsComponentsToKillContainerIDs.logsDatabaseContainerId)
-			}
-		}
-
 		return nil
 	}
 
@@ -87,7 +66,23 @@ func StopEngines(
 		)
 	}
 
-	//TODO what happens with centralized logs components (logs database and logs collector) containers when the engine is stopped?
+	logsDatabaseContainer, err := getLogsDatabaseContainer(ctx, dockerManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs database container")
+	}
+
+	if err := dockerManager.KillContainer(ctx, logsDatabaseContainer.GetId()); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred killing logs database container with ID '%v'", logsDatabaseContainer.GetId())
+	}
+
+	logsCollectorContainer, err := shared_helpers.GetLogsCollectorContainer(ctx, dockerManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector container")
+	}
+
+	if err := dockerManager.KillContainer(ctx, logsCollectorContainer.GetId()); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred killing logs collector container with ID '%v'", logsCollectorContainer.GetId())
+	}
 
 	return successfulGuids, erroredGuids, nil
 }

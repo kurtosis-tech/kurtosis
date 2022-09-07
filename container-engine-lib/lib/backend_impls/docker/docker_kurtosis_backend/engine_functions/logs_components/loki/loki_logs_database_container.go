@@ -45,7 +45,6 @@ func (lokiContainer *lokiLogsDatabaseContainer) CreateAndStart(
 	}
 
 	logsDatabaseAttrs, err := objAttrsProvider.ForLogsDatabase(
-		engineGuid,
 		logsDatabaseHttpPortId,
 		privateHttpPortSpec,
 	)

@@ -998,7 +998,7 @@ func (manager *DockerManager) getContainerHostConfig(
 	needsToAccessDockerHostMachine bool,
 	cpuAllocationMillicpus uint64,
 	memoryAllocationMegabytes uint64,
-	loggingDriverCnfg loggingDriver,
+	loggingDriverCnfg LoggingDriver,
 ) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))

@@ -126,13 +126,13 @@ func StartUserServices(
 		return nil, nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveID)
 	}
 
-	logsCollectorAddress, err := shared_helpers.GetLogsCollectorAddress(ctx, dockerManager)
+	logsCollectorServiceAddress, err := shared_helpers.GetLogsCollectorServiceAddress(ctx, dockerManager)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector address")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector service address")
 	}
 
-	//The following docker labels will be added into the logs stream which is necessary for create new tags
-	//in the logs database and then use it for querying it to get the specific user service's logs
+	//The following docker labels will be added into the logs stream which is necessary for creating new tags
+	//in the logs database and then use it for querying them to get the specific user service's logs
 	logsCollectorLabels := logs_components.LogsCollectorLabels{
 		label_key_consts.EnclaveIDDockerLabelKey.GetString(),
 		label_key_consts.GUIDDockerLabelKey.GetString(),
@@ -147,7 +147,7 @@ func StartUserServices(
 		enclaveObjAttrsProvider,
 		freeIpAddrProvider,
 		dockerManager,
-		logsCollectorAddress,
+		logsCollectorServiceAddress,
 		logsCollectorLabels,
 		)
 	if err != nil {
@@ -316,12 +316,14 @@ func createStartServiceOperation(
 			}
 		}
 
-		if logsCollectorAddress == nil {
-			return nil, stacktrace.NewError("Expected to have a logs collector server address to send the user service logs but it wasn't get")
+		if logsCollectorAddress == "" {
+			return nil, stacktrace.NewError("Expected to have a logs collector server address value to send the user service logs, but it is empty")
 		}
+
+		logsCollectorAddressStr := string(logsCollectorAddress)
 		//The container will be configured to send the logs to the Fluentbit logs collector server
 		fluentdLoggingDriverCnfg := docker_manager.NewFluentdLoggingDriver(
-			*logsCollectorAddress,
+			logsCollectorAddressStr,
 			logsCollectorLabels,
 		)
 

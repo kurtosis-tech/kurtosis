@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	//We get these values front the Docker package github.com/docker/docker/daemon/logger/fluentd but, those are private so, we have to redeclare it
+	//We almost could have gotten these values from the Docker package github.com/docker/docker/daemon/logger/fluentd but, those are private so, we have to redeclare it
 	fluentdLoggingDriverTypeName         = "fluentd"
 	fluentdLoggingDriverAddressConfigKey = "fluentd-address"
 	loggingDriverLabelsKey = "labels"
@@ -20,7 +20,10 @@ type fluentdLoggingDriver struct {
 }
 
 func NewFluentdLoggingDriver(address string, labels []string) *fluentdLoggingDriver {
-	return &fluentdLoggingDriver{address: address, labels: labels}
+	return &fluentdLoggingDriver{
+		address: address,
+		labels: labels,
+	}
 }
 
 func (config *fluentdLoggingDriver) GetLogConfig() container.LogConfig {
