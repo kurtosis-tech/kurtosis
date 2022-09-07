@@ -1,5 +1,7 @@
 # TBD
 
+# 1.58.3
+
 ### Fixes
 * Fixed how `RenderTemplatesToFilesArtifact` would unmarshal large integers into float64, we unmarshal them into a json.Number instead now.
 
