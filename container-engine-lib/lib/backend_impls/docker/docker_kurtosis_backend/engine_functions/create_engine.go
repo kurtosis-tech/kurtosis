@@ -351,26 +351,30 @@ func isThereAnyOtherEngineOrLogsComponentsContainersInTheCluster(
 
 	getLogsDatabaseContainerOperation := func() (interface{}, error) {
 
-		logsDatabaseContainer, err := getLogsDatabaseContainer(ctx, dockerManager)
+		logsDatabaseContainers, err := getLogsDatabaseContainers(ctx, dockerManager)
 		if err != nil {
 			return false, stacktrace.Propagate(err, "An error occurred getting the logs database container")
 		}
 
-		allLogsDatabaseContainerIDs := map[string]bool{
-			logsDatabaseContainer.GetId(): true,
+		allLogsDatabaseContainerIDs := map[string]bool{}
+
+		for _, logsDatabaseContainer := range logsDatabaseContainers {
+			allLogsDatabaseContainerIDs[logsDatabaseContainer.GetId()]= true
 		}
 
 		return allLogsDatabaseContainerIDs, nil
 	}
 
 	getLogsCollectorContainerOperation := func() (interface{}, error) {
-		logsCollectorContainer, err := shared_helpers.GetLogsCollectorContainer(ctx, dockerManager)
+		logsCollectorContainers, err := shared_helpers.GetLogsCollectorContainers(ctx, dockerManager)
 		if err != nil {
 			return false, stacktrace.Propagate(err, "An error occurred getting the logs collector container")
 		}
 
-		allLogsCollectorContainerIDs := map[string]bool{
-			logsCollectorContainer.GetId(): true,
+		allLogsCollectorContainerIDs := map[string]bool{}
+
+		for _, logsCollectorContainer := range logsCollectorContainers {
+			allLogsCollectorContainerIDs[logsCollectorContainer.GetId()]= true
 		}
 
 		return allLogsCollectorContainerIDs, nil
