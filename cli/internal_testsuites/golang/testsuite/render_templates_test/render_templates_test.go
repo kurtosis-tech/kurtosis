@@ -40,7 +40,7 @@ func TestRenderTemplates(t *testing.T) {
 // Helpers
 // ========================================================================
 
-// Checks rendered templates are rendered correctly and to the right files in the right subdirectories
+// Checks templates are rendered correctly and to the right files in the right subdirectories
 func testRenderedTemplates(
 	templateDataByDestinationFilepath map[string]*enclaves.TemplateAndData,
 	ipAddress string,
