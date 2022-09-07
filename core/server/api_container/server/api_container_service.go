@@ -564,11 +564,11 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 
 		templateDataJsonAsBytes := []byte(templateDataAsJson)
 		templateDataJsonReader := bytes.NewReader(templateDataJsonAsBytes)
-		var templateData interface{}
 
 		decoder := json.NewDecoder(templateDataJsonReader)
 		decoder.UseNumber()
 
+		var templateData interface{}
 		if err = decoder.Decode(&templateData); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while decoding the template data json '%v' for file '%v'", templateDataAsJson, destinationRelFilepath)
 		}
