@@ -60,7 +60,7 @@ const USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT  = "/static"
 
 const FILE_SERVER_PORT_SPEC = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, PortProtocol.TCP )
 
-export class StartFileServerResponse  {
+class StartFileServerResponse  {
     fileServerPublicIp: string
     fileServerPublicPortNum: number
 
