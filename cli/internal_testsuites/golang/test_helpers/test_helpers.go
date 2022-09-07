@@ -243,7 +243,7 @@ func StartFileServer(filesArtifactUUID services.FilesArtifactUUID, pathToCheckOn
 	return fileServerPublicIp, fileServerPublicPortNum, nil
 }
 
-// Compare the file contents of the directories against expectedContent and see if they match.
+// Compare the file contents on the server against expectedContent and see if they match.
 func CheckFileContents(serverIP string, port uint16, relativeFilepath string, expectedContents string) error {
 	fileContents, err := getFileContents(serverIP, port, relativeFilepath)
 	if err != nil {

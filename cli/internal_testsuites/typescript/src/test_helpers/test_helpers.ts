@@ -260,7 +260,7 @@ export async function startFileServer(filesArtifactUuid: string, pathToCheckOnFi
 }
 
 
-//Test file contents against the ARCHIVE_TEST_CONTENT string.
+// Compare the file contents on the server against expectedContent and see if they match.
 export async function checkFileContents(ipAddress: string, portNum: number, filename: string, expectedContents: string): Promise<Result<null, Error>> {
     let fileContentResults = await getFileContents(ipAddress, portNum, filename)
     if(fileContentResults.isErr()) { return err(fileContentResults.error)}
