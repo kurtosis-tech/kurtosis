@@ -565,6 +565,9 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 		templateDataJsonAsBytes := []byte(templateDataAsJson)
 		templateDataJsonReader := bytes.NewReader(templateDataJsonAsBytes)
 
+		// We don't use standard json.Unmarshal as that converts large integers to floats
+		// Using this custom decoder we get the json.Number representation which is closer to other json implementations
+		// This talks about the issue further https://github.com/square/go-jose/issues/351#issuecomment-847193900
 		decoder := json.NewDecoder(templateDataJsonReader)
 		decoder.UseNumber()
 
