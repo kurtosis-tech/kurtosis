@@ -12,6 +12,9 @@
 * Updated `CreateEngine` method, added the `logsCollectorHttpPortNumber` param
   * Users will need to update all the `CreateEngine` calls adding this new param
 
+### Changes
+* Changed the user service and modules container's logging driver to the `fluentd` type
+
 # 0.36.1
 ### Changes
 * Add checks to all Bulk API service operations to return empty maps, given an empty input

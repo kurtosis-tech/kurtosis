@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components/fluentbit"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components/loki"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
@@ -20,15 +21,8 @@ import (
 )
 
 const (
-	nameOfNetworkToStartEngineContainersIn = "bridge"
-
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
-
-	logsDatabaseHttpPortId = "http"
-
-	logsCollectorTcpPortId  = "tcp"
-	logsCollectorHttpPortId = "http"
 )
 
 func CreateEngine(
@@ -45,19 +39,19 @@ func CreateEngine(
 	*engine.Engine,
 	error,
 ) {
-	matchingNetworks, err := dockerManager.GetNetworksByName(ctx, nameOfNetworkToStartEngineContainersIn)
+	matchingNetworks, err := dockerManager.GetNetworksByName(ctx, consts.NameOfNetworkToStartEngineContainersIn)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred getting networks matching the network we want to start the engine in, '%v'",
-			nameOfNetworkToStartEngineContainersIn,
+			consts.NameOfNetworkToStartEngineContainersIn,
 		)
 	}
 	numMatchingNetworks := len(matchingNetworks)
 	if numMatchingNetworks == 0 && numMatchingNetworks > 1 {
 		return nil, stacktrace.NewError(
 			"Expected exactly one network matching the name of the network that we want to start the engine in, '%v', but got %v",
-			nameOfNetworkToStartEngineContainersIn,
+			consts.NameOfNetworkToStartEngineContainersIn,
 			numMatchingNetworks,
 		)
 	}
@@ -69,6 +63,31 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID string for the engine")
 	}
 	engineGuid := engine.EngineGUID(engineGuidStr)
+
+	//Declaring the centralized logs stack
+	logsDatabaseContainer := loki.NewLokiLogDatabaseContainer()
+	logsCollectorContainer := fluentbit.NewFluentbitLogsCollectorContainer()
+
+	killCentralizedLogsComponentsContainersFunc, err := createCentralizedLogsComponents(
+		ctx,
+		engineGuid,
+		targetNetworkId,
+		targetNetwork.GetName(),
+		logsCollectorHttpPortNumber,
+		objAttrsProvider,
+		dockerManager,
+		logsDatabaseContainer,
+		logsCollectorContainer,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the centralized logs components for the engine with GUID '%v' and network ID '%v'", engineGuid, targetNetworkId)
+	}
+	shouldKillCentralizedLogsComponentsContainers := true
+	defer func() {
+		if shouldKillCentralizedLogsComponentsContainers {
+			killCentralizedLogsComponentsContainersFunc()
+		}
+	}()
 
 	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.EnginePortProtocol)
 	if err != nil {
@@ -200,24 +219,7 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating an engine object from container with GUID '%v'", containerId)
 	}
 
-	killCentralizedLogsComponentsContainersFunc, err := createCentralizedLogsComponents(
-		ctx,
-		engineGuid,
-		targetNetworkId,
-		targetNetwork.GetName(),
-		logsCollectorHttpPortNumber,
-		objAttrsProvider,
-		dockerManager,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the centralized logs components for the engine with GUID '%v' and network ID '%v'", engineGuid, targetNetworkId)
-	}
-	shouldKillCentralizedLogsComponentsContainers := true
-	defer func() {
-		if shouldKillCentralizedLogsComponentsContainers {
-			killCentralizedLogsComponentsContainersFunc()
-		}
-	}()
+
 
 	shouldKillEngineContainer = false
 	shouldKillCentralizedLogsComponentsContainers = false
@@ -236,13 +238,13 @@ func createCentralizedLogsComponents(
 	logsCollectorHttpPortNumber uint16,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
+	logsDatabaseContainer logs_components.LogsDatabaseContainer,
+	logsCollectorContainer logs_components.LogsCollectorContainer,
 ) (func(), error) {
-
-	logsDatabaseContainer := loki.NewLokiLogDatabaseContainer()
 
 	logsDatabaseHost, logsDatabasePort, killLogsDatabaseContainerFunc, err := logsDatabaseContainer.CreateAndStart(
 		ctx,
-		logsDatabaseHttpPortId,
+		consts.LogsDatabaseHttpPortId,
 		engineGuid,
 		targetNetworkId,
 		targetNetworkName,
@@ -253,7 +255,7 @@ func createCentralizedLogsComponents(
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the logs database container with http port id '%v' for engine with GUID '%v' in Docker network with ID '%v'",
-			logsDatabaseHttpPortId,
+			consts.LogsDatabaseHttpPortId,
 			engineGuid,
 			targetNetworkId,
 		)
@@ -265,15 +267,13 @@ func createCentralizedLogsComponents(
 		}
 	}()
 
-	logsCollectorContainer := fluentbit.NewFluentbitLogsCollectorContainer()
-
 	killLogsCollectorContainerFunc, err := logsCollectorContainer.CreateAndStart(
 		ctx,
 		logsDatabaseHost,
 		logsDatabasePort,
 		logsCollectorHttpPortNumber,
-		logsCollectorTcpPortId,
-		logsCollectorHttpPortId,
+		consts.LogsCollectorTcpPortId,
+		consts.LogsCollectorHttpPortId,
 		engineGuid,
 		targetNetworkId,
 		objAttrsProvider,
@@ -286,8 +286,8 @@ func createCentralizedLogsComponents(
 			logsDatabaseHost,
 			logsDatabasePort,
 			logsCollectorHttpPortNumber,
-			logsCollectorTcpPortId,
-			logsCollectorHttpPortId,
+			consts.LogsCollectorTcpPortId,
+			consts.LogsCollectorHttpPortId,
 			engineGuid,
 			targetNetworkId,
 		)
@@ -308,5 +308,3 @@ func createCentralizedLogsComponents(
 	shouldKillLogsCollectorContainer = false
 	return killCentralizedLogsComponentsContainersFunc, nil
 }
-
-

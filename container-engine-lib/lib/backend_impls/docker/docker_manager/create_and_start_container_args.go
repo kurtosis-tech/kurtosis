@@ -24,7 +24,8 @@ type CreateAndStartContainerArgs struct {
 	needsAccessToDockerHostMachine bool
 	labels                         map[string]string
 	cpuAllocationMillicpus         uint64
-	memoryAllocationMegabytes      uint64
+	memoryAllocationMegabytes uint64
+	loggingDriverCnfg         LoggingDriver
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -46,7 +47,8 @@ type CreateAndStartContainerArgsBuilder struct {
 	needsAccessToDockerHostMachine bool
 	labels                         map[string]string
 	cpuAllocationMillicpus         uint64
-	memoryAllocationMegabytes      uint64
+	memoryAllocationMegabytes uint64
+	loggingDriverCnfg         LoggingDriver
 }
 
 /*
@@ -75,6 +77,7 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		labels:                         map[string]string{},
 		cpuAllocationMillicpus:         0,
 		memoryAllocationMegabytes:      0,
+		loggingDriverCnfg:       		nil,
 	}
 }
 
@@ -98,6 +101,7 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		needsAccessToDockerHostMachine: builder.needsAccessToDockerHostMachine,
 		cpuAllocationMillicpus:         builder.cpuAllocationMillicpus,
 		memoryAllocationMegabytes:      builder.memoryAllocationMegabytes,
+		loggingDriverCnfg: 				builder.loggingDriverCnfg,
 	}
 }
 
@@ -196,5 +200,11 @@ func (builder *CreateAndStartContainerArgsBuilder) WithCPUAllocationMillicpus(cp
 // https://pkg.go.dev/github.com/docker/docker@v20.10.17+incompatible/api/types/container#Resources
 func (builder *CreateAndStartContainerArgsBuilder) WithMemoryAllocationMegabytes(memoryAllocationMegabytes uint64) *CreateAndStartContainerArgsBuilder {
 	builder.memoryAllocationMegabytes = memoryAllocationMegabytes
+	return builder
+}
+
+//Will configure the container to use and specific logging driver which can be configured using the different implementations
+func (builder *CreateAndStartContainerArgsBuilder) WithLoggingDriver(loggingDriverConfig LoggingDriver) *CreateAndStartContainerArgsBuilder {
+	builder.loggingDriverCnfg = loggingDriverConfig
 	return builder
 }
