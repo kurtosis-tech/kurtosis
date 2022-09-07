@@ -151,9 +151,11 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		label_key_consts.ContainerTypeDockerLabelKey.GetString(),
 	}
 
+	logsCollectorAddressStr := string(logsCollectorAddress)
+
 	//The container will be configured to send the logs to the Fluentbit logs collector server
 	fluentdLoggingDriverCnfg := docker_manager.NewFluentdLoggingDriver(
-		logsCollectorAddress,
+		logsCollectorAddressStr,
 		logsCollectorLabels,
 	)
 

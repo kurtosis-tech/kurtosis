@@ -319,9 +319,11 @@ func createStartServiceOperation(
 		if logsCollectorAddress == "" {
 			return nil, stacktrace.NewError("Expected to have a logs collector server address value to send the user service logs, but it is empty")
 		}
+
+		logsCollectorAddressStr := string(logsCollectorAddress)
 		//The container will be configured to send the logs to the Fluentbit logs collector server
 		fluentdLoggingDriverCnfg := docker_manager.NewFluentdLoggingDriver(
-			logsCollectorAddress,
+			logsCollectorAddressStr,
 			logsCollectorLabels,
 		)
 

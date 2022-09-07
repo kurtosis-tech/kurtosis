@@ -2,7 +2,6 @@ package docker_manager
 
 import (
 	"github.com/docker/docker/api/types/container"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components"
 	"strings"
 )
 
@@ -16,13 +15,13 @@ const (
 )
 
 type fluentdLoggingDriver struct {
-	address logs_components.LogsCollectorAddress
-	labels logs_components.LogsCollectorLabels
+	address string
+	labels []string
 }
 
-func NewFluentdLoggingDriver(logsCollectorAddress logs_components.LogsCollectorAddress, labels logs_components.LogsCollectorLabels) *fluentdLoggingDriver {
+func NewFluentdLoggingDriver(address string, labels []string) *fluentdLoggingDriver {
 	return &fluentdLoggingDriver{
-		address: logsCollectorAddress,
+		address: address,
 		labels: labels,
 	}
 }
@@ -31,7 +30,7 @@ func (config *fluentdLoggingDriver) GetLogConfig() container.LogConfig {
 	return container.LogConfig{
 		Type: fluentdLoggingDriverTypeName,
 		Config: map[string]string{
-			fluentdLoggingDriverAddressConfigKey: string(config.address),
+			fluentdLoggingDriverAddressConfigKey: config.address,
 			loggingDriverLabelsKey: config.getLabelsStr(),
 		},
 	}
