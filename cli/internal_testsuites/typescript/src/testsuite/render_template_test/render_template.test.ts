@@ -6,8 +6,8 @@ import {TemplateAndData} from "kurtosis-core-api-lib/build/lib/enclaves/template
 const ENCLAVE_TEST_NAME         = "render-templates-test"
 const IS_PARTITIONING_ENABLED   = false
 
-const ROOT_FILE         = "config.yml"
-const NESTED_FILE       = "grafana/config.yml"
+const ROOT_FILENAME         = "config.yml"
+const NESTED_REL_FILEPATH       = "grafana/config.yml"
 const EXPECTED_CONTENTS = "Hello Stranger. The sum of [1 2 3] is 6. My favorite moment in history 1257894000. My favorite number 1231231243.43."
 
 jest.setTimeout(180000)
@@ -25,7 +25,7 @@ async function TestRenderTemplates() {
 
         const filesArtifactUuid = renderTemplatesResults.value
 
-        const startFileServerResult = await startFileServer(filesArtifactUuid, ROOT_FILE, enclaveContext)
+        const startFileServerResult = await startFileServer(filesArtifactUuid, ROOT_FILENAME, enclaveContext)
         if (startFileServerResult.isErr()){throw startFileServerResult.error}
         const {fileServerPublicIp, fileServerPublicPortNum} = startFileServerResult.value
 
@@ -62,8 +62,8 @@ function getTemplateAndDataByDestRelFilepath() : Map<string, TemplateAndData> {
     const templateData  = {"Name": "Stranger", "Answer": 6, "Numbers": [1, 2, 3], "UnixTimeStamp": 1257894000, "LargeFloat": 1231231243.43}
     const templateAndData = new TemplateAndData(template, templateData)
 
-    templateDataByDestinationFilepath.set(NESTED_FILE, templateAndData)
-    templateDataByDestinationFilepath.set(ROOT_FILE, templateAndData)
+    templateDataByDestinationFilepath.set(NESTED_REL_FILEPATH, templateAndData)
+    templateDataByDestinationFilepath.set(ROOT_FILENAME, templateAndData)
 
     return templateDataByDestinationFilepath
 }

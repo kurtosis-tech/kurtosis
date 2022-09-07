@@ -13,9 +13,9 @@ const (
 	enclaveTestName       = "render-templates-test"
 	isPartitioningEnabled = false
 
-	rootFile         = "config.yml"
-	nestedFile       = "grafana/config.yml"
-	expectedContents = "Hello Stranger. The sum of [1 2 3] is 6. My favorite moment in history 1257894000. My favorite number 1231231243.43."
+	rootFilename      = "config.yml"
+	nestedRelFilepath = "grafana/config.yml"
+	expectedContents  = "Hello Stranger. The sum of [1 2 3] is 6. My favorite moment in history 1257894000. My favorite number 1231231243.43."
 )
 
 func TestRenderTemplates(t *testing.T) {
@@ -29,7 +29,7 @@ func TestRenderTemplates(t *testing.T) {
 	filesArtifactUUID, err := enclaveCtx.RenderTemplates(templateAndDataByDestRelFilepath)
 	require.NoError(t, err)
 
-	fileServerPublicIp, fileServerPublicPortNum, err := test_helpers.StartFileServer(filesArtifactUUID, rootFile, enclaveCtx)
+	fileServerPublicIp, fileServerPublicPortNum, err := test_helpers.StartFileServer(filesArtifactUUID, rootFilename, enclaveCtx)
 	require.NoError(t, err)
 
 	err = testRenderedTemplates(templateAndDataByDestRelFilepath, fileServerPublicIp, fileServerPublicPortNum)
@@ -62,8 +62,8 @@ func getTemplateAndDataByDestRelFilepath() map[string]*enclaves.TemplateAndData 
 	templateData := map[string]interface{}{"Name": "Stranger", "Answer": 6, "Numbers": []int{1, 2, 3}, "UnixTimeStamp": 1257894000, "LargeFloat": 1231231243.43}
 	templateAndData := enclaves.NewTemplateAndData(template, templateData)
 
-	templateDataByDestinationFilepath[nestedFile] = templateAndData
-	templateDataByDestinationFilepath[rootFile] = templateAndData
+	templateDataByDestinationFilepath[nestedRelFilepath] = templateAndData
+	templateDataByDestinationFilepath[rootFilename] = templateAndData
 
 	return templateDataByDestinationFilepath
 }
