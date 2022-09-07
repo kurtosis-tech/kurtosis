@@ -7,8 +7,8 @@ package enclaves
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 type TemplateAndData struct {
-	Template     string
-	TemplateData interface{}
+	template     string
+	templateData interface{}
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation

@@ -665,8 +665,8 @@ func (enclaveCtx *EnclaveContext) RenderTemplates(templateAndDataByDestinationRe
 	templateAndDataByRelDestinationFilepathArgs := make(map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData)
 
 	for destinationRelFilepath, templateAndData := range templateAndDataByDestinationRelFilepaths {
-		template := templateAndData.Template
-		templateData := templateAndData.TemplateData
+		template := templateAndData.template
+		templateData := templateAndData.templateData
 
 		templateDataAsJson, err := json.Marshal(templateData)
 		if err != nil {
