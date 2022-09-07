@@ -344,48 +344,45 @@ func isThereAnyOtherEngineOrLogsComponentsContainersInTheCluster(
 		return allEngineContainers, nil
 	}
 
-	getAllLogsDatabaseContainersOperation := func() (interface{}, error) {
-		allLogsDatabaseContainers, err := getAllLogsDatabaseContainers(ctx, dockerManager)
+	getLogsDatabaseContainerOperation := func() (interface{}, error) {
+
+		logsDatabaseContainer, err := getLogsDatabaseContainer(ctx, dockerManager)
 		if err != nil {
-			return false, stacktrace.Propagate(err, "An error occurred getting all logs database containers")
+			return false, stacktrace.Propagate(err, "An error occurred getting the logs database container")
 		}
 
-		allLogsDatabaseContainerIDs := map[string]bool{}
-
-		for _, container := range allLogsDatabaseContainers{
-			allLogsDatabaseContainerIDs[container.GetId()] = true
+		allLogsDatabaseContainerIDs := map[string]bool{
+			logsDatabaseContainer.GetId(): true,
 		}
 
 		return allLogsDatabaseContainerIDs, nil
 	}
 
-	getAllLogsCollectorContainersOperation := func() (interface{}, error) {
-		allLogsCollectorContainers, err := shared_helpers.GetAllLogsCollectorContainers(ctx, dockerManager)
+	getLogsCollectorContainerOperation := func() (interface{}, error) {
+		logsCollectorContainer, err := shared_helpers.GetLogsCollectorContainer(ctx, dockerManager)
 		if err != nil {
-			return false, stacktrace.Propagate(err, "An error occurred getting all logs collector containers")
+			return false, stacktrace.Propagate(err, "An error occurred getting the logs collector container")
 		}
 
-		allLogsCollectorContainerIDs := map[string]bool{}
-
-		for _, container := range allLogsCollectorContainers{
-			allLogsCollectorContainerIDs[container.GetId()] = true
+		allLogsCollectorContainerIDs := map[string]bool{
+			logsCollectorContainer.GetId(): true,
 		}
 
 		return allLogsCollectorContainerIDs, nil
 	}
 
 	allOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{
-		getAllEngineContainersOperationId: getAllEngineContainersOperation,
-		getAllLogsDatabaseContainersOperationId: getAllLogsDatabaseContainersOperation,
-		getAllLogsCollectorContainersOperationId: getAllLogsCollectorContainersOperation,
+		getAllEngineContainersOperationId:        getAllEngineContainersOperation,
+		getAllLogsDatabaseContainersOperationId:  getLogsDatabaseContainerOperation,
+		getAllLogsCollectorContainersOperationId: getLogsCollectorContainerOperation,
 	}
 
-	successfullOperations, erroredOperations := operation_parallelizer.RunOperationsInParallel(allOperations)
+	successfulOperations, erroredOperations := operation_parallelizer.RunOperationsInParallel(allOperations)
 	if len(erroredOperations) > 0 {
 		return false, nil, stacktrace.NewError("An error occurred running these operations '%+v' in parallel\n Operations with errors: %+v", allOperations, erroredOperations)
 	}
 
-	for _, uncastedContainerIds := range successfullOperations {
+	for _, uncastedContainerIds := range successfulOperations {
 		containerIdsValue := reflect.ValueOf(uncastedContainerIds)
 		for _, containerIdValue := range containerIdsValue.MapKeys() {
 			existentContainerIds = append(existentContainerIds, containerIdValue.String())
