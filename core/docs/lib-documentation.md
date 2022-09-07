@@ -348,9 +348,9 @@ TemplateAndData
 This is an object that gets used by the [renderTemplates](#rendertemplatesmapstring-templateanddata-templateanddatabydestinationrelfilepaths) function.
 It has two properties.
 
-### String Template
+### String template
 The template that needs to be rendered. We support Golang [templates](https://pkg.go.dev/text/template). The casing of the keys inside the template and data doesn't matter.
-### Any TemplateData
+### Any templateData
 The data that needs to be rendered in the template. This will be converted into a JSON string before it gets sent over the wire. The elements inside the object should exactly match the keys in the template. 
 
 ---
