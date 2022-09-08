@@ -251,6 +251,15 @@ func (service *ApiContainerGatewayServiceServer) UnpauseService(ctx context.Cont
 	return remoteApiContainerResponse, nil
 }
 
+func (service *ApiContainerGatewayServiceServer) RenderTemplatesToFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse, error) {
+	remoteApiContainerResponse, err := service.remoteApiContainerClient.RenderTemplatesToFilesArtifact(ctx, args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+	}
+
+	return remoteApiContainerResponse, nil
+}
+
 //writeOverServiceInfoFieldsWithLocalConnectionInformation overwites the `MaybePublicPorts` and `MaybePublicIpAdrr` fields to connect to local ports forwarding requests to private ports in Kubernetes
 // Only TCP Private Ports are forwarded
 func (service *ApiContainerGatewayServiceServer) writeOverServiceInfoFieldsWithLocalConnectionInformation(serviceInfo *kurtosis_core_rpc_api_bindings.ServiceInfo) error {

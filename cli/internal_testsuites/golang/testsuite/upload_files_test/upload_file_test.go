@@ -6,10 +6,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,31 +26,17 @@ const (
 	enclaveTestName       = "upload-files-test"
 	isPartitioningEnabled = false
 
-	fileServerServiceImage                      = "flashspys/nginx-static"
-	fileServerServiceId      services.ServiceID = "file-server"
-	fileServerPortId                            = "http"
-	fileServerPrivatePortNum                    = 80
-
-	waitForStartupTimeBetweenPolls = 500
-	waitForStartupMaxRetries       = 15
-	waitInitialDelayMilliseconds   = 0
-	waitForAvailabilityBodyText    = ""
-
 	// Filenames & contents for the files stored in the files artifact
-	diskDirKeyword                            = "diskDir"
-	archiveDirKeyword                         = "archiveDir"
-	subDirKeyword                             = "subDir"
-	subFileKeywordPattern                     = "subFile"
-	archiveRootFileKeywordPattern             = "archiveRootFile"
-	userServiceMountPointForTestFilesArtifact = "/static"
+	diskDirKeyword                = "diskDir"
+	archiveDirKeyword             = "archiveDir"
+	subDirKeyword                 = "subDir"
+	subFileKeywordPattern         = "subFile"
+	archiveRootFileKeywordPattern = "archiveRootFile"
 
 	folderPermission = 0755
 	filePermission   = 0644
-)
 
-var fileServerPortSpec = services.NewPortSpec(
-	fileServerPrivatePortNum,
-	services.PortProtocol_TCP,
+	fileServerServiceId services.ServiceID = "file-server"
 )
 
 func TestUploadFiles(t *testing.T) {
@@ -71,35 +55,11 @@ func TestUploadFiles(t *testing.T) {
 	filesArtifactUUID, err := enclaveCtx.UploadFiles(filePathsMap[diskDirKeyword])
 	require.NoError(t, err)
 
-	filesArtifactMountPoints := map[services.FilesArtifactUUID]string{
-		filesArtifactUUID: userServiceMountPointForTestFilesArtifact,
-	}
-	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactMountPoints)
-	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
-	require.NoError(t, err, "An error occurred adding the file server service")
-
-	publicPort, found := serviceCtx.GetPublicPorts()[fileServerPortId]
-	require.True(t, found, "Expected to find public port for ID '%v', but none was found", fileServerPortId)
-
-	fileServerPublicIp := serviceCtx.GetMaybePublicIPAddress()
-	fileServerPublicPortNum := publicPort.GetNumber()
 	firstArchiveRootKeyword := fmt.Sprintf("%s%v", archiveRootFileKeywordPattern, 0)
 	firstArchiveRootFilename := filePathsMap[firstArchiveRootKeyword]
 
-	require.NoError(t,
-		enclaveCtx.WaitForHttpGetEndpointAvailability(
-			fileServerServiceId,
-			fileServerPrivatePortNum,
-			firstArchiveRootFilename,
-			waitInitialDelayMilliseconds,
-			waitForStartupMaxRetries,
-			waitForStartupTimeBetweenPolls,
-			waitForAvailabilityBodyText,
-		),
-		"An error occurred waiting for the file server service to become available.",
-	)
-	logrus.Infof("Added file server service with public IP '%v' and port '%v'", fileServerPublicIp,
-		fileServerPublicPortNum)
+	fileServerPublicIp, fileServerPublicPortNum, err := test_helpers.StartFileServer(fileServerServiceId, filesArtifactUUID, firstArchiveRootFilename, enclaveCtx)
+	require.NoError(t, err)
 
 	err = testAllContents(filePathsMap, fileServerPublicIp, fileServerPublicPortNum)
 	require.NoError(t, err)
@@ -150,25 +110,9 @@ func testDirectoryContents(
 		if relativePath == "" {
 			stacktrace.NewError("The file for keyword '%s' was not mapped in the paths map.", fileKeyword)
 		}
-		if err := testFileContents(ipAddress, portNum, relativePath); err != nil {
+		if err := test_helpers.CheckFileContents(ipAddress, portNum, relativePath, archiveTestFileContent); err != nil {
 			return stacktrace.Propagate(err, "There was an error testing the content of file '%s'.", relativePath)
 		}
-	}
-	return nil
-}
-
-// Compare the file contents of the directories against archiveTestFileContent and see if they match.
-func testFileContents(serverIP string, port uint16, relativeFilepath string) error {
-	fileContents, err := getFileContents(serverIP, port, relativeFilepath)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting '%s' contents", relativeFilepath)
-	}
-	if archiveTestFileContent != fileContents {
-		return stacktrace.NewError(
-			"The contents of '%s' do not match the test content '%s'",
-			fileContents,
-			archiveTestFileContent,
-		)
 	}
 	return nil
 }
@@ -265,40 +209,4 @@ func createTestFolderToUpload() (map[string]string, error) {
 		relativeDiskPaths[keyword] = basename
 	}
 	return relativeDiskPaths, nil
-}
-
-func getFileServerContainerConfigSupplier(filesArtifactMountPoints map[services.FilesArtifactUUID]string) func(ipAddr string) (*services.ContainerConfig, error) {
-	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
-		containerConfig := services.NewContainerConfigBuilder(
-			fileServerServiceImage,
-		).WithUsedPorts(map[string]*services.PortSpec{
-			fileServerPortId: fileServerPortSpec,
-		}).WithFiles(
-			filesArtifactMountPoints,
-		).Build()
-		return containerConfig, nil
-	}
-	return containerConfigSupplier
-}
-
-func getFileContents(ipAddress string, portNum uint16, realtiveFilepath string) (string, error) {
-	resp, err := http.Get(fmt.Sprintf("http://%v:%v/%v", ipAddress, portNum, realtiveFilepath))
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the contents of file '%v'", realtiveFilepath)
-	}
-	body := resp.Body
-	defer func() {
-		if err := body.Close(); err != nil {
-			logrus.Warnf("We tried to close the response body, but doing so threw an error:\n%v", err)
-		}
-	}()
-
-	bodyBytes, err := ioutil.ReadAll(body)
-	if err != nil {
-		return "", stacktrace.Propagate(err,
-			"An error occurred reading the response body when getting the contents of file '%v'", realtiveFilepath)
-	}
-
-	bodyStr := string(bodyBytes)
-	return bodyStr, nil
 }

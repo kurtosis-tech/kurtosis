@@ -6,8 +6,8 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211207020812-00a54fc29318
 	github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211207020830-504dbf5ed1a6
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220831120648-10f44d8a5625
-	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220831170500-c734b19e1f3f
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220907155423-ab0c37147300
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220907164025-2392ff7abdbc
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0

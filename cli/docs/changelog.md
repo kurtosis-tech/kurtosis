@@ -1,5 +1,16 @@
 # TBD
 
+### Changes
+* Upgrade to core 1.58.3 - which introduces a `RenderTemplatesToFilesArtifact` endpoint
+* Upgraded engine to 1.32.2
+
+### Features
+* Adds test for the `EnclaveContext.RenderTemplates` SDK call
+
+### Breaking Changes
+* Upgraded to core 1.58.3 and engine to 1.32.2
+  * Users will have to restart their Kurtosis engine
+
 # 0.27.0
 ### Breaking changes
 * Upgrade to core to 1.58.1 and engine to 1.32.1
