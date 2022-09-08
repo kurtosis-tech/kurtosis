@@ -4,6 +4,7 @@ import * as path from "path"
 import * as os from "os";
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import {checkFileContents, startFileServer} from "../../test_helpers/test_helpers";
+import {ServiceID} from "kurtosis-core-api-lib";
 
 const ARCHIVE_DIRECTORY_TEST_PATTERN   = "upload-test-typescript-"
 const ARCHIVE_SUBDIRECTORY_TEST_PATTERN     = "sub-folder-"
@@ -27,6 +28,8 @@ const ARCHIVE_ROOT_FILE_KEYWORD_PATTERN                 = "archiveRootFile"
 const FOLDER_PERMISSION = 0o755
 const FILE_PERMISSION   = 0o644
 
+const FILE_SERVER_SERVICE_ID : ServiceID = "file-server"
+
 jest.setTimeout(180000)
 
 test("Test Upload Files", TestUploadFiles)
@@ -48,7 +51,7 @@ async function TestUploadFiles() {
         const firstArchiveRootKeyWord = `${ARCHIVE_ROOT_FILE_KEYWORD_PATTERN}0`
         const firstArchiveRootFilename = `${filePathsMap.get(firstArchiveRootKeyWord)}`
 
-        const startFileServerResult = await startFileServer(filesArtifactUuid, firstArchiveRootFilename, enclaveContext)
+        const startFileServerResult = await startFileServer(FILE_SERVER_SERVICE_ID, filesArtifactUuid, firstArchiveRootFilename, enclaveContext)
         if (startFileServerResult.isErr()){throw startFileServerResult.error}
         const {fileServerPublicIp, fileServerPublicPortNum} = startFileServerResult.value
 

@@ -46,7 +46,6 @@ const API_PORT_SPEC = new PortSpec(
     PortProtocol.TCP,
 )
 
-const FILE_SERVER_SERVICE_ID: ServiceID = "file-server"
 const FILE_SERVER_SERVICE_IMAGE         = "flashspys/nginx-static"
 const FILE_SERVER_PORT_ID               = "http"
 const FILE_SERVER_PRIVATE_PORT_NUM      = 80
@@ -222,12 +221,12 @@ export async function waitForHealthy(
 
 }
 
-export async function startFileServer(filesArtifactUuid: string, pathToCheckOnFileServer: string, enclaveCtx: EnclaveContext) : Promise<Result<StartFileServerResponse, Error>> {
+export async function startFileServer(fileServerServiceId: ServiceID, filesArtifactUuid: string, pathToCheckOnFileServer: string, enclaveCtx: EnclaveContext) : Promise<Result<StartFileServerResponse, Error>> {
     const filesArtifactsMountPoints = new Map<FilesArtifactUUID, string>()
     filesArtifactsMountPoints.set(filesArtifactUuid, USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT)
 
     const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier(filesArtifactsMountPoints)
-    const addServiceResult = await enclaveCtx.addService(FILE_SERVER_SERVICE_ID, fileServerContainerConfigSupplier)
+    const addServiceResult = await enclaveCtx.addService(fileServerServiceId, fileServerContainerConfigSupplier)
     if(addServiceResult.isErr()){ throw addServiceResult.error }
 
     const serviceContext = addServiceResult.value
@@ -240,7 +239,7 @@ export async function startFileServer(filesArtifactUuid: string, pathToCheckOnFi
     const fileServerPublicPortNum = publicPort.number
 
     const waitForHttpGetEndpointAvailabilityResult = await enclaveCtx.waitForHttpGetEndpointAvailability(
-        FILE_SERVER_SERVICE_ID,
+        fileServerServiceId,
         FILE_SERVER_PRIVATE_PORT_NUM,
         pathToCheckOnFileServer,
         WAIT_INITIAL_DELAY_MILLISECONDS,

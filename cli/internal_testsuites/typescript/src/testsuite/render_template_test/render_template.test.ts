@@ -2,6 +2,7 @@ import {err, ok, Result} from "neverthrow";
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import {checkFileContents, startFileServer} from "../../test_helpers/test_helpers";
 import {TemplateAndData} from "kurtosis-core-api-lib/build/lib/enclaves/template_and_data";
+import {ServiceID} from "kurtosis-core-api-lib";
 
 const ENCLAVE_TEST_NAME         = "render-templates-test"
 const IS_PARTITIONING_ENABLED   = false
@@ -9,6 +10,8 @@ const IS_PARTITIONING_ENABLED   = false
 const ROOT_FILENAME         = "config.yml"
 const NESTED_REL_FILEPATH       = "grafana/config.yml"
 const EXPECTED_CONTENTS = "Hello Stranger. The sum of [1 2 3] is 6. My favorite moment in history 1257894000. My favorite number 1231231243.43."
+
+const FILE_SERVER_SERVICE_ID : ServiceID = "file-server"
 
 jest.setTimeout(180000)
 
@@ -25,7 +28,7 @@ async function TestRenderTemplates() {
 
         const filesArtifactUuid = renderTemplatesResults.value
 
-        const startFileServerResult = await startFileServer(filesArtifactUuid, ROOT_FILENAME, enclaveContext)
+        const startFileServerResult = await startFileServer(FILE_SERVER_SERVICE_ID, filesArtifactUuid, ROOT_FILENAME, enclaveContext)
         if (startFileServerResult.isErr()){throw startFileServerResult.error}
         const {fileServerPublicIp, fileServerPublicPortNum} = startFileServerResult.value
 
