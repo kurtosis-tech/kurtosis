@@ -123,7 +123,7 @@ async function createTestFiles(pathToCreateAt : string, fileCount : number): Pro
             await filesystem.promises.writeFile(fullFilepath, ARCHIVE_TEST_CONTENT)
             await filesystem.promises.chmod(fullFilepath, FILE_PERMISSION)
         } catch {
-            return err(new Error(`Failed to write test file ${filename} at '${fullFilepath}'.`))
+            return err(new Error(`Failed to write test file '${filename}' at '${fullFilepath}'.`))
         }
     }
     return ok(filenames)
@@ -156,9 +156,13 @@ async function createTestFolderToUpload(): Promise<Result<Map<string,string>, Er
     //Set folder permissions.
     try {
         await filesystem.promises.chmod(tempDirectoryResult.value, FOLDER_PERMISSION) //baseDirectory
+    } catch {
+        return err(new Error(`Failed to set permissions for '${tempDirectoryResult.value}'`))
+    }
+    try {
         await filesystem.promises.chmod(subDirectoryResult.value, FOLDER_PERMISSION) //subdirectory
     } catch {
-        return err(new Error("Could not set permissions for root directory or subdirectories while creating test files."))
+        return err(new Error(`Failed to set permissions for '${subDirectoryResult.value}'`))
     }
 
     let subDirFilenames = subDirTestFileResult.value
