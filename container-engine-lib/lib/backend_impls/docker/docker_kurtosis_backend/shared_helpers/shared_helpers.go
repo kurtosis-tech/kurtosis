@@ -460,6 +460,7 @@ func GetLogsCollectorServiceAddress(
 	return logsCollectorAddress, nil
 }
 
+//This is public because we need to use it inside this package and in the "engine_functions" package also
 func GetLogsCollectorContainer(ctx context.Context, dockerManager *docker_manager.DockerManager) (*types.Container, error) {
 	logsCollectorContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
