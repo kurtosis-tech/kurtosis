@@ -1,5 +1,7 @@
 # TBD
 
+# 0.28.0
+
 ### Changes
 * Upgrade to core 1.58.3 - which introduces a `RenderTemplatesToFilesArtifact` endpoint
 * Upgraded engine to 1.32.2
