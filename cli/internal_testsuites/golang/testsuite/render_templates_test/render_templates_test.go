@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -16,6 +17,8 @@ const (
 	rootFilename      = "config.yml"
 	nestedRelFilepath = "grafana/config.yml"
 	expectedContents  = "Hello Stranger. The sum of [1 2 3] is 6. My favorite moment in history 1257894000. My favorite number 1231231243.43."
+
+	fileServerServiceId services.ServiceID = "file-server"
 )
 
 func TestRenderTemplates(t *testing.T) {
@@ -29,7 +32,7 @@ func TestRenderTemplates(t *testing.T) {
 	filesArtifactUUID, err := enclaveCtx.RenderTemplates(templateAndDataByDestRelFilepath)
 	require.NoError(t, err)
 
-	fileServerPublicIp, fileServerPublicPortNum, err := test_helpers.StartFileServer(filesArtifactUUID, rootFilename, enclaveCtx)
+	fileServerPublicIp, fileServerPublicPortNum, err := test_helpers.StartFileServer(fileServerServiceId, filesArtifactUUID, rootFilename, enclaveCtx)
 	require.NoError(t, err)
 
 	err = testRenderedTemplates(templateAndDataByDestRelFilepath, fileServerPublicIp, fileServerPublicPortNum)

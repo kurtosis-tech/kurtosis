@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
@@ -34,6 +35,8 @@ const (
 
 	folderPermission = 0755
 	filePermission   = 0644
+
+	fileServerServiceId services.ServiceID = "file-server"
 )
 
 func TestUploadFiles(t *testing.T) {
@@ -55,7 +58,7 @@ func TestUploadFiles(t *testing.T) {
 	firstArchiveRootKeyword := fmt.Sprintf("%s%v", archiveRootFileKeywordPattern, 0)
 	firstArchiveRootFilename := filePathsMap[firstArchiveRootKeyword]
 
-	fileServerPublicIp, fileServerPublicPortNum, err := test_helpers.StartFileServer(filesArtifactUUID, firstArchiveRootFilename, enclaveCtx)
+	fileServerPublicIp, fileServerPublicPortNum, err := test_helpers.StartFileServer(fileServerServiceId, filesArtifactUUID, firstArchiveRootFilename, enclaveCtx)
 	require.NoError(t, err)
 
 	err = testAllContents(filePathsMap, fileServerPublicIp, fileServerPublicPortNum)

@@ -40,10 +40,9 @@ const (
 
 	defaultPartitionId = ""
 
-	fileServerServiceId      services.ServiceID = "file-server"
-	fileServerServiceImage                      = "flashspys/nginx-static"
-	fileServerPortId                            = "http"
-	fileServerPrivatePortNum                    = 80
+	fileServerServiceImage   = "flashspys/nginx-static"
+	fileServerPortId         = "http"
+	fileServerPrivatePortNum = 80
 
 	waitForStartupTimeBetweenPolls = 500
 	waitForStartupMaxRetries       = 15
@@ -205,7 +204,7 @@ func WaitForHealthy(ctx context.Context, client GrpcAvailabilityChecker, retries
 	return nil
 }
 
-func StartFileServer(filesArtifactUUID services.FilesArtifactUUID, pathToCheckOnFileServer string, enclaveCtx *enclaves.EnclaveContext) (string, uint16, error) {
+func StartFileServer(fileServerServiceId services.ServiceID, filesArtifactUUID services.FilesArtifactUUID, pathToCheckOnFileServer string, enclaveCtx *enclaves.EnclaveContext) (string, uint16, error) {
 	filesArtifactMountPoints := map[services.FilesArtifactUUID]string{
 		filesArtifactUUID: userServiceMountPointForTestFilesArtifact,
 	}
