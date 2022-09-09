@@ -32,7 +32,7 @@ const (
 )
 
 var RenderTemplateCommand = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
-	CommandStr:                command_str_consts.RenderFileCmdStr,
+	CommandStr:                command_str_consts.FilesRenderTemplate,
 	ShortDescription:          "Renders golang templates to an enclave.",
 	LongDescription:           "Renders golang templates to an enclave so that they can be accessed by modules and services inside the enclave.",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
