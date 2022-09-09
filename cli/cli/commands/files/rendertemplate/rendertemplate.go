@@ -32,7 +32,7 @@ const (
 )
 
 var RenderTemplateCommand = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
-	CommandStr:                command_str_consts.FilesUploadCmdStr,
+	CommandStr:                command_str_consts.RenderFileCmdStr,
 	ShortDescription:          "Renders golang templates to an enclave.",
 	LongDescription:           "Renders golang templates to an enclave so that they can be accessed by modules and services inside the enclave.",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
@@ -83,7 +83,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the destination relative filepath using key '%v'", destRelFilepathArgKey)
 	}
 
-	destRelFilepath, err := args.GetNonGreedyArg(dataJsonFileArgKey)
+	destRelFilepath, err := args.GetNonGreedyArg(destRelFilepathArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the data json file using key '%v'", dataJsonFileArgKey)
 	}
