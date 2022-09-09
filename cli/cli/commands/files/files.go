@@ -2,6 +2,7 @@ package files
 
 import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/files/rendertemplate"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/files/storeservice"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/files/storeweb"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/files/upload"
@@ -19,4 +20,5 @@ func init() {
 	FilesCmd.AddCommand(upload.FilesUploadCmd.MustGetCobraCommand())
 	FilesCmd.AddCommand(storeweb.FilesStoreWebCmd.MustGetCobraCommand())
 	FilesCmd.AddCommand(storeservice.FilesStoreServiceCmd.MustGetCobraCommand())
+	FilesCmd.AddCommand(rendertemplate.RenderTemplateCommand.MustGetCobraCommand())
 }
