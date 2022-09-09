@@ -105,7 +105,7 @@ func run(
 
 	dataJsonFile, err := os.Open(dataJsonFilepath)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred reading the file '%v'", dataJsonFilepath)
+		return stacktrace.Propagate(err, "An error occurred opening the data json file '%v'", dataJsonFilepath)
 	}
 	defer dataJsonFile.Close()
 
