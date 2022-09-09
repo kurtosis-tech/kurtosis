@@ -23,9 +23,9 @@ const (
 	isEnclaveIdArgOptional = false
 	isEnclaveIdArgGreedy   = false
 
-	templateFileArgKey    = "template-file"
-	dataJsonFileArgKey    = "data-json-file"
-	destRelFilepathArgKey = "destination-relative-filepath"
+	templateFilepathArgKey = "template-filepath"
+	dataJsonFilepathArgKey = "data-json-filepath"
+	destRelFilepathArgKey  = "destination-relative-filepath"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
@@ -33,8 +33,8 @@ const (
 
 var RenderTemplateCommand = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.FilesRenderTemplate,
-	ShortDescription:          "Renders golang templates to an enclave.",
-	LongDescription:           "Renders golang templates to an enclave so that they can be accessed by modules and services inside the enclave.",
+	ShortDescription:          "Renders a template to an enclave.",
+	LongDescription:           "Renders a golang text/template to an enclave so that they can be accessed by modules and services inside the enclave.",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
 	Args: []*args.ArgConfig{
@@ -45,11 +45,11 @@ var RenderTemplateCommand = &engine_consuming_kurtosis_command.EngineConsumingKu
 			isEnclaveIdArgGreedy,
 		),
 		{
-			Key:            templateFileArgKey,
+			Key:            templateFilepathArgKey,
 			ValidationFunc: validateTemplateFileArg,
 		},
 		{
-			Key:            dataJsonFileArgKey,
+			Key:            dataJsonFilepathArgKey,
 			ValidationFunc: validateDataJsonFileArg,
 		},
 		{
@@ -73,19 +73,19 @@ func run(
 	}
 	enclaveId := enclaves.EnclaveID(enclaveIdStr)
 
-	templateFilepath, err := args.GetNonGreedyArg(templateFileArgKey)
+	templateFilepath, err := args.GetNonGreedyArg(templateFilepathArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the template file using key '%v'", templateFileArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the template file using key '%v'", templateFilepathArgKey)
 	}
 
-	dataJsonFilepath, err := args.GetNonGreedyArg(dataJsonFileArgKey)
+	dataJsonFilepath, err := args.GetNonGreedyArg(dataJsonFilepathArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the destination relative filepath using key '%v'", destRelFilepathArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the data json file using key '%v'", dataJsonFilepathArgKey)
 	}
 
 	destRelFilepath, err := args.GetNonGreedyArg(destRelFilepathArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the data json file using key '%v'", dataJsonFileArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the destination relative filepath using key '%v'", destRelFilepathArgKey)
 	}
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -105,7 +105,7 @@ func run(
 
 	dataJsonFile, err := os.Open(dataJsonFilepath)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred verifying data json '%v' exists and is readable", dataJsonFilepath)
+		return stacktrace.Propagate(err, "An error occurred reading the file '%v'", dataJsonFilepath)
 	}
 	defer dataJsonFile.Close()
 
@@ -129,25 +129,24 @@ func run(
 }
 
 func validateTemplateFileArg(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
-	templateFile, err := args.GetNonGreedyArg(templateFileArgKey)
+	templateFilepath, err := args.GetNonGreedyArg(templateFilepathArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the template file to validate using key '%v'", templateFileArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the template filepath to validate using key '%v'", templateFilepathArgKey)
 	}
 
-	if _, err := os.Stat(templateFile); err != nil {
-		return stacktrace.Propagate(err, "An error occurred verifying templateFileArgKey '%v' exists and is readable", templateFile)
+	if _, err := os.Stat(templateFilepath); err != nil {
+		return stacktrace.Propagate(err, "An error occurred verifying that the template file '%v' exists and is readable", templateFilepath)
 	}
 	return nil
 }
 
 func validateDataJsonFileArg(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
-	dataJsonFilepath, err := args.GetNonGreedyArg(dataJsonFileArgKey)
+	dataJsonFilepath, err := args.GetNonGreedyArg(dataJsonFilepathArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the data json file to validate using key '%v'", dataJsonFileArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the data json filepath to validate using key '%v'", dataJsonFilepathArgKey)
 	}
 
 	dataJsonFileContent, err := os.ReadFile(dataJsonFilepath)
-
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred verifying data json '%v' exists and is readable", dataJsonFilepath)
 	}
@@ -166,7 +165,7 @@ func validateDestRelFilePathArg(ctx context.Context, flags *flags.ParsedFlags, a
 	}
 
 	if path.IsAbs(destRelFilepath) {
-		return stacktrace.NewError("Expected a relative path got an absolute path")
+		return stacktrace.NewError("Expected a relative path got an absolute path '%v'", destRelFilepath)
 	}
 
 	return nil
