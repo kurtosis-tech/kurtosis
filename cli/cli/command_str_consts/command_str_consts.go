@@ -31,7 +31,7 @@ const (
 		FilesStoreWebCmdStr = "storeweb"
 		FilesStoreServiceCmdStr = "storeservice"
 		FilesRenderTemplate     = "rendertemplate"
-	ModuleCmdStr                = "module"
+	ModuleCmdStr = "module"
 		ModuleExecCmdStr = "exec"
 	ServiceCmdStr = "service"
 		ServiceAddCmdStr = "add"
