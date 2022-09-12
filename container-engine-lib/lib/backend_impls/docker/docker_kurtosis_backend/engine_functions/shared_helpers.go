@@ -259,6 +259,25 @@ func extractEngineGuidFromUncastedEngineObj(uncastedEngineObj interface{}) (stri
 
 func getLogsDatabaseContainer(ctx context.Context, dockerManager *docker_manager.DockerManager) (*types.Container, error) {
 
+	matchingLogsDatabaseContainers, err := getAllLogsDatabaseContainers(ctx, dockerManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting logs database containers")
+	}
+	if len(matchingLogsDatabaseContainers) == 0 {
+		return nil, stacktrace.NewError("Didn't find any logs database Docker container; this is a bug in Kurtosis")
+	}
+	if len(matchingLogsDatabaseContainers) > 1 {
+		return nil, stacktrace.NewError("Found more than one logs database Docker container; this is a bug in Kurtosis")
+	}
+
+	logsDatabaseContainer := matchingLogsDatabaseContainers[0]
+
+	return logsDatabaseContainer, nil
+}
+
+func getAllLogsDatabaseContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]*types.Container, error) {
+	matchingLogsDatabaseContainers := []*types.Container{}
+
 	logsDatabaseContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
 		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.LogsDatabaseTypeDockerLabelValue.GetString(),
@@ -268,16 +287,7 @@ func getLogsDatabaseContainer(ctx context.Context, dockerManager *docker_manager
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred fetching logs database containers using labels: %+v", logsDatabaseContainerSearchLabels)
 	}
-	if len(matchingLogsDatabaseContainers) == 0 {
-		return nil, stacktrace.NewError("Didn't find any logs database Docker container matching labels '%+v'; this is a bug in Kurtosis", logsDatabaseContainerSearchLabels)
-	}
-	if len(matchingLogsDatabaseContainers) > 1 {
-		return nil, stacktrace.NewError("Found more than one logs database Docker container matching labels '%+v'; this is a bug in Kurtosis", logsDatabaseContainerSearchLabels)
-	}
-
-	logsDatabaseContainer := matchingLogsDatabaseContainers[0]
-
-	return logsDatabaseContainer, nil
+	return matchingLogsDatabaseContainers, nil
 }
 
 func removeLogsComponentsGracefully(ctx context.Context, dockerManager *docker_manager.DockerManager) error {

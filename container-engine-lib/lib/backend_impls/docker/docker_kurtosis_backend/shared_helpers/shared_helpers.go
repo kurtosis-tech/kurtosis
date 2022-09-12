@@ -462,6 +462,25 @@ func GetLogsCollectorServiceAddress(
 
 //This is public because we need to use it inside this package and in the "engine_functions" package also
 func GetLogsCollectorContainer(ctx context.Context, dockerManager *docker_manager.DockerManager) (*types.Container, error) {
+	allLogsCollectorContainers, err := GetAllLogsCollectorContainers(ctx, dockerManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector containers")
+	}
+	if len(allLogsCollectorContainers) == 0 {
+		return nil, stacktrace.NewError("Didn't find any logs collector Docker container'; this is a bug in Kurtosis")
+	}
+	if len(allLogsCollectorContainers) > 1 {
+		return nil, stacktrace.NewError("Found more than one logs collector Docker container'; this is a bug in Kurtosis")
+	}
+
+	logsCollectorContainer := allLogsCollectorContainers[0]
+
+	return logsCollectorContainer, nil
+}
+
+func GetAllLogsCollectorContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]*types.Container, error) {
+	matchingLogsCollectorContainers := []*types.Container{}
+
 	logsCollectorContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
 		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.LogsCollectorTypeDockerLabelValue.GetString(),
@@ -471,16 +490,7 @@ func GetLogsCollectorContainer(ctx context.Context, dockerManager *docker_manage
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred fetching logs collector containers using labels: %+v", logsCollectorContainerSearchLabels)
 	}
-	if len(matchingLogsCollectorContainers) == 0 {
-		return nil, stacktrace.NewError("Didn't find any logs collector Docker container matching labels '%+v'; this is a bug in Kurtosis", logsCollectorContainerSearchLabels)
-	}
-	if len(matchingLogsCollectorContainers) > 1 {
-		return nil, stacktrace.NewError("Found more than one logs collector Docker container matching labels '%+v'; this is a bug in Kurtosis", logsCollectorContainerSearchLabels)
-	}
-
-	logsCollectorContainer := matchingLogsCollectorContainers[0]
-
-	return logsCollectorContainer, nil
+	return matchingLogsCollectorContainers, nil
 }
 
 // ====================================================================================================

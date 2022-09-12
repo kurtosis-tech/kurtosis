@@ -14,15 +14,21 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"strings"
 	"time"
 )
 
 const (
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
+
+	getAllEngineContainersOperationId operation_parallelizer.OperationID= "getAllEngineContainers"
+	getAllLogsDatabaseContainersOperationId operation_parallelizer.OperationID= "getAllLogsDatabaseContainers"
+	getAllLogsCollectorContainersOperationId operation_parallelizer.OperationID= "getAllLogsCollectorContainers"
 )
 
 func CreateEngine(
@@ -39,6 +45,21 @@ func CreateEngine(
 	*engine.Engine,
 	error,
 ) {
+	allEngineAndLogsComponentsContainerIDs,  err := GetAllEngineAndLogsComponentsContainerIDs(ctx, dockerManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred checking for engine containers and logs components containers existence")
+	}
+	isThereEngineOrLogsComponentsContainersInTheCluster := false
+	if len(allEngineAndLogsComponentsContainerIDs) > 0 {
+		isThereEngineOrLogsComponentsContainersInTheCluster = true
+	}
+
+	canStartNewEngine := !isThereEngineOrLogsComponentsContainersInTheCluster
+	if !canStartNewEngine {
+		containerIdsStr := strings.Join(allEngineAndLogsComponentsContainerIDs, ", ")
+		return nil, stacktrace.NewError("No new engine will be started because there exists engine or logs component containers in the cluster; the following containers with IDs '%v' should be removed before creating a new engine", containerIdsStr)
+	}
+
 	matchingNetworks, err := dockerManager.GetNetworksByName(ctx, consts.NameOfNetworkToStartEngineContainersIn)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -307,4 +328,83 @@ func createCentralizedLogsComponents(
 	shouldKillLogsDatabaseContainer = false
 	shouldKillLogsCollectorContainer = false
 	return killCentralizedLogsComponentsContainersFunc, nil
+}
+
+func GetAllEngineAndLogsComponentsContainerIDs(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+) ([]string, error){
+
+	allEngineAndLogsComponentsContainerIDs := []string{}
+
+	getAllEngineContainersOperation := func() (interface{}, error) {
+		getAllEngineFilters := &engine.EngineFilters{}
+		allEngineContainers, err := getMatchingEngines(ctx, getAllEngineFilters, dockerManager)
+		if err != nil {
+			return false, stacktrace.Propagate(err, "An error occurred getting all the engines using filters '%+v'", getAllEngineFilters)
+		}
+
+		allEngineContainerIDs := map[string]bool{}
+
+		for containerId := range allEngineContainers{
+			allEngineContainerIDs[containerId] = true
+		}
+
+		return allEngineContainerIDs, nil
+	}
+
+	getLogsDatabaseContainerOperation := func() (interface{}, error) {
+
+		logsDatabaseContainers, err := getAllLogsDatabaseContainers(ctx, dockerManager)
+		if err != nil {
+			return false, stacktrace.Propagate(err, "An error occurred getting the logs database container")
+		}
+
+		allLogsDatabaseContainerIDs := map[string]bool{}
+
+		for _, logsDatabaseContainer := range logsDatabaseContainers {
+			allLogsDatabaseContainerIDs[logsDatabaseContainer.GetId()]= true
+		}
+
+		return allLogsDatabaseContainerIDs, nil
+	}
+
+	getLogsCollectorContainerOperation := func() (interface{}, error) {
+		logsCollectorContainers, err := shared_helpers.GetAllLogsCollectorContainers(ctx, dockerManager)
+		if err != nil {
+			return false, stacktrace.Propagate(err, "An error occurred getting the logs collector container")
+		}
+
+		allLogsCollectorContainerIDs := map[string]bool{}
+
+		for _, logsCollectorContainer := range logsCollectorContainers {
+			allLogsCollectorContainerIDs[logsCollectorContainer.GetId()]= true
+		}
+
+		return allLogsCollectorContainerIDs, nil
+	}
+
+	allOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{
+		getAllEngineContainersOperationId:        getAllEngineContainersOperation,
+		getAllLogsDatabaseContainersOperationId:  getLogsDatabaseContainerOperation,
+		getAllLogsCollectorContainersOperationId: getLogsCollectorContainerOperation,
+	}
+
+	successfulOperations, erroredOperations := operation_parallelizer.RunOperationsInParallel(allOperations)
+	if len(erroredOperations) > 0 {
+		return nil, stacktrace.NewError("An error occurred running these operations '%+v' in parallel\n Operations with errors: %+v", allOperations, erroredOperations)
+	}
+
+	for _, uncastedContainerIds := range successfulOperations {
+		containerIds, ok := uncastedContainerIds.(map[string]bool)
+		if !ok {
+			return nil, stacktrace.NewError("An error occurred trying to cast the uncasted container ids '%v' to a map[string]bool", uncastedContainerIds)
+		}
+		for containerId := range containerIds {
+			allEngineAndLogsComponentsContainerIDs = append(allEngineAndLogsComponentsContainerIDs, containerId)
+		}
+	}
+
+
+	return allEngineAndLogsComponentsContainerIDs, nil
 }
