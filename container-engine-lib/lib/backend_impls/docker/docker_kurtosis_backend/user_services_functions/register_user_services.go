@@ -12,10 +12,10 @@ import (
 )
 
 // Registers a user service for each given serviceID, allocating each an IP and ServiceGUID
-func RegisterUserServices(
-	ctx context.Context, 
-	enclaveId enclave.EnclaveID, 
-	serviceIDs map[service.ServiceID]bool, 	
+func registerUserServices(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceIDs map[service.ServiceID]bool,
 	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration,
 	serviceRegistrationMutex *sync.Mutex,
 	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
