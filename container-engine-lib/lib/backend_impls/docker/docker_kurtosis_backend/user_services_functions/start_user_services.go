@@ -126,9 +126,9 @@ func StartUserServices(
 		return nil, nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveID)
 	}
 
-	logsCollectorAddress, err := shared_helpers.GetLogsCollectorAddress(ctx, dockerManager)
+	logsCollectorServiceAddress, err := shared_helpers.GetLogsCollectorServiceAddress(ctx, dockerManager)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector address")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector service address")
 	}
 
 	//The following docker labels will be added into the logs stream which is necessary for creating new tags
@@ -147,7 +147,7 @@ func StartUserServices(
 		enclaveObjAttrsProvider,
 		freeIpAddrProvider,
 		dockerManager,
-		logsCollectorAddress,
+		logsCollectorServiceAddress,
 		logsCollectorLabels,
 		)
 	if err != nil {

@@ -44,7 +44,6 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 	}
 
 	logsCollectorAttrs, err := objAttrsProvider.ForLogsCollector(
-		engineGuid,
 		logsCollectorTcpPortId,
 		privateTcpPortSpec,
 		logsCollectorHttpPortId,
@@ -66,7 +65,7 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
-	logsCollectorVolumeAttrs, err := objAttrsProvider.ForLogsCollectorVolume(engineGuid)
+	logsCollectorVolumeAttrs, err := objAttrsProvider.ForLogsCollectorVolume()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector volume attributes for engine with GUID %v", engineGuid)
 	}

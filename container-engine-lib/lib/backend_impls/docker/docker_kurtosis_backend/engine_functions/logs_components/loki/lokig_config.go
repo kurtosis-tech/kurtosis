@@ -11,6 +11,7 @@ type LokiConfig struct {
 	LimitsConfig  LimitsConfig  `yaml:"limits_config"`
 	Analytics     Analytics     `yaml:"analytics"`
 	RuntimeConfig RuntimeConfig `yaml:"runtime_config"`
+	Ingester      Ingester      `yaml:"ingester"`
 }
 
 type Server struct {
@@ -54,8 +55,8 @@ type Configs struct {
 	From        string `yaml:"from"`
 	Store       string `yaml:"store"`
 	ObjectStore string `yaml:"object_store"`
-	Schema string `yaml:"schema"`
-	Index  Index  `yaml:"index"`
+	Schema      string `yaml:"schema"`
+	Index       Index  `yaml:"index"`
 }
 
 type SchemaConfig struct {
@@ -64,6 +65,17 @@ type SchemaConfig struct {
 
 type Ruler struct {
 	AlertmanagerURL string `yaml:"alertmanager_url"`
+}
+
+type Ingester struct {
+	Wal IngesterWal `yaml:"wal"`
+}
+
+type IngesterWal struct {
+	Enabled            bool   `yaml:"enabled"`
+	Directory          string `yaml:"dir"`
+	FlushOnShutdown    bool   `yaml:"flush_on_shutdown"`
+	CheckpointDuration string `yaml:"checkpoint_duration"`
 }
 
 type Compactor struct {
@@ -145,6 +157,14 @@ func newDefaultLokiConfigForKurtosisCentralizedLogs() *LokiConfig {
 		RuntimeConfig: RuntimeConfig{
 			File:   runtimeConfigFilepath,
 			Period: runtimeConfigPeriod,
+		},
+		Ingester: Ingester{
+			Wal: IngesterWal{
+				Enabled:         enableIngesterWal,
+				Directory:       ingesterWalDirpath,
+				FlushOnShutdown: flushIngesterWalOnShutdown,
+				CheckpointDuration: checkpointDuration,
+			},
 		},
 	}
 	return newConfig

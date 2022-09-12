@@ -19,9 +19,10 @@ import (
 	"strings"
 )
 
-// ====================================================================================================
-//                                     Private Helper Methods
-// ====================================================================================================
+const (
+	shouldShowStoppedLogsDatabaseContainers = true
+)
+
 // Gets engines matching the search filters, indexed by their container ID
 func getMatchingEngines(ctx context.Context, filters *engine.EngineFilters, dockerManager *docker_manager.DockerManager) (map[string]*engine.Engine, error) {
 	engineContainerSearchLabels := map[string]string{
@@ -254,4 +255,58 @@ func extractEngineGuidFromUncastedEngineObj(uncastedEngineObj interface{}) (stri
 		return "", stacktrace.NewError("An error occurred downcasting the engine object")
 	}
 	return string(castedObj.GetGUID()), nil
+}
+
+func getLogsDatabaseContainer(ctx context.Context, dockerManager *docker_manager.DockerManager) (*types.Container, error) {
+
+	logsDatabaseContainerSearchLabels := map[string]string{
+		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.LogsDatabaseTypeDockerLabelValue.GetString(),
+	}
+
+	matchingLogsDatabaseContainers, err := dockerManager.GetContainersByLabels(ctx, logsDatabaseContainerSearchLabels, shouldShowStoppedLogsDatabaseContainers)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred fetching logs database containers using labels: %+v", logsDatabaseContainerSearchLabels)
+	}
+	if len(matchingLogsDatabaseContainers) == 0 {
+		return nil, stacktrace.NewError("Didn't find any logs database Docker container matching labels '%+v'; this is a bug in Kurtosis", logsDatabaseContainerSearchLabels)
+	}
+	if len(matchingLogsDatabaseContainers) > 1 {
+		return nil, stacktrace.NewError("Found more than one logs database Docker container matching labels '%+v'; this is a bug in Kurtosis", logsDatabaseContainerSearchLabels)
+	}
+
+	logsDatabaseContainer := matchingLogsDatabaseContainers[0]
+
+	return logsDatabaseContainer, nil
+}
+
+func removeLogsComponentsGracefully(ctx context.Context, dockerManager *docker_manager.DockerManager) error {
+
+	logsCollectorContainer, err := shared_helpers.GetLogsCollectorContainer(ctx, dockerManager)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the logs collector container")
+	}
+
+	if err := dockerManager.StopContainer(ctx, logsCollectorContainer.GetId(), stopLogsComponentsContainersTimeout); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping the logs collector container with ID '%v'", logsCollectorContainer.GetId())
+	}
+
+	if err := dockerManager.RemoveContainer(ctx, logsCollectorContainer.GetId()); err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing the logs collector container with ID '%v'", logsCollectorContainer.GetId())
+	}
+
+	logsDatabaseContainer, err := getLogsDatabaseContainer(ctx, dockerManager)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the logs database container")
+	}
+
+	if err := dockerManager.StopContainer(ctx, logsDatabaseContainer.GetId(), stopLogsComponentsContainersTimeout); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping the logs database container with ID '%v'", logsDatabaseContainer.GetId())
+	}
+
+	if err := dockerManager.RemoveContainer(ctx, logsDatabaseContainer.GetId()); err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing the logs database container with ID '%v'", logsDatabaseContainer.GetId())
+	}
+
+	return nil
 }

@@ -32,6 +32,8 @@ const (
 	hostMachinePortNumStrParsingBits = 16
 
 	netstatSuccessExitCode = 0
+
+	shouldShowStoppedLogsCollectorContainers = true
 )
 
 // !!!WARNING!!!
@@ -411,21 +413,28 @@ func WaitForPortAvailabilityUsingNetstat(
 	)
 }
 
-func GetLogsCollectorAddress(
+func GetLogsCollectorServiceAddress(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 ) (logs_components.LogsCollectorAddress, error) {
-	logsCollectorContainer, err := getLogsCollectorContainer(ctx, dockerManager)
+	logsCollectorContainer, err := GetLogsCollectorContainer(ctx, dockerManager)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting logs collector container")
+		return "", stacktrace.Propagate(err, "An error occurred getting the logs collector container")
 	}
-	if logsCollectorContainer == nil {
-		return "", stacktrace.Propagate(err, "There isn't a logs collector container running in the Kurtosis cluster")
+
+	isLogsCollectorContainerRunning, found := consts.IsContainerRunningDeterminer[logsCollectorContainer.GetStatus()]
+	if !found {
+		// This should never happen because we enforce completeness in a unit test
+		return "", stacktrace.NewError("No is-running designation found for logs collector container status '%v'; this is a bug in Kurtosis!", logsCollectorContainer.GetStatus().String())
+	}
+
+	if !isLogsCollectorContainerRunning{
+		return "", stacktrace.NewError("The logs collector container is not running")
 	}
 
 	privateIpStr, err := dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineContainersIn, logsCollectorContainer.GetId())
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the logs collector private IP in Docker network '%v'", consts.NameOfNetworkToStartEngineContainersIn)
+		return "", stacktrace.Propagate(err, "An error occurred getting the logs collector private IP address for Docker network '%v'", consts.NameOfNetworkToStartEngineContainersIn)
 	}
 
 	containerLabels := logsCollectorContainer.GetLabels()
@@ -451,6 +460,28 @@ func GetLogsCollectorAddress(
 	return logsCollectorAddress, nil
 }
 
+//This is public because we need to use it inside this package and in the "engine_functions" package also
+func GetLogsCollectorContainer(ctx context.Context, dockerManager *docker_manager.DockerManager) (*types.Container, error) {
+	logsCollectorContainerSearchLabels := map[string]string{
+		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.LogsCollectorTypeDockerLabelValue.GetString(),
+	}
+
+	matchingLogsCollectorContainers, err := dockerManager.GetContainersByLabels(ctx, logsCollectorContainerSearchLabels, shouldShowStoppedLogsCollectorContainers)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred fetching logs collector containers using labels: %+v", logsCollectorContainerSearchLabels)
+	}
+	if len(matchingLogsCollectorContainers) == 0 {
+		return nil, stacktrace.NewError("Didn't find any logs collector Docker container matching labels '%+v'; this is a bug in Kurtosis", logsCollectorContainerSearchLabels)
+	}
+	if len(matchingLogsCollectorContainers) > 1 {
+		return nil, stacktrace.NewError("Found more than one logs collector Docker container matching labels '%+v'; this is a bug in Kurtosis", logsCollectorContainerSearchLabels)
+	}
+
+	logsCollectorContainer := matchingLogsCollectorContainers[0]
+
+	return logsCollectorContainer, nil
+}
 
 // ====================================================================================================
 //                                      Private Helper Functions
@@ -593,27 +624,4 @@ func getUserServiceObjsFromDockerResources(
 		)
 	}
 	return result, nil
-}
-
-func getLogsCollectorContainer(ctx context.Context, dockerManager *docker_manager.DockerManager) (*types.Container, error) {
-
-	logsCollectorContainerSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.LogsCollectorTypeDockerLabelValue.GetString(),
-	}
-	shouldShowStoppedLogsCollectorContainers := false
-	allLogsCollectorContainers, err := dockerManager.GetContainersByLabels(ctx, logsCollectorContainerSearchLabels, shouldShowStoppedLogsCollectorContainers)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred fetching logs collector containers using labels: %+v", logsCollectorContainerSearchLabels)
-	}
-	if allLogsCollectorContainers == nil || len(allLogsCollectorContainers) == 0 {
-		return nil, nil
-	}
-	if len(allLogsCollectorContainers) > 1 {
-		return nil, stacktrace.Propagate(err, "There should be only one logs collector server running in the Kurtosis cluster but '%v' were found; this is a bug in Kurtosis", len(allLogsCollectorContainers))
-	}
-
-	logsCollectorContainer := allLogsCollectorContainers[0]
-
-	return logsCollectorContainer, nil
 }
