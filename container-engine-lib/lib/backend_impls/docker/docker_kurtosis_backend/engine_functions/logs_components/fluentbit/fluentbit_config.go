@@ -15,47 +15,47 @@ const (
 	labelsVarPrefix = "$"
 
 	notAllowedCharInLabels = " .-"
-	noSeparationChar = ""
+	noSeparationChar       = ""
 
 	shouldChangeNextCharToUpperCaseInitialValue = false
-	shouldChangeCharToUpperCaseInitialValue = false
+	shouldChangeCharToUpperCaseInitialValue     = false
 )
 
-type FluentbitConfig struct{
+type FluentbitConfig struct {
 	Service *Service
-	Input *Input
-	Filter *Filter
-	Output *Output
-
+	Input   *Input
+	Filter  *Filter
+	Output  *Output
 }
 
 type Service struct {
-	LogLevel string
+	LogLevel          string
 	HttpServerEnabled string
-	HttpServerHost string
-	HttpServerPort uint16
+	HttpServerHost    string
+	HttpServerPort    uint16
 }
 
 type Input struct {
-	Name string
+	Name   string
 	Listen string
-	Port uint16
+	Port   uint16
 }
 
 type Filter struct {
-	Name string
+	Name  string
 	Match string
 	Rules []string
 }
 
 type Output struct {
-	Name string
-	Match string
-	Host string
-	Port uint16
-	Labels []string
-	LineFormat string
+	Name        string
+	Match       string
+	Host        string
+	Port        uint16
+	Labels      []string
+	LineFormat  string
 	TenantIDKey string
+	RetryLimit  string
 }
 
 func newDefaultFluentbitConfigForKurtosisCentralizedLogs(
@@ -64,21 +64,21 @@ func newDefaultFluentbitConfigForKurtosisCentralizedLogs(
 	httpPortNumber uint16,
 ) *FluentbitConfig {
 	return &FluentbitConfig{
-		Service: &Service {
+		Service: &Service{
 			LogLevel:          logLevel,
 			HttpServerEnabled: httpServerEnabledValue,
 			HttpServerHost:    httpServerLocalhost,
 			HttpServerPort:    httpPortNumber,
 		},
 		Input: &Input{
-			Name: inputName,
+			Name:   inputName,
 			Listen: inputListenIP,
-			Port: tcpPortNumber,
+			Port:   tcpPortNumber,
 		},
 		Filter: &Filter{
-			Name:   modifyFilterName,
-			Match:  matchAllRegex,
-			Rules : getModifyFilterRulesKurtosisLabels(),
+			Name:  modifyFilterName,
+			Match: matchAllRegex,
+			Rules: getModifyFilterRulesKurtosisLabels(),
 		},
 		Output: &Output{
 			Name:        lokiOutputTypeName,
@@ -88,6 +88,7 @@ func newDefaultFluentbitConfigForKurtosisCentralizedLogs(
 			Labels:      getOutputKurtosisLabelsForLogs(),
 			LineFormat:  jsonLineFormat,
 			TenantIDKey: getTenantIdKeyFromKurtosisLabels(),
+			RetryLimit:  unlimitedOutputRetry,
 		},
 	}
 }

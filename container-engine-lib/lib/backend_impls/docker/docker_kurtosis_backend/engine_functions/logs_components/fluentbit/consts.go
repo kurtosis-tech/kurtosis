@@ -15,11 +15,11 @@ const (
 
 	lokiOutputTypeName = "loki"
 
-	configDirpathInContainer = rootDirpath + "/etc"
+	configDirpathInContainer  = rootDirpath + "/etc"
 	configFilepathInContainer = configDirpathInContainer + "/fluent-bit.conf"
 
 	configFileTemplateName = "fluentbitConfigFileTemplate"
-	configFileTemplate = `
+	configFileTemplate     = `
 [SERVICE]
 	log_level {{.Service.LogLevel}}
 	http_server {{.Service.HttpServerEnabled}}
@@ -40,7 +40,9 @@ const (
 	port {{.Output.Port}}
 	labels {{.Output.GetLabelsStr}}
 	line_format {{.Output.LineFormat}}
-	tenant_id_key {{.Output.TenantIDKey}}`
+	tenant_id_key {{.Output.TenantIDKey}}
+	retry_limit {{Output.RetryLimit}}
+`
 
 	healthCheckEndpointPath = "api/v1/health"
 	////////////////////////--FINISH LOKI CONTAINER CONFIGURATION SECTION--/////////////////////////////
@@ -54,5 +56,6 @@ const (
 	modifyFilterName       = "modify"
 	matchAllRegex          = "*"
 	jsonLineFormat         = "json"
+	unlimitedOutputRetry   = "no_limits"
 	////////////////////////--FINISH FLUENTBIT CONFIGURATION SECTION--/////////////////////////////
 )
