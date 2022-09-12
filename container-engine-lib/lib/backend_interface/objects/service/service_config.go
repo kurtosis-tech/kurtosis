@@ -5,6 +5,10 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 )
 
+const (
+	defaultPrivateIPAddrReplacementStr = "KURTOSIS_PRIVATE_IP_ADDR_REPL"
+)
+
 // Config options for the underlying container of a service
 type ServiceConfig struct {
 	containerImageName string
@@ -25,6 +29,8 @@ type ServiceConfig struct {
 	cpuAllocationMillicpus uint64
 
 	memoryAllocationMegabytes uint64
+
+	privateIPAddrReplacementStr string
 }
 
 func NewServiceConfig(
@@ -36,16 +42,20 @@ func NewServiceConfig(
 	envVars map[string]string,
 	filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion,
 	cpuAllocationMillicpus uint64,
-	memoryAllocationMegabytes uint64) *ServiceConfig {
+	memoryAllocationMegabytes uint64,
+	privateIPAddrReplacementStr string) *ServiceConfig {
+	if privateIPAddrReplacementStr == "" {
+		privateIPAddrReplacementStr = defaultPrivateIPAddrReplacementStr
+	}
 	return &ServiceConfig{
-		containerImageName: containerImageName,
-		privatePorts: privatePorts,
-		publicPorts: publicPorts,
-		entrypointArgs: entrypointArgs,
-		cmdArgs: cmdArgs,
-		envVars: envVars,
-		filesArtifactExpansion: filesArtifactExpansion,
-		cpuAllocationMillicpus: cpuAllocationMillicpus,
+		containerImageName:        containerImageName,
+		privatePorts:              privatePorts,
+		publicPorts:               publicPorts,
+		entrypointArgs:            entrypointArgs,
+		cmdArgs:                   cmdArgs,
+		envVars:                   envVars,
+		filesArtifactExpansion:    filesArtifactExpansion,
+		cpuAllocationMillicpus:    cpuAllocationMillicpus,
 		memoryAllocationMegabytes: memoryAllocationMegabytes}
 }
 
@@ -83,4 +93,8 @@ func (serviceConfig *ServiceConfig) GetCPUAllocationMillicpus() uint64 {
 
 func (serviceConfig *ServiceConfig) GetMemoryAllocationMegabytes() uint64 {
 	return serviceConfig.memoryAllocationMegabytes
+}
+
+func (serviceConfig *ServiceConfig) GetPrivateIPAddrReplacementStr() string {
+	return serviceConfig.privateIPAddrReplacementStr
 }
