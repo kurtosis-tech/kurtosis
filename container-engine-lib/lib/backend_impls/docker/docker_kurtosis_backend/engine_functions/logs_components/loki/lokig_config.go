@@ -72,9 +72,10 @@ type Ingester struct {
 }
 
 type IngesterWal struct {
-	Enabled         bool `yaml:"enabled"`
-	Directory       string `yaml:"dir"`
-	FlushOnShutdown bool   `yaml:"flush_on_shutdown"`
+	Enabled            bool   `yaml:"enabled"`
+	Directory          string `yaml:"dir"`
+	FlushOnShutdown    bool   `yaml:"flush_on_shutdown"`
+	CheckpointDuration string `yaml:"checkpoint_duration"`
 }
 
 type Compactor struct {
@@ -159,9 +160,10 @@ func newDefaultLokiConfigForKurtosisCentralizedLogs() *LokiConfig {
 		},
 		Ingester: Ingester{
 			Wal: IngesterWal{
-				Enabled: enableIngesterWal,
-				Directory: ingesterWalDirpath,
+				Enabled:         enableIngesterWal,
+				Directory:       ingesterWalDirpath,
 				FlushOnShutdown: flushIngesterWalOnShutdown,
+				CheckpointDuration: checkpointDuration,
 			},
 		},
 	}
