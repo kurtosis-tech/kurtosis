@@ -6,8 +6,9 @@ import (
 )
 
 // A ServiceRegistration is a stub for a soon-to-be-started service
-// We have this as an independent object so we can return the container's IP
-// address to the user before the container exists
+// We had created this to return the user's IP before the container exists
+// Now this is used for caches in APIC & DockerKurtosisBackend
+// ToDo visit removing this  after partitioning is moved to container-engine-lib and data is stored in a database
 type ServiceRegistration struct {
 	id				 ServiceID
 	guid             ServiceGUID
