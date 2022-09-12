@@ -100,7 +100,7 @@ func StartUserServices(
 	}
 
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	// Sanity check for port bindings on all servicesByServiceId
+	// Sanity check for port bindings on all services
 	for serviceGUID, serviceConfig := range serviceConfigsToStart {
 		publicPorts := serviceConfig.GetPublicPorts()
 		if publicPorts != nil && len(publicPorts) > 0 {
@@ -135,7 +135,7 @@ func StartUserServices(
 		freeIpAddrProvider,
 		dockerManager)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to start servicesByServiceId in parallel.")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to start services in parallel.")
 	}
 
 	// Add operations to their respective pools
