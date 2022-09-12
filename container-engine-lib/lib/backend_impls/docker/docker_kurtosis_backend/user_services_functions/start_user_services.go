@@ -29,17 +29,31 @@ func StartUserServices(
 	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 ) (
-	map[service.ServiceGUID]*service.Service,
+	map[service.ServiceID]*service.Service,
 	map[service.ServiceID]error,
 	error,
 ) {
-	successfulServicesPool := map[service.ServiceGUID]*service.Service{}
-	failedServicesPool := map[service.ServiceID]error{}
-
 	serviceRegistrationMutex.Lock()
 	defer serviceRegistrationMutex.Unlock()
+	successfulServicesPool := map[service.ServiceID]*service.Service{}
+	failedServicesPool := map[service.ServiceID]error{}
 
-	successfulRegistrations, failedRegistrations, err := registerUserServices(enclaveID, servicesByServiceID, serviceRegistrations, enclaveFreeIpProviders)
+	// Check whether any services have been provided at all
+	if len(servicesByServiceID) == 0 {
+		return successfulServicesPool, failedServicesPool, nil
+	}
+
+
+	freeIpAddrProvider, found := enclaveFreeIpProviders[enclaveID]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"Received a request to start servicesByServiceId in enclave '%v', but no free IP address provider was "+
+				"defined for this enclave; this likely means that the start request is being called where it shouldn't "+
+				"be (i.e. outside the API container)",
+			enclaveID,
+		)
+	}
+	successfulRegistrations, failedRegistrations, err := registerUserServices(enclaveID, servicesByServiceID, serviceRegistrations, freeIpAddrProvider)
 	// Defer an undo to all the successful registrations in case an error occurs in future phases
 	shouldRemoveServices := map[service.ServiceID]bool{}
 	for serviceID, serviceRegistration := range successfulRegistrations {
@@ -59,18 +73,18 @@ func StartUserServices(
 		failedServicesPool[serviceId] = err
 	}
 
-	servicesByServiceGUID := map[service.ServiceGUID]*service.ServiceConfig{}
-	for serviceID, serviceRegistration := range successfulRegistrations {
-		servicesByServiceGUID[serviceRegistration.GetGUID()] = servicesByServiceID[serviceID]
-	}
-
+	servicesByServiceGUID := map[service.ServiceGUID]*service.ServiceRegistration{}
 	serviceConfigsToStart := map[service.ServiceGUID]*service.ServiceConfig{}
-	for guid, config := range servicesByServiceGUID {
-		serviceConfigsToStart[guid] = config
+	for serviceID, serviceRegistration := range successfulRegistrations {
+		guid := serviceRegistration.GetGUID()
+		config := servicesByServiceID[serviceID]
+		config.ReplacePlaceholderWithPrivateIPAddr(serviceRegistration.GetPrivateIP().String())
+		servicesByServiceGUID[guid] = serviceRegistration
+		serviceConfigsToStart[guid] = servicesByServiceID[serviceID]
 	}
 
-	// If no servicesByServiceId were passed in to start, return empty maps
-	// This is to prevent an empty filter being used to query for matching objects and resources, returning all servicesByServiceId
+=	// If no services had succesful IP address registrations return empty
+	// This is to prevent an empty filter being used to query for matching objects and resources, returning all servicesByServiceGUID
 	// and causing logic to break (eg. check for duplicate service GUIDs)
 	// Making this check allows us to eject early and maintain a guarantee that objects and resources returned
 	// are 1:1 with serviceGUIDs
@@ -80,7 +94,7 @@ func StartUserServices(
 
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	// Sanity check for port bindings on all servicesByServiceId
-	for serviceGUID, serviceConfig := range servicesByServiceGUID {
+	for serviceGUID, serviceConfig := range serviceConfigsToStart {
 		publicPorts := serviceConfig.GetPublicPorts()
 		if publicPorts != nil && len(publicPorts) > 0 {
 			privatePorts := serviceConfig.GetPrivatePorts()
@@ -99,55 +113,6 @@ func StartUserServices(
 	}
 	enclaveNetworkId := enclaveNetwork.GetId()
 
-	freeIpAddrProvider, found := enclaveFreeIpProviders[enclaveID]
-	if !found {
-		return nil, nil, stacktrace.NewError(
-			"Received a request to start servicesByServiceId in enclave '%v', but no free IP address provider was "+
-				"defined for this enclave; this likely means that the start request is being called where it shouldn't "+
-				"be (i.e. outside the API container)",
-			enclaveID,
-		)
-	}
-
-	// Find the registrations
-	registrationsForEnclave, found := serviceRegistrations[enclaveID]
-	if !found {
-		return nil, nil, stacktrace.NewError(
-			"No service registrations are being tracked for enclave '%v'; this likely means that the start service request is being called where it shouldn't "+
-				"be (i.e. outside the API container)",
-			enclaveID,
-		)
-	}
-
-	// Check that all servicesByServiceId have valid registrations attached
-	for serviceGUID, _ := range servicesByServiceGUID {
-		_, found := registrationsForEnclave[serviceGUID]
-		if !found {
-			failedServicesPool[serviceGUID] = stacktrace.NewError(
-				"Cannot start service '%v' because no preexisting registration has been made for the service",
-				serviceGUID,
-			)
-			delete(serviceConfigsToStart, serviceGUID)
-		}
-	}
-
-	// Find if a container has already been associated with any of the registrations yet
-	serviceGUIDs := map[service.ServiceGUID]bool{}
-	for guid := range serviceConfigsToStart {
-		serviceGUIDs[guid] = true
-	}
-	preexistingServicesFilters := &service.ServiceFilters{
-		GUIDs: serviceGUIDs,
-	}
-	preexistingServices, _, err := shared_helpers.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveID, preexistingServicesFilters, dockerManager)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting preexisting containers for the servicesByServiceId.")
-	}
-	for serviceGUID := range preexistingServices {
-		failedServicesPool[serviceGUID] = stacktrace.NewError("Cannot start servicesByServiceId '%v'; because containers already exists for those servicesByServiceId.", serviceGUID)
-		delete(serviceConfigsToStart, serviceGUID)
-	}
-
 	enclaveObjAttrsProvider, err := objAttrsProvider.ForEnclave(enclaveID)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveID)
@@ -157,7 +122,7 @@ func StartUserServices(
 		ctx,
 		enclaveNetworkId,
 		serviceConfigsToStart,
-		registrationsForEnclave,
+		servicesByServiceGUID,
 		enclaveObjAttrsProvider,
 		freeIpAddrProvider,
 		dockerManager)
@@ -422,23 +387,13 @@ func registerUserServices(
 	enclaveId enclave.EnclaveID,
 	serviceIDs map[service.ServiceID]*service.ServiceConfig,
 	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration,
-	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
+	freeIpAddrProvider *lib.FreeIpAddrTracker) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
 	successfulServicesPool := map[service.ServiceID]*service.ServiceRegistration{}
 	failedServicesPool := map[service.ServiceID]error{}
 
 	// If no service IDs passed in, return empty maps
 	if len(serviceIDs) == 0 {
 		return successfulServicesPool, failedServicesPool, nil
-	}
-
-	freeIpAddrProvider, found := enclaveFreeIpProviders[enclaveId]
-	if !found {
-		return nil, nil, stacktrace.NewError(
-			"Received a request to register services in enclave '%v', but no free IP address provider was "+
-				"defined for this enclave; this likely means that the registration request is being called where it shouldn't "+
-				"be (i.e. outside the API container)",
-			enclaveId,
-		)
 	}
 
 	registrationsForEnclave, found := serviceRegistrations[enclaveId]
