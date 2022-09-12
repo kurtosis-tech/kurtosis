@@ -70,7 +70,7 @@ func StartUserServices(
 	for serviceID := range services {
 		serviceIDs = append(serviceIDs, serviceID)
 	}
-	successfulRegistrations, failedRegistrations, err := registerUserServices(ctx, enclaveID, services, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+	successfulRegistrations, failedRegistrations, err := registerUserServices(ctx, enclaveID, serviceIDs, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	// Defer an undo to all the successful registrations in case an error occurs in future phases
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", serviceIDs)
@@ -603,7 +603,7 @@ func destroyServiceAfterFailure(
 func registerUserServices(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
-	serviceIDs map[service.ServiceID]*service.ServiceConfig,
+	serviceIDs []service.ServiceID,
 	cliModeArgs *shared_helpers.CliModeArgs,
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
@@ -625,7 +625,7 @@ func registerUserServices(
 	enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveID)
 
 	registerServiceOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
-	for serviceID, _ := range serviceIDs {
+	for _, serviceID := range serviceIDs {
 		registerServiceOperations[operation_parallelizer.OperationID(serviceID)] = createRegisterUserServiceOperation(
 			ctx,
 			enclaveID,

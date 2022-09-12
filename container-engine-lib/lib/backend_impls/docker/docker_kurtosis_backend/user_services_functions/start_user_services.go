@@ -57,7 +57,7 @@ func StartUserServices(
 	for serviceID := range services {
 		serviceIDs = append(serviceIDs, serviceID)
 	}
-	successfulRegistrations, failedRegistrations, err := registerUserServices(enclaveID, services, serviceRegistrations, freeIpAddrProvider)
+	successfulRegistrations, failedRegistrations, err := registerUserServices(enclaveID, serviceIDs, serviceRegistrations, freeIpAddrProvider)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", serviceIDs)
 	}
@@ -399,7 +399,7 @@ func checkPrivateAndPublicPortsAreOneToOne(privatePorts map[string]*port_spec.Po
 // Registers a user service for each given serviceID, allocating each an IP and ServiceGUID
 func registerUserServices(
 	enclaveId enclave.EnclaveID,
-	serviceIDs map[service.ServiceID]*service.ServiceConfig,
+	serviceIDs []service.ServiceID,
 	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration,
 	freeIpAddrProvider *lib.FreeIpAddrTracker) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
 	successfulServicesPool := map[service.ServiceID]*service.ServiceRegistration{}
@@ -421,7 +421,7 @@ func registerUserServices(
 
 	successfulRegistrations := map[service.ServiceID]*service.ServiceRegistration{}
 	failedRegistrations := map[service.ServiceID]error{}
-	for serviceID, _ := range serviceIDs {
+	for _, serviceID := range serviceIDs {
 		ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
 		if err != nil {
 			failedRegistrations[serviceID] = stacktrace.Propagate(err, "An error occurred getting a free IP address to give to service '%v' in enclave '%v'", serviceID, enclaveId)
