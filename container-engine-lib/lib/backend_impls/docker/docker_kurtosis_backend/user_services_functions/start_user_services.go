@@ -108,7 +108,7 @@ func StartUserServices(
 			err := checkPrivateAndPublicPortsAreOneToOne(privatePorts, publicPorts)
 			if err != nil {
 				serviceID := successfulRegistrationsByGUID[serviceGUID].GetID()
-				failedServicesPool[serviceID] = stacktrace.Propagate(err, "Private and public ports are for service with ID '%v' are not one to one.", serviceID)
+				failedServicesPool[serviceID] = stacktrace.Propagate(err, "Private and public ports for service with ID '%v' are not one to one.", serviceID)
 				delete(serviceConfigsToStart, serviceGUID)
 			}
 		}
