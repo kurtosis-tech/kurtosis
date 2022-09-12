@@ -462,7 +462,7 @@ func GetLogsCollectorServiceAddress(
 
 //This is public because we need to use it inside this package and in the "engine_functions" package also
 func GetLogsCollectorContainer(ctx context.Context, dockerManager *docker_manager.DockerManager) (*types.Container, error) {
-	allLogsCollectorContainers, err := GetLogsCollectorContainers(ctx, dockerManager)
+	allLogsCollectorContainers, err := GetAllLogsCollectorContainers(ctx, dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector containers")
 	}
@@ -478,7 +478,7 @@ func GetLogsCollectorContainer(ctx context.Context, dockerManager *docker_manage
 	return logsCollectorContainer, nil
 }
 
-func GetLogsCollectorContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]*types.Container, error) {
+func GetAllLogsCollectorContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]*types.Container, error) {
 	matchingLogsCollectorContainers := []*types.Container{}
 
 	logsCollectorContainerSearchLabels := map[string]string{

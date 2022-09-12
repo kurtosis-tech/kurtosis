@@ -18,7 +18,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"reflect"
 	"strings"
 	"time"
 )
@@ -46,14 +45,19 @@ func CreateEngine(
 	*engine.Engine,
 	error,
 ) {
-	isThereEngineOrLogsComponentsContainersInTheCluster, existenceContainerIds,  err := isThereAnyOtherEngineOrLogsComponentsContainersInTheCluster(ctx, dockerManager)
+	allEngineAndLogsComponentsContainerIDs,  err := GetAllEngineAndLogsComponentsContainerIDs(ctx, dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred checking for engine containers and logs components containers existence")
 	}
+	isThereEngineOrLogsComponentsContainersInTheCluster := false
+	if len(allEngineAndLogsComponentsContainerIDs) > 0 {
+		isThereEngineOrLogsComponentsContainersInTheCluster = true
+	}
+
 	canStartNewEngine := !isThereEngineOrLogsComponentsContainersInTheCluster
 	if !canStartNewEngine {
-		containerIdsStr := strings.Join(existenceContainerIds, ", ")
-		return nil, stacktrace.NewError("No new engine won't be started because there exist an engine or logs component container in the cluster; the following containers with IDs '%v' should be removed before creating a new engine", containerIdsStr)
+		containerIdsStr := strings.Join(allEngineAndLogsComponentsContainerIDs, ", ")
+		return nil, stacktrace.NewError("No new engine will be started because there exists engine or logs component containers in the cluster; the following containers with IDs '%v' should be removed before creating a new engine", containerIdsStr)
 	}
 
 	matchingNetworks, err := dockerManager.GetNetworksByName(ctx, consts.NameOfNetworkToStartEngineContainersIn)
@@ -326,12 +330,12 @@ func createCentralizedLogsComponents(
 	return killCentralizedLogsComponentsContainersFunc, nil
 }
 
-func isThereAnyOtherEngineOrLogsComponentsContainersInTheCluster(
+func GetAllEngineAndLogsComponentsContainerIDs(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
-) (bool, []string, error){
+) ([]string, error){
 
-	existentContainerIds := []string{}
+	allEngineAndLogsComponentsContainerIDs := []string{}
 
 	getAllEngineContainersOperation := func() (interface{}, error) {
 		getAllEngineFilters := &engine.EngineFilters{}
@@ -346,12 +350,12 @@ func isThereAnyOtherEngineOrLogsComponentsContainersInTheCluster(
 			allEngineContainerIDs[containerId] = true
 		}
 
-		return allEngineContainers, nil
+		return allEngineContainerIDs, nil
 	}
 
 	getLogsDatabaseContainerOperation := func() (interface{}, error) {
 
-		logsDatabaseContainers, err := getLogsDatabaseContainers(ctx, dockerManager)
+		logsDatabaseContainers, err := getAllLogsDatabaseContainers(ctx, dockerManager)
 		if err != nil {
 			return false, stacktrace.Propagate(err, "An error occurred getting the logs database container")
 		}
@@ -366,7 +370,7 @@ func isThereAnyOtherEngineOrLogsComponentsContainersInTheCluster(
 	}
 
 	getLogsCollectorContainerOperation := func() (interface{}, error) {
-		logsCollectorContainers, err := shared_helpers.GetLogsCollectorContainers(ctx, dockerManager)
+		logsCollectorContainers, err := shared_helpers.GetAllLogsCollectorContainers(ctx, dockerManager)
 		if err != nil {
 			return false, stacktrace.Propagate(err, "An error occurred getting the logs collector container")
 		}
@@ -388,19 +392,19 @@ func isThereAnyOtherEngineOrLogsComponentsContainersInTheCluster(
 
 	successfulOperations, erroredOperations := operation_parallelizer.RunOperationsInParallel(allOperations)
 	if len(erroredOperations) > 0 {
-		return false, nil, stacktrace.NewError("An error occurred running these operations '%+v' in parallel\n Operations with errors: %+v", allOperations, erroredOperations)
+		return nil, stacktrace.NewError("An error occurred running these operations '%+v' in parallel\n Operations with errors: %+v", allOperations, erroredOperations)
 	}
 
 	for _, uncastedContainerIds := range successfulOperations {
-		containerIdsValue := reflect.ValueOf(uncastedContainerIds)
-		for _, containerIdValue := range containerIdsValue.MapKeys() {
-			existentContainerIds = append(existentContainerIds, containerIdValue.String())
+		containerIds, ok := uncastedContainerIds.(map[string]bool)
+		if !ok {
+			return nil, stacktrace.NewError("An error occurred trying to cast the uncasted container ids '%v' to a map[string]bool", uncastedContainerIds)
+		}
+		for containerId := range containerIds {
+			allEngineAndLogsComponentsContainerIDs = append(allEngineAndLogsComponentsContainerIDs, containerId)
 		}
 	}
 
-	if len(existentContainerIds) > 0 {
-		return true, existentContainerIds, nil
-	}
-	return false, existentContainerIds, nil
-}
 
+	return allEngineAndLogsComponentsContainerIDs, nil
+}

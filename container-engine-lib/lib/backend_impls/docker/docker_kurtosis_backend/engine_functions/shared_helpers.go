@@ -259,7 +259,7 @@ func extractEngineGuidFromUncastedEngineObj(uncastedEngineObj interface{}) (stri
 
 func getLogsDatabaseContainer(ctx context.Context, dockerManager *docker_manager.DockerManager) (*types.Container, error) {
 
-	matchingLogsDatabaseContainers, err := getLogsDatabaseContainers(ctx, dockerManager)
+	matchingLogsDatabaseContainers, err := getAllLogsDatabaseContainers(ctx, dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting logs database containers")
 	}
@@ -275,7 +275,7 @@ func getLogsDatabaseContainer(ctx context.Context, dockerManager *docker_manager
 	return logsDatabaseContainer, nil
 }
 
-func getLogsDatabaseContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]*types.Container, error) {
+func getAllLogsDatabaseContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]*types.Container, error) {
 	matchingLogsDatabaseContainers := []*types.Container{}
 
 	logsDatabaseContainerSearchLabels := map[string]string{

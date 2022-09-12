@@ -7,8 +7,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
-	engine_object "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
@@ -116,7 +114,7 @@ func runKurtosisBackendTesting() error {
 	}
 	logrus.Infof("Engine 1 info: %+v", engine)
 
-		engineFil := &engine_object.EngineFilters{
+		/*engineFil := &engine_object.EngineFilters{
 			GUIDs: map[engine_object.EngineGUID]bool{
 				engine.GetGUID(): true,
 			},
@@ -124,12 +122,14 @@ func runKurtosisBackendTesting() error {
 				container_status.ContainerStatus_Running: true,
 			},
 		}
-		stoppedEngineGuids, erroredEngineGuids, err := backend.DestroyEngines(ctx, engineFil)
+		stoppedEngineGuids, erroredEngineGuids, err := backend.StopEngines(ctx, engineFil)
 		if err != nil {
 			return err
 		}
 		logrus.Infof("Successfull stopped engines: %+v", stoppedEngineGuids)
 		logrus.Infof("Errored stopped engines: %+v", erroredEngineGuids)
+		*/
+
 
 		serializedArgs2 := map[string]string{
 			"SERIALIZED_ARGS": `{"grpcListenPortNum":9810,"grpcProxyListenPortNum":9811,"logLevelStr":"debug","imageVersionTag":"1.29.0","metricsUserId":"552f","didUserAcceptSendingMetrics":false,"kurtosisBackendType":"docker","kurtosisBackendConfig":{}}`,
@@ -149,7 +149,7 @@ func runKurtosisBackendTesting() error {
 		}
 		logrus.Infof("Engine 2 info: %+v", engine2)
 
-
+/*
 		engineFil2 := &engine_object.EngineFilters{
 			GUIDs: map[engine_object.EngineGUID]bool{
 				engine.GetGUID(): true,
