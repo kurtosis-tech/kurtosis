@@ -2,7 +2,6 @@ package engine_functions
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
@@ -68,22 +67,11 @@ func DestroyEngines(
 		)
 	}
 
-	logsCollectorContainer, err := shared_helpers.GetLogsCollectorContainer(ctx, dockerManager)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector container")
-	}
-
-	if err := dockerManager.RemoveContainer(ctx, logsCollectorContainer.GetId()); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred removing logs collector container with ID '%v'", logsCollectorContainer.GetId())
-	}
-
-	logsDatabaseContainer, err := getLogsDatabaseContainer(ctx, dockerManager)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs database container")
-	}
-
-	if err := dockerManager.RemoveContainer(ctx, logsDatabaseContainer.GetId()); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred removing logs database container with ID '%v'", logsDatabaseContainer.GetId())
+	//TODO we are removing the los components containers rather than stopping them because we are preparing the stage
+	//TODO for a single engine server, logs components containers have an static name, so if we stop the containers
+	//TODO the engine restart will fail because the container's name will be in use
+	if err := removeLogsComponentsGracefully(ctx, dockerManager); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing the logs components containers")
 	}
 
 	return successfulGuids, erroredGuids, nil

@@ -289,3 +289,34 @@ func getLogsDatabaseContainers(ctx context.Context, dockerManager *docker_manage
 	}
 	return matchingLogsDatabaseContainers, nil
 }
+
+func removeLogsComponentsGracefully(ctx context.Context, dockerManager *docker_manager.DockerManager) error {
+
+	logsCollectorContainer, err := shared_helpers.GetLogsCollectorContainer(ctx, dockerManager)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the logs collector container")
+	}
+
+	if err := dockerManager.StopContainer(ctx, logsCollectorContainer.GetId(), stopLogsComponentsContainersTimeout); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping the logs collector container with ID '%v'", logsCollectorContainer.GetId())
+	}
+
+	if err := dockerManager.RemoveContainer(ctx, logsCollectorContainer.GetId()); err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing the logs collector container with ID '%v'", logsCollectorContainer.GetId())
+	}
+
+	logsDatabaseContainer, err := getLogsDatabaseContainer(ctx, dockerManager)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the logs database container")
+	}
+
+	if err := dockerManager.StopContainer(ctx, logsDatabaseContainer.GetId(), stopLogsComponentsContainersTimeout); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping the logs database container with ID '%v'", logsDatabaseContainer.GetId())
+	}
+
+	if err := dockerManager.RemoveContainer(ctx, logsDatabaseContainer.GetId()); err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing the logs database container with ID '%v'", logsDatabaseContainer.GetId())
+	}
+
+	return nil
+}
