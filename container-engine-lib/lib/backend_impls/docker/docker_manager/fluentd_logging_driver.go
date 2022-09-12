@@ -9,20 +9,26 @@ const (
 	//We almost could have gotten these values from the Docker package github.com/docker/docker/daemon/logger/fluentd but, those are private so, we have to redeclare it
 	fluentdLoggingDriverTypeName         = "fluentd"
 	fluentdLoggingDriverAddressConfigKey = "fluentd-address"
-	loggingDriverLabelsKey = "labels"
+	fluentdLoggingDriverAsyncConfigKey   = "fluentd-async"
+	loggingDriverLabelsKey               = "labels"
+
+	//Using async for do not blocking the container's logs if the Fluentd/Fluentbit service is down
+	enableAsyncFluentbitLoggingDriverByDefault = "true"
 
 	labelsSeparator = ","
 )
 
 type fluentdLoggingDriver struct {
 	address string
-	labels []string
+	async   string
+	labels  []string
 }
 
 func NewFluentdLoggingDriver(address string, labels []string) *fluentdLoggingDriver {
 	return &fluentdLoggingDriver{
 		address: address,
-		labels: labels,
+		async:   enableAsyncFluentbitLoggingDriverByDefault,
+		labels:  labels,
 	}
 }
 
@@ -31,7 +37,8 @@ func (config *fluentdLoggingDriver) GetLogConfig() container.LogConfig {
 		Type: fluentdLoggingDriverTypeName,
 		Config: map[string]string{
 			fluentdLoggingDriverAddressConfigKey: config.address,
-			loggingDriverLabelsKey: config.getLabelsStr(),
+			fluentdLoggingDriverAsyncConfigKey:   config.async,
+			loggingDriverLabelsKey:               config.getLabelsStr(),
 		},
 	}
 }

@@ -68,16 +68,6 @@ func DestroyEngines(
 		)
 	}
 
-	//Remove the logs components volumes only if are not in use
-	logsDatabaseContainer, err := getLogsDatabaseContainer(ctx, dockerManager)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs database container")
-	}
-
-	if err := dockerManager.RemoveContainer(ctx, logsDatabaseContainer.GetId()); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred removing logs database container with ID '%v'", logsDatabaseContainer.GetId())
-	}
-
 	logsCollectorContainer, err := shared_helpers.GetLogsCollectorContainer(ctx, dockerManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector container")
@@ -85,6 +75,15 @@ func DestroyEngines(
 
 	if err := dockerManager.RemoveContainer(ctx, logsCollectorContainer.GetId()); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred removing logs collector container with ID '%v'", logsCollectorContainer.GetId())
+	}
+
+	logsDatabaseContainer, err := getLogsDatabaseContainer(ctx, dockerManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs database container")
+	}
+
+	if err := dockerManager.RemoveContainer(ctx, logsDatabaseContainer.GetId()); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing logs database container with ID '%v'", logsDatabaseContainer.GetId())
 	}
 
 	return successfulGuids, erroredGuids, nil
