@@ -34,10 +34,10 @@ const (
 var servicePublicIp net.IP = nil
 var servicePublicPorts map[string]*port_spec.PortSpec = nil
 
-func RegisterUserServices(
+func registerUserServices(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
-	serviceIDs map[service.ServiceID]bool,
+	serviceIDs map[service.ServiceID]*service.ServiceConfig,
 	cliModeArgs *shared_helpers.CliModeArgs,
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,

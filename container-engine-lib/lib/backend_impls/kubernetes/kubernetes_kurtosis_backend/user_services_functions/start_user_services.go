@@ -42,15 +42,44 @@ func StartUserServices(
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (
-	map[service.ServiceGUID]*service.Service,
-	map[service.ServiceGUID]error,
+	map[service.ServiceID]*service.Service,
+	map[service.ServiceID]error,
 	error,
 ) {
-	successfulServicesPool := map[service.ServiceGUID]*service.Service{}
-	failedServicesPool := map[service.ServiceGUID]error{}
+	successfulServicesPool := map[service.ServiceID]*service.Service{}
+	failedServicesPool := map[service.ServiceID]error{}
 	serviceConfigsToStart := map[service.ServiceGUID]*service.ServiceConfig{}
-	for guid, config:= range services {
-		serviceConfigsToStart[guid] = config
+	successfulRegistrationsByGUID := map[service.ServiceGUID]*service.ServiceRegistration{}
+
+	// Check whether any services have been provided at all
+	if len(services) == 0 {
+		return successfulServicesPool, failedServicesPool, nil
+	}
+
+	successfulRegistrations, failedRegistrations, err := registerUserServices(ctx, enclaveID, services, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+	// Defer an undo to all the successful registrations in case an error occurs in future phases
+	shouldRemoveServices := map[service.ServiceID]bool{}
+	for serviceID, serviceRegistration := range successfulRegistrations {
+		shouldRemoveServices[serviceID] = true
+		defer func() {
+			if shouldRemoveServices[serviceID] {
+				err = destroyServiceAfterFailure(ctx, enclaveID, serviceRegistration.GetGUID(), cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+				if err != nil {
+					failedServicesPool[serviceID] = stacktrace.Propagate(err,
+						"WARNING: Attempted to remove service '%v' after it failed to register but an error occurredwhile doing so."+
+							"Must destroy service manually!", serviceID)
+				}
+			}
+		}()
+	}
+	for serviceId, err := range failedRegistrations {
+		failedServicesPool[serviceId] = err
+	}
+
+	for serviceID, successfulRegistration := range successfulRegistrations {
+		guid := successfulRegistrations[serviceID].GetGUID()
+		serviceConfigsToStart[guid] = services[serviceID]
+		successfulRegistrationsByGUID[guid] = successfulRegistration
 	}
 
 	// If no services were passed in to start, return empty maps
@@ -58,7 +87,7 @@ func StartUserServices(
 	// and causing logic to break (eg. check for duplicate service GUIDs)
 	// Making this check allows us to eject early and maintain a guarantee that objects and resources returned
 	// are 1:1 with serviceGUIDs
-	if len(services) == 0 {
+	if len(serviceConfigsToStart) == 0 {
 		return successfulServicesPool, failedServicesPool, nil
 	}
 
@@ -73,7 +102,7 @@ func StartUserServices(
 
 	// Check all services already have registrations attached
 	serviceGUIDs := map[service.ServiceGUID]bool{}
-	for guid := range services {
+	for guid := range serviceConfigsToStart {
 		serviceGUIDs[guid] = true
 	}
 	preexistingServicesFilters := &service.ServiceFilters{
@@ -93,7 +122,8 @@ func StartUserServices(
 	}
 	for guid, _ := range serviceGUIDs {
 		if _, found := preexistingObjectsAndResources[guid]; !found {
-			failedServicesPool[guid] = stacktrace.NewError("Couldn't find any service registrations matching service GUID '%v'", guid)
+			serviceID := successfulRegistrationsByGUID[guid].GetID()
+			failedServicesPool[serviceID] = stacktrace.NewError("Couldn't find any service registrations matching service GUID '%v'", guid)
 			delete(serviceConfigsToStart, guid)
 		}
 	}
@@ -113,14 +143,19 @@ func StartUserServices(
 	}
 
 	// Add operations to their respective pools
-	for serviceGUID, service := range successfulStarts {
-		successfulServicesPool[serviceGUID] = service
+	for serviceID, service := range successfulStarts {
+		guid := successfulRegistrationsByGUID[serviceID].GetID()
+		successfulServicesPool[guid] = service
 	}
 
-	for serviceGUID, serviceErr := range failedStarts {
-		failedServicesPool[serviceGUID] = serviceErr
+	for serviceID, serviceErr := range failedStarts {
+		guid := successfulRegistrationsByGUID[serviceID].GetID()
+		failedServicesPool[guid] = serviceErr
 	}
 
+	for serviceID, _ := range successfulServicesPool {
+		shouldRemoveServices[serviceID] = false
+	}
 	return successfulServicesPool, failedServicesPool, nil
 }
 
@@ -525,4 +560,31 @@ func getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts map[string]*po
 
 func convertMegabytesToBytes(value uint64) uint64 {
 	return value * megabytesToBytesFactor
+}
+
+func destroyServiceAfterFailure(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGUID service.ServiceGUID,
+	cliModeArgs *shared_helpers.CliModeArgs,
+	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
+	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
+	kubernetesManager *kubernetes_manager.KubernetesManager) error {
+	destroyServiceFilters := &service.ServiceFilters{
+		GUIDs: map[service.ServiceGUID]bool{
+			serviceGUID: true,
+		},
+	}
+	// Use background context in case the input one is cancelled
+	_, erroredRegistrations, err := DestroyUserServices(ctx, enclaveId, destroyServiceFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+	var errToReturn error
+	if err != nil {
+		errToReturn = err
+	} else if destroyErr, found := erroredRegistrations[serviceGUID]; found {
+		errToReturn = destroyErr
+	}
+	if errToReturn != nil {
+		return stacktrace.NewError("Attempted to destroy the service with GUID'%v', but doing so threw an error:\n%v", serviceGUID, errToReturn)
+	}
+	return nil
 }
