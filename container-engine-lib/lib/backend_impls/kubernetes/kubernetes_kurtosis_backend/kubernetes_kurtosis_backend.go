@@ -189,18 +189,6 @@ func (backend KubernetesKurtosisBackend) DestroyEngines(
 	return successfulEngineGuids, erroredEngineGuids, nil
 }
 
-// Registers a user service for each given serviceId, allocating each an IP and ServiceGUID
-func (backend *KubernetesKurtosisBackend) RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, serviceIds map[service.ServiceID]bool) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error){
-	return user_services_functions.RegisterUserServices(
-		ctx,
-		enclaveId,
-		serviceIds,
-		backend.cliModeArgs,
-		backend.apiContainerModeArgs,
-		backend.engineServerModeArgs,
-		backend.kubernetesManager)
-}
-
 func (backend *KubernetesKurtosisBackend) StartUserServices(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,

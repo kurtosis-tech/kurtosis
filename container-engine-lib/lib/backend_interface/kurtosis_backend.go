@@ -229,17 +229,6 @@ type KurtosisBackend interface {
 		- As of 2022-05-15, Kurtosis services can never be restarted once stopped.
 	*/
 
-	// Registers a user service for each given serviceId, allocating each an IP and ServiceGUID
-	RegisterUserServices(
-		ctx context.Context,
-		enclaveId enclave.EnclaveID,
-		serviceIds map[service.ServiceID]bool,
-	) (
-		successfulUserServiceRegistrations map[service.ServiceID]*service.ServiceRegistration, // "set" of user service IDs that were successfully registered
-		erroredUserServiceIds map[service.ServiceID]error, // "set" of user service IDs that errored when attempting to register, with the error
-		resultErr error, // represents an error with the function itself, rather than the user services
-	)
-
 	// StartUserService consumes service registrations to create auser container for each registration, given each service config
 	StartUserServices(
 		ctx context.Context,
