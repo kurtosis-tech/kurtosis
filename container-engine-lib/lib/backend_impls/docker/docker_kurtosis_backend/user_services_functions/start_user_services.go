@@ -76,8 +76,8 @@ func StartUserServices(
 			}
 		}()
 	}
-	for serviceId, err := range failedRegistrations {
-		failedServicesPool[serviceId] = err
+	for serviceID, registrationError := range failedRegistrations {
+		failedServicesPool[serviceID] = stacktrace.Propagate(registrationError, "Failed to register service with ID '%v'", serviceID)
 	}
 
 	successfulRegistrationsByGUID := map[service.ServiceGUID]*service.ServiceRegistration{}
@@ -90,7 +90,7 @@ func StartUserServices(
 		serviceConfigsToStart[guid] = services[serviceID]
 	}
 
-	// If no services had successful IP address registrations return immediately
+	// If no services had successful registrations, return immediately
 	// This is to prevent an empty filter being used to query for matching objects and resources, returning all services
 	// and causing logic to break (eg. check for duplicate service GUIDs)
 	// Making this check allows us to eject early and maintain a guarantee that objects and resources returned
@@ -107,7 +107,8 @@ func StartUserServices(
 			privatePorts := serviceConfig.GetPrivatePorts()
 			err := checkPrivateAndPublicPortsAreOneToOne(privatePorts, publicPorts)
 			if err != nil {
-				failedServicesPool[successfulRegistrationsByGUID[serviceGUID].GetID()] = stacktrace.Propagate(err, "Private and public ports are for service with GUID '%v' are not one to one.", serviceGUID)
+				serviceID := successfulRegistrationsByGUID[serviceGUID].GetID()
+				failedServicesPool[serviceID] = stacktrace.Propagate(err, "Private and public ports are for service with ID '%v' are not one to one.", serviceID)
 				delete(serviceConfigsToStart, serviceGUID)
 			}
 		}
@@ -148,6 +149,7 @@ func StartUserServices(
 		failedServicesPool[serviceID] = serviceErr
 	}
 
+	// Do not remove services that were started successfully
 	for serviceID, _ := range successfulServicesPool {
 		shouldRemoveServices[serviceID] = false
 	}

@@ -89,8 +89,8 @@ func StartUserServices(
 			}
 		}()
 	}
-	for serviceId, err := range failedRegistrations {
-		failedServicesPool[serviceId] = err
+	for serviceID, registrationError := range failedRegistrations {
+		failedServicesPool[serviceID] = stacktrace.Propagate(registrationError, "Failed to register service with ID '%v'", serviceID)
 	}
 
 	successfulRegistrationsByGUID := map[service.ServiceGUID]*service.ServiceRegistration{}
@@ -103,7 +103,7 @@ func StartUserServices(
 		serviceConfigsToStart[guid] = services[serviceID]
 	}
 
-	// If no services were had successful registrations, return immediately
+	// If no services had successful registrations, return immediately
 	// This is to prevent an empty filter being used to query for matching objects and resources, returning all services
 	// and causing logic to break (eg. check for duplicate service GUIDs)
 	// Making this check allows us to eject early and maintain a guarantee that objects and resources returned
@@ -121,18 +121,18 @@ func StartUserServices(
 		}
 	}
 
-	// Check all services already have registrations attached
+	// Get Pre existing objects
 	serviceGUIDs := map[service.ServiceGUID]bool{}
 	for guid := range serviceConfigsToStart {
 		serviceGUIDs[guid] = true
 	}
-	preexistingServicesFilters := &service.ServiceFilters{
+	existingObjectsAndResourcesFilters := &service.ServiceFilters{
 		GUIDs: serviceGUIDs,
 	}
-	preexistingObjectsAndResources, err := shared_helpers.GetMatchingUserServiceObjectsAndKubernetesResources(
+	existingObjectsAndResources, err := shared_helpers.GetMatchingUserServiceObjectsAndKubernetesResources(
 		ctx,
 		enclaveID,
-		preexistingServicesFilters,
+		existingObjectsAndResourcesFilters,
 		cliModeArgs,
 		apiContainerModeArgs,
 		engineServerModeArgs,
@@ -141,39 +141,29 @@ func StartUserServices(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user service objects and Kubernetes resources matching service GUIDs '%v'", serviceGUIDs)
 	}
-	for guid, _ := range serviceGUIDs {
-		if _, found := preexistingObjectsAndResources[guid]; !found {
-			serviceID := successfulRegistrationsByGUID[guid].GetID()
-			failedServicesPool[serviceID] = stacktrace.NewError("Couldn't find any service registrations matching service GUID '%v'", guid)
-			delete(serviceConfigsToStart, guid)
-		}
-	}
-	if len(preexistingObjectsAndResources) > len(serviceGUIDs) {
-		// Should never happen because service GUIDs should be unique
-		return nil, nil, stacktrace.NewError("Found more than one service registration matching service GUIDs; this is a bug in Kurtosis")
-	}
 
 	successfulStarts, failedStarts, err := runStartServiceOperationsInParallel(
 		ctx,
 		enclaveID,
 		serviceConfigsToStart,
-		preexistingObjectsAndResources,
+		existingObjectsAndResources,
 		kubernetesManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to start services in parallel.")
 	}
 
 	// Add operations to their respective pools
-	for serviceID, service := range successfulStarts {
-		guid := successfulRegistrationsByGUID[serviceID].GetID()
-		successfulServicesPool[guid] = service
+	for serviceGUID, service := range successfulStarts {
+		serviceID := successfulRegistrationsByGUID[serviceGUID].GetID()
+		successfulServicesPool[serviceID] = service
 	}
 
-	for serviceID, serviceErr := range failedStarts {
-		guid := successfulRegistrationsByGUID[serviceID].GetID()
-		failedServicesPool[guid] = serviceErr
+	for serviceGUID, serviceErr := range failedStarts {
+		serviceID := successfulRegistrationsByGUID[serviceGUID].GetID()
+		failedServicesPool[serviceID] = serviceErr
 	}
 
+	// Do not remove services that were started successfully
 	for serviceID, _ := range successfulServicesPool {
 		shouldRemoveServices[serviceID] = false
 	}
