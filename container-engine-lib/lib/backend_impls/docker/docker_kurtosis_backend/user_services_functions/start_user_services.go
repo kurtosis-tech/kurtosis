@@ -80,14 +80,14 @@ func StartUserServices(
 		failedServicesPool[serviceID] = stacktrace.Propagate(registrationError, "Failed to register service with ID '%v'", serviceID)
 	}
 
-	successfulRegistrationsByGUID := map[service.ServiceGUID]*service.ServiceRegistration{}
 	serviceConfigsToStart := map[service.ServiceGUID]*service.ServiceConfig{}
-	for serviceID, serviceRegistration := range successfulRegistrations {
-		guid := serviceRegistration.GetGUID()
+	successfulRegistrationsByGUID := map[service.ServiceGUID]*service.ServiceRegistration{}
+	for serviceID, successfulRegistration := range successfulRegistrations {
+		guid := successfulRegistrations[serviceID].GetGUID()
 		config := services[serviceID]
-		config.ReplacePlaceholderWithPrivateIPAddr(serviceRegistration.GetPrivateIP().String())
-		successfulRegistrationsByGUID[guid] = serviceRegistration
-		serviceConfigsToStart[guid] = services[serviceID]
+		config.ReplacePlaceholderWithPrivateIPAddr(successfulRegistration.GetPrivateIP().String())
+		serviceConfigsToStart[guid] = config
+		successfulRegistrationsByGUID[guid] = successfulRegistration
 	}
 
 	// If no services had successful registrations, return immediately
