@@ -19,7 +19,7 @@ const (
 	configFilepathInContainer = configDirpathInContainer + "/fluent-bit.conf"
 
 	//these two values are used for configuring the filesystem buffer. See more here: https://docs.fluentbit.io/manual/administration/buffering-and-storage#filesystem-buffering-to-the-rescue
-	filesystemBufferStorageDirpath = rootDirpath + "/storage/"
+	filesystemBufferStorageDirpath = configDirpathInContainer + "/storage/"
 	inputFilesystemStorageType = "filesystem"
 
 	configFileTemplateName = "fluentbitConfigFileTemplate"
@@ -47,7 +47,7 @@ const (
 	labels {{.Output.GetLabelsStr}}
 	line_format {{.Output.LineFormat}}
 	tenant_id_key {{.Output.TenantIDKey}}
-	retry_limit {{Output.RetryLimit}}
+	retry_limit {{.Output.RetryLimit}}
 `
 
 	healthCheckEndpointPath = "api/v1/health"
