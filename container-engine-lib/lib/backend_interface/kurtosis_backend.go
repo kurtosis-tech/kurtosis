@@ -235,9 +235,9 @@ type KurtosisBackend interface {
 		enclaveId enclave.EnclaveID,
 		services map[service.ServiceID]*service.ServiceConfig,
 	) (
-		successfulServices map[service.ServiceGUID]*service.Service, // "set" of user service GUIDs that were successfully started
-		unsuccessfulServices map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when attempting to start, with the error
-		resultErr error, // represents an error with the function itself, rather than the user services
+		successfulServices map[service.ServiceID]*service.Service, // "set" of user service GUIDs that were successfully started
+		unsuccessfulServices map[service.ServiceID]error,          // "set" of user service GUIDs that errored when attempting to start, with the error
+		resultErr error,                                           // represents an error with the function itself, rather than the user services
 	)
 
 	// Gets user services using the given filters, returning a map of matched user services identified by their GUID

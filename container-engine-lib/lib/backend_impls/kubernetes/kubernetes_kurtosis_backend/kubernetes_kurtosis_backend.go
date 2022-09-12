@@ -194,9 +194,9 @@ func (backend *KubernetesKurtosisBackend) StartUserServices(
 	enclaveId enclave.EnclaveID,
 	services map[service.ServiceID]*service.ServiceConfig,
 ) (
-		map[service.ServiceGUID]*service.Service,
-		map[service.ServiceGUID]error,
-		error,
+	map[service.ServiceID]*service.Service,
+	map[service.ServiceID]error,
+	error,
 ) {
 	return user_services_functions.StartUserServices(
 		ctx,
