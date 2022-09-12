@@ -18,7 +18,9 @@ const (
 	configDirpathInContainer  = rootDirpath + "/etc"
 	configFilepathInContainer = configDirpathInContainer + "/fluent-bit.conf"
 
+	//these two values are used for configuring the filesystem buffer. See more here: https://docs.fluentbit.io/manual/administration/buffering-and-storage#filesystem-buffering-to-the-rescue
 	filesystemBufferStorageDirpath = rootDirpath + "/storage/"
+	inputFilesystemStorageType = "filesystem"
 
 	configFileTemplateName = "fluentbitConfigFileTemplate"
 	configFileTemplate     = `
@@ -32,6 +34,7 @@ const (
 	name {{.Input.Name}}
 	listen {{.Input.Listen}}
 	port {{.Input.Port}}
+	storage.type  {{.Input.StorageType}}
 [FILTER]
 	name {{.Filter.Name}}
 	match {{.Filter.Match}}

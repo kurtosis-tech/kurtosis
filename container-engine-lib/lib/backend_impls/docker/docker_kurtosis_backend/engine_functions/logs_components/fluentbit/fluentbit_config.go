@@ -40,6 +40,7 @@ type Input struct {
 	Name   string
 	Listen string
 	Port   uint16
+	StorageType string
 }
 
 type Filter struct {
@@ -76,6 +77,7 @@ func newDefaultFluentbitConfigForKurtosisCentralizedLogs(
 			Name:   inputName,
 			Listen: inputListenIP,
 			Port:   tcpPortNumber,
+			StorageType: inputFilesystemStorageType,
 		},
 		Filter: &Filter{
 			Name:  modifyFilterName,
