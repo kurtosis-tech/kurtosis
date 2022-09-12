@@ -94,13 +94,13 @@ func StartUserServices(
 	}
 
 	serviceConfigsToStart := map[service.ServiceGUID]*service.ServiceConfig{}
-	successfulRegistrationsByGUID := map[service.ServiceGUID]*service.ServiceRegistration{}
+	successfulServiceIDsByGUID := map[service.ServiceGUID]service.ServiceID{}
 	for serviceID, successfulRegistration := range successfulRegistrations {
 		guid := successfulRegistrations[serviceID].GetGUID()
 		config := services[serviceID]
 		config.ReplacePlaceholderWithPrivateIPAddr(successfulRegistration.GetPrivateIP().String())
 		serviceConfigsToStart[guid] = config
-		successfulRegistrationsByGUID[guid] = successfulRegistration
+		successfulServiceIDsByGUID[guid] = serviceID
 	}
 
 	// If no services had successful registrations, return immediately
@@ -121,7 +121,7 @@ func StartUserServices(
 		}
 	}
 
-	// Get Pre existing objects
+	// Get existing objects
 	serviceGUIDs := map[service.ServiceGUID]bool{}
 	for guid := range serviceConfigsToStart {
 		serviceGUIDs[guid] = true
@@ -141,6 +141,13 @@ func StartUserServices(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user service objects and Kubernetes resources matching service GUIDs '%v'", serviceGUIDs)
 	}
+	for guid, _ := range serviceGUIDs {
+		if _, found := existingObjectsAndResources[guid]; !found {
+			serviceID := successfulServiceIDsByGUID[guid]
+			failedServicesPool[serviceID] = stacktrace.NewError("Couldn't find any service registrations for service GUID '%v' for service ID '%v'. This is a bug in Kurtosis.", guid, serviceID)
+			delete(serviceConfigsToStart, guid)
+		}
+	}
 	if len(existingObjectsAndResources) > len(serviceGUIDs) {
 		// Should never happen because service GUIDs should be unique
 		return nil, nil, stacktrace.NewError("Found more than one service registration matching service GUIDs; this is a bug in Kurtosis")
@@ -158,12 +165,12 @@ func StartUserServices(
 
 	// Add operations to their respective pools
 	for serviceGUID, service := range successfulStarts {
-		serviceID := successfulRegistrationsByGUID[serviceGUID].GetID()
+		serviceID := successfulServiceIDsByGUID[serviceGUID]
 		successfulServicesPool[serviceID] = service
 	}
 
 	for serviceGUID, serviceErr := range failedStarts {
-		serviceID := successfulRegistrationsByGUID[serviceGUID].GetID()
+		serviceID := successfulServiceIDsByGUID[serviceGUID]
 		failedServicesPool[serviceID] = serviceErr
 	}
 
