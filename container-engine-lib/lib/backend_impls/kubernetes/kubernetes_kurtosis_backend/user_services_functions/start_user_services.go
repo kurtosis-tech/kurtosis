@@ -77,6 +77,8 @@ func StartUserServices(
 	}
 
 	for serviceID, successfulRegistration := range successfulRegistrations {
+		config := services[serviceID]
+		config.ReplacePlaceholderWithPrivateIPAddr(successfulRegistration.GetPrivateIP().String())
 		guid := successfulRegistrations[serviceID].GetGUID()
 		serviceConfigsToStart[guid] = services[serviceID]
 		successfulRegistrationsByGUID[guid] = successfulRegistration
