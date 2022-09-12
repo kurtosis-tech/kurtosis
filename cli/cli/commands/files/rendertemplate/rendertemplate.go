@@ -114,7 +114,10 @@ func run(
 	decoder.UseNumber()
 
 	var templateData interface{}
-	decoder.Decode(&templateData)
+	err = decoder.Decode(&templateData)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while decoding the JSON file '%v'", dataJsonFilepath)
+	}
 
 	templateAndData := enclaves.NewTemplateAndData(templateFileContents, templateData)
 	templateAndDataByDestRelFilepath := make(map[string]*enclaves.TemplateAndData)
