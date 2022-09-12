@@ -141,6 +141,10 @@ func StartUserServices(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user service objects and Kubernetes resources matching service GUIDs '%v'", serviceGUIDs)
 	}
+	if len(existingObjectsAndResources) > len(serviceGUIDs) {
+		// Should never happen because service GUIDs should be unique
+		return nil, nil, stacktrace.NewError("Found more than one service registration matching service GUIDs; this is a bug in Kurtosis")
+	}
 
 	successfulStarts, failedStarts, err := runStartServiceOperationsInParallel(
 		ctx,
