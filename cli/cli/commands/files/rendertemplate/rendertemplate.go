@@ -34,7 +34,7 @@ const (
 var RenderTemplateCommand = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.FilesRenderTemplate,
 	ShortDescription:          "Renders a template to an enclave.",
-	LongDescription:           "Renders a golang text/template to an enclave so that they can be accessed by modules and services inside the enclave.",
+	LongDescription:           "Renders a Golang text/template to an enclave so that output can be accessed by modules and services inside the enclave.",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
 	Args: []*args.ArgConfig{
@@ -80,7 +80,7 @@ func run(
 
 	dataJsonFilepath, err := args.GetNonGreedyArg(dataJsonFilepathArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the data json file using key '%v'", dataJsonFilepathArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the data JSON file using key '%v'", dataJsonFilepathArgKey)
 	}
 
 	destRelFilepath, err := args.GetNonGreedyArg(destRelFilepathArgKey)
@@ -105,11 +105,11 @@ func run(
 
 	dataJsonFile, err := os.Open(dataJsonFilepath)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred opening the data json file '%v'", dataJsonFilepath)
+		return stacktrace.Propagate(err, "An error occurred opening the data JSON file '%v'", dataJsonFilepath)
 	}
 	defer dataJsonFile.Close()
 
-	// We use this so that the large integers in the data json get parsed as integers and not floats
+	// We use this so that the large integers in the data JSON get parsed as integers and not floats
 	decoder := json.NewDecoder(dataJsonFile)
 	decoder.UseNumber()
 
@@ -143,16 +143,16 @@ func validateTemplateFileArg(ctx context.Context, flags *flags.ParsedFlags, args
 func validateDataJsonFileArg(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
 	dataJsonFilepath, err := args.GetNonGreedyArg(dataJsonFilepathArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the data json filepath to validate using key '%v'", dataJsonFilepathArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the data JSON filepath to validate using key '%v'", dataJsonFilepathArgKey)
 	}
 
 	dataJsonFileContent, err := os.ReadFile(dataJsonFilepath)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred verifying data json '%v' exists and is readable", dataJsonFilepath)
+		return stacktrace.Propagate(err, "An error occurred verifying data JSON '%v' exists and is readable", dataJsonFilepath)
 	}
 
 	if !json.Valid(dataJsonFileContent) {
-		return stacktrace.NewError("The data file isn't valid json")
+		return stacktrace.NewError("The data file isn't valid JSON")
 	}
 
 	return nil
@@ -165,7 +165,7 @@ func validateDestRelFilePathArg(ctx context.Context, flags *flags.ParsedFlags, a
 	}
 
 	if path.IsAbs(destRelFilepath) {
-		return stacktrace.NewError("Expected a relative path got an absolute path '%v'", destRelFilepath)
+		return stacktrace.NewError("Expected a relative path but got an absolute path '%v'", destRelFilepath)
 	}
 
 	return nil
