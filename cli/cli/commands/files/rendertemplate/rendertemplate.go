@@ -24,7 +24,7 @@ const (
 	isEnclaveIdArgGreedy   = false
 
 	templateFilepathArgKey = "template-filepath"
-	dataJsonFilepathArgKey = "data-json-filepath"
+	dataJSONFilepathArgKey = "data-json-filepath"
 	destRelFilepathArgKey  = "destination-relative-filepath"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
@@ -49,8 +49,8 @@ var RenderTemplateCommand = &engine_consuming_kurtosis_command.EngineConsumingKu
 			ValidationFunc: validateTemplateFileArg,
 		},
 		{
-			Key:            dataJsonFilepathArgKey,
-			ValidationFunc: validateDataJsonFileArg,
+			Key:            dataJSONFilepathArgKey,
+			ValidationFunc: validateDataJSONFileArg,
 		},
 		{
 			Key:            destRelFilepathArgKey,
@@ -78,9 +78,9 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the template file using key '%v'", templateFilepathArgKey)
 	}
 
-	dataJsonFilepath, err := args.GetNonGreedyArg(dataJsonFilepathArgKey)
+	dataJSONFilepath, err := args.GetNonGreedyArg(dataJSONFilepathArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the data JSON file using key '%v'", dataJsonFilepathArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the data JSON file using key '%v'", dataJSONFilepathArgKey)
 	}
 
 	destRelFilepath, err := args.GetNonGreedyArg(destRelFilepathArgKey)
@@ -103,20 +103,20 @@ func run(
 	}
 	templateFileContents := string(templateFileBytes)
 
-	dataJsonFile, err := os.Open(dataJsonFilepath)
+	dataJSONFile, err := os.Open(dataJSONFilepath)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred opening the data JSON file '%v'", dataJsonFilepath)
+		return stacktrace.Propagate(err, "An error occurred opening the data JSON file '%v'", dataJSONFilepath)
 	}
-	defer dataJsonFile.Close()
+	defer dataJSONFile.Close()
 
 	// We use this so that the large integers in the data JSON get parsed as integers and not floats
-	decoder := json.NewDecoder(dataJsonFile)
+	decoder := json.NewDecoder(dataJSONFile)
 	decoder.UseNumber()
 
 	var templateData interface{}
 	err = decoder.Decode(&templateData)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while decoding the JSON file '%v'", dataJsonFilepath)
+		return stacktrace.Propagate(err, "An error occurred while decoding the JSON file '%v'", dataJSONFilepath)
 	}
 
 	templateAndData := enclaves.NewTemplateAndData(templateFileContents, templateData)
@@ -125,7 +125,7 @@ func run(
 
 	filesArtifactUuid, err := enclaveCtx.RenderTemplates(templateAndDataByDestRelFilepath)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred rendering the template file at path '%v' with data in the file at path '%v' to enclave '%v'", templateFilepath, dataJsonFilepath, enclaveId)
+		return stacktrace.Propagate(err, "An error occurred rendering the template file at path '%v' with data in the file at path '%v' to enclave '%v'", templateFilepath, dataJSONFilepath, enclaveId)
 	}
 	logrus.Infof("Files package UUID: %v", filesArtifactUuid)
 	return nil
@@ -143,18 +143,18 @@ func validateTemplateFileArg(ctx context.Context, flags *flags.ParsedFlags, args
 	return nil
 }
 
-func validateDataJsonFileArg(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
-	dataJsonFilepath, err := args.GetNonGreedyArg(dataJsonFilepathArgKey)
+func validateDataJSONFileArg(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
+	dataJSONFilepath, err := args.GetNonGreedyArg(dataJSONFilepathArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the data JSON filepath to validate using key '%v'", dataJsonFilepathArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the data JSON filepath to validate using key '%v'", dataJSONFilepathArgKey)
 	}
 
-	dataJsonFileContent, err := os.ReadFile(dataJsonFilepath)
+	dataJSONFileContent, err := os.ReadFile(dataJSONFilepath)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred verifying data JSON '%v' exists and is readable", dataJsonFilepath)
+		return stacktrace.Propagate(err, "An error occurred verifying data JSON '%v' exists and is readable", dataJSONFilepath)
 	}
 
-	if !json.Valid(dataJsonFileContent) {
+	if !json.Valid(dataJSONFileContent) {
 		return stacktrace.NewError("The data file isn't valid JSON")
 	}
 
