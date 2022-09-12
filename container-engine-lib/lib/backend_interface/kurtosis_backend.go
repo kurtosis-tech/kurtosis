@@ -218,7 +218,7 @@ type KurtosisBackend interface {
 		                           KURTOSIS SERVICE STATE DIAGRAM
 	                                .-----------------DestroyServices--------------------.
 	                               /                                                      \
-		  StartService--> RUNNING ---StopServices---> STOPPED ---DestroyServices---> DESTROYED
+		  StartServices--> RUNNING ---StopServices---> STOPPED ---DestroyServices---> DESTROYED
 
 		- Note the above state diagram doesn't account for PauseService or UnpauseService
 		- As of 2022-05-15, Kurtosis services can never be restarted once stopped.

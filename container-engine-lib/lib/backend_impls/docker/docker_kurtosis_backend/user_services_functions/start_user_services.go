@@ -43,17 +43,24 @@ func StartUserServices(
 		return successfulServicesPool, failedServicesPool, nil
 	}
 
-
 	freeIpAddrProvider, found := enclaveFreeIpProviders[enclaveID]
 	if !found {
 		return nil, nil, stacktrace.NewError(
-			"Received a request to start servicesByServiceId in enclave '%v', but no free IP address provider was "+
+			"Received a request to start services in enclave '%v', but no free IP address provider was "+
 				"defined for this enclave; this likely means that the start request is being called where it shouldn't "+
 				"be (i.e. outside the API container)",
 			enclaveID,
 		)
 	}
+
+	serviceIDs := make([]service.ServiceID, len(services))
+	for serviceID := range services {
+		serviceIDs = append(serviceIDs, serviceID)
+	}
 	successfulRegistrations, failedRegistrations, err := registerUserServices(enclaveID, services, serviceRegistrations, freeIpAddrProvider)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", serviceIDs)
+	}
 	// Defer an undo to all the successful registrations in case an error occurs in future phases
 	shouldRemoveServices := map[service.ServiceID]bool{}
 	for serviceID, serviceRegistration := range successfulRegistrations {
@@ -63,7 +70,7 @@ func StartUserServices(
 				err = destroyServiceAfterFailure(ctx, enclaveID, serviceRegistration.GetGUID(), serviceRegistrations, enclaveFreeIpProviders, dockerManager)
 				if err != nil {
 					failedServicesPool[serviceID] = stacktrace.Propagate(err,
-						"WARNING: Attempted to remove service '%v' after it failed to register but an error occurredwhile doing so."+
+						"WARNING: Attempted to remove service '%v' after it failed to start but an error occurred while doing so."+
 							"Must destroy service manually!", serviceID)
 				}
 			}
@@ -83,7 +90,7 @@ func StartUserServices(
 		serviceConfigsToStart[guid] = services[serviceID]
 	}
 
-	// If no services had successful IP address registrations return empty
+	// If no services had successful IP address registrations return immediately
 	// This is to prevent an empty filter being used to query for matching objects and resources, returning all services
 	// and causing logic to break (eg. check for duplicate service GUIDs)
 	// Making this check allows us to eject early and maintain a guarantee that objects and resources returned
@@ -111,7 +118,7 @@ func StartUserServices(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveID)
 	}
-	enclaveNetworkId := enclaveNetwork.GetId()
+	enclaveNetworkID := enclaveNetwork.GetId()
 
 	enclaveObjAttrsProvider, err := objAttrsProvider.ForEnclave(enclaveID)
 	if err != nil {
@@ -120,7 +127,7 @@ func StartUserServices(
 
 	successfulStarts, failedStarts, err := runStartServiceOperationsInParallel(
 		ctx,
-		enclaveNetworkId,
+		enclaveNetworkID,
 		serviceConfigsToStart,
 		successfulRegistrationsByGUID,
 		enclaveObjAttrsProvider,

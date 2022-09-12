@@ -60,16 +60,21 @@ func StartUserServices(
 ) {
 	successfulServicesPool := map[service.ServiceID]*service.Service{}
 	failedServicesPool := map[service.ServiceID]error{}
-	serviceConfigsToStart := map[service.ServiceGUID]*service.ServiceConfig{}
-	successfulRegistrationsByGUID := map[service.ServiceGUID]*service.ServiceRegistration{}
 
 	// Check whether any services have been provided at all
 	if len(services) == 0 {
 		return successfulServicesPool, failedServicesPool, nil
 	}
 
+	serviceIDs := make([]service.ServiceID, len(services))
+	for serviceID := range services {
+		serviceIDs = append(serviceIDs, serviceID)
+	}
 	successfulRegistrations, failedRegistrations, err := registerUserServices(ctx, enclaveID, services, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 	// Defer an undo to all the successful registrations in case an error occurs in future phases
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", serviceIDs)
+	}
 	shouldRemoveServices := map[service.ServiceID]bool{}
 	for serviceID, serviceRegistration := range successfulRegistrations {
 		shouldRemoveServices[serviceID] = true
@@ -78,7 +83,7 @@ func StartUserServices(
 				err = destroyServiceAfterFailure(ctx, enclaveID, serviceRegistration.GetGUID(), cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 				if err != nil {
 					failedServicesPool[serviceID] = stacktrace.Propagate(err,
-						"WARNING: Attempted to remove service '%v' after it failed to register but an error occurredwhile doing so."+
+						"WARNING: Attempted to remove service '%v' after it failed to start but an error occurred while doing so."+
 							"Must destroy service manually!", serviceID)
 				}
 			}
@@ -88,15 +93,17 @@ func StartUserServices(
 		failedServicesPool[serviceId] = err
 	}
 
+	successfulRegistrationsByGUID := map[service.ServiceGUID]*service.ServiceRegistration{}
+	serviceConfigsToStart := map[service.ServiceGUID]*service.ServiceConfig{}
 	for serviceID, successfulRegistration := range successfulRegistrations {
 		config := services[serviceID]
 		config.ReplacePlaceholderWithPrivateIPAddr(successfulRegistration.GetPrivateIP().String())
 		guid := successfulRegistrations[serviceID].GetGUID()
-		serviceConfigsToStart[guid] = services[serviceID]
 		successfulRegistrationsByGUID[guid] = successfulRegistration
+		serviceConfigsToStart[guid] = services[serviceID]
 	}
 
-	// If no services were passed in to start, return empty maps
+	// If no services were had successful registrations, return immediately
 	// This is to prevent an empty filter being used to query for matching objects and resources, returning all services
 	// and causing logic to break (eg. check for duplicate service GUIDs)
 	// Making this check allows us to eject early and maintain a guarantee that objects and resources returned
@@ -107,7 +114,7 @@ func StartUserServices(
 
 	// Sanity check for port bindings on all services
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	for _, config := range services {
+	for _, config := range serviceConfigsToStart {
 		publicPorts := config.GetPublicPorts()
 		if publicPorts != nil && len(publicPorts) > 0 {
 			logrus.Warn("The Kubernetes Kurtosis backend doesn't support defining static ports for services; the public ports will be ignored.")

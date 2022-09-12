@@ -58,7 +58,9 @@ func NewServiceConfig(
 		envVars:                   envVars,
 		filesArtifactExpansion:    filesArtifactExpansion,
 		cpuAllocationMillicpus:    cpuAllocationMillicpus,
-		memoryAllocationMegabytes: memoryAllocationMegabytes}
+		memoryAllocationMegabytes: memoryAllocationMegabytes,
+		privateIPAddrPlaceholder:  privateIPAddrReplacementStr,
+	}
 }
 
 func (serviceConfig *ServiceConfig) GetContainerImageName() string {
