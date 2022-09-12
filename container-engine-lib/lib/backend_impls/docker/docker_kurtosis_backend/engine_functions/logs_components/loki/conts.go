@@ -69,5 +69,10 @@ const (
 	//How often to check the file.
 	runtimeConfigPeriod             = "20s"
 	runtimeConfigFileInitialContent = "overrides:"
+
+	//The configuration for the ingester WAL, it's important for storing chunks when the server is shutdown. See more here: https://grafana.com/docs/loki/latest/configuration/#ingester
+	enableIngesterWal = true
+	ingesterWalDirpath  = dirpath + "/wal"
+	flushIngesterWalOnShutdown = true
 	////////////////////////--FINISH--LOKI CONFIGURATION SECTION--/////////////////////////////
 )
