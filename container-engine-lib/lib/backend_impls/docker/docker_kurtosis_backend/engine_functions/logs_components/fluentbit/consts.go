@@ -18,6 +18,8 @@ const (
 	configDirpathInContainer  = rootDirpath + "/etc"
 	configFilepathInContainer = configDirpathInContainer + "/fluent-bit.conf"
 
+	filesystemBufferStorageDirpath = rootDirpath + "/storage/"
+
 	configFileTemplateName = "fluentbitConfigFileTemplate"
 	configFileTemplate     = `
 [SERVICE]
@@ -25,6 +27,7 @@ const (
 	http_server {{.Service.HttpServerEnabled}}
 	http_listen {{.Service.HttpServerHost}}
 	http_port {{.Service.HttpServerPort}}
+	storage.path {{.Service.StoragePath}}
 [INPUT]
 	name {{.Input.Name}}
 	listen {{.Input.Listen}}

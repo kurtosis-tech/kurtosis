@@ -33,6 +33,7 @@ type Service struct {
 	HttpServerEnabled string
 	HttpServerHost    string
 	HttpServerPort    uint16
+	StoragePath       string
 }
 
 type Input struct {
@@ -69,6 +70,7 @@ func newDefaultFluentbitConfigForKurtosisCentralizedLogs(
 			HttpServerEnabled: httpServerEnabledValue,
 			HttpServerHost:    httpServerLocalhost,
 			HttpServerPort:    httpPortNumber,
+			StoragePath:       filesystemBufferStorageDirpath,
 		},
 		Input: &Input{
 			Name:   inputName,
