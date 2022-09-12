@@ -22,7 +22,7 @@ import (
 func StartUserServices(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
-	servicesByServiceID map[service.ServiceID]*service.ServiceConfig,
+	services map[service.ServiceID]*service.ServiceConfig,
 	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration,
 	serviceRegistrationMutex *sync.Mutex,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
@@ -39,7 +39,7 @@ func StartUserServices(
 	failedServicesPool := map[service.ServiceID]error{}
 
 	// Check whether any services have been provided at all
-	if len(servicesByServiceID) == 0 {
+	if len(services) == 0 {
 		return successfulServicesPool, failedServicesPool, nil
 	}
 
@@ -53,7 +53,7 @@ func StartUserServices(
 			enclaveID,
 		)
 	}
-	successfulRegistrations, failedRegistrations, err := registerUserServices(enclaveID, servicesByServiceID, serviceRegistrations, freeIpAddrProvider)
+	successfulRegistrations, failedRegistrations, err := registerUserServices(enclaveID, services, serviceRegistrations, freeIpAddrProvider)
 	// Defer an undo to all the successful registrations in case an error occurs in future phases
 	shouldRemoveServices := map[service.ServiceID]bool{}
 	for serviceID, serviceRegistration := range successfulRegistrations {
@@ -77,10 +77,10 @@ func StartUserServices(
 	serviceConfigsToStart := map[service.ServiceGUID]*service.ServiceConfig{}
 	for serviceID, serviceRegistration := range successfulRegistrations {
 		guid := serviceRegistration.GetGUID()
-		config := servicesByServiceID[serviceID]
+		config := services[serviceID]
 		config.ReplacePlaceholderWithPrivateIPAddr(serviceRegistration.GetPrivateIP().String())
 		successfulRegistrationsByGUID[guid] = serviceRegistration
-		serviceConfigsToStart[guid] = servicesByServiceID[serviceID]
+		serviceConfigsToStart[guid] = services[serviceID]
 	}
 
 	// If no services had successful IP address registrations return empty
