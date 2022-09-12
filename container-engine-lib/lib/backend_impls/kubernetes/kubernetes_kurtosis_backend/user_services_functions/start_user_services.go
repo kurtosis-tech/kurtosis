@@ -21,7 +21,6 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
-	"net"
 )
 
 const (
@@ -38,9 +37,6 @@ const (
 	unboundPortName   = "nonexistent-port"
 	unboundPortNumber = 1
 )
-
-var servicePublicIp net.IP = nil
-var servicePublicPorts map[string]*port_spec.PortSpec = nil
 
 // Completeness enforced via unit test
 var kurtosisPortProtocolToKubernetesPortProtocolTranslator = map[port_spec.PortProtocol]apiv1.Protocol{
