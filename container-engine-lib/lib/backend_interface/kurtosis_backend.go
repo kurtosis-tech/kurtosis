@@ -233,7 +233,7 @@ type KurtosisBackend interface {
 	StartUserServices(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		services map[service.ServiceGUID]*service.ServiceConfig,
+		services map[service.ServiceID]*service.ServiceConfig,
 	) (
 		successfulServices map[service.ServiceGUID]*service.Service, // "set" of user service GUIDs that were successfully started
 		unsuccessfulServices map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when attempting to start, with the error

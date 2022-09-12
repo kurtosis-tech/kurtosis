@@ -36,7 +36,7 @@ var kurtosisPortProtocolToKubernetesPortProtocolTranslator = map[port_spec.PortP
 func StartUserServices(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
-	services map[service.ServiceGUID]*service.ServiceConfig,
+	services map[service.ServiceID]*service.ServiceConfig,
 	cliModeArgs *shared_helpers.CliModeArgs,
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,

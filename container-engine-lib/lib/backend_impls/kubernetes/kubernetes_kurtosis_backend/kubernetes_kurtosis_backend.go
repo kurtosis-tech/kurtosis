@@ -192,7 +192,7 @@ func (backend KubernetesKurtosisBackend) DestroyEngines(
 func (backend *KubernetesKurtosisBackend) StartUserServices(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	services map[service.ServiceGUID]*service.ServiceConfig,
+	services map[service.ServiceID]*service.ServiceConfig,
 ) (
 		map[service.ServiceGUID]*service.Service,
 		map[service.ServiceGUID]error,

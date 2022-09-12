@@ -41,6 +41,22 @@ func DestroyUserServices(
 	serviceRegistrationMutex.Lock()
 	defer serviceRegistrationMutex.Unlock()
 
+	return destroyUserServicesUnlocked(ctx, enclaveId, filters, serviceRegistrations, enclaveFreeIpProviders, dockerManager)
+}
+
+func destroyUserServicesUnlocked(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *service.ServiceFilters,
+	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration,
+	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker,
+	dockerManager *docker_manager.DockerManager,
+) (
+	resultSuccessfulGuids map[service.ServiceGUID]bool,
+	resultErroredGuids map[service.ServiceGUID]error,
+	resultErr error,
+) {
+
 	freeIpAddrTrackerForEnclave, found := enclaveFreeIpProviders[enclaveId]
 	if !found {
 		return nil, nil, stacktrace.NewError(

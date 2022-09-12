@@ -2,6 +2,7 @@ package user_service_functions
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -15,12 +16,13 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"sync"
+	"time"
 )
 
 func StartUserServices(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
-	services map[service.ServiceGUID]*service.ServiceConfig,
+	servicesByServiceID map[service.ServiceID]*service.ServiceConfig,
 	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration,
 	serviceRegistrationMutex *sync.Mutex,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
@@ -28,30 +30,57 @@ func StartUserServices(
 	dockerManager *docker_manager.DockerManager,
 ) (
 	map[service.ServiceGUID]*service.Service,
-	map[service.ServiceGUID]error,
+	map[service.ServiceID]error,
 	error,
 ) {
+	successfulServicesPool := map[service.ServiceGUID]*service.Service{}
+	failedServicesPool := map[service.ServiceID]error{}
+
 	serviceRegistrationMutex.Lock()
 	defer serviceRegistrationMutex.Unlock()
-	successfulServicesPool := map[service.ServiceGUID]*service.Service{}
-	failedServicesPool := map[service.ServiceGUID]error{}
+
+	successfulRegistrations, failedRegistrations, err := registerUserServices(enclaveID, servicesByServiceID, serviceRegistrations, enclaveFreeIpProviders)
+	// Defer an undo to all the successful registrations in case an error occurs in future phases
+	shouldRemoveServices := map[service.ServiceID]bool{}
+	for serviceID, serviceRegistration := range successfulRegistrations {
+		shouldRemoveServices[serviceID] = true
+		defer func() {
+			if shouldRemoveServices[serviceID] {
+				err = destroyServiceAfterFailure(ctx, enclaveID, serviceRegistration.GetGUID(), serviceRegistrations, enclaveFreeIpProviders, dockerManager)
+				if err != nil {
+					failedServicesPool[serviceID] = stacktrace.Propagate(err,
+						"WARNING: Attempted to remove service '%v' after it failed to register but an error occurredwhile doing so."+
+							"Must destroy service manually!", serviceID)
+				}
+			}
+		}()
+	}
+	for serviceId, err := range failedRegistrations {
+		failedServicesPool[serviceId] = err
+	}
+
+	servicesByServiceGUID := map[service.ServiceGUID]*service.ServiceConfig{}
+	for serviceID, serviceRegistration := range successfulRegistrations {
+		servicesByServiceGUID[serviceRegistration.GetGUID()] = servicesByServiceID[serviceID]
+	}
+
 	serviceConfigsToStart := map[service.ServiceGUID]*service.ServiceConfig{}
-	for guid, config:= range services {
+	for guid, config := range servicesByServiceGUID {
 		serviceConfigsToStart[guid] = config
 	}
 
-	// If no services were passed in to start, return empty maps
-	// This is to prevent an empty filter being used to query for matching objects and resources, returning all services
+	// If no servicesByServiceId were passed in to start, return empty maps
+	// This is to prevent an empty filter being used to query for matching objects and resources, returning all servicesByServiceId
 	// and causing logic to break (eg. check for duplicate service GUIDs)
 	// Making this check allows us to eject early and maintain a guarantee that objects and resources returned
 	// are 1:1 with serviceGUIDs
-	if len(services) == 0 {
+	if len(servicesByServiceGUID) == 0 {
 		return successfulServicesPool, failedServicesPool, nil
 	}
 
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	// Sanity check for port bindings on all services
-	for serviceGUID, serviceConfig := range services {
+	// Sanity check for port bindings on all servicesByServiceId
+	for serviceGUID, serviceConfig := range servicesByServiceGUID {
 		publicPorts := serviceConfig.GetPublicPorts()
 		if publicPorts != nil && len(publicPorts) > 0 {
 			privatePorts := serviceConfig.GetPrivatePorts()
@@ -73,7 +102,7 @@ func StartUserServices(
 	freeIpAddrProvider, found := enclaveFreeIpProviders[enclaveID]
 	if !found {
 		return nil, nil, stacktrace.NewError(
-			"Received a request to start services in enclave '%v', but no free IP address provider was "+
+			"Received a request to start servicesByServiceId in enclave '%v', but no free IP address provider was "+
 				"defined for this enclave; this likely means that the start request is being called where it shouldn't "+
 				"be (i.e. outside the API container)",
 			enclaveID,
@@ -90,8 +119,8 @@ func StartUserServices(
 		)
 	}
 
-	// Check that all services have valid registrations attached
-	for serviceGUID, _ := range services {
+	// Check that all servicesByServiceId have valid registrations attached
+	for serviceGUID, _ := range servicesByServiceGUID {
 		_, found := registrationsForEnclave[serviceGUID]
 		if !found {
 			failedServicesPool[serviceGUID] = stacktrace.NewError(
@@ -112,10 +141,10 @@ func StartUserServices(
 	}
 	preexistingServices, _, err := shared_helpers.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveID, preexistingServicesFilters, dockerManager)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting preexisting containers for the services.")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting preexisting containers for the servicesByServiceId.")
 	}
 	for serviceGUID := range preexistingServices {
-		failedServicesPool[serviceGUID] = stacktrace.NewError( "Cannot start services '%v'; because containers already exists for those services.", serviceGUID)
+		failedServicesPool[serviceGUID] = stacktrace.NewError("Cannot start servicesByServiceId '%v'; because containers already exists for those servicesByServiceId.", serviceGUID)
 		delete(serviceConfigsToStart, serviceGUID)
 	}
 
@@ -133,7 +162,7 @@ func StartUserServices(
 		freeIpAddrProvider,
 		dockerManager)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to start services in parallel.")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to start servicesByServiceId in parallel.")
 	}
 
 	// Add operations to their respective pools
@@ -384,6 +413,118 @@ func checkPrivateAndPublicPortsAreOneToOne(privatePorts map[string]*port_spec.Po
 		if _, found := publicPorts[portID]; !found {
 			return stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portID, privatePortSpec.GetNumber())
 		}
+	}
+	return nil
+}
+
+// Registers a user service for each given serviceID, allocating each an IP and ServiceGUID
+func registerUserServices(
+	enclaveId enclave.EnclaveID,
+	serviceIDs map[service.ServiceID]*service.ServiceConfig,
+	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration,
+	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
+	successfulServicesPool := map[service.ServiceID]*service.ServiceRegistration{}
+	failedServicesPool := map[service.ServiceID]error{}
+
+	// If no service IDs passed in, return empty maps
+	if len(serviceIDs) == 0 {
+		return successfulServicesPool, failedServicesPool, nil
+	}
+
+	freeIpAddrProvider, found := enclaveFreeIpProviders[enclaveId]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"Received a request to register services in enclave '%v', but no free IP address provider was "+
+				"defined for this enclave; this likely means that the registration request is being called where it shouldn't "+
+				"be (i.e. outside the API container)",
+			enclaveId,
+		)
+	}
+
+	registrationsForEnclave, found := serviceRegistrations[enclaveId]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"No service registrations are being tracked for enclave '%v'; this likely means that the registration request is being called where it shouldn't "+
+				"be (i.e. outside the API container)",
+			enclaveId,
+		)
+	}
+
+	successfulRegistrations := map[service.ServiceID]*service.ServiceRegistration{}
+	failedRegistrations := map[service.ServiceID]error{}
+	for serviceID, _ := range serviceIDs {
+		ipAddr, err := freeIpAddrProvider.GetFreeIpAddr()
+		if err != nil {
+			failedRegistrations[serviceID] = stacktrace.Propagate(err, "An error occurred getting a free IP address to give to service '%v' in enclave '%v'", serviceID, enclaveId)
+			continue
+		}
+		shouldFreeIp := true
+		defer func() {
+			if shouldFreeIp {
+				freeIpAddrProvider.ReleaseIpAddr(ipAddr)
+			}
+		}()
+
+		guid := service.ServiceGUID(fmt.Sprintf(
+			"%v-%v",
+			serviceID,
+			time.Now().Unix(),
+		))
+		registration := service.NewServiceRegistration(
+			serviceID,
+			guid,
+			enclaveId,
+			ipAddr,
+		)
+
+		registrationsForEnclave[guid] = registration
+		shouldRemoveRegistration := true
+		defer func() {
+			if shouldRemoveRegistration {
+				delete(registrationsForEnclave, guid)
+
+			}
+		}()
+
+		shouldFreeIp = false
+		shouldRemoveRegistration = false
+		successfulRegistrations[serviceID] = registration
+	}
+
+	// Add operations to their respective pools
+	for serviceID, serviceRegistration := range successfulRegistrations {
+		successfulServicesPool[serviceID] = serviceRegistration
+	}
+
+	for serviceID, serviceErr := range failedRegistrations {
+		failedServicesPool[serviceID] = serviceErr
+	}
+
+	return successfulRegistrations, failedRegistrations, nil
+}
+
+func destroyServiceAfterFailure(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGUID service.ServiceGUID,
+	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration,
+	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker,
+	dockerManager *docker_manager.DockerManager) error {
+	destroyServiceFilters := &service.ServiceFilters{
+		GUIDs: map[service.ServiceGUID]bool{
+			serviceGUID: true,
+		},
+	}
+	// Use background context in case the input one is cancelled
+	_, erroredRegistrations, err := destroyUserServicesUnlocked(ctx, enclaveId, destroyServiceFilters, serviceRegistrations, enclaveFreeIpProviders, dockerManager)
+	var errToReturn error
+	if err != nil {
+		errToReturn = err
+	} else if destroyErr, found := erroredRegistrations[serviceGUID]; found {
+		errToReturn = destroyErr
+	}
+	if errToReturn != nil {
+		return stacktrace.NewError("Attempted to destroy the service with GUID'%v', but doing so threw an error:\n%v", serviceGUID, errToReturn)
 	}
 	return nil
 }
