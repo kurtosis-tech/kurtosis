@@ -73,22 +73,22 @@ func StartUserServices(
 		failedServicesPool[serviceId] = err
 	}
 
-	servicesByServiceGUID := map[service.ServiceGUID]*service.ServiceRegistration{}
+	successfulRegistrationsByGUID := map[service.ServiceGUID]*service.ServiceRegistration{}
 	serviceConfigsToStart := map[service.ServiceGUID]*service.ServiceConfig{}
 	for serviceID, serviceRegistration := range successfulRegistrations {
 		guid := serviceRegistration.GetGUID()
 		config := servicesByServiceID[serviceID]
 		config.ReplacePlaceholderWithPrivateIPAddr(serviceRegistration.GetPrivateIP().String())
-		servicesByServiceGUID[guid] = serviceRegistration
+		successfulRegistrationsByGUID[guid] = serviceRegistration
 		serviceConfigsToStart[guid] = servicesByServiceID[serviceID]
 	}
 
-=	// If no services had succesful IP address registrations return empty
-	// This is to prevent an empty filter being used to query for matching objects and resources, returning all servicesByServiceGUID
+	// If no services had successful IP address registrations return empty
+	// This is to prevent an empty filter being used to query for matching objects and resources, returning all services
 	// and causing logic to break (eg. check for duplicate service GUIDs)
 	// Making this check allows us to eject early and maintain a guarantee that objects and resources returned
 	// are 1:1 with serviceGUIDs
-	if len(servicesByServiceGUID) == 0 {
+	if len(serviceConfigsToStart) == 0 {
 		return successfulServicesPool, failedServicesPool, nil
 	}
 
@@ -100,7 +100,7 @@ func StartUserServices(
 			privatePorts := serviceConfig.GetPrivatePorts()
 			err := checkPrivateAndPublicPortsAreOneToOne(privatePorts, publicPorts)
 			if err != nil {
-				failedServicesPool[serviceGUID] = stacktrace.Propagate(err, "Private and public ports are for service with GUID '%v' are not one to one.", serviceGUID)
+				failedServicesPool[successfulRegistrationsByGUID[serviceGUID].GetID()] = stacktrace.Propagate(err, "Private and public ports are for service with GUID '%v' are not one to one.", serviceGUID)
 				delete(serviceConfigsToStart, serviceGUID)
 			}
 		}
@@ -122,7 +122,7 @@ func StartUserServices(
 		ctx,
 		enclaveNetworkId,
 		serviceConfigsToStart,
-		servicesByServiceGUID,
+		successfulRegistrationsByGUID,
 		enclaveObjAttrsProvider,
 		freeIpAddrProvider,
 		dockerManager)
@@ -132,13 +132,18 @@ func StartUserServices(
 
 	// Add operations to their respective pools
 	for serviceGUID, service := range successfulStarts {
-		successfulServicesPool[serviceGUID] = service
+		serviceID := successfulRegistrationsByGUID[serviceGUID].GetID()
+		successfulServicesPool[serviceID] = service
 	}
 
 	for serviceGUID, serviceErr := range failedStarts {
-		failedServicesPool[serviceGUID] = serviceErr
+		serviceID := successfulRegistrationsByGUID[serviceGUID].GetID()
+		failedServicesPool[serviceID] = serviceErr
 	}
 
+	for serviceID, _ := range successfulServicesPool {
+		shouldRemoveServices[serviceID] = false
+	}
 	return successfulServicesPool, failedServicesPool, nil
 }
 
