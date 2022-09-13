@@ -6,6 +6,7 @@ replace (
 	github.com/kurtosis-tech/kurtosis-core/api/golang => ../api/golang
 	github.com/kurtosis-tech/kurtosis-core/files_artifacts_expander => ../files_artifacts_expander
 	github.com/kurtosis-tech/kurtosis-core/launcher => ../launcher
+	github.com/kurtosis-tech/container-engine-lib => ../../container-engine-lib
 )
 
 require (
