@@ -207,11 +207,11 @@ func(network *ServiceNetwork) StartServices(
 	}
 	// defer undo all to destroy services that fail in a later phase
 	defer func() {
-		userServiceFilters := &service.ServiceFilters{
-			IDs: serviceIDsToRemove,
-		}
 		if len(serviceIDsToRemove) == 0 {
 			return
+		}
+		userServiceFilters := &service.ServiceFilters{
+			IDs: serviceIDsToRemove,
 		}
 		_, failedToDestroyGUIDs, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveId, userServiceFilters)
 		if err != nil {
