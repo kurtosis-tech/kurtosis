@@ -3,6 +3,8 @@ import { PortSpec } from "./port_spec";
 // The UUID of an artifact containing files that should be mounted into a service container
 export type FilesArtifactUUID = string;
 
+const DEFAULT_PRIVATE_IP_ADDR_PLACEHOLDER = "KURTOSIS_PRIVATE_IP_ADDR_PLACEHOLDER"
+
 // ====================================================================================================
 //                                    Config Object
 // ====================================================================================================
@@ -19,6 +21,7 @@ export class ContainerConfig {
         public readonly environmentVariableOverrides: Map<string,string>,
         public readonly cpuAllocationMillicpus: number,
         public readonly memoryAllocationMegabytes: number,
+        public readonly privateIPAddrPlaceholder: string,
     ) {}
 
     // No need for getters because all the fields are 'readonly'
@@ -39,6 +42,7 @@ export class ContainerConfigBuilder {
 	private environmentVariableOverrides: Map<string,string>;
     private cpuAllocationMillicpus: number;
     private memoryAllocationMegabytes: number;
+    private privateIPAddrPlaceholder: string;
 
     constructor (image: string) {
         this.image = image;
@@ -50,6 +54,7 @@ export class ContainerConfigBuilder {
         this.publicPorts = new Map(); //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
         this.cpuAllocationMillicpus = 0;
         this.memoryAllocationMegabytes = 0;
+        this.privateIPAddrPlaceholder = DEFAULT_PRIVATE_IP_ADDR_PLACEHOLDER;
     }
 
     public withUsedPorts(usedPorts: Map<string, PortSpec>): ContainerConfigBuilder {
@@ -93,6 +98,11 @@ export class ContainerConfigBuilder {
         return this;
     }
 
+    public withPrivateIPAddrPlaceholder(privateIPAddrPlaceholder: string): ContainerConfigBuilder {
+        this.privateIPAddrPlaceholder = privateIPAddrPlaceholder;
+        return this;
+}
+
     public build(): ContainerConfig {
         return new ContainerConfig(
             this.image,
@@ -104,6 +114,7 @@ export class ContainerConfigBuilder {
             this.environmentVariableOverrides,
             this.cpuAllocationMillicpus,
             this.memoryAllocationMegabytes,
+            this.privateIPAddrPlaceholder,
         );
     }
 }
