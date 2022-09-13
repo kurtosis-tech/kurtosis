@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+* Added `rendertemplate` to `kurtosis files` which allows you to upload a Golang text/template with data provided as a JSON file.
+
 # 0.28.0
 
 ### Changes
