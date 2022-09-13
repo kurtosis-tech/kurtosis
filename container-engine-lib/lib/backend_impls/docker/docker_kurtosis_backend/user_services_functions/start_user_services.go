@@ -189,13 +189,21 @@ func runStartServiceOperationsInParallel(
 	map[service.ServiceID]error,
 	error,
 ) {
+	successfulServices := map[service.ServiceID]*service.Service{}
+	failedServices := map[service.ServiceID]error{}
+
 	startServiceOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
 	for serviceID, config := range serviceConfigs {
+		serviceRegistration, found := serviceRegistrations[serviceID]
+		if !found {
+			failedServices[serviceID] = stacktrace.NewError("Failed to get service registration for service ID '%v' while creating start service operation. This should never happen. This is a Kurtosis bug.", serviceID)
+			continue
+		}
 		startServiceOperations[operation_parallelizer.OperationID(serviceID)] = createStartServiceOperation(
 			ctx,
-			serviceRegistrations[serviceID].GetGUID(),
+			serviceRegistration.GetGUID(),
 			config,
-			serviceRegistrations[serviceID],
+			serviceRegistration,
 			enclaveNetworkId,
 			enclaveObjAttrsProvider,
 			freeIpAddrProvider,
@@ -203,9 +211,6 @@ func runStartServiceOperationsInParallel(
 	}
 
 	successfulServicesObjs, failedOperations := operation_parallelizer.RunOperationsInParallel(startServiceOperations)
-
-	successfulServices := map[service.ServiceID]*service.Service{}
-	failedServices := map[service.ServiceID]error{}
 
 	for id, data := range successfulServicesObjs {
 		serviceID := service.ServiceID(id)
