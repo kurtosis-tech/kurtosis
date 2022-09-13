@@ -240,7 +240,7 @@ func runStartServiceOperationsInParallel(
 		serviceObjectPtr, ok := data.(*service.Service)
 		if !ok {
 			return nil, nil, stacktrace.NewError(
-				"An error occurred downcasting data returned from the start user service operation for service with ID: %v."+
+				"An error occurred downcasting data returned from the start user service operation for service with ID: %v. "+
 					"This is a Kurtosis bug. Make sure the desired type is actually being returned in the corresponding Operation.", serviceID)
 		}
 		successfulServices[serviceID] = serviceObjectPtr
@@ -665,7 +665,7 @@ func registerUserServices(
 		serviceRegistration, ok := data.(*service.ServiceRegistration)
 		if !ok {
 			return nil, nil, stacktrace.NewError(
-				"An error occurred downcasting data returned from the register user service operation for service with id: %v."+
+				"An error occurred downcasting data returned from the register user service operation for service with id: %v. "+
 					"This is a Kurtosis bug. Make sure the desired type is actually being returned in the corresponding Operation.", serviceID)
 		}
 		successfulServicesPool[serviceID] = serviceRegistration
