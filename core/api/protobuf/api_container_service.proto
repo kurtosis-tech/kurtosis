@@ -130,6 +130,9 @@ message ServiceConfig {
 
   // Corresponds to available memory in megabytes in both Docker and Kubernetes
   uint64 memory_allocation_megabytes = 9;
+
+  // The private IP address placeholder string that will be replaced with the actual IP address
+  string private_ip_addr_placeholder = 10;
 }
 
 message ModuleInfo {

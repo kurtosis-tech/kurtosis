@@ -1392,7 +1392,8 @@ proto.api_container_api.ServiceConfig.toObject = function(includeInstance, msg) 
     envVarsMap: (f = msg.getEnvVarsMap()) ? f.toObject(includeInstance, undefined) : [],
     filesArtifactMountpointsMap: (f = msg.getFilesArtifactMountpointsMap()) ? f.toObject(includeInstance, undefined) : [],
     cpuAllocationMillicpus: jspb.Message.getFieldWithDefault(msg, 8, 0),
-    memoryAllocationMegabytes: jspb.Message.getFieldWithDefault(msg, 9, 0)
+    memoryAllocationMegabytes: jspb.Message.getFieldWithDefault(msg, 9, 0),
+    privateIpAddrPlaceholder: jspb.Message.getFieldWithDefault(msg, 10, "")
   };
 
   if (includeInstance) {
@@ -1473,6 +1474,10 @@ proto.api_container_api.ServiceConfig.deserializeBinaryFromReader = function(msg
       var value = /** @type {number} */ (reader.readUint64());
       msg.setMemoryAllocationMegabytes(value);
       break;
+    case 10:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setPrivateIpAddrPlaceholder(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -1550,6 +1555,13 @@ proto.api_container_api.ServiceConfig.serializeBinaryToWriter = function(message
   if (f !== 0) {
     writer.writeUint64(
       9,
+      f
+    );
+  }
+  f = message.getPrivateIpAddrPlaceholder();
+  if (f.length > 0) {
+    writer.writeString(
+      10,
       f
     );
   }
@@ -1769,6 +1781,24 @@ proto.api_container_api.ServiceConfig.prototype.getMemoryAllocationMegabytes = f
  */
 proto.api_container_api.ServiceConfig.prototype.setMemoryAllocationMegabytes = function(value) {
   return jspb.Message.setProto3IntField(this, 9, value);
+};
+
+
+/**
+ * optional string private_ip_addr_placeholder = 10;
+ * @return {string}
+ */
+proto.api_container_api.ServiceConfig.prototype.getPrivateIpAddrPlaceholder = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 10, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.ServiceConfig} returns this
+ */
+proto.api_container_api.ServiceConfig.prototype.setPrivateIpAddrPlaceholder = function(value) {
+  return jspb.Message.setProto3StringField(this, 10, value);
 };
 
 

@@ -97,6 +97,9 @@ export class ServiceConfig extends jspb.Message {
   getMemoryAllocationMegabytes(): number;
   setMemoryAllocationMegabytes(value: number): ServiceConfig;
 
+  getPrivateIpAddrPlaceholder(): string;
+  setPrivateIpAddrPlaceholder(value: string): ServiceConfig;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServiceConfig.AsObject;
   static toObject(includeInstance: boolean, msg: ServiceConfig): ServiceConfig.AsObject;
@@ -116,6 +119,7 @@ export namespace ServiceConfig {
     filesArtifactMountpointsMap: Array<[string, string]>,
     cpuAllocationMillicpus: number,
     memoryAllocationMegabytes: number,
+    privateIpAddrPlaceholder: string,
   }
 }
 
