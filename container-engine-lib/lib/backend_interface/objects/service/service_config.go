@@ -3,12 +3,6 @@ package service
 import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"strings"
-)
-
-const (
-	defaultPrivateIPAddrPlaceholder = "KURTOSIS_PRIVATE_IP_ADDR_PLACEHOLDER"
-	unlimitedReplacements           = -1
 )
 
 // Config options for the underlying container of a service
@@ -46,9 +40,6 @@ func NewServiceConfig(
 	cpuAllocationMillicpus uint64,
 	memoryAllocationMegabytes uint64,
 	privateIPAddrPlaceholder string) *ServiceConfig {
-	if privateIPAddrPlaceholder == "" {
-		privateIPAddrPlaceholder = defaultPrivateIPAddrPlaceholder
-	}
 	return &ServiceConfig{
 		containerImageName:        containerImageName,
 		privatePorts:              privatePorts,
@@ -99,12 +90,6 @@ func (serviceConfig *ServiceConfig) GetMemoryAllocationMegabytes() uint64 {
 	return serviceConfig.memoryAllocationMegabytes
 }
 
-func (serviceConfig *ServiceConfig) ReplacePlaceholderWithPrivateIPAddr(privateIPAddr string) {
-	for index, _ := range serviceConfig.cmdArgs {
-		serviceConfig.cmdArgs[index] = strings.Replace(serviceConfig.cmdArgs[index], serviceConfig.privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
-	}
-
-	for key, _ := range serviceConfig.envVars {
-		serviceConfig.envVars[key] = strings.Replace(serviceConfig.envVars[key], serviceConfig.privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
-	}
+func (serviceConfig *ServiceConfig) GetPrivateIPAddrPlaceholder() string {
+	return serviceConfig.privateIPAddrPlaceholder
 }

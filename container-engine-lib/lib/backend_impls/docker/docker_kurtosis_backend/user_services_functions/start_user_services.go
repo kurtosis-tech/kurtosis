@@ -15,8 +15,13 @@ import (
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"strings"
 	"sync"
 	"time"
+)
+
+const (
+	unlimitedReplacements = -1
 )
 
 func StartUserServices(
@@ -91,10 +96,11 @@ func StartUserServices(
 	}
 
 	serviceConfigsToStart := map[service.ServiceID]*service.ServiceConfig{}
-	for serviceID, successfulRegistration := range successfulRegistrations {
-		config := services[serviceID]
-		config.ReplacePlaceholderWithPrivateIPAddr(successfulRegistration.GetPrivateIP().String())
-		serviceConfigsToStart[serviceID] = config
+	for serviceID, serviceConfig := range services {
+		if _, found := successfulRegistrations[serviceID]; !found {
+			continue
+		}
+		serviceConfigsToStart[serviceID] = serviceConfig
 	}
 
 	// If no services had successful registrations, return immediately
@@ -235,7 +241,19 @@ func createStartServiceOperation(
 		envVars := serviceConfig.GetEnvVars()
 		cpuAllocationMillicpus := serviceConfig.GetCPUAllocationMillicpus()
 		memoryAllocationMegabytes := serviceConfig.GetMemoryAllocationMegabytes()
+		privateIPAddrPlaceholder := serviceConfig.GetPrivateIPAddrPlaceholder()
 
+		// We replace the placeholder value with the actual private IP address
+		privateIPAddrStr := privateIpAddr.String()
+		for index, _ := range entrypointArgs {
+			entrypointArgs[index] = strings.Replace(entrypointArgs[index], privateIPAddrPlaceholder, privateIPAddrStr, unlimitedReplacements)
+		}
+		for index, _ := range cmdArgs {
+			cmdArgs[index] = strings.Replace(cmdArgs[index], privateIPAddrPlaceholder, privateIPAddrStr, unlimitedReplacements)
+		}
+		for key, _ := range envVars {
+			envVars[key] = strings.Replace(envVars[key], privateIPAddrPlaceholder, privateIPAddrStr, unlimitedReplacements)
+		}
 
 		volumeMounts := map[string]string{}
 		shouldDeleteVolumes := true

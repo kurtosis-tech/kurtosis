@@ -21,6 +21,7 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
+	"strings"
 )
 
 const (
@@ -36,6 +37,8 @@ const (
 	// In these cases, we use these notional unbound ports
 	unboundPortName   = "nonexistent-port"
 	unboundPortNumber = 1
+
+	unlimitedReplacements = -1
 )
 
 // Completeness enforced via unit test
@@ -104,10 +107,11 @@ func StartUserServices(
 	}
 
 	serviceConfigsToStart := map[service.ServiceID]*service.ServiceConfig{}
-	for serviceID, successfulRegistration := range successfulRegistrations {
-		config := services[serviceID]
-		config.ReplacePlaceholderWithPrivateIPAddr(successfulRegistration.GetPrivateIP().String())
-		serviceConfigsToStart[serviceID] = config
+	for serviceID, serviceConfig := range services {
+		if _, found := successfulRegistrations[serviceID]; !found {
+			continue
+		}
+		serviceConfigsToStart[serviceID] = serviceConfig
 	}
 
 	// If no services had successful registrations, return immediately
@@ -252,6 +256,7 @@ func createStartServiceOperation(
 	servicesObjectsAndResources map[service.ServiceID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
 	enclaveID enclave.EnclaveID,
 	kubernetesManager *kubernetes_manager.KubernetesManager) operation_parallelizer.Operation {
+
 	return func() (interface{}, error) {
 		filesArtifactsExpansion := serviceConfig.GetFilesArtifactsExpansion()
 		containerImageName := serviceConfig.GetContainerImageName()
@@ -261,6 +266,7 @@ func createStartServiceOperation(
 		envVars := serviceConfig.GetEnvVars()
 		cpuAllocationMillicpus := serviceConfig.GetCPUAllocationMillicpus()
 		memoryAllocationMegabytes := serviceConfig.GetMemoryAllocationMegabytes()
+		privateIPAddrPlaceholder := serviceConfig.GetPrivateIPAddrPlaceholder()
 
 		matchingObjectAndResources, found := servicesObjectsAndResources[serviceID]
 		if !found {
@@ -270,6 +276,18 @@ func createStartServiceOperation(
 		serviceObj := matchingObjectAndResources.Service
 		if serviceObj != nil {
 			return nil, stacktrace.NewError("Cannot start service with ID '%v' because the service has already been started previously", serviceID)
+		}
+
+		// We replace the placeholder value with the actual private IP address
+		privateIPAddr := matchingObjectAndResources.ServiceRegistration.GetPrivateIP().String()
+		for index, _ := range entrypointArgs {
+			entrypointArgs[index] = strings.Replace(entrypointArgs[index], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
+		}
+		for index, _ := range cmdArgs {
+			cmdArgs[index] = strings.Replace(cmdArgs[index], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
+		}
+		for key, _ := range envVars {
+			envVars[key] = strings.Replace(envVars[key], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
 		}
 
 		namespaceName := kubernetesService.GetNamespace()
