@@ -164,12 +164,12 @@ func StartUserServices(
 	}
 	for serviceID, _ := range serviceIDsToFilter {
 		registration, found := successfulRegistrations[serviceID]
-		guid := registration.GetGUID()
 		if !found {
 			failedServicesPool[serviceID] = stacktrace.NewError("Couldn't find a service registration for service ID '%v'. This is a bug in Kurtosis.", serviceID)
 			delete(serviceConfigsToStart, serviceID)
 		}
-		if _, found := existingObjectsAndResources[guid]; !found {
+		guid := registration.GetGUID()
+		if _, found = existingObjectsAndResources[guid]; !found {
 			failedServicesPool[serviceID] = stacktrace.NewError("Couldn't find any service registrations for service GUID '%v' for service ID '%v'. This is a bug in Kurtosis.", guid, serviceID)
 			delete(serviceConfigsToStart, serviceID)
 		}
