@@ -298,7 +298,7 @@ func(network *ServiceNetwork) StartServices(
 			for serviceID := range sidecarsToCleanUp {
 				networkingSidecar, found := network.networkingSidecars[serviceID]
 				if !found {
-					failedServicesPool[serviceID] = stacktrace.NewError("Tried cleaning up sidecar for service with ID '%v' but couldn't retrieve it from the cache.")
+					failedServicesPool[serviceID] = stacktrace.NewError("Tried cleaning up sidecar for service with ID '%v' but couldn't retrieve it from the cache.", serviceID)
 				}
 				err = network.networkingSidecarManager.Remove(ctx, networkingSidecar)
 				if err != nil {

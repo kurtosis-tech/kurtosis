@@ -30,7 +30,7 @@ import {
     RemoveServiceResponse,
     UnloadModuleResponse,
     GetModulesResponse,
-    GetServicesResponse, RegisterServicesArgs, StartServicesArgs,
+    GetServicesResponse, StartServicesArgs,
     RenderTemplatesToFilesArtifactArgs,
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceID } from './services/service';
@@ -57,7 +57,8 @@ export function newServiceConfig(
     environmentVariableOverrides : Map<string, string>,
     filesArtifactMountDirpaths : Map<string, string>,
     cpuAllocationMillicpus : number,
-    memoryAllocationMegabytes : number
+    memoryAllocationMegabytes : number,
+    privateIPAddrPlaceholder : string
 ) {
     const result : ServiceConfig = new ServiceConfig();
     result.setContainerImageName(containerImageName);
@@ -89,6 +90,7 @@ export function newServiceConfig(
     }
     result.setCpuAllocationMillicpus(cpuAllocationMillicpus);
     result.setMemoryAllocationMegabytes(memoryAllocationMegabytes);
+    result.setPrivateIpAddrPlaceholder(privateIPAddrPlaceholder);
     return result;
 }
 
@@ -173,21 +175,6 @@ export function newModuleInfo(
     result.setMaybePublicGrpcPort(maybePublicGrpcPort)
 
     return result
-}
-
-
-// ==============================================================================================
-//                                     Register Service
-// ==============================================================================================
-export function newRegisterServicesArgs(serviceIds: Map<ServiceID, boolean>, partitionId: PartitionID): RegisterServicesArgs {
-    const result : RegisterServicesArgs = new RegisterServicesArgs();
-    const serviceIdSet: jspb.Map<string, boolean> = result.getServiceIdSetMap();
-    for (const [serviceId, _] of serviceIds) {
-        serviceIdSet.set(String(serviceId), true);
-    }
-    result.setPartitionId(String(partitionId));
-
-    return result;
 }
 
 
