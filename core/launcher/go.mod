@@ -2,10 +2,6 @@ module github.com/kurtosis-tech/kurtosis-core/launcher
 
 go 1.17
 
-replace (
-	github.com/kurtosis-tech/container-engine-lib => ../../container-engine-lib
-)
-
 require (
 	github.com/kurtosis-tech/container-engine-lib v0.37.0
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
