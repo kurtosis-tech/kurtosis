@@ -61,10 +61,13 @@ func StartUserServices(
 	var serviceIDsToRegister []service.ServiceID
 	for serviceID, config := range services {
 		if config.GetPrivateIPAddrPlaceholder() == "" {
-			failedServicesPool[serviceID] = stacktrace.NewError("Received an empty PrivateIPAddrPlaceHolder for service with ID '%v'", serviceID)
+			failedServicesPool[serviceID] = stacktrace.NewError("Service with ID '%v' has an empty private IP Address placeholder. Expect this to be of length greater than zero.", serviceID)
 			continue
 		}
 		serviceIDsToRegister = append(serviceIDsToRegister, serviceID)
+	}
+	if len(serviceIDsToRegister) == 0 {
+		return successfulServicesPool, failedServicesPool, nil
 	}
 
 	successfulRegistrations, failedRegistrations, err := registerUserServices(enclaveID, serviceIDsToRegister, serviceRegistrations, freeIpAddrProvider)
