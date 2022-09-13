@@ -58,7 +58,7 @@ func StartUserServices(
 		)
 	}
 
-	serviceIDsToRegister := make([]service.ServiceID, len(services))
+	var serviceIDsToRegister []service.ServiceID
 	for serviceID, config := range services {
 		if config.GetPrivateIPAddrPlaceholder() == "" {
 			failedServicesPool[serviceID] = stacktrace.NewError("Received an empty PrivateIPAddrPlaceHolder for service with ID '%v'", serviceID)
