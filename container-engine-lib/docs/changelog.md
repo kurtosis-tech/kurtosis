@@ -1,5 +1,7 @@
 # TBD
 
+# 0.37.0
+
 
 ### Breaking Changes
 * Removed `RegisterUserServices` from the `KurtosisBackend` and made it private to the `StartUserServices` implementations in `Docker` and `Kubernetes`
