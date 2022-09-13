@@ -540,8 +540,7 @@ func (network *ServiceNetwork) GetService(ctx context.Context, serviceId service
 		return nil, stacktrace.Propagate(err, "An error occurred getting service '%v'", serviceGuid)
 	}
 	if len(matchingServices) == 0 {
-		return nil, stacktrace.Propagate(
-			err,
+		return nil, stacktrace.NewError(
 			"A registration exists for service GUID '%v' but no service objects were found; this indicates that the service was "+
 				"registered but not started",
 			serviceGuid,
