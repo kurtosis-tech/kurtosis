@@ -91,11 +91,11 @@ func StartUserServices(
 		serviceIDsToRemove[serviceID] = true
 	}
 	defer func() {
-		userServiceFilters := &service.ServiceFilters{
-			IDs: serviceIDsToRemove,
-		}
 		if len(serviceIDsToRemove) == 0 {
 			return
+		}
+		userServiceFilters := &service.ServiceFilters{
+			IDs: serviceIDsToRemove,
 		}
 		_, failedToDestroyGUIDs, err := DestroyUserServices(ctx, enclaveID, userServiceFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 		if err != nil {
