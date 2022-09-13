@@ -94,7 +94,7 @@ func StartUserServices(
 		_, failedToDestroyGUIDs, err := DestroyUserServices(ctx, enclaveID, userServiceFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 		if err != nil {
 			for serviceID, _ := range serviceIDsToRemove {
-				failedServicesPool[serviceID] = stacktrace.Propagate(err, "Attempted to destroy all services with serviceIDsToRegister '%v' together but had no success. You must manually destroy the service '%v'.", serviceIDsToRemove, serviceID)
+				failedServicesPool[serviceID] = stacktrace.Propagate(err, "Attempted to destroy all services with IDs '%v' together but had no success. You must manually destroy the service '%v'!", serviceIDsToRemove, serviceID)
 			}
 			return
 		}

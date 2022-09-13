@@ -83,7 +83,7 @@ func StartUserServices(
 		_, failedToDestroyGUIDs, err := destroyUserServicesUnlocked(ctx, enclaveID, userServiceFilters, serviceRegistrations, enclaveFreeIpProviders, dockerManager)
 		if err != nil {
 			for serviceID, _ := range serviceIDsToRemove {
-				failedServicesPool[serviceID] = stacktrace.Propagate(err, "Attempted to destroy all services with serviceIDsToRegister '%v' together but had no success. You must manually destroy the service '%v'.", serviceIDsToRemove, serviceID)
+				failedServicesPool[serviceID] = stacktrace.Propagate(err, "Attempted to destroy all services with IDs '%v' together but had no success. You must manually destroy the service '%v'!", serviceIDsToRemove, serviceID)
 			}
 			return
 		}
