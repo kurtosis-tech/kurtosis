@@ -83,6 +83,9 @@ func StartUserServices(
 		userServiceFilters := &service.ServiceFilters{
 			IDs: serviceIDsToRemove,
 		}
+		if len(serviceIDsToRemove) == 0 {
+			return
+		}
 		_, failedToDestroyGUIDs, err := destroyUserServicesUnlocked(ctx, enclaveID, userServiceFilters, serviceRegistrations, enclaveFreeIpProviders, dockerManager)
 		if err != nil {
 			for serviceID, _ := range serviceIDsToRemove {

@@ -94,6 +94,9 @@ func StartUserServices(
 		userServiceFilters := &service.ServiceFilters{
 			IDs: serviceIDsToRemove,
 		}
+		if len(serviceIDsToRemove) == 0 {
+			return
+		}
 		_, failedToDestroyGUIDs, err := DestroyUserServices(ctx, enclaveID, userServiceFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 		if err != nil {
 			for serviceID, _ := range serviceIDsToRemove {

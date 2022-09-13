@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+* Fixed a bug where `StartUserServices` would delete all services regardless of success or failure.
+
 # 0.37.0
 
 
