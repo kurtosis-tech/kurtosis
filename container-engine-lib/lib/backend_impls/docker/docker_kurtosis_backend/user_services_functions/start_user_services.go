@@ -90,14 +90,11 @@ func StartUserServices(
 		failedServicesPool[serviceID] = stacktrace.Propagate(registrationError, "Failed to register service with ID '%v'", serviceID)
 	}
 
-	serviceConfigsToStart := map[service.ServiceGUID]*service.ServiceConfig{}
-	successfulRegistrationsByGUID := map[service.ServiceGUID]*service.ServiceRegistration{}
+	serviceConfigsToStart := map[service.ServiceID]*service.ServiceConfig{}
 	for serviceID, successfulRegistration := range successfulRegistrations {
-		guid := successfulRegistration.GetGUID()
 		config := services[serviceID]
 		config.ReplacePlaceholderWithPrivateIPAddr(successfulRegistration.GetPrivateIP().String())
-		serviceConfigsToStart[guid] = config
-		successfulRegistrationsByGUID[guid] = successfulRegistration
+		serviceConfigsToStart[serviceID] = config
 	}
 
 	// If no services had successful registrations, return immediately
@@ -111,15 +108,14 @@ func StartUserServices(
 
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	// Sanity check for port bindings on all services
-	for serviceGUID, serviceConfig := range serviceConfigsToStart {
+	for serviceID, serviceConfig := range serviceConfigsToStart {
 		publicPorts := serviceConfig.GetPublicPorts()
 		if publicPorts != nil && len(publicPorts) > 0 {
 			privatePorts := serviceConfig.GetPrivatePorts()
 			err := checkPrivateAndPublicPortsAreOneToOne(privatePorts, publicPorts)
 			if err != nil {
-				serviceID := successfulRegistrationsByGUID[serviceGUID].GetID()
 				failedServicesPool[serviceID] = stacktrace.Propagate(err, "Private and public ports for service with ID '%v' are not one to one.", serviceID)
-				delete(serviceConfigsToStart, serviceGUID)
+				delete(serviceConfigsToStart, serviceID)
 			}
 		}
 	}
@@ -140,7 +136,7 @@ func StartUserServices(
 		ctx,
 		enclaveNetworkID,
 		serviceConfigsToStart,
-		successfulRegistrationsByGUID,
+		successfulRegistrations,
 		enclaveObjAttrsProvider,
 		freeIpAddrProvider,
 		dockerManager)
@@ -149,13 +145,11 @@ func StartUserServices(
 	}
 
 	// Add operations to their respective pools
-	for serviceGUID, service := range successfulStarts {
-		serviceID := successfulRegistrationsByGUID[serviceGUID].GetID()
+	for serviceID, service := range successfulStarts {
 		successfulServicesPool[serviceID] = service
 	}
 
-	for serviceGUID, serviceErr := range failedStarts {
-		serviceID := successfulRegistrationsByGUID[serviceGUID].GetID()
+	for serviceID, serviceErr := range failedStarts {
 		failedServicesPool[serviceID] = serviceErr
 	}
 
@@ -172,23 +166,23 @@ func StartUserServices(
 func runStartServiceOperationsInParallel(
 	ctx context.Context,
 	enclaveNetworkId string,
-	serviceConfigs map[service.ServiceGUID]*service.ServiceConfig,
-	serviceRegistrations map[service.ServiceGUID]*service.ServiceRegistration,
+	serviceConfigs map[service.ServiceID]*service.ServiceConfig,
+	serviceRegistrations map[service.ServiceID]*service.ServiceRegistration,
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
 	freeIpAddrProvider *lib.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 ) (
-	map[service.ServiceGUID]*service.Service,
-	map[service.ServiceGUID]error,
+	map[service.ServiceID]*service.Service,
+	map[service.ServiceID]error,
 	error,
 ) {
 	startServiceOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
-	for guid, config := range serviceConfigs {
-		startServiceOperations[operation_parallelizer.OperationID(guid)] = createStartServiceOperation(
+	for serviceID, config := range serviceConfigs {
+		startServiceOperations[operation_parallelizer.OperationID(serviceID)] = createStartServiceOperation(
 			ctx,
-			guid,
+			serviceRegistrations[serviceID].GetGUID(),
 			config,
-			serviceRegistrations[guid],
+			serviceRegistrations[serviceID],
 			enclaveNetworkId,
 			enclaveObjAttrsProvider,
 			freeIpAddrProvider,
@@ -197,23 +191,23 @@ func runStartServiceOperationsInParallel(
 
 	successfulServicesObjs, failedOperations := operation_parallelizer.RunOperationsInParallel(startServiceOperations)
 
-	successfulServices := map[service.ServiceGUID]*service.Service{}
-	failedServices := map[service.ServiceGUID]error{}
+	successfulServices := map[service.ServiceID]*service.Service{}
+	failedServices := map[service.ServiceID]error{}
 
 	for id, data := range successfulServicesObjs {
-		serviceGUID := service.ServiceGUID(id)
+		serviceID := service.ServiceID(id)
 		serviceObj, ok := data.(*service.Service)
 		if !ok {
 			return nil, nil, stacktrace.NewError(
-				"An error occurred downcasting data returned from the start user service operation for service with GUID: '%v'. "+
-					"This is a Kurtosis bug. Make sure the desired type is actually being returned in the corresponding Operation.", serviceGUID)
+				"An error occurred downcasting data returned from the start user service operation for service with ID: '%v'. "+
+					"This is a Kurtosis bug. Make sure the desired type is actually being returned in the corresponding Operation.", serviceID)
 		}
-		successfulServices[serviceGUID] = serviceObj
+		successfulServices[serviceID] = serviceObj
 	}
 
 	for id, err := range failedOperations {
-		serviceGUID := service.ServiceGUID(id)
-		failedServices[serviceGUID] = err
+		serviceID := service.ServiceID(id)
+		failedServices[serviceID] = err
 	}
 
 	return successfulServices, failedServices, nil
