@@ -178,7 +178,7 @@ func(network *ServiceNetwork) StartServices(
 	for serviceID := range apiServiceConfigs {
 		if _, found := network.registeredServiceInfo[serviceID]; found {
 			failedServicesPool[serviceID] = stacktrace.NewError(
-				"Cannot register service '%v' because it already exists in the network",
+				"Cannot start service '%v' because it already exists in the network",
 				serviceID,
 			)
 			delete(apiServiceConfigs, serviceID)
@@ -203,42 +203,16 @@ func(network *ServiceNetwork) StartServices(
 	// TODO We SHOULD defer an undo to undo the service-starting resource that we did here, but we don't have a way to just undo
 	// that and leave the registration intact (since we only have RemoveService as of 2022-08-11, but that also deletes the registration,
 	//which would mean deleting a resource we don't own here)
-
-	successfulServiceIPs := map[service.ServiceID]net.IP{}
-	for serviceID, successfulService := range successfulServices {
-		serviceRegistration := successfulService.GetRegistration()
-		network.registeredServiceInfo[serviceID] = serviceRegistration
-		shouldRemoveFromServicesMap := true
-		defer func() {
-			if shouldRemoveFromServicesMap {
-				delete(network.registeredServiceInfo, serviceID)
-			}
-		}()
-
-		if err := network.topology.AddService(serviceID, partitionID); err != nil {
-			failedServicesPool[serviceID] = stacktrace.Propagate(
-				err,
-				"An error occurred adding service with ID '%v' to partition '%v' in the topology",
-				serviceID,
-				partitionID,
-			)
-			continue
-		}
-		shouldRemoveFromTopology := true
-		defer func() {
-			if shouldRemoveFromTopology {
-				network.topology.RemoveService(serviceID)
-			}
-		}()
-
-		shouldRemoveFromServicesMap = false
-		shouldRemoveFromTopology = false
-		privateIP := serviceRegistration.GetPrivateIP()
-		successfulServiceIPs[serviceID] = privateIP
-	}
-
 	for serviceID, err := range failedStarts {
 		failedServicesPool[serviceID] = err
+	}
+
+	for serviceID, successfulService := range successfulServices {
+		err = addServiceToTopology(successfulService, network, serviceID, partitionID)
+		if err != nil {
+			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred adding service to the topology")
+			delete(successfulServices, serviceID)
+		}
 	}
 
 	// TODO Fix race condition
@@ -866,5 +840,36 @@ func checkPrivateAndPublicPortsAreOneToOne(privatePorts map[string]*kurtosis_cor
 			return stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portID, privatePortSpec.GetNumber())
 		}
 	}
+	return nil
+}
+
+func addServiceToTopology(successfulService *service.Service, network *ServiceNetwork, serviceID service.ServiceID, partitionID service_network_types.PartitionID) error {
+	serviceRegistration := successfulService.GetRegistration()
+	network.registeredServiceInfo[serviceID] = serviceRegistration
+	shouldRemoveFromServicesMap := true
+	defer func() {
+		if shouldRemoveFromServicesMap {
+			delete(network.registeredServiceInfo, serviceID)
+		}
+	}()
+
+	if err := network.topology.AddService(serviceID, partitionID); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred adding service with ID '%v' to partition '%v' in the topology",
+			serviceID,
+			partitionID,
+		)
+	}
+	shouldRemoveFromTopology := true
+	defer func() {
+		if shouldRemoveFromTopology {
+			network.topology.RemoveService(serviceID)
+		}
+	}()
+
+	shouldRemoveFromServicesMap = false
+	shouldRemoveFromTopology = false
+
 	return nil
 }
