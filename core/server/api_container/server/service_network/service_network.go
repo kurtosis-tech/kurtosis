@@ -174,7 +174,7 @@ func(network *ServiceNetwork) StartServices(
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	failedServicesPool := map[service.ServiceID]error{}
-	successfulServicesPool := map[service.ServiceID]*service.Service
+	successfulServicesPool := map[service.ServiceID]*service.Service{}
 
 	for serviceID := range apiServiceConfigs {
 		if _, found := network.registeredServiceInfo[serviceID]; found {
@@ -205,13 +205,14 @@ func(network *ServiceNetwork) StartServices(
 	for serviceID := range successfulStarts {
 		serviceIDsToRemove[serviceID] = true
 	}
+	// defer undo all to destroy services that fail in a later phase
 	defer func() {
 		userServiceFilters := &service.ServiceFilters{
 			IDs: serviceIDsToRemove,
 		}
 		_, failedToDestroyGUIDs, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveId, userServiceFilters)
 		if err != nil {
-			for serviceID, _ := range serviceIDsToRemove {
+			for serviceID := range serviceIDsToRemove {
 				failedServicesPool[serviceID] = stacktrace.Propagate(err, "Attempted to destroy all services with IDs '%v' together but had no success. You must manually destroy the service '%v'!", serviceIDsToRemove, serviceID)
 			}
 			return
@@ -219,7 +220,7 @@ func(network *ServiceNetwork) StartServices(
 		if len(failedToDestroyGUIDs) == 0 {
 			return
 		}
-		destroyFailuresAccountedFor := map[service.ServiceGUID]bool{}
+		destroyFailuresAccountedFor := 0
 		for serviceID, service := range successfulStarts {
 			guid := service.GetRegistration().GetGUID()
 			destroyErr, found := failedToDestroyGUIDs[guid]
@@ -227,10 +228,10 @@ func(network *ServiceNetwork) StartServices(
 				continue
 			}
 			failedServicesPool[serviceID] = stacktrace.Propagate(destroyErr, "Failed to destroy the service '%v' after it failed to start. You must manually destroy the service!", serviceID)
-			destroyFailuresAccountedFor[guid] = true
+			destroyFailuresAccountedFor += 1
 		}
-		if len(destroyFailuresAccountedFor) != len(failedToDestroyGUIDs) {
-			logrus.Errorf("Couldn't propagate all failures while destroying services. This is a bug in Kurtosis. Accounted for '%v', expected '%v'", len(destroyFailuresAccountedFor), len(failedToDestroyGUIDs))
+		if destroyFailuresAccountedFor != len(failedToDestroyGUIDs) {
+			logrus.Errorf("Couldn't propagate all failures while destroying services. This is a bug in Kurtosis. Accounted for '%v', expected '%v'", destroyFailuresAccountedFor, len(failedToDestroyGUIDs))
 		}
 	}()
 
