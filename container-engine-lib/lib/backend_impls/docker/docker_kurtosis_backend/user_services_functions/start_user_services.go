@@ -58,13 +58,18 @@ func StartUserServices(
 		)
 	}
 
-	serviceIDs := make([]service.ServiceID, len(services))
-	for serviceID := range services {
-		serviceIDs = append(serviceIDs, serviceID)
+	serviceIDsToRegister := make([]service.ServiceID, len(services))
+	for serviceID, config := range services {
+		if config.GetPrivateIPAddrPlaceholder() == "" {
+			failedServicesPool[serviceID] = stacktrace.NewError("Received an empty PrivateIPAddrPlaceHolder for service with ID '%v'", serviceID)
+			continue
+		}
+		serviceIDsToRegister = append(serviceIDsToRegister, serviceID)
 	}
-	successfulRegistrations, failedRegistrations, err := registerUserServices(enclaveID, serviceIDs, serviceRegistrations, freeIpAddrProvider)
+
+	successfulRegistrations, failedRegistrations, err := registerUserServices(enclaveID, serviceIDsToRegister, serviceRegistrations, freeIpAddrProvider)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", serviceIDs)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", serviceIDsToRegister)
 	}
 	// Defer an undo to all the successful registrations in case an error occurs in future phases
 	serviceIDsToRemove := map[service.ServiceID]bool{}
@@ -78,7 +83,7 @@ func StartUserServices(
 		_, failedToDestroyGUIDs, err := destroyUserServicesUnlocked(ctx, enclaveID, userServiceFilters, serviceRegistrations, enclaveFreeIpProviders, dockerManager)
 		if err != nil {
 			for serviceID, _ := range serviceIDsToRemove {
-				failedServicesPool[serviceID] = stacktrace.Propagate(err, "Attempted to destroy all services with serviceIDs '%v' together but had no success. You must manually destroy the service '%v'.", serviceIDsToRemove, serviceID)
+				failedServicesPool[serviceID] = stacktrace.Propagate(err, "Attempted to destroy all services with serviceIDsToRegister '%v' together but had no success. You must manually destroy the service '%v'.", serviceIDsToRemove, serviceID)
 			}
 			return
 		}
