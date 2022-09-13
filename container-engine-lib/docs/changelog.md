@@ -20,6 +20,8 @@
 * Changed the function signature of the `KurtosisBackend.StartUserServices` method to accept `map[service.ServiceID]*ServiceConfigs` as the third argument. 
 * Changed the return type of the `Kurtosisbackend.StartUserServices` method to return success & failure mapped by `ServiceID` over the previous implementation that mapped it by `ServiceGUID`
 
+### Fixes
+* Fixed a bug because of which `DockerKurotisBackend.DestoryUserServices` would always return an empty list for `resultSuccessfulGuids` due to missing assignments.
 
 
 # 0.36.1

@@ -133,12 +133,13 @@ func destroyUserServicesUnlocked(
 		)
 	}
 
+	successfulGuids := map[service.ServiceGUID]bool{}
 	for guid := range successfulResourceRemovalGuids {
 		registrationsToDeregister[guid] = matchingRegistrations[guid]
+		successfulGuids[guid] = true
 	}
 
 	// Finalize deregistration
-	successfulGuids := map[service.ServiceGUID]bool{}
 	for guid, registration := range registrationsToDeregister {
 		freeIpAddrTrackerForEnclave.ReleaseIpAddr(registration.GetPrivateIP())
 		delete(registrationsForEnclave, guid)
@@ -283,4 +284,12 @@ func removeUserServiceDockerResources(
 
 	successGuids := successfulVolumeRemovalGuids
 	return successGuids, erroredGuids, nil
+}
+
+func extractServiceGUIDFromServiceObj(uncastedObj interface{}) (string, error) {
+	castedObj, ok := uncastedObj.(*service.Service)
+	if !ok {
+		return "", stacktrace.NewError("An error occurred downcasting the user service object")
+	}
+	return string(castedObj.GetRegistration().GetGUID()), nil
 }
