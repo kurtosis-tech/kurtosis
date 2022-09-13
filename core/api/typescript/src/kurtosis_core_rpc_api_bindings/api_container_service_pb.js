@@ -3514,7 +3514,8 @@ proto.api_container_api.StartServicesResponse.prototype.toObject = function(opt_
 proto.api_container_api.StartServicesResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
     successfulServiceIdsToServiceInfoMap: (f = msg.getSuccessfulServiceIdsToServiceInfoMap()) ? f.toObject(includeInstance, proto.api_container_api.ServiceInfo.toObject) : [],
-    failedServiceIdsToErrorMap: (f = msg.getFailedServiceIdsToErrorMap()) ? f.toObject(includeInstance, undefined) : []
+    failedServiceIdsToErrorMap: (f = msg.getFailedServiceIdsToErrorMap()) ? f.toObject(includeInstance, undefined) : [],
+    partitionId: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -3563,6 +3564,10 @@ proto.api_container_api.StartServicesResponse.deserializeBinaryFromReader = func
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
          });
       break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setPartitionId(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -3599,6 +3604,13 @@ proto.api_container_api.StartServicesResponse.serializeBinaryToWriter = function
   f = message.getFailedServiceIdsToErrorMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
+  }
+  f = message.getPartitionId();
+  if (f.length > 0) {
+    writer.writeString(
+      3,
+      f
+    );
   }
 };
 
@@ -3645,6 +3657,24 @@ proto.api_container_api.StartServicesResponse.prototype.getFailedServiceIdsToErr
 proto.api_container_api.StartServicesResponse.prototype.clearFailedServiceIdsToErrorMap = function() {
   this.getFailedServiceIdsToErrorMap().clear();
   return this;};
+
+
+/**
+ * optional string partition_id = 3;
+ * @return {string}
+ */
+proto.api_container_api.StartServicesResponse.prototype.getPartitionId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.StartServicesResponse} returns this
+ */
+proto.api_container_api.StartServicesResponse.prototype.setPartitionId = function(value) {
+  return jspb.Message.setProto3StringField(this, 3, value);
+};
 
 
 

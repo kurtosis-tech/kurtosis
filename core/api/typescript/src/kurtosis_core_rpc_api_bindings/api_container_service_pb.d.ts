@@ -362,6 +362,9 @@ export class StartServicesResponse extends jspb.Message {
   getFailedServiceIdsToErrorMap(): jspb.Map<string, string>;
   clearFailedServiceIdsToErrorMap(): StartServicesResponse;
 
+  getPartitionId(): string;
+  setPartitionId(value: string): StartServicesResponse;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StartServicesResponse.AsObject;
   static toObject(includeInstance: boolean, msg: StartServicesResponse): StartServicesResponse.AsObject;
@@ -374,6 +377,7 @@ export namespace StartServicesResponse {
   export type AsObject = {
     successfulServiceIdsToServiceInfoMap: Array<[string, ServiceInfo.AsObject]>,
     failedServiceIdsToErrorMap: Array<[string, string]>,
+    partitionId: string,
   }
 }
 
