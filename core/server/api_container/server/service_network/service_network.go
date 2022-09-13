@@ -242,6 +242,7 @@ func(network *ServiceNetwork) StartServices(
 		failedServicesPool[serviceID] = err
 	}
 
+	// TODO remove from topology if the larger function fails
 	for serviceID, successfulService := range successfulServicesPool {
 		err = addServiceToTopology(successfulService, network, serviceID, partitionID)
 		if err != nil {
@@ -249,6 +250,16 @@ func(network *ServiceNetwork) StartServices(
 			delete(successfulServicesPool, serviceID)
 		}
 	}
+	serviceIDsForTopologyCleanup := map[service.ServiceID]bool{}
+	for serviceID := range successfulServicesPool {
+		serviceIDsForTopologyCleanup[serviceID] = true
+	}
+	defer func() {
+		for serviceID := range serviceIDsForTopologyCleanup {
+			network.topology.RemoveService(serviceID)
+			delete(network.registeredServiceInfo, serviceID)
+		}
+	}()
 
 	// TODO Fix race condition
 	// There is race condition here.
@@ -256,6 +267,7 @@ func(network *ServiceNetwork) StartServices(
 	// 2. Then we create the sidecars for the target services
 	// 3. Only then we block access between the target services & the rest of the world (both ways)
 	// Between 1 & 3 the target & others can speak to each other if they choose to (eg: run a port scan)
+	sidecarsToCleanUp := map[service.ServiceID]bool{}
 	if network.isPartitioningEnabled {
 		for serviceID, serviceInfo := range successfulServicesPool {
 			serviceRegistration := serviceInfo.GetRegistration()
@@ -278,6 +290,19 @@ func(network *ServiceNetwork) StartServices(
 				continue
 			}
 		}
+		for serviceID := range successfulServicesPool {
+			sidecarsToCleanUp[serviceID] = true
+		}
+		defer func() {
+			for serviceID := range sidecarsToCleanUp {
+				networkingSidecar, found := network.networkingSidecars[serviceID]
+				if !found {
+					logrus.Warnf("Tried cleaning up sidecar for service with ID '%v' but couldn't retrieve it from the cache.", serviceID)
+				}
+				network.networkingSidecarManager.Remove(ctx, networkingSidecar)
+				delete(network.networkingSidecars, serviceID)
+			}
+		}()
 
 		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
 		if err != nil {
@@ -307,6 +332,8 @@ func(network *ServiceNetwork) StartServices(
 
 	for serviceID := range successfulServicesPool {
 		delete(serviceIDsToRemove, serviceID)
+		delete(serviceIDsForTopologyCleanup, serviceID)
+		delete(sidecarsToCleanUp, serviceID)
 	}
 	return successfulServicesPool, failedServicesPool, nil
 }
