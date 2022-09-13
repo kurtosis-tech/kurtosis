@@ -45,9 +45,9 @@ func NewServiceConfig(
 	filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion,
 	cpuAllocationMillicpus uint64,
 	memoryAllocationMegabytes uint64,
-	privateIPAddrReplacementStr string) *ServiceConfig {
-	if privateIPAddrReplacementStr == "" {
-		privateIPAddrReplacementStr = defaultPrivateIPAddrPlaceholder
+	privateIPAddrPlaceholder string) *ServiceConfig {
+	if privateIPAddrPlaceholder == "" {
+		privateIPAddrPlaceholder = defaultPrivateIPAddrPlaceholder
 	}
 	return &ServiceConfig{
 		containerImageName:        containerImageName,
@@ -59,7 +59,7 @@ func NewServiceConfig(
 		filesArtifactExpansion:    filesArtifactExpansion,
 		cpuAllocationMillicpus:    cpuAllocationMillicpus,
 		memoryAllocationMegabytes: memoryAllocationMegabytes,
-		privateIPAddrPlaceholder:  privateIPAddrReplacementStr,
+		privateIPAddrPlaceholder:  privateIPAddrPlaceholder,
 	}
 }
 
