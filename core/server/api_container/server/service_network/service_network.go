@@ -268,6 +268,7 @@ func(network *ServiceNetwork) StartServices(
 	// 3. Only then we block access between the target services & the rest of the world (both ways)
 	// Between 1 & 3 the target & others can speak to each other if they choose to (eg: run a port scan)
 	sidecarsToCleanUp := map[service.ServiceID]bool{}
+	servicesToRemoveFromTrafficControl := map[service.ServiceID]bool{}
 	if network.isPartitioningEnabled {
 		for serviceID, serviceInfo := range successfulServicesPool {
 			serviceRegistration := serviceInfo.GetRegistration()
@@ -297,9 +298,12 @@ func(network *ServiceNetwork) StartServices(
 			for serviceID := range sidecarsToCleanUp {
 				networkingSidecar, found := network.networkingSidecars[serviceID]
 				if !found {
-					logrus.Warnf("Tried cleaning up sidecar for service with ID '%v' but couldn't retrieve it from the cache.", serviceID)
+					failedServicesPool[serviceID] = stacktrace.NewError("Tried cleaning up sidecar for service with ID '%v' but couldn't retrieve it from the cache.")
 				}
-				network.networkingSidecarManager.Remove(ctx, networkingSidecar)
+				err = network.networkingSidecarManager.Remove(ctx, networkingSidecar)
+				if err != nil {
+					failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while cleaning up the side car for service ID '%v'.", serviceID)
+				}
 				delete(network.networkingSidecars, serviceID)
 			}
 		}()
@@ -325,15 +329,37 @@ func(network *ServiceNetwork) StartServices(
 		}
 
 		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.registeredServiceInfo, network.networkingSidecars); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration on the new nodes to partition them "+
-				"off from other nodes")
+			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration to partition off new nodes.")
 		}
+		for serviceID := range successfulServicesPool {
+			servicesToRemoveFromTrafficControl[serviceID] = true
+		}
+		defer func() {
+			for serviceID, targetServicePacketLossConfiguration := range updatesToApply {
+				if _, found := servicesToRemoveFromTrafficControl[serviceID]; found {
+					delete(updatesToApply, serviceID)
+					continue
+				}
+				for targetServiceID  := range targetServicePacketLossConfiguration {
+					if _, found := successfulServicesPool[targetServiceID]; found {
+						delete(targetServicePacketLossConfiguration, serviceID)
+						continue
+					}
+				}
+			}
+			if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.registeredServiceInfo, network.networkingSidecars); err != nil {
+				for serviceID := range servicesToRemoveFromTrafficControl {
+					failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while removing the service '%v' from the tc configuration of other services.", serviceID)
+				}
+			}
+		}()
 	}
 
 	for serviceID := range successfulServicesPool {
 		delete(serviceIDsToRemove, serviceID)
 		delete(serviceIDsForTopologyCleanup, serviceID)
 		delete(sidecarsToCleanUp, serviceID)
+		delete(servicesToRemoveFromTrafficControl, serviceID)
 	}
 	return successfulServicesPool, failedServicesPool, nil
 }
