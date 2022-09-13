@@ -102,9 +102,11 @@ func StartUserServices(
 			return
 		}
 		for serviceID, registration := range successfulRegistrations {
-			if err, found := failedToDestroyGUIDs[registration.GetGUID()]; found {
-				failedServicesPool[serviceID] = stacktrace.Propagate(err, "Failed to destroy the service '%v' after it failed to start. You must manually destroy the service!", serviceID)
+			destroyErr, found := failedToDestroyGUIDs[registration.GetGUID()]
+			if !found {
+				continue
 			}
+			failedServicesPool[serviceID] = stacktrace.Propagate(destroyErr, "Failed to destroy the service '%v' after it failed to start. You must manually destroy the service!", serviceID)
 		}
 	}()
 	for serviceID, registrationError := range failedRegistrations {
