@@ -2,14 +2,9 @@
 
 
 ### Breaking Changes
-* Removed the `KurtosisBackend.RegisterUserServices` API call.
-* Changed the function signature of the `KurtosisBackend.StartUserServices` method to accept `map[service.ServiceID]*ServiceConfigs` as the third argument. 
-* Changed the return type of the `Kurtosisbackend.StartUserServices` method to return success & failure mapped by `ServiceID` over the previous implementation that mapped it by `ServiceGUID`
-
-### Changes
 * Removed `RegisterUserServices` from the `KurtosisBackend` and made it private to the `StartUserServices` implementations in `Docker` and `Kubernetes`
   * Users can now call `KurtosisBackend.StartUserServices` which will handle registration & starting of services for the user.
-* Changed the function signature of `KurtosisBackend.StartUserServices` to accept `*ServiceConfigs` mapped by `ServicdID` instead of `ServiceGUID`
+* Changed the function signature of `KurtosisBackend.StartUserServices` to accept `*ServiceConfigs` mapped by `ServiceID` instead of `ServiceGUID`
   * Users will now pass
     * `ctx context.Context`
     * `enclaveID encalve.enclaveID`
@@ -19,6 +14,12 @@
     * `successfulServices map[service.ServiceID]*service.Service`
     * `unsuccessfulServices map[service.ServiceID]error`
     * `resultErr error`
+
+### Changes
+* Removed the `KurtosisBackend.RegisterUserServices` API call.
+* Changed the function signature of the `KurtosisBackend.StartUserServices` method to accept `map[service.ServiceID]*ServiceConfigs` as the third argument. 
+* Changed the return type of the `Kurtosisbackend.StartUserServices` method to return success & failure mapped by `ServiceID` over the previous implementation that mapped it by `ServiceGUID`
+
 
 
 # 0.36.1
