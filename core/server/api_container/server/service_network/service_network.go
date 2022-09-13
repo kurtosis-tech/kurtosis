@@ -175,7 +175,7 @@ func(network *ServiceNetwork) StartServices(
 	defer network.mutex.Unlock()
 	failedServicesPool := map[service.ServiceID]error{}
 
-	for serviceID, _ := range apiServiceConfigs {
+	for serviceID := range apiServiceConfigs {
 		if _, found := network.registeredServiceInfo[serviceID]; found {
 			failedServicesPool[serviceID] = stacktrace.NewError(
 				"Cannot register service '%v' because it already exists in the network",
@@ -205,8 +205,8 @@ func(network *ServiceNetwork) StartServices(
 	//which would mean deleting a resource we don't own here)
 
 	successfulServiceIPs := map[service.ServiceID]net.IP{}
-	for serviceID, service := range successfulServices {
-		serviceRegistration := service.GetRegistration()
+	for serviceID, successfulService := range successfulServices {
+		serviceRegistration := successfulService.GetRegistration()
 		network.registeredServiceInfo[serviceID] = serviceRegistration
 		shouldRemoveFromServicesMap := true
 		defer func() {
@@ -242,17 +242,12 @@ func(network *ServiceNetwork) StartServices(
 	}
 
 	// TODO Fix race condition
-	// 1. There is race condition here. We first start the target services
+	// There is race condition here.
+	// 1. We first start the target services
 	// 2. Then we create the sidecars for the target services
 	// 3. Only then we block access between the target services & the rest of the world (both ways)
 	// Between 1 & 3 the target & others can speak to each other if they choose to (eg: run a port scan)
 	if network.isPartitioningEnabled {
-		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
-				" to know what packet loss updates to apply")
-		}
-
 		for serviceID, serviceInfo := range successfulServices {
 			serviceRegistration := serviceInfo.GetRegistration()
 			serviceGUID := serviceRegistration.GetGUID()
@@ -275,7 +270,27 @@ func(network *ServiceNetwork) StartServices(
 			}
 		}
 
-		if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, network.registeredServiceInfo, network.networkingSidecars); err != nil {
+		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
+				" to know what packet loss updates to apply")
+		}
+
+		// We filter down all the packet loss configurations to configurations where the
+		// successful services are either a source or a target
+		updatesToApply := map[service.ServiceID]map[service.ServiceID]float32{}
+		for serviceID, targetServicePacketLossConfiguration := range servicePacketLossConfigurationsByServiceID {
+			for targetServiceID  := range targetServicePacketLossConfiguration {
+				if _, found := successfulServices[serviceID]; found {
+					updatesToApply[serviceID] = targetServicePacketLossConfiguration
+				}
+				if _, found := successfulServices[targetServiceID]; found {
+					updatesToApply[serviceID] = targetServicePacketLossConfiguration
+				}
+			}
+		}
+
+		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.registeredServiceInfo, network.networkingSidecars); err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration on the new nodes to partition them "+
 				"off from other nodes")
 		}
