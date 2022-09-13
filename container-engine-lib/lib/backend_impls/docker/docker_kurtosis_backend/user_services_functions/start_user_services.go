@@ -62,17 +62,27 @@ func StartUserServices(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", serviceIDs)
 	}
 	// Defer an undo to all the successful registrations in case an error occurs in future phases
-	shouldRemoveServices := map[service.ServiceID]bool{}
+	serviceIDsToRemove := map[service.ServiceID]bool{}
+	for serviceID, _ := range successfulRegistrations {
+		serviceIDsToRemove[serviceID] = true
+	}
 	defer func() {
-		for serviceID, serviceRegistration := range successfulRegistrations {
-			shouldRemoveServices[serviceID] = true
-			if shouldRemoveServices[serviceID] {
-				err = destroyServiceAfterFailure(ctx, enclaveID, serviceRegistration.GetGUID(), serviceRegistrations, enclaveFreeIpProviders, dockerManager)
-				if err != nil {
-					failedServicesPool[serviceID] = stacktrace.Propagate(err,
-						"WARNING: Attempted to remove service '%v' after it failed to start but an error occurred while doing so. "+
-							"You must destroy service manually!", serviceID)
-				}
+		userServiceFilters := &service.ServiceFilters{
+			IDs: serviceIDsToRemove,
+		}
+		_, failedToDestroyGUIDs, err := destroyUserServicesUnlocked(ctx, enclaveID, userServiceFilters, serviceRegistrations, enclaveFreeIpProviders, dockerManager)
+		if err != nil {
+			for serviceID, _ := range serviceIDsToRemove {
+				failedServicesPool[serviceID] = stacktrace.Propagate(err, "Attempted to destroy all services with serviceIDs '%v' together but had no success. You must manually destroy the service '%v'.", serviceIDsToRemove, serviceID)
+			}
+			return
+		}
+		if len(failedToDestroyGUIDs) == 0 {
+			return
+		}
+		for serviceID, registration := range successfulRegistrations {
+			if err, found := failedToDestroyGUIDs[registration.GetGUID()]; found {
+				failedServicesPool[serviceID] = stacktrace.Propagate(err, "Failed to destroy the service '%v' after it failed to start. You must manually destroy the service!", serviceID)
 			}
 		}
 	}()
@@ -151,7 +161,7 @@ func StartUserServices(
 
 	// Do not remove services that were started successfully
 	for serviceID, _ := range successfulServicesPool {
-		shouldRemoveServices[serviceID] = false
+		delete(serviceIDsToRemove, serviceID)
 	}
 	return successfulServicesPool, failedServicesPool, nil
 }
