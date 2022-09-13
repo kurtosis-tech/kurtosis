@@ -594,33 +594,6 @@ func convertMegabytesToBytes(value uint64) uint64 {
 	return value * megabytesToBytesFactor
 }
 
-func destroyServiceAfterFailure(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceGUID service.ServiceGUID,
-	cliModeArgs *shared_helpers.CliModeArgs,
-	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
-	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
-	kubernetesManager *kubernetes_manager.KubernetesManager) error {
-	destroyServiceFilters := &service.ServiceFilters{
-		GUIDs: map[service.ServiceGUID]bool{
-			serviceGUID: true,
-		},
-	}
-	// Use background context in case the input one is cancelled
-	_, erroredRegistrations, err := DestroyUserServices(ctx, enclaveId, destroyServiceFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
-	var errToReturn error
-	if err != nil {
-		errToReturn = err
-	} else if destroyErr, found := erroredRegistrations[serviceGUID]; found {
-		errToReturn = destroyErr
-	}
-	if errToReturn != nil {
-		return stacktrace.NewError("Attempted to destroy the service with GUID'%v', but doing so threw an error:\n%v", serviceGUID, errToReturn)
-	}
-	return nil
-}
-
 func registerUserServices(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
