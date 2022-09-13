@@ -171,53 +171,6 @@ func (apicService ApiContainerService) ExecuteModule(ctx context.Context, args *
 	return resp, nil
 }
 
-func (apicService ApiContainerService) RegisterServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServicesArgs) (*kurtosis_core_rpc_api_bindings.RegisterServicesResponse, error) {
-	failedServicesPool := map[kurtosis_backend_service.ServiceID]error{}
-	serviceIDs := map[kurtosis_backend_service.ServiceID]bool{}
-
-	for id := range args.ServiceIdSet {
-		serviceIDs[kurtosis_backend_service.ServiceID(id)] = true
-	}
-	partitionId := service_network_types.PartitionID(args.PartitionId)
-	serviceIDsToIPs, failedServiceErrors, err := apicService.serviceNetwork.RegisterServices(ctx, serviceIDs, partitionId)
-	if err != nil {
-		// TODO IP: Leaks internal information about API container
-		return nil, stacktrace.Propagate(err, "An error occurred registering services '%v' in the service network", serviceIDs)
-	}
-	// Defer an undo of successfully created resource in case anything goes wrong in remainder of function
-	shouldRemoveRegistrations := map[kurtosis_backend_service.ServiceID]bool{}
-	for serviceID, _ := range serviceIDsToIPs {
-		shouldRemoveRegistrations[serviceID] = true
-	}
-	defer func() {
-		for serviceID, _ := range shouldRemoveRegistrations {
-			_, err := apicService.serviceNetwork.RemoveService(context.Background(), serviceID)
-			failedServicesPool[serviceID] = stacktrace.Propagate(err,
-				"Attempted to remove service '%v' to delete its resources after it failed, but an error occurred"+
-					"while attempting to remove the service.", serviceID)
-		}
-	}()
-	// Add failed services to failed services pool
-	for serviceID, registrationError := range failedServiceErrors {
-		failedServicesPool[serviceID] = registrationError
-	}
-
-	serviceIDsToIPsStrs := map[string]string{}
-	for id, ip := range serviceIDsToIPs {
-		serviceIDsToIPsStrs[string(id)] = ip.String()
-	}
-	failedServiceIDsToErrStrs := map[string]string{}
-	for id, serviceErr := range failedServicesPool {
-		failedServiceIDsToErrStrs[string(id)] = serviceErr.Error()
-	}
-
-	// Do not remove services that were successful
-	for serviceIDStr, _ := range serviceIDsToIPsStrs {
-		delete(shouldRemoveRegistrations, kurtosis_backend_service.ServiceID(serviceIDStr))
-	}
-	return binding_constructors.NewRegisterServicesResponse(serviceIDsToIPsStrs, failedServiceIDsToErrStrs), nil
-}
-
 func (apicService ApiContainerService) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {
 	failedServicesPool := map[kurtosis_backend_service.ServiceID]error{}
 	serviceIDsToAPIConfigs := map[kurtosis_backend_service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
@@ -227,7 +180,9 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 		serviceIDsToAPIConfigs[kurtosis_backend_service.ServiceID(serviceIDStr)] = apiServiceConfig
 	}
 
-	successfulServices, failedServices, err := apicService.serviceNetwork.StartServices(ctx, serviceIDsToAPIConfigs)
+	partition := service_network_types.PartitionID(args.PartitionId)
+
+	successfulServices, failedServices, err := apicService.serviceNetwork.StartServices(ctx, serviceIDsToAPIConfigs, partition)
 	if err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "An error occurred starting services in the service network")
