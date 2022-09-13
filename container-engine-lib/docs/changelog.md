@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+* Fixed a bug where `KurtosisBackend.StartUserServices` would destroy all services regardless of success or failure.
+
 # 0.37.0
 
 

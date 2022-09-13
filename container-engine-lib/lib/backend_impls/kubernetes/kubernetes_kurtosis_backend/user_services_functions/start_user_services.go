@@ -91,6 +91,9 @@ func StartUserServices(
 		serviceIDsToRemove[serviceID] = true
 	}
 	defer func() {
+		if len(serviceIDsToRemove) == 0 {
+			return
+		}
 		userServiceFilters := &service.ServiceFilters{
 			IDs: serviceIDsToRemove,
 		}
@@ -196,6 +199,7 @@ func StartUserServices(
 	for serviceID, _ := range successfulServicesPool {
 		delete(serviceIDsToRemove, serviceID)
 	}
+	logrus.Debugf("Started services '%v' succesfully while '%v' failed", successfulServicesPool, failedServicesPool)
 	return successfulServicesPool, failedServicesPool, nil
 }
 
