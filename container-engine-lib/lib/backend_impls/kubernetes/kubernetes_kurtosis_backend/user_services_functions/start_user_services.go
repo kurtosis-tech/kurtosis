@@ -150,7 +150,7 @@ func StartUserServices(
 	existingObjectsAndResourcesFilters := &service.ServiceFilters{
 		IDs: serviceIDsToFilter,
 	}
-	existingObjectsAndResources, err := shared_helpers.GetMatchingUserServiceObjectsAndKubernetesResources(
+	existingObjectsAndResources, err := shared_helpers.GetMatchingUserServiceObjectsAndKubernetesResourcesByServiceID(
 		ctx,
 		enclaveID,
 		existingObjectsAndResourcesFilters,
@@ -163,14 +163,8 @@ func StartUserServices(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user service objects and Kubernetes resources matching service IDs '%v'", serviceIDsToFilter)
 	}
 	for serviceID, _ := range serviceIDsToFilter {
-		registration, found := successfulRegistrations[serviceID]
-		if !found {
-			failedServicesPool[serviceID] = stacktrace.NewError("Couldn't find a service registration for service ID '%v'. This is a bug in Kurtosis.", serviceID)
-			delete(serviceConfigsToStart, serviceID)
-		}
-		guid := registration.GetGUID()
-		if _, found = existingObjectsAndResources[guid]; !found {
-			failedServicesPool[serviceID] = stacktrace.NewError("Couldn't find any service registrations for service GUID '%v' for service ID '%v'. This is a bug in Kurtosis.", guid, serviceID)
+		if _, found := existingObjectsAndResources[serviceID]; !found {
+			failedServicesPool[serviceID] = stacktrace.NewError("Couldn't find any service registrations for service ID '%v'. This is a bug in Kurtosis.", serviceID)
 			delete(serviceConfigsToStart, serviceID)
 		}
 	}
@@ -212,7 +206,7 @@ func runStartServiceOperationsInParallel(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
 	services map[service.ServiceID]*service.ServiceConfig,
-	servicesObjectsAndResources map[service.ServiceGUID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
+	servicesObjectsAndResources map[service.ServiceID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (
 	map[service.ServiceID]*service.Service,
@@ -220,17 +214,12 @@ func runStartServiceOperationsInParallel(
 	error,
 ) {
 	startServiceOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
-	servicesObjectsAndResourcesByServiceID := map[service.ServiceID]*shared_helpers.UserServiceObjectsAndKubernetesResources{}
-	for _, servicesObjectsAndResource := range servicesObjectsAndResources {
-		serviceID := servicesObjectsAndResource.ServiceRegistration.GetID()
-		servicesObjectsAndResourcesByServiceID[serviceID] = servicesObjectsAndResource
-	}
 	for serviceID, config := range services {
 		startServiceOperations[operation_parallelizer.OperationID(serviceID)] = createStartServiceOperation(
 			ctx,
 			serviceID,
 			config,
-			servicesObjectsAndResourcesByServiceID,
+			servicesObjectsAndResources,
 			enclaveID,
 			kubernetesManager)
 	}

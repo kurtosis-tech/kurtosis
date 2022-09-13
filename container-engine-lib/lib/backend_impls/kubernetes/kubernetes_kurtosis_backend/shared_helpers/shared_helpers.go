@@ -623,6 +623,30 @@ func WaitForPortAvailabilityUsingNetstat(
 	)
 }
 
+func GetMatchingUserServiceObjectsAndKubernetesResourcesByServiceID(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	filters *service.ServiceFilters,
+	cliModeArgs *CliModeArgs,
+	apiContainerModeArgs *ApiContainerModeArgs,
+	engineServerModeArgs *EngineServerModeArgs,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) (
+	map[service.ServiceID]*UserServiceObjectsAndKubernetesResources,
+	error,
+) {
+	matchesByGUID, err := GetMatchingUserServiceObjectsAndKubernetesResources(ctx, enclaveId, filters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting matching user service objects and Kubernetes resources by service ID")
+	}
+	matchesByServiceID := map[service.ServiceID]*UserServiceObjectsAndKubernetesResources{}
+	for _, userServiceObjectsAndKubernetesResource := range matchesByGUID {
+		serviceID := userServiceObjectsAndKubernetesResource.ServiceRegistration.GetID()
+		matchesByServiceID[serviceID] = userServiceObjectsAndKubernetesResource
+	}
+	return matchesByServiceID, nil
+}
+
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
