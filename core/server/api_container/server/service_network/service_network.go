@@ -210,6 +210,9 @@ func(network *ServiceNetwork) StartServices(
 		userServiceFilters := &service.ServiceFilters{
 			IDs: serviceIDsToRemove,
 		}
+		if len(serviceIDsToRemove) == 0 {
+			return
+		}
 		_, failedToDestroyGUIDs, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveId, userServiceFilters)
 		if err != nil {
 			for serviceID := range serviceIDsToRemove {
@@ -255,6 +258,9 @@ func(network *ServiceNetwork) StartServices(
 		serviceIDsForTopologyCleanup[serviceID] = true
 	}
 	defer func() {
+		if len(serviceIDsForTopologyCleanup) == 0 {
+			return
+		}
 		for serviceID := range serviceIDsForTopologyCleanup {
 			network.topology.RemoveService(serviceID)
 			delete(network.registeredServiceInfo, serviceID)
@@ -295,6 +301,9 @@ func(network *ServiceNetwork) StartServices(
 			sidecarsToCleanUp[serviceID] = true
 		}
 		defer func() {
+			if len(sidecarsToCleanUp) == 0 {
+				return
+			}
 			for serviceID := range sidecarsToCleanUp {
 				networkingSidecar, found := network.networkingSidecars[serviceID]
 				if !found {
@@ -335,6 +344,9 @@ func(network *ServiceNetwork) StartServices(
 			servicesToRemoveFromTrafficControl[serviceID] = true
 		}
 		defer func() {
+			if len(servicesToRemoveFromTrafficControl) == 0 {
+				return
+			}
 			for serviceID, targetServicePacketLossConfiguration := range updatesToApply {
 				if _, found := servicesToRemoveFromTrafficControl[serviceID]; found {
 					delete(updatesToApply, serviceID)
