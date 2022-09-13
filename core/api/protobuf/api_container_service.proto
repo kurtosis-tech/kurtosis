@@ -229,6 +229,9 @@ message ExecuteModuleResponse {
 // ==============================================================================================
 message StartServicesArgs {
   map<string, ServiceConfig> service_ids_to_configs = 1;
+
+  // The partition to start the service in
+  string partition_id = 2;
 }
 
 message StartServicesResponse {
@@ -237,9 +240,6 @@ message StartServicesResponse {
 
   // A map of Service IDs that failed to start with the error causing the failure
   map<string, string> failed_service_ids_to_error = 2;
-
-  // The partition to start the service in
-  string partition_id = 3;
 }
 
 // ==============================================================================================
