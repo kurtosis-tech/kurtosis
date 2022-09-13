@@ -1,5 +1,29 @@
 # TBD
 
+
+### Breaking Changes
+* Removed `RegisterUserServices` from the `KurtosisBackend` and made it private to the `StartUserServices` implementations in `Docker` and `Kubernetes`
+  * Users can now call `KurtosisBackend.StartUserServices` which will handle registration & starting of services for the user.
+* Changed the function signature of `KurtosisBackend.StartUserServices` to accept `*ServiceConfigs` mapped by `ServiceID` instead of `ServiceGUID`
+  * Users will now pass
+    * `ctx context.Context`
+    * `enclaveID encalve.enclaveID`
+    * `services map[service.ServiceID]*service.ServiceConfig`
+* Changed the return type of the `Kurtosisbackend.StartUserServices` method to return success & failure mapped by `ServiceID` over the previous implementation that mapped it by `ServiceGUID`
+  * Users will now get
+    * `successfulServices map[service.ServiceID]*service.Service`
+    * `unsuccessfulServices map[service.ServiceID]error`
+    * `resultErr error`
+
+### Changes
+* Removed the `KurtosisBackend.RegisterUserServices` API call.
+* Changed the function signature of the `KurtosisBackend.StartUserServices` method to accept `map[service.ServiceID]*ServiceConfigs` as the third argument. 
+* Changed the return type of the `Kurtosisbackend.StartUserServices` method to return success & failure mapped by `ServiceID` over the previous implementation that mapped it by `ServiceGUID`
+
+### Fixes
+* Fixed a bug because of which `DockerKurotisBackend.DestoryUserServices` would always return an empty list for `resultSuccessfulGuids` due to missing assignments.
+
+
 # 0.36.1
 
 ### Changes

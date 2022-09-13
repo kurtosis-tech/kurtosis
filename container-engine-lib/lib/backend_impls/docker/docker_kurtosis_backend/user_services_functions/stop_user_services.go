@@ -74,11 +74,3 @@ func StopUserServices(
 
 	return successfulGuids, erroredGuids, nil
 }
-
-func extractServiceGUIDFromServiceObj(uncastedObj interface{}) (string, error) {
-	castedObj, ok := uncastedObj.(*service.Service)
-	if !ok {
-		return "", stacktrace.NewError("An error occurred downcasting the user service object")
-	}
-	return string(castedObj.GetRegistration().GetGUID()), nil
-}

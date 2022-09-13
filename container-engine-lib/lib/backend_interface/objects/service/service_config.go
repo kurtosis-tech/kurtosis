@@ -25,6 +25,8 @@ type ServiceConfig struct {
 	cpuAllocationMillicpus uint64
 
 	memoryAllocationMegabytes uint64
+
+	privateIPAddrPlaceholder string
 }
 
 func NewServiceConfig(
@@ -36,17 +38,20 @@ func NewServiceConfig(
 	envVars map[string]string,
 	filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion,
 	cpuAllocationMillicpus uint64,
-	memoryAllocationMegabytes uint64) *ServiceConfig {
+	memoryAllocationMegabytes uint64,
+	privateIPAddrPlaceholder string) *ServiceConfig {
 	return &ServiceConfig{
-		containerImageName: containerImageName,
-		privatePorts: privatePorts,
-		publicPorts: publicPorts,
-		entrypointArgs: entrypointArgs,
-		cmdArgs: cmdArgs,
-		envVars: envVars,
-		filesArtifactExpansion: filesArtifactExpansion,
-		cpuAllocationMillicpus: cpuAllocationMillicpus,
-		memoryAllocationMegabytes: memoryAllocationMegabytes}
+		containerImageName:        containerImageName,
+		privatePorts:              privatePorts,
+		publicPorts:               publicPorts,
+		entrypointArgs:            entrypointArgs,
+		cmdArgs:                   cmdArgs,
+		envVars:                   envVars,
+		filesArtifactExpansion:    filesArtifactExpansion,
+		cpuAllocationMillicpus:    cpuAllocationMillicpus,
+		memoryAllocationMegabytes: memoryAllocationMegabytes,
+		privateIPAddrPlaceholder:  privateIPAddrPlaceholder,
+	}
 }
 
 func (serviceConfig *ServiceConfig) GetContainerImageName() string {
@@ -83,4 +88,8 @@ func (serviceConfig *ServiceConfig) GetCPUAllocationMillicpus() uint64 {
 
 func (serviceConfig *ServiceConfig) GetMemoryAllocationMegabytes() uint64 {
 	return serviceConfig.memoryAllocationMegabytes
+}
+
+func (serviceConfig *ServiceConfig) GetPrivateIPAddrPlaceholder() string {
+	return serviceConfig.privateIPAddrPlaceholder
 }

@@ -218,37 +218,21 @@ type KurtosisBackend interface {
 		                           KURTOSIS SERVICE STATE DIAGRAM
 	                                .-----------------DestroyServices--------------------.
 	                               /                                                      \
-		  RegisterService--> REGISTERED ---StopServices---> STOPPED ---DestroyServices---> DESTROYED
-		                           \                          /                           /
-		                      StartService              StopServices                     /
-		                             \                      /                           /
-		                              '---------------> RUNNING ---DestroyServices-----'
-		Considerations:
-		- We have REGISTERED as a state separate from RUNNING because some user containers need to know their own
-			IP address when they start, which means we need to know the IP address of the container BEFORE it starts.
+		  StartServices--> RUNNING ---StopServices---> STOPPED ---DestroyServices---> DESTROYED
+
+		- Note the above state diagram doesn't account for PauseService or UnpauseService
 		- As of 2022-05-15, Kurtosis services can never be restarted once stopped.
 	*/
-
-	// Registers a user service for each given serviceId, allocating each an IP and ServiceGUID
-	RegisterUserServices(
-		ctx context.Context,
-		enclaveId enclave.EnclaveID,
-		serviceIds map[service.ServiceID]bool,
-	) (
-		successfulUserServiceRegistrations map[service.ServiceID]*service.ServiceRegistration, // "set" of user service IDs that were successfully registered
-		erroredUserServiceIds map[service.ServiceID]error, // "set" of user service IDs that errored when attempting to register, with the error
-		resultErr error, // represents an error with the function itself, rather than the user services
-	)
 
 	// StartUserService consumes service registrations to create auser container for each registration, given each service config
 	StartUserServices(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		services map[service.ServiceGUID]*service.ServiceConfig,
+		services map[service.ServiceID]*service.ServiceConfig,
 	) (
-		successfulServices map[service.ServiceGUID]*service.Service, // "set" of user service GUIDs that were successfully started
-		unsuccessfulServices map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when attempting to start, with the error
-		resultErr error, // represents an error with the function itself, rather than the user services
+		successfulServices map[service.ServiceID]*service.Service, // "set" of user service IDs that were successfully started
+		unsuccessfulServices map[service.ServiceID]error,          // "set" of user service IDs that errored when attempting to start, with the error
+		resultErr error,                                           // represents an error with the function itself, rather than the user services
 	)
 
 	// Gets user services using the given filters, returning a map of matched user services identified by their GUID
