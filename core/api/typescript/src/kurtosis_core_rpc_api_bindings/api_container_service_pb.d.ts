@@ -337,50 +337,6 @@ export namespace ExecuteModuleResponse {
   }
 }
 
-export class RegisterServicesArgs extends jspb.Message {
-  getServiceIdSetMap(): jspb.Map<string, boolean>;
-  clearServiceIdSetMap(): RegisterServicesArgs;
-
-  getPartitionId(): string;
-  setPartitionId(value: string): RegisterServicesArgs;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): RegisterServicesArgs.AsObject;
-  static toObject(includeInstance: boolean, msg: RegisterServicesArgs): RegisterServicesArgs.AsObject;
-  static serializeBinaryToWriter(message: RegisterServicesArgs, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): RegisterServicesArgs;
-  static deserializeBinaryFromReader(message: RegisterServicesArgs, reader: jspb.BinaryReader): RegisterServicesArgs;
-}
-
-export namespace RegisterServicesArgs {
-  export type AsObject = {
-    serviceIdSetMap: Array<[string, boolean]>,
-    partitionId: string,
-  }
-}
-
-export class RegisterServicesResponse extends jspb.Message {
-  getServiceIdsToPrivateIpAddressesMap(): jspb.Map<string, string>;
-  clearServiceIdsToPrivateIpAddressesMap(): RegisterServicesResponse;
-
-  getFailedServiceIdsToErrorMap(): jspb.Map<string, string>;
-  clearFailedServiceIdsToErrorMap(): RegisterServicesResponse;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): RegisterServicesResponse.AsObject;
-  static toObject(includeInstance: boolean, msg: RegisterServicesResponse): RegisterServicesResponse.AsObject;
-  static serializeBinaryToWriter(message: RegisterServicesResponse, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): RegisterServicesResponse;
-  static deserializeBinaryFromReader(message: RegisterServicesResponse, reader: jspb.BinaryReader): RegisterServicesResponse;
-}
-
-export namespace RegisterServicesResponse {
-  export type AsObject = {
-    serviceIdsToPrivateIpAddressesMap: Array<[string, string]>,
-    failedServiceIdsToErrorMap: Array<[string, string]>,
-  }
-}
-
 export class StartServicesArgs extends jspb.Message {
   getServiceIdsToConfigsMap(): jspb.Map<string, ServiceConfig>;
   clearServiceIdsToConfigsMap(): StartServicesArgs;
