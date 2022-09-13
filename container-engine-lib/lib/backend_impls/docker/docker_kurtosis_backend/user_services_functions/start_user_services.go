@@ -63,19 +63,19 @@ func StartUserServices(
 	}
 	// Defer an undo to all the successful registrations in case an error occurs in future phases
 	shouldRemoveServices := map[service.ServiceID]bool{}
-	for serviceID, serviceRegistration := range successfulRegistrations {
-		shouldRemoveServices[serviceID] = true
-		defer func() {
+	defer func() {
+		for serviceID, serviceRegistration := range successfulRegistrations {
+			shouldRemoveServices[serviceID] = true
 			if shouldRemoveServices[serviceID] {
 				err = destroyServiceAfterFailure(ctx, enclaveID, serviceRegistration.GetGUID(), serviceRegistrations, enclaveFreeIpProviders, dockerManager)
 				if err != nil {
 					failedServicesPool[serviceID] = stacktrace.Propagate(err,
-						"WARNING: Attempted to remove service '%v' after it failed to start but an error occurred while doing so."+
-							"Must destroy service manually!", serviceID)
+						"WARNING: Attempted to remove service '%v' after it failed to start but an error occurred while doing so. "+
+							"You must destroy service manually!", serviceID)
 				}
 			}
-		}()
-	}
+		}
+	}()
 	for serviceID, registrationError := range failedRegistrations {
 		failedServicesPool[serviceID] = stacktrace.Propagate(registrationError, "Failed to register service with ID '%v'", serviceID)
 	}
