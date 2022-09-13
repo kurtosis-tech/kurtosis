@@ -199,6 +199,7 @@ func StartUserServices(
 	for serviceID, _ := range successfulServicesPool {
 		delete(serviceIDsToRemove, serviceID)
 	}
+	logrus.Debugf("Started services '%v' succesfully while '%v' failed", successfulServicesPool, failedServicesPool)
 	return successfulServicesPool, failedServicesPool, nil
 }
 
