@@ -259,10 +259,10 @@ export class EnclaveContext {
             partitionId: PartitionID,
             containerConfig: ContainerConfig
         ): Promise<Result<ServiceContext, Error>> {
-        const containerConfigByServiceID : Map<ServiceID, ContainerConfig> = new Map<ServiceID, ContainerConfig>();
-        containerConfigByServiceID.set(serviceId, containerConfig)
+        const containerConfigs : Map<ServiceID, ContainerConfig> = new Map<ServiceID, ContainerConfig>();
+        containerConfigs.set(serviceId, containerConfig)
         const resultAddServiceToPartition : Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error> = await this.addServicesToPartition(
-            containerConfigByServiceID,
+            containerConfigs,
             partitionId,
         );
         if (resultAddServiceToPartition.isErr()) {
@@ -282,14 +282,14 @@ export class EnclaveContext {
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async addServicesToPartition(
-        containerConfigByServiceID: Map<ServiceID, ContainerConfig>,
+        containerConfigs: Map<ServiceID, ContainerConfig>,
         partitionID: PartitionID,
     ): Promise<Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error>> {
         const failedServicesPool: Map<ServiceID, Error> = new Map<ServiceID, Error>();
         const successfulServices: Map<ServiceID, ServiceContext> = new Map<ServiceID, ServiceContext>();
 
         const serviceConfigs = new Map<ServiceID, ServiceConfig>();
-        for (const [serviceID, containerConfig] of containerConfigByServiceID.entries()) {
+        for (const [serviceID, containerConfig] of containerConfigs.entries()) {
             const serviceIDStr: ServiceID = <string>serviceID;
             log.trace(`Creating files artifact ID str -> mount dirpaths map for service with Id '${serviceIDStr}'...`);
             const artifactIdStrToMountDirpath: Map<string, string> = new Map<string, string>();
