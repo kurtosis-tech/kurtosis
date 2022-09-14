@@ -175,5 +175,6 @@ func (builder *ContainerConfigBuilder) Build() *ContainerConfig {
 		publicPorts:      builder.publicPorts,
 		cpuAllocationMillicpus:    builder.cpuAllocationMillicpus,
 		memoryAllocationMegabytes: builder.memoryAllocationMegabytes,
+		privateIPAddrPlaceholder: builder.privateIPAddrPlaceholder,
 	}
 }
