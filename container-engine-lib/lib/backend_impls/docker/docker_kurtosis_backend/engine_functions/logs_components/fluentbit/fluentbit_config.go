@@ -142,7 +142,6 @@ func getTenantIdKeyFromKurtosisLabels() string {
 	return label_key_consts.EnclaveIDDockerLabelKey.GetString()
 }
 
-//improve this manual steps using a regex of disallowed characters and https://pkg.go.dev/regexp#Regexp.ReplaceAllString
 func newValidFormatLabelValue(stringToModify string) string {
 	stringToModifyInLowerCase := strings.ToLower(stringToModify)
 	shouldChangeNextCharToUpperCase := shouldChangeNextCharToUpperCaseInitialValue

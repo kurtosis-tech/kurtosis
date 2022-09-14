@@ -167,8 +167,6 @@ func (backend *DockerKurtosisBackend) CreateEnclave(
 
 	newEnclave := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty)
 
-	//TODO add the logic for creating the logs retention period for the enclave, taking the retention period param sent by the user
-
 	shouldDeleteNetwork = false
 	shouldDeleteVolume = false
 	return newEnclave, nil
@@ -425,10 +423,6 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	for enclaveId, networkRemovalErr := range erroredNetworkRemovalEnclaveIds {
 		erroredEnclaveIds[enclaveId] = networkRemovalErr
 	}
-
-	//TODO add the logic for removing the logs retention period configuration for the enclave
-
-	//TODO add the logic for removing the logs stored in the centralized logs database, using the Lokis´endpoint /loki/api/v1/delete (https://grafana.com/docs/loki/latest/api/#request-log-deletion)
 
 	return successfulNetworkRemovalEnclaveIds, erroredEnclaveIds, nil
 }
