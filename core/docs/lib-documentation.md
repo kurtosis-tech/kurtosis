@@ -375,9 +375,9 @@ _Found a bug? File it on [the repo][issues]!_
 
 [enclavecontext]: #enclavecontext
 [enclavecontext_registerfilesartifacts]: #registerfilesartifactsmapfilesartifactid-string-filesartifacturls
-[enclavecontext_addservice]: #addserviceserviceid-serviceid--funcstring-ipaddr---containerconfigcontainerconfig-containerconfigsupplier---servicecontextservicecontext-servicecontext
-[enclavecontext_addservicetopartition]: #addservicetopartitionserviceid-serviceid-partitionid-partitionid-funcstring-ipaddr---containerconfig-containerconfigsupplier---servicecontext-servicecontext
-[enclavecontext_addservicestopartition]: #addservicestopartitionmapserviceid-funcstring-ipaddr---containerconfig-serviceconfigsuppliers-partitionid-partitionid---mapserviceid-servicecontext-successfulservices-mapserviceid-error-failedservices
+[enclavecontext_addservice]: #addserviceserviceid-serviceid--containerconfigcontainerconfig-containerconfig---servicecontextservicecontext-servicecontext
+[enclavecontext_addservicetopartition]: #addservicetopartitionserviceid-serviceid-partitionid-partitionid-containerconfigcontainerconfig-containerconfig---servicecontextservicecontext-servicecontext
+[enclavecontext_addservicestopartition]: #addservicestopartitionmapserviceid-containerconfigcontainerconfig-containerconfigs-partitionid-partitionid---mapserviceid-servicecontextservicecontext-successfulservices-mapserviceid-error-failedservices
 [enclavecontext_unpauseservice]: #unpauseserviceserviceid-serviceid
 [enclavecontext_repartitionnetwork]: #repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnectionpartitionconnection-partitionconnections-partitionconnectionpartitionconnection-defaultconnection
 [enclavecontext_uploadfiles]: #uploadfilesstring-pathtoupload
