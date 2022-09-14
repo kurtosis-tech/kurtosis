@@ -59,7 +59,7 @@ func TestAddingDatastoreServicesInBulk(t *testing.T) {
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	datastoreServiceIDs := map[int]services.ServiceID{}
-	datastoreServiceConfigSuppliers := map[services.ServiceID]func(string) (*services.ContainerConfig, error){}
+	datastoreServiceConfigSuppliers := map[services.ServiceID]*services.ContainerConfig{}
 	for i := 0; i < numServicesToAdd; i++ {
 		serviceID := services.ServiceID(fmt.Sprintf("%v-%v", datastoreServiceId, i))
 		datastoreServiceIDs[i] = serviceID
@@ -73,7 +73,7 @@ func TestAddingDatastoreServicesInBulk(t *testing.T) {
 	require.Equal(t, numServicesToAdd, len(successfulDatastoreServiceContexts))
 	require.Equal(t, 0, len(failedDatastoreServiceErrs))
 
-	apiServiceConfigSuppliers := map[services.ServiceID]func(string) (*services.ContainerConfig, error){}
+	apiServiceConfigSuppliers := map[services.ServiceID]*services.ContainerConfig{}
 	for i := 0; i < numServicesToAdd; i++ {
 		datastoreServiceID, found := datastoreServiceIDs[i]
 		require.True(t, found)
@@ -84,7 +84,7 @@ func TestAddingDatastoreServicesInBulk(t *testing.T) {
 		datastoreConfigArtifactUUID, err := enclaveCtx.UploadFiles(configFilepath)
 		require.NoErrorf(t, err, "An error occurred uploading files to enclave for service '%v'", datastoreServiceID)
 		serviceID := fmt.Sprintf("%v-%v", apiServiceID, i)
-		apiServiceConfigSuppliers[services.ServiceID(serviceID)] = getApiServiceContainerConfigSupplier(datastoreConfigArtifactUUID)
+		apiServiceConfigSuppliers[services.ServiceID(serviceID)] = getContainerConfig(datastoreConfigArtifactUUID)
 	}
 	logrus.Infof("Adding three api services simultaneously...")
 	successfulAPIServiceCtx, failedAPIServiceErrs, err := enclaveCtx.AddServices(apiServiceConfigSuppliers)
@@ -93,20 +93,20 @@ func TestAddingDatastoreServicesInBulk(t *testing.T) {
 	require.Equal(t, 0, len(failedAPIServiceErrs))
 }
 
-func getDatastoreContainerConfigSupplier() func(ipAddr string) (*services.ContainerConfig, error) {
-	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
+func getDatastoreContainerConfigSupplier() *services.ContainerConfig {
+	containerConfigSupplier := func(ipAddr string) *services.ContainerConfig {
 		containerConfig := services.NewContainerConfigBuilder(
 			datastoreImage,
 		).WithUsedPorts(map[string]*services.PortSpec{
 			datastorePortId: datastorePortSpec,
 		}).Build()
-		return containerConfig, nil
+		return containerConfig
 	}
-	return containerConfigSupplier
+	return containerConfigSupplier("foo")
 }
 
-func getApiServiceContainerConfigSupplier(apiConfigArtifactUuid services.FilesArtifactUUID) func(ipAddr string) (*services.ContainerConfig, error) {
-	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
+func getContainerConfig(apiConfigArtifactUuid services.FilesArtifactUUID) *services.ContainerConfig {
+	containerConfig := func(ipAddr string) (*services.ContainerConfig) {
 		startCmd := []string{
 			"./example-api-server.bin",
 			"--config",
@@ -121,10 +121,10 @@ func getApiServiceContainerConfigSupplier(apiConfigArtifactUuid services.FilesAr
 			apiConfigArtifactUuid: configMountpathOnApiContainer,
 		}).WithCmdOverride(startCmd).Build()
 
-		return containerConfig, nil
+		return containerConfig
 	}
 
-	return containerConfigSupplier
+	return containerConfig("foo")
 }
 
 func createApiConfigFile(datastoreIP string) (string, error) {

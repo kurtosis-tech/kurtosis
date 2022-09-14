@@ -61,14 +61,15 @@ func TestNetworkSoftPartitions(t *testing.T) {
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	configSupplier := getExampleServiceConfigSupplier()
+	config, _ := configSupplier("hello")
 
-	exampleServiceCtx, err := enclaveCtx.AddService(exampleServiceId, configSupplier)
+	exampleServiceCtx, err := enclaveCtx.AddService(exampleServiceId, config)
 	require.NoError(t, err, "An error occurred adding the datastore service")
 	logrus.Debugf("Example service IP: %v", exampleServiceCtx.GetPrivateIPAddress())
 
-	containerConfigSupplier := getTestServiceContainerConfigSupplier()
+	config, _ = getTestServiceContainerConfigSupplier()("hello")
 
-	testServiceCtx, err := enclaveCtx.AddService(testService, containerConfigSupplier)
+	testServiceCtx, err := enclaveCtx.AddService(testService, config)
 	require.NoError(t, err, "An error occurred adding the file server service")
 	logrus.Debugf("Test service IP: %v", testServiceCtx.GetPrivateIPAddress())
 

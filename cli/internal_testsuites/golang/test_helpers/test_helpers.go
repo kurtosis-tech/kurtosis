@@ -85,7 +85,7 @@ func AddDatastoreService(
 	resultClientCloseFunc func(),
 	resultErr error,
 ) {
-	containerConfigSupplier := getDatastoreContainerConfigSupplier()
+	containerConfigSupplier, _ := getDatastoreContainerConfigSupplier()("foo")
 
 	serviceCtx, err := enclaveCtx.AddService(serviceId, containerConfigSupplier)
 	if err != nil {
@@ -150,7 +150,8 @@ func AddAPIServiceToPartition(ctx context.Context, serviceId services.ServiceID,
 
 	containerConfigSupplier := getApiServiceContainerConfigSupplier(datastoreConfigArtifactUuid)
 
-	serviceCtx, err := enclaveCtx.AddServiceToPartition(serviceId, partitionId, containerConfigSupplier)
+	config, err := containerConfigSupplier("")
+	serviceCtx, err := enclaveCtx.AddServiceToPartition(serviceId, partitionId, config)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred adding the API service")
 	}
@@ -209,7 +210,8 @@ func StartFileServer(fileServerServiceId services.ServiceID, filesArtifactUUID s
 		filesArtifactUUID: userServiceMountPointForTestFilesArtifact,
 	}
 	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactMountPoints)
-	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
+	fsConfig, _ := fileServerContainerConfigSupplier("")
+	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, fsConfig)
 	if err != nil {
 		return "", 0, stacktrace.Propagate(err, "An error occurred adding the file server service")
 	}

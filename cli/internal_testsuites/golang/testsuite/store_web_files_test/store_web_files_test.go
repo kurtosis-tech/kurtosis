@@ -59,7 +59,8 @@ func TestStoreWebFiles(t *testing.T) {
 	}
 	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactMountpoints)
 
-	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
+	config, _ := fileServerContainerConfigSupplier("hello")
+	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, config)
 	require.NoError(t, err, "An error occurred adding the file server service")
 	publicPort, found := serviceCtx.GetPublicPorts()[fileServerPortId]
 	require.True(t, found, "Expected to find public port for ID '%v', but none was found", fileServerPortId)

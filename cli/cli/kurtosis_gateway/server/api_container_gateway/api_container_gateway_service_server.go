@@ -84,14 +84,6 @@ func (service *ApiContainerGatewayServiceServer) ExecuteModule(ctx context.Conte
 	return remoteApiContainerResponse, nil
 }
 
-func (service *ApiContainerGatewayServiceServer) RegisterServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServicesArgs) (*kurtosis_core_rpc_api_bindings.RegisterServicesResponse, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.RegisterServices(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
-	}
-	return remoteApiContainerResponse, nil
-}
-
 func (service *ApiContainerGatewayServiceServer) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {
 	service.mutex.Lock()
 	defer service.mutex.Unlock()

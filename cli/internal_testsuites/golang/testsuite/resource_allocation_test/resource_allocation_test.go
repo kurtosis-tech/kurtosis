@@ -29,8 +29,9 @@ func TestSettingResourceAllocationFieldsAddsServiceWithNoError(t *testing.T) {
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	containerConfigSupplier := getContainerConfigSupplierWithCPUAndMemory()
+	config, err := containerConfigSupplier("hello")
 
-	_, err = enclaveCtx.AddService(testServiceId, containerConfigSupplier)
+	_, err = enclaveCtx.AddService(testServiceId, config)
 	require.NoError(t, err, "An error occurred adding the file server service with the cpuAllocationMillicpus=`%d` and memoryAllocationMegabytes=`%d`", testCpuAllocMillicpus, testMemoryAllocMegabytes)
 }
 
@@ -43,8 +44,9 @@ func TestSettingInvalidMemoryAllocationMegabytesReturnsError(t *testing.T) {
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	containerConfigSupplier := getContainerConfigSupplierWithInvalidMemory()
+	config, _ := containerConfigSupplier("hello")
 
-	_, err = enclaveCtx.AddService(testServiceId, containerConfigSupplier)
+	_, err = enclaveCtx.AddService(testServiceId, config)
 	require.Error(t, err, "An error should have occurred with the following invalid memory allocation: `%d`", testInvalidMemoryAllocMegabytes)
 }
 

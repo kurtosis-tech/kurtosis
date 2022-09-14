@@ -56,7 +56,8 @@ func TestExecCommand(t *testing.T) {
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	containerConfigSupplier := getContainerConfigSupplier()
 
-	testServiceContext, err := enclaveCtx.AddService(testServiceId, containerConfigSupplier)
+	config, _ := containerConfigSupplier("hello")
+	testServiceContext, err := enclaveCtx.AddService(testServiceId, config)
 	require.NoError(t, err, "An error occurred starting service '%v'", testServiceId)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------

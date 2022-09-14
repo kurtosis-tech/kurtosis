@@ -216,6 +216,7 @@ func run(
 	}
 
 	containerConfigSupplier, err := getContainerConfigSupplier(image, portsStr, cmdArgs, entrypointStr, envvarsStr, filesArtifactMountsStr)
+	containerConfig, _ := containerConfigSupplier("hello")
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -230,7 +231,7 @@ func run(
 	// TODO Allow adding services to an already-repartitioned enclave
 	serviceCtx, err := enclaveCtx.AddService(
 		services.ServiceID(serviceId),
-		containerConfigSupplier,
+		containerConfig,
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred adding service '%v' to enclave '%v'", serviceId, enclaveId)

@@ -39,8 +39,8 @@ func TestWaitForEndpointAvailabilityFunction(t *testing.T) {
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	configSupplier := getExampleServiceConfigSupplier()
-
-	_, err = enclaveCtx.AddService(exampleServiceId, configSupplier)
+	config, err := configSupplier()
+	_, err = enclaveCtx.AddService(exampleServiceId, config)
 	require.NoError(t, err, "An error occurred adding the datastore service")
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
