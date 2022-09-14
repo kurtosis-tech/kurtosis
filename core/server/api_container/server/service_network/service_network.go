@@ -256,6 +256,7 @@ func(network *ServiceNetwork) StartServices(
 			delete(successfulServicesPool, serviceID)
 			continue
 		}
+		logrus.Debugf("Successfully added service with ID '%v' to topology", serviceID)
 	}
 	serviceIDsForTopologyCleanup := map[service.ServiceID]bool{}
 	for serviceID := range successfulServicesPool {
@@ -287,6 +288,7 @@ func(network *ServiceNetwork) StartServices(
 				delete(successfulServicesPool, serviceID)
 				continue
 			}
+			logrus.Debugf("Successfully created sidecars for service with ID '%v'", serviceID)
 		}
 		for serviceID := range successfulServicesPool {
 			sidecarsToCleanUp[serviceID] = true
@@ -321,6 +323,7 @@ func(network *ServiceNetwork) StartServices(
 		if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, network.registeredServiceInfo, network.networkingSidecars); err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration to partition off new nodes.")
 		}
+		logrus.Debugf("Successfully appleid qdisc configurations")
 		for serviceID := range successfulServicesPool {
 			servicesToRemoveFromTrafficControl[serviceID] = true
 		}
@@ -359,6 +362,8 @@ func(network *ServiceNetwork) StartServices(
 		delete(sidecarsToCleanUp, serviceID)
 		delete(servicesToRemoveFromTrafficControl, serviceID)
 	}
+
+	logrus.Debugf("Sueccesfully started services '%v' and failed '%v'", successfulServicesPool, failedServicesPool)
 	return successfulServicesPool, failedServicesPool, nil
 }
 
@@ -859,6 +864,8 @@ func (network *ServiceNetwork) addSidecarForService(ctx context.Context, service
 		return stacktrace.Propagate(err, "An error occurred initializing the newly-created networking-sidecar-traffic-control-qdisc-configuration for service `%v`", serviceID)
 	}
 
+	shouldRemoveSidecarFromMap = false
+	shouldRemoveSidecarFromManager = false
 	return nil
 }
 
