@@ -254,6 +254,7 @@ func(network *ServiceNetwork) StartServices(
 		if err != nil {
 			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred adding service to the topology")
 			delete(successfulServicesPool, serviceID)
+			continue
 		}
 	}
 	serviceIDsForTopologyCleanup := map[service.ServiceID]bool{}
@@ -281,8 +282,11 @@ func(network *ServiceNetwork) StartServices(
 	if network.isPartitioningEnabled {
 		for serviceID, service := range successfulServicesPool {
 			err = network.addSidecarForService(ctx, service)
-			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while adding networking sidecar for service '%v'", serviceID)
-			delete(successfulServicesPool, serviceID)
+			if err != nil {
+				failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while adding networking sidecar for service '%v'", serviceID)
+				delete(successfulServicesPool, serviceID)
+				continue
+			}
 		}
 		for serviceID := range successfulServicesPool {
 			sidecarsToCleanUp[serviceID] = true
@@ -295,10 +299,12 @@ func(network *ServiceNetwork) StartServices(
 				networkingSidecar, found := network.networkingSidecars[serviceID]
 				if !found {
 					failedServicesPool[serviceID] = stacktrace.NewError("Tried cleaning up sidecar for service with ID '%v' but couldn't retrieve it from the cache. This is a Kurtosis bug.", serviceID)
+					continue
 				}
 				err = network.networkingSidecarManager.Remove(ctx, networkingSidecar)
 				if err != nil {
 					failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while cleaning up the side car for service ID '%v'.", serviceID)
+					continue
 				}
 				delete(network.networkingSidecars, serviceID)
 			}
