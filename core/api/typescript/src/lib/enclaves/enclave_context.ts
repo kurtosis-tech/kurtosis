@@ -340,9 +340,7 @@ export class EnclaveContext {
             return err(startServicesResponseResult.error)
         }
         const startServicesResponse = startServicesResponseResult.value;
-        // Don't need to defer a removal of successfully started services here because it was done right after register phase
-        // This is the correct way to do it because we want to defer undos of resources, right after the function gains responsibility of
-        // the resource, which in this case, is after they successfully returned from the successful phase.
+        // We don't defer-undo and remove failed services as APIC.StartServices already cleans up after itself
 
         // Add services that failed to start to failed services pool
         const failedServices: jspb.Map<string, string> | undefined = startServicesResponse.getFailedServiceIdsToErrorMap();

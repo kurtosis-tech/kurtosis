@@ -201,7 +201,6 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	failedServicesPool := map[services.ServiceID]error{}
 	partitionIDStr := string(partitionID)
 
-	logrus.Trace("New services successfully registered with Kurtosis API")
 	serviceConfigs := map[string]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
 	for serviceID, containerConfig := range containerConfigs {
 		logrus.Tracef("Creating files artifact ID str -> mount dirpaths map for service with Id '%v'...", serviceID)
@@ -250,6 +249,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred starting services with the Kurtosis API")
 	}
+	// We don't defer-undo and remove failed services as APIC.StartServices already cleans up after itself
 
 	for serviceIDStr, errStr := range startServicesResp.GetFailedServiceIdsToError() {
 		serviceID := services.ServiceID(serviceIDStr)
