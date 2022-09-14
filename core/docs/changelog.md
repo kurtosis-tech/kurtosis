@@ -4,7 +4,7 @@
 * Removed the `APIC.RegisterServices` endpoint
   * Users can now simply call the `APIC.StartServices` which will handle everything for them
 * Changed the `APIC.StartServices` endpoint to accept a `partition_id`
-  * Users will now have to pass in a partition_id which maybe `""` - to pick the default partition
+  * Users will now have to pass in a partition_id of an existing partition which maybe `""` - to pick the default partition.
 * Added `privateIPAddrPlaceholder` field to the `ContainerConfig` object
   * This defaults to `KURTOSIS_IP_ADDR_PLACEHOLDER` in case the user doesn't supply it
   * Kurtosis will replace the placeholder in the entry point args, env vars & cmd args with the private ip address of the container while starting the container

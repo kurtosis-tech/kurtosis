@@ -150,13 +150,13 @@ func (enclaveCtx *EnclaveContext) AddService(
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) AddServices(
-	containerConfigByServiceID map[services.ServiceID]*services.ContainerConfig,
+	containerConfigs map[services.ServiceID]*services.ContainerConfig,
 ) (
 	resultSuccessfulServices map[services.ServiceID]*services.ServiceContext,
 	resultFailedServices map[services.ServiceID]error,
 	resultErr error,
 ) {
-	successfulServices, failedServices, err := enclaveCtx.AddServicesToPartition(containerConfigByServiceID, defaultPartitionId)
+	successfulServices, failedServices, err := enclaveCtx.AddServicesToPartition(containerConfigs, defaultPartitionId)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred adding services to the enclave in the default partition.")
 	}
@@ -190,7 +190,7 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 }
 
 func (enclaveCtx *EnclaveContext) AddServicesToPartition(
-	containerConfigByServiceID map[services.ServiceID]*services.ContainerConfig,
+	containerConfigs map[services.ServiceID]*services.ContainerConfig,
 	partitionID PartitionID,
 ) (
 	resultSuccessfulServices map[services.ServiceID]*services.ServiceContext,
@@ -203,7 +203,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 
 	logrus.Trace("New services successfully registered with Kurtosis API")
 	serviceConfigs := map[string]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
-	for serviceID, containerConfig := range containerConfigByServiceID {
+	for serviceID, containerConfig := range containerConfigs {
 		logrus.Tracef("Creating files artifact ID str -> mount dirpaths map for service with Id '%v'...", serviceID)
 		artifactIdStrToMountDirpath := map[string]string{}
 		for filesArtifactID, mountDirpath := range containerConfig.GetFilesArtifactMountpoints() {
