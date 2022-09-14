@@ -827,8 +827,8 @@ func (network *ServiceNetwork) addServiceToTopology(service *service.Service, pa
 		}
 	}()
 
-	shouldRemoveFromServicesMap = false
 	shouldRemoveFromTopology = false
+	shouldRemoveFromServicesMap = false
 	return nil
 }
 
