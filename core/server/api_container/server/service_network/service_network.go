@@ -150,7 +150,7 @@ func (network *ServiceNetwork) Repartition(
 	return nil
 }
 
-// Starts a previously-registered but not-started service by creating it in a container.
+// Starts the services in the given partition in their own containers
 //
 // This is a bulk operation that follows a funnel/rollback approach.
 // This means that when an error occurs, for an indvidiual operation (service in this case), we add it to a set of
@@ -163,7 +163,7 @@ func (network *ServiceNetwork) Repartition(
 //	- error	- if error occurred with bulk operation as a whole
 func(network *ServiceNetwork) StartServices(
 	ctx context.Context,
-	apiServiceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
+	serviceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
 	partitionID service_network_types.PartitionID,
 ) (
 	resultSuccessfulServices map[service.ServiceID]*service.Service,
@@ -176,14 +176,16 @@ func(network *ServiceNetwork) StartServices(
 	failedServicesPool := map[service.ServiceID]error{}
 	successfulServicesPool := map[service.ServiceID]*service.Service{}
 
-	for serviceID := range apiServiceConfigs {
+	servicesToStart := map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
+	for serviceID, config := range serviceConfigs {
 		if _, found := network.registeredServiceInfo[serviceID]; found {
 			failedServicesPool[serviceID] = stacktrace.NewError(
 				"Cannot start service '%v' because it already exists in the network",
 				serviceID,
 			)
-			delete(apiServiceConfigs, serviceID)
+			continue
 		}
+		servicesToStart[serviceID] = config
 	}
 
 	if partitionID == "" {
@@ -197,7 +199,7 @@ func(network *ServiceNetwork) StartServices(
 	}
 
 
-	successfulStarts, failedStarts, err := network.startServices(ctx, apiServiceConfigs)
+	successfulStarts, failedStarts, err := network.startServices(ctx, servicesToStart)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred attempting to add services to the service network.")
 	}
@@ -234,10 +236,12 @@ func(network *ServiceNetwork) StartServices(
 			destroyFailuresAccountedFor += 1
 		}
 		if destroyFailuresAccountedFor != len(failedToDestroyGUIDs) {
-			logrus.Errorf("Couldn't propagate all failures while destroying services. This is a bug in Kurtosis. Accounted for '%v', expected '%v'", destroyFailuresAccountedFor, len(failedToDestroyGUIDs))
+			logrus.Errorf("Couldn't propagate all failures while destroying services. This is a bug in Kurtosis. Accounted for '%v', expected '%v' services.", destroyFailuresAccountedFor, len(failedToDestroyGUIDs))
 		}
 	}()
 
+	// We have `successfulServicesPool` in addition to `successfulStarts` as we keep removing failed services from `successfulServicesPool`.
+	// We still need to keep information about services started successfully as we need to use them in the defer undo above to fetch the GUID.
 	for serviceID, service := range successfulStarts {
 		successfulServicesPool[serviceID] = service
 	}
@@ -245,9 +249,8 @@ func(network *ServiceNetwork) StartServices(
 		failedServicesPool[serviceID] = err
 	}
 
-	// TODO remove from topology if the larger function fails
-	for serviceID, successfulService := range successfulServicesPool {
-		err = addServiceToTopology(successfulService, network, serviceID, partitionID)
+	for serviceID, service := range successfulServicesPool {
+		err = network.addServiceToTopology(service, partitionID)
 		if err != nil {
 			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred adding service to the topology")
 			delete(successfulServicesPool, serviceID)
@@ -276,26 +279,10 @@ func(network *ServiceNetwork) StartServices(
 	sidecarsToCleanUp := map[service.ServiceID]bool{}
 	servicesToRemoveFromTrafficControl := map[service.ServiceID]bool{}
 	if network.isPartitioningEnabled {
-		for serviceID, serviceInfo := range successfulServicesPool {
-			serviceRegistration := serviceInfo.GetRegistration()
-			serviceGUID := serviceRegistration.GetGUID()
-
-			sidecar, err := network.networkingSidecarManager.Add(ctx, serviceGUID)
-			if err != nil {
-				failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred adding the networking sidecar for service `%v`", serviceID)
-				delete(successfulServicesPool, serviceID)
-				continue
-			}
-			// TODO: When atomicity is implemented for StartServices, add a defer to undo creation of sidecar in case of failure
-
-			network.networkingSidecars[serviceID] = sidecar
-			// TODO: When atomicity is implemented for StartServices, add a defer to undo addition of sidecar to map
-
-			if err := sidecar.InitializeTrafficControl(ctx); err != nil {
-				failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred initializing the newly-created networking-sidecar-traffic-control-qdisc-configuration for service `%v`", serviceID)
-				delete(successfulServicesPool, serviceID)
-				continue
-			}
+		for serviceID, service := range successfulServicesPool {
+			err = network.addSidecarForService(ctx, service)
+			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while adding networking sidecar for service '%v'", serviceID)
+			delete(successfulServicesPool, serviceID)
 		}
 		for serviceID := range successfulServicesPool {
 			sidecarsToCleanUp[serviceID] = true
@@ -307,7 +294,7 @@ func(network *ServiceNetwork) StartServices(
 			for serviceID := range sidecarsToCleanUp {
 				networkingSidecar, found := network.networkingSidecars[serviceID]
 				if !found {
-					failedServicesPool[serviceID] = stacktrace.NewError("Tried cleaning up sidecar for service with ID '%v' but couldn't retrieve it from the cache.", serviceID)
+					failedServicesPool[serviceID] = stacktrace.NewError("Tried cleaning up sidecar for service with ID '%v' but couldn't retrieve it from the cache. This is a Kurtosis bug.", serviceID)
 				}
 				err = network.networkingSidecarManager.Remove(ctx, networkingSidecar)
 				if err != nil {
@@ -323,21 +310,9 @@ func(network *ServiceNetwork) StartServices(
 				" to know what packet loss updates to apply")
 		}
 
-		// We filter down all the packet loss configurations to configurations where the
-		// successful services are either a source or a target
-		updatesToApply := map[service.ServiceID]map[service.ServiceID]float32{}
-		for serviceID, targetServicePacketLossConfiguration := range servicePacketLossConfigurationsByServiceID {
-			for targetServiceID  := range targetServicePacketLossConfiguration {
-				if _, found := successfulServicesPool[serviceID]; found {
-					updatesToApply[serviceID] = targetServicePacketLossConfiguration
-				}
-				if _, found := successfulServicesPool[targetServiceID]; found {
-					updatesToApply[serviceID] = targetServicePacketLossConfiguration
-				}
-			}
-		}
-
-		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.registeredServiceInfo, network.networkingSidecars); err != nil {
+		// We apply all the configurations. We can't filter to source/target being a service started in this method call as we'd miss configurations between existing services.
+		// The updates completely replace the tables, and we can't lose partitioning between existing services
+		if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, network.registeredServiceInfo, network.networkingSidecars); err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration to partition off new nodes.")
 		}
 		for serviceID := range successfulServicesPool {
@@ -347,21 +322,26 @@ func(network *ServiceNetwork) StartServices(
 			if len(servicesToRemoveFromTrafficControl) == 0 {
 				return
 			}
-			for serviceID, targetServicePacketLossConfiguration := range updatesToApply {
+			// We keep all mappings where source->dest are not in servicesToRemoveFromTrafficControl
+			updatesToApply := map[service.ServiceID]map[service.ServiceID]float32{}
+			for serviceID, targetServicePacketLossConfiguration := range servicePacketLossConfigurationsByServiceID {
+				// ignore all mappings from failed new services -> existing services
 				if _, found := servicesToRemoveFromTrafficControl[serviceID]; found {
-					delete(updatesToApply, serviceID)
 					continue
 				}
+				updatesToApply[serviceID] = map[service.ServiceID]float32{}
 				for targetServiceID  := range targetServicePacketLossConfiguration {
-					if _, found := successfulServicesPool[targetServiceID]; found {
-						delete(targetServicePacketLossConfiguration, serviceID)
+					// ignore all mappings from existing services -> failed new services, keep all else
+					if _, found := servicesToRemoveFromTrafficControl[targetServiceID]; found {
 						continue
 					}
+					// keep all mappings where source->dest are not in servicesToRemoveFromTrafficControl
+					updatesToApply[serviceID] = targetServicePacketLossConfiguration
 				}
 			}
 			if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.registeredServiceInfo, network.networkingSidecars); err != nil {
 				for serviceID := range servicesToRemoveFromTrafficControl {
-					failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while removing the service '%v' from the tc configuration of other services.", serviceID)
+					failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while removing the service '%v' from the traffic control configuration of other services.", serviceID)
 				}
 			}
 		}()
@@ -808,6 +788,74 @@ func (network *ServiceNetwork) gzipAndPushTarredFileBytesToOutput(
 	return nil
 }
 
+
+// This service is not thread safe. Only call this from a method where there is a mutex lock on the network.
+func (network *ServiceNetwork) addServiceToTopology(service *service.Service, partitionID service_network_types.PartitionID) error {
+	serviceRegistration := service.GetRegistration()
+	serviceID := serviceRegistration.GetID()
+	network.registeredServiceInfo[serviceID] = serviceRegistration
+	shouldRemoveFromServicesMap := true
+	defer func() {
+		if shouldRemoveFromServicesMap {
+			delete(network.registeredServiceInfo, serviceID)
+		}
+	}()
+
+	if err := network.topology.AddService(serviceID, partitionID); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred adding service with ID '%v' to partition '%v' in the topology",
+			serviceID,
+			partitionID,
+		)
+	}
+	shouldRemoveFromTopology := true
+	defer func() {
+		if shouldRemoveFromTopology {
+			network.topology.RemoveService(serviceID)
+		}
+	}()
+
+	shouldRemoveFromServicesMap = false
+	shouldRemoveFromTopology = false
+	return nil
+}
+
+// This service is not thread safe. Only call this from a method where there is a mutex lock on the network.
+func (network *ServiceNetwork) addSidecarForService(ctx context.Context, service *service.Service) error {
+	serviceRegistration := service.GetRegistration()
+	serviceGUID := serviceRegistration.GetGUID()
+	serviceID := serviceRegistration.GetID()
+
+	sidecar, err := network.networkingSidecarManager.Add(ctx, serviceGUID)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred adding the networking sidecar for service `%v`", serviceID)
+	}
+	shouldRemoveSidecarFromManager := true
+	defer func() {
+		if shouldRemoveSidecarFromManager {
+			err = network.networkingSidecarManager.Remove(ctx, sidecar)
+			if err != nil {
+				logrus.Warnf("Attempted to remove network sidecar during cleanup for service '%v' but failed", serviceID)
+			}
+		}
+	}()
+
+	network.networkingSidecars[serviceID] = sidecar
+	shouldRemoveSidecarFromMap := true
+	defer func() {
+		if shouldRemoveSidecarFromMap {
+			delete(network.networkingSidecars, serviceID)
+		}
+	}()
+
+	if err := sidecar.InitializeTrafficControl(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred initializing the newly-created networking-sidecar-traffic-control-qdisc-configuration for service `%v`", serviceID)
+	}
+
+	return nil
+}
+
 func convertAPIPortsToPortSpecs(
 	privateAPIPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
 	publicAPIPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
@@ -886,36 +934,5 @@ func checkPrivateAndPublicPortsAreOneToOne(privatePorts map[string]*kurtosis_cor
 			return stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portID, privatePortSpec.GetNumber())
 		}
 	}
-	return nil
-}
-
-func addServiceToTopology(successfulService *service.Service, network *ServiceNetwork, serviceID service.ServiceID, partitionID service_network_types.PartitionID) error {
-	serviceRegistration := successfulService.GetRegistration()
-	network.registeredServiceInfo[serviceID] = serviceRegistration
-	shouldRemoveFromServicesMap := true
-	defer func() {
-		if shouldRemoveFromServicesMap {
-			delete(network.registeredServiceInfo, serviceID)
-		}
-	}()
-
-	if err := network.topology.AddService(serviceID, partitionID); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred adding service with ID '%v' to partition '%v' in the topology",
-			serviceID,
-			partitionID,
-		)
-	}
-	shouldRemoveFromTopology := true
-	defer func() {
-		if shouldRemoveFromTopology {
-			network.topology.RemoveService(serviceID)
-		}
-	}()
-
-	shouldRemoveFromServicesMap = false
-	shouldRemoveFromTopology = false
-
 	return nil
 }
