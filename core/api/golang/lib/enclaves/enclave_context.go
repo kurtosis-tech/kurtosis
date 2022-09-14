@@ -249,7 +249,22 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred starting services with the Kurtosis API")
 	}
-	// We don't defer-undo and remove failed services as APIC.StartServices already cleans up after itself
+	// defer-undo removes all successfully started services in case of errors in the future phases
+	shouldRemoveServices := map[services.ServiceID]bool{}
+	for serviceIDStr := range startServicesResp.GetSuccessfulServiceIdsToServiceInfo() {
+		shouldRemoveServices[services.ServiceID(serviceIDStr)] = true
+	}
+	defer func() {
+		for serviceID, _ := range shouldRemoveServices {
+			removeServiceArgs := binding_constructors.NewRemoveServiceArgs(string(serviceID))
+			_, err = enclaveCtx.client.RemoveService(context.Background(), removeServiceArgs)
+			if err != nil {
+				failedServicesPool[serviceID] = stacktrace.Propagate(err,
+					"Attempted to remove service '%v' to delete its resources after starting it failed, but an error occurred "+
+						"while attempting to remove the service.", serviceID)
+			}
+		}
+	}()
 
 	for serviceIDStr, errStr := range startServicesResp.GetFailedServiceIdsToError() {
 		serviceID := services.ServiceID(serviceIDStr)
@@ -282,6 +297,10 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 		successfulServices[serviceID] = serviceContext
 	}
 
+	// Do not remove resources for successful services
+	for serviceID := range successfulServices {
+		delete(shouldRemoveServices, serviceID)
+	}
 	return successfulServices, failedServicesPool, nil
 }
 
