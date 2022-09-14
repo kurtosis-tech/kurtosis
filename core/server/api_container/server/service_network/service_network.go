@@ -226,8 +226,8 @@ func(network *ServiceNetwork) StartServices(
 			return
 		}
 		destroyFailuresAccountedFor := 0
-		for serviceID, service := range successfulStarts {
-			guid := service.GetRegistration().GetGUID()
+		for serviceID, serviceInfo := range successfulStarts {
+			guid := serviceInfo.GetRegistration().GetGUID()
 			destroyErr, found := failedToDestroyGUIDs[guid]
 			if !found {
 				continue
@@ -242,15 +242,15 @@ func(network *ServiceNetwork) StartServices(
 
 	// We have `successfulServicesPool` in addition to `successfulStarts` as we keep removing failed services from `successfulServicesPool`.
 	// We still need to keep information about services started successfully as we need to use them in the defer undo above to fetch the GUID.
-	for serviceID, service := range successfulStarts {
-		successfulServicesPool[serviceID] = service
+	for serviceID, serviceInfo := range successfulStarts {
+		successfulServicesPool[serviceID] = serviceInfo
 	}
 	for serviceID, err := range failedStarts {
 		failedServicesPool[serviceID] = err
 	}
 
-	for serviceID, service := range successfulServicesPool {
-		err = network.addServiceToTopology(service, partitionID)
+	for serviceID, serviceInfo := range successfulServicesPool {
+		err = network.addServiceToTopology(serviceInfo, partitionID)
 		if err != nil {
 			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred adding service to the topology")
 			delete(successfulServicesPool, serviceID)
@@ -280,8 +280,8 @@ func(network *ServiceNetwork) StartServices(
 	sidecarsToCleanUp := map[service.ServiceID]bool{}
 	servicesToRemoveFromTrafficControl := map[service.ServiceID]bool{}
 	if network.isPartitioningEnabled {
-		for serviceID, service := range successfulServicesPool {
-			err = network.addSidecarForService(ctx, service)
+		for serviceID, serviceInfo := range successfulServicesPool {
+			err = network.addSidecarForService(ctx, serviceInfo)
 			if err != nil {
 				failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while adding networking sidecar for service '%v'", serviceID)
 				delete(successfulServicesPool, serviceID)
