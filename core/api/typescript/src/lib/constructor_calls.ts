@@ -181,12 +181,13 @@ export function newModuleInfo(
 // ==============================================================================================
 //                                        Start Service
 // ==============================================================================================
-export function newStartServicesArgs(serviceConfigs : Map<ServiceID, ServiceConfig>) : StartServicesArgs {
+export function newStartServicesArgs(serviceConfigs : Map<ServiceID, ServiceConfig>, partitionID: string) : StartServicesArgs {
     const result : StartServicesArgs = new StartServicesArgs();
     const serviceIdsToConfigs : jspb.Map<string, ServiceConfig> = result.getServiceIdsToConfigsMap();
     for (const [serviceId, serviceConfig] of serviceConfigs) {
         serviceIdsToConfigs.set(String(serviceId), serviceConfig);
     }
+    result.setPartitionId(partitionID)
 
     return result;
 }

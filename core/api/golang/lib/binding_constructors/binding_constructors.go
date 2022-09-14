@@ -136,10 +136,10 @@ func NewModuleInfo(
 // ==============================================================================================
 //                                        Start Service
 // ==============================================================================================
-func NewStartServicesArgs(serviceConfigs map[string]*kurtosis_core_rpc_api_bindings.ServiceConfig, partitionId string) *kurtosis_core_rpc_api_bindings.StartServicesArgs {
+func NewStartServicesArgs(serviceConfigs map[string]*kurtosis_core_rpc_api_bindings.ServiceConfig, partitionID string) *kurtosis_core_rpc_api_bindings.StartServicesArgs {
 	return &kurtosis_core_rpc_api_bindings.StartServicesArgs{
 		ServiceIdsToConfigs: serviceConfigs,
-		PartitionId: partitionId,
+		PartitionId:         partitionID,
 	}
 }
 

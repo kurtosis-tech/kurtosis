@@ -216,10 +216,10 @@ export class EnclaveContext {
             serviceId: ServiceID,
             containerConfig: ContainerConfig
         ): Promise<Result<ServiceContext, Error>> {
-        const containerConfigByServiceID : Map<ServiceID, ContainerConfig> = new Map<ServiceID, ContainerConfig>();
-        containerConfigByServiceID.set(serviceId, containerConfig)
+        const containerConfigs : Map<ServiceID, ContainerConfig> = new Map<ServiceID, ContainerConfig>();
+        containerConfigs.set(serviceId, containerConfig)
         const resultAddServiceToPartition : Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error> = await this.addServicesToPartition(
-            containerConfigByServiceID,
+            containerConfigs,
             DEFAULT_PARTITION_ID,
         );
         if (resultAddServiceToPartition.isErr()) {
@@ -239,11 +239,11 @@ export class EnclaveContext {
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async addServices(
-            containerConfigByServiceID : Map<ServiceID, ContainerConfig>
+            containerConfigs : Map<ServiceID, ContainerConfig>
         ): Promise<Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error>> {
 
         const resultAddServicesToPartition : Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error> = await this.addServicesToPartition(
-            containerConfigByServiceID,
+            containerConfigs,
             DEFAULT_PARTITION_ID,
         );
         if (resultAddServicesToPartition.isErr()) {
@@ -283,7 +283,7 @@ export class EnclaveContext {
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async addServicesToPartition(
         containerConfigByServiceID: Map<ServiceID, ContainerConfig>,
-        partitionId: PartitionID,
+        partitionID: PartitionID,
     ): Promise<Result<[Map<ServiceID, ServiceContext>, Map<ServiceID, Error>], Error>> {
         const failedServicesPool: Map<ServiceID, Error> = new Map<ServiceID, Error>();
         const successfulServices: Map<ServiceID, ServiceContext> = new Map<ServiceID, ServiceContext>();
@@ -334,7 +334,7 @@ export class EnclaveContext {
             serviceConfigs.set(serviceID, serviceConfig);
         }
         log.trace("Starting new services with Kurtosis API...");
-        const startServicesArgs: StartServicesArgs = newStartServicesArgs(serviceConfigs)
+        const startServicesArgs: StartServicesArgs = newStartServicesArgs(serviceConfigs, partitionID)
         const startServicesResponseResult = await this.backend.startServices(startServicesArgs)
         if (startServicesResponseResult.isErr()) {
             return err(startServicesResponseResult.error)
