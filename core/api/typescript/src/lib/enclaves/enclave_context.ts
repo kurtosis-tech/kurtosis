@@ -390,7 +390,7 @@ export class EnclaveContext {
                 const removeServiceArgs : RemoveServiceArgs = newRemoveServiceArgs(serviceId)
                 const removeServiceResult = await this.backend.removeService(removeServiceArgs);
                 if (removeServiceResult.isErr()){
-                    const errMsg = `"Attempted to remove service '${serviceId}' to delete its resources after it failed to start, but the following error occurred" +
+                    const errMsg = `"Attempted to remove service '${serviceId}' to delete its resources after it failed to start, but the following error occurred " +
                     "while attempting to remove the service:\n ${removeServiceResult.error}`
                     failedServicesPool.set(serviceId, new Error(errMsg))
                 }
