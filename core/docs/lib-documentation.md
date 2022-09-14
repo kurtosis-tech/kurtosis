@@ -76,7 +76,7 @@ Starts a new service in the enclave with the given service ID, inside the partit
 
 * `serviceId`: The ID that the new service should have.
 * `partitionId`: The ID of the partition that the new service should be started in. This can be left blank to start the service in the default partition if it exists (i.e. if the enclave hasn't been repartitioned and the default partition removed).
-* `containerConfig`: A [ContainerConfig][containerconfig] object indicating how to start the service.
+* `containerConfig`: A [ContainerConfig][containerconfig] object indicating how to configure the service.
 
 **Returns**
 
@@ -87,7 +87,7 @@ Start services in bulk in the enclave with the given service IDs, inside the par
 
 **Args**
 
-* `containerConfigs`: A mapping of service IDs to start in the enclave to their `containerConfig` indicating how to start the service.
+* `containerConfigs`: A mapping of service IDs to start in the enclave to their `containerConfig` indicating how to configure the service.
 * `partitionId`: The ID of the partition that the new service should be started in. This can be left blank to start the service in the default partition if it exists (i.e. if the enclave hasn't been repartitioned and the default partition removed).
 
 **Returns**
