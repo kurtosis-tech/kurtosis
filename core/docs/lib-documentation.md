@@ -375,7 +375,7 @@ _Found a bug? File it on [the repo][issues]!_
 
 [enclavecontext]: #enclavecontext
 [enclavecontext_registerfilesartifacts]: #registerfilesartifactsmapfilesartifactid-string-filesartifacturls
-[enclavecontext_addservice]: #addserviceserviceid-serviceid-containerconfig-containerconfig---servicecontext-servicecontext
+[enclavecontext_addservice]: #addserviceserviceid-serviceid--containerconfig-containerconfig---servicecontext-servicecontext
 [enclavecontext_addservicetopartition]: #addservicetopartitionserviceid-serviceid-partitionid-partitionid-containerconfig-containerconfig---servicecontext-servicecontext
 [enclavecontext_addservicestopartition]: #addservicestopartitionmapserviceid-containerconfig-containerconfigs-partitionid-partitionid---mapserviceid-servicecontext-successfulservices-mapserviceid-error-failedservices
 [enclavecontext_unpauseservice]: #unpauseserviceserviceid-serviceid

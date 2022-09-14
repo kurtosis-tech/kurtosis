@@ -16,7 +16,6 @@
 * Removed the `APIC.RegisterService` endpoint.
 * Changed the `APIC.StartServices` endpoint to accept a `partition_id`.
 * Changed the `EnclaveContext.AddService`, `EnclaveContext.AddServices`, `EnclaveContext.AddServiceToPartition` and `EnclaveContext.AddServicesToPatition` to accept a `ContainerConfig` object instead of a `ContainerConfigSupplier`.
-* Changed partitioning logic to start the target services and then partition.
 * Added `privateIPAddrPlaceholder` field to the `ContainerConfig` object.
 * Changed order of partitioning while starting services, now we start the services and then block access from/to the service from other partitions.
 * Made `ServiceNetwork.StartServices` clean up after itself completely
