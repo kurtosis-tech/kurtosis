@@ -20,7 +20,7 @@ service ApiContainerService {
   // Executes an executable module on the user's behalf
   rpc ExecuteModule(ExecuteModuleArgs) returns (ExecuteModuleResponse) {};
 
-  // Starts previously-registered services by creating containers for them
+  // Start services by creating containers for them
   rpc StartServices(StartServicesArgs) returns (StartServicesResponse) {};
 
   // Returns the IDs of the current services in the enclave

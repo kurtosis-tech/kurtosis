@@ -250,9 +250,6 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred starting services with the Kurtosis API")
 	}
-	// Don't need to defer a removal of successfully started services here because it was done right after register phase
-	// This is the correct way to do it because we want to defer undos of resources, right after the function gains responsibility of
-	// the resource, which in this case, is after they successfully returned from the successful phase.
 
 	for serviceIDStr, errStr := range startServicesResp.GetFailedServiceIdsToError() {
 		serviceID := services.ServiceID(serviceIDStr)
