@@ -110,6 +110,7 @@ func NewContainerConfigBuilder(image string) *ContainerConfigBuilder {
 		environmentVariableOverrides: map[string]string{},
 		cpuAllocationMillicpus:       0,
 		memoryAllocationMegabytes:    0,
+		privateIPAddrPlaceholder: "",
 	}
 }
 

@@ -54,7 +54,7 @@ export class ContainerConfigBuilder {
         this.publicPorts = new Map(); //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
         this.cpuAllocationMillicpus = 0;
         this.memoryAllocationMegabytes = 0;
-        this.privateIPAddrPlaceholder = DEFAULT_PRIVATE_IP_ADDR_PLACEHOLDER;
+        this.privateIPAddrPlaceholder = "";
     }
 
     public withUsedPorts(usedPorts: Map<string, PortSpec>): ContainerConfigBuilder {
@@ -104,6 +104,9 @@ export class ContainerConfigBuilder {
 }
 
     public build(): ContainerConfig {
+        if (this.privateIPAddrPlaceholder == "") {
+            this.privateIPAddrPlaceholder = DEFAULT_PRIVATE_IP_ADDR_PLACEHOLDER
+        }
         return new ContainerConfig(
             this.image,
             this.usedPorts,
