@@ -363,7 +363,7 @@ func(network *ServiceNetwork) StartServices(
 		delete(servicesToRemoveFromTrafficControl, serviceID)
 	}
 
-	logrus.Debugf("Sueccesfully started services '%v' and failed '%v'", successfulServicesPool, failedServicesPool)
+	logrus.Infof("Sueccesfully started services '%v' and failed '%v' in the service network", successfulServicesPool, failedServicesPool)
 	return successfulServicesPool, failedServicesPool, nil
 }
 
@@ -685,14 +685,14 @@ func (network *ServiceNetwork) startServices(
 		// Docker and K8s requires the minimum memory limit to be 6 megabytes to we make sure the allocation is at least that amount
 		// But first, we check that it's not the default value, meaning the user potentially didn't even set it
 		if config.MemoryAllocationMegabytes != defaultMemoryAllocMegabytes && config.MemoryAllocationMegabytes < minMemoryLimit {
-			failedServicesPool[serviceID] = stacktrace.NewError("Memory allocation, `%d`, is too low. Kurtosis requires the memory limit to be at least `%d` megabytes for service with GUID '%v'.", config.MemoryAllocationMegabytes, minMemoryLimit, serviceID)
+			failedServicesPool[serviceID] = stacktrace.NewError("Memory allocation, `%d`, is too low. Kurtosis requires the memory limit to be at least `%d` megabytes for service with ID '%v'.", config.MemoryAllocationMegabytes, minMemoryLimit, serviceID)
 			continue
 		}
 
 		// Convert ports
 		privateServicePortSpecs, requestedPublicServicePortSpecs, err := convertAPIPortsToPortSpecs(config.PrivatePorts, config.PublicPorts)
 		if err != nil {
-			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while trying to convert public and private API ports to port specs for service with GUID '%v'", serviceID)
+			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while trying to convert public and private API ports to port specs for service with ID '%v'", serviceID)
 			continue
 		}
 
@@ -847,7 +847,7 @@ func (network *ServiceNetwork) addSidecarForService(ctx context.Context, service
 		if shouldRemoveSidecarFromManager {
 			err = network.networkingSidecarManager.Remove(ctx, sidecar)
 			if err != nil {
-				logrus.Warnf("Attempted to remove network sidecar during cleanup for service '%v' but failed", serviceID)
+				logrus.Errorf("Attempted to remove network sidecar during cleanup for service '%v' but failed", serviceID)
 			}
 		}
 	}()
