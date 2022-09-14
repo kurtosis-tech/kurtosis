@@ -290,13 +290,12 @@ export class EnclaveContext {
 
         const serviceConfigs = new Map<ServiceID, ServiceConfig>();
         for (const [serviceID, containerConfig] of containerConfigs.entries()) {
-            const serviceIDStr: ServiceID = <string>serviceID;
-            log.trace(`Creating files artifact ID str -> mount dirpaths map for service with Id '${serviceIDStr}'...`);
+            log.trace(`Creating files artifact ID str -> mount dirpaths map for service with Id '${serviceID}'...`);
             const artifactIdStrToMountDirpath: Map<string, string> = new Map<string, string>();
             for (const [filesArtifactId, mountDirpath] of containerConfig.filesArtifactMountpoints) {
                 artifactIdStrToMountDirpath.set(filesArtifactId, mountDirpath);
             }
-            log.trace(`Successfully created files artifact ID str -> mount dirpaths map for service with Id '${serviceIDStr}'`);
+            log.trace(`Successfully created files artifact ID str -> mount dirpaths map for service with Id '${serviceID}'`);
 
             const privatePorts = containerConfig.usedPorts;
             const privatePortsForApi: Map<string, Port> = new Map();
@@ -341,6 +340,9 @@ export class EnclaveContext {
         }
         const startServicesResponse = startServicesResponseResult.value;
         const successfulServicesInfo: jspb.Map<String, ServiceInfo> | undefined = startServicesResponse.getSuccessfulServiceIdsToServiceInfoMap();
+        if (successfulServicesInfo === undefined) {
+            return err(new Error("Expected StartServicesResponse to contain a field that does not exist."))
+        }
         // defer-undo removes all successfully started services in case of errors in the future phases
         const shouldRemoveServices: Map<ServiceID, boolean> = new Map<ServiceID, boolean>();
         for (const [serviceIdStr, _] of successfulServicesInfo.entries()) {
@@ -350,15 +352,12 @@ export class EnclaveContext {
         try {
             // Add services that failed to start to failed services pool
             const failedServices: jspb.Map<string, string> | undefined = startServicesResponse.getFailedServiceIdsToErrorMap();
-            if (failedServices == undefined) {
+            if (failedServices === undefined) {
                 return err(new Error("Expected StartServicesResponse to contain a field that does not exist."))
             }
             for (const [serviceIdStr, serviceErrStr] of failedServices.entries()) {
                 const serviceId: ServiceID = <ServiceID>serviceIdStr;
                 failedServicesPool.set(serviceId, new Error(serviceErrStr))
-            }
-            if (successfulServicesInfo == undefined) {
-                return err(new Error("Expected StartServicesResponse to contain a field that does not exist."))
             }
             for (const [serviceIdStr, serviceInfo] of successfulServicesInfo.entries()) {
                 const serviceId: ServiceID = <ServiceID>serviceIdStr;
