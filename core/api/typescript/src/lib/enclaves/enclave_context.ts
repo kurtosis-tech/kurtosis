@@ -340,42 +340,63 @@ export class EnclaveContext {
             return err(startServicesResponseResult.error)
         }
         const startServicesResponse = startServicesResponseResult.value;
-        // We don't defer-undo and remove failed services as APIC.StartServices already cleans up after itself
-
-        // Add services that failed to start to failed services pool
-        const failedServices: jspb.Map<string, string> | undefined = startServicesResponse.getFailedServiceIdsToErrorMap();
-        if (failedServices == undefined) {
-            return err(new Error("Expected StartServicesResponse to contain a field that does not exist."))
-        }
-        for (const [serviceIdStr, serviceErrStr] of failedServices.entries()) {
-            const serviceId: ServiceID = <ServiceID>serviceIdStr;
-            failedServicesPool.set(serviceId, new Error(serviceErrStr))
-        }
         const successfulServicesInfo: jspb.Map<String, ServiceInfo> | undefined = startServicesResponse.getSuccessfulServiceIdsToServiceInfoMap();
-        if (successfulServicesInfo == undefined) {
-            return err(new Error("Expected StartServicesResponse to contain a field that does not exist."))
-        }
-        for (const [serviceIdStr, serviceInfo] of successfulServicesInfo.entries()) {
-            const serviceId: ServiceID = <ServiceID>serviceIdStr;
-            const serviceCtxPrivatePorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
-                serviceInfo.getPrivatePortsMap(),
-            );
-            const serviceCtxPublicPorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
-                serviceInfo.getMaybePublicPortsMap(),
-            );
-
-            const serviceContext: ServiceContext = new ServiceContext(
-                this.backend,
-                serviceId,
-                serviceInfo.getPrivateIpAddr(),
-                serviceCtxPrivatePorts,
-                serviceInfo.getMaybePublicIpAddr(),
-                serviceCtxPublicPorts,
-            );
-            successfulServices.set(serviceId, serviceContext)
-            log.trace(`Successfully started service with ID '${serviceId}' with Kurtosis API`);
+        // defer-undo removes all successfully started services in case of errors in the future phases
+        const shouldRemoveServices: Map<ServiceID, boolean> = new Map<ServiceID, boolean>();
+        for (const [serviceIdStr, _] of successfulServicesInfo.entries()) {
+            shouldRemoveServices.set(<ServiceID>serviceIdStr, true);
         }
 
+        try {
+            // Add services that failed to start to failed services pool
+            const failedServices: jspb.Map<string, string> | undefined = startServicesResponse.getFailedServiceIdsToErrorMap();
+            if (failedServices == undefined) {
+                return err(new Error("Expected StartServicesResponse to contain a field that does not exist."))
+            }
+            for (const [serviceIdStr, serviceErrStr] of failedServices.entries()) {
+                const serviceId: ServiceID = <ServiceID>serviceIdStr;
+                failedServicesPool.set(serviceId, new Error(serviceErrStr))
+            }
+            if (successfulServicesInfo == undefined) {
+                return err(new Error("Expected StartServicesResponse to contain a field that does not exist."))
+            }
+            for (const [serviceIdStr, serviceInfo] of successfulServicesInfo.entries()) {
+                const serviceId: ServiceID = <ServiceID>serviceIdStr;
+                const serviceCtxPrivatePorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
+                    serviceInfo.getPrivatePortsMap(),
+                );
+                const serviceCtxPublicPorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
+                    serviceInfo.getMaybePublicPortsMap(),
+                );
+
+                const serviceContext: ServiceContext = new ServiceContext(
+                    this.backend,
+                    serviceId,
+                    serviceInfo.getPrivateIpAddr(),
+                    serviceCtxPrivatePorts,
+                    serviceInfo.getMaybePublicIpAddr(),
+                    serviceCtxPublicPorts,
+                );
+                successfulServices.set(serviceId, serviceContext)
+                log.trace(`Successfully started service with ID '${serviceId}' with Kurtosis API`);
+            }
+            // Do not remove resources for successful services
+            for (const [serviceId, _] of successfulServices) {
+                shouldRemoveServices.delete(serviceId)
+            }
+        } finally {
+            for (const[serviceId, _] of shouldRemoveServices) {
+                // Do a best effort attempt to remove resources for this object to clean up after it failed
+                // TODO: Migrate this to a bulk remove services call
+                const removeServiceArgs : RemoveServiceArgs = newRemoveServiceArgs(serviceId)
+                const removeServiceResult = await this.backend.removeService(removeServiceArgs);
+                if (removeServiceResult.isErr()){
+                    const errMsg = `"Attempted to remove service '${serviceId}' to delete its resources after it failed to start, but the following error occurred" +
+                    "while attempting to remove the service:\n ${removeServiceResult.error}`
+                    failedServicesPool.set(serviceId, new Error(errMsg))
+                }
+            }
+        }
         return ok([successfulServices, failedServicesPool])
     }
 
