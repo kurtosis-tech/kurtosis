@@ -128,10 +128,10 @@ func (enclaveCtx *EnclaveContext) AddService(
 	serviceID services.ServiceID,
 	containerConfig *services.ContainerConfig,
 ) (*services.ServiceContext, error) {
-	containerConfigByService := map[services.ServiceID]*services.ContainerConfig{}
-	containerConfigByService[serviceID] = containerConfig
+	containerConfigs := map[services.ServiceID]*services.ContainerConfig{}
+	containerConfigs[serviceID] = containerConfig
 	serviceContexts, failedServices, err := enclaveCtx.AddServicesToPartition(
-		containerConfigByService,
+		containerConfigs,
 		defaultPartitionId,
 	)
 	if err != nil {
@@ -169,10 +169,10 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	partitionID PartitionID,
 	containerConfig *services.ContainerConfig,
 ) (*services.ServiceContext, error) {
-	containerConfigByServiceID := map[services.ServiceID]*services.ContainerConfig{}
-	containerConfigByServiceID[serviceID] = containerConfig
+	containerConfigs := map[services.ServiceID]*services.ContainerConfig{}
+	containerConfigs[serviceID] = containerConfig
 	serviceContexts, failedServices, err := enclaveCtx.AddServicesToPartition(
-		containerConfigByServiceID,
+		containerConfigs,
 		partitionID,
 	)
 	if err != nil {
