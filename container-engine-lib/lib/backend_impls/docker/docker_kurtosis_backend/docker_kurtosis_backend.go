@@ -139,15 +139,7 @@ func (backend *DockerKurtosisBackend) DestroyEngines(
 	return engine_functions.DestroyEngines(ctx, filters, backend.dockerManager)
 }
 
-func (backend *DockerKurtosisBackend ) RegisterUserServices(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	serviceIds map[service.ServiceID]bool,
-	) (successfulUserServiceRegistrations map[service.ServiceID]*service.ServiceRegistration, erroredUserServiceIds map[service.ServiceID]error, resultErr error) {
-	return user_service_functions.RegisterUserServices(ctx, enclaveId, serviceIds, backend.serviceRegistrations, backend.serviceRegistrationMutex, backend.enclaveFreeIpProviders)
-}
-
-func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]*service.Service, map[service.ServiceGUID]error, error){
+func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceID]*service.ServiceConfig) (map[service.ServiceID]*service.Service, map[service.ServiceID]error, error) {
 	return user_service_functions.StartUserServices(
 		ctx,
 		enclaveId,

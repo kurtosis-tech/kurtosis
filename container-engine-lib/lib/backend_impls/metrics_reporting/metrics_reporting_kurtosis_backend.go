@@ -311,16 +311,7 @@ func (backend *MetricsReportingKurtosisBackend) DestroyModules(
 	return successes, failures, nil
 }
 
-// Registers a user service for each given serviceId, allocating each an IP and ServiceGUID
-func (backend *MetricsReportingKurtosisBackend) RegisterUserServices(ctx context.Context, enclaveId enclave.EnclaveID, serviceIds map[service.ServiceID]bool, ) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error){
-	successes, failures, err := backend.underlying.RegisterUserServices(ctx, enclaveId, serviceIds)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services in enclave '%v' with the following service ids: %+v", enclaveId, serviceIds)
-	}
-	return successes, failures, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceGUID]*service.ServiceConfig) (map[service.ServiceGUID]*service.Service, map[service.ServiceGUID]error, error){
+func (backend *MetricsReportingKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceID]*service.ServiceConfig) (map[service.ServiceID]*service.Service, map[service.ServiceID]error, error) {
 	successes, failures, err := backend.underlying.StartUserServices(ctx, enclaveId, services)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred starting services in enclave '%v' with the following service ids: %+v", enclaveId, services)
