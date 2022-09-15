@@ -237,7 +237,7 @@ func(network *ServiceNetwork) StartServices(
 		}
 	}()
 
-	// We add all the successfully started services to a queue of services that will be processed in later phases
+	// We add all the successfully started services to a list of services that will be processed in later phases
 	servicesToProcessFurther := map[service.ServiceID]*service.Service{}
 	for serviceID, serviceInfo := range successfulStarts{
 		servicesToProcessFurther[serviceID] = serviceInfo
@@ -291,10 +291,9 @@ func(network *ServiceNetwork) StartServices(
 	// 3. Only then we block access between the target services & the rest of the world (both ways)
 	// Between 1 & 3 the target & others can speak to each other if they choose to (eg: run a port scan)
 	sidecarsToCleanUp := map[service.ServiceID]bool{}
-	servicesToRemoveFromTrafficControl := map[service.ServiceID]bool{}
 	if network.isPartitioningEnabled {
 		for serviceID, serviceInfo := range servicesToProcessFurther {
-			err = network.addSidecarForService(ctx, serviceInfo)
+			err = network.createSidecarAndAddToMap(ctx, serviceInfo)
 			if err != nil {
 				failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while adding networking sidecar for service '%v'", serviceID)
 				delete(servicesToProcessFurther, serviceID)
@@ -305,6 +304,7 @@ func(network *ServiceNetwork) StartServices(
 		for serviceID := range servicesToProcessFurther {
 			sidecarsToCleanUp[serviceID] = true
 		}
+		// This defer-undo undoes resources created by `createSidecarAndAddToMap` in the reverse order of creation
 		defer func() {
 			if len(sidecarsToCleanUp) == 0 {
 				return
@@ -347,11 +347,10 @@ func(network *ServiceNetwork) StartServices(
 	}
 	logrus.Infof("Sueccesfully started services '%v' and failed '%v' in the service network", successfulServicePool, failedServicesPool)
 	for serviceID := range successfulServicePool {
-		delete(servicesToRemoveFromRegistrationMap, serviceID)
 		delete(serviceIDsToRemove, serviceID)
+		delete(servicesToRemoveFromRegistrationMap, serviceID)
 		delete(serviceIDsForTopologyCleanup, serviceID)
 		delete(sidecarsToCleanUp, serviceID)
-		delete(servicesToRemoveFromTrafficControl, serviceID)
 	}
 	return successfulServicePool, failedServicesPool, nil
 }
@@ -810,7 +809,7 @@ func (network *ServiceNetwork) addServiceToTopology(serviceID service.ServiceID,
 }
 
 // This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
-func (network *ServiceNetwork) addSidecarForService(ctx context.Context, service *service.Service) error {
+func (network *ServiceNetwork) createSidecarAndAddToMap(ctx context.Context, service *service.Service) error {
 	serviceRegistration := service.GetRegistration()
 	serviceGUID := serviceRegistration.GetGUID()
 	serviceID := serviceRegistration.GetID()
