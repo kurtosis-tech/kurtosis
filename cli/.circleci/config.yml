@@ -328,6 +328,7 @@ jobs:
       - run: "${KURTOSIS_BINPATH} enclave new --id test-enclave"
       - run: "${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=80"
       - run: "${KURTOSIS_BINPATH} service rm test-enclave test1"
+      - run: "sleep 6"
       - run: "${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=80"
       - run: "${KURTOSIS_BINPATH} service add test-enclave test2 httpd --ports http=80"
 
