@@ -1,13 +1,14 @@
 # TBD
 
 ### Changes
-* Upgraded core to 1.59.0 which changes the signature of `APIC.StartServices`
+* Upgraded core to 1.59.0 which changes the signature of `APIC.StartServices` and changes the `EnclaveContext.AddService` and related methods to take in a `ContainerConfig` instead of a `ConfigSupplier`
+  * For further details we encourage users to look at the `core` changelogs & library documentation.
   * Users will have to restart their kurtosis engine via `kurtosis engine restart`
 * Upgraded container-engine-lib to 0.37.1 which makes registering a service a part of `KurtosisBackend.StartUserService` and deprecates `KurtosisBackend.RegisterService`
   * Users will have to restart their kurtosis engine via `kurtosis engine restart`
 
 ### Changes
-* Upgraded core to 1.59.0 which changes the signature of `APIC.StartServices`
+* Upgraded core to 1.59.0 which changes the signature of `APIC.StartServices` and changes the `EnclaveContext.AddService` and related methods to take in a `ContainerConfig` instead of a `ConfigSupplier`
 * Upgraded container-engine-lib to 0.37.1 which makes registering a service a part of `KurtosisBackend.StartUserService`
 
 # 1.32.2
