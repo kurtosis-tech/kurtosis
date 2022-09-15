@@ -1,4 +1,10 @@
 # TBD
+### Changes
+* Upgraded core to 1.59.1 and container-engine-lib to 0.38.0
+
+### Breaking Changes
+* The engine server launcher has been updated, now the `NewEngineServerArgs`, `LaunchWithCustomVersion` and `LaunchWithDefaultVersion` receive a new argument `logsCollectorHttpPortNum` and 
+  * Users will have to refactor all these methods calls for adding the new argument
 
 ### Fixes
 * Fixed CHANGELOG and versioning, the previous release should have been a minor version change due to breaking change
@@ -7,7 +13,6 @@
 * Fixed CHANGELOG and versioning, the previous release should have been a minor version change due to breaking change
 
 # 1.32.3
-
 ### Breaking Changes
 * Upgraded core to 1.59.0 which changes the signature of `APIC.StartServices` and changes the `EnclaveContext.AddService` and related methods to take in a `ContainerConfig` instead of a `ConfigSupplier`
   * For further details we encourage users to look at the `core` changelogs & library documentation.
@@ -20,7 +25,6 @@
 * Upgraded container-engine-lib to 0.37.1 which makes registering a service a part of `KurtosisBackend.StartUserService`
 
 # 1.32.2
-
 ### Fixes
 * Upgraded core to 1.58.3 which fixes how we handle json in the `RenderTemplatesToFilesArtifact` end point.
 
