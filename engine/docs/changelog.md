@@ -1,5 +1,7 @@
 # TBD
 
+# 1.32.3
+
 ### Changes
 * Upgraded core to 1.59.0 which changes the signature of `APIC.StartServices` and changes the `EnclaveContext.AddService` and related methods to take in a `ContainerConfig` instead of a `ConfigSupplier`
   * For further details we encourage users to look at the `core` changelogs & library documentation.
