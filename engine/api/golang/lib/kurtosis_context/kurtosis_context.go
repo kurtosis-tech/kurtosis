@@ -21,9 +21,11 @@ const (
 	// NOTE: This needs to be 127.0.0.1 rather than 0.0.0.0, because Windows machines don't translate 0.0.0.0 -> 127.0.0.1
 	localHostIPAddressStr = "127.0.0.1"
 
-	DefaultKurtosisEngineServerGrpcPortNum = uint16(9710)
+	DefaultGrpcEngineServerPortNum = uint16(9710)
 
-	DefaultKurtosisEngineServerGrpcProxyPortNum = uint16(9711)
+	DefaultGrpcProxyEngineServerPortNum = uint16(9711)
+
+	DefaultHttpLogsCollectorPortNum = uint16(9712)
 
 	// Blank tells the engine server to use the default
 	defaultApiContainerVersionTag = ""
@@ -40,7 +42,7 @@ type KurtosisContext struct {
 // Attempts to create a KurtosisContext connected to a Kurtosis engine running locally
 func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 	ctx := context.Background()
-	kurtosisEngineSocketStr := fmt.Sprintf("%v:%v", localHostIPAddressStr, DefaultKurtosisEngineServerGrpcPortNum)
+	kurtosisEngineSocketStr := fmt.Sprintf("%v:%v", localHostIPAddressStr, DefaultGrpcEngineServerPortNum)
 
 	// TODO SECURITY: Use HTTPS to ensure we're connecting to the real Kurtosis API servers
 	conn, err := grpc.Dial(kurtosisEngineSocketStr, grpc.WithInsecure())
