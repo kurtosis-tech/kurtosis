@@ -15,8 +15,9 @@ const (
 
 // Fields are public for JSON de/serialization
 type EngineServerArgs struct {
-	GrpcListenPortNum      uint16 `json:"grpcListenPortNum"`
-	GrpcProxyListenPortNum uint16 `json:"grpcProxyListenPortNum"`
+	GrpcListenPortNum        uint16 `json:"grpcListenPortNum"`
+	GrpcProxyListenPortNum   uint16 `json:"grpcProxyListenPortNum"`
+	LogsCollectorHttpPortNum uint16 `json:"logsCollectorHttpPortNum"`
 
 	LogLevelStr string `json:"logLevelStr"`
 
@@ -71,6 +72,7 @@ func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
 func NewEngineServerArgs(
 	grpcListenPortNum uint16,
 	grpcProxyListenPortNum uint16,
+	logsCollectorHttpPortNum uint16,
 	logLevelStr string,
 	imageVersionTag string,
 	metricsUserID string,
@@ -81,6 +83,7 @@ func NewEngineServerArgs(
 	result := &EngineServerArgs{
 		GrpcListenPortNum:           grpcListenPortNum,
 		GrpcProxyListenPortNum:      grpcProxyListenPortNum,
+		LogsCollectorHttpPortNum:    logsCollectorHttpPortNum,
 		LogLevelStr:                 logLevelStr,
 		ImageVersionTag:             imageVersionTag,
 		MetricsUserID:               metricsUserID,
