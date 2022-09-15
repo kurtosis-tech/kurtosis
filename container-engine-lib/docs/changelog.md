@@ -1,7 +1,7 @@
 # TBD
 
 ### Fixes
-* Fixed a bug in `KurtosisBackend.StartUserServices` where we'd assign lose some error logging as we'd assign errors to a variable that had already been returned by the closing function.
+* Fixed a bug in `KurtosisBackend.StartUserServices` where we'd assign some error logging as we'd assign errors to a variable that had already been returned by the closing function.
 
 # 0.37.1
 
