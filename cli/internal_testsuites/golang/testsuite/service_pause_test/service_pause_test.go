@@ -35,9 +35,9 @@ func TestPauseUnpause(t *testing.T) {
 	defer stopEnclaveFunc()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
-	containerConfigSupplier := getContainerConfigSupplier()
+	containerConfig := getContainerConfig()
 
-	serviceCtx, err := enclaveCtx.AddService(testServiceId, containerConfigSupplier)
+	serviceCtx, err := enclaveCtx.AddService(testServiceId, containerConfig)
 	require.NoError(t, err, "An error occurred adding the file server service")
 
 	time.Sleep(delayBetweenCommandsInSeconds * time.Second)
@@ -73,8 +73,7 @@ func TestPauseUnpause(t *testing.T) {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getContainerConfigSupplier() func(ipAddr string) (*services.ContainerConfig, error) {
-	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
+func getContainerConfig() *services.ContainerConfig{
 
 		// We spam timestamps so that we can measure pausing processes (no more log output) and unpausing (log output resumes)
 		entrypointArgs := []string{"/bin/sh", "-c"}
@@ -87,7 +86,5 @@ func getContainerConfigSupplier() func(ipAddr string) (*services.ContainerConfig
 		).WithCmdOverride(
 			cmdArgs,
 		).Build()
-		return containerConfig, nil
-	}
-	return containerConfigSupplier
+		return containerConfig
 }

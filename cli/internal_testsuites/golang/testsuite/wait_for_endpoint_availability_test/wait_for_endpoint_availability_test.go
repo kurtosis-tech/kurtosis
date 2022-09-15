@@ -38,7 +38,7 @@ func TestWaitForEndpointAvailabilityFunction(t *testing.T) {
 	defer stopEnclaveFunc()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
-	configSupplier := getExampleServiceConfigSupplier()
+	configSupplier := getExampleServiceConfig()
 	config, err := configSupplier()
 	_, err = enclaveCtx.AddService(exampleServiceId, config)
 	require.NoError(t, err, "An error occurred adding the datastore service")
@@ -58,14 +58,11 @@ func TestWaitForEndpointAvailabilityFunction(t *testing.T) {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getExampleServiceConfigSupplier() func(ipAddr string) (*services.ContainerConfig, error) {
-	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
-		containerConfig := services.NewContainerConfigBuilder(
-			dockerGettingStartedImage,
-		).WithUsedPorts(map[string]*services.PortSpec{
-			exampleServicePortId: exampleServicePrivatePortSpec,
-		}).Build()
-		return containerConfig, nil
-	}
-	return containerConfigSupplier
+func getExampleServiceConfig() *services.ContainerConfig {
+	containerConfig := services.NewContainerConfigBuilder(
+		dockerGettingStartedImage,
+	).WithUsedPorts(map[string]*services.PortSpec{
+		exampleServicePortId: exampleServicePrivatePortSpec,
+	}).Build()
+	return containerConfig
 }
