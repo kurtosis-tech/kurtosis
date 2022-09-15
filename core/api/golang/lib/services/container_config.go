@@ -110,7 +110,7 @@ func NewContainerConfigBuilder(image string) *ContainerConfigBuilder {
 		environmentVariableOverrides: map[string]string{},
 		cpuAllocationMillicpus:       0,
 		memoryAllocationMegabytes:    0,
-		privateIPAddrPlaceholder: "",
+		privateIPAddrPlaceholder: defaultPrivateIPAddrPlaceholder,
 	}
 }
 
@@ -161,9 +161,6 @@ func (builder *ContainerConfigBuilder) WithPrivateIPAddrPlaceholder(privateIPAdd
 }
 
 func (builder *ContainerConfigBuilder) Build() *ContainerConfig {
-	if builder.privateIPAddrPlaceholder == "" {
-		builder.privateIPAddrPlaceholder = defaultPrivateIPAddrPlaceholder
-	}
 	return &ContainerConfig{
 		image:                        builder.image,
 		usedPorts:                    builder.usedPorts,

@@ -252,7 +252,7 @@ func(network *ServiceNetwork) StartServices(
 	for serviceID, serviceInfo := range successfulServicesPool {
 		err = network.addServiceToTopology(serviceInfo, partitionID)
 		if err != nil {
-			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred adding service to the topology")
+			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred adding service '%v' to the topology", serviceID)
 			delete(successfulServicesPool, serviceID)
 			continue
 		}
@@ -323,47 +323,17 @@ func(network *ServiceNetwork) StartServices(
 		if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, network.registeredServiceInfo, network.networkingSidecars); err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration to partition off new nodes.")
 		}
-		logrus.Debugf("Successfully appleid qdisc configurations")
-		for serviceID := range successfulServicesPool {
-			servicesToRemoveFromTrafficControl[serviceID] = true
-		}
-		defer func() {
-			if len(servicesToRemoveFromTrafficControl) == 0 {
-				return
-			}
-			// We keep all mappings where source->dest are not in servicesToRemoveFromTrafficControl
-			updatesToApply := map[service.ServiceID]map[service.ServiceID]float32{}
-			for serviceID, targetServicePacketLossConfiguration := range servicePacketLossConfigurationsByServiceID {
-				// ignore all mappings from failed new services -> existing services
-				if _, found := servicesToRemoveFromTrafficControl[serviceID]; found {
-					continue
-				}
-				updatesToApply[serviceID] = map[service.ServiceID]float32{}
-				for targetServiceID  := range targetServicePacketLossConfiguration {
-					// ignore all mappings from existing services -> failed new services, keep all else
-					if _, found := servicesToRemoveFromTrafficControl[targetServiceID]; found {
-						continue
-					}
-					// keep all mappings where source->dest are not in servicesToRemoveFromTrafficControl
-					updatesToApply[serviceID] = targetServicePacketLossConfiguration
-				}
-			}
-			if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.registeredServiceInfo, network.networkingSidecars); err != nil {
-				for serviceID := range servicesToRemoveFromTrafficControl {
-					failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while removing the service '%v' from the traffic control configuration of other services.", serviceID)
-				}
-			}
-		}()
+		logrus.Debugf("Successfully applied qdisc configurations")
+		// We don't need to undo the traffic control changes because in the worst case existing nodes have entries in their traffic control for IP addresses that don't resolve to any containers.
 	}
 
+	logrus.Infof("Sueccesfully started services '%v' and failed '%v' in the service network", successfulServicesPool, failedServicesPool)
 	for serviceID := range successfulServicesPool {
 		delete(serviceIDsToRemove, serviceID)
 		delete(serviceIDsForTopologyCleanup, serviceID)
 		delete(sidecarsToCleanUp, serviceID)
 		delete(servicesToRemoveFromTrafficControl, serviceID)
 	}
-
-	logrus.Infof("Sueccesfully started services '%v' and failed '%v' in the service network", successfulServicesPool, failedServicesPool)
 	return successfulServicesPool, failedServicesPool, nil
 }
 
