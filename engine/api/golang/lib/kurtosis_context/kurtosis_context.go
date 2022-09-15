@@ -25,6 +25,8 @@ const (
 
 	DefaultKurtosisEngineServerGrpcProxyPortNum = uint16(9711)
 
+	DefaultKurtosisLogsCollectorHttpPortNum = uint16(9712)
+
 	// Blank tells the engine server to use the default
 	defaultApiContainerVersionTag = ""
 )

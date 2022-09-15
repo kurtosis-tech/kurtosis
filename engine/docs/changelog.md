@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Published the `DefaultKurtosisLogsCollectorHttpPortNum` const which can be used to launch the engine's server
 
 # 1.33.0
 ### Changes
