@@ -1,11 +1,11 @@
 # TBD
 ### Features
-* Published the `DefaultKurtosisLogsCollectorHttpPortNum` const which can be used to launch the engine's server
+* Published the `DefaultHttpLogsCollectorPortNum` const which can be used to launch the engine's server
 
 ### Breaking Changes
-* Renamed the `DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM` const to `DEFAULT_KURTOSIS_ENGINE_SERVER_GRPC_PORT_NUM` and `DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM` to `DEFAULT_KURTOSIS_ENGINE_SERVER_GRPC_PROXY_PORT_NUM` under our principle of TS & Go being as similar as possible
+* Renamed the `DefaultKurtosisEngineServerGrpcPortNum` const to `DefaultGrpcEngineServerPortNum` and `DefaultKurtosisEngineServerGrpcProxyPortNum` to `DefaultGrpcProxyEngineServerPortNum` in Golang library under our principle of TS & Go being as similar as possible
   * Users will have to replace the old const with the new ones, the values does not change
-  
+ 
 # 1.33.0
 ### Changes
 * Upgraded core to 1.59.1 and container-engine-lib to 0.38.0

@@ -29,9 +29,9 @@ const LOCAL_HOSTNAME: string = "localhost";
 
 const API_CONTAINER_LOG_LEVEL: string = "debug";
 
-export const DEFAULT_KURTOSIS_ENGINE_SERVER_GRPC_PORT_NUM: number = 9710;
-export const DEFAULT_KURTOSIS_ENGINE_SERVER_GRPC_PROXY_PORT_NUM: number = 9711;
-export const DEFAULT_KURTOSIS_LOGS_COLLECTOR_HTTP_PORT_NUM: number = 9712;
+export const DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM: number = 9710;
+export const DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM: number = 9711;
+export const DEFAULT_HTTP_LOGS_COLLECTOR_PORT_NUM: number = 9712;
 
 // Blank tells the engine server to use the default
 const DEFAULT_API_CONTAINER_VERSION_TAG = "";
@@ -59,14 +59,14 @@ export class KurtosisContext {
                 const grpc_node = await import( /* webpackIgnore: true */ "@grpc/grpc-js")
                 const engineServiceNode = await import( /* webpackIgnore: true */ "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb")
 
-                const kurtosisEngineSocketStr: string = `${LOCAL_HOSTNAME}:${DEFAULT_KURTOSIS_ENGINE_SERVER_GRPC_PORT_NUM}`
+                const kurtosisEngineSocketStr: string = `${LOCAL_HOSTNAME}:${DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM}`
                 const engineServiceClientNode = new engineServiceNode.EngineServiceClient(kurtosisEngineSocketStr, grpc_node.credentials.createInsecure())
                 genericEngineClient = new GrpcNodeEngineClient(engineServiceClientNode)
             }else {
                 // For the symmetricity purpose, we import 'engine_service_grpc_web_pb' here. But this wouldn't affect anything if imported normally.
                 const engineServiceWeb = await import("../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb")
 
-                const kurtosisEngineSocketStr: string = `http://${LOCAL_HOSTNAME}:${DEFAULT_KURTOSIS_ENGINE_SERVER_GRPC_PROXY_PORT_NUM}`
+                const kurtosisEngineSocketStr: string = `http://${LOCAL_HOSTNAME}:${DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM}`
                 const engineServiceClientWeb = new engineServiceWeb.EngineServiceClient(kurtosisEngineSocketStr)
                 genericEngineClient = new GrpcWebEngineClient(engineServiceClientWeb)
             }
