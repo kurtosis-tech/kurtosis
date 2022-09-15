@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/blang/semver"
-	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/launcher/engine_server_launcher"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

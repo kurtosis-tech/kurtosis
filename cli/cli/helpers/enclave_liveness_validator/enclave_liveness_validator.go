@@ -1,7 +1,7 @@
 package enclave_liveness_validator
 
 import (
-	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 )
 

@@ -2,7 +2,7 @@ package engine_manager
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/lib/kurtosis_context"
 	"net"
 )
 

@@ -9,7 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )

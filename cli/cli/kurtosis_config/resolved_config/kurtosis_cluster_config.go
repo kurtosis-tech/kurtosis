@@ -6,7 +6,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	v2 "github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/overrides_objects/v2"
-	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/stacktrace"
 	"strings"
 )
