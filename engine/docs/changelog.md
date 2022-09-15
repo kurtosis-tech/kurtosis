@@ -1,8 +1,14 @@
 # TBD
 
+### Fixes
+* Fixed CHANGELOG and versioning, the previous release should have been a minor version change due to breaking change
+
+### Breaking Changes
+* Fixed CHANGELOG and versioning, the previous release should have been a minor version change due to breaking change
+
 # 1.32.3
 
-### Changes
+### Breaking Changes
 * Upgraded core to 1.59.0 which changes the signature of `APIC.StartServices` and changes the `EnclaveContext.AddService` and related methods to take in a `ContainerConfig` instead of a `ConfigSupplier`
   * For further details we encourage users to look at the `core` changelogs & library documentation.
   * Users will have to restart their kurtosis engine via `kurtosis engine restart`
