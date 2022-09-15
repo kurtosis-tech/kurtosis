@@ -1,7 +1,8 @@
 # TBD
+### Changes
+* Upgraded container-engine-lib to `0.38.0`
 
 # 1.59.0
-
 ### Breaking Changes
 * Removed the `APIC.RegisterServices` endpoint
   * Users can now simply call the `APIC.StartServices` which will handle everything for them.
@@ -29,14 +30,11 @@
 ### Fixed
 * Fixed a bug in `ServiceNetwork.GetService` where the API container would panic by propagating a nil error if the APIC had a registration but the `KurtosisBackend` returned nothing.
 
-
 # 1.58.3
-
 ### Fixes
 * Fixed how `RenderTemplatesToFilesArtifact` would unmarshal large integers into float64, we unmarshal them into a json.Number instead now.
 
 # 1.58.2
-
 ### Features
 * Container engine server exposes a `RenderTemplatesToFilesArtifact` endpoint that takes in templates & data and returns a file artifact.
 * Added `RemoveFile` to both `FileCache` and `FilesArtifactStore` to support removing files from the cache and store.
