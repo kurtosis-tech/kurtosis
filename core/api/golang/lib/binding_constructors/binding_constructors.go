@@ -26,7 +26,8 @@ func NewServiceConfig(
 	envVars map[string]string,
 	filesArtifactMountDirpaths map[string]string,
 	cpuAllocationMillicpus uint64,
-	memoryAllocationMegabytes uint64) *kurtosis_core_rpc_api_bindings.ServiceConfig {
+	memoryAllocationMegabytes uint64,
+	privateIPAddrPlaceholder string) *kurtosis_core_rpc_api_bindings.ServiceConfig {
 	return &kurtosis_core_rpc_api_bindings.ServiceConfig{
 		ContainerImageName:        containerImageName,
 		PrivatePorts:              privatePorts,
@@ -37,6 +38,7 @@ func NewServiceConfig(
 		FilesArtifactMountpoints:  filesArtifactMountDirpaths,
 		CpuAllocationMillicpus:    cpuAllocationMillicpus,
 		MemoryAllocationMegabytes: memoryAllocationMegabytes,
+		PrivateIpAddrPlaceholder:  privateIPAddrPlaceholder,
 	}
 }
 
@@ -132,28 +134,12 @@ func NewModuleInfo(
 }
 
 // ==============================================================================================
-//                                     Register Service
-// ==============================================================================================
-func NewRegisterServicesArgs(serviceIDSet map[string]bool, partitionID string) *kurtosis_core_rpc_api_bindings.RegisterServicesArgs{
-	return &kurtosis_core_rpc_api_bindings.RegisterServicesArgs{
-		ServiceIdSet: serviceIDSet,
-		PartitionId: partitionID,
-	}
-}
-
-func NewRegisterServicesResponse(serviceIDsToIPsMap map[string]string, failedServicesErrors map[string]string) *kurtosis_core_rpc_api_bindings.RegisterServicesResponse {
-	return &kurtosis_core_rpc_api_bindings.RegisterServicesResponse{
-		ServiceIdsToPrivateIpAddresses: serviceIDsToIPsMap,
-		FailedServiceIdsToError: failedServicesErrors,
-	}
-}
-
-// ==============================================================================================
 //                                        Start Service
 // ==============================================================================================
-func NewStartServicesArgs(serviceConfigs map[string]*kurtosis_core_rpc_api_bindings.ServiceConfig) *kurtosis_core_rpc_api_bindings.StartServicesArgs {
+func NewStartServicesArgs(serviceConfigs map[string]*kurtosis_core_rpc_api_bindings.ServiceConfig, partitionID string) *kurtosis_core_rpc_api_bindings.StartServicesArgs {
 	return &kurtosis_core_rpc_api_bindings.StartServicesArgs{
 		ServiceIdsToConfigs: serviceConfigs,
+		PartitionId:         partitionID,
 	}
 }
 

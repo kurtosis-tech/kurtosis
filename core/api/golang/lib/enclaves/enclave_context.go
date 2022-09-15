@@ -126,12 +126,12 @@ func (enclaveCtx *EnclaveContext) GetModuleContext(moduleId modules.ModuleID) (*
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) AddService(
 	serviceID services.ServiceID,
-	containerConfigSupplier func(ipAddr string) (*services.ContainerConfig, error),
+	containerConfig *services.ContainerConfig,
 ) (*services.ServiceContext, error) {
-	serviceConfigSuppliers := map[services.ServiceID]func(ipAddr string) (*services.ContainerConfig, error){}
-	serviceConfigSuppliers[serviceID] = containerConfigSupplier
+	containerConfigs := map[services.ServiceID]*services.ContainerConfig{}
+	containerConfigs[serviceID] = containerConfig
 	serviceContexts, failedServices, err := enclaveCtx.AddServicesToPartition(
-		serviceConfigSuppliers,
+		containerConfigs,
 		defaultPartitionId,
 	)
 	if err != nil {
@@ -150,29 +150,29 @@ func (enclaveCtx *EnclaveContext) AddService(
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) AddServices(
-	serviceConfigSuppliers map[services.ServiceID]func(ipAddr string) (*services.ContainerConfig, error),
+	containerConfigs map[services.ServiceID]*services.ContainerConfig,
 ) (
 	resultSuccessfulServices map[services.ServiceID]*services.ServiceContext,
 	resultFailedServices map[services.ServiceID]error,
 	resultErr error,
 ) {
-	succcessfulServices, failedServices, err := enclaveCtx.AddServicesToPartition(serviceConfigSuppliers, defaultPartitionId)
+	successfulServices, failedServices, err := enclaveCtx.AddServicesToPartition(containerConfigs, defaultPartitionId)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred adding services to the enclave in the default partition.")
 	}
-	return succcessfulServices, failedServices, err
+	return successfulServices, failedServices, err
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	serviceID services.ServiceID,
 	partitionID PartitionID,
-	containerConfigSupplier func(ipAddr string) (*services.ContainerConfig, error),
+	containerConfig *services.ContainerConfig,
 ) (*services.ServiceContext, error) {
-	serviceConfigSuppliers := map[services.ServiceID]func(ipAddr string) (*services.ContainerConfig, error){}
-	serviceConfigSuppliers[serviceID] = containerConfigSupplier
+	containerConfigs := map[services.ServiceID]*services.ContainerConfig{}
+	containerConfigs[serviceID] = containerConfig
 	serviceContexts, failedServices, err := enclaveCtx.AddServicesToPartition(
-		serviceConfigSuppliers,
+		containerConfigs,
 		partitionID,
 	)
 	if err != nil {
@@ -190,7 +190,7 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 }
 
 func (enclaveCtx *EnclaveContext) AddServicesToPartition(
-	serviceConfigSuppliers map[services.ServiceID]func(ipAddr string) (*services.ContainerConfig, error),
+	containerConfigs map[services.ServiceID]*services.ContainerConfig,
 	partitionID PartitionID,
 ) (
 	resultSuccessfulServices map[services.ServiceID]*services.ServiceContext,
@@ -199,62 +199,10 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 ) {
 	ctx := context.Background()
 	failedServicesPool := map[services.ServiceID]error{}
+	partitionIDStr := string(partitionID)
 
-	logrus.Trace("Registering new services with Kurtosis API...")
-	serviceIDs := map[string]bool{}
-	for id, _ := range serviceConfigSuppliers {
-		serviceIDs[string(id)] = true
-	}
-	registerServicesArgs := binding_constructors.NewRegisterServicesArgs(serviceIDs, string(partitionID))
-	registerServicesResp, err := enclaveCtx.client.RegisterServices(ctx, registerServicesArgs)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(
-			err,
-			"An error occurred registering service with IDs '%v' with the Kurtosis API",
-			serviceIDs)
-	}
-	// Defer undos to remove all registration resources of successful registrations, in case of errors in following phases
-	shouldRemoveServices := map[services.ServiceID]bool{}
-	for serviceIDStr, _ := range registerServicesResp.GetServiceIdsToPrivateIpAddresses() {
-		shouldRemoveServices[services.ServiceID(serviceIDStr)] = true
-	}
-	defer func() {
-		for serviceID, _ := range shouldRemoveServices {
-			// TODO: Migrate this to a bulk remove services call
-			removeServiceArgs := binding_constructors.NewRemoveServiceArgs(string(serviceID))
-			_, err = enclaveCtx.client.RemoveService(context.Background(), removeServiceArgs)
-			if err != nil {
-				failedServicesPool[serviceID] = stacktrace.Propagate(err,
-					"Attempted to remove service '%v' to delete its resources after registering it failed, but an error occurred"+
-						"while attempting to remove the service.", serviceID)
-			}
-		}
-	}()
-	for serviceIDStr, errStr := range registerServicesResp.GetFailedServiceIdsToError() {
-		serviceID := services.ServiceID(serviceIDStr)
-		failedServicesPool[serviceID] = stacktrace.Propagate(errors.New(errStr), "The following error occurred when trying to register service '%v'", serviceID)
-	}
-
-	logrus.Trace("New services successfully registered with Kurtosis API")
 	serviceConfigs := map[string]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
-	for serviceIDStr, privateIPAddr := range registerServicesResp.GetServiceIdsToPrivateIpAddresses() {
-		serviceID := services.ServiceID(serviceIDStr)
-
-		logrus.Tracef("Generating container config object using the container config supplier for service '%v'...", serviceID)
-		containerConfigSupplier, found := serviceConfigSuppliers[serviceID]
-		if !found {
-			failedServicesPool[serviceID] = stacktrace.NewError(
-				"A container config was not found for the registered service ID. " +
-					"This should not have happened as it means a service ID that was not requested was registered. This is a bug in Kurtosis.")
-			continue
-		}
-		containerConfig, err := containerConfigSupplier(privateIPAddr)
-		if err != nil {
-			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred executing the container config supplier for service with ID '%v'", serviceID)
-			continue
-		}
-		logrus.Tracef("Container config object successfully generated for service with ID '%v'", serviceID)
-
+	for serviceID, containerConfig := range containerConfigs {
 		logrus.Tracef("Creating files artifact ID str -> mount dirpaths map for service with Id '%v'...", serviceID)
 		artifactIdStrToMountDirpath := map[string]string{}
 		for filesArtifactID, mountDirpath := range containerConfig.GetFilesArtifactMountpoints() {
@@ -280,6 +228,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 		}
 		//TODO finish the hack
 
+		serviceIDStr := string(serviceID)
 		serviceConfigs[serviceIDStr] = binding_constructors.NewServiceConfig(
 			containerConfig.GetImage(),
 			privatePortsForApi,
@@ -289,19 +238,32 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 			containerConfig.GetEnvironmentVariableOverrides(),
 			artifactIdStrToMountDirpath,
 			containerConfig.GetCPUAllocationMillicpus(),
-			containerConfig.GetMemoryAllocationMegabytes())
+			containerConfig.GetMemoryAllocationMegabytes(),
+			containerConfig.GetPrivateIPAddrPlaceholder())
 	}
 
-	startServicesArgs := binding_constructors.NewStartServicesArgs(serviceConfigs)
+	startServicesArgs := binding_constructors.NewStartServicesArgs(serviceConfigs, partitionIDStr)
 
 	logrus.Trace("Starting new services with Kurtosis API...")
 	startServicesResp, err := enclaveCtx.client.StartServices(ctx, startServicesArgs)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred starting services with the Kurtosis API")
 	}
-	// Don't need to defer a removal of successfully started services here because it was done right after register phase
-	// This is the correct way to do it because we want to defer undos of resources, right after the function gains responsibility of
-	// the resource, which in this case, is after they successfully returned from the successful phase.
+	// defer-undo removes all successfully started services in case of errors in the future phases
+	shouldRemoveServices := map[services.ServiceID]bool{}
+	for serviceIDStr := range startServicesResp.GetSuccessfulServiceIdsToServiceInfo() {
+		shouldRemoveServices[services.ServiceID(serviceIDStr)] = true
+	}
+	defer func() {
+		for serviceID, _ := range shouldRemoveServices {
+			removeServiceArgs := binding_constructors.NewRemoveServiceArgs(string(serviceID))
+			_, err = enclaveCtx.client.RemoveService(context.Background(), removeServiceArgs)
+			if err != nil {
+				logrus.Errorf("Attempted to remove service '%v' to delete its resources after it failed to start, but an error occurred "+
+					"while attempting to remove the service:\n'%v'", serviceID, err)
+			}
+		}
+	}()
 
 	for serviceIDStr, errStr := range startServicesResp.GetFailedServiceIdsToError() {
 		serviceID := services.ServiceID(serviceIDStr)
@@ -335,7 +297,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 	}
 
 	// Do not remove resources for successful services
-	for serviceID, _ := range successfulServices {
+	for serviceID := range successfulServices {
 		delete(shouldRemoveServices, serviceID)
 	}
 	return successfulServices, failedServicesPool, nil

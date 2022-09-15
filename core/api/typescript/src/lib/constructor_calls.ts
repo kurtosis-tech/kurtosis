@@ -30,7 +30,7 @@ import {
     RemoveServiceResponse,
     UnloadModuleResponse,
     GetModulesResponse,
-    GetServicesResponse, RegisterServicesArgs, StartServicesArgs,
+    GetServicesResponse, StartServicesArgs,
     RenderTemplatesToFilesArtifactArgs,
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceID } from './services/service';
@@ -57,7 +57,8 @@ export function newServiceConfig(
     environmentVariableOverrides : Map<string, string>,
     filesArtifactMountDirpaths : Map<string, string>,
     cpuAllocationMillicpus : number,
-    memoryAllocationMegabytes : number
+    memoryAllocationMegabytes : number,
+    privateIPAddrPlaceholder : string
 ) {
     const result : ServiceConfig = new ServiceConfig();
     result.setContainerImageName(containerImageName);
@@ -89,6 +90,7 @@ export function newServiceConfig(
     }
     result.setCpuAllocationMillicpus(cpuAllocationMillicpus);
     result.setMemoryAllocationMegabytes(memoryAllocationMegabytes);
+    result.setPrivateIpAddrPlaceholder(privateIPAddrPlaceholder);
     return result;
 }
 
@@ -177,29 +179,15 @@ export function newModuleInfo(
 
 
 // ==============================================================================================
-//                                     Register Service
-// ==============================================================================================
-export function newRegisterServicesArgs(serviceIds: Map<ServiceID, boolean>, partitionId: PartitionID): RegisterServicesArgs {
-    const result : RegisterServicesArgs = new RegisterServicesArgs();
-    const serviceIdSet: jspb.Map<string, boolean> = result.getServiceIdSetMap();
-    for (const [serviceId, _] of serviceIds) {
-        serviceIdSet.set(String(serviceId), true);
-    }
-    result.setPartitionId(String(partitionId));
-
-    return result;
-}
-
-
-// ==============================================================================================
 //                                        Start Service
 // ==============================================================================================
-export function newStartServicesArgs(serviceConfigs : Map<ServiceID, ServiceConfig>) : StartServicesArgs {
+export function newStartServicesArgs(serviceConfigs : Map<ServiceID, ServiceConfig>, partitionID: string) : StartServicesArgs {
     const result : StartServicesArgs = new StartServicesArgs();
     const serviceIdsToConfigs : jspb.Map<string, ServiceConfig> = result.getServiceIdsToConfigsMap();
     for (const [serviceId, serviceConfig] of serviceConfigs) {
         serviceIdsToConfigs.set(String(serviceId), serviceConfig);
     }
+    result.setPartitionId(partitionID)
 
     return result;
 }

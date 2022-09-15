@@ -1,5 +1,33 @@
 # TBD
 
+### Breaking Changes
+* Removed the `APIC.RegisterServices` endpoint
+  * Users can now simply call the `APIC.StartServices` which will handle everything for them.
+* Changed the `APIC.StartServices` endpoint to accept a `partition_id`
+  * Users will now have to pass in a partition_id of an existing partition which maybe `""` - to pick the default partition.
+* Added `privateIPAddrPlaceholder` field to the `ContainerConfig` object
+  * This defaults to `KURTOSIS_IP_ADDR_PLACEHOLDER` in case the user doesn't supply it.
+  * Kurtosis will replace the placeholder in the entry point args, env vars & cmd args with the private ip address of the container while starting the container.
+* Changed the `EnclaveContext.AddService`, `EnclaveContext.AddServices`, `EnclaveContext.AddServiceToPartition` and `EnclaveContext.AddServicesToPatition` to accept a `ContainerConfig` object instead of a `ContainerConfigSupplier`
+  * Now the user can simply pass in a `containerConfig ContainerConfig` over supplying a `serviceConfigSuppliers func(ipAddr string) (*services.ContainerConfig, error)` which supports a `privateIPAddrPlaceholder` mentioned above.
+
+### Changes
+* Upgraded container-engine-lib to `0.37.1` .
+* Removed the `APIC.RegisterService` endpoint.
+* Changed the `APIC.StartServices` endpoint to accept a `partition_id`.
+* Changed the `EnclaveContext.AddService`, `EnclaveContext.AddServices`, `EnclaveContext.AddServiceToPartition` and `EnclaveContext.AddServicesToPatition` to accept a `ContainerConfig` object instead of a `ContainerConfigSupplier`.
+* Added `privateIPAddrPlaceholder` field to the `ContainerConfig` object.
+* Changed order of partitioning while starting services, now we start the services and then block access from/to the service from other partitions.
+* Made `ServiceNetwork.StartServices` clean up after itself completely
+  * Destroys all the services that fail anywhere in the process.
+  * Removes failing services from the partition topology.
+  * Removes the networking sidecars of any services that fail anywhere in the process.
+  * Undoes the partitioning, and removes the failing services from the `qdisc` rules of other services.
+
+### Fixed
+* Fixed a bug in `ServiceNetwork.GetService` where the API container would panic by propagating a nil error if the APIC had a registration but the `KurtosisBackend` returned nothing.
+
+
 # 1.58.3
 
 ### Fixes

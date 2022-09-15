@@ -17,6 +17,10 @@
 
 package services
 
+const (
+	defaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
+)
+
 // The UUID of an artifact containing files that should be mounted into a service container
 type FilesArtifactUUID string
 
@@ -34,6 +38,7 @@ type ContainerConfig struct {
 	environmentVariableOverrides map[string]string
 	cpuAllocationMillicpus       uint64
 	memoryAllocationMegabytes    uint64
+	privateIPAddrPlaceholder     string
 }
 
 func (config *ContainerConfig) GetImage() string {
@@ -73,6 +78,10 @@ func (config *ContainerConfig) GetPublicPorts() map[string]*PortSpec {
 	return config.publicPorts
 }
 
+func (config *ContainerConfig) GetPrivateIPAddrPlaceholder() string {
+	return config.privateIPAddrPlaceholder
+}
+
 // ====================================================================================================
 //                                      Builder
 // ====================================================================================================
@@ -88,6 +97,7 @@ type ContainerConfigBuilder struct {
 	environmentVariableOverrides map[string]string
 	cpuAllocationMillicpus       uint64
 	memoryAllocationMegabytes    uint64
+	privateIPAddrPlaceholder     string
 }
 
 func NewContainerConfigBuilder(image string) *ContainerConfigBuilder {
@@ -100,6 +110,7 @@ func NewContainerConfigBuilder(image string) *ContainerConfigBuilder {
 		environmentVariableOverrides: map[string]string{},
 		cpuAllocationMillicpus:       0,
 		memoryAllocationMegabytes:    0,
+		privateIPAddrPlaceholder: defaultPrivateIPAddrPlaceholder,
 	}
 }
 
@@ -144,6 +155,11 @@ func (builder *ContainerConfigBuilder) WithMemoryAllocationMegabytes(memoryAlloc
 	return builder
 }
 
+func (builder *ContainerConfigBuilder) WithPrivateIPAddrPlaceholder(privateIPAddrPlaceholder string) *ContainerConfigBuilder{
+	builder.privateIPAddrPlaceholder = privateIPAddrPlaceholder
+	return builder
+}
+
 func (builder *ContainerConfigBuilder) Build() *ContainerConfig {
 	return &ContainerConfig{
 		image:                        builder.image,
@@ -156,5 +172,6 @@ func (builder *ContainerConfigBuilder) Build() *ContainerConfig {
 		publicPorts:      builder.publicPorts,
 		cpuAllocationMillicpus:    builder.cpuAllocationMillicpus,
 		memoryAllocationMegabytes: builder.memoryAllocationMegabytes,
+		privateIPAddrPlaceholder: builder.privateIPAddrPlaceholder,
 	}
 }

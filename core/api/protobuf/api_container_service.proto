@@ -20,10 +20,7 @@ service ApiContainerService {
   // Executes an executable module on the user's behalf
   rpc ExecuteModule(ExecuteModuleArgs) returns (ExecuteModuleResponse) {};
 
-  // Registers a service with the API container but doesn't start the container for it
-  rpc RegisterServices(RegisterServicesArgs) returns (RegisterServicesResponse) {};
-
-  // Starts previously-registered services by creating containers for them
+  // Start services by creating containers for them
   rpc StartServices(StartServicesArgs) returns (StartServicesResponse) {};
 
   // Returns the IDs of the current services in the enclave
@@ -130,6 +127,9 @@ message ServiceConfig {
 
   // Corresponds to available memory in megabytes in both Docker and Kubernetes
   uint64 memory_allocation_megabytes = 9;
+
+  // The private IP address placeholder string used in entrypoint_args, cmd_args & env_vars that will be replaced with the private IP address inside the container
+  string private_ip_addr_placeholder = 10;
 }
 
 message ModuleInfo {
@@ -225,29 +225,13 @@ message ExecuteModuleResponse {
 }
 
 // ==============================================================================================
-//                                     Register Service
-// ==============================================================================================
-message RegisterServicesArgs {
-  // IDs that will be used to identify services going forward
-  map<string, bool> service_id_set = 1;
-
-  // If emptystring, the default partition ID will be used
-  string partition_id = 2;
-}
-
-message RegisterServicesResponse {
-  // A map of Service IDs to IP address *inside* the enclave that the service will receive when it starts
-  map<string, string> service_ids_to_private_ip_addresses = 1;
-
-  // A map of Service IDs that failed to register with the error causing the failure
-  map<string, string> failed_service_ids_to_error = 2;
-}
-
-// ==============================================================================================
 //                                        Start Service
 // ==============================================================================================
 message StartServicesArgs {
   map<string, ServiceConfig> service_ids_to_configs = 1;
+
+  // The partition to start the service in
+  string partition_id = 2;
 }
 
 message StartServicesResponse {

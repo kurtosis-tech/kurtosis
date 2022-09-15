@@ -69,25 +69,25 @@ Downloads the given files artifacts to the Kurtosis engine, associating them wit
 
 * `filesArtifactUrls`: A map of files_artifact_id -> url, where the ID is how the artifact will be referenced in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints] and the URL is the URL on the web where the files artifact should be downloaded from.
 
-### addServiceToPartition(ServiceID serviceId, PartitionID partitionId, Func(String ipAddr) -\> [ContainerConfig][containerconfig] containerConfigSupplier) -\> ([ServiceContext][servicecontext] serviceContext)
-Starts a new service in the enclave with the given service ID, inside the partition with the given ID, using the given config supplier.
+### addServiceToPartition(ServiceID serviceId, PartitionID partitionId, [ContainerConfig][containerconfig] containerConfig) -\> ([ServiceContext][servicecontext] serviceContext)
+Starts a new service in the enclave with the given service ID, inside the partition with the given ID, using the given container config.
 
 **Args**
 
 * `serviceId`: The ID that the new service should have.
 * `partitionId`: The ID of the partition that the new service should be started in. This can be left blank to start the service in the default partition if it exists (i.e. if the enclave hasn't been repartitioned and the default partition removed).
-* `containerConfigSupplier`: An anonymous function, used to produce the [ContainerConfig][containerconfig] for starting the service, which receives the private IP address of the service being started (the IP address of the service _inside_ the service's enclave)
+* `containerConfig`: A [ContainerConfig][containerconfig] object indicating how to configure the service.
 
 **Returns**
 
 * `serviceContext`: The [ServiceContext][servicecontext] representation of a service running in a Docker container. Port information can be found in `ServiceContext.GetPublicPorts()`. The port spec strings that the service declared (as defined in [ContainerConfig.usedPorts][containerconfig_usedports]), mapped to the port on the host machine where the port has been bound to. This allows you to make requests to a service running in Kurtosis by making requests to a port on your local machine. If a port was not bound to a host machine port, it will not be present in the map (and if no ports were bound to host machine ports, the map will be empty).
 
-### addServicesToPartition(Map\<ServiceID, Func(String ipAddr) -\> [ContainerConfig][containerconfig]\> serviceConfigSuppliers, PartitionID partitionId) -\> (Map\<ServiceID, [ServiceContext][servicecontext]\> successfulServices, Map\<ServiceID, Error\> failedServices)
-Start services in bulk in the enclave with the given service IDs, inside the partition with the given ID, using the given config suppliers.
+### addServicesToPartition(Map\<ServiceID, [ContainerConfig][containerconfig]\> containerConfigs, PartitionID partitionId) -\> (Map\<ServiceID, [ServiceContext][servicecontext]\> successfulServices, Map\<ServiceID, Error\> failedServices)
+Start services in bulk in the enclave with the given service IDs, inside the partition with the given ID, using the given container config.
 
 **Args**
 
-* `serviceConfigSuppliers`: A mapping of service IDs to start in the enclave to their respective `containerConfigSupplier`'s indicating how to configure the service.
+* `containerConfigs`: A mapping of service IDs to start in the enclave to their `containerConfig` indicating how to configure the service.
 * `partitionId`: The ID of the partition that the new service should be started in. This can be left blank to start the service in the default partition if it exists (i.e. if the enclave hasn't been repartitioned and the default partition removed).
 
 **Returns**
@@ -95,10 +95,10 @@ Start services in bulk in the enclave with the given service IDs, inside the par
 * `successfulServices`: A mapping of service IDs that were successfully started in the enclave to their respective [ServiceContext][servicecontext] representation. 
 * `failedServices`: A mapping of service IDs to the errors the caused that prevented the services from being added successfully to the enclave. 
 
-### addService(ServiceID serviceId,  Func(String ipAddr) -\> [ContainerConfig][containerconfig] containerConfigSupplier) -\> ([ServiceContext][servicecontext] serviceContext)
+### addService(ServiceID serviceId,  [ContainerConfig][containerconfig] containerConfig) -\> ([ServiceContext][servicecontext] serviceContext)
 Convenience wrapper around [EnclaveContext.addServiceToPartition][enclavecontext_addservicetopartition], that adds the service to the default partition. Note that if the enclave has been repartitioned and the default partition doesn't exist anymore, this method will fail.
 
-### addServices(Map\<ServiceID, Func(String ipAddr) -\> [ContainerConfig][containerconfig]\> serviceConfigSuppliers) -\> (Map\<ServiceID, [ServiceContext][servicecontext]\> successfulServices, Map\<ServiceID, Error\> failedServices)
+### addServices(Map\<ServiceID, [ContainerConfig][containerconfig]\> containerConfigs) -\> (Map\<ServiceID, [ServiceContext][servicecontext]\> successfulServices, Map\<ServiceID, Error\> failedServices)
 Convenience wrapper around [EnclaveContext.addServicesToPartition][enclavecontext_addservicestopartition], that adds the services to the default partition. Note that if the enclave has been repartitioned and the default partition doesn't exist anymore, this method will fail.
 
 ### getServiceContext(ServiceID serviceId) -\> [ServiceContext][servicecontext]
@@ -279,7 +279,9 @@ Allows you to set an allocation for CPU resources available in the underlying ho
 ### uint64 memoryAllocationMegabytes
 Allows you to set an allocation for memory resources available in the underlying host container of a service. The metric used to measure `memoryAllocation` is `megabytes`. Setting `memoryAllocation=1000` is equivalent to setting the memory limit of the underlying host machine to `1e9 bytes` or `1GB`. If set, the value must be a nonzero positive integer of at least `6 megabytes` as Docker requires this as a minimum. If unset, there will be no constraints on memory usage of the host container. For information on memory limits in your underlying container engine, view [Docker](https://docs.docker.com/config/containers/resource_constraints/)'s and [Kubernetes](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)` docs.
 
-
+### String privateIPAddrPlaceholder
+The placeholder string used within `entrypointOverrideArgs`, `cmdOverrideArgs`, and `environmentVariableOverrides` that gets replaced with the private IP address of the container inside Docker/Kubernetes before the container starts. This defaults to `KURTOSIS_IP_ADDR_PLACEHOLDER` if this isn't set.
+The user needs to make sure that they provide the same placeholder string for this field that they use in `entrypointOverrideArgs`, `cmdOverrideArgs`, and `environmentVariableOverrides`.
 
 
 ContainerConfigBuilder
@@ -373,9 +375,9 @@ _Found a bug? File it on [the repo][issues]!_
 
 [enclavecontext]: #enclavecontext
 [enclavecontext_registerfilesartifacts]: #registerfilesartifactsmapfilesartifactid-string-filesartifacturls
-[enclavecontext_addservice]: #addserviceserviceid-serviceid--funcstring-ipaddr---containerconfigcontainerconfig-containerconfigsupplier---servicecontextservicecontext-servicecontext
-[enclavecontext_addservicetopartition]: #addservicetopartitionserviceid-serviceid-partitionid-partitionid-funcstring-ipaddr---containerconfig-containerconfigsupplier---servicecontext-servicecontext
-[enclavecontext_addservicestopartition]: #addservicestopartitionmapserviceid-funcstring-ipaddr---containerconfig-serviceconfigsuppliers-partitionid-partitionid---mapserviceid-servicecontext-successfulservices-mapserviceid-error-failedservices
+[enclavecontext_addservice]: #addserviceserviceid-serviceid--containerconfig-containerconfig---servicecontext-servicecontext
+[enclavecontext_addservicetopartition]: #addservicetopartitionserviceid-serviceid-partitionid-partitionid-containerconfig-containerconfig---servicecontext-servicecontext
+[enclavecontext_addservicestopartition]: #addservicestopartitionmapserviceid-containerconfig-containerconfigs-partitionid-partitionid---mapserviceid-servicecontext-successfulservices-mapserviceid-error-failedservices
 [enclavecontext_unpauseservice]: #unpauseserviceserviceid-serviceid
 [enclavecontext_repartitionnetwork]: #repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnectionpartitionconnection-partitionconnections-partitionconnectionpartitionconnection-defaultconnection
 [enclavecontext_uploadfiles]: #uploadfilesstring-pathtoupload
