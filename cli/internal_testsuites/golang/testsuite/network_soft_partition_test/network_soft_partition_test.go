@@ -1,4 +1,5 @@
-//+build !minikube
+//go:build !minikube
+// +build !minikube
 
 // We don't run this test in Kubernetes because, as of 2022-07-07, Kubernetes doesn't support network partitioning
 
@@ -60,16 +61,15 @@ func TestNetworkSoftPartitions(t *testing.T) {
 	defer stopEnclaveFunc()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
-	configSupplier := getExampleServiceConfigSupplier()
-	config, _ := configSupplier("hello")
+	exampleServiceContainerConfig := getExampleServiceConfig()
 
-	exampleServiceCtx, err := enclaveCtx.AddService(exampleServiceId, config)
+	exampleServiceCtx, err := enclaveCtx.AddService(exampleServiceId, exampleServiceContainerConfig)
 	require.NoError(t, err, "An error occurred adding the datastore service")
 	logrus.Debugf("Example service IP: %v", exampleServiceCtx.GetPrivateIPAddress())
 
-	config, _ = getTestServiceContainerConfigSupplier()("hello")
+	testServiceContainerConfig := getTestServiceContainerConfig()
 
-	testServiceCtx, err := enclaveCtx.AddService(testService, config)
+	testServiceCtx, err := enclaveCtx.AddService(testService, testServiceContainerConfig)
 	require.NoError(t, err, "An error occurred adding the file server service")
 	logrus.Debugf("Test service IP: %v", testServiceCtx.GetPrivateIPAddress())
 
@@ -210,36 +210,30 @@ func repartitionNetwork(
 	return nil
 }
 
-func getExampleServiceConfigSupplier() func(ipAddr string) (*services.ContainerConfig, error) {
+func getExampleServiceConfig() *services.ContainerConfig {
 	portSpec := services.NewPortSpec(exampleServicePortNumInsideNetwork, services.PortProtocol_TCP)
-	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
-		containerConfig := services.NewContainerConfigBuilder(
-			dockerGettingStartedImage,
-		).WithUsedPorts(
-			map[string]*services.PortSpec{exampleServiceMainPortID: portSpec},
-		).Build()
-		return containerConfig, nil
-	}
-	return containerConfigSupplier
+	containerConfig := services.NewContainerConfigBuilder(
+		dockerGettingStartedImage,
+	).WithUsedPorts(
+		map[string]*services.PortSpec{exampleServiceMainPortID: portSpec},
+	).Build()
+	return containerConfig
 }
 
-func getTestServiceContainerConfigSupplier() func(ipAddr string) (*services.ContainerConfig, error) {
-	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
+func getTestServiceContainerConfig() *services.ContainerConfig {
 
-		// We sleep because the only function of this container is to test Docker executing a command while it's running
-		// NOTE: We could just as easily combine this into a single array (rather than splitting between ENTRYPOINT and CMD
-		// args), but this provides a nice little regression test of the ENTRYPOINT overriding
-		entrypointArgs := []string{sleepCmd}
-		cmdArgs := []string{testServiceSleepMillisecondsStr}
+	// We sleep because the only function of this container is to test Docker executing a command while it's running
+	// NOTE: We could just as easily combine this into a single array (rather than splitting between ENTRYPOINT and CMD
+	// args), but this provides a nice little regression test of the ENTRYPOINT overriding
+	entrypointArgs := []string{sleepCmd}
+	cmdArgs := []string{testServiceSleepMillisecondsStr}
 
-		containerConfig := services.NewContainerConfigBuilder(
-			kurtosisIpRoute2DockerImageName,
-		).WithEntrypointOverride(
-			entrypointArgs,
-		).WithCmdOverride(
-			cmdArgs,
-		).Build()
-		return containerConfig, nil
-	}
-	return containerConfigSupplier
+	containerConfig := services.NewContainerConfigBuilder(
+		kurtosisIpRoute2DockerImageName,
+	).WithEntrypointOverride(
+		entrypointArgs,
+	).WithCmdOverride(
+		cmdArgs,
+	).Build()
+	return containerConfig
 }
