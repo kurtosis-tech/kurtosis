@@ -53,8 +53,8 @@ const (
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
-	// Magic key that, when found in CMD, ENTRYPOINT, or envvars, will be replaced with the service's IP address
-	serviceIpAddrReplaceKeyword = "IPADDR"
+
+	privateIPAddressPlaceholderKey = "ip-address-placeholder"
 
 	// Each envvar should be KEY1=VALUE1, which means we should have two components to each envvar declaration
 	expectedNumberKeyValueComponentsInEnvvarDeclaration = 2
@@ -68,7 +68,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 	LongDescription: fmt.Sprintf(
 		"Adds a new service with the given parameters to the given enclave (NOTE: any instances of "+
 			"the string '%v' in the CMD args will be replaced with the container's IP address inside the enclave)",
-		serviceIpAddrReplaceKeyword,
+		privateIPAddressPlaceholderKey,
 	),
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
@@ -99,7 +99,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 				"ENTRYPOINT binary that will be used when running the container, overriding the "+
 					"image's default ENTRYPOINT (NOTE: any instances of the string '%v' will be "+
 					"replaced with the container's IP address inside the enclave)",
-				serviceIpAddrReplaceKeyword,
+				privateIPAddressPlaceholderKey,
 			),
 			// TODO Make this a string list
 			Type: flags.FlagType_String,
@@ -114,7 +114,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 				envvarKeyValueDelimiter,
 				envvarDeclarationsDelimiter,
 				envvarKeyValueDelimiter,
-				serviceIpAddrReplaceKeyword,
+				privateIPAddressPlaceholderKey,
 			),
 			Type: flags.FlagType_String,
 		},
@@ -147,6 +147,11 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 				command_str_consts.FilesCmdStr,
 				command_str_consts.FilesUploadCmdStr,
 			),
+			Type: flags.FlagType_String,
+		},
+		{
+			Key: privateIPAddressPlaceholderKey,
+			Usage: "Kurtosis will replace occurrences of this string in the entrypoint args, env vars and cmd args with the IP address of the container inside Docker/Kubernetes",
 			Type: flags.FlagType_String,
 		},
 	},
@@ -200,6 +205,11 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the files artifact mounts string using key '%v'", filesFlagKey)
 	}
 
+	privateIPAddressPlaceholder, err := flags.GetString(privateIPAddressPlaceholderKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the private IP address place holder using key '%v'", privateIPAddressPlaceholderKey)
+	}
+
 	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting existing enclaves")
@@ -215,16 +225,16 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveId)
 	}
 
-	containerConfigSupplier, err := getContainerConfigSupplier(image, portsStr, cmdArgs, entrypointStr, envvarsStr, filesArtifactMountsStr)
-	containerConfig, _ := containerConfigSupplier("hello")
+	containerConfig, err := getContainerConfig(image, portsStr, cmdArgs, entrypointStr, envvarsStr, filesArtifactMountsStr, privateIPAddressPlaceholder)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred getting the container config supplier to start image '%v' with CMD '%+v', ENTRYPOINT '%v', and envvars '%v'",
+			"An error occurred getting the container config supplier to start image '%v' with CMD '%+v', ENTRYPOINT '%v', and envvars '%v' and private IP address placeholder '%v'",
 			image,
 			cmdArgs,
 			entrypointStr,
 			envvarsStr,
+			privateIPAddressPlaceholder,
 		)
 	}
 
@@ -306,14 +316,15 @@ func getEnclaveContextFromEnclaveInfo(infoForEnclave *kurtosis_engine_rpc_api_bi
 	return enclaveCtx, nil
 }
 
-func getContainerConfigSupplier(
+func getContainerConfig(
 	image string,
 	portsStr string,
 	cmdArgs []string,
 	entrypoint string,
 	envvarsStr string,
 	filesArtifactMountsStr string,
-) (func(ipAddr string) (*services.ContainerConfig, error), error) {
+	privateIPAddressPlaceholder string,
+)  (*services.ContainerConfig, error) {
 	envvarsMap, err := parseEnvVarsStr(envvarsStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing environment variables string '%v'", envvarsStr)
@@ -329,40 +340,28 @@ func getContainerConfigSupplier(
 		return nil, stacktrace.Propagate(err, "An error occurred parsing files artifact mounts string '%v'", filesArtifactMountsStr)
 	}
 
-	return func(ipAddr string) (*services.ContainerConfig, error) {
-		ipReplacedCmdArgs := []string{}
-		for _, arg := range cmdArgs {
-			newArg := strings.ReplaceAll(arg, serviceIpAddrReplaceKeyword, ipAddr)
-			ipReplacedCmdArgs = append(ipReplacedCmdArgs, newArg)
-		}
+	resultBuilder := services.NewContainerConfigBuilder(image)
+	if len(cmdArgs) > 0 {
+		resultBuilder.WithCmdOverride(cmdArgs)
+	}
+	if entrypoint != "" {
+		resultBuilder.WithEntrypointOverride([]string{entrypoint})
+	}
+	if len(envvarsMap) > 0 {
+		resultBuilder.WithEnvironmentVariableOverrides(envvarsMap)
+	}
+	if len(ports) > 0 {
+		resultBuilder.WithUsedPorts(ports)
+	}
+	if len(filesArtifactMounts) > 0 {
+		resultBuilder.WithFiles(filesArtifactMounts)
+	}
 
-		ipReplacedEntrypoint := strings.ReplaceAll(entrypoint, serviceIpAddrReplaceKeyword, ipAddr)
+	if len(privateIPAddressPlaceholder) > 0 {
+		resultBuilder.WithPrivateIPAddrPlaceholder(privateIPAddressPlaceholder)
+	}
 
-		ipReplacedEnvvars := map[string]string{}
-		for key, value := range envvarsMap {
-			newValue := strings.ReplaceAll(value, serviceIpAddrReplaceKeyword, ipAddr)
-			ipReplacedEnvvars[key] = newValue
-		}
-
-		resultBuilder := services.NewContainerConfigBuilder(image)
-		if len(ipReplacedCmdArgs) > 0 {
-			resultBuilder.WithCmdOverride(ipReplacedCmdArgs)
-		}
-		if ipReplacedEntrypoint != "" {
-			resultBuilder.WithEntrypointOverride([]string{ipReplacedEntrypoint})
-		}
-		if len(ipReplacedEnvvars) > 0 {
-			resultBuilder.WithEnvironmentVariableOverrides(ipReplacedEnvvars)
-		}
-		if len(ports) > 0 {
-			resultBuilder.WithUsedPorts(ports)
-		}
-		if len(filesArtifactMounts) > 0 {
-			resultBuilder.WithFiles(filesArtifactMounts)
-		}
-
-		return resultBuilder.Build(), nil
-	}, nil
+	return resultBuilder.Build(), nil
 }
 
 // Parses a string in the form KEY1=VALUE1,KEY2=VALUE2 into a map of strings

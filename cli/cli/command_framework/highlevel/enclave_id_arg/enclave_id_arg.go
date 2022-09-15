@@ -15,7 +15,7 @@ import (
 func NewEnclaveIDArg(
 	// The arg key where this enclave ID argument will be stored
 	argKey string,
-	// TODO SWITCH THIS TO A KURTOSISCONTEXT ONCE https://github.com/kurtosis-tech/kurtosis-core-api-lib/issues/508 IS BUILT!
+	// TODO SWITCH THIS TO A KURTOSISCONTEXT ONCE https://github.com/kurtosis-tech/kurtosis-core/issues/508 IS BUILT!
 	// We expect that the engine to be set up via the command's PreValidationAndRunFunc; this is the key where the resulting
 	//  EngineServiceClient will be stored in the context.Context object passed to the validation function
 	engineClientCtxKey string,
@@ -44,7 +44,7 @@ func getCompletions(ctx context.Context, flags *flags.ParsedFlags, previousArgs 
 		)
 	}
 
-	// TODO close the client inside the kurtosisCtx, but requires https://github.com/kurtosis-tech/kurtosis-engine-api-lib/issues/89
+	// TODO close the client inside the kurtosisCtx, but requires https://github.com/kurtosis-tech/kurtosis-engine-server/issues/89
 
 	enclaves, err := kurtosisCtx.GetEnclaves(ctx)
 	if err != nil {
