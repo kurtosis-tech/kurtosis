@@ -246,8 +246,24 @@ func(network *ServiceNetwork) StartServices(
 		failedServicesPool[serviceID] = err
 	}
 
-	for serviceID, serviceInfo := range servicesToProcessFurther {
-		err = network.addServiceToTopology(serviceInfo, partitionID)
+	for serviceID, serviceInfo := range servicesToProcessFurther{
+		network.registeredServiceInfo[serviceID] = serviceInfo.GetRegistration()
+	}
+	servicesToRemoveFromRegistrationMap := map[service.ServiceID]bool{}
+	for serviceID := range servicesToProcessFurther {
+		servicesToRemoveFromRegistrationMap[serviceID] = true
+	}
+	defer func() {
+		if len(servicesToRemoveFromRegistrationMap) == 0 {
+			return
+		}
+		for serviceID := range servicesToRemoveFromRegistrationMap {
+			delete(network.registeredServiceInfo, serviceID)
+		}
+	}()
+
+	for serviceID, _ := range servicesToProcessFurther {
+		err = network.addServiceToTopology(serviceID, partitionID)
 		if err != nil {
 			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred adding service '%v' to the topology", serviceID)
 			delete(servicesToProcessFurther, serviceID)
@@ -265,7 +281,6 @@ func(network *ServiceNetwork) StartServices(
 		}
 		for serviceID := range serviceIDsForTopologyCleanup {
 			network.topology.RemoveService(serviceID)
-			delete(network.registeredServiceInfo, serviceID)
 		}
 	}()
 
@@ -331,7 +346,8 @@ func(network *ServiceNetwork) StartServices(
 		successfulServicePool[serviceID] = serviceInfo
 	}
 	logrus.Infof("Sueccesfully started services '%v' and failed '%v' in the service network", successfulServicePool, failedServicesPool)
-	for serviceID := range servicesToProcessFurther {
+	for serviceID := range successfulServicePool {
+		delete(servicesToRemoveFromRegistrationMap, serviceID)
 		delete(serviceIDsToRemove, serviceID)
 		delete(serviceIDsForTopologyCleanup, serviceID)
 		delete(sidecarsToCleanUp, serviceID)
@@ -772,19 +788,8 @@ func (network *ServiceNetwork) gzipAndPushTarredFileBytesToOutput(
 	return nil
 }
 
-
-// This service is not thread safe. Only call this from a method where there is a mutex lock on the network.
-func (network *ServiceNetwork) addServiceToTopology(service *service.Service, partitionID service_network_types.PartitionID) error {
-	serviceRegistration := service.GetRegistration()
-	serviceID := serviceRegistration.GetID()
-	network.registeredServiceInfo[serviceID] = serviceRegistration
-	shouldRemoveFromServicesMap := true
-	defer func() {
-		if shouldRemoveFromServicesMap {
-			delete(network.registeredServiceInfo, serviceID)
-		}
-	}()
-
+// This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
+func (network *ServiceNetwork) addServiceToTopology(serviceID service.ServiceID, partitionID service_network_types.PartitionID) error {
 	if err := network.topology.AddService(serviceID, partitionID); err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -801,11 +806,10 @@ func (network *ServiceNetwork) addServiceToTopology(service *service.Service, pa
 	}()
 
 	shouldRemoveFromTopology = false
-	shouldRemoveFromServicesMap = false
 	return nil
 }
 
-// This service is not thread safe. Only call this from a method where there is a mutex lock on the network.
+// This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
 func (network *ServiceNetwork) addSidecarForService(ctx context.Context, service *service.Service) error {
 	serviceRegistration := service.GetRegistration()
 	serviceGUID := serviceRegistration.GetGUID()
