@@ -1,4 +1,6 @@
 # TBD
+
+# 0.38.0
 ### Features
 * Added the `ForLogsDatabaseServer` and the `ForLogsCollectorServer` Docker objects attribute
 * Added `LogsCollectorTypeDockerLabelValue`, `ModuleContainerTypeDockerLabelValue` and `LogsDbDataVolumeTypeDockerLabelValue` Docker labels
