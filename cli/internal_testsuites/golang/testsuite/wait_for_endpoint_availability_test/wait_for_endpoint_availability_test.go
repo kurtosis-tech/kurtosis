@@ -38,9 +38,8 @@ func TestWaitForEndpointAvailabilityFunction(t *testing.T) {
 	defer stopEnclaveFunc()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
-	configSupplier := getExampleServiceConfig()
-	config, err := configSupplier()
-	_, err = enclaveCtx.AddService(exampleServiceId, config)
+	containerConfig := getExampleServiceConfig()
+	_, err = enclaveCtx.AddService(exampleServiceId, containerConfig)
 	require.NoError(t, err, "An error occurred adding the datastore service")
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
