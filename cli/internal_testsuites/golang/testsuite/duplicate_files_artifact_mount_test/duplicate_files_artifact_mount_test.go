@@ -45,8 +45,8 @@ func TestStoreWebFiles(t *testing.T) {
 	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactMountpoints)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	config, _ := fileServerContainerConfigSupplier("hello")
-	_, err = enclaveCtx.AddService(serviceId, config)
+	containerConfig, _ := fileServerContainerConfigSupplier("hello")
+	_, err = enclaveCtx.AddService(serviceId, containerConfig)
 	require.Errorf(
 		t,
 		err,
