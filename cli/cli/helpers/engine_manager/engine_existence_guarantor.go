@@ -8,7 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/lib/kurtosis_context"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/launcher/engine_server_launcher"
+	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
