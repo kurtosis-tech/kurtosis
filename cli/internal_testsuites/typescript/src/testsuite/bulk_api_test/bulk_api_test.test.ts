@@ -54,16 +54,16 @@ test("Test adding services to an enclave simultaneously", async () => {
         // ------------------------------------- TEST SETUP ----------------------------------------------
         log.info("Adding three datastore services simulataneously")
         const datastoreServiceIds : Map<number, ServiceID> = new Map<number, ServiceID>();
-        const datastoreServiceConfigSuppliers  = new Map<ServiceID,( ipAddr: string) => Result<ContainerConfig, Error>>();
+        const datastoreContainerConfig  = new Map<ServiceID, ContainerConfig>();
         for(let i = 0; i < NUM_SERVICES_TO_ADD; i++){
             const serviceId = `${DATASTORE_SERVICE_ID}-${i}`
             datastoreServiceIds.set(i, serviceId)
-            datastoreServiceConfigSuppliers.set(serviceId, getDatastoreContainerConfigSupplier())
+            datastoreContainerConfig.set(serviceId, getDatastoreContainerConfig())
         }
 
         // ------------------------------------- TEST RUN ----------------------------------------------
         const addDatastoreServicesResult : Result<[Map<string, ServiceContext>, Map<string, Error>], Error>
-            = await enclaveContext.addServices(datastoreServiceConfigSuppliers)
+            = await enclaveContext.addServices(datastoreContainerConfig)
         if(addDatastoreServicesResult.isErr()){ throw addDatastoreServicesResult.error }
 
         const successfulDatastoreServiceContexts = addDatastoreServicesResult.value[0]
@@ -76,7 +76,7 @@ test("Test adding services to an enclave simultaneously", async () => {
             throw new Error(`Expected no failed datastore services but the actual number of failed datastore services was '${failedDatastoreServiceErrs.size}'`)
         }
 
-        const apiServiceConfigSuppliers  = new Map<ServiceID,( ipAddr: string) => Result<ContainerConfig, Error>>();
+        const apiServiceConfigs  = new Map<ServiceID, ContainerConfig>();
         for(let i = 0; i < NUM_SERVICES_TO_ADD; i++){
             const datastoreServiceId : ServiceID | undefined = datastoreServiceIds.get(i)
             if (datastoreServiceId == undefined) {
@@ -97,12 +97,12 @@ test("Test adding services to an enclave simultaneously", async () => {
             }
             const datastoreConfigArtifactUuid = uploadFilesResult.value
             const serviceId = `${API_SERVICE_ID}-${i}`
-            apiServiceConfigSuppliers.set(serviceId, getApiServiceContainerConfigSupplier(datastoreConfigArtifactUuid))
+            apiServiceConfigs.set(serviceId, getApiServiceContainerConfig(datastoreConfigArtifactUuid))
         }
 
         // ------------------------------------- TEST RUN ----------------------------------------------
         const addApiServicesResult : Result<[Map<string, ServiceContext>, Map<string, Error>], Error>
-            = await enclaveContext.addServices(apiServiceConfigSuppliers)
+            = await enclaveContext.addServices(apiServiceConfigs)
         if(addApiServicesResult.isErr()){ throw addApiServicesResult.error }
 
         const successfulApiServiceContexts = addApiServicesResult.value[0]
@@ -119,46 +119,38 @@ test("Test adding services to an enclave simultaneously", async () => {
     }
 });
 
-function getDatastoreContainerConfigSupplier(): ( ipAddr: string) => Result<ContainerConfig, Error> {
-    const containerConfigSupplier = ( ipAddr: string): Result<ContainerConfig, Error> => {
-        const usedPorts = new Map<string, PortSpec>();
-        usedPorts.set(DATASTORE_PORT_ID, DATASTORE_PORT_SPEC);
+function getDatastoreContainerConfig(): ContainerConfig {
 
-        const containerConfig = new ContainerConfigBuilder(DATASTORE_IMAGE).withUsedPorts(usedPorts).build();
+    const usedPorts = new Map<string, PortSpec>();
+    usedPorts.set(DATASTORE_PORT_ID, DATASTORE_PORT_SPEC);
 
-        return ok(containerConfig);
-    };
+    const containerConfig = new ContainerConfigBuilder(DATASTORE_IMAGE).withUsedPorts(usedPorts).build();
 
-    return containerConfigSupplier;
+    return containerConfig;
 }
 
-function getApiServiceContainerConfigSupplier(
+function getApiServiceContainerConfig(
     apiConfigArtifactUuid: FilesArtifactUUID,
-): (ipAddr:string) => Result<ContainerConfig, Error> {
+): ContainerConfig {
 
-    const containerConfigSupplier = (ipAddr: string): Result<ContainerConfig, Error> => {
+    const usedPorts = new Map<string, PortSpec>();
+    usedPorts.set(API_PORT_ID, API_PORT_SPEC);
+    const startCmd: string[] = [
+        "./example-api-server.bin",
+        "--config",
+        path.join(CONFIG_MOUNTPATH_ON_API_CONTAINER, CONFIG_FILENAME),
+    ]
 
-        const usedPorts = new Map<string, PortSpec>();
-        usedPorts.set(API_PORT_ID, API_PORT_SPEC);
-        const startCmd: string[] = [
-            "./example-api-server.bin",
-            "--config",
-            path.join(CONFIG_MOUNTPATH_ON_API_CONTAINER, CONFIG_FILENAME),
-        ]
+    const filesArtifactMountpoints = new Map<FilesArtifactUUID, string>()
+    filesArtifactMountpoints.set(apiConfigArtifactUuid, CONFIG_MOUNTPATH_ON_API_CONTAINER)
 
-        const filesArtifactMountpoints = new Map<FilesArtifactUUID, string>()
-        filesArtifactMountpoints.set(apiConfigArtifactUuid, CONFIG_MOUNTPATH_ON_API_CONTAINER)
+    const containerConfig = new ContainerConfigBuilder(API_SERVICE_IMAGE)
+        .withUsedPorts(usedPorts)
+        .withFiles(filesArtifactMountpoints)
+        .withCmdOverride(startCmd)
+        .build()
 
-        const containerConfig = new ContainerConfigBuilder(API_SERVICE_IMAGE)
-            .withUsedPorts(usedPorts)
-            .withFiles(filesArtifactMountpoints)
-            .withCmdOverride(startCmd)
-            .build()
-
-        return ok(containerConfig)
-    }
-
-    return containerConfigSupplier;
+    return containerConfig
 
 }
 

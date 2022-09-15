@@ -54,7 +54,6 @@ type DatastoreArmyModuleResult struct {
 }
 
 func TestModule(t *testing.T) {
-	t.Skipf("Skipping this as there's a circular dependency between datastore-army-module and the CLI. Breaking deadlock.")
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------

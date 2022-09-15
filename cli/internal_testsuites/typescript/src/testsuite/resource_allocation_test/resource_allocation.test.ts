@@ -23,9 +23,9 @@ test("Test setting resource allocation fields adds service with no error", async
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const containerConfigSupplier = getContainerConfigSupplierWithCPUAndMemory()
+        const containerConfig = getContainerConfigWithCPUAndMemory()
 
-        const addServiceResult = await enclaveContext.addService(TEST_SERVICE_ID, containerConfigSupplier)
+        const addServiceResult = await enclaveContext.addService(TEST_SERVICE_ID, containerConfig)
 
         if(addServiceResult.isErr()) {
             log.error(`An error occurred adding the file server service with the cpuAllocationMillicpus=${TEST_CPU_ALLOC_MILLICPUS} and memoryAllocationMegabytes=${TEST_MEMORY_ALLOC_MEGABYTES}`);
@@ -46,7 +46,7 @@ test("Test setting invalid memory allocation megabytes returns error", async () 
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const containerConfigSupplier = getContainerConfigSupplierWithInvalidMemory()
+        const containerConfigSupplier = getContainerConfigWithInvalidMemory()
 
         const addServiceResult = await enclaveContext.addService(TEST_SERVICE_ID, containerConfigSupplier)
 
@@ -61,31 +61,21 @@ test("Test setting invalid memory allocation megabytes returns error", async () 
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-function getContainerConfigSupplierWithCPUAndMemory(): (ipAddr:string) => Result<ContainerConfig, Error> {
+function getContainerConfigWithCPUAndMemory(): ContainerConfig {
 
-    const containerConfigSupplier = (ipAddr:string): Result<ContainerConfig, Error> => {
-        const containerConfig = new ContainerConfigBuilder(RESOURCE_ALLOC_TEST_IMAGE)
-            .withCpuAllocationMillicpus(TEST_CPU_ALLOC_MILLICPUS)
-            .withMemoryAllocationMegabytes(TEST_MEMORY_ALLOC_MEGABYTES)
-            .build()
+    const containerConfig = new ContainerConfigBuilder(RESOURCE_ALLOC_TEST_IMAGE)
+        .withCpuAllocationMillicpus(TEST_CPU_ALLOC_MILLICPUS)
+        .withMemoryAllocationMegabytes(TEST_MEMORY_ALLOC_MEGABYTES)
+        .build()
 
-        return ok(containerConfig)
-    }
-
-    return containerConfigSupplier
+    return containerConfig
 }
 
-function getContainerConfigSupplierWithInvalidMemory(): (ipAddr:string) => Result<ContainerConfig, Error> {
-
-    const containerConfigSupplier = (ipAddr:string): Result<ContainerConfig, Error> => {
-        const containerConfig = new ContainerConfigBuilder(RESOURCE_ALLOC_TEST_IMAGE)
-            .withMemoryAllocationMegabytes(TEST_INVALID_MEMORY_ALLOC_MEGABYTES)
-            .build()
-
-        return ok(containerConfig)
-    }
-
-    return containerConfigSupplier
+function getContainerConfigWithInvalidMemory(): ContainerConfig {
+    const containerConfig = new ContainerConfigBuilder(RESOURCE_ALLOC_TEST_IMAGE)
+        .withMemoryAllocationMegabytes(TEST_INVALID_MEMORY_ALLOC_MEGABYTES)
+        .build()
+    return containerConfig
 }
 
 function delay(ms: number) {
