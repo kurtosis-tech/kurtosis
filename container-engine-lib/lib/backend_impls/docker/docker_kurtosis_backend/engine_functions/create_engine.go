@@ -45,17 +45,14 @@ func CreateEngine(
 	*engine.Engine,
 	error,
 ) {
-	allEngineAndLogsComponentsContainerIDs,  err := GetAllEngineAndLogsComponentsContainerIDs(ctx, dockerManager)
+	allEngineAndLogsComponentsContainerIDs,  err := getAllLogsComponentsContainerIDs(ctx, dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred checking for engine containers and logs components containers existence")
 	}
-	isThereEngineOrLogsComponentsContainersInTheCluster := false
-	if len(allEngineAndLogsComponentsContainerIDs) > 0 {
-		isThereEngineOrLogsComponentsContainersInTheCluster = true
-	}
 
-	canStartNewEngine := !isThereEngineOrLogsComponentsContainersInTheCluster
-	if !canStartNewEngine {
+	isThereEngineOrLogsComponentsContainersInTheCluster := len(allEngineAndLogsComponentsContainerIDs) > 0
+
+	if isThereEngineOrLogsComponentsContainersInTheCluster {
 		containerIdsStr := strings.Join(allEngineAndLogsComponentsContainerIDs, ", ")
 		return nil, stacktrace.NewError("No new engine will be started because there exists engine or logs component containers in the cluster; the following containers with IDs '%v' should be removed before creating a new engine", containerIdsStr)
 	}
@@ -89,7 +86,7 @@ func CreateEngine(
 	logsDatabaseContainer := loki.NewLokiLogDatabaseContainer()
 	logsCollectorContainer := fluentbit.NewFluentbitLogsCollectorContainer()
 
-	killCentralizedLogsComponentsContainersFunc, err := createCentralizedLogsComponents(
+	removeCentralizedLogsComponentsContainersFunc, err := createCentralizedLogsComponents(
 		ctx,
 		engineGuid,
 		targetNetworkId,
@@ -103,10 +100,10 @@ func CreateEngine(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the centralized logs components for the engine with GUID '%v' and network ID '%v'", engineGuid, targetNetworkId)
 	}
-	shouldKillCentralizedLogsComponentsContainers := true
+	shouldRemoveCentralizedLogsComponentsContainers := true
 	defer func() {
-		if shouldKillCentralizedLogsComponentsContainers {
-			killCentralizedLogsComponentsContainersFunc()
+		if shouldRemoveCentralizedLogsComponentsContainers {
+			removeCentralizedLogsComponentsContainersFunc()
 		}
 	}()
 
@@ -241,9 +238,8 @@ func CreateEngine(
 	}
 
 
-
 	shouldKillEngineContainer = false
-	shouldKillCentralizedLogsComponentsContainers = false
+	shouldRemoveCentralizedLogsComponentsContainers = false
 	return result, nil
 }
 
@@ -263,7 +259,7 @@ func createCentralizedLogsComponents(
 	logsCollectorContainer logs_components.LogsCollectorContainer,
 ) (func(), error) {
 
-	logsDatabaseHost, logsDatabasePort, killLogsDatabaseContainerFunc, err := logsDatabaseContainer.CreateAndStart(
+	logsDatabaseHost, logsDatabasePort, removeLogsDatabaseContainerFunc, err := logsDatabaseContainer.CreateAndStart(
 		ctx,
 		consts.LogsDatabaseHttpPortId,
 		engineGuid,
@@ -281,14 +277,14 @@ func createCentralizedLogsComponents(
 			targetNetworkId,
 		)
 	}
-	shouldKillLogsDatabaseContainer := true
+	shouldRemoveLogsDatabaseContainer := true
 	defer func() {
-		if shouldKillLogsDatabaseContainer {
-			killLogsDatabaseContainerFunc()
+		if shouldRemoveLogsDatabaseContainer {
+			removeLogsDatabaseContainerFunc()
 		}
 	}()
 
-	killLogsCollectorContainerFunc, err := logsCollectorContainer.CreateAndStart(
+	removeLogsCollectorContainerAndVolumeFunc, err := logsCollectorContainer.CreateAndStart(
 		ctx,
 		logsDatabaseHost,
 		logsDatabasePort,
@@ -313,45 +309,29 @@ func createCentralizedLogsComponents(
 			targetNetworkId,
 		)
 	}
-	shouldKillLogsCollectorContainer := true
+	shouldRemoveLogsCollectorContainerAndVolume := true
 	defer func() {
-		if shouldKillLogsCollectorContainer {
-			killLogsCollectorContainerFunc()
+		if shouldRemoveLogsCollectorContainerAndVolume {
+			removeLogsCollectorContainerAndVolumeFunc()
 		}
 	}()
 
-	killCentralizedLogsComponentsContainersFunc := func() {
-		killLogsDatabaseContainerFunc()
-		killLogsCollectorContainerFunc()
+	removeCentralizedLogsComponentsContainersFunc := func() {
+		removeLogsDatabaseContainerFunc()
+		removeLogsCollectorContainerAndVolumeFunc()
 	}
 
-	shouldKillLogsDatabaseContainer = false
-	shouldKillLogsCollectorContainer = false
-	return killCentralizedLogsComponentsContainersFunc, nil
+	shouldRemoveLogsDatabaseContainer = false
+	shouldRemoveLogsCollectorContainerAndVolume = false
+	return removeCentralizedLogsComponentsContainersFunc, nil
 }
 
-func GetAllEngineAndLogsComponentsContainerIDs(
+func getAllLogsComponentsContainerIDs(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 ) ([]string, error){
 
 	allEngineAndLogsComponentsContainerIDs := []string{}
-
-	getAllEngineContainersOperation := func() (interface{}, error) {
-		getAllEngineFilters := &engine.EngineFilters{}
-		allEngineContainers, err := getMatchingEngines(ctx, getAllEngineFilters, dockerManager)
-		if err != nil {
-			return false, stacktrace.Propagate(err, "An error occurred getting all the engines using filters '%+v'", getAllEngineFilters)
-		}
-
-		allEngineContainerIDs := map[string]bool{}
-
-		for containerId := range allEngineContainers{
-			allEngineContainerIDs[containerId] = true
-		}
-
-		return allEngineContainerIDs, nil
-	}
 
 	getLogsDatabaseContainerOperation := func() (interface{}, error) {
 
@@ -385,7 +365,6 @@ func GetAllEngineAndLogsComponentsContainerIDs(
 	}
 
 	allOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{
-		getAllEngineContainersOperationId:        getAllEngineContainersOperation,
 		getAllLogsDatabaseContainersOperationId:  getLogsDatabaseContainerOperation,
 		getAllLogsCollectorContainersOperationId: getLogsCollectorContainerOperation,
 	}

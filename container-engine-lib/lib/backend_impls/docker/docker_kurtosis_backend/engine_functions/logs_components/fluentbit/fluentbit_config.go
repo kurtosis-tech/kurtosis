@@ -14,8 +14,8 @@ const (
 
 	labelsVarPrefix = "$"
 
-	notAllowedCharInLabels = " .-"
-	noSeparationChar       = ""
+	notAllowedCharsInLabels = " .-"
+	noSeparationChar        = ""
 
 	shouldChangeNextCharToUpperCaseInitialValue = false
 	shouldChangeCharToUpperCaseInitialValue     = false
@@ -153,7 +153,7 @@ func newValidFormatLabelValue(stringToModify string) string {
 		if shouldChangeCharToUpperCase {
 			newChar = strings.ToUpper(newChar)
 		}
-		if strings.ContainsAny(currenChar, notAllowedCharInLabels) {
+		if strings.ContainsAny(currenChar, notAllowedCharsInLabels) {
 			shouldChangeNextCharToUpperCase = true
 		} else {
 			shouldChangeNextCharToUpperCase = false

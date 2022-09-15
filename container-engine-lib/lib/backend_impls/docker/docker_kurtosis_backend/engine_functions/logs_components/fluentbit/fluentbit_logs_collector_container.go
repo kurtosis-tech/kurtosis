@@ -1,6 +1,7 @@
 package fluentbit
 
 import (
+	"bytes"
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
@@ -9,9 +10,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type fluentbitLogsCollectorContainer struct {
+const (
+	shouldFollowLogsWhenTheContainerWillBeRemoved = false
+)
 
-}
+type fluentbitLogsCollectorContainer struct {}
 
 func NewFluentbitLogsCollectorContainer() *fluentbitLogsCollectorContainer {
 	return &fluentbitLogsCollectorContainer{}
@@ -71,6 +74,35 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 	}
 
 	volumeName := logsCollectorVolumeAttrs.GetName().GetString()
+	volumeLabelStrs := map[string]string{}
+	for labelKey, labelValue := range logsCollectorVolumeAttrs.GetLabels() {
+		volumeLabelStrs[labelKey.GetString()] = labelValue.GetString()
+	}
+	if err := dockerManager.CreateVolume(ctx, volumeName, volumeLabelStrs); err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating logs collector volume with name '%v' and labels '%+v'",
+			volumeName,
+			volumeLabelStrs,
+		)
+	}
+	removeVolumeFunc := func() {
+		if err := dockerManager.RemoveVolume(ctx, volumeName); err != nil {
+			logrus.Errorf(
+				"Launching the logs collector server for the engine with GUID '%v' didn't complete successfully so we "+
+					"tried to remove the associated volume '%v' we started, but doing so exited with an error:\n%v",
+				engineGuid,
+				volumeName,
+				err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector volume '%v'!!!!!!", volumeName)
+		}
+	}
+	shouldRemoveLogsCollectorVolume := true
+	defer func() {
+		if shouldRemoveLogsCollectorVolume {
+			removeVolumeFunc()
+		}
+	}()
 
 	if err := logsCollectorConfigurationCreator.CreateConfiguration(context.Background(), targetNetworkId, volumeName, dockerManager); err != nil {
 		return nil, stacktrace.Propagate(
@@ -95,26 +127,43 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 
 	containerId, _, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred starting the logs controller container with these args '%+v'", createAndStartArgs)
+		return nil, stacktrace.Propagate(err, "An error occurred starting the logs collector container with these args '%+v'", createAndStartArgs)
 	}
-	killContainerFunc := func() {
-		if err := dockerManager.KillContainer(context.Background(), containerId); err != nil {
+	removeContainerFunc := func() {
+		removeCtx := context.Background()
+		containerLogsReadCloser, err := dockerManager.GetContainerLogs(removeCtx, containerId, shouldFollowLogsWhenTheContainerWillBeRemoved)
+		if err != nil {
 			logrus.Errorf(
-				"Launching the logs controller server for engine with GUID '%v' and container ID '%v' didn't complete successfully so we "+
+				"We tried to get the logs collector container logs, with container ID '%v', but doing it throw the following error:\n%v",
+				containerId,
+				err)
+		}
+		defer containerLogsReadCloser.Close()
+
+		containerReadCloserBuffer := new(bytes.Buffer)
+		containerReadCloserBuffer.ReadFrom(containerLogsReadCloser)
+		containerLogsStr := containerReadCloserBuffer.String()
+
+		containerLogsHeader := "\n--------------------- FLUENTBIT CONTAINER LOGS -----------------------\n"
+		containerLogsFooter := "\n------------------- END FLUENTBIT CONTAINER LOGS --------------------"
+		logrus.Infof("Could not start the logs collector container; logs are below:%v%v%v", containerLogsHeader, containerLogsStr, containerLogsFooter)
+
+		if err := dockerManager.RemoveContainer(removeCtx, containerId); err != nil {
+			logrus.Errorf(
+				"Launching the logs collector server for engine with GUID '%v' and container ID '%v' didn't complete successfully so we "+
 					"tried to kill the container we started, but doing so exited with an error:\n%v",
 				engineGuid,
 				containerId,
 				err)
-			logrus.Errorf("ACTION REQUIRED: You'll need to manually stop the logs controller server for engine with GUID '%v' and Docker container ID '%v'!!!!!!", engineGuid, containerId)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually stop the logs collector server for engine with GUID '%v' and Docker container ID '%v'!!!!!!", engineGuid, containerId)
 		}
 	}
-	shouldKillLogsCollectorContainer := true
+	shouldRemoveLogsCollectorContainer := true
 	defer func() {
-		if shouldKillLogsCollectorContainer {
-			killContainerFunc()
+		if shouldRemoveLogsCollectorContainer {
+			removeContainerFunc()
 		}
 	}()
-	//We can't remove the volume because the container is killed not destroyed, so it will still mounted to the volume
 
 	logsCollectorAvailabilityChecker := newFluentbitAvailabilityChecker(privateHttpPortSpec.GetNumber())
 
@@ -122,6 +171,12 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the log collector's to become available")
 	}
 
-	shouldKillLogsCollectorContainer = false
-	return killContainerFunc, nil
+	removeContainerAndVolumeFunc := func() {
+		removeContainerFunc()
+		removeVolumeFunc()
+	}
+
+	shouldRemoveLogsCollectorContainer = false
+	shouldRemoveLogsCollectorVolume = false
+	return removeContainerAndVolumeFunc, nil
 }

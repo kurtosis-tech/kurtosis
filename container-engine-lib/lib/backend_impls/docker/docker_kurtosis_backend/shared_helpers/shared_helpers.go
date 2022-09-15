@@ -321,6 +321,7 @@ func GetMatchingUserServiceObjsAndDockerResourcesNoMutex(
 	return resultServiceObjs, resultDockerResources, nil
 }
 
+// TODO Make private when networking sidecars are pushed down to the service level
 func GetSingleUserServiceObjAndResourcesNoMutex(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,

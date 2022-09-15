@@ -95,7 +95,7 @@ const (
 	shouldAttachStdoutWhenCreatingContainerExec               = true
 	shouldExecuteInDetachModeWhenCreatingContainerExec        = false
 
-	megabytesToBytesFactor = 1_000_000
+	megabytesToBytesFactor    = 1_000_000
 	millicpusToNanoCPUsFactor = 1_000_000
 
 	minMemoryLimit = 6
@@ -432,7 +432,7 @@ func (manager DockerManager) CreateAndStartContainer(
 		args.needsAccessToDockerHostMachine,
 		args.cpuAllocationMillicpus,
 		args.memoryAllocationMegabytes,
-		args.loggingDriverCnfg)
+		args.loggingDriverConfig)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -998,7 +998,7 @@ func (manager *DockerManager) getContainerHostConfig(
 	needsToAccessDockerHostMachine bool,
 	cpuAllocationMillicpus uint64,
 	memoryAllocationMegabytes uint64,
-	loggingDriverCnfg LoggingDriver,
+	loggingDriverConfig LoggingDriver,
 ) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))
@@ -1078,8 +1078,8 @@ func (manager *DockerManager) getContainerHostConfig(
 	}
 
 	logConfig := container.LogConfig{}
-	if loggingDriverCnfg != nil {
-		logConfig = loggingDriverCnfg.GetLogConfig()
+	if loggingDriverConfig != nil {
+		logConfig = loggingDriverConfig.GetLogConfig()
 	}
 
 	// NOTE: Do NOT use PublishAllPorts here!!!! This will work if a Dockerfile doesn't have an EXPOSE directive, but

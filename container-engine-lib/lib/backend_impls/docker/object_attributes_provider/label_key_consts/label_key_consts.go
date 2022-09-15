@@ -34,8 +34,6 @@ const (
 
 	privateIpAddrLabelKeyStr = labelNamespaceStr + "private-ip"
 
-	// Used for thins that are in the engine scope, like the logs database server and volume
-	engineGuidLabelKeyStr = labelNamespaceStr + "engine-guid"
 )
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // If these value change, it will lead to the Kurtosis engine losing track of old containers
@@ -55,4 +53,3 @@ var EnclaveIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(encla
 var IsNetworkPartitioningEnabledDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(isNetworkPartitioningEnabledKeyStr)
 var PrivateIPDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(privateIpAddrLabelKeyStr)
 var UserServiceGUIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(userServiceGuidDockerLabelKeyStr)
-var EngineGUIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(engineGuidLabelKeyStr)

@@ -39,6 +39,7 @@ func StopEngines(
 		dockerObjectId string,
 	) error {
 		engineContainerId := dockerObjectId
+		// TODO Switch to graceful stop to ensure we don't get database corruption
 		if err := dockerManager.KillContainer(ctx, engineContainerId); err != nil {
 			return stacktrace.Propagate(err, "An error occurred killing engine container with ID '%v'", dockerObjectId)
 		}

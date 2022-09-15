@@ -24,8 +24,8 @@ type CreateAndStartContainerArgs struct {
 	needsAccessToDockerHostMachine bool
 	labels                         map[string]string
 	cpuAllocationMillicpus         uint64
-	memoryAllocationMegabytes uint64
-	loggingDriverCnfg         LoggingDriver
+	memoryAllocationMegabytes      uint64
+	loggingDriverConfig            LoggingDriver
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -47,8 +47,8 @@ type CreateAndStartContainerArgsBuilder struct {
 	needsAccessToDockerHostMachine bool
 	labels                         map[string]string
 	cpuAllocationMillicpus         uint64
-	memoryAllocationMegabytes uint64
-	loggingDriverCnfg         LoggingDriver
+	memoryAllocationMegabytes      uint64
+	loggingDriverCnfg              LoggingDriver
 }
 
 /*
@@ -77,7 +77,7 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		labels:                         map[string]string{},
 		cpuAllocationMillicpus:         0,
 		memoryAllocationMegabytes:      0,
-		loggingDriverCnfg:       		nil,
+		loggingDriverCnfg:              nil,
 	}
 }
 
@@ -101,7 +101,7 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		needsAccessToDockerHostMachine: builder.needsAccessToDockerHostMachine,
 		cpuAllocationMillicpus:         builder.cpuAllocationMillicpus,
 		memoryAllocationMegabytes:      builder.memoryAllocationMegabytes,
-		loggingDriverCnfg: 				builder.loggingDriverCnfg,
+		loggingDriverConfig:            builder.loggingDriverCnfg,
 	}
 }
 
