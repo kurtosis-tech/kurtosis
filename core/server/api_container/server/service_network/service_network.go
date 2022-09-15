@@ -174,7 +174,6 @@ func(network *ServiceNetwork) StartServices(
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	failedServicesPool := map[service.ServiceID]error{}
-	successfulServicesPool := map[service.ServiceID]*service.Service{}
 
 	servicesToStart := map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
 	for serviceID, config := range serviceConfigs {
@@ -238,26 +237,26 @@ func(network *ServiceNetwork) StartServices(
 		}
 	}()
 
-	// We have `successfulServicesPool` in addition to `successfulStarts` as we keep removing failed services from `successfulServicesPool`.
-	// We still need to keep information about services started successfully as we need to use them in the defer undo above to fetch the GUID.
-	for serviceID, serviceInfo := range successfulStarts {
-		successfulServicesPool[serviceID] = serviceInfo
+	// We add all the successfully started services to a queue of services that will be processed in later phases
+	servicesToProcessFurther := map[service.ServiceID]*service.Service{}
+	for serviceID, serviceInfo := range successfulStarts{
+		servicesToProcessFurther[serviceID] = serviceInfo
 	}
 	for serviceID, err := range failedStarts {
 		failedServicesPool[serviceID] = err
 	}
 
-	for serviceID, serviceInfo := range successfulServicesPool {
+	for serviceID, serviceInfo := range servicesToProcessFurther {
 		err = network.addServiceToTopology(serviceInfo, partitionID)
 		if err != nil {
 			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred adding service '%v' to the topology", serviceID)
-			delete(successfulServicesPool, serviceID)
+			delete(servicesToProcessFurther, serviceID)
 			continue
 		}
 		logrus.Debugf("Successfully added service with ID '%v' to topology", serviceID)
 	}
 	serviceIDsForTopologyCleanup := map[service.ServiceID]bool{}
-	for serviceID := range successfulServicesPool {
+	for serviceID := range servicesToProcessFurther {
 		serviceIDsForTopologyCleanup[serviceID] = true
 	}
 	defer func() {
@@ -279,16 +278,16 @@ func(network *ServiceNetwork) StartServices(
 	sidecarsToCleanUp := map[service.ServiceID]bool{}
 	servicesToRemoveFromTrafficControl := map[service.ServiceID]bool{}
 	if network.isPartitioningEnabled {
-		for serviceID, serviceInfo := range successfulServicesPool {
+		for serviceID, serviceInfo := range servicesToProcessFurther {
 			err = network.addSidecarForService(ctx, serviceInfo)
 			if err != nil {
 				failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while adding networking sidecar for service '%v'", serviceID)
-				delete(successfulServicesPool, serviceID)
+				delete(servicesToProcessFurther, serviceID)
 				continue
 			}
 			logrus.Debugf("Successfully created sidecars for service with ID '%v'", serviceID)
 		}
-		for serviceID := range successfulServicesPool {
+		for serviceID := range servicesToProcessFurther {
 			sidecarsToCleanUp[serviceID] = true
 		}
 		defer func() {
@@ -325,14 +324,20 @@ func(network *ServiceNetwork) StartServices(
 		// We don't need to undo the traffic control changes because in the worst case existing nodes have entries in their traffic control for IP addresses that don't resolve to any containers.
 	}
 
-	logrus.Infof("Sueccesfully started services '%v' and failed '%v' in the service network", successfulServicesPool, failedServicesPool)
-	for serviceID := range successfulServicesPool {
+
+	// All processing is done so the services can be marked successful
+	successfulServicePool := map[service.ServiceID]*service.Service{}
+	for serviceID, serviceInfo := range servicesToProcessFurther {
+		successfulServicePool[serviceID] = serviceInfo
+	}
+	logrus.Infof("Sueccesfully started services '%v' and failed '%v' in the service network", successfulServicePool, failedServicesPool)
+	for serviceID := range servicesToProcessFurther {
 		delete(serviceIDsToRemove, serviceID)
 		delete(serviceIDsForTopologyCleanup, serviceID)
 		delete(sidecarsToCleanUp, serviceID)
 		delete(servicesToRemoveFromTrafficControl, serviceID)
 	}
-	return successfulServicesPool, failedServicesPool, nil
+	return successfulServicePool, failedServicesPool, nil
 }
 
 func (network *ServiceNetwork) RemoveService(
