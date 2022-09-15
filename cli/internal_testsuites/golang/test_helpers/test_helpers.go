@@ -85,9 +85,9 @@ func AddDatastoreService(
 	resultClientCloseFunc func(),
 	resultErr error,
 ) {
-	containerConfigSupplier, _ := getDatastoreContainerConfigSupplier()("foo")
+	containerConfig := getDatastoreContainerConfig()
 
-	serviceCtx, err := enclaveCtx.AddService(serviceId, containerConfigSupplier)
+	serviceCtx, err := enclaveCtx.AddService(serviceId, containerConfig)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred adding the datastore service")
 	}
@@ -148,10 +148,9 @@ func AddAPIServiceToPartition(ctx context.Context, serviceId services.ServiceID,
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred uploading the datastore config file")
 	}
 
-	containerConfigSupplier := getApiServiceContainerConfigSupplier(datastoreConfigArtifactUuid)
+	containerConfig := getApiServiceContainerConfig(datastoreConfigArtifactUuid)
 
-	config, err := containerConfigSupplier("")
-	serviceCtx, err := enclaveCtx.AddServiceToPartition(serviceId, partitionId, config)
+	serviceCtx, err := enclaveCtx.AddServiceToPartition(serviceId, partitionId, containerConfig)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred adding the API service")
 	}
@@ -209,9 +208,8 @@ func StartFileServer(fileServerServiceId services.ServiceID, filesArtifactUUID s
 	filesArtifactMountPoints := map[services.FilesArtifactUUID]string{
 		filesArtifactUUID: userServiceMountPointForTestFilesArtifact,
 	}
-	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactMountPoints)
-	fsConfig, _ := fileServerContainerConfigSupplier("")
-	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, fsConfig)
+	fileServerContainerConfig := getFileServerContainerConfig(filesArtifactMountPoints)
+	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfig)
 	if err != nil {
 		return "", 0, stacktrace.Propagate(err, "An error occurred adding the file server service")
 	}
@@ -261,40 +259,35 @@ func CheckFileContents(serverIP string, port uint16, relativeFilepath string, ex
 }
 
 // ====================================================================================================
-//                                      Private Helper Methods
+//
+//	Private Helper Methods
+//
 // ====================================================================================================
-func getDatastoreContainerConfigSupplier() func(ipAddr string) (*services.ContainerConfig, error) {
-	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
-		containerConfig := services.NewContainerConfigBuilder(
-			datastoreImage,
-		).WithUsedPorts(map[string]*services.PortSpec{
-			datastorePortId: datastorePortSpec,
-		}).Build()
-		return containerConfig, nil
-	}
-	return containerConfigSupplier
+func getDatastoreContainerConfig() *services.ContainerConfig {
+	containerConfig := services.NewContainerConfigBuilder(
+		datastoreImage,
+	).WithUsedPorts(map[string]*services.PortSpec{
+		datastorePortId: datastorePortSpec,
+	}).Build()
+	return containerConfig
 }
 
-func getApiServiceContainerConfigSupplier(apiConfigArtifactUuid services.FilesArtifactUUID) func(ipAddr string) (*services.ContainerConfig, error) {
-	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
-		startCmd := []string{
-			"./example-api-server.bin",
-			"--config",
-			path.Join(configMountpathOnApiContainer, configFilename),
-		}
-
-		containerConfig := services.NewContainerConfigBuilder(
-			apiServiceImage,
-		).WithUsedPorts(map[string]*services.PortSpec{
-			apiPortId: apiPortSpec,
-		}).WithFiles(map[services.FilesArtifactUUID]string{
-			apiConfigArtifactUuid: configMountpathOnApiContainer,
-		}).WithCmdOverride(startCmd).Build()
-
-		return containerConfig, nil
+func getApiServiceContainerConfig(apiConfigArtifactUuid services.FilesArtifactUUID) *services.ContainerConfig {
+	startCmd := []string{
+		"./example-api-server.bin",
+		"--config",
+		path.Join(configMountpathOnApiContainer, configFilename),
 	}
 
-	return containerConfigSupplier
+	containerConfig := services.NewContainerConfigBuilder(
+		apiServiceImage,
+	).WithUsedPorts(map[string]*services.PortSpec{
+		apiPortId: apiPortSpec,
+	}).WithFiles(map[services.FilesArtifactUUID]string{
+		apiConfigArtifactUuid: configMountpathOnApiContainer,
+	}).WithCmdOverride(startCmd).Build()
+
+	return containerConfig
 }
 
 func createApiConfigFile(datastoreIP string) (string, error) {
@@ -342,16 +335,13 @@ func getFileContents(ipAddress string, portNum uint16, realtiveFilepath string) 
 	return bodyStr, nil
 }
 
-func getFileServerContainerConfigSupplier(filesArtifactMountPoints map[services.FilesArtifactUUID]string) func(ipAddr string) (*services.ContainerConfig, error) {
-	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
-		containerConfig := services.NewContainerConfigBuilder(
-			fileServerServiceImage,
-		).WithUsedPorts(map[string]*services.PortSpec{
-			fileServerPortId: fileServerPortSpec,
-		}).WithFiles(
-			filesArtifactMountPoints,
-		).Build()
-		return containerConfig, nil
-	}
-	return containerConfigSupplier
+func getFileServerContainerConfig(filesArtifactMountPoints map[services.FilesArtifactUUID]string) *services.ContainerConfig {
+	containerConfig := services.NewContainerConfigBuilder(
+		fileServerServiceImage,
+	).WithUsedPorts(map[string]*services.PortSpec{
+		fileServerPortId: fileServerPortSpec,
+	}).WithFiles(
+		filesArtifactMountPoints,
+	).Build()
+	return containerConfig
 }
