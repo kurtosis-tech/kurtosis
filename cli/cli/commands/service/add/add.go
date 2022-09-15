@@ -225,7 +225,7 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred getting the container config supplier to start image '%v' with CMD '%+v', ENTRYPOINT '%v', and envvars '%v' and private IP address placeholder '%v'",
+			"An error occurred getting the container config supplier to start image '%v' with CMD '%+v', ENTRYPOINT '%v',  envvars '%v' and private IP address placeholder '%v'",
 			image,
 			cmdArgs,
 			entrypointStr,
