@@ -5,28 +5,30 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components/fluentbit"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components/loki"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"strings"
 	"time"
 )
 
 const (
-
-	nameOfNetworkToStartEngineContainerIn = "bridge"
-
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
 
-	// We leave a relatively short timeout so that the engine gets a chance to gracefully clean up, but the
-	// user isn't stuck waiting on a long-running operation when they tell the engine to stop
-	engineStopTimeout = 1 * time.Second
+	getAllEngineContainersOperationId operation_parallelizer.OperationID= "getAllEngineContainers"
+	getAllLogsDatabaseContainersOperationId operation_parallelizer.OperationID= "getAllLogsDatabaseContainers"
+	getAllLogsCollectorContainersOperationId operation_parallelizer.OperationID= "getAllLogsCollectorContainers"
 )
 
 func CreateEngine(
@@ -35,6 +37,7 @@ func CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
+	logsCollectorHttpPortNumber uint16,
 	envVars map[string]string,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
@@ -42,19 +45,31 @@ func CreateEngine(
 	*engine.Engine,
 	error,
 ) {
-	matchingNetworks, err := dockerManager.GetNetworksByName(ctx, nameOfNetworkToStartEngineContainerIn)
+	allEngineAndLogsComponentsContainerIDs,  err := getAllLogsComponentsContainerIDs(ctx, dockerManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred checking for engine containers and logs components containers existence")
+	}
+
+	isThereEngineOrLogsComponentsContainersInTheCluster := len(allEngineAndLogsComponentsContainerIDs) > 0
+
+	if isThereEngineOrLogsComponentsContainersInTheCluster {
+		containerIdsStr := strings.Join(allEngineAndLogsComponentsContainerIDs, ", ")
+		return nil, stacktrace.NewError("No new engine will be started because there exists engine or logs component containers in the cluster; the following containers with IDs '%v' should be removed before creating a new engine", containerIdsStr)
+	}
+
+	matchingNetworks, err := dockerManager.GetNetworksByName(ctx, consts.NameOfNetworkToStartEngineContainersIn)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred getting networks matching the network we want to start the engine in, '%v'",
-			nameOfNetworkToStartEngineContainerIn,
+			consts.NameOfNetworkToStartEngineContainersIn,
 		)
 	}
 	numMatchingNetworks := len(matchingNetworks)
 	if numMatchingNetworks == 0 && numMatchingNetworks > 1 {
 		return nil, stacktrace.NewError(
 			"Expected exactly one network matching the name of the network that we want to start the engine in, '%v', but got %v",
-			nameOfNetworkToStartEngineContainerIn,
+			consts.NameOfNetworkToStartEngineContainersIn,
 			numMatchingNetworks,
 		)
 	}
@@ -66,6 +81,31 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID string for the engine")
 	}
 	engineGuid := engine.EngineGUID(engineGuidStr)
+
+	//Declaring the centralized logs stack
+	logsDatabaseContainer := loki.NewLokiLogDatabaseContainer()
+	logsCollectorContainer := fluentbit.NewFluentbitLogsCollectorContainer()
+
+	removeCentralizedLogsComponentsContainersFunc, err := createCentralizedLogsComponents(
+		ctx,
+		engineGuid,
+		targetNetworkId,
+		targetNetwork.GetName(),
+		logsCollectorHttpPortNumber,
+		objAttrsProvider,
+		dockerManager,
+		logsDatabaseContainer,
+		logsCollectorContainer,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the centralized logs components for the engine with GUID '%v' and network ID '%v'", engineGuid, targetNetworkId)
+	}
+	shouldRemoveCentralizedLogsComponentsContainers := true
+	defer func() {
+		if shouldRemoveCentralizedLogsComponentsContainers {
+			removeCentralizedLogsComponentsContainersFunc()
+		}
+	}()
 
 	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.EnginePortProtocol)
 	if err != nil {
@@ -164,7 +204,7 @@ func CreateEngine(
 			// the failure was the original context being cancelled
 			if err := dockerManager.KillContainer(context.Background(), containerId); err != nil {
 				logrus.Errorf(
-					"Launching the engine server with GUID '%v' and container GUID '%v' didn't complete successfully so we "+
+					"Launching the engine server with GUID '%v' and container ID '%v' didn't complete successfully so we "+
 						"tried to kill the container we started, but doing so exited with an error:\n%v",
 					engineGuid,
 					containerId,
@@ -197,7 +237,153 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating an engine object from container with GUID '%v'", containerId)
 	}
 
+
 	shouldKillEngineContainer = false
+	shouldRemoveCentralizedLogsComponentsContainers = false
 	return result, nil
 }
 
+// ====================================================================================================
+// 									   Private helper methods
+// ====================================================================================================
+//TODO we can run it in parallel after the network creation, and we can wait before returning the EngineInfo object
+func createCentralizedLogsComponents(
+	ctx context.Context,
+	engineGuid engine.EngineGUID,
+	targetNetworkId string,
+	targetNetworkName string,
+	logsCollectorHttpPortNumber uint16,
+	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
+	dockerManager *docker_manager.DockerManager,
+	logsDatabaseContainer logs_components.LogsDatabaseContainer,
+	logsCollectorContainer logs_components.LogsCollectorContainer,
+) (func(), error) {
+
+	logsDatabaseHost, logsDatabasePort, removeLogsDatabaseContainerFunc, err := logsDatabaseContainer.CreateAndStart(
+		ctx,
+		consts.LogsDatabaseHttpPortId,
+		engineGuid,
+		targetNetworkId,
+		targetNetworkName,
+		objAttrsProvider,
+		dockerManager,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the logs database container with http port id '%v' for engine with GUID '%v' in Docker network with ID '%v'",
+			consts.LogsDatabaseHttpPortId,
+			engineGuid,
+			targetNetworkId,
+		)
+	}
+	shouldRemoveLogsDatabaseContainer := true
+	defer func() {
+		if shouldRemoveLogsDatabaseContainer {
+			removeLogsDatabaseContainerFunc()
+		}
+	}()
+
+	removeLogsCollectorContainerAndVolumeFunc, err := logsCollectorContainer.CreateAndStart(
+		ctx,
+		logsDatabaseHost,
+		logsDatabasePort,
+		logsCollectorHttpPortNumber,
+		consts.LogsCollectorTcpPortId,
+		consts.LogsCollectorHttpPortId,
+		engineGuid,
+		targetNetworkId,
+		objAttrsProvider,
+		dockerManager,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred running the logs collector container with logs database host '%v', logs database port '%v', http port '%v', tcp port id '%v', and http port id '%v' for engine with GUID '%v' in Docker network with ID '%v'",
+			logsDatabaseHost,
+			logsDatabasePort,
+			logsCollectorHttpPortNumber,
+			consts.LogsCollectorTcpPortId,
+			consts.LogsCollectorHttpPortId,
+			engineGuid,
+			targetNetworkId,
+		)
+	}
+	shouldRemoveLogsCollectorContainerAndVolume := true
+	defer func() {
+		if shouldRemoveLogsCollectorContainerAndVolume {
+			removeLogsCollectorContainerAndVolumeFunc()
+		}
+	}()
+
+	removeCentralizedLogsComponentsContainersFunc := func() {
+		removeLogsDatabaseContainerFunc()
+		removeLogsCollectorContainerAndVolumeFunc()
+	}
+
+	shouldRemoveLogsDatabaseContainer = false
+	shouldRemoveLogsCollectorContainerAndVolume = false
+	return removeCentralizedLogsComponentsContainersFunc, nil
+}
+
+func getAllLogsComponentsContainerIDs(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+) ([]string, error){
+
+	allEngineAndLogsComponentsContainerIDs := []string{}
+
+	getLogsDatabaseContainerOperation := func() (interface{}, error) {
+
+		logsDatabaseContainers, err := getAllLogsDatabaseContainers(ctx, dockerManager)
+		if err != nil {
+			return false, stacktrace.Propagate(err, "An error occurred getting the logs database container")
+		}
+
+		allLogsDatabaseContainerIDs := map[string]bool{}
+
+		for _, logsDatabaseContainer := range logsDatabaseContainers {
+			allLogsDatabaseContainerIDs[logsDatabaseContainer.GetId()]= true
+		}
+
+		return allLogsDatabaseContainerIDs, nil
+	}
+
+	getLogsCollectorContainerOperation := func() (interface{}, error) {
+		logsCollectorContainers, err := shared_helpers.GetAllLogsCollectorContainers(ctx, dockerManager)
+		if err != nil {
+			return false, stacktrace.Propagate(err, "An error occurred getting the logs collector container")
+		}
+
+		allLogsCollectorContainerIDs := map[string]bool{}
+
+		for _, logsCollectorContainer := range logsCollectorContainers {
+			allLogsCollectorContainerIDs[logsCollectorContainer.GetId()]= true
+		}
+
+		return allLogsCollectorContainerIDs, nil
+	}
+
+	allOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{
+		getAllLogsDatabaseContainersOperationId:  getLogsDatabaseContainerOperation,
+		getAllLogsCollectorContainersOperationId: getLogsCollectorContainerOperation,
+	}
+
+	successfulOperations, erroredOperations := operation_parallelizer.RunOperationsInParallel(allOperations)
+	if len(erroredOperations) > 0 {
+		return nil, stacktrace.NewError("An error occurred running these operations '%+v' in parallel\n Operations with errors: %+v", allOperations, erroredOperations)
+	}
+
+	for _, uncastedContainerIds := range successfulOperations {
+		containerIds, ok := uncastedContainerIds.(map[string]bool)
+		if !ok {
+			return nil, stacktrace.NewError("An error occurred trying to cast the uncasted container ids '%v' to a map[string]bool", uncastedContainerIds)
+		}
+		for containerId := range containerIds {
+			allEngineAndLogsComponentsContainerIDs = append(allEngineAndLogsComponentsContainerIDs, containerId)
+		}
+	}
+
+
+	return allEngineAndLogsComponentsContainerIDs, nil
+}

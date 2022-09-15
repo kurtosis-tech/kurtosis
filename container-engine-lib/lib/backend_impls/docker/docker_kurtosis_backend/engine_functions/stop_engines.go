@@ -6,6 +6,11 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/stacktrace"
+	"time"
+)
+
+const (
+	stopLogsComponentsContainersTimeout = 1 * time.Minute
 )
 
 func StopEngines(
@@ -33,8 +38,10 @@ func StopEngines(
 		dockerManager *docker_manager.DockerManager,
 		dockerObjectId string,
 	) error {
-		if err := dockerManager.KillContainer(ctx, dockerObjectId); err != nil {
-			return stacktrace.Propagate(err, "An error occurred killing engine container with GUID '%v'", dockerObjectId)
+		engineContainerId := dockerObjectId
+		// TODO Switch to graceful stop to ensure we don't get database corruption
+		if err := dockerManager.KillContainer(ctx, engineContainerId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred killing engine container with ID '%v'", dockerObjectId)
 		}
 		return nil
 	}
@@ -64,5 +71,13 @@ func StopEngines(
 		)
 	}
 
+	//TODO we are removing the los components containers rather than stopping them because we are preparing the stage
+	//TODO for a single engine server, logs components containers have an static name, so if we stop the containers
+	//TODO the engine restart will fail because the container's name will be in use
+	if err := removeLogsComponentsGracefully(ctx, dockerManager); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing the logs components containers")
+	}
+
 	return successfulGuids, erroredGuids, nil
 }
+

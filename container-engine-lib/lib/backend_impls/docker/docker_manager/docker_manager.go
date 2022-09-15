@@ -95,7 +95,7 @@ const (
 	shouldAttachStdoutWhenCreatingContainerExec               = true
 	shouldExecuteInDetachModeWhenCreatingContainerExec        = false
 
-	megabytesToBytesFactor = 1_000_000
+	megabytesToBytesFactor    = 1_000_000
 	millicpusToNanoCPUsFactor = 1_000_000
 
 	minMemoryLimit = 6
@@ -431,7 +431,8 @@ func (manager DockerManager) CreateAndStartContainer(
 		args.usedPorts,
 		args.needsAccessToDockerHostMachine,
 		args.cpuAllocationMillicpus,
-		args.memoryAllocationMegabytes)
+		args.memoryAllocationMegabytes,
+		args.loggingDriverConfig)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -996,7 +997,9 @@ func (manager *DockerManager) getContainerHostConfig(
 	usedPortsWithPublishSpec map[nat.Port]PortPublishSpec,
 	needsToAccessDockerHostMachine bool,
 	cpuAllocationMillicpus uint64,
-	memoryAllocationMegabytes uint64) (hostConfig *container.HostConfig, err error) {
+	memoryAllocationMegabytes uint64,
+	loggingDriverConfig LoggingDriver,
+) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))
 	for hostFilepath, containerFilepath := range bindMounts {
@@ -1074,6 +1077,11 @@ func (manager *DockerManager) getContainerHostConfig(
 		resources.MemorySwap = int64(memoryAllocationBytes)
 	}
 
+	logConfig := container.LogConfig{}
+	if loggingDriverConfig != nil {
+		logConfig = loggingDriverConfig.GetLogConfig()
+	}
+
 	// NOTE: Do NOT use PublishAllPorts here!!!! This will work if a Dockerfile doesn't have an EXPOSE directive, but
 	//  if the Dockerfile *does* have an EXPOSE directive then _only_ the ports with EXPOSE will be published
 	// See also: https://www.ctl.io/developers/blog/post/docker-networking-rules/
@@ -1084,6 +1092,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		PortBindings: portMap,
 		ExtraHosts:   extraHosts,
 		Resources:    resources,
+		LogConfig:    logConfig,
 	}
 	return containerHostConfigPtr, nil
 }

@@ -33,6 +33,7 @@ const (
 	isNetworkPartitioningEnabledKeyStr = labelNamespaceStr + "is-network-partitioning-enabled"
 
 	privateIpAddrLabelKeyStr = labelNamespaceStr + "private-ip"
+
 )
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // If these value change, it will lead to the Kurtosis engine losing track of old containers

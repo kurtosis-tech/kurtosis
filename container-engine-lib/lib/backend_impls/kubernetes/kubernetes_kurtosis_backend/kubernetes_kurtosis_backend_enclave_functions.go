@@ -323,6 +323,7 @@ func (backend KubernetesKurtosisBackend) DestroyEnclaves(
 
 		successfulEnclaveIds[enclaveId] = true
 	}
+
 	return successfulEnclaveIds, erroredEnclaveIds, nil
 }
 

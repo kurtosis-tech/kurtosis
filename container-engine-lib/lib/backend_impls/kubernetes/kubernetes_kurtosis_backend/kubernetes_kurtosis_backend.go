@@ -119,6 +119,7 @@ func (backend KubernetesKurtosisBackend) CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
+	logsCollectorHttpPortNumber uint16,
 	envVars map[string]string,
 ) (
 	*engine.Engine,

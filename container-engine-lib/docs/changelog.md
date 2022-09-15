@@ -1,4 +1,19 @@
 # TBD
+### Features
+* Added the `ForLogsDatabaseServer` and the `ForLogsCollectorServer` Docker objects attribute
+* Added `LogsCollectorTypeDockerLabelValue`, `ModuleContainerTypeDockerLabelValue` and `LogsDbDataVolumeTypeDockerLabelValue` Docker labels
+* Added `EngineGUIDDockerLabelKey` Docker label key
+* Added `LogsDatabaseContainer` interface for defining centralized logs database container behaviour
+* Added `LokiLogsDatabaseContainer` implementation and the Kurtosis configuration values
+* Added `LogsCollectorContainer` interface for defining centralized logs collector container behaviour
+* Added `FluentbitLogsCollectorContainer`  implementation and the Kurtosis configuration values
+
+### Breaking Changes
+* Updated `CreateEngine` method, added the `logsCollectorHttpPortNumber` param
+  * Users will need to update all the `CreateEngine` calls adding this new param
+
+### Changes
+* Changed the user service and modules container's logging driver to the `fluentd` type
 
 ### Fixes
 * Fixed a bug in `KurtosisBackend.StartUserServices` where we'd lose some error logging in a `defer` as we'd assign errors to a variable that had already been returned by the closing function.
@@ -35,13 +50,10 @@
 
 
 # 0.36.1
-
 ### Changes
 * Add checks to all Bulk API service operations to return empty maps, given an empty input
 
 # 0.36.0
-
-
 ### Breaking Changes 
 * Remove `RegisterUserService` and `StartUserService` from `KurtosisBackend` interface
   * Users will need to remove all references to `RegisterUserService` and `StartUserService` in favor of `RegisterUserServices` and `StartUserServices`

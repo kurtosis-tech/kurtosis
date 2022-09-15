@@ -8,6 +8,6 @@ type EngineFilters struct {
 	GUIDs map[EngineGUID]bool
 
 	// Disjunctive set of statuses that returned engines must conform to
-	// If nil or empty, will match all IDs
+	// If nil or empty, will match all statuses
 	Statuses map[container_status.ContainerStatus]bool
 }

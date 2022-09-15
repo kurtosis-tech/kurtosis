@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
@@ -29,6 +30,10 @@ const (
 	// Engine container port number string parsing constants
 	hostMachinePortNumStrParsingBase = 10
 	hostMachinePortNumStrParsingBits = 16
+
+	netstatSuccessExitCode = 0
+
+	shouldShowStoppedLogsCollectorContainers = true
 )
 
 // !!!WARNING!!!
@@ -316,6 +321,182 @@ func GetMatchingUserServiceObjsAndDockerResourcesNoMutex(
 	return resultServiceObjs, resultDockerResources, nil
 }
 
+// TODO Make private when networking sidecars are pushed down to the service level
+func GetSingleUserServiceObjAndResourcesNoMutex(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	userServiceGuid service.ServiceGUID,
+	dockerManager *docker_manager.DockerManager,
+) (
+	*service.Service,
+	*UserServiceDockerResources,
+	error,
+) {
+	filters := &service.ServiceFilters{
+		GUIDs: map[service.ServiceGUID]bool{
+			userServiceGuid: true,
+		},
+	}
+	userServices, dockerResources, err := GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters, dockerManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services using filters '%v'", filters)
+	}
+	numOfUserServices := len(userServices)
+	if numOfUserServices == 0 {
+		return nil, nil, stacktrace.NewError("No user service with GUID '%v' in enclave with ID '%v' was found", userServiceGuid, enclaveId)
+	}
+	if numOfUserServices > 1 {
+		return nil, nil, stacktrace.NewError("Expected to find only one user service with GUID '%v' in enclave with ID '%v', but '%v' was found", userServiceGuid, enclaveId, numOfUserServices)
+	}
+
+	var resultService *service.Service
+	for _, resultService = range userServices {
+	}
+
+	var resultDockerResources *UserServiceDockerResources
+	for _, resultDockerResources = range dockerResources {
+	}
+
+	return resultService, resultDockerResources, nil
+}
+
+func WaitForPortAvailabilityUsingNetstat(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	containerId string,
+	portSpec *port_spec.PortSpec,
+	maxRetries uint,
+	timeBetweenRetries time.Duration,
+) error {
+	commandStr := fmt.Sprintf(
+		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
+		strings.ToLower(portSpec.GetProtocol().String()),
+		portSpec.GetNumber(),
+	)
+	execCmd := []string{
+		"sh",
+		"-c",
+		commandStr,
+	}
+	for i := uint(0); i < maxRetries; i++ {
+		outputBuffer := &bytes.Buffer{}
+		exitCode, err := dockerManager.RunExecCommand(ctx, containerId, execCmd, outputBuffer)
+		if err == nil {
+			if exitCode == netstatSuccessExitCode {
+				return nil
+			}
+			logrus.Debugf(
+				"Netstat availability-waiting command '%v' returned without a Docker error, but exited with non-%v exit code '%v' and logs:\n%v",
+				commandStr,
+				netstatSuccessExitCode,
+				exitCode,
+				outputBuffer.String(),
+			)
+		} else {
+			logrus.Debugf(
+				"Netstat availability-waiting command '%v' experienced a Docker error:\n%v",
+				commandStr,
+				err,
+			)
+		}
+
+		// Tiny optimization to not sleep if we're not going to run the loop again
+		if i < maxRetries {
+			time.Sleep(timeBetweenRetries)
+		}
+	}
+
+	return stacktrace.NewError(
+		"The port didn't become available (as measured by the command '%v') even after retrying %v times with %v between retries",
+		commandStr,
+		maxRetries,
+		timeBetweenRetries,
+	)
+}
+
+func GetLogsCollectorServiceAddress(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+) (logs_components.LogsCollectorAddress, error) {
+	logsCollectorContainer, err := GetLogsCollectorContainer(ctx, dockerManager)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the logs collector container")
+	}
+
+	isLogsCollectorContainerRunning, found := consts.IsContainerRunningDeterminer[logsCollectorContainer.GetStatus()]
+	if !found {
+		// This should never happen because we enforce completeness in a unit test
+		return "", stacktrace.NewError("No is-running designation found for logs collector container status '%v'; this is a bug in Kurtosis!", logsCollectorContainer.GetStatus().String())
+	}
+
+	if !isLogsCollectorContainerRunning{
+		return "", stacktrace.NewError("The logs collector container is not running")
+	}
+
+	privateIpStr, err := dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineContainersIn, logsCollectorContainer.GetId())
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the logs collector private IP address for Docker network '%v'", consts.NameOfNetworkToStartEngineContainersIn)
+	}
+
+	containerLabels := logsCollectorContainer.GetLabels()
+
+	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsDockerLabelKey.GetString()]
+	if !found {
+		return "", stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsDockerLabelKey.GetString())
+	}
+
+	portSpecs, err := docker_port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred deserializing port specs string '%v'", serializedPortSpecs)
+	}
+
+	tcpPortSpec, foundPortSpec := portSpecs[consts.LogsCollectorTcpPortId]
+	if !foundPortSpec {
+		return "", stacktrace.NewError("No tcp port with ID '%v' found in the port specs", consts.LogsCollectorTcpPortId)
+	}
+
+	logsCollectorAddressStr := fmt.Sprintf("%v:%v", privateIpStr, tcpPortSpec.GetNumber())
+	logsCollectorAddress := logs_components.LogsCollectorAddress(logsCollectorAddressStr)
+
+	return logsCollectorAddress, nil
+}
+
+//This is public because we need to use it inside this package and in the "engine_functions" package also
+func GetLogsCollectorContainer(ctx context.Context, dockerManager *docker_manager.DockerManager) (*types.Container, error) {
+	allLogsCollectorContainers, err := GetAllLogsCollectorContainers(ctx, dockerManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector containers")
+	}
+	if len(allLogsCollectorContainers) == 0 {
+		return nil, stacktrace.NewError("Didn't find any logs collector Docker container'; this is a bug in Kurtosis")
+	}
+	if len(allLogsCollectorContainers) > 1 {
+		return nil, stacktrace.NewError("Found more than one logs collector Docker container'; this is a bug in Kurtosis")
+	}
+
+	logsCollectorContainer := allLogsCollectorContainers[0]
+
+	return logsCollectorContainer, nil
+}
+
+func GetAllLogsCollectorContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]*types.Container, error) {
+	matchingLogsCollectorContainers := []*types.Container{}
+
+	logsCollectorContainerSearchLabels := map[string]string{
+		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.LogsCollectorTypeDockerLabelValue.GetString(),
+	}
+
+	matchingLogsCollectorContainers, err := dockerManager.GetContainersByLabels(ctx, logsCollectorContainerSearchLabels, shouldShowStoppedLogsCollectorContainers)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred fetching logs collector containers using labels: %+v", logsCollectorContainerSearchLabels)
+	}
+	return matchingLogsCollectorContainers, nil
+}
+
+// ====================================================================================================
+//                                      Private Helper Functions
+// ====================================================================================================
 func getMatchingUserServiceDockerResources(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
@@ -455,98 +636,3 @@ func getUserServiceObjsFromDockerResources(
 	}
 	return result, nil
 }
-
-func GetSingleUserServiceObjAndResourcesNoMutex(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	userServiceGuid service.ServiceGUID,
-	dockerManager *docker_manager.DockerManager,
-) (
-	*service.Service,
-	*UserServiceDockerResources,
-	error,
-) {
-	filters := &service.ServiceFilters{
-		GUIDs: map[service.ServiceGUID]bool{
-			userServiceGuid: true,
-		},
-	}
-	userServices, dockerResources, err := GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters, dockerManager)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services using filters '%v'", filters)
-	}
-	numOfUserServices := len(userServices)
-	if numOfUserServices == 0 {
-		return nil, nil, stacktrace.NewError("No user service with GUID '%v' in enclave with ID '%v' was found", userServiceGuid, enclaveId)
-	}
-	if numOfUserServices > 1 {
-		return nil, nil, stacktrace.NewError("Expected to find only one user service with GUID '%v' in enclave with ID '%v', but '%v' was found", userServiceGuid, enclaveId, numOfUserServices)
-	}
-
-	var resultService *service.Service
-	for _, resultService = range userServices {
-	}
-
-	var resultDockerResources *UserServiceDockerResources
-	for _, resultDockerResources = range dockerResources {
-	}
-
-	return resultService, resultDockerResources, nil
-}
-
-const netstatSuccessExitCode = 0
-
-func WaitForPortAvailabilityUsingNetstat(
-	ctx context.Context,
-	dockerManager *docker_manager.DockerManager,
-	containerId string,
-	portSpec *port_spec.PortSpec,
-	maxRetries uint,
-	timeBetweenRetries time.Duration,
-) error {
-	commandStr := fmt.Sprintf(
-		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
-		strings.ToLower(portSpec.GetProtocol().String()),
-		portSpec.GetNumber(),
-	)
-	execCmd := []string{
-		"sh",
-		"-c",
-		commandStr,
-	}
-	for i := uint(0); i < maxRetries; i++ {
-		outputBuffer := &bytes.Buffer{}
-		exitCode, err := dockerManager.RunExecCommand(ctx, containerId, execCmd, outputBuffer)
-		if err == nil {
-			if exitCode == netstatSuccessExitCode {
-				return nil
-			}
-			logrus.Debugf(
-				"Netstat availability-waiting command '%v' returned without a Docker error, but exited with non-%v exit code '%v' and logs:\n%v",
-				commandStr,
-				netstatSuccessExitCode,
-				exitCode,
-				outputBuffer.String(),
-			)
-		} else {
-			logrus.Debugf(
-				"Netstat availability-waiting command '%v' experienced a Docker error:\n%v",
-				commandStr,
-				err,
-			)
-		}
-
-		// Tiny optimization to not sleep if we're not going to run the loop again
-		if i < maxRetries {
-			time.Sleep(timeBetweenRetries)
-		}
-	}
-
-	return stacktrace.NewError(
-		"The port didn't become available (as measured by the command '%v') even after retrying %v times with %v between retries",
-		commandStr,
-		maxRetries,
-		timeBetweenRetries,
-	)
-}
-

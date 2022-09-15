@@ -105,14 +105,118 @@ func runKurtosisBackendTesting() error {
 		"kurtosistech/kurtosis-engine-server",
 		"1.29.0",
 		9710,
-		9810,
+		9711,
+		9712,
 		serializedArgs,
 	)
 	if err != nil {
 		return err
 	}
+	logrus.Infof("Engine 1 info: %+v", engine)
 
-	logrus.Infof("Engine info: %+v", engine)
+		/*engineFil := &engine_object.EngineFilters{
+			GUIDs: map[engine_object.EngineGUID]bool{
+				engine.GetGUID(): true,
+			},
+			Statuses: map[container_status.ContainerStatus]bool{
+				container_status.ContainerStatus_Running: true,
+			},
+		}
+		stoppedEngineGuids, erroredEngineGuids, err := backend.StopEngines(ctx, engineFil)
+		if err != nil {
+			return err
+		}
+		logrus.Infof("Successfull stopped engines: %+v", stoppedEngineGuids)
+		logrus.Infof("Errored stopped engines: %+v", erroredEngineGuids)
+		*/
+
+
+		serializedArgs2 := map[string]string{
+			"SERIALIZED_ARGS": `{"grpcListenPortNum":9810,"grpcProxyListenPortNum":9811,"logLevelStr":"debug","imageVersionTag":"1.29.0","metricsUserId":"552f","didUserAcceptSendingMetrics":false,"kurtosisBackendType":"docker","kurtosisBackendConfig":{}}`,
+		}
+
+		engine2, err := backend.CreateEngine(
+			ctx,
+			"kurtosistech/kurtosis-engine-server",
+			"1.29.0",
+			9810,
+			9811,
+			9812,
+			serializedArgs2,
+		)
+		if err != nil {
+			return err
+		}
+		logrus.Infof("Engine 2 info: %+v", engine2)
+
+/*
+		engineFil2 := &engine_object.EngineFilters{
+			GUIDs: map[engine_object.EngineGUID]bool{
+				engine.GetGUID(): true,
+				engine2.GetGUID(): true,
+			},
+		}
+		destroyedEngineGuids, erroredDestroyedEngineGuids, err := backend.DestroyEngines(ctx, engineFil2)
+		if err != nil {
+			return err
+		}
+		logrus.Infof("Successfull destroyed engines: %+v", destroyedEngineGuids)
+		logrus.Infof("Errored destroyed engines: %+v", erroredDestroyedEngineGuids)
+
+		/*
+			enclaveID := enclave2.EnclaveID("enclave-for-test")
+			enclave, err := backend.CreateEnclave(
+				ctx,
+				enclaveID,
+				false,
+			)
+			if err != nil {
+				return err
+			}
+			logrus.Infof("Enclave info: %+v", enclave)
+
+			userServiceID := service.ServiceID("user-service-test")
+			serviceIds := map[service.ServiceID]bool {
+				userServiceID: true,
+			}
+			successfulUserServiceRegistrations, erroredUserServiceRegistrations, err := backend.RegisterUserServices(
+				ctx,
+				enclaveID,
+				serviceIds,
+			)
+			if err != nil {
+				return err
+			}
+			logrus.Infof("Successfull user service registrations: %+v", successfulUserServiceRegistrations)
+			logrus.Infof("Errored user service registrations: %+v", erroredUserServiceRegistrations)
+
+			serviceConfig := service.NewServiceConfig(
+				"alpine:3.12.4",
+				nil,
+				nil,
+				nil,
+				nil,
+				nil,
+				nil,
+				0,
+				0,
+			)
+
+			serviceToStart := map[service.ServiceGUID]*service.ServiceConfig{
+				successfulUserServiceRegistrations[userServiceID].GetGUID(): serviceConfig,
+			}
+
+			successfulUserServiceStarted, erroredUserServiceStarted, err := backend.StartUserServices(
+				ctx,
+				enclaveID,
+				serviceToStart,
+			)
+			if err != nil {
+				return err
+			}
+			logrus.Infof("Successfull user service started: %+v", successfulUserServiceStarted)
+			logrus.Infof("Errored user service started: %+v", erroredUserServiceStarted)
+	*/
 
 	/*
 		_, err := lib.GetCLIKubernetesKurtosisBackend(ctx)
@@ -137,3 +241,4 @@ func runKurtosisBackendTesting() error {
 
 	return nil
 }
+
