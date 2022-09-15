@@ -259,9 +259,8 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 			removeServiceArgs := binding_constructors.NewRemoveServiceArgs(string(serviceID))
 			_, err = enclaveCtx.client.RemoveService(context.Background(), removeServiceArgs)
 			if err != nil {
-				failedServicesPool[serviceID] = stacktrace.Propagate(err,
-					"Attempted to remove service '%v' to delete its resources after it failed to start, but an error occurred "+
-						"while attempting to remove the service.", serviceID)
+				logrus.Errorf("Attempted to remove service '%v' to delete its resources after it failed to start, but an error occurred "+
+					"while attempting to remove the service:\n'%v'", serviceID, err)
 			}
 		}
 	}()

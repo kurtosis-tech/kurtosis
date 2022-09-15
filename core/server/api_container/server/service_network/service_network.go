@@ -217,9 +217,7 @@ func(network *ServiceNetwork) StartServices(
 		}
 		_, failedToDestroyGUIDs, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveId, userServiceFilters)
 		if err != nil {
-			for serviceID := range serviceIDsToRemove {
-				failedServicesPool[serviceID] = stacktrace.Propagate(err, "Attempted to destroy all services with IDs '%v' together but had no success. You must manually destroy the service '%v'!", serviceIDsToRemove, serviceID)
-			}
+			logrus.Errorf("Attempted to destroy all services with IDs '%v' together but had no success. You must manually destroy the services! The following error had occurred:\n'%v'", serviceIDsToRemove, err)
 			return
 		}
 		if len(failedToDestroyGUIDs) == 0 {
@@ -232,7 +230,7 @@ func(network *ServiceNetwork) StartServices(
 			if !found {
 				continue
 			}
-			failedServicesPool[serviceID] = stacktrace.Propagate(destroyErr, "Failed to destroy the service '%v' after it failed to start. You must manually destroy the service!", serviceID)
+			logrus.Errorf("Failed to destroy the service '%v' after it failed to start. You must manually destroy the service! The following error had occurred:\n'%v'", serviceID, destroyErr)
 			destroyFailuresAccountedFor += 1
 		}
 		if destroyFailuresAccountedFor != len(failedToDestroyGUIDs) {
@@ -300,12 +298,12 @@ func(network *ServiceNetwork) StartServices(
 			for serviceID := range sidecarsToCleanUp {
 				networkingSidecar, found := network.networkingSidecars[serviceID]
 				if !found {
-					failedServicesPool[serviceID] = stacktrace.NewError("Tried cleaning up sidecar for service with ID '%v' but couldn't retrieve it from the cache. This is a Kurtosis bug.", serviceID)
+					logrus.Errorf("Tried cleaning up sidecar for service with ID '%v' but couldn't retrieve it from the cache. This is a Kurtosis bug.", serviceID)
 					continue
 				}
 				err = network.networkingSidecarManager.Remove(ctx, networkingSidecar)
 				if err != nil {
-					failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred while cleaning up the side car for service ID '%v'.", serviceID)
+					logrus.Errorf("Attempted to clean up the sidecar for service with ID '%v' but the following error occurred:\n'%v'", serviceID, err)
 					continue
 				}
 				delete(network.networkingSidecars, serviceID)
