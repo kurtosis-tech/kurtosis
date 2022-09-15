@@ -1,5 +1,7 @@
 # TBD
 
+# 1.59.0
+
 ### Breaking Changes
 * Removed the `APIC.RegisterServices` endpoint
   * Users can now simply call the `APIC.StartServices` which will handle everything for them.
