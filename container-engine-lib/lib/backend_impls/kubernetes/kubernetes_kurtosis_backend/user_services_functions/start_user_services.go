@@ -99,9 +99,7 @@ func StartUserServices(
 		}
 		_, failedToDestroyGUIDs, err := DestroyUserServices(ctx, enclaveID, userServiceFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 		if err != nil {
-			for serviceID, _ := range serviceIDsToRemove {
-				failedServicesPool[serviceID] = stacktrace.Propagate(err, "Attempted to destroy all services with IDs '%v' together but had no success. You must manually destroy the service '%v'!", serviceIDsToRemove, serviceID)
-			}
+			logrus.Errorf("Attempted to destroy all services with IDs '%v' together but had no success. You must manually destroy the services! The following error had occurred:\n'%v'", serviceIDsToRemove, err)
 			return
 		}
 		if len(failedToDestroyGUIDs) == 0 {
@@ -112,7 +110,7 @@ func StartUserServices(
 			if !found {
 				continue
 			}
-			failedServicesPool[serviceID] = stacktrace.Propagate(destroyErr, "Failed to destroy the service '%v' after it failed to start. You must manually destroy the service!", serviceID)
+			logrus.Errorf("Failed to destroy the service '%v' after it failed to start. You must manually destroy the service! The following error had occurred:\n'%v'", serviceID, destroyErr)
 		}
 	}()
 	for serviceID, registrationError := range failedRegistrations {
