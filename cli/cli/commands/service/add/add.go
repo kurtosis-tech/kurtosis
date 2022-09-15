@@ -65,11 +65,7 @@ var defaultPortProtocolStr = strings.ToLower(kurtosis_core_rpc_api_bindings.Port
 var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:       command_str_consts.ServiceAddCmdStr,
 	ShortDescription: "Adds a service to an enclave",
-	LongDescription: fmt.Sprintf(
-		"Adds a new service with the given parameters to the given enclave (NOTE: any instances of "+
-			"the string '%v' in the CMD args will be replaced with the container's IP address inside the enclave)",
-		privateIPAddressPlaceholderKey,
-	),
+	LongDescription: "Adds a new service with the given parameters to the given enclave.",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
 	Args: []*args.ArgConfig{
