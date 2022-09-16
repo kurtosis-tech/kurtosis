@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       bump_major:
-        description: 'Bump the MAJOR version ("X" in "X.Y.Z") on this release'
+        description: '(DANGER) Bump the MAJOR version ("X" in "X.Y.Z") on this release'
         required: true
         type: boolean
       should_do_weekend_release:
@@ -21,9 +21,6 @@ jobs:
         run: |
           set -euo pipefail
 
-          # TODO DEBUGGIN
-          echo ${{ inputs.should_do_weekend_release }}
-
           is_weekend_release="false"
 
           # 'date +%u' returns Monday = 1..... Friday = 5, Sat = 6, Sun = 7
@@ -37,7 +34,7 @@ jobs:
             echo "Refusing to release on Friday, Saturday, or Sunday to avoid risk of Kurtosians needing to fix bugs on the weekend"
             exit 1
           fi
-##- uses: kurtosis-tech/release/.github/workflows/release.yml@master
-##  with:
-##    bump_major: ${{ inputs.bump_major }}
-##  secrets: inherit
+      - uses: kurtosis-tech/release/.github/workflows/release.yml@master
+        with:
+          bump_major: ${{ inputs.bump_major }}
+        secrets: inherit
