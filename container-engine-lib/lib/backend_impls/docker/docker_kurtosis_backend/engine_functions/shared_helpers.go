@@ -2,7 +2,6 @@ package engine_functions
 
 import (
 	"context"
-	docker_types "github.com/docker/docker/api/types"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
@@ -273,27 +272,6 @@ func getAllLogsDatabaseContainers(ctx context.Context, dockerManager *docker_man
 	return matchingLogsDatabaseContainers, nil
 }
 
-func getLogsCollectorVolume(ctx context.Context, dockerManager *docker_manager.DockerManager) (*docker_types.Volume, error) {
-	logsCollectorVolumeSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.VolumeTypeDockerLabelKey.GetString(): label_value_consts.LogsCollectorVolumeTypeDockerLabelValue.GetString(),
-	}
-
-	matchingLogsCollectorVolumes, err := dockerManager.GetVolumesByLabels(ctx, logsCollectorVolumeSearchLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred fetching logs collector volumes using labels: %+v", logsCollectorVolumeSearchLabels)
-	}
-	if len(matchingLogsCollectorVolumes) == 0 {
-		return nil, nil
-	}
-	if len(matchingLogsCollectorVolumes) > 1 {
-		return nil, stacktrace.NewError("Found more than one logs collector Docker volume; this is a bug in Kurtosis")
-	}
-	logsCollectorVolume := matchingLogsCollectorVolumes[0]
-
-	return logsCollectorVolume, nil
-}
-
 func removeLogsComponentsGracefully(
 	ctx context.Context,
 	engineFilters *engine.EngineFilters,
@@ -303,55 +281,47 @@ func removeLogsComponentsGracefully(
 	//TODO this hack should be removed when we untied the logs components from the engine
 	shouldRemoveLogsComponents := false
 
+	if engineFilters.Statuses == nil || len(engineFilters.Statuses) == 0 {
+		shouldRemoveLogsComponents = true
+	}
+
 	for engineStatus := range engineFilters.Statuses {
 		if engineStatus == container_status.ContainerStatus_Running {
 			shouldRemoveLogsComponents = true
 		}
 	}
 
-	if shouldRemoveLogsComponents {
-		allLogsCollectorContainers, err := shared_helpers.GetAllLogsCollectorContainers(ctx, dockerManager)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting all logs collector containers")
+	if !shouldRemoveLogsComponents {
+		return nil
+	}
+
+	allLogsCollectorContainers, err := shared_helpers.GetAllLogsCollectorContainers(ctx, dockerManager)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting all logs collector containers")
+	}
+
+	for _, logsCollectorContainer := range allLogsCollectorContainers {
+		if err := dockerManager.StopContainer(ctx, logsCollectorContainer.GetId(), stopLogsComponentsContainersTimeout); err != nil {
+			return stacktrace.Propagate(err, "An error occurred stopping the logs collector container with ID '%v'", logsCollectorContainer.GetId())
 		}
 
-		if len(allLogsCollectorContainers) > 0 {
-			for _, logsCollectorContainer := range allLogsCollectorContainers {
-				if err := dockerManager.StopContainer(ctx, logsCollectorContainer.GetId(), stopLogsComponentsContainersTimeout); err != nil {
-					return stacktrace.Propagate(err, "An error occurred stopping the logs collector container with ID '%v'", logsCollectorContainer.GetId())
-				}
+		if err := dockerManager.RemoveContainer(ctx, logsCollectorContainer.GetId()); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing the logs collector container with ID '%v'", logsCollectorContainer.GetId())
+		}
+	}
 
-				if err := dockerManager.RemoveContainer(ctx, logsCollectorContainer.GetId()); err != nil {
-					return stacktrace.Propagate(err, "An error occurred removing the logs collector container with ID '%v'", logsCollectorContainer.GetId())
-				}
-			}
+	allLogsDatabaseContainers, err := getAllLogsDatabaseContainers(ctx, dockerManager)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting all logs database containers")
+	}
+
+	for _, logsDatabaseContainer := range allLogsDatabaseContainers {
+		if err := dockerManager.StopContainer(ctx, logsDatabaseContainer.GetId(), stopLogsComponentsContainersTimeout); err != nil {
+			return stacktrace.Propagate(err, "An error occurred stopping the logs database container with ID '%v'", logsDatabaseContainer.GetId())
 		}
 
-		logsCollectorVolume, err := getLogsCollectorVolume(ctx, dockerManager)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting the logs collector volume")
-		}
-		if logsCollectorVolume != nil {
-			if err := dockerManager.RemoveVolume(ctx, logsCollectorVolume.Name); err != nil {
-				return stacktrace.Propagate(err, "An error occurred removing the logs collector volume '%v", logsCollectorVolume.Name)
-			}
-		}
-
-		allLogsDatabaseContainers, err := getAllLogsDatabaseContainers(ctx, dockerManager)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting all logs database containers")
-		}
-
-		if len(allLogsDatabaseContainers) > 0 {
-			for _, logsDatabaseContainer := range allLogsDatabaseContainers {
-				if err := dockerManager.StopContainer(ctx, logsDatabaseContainer.GetId(), stopLogsComponentsContainersTimeout); err != nil {
-					return stacktrace.Propagate(err, "An error occurred stopping the logs database container with ID '%v'", logsDatabaseContainer.GetId())
-				}
-
-				if err := dockerManager.RemoveContainer(ctx, logsDatabaseContainer.GetId()); err != nil {
-					return stacktrace.Propagate(err, "An error occurred removing the logs database container with ID '%v'", logsDatabaseContainer.GetId())
-				}
-			}
+		if err := dockerManager.RemoveContainer(ctx, logsDatabaseContainer.GetId()); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing the logs database container with ID '%v'", logsDatabaseContainer.GetId())
 		}
 	}
 
