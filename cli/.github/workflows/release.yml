@@ -20,16 +20,15 @@ jobs:
         run: |
           set -euo pipefail
 
-          FRIDAY_ORDINAL=5
-          SATURDAY_ORDINAL=6
-          SUNDAY_ORDINAL=7
-
           # TODO DEBUGGIN
           echo ${{ inputs.should_do_weekend_release }}
 
           is_weekend_release="false"
+
+          # 'date +%u' returns Monday = 1..... Friday = 5, Sat = 6, Sun = 7
+          FRIDAY_ORDINAL=5
           day_of_week_ordinal="$(date +%u)"
-          if [ "${day_of_week_ordinal}" -eq "${FRIDAY_ORDINAL}" ] || [ "${day_of_week_ordinal}" -eq "${SATURDAY_ORDINAL}" ] || [ "${day_of_week_ordinal}" -eq "${SUNDAY_ORDINAL}" ]; then
+          if [ "${day_of_week_ordinal}" -ge "${FRIDAY_ORDINAL}" ]; then
             is_weekend_release="true"
           fi
 
