@@ -202,29 +202,30 @@ func(network *ServiceNetwork) StartServices(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred attempting to add services to the service network.")
 	}
-	serviceIDsToRemove := map[service.ServiceID]bool{}
-	for serviceID := range successfulStarts {
-		serviceIDsToRemove[serviceID] = true
+	serviceGUIDsToRemove := map[service.ServiceGUID]bool{}
+	for _, service := range successfulStarts {
+		guid := service.GetRegistration().GetGUID()
+		serviceGUIDsToRemove[guid] = true
 	}
 	// defer undo all to destroy services that fail in a later phase
 	defer func() {
-		if len(serviceIDsToRemove) == 0 {
+		if len(serviceGUIDsToRemove) == 0 {
 			return
 		}
 		userServiceFilters := &service.ServiceFilters{
-			IDs: serviceIDsToRemove,
+			GUIDs: serviceGUIDsToRemove,
 		}
 		_, failedToDestroyGUIDs, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveId, userServiceFilters)
 		if err != nil {
-			logrus.Errorf("Attempted to destroy all services with IDs '%v' together but had no success. You must manually destroy the services! The following error had occurred:\n'%v'", serviceIDsToRemove, err)
+			logrus.Errorf("Attempted to destroy all services with GUIDs '%v' together but had no success. You must manually destroy the services! The following error had occurred:\n'%v'", serviceGUIDsToRemove, err)
 			return
 		}
 		if len(failedToDestroyGUIDs) == 0 {
 			return
 		}
 		destroyFailuresAccountedFor := 0
-		for serviceID, serviceInfo := range successfulStarts {
-			guid := serviceInfo.GetRegistration().GetGUID()
+		for serviceID, service := range successfulStarts {
+			guid := service.GetRegistration().GetGUID()
 			destroyErr, found := failedToDestroyGUIDs[guid]
 			if !found {
 				continue
@@ -346,8 +347,9 @@ func(network *ServiceNetwork) StartServices(
 		successfulServicePool[serviceID] = serviceInfo
 	}
 	logrus.Infof("Sueccesfully started services '%v' and failed '%v' in the service network", successfulServicePool, failedServicesPool)
-	for serviceID := range successfulServicePool {
-		delete(serviceIDsToRemove, serviceID)
+	for serviceID, service := range successfulServicePool {
+		guid := service.GetRegistration().GetGUID()
+		delete(serviceGUIDsToRemove, guid)
 		delete(servicesToRemoveFromRegistrationMap, serviceID)
 		delete(serviceIDsForTopologyCleanup, serviceID)
 		delete(sidecarsToCleanUp, serviceID)
