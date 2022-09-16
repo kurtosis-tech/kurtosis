@@ -1,12 +1,12 @@
 # TBD
 
 ### Breaking Changes
-* Removed magical constant `IPADDR` that would get replaced with the IP address.
-  * Added a flag for the user to supply a placeholder using `ip-address-placeholder` in `kurtosis enclave add`. Occurrences of this flag in entrypoint args, env vars & cmd args will get replaced with the private IP address inside the container.
+* Removed magical constant `IPADDR` from the `kurtosis service add` subcommand that would get replaced with the IP address.
+* Added a flag for the user to supply a placeholder using `ip-address-placeholder` in `kurtosis enclave add`. Occurrences of this flag in entrypoint args, env vars & cmd args will get replaced with the private IP address inside the container.
   * Users should use this new flag to do any IP address replacements.
 
 ### Changes
-* Removed magical constant `IPADDR` that would get replaced with the IP address.
+* Removed magical constant `IPADDR` from the `kurtosis service add` subcommand that would get replaced with the IP address.
 * Added a flag for the user to supply a placeholder using `ip-address-placeholder` in `kurtosis enclave add`. Occurrences of this flag in entrypoint args, env vars & cmd args will get replaced with the private IP address inside the container.
 
 ### Features
