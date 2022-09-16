@@ -93,7 +93,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Key: entrypointBinaryFlagKey,
 			Usage: fmt.Sprintf(
 				"ENTRYPOINT binary that will be used when running the container, overriding the "+
-					"image's default ENTRYPOINT (NOTE: any instances of the string '%v' will be "+
+					"image's default ENTRYPOINT (NOTE: any instances of the flag argument of '%v' will be "+
 					"replaced with the container's IP address inside the enclave)",
 				privateIPAddressPlaceholderKey,
 			),
@@ -105,7 +105,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Key: envvarsFlagKey,
 			Usage: fmt.Sprintf(
 				"String containing environment variables that will be set when running the container, in "+
-					"the form \"KEY1%vVALUE1%vKEY2%vVALUE2\" (NOTE: any instances of the string '%v' in values "+
+					"the form \"KEY1%vVALUE1%vKEY2%vVALUE2\" (NOTE: any instances of the flag argument of '%v' in values "+
 					"will be replaced with the container's IP address inside the enclave)",
 				envvarKeyValueDelimiter,
 				envvarDeclarationsDelimiter,
