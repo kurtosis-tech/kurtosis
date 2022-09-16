@@ -55,6 +55,7 @@ const (
 
 
 	privateIPAddressPlaceholderKey = "ip-address-placeholder"
+	privateIPAddressPlaceholderDefault = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
 	// Each envvar should be KEY1=VALUE1, which means we should have two components to each envvar declaration
 	expectedNumberKeyValueComponentsInEnvvarDeclaration = 2
@@ -140,8 +141,9 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 		},
 		{
 			Key: privateIPAddressPlaceholderKey,
-			Usage: "Kurtosis will replace occurrences of this string in the ENTRYPOINT args, ENV vars and CMD args with the IP address of the container inside the enclave",
+			Usage: fmt.Sprintf("Kurtosis will replace occurrences of this string in the ENTRYPOINT args, ENV vars and CMD args with the IP address of the container inside the enclave. This defaults to '%v'", privateIPAddressPlaceholderDefault),
 			Type: flags.FlagType_String,
+			Default: privateIPAddressPlaceholderDefault,
 		},
 	},
 	RunFunc: run,
