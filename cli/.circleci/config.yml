@@ -283,7 +283,7 @@ jobs:
       - run:
           name: "Verify Kurtosis cleaned up all its volumes"
           command: |
-            if ! [ $(docker volume ls | tail -n+2 | wc -l) -eq 0 ]; then
+            if ! [ $(docker volume ls | tail -n+2 | wc -l | grep -v kurtosis-logs-collector-vol | grep -v kurtosis-logs-db-vol) -eq 0 ]; then
               docker volume ls
               false
             fi
@@ -369,7 +369,7 @@ jobs:
             - run:
                 name: "Verify Kurtosis cleaned up all its volumes"
                 command: |
-                  if ! [ $(docker volume ls | tail -n+2 | wc -l) -eq 0 ]; then
+                  if ! [ $(docker volume ls | grep -v kurtosis-logs-collector-vol | grep -v kurtosis-logs-db-vol | tail -n+2 | wc -l) -eq 0 ]; then
                     docker volume ls
                     false
                   fi
@@ -537,12 +537,6 @@ workflows:
             - build_cli
           <<: *filters_ignore_master
 
-      - test_old_enclave_continuity:
-          context:
-            - docker-user
-          requires:
-            - build_cli
-          <<: *filters_ignore_master
       - test_config_init_edge_cases:
           requires:
             - build_cli

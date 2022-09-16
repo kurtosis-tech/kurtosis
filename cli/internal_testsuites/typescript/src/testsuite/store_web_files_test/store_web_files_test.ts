@@ -50,9 +50,9 @@ test("Test web file storing", async () => {
         const filesArtifactsMountpoints = new Map<FilesArtifactUUID, string>()
         filesArtifactsMountpoints.set(filesArtifactUuid, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT)
 
-        const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier(filesArtifactsMountpoints)
+        const fileServerContainerConfig = getFileServerContainerConfig(filesArtifactsMountpoints)
 
-        const addServiceResult = await enclaveContext.addService(FILE_SERVER_SERVICE_ID, fileServerContainerConfigSupplier)
+        const addServiceResult = await enclaveContext.addService(FILE_SERVER_SERVICE_ID, fileServerContainerConfig)
         if(addServiceResult.isErr()){ throw addServiceResult.error }
 
         const serviceContext = addServiceResult.value
@@ -125,22 +125,16 @@ test("Test web file storing", async () => {
 //                                       Private helper functions
 // ====================================================================================================
 
-function getFileServerContainerConfigSupplier(filesArtifactMountpoints: Map<FilesArtifactUUID, string>): (ipAddr: string) => Result<ContainerConfig, Error> {
-	
-    const containerConfigSupplier = (ipAddr:string): Result<ContainerConfig, Error> => {
+function getFileServerContainerConfig(filesArtifactMountpoints: Map<FilesArtifactUUID, string>): ContainerConfig {
+    const usedPorts = new Map<string, PortSpec>()
+    usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
 
-        const usedPorts = new Map<string, PortSpec>()
-        usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
+    const containerConfig = new ContainerConfigBuilder(FILE_SERVER_SERVICE_IMAGE)
+        .withUsedPorts(usedPorts)
+        .withFiles(filesArtifactMountpoints)
+        .build()
 
-        const containerConfig = new ContainerConfigBuilder(FILE_SERVER_SERVICE_IMAGE)
-            .withUsedPorts(usedPorts)
-            .withFiles(filesArtifactMountpoints)
-            .build()
-
-        return ok(containerConfig)
-    }
-
-    return containerConfigSupplier
+    return containerConfig
 }
 
 async function getFileContents(ipAddress: string, portNum: number, filename: string): Promise<Result<string, Error>> {

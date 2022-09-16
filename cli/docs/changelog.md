@@ -1,4 +1,19 @@
 # TBD
+### Breaking Changes
+* Upgraded to container-engine-lib 0.38.2, core to 1.59.3 and engine to 1.34.2
+  * Users will have to restart their Kurtosis engine
+
+### Breaking Changes
+* Removed magical constant `IPADDR` from the `kurtosis service add` subcommand that would get replaced with the IP address.
+* Added a flag for the user to supply a placeholder using `ip-address-placeholder` in `kurtosis enclave add`. Occurrences of this flag in entrypoint args, env vars & cmd args will get replaced with the private IP address inside the container.
+  * Users should use this new flag to do any IP address replacements.
+* Upgraded `container-engine-lib` to 0.38.1, `core` to 1.59.2 and engine to `1.34.1`
+  * Users will have to restart their Kurtosis engine by `kurtosis engine restart`
+
+### Changes
+* Removed magical constant `IPADDR` from the `kurtosis service add` subcommand that would get replaced with the IP address.
+* Added a flag for the user to supply a placeholder using `ip-address-placeholder` in `kurtosis enclave add`. Occurrences of this flag in entrypoint args, env vars & cmd args will get replaced with the private IP address inside the container.
+* Upgraded `container-engine-lib` to 0.38.1, `core` to 1.59.2 and engine to `1.34.1`.
 
 ### Features
 * Added `rendertemplate` to `kurtosis files` which allows you to upload a Golang text/template with data provided as a JSON file.

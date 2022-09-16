@@ -59,9 +59,9 @@ test("Test network soft partitions", async () => {
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const configSupplier = getExampleServiceConfigSupplier()
+        const exampleServiceConfig = getExampleServiceConfig()
 
-        const exampleAddServiceResult = await enclaveContext.addService(EXAMPLE_SERVICE_ID, configSupplier)
+        const exampleAddServiceResult = await enclaveContext.addService(EXAMPLE_SERVICE_ID, exampleServiceConfig)
         if(exampleAddServiceResult.isErr()){
             log.error("An error occurred adding the datastore service")
             throw exampleAddServiceResult.error
@@ -71,9 +71,9 @@ test("Test network soft partitions", async () => {
         log.debug(`Example service IP: ${exampleServiceContext.getPrivateIPAddress()}`)
 
 
-        const containerConfigSupplier = getTestServiceContainerConfigSupplier()
+        const containerConfig = getTestServiceContainerConfig()
 
-        const testAddServiceResult = await enclaveContext.addService(TEST_SERVICE, containerConfigSupplier)
+        const testAddServiceResult = await enclaveContext.addService(TEST_SERVICE, containerConfig)
         if(testAddServiceResult.isErr()){
             log.error("An error occurred adding the file server service")
             throw testAddServiceResult.error
@@ -291,37 +291,28 @@ async function repartitionNetwork(enclaveContext: EnclaveContext, partitionConne
 
     return ok(null)
 }
+function getExampleServiceConfig(): ContainerConfig {
 
-function getExampleServiceConfigSupplier():(ipAddr: string) => Result<ContainerConfig, Error>{
     const portSpec = new PortSpec(EXAMPLE_SERVICE_PORT_NUM_INSIDE_NETWORK, PortProtocol.TCP);
-    const containerConfigSupplier = (ipAddr: string): Result<ContainerConfig, Error> => {
-        const usedPorts = new Map<string,PortSpec>()
-        usedPorts.set(EXAMPLE_SERVICE_MAIN_PORT_ID,portSpec)
-        const containerConfig = new ContainerConfigBuilder(DOCKER_GETTING_STARTED_IMAGE)
-                .withUsedPorts(usedPorts)
-                .build()
-        return ok(containerConfig)
-    }
-
-    return containerConfigSupplier
+    const usedPorts = new Map<string,PortSpec>()
+    usedPorts.set(EXAMPLE_SERVICE_MAIN_PORT_ID,portSpec)
+    const containerConfig = new ContainerConfigBuilder(DOCKER_GETTING_STARTED_IMAGE)
+            .withUsedPorts(usedPorts)
+            .build()
+    return containerConfig
 }
 
-function getTestServiceContainerConfigSupplier():(ipAddr: string) => Result<ContainerConfig, Error> {
-    const containerConfigSupplier = (ipAddr: string): Result<ContainerConfig, Error> => {
-        
-        // We sleep because the only function of this container is to test Docker executing a command while it's running
-        // NOTE: We could just as easily combine this into a single array (rather than splitting between ENTRYPOINT and CMD
-        // args), but this provides a nice little regression test of the ENTRYPOINT overriding
-        const entrypointArgs = [SLEEP_CMD]
-        const cmdArgs = [TEST_SERVICE_SLEEP_MILLISECONDS_STR]
-        
-        const containerConfig = new ContainerConfigBuilder(KURTOSIS_IP_ROUTE_2_DOCKER_IMAGE_NAME)
-                .withEntrypointOverride(entrypointArgs)
-                .withCmdOverride(cmdArgs)
-                .build()
-        
-        return ok(containerConfig)
-    }
+function getTestServiceContainerConfig(): ContainerConfig {
+    // We sleep because the only function of this container is to test Docker executing a command while it's running
+    // NOTE: We could just as easily combine this into a single array (rather than splitting between ENTRYPOINT and CMD
+    // args), but this provides a nice little regression test of the ENTRYPOINT overriding
+    const entrypointArgs = [SLEEP_CMD]
+    const cmdArgs = [TEST_SERVICE_SLEEP_MILLISECONDS_STR]
 
-    return containerConfigSupplier
+    const containerConfig = new ContainerConfigBuilder(KURTOSIS_IP_ROUTE_2_DOCKER_IMAGE_NAME)
+            .withEntrypointOverride(entrypointArgs)
+            .withCmdOverride(cmdArgs)
+            .build()
+
+    return containerConfig
 }

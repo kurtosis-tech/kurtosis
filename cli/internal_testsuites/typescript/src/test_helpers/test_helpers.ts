@@ -76,9 +76,9 @@ export async function addDatastoreService(serviceId: ServiceID, enclaveContext: 
         clientCloseFunction: () => void;
     },Error>> {
     
-    const containerConfigSupplier = getDatastoreContainerConfigSupplier();
+    const containerConfig = getDatastoreContainerConfig();
 
-    const addServiceResult = await enclaveContext.addService(serviceId, containerConfigSupplier);
+    const addServiceResult = await enclaveContext.addService(serviceId, containerConfig);
     if (addServiceResult.isErr()) {
         log.error("An error occurred adding the datastore service");
         return err(addServiceResult.error);
@@ -157,9 +157,9 @@ export async function addAPIServiceToPartition(
     }
     const datastoreConfigArtifactUuid = uploadConfigResult.value
 
-    const containerConfigSupplier = getApiServiceContainerConfigSupplier(datastoreConfigArtifactUuid)
+    const containerConfig = getApiServiceContainerConfig(datastoreConfigArtifactUuid)
 
-    const addServiceToPartitionResult = await enclaveContext.addServiceToPartition(serviceId, partitionId, containerConfigSupplier)
+    const addServiceToPartitionResult = await enclaveContext.addServiceToPartition(serviceId, partitionId, containerConfig)
     if(addServiceToPartitionResult.isErr()) return err(addServiceToPartitionResult.error)
 
     const serviceContext = addServiceToPartitionResult.value;
@@ -225,8 +225,8 @@ export async function startFileServer(fileServerServiceId: ServiceID, filesArtif
     const filesArtifactsMountPoints = new Map<FilesArtifactUUID, string>()
     filesArtifactsMountPoints.set(filesArtifactUuid, USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT)
 
-    const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier(filesArtifactsMountPoints)
-    const addServiceResult = await enclaveCtx.addService(fileServerServiceId, fileServerContainerConfigSupplier)
+    const fileServerContainerConfig = getFileServerContainerConfig(filesArtifactsMountPoints)
+    const addServiceResult = await enclaveCtx.addService(fileServerServiceId, fileServerContainerConfig)
     if(addServiceResult.isErr()){ throw addServiceResult.error }
 
     const serviceContext = addServiceResult.value
@@ -274,48 +274,37 @@ export async function checkFileContents(ipAddress: string, portNum: number, file
 //                                      Private Helper Methods
 // ====================================================================================================
 
-function getDatastoreContainerConfigSupplier(): ( ipAddr: string) => Result<ContainerConfig, Error> {
+function getDatastoreContainerConfig(): ContainerConfig {
 
-    const containerConfigSupplier = ( ipAddr: string): Result<ContainerConfig, Error> => {
-        const usedPorts = new Map<string, PortSpec>();
-        usedPorts.set(DATASTORE_PORT_ID, DATASTORE_PORT_SPEC);
+    const usedPorts = new Map<string, PortSpec>();
+    usedPorts.set(DATASTORE_PORT_ID, DATASTORE_PORT_SPEC);
 
-        const containerConfig = new ContainerConfigBuilder(DATASTORE_IMAGE).withUsedPorts(usedPorts).build();
+    const containerConfig = new ContainerConfigBuilder(DATASTORE_IMAGE).withUsedPorts(usedPorts).build();
 
-        return ok(containerConfig);
-    };
-
-    return containerConfigSupplier;
+    return containerConfig;
 }
 
-function getApiServiceContainerConfigSupplier(
+function getApiServiceContainerConfig(
     apiConfigArtifactUuid: FilesArtifactUUID,
-): (ipAddr:string) => Result<ContainerConfig, Error> {
+): ContainerConfig {
+    const usedPorts = new Map<string, PortSpec>();
+    usedPorts.set(API_PORT_ID, API_PORT_SPEC);
+    const startCmd: string[] = [
+        "./example-api-server.bin",
+        "--config",
+        path.join(CONFIG_MOUNTPATH_ON_API_CONTAINER, CONFIG_FILENAME),
+    ]
 
-    const containerConfigSupplier = (ipAddr: string): Result<ContainerConfig, Error> => {
+    const filesArtifactMountpoints = new Map<FilesArtifactUUID, string>()
+    filesArtifactMountpoints.set(apiConfigArtifactUuid, CONFIG_MOUNTPATH_ON_API_CONTAINER)
 
-        const usedPorts = new Map<string, PortSpec>();
-        usedPorts.set(API_PORT_ID, API_PORT_SPEC);
-        const startCmd: string[] = [
-            "./example-api-server.bin",
-            "--config",
-            path.join(CONFIG_MOUNTPATH_ON_API_CONTAINER, CONFIG_FILENAME),
-        ]
+    const containerConfig = new ContainerConfigBuilder(API_SERVICE_IMAGE)
+        .withUsedPorts(usedPorts)
+        .withFiles(filesArtifactMountpoints)
+        .withCmdOverride(startCmd)
+        .build()
 
-        const filesArtifactMountpoints = new Map<FilesArtifactUUID, string>()
-        filesArtifactMountpoints.set(apiConfigArtifactUuid, CONFIG_MOUNTPATH_ON_API_CONTAINER)
-
-        const containerConfig = new ContainerConfigBuilder(API_SERVICE_IMAGE)
-            .withUsedPorts(usedPorts)
-            .withFiles(filesArtifactMountpoints)
-            .withCmdOverride(startCmd)
-            .build()
-
-        return ok(containerConfig)
-    }
-
-    return containerConfigSupplier;
-
+    return containerConfig
 }
 
 async function createApiConfigFile(datastoreIP: string): Promise<Result<string, Error>> {
@@ -356,19 +345,16 @@ async function createApiConfigFile(datastoreIP: string): Promise<Result<string, 
 
 }
 
-function getFileServerContainerConfigSupplier(filesArtifactMountPoints: Map<FilesArtifactUUID, string>): (ipAddr: string) => Result<ContainerConfig, Error> {
-    const containerConfigSupplier = (ipAddr:string): Result<ContainerConfig, Error> => {
-        const usedPorts = new Map<string, PortSpec>()
-        usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
+function getFileServerContainerConfig(filesArtifactMountPoints: Map<FilesArtifactUUID, string>): ContainerConfig {
+    const usedPorts = new Map<string, PortSpec>()
+    usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
 
-        const containerConfig = new ContainerConfigBuilder(FILE_SERVER_SERVICE_IMAGE)
-            .withUsedPorts(usedPorts)
-            .withFiles(filesArtifactMountPoints)
-            .build()
+    const containerConfig = new ContainerConfigBuilder(FILE_SERVER_SERVICE_IMAGE)
+        .withUsedPorts(usedPorts)
+        .withFiles(filesArtifactMountPoints)
+        .build()
 
-        return ok(containerConfig)
-    }
-    return containerConfigSupplier
+   return containerConfig
 }
 
 async function getFileContents(ipAddress: string, portNum: number, relativeFilepath: string): Promise<Result<any, Error>> {

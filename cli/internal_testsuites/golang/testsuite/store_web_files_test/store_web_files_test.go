@@ -57,9 +57,9 @@ func TestStoreWebFiles(t *testing.T) {
 	filesArtifactMountpoints := map[services.FilesArtifactUUID]string{
 		filesArtifactUuid: userServiceMountPointForTestFilesArtifact,
 	}
-	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactMountpoints)
+	fileServerContainerConfig := getFileServerContainerConfig(filesArtifactMountpoints)
 
-	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
+	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfig)
 	require.NoError(t, err, "An error occurred adding the file server service")
 	publicPort, found := serviceCtx.GetPublicPorts()[fileServerPortId]
 	require.True(t, found, "Expected to find public port for ID '%v', but none was found", fileServerPortId)
@@ -109,19 +109,15 @@ func TestStoreWebFiles(t *testing.T) {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getFileServerContainerConfigSupplier(filesArtifactMountpoints map[services.FilesArtifactUUID]string) func(ipAddr string) (*services.ContainerConfig, error) {
-	containerConfigSupplier  := func(ipAddr string) (*services.ContainerConfig, error) {
-
-		containerConfig := services.NewContainerConfigBuilder(
-			fileServerServiceImage,
-		).WithUsedPorts(map[string]*services.PortSpec{
-			fileServerPortId: fileServerPortSpec,
-		}).WithFiles(
-			filesArtifactMountpoints,
-		).Build()
-		return containerConfig, nil
-	}
-	return containerConfigSupplier
+func getFileServerContainerConfig(filesArtifactMountpoints map[services.FilesArtifactUUID]string) *services.ContainerConfig {
+	containerConfig := services.NewContainerConfigBuilder(
+		fileServerServiceImage,
+	).WithUsedPorts(map[string]*services.PortSpec{
+		fileServerPortId: fileServerPortSpec,
+	}).WithFiles(
+		filesArtifactMountpoints,
+	).Build()
+	return containerConfig
 }
 
 func getFileContents(ipAddress string, portNum uint16, filename string) (string, error) {

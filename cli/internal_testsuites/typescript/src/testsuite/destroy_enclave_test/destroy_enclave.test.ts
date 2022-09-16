@@ -37,9 +37,9 @@ test("Test destroy enclave", async () => {
         if(storeWebFilesResult.isErr()) { throw storeWebFilesResult.error }
         const filesArtifactUuid = storeWebFilesResult.value;
 
-        const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier(filesArtifactUuid)
+        const fileServerContainerConfig = getFileServerContainerConfig(filesArtifactUuid)
 
-        const addServiceResult = await enclaveContext.addService(FILE_SERVER_SERVICE_ID, fileServerContainerConfigSupplier)
+        const addServiceResult = await enclaveContext.addService(FILE_SERVER_SERVICE_ID, fileServerContainerConfig)
         if(addServiceResult.isErr()){ throw addServiceResult.error }
 
         const serviceContext = addServiceResult.value
@@ -74,24 +74,18 @@ test("Test destroy enclave", async () => {
 //                                       Private helper functions
 // ====================================================================================================
 
-function getFileServerContainerConfigSupplier(filesArtifactUuid: FilesArtifactUUID): (ipAddr: string) => Result<ContainerConfig, Error> {
+function getFileServerContainerConfig(filesArtifactUuid: FilesArtifactUUID): ContainerConfig {
+    const usedPorts = new Map<string, PortSpec>()
+    usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
 
-    const containerConfigSupplier = (ipAddr:string): Result<ContainerConfig, Error> => {
+    const filesArtifactMountpoints = new Map<FilesArtifactUUID, string>()
+    filesArtifactMountpoints.set(filesArtifactUuid, FILES_ARTIFACT_MOUNTPOINT)
 
-        const usedPorts = new Map<string, PortSpec>()
-        usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
+    const containerConfig = new ContainerConfigBuilder(FILE_SERVER_SERVICE_IMAGE)
+        .withUsedPorts(usedPorts)
+        .withFiles(filesArtifactMountpoints)
+        .build()
 
-        const filesArtifactMountpoints = new Map<FilesArtifactUUID, string>()
-        filesArtifactMountpoints.set(filesArtifactUuid, FILES_ARTIFACT_MOUNTPOINT)
-
-        const containerConfig = new ContainerConfigBuilder(FILE_SERVER_SERVICE_IMAGE)
-            .withUsedPorts(usedPorts)
-            .withFiles(filesArtifactMountpoints)
-            .build()
-
-        return ok(containerConfig)
-    }
-
-    return containerConfigSupplier
+    return containerConfig
 }
 

@@ -9,18 +9,19 @@ import (
 )
 
 const (
-	testName = "destroy-enclave"
+	testName              = "destroy-enclave"
 	isPartitioningEnabled = false
 
-	fileServerServiceImage                          = "flashspys/nginx-static"
-	fileServerServiceId          services.ServiceID = "file-server"
-	fileServerPortId = "http"
-	fileServerPrivatePortNum = 80
+	fileServerServiceImage                      = "flashspys/nginx-static"
+	fileServerServiceId      services.ServiceID = "file-server"
+	fileServerPortId                            = "http"
+	fileServerPrivatePortNum                    = 80
 
-	testFilesArtifactUrl                          = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
+	testFilesArtifactUrl = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
 
 	filesArtifactMountpoint = "/static"
 )
+
 var fileServerPortSpec = services.NewPortSpec(
 	fileServerPrivatePortNum,
 	services.PortProtocol_TCP,
@@ -43,8 +44,8 @@ func TestDestroyEnclave(t *testing.T) {
 	filesArtifactUuid, err := enclaveCtx.StoreWebFiles(ctx, testFilesArtifactUrl)
 	require.NoError(t, err, "An error occurred storing the files artifact")
 
-	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactUuid)
-	_, err = enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
+	fileServerContainerConfig := getFileServerContainerConfig(filesArtifactUuid)
+	_, err = enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfig)
 	require.NoError(t, err, "An error occurred adding the file server service")
 
 	err = destroyEnclaveFunc()
@@ -56,17 +57,14 @@ func TestDestroyEnclave(t *testing.T) {
 //                                       Private helper functions
 // ====================================================================================================
 
-func getFileServerContainerConfigSupplier(filesArtifactUuid services.FilesArtifactUUID) func(ipAddr string) (*services.ContainerConfig, error) {
-	containerConfigSupplier  := func(ipAddr string) (*services.ContainerConfig, error) {
+func getFileServerContainerConfig(filesArtifactUuid services.FilesArtifactUUID) *services.ContainerConfig {
 
-		containerConfig := services.NewContainerConfigBuilder(
-			fileServerServiceImage,
-		).WithUsedPorts(map[string]*services.PortSpec{
-			fileServerPortId: fileServerPortSpec,
-		}).WithFiles(map[services.FilesArtifactUUID]string{
-			filesArtifactUuid: filesArtifactMountpoint,
-		}).Build()
-		return containerConfig, nil
-	}
-	return containerConfigSupplier
+	containerConfig := services.NewContainerConfigBuilder(
+		fileServerServiceImage,
+	).WithUsedPorts(map[string]*services.PortSpec{
+		fileServerPortId: fileServerPortSpec,
+	}).WithFiles(map[services.FilesArtifactUUID]string{
+		filesArtifactUuid: filesArtifactMountpoint,
+	}).Build()
+	return containerConfig
 }

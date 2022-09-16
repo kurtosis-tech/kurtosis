@@ -39,7 +39,7 @@ test("Test wait for endpoint availability", async () => {
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
 
-        const addServiceResult = await enclaveContext.addService(EXAMPLE_SERVICE_ID, containerConfigSupplier)
+        const addServiceResult = await enclaveContext.addService(EXAMPLE_SERVICE_ID, containerConfig())
 
         if(addServiceResult.isErr()){
             log.error("An error occurred adding the datastore service")
@@ -78,7 +78,7 @@ test("Test wait for endpoint availability", async () => {
 //                                       Private helper functions
 // ====================================================================================================
 
-function containerConfigSupplier(): Result<ContainerConfig, Error> {
+function containerConfig(): ContainerConfig {
     const exampleServicePort = new Map<string, PortSpec>()
     exampleServicePort.set(EXAMPLE_SERVICE_PORT_ID, exampleServicePrivatePortSpec)
     
@@ -86,5 +86,5 @@ function containerConfigSupplier(): Result<ContainerConfig, Error> {
         .withUsedPorts(exampleServicePort)
         .build()
 
-    return ok(containerConfig)
+    return containerConfig
 }

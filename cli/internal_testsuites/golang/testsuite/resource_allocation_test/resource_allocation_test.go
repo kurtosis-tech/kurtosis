@@ -28,9 +28,9 @@ func TestSettingResourceAllocationFieldsAddsServiceWithNoError(t *testing.T) {
 	defer destroyEnclaveFunc()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
-	containerConfigSupplier := getContainerConfigSupplierWithCPUAndMemory()
+	containerConfig := getContainerConfigWithCPUAndMemory()
 
-	_, err = enclaveCtx.AddService(testServiceId, containerConfigSupplier)
+	_, err = enclaveCtx.AddService(testServiceId, containerConfig)
 	require.NoError(t, err, "An error occurred adding the file server service with the cpuAllocationMillicpus=`%d` and memoryAllocationMegabytes=`%d`", testCpuAllocMillicpus, testMemoryAllocMegabytes)
 }
 
@@ -42,37 +42,33 @@ func TestSettingInvalidMemoryAllocationMegabytesReturnsError(t *testing.T) {
 	defer destroyEnclaveFunc()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
-	containerConfigSupplier := getContainerConfigSupplierWithInvalidMemory()
+	containerConfig := getContainerConfigWithInvalidMemory()
 
-	_, err = enclaveCtx.AddService(testServiceId, containerConfigSupplier)
+	_, err = enclaveCtx.AddService(testServiceId, containerConfig)
 	require.Error(t, err, "An error should have occurred with the following invalid memory allocation: `%d`", testInvalidMemoryAllocMegabytes)
 }
 
 // ====================================================================================================
-//                                       Private helper functions
+//
+//	Private helper functions
+//
 // ====================================================================================================
-func getContainerConfigSupplierWithCPUAndMemory() func(ipAddr string) (*services.ContainerConfig, error) {
-	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
-		containerConfig := services.NewContainerConfigBuilder(
-			resourceAllocTestImageName,
-		).WithCPUAllocationMillicpus(
-			testCpuAllocMillicpus,
-		).WithMemoryAllocationMegabytes(
-			testMemoryAllocMegabytes,
-		).Build()
-		return containerConfig, nil
-	}
-	return containerConfigSupplier
+func getContainerConfigWithCPUAndMemory() *services.ContainerConfig {
+	containerConfig := services.NewContainerConfigBuilder(
+		resourceAllocTestImageName,
+	).WithCPUAllocationMillicpus(
+		testCpuAllocMillicpus,
+	).WithMemoryAllocationMegabytes(
+		testMemoryAllocMegabytes,
+	).Build()
+	return containerConfig
 }
 
-func getContainerConfigSupplierWithInvalidMemory() func(ipAddr string) (*services.ContainerConfig, error) {
-	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
-		containerConfig := services.NewContainerConfigBuilder(
-			resourceAllocTestImageName,
-		).WithMemoryAllocationMegabytes(
-			testInvalidMemoryAllocMegabytes,
-		).Build()
-		return containerConfig, nil
-	}
-	return containerConfigSupplier
+func getContainerConfigWithInvalidMemory() *services.ContainerConfig {
+	containerConfig := services.NewContainerConfigBuilder(
+		resourceAllocTestImageName,
+	).WithMemoryAllocationMegabytes(
+		testInvalidMemoryAllocMegabytes,
+	).Build()
+	return containerConfig
 }

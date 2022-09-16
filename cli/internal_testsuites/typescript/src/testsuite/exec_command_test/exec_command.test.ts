@@ -36,9 +36,9 @@ test("Test exec command", async () => {
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const containerConfigSupplier = getContainerConfigSupplier()
+        const containerConfig = getContainerConfig()
 
-        const addServiceResult = await enclaveContext.addService(TEST_SERVICE_ID, containerConfigSupplier)
+        const addServiceResult = await enclaveContext.addService(TEST_SERVICE_ID, containerConfig)
 
         if(addServiceResult.isErr()) {
             log.error(`An error occurred starting service "${TEST_SERVICE_ID}"`);
@@ -117,21 +117,16 @@ test("Test exec command", async () => {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-function getContainerConfigSupplier(): (ipAddr:string) => Result<ContainerConfig, Error> {
-	
-    const containerConfigSupplier = (ipAddr:string): Result<ContainerConfig, Error> => {
-        const entrypointArgs = ["sleep"]
-        const cmdArgs = ["30"]
+function getContainerConfig(): ContainerConfig {
+    const entrypointArgs = ["sleep"]
+    const cmdArgs = ["30"]
 
-        const containerConfig = new ContainerConfigBuilder(EXEC_CMD_TEST_IMAGE)
-            .withEntrypointOverride(entrypointArgs)
-            .withCmdOverride(cmdArgs)
-            .build()
-        
-        return ok(containerConfig)
-    }
+    const containerConfig = new ContainerConfigBuilder(EXEC_CMD_TEST_IMAGE)
+        .withEntrypointOverride(entrypointArgs)
+        .withCmdOverride(cmdArgs)
+        .build()
 
-    return containerConfigSupplier
+    return containerConfig
 }
 
 async function runExecCmd(serviceContext: ServiceContext, command: string[]) {

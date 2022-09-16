@@ -48,10 +48,11 @@ test("Test two files artifacts mounted to the same location", async () => {
         const filesArtifactMountpoints = new Map<FilesArtifactUUID, string>()
         filesArtifactMountpoints.set(firstFilesArtifactUuid, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT);
         filesArtifactMountpoints.set(secondFilesArtifactUuid, USER_SERVICE_MOUNTPOINT_FOR_TEST_FILESARTIFACT);
-        const fileServerContainerConfigSupplier = getFileServerContainerConfigSupplier(filesArtifactMountpoints)
+        const fileServerContainerConfig = getFileServerContainerConfig(filesArtifactMountpoints)
+
 
         // ------------------------------------- TEST RUN ----------------------------------------------
-        const addServiceResult = await enclaveContext.addService(SERVICE_ID, fileServerContainerConfigSupplier)
+        const addServiceResult = await enclaveContext.addService(SERVICE_ID, fileServerContainerConfig)
         if(addServiceResult.isOk()){
             throw new Error(`Adding service '${SERVICE_ID}' should have failed and did not, because duplicated files artifact mountpoints ` +
                 `'${filesArtifactMountpoints}' should throw an error`)
@@ -70,15 +71,10 @@ test("Test two files artifacts mounted to the same location", async () => {
 //                                       Private helper functions
 // ====================================================================================================
 
-function getFileServerContainerConfigSupplier(filesArtifactMountpoints: Map<FilesArtifactUUID, string>): (ipAddr: string) => Result<ContainerConfig, Error> {
+function getFileServerContainerConfig(filesArtifactMountpoints: Map<FilesArtifactUUID, string>): ContainerConfig {
+    const containerConfig = new ContainerConfigBuilder(IMAGE)
+        .withFiles(filesArtifactMountpoints)
+        .build()
 
-    const containerConfigSupplier = (ipAddr:string): Result<ContainerConfig, Error> => {
-        const containerConfig = new ContainerConfigBuilder(IMAGE)
-            .withFiles(filesArtifactMountpoints)
-            .build()
-
-        return ok(containerConfig)
-    }
-
-    return containerConfigSupplier
+   return containerConfig
 }

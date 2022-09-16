@@ -42,10 +42,10 @@ func TestStoreWebFiles(t *testing.T) {
 		firstFilesArtifactUuid:  userServiceMountPointForTestFilesArtifact,
 		secondFilesArtifactUuid: userServiceMountPointForTestFilesArtifact,
 	}
-	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier(filesArtifactMountpoints)
+	fileServerContainerConfig := getFileServerContainerConfig(filesArtifactMountpoints)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	_, err = enclaveCtx.AddService(serviceId, fileServerContainerConfigSupplier)
+	_, err = enclaveCtx.AddService(serviceId, fileServerContainerConfig)
 	require.Errorf(
 		t,
 		err,
@@ -66,15 +66,11 @@ func TestStoreWebFiles(t *testing.T) {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getFileServerContainerConfigSupplier(filesArtifactMountpoints map[services.FilesArtifactUUID]string) func(ipAddr string) (*services.ContainerConfig, error) {
-	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
-
-		containerConfig := services.NewContainerConfigBuilder(
-			image,
-		).WithFiles(
-			filesArtifactMountpoints,
-		).Build()
-		return containerConfig, nil
-	}
-	return containerConfigSupplier
+func getFileServerContainerConfig(filesArtifactMountpoints map[services.FilesArtifactUUID]string) *services.ContainerConfig {
+	containerConfig := services.NewContainerConfigBuilder(
+		image,
+	).WithFiles(
+		filesArtifactMountpoints,
+	).Build()
+	return containerConfig
 }

@@ -48,7 +48,7 @@ func NewGatewayConnectionProvider(ctx context.Context, kubernetesConfig *restcli
 
 func (provider *GatewayConnectionProvider) ForEngine(engine *engine.Engine) (GatewayConnectionToKurtosis, error) {
 	// Forward public GRPC ports of engine
-	enginePublicGrpcPortSpec, err := port_spec.NewPortSpec(kurtosis_context.DefaultKurtosisEngineServerGrpcPortNum, port_spec.PortProtocol_TCP)
+	enginePublicGrpcPortSpec, err := port_spec.NewPortSpec(kurtosis_context.DefaultGrpcEngineServerPortNum, port_spec.PortProtocol_TCP)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get a port-spec describing the public GRPC port of a Kurtosis engine, instead a non-nil error was returned")
 	}

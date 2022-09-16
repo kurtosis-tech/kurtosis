@@ -17,7 +17,7 @@ const (
 	testName              = "module"
 	isPartitioningEnabled = false
 
-	testModuleImage = "kurtosistech/datastore-army-module:0.2.8"
+	testModuleImage = "kurtosistech/datastore-army-module:0.2.13"
 
 	datastoreArmyModuleId modules.ModuleID = "datastore-army"
 

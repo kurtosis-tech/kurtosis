@@ -23,9 +23,9 @@ test("Test service pause", async () => {
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const containerConfigSupplier = getContainerConfigSupplier()
+        const containerConfig = getContainerConfig()
 
-        const addServiceResult = await enclaveContext.addService(TEST_SERVICE_ID, containerConfigSupplier)
+        const addServiceResult = await enclaveContext.addService(TEST_SERVICE_ID, containerConfig)
 
         if(addServiceResult.isErr()) {
             log.error(`An error occurred starting service "${TEST_SERVICE_ID}"`);
@@ -83,23 +83,18 @@ test("Test service pause", async () => {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-function getContainerConfigSupplier(): (ipAddr:string) => Result<ContainerConfig, Error> {
+function getContainerConfig(): ContainerConfig {
 
-    const containerConfigSupplier = (ipAddr:string): Result<ContainerConfig, Error> => {
+    // We spam timestamps so that we can measure pausing processes (no more log output) and unpausing (log output resumes)
+    const entrypointArgs = ["/bin/sh", "-c"]
+    const cmdArgs = ["while sleep 1; do ts=$(date +\"%s\") ; echo \"$ts\" >> " + TEST_LOG_FILEPATH + " ; done"]
 
-        // We spam timestamps so that we can measure pausing processes (no more log output) and unpausing (log output resumes)
-        const entrypointArgs = ["/bin/sh", "-c"]
-        const cmdArgs = ["while sleep 1; do ts=$(date +\"%s\") ; echo \"$ts\" >> " + TEST_LOG_FILEPATH + " ; done"]
+    const containerConfig = new ContainerConfigBuilder(PAUSE_UNPAUSE_TEST_IMAGE)
+        .withEntrypointOverride(entrypointArgs)
+        .withCmdOverride(cmdArgs)
+        .build()
 
-        const containerConfig = new ContainerConfigBuilder(PAUSE_UNPAUSE_TEST_IMAGE)
-            .withEntrypointOverride(entrypointArgs)
-            .withCmdOverride(cmdArgs)
-            .build()
-
-        return ok(containerConfig)
-    }
-
-    return containerConfigSupplier
+    return containerConfig
 }
 
 function delay(ms: number) {

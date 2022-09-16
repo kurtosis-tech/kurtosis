@@ -54,9 +54,9 @@ func TestExecCommand(t *testing.T) {
 	defer stopEnclaveFunc()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
-	containerConfigSupplier := getContainerConfigSupplier()
+	containerConfig := getContainerConfig()
 
-	testServiceContext, err := enclaveCtx.AddService(testServiceId, containerConfigSupplier)
+	testServiceContext, err := enclaveCtx.AddService(testServiceId, containerConfig)
 	require.NoError(t, err, "An error occurred starting service '%v'", testServiceId)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
@@ -90,25 +90,21 @@ func TestExecCommand(t *testing.T) {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getContainerConfigSupplier() func(ipAddr string) (*services.ContainerConfig, error) {
-	containerConfigSupplier  := func(ipAddr string) (*services.ContainerConfig, error) {
+func getContainerConfig() *services.ContainerConfig {
+	// We sleep because the only function of this container is to test Docker executing a command while it's running
+	// NOTE: We could just as easily combine this into a single array (rather than splitting between ENTRYPOINT and CMD
+	// args), but this provides a nice little regression test of the ENTRYPOINT overriding
+	entrypointArgs := []string{"sleep"}
+	cmdArgs := []string{"30"}
 
-		// We sleep because the only function of this container is to test Docker executing a command while it's running
-		// NOTE: We could just as easily combine this into a single array (rather than splitting between ENTRYPOINT and CMD
-		// args), but this provides a nice little regression test of the ENTRYPOINT overriding
-		entrypointArgs := []string{"sleep"}
-		cmdArgs := []string{"30"}
-
-		containerConfig := services.NewContainerConfigBuilder(
-			execCmdTestImage,
-		).WithEntrypointOverride(
-			entrypointArgs,
-		).WithCmdOverride(
-			cmdArgs,
-		).Build()
-		return containerConfig, nil
-	}
-	return containerConfigSupplier
+	containerConfig := services.NewContainerConfigBuilder(
+		execCmdTestImage,
+	).WithEntrypointOverride(
+		entrypointArgs,
+	).WithCmdOverride(
+		cmdArgs,
+	).Build()
+	return containerConfig
 }
 
 func runExecCmd(serviceContext *services.ServiceContext, command []string) (int32, string, error) {

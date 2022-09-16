@@ -59,21 +59,21 @@ func TestAddingDatastoreServicesInBulk(t *testing.T) {
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	datastoreServiceIDs := map[int]services.ServiceID{}
-	datastoreServiceConfigSuppliers := map[services.ServiceID]func(string) (*services.ContainerConfig, error){}
+	datastoreServiceConfigs := map[services.ServiceID]*services.ContainerConfig{}
 	for i := 0; i < numServicesToAdd; i++ {
 		serviceID := services.ServiceID(fmt.Sprintf("%v-%v", datastoreServiceId, i))
 		datastoreServiceIDs[i] = serviceID
-		datastoreServiceConfigSuppliers[serviceID] = getDatastoreContainerConfigSupplier()
+		datastoreServiceConfigs[serviceID] = getDatastoreContainerConfig()
 	}
 
 	logrus.Infof("Adding three datastore services simultaneously...")
-	successfulDatastoreServiceContexts, failedDatastoreServiceErrs, err := enclaveCtx.AddServices(datastoreServiceConfigSuppliers)
+	successfulDatastoreServiceContexts, failedDatastoreServiceErrs, err := enclaveCtx.AddServices(datastoreServiceConfigs)
 	require.NoError(t, err, "An error occurred adding the datastore services to the enclave")
 	logrus.Infof("Added datastore service")
 	require.Equal(t, numServicesToAdd, len(successfulDatastoreServiceContexts))
 	require.Equal(t, 0, len(failedDatastoreServiceErrs))
 
-	apiServiceConfigSuppliers := map[services.ServiceID]func(string) (*services.ContainerConfig, error){}
+	apiServiceConfigs := map[services.ServiceID]*services.ContainerConfig{}
 	for i := 0; i < numServicesToAdd; i++ {
 		datastoreServiceID, found := datastoreServiceIDs[i]
 		require.True(t, found)
@@ -84,47 +84,40 @@ func TestAddingDatastoreServicesInBulk(t *testing.T) {
 		datastoreConfigArtifactUUID, err := enclaveCtx.UploadFiles(configFilepath)
 		require.NoErrorf(t, err, "An error occurred uploading files to enclave for service '%v'", datastoreServiceID)
 		serviceID := fmt.Sprintf("%v-%v", apiServiceID, i)
-		apiServiceConfigSuppliers[services.ServiceID(serviceID)] = getApiServiceContainerConfigSupplier(datastoreConfigArtifactUUID)
+		apiServiceConfigs[services.ServiceID(serviceID)] = getContainerConfig(datastoreConfigArtifactUUID)
 	}
 	logrus.Infof("Adding three api services simultaneously...")
-	successfulAPIServiceCtx, failedAPIServiceErrs, err := enclaveCtx.AddServices(apiServiceConfigSuppliers)
+	successfulAPIServiceCtx, failedAPIServiceErrs, err := enclaveCtx.AddServices(apiServiceConfigs)
 	require.NoError(t, err, "An error occurred adding the api services to the enclave")
 	require.Equal(t, numServicesToAdd, len(successfulAPIServiceCtx))
 	require.Equal(t, 0, len(failedAPIServiceErrs))
 }
 
-func getDatastoreContainerConfigSupplier() func(ipAddr string) (*services.ContainerConfig, error) {
-	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
-		containerConfig := services.NewContainerConfigBuilder(
-			datastoreImage,
-		).WithUsedPorts(map[string]*services.PortSpec{
-			datastorePortId: datastorePortSpec,
-		}).Build()
-		return containerConfig, nil
-	}
-	return containerConfigSupplier
+func getDatastoreContainerConfig() *services.ContainerConfig {
+	containerConfig := services.NewContainerConfigBuilder(
+		datastoreImage,
+	).WithUsedPorts(map[string]*services.PortSpec{
+		datastorePortId: datastorePortSpec,
+	}).Build()
+	return containerConfig
 }
 
-func getApiServiceContainerConfigSupplier(apiConfigArtifactUuid services.FilesArtifactUUID) func(ipAddr string) (*services.ContainerConfig, error) {
-	containerConfigSupplier := func(ipAddr string) (*services.ContainerConfig, error) {
-		startCmd := []string{
-			"./example-api-server.bin",
-			"--config",
-			path.Join(configMountpathOnApiContainer, configFilename),
-		}
-
-		containerConfig := services.NewContainerConfigBuilder(
-			apiServiceImage,
-		).WithUsedPorts(map[string]*services.PortSpec{
-			apiPortId: apiPortSpec,
-		}).WithFiles(map[services.FilesArtifactUUID]string{
-			apiConfigArtifactUuid: configMountpathOnApiContainer,
-		}).WithCmdOverride(startCmd).Build()
-
-		return containerConfig, nil
+func getContainerConfig(apiConfigArtifactUuid services.FilesArtifactUUID) *services.ContainerConfig {
+	startCmd := []string{
+		"./example-api-server.bin",
+		"--config",
+		path.Join(configMountpathOnApiContainer, configFilename),
 	}
 
-	return containerConfigSupplier
+	containerConfig := services.NewContainerConfigBuilder(
+		apiServiceImage,
+	).WithUsedPorts(map[string]*services.PortSpec{
+		apiPortId: apiPortSpec,
+	}).WithFiles(map[services.FilesArtifactUUID]string{
+		apiConfigArtifactUuid: configMountpathOnApiContainer,
+	}).WithCmdOverride(startCmd).Build()
+
+	return containerConfig
 }
 
 func createApiConfigFile(datastoreIP string) (string, error) {
