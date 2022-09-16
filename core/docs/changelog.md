@@ -1,5 +1,7 @@
 # TBD
 
+# 1.59.2
+
 ### Changes
 * Upgraded container-engine-lib to `0.38.1`
 
