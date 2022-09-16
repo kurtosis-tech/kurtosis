@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+* Upgraded core to 1.59.2 and container-engine-lib to 0.38.1
+
 # 1.34.0
 ### Features
 * Published the `DefaultHttpLogsCollectorPortNum` const which can be used to launch the engine's server

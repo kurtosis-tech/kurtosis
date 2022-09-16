@@ -9,8 +9,8 @@ replace (
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/kurtosis-tech/container-engine-lib v0.38.0
-	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220915145911-79755226b796
+	github.com/kurtosis-tech/container-engine-lib v0.38.1
+	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220916142949-0e4064f10152
 	github.com/kurtosis-tech/kurtosis-engine-server/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
@@ -29,6 +29,7 @@ require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dmarkham/enumer v1.5.5 // indirect
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v20.10.16+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
@@ -49,7 +50,6 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d // indirect
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220915145944-ddfcfc696793 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -58,17 +58,21 @@ require (
 	github.com/onsi/gomega v1.10.3 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
+	github.com/pascaldekloe/name v1.0.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/segmentio/backo-go v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
+	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
+	golang.org/x/tools v0.1.10 // indirect
+	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20210402141018-6c239bbf2bb1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
