@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+* Fixed a bug where services wouldn't start in `KubernetesBackend.StartUserServices` as we'd get older GUIDs or GUIDs from other enclaves that had been associated with the ServiceID earlier.
+
 # 0.38.0
 ### Features
 * Added the `ForLogsDatabaseServer` and the `ForLogsCollectorServer` Docker objects attribute
