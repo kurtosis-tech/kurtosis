@@ -65,7 +65,7 @@ var defaultPortProtocolStr = strings.ToLower(kurtosis_core_rpc_api_bindings.Port
 var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:       command_str_consts.ServiceAddCmdStr,
 	ShortDescription: "Adds a service to an enclave",
-	LongDescription: "Adds a new service with the given parameters to the given enclave.",
+	LongDescription: "Adds a new service with the given parameters to the given enclave",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
 	Args: []*args.ArgConfig{
@@ -91,12 +91,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 	Flags: []*flags.FlagConfig{
 		{
 			Key: entrypointBinaryFlagKey,
-			Usage: fmt.Sprintf(
-				"ENTRYPOINT binary that will be used when running the container, overriding the "+
-					"image's default ENTRYPOINT (NOTE: any instances of the flag argument of '%v' will be "+
-					"replaced with the container's IP address inside the enclave)",
-				privateIPAddressPlaceholderKey,
-			),
+			Usage: "ENTRYPOINT binary that will be used when running the container, overriding the image's default ENTRYPOINT",
 			// TODO Make this a string list
 			Type: flags.FlagType_String,
 		},
@@ -105,12 +100,10 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Key: envvarsFlagKey,
 			Usage: fmt.Sprintf(
 				"String containing environment variables that will be set when running the container, in "+
-					"the form \"KEY1%vVALUE1%vKEY2%vVALUE2\" (NOTE: any instances of the flag argument of '%v' in values "+
-					"will be replaced with the container's IP address inside the enclave)",
+					"the form \"KEY1%vVALUE1%vKEY2%vVALUE2\"",
 				envvarKeyValueDelimiter,
 				envvarDeclarationsDelimiter,
 				envvarKeyValueDelimiter,
-				privateIPAddressPlaceholderKey,
 			),
 			Type: flags.FlagType_String,
 		},
@@ -147,7 +140,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 		},
 		{
 			Key: privateIPAddressPlaceholderKey,
-			Usage: "Kurtosis will replace occurrences of this string in the entrypoint args, env vars and cmd args with the IP address of the container inside Docker/Kubernetes",
+			Usage: "Kurtosis will replace occurrences of this string in the ENTRYPOINT args, ENV vars and CMD args with the IP address of the container inside the enclave",
 			Type: flags.FlagType_String,
 		},
 	},
