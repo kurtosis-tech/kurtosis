@@ -203,8 +203,8 @@ func(network *ServiceNetwork) StartServices(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred attempting to add services to the service network.")
 	}
 	serviceGUIDsToRemove := map[service.ServiceGUID]bool{}
-	for _, service := range successfulStarts {
-		guid := service.GetRegistration().GetGUID()
+	for _, serviceInfo := range successfulStarts {
+		guid := serviceInfo.GetRegistration().GetGUID()
 		serviceGUIDsToRemove[guid] = true
 	}
 	// defer undo all to destroy services that fail in a later phase
@@ -224,8 +224,8 @@ func(network *ServiceNetwork) StartServices(
 			return
 		}
 		destroyFailuresAccountedFor := 0
-		for serviceID, service := range successfulStarts {
-			guid := service.GetRegistration().GetGUID()
+		for serviceID, serviceInfo := range successfulStarts {
+			guid := serviceInfo.GetRegistration().GetGUID()
 			destroyErr, found := failedToDestroyGUIDs[guid]
 			if !found {
 				continue
@@ -263,7 +263,7 @@ func(network *ServiceNetwork) StartServices(
 		}
 	}()
 
-	for serviceID, _ := range servicesToProcessFurther {
+	for serviceID := range servicesToProcessFurther {
 		err = network.addServiceToTopology(serviceID, partitionID)
 		if err != nil {
 			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred adding service '%v' to the topology", serviceID)
@@ -347,8 +347,8 @@ func(network *ServiceNetwork) StartServices(
 		successfulServicePool[serviceID] = serviceInfo
 	}
 	logrus.Infof("Sueccesfully started services '%v' and failed '%v' in the service network", successfulServicePool, failedServicesPool)
-	for serviceID, service := range successfulServicePool {
-		guid := service.GetRegistration().GetGUID()
+	for serviceID, serviceInfo := range successfulServicePool {
+		guid := serviceInfo.GetRegistration().GetGUID()
 		delete(serviceGUIDsToRemove, guid)
 		delete(servicesToRemoveFromRegistrationMap, serviceID)
 		delete(serviceIDsForTopologyCleanup, serviceID)
