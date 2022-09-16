@@ -141,7 +141,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 		},
 		{
 			Key: privateIPAddressPlaceholderKey,
-			Usage: fmt.Sprintf("Kurtosis will replace occurrences of this string in the ENTRYPOINT args, ENV vars and CMD args with the IP address of the container inside the enclave. This defaults to '%v'", privateIPAddressPlaceholderDefault),
+			Usage: "Kurtosis will replace occurrences of this string in the ENTRYPOINT args, ENV vars and CMD args with the IP address of the container inside the enclave",
 			Type: flags.FlagType_String,
 			Default: privateIPAddressPlaceholderDefault,
 		},
