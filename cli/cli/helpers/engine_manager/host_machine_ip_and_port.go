@@ -27,7 +27,7 @@ func getDefaultKurtosisEngineLocalhostMachineIpAndPort() *hostMachineIpAndPort {
 
 	return &hostMachineIpAndPort{
 		ipAddr:  engineIp,
-		portNum: kurtosis_context.DefaultKurtosisEngineServerGrpcPortNum,
+		portNum: kurtosis_context.DefaultGrpcEngineServerPortNum,
 	}
 
 }
