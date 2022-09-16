@@ -86,20 +86,20 @@ func StartUserServices(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with IDs '%v'", serviceIDsToRegister)
 	}
 	// Defer an undo to all the successful registrations in case an error occurs in future phases
-	serviceIDsToRemove := map[service.ServiceID]bool{}
-	for serviceID, _ := range successfulRegistrations {
-		serviceIDsToRemove[serviceID] = true
+	serviceGUIDsToRemove := map[service.ServiceGUID]bool{}
+	for _, registration := range successfulRegistrations {
+		serviceGUIDsToRemove[registration.GetGUID()] = true
 	}
 	defer func() {
-		if len(serviceIDsToRemove) == 0 {
+		if len(serviceGUIDsToRemove) == 0 {
 			return
 		}
 		userServiceFilters := &service.ServiceFilters{
-			IDs: serviceIDsToRemove,
+			GUIDs: serviceGUIDsToRemove,
 		}
 		_, failedToDestroyGUIDs, err := DestroyUserServices(ctx, enclaveID, userServiceFilters, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
 		if err != nil {
-			logrus.Errorf("Attempted to destroy all services with IDs '%v' together but had no success. You must manually destroy the services! The following error had occurred:\n'%v'", serviceIDsToRemove, err)
+			logrus.Errorf("Attempted to destroy all services with GUIDs '%v' together but had no success. You must manually destroy the services! The following error had occurred:\n'%v'", serviceGUIDsToRemove, err)
 			return
 		}
 		if len(failedToDestroyGUIDs) == 0 {
@@ -196,8 +196,9 @@ func StartUserServices(
 	}
 
 	// Do not remove services that were started successfully
-	for serviceID, _ := range successfulServicesPool {
-		delete(serviceIDsToRemove, serviceID)
+	for _, service := range successfulServicesPool {
+		guid := service.GetRegistration().GetGUID()
+		delete(serviceGUIDsToRemove, guid)
 	}
 	logrus.Debugf("Started services '%v' succesfully while '%v' failed", successfulServicesPool, failedServicesPool)
 	return successfulServicesPool, failedServicesPool, nil
