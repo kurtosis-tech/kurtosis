@@ -46,9 +46,9 @@ test("Test setting invalid memory allocation megabytes returns error", async () 
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const containerConfigSupplier = getContainerConfigWithInvalidMemory()
+        const containerConfig = getContainerConfigWithInvalidMemory()
 
-        const addServiceResult = await enclaveContext.addService(TEST_SERVICE_ID, containerConfigSupplier)
+        const addServiceResult = await enclaveContext.addService(TEST_SERVICE_ID, containerConfig)
 
         if(!addServiceResult.isErr()) {
             log.error(`An error should have occurred with the following invalid memory allocation: ${TEST_INVALID_MEMORY_ALLOC_MEGABYTES}`);
