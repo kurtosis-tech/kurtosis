@@ -1,7 +1,8 @@
 # TBD
+### Fixes
+* Fixed a bug where `KubernetesBackend.StopEngines` was failing because was trying to get the logs components containers and those were previously removed
 
 # 0.38.1
-
 ### Fixes
 * Fixed a bug where services wouldn't start in `KubernetesBackend.StartUserServices` as we'd get older GUIDs or GUIDs from other enclaves that had been associated with the ServiceID earlier.
 * Fixed a bug where we are destroying services why `ID` which is dangerous (as we may select across enclaves), now destroying by `GUID` instead.
