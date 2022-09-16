@@ -418,7 +418,7 @@ func GetLogsCollectorServiceAddress(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 ) (logs_components.LogsCollectorAddress, error) {
-	logsCollectorContainer, err := GetLogsCollectorContainer(ctx, dockerManager)
+	logsCollectorContainer, err := getLogsCollectorContainer(ctx, dockerManager)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting the logs collector container")
 	}
@@ -462,23 +462,6 @@ func GetLogsCollectorServiceAddress(
 }
 
 //This is public because we need to use it inside this package and in the "engine_functions" package also
-func GetLogsCollectorContainer(ctx context.Context, dockerManager *docker_manager.DockerManager) (*types.Container, error) {
-	allLogsCollectorContainers, err := GetAllLogsCollectorContainers(ctx, dockerManager)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector containers")
-	}
-	if len(allLogsCollectorContainers) == 0 {
-		return nil, stacktrace.NewError("Didn't find any logs collector Docker container'; this is a bug in Kurtosis")
-	}
-	if len(allLogsCollectorContainers) > 1 {
-		return nil, stacktrace.NewError("Found more than one logs collector Docker container'; this is a bug in Kurtosis")
-	}
-
-	logsCollectorContainer := allLogsCollectorContainers[0]
-
-	return logsCollectorContainer, nil
-}
-
 func GetAllLogsCollectorContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]*types.Container, error) {
 	matchingLogsCollectorContainers := []*types.Container{}
 
@@ -497,6 +480,23 @@ func GetAllLogsCollectorContainers(ctx context.Context, dockerManager *docker_ma
 // ====================================================================================================
 //                                      Private Helper Functions
 // ====================================================================================================
+func getLogsCollectorContainer(ctx context.Context, dockerManager *docker_manager.DockerManager) (*types.Container, error) {
+	allLogsCollectorContainers, err := GetAllLogsCollectorContainers(ctx, dockerManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector containers")
+	}
+	if len(allLogsCollectorContainers) == 0 {
+		return nil, stacktrace.NewError("Didn't find any logs collector Docker container'; this is a bug in Kurtosis")
+	}
+	if len(allLogsCollectorContainers) > 1 {
+		return nil, stacktrace.NewError("Found more than one logs collector Docker container'; this is a bug in Kurtosis")
+	}
+
+	logsCollectorContainer := allLogsCollectorContainers[0]
+
+	return logsCollectorContainer, nil
+}
+
 func getMatchingUserServiceDockerResources(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
