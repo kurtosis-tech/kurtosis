@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+* Fixes accidental service deletion by calling `DestroyUserServices` with `GUID` instead of `ID` from a defer-undo in `ServiceNetwork.StartServices`.
+
 # 1.59.1
 ### Changes
 * Upgraded container-engine-lib to `0.38.0`
