@@ -1,4 +1,7 @@
 # TBD
+### Breaking Changes
+* Upgraded to container-engine-lib 0.38.0, core to 1.59.1 and engine to 1.34.0
+  * Users will have to restart their Kurtosis engine
 
 ### Breaking Changes
 * Removed magical constant `IPADDR` from the `kurtosis service add` subcommand that would get replaced with the IP address.
