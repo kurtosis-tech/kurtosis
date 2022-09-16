@@ -1,4 +1,6 @@
 # TBD
+
+# 0.38.2
 ### Fixes
 * Fixed a bug where `KubernetesBackend.StopEngines` was failing because was trying to get the logs components containers and those were previously removed
 
