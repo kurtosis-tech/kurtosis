@@ -143,14 +143,16 @@ func StartUserServices(
 		}
 	}
 
-	// Get existing objects
-	serviceIDsToFilter := map[service.ServiceID]bool{}
-	for serviceID := range serviceConfigsToStart {
-		serviceIDsToFilter[serviceID] = true
+	// Get existing objects by GUID. We use GUIDs and not IDs as IDs can match services being deleted or services in other Enclaves.
+	serviceGUIDsToFilter := map[service.ServiceGUID]bool{}
+	for _, registration := range successfulRegistrations {
+		guid := registration.GetGUID()
+		serviceGUIDsToFilter[guid] = true
 	}
 	existingObjectsAndResourcesFilters := &service.ServiceFilters{
-		IDs: serviceIDsToFilter,
+		GUIDs: serviceGUIDsToFilter,
 	}
+	// This is safe, as there's an N -> 1 mapping between GUID and ID and the GUIDs that we filter on don't have any matching IDs
 	existingObjectsAndResources, err := shared_helpers.GetMatchingUserServiceObjectsAndKubernetesResourcesByServiceID(
 		ctx,
 		enclaveID,
@@ -161,15 +163,15 @@ func StartUserServices(
 		kubernetesManager,
 	)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user service objects and Kubernetes resources matching service IDs '%v'", serviceIDsToFilter)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user service objects and Kubernetes resources matching service GUIDs '%v'", serviceGUIDsToFilter)
 	}
-	for serviceID, _ := range serviceIDsToFilter {
+	for serviceID, _ := range successfulRegistrations {
 		if _, found := existingObjectsAndResources[serviceID]; !found {
 			failedServicesPool[serviceID] = stacktrace.NewError("Couldn't find any service registrations for service ID '%v'. This is a bug in Kurtosis.", serviceID)
 			delete(serviceConfigsToStart, serviceID)
 		}
 	}
-	if len(existingObjectsAndResources) > len(serviceIDsToFilter) {
+	if len(existingObjectsAndResources) > len(serviceGUIDsToFilter) {
 		// Should never happen because service GUIDs should be unique
 		return nil, nil, stacktrace.NewError("Found more than one service registration matching service GUIDs; this is a bug in Kurtosis")
 	}
