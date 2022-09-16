@@ -15,7 +15,8 @@
 * Upgraded `container-engine-lib` to 0.38.1, `core` to 1.59.2 and engine to `1.34.1`.
 
 ### Features
-* Added `rendertemplate` to `kurtosis files` which allows you to upload a Golang text/template with data provided as a JSON file.
+- Added `rendertemplate` to `kurtosis files` which allows you to upload a Golang text/template with data provided as a JSON file.
+- Prevent releasing on Friday/Saturday/Sunday unless an explicit override checkbox is ticked
 
 # 0.28.0
 
