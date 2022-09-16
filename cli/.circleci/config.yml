@@ -283,7 +283,7 @@ jobs:
       - run:
           name: "Verify Kurtosis cleaned up all its volumes"
           command: |
-            if ! [ $(docker volume ls | tail -n+2 | wc -l) -eq 0 ]; then
+            if ! [ $(docker volume ls | tail -n+2 | wc -l | grep -v kurtosis-logs) -eq 0 ]; then
               docker volume ls
               false
             fi
