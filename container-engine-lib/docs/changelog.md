@@ -1,4 +1,6 @@
 # TBD
+
+# 0.38.3
 ### Fixes
 - Fixed a bug where searching for a container wouldn't appropriately exclude non-`0.0.0.0` ports
 
