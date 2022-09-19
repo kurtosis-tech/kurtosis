@@ -1,4 +1,6 @@
 # TBD
+
+# 1.34.3
 ### Fixes
 - Upgraded to core 1.59.4 and container-engine-lib 0.38.3 to fix a bug with non-`0.0.0.0` IP addresses not getting successfully skipped
 
