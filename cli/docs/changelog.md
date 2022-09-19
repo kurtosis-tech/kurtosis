@@ -1,5 +1,7 @@
 # TBD
 
+# 0.29.0
+
 ### Breaking Changes
 * Upgraded to container-engine-lib 0.38.2, core to 1.59.3 and engine to 1.34.2
   * Users will have to restart their Kurtosis engine
