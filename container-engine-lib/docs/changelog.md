@@ -2,6 +2,9 @@
 ### Fixes
 - Fixed a bug where `getHostPortBindingsOnExpectedInterface` was incorrectly skipping ports
 
+### Changes
+- Remove the printing of the logs collector & Loki container logs in their deferred-removal function, as it proved confusing
+
 # 0.38.3
 ### Fixes
 - Fixed a bug where searching for a container wouldn't appropriately exclude non-`0.0.0.0` ports

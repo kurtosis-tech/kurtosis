@@ -1,17 +1,12 @@
 package fluentbit
 
 import (
-	"bytes"
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	shouldFollowLogsWhenTheContainerWillBeRemoved = false
 )
 
 type fluentbitLogsCollectorContainer struct {}
@@ -131,23 +126,6 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 	}
 	removeContainerFunc := func() {
 		removeCtx := context.Background()
-		containerLogsReadCloser, err := dockerManager.GetContainerLogs(removeCtx, containerId, shouldFollowLogsWhenTheContainerWillBeRemoved)
-		if err != nil {
-			logrus.Errorf(
-				"We tried to get the logs collector container logs, with container ID '%v', but doing it throw the following error:\n%v",
-				containerId,
-				err)
-		}
-		defer containerLogsReadCloser.Close()
-
-		containerReadCloserBuffer := new(bytes.Buffer)
-		containerReadCloserBuffer.ReadFrom(containerLogsReadCloser)
-		containerLogsStr := containerReadCloserBuffer.String()
-
-		containerLogsHeader := "\n--------------------- FLUENTBIT CONTAINER LOGS -----------------------\n"
-		containerLogsFooter := "\n------------------- END FLUENTBIT CONTAINER LOGS --------------------"
-		logrus.Infof("Could not start the logs collector container; logs are below:%v%v%v", containerLogsHeader, containerLogsStr, containerLogsFooter)
-
 		if err := dockerManager.RemoveContainer(removeCtx, containerId); err != nil {
 			logrus.Errorf(
 				"Launching the logs collector server for engine with GUID '%v' and container ID '%v' didn't complete successfully so we "+
@@ -168,7 +146,11 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 	logsCollectorAvailabilityChecker := newFluentbitAvailabilityChecker(privateHttpPortSpec.GetNumber())
 
 	if err := logsCollectorAvailabilityChecker.WaitForAvailability(); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the log collector's to become available")
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred waiting for logs collector container '%v' to become available",
+			containerId,
+		)
 	}
 
 	removeContainerAndVolumeFunc := func() {
