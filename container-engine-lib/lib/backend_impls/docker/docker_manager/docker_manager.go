@@ -1146,7 +1146,6 @@ func (manager *DockerManager) getContainerCfg(
 func getHostPortBindingsOnExpectedInterface(hostPortBindingsOnAllInterfaces nat.PortMap) map[nat.Port]*nat.PortBinding {
 	result := map[nat.Port]*nat.PortBinding{}
 	for port, allInterfaceBindings := range hostPortBindingsOnAllInterfaces {
-		foundHostPortBinding := false
 		for _, interfaceBinding := range allInterfaceBindings {
 			logrus.Tracef(
 				"Examining interface binding with host IP '%v' and port '%v' for port '%v'...",
@@ -1160,12 +1159,9 @@ func getHostPortBindingsOnExpectedInterface(hostPortBindingsOnAllInterfaces nat.
 					HostIP:   hostPortBindingInterfaceForUserConsumption,
 					HostPort: interfaceBinding.HostPort,
 				}
-				foundHostPortBinding = true
+				// Finding multiple public ports for the same interface would be silly, and unnecessary, so we break here
 				break
 			}
-		}
-		if !foundHostPortBinding {
-			break
 		}
 	}
 	return result
