@@ -38,4 +38,3 @@ jobs:
         with:
           bump_major: ${{ inputs.bump_major }}
         secrets: inherit
-        name: Run the release
