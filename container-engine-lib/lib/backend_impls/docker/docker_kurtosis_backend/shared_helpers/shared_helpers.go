@@ -34,8 +34,6 @@ const (
 	netstatSuccessExitCode = 0
 
 	shouldShowStoppedLogsCollectorContainers = true
-
-	shouldFollowLogsWhenGettingAllContainerLogs = false
 )
 
 // !!!WARNING!!!

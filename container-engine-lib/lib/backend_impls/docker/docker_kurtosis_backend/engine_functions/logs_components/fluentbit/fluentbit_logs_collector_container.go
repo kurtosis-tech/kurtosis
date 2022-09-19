@@ -9,13 +9,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	shouldFollowLogsWhenTheContainerWillBeRemoved = false
-
-	containerLogsHeader = "\n--------------------- FLUENTBIT CONTAINER LOGS -----------------------\n"
-	containerLogsFooter = "\n------------------- END FLUENTBIT CONTAINER LOGS --------------------"
-)
-
 type fluentbitLogsCollectorContainer struct {}
 
 func NewFluentbitLogsCollectorContainer() *fluentbitLogsCollectorContainer {
