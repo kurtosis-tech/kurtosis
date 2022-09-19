@@ -1,4 +1,6 @@
 # TBD
+### Changes
+- Remove the printing of the logs collector & Loki container logs in their deferred-removal function, as it proved confusing
 
 # 0.38.3
 ### Fixes
