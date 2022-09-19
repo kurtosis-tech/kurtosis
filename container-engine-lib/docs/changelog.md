@@ -1,4 +1,6 @@
 # TBD
+
+# 0.38.4
 ### Fixes
 - Fixed a bug where `getHostPortBindingsOnExpectedInterface` was incorrectly skipping ports
 
