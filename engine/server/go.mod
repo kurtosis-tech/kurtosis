@@ -9,8 +9,8 @@ replace (
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/kurtosis-tech/container-engine-lib v0.38.2
-	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220916174934-a996c50e549b
+	github.com/kurtosis-tech/container-engine-lib v0.38.3
+	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220919200508-7b081914ba0a
 	github.com/kurtosis-tech/kurtosis-engine-server/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
@@ -49,7 +49,6 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d // indirect
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220916175000-460d0ee57c57 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
