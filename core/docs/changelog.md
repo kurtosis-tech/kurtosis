@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+- Upgrade to container-engine-lib 0.38.3, which contains a bugfix for non-`0.0.0.0` IP addresses not being skipped properly
 
 # 1.59.3
 ### Changes
