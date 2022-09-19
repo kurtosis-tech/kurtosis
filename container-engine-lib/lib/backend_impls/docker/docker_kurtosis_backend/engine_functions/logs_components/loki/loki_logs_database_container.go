@@ -1,7 +1,6 @@
 package loki
 
 import (
-	"bytes"
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -107,24 +106,6 @@ func (lokiContainer *lokiLogsDatabaseContainer) CreateAndStart(
 	}
 	removeContainerFunc := func() {
 		removeCtx := context.Background()
-		containerLogsReadCloser, err := dockerManager.GetContainerLogs(removeCtx, containerId, shouldFollowLogsWhenTheContainerWillBeRemoved)
-		if err != nil {
-			logrus.Errorf(
-				"We tried to get the logs database container logs, with container ID '%v', but doing it throw the following error:\n%v",
-				containerId,
-				err)
-		}
-		defer containerLogsReadCloser.Close()
-
-		containerReadCloserBuffer := new(bytes.Buffer)
-		containerReadCloserBuffer.ReadFrom(containerLogsReadCloser)
-		containerLogsStr := containerReadCloserBuffer.String()
-
-		containerLogsHeader := "\n--------------------- LOKI CONTAINER LOGS -----------------------\n"
-		containerLogsFooter := "\n------------------- END LOKI CONTAINER LOGS --------------------"
-		logrus.Infof("Could not start the logs database container; logs are below:%v%v%v", containerLogsHeader, containerLogsStr, containerLogsFooter)
-
-
 		if err := dockerManager.RemoveContainer(removeCtx, containerId); err != nil {
 			logrus.Errorf(
 				"Launching the logs database server with GUID '%v' and container ID '%v' didn't complete successfully so we "+
