@@ -14,7 +14,7 @@ on:
         type: boolean
 
 jobs:
-  release:
+  weekend-check:
     runs-on: ubuntu-latest
     steps:
       - name: Verify release is allowed (weekend releases are only allowed when weekend release override is set)
@@ -34,7 +34,9 @@ jobs:
             echo "Refusing to release on Friday, Saturday, or Sunday to avoid risk of Kurtosians needing to fix bugs on the weekend"
             exit 1
           fi
+  release:
       - uses: kurtosis-tech/release/.github/workflows/release.yml@master
         with:
           bump_major: ${{ inputs.bump_major }}
         secrets: inherit
+        needs: weekend-check
