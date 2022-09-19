@@ -1214,30 +1214,23 @@ func newContainerFromDockerContainer(dockerContainer types.Container) (*docker_m
 	// to process the ports into the same format as ContainerInspect so we can call getHostPortBindingsOnExpectedInterface
 	portMap := nat.PortMap{}
 	for _, port := range dockerContainer.Ports {
-		// T
-		portSpecStr := fmt.Sprintf(
-			"%v:%v:%v/%v",
-			port.IP,
-			port.PrivatePort,
-			port.PublicPort,
-			port.Type,
-		)
+		// It's kinda bad that we use "forbidden knowledge" about how nat.Port represents its internals to create one, but
+		// the nat.Port API is so infuriatingly awful to use (how do you even create one??)
+		privatePortStr := fmt.Sprintf("%v/%v", port.PrivatePort, port.Type)
+		privatePort := nat.Port(privatePortStr)
 
-		portMappings, err := nat.ParsePortSpec(portSpecStr)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred parsing Docker port spec string '%v'", portSpecStr)
+		bindingsForPort, found := portMap[privatePort]
+		if !found {
+			bindingsForPort = []nat.PortBinding{}
 		}
 
-		for _, portMapping := range portMappings {
-			privatePort := portMapping.Port
-
-			bindingsForPort, found := portMap[privatePort]
-			if !found {
-				bindingsForPort = []nat.PortBinding{}
-			}
-			bindingsForPort = append(bindingsForPort, portMapping.Binding)
-			portMap[privatePort] = bindingsForPort
+		hostBinding := nat.PortBinding{
+			HostIP:   port.IP,
+			HostPort: fmt.Sprintf("%v", port.PublicPort),
 		}
+
+		bindingsForPort = append(bindingsForPort, hostBinding)
+		portMap[privatePort] = bindingsForPort
 	}
 	containerHostPortBindings := getHostPortBindingsOnExpectedInterface(portMap)
 

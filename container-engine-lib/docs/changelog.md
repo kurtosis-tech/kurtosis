@@ -2,6 +2,9 @@
 ### Fixes
 - Fixed a bug where searching for a container wouldn't appropriately exclude non-`0.0.0.0` ports
 
+### Features
+- Added a test to ensure that `newContainerFromDockerContainer` appropriately excludes non-`0.0.0.0` ports
+
 # 0.38.2
 ### Fixes
 * Fixed a bug where `KubernetesBackend.StopEngines` was failing because was trying to get the logs components containers and those were previously removed
