@@ -35,8 +35,8 @@ jobs:
             exit 1
           fi
   release:
-      - uses: kurtosis-tech/release/.github/workflows/release.yml@master
-        with:
-          bump_major: ${{ inputs.bump_major }}
-        secrets: inherit
-        needs: weekend-check
+    uses: kurtosis-tech/release/.github/workflows/release.yml@master
+    with:
+      bump_major: ${{ inputs.bump_major }}
+    secrets: inherit
+    needs: weekend-check
