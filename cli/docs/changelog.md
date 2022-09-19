@@ -18,6 +18,9 @@
 - Added `rendertemplate` to `kurtosis files` which allows you to upload a Golang text/template with data provided as a JSON file.
 - Prevent releasing on Friday/Saturday/Sunday unless an explicit override checkbox is ticked
 
+### Fixes
+- Fixed the release script so that it runs.
+
 # 0.28.0
 
 ### Changes
