@@ -2,6 +2,7 @@ package docker_manager
 
 import (
 	"github.com/docker/docker/api/types"
+	"github.com/docker/go-connections/nat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -93,4 +94,39 @@ func TestCorrectPortIsSelectedWhenIPv6IsPresent(t *testing.T) {
 	require.True(t, found)
 	require.Equal(t, "127.0.0.1", portBinding.HostIP)
 	require.Equal(t, "49050", portBinding.HostPort)
+}
+
+func TestCorrectSelectionWhenTwoOfSameIPs(t *testing.T) {
+	port1 := nat.Port("9710/tcp")
+	port2 := nat.Port("9711/tcp")
+
+	// Directly from a case we saw in the field:
+	// map[10000/tcp:[] 9710/tcp:[{HostIP:0.0.0.0 HostPort:9710}] 9711/tcp:[{HostIP:0.0.0.0 HostPort:9711}]]
+	portMap := nat.PortMap{
+		"10000/tcp": []nat.PortBinding{},
+		"9710/tcp": []nat.PortBinding{
+			{
+				HostIP:   "0.0.0.0",
+				HostPort: "9710",
+			},
+		},
+		"9711/tcp": []nat.PortBinding{
+			{
+				HostIP:   "0.0.0.0",
+				HostPort: "9711",
+			},
+		},
+	}
+	hostPortBindings := getHostPortBindingsOnExpectedInterface(portMap)
+	require.Equal(t, 2, len(hostPortBindings))
+
+	publicBinding1, found := hostPortBindings[port1]
+	require.True(t, found)
+	require.Equal(t, "127.0.0.1", publicBinding1.HostIP)
+	require.Equal(t, "9710", publicBinding1.HostPort)
+
+	publicBinding2, found := hostPortBindings[port2]
+	require.True(t, found)
+	require.Equal(t, "127.0.0.1", publicBinding2.HostIP)
+	require.Equal(t, "9711", publicBinding2.HostPort)
 }
