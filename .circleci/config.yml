@@ -37,14 +37,14 @@ jobs:
       # Cache our dependencies
       - restore_cache:
           keys:
-            - << pipeline.parameters.build-cache-key-prefix >>-{{ checksum "go.sum" }}
+            - << pipeline.parameters.build-cache-key-prefix >>-{{ checksum "container-engine-lib/go.sum" }}
 
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           container-engine-lib/scripts/build.sh
       - save_cache:
-          key: << pipeline.parameters.build-cache-key-prefix >>-{{ checksum "go.sum" }}
+          key: << pipeline.parameters.build-cache-key-prefix >>-{{ checksum "container-engine-lib/go.sum" }}
           paths:
             - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
             - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
