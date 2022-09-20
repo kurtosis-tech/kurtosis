@@ -1,0 +1,24 @@
+{
+    "//": "TODO TODO Add package name, description, license, etc. here",
+    "version": "0.0.0",
+    "main": "./build/index",
+    "types": "./build/index",
+    "scripts": {
+        "build": "tsc",
+        "test": "ts-mocha -p tsconfig.json 'test/**/*.ts'"
+    },
+    "files": [
+        "build"
+    ],
+    "engines": {
+        "node": ">= 16.13.0"
+    },
+    "dependencies": {
+    },
+    "devDependencies": {
+        "@types/mocha": "^9.0.0",
+        "mocha": "^9.0.3",
+        "ts-mocha": "^8.0.0",
+        "typescript": "^4.3.5"
+    }
+}

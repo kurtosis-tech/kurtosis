@@ -1,0 +1,86 @@
+# IntelliJ
+.idea
+*.iws
+*.iml
+*.ipr
+
+# VS Code
+*.vscode
+
+# Jenv
+.java-version
+
+# Pyenv
+.python-version
+
+# Mac spotlight index files
+.DS_Store
+
+*.un~
+Session.vim
+.netrwhist
+*~
+*.pyc
+*.pydevproject
+.project
+.metadata
+bin/**
+tmp/**
+tmp/**/*
+*.tmp
+*.bak
+*~.nib
+local.properties
+.classpath
+.settings/
+.loadpath
+
+# Vim swapfiles
+*.swp
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Archive files
+*.tgz
+*.zip
+
+# External tool builders
+.externalToolBuilders/
+
+# Locally stored "Eclipse launch configurations"
+*.launch
+
+# CDT-specific
+.cproject
+
+# PDT-specific
+.buildpath
+
+# Ignore Vim helptags
+doc/tags
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Test binary, built with `go test -c`
+*.test
+
+
+# Output directories
+build/
+dist/
+
+# Java
+.gradle
+
+# Node
+node_modules
+yarn-error.log
+
+# Bazel
+/bazel-*
