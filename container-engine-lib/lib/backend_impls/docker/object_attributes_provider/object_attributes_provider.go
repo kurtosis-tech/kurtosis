@@ -1,29 +1,28 @@
 package object_attributes_provider
 
 import (
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_value"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_object_name"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_value"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_object_name"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"strings"
 )
 
 const (
-	engineServerNamePrefix  = "kurtosis-engine"
-	logsDatabaseName  = "kurtosis-logs-db"
-	logsCollectorName = "kurtosis-logs-collector"
+	engineServerNamePrefix = "kurtosis-engine"
+	logsDatabaseName       = "kurtosis-logs-db"
+	logsCollectorName      = "kurtosis-logs-collector"
 
 	//We always use the same name because we are going to have only one instance of this volume,
 	//so when the engine is restarted it mounts the same volume with the previous logs
-	logsDatabaseVolumeName = logsDatabaseName + "-vol"
+	logsDatabaseVolumeName  = logsDatabaseName + "-vol"
 	logsCollectorVolumeName = logsCollectorName + "-vol"
-
 )
 
 type DockerObjectAttributesProvider interface {
@@ -185,7 +184,7 @@ func (provider *dockerObjectAttributesProviderImpl) ForLogsCollector(
 	}
 
 	usedPorts := map[string]*port_spec.PortSpec{
-		tcpPortId: tcpPortSpec,
+		tcpPortId:  tcpPortSpec,
 		httpPortId: httpPortSpec,
 	}
 	serializedPortsSpec, err := docker_port_spec_serializer.SerializePortSpecs(usedPorts)

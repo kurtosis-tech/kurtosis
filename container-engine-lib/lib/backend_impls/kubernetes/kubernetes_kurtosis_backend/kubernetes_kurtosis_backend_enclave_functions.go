@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gammazero/workerpool"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -31,9 +31,9 @@ const (
 	createdDirPerms  os.FileMode = 0755
 	createdFilePerms os.FileMode = 0644
 
-	numPodsToDumpAtOnce                      = 20
+	numPodsToDumpAtOnce = 20
 
-	shouldFollowPodLogsWhenDumping = false
+	shouldFollowPodLogsWhenDumping        = false
 	shouldAddTimestampsWhenDumpingPodLogs = true
 
 	enclaveDumpJsonSerializationIndent = "  "
@@ -60,7 +60,7 @@ type enclaveKubernetesResources struct {
 
 type dumpPodResult struct {
 	podName string
-	err error
+	err     error
 }
 
 // ====================================================================================================
@@ -118,7 +118,7 @@ func (backend KubernetesKurtosisBackend) CreateEnclave(
 
 	enclaveResources := &enclaveKubernetesResources{
 		namespace: enclaveNamespace,
-		pods: []apiv1.Pod{},
+		pods:      []apiv1.Pod{},
 	}
 	enclaveObjsById, err := getEnclaveObjectsFromKubernetesResources(map[enclave.EnclaveID]*enclaveKubernetesResources{
 		enclaveId: enclaveResources,
@@ -219,7 +219,6 @@ func (backend KubernetesKurtosisBackend) StopEnclaves(
 				continue
 			}
 		}
-
 
 		successfulEnclaveIds[enclaveId] = true
 	}
@@ -599,7 +598,7 @@ func dumpPodInfo(
 		containerName := container.Name
 
 		// Make container output directory
-		containerLogsFilepath := path.Join(podOutputDirpath, containerName +containerLogsFilenameSuffix)
+		containerLogsFilepath := path.Join(podOutputDirpath, containerName+containerLogsFilenameSuffix)
 		containerLogsOutputFp, err := os.Create(containerLogsFilepath)
 		if err != nil {
 			return stacktrace.Propagate(

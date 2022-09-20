@@ -108,21 +108,21 @@
 # 0.34.0
 #### Breaking Changes
 * Move all `docker.DockerKurtosisBackend` functionality to `docker_kurtosis_backend` module
-  * Users will need to replace their `github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker` import for
-`github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend` (same with corresponding `kubernetes` packages)
+  * Users will need to replace their `github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker` import for
+`github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend` (same with corresponding `kubernetes` packages)
 * Move all functions in `DockerKurtosisBackend` related to user services to `user_service_functions` module
-  * Users will need to replace their `github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker` import for
-`github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend` (same with corresponding `kubernetes` packages)
+  * Users will need to replace their `github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker` import for
+`github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend` (same with corresponding `kubernetes` packages)
 * Move all `kubernetes.KubernetesKurtosisBackend` functionality to `kubernetes_kurtosis_backend` module
-  * Users will need to replace their `github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes` import for
-`github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend` (same with corresponding `kubernetes` packages)
+  * Users will need to replace their `github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes` import for
+`github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend` (same with corresponding `kubernetes` packages)
 * Move all functions in `KubernetesKurtosisBackend` related to user services to `user_service_functions` module
-  * Users will need to replace their `github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes` import for
-`github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend` (same with corresponding `kubernetes` packages)
+  * Users will need to replace their `github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes` import for
+`github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend` (same with corresponding `kubernetes` packages)
 * Move `ServiceConfig` and `FilesArtifactsExpansion` out of `backend_interface` module into respective files in `objects` module
-  * Users will need to replace their `github.com/kurtosis-tech/container-engine-lib/lib/backend_interface` import for `ServiceConfig` 
-and `FilesArtifactsExpansion` to be `github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service` (same with corresponding `kubernetes` packages)
-and `github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion` respectively
+  * Users will need to replace their `github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface` import for `ServiceConfig` 
+and `FilesArtifactsExpansion` to be `github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service` (same with corresponding `kubernetes` packages)
+and `github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion` respectively
 
 ### Features
 * Implement `operation_parallelizer` module to abstract common use case of executing multiple operations and receiving successful and failed operations
@@ -704,7 +704,7 @@ and `github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects
 * The `HostMachineDomainInsideContainer` and `HostGatewayName` parameters are no longer public
   * There is no replacement; users who were depending on this should use the `needsAccessToHostMachine` parameter when starting a container
 * The `DockerManager` package has been moved
-  * Users should replace `github.com/kurtosis-tech/container-engine-lib/lib/docker_manager` -> `github.com/kurtosis-tech/container-engine-lib/lib/backends/docker/docker_manager`
+  * Users should replace `github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/docker_manager` -> `github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backends/docker/docker_manager`
 
 
 # 0.8.8

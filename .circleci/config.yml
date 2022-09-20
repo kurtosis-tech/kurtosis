@@ -2,15 +2,15 @@ version: 2.1
 
 orbs:
   npm-publisher: uraway/npm-publisher@0.2.0
-  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.0
+  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.1
 
 parameters:
   go-version:
     type: string
-    default: 1.16
-  node-version:
+    default: "1.17"
+  build-cache-key-prefix:
     type: string
-    default: 16.13.0
+    default: "go-mod-v1"   # Can bump this version to bust the cache
 
 # NOTE: Because CircleCI jobs run on separate machines from each other, we duplicate steps (like checkout) between jobs. This is because doing the "correct" DRY
 #  refactoring of, "one job for checkout, one job for build Docker image, etc." would require a) persisting files between jobs and b) persisting Docker images between
@@ -18,50 +18,36 @@ parameters:
 #  images), so we run everything inside a single job.
 # See also: https://discuss.circleci.com/t/can-docker-images-be-preserved-between-jobs-in-a-workflow-without-a-manual-load-save/23388/12
 jobs:
-  check_golang:
+  build_container_engine_lib:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.go-version>>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
+
+    # Done on 2022-05-15, when the job was 1m30s and CircleCI insights showed that we were maxing out the 'medium' class CPUs
+    resource_class: large
+
     steps:
       - checkout
 
       # If the only changes are to the docs, don't run the slow (and expensive) code checks
       # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
       - run: |
-          if git --no-pager diff --exit-code origin/develop...HEAD -- . ':!docs'; then
+          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
             circleci-agent step halt
           fi
+      # Cache our dependencies
+      - restore_cache:
+          keys:
+            - << pipeline.parameters.build-cache-key-prefix >>-{{ checksum "go.sum" }}
 
-      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
-      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
-          golang/scripts/build.sh
-
-  check_typescript:
-    docker:
-      - image: "cimg/node:<< pipeline.parameters.node-version>>"
-    steps:
-      - checkout
-
-      # If the only changes are to the docs, don't run the slow (and expensive) code checks
-      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
-      - run: |
-          if git --no-pager diff --exit-code origin/develop...HEAD -- . ':!docs'; then
-            circleci-agent step halt
-          fi
-
-      - run: typescript/scripts/build.sh
-
-  publish_typescript:
-    docker:
-      - image: "cimg/node:<< pipeline.parameters.node-version>>"
-    steps:
-      - checkout
-      - run: typescript/scripts/build.sh
-      - npm-publisher/publish-from-package-version:
-          package-path: typescript
-          publish-token-variable: NPMJS_AUTH_TOKEN
+          container-engine-lib/scripts/build.sh
+      - save_cache:
+          key: << pipeline.parameters.build-cache-key-prefix >>-{{ checksum "go.sum" }}
+          paths:
+            - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
+            - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
 
 workflows:
   build:
@@ -72,33 +58,16 @@ workflows:
           filters:
             branches:
               ignore:
-                - develop
                 - master
-      - check_golang:
+      - build_container_engine_lib:
           context:
             # This pulls in KurtosisBot's Github token, so that we can read from our private repos
             - github-user
           filters:
             branches:
               ignore:
-                - develop
-                - master
-      - check_typescript:
-          filters:
-            branches:
-              ignore:
-                - develop
                 - master
       # -- End PR check jobs ---------------------------------------
 
       # -- Artifact-publishing jobs --------------------------------
-      # TODO UNCOMMENT WHEN READY
-      #- publish_typescript:
-      #    context:
-      #      - npmjs-user
-      #    filters:
-      #      branches:
-      #        ignore: /.*/
-      #      tags:
-      #        only: /^[0-9]+\.[0-9]+\.[0-9]+$/
       # -- End artifact-publishing jobs ----------------------------

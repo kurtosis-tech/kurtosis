@@ -1,7 +1,7 @@
 package label_key_consts
 
 import (
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 )
 
 const (
@@ -12,11 +12,11 @@ const (
 	// If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
 	// These immutable values track resources between Kurtosis versions.
 	labelNamespaceStr = "com.kurtosistech."
-	appIdLabelKeyStr = labelNamespaceStr + "app-id"
+	appIdLabelKeyStr  = labelNamespaceStr + "app-id"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	containerTypeLabelKeyStr = labelNamespaceStr + "container-type"
-	volumeTypeLabelKeyStr = labelNamespaceStr + "volume-type"
+	volumeTypeLabelKeyStr    = labelNamespaceStr + "volume-type"
 
 	// A label to identify a Kurtosis resource (e.g. network, container, etc.) by its id
 	idLabelKeyStr = labelNamespaceStr + "id"
@@ -33,8 +33,8 @@ const (
 	isNetworkPartitioningEnabledKeyStr = labelNamespaceStr + "is-network-partitioning-enabled"
 
 	privateIpAddrLabelKeyStr = labelNamespaceStr + "private-ip"
-
 )
+
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // If these value change, it will lead to the Kurtosis engine losing track of old containers
 //  which will cause a resource leak on the user's system!
@@ -42,6 +42,7 @@ const (
 //   If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
 //
 var AppIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(appIdLabelKeyStr)
+
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 var ContainerTypeDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(containerTypeLabelKeyStr)

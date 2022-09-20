@@ -2,7 +2,7 @@ package kubernetes_resource_collectors
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/stacktrace"
 	apiv1 "k8s.io/api/core/v1"
 )
@@ -17,6 +17,7 @@ import (
 type namespaceKubernetesResource struct {
 	underlying apiv1.Namespace
 }
+
 func (resource namespaceKubernetesResource) getName() string {
 	return resource.underlying.Name
 }
@@ -68,4 +69,3 @@ func CollectMatchingNamespaces(
 	}
 	return result, nil
 }
-

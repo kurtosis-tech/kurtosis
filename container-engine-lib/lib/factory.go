@@ -2,12 +2,12 @@ package lib
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/metrics_reporting"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/metrics_reporting"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/stacktrace"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -29,7 +29,7 @@ func GetCLIKubernetesKurtosisBackend(ctx context.Context) (backend_interface.Kur
 		return kubernetes_kurtosis_backend.NewCLIModeKubernetesKurtosisBackend(kubernetesManager), nil
 	}
 
-	wrappedBackend, err:= getWrappedKubernetesKurtosisBackend(
+	wrappedBackend, err := getWrappedKubernetesKurtosisBackend(
 		ctx,
 		kubernetesConfig,
 		backendSupplier,
@@ -40,7 +40,6 @@ func GetCLIKubernetesKurtosisBackend(ctx context.Context) (backend_interface.Kur
 
 	return wrappedBackend, nil
 }
-
 
 func GetEngineServerKubernetesKurtosisBackend(
 	ctx context.Context,
@@ -56,7 +55,7 @@ func GetEngineServerKubernetesKurtosisBackend(
 		), nil
 	}
 
-	wrappedBackend, err:= getWrappedKubernetesKurtosisBackend(
+	wrappedBackend, err := getWrappedKubernetesKurtosisBackend(
 		ctx,
 		kubernetesConfig,
 		backendSupplier,
@@ -105,7 +104,7 @@ func GetApiContainerKubernetesKurtosisBackend(
 		), nil
 	}
 
-	wrappedBackend, err:= getWrappedKubernetesKurtosisBackend(
+	wrappedBackend, err := getWrappedKubernetesKurtosisBackend(
 		ctx,
 		kubernetesConfig,
 		backendSupplier,
@@ -117,7 +116,6 @@ func GetApiContainerKubernetesKurtosisBackend(
 	return wrappedBackend, nil
 }
 
-
 // ====================================================================================================
 //                                      Private Helper Functions
 // ====================================================================================================
@@ -125,7 +123,7 @@ func getWrappedKubernetesKurtosisBackend(
 	ctx context.Context,
 	kubernetesConfig *rest.Config,
 	kurtosisBackendSupplier func(context.Context, *kubernetes_manager.KubernetesManager) (*kubernetes_kurtosis_backend.KubernetesKurtosisBackend, error),
-) (*metrics_reporting.MetricsReportingKurtosisBackend, error){
+) (*metrics_reporting.MetricsReportingKurtosisBackend, error) {
 	clientSet, err := kubernetes.NewForConfig(kubernetesConfig)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to create kubernetes client set using Kubernetes config '%+v', instead a non nil error was returned", kubernetesConfig)

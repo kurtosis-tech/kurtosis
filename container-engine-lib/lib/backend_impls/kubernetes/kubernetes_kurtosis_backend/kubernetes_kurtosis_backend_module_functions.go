@@ -2,16 +2,16 @@ package kubernetes_kurtosis_backend
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -38,7 +38,7 @@ const (
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
 
 type moduleObjectsAndKubernetesResources struct {
-	module *module.Module
+	module              *module.Module
 	kubernetesResources *moduleKubernetesResources
 }
 
@@ -73,7 +73,7 @@ func (backend KubernetesKurtosisBackend) CreateModule(
 	}
 	guid := module.ModuleGUID(guidStr)
 
-	enclaveAttributesProvider:= backend.objAttrsProvider.ForEnclave(enclaveId)
+	enclaveAttributesProvider := backend.objAttrsProvider.ForEnclave(enclaveId)
 
 	enclaveNamespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
 	if err != nil {
@@ -146,7 +146,7 @@ func (backend KubernetesKurtosisBackend) CreateModule(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred while creating the service with name '%s', labels '%+v', annotations '%+v' " +
+			"An error occurred while creating the service with name '%s', labels '%+v', annotations '%+v' "+
 				", ports '%+v' and pod labels '%+v' in namespace '%s'",
 			moduleServiceName,
 			moduleServiceLabels,
@@ -192,7 +192,7 @@ func (backend KubernetesKurtosisBackend) CreateModule(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred while creating the pod with name '%s', labels '%+v', annotations '%+v'," +
+			"An error occurred while creating the pod with name '%s', labels '%+v', annotations '%+v',"+
 				" containers '%v' in namespace '%s' using image '%s'",
 			modulePodName,
 			modulePodLabels,
@@ -213,8 +213,8 @@ func (backend KubernetesKurtosisBackend) CreateModule(
 	}()
 
 	moduleResources := &moduleKubernetesResources{
-		service:          moduleService,
-		pod:              modulePod,
+		service: moduleService,
+		pod:     modulePod,
 	}
 	moduleObjsById, err := getModuleObjectsFromKubernetesResources(enclaveId, map[module.ModuleGUID]*moduleKubernetesResources{
 		guid: moduleResources,
@@ -434,7 +434,6 @@ func (backend KubernetesKurtosisBackend) DestroyModules(
 	return successfulModuleGUIDs, erroredModuleGUIDs, nil
 }
 
-
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
@@ -460,7 +459,6 @@ func getModuleContainers(
 			Image: containerImageAndTag,
 			Env:   containerEnvVars,
 			Ports: containerPorts,
-
 		},
 	}
 
@@ -536,8 +534,8 @@ func (backend KubernetesKurtosisBackend) getModuleKubernetesResourcesMatchingGui
 	}
 
 	kubernetesResourceSearchLabels := map[string]string{
-		label_key_consts.AppIDKubernetesLabelKey.GetString(): label_value_consts.AppIDKubernetesLabelValue.GetString(),
-		label_key_consts.EnclaveIDKubernetesLabelKey.GetString(): string(enclaveId),
+		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		label_key_consts.EnclaveIDKubernetesLabelKey.GetString():            string(enclaveId),
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.ModuleKurtosisResourceTypeKubernetesLabelValue.GetString(),
 	}
 

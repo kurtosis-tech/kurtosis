@@ -1,6 +1,6 @@
 package loki
 
-import "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+import "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 
 const (
 	configDirpath = "/etc/loki/"
@@ -50,8 +50,8 @@ const (
 
 	//The next values are used to configure the Compactor component which allows us to enable the retention period
 	//See more here: https://grafana.com/docs/loki/latest/operations/storage/retention/
-	compactorWorkingDirectory           = dirpath + "/compactor"
-	compactorRetentionEnabled           = true
+	compactorWorkingDirectory = dirpath + "/compactor"
+	compactorRetentionEnabled = true
 	//More about retention delete delay here: https://grafana.com/docs/loki/latest/operations/storage/retention/#compactor
 	compactorRetentionDeleteDelay       = "1h"
 	compactorRetentionDeleteWorkerCount = 150
@@ -71,9 +71,9 @@ const (
 	runtimeConfigFileInitialContent = "overrides:"
 
 	//The configuration for the ingester WAL, it's important for storing chunks when the server is shutdown. See more here: https://grafana.com/docs/loki/latest/configuration/#ingester
-	enableIngesterWal = true
-	ingesterWalDirpath  = dirpath + "/wal"
+	enableIngesterWal          = true
+	ingesterWalDirpath         = dirpath + "/wal"
 	flushIngesterWalOnShutdown = true //It's useful for graceful shutdowns
-	checkpointDuration = "1s" //It's useful for ungraceful shutdowns, whe the server is restarted the WAL loads the last checkpoint saved
+	checkpointDuration         = "1s" //It's useful for ungraceful shutdowns, whe the server is restarted the WAL loads the last checkpoint saved
 	////////////////////////--FINISH--LOKI CONFIGURATION SECTION--/////////////////////////////
 )

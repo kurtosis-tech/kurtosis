@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"text/template"
@@ -15,7 +15,7 @@ const (
 	//We use this image and version because we already are using this in other projects so there is a high probability
 	//that the image is already downloaded in the local machine
 	configuratorContainerImage = "alpine:3.12.4"
-	configuratorContainerName = "kurtosis-fluentbit-configurator"
+	configuratorContainerName  = "kurtosis-fluentbit-configurator"
 
 	shBinaryFilepath = "/bin/sh"
 	shCmdFlag        = "-c"
@@ -36,7 +36,6 @@ type fluentbitConfigurationCreator struct {
 func newFluentbitConfigurationCreator(config *FluentbitConfig) *fluentbitConfigurationCreator {
 	return &fluentbitConfigurationCreator{config: config}
 }
-
 
 func (fluent *fluentbitConfigurationCreator) CreateConfiguration(
 	ctx context.Context,
@@ -94,7 +93,7 @@ func (fluent *fluentbitConfigurationCreator) CreateConfiguration(
 	return nil
 }
 
-func (fluent *fluentbitConfigurationCreator)  createFluentbitConfigFileInVolume(
+func (fluent *fluentbitConfigurationCreator) createFluentbitConfigFileInVolume(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 	containerId string,

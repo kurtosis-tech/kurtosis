@@ -4,18 +4,18 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components/fluentbit"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components/loki"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"github.com/kurtosis-tech/container-engine-lib/lib/operation_parallelizer"
-	"github.com/kurtosis-tech/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components/fluentbit"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components/loki"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/operation_parallelizer"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
@@ -26,9 +26,9 @@ const (
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
 
-	getAllEngineContainersOperationId operation_parallelizer.OperationID= "getAllEngineContainers"
-	getAllLogsDatabaseContainersOperationId operation_parallelizer.OperationID= "getAllLogsDatabaseContainers"
-	getAllLogsCollectorContainersOperationId operation_parallelizer.OperationID= "getAllLogsCollectorContainers"
+	getAllEngineContainersOperationId        operation_parallelizer.OperationID = "getAllEngineContainers"
+	getAllLogsDatabaseContainersOperationId  operation_parallelizer.OperationID = "getAllLogsDatabaseContainers"
+	getAllLogsCollectorContainersOperationId operation_parallelizer.OperationID = "getAllLogsCollectorContainers"
 )
 
 func CreateEngine(
@@ -45,7 +45,7 @@ func CreateEngine(
 	*engine.Engine,
 	error,
 ) {
-	allEngineAndLogsComponentsContainerIDs,  err := getAllLogsComponentsContainerIDs(ctx, dockerManager)
+	allEngineAndLogsComponentsContainerIDs, err := getAllLogsComponentsContainerIDs(ctx, dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred checking for engine containers and logs components containers existence")
 	}
@@ -237,7 +237,6 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating an engine object from container with GUID '%v'", containerId)
 	}
 
-
 	shouldKillEngineContainer = false
 	shouldRemoveCentralizedLogsComponentsContainers = false
 	return result, nil
@@ -329,7 +328,7 @@ func createCentralizedLogsComponents(
 func getAllLogsComponentsContainerIDs(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
-) ([]string, error){
+) ([]string, error) {
 
 	allEngineAndLogsComponentsContainerIDs := []string{}
 
@@ -343,7 +342,7 @@ func getAllLogsComponentsContainerIDs(
 		allLogsDatabaseContainerIDs := map[string]bool{}
 
 		for _, logsDatabaseContainer := range logsDatabaseContainers {
-			allLogsDatabaseContainerIDs[logsDatabaseContainer.GetId()]= true
+			allLogsDatabaseContainerIDs[logsDatabaseContainer.GetId()] = true
 		}
 
 		return allLogsDatabaseContainerIDs, nil
@@ -358,7 +357,7 @@ func getAllLogsComponentsContainerIDs(
 		allLogsCollectorContainerIDs := map[string]bool{}
 
 		for _, logsCollectorContainer := range logsCollectorContainers {
-			allLogsCollectorContainerIDs[logsCollectorContainer.GetId()]= true
+			allLogsCollectorContainerIDs[logsCollectorContainer.GetId()] = true
 		}
 
 		return allLogsCollectorContainerIDs, nil

@@ -3,13 +3,13 @@ package backend_creator
 import (
 	"context"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/metrics_reporting"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/metrics_reporting"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -20,8 +20,8 @@ import (
 // Struct encapsulating information needed to prep the DockerKurtosisBackend for extended API container functionality
 type APIContainerModeArgs struct {
 	// Normally storing a context in a struct is bad, but we only do this to package it together as part of "optional" args
-	Context   context.Context
-	EnclaveID enclave.EnclaveID
+	Context        context.Context
+	EnclaveID      enclave.EnclaveID
 	APIContainerIP net.IP
 }
 
@@ -53,7 +53,7 @@ func GetLocalDockerKurtosisBackend(
 		if err != nil {
 			return nil, stacktrace.Propagate(
 				err,
-				"An error occurred getting Docker networks matching enclave ID '%v', which is necessary for the API " +
+				"An error occurred getting Docker networks matching enclave ID '%v', which is necessary for the API "+
 					"container to get the network CIDR and its own IP address",
 				enclaveId,
 			)
@@ -69,8 +69,8 @@ func GetLocalDockerKurtosisBackend(
 		apiContainerIp := optionalApiContainerModeArgs.APIContainerIP
 
 		alreadyTakenIps := map[string]bool{
-			networkIp.String(): true,
-			network.GetGatewayIp(): true,
+			networkIp.String():      true,
+			network.GetGatewayIp():  true,
 			apiContainerIp.String(): true,
 		}
 

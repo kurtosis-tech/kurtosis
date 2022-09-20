@@ -2,9 +2,9 @@ package engine_functions
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -62,7 +62,7 @@ func DestroyEngines(
 	for guidStr, err := range erroredEngineGuidStrs {
 		erroredGuids[engine.EngineGUID(guidStr)] = stacktrace.Propagate(
 			err,
-		"An error occurred destroying engine '%v'",
+			"An error occurred destroying engine '%v'",
 			guidStr,
 		)
 	}

@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"net"
 )
 
@@ -14,7 +14,7 @@ type ServiceGUID string
 type Service struct {
 	registration *ServiceRegistration
 
-	status           container_status.ContainerStatus
+	status container_status.ContainerStatus
 
 	// Keyed by user-provided port ID
 	privatePorts map[string]*port_spec.PortSpec
@@ -23,7 +23,7 @@ type Service struct {
 	// This will only be non-nil if both:
 	// - The service's status is running
 	// - The backend type is Docker
-	maybePublicIp    net.IP
+	maybePublicIp net.IP
 
 	// When running in Docker, a mapping of service_port_id -> port_on_host_machine where the user can make requests to
 	//  access the service (where host machine == outside the Docker VM)

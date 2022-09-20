@@ -4,17 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/engine_functions"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/user_services_functions"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/engine_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/user_services_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	"net"
@@ -34,7 +34,6 @@ type KubernetesKurtosisBackend struct {
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs
 }
 
-
 // Private constructor that the other public constructors will use
 func newKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
@@ -44,11 +43,11 @@ func newKubernetesKurtosisBackend(
 ) *KubernetesKurtosisBackend {
 	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	return &KubernetesKurtosisBackend{
-		kubernetesManager:               kubernetesManager,
-		objAttrsProvider:                objAttrsProvider,
-		cliModeArgs:                     cliModeArgs,
-		engineServerModeArgs:            engineServerModeArgs,
-		apiContainerModeArgs:            apiContainerModeArgs,
+		kubernetesManager:    kubernetesManager,
+		objAttrsProvider:     objAttrsProvider,
+		cliModeArgs:          cliModeArgs,
+		engineServerModeArgs: engineServerModeArgs,
+		apiContainerModeArgs: apiContainerModeArgs,
 	}
 }
 
@@ -92,20 +91,20 @@ func NewCLIModeKubernetesKurtosisBackend(
 
 func NewKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
-	// TODO Remove the necessity for these different args by splitting the *KubernetesKurtosisBackend into multiple backends per consumer, e.g.
-	//  APIContainerKurtosisBackend, CLIKurtosisBackend, EngineKurtosisBackend, etc. This can only happen once the CLI
-	//  no longer uses the same functionality as API container, engine, etc. though
+// TODO Remove the necessity for these different args by splitting the *KubernetesKurtosisBackend into multiple backends per consumer, e.g.
+//  APIContainerKurtosisBackend, CLIKurtosisBackend, EngineKurtosisBackend, etc. This can only happen once the CLI
+//  no longer uses the same functionality as API container, engine, etc. though
 	cliModeArgs *shared_helpers.CliModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	apiContainerModeargs *shared_helpers.ApiContainerModeArgs,
 ) *KubernetesKurtosisBackend {
 	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	return &KubernetesKurtosisBackend{
-		kubernetesManager:               kubernetesManager,
-		objAttrsProvider:                objAttrsProvider,
-		cliModeArgs:                     cliModeArgs,
-		engineServerModeArgs:            engineServerModeArgs,
-		apiContainerModeArgs:            apiContainerModeargs,
+		kubernetesManager:    kubernetesManager,
+		objAttrsProvider:     objAttrsProvider,
+		cliModeArgs:          cliModeArgs,
+		engineServerModeArgs: engineServerModeArgs,
+		apiContainerModeArgs: apiContainerModeargs,
 	}
 }
 
@@ -365,7 +364,7 @@ func (backend *KubernetesKurtosisBackend) getEnclaveNamespaceName(ctx context.Co
 	} else if backend.apiContainerModeArgs != nil {
 		if enclaveId != backend.apiContainerModeArgs.GetOwnEnclaveId() {
 			return "", stacktrace.NewError(
-				"Received a request to get namespace for enclave '%v', but the Kubernetes Kurtosis backend is running in an API " +
+				"Received a request to get namespace for enclave '%v', but the Kubernetes Kurtosis backend is running in an API "+
 					"container in a different enclave '%v' (so Kubernetes would throw a permission error)",
 				enclaveId,
 				backend.apiContainerModeArgs.GetOwnEnclaveId(),

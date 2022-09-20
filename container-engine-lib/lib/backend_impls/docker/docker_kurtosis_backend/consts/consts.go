@@ -1,8 +1,8 @@
 package consts
 
 import (
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 )
 
 const (
@@ -28,8 +28,8 @@ const (
 	DockerSocketFilepath = "/var/run/docker.sock"
 
 	//Centralized logs component port IDs
-	LogsDatabaseHttpPortId = "http"
-	LogsCollectorTcpPortId = "tcp"
+	LogsDatabaseHttpPortId  = "http"
+	LogsCollectorTcpPortId  = "tcp"
 	LogsCollectorHttpPortId = "http"
 
 	//The Docker network name where all the containers in the engine context will be added

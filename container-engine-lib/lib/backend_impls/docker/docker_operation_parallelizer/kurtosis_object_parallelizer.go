@@ -2,7 +2,7 @@ package docker_operation_parallelizer
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -15,18 +15,18 @@ import (
 //  5) key the results by the Kurtosis ID
 func RunDockerOperationInParallelForKurtosisObjects(
 	ctx context.Context,
-	// The objects that will be operated upon, keyed by their Docker ID
-	// TODO Replace this stupid interface{} thing when we get generics!!
+// The objects that will be operated upon, keyed by their Docker ID
+// TODO Replace this stupid interface{} thing when we get generics!!
 	dockerKeyedKurtosisObjects map[string]interface{},
 	dockerManager *docker_manager.DockerManager,
-	// Function that will be applied to each Kurtosis object for extracting its key
-	// when categorizing the final results
-	// TODO Replace this stupid interface{} thing when we get generics!!
+// Function that will be applied to each Kurtosis object for extracting its key
+// when categorizing the final results
+// TODO Replace this stupid interface{} thing when we get generics!!
 	kurtosisKeyExtractor func(kurtosisObj interface{}) (string, error),
 	operationToApplyToAllDockerObjects DockerOperation,
 ) (
-	// Results of the Docker operation, keyed by Kurtosis object IDs (needs to be converted to the
-	// proper type). Nil error == no error occurred
+// Results of the Docker operation, keyed by Kurtosis object IDs (needs to be converted to the
+// proper type). Nil error == no error occurred
 	resultSuccessfulKurtosisObjectIds map[string]bool,
 	resultErroredKurtosisObjectIds map[string]error,
 	resultErr error,

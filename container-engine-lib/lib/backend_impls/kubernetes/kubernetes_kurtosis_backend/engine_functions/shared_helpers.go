@@ -2,13 +2,13 @@ package engine_functions
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	apiv1 "k8s.io/api/core/v1"
 	"net"
@@ -206,7 +206,7 @@ func getMatchingEngineKubernetesResources(
 		if serviceAccountsForId, found := serviceAccounts[engineGuidStr]; found {
 			if len(serviceAccountsForId) > 1 {
 				return nil, stacktrace.NewError(
-					"Expected at most one engine service account in namespace '%v' for engine with GUID '%v' " +
+					"Expected at most one engine service account in namespace '%v' for engine with GUID '%v' "+
 						"but found '%v'",
 					namespaceName,
 					engineGuid,
@@ -234,7 +234,7 @@ func getMatchingEngineKubernetesResources(
 		if servicesForId, found := services[engineGuidStr]; found {
 			if len(servicesForId) > 1 {
 				return nil, stacktrace.NewError(
-					"Expected at most one engine service in namespace '%v' for engine with GUID '%v' " +
+					"Expected at most one engine service in namespace '%v' for engine with GUID '%v' "+
 						"but found '%v'",
 					namespaceName,
 					engineGuid,
@@ -262,7 +262,7 @@ func getMatchingEngineKubernetesResources(
 		if podsForId, found := pods[engineGuidStr]; found {
 			if len(podsForId) > 1 {
 				return nil, stacktrace.NewError(
-					"Expected at most one engine pod in namespace '%v' for engine with GUID '%v' " +
+					"Expected at most one engine pod in namespace '%v' for engine with GUID '%v' "+
 						"but found '%v'",
 					namespaceName,
 					engineGuid,

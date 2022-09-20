@@ -1,7 +1,7 @@
 package label_value_consts
 
 import (
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 )
 
 const (
@@ -15,11 +15,11 @@ const (
 	engineKurtosisResourceTypeLabelValueStr = "kurtosis-engine"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	enclaveKurtosisResourceTypeLabelValueStr           			= "enclave"
-	apiContainerKurtosisResourceTypeLabelValueStr      			= "api-container"
-	userServiceKurtosisResourceTypeLabelValueStr       			= "user-service"
-	networkingSidecarKurtosisResourceTypeLabelValueStr 			= "networking-sidecar"
-	moduleKurtosisResourceTypeLabelValueStr            			= "module"
+	enclaveKurtosisResourceTypeLabelValueStr           = "enclave"
+	apiContainerKurtosisResourceTypeLabelValueStr      = "api-container"
+	userServiceKurtosisResourceTypeLabelValueStr       = "user-service"
+	networkingSidecarKurtosisResourceTypeLabelValueStr = "networking-sidecar"
+	moduleKurtosisResourceTypeLabelValueStr            = "module"
 
 	enclaveDataVolumeTypeLabelValueStr             = "enclave-data"
 	filesArtifactsExpansionVolumeTypeLabelValueStr = "files-artifacts-expansion"
@@ -36,6 +36,7 @@ const (
 //
 var AppIDKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(appIdLabelValueStr)
 var EngineKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(engineKurtosisResourceTypeLabelValueStr)
+
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 var ModuleKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(moduleKurtosisResourceTypeLabelValueStr)
