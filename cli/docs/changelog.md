@@ -3,6 +3,9 @@
 ### Fixes
 * Adds back the test for continuity
 
+### Features
+* Adds user services status to `kurtosis enclave inspect`
+
 # 0.29.1
 ### Fixes
 - Upgraded to container-engine-lib 0.38.4, core 1.59.5, and engine 1.34.4 to fix a bug with non-`0.0.0.0` host port bindings not getting skipped
