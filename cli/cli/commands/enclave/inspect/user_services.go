@@ -21,6 +21,7 @@ const (
 	userServiceGUIDColHeader      = "GUID"
 	userServiceIDColHeader        = "ID"
 	userServicePortsColHeader     = "Ports"
+	userServiceStatusColHeader    = "Status"
 	defaultEmptyIPAddrForServices = ""
 
 	missingPortPlaceholder = "<none>"
@@ -49,11 +50,13 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 		userServiceGUIDColHeader,
 		userServiceIDColHeader,
 		userServicePortsColHeader,
+		userServiceStatusColHeader,
 	)
 	sortedUserServices := getSortedUserServiceSliceFromUserServiceMap(userServices)
 	for _, userService := range sortedUserServices {
 		serviceIdStr := string(userService.GetRegistration().GetID())
 		guidStr := string(userService.GetRegistration().GetGUID())
+		serviceStatusStr := userService.GetStatus().String()
 
 		// Look for public port and IP information in API container map
 		maybePublicPortMapFromAPIC := map[string]*kurtosis_core_rpc_api_bindings.Port{}
@@ -73,7 +76,7 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 		firstPortBindingLine := portBindingLines[0]
 		additionalPortBindingLines := portBindingLines[1:]
 
-		if err := tablePrinter.AddRow(guidStr, serviceIdStr, firstPortBindingLine); err != nil {
+		if err := tablePrinter.AddRow(guidStr, serviceIdStr, firstPortBindingLine, serviceStatusStr); err != nil {
 			return stacktrace.Propagate(
 				err,
 				"An error occurred adding row for user service with GUID '%v' to the table printer",
