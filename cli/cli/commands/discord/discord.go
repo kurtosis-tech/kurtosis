@@ -35,7 +35,7 @@ func run(_ *cobra.Command, _ []string) error {
 		case windows:
 			args = []string{"rundll32", "url.dll,FileProtocolHandler", kurtosisDiscord}
 		default:
-			return stacktrace.NewError("Unsupported platform")
+			return stacktrace.NewError("Unsupported operating system")
 	}
 	command := exec.Command(args[0], args[1:]...)
 	return command.Start()
