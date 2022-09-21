@@ -9,7 +9,6 @@ script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # ==================================================================================================
 
 COMMANDS_TO_RUN=(
-    "run-envoy-proxy"
     "run-kurtosis-engine"
 )
 
@@ -22,11 +21,6 @@ PIDS_TO_WAIT_FOR=()
 function run-kurtosis-engine() {
     echo "starting kurtosis engine..."
     "${script_dirpath}"/kurtosis-engine
-}
-
-function run-envoy-proxy() {
-    echo "starting envoy proxy..."
-    envoy -c /etc/envoy/envoy.yaml
 }
 
 for command_to_run in "${COMMANDS_TO_RUN[@]}"; do

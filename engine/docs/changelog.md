@@ -1,4 +1,6 @@
 # TBD
+### Removals
+* Remove envoy proxy from docker image. No envoy proxy is being run anymore, effectively removing HTTP1.
 
 # 1.34.4
 ### Fixes
