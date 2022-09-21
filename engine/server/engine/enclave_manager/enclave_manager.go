@@ -3,17 +3,17 @@ package enclave_manager
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"sort"
 	"strings"
 	"sync"
 
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -24,19 +24,19 @@ const (
 
 	apiContainerListenGrpcProxyPortNumInsideNetwork = uint16(7444)
 
-	enclavesCleaningPhaseTitle             = "enclaves"
+	enclavesCleaningPhaseTitle = "enclaves"
 )
 
 // TODO Move this to the KurtosisBackend to calculate!!
 // Completeness enforced via unit test
 var isContainerRunningDeterminer = map[types.ContainerStatus]bool{
-	types.ContainerStatus_Paused: false,
+	types.ContainerStatus_Paused:     false,
 	types.ContainerStatus_Restarting: true,
-	types.ContainerStatus_Running: true,
-	types.ContainerStatus_Removing: false,
-	types.ContainerStatus_Dead: false,
-	types.ContainerStatus_Created: false,
-	types.ContainerStatus_Exited: false,
+	types.ContainerStatus_Running:    true,
+	types.ContainerStatus_Removing:   false,
+	types.ContainerStatus_Dead:       false,
+	types.ContainerStatus_Created:    false,
+	types.ContainerStatus_Exited:     false,
 }
 
 // Unfortunately, Docker doesn't have constants for the protocols it supports declared
@@ -61,14 +61,15 @@ func NewEnclaveManager(
 	apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier,
 ) *EnclaveManager {
 	return &EnclaveManager{
-		mutex:                               &sync.Mutex{},
-		kurtosisBackend:                     kurtosisBackend,
+		mutex:           &sync.Mutex{},
+		kurtosisBackend: kurtosisBackend,
 		apiContainerKurtosisBackendConfigSupplier: apiContainerKurtosisBackendConfigSupplier,
 	}
 }
 
 // It's a liiiitle weird that we return an EnclaveInfo object (which is a Protobuf object), but as of 2021-10-21 this class
-//  is only used by the EngineServerService so we might as well return the object that EngineServerService wants
+//
+//	is only used by the EngineServerService so we might as well return the object that EngineServerService wants
 func (manager *EnclaveManager) CreateEnclave(
 	setupCtx context.Context,
 	// If blank, will use the default
@@ -176,7 +177,8 @@ func (manager *EnclaveManager) CreateEnclave(
 }
 
 // It's a liiiitle weird that we return an EnclaveInfo object (which is a Protobuf object), but as of 2021-10-21 this class
-//  is only used by the EngineServerService so we might as well return the object that EngineServerService wants
+//
+//	is only used by the EngineServerService so we might as well return the object that EngineServerService wants
 func (manager *EnclaveManager) GetEnclaves(
 	ctx context.Context,
 ) (map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
@@ -214,7 +216,7 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveIdStr 
 
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
 	enclaveDestroyFilter := &enclave.EnclaveFilters{
-		IDs:      map[enclave.EnclaveID]bool{
+		IDs: map[enclave.EnclaveID]bool{
 			enclaveId: true,
 		},
 	}
@@ -347,7 +349,8 @@ func (manager *EnclaveManager) getEnclaveApiContainerInformation(
 }
 
 // Both StopEnclave and DestroyEnclave need to be able to stop enclaves, but both have a mutex guard. Because Go mutexes
-//  aren't reentrant, DestroyEnclave can't just call StopEnclave so we use this helper function
+//
+//	aren't reentrant, DestroyEnclave can't just call StopEnclave so we use this helper function
 func (manager *EnclaveManager) stopEnclaveWithoutMutex(ctx context.Context, enclaveId enclave.EnclaveID) error {
 	_, enclaveStopErrs, err := manager.kurtosisBackend.StopEnclaves(ctx, getEnclaveByEnclaveIdFilter(enclaveId))
 	if err != nil {
@@ -379,7 +382,7 @@ func (manager *EnclaveManager) stopEnclaveWithoutMutex(ctx context.Context, encl
 func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll bool) ([]string, []error, error) {
 	enclaveStatusFilters := map[enclave.EnclaveStatus]bool{
 		enclave.EnclaveStatus_Stopped: true,
-		enclave.EnclaveStatus_Empty: true,
+		enclave.EnclaveStatus_Empty:   true,
 	}
 	if shouldCleanAll {
 		enclaveStatusFilters[enclave.EnclaveStatus_Running] = true
@@ -418,7 +421,7 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 	for enclaveId, enclaveObj := range enclaves {
 		enclaveInfo, err := manager.getEnclaveInfoForEnclave(ctx, enclaveObj)
 		if err != nil {
-			return nil, stacktrace.Propagate(err,"An error occurred getting information about enclave '%v'", enclaveId)
+			return nil, stacktrace.Propagate(err, "An error occurred getting information about enclave '%v'", enclaveId)
 		}
 		result[enclaveId] = enclaveInfo
 	}
@@ -428,7 +431,7 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 
 func getEnclaveByEnclaveIdFilter(enclaveId enclave.EnclaveID) *enclave.EnclaveFilters {
 	return &enclave.EnclaveFilters{
-		IDs: map[enclave.EnclaveID]bool {
+		IDs: map[enclave.EnclaveID]bool{
 			enclaveId: true,
 		},
 	}
@@ -442,7 +445,7 @@ func getAllEnclavesFilter() *enclave.EnclaveFilters {
 
 func getApiContainerByEnclaveIdFilter(enclaveId enclave.EnclaveID) *api_container.APIContainerFilters {
 	return &api_container.APIContainerFilters{
-		EnclaveIDs: map[enclave.EnclaveID]bool {
+		EnclaveIDs: map[enclave.EnclaveID]bool{
 			enclaveId: true,
 		},
 	}
@@ -511,18 +514,18 @@ func (manager *EnclaveManager) getEnclaveInfoForEnclave(ctx context.Context, enc
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get EnclaveContainersStatus from the enclave status of enclave '%v', but an error occurred", enclaveId)
 	}
-	return &kurtosis_engine_rpc_api_bindings.EnclaveInfo {
-		EnclaveId:          enclaveIdStr,
-		ContainersStatus:   enclaveContainersStatus,
-		ApiContainerStatus: apiContainerStatus,
-		ApiContainerInfo: apiContainerInfo,
+	return &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
+		EnclaveId:                   enclaveIdStr,
+		ContainersStatus:            enclaveContainersStatus,
+		ApiContainerStatus:          apiContainerStatus,
+		ApiContainerInfo:            apiContainerInfo,
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
 	}, nil
 }
 
 // Returns nil if apiContainerMap is empty
 func getFirstApiContainerFromMap(apiContainerMap map[enclave.EnclaveID]*api_container.APIContainer) *api_container.APIContainer {
-	firstApiContainerFound := (*api_container.APIContainer) (nil)
+	firstApiContainerFound := (*api_container.APIContainer)(nil)
 	for _, apiContainer := range apiContainerMap {
 		firstApiContainerFound = apiContainer
 		break
@@ -555,4 +558,3 @@ func getApiContainerStatusFromContainerStatus(status container_status.ContainerS
 		return -1, stacktrace.NewError("Unrecognized container status '%v'; this is a bug in Kurtosis", status.String())
 	}
 }
-
