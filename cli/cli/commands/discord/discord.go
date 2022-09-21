@@ -26,6 +26,7 @@ const (
 var DiscordCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:       command_str_consts.DiscordCmdStr,
 	ShortDescription: "Opens the Kurtosis Discord",
+	LongDescription: "Opens the #general channel on the Kurtosis Discord server",
 	RunFunc:          run,
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:  engineClientCtxKey,
