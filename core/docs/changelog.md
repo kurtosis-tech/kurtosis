@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+* Uses the `kurtosis/container-engine-lib` inside the new mono repo instead of the `container-engine-lib`
+
 # 1.59.5
 ### Fixes
 - Upgrade to container-engine-lib to 0.38.4 to fix another bug with port selection 
