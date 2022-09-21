@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+* Attempting to fix the release version
+
 # 0.0.1
 
 ### Changes
