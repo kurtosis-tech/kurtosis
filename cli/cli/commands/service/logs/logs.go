@@ -7,9 +7,9 @@ package logs
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
