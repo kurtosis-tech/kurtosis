@@ -18,12 +18,17 @@ const (
 	macOSName          = "darwin"
 	windowsOSName      = "windows"
 	kurtosisDiscordUrl = "https://discord.com/channels/783719264308953108/783719264308953111"
+
+	kurtosisBackendCtxKey = "kurtosis-backend"
+	engineClientCtxKey = "engine-client"
 )
 
 var DiscordCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:       command_str_consts.DiscordCmdStr,
 	ShortDescription: "Opens the Kurtosis Discord",
 	RunFunc:          run,
+	KurtosisBackendContextKey: kurtosisBackendCtxKey,
+	EngineClientContextKey:  engineClientCtxKey,
 }
 
 func run(
