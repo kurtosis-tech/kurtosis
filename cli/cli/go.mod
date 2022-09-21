@@ -12,9 +12,9 @@ require (
 	github.com/dmarkham/enumer v1.5.5
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/go-yaml/yaml v2.1.0+incompatible
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220919225033-3cd8799c3fef
-	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220919225846-6997fea7a9f3
-	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220919225828-7575f40e96b3
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220921193815-debffebc0002
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220921212814-3e5a7b3ee795
+	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220921212751-fff23ea9ae12
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0-20220921175545-918c1123555a
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211205213337-f5088fc26465

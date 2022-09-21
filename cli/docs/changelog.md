@@ -1,7 +1,12 @@
 # TBD
 
+### Breaking Changes
+* Upgraded core to 1.59.6 and engine to 1.34.6
+  * Users need to restart their Kurtosis engine using `kurtosis engine restart`
+
 ### Changes
 * Uses the `kurtosis/container-engine-lib` inside the new mono repo instead of the `container-engine-lib` repo
+* Upgraded core to 1.59.6 and engine to 1.34.6
 
 # 0.29.3
 
