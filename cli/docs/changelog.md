@@ -1,5 +1,7 @@
 # TBD
 
+# 0.29.2
+
 ### Fixes
 * Adds back the test for continuity
 
