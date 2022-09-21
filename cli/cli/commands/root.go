@@ -98,7 +98,7 @@ func init() {
 	RootCmd.AddCommand(cluster.ClusterCmd)
 	RootCmd.AddCommand(config.ConfigCmd)
 	RootCmd.AddCommand(files.FilesCmd)
-	RootCmd.AddCommand(discord.Discord)
+	RootCmd.AddCommand(discord.DiscordCmd)
 }
 
 // ====================================================================================================

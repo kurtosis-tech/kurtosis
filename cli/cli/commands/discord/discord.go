@@ -9,13 +9,13 @@ import (
 )
 
 const (
-	linux = "linux"
-	mac = "darwin"
-	windows = "windows"
-	kurtosisDiscord = "https://discord.com/channels/783719264308953108/783719264308953111"
+	linuxOSName = "linux"
+	macOSName = "darwin"
+	windowsOSName      = "windows"
+	kurtosisDiscordUrl = "https://discord.com/channels/783719264308953108/783719264308953111"
 )
 
-var Discord = &cobra.Command{
+var DiscordCmd = &cobra.Command{
 	Use:   command_str_consts.DiscordCmdStr,
 	Short: "Opens the Kurtosis Discord",
 	RunE:  run,
@@ -28,15 +28,18 @@ func init() {
 func run(_ *cobra.Command, _ []string) error {
 	var args []string
 	switch runtime.GOOS {
-		case linux:
-			args = []string{"xdg-open", kurtosisDiscord}
-		case mac:
-			args = []string{"open", kurtosisDiscord}
-		case windows:
-			args = []string{"rundll32", "url.dll,FileProtocolHandler", kurtosisDiscord}
-		default:
-			return stacktrace.NewError("Unsupported operating system")
+	case linuxOSName:
+		args = []string{"xdg-open", kurtosisDiscordUrl}
+	case macOSName:
+		args = []string{"open", kurtosisDiscordUrl}
+	case windowsOSName:
+		args = []string{"rundll32", "url.dll,FileProtocolHandler", kurtosisDiscordUrl}
+	default:
+		return stacktrace.NewError("Unsupported operating system")
 	}
 	command := exec.Command(args[0], args[1:]...)
-	return command.Start()
+	if err := command.Start(); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while opening the Kurtosis DiscordCmd Channel")
+	}
+	return nil
 }
