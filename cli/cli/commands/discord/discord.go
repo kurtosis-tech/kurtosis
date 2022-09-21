@@ -14,7 +14,7 @@ const (
 )
 
 var Discord = &cobra.Command{
-	Use:   command_str_consts.VersionCmdStr,
+	Use:   command_str_consts.DiscordCmdStr,
 	Short: "Opens the Kurtosis Discord",
 	RunE:  run,
 }
