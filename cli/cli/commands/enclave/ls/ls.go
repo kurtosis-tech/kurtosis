@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_status_stringifier"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
@@ -24,7 +25,7 @@ const (
 	enclaveStatusColumnHeader = "Status"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
-	engineClientCtxKey  = "engine-client"
+	engineClientCtxKey    = "engine-client"
 )
 
 var EnclaveLsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -53,8 +54,10 @@ func run(
 	enclaveStatuses := map[string]string{}
 	for enclaveId, enclaveInfo := range enclaveInfoMap {
 		orderedEnclaveIds = append(orderedEnclaveIds, enclaveId)
-		//TODO refactor in order to print users friendly status strings and not the enum value
-		enclaveStatuses[enclaveId] = enclaveInfo.GetContainersStatus().String()
+		enclaveStatuses[enclaveId], err = enclave_status_stringifier.EnclaveContainersStatusStringifier(enclaveInfo.GetContainersStatus())
+		if err != nil {
+			return err
+		}
 	}
 	sort.Strings(orderedEnclaveIds)
 
