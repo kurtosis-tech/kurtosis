@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/clean"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/cluster"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/config"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/discord"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/engine"
 	files "github.com/kurtosis-tech/kurtosis-cli/cli/commands/files"
@@ -97,6 +98,7 @@ func init() {
 	RootCmd.AddCommand(cluster.ClusterCmd)
 	RootCmd.AddCommand(config.ConfigCmd)
 	RootCmd.AddCommand(files.FilesCmd)
+	RootCmd.AddCommand(discord.Discord)
 }
 
 // ====================================================================================================
