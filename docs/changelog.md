@@ -1,5 +1,7 @@
 # TBD
 
+# 0.49.1
+
 ### Fixes
 * Attempting to fix the release version
 ### Changes
