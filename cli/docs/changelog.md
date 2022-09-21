@@ -1,7 +1,17 @@
 # TBD
 
+# 0.29.3
+
+### Features
+* Adds a `discord` subcommand that launches the Kurtosis general discord channel
+
+# 0.29.2
+
 ### Fixes
 * Adds back the test for continuity
+
+### Features
+* Adds user services status to `kurtosis enclave inspect`
 
 # 0.29.1
 ### Fixes
