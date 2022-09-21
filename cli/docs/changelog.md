@@ -1,5 +1,7 @@
 # TBD
 
+# 0.29.3
+
 ### Features
 * Adds a `discord` subcommand that launches the Kurtosis general discord channel
 
