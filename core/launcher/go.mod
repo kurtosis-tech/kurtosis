@@ -3,7 +3,7 @@ module github.com/kurtosis-tech/kurtosis-core/launcher
 go 1.17
 
 require (
-	github.com/kurtosis-tech/container-engine-lib v0.38.4
+	github.com/kurtosis-tech/kurtosis v0.49.1
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
