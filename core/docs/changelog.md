@@ -1,7 +1,7 @@
 # TBD
 
 ### Changes
-* Uses the `kurtosis/container-engine-lib` inside the new mono repo instead of the `container-engine-lib`
+* Uses the `kurtosis/container-engine-lib` inside the new mono repo instead of the `container-engine-lib` repo
 
 # 1.59.5
 ### Fixes
