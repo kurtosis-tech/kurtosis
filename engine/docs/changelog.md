@@ -4,6 +4,10 @@
 ### Removals
 * Remove envoy proxy from docker image. No envoy proxy is being run anymore, effectively removing HTTP1.
 
+### Changes
+* Uses the `kurtosis/container-engine-lib` inside the new mono repo instead of the `container-engine-lib` repo
+* Uses `kurtosis-core` 1.59.6
+
 # 1.34.4
 ### Fixes
 - Upgrade to container-engine-lib to 0.38.4 and core 1.59.5 to fix another bug with port selection 

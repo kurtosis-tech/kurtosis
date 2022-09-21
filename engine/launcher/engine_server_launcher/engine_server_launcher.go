@@ -7,9 +7,9 @@ package engine_server_launcher
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -35,8 +35,8 @@ func NewEngineServerLauncher(kurtosisBackend backend_interface.KurtosisBackend) 
 func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	ctx context.Context,
 	logLevel logrus.Level,
-	grpcListenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
-	grpcProxyListenPortNum uint16, // Envoy proxy port that will forward grpc-web calls to the engine
+	grpcListenPortNum uint16,           // The port that the engine server will listen on AND the port that it should be bound to on the host machine
+	grpcProxyListenPortNum uint16,      // Envoy proxy port that will forward grpc-web calls to the engine
 	logsCollectorHttpPortNumber uint16, //The port that the logs collector will expose the HTTP server
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
@@ -44,7 +44,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
-	// NOTE: We can return a resultPublicGrpcProxyPortNum here if we ever need it
+// NOTE: We can return a resultPublicGrpcProxyPortNum here if we ever need it
 	resultErr error,
 ) {
 	publicIpAddr, publicGrpcPortSpec, err := launcher.LaunchWithCustomVersion(
@@ -68,8 +68,8 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	ctx context.Context,
 	imageVersionTag string,
 	logLevel logrus.Level,
-	grpcListenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
-	grpcProxyListenPortNum uint16, // Envoy proxy port that will forward grpc-web calls to the engine
+	grpcListenPortNum uint16,           // The port that the engine server will listen on AND the port that it should be bound to on the host machine
+	grpcProxyListenPortNum uint16,      // Envoy proxy port that will forward grpc-web calls to the engine
 	logsCollectorHttpPortNumber uint16, //The port that the logs collector will expose the HTTP server
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
