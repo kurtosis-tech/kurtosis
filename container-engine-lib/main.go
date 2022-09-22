@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
@@ -53,6 +53,7 @@ func runDockerManagerTesting() error {
 	}
 	dockerManager := docker_manager.NewDockerManager(dockerClient)
 
+
 	// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv Arbitrary logic goes here vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 	result, err := dockerManager.GetContainersByLabels(ctx, map[string]string{}, false)
 	if err != nil {
@@ -78,6 +79,7 @@ func runKubernetesManagerTesting() error {
 	}
 	kubernetesManager := kubernetes_manager.NewKubernetesManager(clientSet, kubernetesConfig)
 
+
 	// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv Arbitrary logic goes here vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 	kubernetesManager.GetNamespace(ctx, "TODO")
 
@@ -87,6 +89,7 @@ func runKubernetesManagerTesting() error {
 // Can comment which backend you want to use
 func runKurtosisBackendTesting() error {
 	ctx := context.Background()
+
 
 	backend, err := backend_creator.GetLocalDockerKurtosisBackend(nil)
 	if err != nil {
@@ -103,7 +106,6 @@ func runKurtosisBackendTesting() error {
 		"1.29.0",
 		9710,
 		9711,
-		9712,
 		serializedArgs,
 	)
 	if err != nil {
@@ -111,41 +113,41 @@ func runKurtosisBackendTesting() error {
 	}
 	logrus.Infof("Engine 1 info: %+v", engine)
 
-	/*engineFil := &engine_object.EngineFilters{
-		GUIDs: map[engine_object.EngineGUID]bool{
-			engine.GetGUID(): true,
-		},
-		Statuses: map[container_status.ContainerStatus]bool{
-			container_status.ContainerStatus_Running: true,
-		},
-	}
-	stoppedEngineGuids, erroredEngineGuids, err := backend.StopEngines(ctx, engineFil)
-	if err != nil {
-		return err
-	}
-	logrus.Infof("Successfull stopped engines: %+v", stoppedEngineGuids)
-	logrus.Infof("Errored stopped engines: %+v", erroredEngineGuids)
-	*/
+		/*engineFil := &engine_object.EngineFilters{
+			GUIDs: map[engine_object.EngineGUID]bool{
+				engine.GetGUID(): true,
+			},
+			Statuses: map[container_status.ContainerStatus]bool{
+				container_status.ContainerStatus_Running: true,
+			},
+		}
+		stoppedEngineGuids, erroredEngineGuids, err := backend.StopEngines(ctx, engineFil)
+		if err != nil {
+			return err
+		}
+		logrus.Infof("Successfull stopped engines: %+v", stoppedEngineGuids)
+		logrus.Infof("Errored stopped engines: %+v", erroredEngineGuids)
+		*/
 
-	serializedArgs2 := map[string]string{
-		"SERIALIZED_ARGS": `{"grpcListenPortNum":9810,"grpcProxyListenPortNum":9811,"logLevelStr":"debug","imageVersionTag":"1.29.0","metricsUserId":"552f","didUserAcceptSendingMetrics":false,"kurtosisBackendType":"docker","kurtosisBackendConfig":{}}`,
-	}
 
-	engine2, err := backend.CreateEngine(
-		ctx,
-		"kurtosistech/kurtosis-engine-server",
-		"1.29.0",
-		9810,
-		9811,
-		9812,
-		serializedArgs2,
-	)
-	if err != nil {
-		return err
-	}
-	logrus.Infof("Engine 2 info: %+v", engine2)
+		serializedArgs2 := map[string]string{
+			"SERIALIZED_ARGS": `{"grpcListenPortNum":9810,"grpcProxyListenPortNum":9811,"logLevelStr":"debug","imageVersionTag":"1.29.0","metricsUserId":"552f","didUserAcceptSendingMetrics":false,"kurtosisBackendType":"docker","kurtosisBackendConfig":{}}`,
+		}
 
-	/*
+		engine2, err := backend.CreateEngine(
+			ctx,
+			"kurtosistech/kurtosis-engine-server",
+			"1.29.0",
+			9810,
+			9811,
+			serializedArgs2,
+		)
+		if err != nil {
+			return err
+		}
+		logrus.Infof("Engine 2 info: %+v", engine2)
+
+/*
 		engineFil2 := &engine_object.EngineFilters{
 			GUIDs: map[engine_object.EngineGUID]bool{
 				engine.GetGUID(): true,
@@ -220,6 +222,7 @@ func runKurtosisBackendTesting() error {
 			return err
 		}
 	*/
+
 
 	// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv Arbitrary logic goes here vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 	// enclaveId := enclave.EnclaveID("test")  // TODO Make this whatever you need

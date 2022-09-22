@@ -3,25 +3,23 @@ package engine_functions
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 	"strconv"
 	"strings"
 )
 
-const (
-	shouldShowStoppedLogsDatabaseContainers = true
-)
+
 
 // Gets engines matching the search filters, indexed by their container ID
 func getMatchingEngines(ctx context.Context, filters *engine.EngineFilters, dockerManager *docker_manager.DockerManager) (map[string]*engine.Engine, error) {
@@ -255,75 +253,4 @@ func extractEngineGuidFromUncastedEngineObj(uncastedEngineObj interface{}) (stri
 		return "", stacktrace.NewError("An error occurred downcasting the engine object")
 	}
 	return string(castedObj.GetGUID()), nil
-}
-
-func getAllLogsDatabaseContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]*types.Container, error) {
-	matchingLogsDatabaseContainers := []*types.Container{}
-
-	logsDatabaseContainerSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.LogsDatabaseTypeDockerLabelValue.GetString(),
-	}
-
-	matchingLogsDatabaseContainers, err := dockerManager.GetContainersByLabels(ctx, logsDatabaseContainerSearchLabels, shouldShowStoppedLogsDatabaseContainers)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred fetching logs database containers using labels: %+v", logsDatabaseContainerSearchLabels)
-	}
-	return matchingLogsDatabaseContainers, nil
-}
-
-func removeLogsComponentsGracefully(
-	ctx context.Context,
-	engineFilters *engine.EngineFilters,
-	dockerManager *docker_manager.DockerManager) error {
-
-	//This is a giant hack to prevent removing the logs components containers when these shouldn't be removed
-	//TODO this hack should be removed when we untied the logs components from the engine
-	shouldRemoveLogsComponents := false
-
-	if engineFilters.Statuses == nil || len(engineFilters.Statuses) == 0 {
-		shouldRemoveLogsComponents = true
-	}
-
-	for engineStatus := range engineFilters.Statuses {
-		if engineStatus == container_status.ContainerStatus_Running {
-			shouldRemoveLogsComponents = true
-		}
-	}
-
-	if !shouldRemoveLogsComponents {
-		return nil
-	}
-
-	allLogsCollectorContainers, err := shared_helpers.GetAllLogsCollectorContainers(ctx, dockerManager)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting all logs collector containers")
-	}
-
-	for _, logsCollectorContainer := range allLogsCollectorContainers {
-		if err := dockerManager.StopContainer(ctx, logsCollectorContainer.GetId(), stopLogsComponentsContainersTimeout); err != nil {
-			return stacktrace.Propagate(err, "An error occurred stopping the logs collector container with ID '%v'", logsCollectorContainer.GetId())
-		}
-
-		if err := dockerManager.RemoveContainer(ctx, logsCollectorContainer.GetId()); err != nil {
-			return stacktrace.Propagate(err, "An error occurred removing the logs collector container with ID '%v'", logsCollectorContainer.GetId())
-		}
-	}
-
-	allLogsDatabaseContainers, err := getAllLogsDatabaseContainers(ctx, dockerManager)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting all logs database containers")
-	}
-
-	for _, logsDatabaseContainer := range allLogsDatabaseContainers {
-		if err := dockerManager.StopContainer(ctx, logsDatabaseContainer.GetId(), stopLogsComponentsContainersTimeout); err != nil {
-			return stacktrace.Propagate(err, "An error occurred stopping the logs database container with ID '%v'", logsDatabaseContainer.GetId())
-		}
-
-		if err := dockerManager.RemoveContainer(ctx, logsDatabaseContainer.GetId()); err != nil {
-			return stacktrace.Propagate(err, "An error occurred removing the logs database container with ID '%v'", logsDatabaseContainer.GetId())
-		}
-	}
-
-	return nil
 }

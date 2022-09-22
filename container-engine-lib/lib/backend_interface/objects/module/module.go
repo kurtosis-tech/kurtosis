@@ -1,9 +1,9 @@
 package module
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"net"
 )
 
@@ -13,11 +13,11 @@ type ModuleGUID string
 // Object that represents POINT-IN-TIME information about a Kurtosis Module
 // Store this object and continue to reference it at your own risk!!!
 type Module struct {
-	enclaveId   enclave.EnclaveID
-	id          ModuleID
-	guid        ModuleGUID
-	status      container_status.ContainerStatus
-	privateIp   net.IP
+	enclaveId enclave.EnclaveID
+	id ModuleID
+	guid ModuleGUID
+	status container_status.ContainerStatus
+	privateIp net.IP
 	privatePort *port_spec.PortSpec
 
 	// Will be nil if the module isn't running, or if the backend is Kubernetes

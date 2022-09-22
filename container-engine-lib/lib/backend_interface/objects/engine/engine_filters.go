@@ -1,6 +1,6 @@
 package engine
 
-import "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+import "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 
 type EngineFilters struct {
 	// Disjunctive set of engine GUIDs to find engines for

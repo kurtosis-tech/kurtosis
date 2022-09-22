@@ -2,7 +2,7 @@ package kubernetes_resource_collectors
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/stacktrace"
 	rbacv1 "k8s.io/api/rbac/v1"
 )
@@ -17,7 +17,6 @@ import (
 type roleKubernetesResource struct {
 	underlying rbacv1.Role
 }
-
 func (resource roleKubernetesResource) getName() string {
 	return resource.underlying.Name
 }

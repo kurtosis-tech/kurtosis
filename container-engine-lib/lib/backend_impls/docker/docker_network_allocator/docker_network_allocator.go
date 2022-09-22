@@ -3,7 +3,7 @@ package docker_network_allocator
 import (
 	"context"
 	"encoding/binary"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -30,7 +30,7 @@ const (
 	timeBetweenNetworkCreationRetries = 1 * time.Second
 )
 
-var networkCidrMask = net.CIDRMask(int(supportedIpAddrBitLength-networkWidthBits), int(supportedIpAddrBitLength))
+var networkCidrMask = net.CIDRMask(int(supportedIpAddrBitLength - networkWidthBits), int(supportedIpAddrBitLength))
 var networkWidthUint64 = uint64(math.Pow(float64(2), float64(networkWidthBits)))
 var maxUint32PlusOne = uint64(math.MaxUint32) + 1
 
@@ -49,63 +49,63 @@ var disallowedIpRanges = [][][]byte{
 	},
 	{
 		// Shared address space for communications between a service provider and its subscribers when using a carrier-grade NAT
-		{100, 64, 0, 0}, {100, 127, 255, 255},
+		{100,64,0,0}, {100,127,255,255},
 	},
 	{
 		// Used for loopback addresses to the local host
-		{127, 0, 0, 0}, {127, 255, 255, 255},
+		{127,0,0,0}, {127,255,255,255},
 	},
 	{
 		// Used for link-local addresses between two hosts on a single link when no IP address is otherwise specified, such as would have normally been retrieved from a DHCP server
-		{169, 254, 0, 0}, {169, 254, 255, 255},
+		{169,254,0,0}, {169,254,255,255},
 	},
 	{
 		// Used for local communications within a private network
-		{172, 16, 0, 0}, {172, 31, 255, 255},
+		{172,16,0,0}, {172,31,255,255},
 	},
 	{
 		// IETF Protocol Assignments
-		{192, 0, 0, 0}, {192, 0, 0, 255},
+		{192,0,0,0}, {192,0,0,255},
 	},
 	{
 		// Assigned as TEST-NET-1, documentation and examples
-		{192, 0, 2, 0}, {192, 0, 2, 255},
+		{192,0,2,0}, {192,0,2,255},
 	},
 	{
 		// Reserved; formerly used for IPv6 to IPv4 relay (included IPv6 address block 2002::/16)
-		{192, 88, 99, 0}, {192, 88, 99, 255},
+		{192,88,99,0}, {192,88,99,255},
 	},
 	{
 		// Used for local communications within a private network
-		{192, 168, 0, 0}, {192, 168, 255, 255},
+		{192,168,0,0}, {192,168,255,255},
 	},
 	{
 		// Used for benchmark testing of inter-network communications between two separate subnets
-		{198, 18, 0, 0}, {198, 19, 255, 255},
+		{198,18,0,0}, {198,19,255,255},
 	},
 	{
 		// Assigned as TEST-NET-2, documentation and examples
-		{198, 51, 100, 0}, {198, 51, 100, 255},
+		{198,51,100,0}, {198,51,100,255},
 	},
 	{
 		// Assigned as TEST-NET-3, documentation and examples
-		{203, 0, 113, 0}, {203, 0, 113, 255},
+		{203,0,113,0}, {203,0,113,255},
 	},
 	{
 		// In use for IP multicast (Former Class D network)
-		{224, 0, 0, 0}, {239, 255, 255, 255},
+		{224,0,0,0}, {239,255,255,255},
 	},
 	{
 		// Assigned as MCAST-TEST-NET, documentation and examples
-		{233, 252, 0, 0}, {233, 252, 0, 255},
+		{233,252,0,0}, {233,252,0,255},
 	},
 	{
 		// Reserved for future use (Former Class E network)
-		{240, 0, 0, 0}, {255, 255, 255, 254},
+		{240,0,0,0}, {255,255,255,254},
 	},
 	{
 		// Reserved for the "limited broadcast" destination address
-		{255, 255, 255, 255}, {255, 255, 255, 255},
+		{255,255,255,255}, {255,255,255,255},
 	},
 }
 
@@ -113,7 +113,7 @@ type DockerNetworkAllocator struct {
 	// Our constructor sets the rand.Seed, so we want to force users to use the constructor
 	// This private variable guarantees it
 	isConstructedViaConstructor bool
-	dockerManager               *docker_manager.DockerManager
+	dockerManager *docker_manager.DockerManager
 }
 
 func NewDockerNetworkAllocator(dockerManager *docker_manager.DockerManager) *DockerNetworkAllocator {
@@ -124,9 +124,10 @@ func NewDockerNetworkAllocator(dockerManager *docker_manager.DockerManager) *Doc
 
 	return &DockerNetworkAllocator{
 		isConstructedViaConstructor: true,
-		dockerManager:               dockerManager,
+		dockerManager: dockerManager,
 	}
 }
+
 
 func (provider *DockerNetworkAllocator) CreateNewNetwork(
 	ctx context.Context,
@@ -190,9 +191,9 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 		}
 
 		logrus.Debugf(
-			"Tried to create network '%v' with CIDR '%v', but Docker returned the '%v' error indicating that either:\n"+
-				" 1) there used to be a Docker network that used those IPs that was just deleted (Docker will report a network as deleted earlier than its IPs are freed)\n"+
-				" 2) a new network was created after we scanned for used IPs but before we made the call to create the network\n"+
+			"Tried to create network '%v' with CIDR '%v', but Docker returned the '%v' error indicating that either:\n" +
+				" 1) there used to be a Docker network that used those IPs that was just deleted (Docker will report a network as deleted earlier than its IPs are freed)\n" +
+				" 2) a new network was created after we scanned for used IPs but before we made the call to create the network\n" +
 				"Either way, we'll sleep for %v and retry",
 			networkName,
 			freeNetworkIpAndMask.String(),

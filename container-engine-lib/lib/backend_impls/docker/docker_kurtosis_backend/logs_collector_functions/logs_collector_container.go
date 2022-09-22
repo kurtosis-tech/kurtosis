@@ -1,10 +1,9 @@
-package logs_components
+package logs_collector_functions
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 )
 
 type LogsCollectorContainer interface {
@@ -15,12 +14,13 @@ type LogsCollectorContainer interface {
 		httpPortNumber uint16,
 		logsCollectorTcpPortId string,
 		logsCollectorHttpPortId string,
-		engineGuid engine.EngineGUID,
 		targetNetworkId string,
 		objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 		dockerManager *docker_manager.DockerManager,
 	) (
-		resultKillLogsCollectorContainerFunc func(),
+		resultContainerId  string,
+		resultContainerLabels map[string]string,
+		resultRemoveLogsCollectorContainerFunc func(),
 		resultErr error,
 	)
 }

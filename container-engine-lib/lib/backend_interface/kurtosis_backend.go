@@ -2,13 +2,15 @@ package backend_interface
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/logs_database"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"io"
 	"net"
 )
@@ -34,7 +36,6 @@ type KurtosisBackend interface {
 		imageVersionTag string,
 		grpcPortNum uint16,
 		grpcProxyPortNum uint16,
-		logsCollectorHttpPortNumber uint16,
 		envVars map[string]string,
 	) (
 		*engine.Engine,
@@ -50,8 +51,8 @@ type KurtosisBackend interface {
 		filters *engine.EngineFilters,
 	) (
 		successfulEngineGuids map[engine.EngineGUID]bool, // "set" of engine GUIDs that were successfully stopped
-		erroredEngineGuids map[engine.EngineGUID]error,   // "set" of engine GUIDs that errored when stopping, with the error
-		resultErr error,                                  // Represents an error with the function itself, rather than the engines
+		erroredEngineGuids map[engine.EngineGUID]error, // "set" of engine GUIDs that errored when stopping, with the error
+		resultErr error, // Represents an error with the function itself, rather than the engines
 	)
 
 	// Destroys the engines matching the given filters, regardless of if they're running or not
@@ -60,8 +61,8 @@ type KurtosisBackend interface {
 		filters *engine.EngineFilters,
 	) (
 		successfulEngineGuids map[engine.EngineGUID]bool, // "set" of engine GUIDs that were successfully destroyed
-		erroredEngineGuids map[engine.EngineGUID]error,   // "set" of engine GUIDs that errored when destroying, with the error
-		resultErr error,                                  // Represents an error with the function itself, rather than the engines
+		erroredEngineGuids map[engine.EngineGUID]error, // "set" of engine GUIDs that errored when destroying, with the error
+		resultErr error, // Represents an error with the function itself, rather than the engines
 	)
 
 	// Creates an enclave with the given enclave ID
@@ -117,8 +118,8 @@ type KurtosisBackend interface {
 		grpcPortNum uint16,
 		grpcProxyPortNum uint16,
 		enclaveDataVolumeDirpath string,
-	// The environment variable that the user is requesting to populate with the container's own IP address
-	// Must not conflict with the custom environment variables
+		// The environment variable that the user is requesting to populate with the container's own IP address
+		// Must not conflict with the custom environment variables
 		ownIpAddressEnvVar string,
 		customEnvVars map[string]string,
 	) (
@@ -130,7 +131,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *api_container.APIContainerFilters,
 	) (
-	// Matching API containers, keyed by their enclave ID
+		// Matching API containers, keyed by their enclave ID
 		map[enclave.EnclaveID]*api_container.APIContainer,
 		error,
 	)
@@ -140,7 +141,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *api_container.APIContainerFilters,
 	) (
-	// Successful & errored API containers are keyed by their enclave ID
+		// Successful & errored API containers are keyed by their enclave ID
 		successfulApiContainerIds map[enclave.EnclaveID]bool,
 		erroredApiContainerIds map[enclave.EnclaveID]error,
 		resultErr error,
@@ -151,7 +152,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *api_container.APIContainerFilters,
 	) (
-	// Successful & errored API containers are keyed by their enclave ID
+		// Successful & errored API containers are keyed by their enclave ID
 		successfulApiContainerIds map[enclave.EnclaveID]bool,
 		erroredApiContainerIds map[enclave.EnclaveID]error,
 		resultErr error,
@@ -200,8 +201,8 @@ type KurtosisBackend interface {
 		filters *module.ModuleFilters,
 	) (
 		successfulModuleIds map[module.ModuleGUID]bool, // "set" of module IDs that were successfully stopped
-		erroredModuleIds map[module.ModuleGUID]error,   // "set" of module IDs that errored when being stopped, with the error
-		resultErr error,                                // Represents an error with the function itself, rather than the modules
+		erroredModuleIds map[module.ModuleGUID]error, // "set" of module IDs that errored when being stopped, with the error
+		resultErr error, // Represents an error with the function itself, rather than the modules
 	)
 
 	// Destroys the modules with the given filters, regardless of if they're running or not
@@ -211,18 +212,18 @@ type KurtosisBackend interface {
 		filters *module.ModuleFilters,
 	) (
 		successfulModuleIds map[module.ModuleGUID]bool, // "set" of module IDs that were successfully destroyed
-		erroredModuleIds map[module.ModuleGUID]error,   // "set" of module IDs that errored when destroying, with the error
-		resultErr error,                                // Represents an error with the function itself, rather than the modules
+		erroredModuleIds map[module.ModuleGUID]error, // "set" of module IDs that errored when destroying, with the error
+		resultErr error, // Represents an error with the function itself, rather than the modules
 	)
 
 	/*
-			                           KURTOSIS SERVICE STATE DIAGRAM
-		                                .-----------------DestroyServices--------------------.
-		                               /                                                      \
-			  StartServices--> RUNNING ---StopServices---> STOPPED ---DestroyServices---> DESTROYED
+		                           KURTOSIS SERVICE STATE DIAGRAM
+	                                .-----------------DestroyServices--------------------.
+	                               /                                                      \
+		  StartServices--> RUNNING ---StopServices---> STOPPED ---DestroyServices---> DESTROYED
 
-			- Note the above state diagram doesn't account for PauseService or UnpauseService
-			- As of 2022-05-15, Kurtosis services can never be restarted once stopped.
+		- Note the above state diagram doesn't account for PauseService or UnpauseService
+		- As of 2022-05-15, Kurtosis services can never be restarted once stopped.
 	*/
 
 	// StartUserService consumes service registrations to create auser container for each registration, given each service config
@@ -315,8 +316,8 @@ type KurtosisBackend interface {
 		filters *service.ServiceFilters,
 	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully stopped
-		erroredUserServiceGuids map[service.ServiceGUID]error,   // "set" of user service GUIDs that errored when stopping, with the error
-		resultErr error,                                         // Represents an error with the function itself, rather than the user services
+		erroredUserServiceGuids map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when stopping, with the error
+		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
 	// DestroyUserServices destroys user services matching the given filters, removing all resources associated with it
@@ -326,8 +327,8 @@ type KurtosisBackend interface {
 		filters *service.ServiceFilters,
 	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully destroyed
-		erroredUserServiceGuids map[service.ServiceGUID]error,   // "set" of user service GUIDs that errored when destroying, with the error
-		resultErr error,                                         // Represents an error with the function itself, rather than the user services
+		erroredUserServiceGuids map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when destroying, with the error
+		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
 	// TODO Move this logic inside the user service, so that we have tighter controls on what can happen and what can't
@@ -380,4 +381,41 @@ type KurtosisBackend interface {
 		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultErr error,
 	)
+
+	// Create a new Logs Database for storing and requesting the container's logs
+	CreateLogsDatabase(
+		ctx context.Context,
+	) (
+		*logs_database.LogsDatabase,
+		error,
+	)
+
+	// Gets the logs database
+	GetLogsDatabase(ctx context.Context) (*logs_database.LogsDatabase, error)
+
+	// Stop the logs database
+	StopLogsDatabase(ctx context.Context) error
+
+	// Destroy the logs database
+	DestroyLogsDatabase(ctx context.Context) error
+
+	//TODO I'd add a comment to CreateLogsCollector saying that it requires the logs DB to be up
+
+	// Create a new Logs Collector for sending container's logs to the logs database server
+	CreateLogsCollector(
+		ctx context.Context,
+		logsCollectorHttpPortNumber uint16,
+	) (
+		*logs_collector.LogsCollector,
+		error,
+	)
+
+	// Gets the logs collector
+	GetLogsCollector(ctx context.Context) (*logs_collector.LogsCollector, error)
+
+	// Stop the logs collector
+	StopLogsCollector(ctx context.Context) error
+
+	// Destroy the logs collector
+	DestroyLogsCollector(ctx context.Context) error
 }

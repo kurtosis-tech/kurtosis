@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 )
 
 // Selector for matching services inside an enclave

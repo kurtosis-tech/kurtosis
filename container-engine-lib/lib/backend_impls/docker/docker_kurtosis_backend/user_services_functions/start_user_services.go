@@ -4,16 +4,17 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/operation_parallelizer"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/operation_parallelizer"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -32,6 +33,7 @@ func StartUserServices(
 	services map[service.ServiceID]*service.ServiceConfig,
 	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration,
 	serviceRegistrationMutex *sync.Mutex,
+	logsCollector *logs_collector.LogsCollector,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
@@ -151,14 +153,10 @@ func StartUserServices(
 		return nil, nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveID)
 	}
 
-	logsCollectorServiceAddress, err := shared_helpers.GetLogsCollectorServiceAddress(ctx, dockerManager)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector service address")
-	}
-
+	logsCollectorServiceAddress := logsCollector.GetPrivateTcpAddress()
 	//The following docker labels will be added into the logs stream which is necessary for creating new tags
 	//in the logs database and then use it for querying them to get the specific user service's logs
-	logsCollectorLabels := logs_components.LogsCollectorLabels{
+	logsCollectorLabels := logs_collector_functions.LogsCollectorLabels{
 		label_key_consts.EnclaveIDDockerLabelKey.GetString(),
 		label_key_consts.GUIDDockerLabelKey.GetString(),
 		label_key_consts.ContainerTypeDockerLabelKey.GetString(),
@@ -174,7 +172,7 @@ func StartUserServices(
 		dockerManager,
 		logsCollectorServiceAddress,
 		logsCollectorLabels,
-	)
+		)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to start services in parallel.")
 	}
@@ -208,8 +206,8 @@ func runStartServiceOperationsInParallel(
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
 	freeIpAddrProvider *lib.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
-	logsCollectorAddress logs_components.LogsCollectorAddress,
-	logsCollectorLabels logs_components.LogsCollectorLabels,
+	logsCollectorAddress logs_collector.LogsCollectorAddress,
+	logsCollectorLabels logs_collector_functions.LogsCollectorLabels,
 ) (
 	map[service.ServiceID]*service.Service,
 	map[service.ServiceID]error,
@@ -269,8 +267,8 @@ func createStartServiceOperation(
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
 	freeIpAddrProvider *lib.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
-	logsCollectorAddress logs_components.LogsCollectorAddress,
-	logsCollectorLabels logs_components.LogsCollectorLabels,
+	logsCollectorAddress logs_collector.LogsCollectorAddress,
+	logsCollectorLabels logs_collector_functions.LogsCollectorLabels,
 ) operation_parallelizer.Operation {
 	id := serviceRegistration.GetID()
 	privateIpAddr := serviceRegistration.GetPrivateIP()
@@ -406,6 +404,7 @@ func createStartServiceOperation(
 		if volumeMounts != nil {
 			createAndStartArgsBuilder.WithVolumeMounts(volumeMounts)
 		}
+
 
 		createAndStartArgs := createAndStartArgsBuilder.Build()
 

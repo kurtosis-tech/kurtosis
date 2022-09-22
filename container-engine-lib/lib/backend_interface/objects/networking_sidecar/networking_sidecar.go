@@ -1,15 +1,15 @@
 package networking_sidecar
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 )
 
 type NetworkingSidecar struct {
 	serviceGuid service.ServiceGUID
-	enclaveId   enclave.EnclaveID
-	status      container_status.ContainerStatus
+	enclaveId enclave.EnclaveID
+	status container_status.ContainerStatus
 }
 
 func NewNetworkingSidecar(serviceGuid service.ServiceGUID, enclaveId enclave.EnclaveID, status container_status.ContainerStatus) *NetworkingSidecar {

@@ -1,22 +1,22 @@
 package object_attributes_provider
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_object_name"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_object_name"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
 const (
-	engineNamePrefix = "kurtosis-engine"
+	engineNamePrefix                = "kurtosis-engine"
 )
 
 type KubernetesEngineObjectAttributesProvider interface {
@@ -69,7 +69,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEnginePod() (Ku
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
@@ -107,7 +107,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
@@ -130,7 +130,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineNamespace
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
@@ -153,7 +153,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineServiceAc
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
@@ -176,7 +176,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRo
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
@@ -199,7 +199,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRo
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
@@ -219,7 +219,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) getEngineObjectLab
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue,
 		label_key_consts.IDKubernetesLabelKey:                   guidLabelValue,
-		label_key_consts.GUIDKubernetesLabelKey:                 guidLabelValue,
+		label_key_consts.GUIDKubernetesLabelKey:                   guidLabelValue,
 	}
 	return labels, nil
 }

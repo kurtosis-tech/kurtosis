@@ -10,10 +10,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -35,14 +35,14 @@ import (
 
 const (
 	defaultPersistentVolumeClaimAccessMode = apiv1.ReadWriteOnce
-	binaryMegabytesSuffix                  = "Mi"
-	uintToIntStringConversionBase          = 10
+	binaryMegabytesSuffix         		   = "Mi"
+	uintToIntStringConversionBase		   = 10
 
 	waitForPersistentVolumeBoundInitialDelayMilliSeconds = 100
-	waitForPersistentVolumeBoundTimeout                  = 60 * time.Second
+	waitForPersistentVolumeBoundTimeout = 60 * time.Second
 	waitForPersistentVolumeBoundRetriesDelayMilliSeconds = 500
 
-	podWaitForAvailabilityTimeout          = 15 * time.Minute
+	podWaitForAvailabilityTimeout = 15 * time.Minute
 	podWaitForAvailabilityTimeBetweenPolls = 500 * time.Millisecond
 
 	// This is a container "reason" (machine-readable string) indicating that the container has some issue with
@@ -53,12 +53,12 @@ const (
 	containerStatusLineBulletPoint = " - "
 
 	// Kubernetes unfortunately doesn't have a good way to get the exit code out, so we have to parse it out of a string
-	expectedTerminationMessage = "command terminated with exit code"
+	expectedTerminationMessage				= "command terminated with exit code"
 
-	shouldAllocateStdinOnPodExec   = false
+	shouldAllocateStdinOnPodExec = false
 	shouldAllocatedStdoutOnPodExec = true
 	shouldAllocatedStderrOnPodExec = true
-	shouldAllocateTtyOnPodExec     = false
+	shouldAllocateTtyOnPodExec = false
 
 	successExecCommandExitCode = 0
 
@@ -66,7 +66,7 @@ const (
 	fieldManager = "kurtosis"
 
 	shouldFollowContainerLogsWhenPrintingPodInfo = false
-	shouldAddTimestampsWhenPrintingPodInfo       = true
+	shouldAddTimestampsWhenPrintingPodInfo = true
 )
 
 var (
@@ -76,7 +76,7 @@ var (
 	}
 	globalCreateOptions = metav1.CreateOptions{
 		// We need every object to have this field manager so that the Kurtosis objects can all seamlessly modify Kubernetes resources
-		FieldManager: fieldManager,
+		FieldManager:    fieldManager,
 	}
 )
 
@@ -85,6 +85,7 @@ type KubernetesManager struct {
 	kubernetesClientSet *kubernetes.Clientset
 	// Underlying restClient configuration
 	kuberneteRestConfig *rest.Config
+
 }
 
 func NewKubernetesManager(kubernetesClientSet *kubernetes.Clientset, kuberneteRestConfig *rest.Config) *KubernetesManager {
@@ -144,9 +145,9 @@ func (manager *KubernetesManager) UpdateService(
 	ctx context.Context,
 	namespaceName string,
 	serviceName string,
-// We use a configurator, rather than letting the user pass in their own ServiceApplyConfiguration, so that we ensure
-// they use the constructor (and don't do struct instantiation and forget to add the namespace, object name, etc. which
-// would result in removing the object name)
+	// We use a configurator, rather than letting the user pass in their own ServiceApplyConfiguration, so that we ensure
+	// they use the constructor (and don't do struct instantiation and forget to add the namespace, object name, etc. which
+	// would result in removing the object name)
 	updateConfigurator func(configuration *applyconfigurationsv1.ServiceApplyConfiguration),
 ) (*apiv1.Service, error) {
 	updatesToApply := applyconfigurationsv1.Service(serviceName, namespaceName)
@@ -189,7 +190,7 @@ func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, names
 		TypeMeta: serviceResult.TypeMeta,
 		ListMeta: serviceResult.ListMeta,
 	}
-
+	
 	return &servicesNotMarkedForDeletionserviceList, nil
 }
 
@@ -263,7 +264,7 @@ func (manager *KubernetesManager) GetPersistentVolumeClaim(ctx context.Context, 
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get persistent volume claim with name '%s' in namespace '%s'", persistentVolumeClaimName, namespace)
 	}
-
+	
 	deletionTimestamp := volumeClaim.GetObjectMeta().GetDeletionTimestamp()
 	if deletionTimestamp != nil {
 		return nil, stacktrace.Propagate(err, "Persistent volume claim with name '%s' in namespace '%s' has been marked for deletion", persistentVolumeClaimName, namespace)
@@ -283,7 +284,7 @@ func (manager *KubernetesManager) GetPersistentVolumeClaimsByLabels(ctx context.
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get persistent volume claim with labels '%+v' in namespace '%s'", persistentVolumeClaimLabels, namespace)
 	}
-
+ 
 	// Only return objects not tombstoned by Kubernetes
 	var persistentVolumeClaimsNotMarkedForDeletionList []apiv1.PersistentVolumeClaim
 	for _, persistentVolumeClaim := range persistentVolumeClaimsResult.Items {
@@ -300,7 +301,7 @@ func (manager *KubernetesManager) GetPersistentVolumeClaimsByLabels(ctx context.
 	return &persistentVolumeClaimsNotMarkedForDeletionpersistentVolumeClaimList, nil
 }
 
-*/
+ */
 
 // ---------------------------namespaces------------------------------------------------------------------------------
 
@@ -439,7 +440,7 @@ func (manager *KubernetesManager) RemoveServiceAccount(ctx context.Context, serv
 func (manager *KubernetesManager) CreateRole(ctx context.Context, name string, namespace string, rules []rbacv1.PolicyRule, labels map[string]string) (*rbacv1.Role, error) {
 	client := manager.kubernetesClientSet.RbacV1().Roles(namespace)
 
-	role := &rbacv1.Role{
+	role :=  &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
 			Labels: labels,
@@ -506,7 +507,7 @@ func (manager *KubernetesManager) CreateRoleBindings(ctx context.Context, name s
 			Labels: labels,
 		},
 		Subjects: subjects,
-		RoleRef:  roleRef,
+		RoleRef: roleRef,
 	}
 
 	roleBindingResult, err := client.Create(ctx, roleBinding, globalCreateOptions)
@@ -562,7 +563,7 @@ func (manager *KubernetesManager) RemoveRoleBindings(ctx context.Context, roleBi
 func (manager *KubernetesManager) CreateClusterRoles(ctx context.Context, name string, rules []rbacv1.PolicyRule, labels map[string]string) (*rbacv1.ClusterRole, error) {
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
 
-	clusterRole := &rbacv1.ClusterRole{
+	clusterRole :=  &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
 			Labels: labels,
@@ -589,7 +590,7 @@ func (manager *KubernetesManager) GetClusterRolesByLabels(ctx context.Context, c
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get cluster roles with labels '%+v', instead a non-nil error was returned", clusterRoleLabels)
 	}
-
+	
 	// Only return objects not tombstoned by Kubernetes
 	var clusterRolesNotMarkedForDeletionList []rbacv1.ClusterRole
 	for _, clusterRole := range clusterRoles.Items {
@@ -628,7 +629,7 @@ func (manager *KubernetesManager) CreateClusterRoleBindings(ctx context.Context,
 			Labels: labels,
 		},
 		Subjects: subjects,
-		RoleRef:  roleRef,
+		RoleRef: roleRef,
 	}
 
 	clusterRoleBindingResult, err := client.Create(ctx, clusterRoleBinding, globalCreateOptions)
@@ -699,9 +700,9 @@ func (manager *KubernetesManager) CreatePod(
 		Annotations: podAnnotations,
 	}
 	podSpec := apiv1.PodSpec{
-		Volumes:            podVolumes,
-		InitContainers:     initContainers,
-		Containers:         podContainers,
+		Volumes:    podVolumes,
+		InitContainers: initContainers,
+		Containers: podContainers,
 		ServiceAccountName: podServiceAccountName,
 		// We don't want Kubernetes auto-magically restarting our containers if they fail
 		RestartPolicy: apiv1.RestartPolicyNever,
@@ -768,10 +769,10 @@ func (manager *KubernetesManager) GetContainerLogs(
 ) (
 	io.ReadCloser,
 	error,
-) {
+){
 	options := &apiv1.PodLogOptions{
-		Container:  containerName,
-		Follow:     shouldFollowLogs,
+		Container: containerName,
+		Follow: shouldFollowLogs,
 		Timestamps: shouldAddTimestamps,
 	}
 
@@ -802,11 +803,11 @@ func (manager *KubernetesManager) RunExecCommand(
 ) {
 	execOptions := &apiv1.PodExecOptions{
 		Container: containerName,
-		Command:   command,
-		Stdin:     shouldAllocateStdinOnPodExec,
-		Stdout:    shouldAllocatedStdoutOnPodExec,
-		Stderr:    shouldAllocatedStderrOnPodExec,
-		TTY:       shouldAllocateTtyOnPodExec,
+		Command: command,
+		Stdin:   shouldAllocateStdinOnPodExec,
+		Stdout:  shouldAllocatedStdoutOnPodExec,
+		Stderr:  shouldAllocatedStderrOnPodExec,
+		TTY:     shouldAllocateTtyOnPodExec,
 	}
 
 	//Create a RESTful command request.
@@ -855,6 +856,7 @@ func (manager *KubernetesManager) RunExecCommand(
 	return successExecCommandExitCode, nil
 }
 
+
 func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace string, podLabels map[string]string) (*apiv1.PodList, error) {
 	namespacePodClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
 
@@ -886,6 +888,7 @@ func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace
 func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string, podName string) *url.URL {
 	return manager.kubernetesClientSet.CoreV1().RESTClient().Post().Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
 }
+
 
 // TODO Delete this after 2022-08-01 if we're not using Jobs
 /*
@@ -993,7 +996,7 @@ func (manager KubernetesManager) GetJobCompletionAndSuccessFlags(ctx context.Con
 
 	return true, false, nil
 }
-*/
+ */
 
 // ====================================================================================================
 //                                     Private Helper Methods
@@ -1059,7 +1062,7 @@ func (manager *KubernetesManager) waitForPersistentVolumeClaimBinding(
 	)
 }
 
-*/
+ */
 
 func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, namespaceName string, podName string) error {
 	// Wait for the pod to start running
@@ -1082,8 +1085,8 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 				maybeContainerWaitingState := containerStatus.State.Waiting
 				if maybeContainerWaitingState != nil && maybeContainerWaitingState.Reason == imagePullBackOffContainerReason {
 					return stacktrace.NewError(
-						"Container '%v' using image '%v' in pod '%v' in namespace '%v' is stuck in state '%v'. This likely means:\n"+
-							"1) There's a typo in either the image name or the tag name\n"+
+						"Container '%v' using image '%v' in pod '%v' in namespace '%v' is stuck in state '%v'. This likely means:\n" +
+							"1) There's a typo in either the image name or the tag name\n" +
 							"2) The image isn't accessible to Kubernetes (e.g. it's a local image, or it's in a private image registry that Kubernetes can't access)",
 						containerName,
 						containerStatus.Image,
@@ -1116,7 +1119,7 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 
 	containerStatusStrs := renderContainerStatuses(latestPodStatus.ContainerStatuses, containerStatusLineBulletPoint)
 	return stacktrace.NewError(
-		"Pod '%v' did not become available after %v; its latest state is '%v' and status message is: %v\n"+
+		"Pod '%v' did not become available after %v; its latest state is '%v' and status message is: %v\n" +
 			"The pod's container states are as follows:\n%v",
 		podName,
 		podWaitForAvailabilityTimeout,
@@ -1192,6 +1195,7 @@ func renderContainerStatuses(containerStatuses []apiv1.ContainerStatus, prefixSt
 		containerName := containerStatus.Name
 		state := containerStatus.State
 
+
 		// Okay to do in an if-else because only one will be filled out per Kubernetes docs
 		var statusStrForContainer string
 		if state.Waiting != nil {
@@ -1213,7 +1217,7 @@ func renderContainerStatuses(containerStatuses []apiv1.ContainerStatus, prefixSt
 			)
 		} else {
 			statusStrForContainer = fmt.Sprintf(
-				"Unrecogznied container state '%+v'; this likely means that Kubernetes "+
+				"Unrecogznied container state '%+v'; this likely means that Kubernetes " +
 					"has added a new container state and Kurtosis needs to be updated to handle it",
 				state,
 			)
@@ -1238,7 +1242,7 @@ func renderContainerStatuses(containerStatuses []apiv1.ContainerStatus, prefixSt
 
 // Kubernetes doesn't seem to have a nice API for getting back the exit code of a command (though this seems strange??),
 // so we have to parse it out of a status message
-func getExitCodeFromStatusMessage(statusMessage string) (int32, error) {
+func getExitCodeFromStatusMessage(statusMessage string) (int32, error){
 	messageSlice := strings.Split(statusMessage, " ")
 	if len(messageSlice) != 6 {
 		return -1, stacktrace.NewError(
