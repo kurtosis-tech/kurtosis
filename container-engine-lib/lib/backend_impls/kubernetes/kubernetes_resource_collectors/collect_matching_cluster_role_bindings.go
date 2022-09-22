@@ -17,6 +17,7 @@ import (
 type clusterRoleBindingKubernetesResource struct {
 	underlying rbacv1.ClusterRoleBinding
 }
+
 func (resource clusterRoleBindingKubernetesResource) getName() string {
 	return resource.underlying.Name
 }

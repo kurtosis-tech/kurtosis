@@ -325,10 +325,10 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForModuleContainer(
 // In Docker we get one volume per artifact being expanded
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSingleFilesArtifactExpansionVolume(
 	serviceGUID service.ServiceGUID,
-)(
+) (
 	DockerObjectAttributes,
 	error,
-){
+) {
 	serviceGuidStr := string(serviceGUID)
 
 	guidStr, err := uuid_generator.GenerateUUIDString()
@@ -369,7 +369,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSingleFilesArtifac
 // all expansion
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactsExpanderContainer(
 	serviceGUID service.ServiceGUID,
-)(
+) (
 	DockerObjectAttributes,
 	error,
 ) {
@@ -409,7 +409,9 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactsExpa
 }
 
 // ====================================================================================================
-//                                      Private Helper Functions
+//
+//	Private Helper Functions
+//
 // ====================================================================================================
 // Gets the name for an enclave object, making sure to put the enclave ID first and join using the standardized separator
 func (provider *dockerEnclaveObjectAttributesProviderImpl) getNameForEnclaveObject(elems []string) (*docker_object_name.DockerObjectName, error) {
@@ -427,7 +429,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getNameForEnclaveObje
 	}
 	return name, nil
 }
-
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObject() map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue {
 	return map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{

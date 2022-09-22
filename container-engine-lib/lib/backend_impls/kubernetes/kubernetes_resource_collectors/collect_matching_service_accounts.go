@@ -17,6 +17,7 @@ import (
 type serviceAccountKubernetesResource struct {
 	underlying apiv1.ServiceAccount
 }
+
 func (resource serviceAccountKubernetesResource) getName() string {
 	return resource.underlying.Name
 }

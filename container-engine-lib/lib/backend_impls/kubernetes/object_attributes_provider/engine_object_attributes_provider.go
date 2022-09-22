@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	engineNamePrefix                = "kurtosis-engine"
+	engineNamePrefix = "kurtosis-engine"
 )
 
 type KubernetesEngineObjectAttributesProvider interface {
@@ -69,7 +69,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEnginePod() (Ku
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
@@ -107,7 +107,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
@@ -130,7 +130,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineNamespace
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
@@ -153,7 +153,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineServiceAc
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
@@ -176,7 +176,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRo
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
@@ -199,7 +199,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRo
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
@@ -219,7 +219,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) getEngineObjectLab
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue,
 		label_key_consts.IDKubernetesLabelKey:                   guidLabelValue,
-		label_key_consts.GUIDKubernetesLabelKey:                   guidLabelValue,
+		label_key_consts.GUIDKubernetesLabelKey:                 guidLabelValue,
 	}
 	return labels, nil
 }

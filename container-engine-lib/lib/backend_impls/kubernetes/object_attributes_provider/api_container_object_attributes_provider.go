@@ -18,8 +18,9 @@ import (
 const (
 	// All API container objects will be named this, which is fine because the objects are namespaced and there
 	// should only be a single API container per enclave
-	apiContainerObjectNameStr                = "kurtosis-api"
+	apiContainerObjectNameStr = "kurtosis-api"
 )
+
 var apiContainerObjectName = kubernetes_object_name.MustCreateNewKubernetesObjectName(apiContainerObjectNameStr)
 
 type KubernetesApiContainerObjectAttributesProvider interface {
@@ -60,7 +61,7 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContai
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(apiContainerObjectName, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
 			"'%s' and labels '%+v', and annotations '%+v'", apiContainerObjectName.GetString(), labels, annotations)
 	}
 
@@ -94,7 +95,7 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContai
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(apiContainerObjectName, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
 			"'%s' and labels '%+v', and annotations '%+v'", apiContainerObjectName.GetString(), labels, annotations)
 	}
 
@@ -112,7 +113,7 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContai
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(apiContainerObjectName, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
 			"'%s' and labels '%+v', and annotations '%+v'", apiContainerObjectName.GetString(), labels, annotations)
 	}
 
@@ -130,7 +131,7 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContai
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(apiContainerObjectName, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
 			"'%s' and labels '%+v', and annotations '%+v'", apiContainerObjectName.GetString(), labels, annotations)
 	}
 
@@ -148,7 +149,7 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContai
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(apiContainerObjectName, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name " +
+		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
 			"'%s' and labels '%+v', and annotations '%+v'", apiContainerObjectName.GetString(), labels, annotations)
 	}
 

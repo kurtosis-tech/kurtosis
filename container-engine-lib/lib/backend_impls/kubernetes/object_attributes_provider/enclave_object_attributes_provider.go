@@ -18,10 +18,10 @@ import (
 )
 
 const (
-	namespacePrefix = "kurtosis-enclave"
-	filesArtifactsExpansionPrefix          = "files-artifact-expansion"
-	userServicePrefix                      = "user-service"
-	modulePrefix      = "module"
+	namespacePrefix               = "kurtosis-enclave"
+	filesArtifactsExpansionPrefix = "files-artifact-expansion"
+	userServicePrefix             = "user-service"
+	modulePrefix                  = "module"
 )
 
 type KubernetesEnclaveObjectAttributesProvider interface {
@@ -110,7 +110,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespa
 	return objectAttributes, nil
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForApiContainer() KubernetesApiContainerObjectAttributesProvider{
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForApiContainer() KubernetesApiContainerObjectAttributesProvider {
 	enclaveId := enclave.EnclaveID(provider.enclaveId)
 	return GetKubernetesApiContainerObjectAttributesProvider(enclaveId)
 }
@@ -121,7 +121,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForNetworkingSide
 	panic("implement me")
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceService (
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceService(
 	serviceGUID service.ServiceGUID,
 	serviceID service.ServiceID,
 ) (
@@ -188,7 +188,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod
 	labels[label_key_consts.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
 
 	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{
-		kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey : serializedPortSpecsAnnotationValue,
+		kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey: serializedPortSpecsAnnotationValue,
 	}
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)

@@ -17,6 +17,7 @@ import (
 type roleKubernetesResource struct {
 	underlying rbacv1.Role
 }
+
 func (resource roleKubernetesResource) getName() string {
 	return resource.underlying.Name
 }

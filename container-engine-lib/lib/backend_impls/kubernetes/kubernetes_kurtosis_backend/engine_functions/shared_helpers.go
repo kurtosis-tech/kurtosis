@@ -206,7 +206,7 @@ func getMatchingEngineKubernetesResources(
 		if serviceAccountsForId, found := serviceAccounts[engineGuidStr]; found {
 			if len(serviceAccountsForId) > 1 {
 				return nil, stacktrace.NewError(
-					"Expected at most one engine service account in namespace '%v' for engine with GUID '%v' " +
+					"Expected at most one engine service account in namespace '%v' for engine with GUID '%v' "+
 						"but found '%v'",
 					namespaceName,
 					engineGuid,
@@ -234,7 +234,7 @@ func getMatchingEngineKubernetesResources(
 		if servicesForId, found := services[engineGuidStr]; found {
 			if len(servicesForId) > 1 {
 				return nil, stacktrace.NewError(
-					"Expected at most one engine service in namespace '%v' for engine with GUID '%v' " +
+					"Expected at most one engine service in namespace '%v' for engine with GUID '%v' "+
 						"but found '%v'",
 					namespaceName,
 					engineGuid,
@@ -262,7 +262,7 @@ func getMatchingEngineKubernetesResources(
 		if podsForId, found := pods[engineGuidStr]; found {
 			if len(podsForId) > 1 {
 				return nil, stacktrace.NewError(
-					"Expected at most one engine pod in namespace '%v' for engine with GUID '%v' " +
+					"Expected at most one engine pod in namespace '%v' for engine with GUID '%v' "+
 						"but found '%v'",
 					namespaceName,
 					engineGuid,

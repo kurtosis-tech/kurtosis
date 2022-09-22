@@ -31,9 +31,9 @@ const (
 	createdDirPerms  os.FileMode = 0755
 	createdFilePerms os.FileMode = 0644
 
-	numPodsToDumpAtOnce                      = 20
+	numPodsToDumpAtOnce = 20
 
-	shouldFollowPodLogsWhenDumping = false
+	shouldFollowPodLogsWhenDumping        = false
 	shouldAddTimestampsWhenDumpingPodLogs = true
 
 	enclaveDumpJsonSerializationIndent = "  "
@@ -60,7 +60,7 @@ type enclaveKubernetesResources struct {
 
 type dumpPodResult struct {
 	podName string
-	err error
+	err     error
 }
 
 // ====================================================================================================
@@ -118,7 +118,7 @@ func (backend KubernetesKurtosisBackend) CreateEnclave(
 
 	enclaveResources := &enclaveKubernetesResources{
 		namespace: enclaveNamespace,
-		pods: []apiv1.Pod{},
+		pods:      []apiv1.Pod{},
 	}
 	enclaveObjsById, err := getEnclaveObjectsFromKubernetesResources(map[enclave.EnclaveID]*enclaveKubernetesResources{
 		enclaveId: enclaveResources,
@@ -219,7 +219,6 @@ func (backend KubernetesKurtosisBackend) StopEnclaves(
 				continue
 			}
 		}
-
 
 		successfulEnclaveIds[enclaveId] = true
 	}
@@ -599,7 +598,7 @@ func dumpPodInfo(
 		containerName := container.Name
 
 		// Make container output directory
-		containerLogsFilepath := path.Join(podOutputDirpath, containerName +containerLogsFilenameSuffix)
+		containerLogsFilepath := path.Join(podOutputDirpath, containerName+containerLogsFilenameSuffix)
 		containerLogsOutputFp, err := os.Create(containerLogsFilepath)
 		if err != nil {
 			return stacktrace.Propagate(

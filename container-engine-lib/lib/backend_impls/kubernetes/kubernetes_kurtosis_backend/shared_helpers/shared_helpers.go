@@ -70,7 +70,7 @@ func NewApiContainerModeArgs(
 	ownEnclaveId enclave.EnclaveID,
 	ownNamespaceName string, ) *ApiContainerModeArgs {
 	return &ApiContainerModeArgs{
-		ownEnclaveId: ownEnclaveId,
+		ownEnclaveId:     ownEnclaveId,
 		ownNamespaceName: ownNamespaceName,
 	}
 }
@@ -154,7 +154,7 @@ func GetEnclaveNamespaceName(
 	} else if apiContainerModeArgs != nil {
 		if enclaveId != apiContainerModeArgs.ownEnclaveId {
 			return "", stacktrace.NewError(
-				"Received a request to get namespace for enclave '%v', but the Kubernetes Kurtosis backend is running in an API " +
+				"Received a request to get namespace for enclave '%v', but the Kubernetes Kurtosis backend is running in an API "+
 					"container in a different enclave '%v' (so Kubernetes would throw a permission error)",
 				enclaveId,
 				apiContainerModeArgs.ownEnclaveId,

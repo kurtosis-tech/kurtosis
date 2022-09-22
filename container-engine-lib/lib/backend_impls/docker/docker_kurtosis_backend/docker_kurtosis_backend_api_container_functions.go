@@ -45,7 +45,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	enclaveId enclave.EnclaveID,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
-	// The dirpath on the API container where the enclave data volume should be mounted
+// The dirpath on the API container where the enclave data volume should be mounted
 	enclaveDataVolumeDirpath string,
 	ownIpAddressEnvVar string,
 	customEnvVars map[string]string,
@@ -77,7 +77,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 
 	networkCidr := enclaveNetwork.GetIpAndMask()
 	alreadyTakenIps := map[string]bool{
-		networkCidr.IP.String(): true,
+		networkCidr.IP.String():       true,
 		enclaveNetwork.GetGatewayIp(): true,
 	}
 

@@ -7,7 +7,7 @@ type PartitionID string
 // Object that represents POINT-IN-TIME information about a network partition
 // Store this object and continue to reference it at your own risk!!!
 type Partition struct {
-	id PartitionID
+	id       PartitionID
 	services []*service.Service
 }
 

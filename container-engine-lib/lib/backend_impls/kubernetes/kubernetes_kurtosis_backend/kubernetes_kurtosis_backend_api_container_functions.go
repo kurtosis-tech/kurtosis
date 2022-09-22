@@ -1,4 +1,5 @@
 package kubernetes_kurtosis_backend
+
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
@@ -113,7 +114,7 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 	}
 
 	enclaveAttributesProvider := backend.objAttrsProvider.ForEnclave(enclaveId)
-	apiContainerAttributesProvider:= enclaveAttributesProvider.ForApiContainer()
+	apiContainerAttributesProvider := enclaveAttributesProvider.ForApiContainer()
 
 	enclaveNamespaceName, err := backend.getEnclaveNamespaceName(ctx, enclaveId)
 	if err != nil {
@@ -199,7 +200,7 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"Expected to be able to get API container attributes for a Kubernetes service account, " +
+			"Expected to be able to get API container attributes for a Kubernetes service account, "+
 				"instead got a non-nil error",
 		)
 	}
@@ -208,7 +209,7 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 	serviceAccountLabels := shared_helpers.GetStringMapFromLabelMap(serviceAccountAttributes.GetLabels())
 	apiContainerServiceAccount, err := backend.kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, enclaveNamespaceName, serviceAccountLabels)
 	if err != nil {
-		return nil,  stacktrace.Propagate(err, "An error occurred creating service account '%v' with labels '%+v' in namespace '%v'", serviceAccountName, serviceAccountLabels, enclaveNamespaceName)
+		return nil, stacktrace.Propagate(err, "An error occurred creating service account '%v' with labels '%+v' in namespace '%v'", serviceAccountName, serviceAccountLabels, enclaveNamespaceName)
 	}
 	apiContainerServiceAccountName := apiContainerServiceAccount.GetName()
 	shouldRemoveServiceAccount := true
@@ -226,7 +227,7 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"Expected to be able to get API container attributes for a Kubernetes role, " +
+			"Expected to be able to get API container attributes for a Kubernetes role, "+
 				"instead got a non-nil error",
 		)
 	}
@@ -255,7 +256,7 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 		},
 		{
 			// Necessary for the API container to get its own namespace
-			Verbs: []string{kubernetes_manager_consts.GetKubernetesVerb},
+			Verbs:     []string{kubernetes_manager_consts.GetKubernetesVerb},
 			APIGroups: []string{rbacv1.APIGroupAll},
 			Resources: []string{kubernetes_manager_consts.NamespacesKubernetesResource},
 		},
@@ -263,7 +264,7 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 
 	apiContainerRole, err := backend.kubernetesManager.CreateRole(ctx, roleName, enclaveNamespaceName, rolePolicyRules, roleLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating role '%v' with policy rules '%+v' " +
+		return nil, stacktrace.Propagate(err, "An error occurred creating role '%v' with policy rules '%+v' "+
 			"and labels '%+v' in namespace '%v'", roleName, rolePolicyRules, roleLabels, enclaveNamespaceName)
 	}
 	shouldRemoveRole := true
@@ -281,7 +282,7 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"Expected to be able to get API container attributes for a Kubernetes role bindings, " +
+			"Expected to be able to get API container attributes for a Kubernetes role bindings, "+
 				"instead got a non-nil error",
 		)
 	}
@@ -302,9 +303,9 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 		Name:     roleName,
 	}
 
-	 apiContainerRoleBinding, err := backend.kubernetesManager.CreateRoleBindings(ctx, roleBindingName, enclaveNamespaceName, roleBindingsSubjects, roleBindingsRoleRef, roleBindingsLabels)
-	 if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating role bindings '%v' with subjects " +
+	apiContainerRoleBinding, err := backend.kubernetesManager.CreateRoleBindings(ctx, roleBindingName, enclaveNamespaceName, roleBindingsSubjects, roleBindingsRoleRef, roleBindingsLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating role bindings '%v' with subjects "+
 			"'%+v' and role ref '%+v' in namespace '%v'", roleBindingName, roleBindingsSubjects, roleBindingsRoleRef, enclaveNamespaceName)
 	}
 	shouldRemoveRoleBinding := true
@@ -355,11 +356,11 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 	}()
 
 	apiContainerResources := &apiContainerKubernetesResources{
-		role:             apiContainerRole,
-		roleBinding:      apiContainerRoleBinding,
-		serviceAccount:   apiContainerServiceAccount,
-		service:          apiContainerService,
-		pod:              apiContainerPod,
+		role:           apiContainerRole,
+		roleBinding:    apiContainerRoleBinding,
+		serviceAccount: apiContainerServiceAccount,
+		service:        apiContainerService,
+		pod:            apiContainerPod,
 	}
 	apiContainerObjsById, err := getApiContainerObjectsFromKubernetesResources(map[enclave.EnclaveID]*apiContainerKubernetesResources{
 		enclaveId: apiContainerResources,
@@ -677,7 +678,7 @@ func (backend KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResour
 		}
 		if len(servicesForEnclaveId) == 0 {
 			return nil, stacktrace.NewError(
-				"Expected to find one API container service in namespace '%v' for enclave with ID '%v' " +
+				"Expected to find one API container service in namespace '%v' for enclave with ID '%v' "+
 					"but none was found",
 				namespaceName,
 				enclaveIdStr,
@@ -685,7 +686,7 @@ func (backend KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResour
 		}
 		if len(servicesForEnclaveId) > 1 {
 			return nil, stacktrace.NewError(
-				"Expected at most one API container service in namespace '%v' for enclave with ID '%v' " +
+				"Expected at most one API container service in namespace '%v' for enclave with ID '%v' "+
 					"but found '%v'",
 				namespaceName,
 				enclaveIdStr,
@@ -712,7 +713,7 @@ func (backend KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResour
 		if podsForEnclaveId, found := pods[enclaveIdStr]; found {
 			if len(podsForEnclaveId) == 0 {
 				return nil, stacktrace.NewError(
-					"Expected to find one API container pod in namespace '%v' for enclave with ID '%v' " +
+					"Expected to find one API container pod in namespace '%v' for enclave with ID '%v' "+
 						"but none was found",
 					namespaceName,
 					enclaveIdStr,
@@ -720,7 +721,7 @@ func (backend KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResour
 			}
 			if len(podsForEnclaveId) > 1 {
 				return nil, stacktrace.NewError(
-					"Expected at most one API container pod in namespace '%v' for enclave with ID '%v' " +
+					"Expected at most one API container pod in namespace '%v' for enclave with ID '%v' "+
 						"but found '%v'",
 					namespaceName,
 					enclaveIdStr,
@@ -748,7 +749,7 @@ func (backend KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResour
 		if roleBindingsForEnclaveId, found := roleBindings[enclaveIdStr]; found {
 			if len(roleBindingsForEnclaveId) == 0 {
 				return nil, stacktrace.NewError(
-						"Expected to find one API container role binding in namespace '%v' for enclave with ID '%v' " +
+					"Expected to find one API container role binding in namespace '%v' for enclave with ID '%v' "+
 						"but none was found",
 					namespaceName,
 					enclaveIdStr,
@@ -756,7 +757,7 @@ func (backend KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResour
 			}
 			if len(roleBindingsForEnclaveId) > 1 {
 				return nil, stacktrace.NewError(
-					"Expected at most one API container role binding in namespace '%v' for enclave with ID '%v' " +
+					"Expected at most one API container role binding in namespace '%v' for enclave with ID '%v' "+
 						"but found '%v'",
 					namespaceName,
 					enclaveIdStr,
@@ -784,7 +785,7 @@ func (backend KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResour
 		if rolesForEnclaveId, found := roles[enclaveIdStr]; found {
 			if len(rolesForEnclaveId) == 0 {
 				return nil, stacktrace.NewError(
-					"Expected to find one API container role in namespace '%v' for enclave with ID '%v' " +
+					"Expected to find one API container role in namespace '%v' for enclave with ID '%v' "+
 						"but none was found",
 					namespaceName,
 					enclaveIdStr,
@@ -792,7 +793,7 @@ func (backend KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResour
 			}
 			if len(rolesForEnclaveId) > 1 {
 				return nil, stacktrace.NewError(
-					"Expected at most one API container role in namespace '%v' for enclave with ID '%v' " +
+					"Expected at most one API container role in namespace '%v' for enclave with ID '%v' "+
 						"but found '%v'",
 					namespaceName,
 					enclaveIdStr,
@@ -820,7 +821,7 @@ func (backend KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResour
 		if serviceAccountsForEnclaveId, found := serviceAccounts[enclaveIdStr]; found {
 			if len(serviceAccountsForEnclaveId) == 0 {
 				return nil, stacktrace.NewError(
-					"Expected to find one API container service account in namespace '%v' for enclave with ID '%v' " +
+					"Expected to find one API container service account in namespace '%v' for enclave with ID '%v' "+
 						"but none was found",
 					namespaceName,
 					enclaveIdStr,
@@ -828,7 +829,7 @@ func (backend KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResour
 			}
 			if len(serviceAccountsForEnclaveId) > 1 {
 				return nil, stacktrace.NewError(
-					"Expected at most one API container service account in namespace '%v' for enclave with ID '%v' " +
+					"Expected at most one API container service account in namespace '%v' for enclave with ID '%v' "+
 						"but found '%v'",
 					namespaceName,
 					enclaveIdStr,
@@ -938,7 +939,7 @@ func getApiContainerContainersAndVolumes(
 		Name: ApiContainerOwnNamespaceNameEnvVar,
 		ValueFrom: &apiv1.EnvVarSource{
 			FieldRef: &apiv1.ObjectFieldSelector{
-				 FieldPath: kubernetesResourceOwnNamespaceFieldPath,
+				FieldPath: kubernetesResourceOwnNamespaceFieldPath,
 			},
 		},
 	}

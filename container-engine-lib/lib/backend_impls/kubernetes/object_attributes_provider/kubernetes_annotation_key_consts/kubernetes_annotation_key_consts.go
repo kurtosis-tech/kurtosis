@@ -14,6 +14,6 @@ const (
 )
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//   If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
 //
+//	If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
 var PortSpecsKubernetesAnnotationKey = kubernetes_annotation_key.MustCreateNewKubernetesAnnotationKey(portSpecsAnnotationKeyStr)

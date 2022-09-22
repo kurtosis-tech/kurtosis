@@ -17,6 +17,7 @@ import (
 type podKubernetesResource struct {
 	underlying apiv1.Pod
 }
+
 func (resource podKubernetesResource) getName() string {
 	return resource.underlying.Name
 }

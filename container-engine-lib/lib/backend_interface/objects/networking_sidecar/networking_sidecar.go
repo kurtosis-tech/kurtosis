@@ -8,8 +8,8 @@ import (
 
 type NetworkingSidecar struct {
 	serviceGuid service.ServiceGUID
-	enclaveId enclave.EnclaveID
-	status container_status.ContainerStatus
+	enclaveId   enclave.EnclaveID
+	status      container_status.ContainerStatus
 }
 
 func NewNetworkingSidecar(serviceGuid service.ServiceGUID, enclaveId enclave.EnclaveID, status container_status.ContainerStatus) *NetworkingSidecar {

@@ -46,10 +46,10 @@ const (
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
 
 type matchingNetworkInformation struct {
-	enclaveId enclave.EnclaveID
+	enclaveId     enclave.EnclaveID
 	enclaveStatus enclave.EnclaveStatus
 	dockerNetwork *types.Network
-	containers []*types.Container
+	containers    []*types.Container
 }
 
 func (backend *DockerKurtosisBackend) CreateEnclave(
@@ -75,7 +75,7 @@ func (backend *DockerKurtosisBackend) CreateEnclave(
 		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because an enclave with ID '%v' already exists", enclaveId, enclaveId)
 	}
 
-	volumeSearchLabels :=  map[string]string{
+	volumeSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():      label_value_consts.AppIDDockerLabelValue.GetString(),
 		label_key_consts.EnclaveIDDockerLabelKey.GetString():  string(enclaveId),
 		label_key_consts.VolumeTypeDockerLabelKey.GetString(): label_value_consts.EnclaveDataVolumeTypeDockerLabelValue.GetString(),
@@ -155,7 +155,7 @@ func (backend *DockerKurtosisBackend) CreateEnclave(
 		if shouldDeleteVolume {
 			if err := backend.dockerManager.RemoveVolume(teardownCtx, enclaveDataVolumeNameStr); err != nil {
 				logrus.Errorf(
-					"Creating the enclave didn't complete successfully, so we tried to delete enclave data volume '%v' " +
+					"Creating the enclave didn't complete successfully, so we tried to delete enclave data volume '%v' "+
 						"that we created but an error was thrown:\n%v",
 					enclaveDataVolumeNameStr,
 					err,
@@ -375,14 +375,14 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	for enclaveId := range matchingNetworkInfo {
 		if _, found := backend.enclaveFreeIpProviders[enclaveId]; found {
 			return nil, nil, stacktrace.NewError(
-				"Received a request to destroy enclave '%v' for which a free IP address tracker is registered; this likely " +
+				"Received a request to destroy enclave '%v' for which a free IP address tracker is registered; this likely "+
 					"means that destroy enclave is being called where it shouldn't be (i.e. inside the API container)",
 				enclaveId,
 			)
 		}
 		if _, found := backend.serviceRegistrations[enclaveId]; found {
 			return nil, nil, stacktrace.NewError(
-				"Received a request to destroy enclave '%v' for which services are being tracked; this likely " +
+				"Received a request to destroy enclave '%v' for which services are being tracked; this likely "+
 					"means that destroy enclave is being called where it shouldn't be (i.e. inside the API container)",
 				enclaveId,
 			)
@@ -434,7 +434,7 @@ func (backend *DockerKurtosisBackend) getMatchingEnclaveNetworkInfo(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
-	// Keyed by network ID
+// Keyed by network ID
 	map[enclave.EnclaveID]*matchingNetworkInformation,
 	error,
 ) {
@@ -711,7 +711,7 @@ func destroyContainersInEnclaves(
 	map[enclave.EnclaveID]bool,
 	map[enclave.EnclaveID]error,
 	error,
-){
+) {
 	// For all the enclaves to destroy, gather all the containers that should be destroyed
 	enclaveIdsForContainerIdsToRemove := map[string]enclave.EnclaveID{}
 	containerIdsToRemove := map[string]bool{}

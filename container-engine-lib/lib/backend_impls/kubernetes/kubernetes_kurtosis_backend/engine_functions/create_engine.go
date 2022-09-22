@@ -280,7 +280,7 @@ func createEngineClusterRole(
 	clusterRoleLabels := shared_helpers.GetStringMapFromLabelMap(clusterRolesAttributes.GetLabels())
 	clusterRolePolicyRules := []rbacv1.PolicyRule{
 		{
-			Verbs:     []string{
+			Verbs: []string{
 				kubernetes_manager_consts.CreateKubernetesVerb,
 				kubernetes_manager_consts.UpdateKubernetesVerb,
 				kubernetes_manager_consts.PatchKubernetesVerb,
@@ -299,7 +299,7 @@ func createEngineClusterRole(
 				kubernetes_manager_consts.PodExecsKubernetesResource,
 				kubernetes_manager_consts.PodLogsKubernetesResource,
 				kubernetes_manager_consts.ServicesKubernetesResource,
-				kubernetes_manager_consts.JobsKubernetesResource,  // Necessary so that we can give the API container the permission
+				kubernetes_manager_consts.JobsKubernetesResource, // Necessary so that we can give the API container the permission
 			},
 		},
 	}

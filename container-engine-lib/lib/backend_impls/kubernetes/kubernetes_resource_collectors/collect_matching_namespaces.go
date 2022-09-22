@@ -17,6 +17,7 @@ import (
 type namespaceKubernetesResource struct {
 	underlying apiv1.Namespace
 }
+
 func (resource namespaceKubernetesResource) getName() string {
 	return resource.underlying.Name
 }
@@ -68,4 +69,3 @@ func CollectMatchingNamespaces(
 	}
 	return result, nil
 }
-

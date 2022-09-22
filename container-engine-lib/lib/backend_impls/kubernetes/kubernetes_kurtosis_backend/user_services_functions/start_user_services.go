@@ -549,7 +549,7 @@ func getUserServicePodContainerSpecs(
 		resourceRequestsList[apiv1.ResourceMemory] = *resource.NewQuantity(int64(memoryAllocationInBytes), resource.DecimalSI)
 	}
 	resourceRequirements := apiv1.ResourceRequirements{
-		Limits: resourceLimitsList,
+		Limits:   resourceLimitsList,
 		Requests: resourceRequestsList,
 	}
 
@@ -585,12 +585,12 @@ func getKubernetesServicePortsFromPrivatePortSpecs(privatePorts map[string]*port
 		}
 
 		kubernetesPortObj := apiv1.ServicePort{
-			Name:        portId,
-			Protocol:    kubernetesProtocol,
+			Name:     portId,
+			Protocol: kubernetesProtocol,
 			// TODO Specify this!!! Will make for a really nice user interface (e.g. "https")
 			AppProtocol: nil,
 			// Safe to cast because max uint16 < int32
-			Port:        int32(portSpec.GetNumber()),
+			Port: int32(portSpec.GetNumber()),
 		}
 		result = append(result, kubernetesPortObj)
 	}
@@ -608,7 +608,7 @@ func getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts map[string]*po
 		}
 
 		kubernetesPortObj := apiv1.ContainerPort{
-			Name:          portId,
+			Name: portId,
 			// Safe to do because max uint16 < int32
 			ContainerPort: int32(portSpec.GetNumber()),
 			Protocol:      kubernetesProtocol,

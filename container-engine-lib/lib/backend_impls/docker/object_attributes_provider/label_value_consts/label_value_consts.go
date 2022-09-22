@@ -26,7 +26,7 @@ const (
 	enclaveDataVolumeTypeLabelValueStr            = "enclave-data"
 	filesArtifactExpansionVolumeTypeLabelValueStr = "files-artifacts-expansion"
 	logsDatabaseVolumeTypeLabelValueStr           = "logs-db"
-	logsCollectorVolumeTypeLabelValueStr           = "logs-collector-data"
+	logsCollectorVolumeTypeLabelValueStr          = "logs-collector-data"
 
 	trueValueStr  = "true"
 	falseValueStr = "false"
@@ -34,10 +34,10 @@ const (
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // If these value change, it will lead to the Kurtosis engine losing track of old containers
-//  which will cause a resource leak on the user's system!
 //
-//   If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
+//	which will cause a resource leak on the user's system!
 //
+//	 If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
 var AppIDDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(appIdLabelValueStr)
 var EngineContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(engineContainerTypeLabelValueStr)
 var LogsDatabaseTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(logsDatabaseContainerTypeLabelValueStr)

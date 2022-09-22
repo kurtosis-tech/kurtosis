@@ -15,7 +15,7 @@ func PauseService(
 	serviceGuid service.ServiceGUID,
 	dockerManager *docker_manager.DockerManager,
 ) error {
-	_, dockerResources, err :=	shared_helpers.GetSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid, dockerManager)
+	_, dockerResources, err := shared_helpers.GetSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceGuid, dockerManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get information about service '%v' from Kurtosis ", serviceGuid)
 	}

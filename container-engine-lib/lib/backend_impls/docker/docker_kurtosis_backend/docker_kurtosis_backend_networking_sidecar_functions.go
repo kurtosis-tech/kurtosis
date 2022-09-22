@@ -21,7 +21,7 @@ import (
 
 const (
 	networkingSidecarImageName = "kurtosistech/iproute2"
-	succesfulExecCmdExitCode = 0
+	succesfulExecCmdExitCode   = 0
 )
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
@@ -36,10 +36,10 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
-)(
+) (
 	*networking_sidecar.NetworkingSidecar,
 	error,
-){
+) {
 	// Get the Docker network ID where we'll start the new sidecar container
 	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
 	if err != nil {
@@ -49,8 +49,8 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 	freeIpAddrProvider, found := backend.enclaveFreeIpProviders[enclaveId]
 	if !found {
 		return nil, stacktrace.NewError(
-			"Received a request to create networking sidecar for service with GUID '%v' in enclave '%v', but no free IP address provider was " +
-				"defined for this enclave; this likely means that the request is being called where it shouldn't " +
+			"Received a request to create networking sidecar for service with GUID '%v' in enclave '%v', but no free IP address provider was "+
+				"defined for this enclave; this likely means that the request is being called where it shouldn't "+
 				"be (i.e. outside the API container)",
 			serviceGuid,
 			enclaveId,
@@ -125,7 +125,7 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 			// the failure was the original context being cancelled
 			if err := backend.dockerManager.KillContainer(context.Background(), containerId); err != nil {
 				logrus.Errorf(
-					"Launching networking sidecar container '%v' with container ID '%v' didn't complete successfully so we " +
+					"Launching networking sidecar container '%v' with container ID '%v' didn't complete successfully so we "+
 						"tried to kill the container we started, but doing so exited with an error:\n%v",
 					containerName.GetString(),
 					containerId,
@@ -171,11 +171,11 @@ func (backend *DockerKurtosisBackend) RunNetworkingSidecarExecCommands(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	networkingSidecarsCommands map[service.ServiceGUID][]string,
-)(
+) (
 	map[service.ServiceGUID]*exec_result.ExecResult,
 	map[service.ServiceGUID]error,
 	error,
-){
+) {
 	successfulNetworkingSidecarExecResults := map[service.ServiceGUID]*exec_result.ExecResult{}
 	erroredUserServiceGuids := map[service.ServiceGUID]error{}
 
@@ -199,13 +199,13 @@ func (backend *DockerKurtosisBackend) RunNetworkingSidecarExecCommands(
 	if len(networkingSidecarsCommands) != len(networkingSidecars) {
 		return nil, nil, stacktrace.NewError("The amount of networking sidecars found '%v' are not equal to the amount of networking sidecars to run exec commands '%v'", len(networkingSidecars), len(networkingSidecarsCommands))
 	}
-	for _, networkingSidecar := range networkingSidecars{
-		if _,found := networkingSidecarsCommands[networkingSidecar.GetServiceGUID()]; !found {
+	for _, networkingSidecar := range networkingSidecars {
+		if _, found := networkingSidecarsCommands[networkingSidecar.GetServiceGUID()]; !found {
 			return nil,
 				nil,
 				stacktrace.NewError(
-					"Networking sidecar with user service GUID '%v' was found when getting matching " +
-						"networking sidecars with filters '%+v' but it was not declared in the networking " +
+					"Networking sidecar with user service GUID '%v' was found when getting matching "+
+						"networking sidecars with filters '%+v' but it was not declared in the networking "+
 						"sidecar exec commands list '%+v'",
 					networkingSidecar.GetServiceGUID(),
 					filters,
@@ -304,7 +304,7 @@ func (backend *DockerKurtosisBackend) DestroyNetworkingSidecars(
 ) {
 	networkingSidecars, err := backend.getMatchingNetworkingSidecars(ctx, filters)
 	if err != nil {
-		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting networking sidecars matching filters '%+v'", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting networking sidecars matching filters '%+v'", filters)
 	}
 
 	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
