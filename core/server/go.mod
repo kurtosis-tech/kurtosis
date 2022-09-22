@@ -3,6 +3,7 @@ module github.com/kurtosis-tech/kurtosis/core/server
 go 1.17
 
 replace (
+	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
 	github.com/kurtosis-tech/kurtosis/core/api/golang => ../api/golang
 	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander => ../files_artifacts_expander
 	github.com/kurtosis-tech/kurtosis/core/launcher => ../launcher
@@ -10,6 +11,7 @@ replace (
 
 require (
 	github.com/google/uuid v1.3.0
+	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/api/golang v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // Local dependency
@@ -23,10 +25,7 @@ require (
 	gotest.tools v2.2.0+incompatible
 )
 
-require (
-	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0-20220921175545-918c1123555a
-	github.com/mholt/archiver v3.1.1+incompatible
-)
+require github.com/mholt/archiver v3.1.1+incompatible
 
 require (
 	github.com/Microsoft/go-winio v0.4.17 // indirect
