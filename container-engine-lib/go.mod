@@ -1,4 +1,4 @@
-module github.com/kurtosis-tech/container-engine-lib
+module github.com/kurtosis-tech/kurtosis/container-engine-lib
 
 go 1.17
 

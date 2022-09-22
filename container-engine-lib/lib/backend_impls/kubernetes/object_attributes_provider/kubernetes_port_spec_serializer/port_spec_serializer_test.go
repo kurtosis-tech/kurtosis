@@ -1,7 +1,7 @@
 package kubernetes_port_spec_serializer
 
 import (
-	port_spec2 "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	port_spec2 "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"

@@ -1,6 +1,6 @@
 package partition
 
-import "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+import "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 
 type PartitionID string
 
