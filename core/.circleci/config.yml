@@ -85,7 +85,7 @@ jobs:
           fi
 
       - setup_remote_docker:
-          version: "<< pipeline.parameters.docker-engine-version>>"
+          version: "<< pipeline.parameters.core-docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Doesn't actually read any private repos so doesn't need the magic Go-private-repo Git config stuff
@@ -131,7 +131,7 @@ jobs:
           fi
 
       - setup_remote_docker:
-          version: "<< pipeline.parameters.docker-engine-version>>"
+          version: "<< pipeline.parameters.core-docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Cache our dependencies
@@ -214,7 +214,7 @@ jobs:
       - checkout
 
       - setup_remote_docker:
-          version: "<< pipeline.parameters.docker-engine-version>>"
+          version: "<< pipeline.parameters.core-docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Doesn't actually use any Kurtosis private repos so doesn't need the Go-private-repo Git config magic
@@ -243,7 +243,7 @@ jobs:
       - checkout
 
       - setup_remote_docker:
-          version: "<< pipeline.parameters.docker-engine-version>>"
+          version: "<< pipeline.parameters.core-docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
