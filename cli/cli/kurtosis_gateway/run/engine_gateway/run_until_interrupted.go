@@ -1,7 +1,7 @@
 package engine_gateway
 
 import (
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/connection"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/live_engine_client_supplier"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/server/engine_gateway"

@@ -2,9 +2,9 @@ package engine_manager
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/kurtosis_config_getter"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cluster_setting"
