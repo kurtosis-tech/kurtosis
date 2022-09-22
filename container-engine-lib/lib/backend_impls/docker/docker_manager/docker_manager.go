@@ -543,10 +543,23 @@ func (manager DockerManager) CreateAndStartContainer(
 			}
 			logrus.Tracef("Network settings -> ports: %+v", allInterfaceHostPortBindings)
 
-			// This is "candidate" because if Docker is missing ports, it may end up as empty or half-filled (which we won't accept)
-			candidatePortBindingsOnExpectedInterface := manager.getHostPortBindingsFromDockerPortMap(publishedPortsSet, allInterfaceHostPortBindings)
-			if len(candidatePortBindingsOnExpectedInterface) == numPublishedPorts {
-				resultHostPortBindings = candidatePortBindingsOnExpectedInterface
+			allHostPortBindingsOnExpectedInterface := getHostPortBindingsOnExpectedInterface(allInterfaceHostPortBindings)
+
+			// Filter to the ports matching the ports we wanted to publish
+			usedHostPortBindingsOnExpectedInterface := map[nat.Port]*nat.PortBinding{}
+			for port, hostPortBinding := range allHostPortBindingsOnExpectedInterface {
+				if _, found := usedPortsSet[port]; !found {
+					logrus.Tracef("Port '%v' isn't in used port set, so we're skipping its host port binding", port)
+					continue
+				}
+
+				usedHostPortBindingsOnExpectedInterface[port] = hostPortBinding
+			}
+
+			// If we're missing a host port binding, it's likely because of https://github.com/moby/moby/issues/42860
+			// We'll retry after a sleep
+			if len(usedHostPortBindingsOnExpectedInterface) == numPublishedPorts {
+				resultHostPortBindings = usedHostPortBindingsOnExpectedInterface
 				break
 			}
 			time.Sleep(timeBetweenHostPortBindingChecks)
@@ -1129,21 +1142,10 @@ func (manager *DockerManager) getContainerCfg(
 }
 
 // Takes in a PortMap (as reported by Docker container inspect) and returns a map of the used ports -> host port binding on the expected interface
-// If the given PortMap doesn't have host port bindings for all the usedPortsSet, then len(resultMap) < len(usedPortsSet)
-// NOTE: You might be wondering why we can't use getHostPortBindingsFromContainerPortsList instead. The reason is that, VERY
-//  frustratingly, Docker's ContainerInspect (which we use when creating a container) returns ports in a completely different
-//  format than ContainerList so we need to have two separate methods to process the two of them.
-func (manager *DockerManager) getHostPortBindingsFromDockerPortMap(usedPortsSet map[nat.Port]bool, allInterfaceHostPortBindings nat.PortMap) map[nat.Port]*nat.PortBinding {
+// If no bindings for the interface are found, len(output) < len(input)
+func getHostPortBindingsOnExpectedInterface(hostPortBindingsOnAllInterfaces nat.PortMap) map[nat.Port]*nat.PortBinding {
 	result := map[nat.Port]*nat.PortBinding{}
-	for port, allInterfaceBindings := range allInterfaceHostPortBindings {
-		// Skip ports that aren't a part of the usedPorts set, so that the portBindings
-		//  result will have a 1:1 mapping
-		if _, found := usedPortsSet[port]; !found {
-			logrus.Tracef("Port '%v' isn't in used port set, so we're skipping looking for a host port binding for it", port)
-			continue
-		}
-
-		foundHostPortBinding := false
+	for port, allInterfaceBindings := range hostPortBindingsOnAllInterfaces {
 		for _, interfaceBinding := range allInterfaceBindings {
 			logrus.Tracef(
 				"Examining interface binding with host IP '%v' and port '%v' for port '%v'...",
@@ -1157,15 +1159,9 @@ func (manager *DockerManager) getHostPortBindingsFromDockerPortMap(usedPortsSet 
 					HostIP:   hostPortBindingInterfaceForUserConsumption,
 					HostPort: interfaceBinding.HostPort,
 				}
-				foundHostPortBinding = true
+				// Finding multiple public ports for the same interface would be silly, and unnecessary, so we break here
 				break
 			}
-		}
-		if !foundHostPortBinding {
-			// If we're missing a host port binding, it's likely because of https://github.com/moby/moby/issues/42860
-			// Eject, which will result in an incomplete candidate host port bindings map, which will
-			//  retry the whole thing again in a little bit
-			break
 		}
 	}
 	return result
@@ -1209,7 +1205,30 @@ func newContainerFromDockerContainer(dockerContainer types.Container) (*docker_m
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting container name from Docker container names '%+v'", dockerContainer.Names)
 	}
-	containerHostPortBindings := getHostPortBindingsFromContainerPortsList(dockerContainer.Ports)
+
+	// Frustratingly, Docker's ContainerList returns ports in a completely different format than ContainerInspect, so we need
+	// to process the ports into the same format as ContainerInspect so we can call getHostPortBindingsOnExpectedInterface
+	portMap := nat.PortMap{}
+	for _, port := range dockerContainer.Ports {
+		// It's kinda bad that we use "forbidden knowledge" about how nat.Port represents its internals to create one, but
+		// the nat.Port API is so infuriatingly awful to use (how do you even create one??)
+		privatePortStr := fmt.Sprintf("%v/%v", port.PrivatePort, port.Type)
+		privatePort := nat.Port(privatePortStr)
+
+		bindingsForPort, found := portMap[privatePort]
+		if !found {
+			bindingsForPort = []nat.PortBinding{}
+		}
+
+		hostBinding := nat.PortBinding{
+			HostIP:   port.IP,
+			HostPort: fmt.Sprintf("%v", port.PublicPort),
+		}
+
+		bindingsForPort = append(bindingsForPort, hostBinding)
+		portMap[privatePort] = bindingsForPort
+	}
+	containerHostPortBindings := getHostPortBindingsOnExpectedInterface(portMap)
 
 	newContainer := docker_manager_types.NewContainer(
 		dockerContainer.ID,
@@ -1238,28 +1257,6 @@ func getContainerNameByDockerContainerNames(dockerContainerNames []string) (stri
 		return containerName, nil
 	}
 	return "", stacktrace.NewError("There is not any Docker container name to get")
-}
-
-// NOTE: You might be wondering why we can't use getHostPortBindingsFromDockerPortMap instead. The reason is that, VERY
-//  frustratingly, Docker's ContainerInspect (which we use when creating a container) returns ports in a completely different
-//  format than ContainerList so we need to have two separate methods to process the two of them.
-func getHostPortBindingsFromContainerPortsList(dockerContainerPorts []types.Port) map[nat.Port]*nat.PortBinding {
-	hostPortBindings := make(map[nat.Port]*nat.PortBinding, len(dockerContainerPorts))
-
-	for _, port := range dockerContainerPorts {
-		publicPortString := fmt.Sprintf("%v", port.PublicPort)
-		containerPortNumberAndProtocolString := fmt.Sprintf("%v/%v", port.PrivatePort, port.Type)
-		natPort := nat.Port(containerPortNumberAndProtocolString)
-
-		// NOTE: We override the IP address because Docker will report 0.0.0.0, but Windows machines can't handle this
-		//  IP address
-		natPortBinding := &nat.PortBinding{
-			HostIP:   hostPortBindingInterfaceForUserConsumption,
-			HostPort: publicPortString,
-		}
-		hostPortBindings[natPort] = natPortBinding
-	}
-	return hostPortBindings
 }
 
 func getLabelsFilterArgs(searchFilterKey string, labels map[string]string) filters.Args {

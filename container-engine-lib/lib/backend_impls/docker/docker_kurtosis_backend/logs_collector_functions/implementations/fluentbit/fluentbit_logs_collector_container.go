@@ -1,16 +1,11 @@
 package fluentbit
 
 import (
-	"bytes"
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	shouldFollowLogsWhenTheContainerWillBeRemoved = false
 )
 
 type fluentbitLogsCollectorContainer struct {}
@@ -122,32 +117,6 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 	}
 	removeContainerFunc := func() {
 		removeCtx := context.Background()
-		//First try to print the logs before removing it
-		containerLogsReadCloser, err := dockerManager.GetContainerLogs(removeCtx, containerId, shouldFollowLogsWhenTheContainerWillBeRemoved)
-		if err != nil {
-			logrus.Errorf(
-				"Launching the logs collector container with ID '%v' didn't complete successfully so we "+
-				"tried to get the container's logs, but doing so throw the following error:\n%v",
-				containerId,
-				err)
-		}
-		defer containerLogsReadCloser.Close()
-
-		if containerLogsReadCloser != nil {
-			containerReadCloserBuffer := new(bytes.Buffer)
-			if  _, err := containerReadCloserBuffer.ReadFrom(containerLogsReadCloser); err != nil {
-				logrus.Errorf(
-					"Launching the logs collector container with ID '%v' didn't complete successfully so we "+
-						"tried to read the container's logs, but doing so throw the following error:\n%v",
-					containerId,
-					err)
-			} else {
-				containerLogsStr := containerReadCloserBuffer.String()
-				containerLogsHeader := "\n--------------------- FLUENTBIT CONTAINER LOGS -----------------------\n"
-				containerLogsFooter := "\n------------------- END FLUENTBIT CONTAINER LOGS --------------------"
-				logrus.Infof("Could not start the logs collector container; logs are below:%v%v%v", containerLogsHeader, containerLogsStr, containerLogsFooter)
-			}
-		}
 
 		if err := dockerManager.RemoveContainer(removeCtx, containerId); err != nil {
 			logrus.Errorf(
@@ -168,7 +137,7 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 	logsCollectorAvailabilityChecker := newFluentbitAvailabilityChecker(privateHttpPortSpec.GetNumber())
 
 	if err := logsCollectorAvailabilityChecker.WaitForAvailability(); err != nil {
-		return "",  nil, nil,stacktrace.Propagate(err, "An error occurred waiting for the log collector's to become available")
+
 	}
 
 	shouldRemoveLogsCollectorContainer = false

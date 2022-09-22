@@ -1,7 +1,6 @@
 package loki
 
 import (
-	"bytes"
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -104,31 +103,6 @@ func (lokiContainer *lokiLogsDatabaseContainer) CreateAndStart(
 	}
 	removeContainerFunc := func() {
 		removeCtx := context.Background()
-		containerLogsReadCloser, err := dockerManager.GetContainerLogs(removeCtx, containerId, shouldFollowLogsWhenTheContainerWillBeRemoved)
-		if err != nil {
-			logrus.Errorf(
-				"Launching the logs databaes container with ID '%v' didn't complete successfully so we "+
-					"tried to get the container's logs, but doing so throw the following error:\n%v",
-				containerId,
-				err)
-		}
-		defer containerLogsReadCloser.Close()
-
-		if containerLogsReadCloser != nil {
-			containerReadCloserBuffer := new(bytes.Buffer)
-			if  _, err :=containerReadCloserBuffer.ReadFrom(containerLogsReadCloser); err != nil {
-				logrus.Errorf(
-					"Launching the logs database container with ID '%v' didn't complete successfully so we "+
-						"tried to read the container's logs, but doing so throw the following error:\n%v",
-					containerId,
-					err)
-			} else {
-				containerLogsStr := containerReadCloserBuffer.String()
-				containerLogsHeader := "\n--------------------- LOKI CONTAINER LOGS -----------------------\n"
-				containerLogsFooter := "\n------------------- END LOKI CONTAINER LOGS --------------------"
-				logrus.Infof("Could not start the logs database container; logs are below:%v%v%v", containerLogsHeader, containerLogsStr, containerLogsFooter)
-			}
-		}
 
 		if err := dockerManager.RemoveContainer(removeCtx, containerId); err != nil {
 			logrus.Errorf(
