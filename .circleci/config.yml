@@ -148,7 +148,7 @@ jobs:
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           launcher/scripts/build.sh
 
-  build_api_container_server_code:
+  build_api_container_server:
     docker:
       - image: "cimg/go:<< pipeline.parameters.core-server-go-version >>"
     steps:
@@ -192,7 +192,7 @@ jobs:
   # -- End PR check jobs ---------------------------------------
 
   # -- Publish jobs --------------------------------------------
-  publish_api_source:
+  publish_core_api_source:
     docker:
       - image: cimg/base:2021.10
     steps:
@@ -230,7 +230,7 @@ jobs:
           git tag "v${version}"
           git push --tags
 
-  publish_api_typescript:
+  publish_core_api_typescript:
     docker:
       - image: "cimg/node:<< pipeline.parameters.core-api-node-version>>"
     steps:
@@ -268,7 +268,7 @@ jobs:
           docker push "${image_name_with_version}"
           docker push "${image_name_no_version}"
 
-  publish_server_image:
+  publish_api_container_server_image:
     docker:
       - image: "cimg/go:<< pipeline.parameters.core-server-go-version >>"
     steps:
@@ -307,11 +307,20 @@ workflows:
     jobs:
       # -- PR check jobs ------------------------------------------
       - kurtosis-docs-checker/check-docs:
-          markdown-link-check-config-json: "{}"
-          filters:
-            branches:
-              ignore:
-                - master
+          markdown-link-check-config-json: |
+            {
+                "replacementPatterns": [
+                    {
+                        "pattern": "^../kurtosis-engine-server",
+                        "replacement": "https://docs.kurtosistech.com/kurtosis-engine-server"
+                    }
+                ],
+                "ignorePatterns": [
+                    {
+                        "pattern": "https://github.com/kurtosis-tech/kurtosis-internal-docs/.*"
+                    }
+                ]
+            }
       - build_container_engine_lib:
           context:
             # This pulls in KurtosisBot's Github token, so that we can read from our private repos
@@ -320,7 +329,77 @@ workflows:
             branches:
               ignore:
                 - master
+
+      - build_core_api_golang:
+          # NOTE: Do NOT add our private Github user here; the API must be publicly-accessible so must build without them
+          context: []
+          filters:
+            branches:
+              ignore:
+                - master
+      - build_core_api_typescript:
+          filters:
+            branches:
+              ignore:
+                - master
+      - build_files_artifacts_expander:
+          context:
+            - docker-user
+          filters:
+            branches:
+              ignore:
+                - master
+      - build_core_launcher:
+          context:
+            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
+            - github-user
+          filters:
+            branches:
+              ignore:
+                - master
+      - build_api_container_server:
+          context:
+            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
+            - github-user
+            - docker-user
+          filters:
+            branches:
+              ignore:
+                - master
       # -- End PR check jobs ---------------------------------------
 
       # -- Artifact-publishing jobs --------------------------------
+      - publish_core_api_source:
+          context:
+            - github-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - publish_core_api_typescript:
+          context:
+            - npmjs-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - publish_files_artifacts_expander_image:
+          context:
+            - docker-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - publish_api_container_server_image:
+          context:
+            - github-user
+            - docker-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
       # -- End artifact-publishing jobs ----------------------------
