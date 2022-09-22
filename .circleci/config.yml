@@ -174,7 +174,7 @@ jobs:
       # Cache our dependencies
       - restore_cache:
           keys:
-            - << pipeline.parameters.core-server-build-cache-key-prefix>>-{{ checksum "server/go.sum" }}
+            - << pipeline.parameters.core-server-build-cache-key-prefix>>-{{ checksum "core/server/go.sum" }}
 
       # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
@@ -184,7 +184,7 @@ jobs:
           core/server/scripts/build.sh
 
       - save_cache:
-          key: << pipeline.parameters.core-server-build-cache-key-prefix>>-{{ checksum "server/go.sum" }}
+          key: << pipeline.parameters.core-server-build-cache-key-prefix>>-{{ checksum "core/server/go.sum" }}
           paths:
             - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
             - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
