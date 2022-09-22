@@ -94,12 +94,12 @@ func run(
 	keyValuePrinter.AddPair(enclaveIdTitleName, enclaveIdStr)
 	enclaveContainersStatusStr, err := enclave_status_stringifier.EnclaveContainersStatusStringifier(enclaveContainersStatus)
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, "An error occurred when stringify enclave containers status")
 	}
 	keyValuePrinter.AddPair(enclaveStatusTitleName, enclaveContainersStatusStr)
 	enclaveApiContainerStatusStr, err := enclave_status_stringifier.EnclaveAPIContainersStatusStringifier(enclaveApiContainerStatus)
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, "An error occurred when stringify enclave API containers status")
 	}
 	keyValuePrinter.AddPair(apiContainerStatusTitleName, enclaveApiContainerStatusStr)
 	isApiContainerRunning := enclaveApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING

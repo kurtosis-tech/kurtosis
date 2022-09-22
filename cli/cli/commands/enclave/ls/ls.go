@@ -56,7 +56,7 @@ func run(
 		orderedEnclaveIds = append(orderedEnclaveIds, enclaveId)
 		enclaveStatuses[enclaveId], err = enclave_status_stringifier.EnclaveContainersStatusStringifier(enclaveInfo.GetContainersStatus())
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "An error occurred when stringify enclave containers status")
 		}
 	}
 	sort.Strings(orderedEnclaveIds)
