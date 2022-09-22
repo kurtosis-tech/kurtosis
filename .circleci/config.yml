@@ -100,7 +100,7 @@ jobs:
             circleci-agent step halt
           fi
 
-      - run: api/typescript/scripts/build.sh
+      - run: core/api/typescript/scripts/build.sh
 
   build_files_artifacts_expander:
     docker:
@@ -126,7 +126,7 @@ jobs:
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Doesn't actually read any private repos so doesn't need the magic Go-private-repo Git config stuff
-      - run: files_artifacts_expander/scripts/build.sh
+      - run: core/files_artifacts_expander/scripts/build.sh
 
   build_core_launcher:
     docker:
@@ -146,7 +146,7 @@ jobs:
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
-          launcher/scripts/build.sh
+          core/launcher/scripts/build.sh
 
   build_api_container_server:
     docker:
@@ -181,7 +181,7 @@ jobs:
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
-          server/scripts/build.sh
+          core/server/scripts/build.sh
 
       - save_cache:
           key: << pipeline.parameters.core-server-build-cache-key-prefix>>-{{ checksum "server/go.sum" }}
@@ -235,7 +235,7 @@ jobs:
       - image: "cimg/node:<< pipeline.parameters.core-api-node-version>>"
     steps:
       - checkout
-      - run: api/typescript/scripts/build.sh
+      - run: core/api/typescript/scripts/build.sh
       - npm-publisher/publish-from-package-version:
           package-path: api/typescript
           publish-token-variable: NPMJS_AUTH_TOKEN
@@ -256,7 +256,7 @@ jobs:
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Doesn't actually use any Kurtosis private repos so doesn't need the Go-private-repo Git config magic
-      - run: files_artifacts_expander/scripts/build.sh
+      - run: core/files_artifacts_expander/scripts/build.sh
       - run: |
           set -euo pipefail
           source files_artifacts_expander/scripts/_constants.env
@@ -289,7 +289,7 @@ jobs:
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
-          server/scripts/build.sh
+          core/server/scripts/build.sh
       - run: |
           set -euo pipefail
           source server/scripts/_constants.env
