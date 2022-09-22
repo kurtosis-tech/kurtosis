@@ -1,0 +1,30 @@
+syntax = "proto3";
+package module_api;
+
+// NOTE: It sucks that we have this Go-specific logic inside this file (which should be language-agnostic). However, the Protobuf team have
+// taken a hard stance on this being the way it should be done, so we have to do it this way.
+option go_package = "github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings";
+
+import "google/protobuf/empty.proto";
+
+// A module that has an "execute" command
+service ExecutableModuleService {
+  // Returns true if the executable module is available
+  rpc IsAvailable(google.protobuf.Empty) returns (google.protobuf.Empty) {};
+
+  // Runs the module's execute function
+  rpc Execute(ExecuteArgs) returns (ExecuteResponse) {};
+}
+
+// ==============================================================================================
+//                                         Execute
+// ==============================================================================================
+message ExecuteArgs {
+  // JSON-serialized args to the module's execute function
+  string params_json = 1;
+}
+
+message ExecuteResponse {
+  // JSON-serialized response from the module's execute function
+  string response_json = 1;
+}
