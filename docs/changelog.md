@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+* Added `kurtosis-core` to the monorepo
+
 # 0.49.1
 
 ### Fixes
