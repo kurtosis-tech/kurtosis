@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+* Change enclave status to user-friendly string
+
 # 0.30.0
 
 ### Breaking Changes

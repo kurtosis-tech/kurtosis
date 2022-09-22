@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_status_stringifier"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
@@ -39,20 +40,20 @@ const (
 	headerPadChar    = "="
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
-	engineClientCtxKey  = "engine-client"
+	engineClientCtxKey    = "engine-client"
 )
 
 var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo kurtosis_engine_rpc_api_bindings.EnclaveInfo, isAPIContainerRunning bool) error{
-	"User Services":     printUserServices,
-	"Kurtosis Modules":  printModules,
+	"User Services":    printUserServices,
+	"Kurtosis Modules": printModules,
 }
 
 var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
-	CommandStr:              command_str_consts.EnclaveInspectCmdStr,
-	ShortDescription:        "Inspect an enclave",
-	LongDescription:         "List information about the enclave's status and contents",
+	CommandStr:                command_str_consts.EnclaveInspectCmdStr,
+	ShortDescription:          "Inspect an enclave",
+	LongDescription:           "List information about the enclave's status and contents",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
-	EngineClientContextKey:  engineClientCtxKey,
+	EngineClientContextKey:    engineClientCtxKey,
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIDArg(
 			enclaveIdArgKey,
@@ -91,9 +92,16 @@ func run(
 
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
 	keyValuePrinter.AddPair(enclaveIdTitleName, enclaveIdStr)
-	// TODO Refactor these to use a user-friendly string and not the enum name
-	keyValuePrinter.AddPair(enclaveStatusTitleName, enclaveContainersStatus.String())
-	keyValuePrinter.AddPair(apiContainerStatusTitleName, enclaveApiContainerStatus.String())
+	enclaveContainersStatusStr, err := enclave_status_stringifier.EnclaveContainersStatusStringifier(enclaveContainersStatus)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred when stringify enclave containers status")
+	}
+	keyValuePrinter.AddPair(enclaveStatusTitleName, enclaveContainersStatusStr)
+	enclaveApiContainerStatusStr, err := enclave_status_stringifier.EnclaveAPIContainersStatusStringifier(enclaveApiContainerStatus)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred when stringify enclave API containers status")
+	}
+	keyValuePrinter.AddPair(apiContainerStatusTitleName, enclaveApiContainerStatusStr)
 	isApiContainerRunning := enclaveApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING
 	if isApiContainerRunning {
 		apiContainerHostInfo := enclaveInfo.GetApiContainerHostMachineInfo()
@@ -130,7 +138,6 @@ func run(
 		numPadChars := (headerWidthChars - numRunesInHeader) / 2
 		padStr := strings.Repeat(headerPadChar, numPadChars)
 		fmt.Println(fmt.Sprintf("%v %v %v", padStr, header, padStr))
-
 
 		if err := printingFunc(ctx, kurtosisBackend, *enclaveInfo, isApiContainerRunning); err != nil {
 			logrus.Error(err)
