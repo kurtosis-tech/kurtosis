@@ -6,8 +6,8 @@
 package api_container_launcher
 
 import (
-	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
-	"github.com/kurtosis-tech/kurtosis-core/launcher/args/kurtosis_backend_config"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args/kurtosis_backend_config"
 )
 
 type KubernetesBackendConfigSupplier struct {
@@ -22,4 +22,3 @@ func NewKubernetesKurtosisBackendConfigSupplier() KubernetesBackendConfigSupplie
 func (backendConfigSupplier KubernetesBackendConfigSupplier) getKurtosisBackendConfig() (args.KurtosisBackendType, interface{}) {
 	return args.KurtosisBackendType_Kubernetes, kurtosis_backend_config.KubernetesBackendConfig{}
 }
-

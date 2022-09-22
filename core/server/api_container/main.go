@@ -12,15 +12,15 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
-	"github.com/kurtosis-tech/kurtosis-core/launcher/args/kurtosis_backend_config"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_launcher"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
+	"github.com/kurtosis-tech/kurtosis/core/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args/kurtosis_backend_config"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/module_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/module_store/module_launcher"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/networking_sidecar"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
@@ -94,8 +94,8 @@ func runMain() error {
 	switch serverArgs.KurtosisBackendType {
 	case args.KurtosisBackendType_Docker:
 		apiContainerModeArgs := &backend_creator.APIContainerModeArgs{
-			Context:   ctx,
-			EnclaveID: enclave.EnclaveID(serverArgs.EnclaveId),
+			Context:        ctx,
+			EnclaveID:      enclave.EnclaveID(serverArgs.EnclaveId),
 			APIContainerIP: ownIpAddress,
 		}
 		kurtosisBackend, err = backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgs)
@@ -107,7 +107,7 @@ func runMain() error {
 		_, ok := (clusterConfig).(kurtosis_backend_config.KubernetesBackendConfig)
 		if !ok {
 			return stacktrace.NewError(
-				"Failed to cast untyped cluster configuration object '%+v' to the appropriate type, even though " +
+				"Failed to cast untyped cluster configuration object '%+v' to the appropriate type, even though "+
 					"Kurtosis backend type is '%v'",
 				clusterConfig,
 				args.KurtosisBackendType_Kubernetes.String(),
@@ -183,11 +183,11 @@ func createServiceNetworkAndModuleStore(
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
 
 	/*
-	filesArtifactStore, err := enclaveDataDir.GetFilesArtifactStore()
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the files artifact store")
-	}
-	 */
+		filesArtifactStore, err := enclaveDataDir.GetFilesArtifactStore()
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the files artifact store")
+		}
+	*/
 
 	isPartitioningEnabled := args.IsPartitioningEnabled
 
@@ -198,13 +198,13 @@ func createServiceNetworkAndModuleStore(
 	)
 
 	/*
-	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
-		kurtosisBackend,
-		enclaveObjAttrsProvider,
-		enclaveId,
-		filesArtifactStore,
-	)
-	 */
+		filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
+			kurtosisBackend,
+			enclaveObjAttrsProvider,
+			enclaveId,
+			filesArtifactStore,
+		)
+	*/
 
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
 		kurtosisBackend,

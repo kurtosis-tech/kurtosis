@@ -1,14 +1,16 @@
 package binding_constructors
 
 import (
-	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/core/api/golang/kurtosis_core_rpc_api_bindings"
 )
 
 // The generated bindings don't come with constructors (leaving it up to the user to initialize all the fields), so we
 // add them so that our code is safer
 
 // ==============================================================================================
-//                           Shared Objects (Used By Multiple Endpoints)
+//
+//	Shared Objects (Used By Multiple Endpoints)
+//
 // ==============================================================================================
 func NewPort(number uint32, protocol kurtosis_core_rpc_api_bindings.Port_Protocol) *kurtosis_core_rpc_api_bindings.Port {
 	return &kurtosis_core_rpc_api_bindings.Port{
@@ -43,7 +45,9 @@ func NewServiceConfig(
 }
 
 // ==============================================================================================
-//                                     Load Module
+//
+//	Load Module
+//
 // ==============================================================================================
 func NewLoadModuleArgs(moduleId string, containerImage string, serializedParams string) *kurtosis_core_rpc_api_bindings.LoadModuleArgs {
 	return &kurtosis_core_rpc_api_bindings.LoadModuleArgs{
@@ -70,7 +74,9 @@ func NewLoadModuleResponse(
 }
 
 // ==============================================================================================
-//                                     Unload Module
+//
+//	Unload Module
+//
 // ==============================================================================================
 func NewUnloadModuleArgs(moduleId string) *kurtosis_core_rpc_api_bindings.UnloadModuleArgs {
 	return &kurtosis_core_rpc_api_bindings.UnloadModuleArgs{
@@ -85,7 +91,9 @@ func NewUnloadModuleResponse(moduleGuid string) *kurtosis_core_rpc_api_bindings.
 }
 
 // ==============================================================================================
-//                                     Execute Module
+//
+//	Execute Module
+//
 // ==============================================================================================
 func NewExecuteModuleArgs(moduleId string, serializedParams string) *kurtosis_core_rpc_api_bindings.ExecuteModuleArgs {
 	return &kurtosis_core_rpc_api_bindings.ExecuteModuleArgs{
@@ -101,7 +109,9 @@ func NewExecuteModuleResponse(serializedResult string) *kurtosis_core_rpc_api_bi
 }
 
 // ==============================================================================================
-//                                     Get Module Info
+//
+//	Get Module Info
+//
 // ==============================================================================================
 func NewGetModulesArgs(moduleIds map[string]bool) *kurtosis_core_rpc_api_bindings.GetModulesArgs {
 	return &kurtosis_core_rpc_api_bindings.GetModulesArgs{
@@ -134,7 +144,9 @@ func NewModuleInfo(
 }
 
 // ==============================================================================================
-//                                        Start Service
+//
+//	Start Service
+//
 // ==============================================================================================
 func NewStartServicesArgs(serviceConfigs map[string]*kurtosis_core_rpc_api_bindings.ServiceConfig, partitionID string) *kurtosis_core_rpc_api_bindings.StartServicesArgs {
 	return &kurtosis_core_rpc_api_bindings.StartServicesArgs{
@@ -148,11 +160,14 @@ func NewStartServicesResponse(
 	failedServicesErrors map[string]string) *kurtosis_core_rpc_api_bindings.StartServicesResponse {
 	return &kurtosis_core_rpc_api_bindings.StartServicesResponse{
 		SuccessfulServiceIdsToServiceInfo: successfulServicesInfo,
-		FailedServiceIdsToError: failedServicesErrors,
+		FailedServiceIdsToError:           failedServicesErrors,
 	}
 }
+
 // ==============================================================================================
-//                                       Get Service Info
+//
+//	Get Service Info
+//
 // ==============================================================================================
 func NewGetServicesArgs(serviceIds map[string]bool) *kurtosis_core_rpc_api_bindings.GetServicesArgs {
 	return &kurtosis_core_rpc_api_bindings.GetServicesArgs{
@@ -185,11 +200,13 @@ func NewServiceInfo(
 }
 
 // ==============================================================================================
-//                                        Remove Service
+//
+//	Remove Service
+//
 // ==============================================================================================
 func NewRemoveServiceArgs(serviceId string) *kurtosis_core_rpc_api_bindings.RemoveServiceArgs {
 	return &kurtosis_core_rpc_api_bindings.RemoveServiceArgs{
-		ServiceId:                   serviceId,
+		ServiceId: serviceId,
 	}
 }
 
@@ -200,7 +217,9 @@ func NewRemoveServiceResponse(serviceGuid string) *kurtosis_core_rpc_api_binding
 }
 
 // ==============================================================================================
-//                                          Repartition
+//
+//	Repartition
+//
 // ==============================================================================================
 func NewRepartitionArgs(
 	partitionServices map[string]*kurtosis_core_rpc_api_bindings.PartitionServices,
@@ -248,7 +267,9 @@ func NewUnpauseServiceArgs(serviceId string) *kurtosis_core_rpc_api_bindings.Unp
 }
 
 // ==============================================================================================
-//                                          Exec Command
+//
+//	Exec Command
+//
 // ==============================================================================================
 func NewExecCommandArgs(serviceId string, commandArgs []string) *kurtosis_core_rpc_api_bindings.ExecCommandArgs {
 	return &kurtosis_core_rpc_api_bindings.ExecCommandArgs{
@@ -265,7 +286,9 @@ func NewExecCommandResponse(exitCode int32, logOutput string) *kurtosis_core_rpc
 }
 
 // ==============================================================================================
-//                           Wait For Http Get Endpoint Availability
+//
+//	Wait For Http Get Endpoint Availability
+//
 // ==============================================================================================
 func NewWaitForHttpGetEndpointAvailabilityArgs(
 	serviceId string,
@@ -287,7 +310,9 @@ func NewWaitForHttpGetEndpointAvailabilityArgs(
 }
 
 // ==============================================================================================
-//                           Wait For Http Post Endpoint Availability
+//
+//	Wait For Http Post Endpoint Availability
+//
 // ==============================================================================================
 func NewWaitForHttpPostEndpointAvailabilityArgs(
 	serviceId string,
@@ -311,28 +336,36 @@ func NewWaitForHttpPostEndpointAvailabilityArgs(
 }
 
 // ==============================================================================================
-//                                  Upload Files Artifact
+//
+//	Upload Files Artifact
+//
 // ==============================================================================================
 func NewUploadFilesArtifactArgs(data []byte) *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs {
 	return &kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs{Data: data}
 }
 
 // ==============================================================================================
-//                                 Store Web Files Artifact
+//
+//	Store Web Files Artifact
+//
 // ==============================================================================================
 func NewStoreWebFilesArtifactArgs(url string) *kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs {
 	return &kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs{Url: url}
 }
 
 // ==============================================================================================
-//                              Store Files Artifact From Service
+//
+//	Store Files Artifact From Service
+//
 // ==============================================================================================
 func NewStoreFilesArtifactFromServiceArgs(serviceId string, sourcePath string) *kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs {
 	return &kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs{ServiceId: serviceId, SourcePath: sourcePath}
 }
 
 // ==============================================================================================
-//                              Render Templates To Files Artifact
+//
+//	Render Templates To Files Artifact
+//
 // ==============================================================================================
 func NewTemplateAndData(template string, dataAsJson string) *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData {
 	return &kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{

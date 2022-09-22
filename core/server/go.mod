@@ -1,18 +1,18 @@
-module github.com/kurtosis-tech/kurtosis-core/server
+module github.com/kurtosis-tech/kurtosis/core/server
 
 go 1.17
 
 replace (
-	github.com/kurtosis-tech/kurtosis-core/api/golang => ../api/golang
-	github.com/kurtosis-tech/kurtosis-core/files_artifacts_expander => ../files_artifacts_expander
-	github.com/kurtosis-tech/kurtosis-core/launcher => ../launcher
+	github.com/kurtosis-tech/kurtosis/core/api/golang => ../api/golang
+	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander => ../files_artifacts_expander
+	github.com/kurtosis-tech/kurtosis/core/launcher => ../launcher
 )
 
 require (
 	github.com/google/uuid v1.3.0
-	github.com/kurtosis-tech/kurtosis-core/api/golang v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis-core/files_artifacts_expander v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0 // Local dependency
+	github.com/kurtosis-tech/kurtosis/core/api/golang v0.0.0 // Local dependency
+	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander v0.0.0 // Local dependency
+	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // Local dependency
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409

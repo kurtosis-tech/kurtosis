@@ -1,4 +1,4 @@
-module github.com/kurtosis-tech/kurtosis-core/launcher
+module github.com/kurtosis-tech/kurtosis/core/launcher
 
 go 1.17
 

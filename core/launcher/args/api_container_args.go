@@ -2,7 +2,7 @@ package args
 
 import (
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis-core/launcher/args/kurtosis_backend_config"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args/kurtosis_backend_config"
 	"reflect"
 	"strings"
 
@@ -26,7 +26,7 @@ type APIContainerArgs struct {
 	GrpcListenPortNum      uint16 `json:"grpcListenPortNum"`
 	GrpcProxyListenPortNum uint16 `json:"grpcProxyListenPortNum"`
 
-	EnclaveId  string `json:"enclaveId"`
+	EnclaveId string `json:"enclaveId"`
 
 	IsPartitioningEnabled bool `json:"isPartitioningEnabled"`
 
@@ -77,7 +77,8 @@ func (args *APIContainerArgs) UnmarshalJSON(data []byte) error {
 }
 
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
-//  we get compile errors if there are missing fields
+//
+//	we get compile errors if there are missing fields
 func NewAPIContainerArgs(
 	version string,
 	logLevel string,

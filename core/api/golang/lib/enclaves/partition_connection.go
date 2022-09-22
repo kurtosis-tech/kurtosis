@@ -6,8 +6,8 @@
 package enclaves
 
 import (
-	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/core/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/core/api/golang/lib/binding_constructors"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -15,8 +15,8 @@ const (
 	unblockedPartitionConnectionPacketLossValue = 0
 	blockedPartitionConnectionPacketLossValue   = 100
 	//Random packet loss is specified in the 'tc' command in percent. The smallest possible non-zero value is: 2^32 = 0.0000000232% More info: https://wiki.linuxfoundation.org/networking/netem
-	smallestPossibleNonZeroPacketLossValue      = 0.0000000232
-	maxPossiblePacketLossValue                  = 100
+	smallestPossibleNonZeroPacketLossValue = 0.0000000232
+	maxPossiblePacketLossValue             = 100
 )
 
 // PartitionConnection To get an instance of this type, use the NewUnblockedPartitionConnection, NewBlockedPartitionConnection or NewSoftPartitionConnection functions
@@ -25,7 +25,9 @@ type PartitionConnection interface {
 }
 
 // ====================================================================================================
-//                                    	 Implementations
+//
+//	Implementations
+//
 // ====================================================================================================
 // A PartitionConnection implementation
 type partitionConnection struct {
@@ -66,7 +68,9 @@ func NewSoftPartitionConnection(packetLossPercentage float32) (PartitionConnecti
 }
 
 // ====================================================================================================
-// 									   Private helper methods
+//
+//	Private helper methods
+//
 // ====================================================================================================
 func isValidPacketLossValue(packetLossPercentage float32) error {
 

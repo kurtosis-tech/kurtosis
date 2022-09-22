@@ -7,7 +7,7 @@ package partition_topology
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/require"
 	"strconv"
@@ -59,7 +59,9 @@ var serviceSetWithService2And3 = map[service.ServiceID]bool{
 }
 
 // ===========================================================================================
-//               Benchmarks (execute with `go test -run=^$ -bench=.`)
+//
+//	Benchmarks (execute with `go test -run=^$ -bench=.`)
+//
 // ===========================================================================================
 func BenchmarkHugeNetworkSinglePartitionGetServicePacketLossConfigurationsByServiceID(b *testing.B) {
 	topology := getHugeTestTopology(b, "service-", packetLossPercentageValueForBlockedConnection)
@@ -151,7 +153,9 @@ func BenchmarkHugeNetworkPathologicalPartitioningGetServicePacketLossConfigurati
 }
 
 // ===========================================================================================
-//                                   Repartition tests
+//
+//	Repartition tests
+//
 // ===========================================================================================
 func TestAllServicesAreAlwaysInServicePacketLossConfigMap(t *testing.T) {
 	topology := get3NodeTestTopology(t, packetLossPercentageValueForBlockedConnection)
@@ -377,7 +381,9 @@ func TestUnknownPartitionsError(t *testing.T) {
 }
 
 // ===========================================================================================
-//                                 Add service tests
+//
+//	Add service tests
+//
 // ===========================================================================================
 func TestRegularAddServiceFlow(t *testing.T) {
 	defaultConnection := PartitionConnection{PacketLossPercentage: packetLossPercentageValueForBlockedConnection}
@@ -436,7 +442,9 @@ func TestAddServiceToNonexistentPartitionError(t *testing.T) {
 }
 
 // ===========================================================================================
-//                                Remove service tests
+//
+//	Remove service tests
+//
 // ===========================================================================================
 func TestRegularRemoveServiceFlow(t *testing.T) {
 	topology := get3NodeTestTopology(t, packetLossPercentageValueForBlockedConnection)
@@ -469,7 +477,9 @@ func TestRegularRemoveServiceFlow(t *testing.T) {
 }
 
 // ===========================================================================================
-//                               Private helper methods
+//
+//	Private helper methods
+//
 // ===========================================================================================
 func get3NodeTestTopology(t *testing.T, defaultPacketLossPercentageValue float32) *PartitionTopology {
 	defaultConnection := PartitionConnection{PacketLossPercentage: defaultPacketLossPercentageValue}

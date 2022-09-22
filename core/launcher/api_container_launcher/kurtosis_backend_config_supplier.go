@@ -6,7 +6,7 @@
 package api_container_launcher
 
 import (
-	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 )
 
 type KurtosisBackendConfigSupplier interface {

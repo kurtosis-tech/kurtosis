@@ -11,8 +11,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
-	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-core/api/golang/module_launch_api"
+	"github.com/kurtosis-tech/kurtosis/core/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/core/api/golang/module_launch_api"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -23,7 +23,7 @@ import (
 const (
 	waitForModuleAvailabilityTimeout = 10 * time.Second
 
-	modulePortNum      = uint16(1111)
+	modulePortNum = uint16(1111)
 )
 
 type ModuleLauncher struct {
@@ -114,7 +114,9 @@ func (launcher ModuleLauncher) Launch(
 }
 
 // ==========================================================================================
-//                                   Private helper functions
+//
+//	Private helper functions
+//
 // ==========================================================================================
 func waitUntilModuleContainerIsAvailable(ctx context.Context, client kurtosis_core_rpc_api_bindings.ExecutableModuleServiceClient) error {
 	contextWithTimeout, cancelFunc := context.WithTimeout(ctx, waitForModuleAvailabilityTimeout)

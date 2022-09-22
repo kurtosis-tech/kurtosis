@@ -1,4 +1,4 @@
-module github.com/kurtosis-tech/kurtosis-core/api/golang
+module github.com/kurtosis-tech/kurtosis/core/api/golang
 
 go 1.15
 

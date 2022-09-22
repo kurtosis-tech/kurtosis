@@ -10,8 +10,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gammazero/workerpool"
-	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-core/files_artifacts_expander/args"
+	"github.com/kurtosis-tech/kurtosis/core/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander/args"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -24,7 +24,7 @@ import (
 const (
 	successExitCode = 0
 	failureExitCode = 1
-	maxWorkers = 4
+	maxWorkers      = 4
 
 	//Files permissions for temporary file storing files artifact data: readable by all the user groups, but writable by user only
 	filesArtifactTemporaryFilePermissions = 0644
@@ -79,7 +79,7 @@ func runMain() error {
 	close(resultErrsChan)
 
 	allResultErrStrs := []string{}
-	for resultErr := range(resultErrsChan) {
+	for resultErr := range resultErrsChan {
 		if resultErr != nil {
 			allResultErrStrs = append(allResultErrStrs, resultErr.Error())
 		}

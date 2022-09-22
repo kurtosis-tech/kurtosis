@@ -11,8 +11,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_launcher"
+	"github.com/kurtosis-tech/kurtosis/core/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/module_store/module_launcher"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 	"strings"
@@ -20,13 +20,13 @@ import (
 )
 
 type moduleInfo struct {
-	moduleGUID    module.ModuleGUID
+	moduleGUID module.ModuleGUID
 
 	// NOTE: When we want restart-able enclaves, we'll need to not store this client and instead recreate one
 	//  from the port num/protocol stored as a label on the module container
 	client kurtosis_core_rpc_api_bindings.ExecutableModuleServiceClient
 
-	privateIpAddr net.IP
+	privateIpAddr     net.IP
 	privatePort       *port_spec.PortSpec
 	maybePublicIpAddr net.IP
 	maybePublicPort   *port_spec.PortSpec
@@ -34,7 +34,7 @@ type moduleInfo struct {
 
 type ModuleStore struct {
 	enclaveId enclave.EnclaveID
-	
+
 	mutex *sync.Mutex
 
 	kurtosisBackend backend_interface.KurtosisBackend

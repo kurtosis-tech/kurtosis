@@ -19,23 +19,23 @@ package services
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/core/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/core/api/golang/lib/binding_constructors"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 type ServiceContext struct {
-	client			kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
-	serviceId		ServiceID
+	client    kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
+	serviceId ServiceID
 
 	// Network location inside the enclave
-	privateIpAddr	string
-	privatePorts	map[string]*PortSpec
+	privateIpAddr string
+	privatePorts  map[string]*PortSpec
 
 	// Network location outside the enclave
-	publicIpAddr	string
-	publicPorts		map[string]*PortSpec
+	publicIpAddr string
+	publicPorts  map[string]*PortSpec
 }
 
 func NewServiceContext(client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient, serviceId ServiceID, privateIpAddr string, privatePorts map[string]*PortSpec, publicIpAddr string, publicPorts map[string]*PortSpec) *ServiceContext {
@@ -81,4 +81,3 @@ func (self *ServiceContext) ExecCommand(command []string) (int32, string, error)
 	}
 	return resp.ExitCode, resp.LogOutput, nil
 }
-

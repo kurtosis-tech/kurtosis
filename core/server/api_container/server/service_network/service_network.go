@@ -14,12 +14,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-core/files_artifacts_expander/args"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
+	"github.com/kurtosis-tech/kurtosis/core/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander/args"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/networking_sidecar"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -39,7 +39,7 @@ const (
 	// TODO This should be populated from the build flow that builds the files-artifacts-expander Docker image
 	filesArtifactsExpanderImage = "kurtosistech/kurtosis-files-artifacts-expander"
 
-	minMemoryLimit = 6 // Docker doesn't allow memory limits less than 6 megabytes
+	minMemoryLimit              = 6 // Docker doesn't allow memory limits less than 6 megabytes
 	defaultMemoryAllocMegabytes = 0
 )
 
@@ -57,6 +57,7 @@ type storeFilesArtifactResult struct {
 
 /*
 This is the in-memory representation of the service network that the API container will manipulate. To make
+
 	any changes to the test network, this struct must be used.
 */
 type ServiceNetwork struct {
@@ -158,10 +159,10 @@ func (network *ServiceNetwork) Repartition(
 // resources that were created during the failed operation, thus narrowing the funnel of operations
 // that were successful. Thus, this function:
 // Returns:
-//	- successfulService - mapping of successful service ids to service objects with info about that service
-//	- failedServices - mapping of failed service ids to errors causing those failures
-//	- error	- if error occurred with bulk operation as a whole
-func(network *ServiceNetwork) StartServices(
+//   - successfulService - mapping of successful service ids to service objects with info about that service
+//   - failedServices - mapping of failed service ids to errors causing those failures
+//   - error	- if error occurred with bulk operation as a whole
+func (network *ServiceNetwork) StartServices(
 	ctx context.Context,
 	serviceConfigs map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
 	partitionID service_network_types.PartitionID,
@@ -196,7 +197,6 @@ func(network *ServiceNetwork) StartServices(
 			partitionID,
 		)
 	}
-
 
 	successfulStarts, failedStarts, err := network.startServices(ctx, servicesToStart)
 	if err != nil {
@@ -240,14 +240,14 @@ func(network *ServiceNetwork) StartServices(
 
 	// We add all the successfully started services to a list of services that will be processed in later phases
 	servicesToProcessFurther := map[service.ServiceID]*service.Service{}
-	for serviceID, serviceInfo := range successfulStarts{
+	for serviceID, serviceInfo := range successfulStarts {
 		servicesToProcessFurther[serviceID] = serviceInfo
 	}
 	for serviceID, err := range failedStarts {
 		failedServicesPool[serviceID] = err
 	}
 
-	for serviceID, serviceInfo := range servicesToProcessFurther{
+	for serviceID, serviceInfo := range servicesToProcessFurther {
 		network.registeredServiceInfo[serviceID] = serviceInfo.GetRegistration()
 	}
 	servicesToRemoveFromRegistrationMap := map[service.ServiceID]bool{}
@@ -339,7 +339,6 @@ func(network *ServiceNetwork) StartServices(
 		logrus.Debugf("Successfully applied qdisc configurations")
 		// We don't need to undo the traffic control changes because in the worst case existing nodes have entries in their traffic control for IP addresses that don't resolve to any containers.
 	}
-
 
 	// All processing is done so the services can be marked successful
 	successfulServicePool := map[service.ServiceID]*service.Service{}
@@ -728,7 +727,7 @@ func (network *ServiceNetwork) startServices(
 		}
 		expanderEnvVars, err := args.GetEnvFromArgs(filesArtifactsExpanderArgs)
 		if err != nil {
-			failedServicesPool[serviceID] =  stacktrace.Propagate(err, "An error occurred getting files artifacts expander environment variables using args: %+v", filesArtifactsExpanderArgs)
+			failedServicesPool[serviceID] = stacktrace.Propagate(err, "An error occurred getting files artifacts expander environment variables using args: %+v", filesArtifactsExpanderArgs)
 			continue
 		}
 

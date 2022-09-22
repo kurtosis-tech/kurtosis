@@ -7,7 +7,7 @@ package partition_topology
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/stacktrace"
 	"strings"
 )
@@ -41,7 +41,9 @@ func NewPartitionTopology(defaultPartition service_network_types.PartitionID, de
 }
 
 // ================================================================================================
-//                                        Public Methods
+//
+//	Public Methods
+//
 // ================================================================================================
 func (topology *PartitionTopology) Repartition(
 	newPartitionServices map[service_network_types.PartitionID]map[service.ServiceID]bool,
@@ -199,7 +201,9 @@ func (topology PartitionTopology) GetServicePacketLossConfigurationsByServiceID(
 }
 
 // ================================================================================================
-//                                  Private Helper Methods
+//
+//	Private Helper Methods
+//
 // ================================================================================================
 func (topology PartitionTopology) getPartitionConnection(
 	a service_network_types.PartitionID,
