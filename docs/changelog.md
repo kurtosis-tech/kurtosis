@@ -1,5 +1,8 @@
 # TBD
 
+### Removals
+* Remove envoy proxy from docker image. No envoy proxy is being run anymore, effectively removing HTTP1.
+
 ### Changes
 * Added `kurtosis-core` to the monorepo
 

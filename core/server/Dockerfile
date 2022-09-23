@@ -1,15 +1,9 @@
-FROM  envoyproxy/envoy-alpine:v1.21.0
+FROM  alpine:3.16.2
 
 RUN apk update && apk add bash
 
-COPY ./envoy.yaml /etc/envoy/envoy.yaml
-
-RUN chmod go+r /etc/envoy/envoy.yaml
-
 WORKDIR /run
 
-COPY ./build/api-container ./run-api-container-and-envoy.sh ./
+COPY ./build/api-container ./
 
-ENV ENVOY_UID=0
-
-CMD bash ./run-api-container-and-envoy.sh
+CMD ./api-container
