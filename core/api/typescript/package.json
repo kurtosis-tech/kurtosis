@@ -1,5 +1,5 @@
 {
-    "name": "kurtosis-core-api-lib",
+    "name": "kurtosis-core-sdk",
     "//": "NOTE: DO NOT UPDATE THIS VERSION MANUALLY - IT WILL BE UPDATED DURING THE RELEASE PROCESS!",
     "version": "1.59.6",
     "description": "This repo contains a Typescript client for communicating with the Kurtosis API server, which both testsuites and Kurtosis Modules use to manipulate the test environment.",
@@ -14,7 +14,7 @@
     ],
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/kurtosis-tech/kurtosis-core-api-lib.git"
+        "url": "git+https://github.com/kurtosis-tech/kurtosis-core-sdk.git"
     },
     "keywords": [
         "kurtosis",
@@ -24,9 +24,9 @@
     "author": "Kurtosis Technologies Inc <support@kurtosistech.com> (https://www.kurtosistech.com/)",
     "license": "Apache-2.0",
     "bugs": {
-        "url": "https://github.com/kurtosis-tech/kurtosis-core-api-lib/issues"
+        "url": "https://github.com/kurtosis-tech/kurtosis-core-sdk/issues"
     },
-    "homepage": "https://github.com/kurtosis-tech/kurtosis-core-api-lib",
+    "homepage": "https://github.com/kurtosis-tech/kurtosis-core-sdk",
     "engines": {
         "node": ">=16.13.0"
     },
