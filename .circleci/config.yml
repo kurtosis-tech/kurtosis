@@ -321,6 +321,10 @@ workflows:
                     }
                 ]
             }
+          filters:
+            branches:
+              ignore:
+                - master
       - build_container_engine_lib:
           context:
             # This pulls in KurtosisBot's Github token, so that we can read from our private repos
