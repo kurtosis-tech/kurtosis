@@ -37,7 +37,7 @@ const (
 	filesArtifactExpansionDirsParentDirpath = "/files-artifacts"
 
 	// TODO This should be populated from the build flow that builds the files-artifacts-expander Docker image
-	filesArtifactsExpanderImage = "kurtosistech/kurtosis-files-artifacts-expander"
+	filesArtifactsExpanderImage = "kurtosistech/files-artifacts-expander"
 
 	minMemoryLimit              = 6 // Docker doesn't allow memory limits less than 6 megabytes
 	defaultMemoryAllocMegabytes = 0
