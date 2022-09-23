@@ -28,7 +28,7 @@ parameters:
     default: 16.13.0
   core-source-repo-name:
     type: string
-    default: kurtosis-core-api-lib
+    default: core-sdk
   core-server-build-cache-key-prefix:
     type: string
     default: "core-server-go-mod-v1"   # Can bump this version to bust the cache
@@ -214,7 +214,7 @@ jobs:
           cd /tmp/<< pipeline.parameters.core-source-repo-name >>/api
           # We need to consider the .proto files as well, b/c they (frustratingly) contain the Go module name
           for pattern in "*.go" "go.mod" "*.proto"; do
-            sed -i 's,github.com/kurtosis-tech/kurtosis-core,github.com/kurtosis-tech/<< pipeline.parameters.core-source-repo-name >>,g' $(find . -type f -name "${pattern}")
+            sed -i 's,github.com/kurtosis-tech/kurtosis/core,github.com/kurtosis-tech/<< pipeline.parameters.core-source-repo-name >>,g' $(find . -type f -name "${pattern}")
           done
       # Push the code up to the remote
       - run: |
