@@ -1,5 +1,7 @@
 # TBD
 
+# 0.49.3
+
 ### Fixes
 * Fix typescript package releases
 * 
