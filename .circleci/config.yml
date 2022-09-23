@@ -208,7 +208,7 @@ jobs:
       - run: |
           dest_api_dirpath="/tmp/<< pipeline.parameters.core-source-repo-name >>/api"
           rm -rf "${dest_api_dirpath}"
-          cp -r api "${dest_api_dirpath}"
+          cp -r core/api "${dest_api_dirpath}"
       # Now, swap Go module names to match the new repo we're pushing the code to
       - run: |
           cd /tmp/<< pipeline.parameters.core-source-repo-name >>/api
