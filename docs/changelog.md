@@ -6,6 +6,9 @@
 ### Changes
 * Added `kurtosis-core` to the monorepo
 
+### Fixes
+* Fixed circle to not docs check on merge
+
 # 0.49.1
 
 ### Fixes
