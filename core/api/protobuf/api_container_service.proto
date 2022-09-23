@@ -1,0 +1,452 @@
+syntax = "proto3";
+package api_container_api;
+
+// NOTE: It sucks that we have this Go-specific logic inside this file (which should be language-agnostic). However, the Protobuf team have
+// taken a hard stance on this being the way it should be done, so we have to do it this way.
+option go_package = "github.com/kurtosis-tech/kurtosis/core/api/golang/kurtosis_core_rpc_api_bindings";
+
+import "google/protobuf/empty.proto";
+
+service ApiContainerService {
+  // Starts a module container in the enclave
+  rpc LoadModule(LoadModuleArgs) returns (LoadModuleResponse) {};
+
+  // Gets information about loaded modules
+  rpc GetModules(GetModulesArgs) returns (GetModulesResponse) {};
+
+  // Stop and remove a module from the enclave
+  rpc UnloadModule(UnloadModuleArgs) returns (UnloadModuleResponse) {};
+
+  // Executes an executable module on the user's behalf
+  rpc ExecuteModule(ExecuteModuleArgs) returns (ExecuteModuleResponse) {};
+
+  // Start services by creating containers for them
+  rpc StartServices(StartServicesArgs) returns (StartServicesResponse) {};
+
+  // Returns the IDs of the current services in the enclave
+  rpc GetServices(GetServicesArgs) returns (GetServicesResponse) {};
+
+  // Instructs the API container to remove the given service
+  rpc RemoveService(RemoveServiceArgs) returns (RemoveServiceResponse) {};
+
+  // Instructs the API container to repartition the enclave
+  rpc Repartition(RepartitionArgs) returns (google.protobuf.Empty) {};
+
+  // Executes the given command inside a running container
+  rpc ExecCommand(ExecCommandArgs) returns (ExecCommandResponse) {};
+
+  // Pauses all processes running in the service container
+  rpc PauseService(PauseServiceArgs) returns (google.protobuf.Empty) {};
+
+  // Unpauses all paused processes running in the service container
+  rpc UnpauseService(UnpauseServiceArgs) returns (google.protobuf.Empty) {};
+
+  // Block until the given HTTP endpoint returns available, calling it through a HTTP Get request
+  rpc WaitForHttpGetEndpointAvailability(WaitForHttpGetEndpointAvailabilityArgs) returns (google.protobuf.Empty) {};
+
+  // Block until the given HTTP endpoint returns available, calling it through a HTTP Post request
+  rpc WaitForHttpPostEndpointAvailability(WaitForHttpPostEndpointAvailabilityArgs) returns (google.protobuf.Empty) {};
+
+  // Uploads a files artifact to the Kurtosis File System
+  rpc UploadFilesArtifact(UploadFilesArtifactArgs) returns (UploadFilesArtifactResponse) {};
+
+  // TODO Make this a server-side streaming method so the client can download large files
+  // Downloads a files artifact from the Kurtosis File System
+  rpc DownloadFilesArtifact(DownloadFilesArtifactArgs) returns (DownloadFilesArtifactResponse) {};
+
+  // Tells the API container to download a files artifact from the web to the Kurtosis File System
+  rpc StoreWebFilesArtifact(StoreWebFilesArtifactArgs) returns (StoreWebFilesArtifactResponse) {};
+
+  // Tells the API container to copy a files artifact from a service to the Kurtosis File System
+  rpc StoreFilesArtifactFromService(StoreFilesArtifactFromServiceArgs) returns (StoreFilesArtifactFromServiceResponse) {}
+
+  // Renders the templates and their data to a files artifact in the Kurtosis File System
+  rpc RenderTemplatesToFilesArtifact(RenderTemplatesToFilesArtifactArgs) returns (RenderTemplatesToFilesArtifactResponse) {}
+}
+
+// ==============================================================================================
+//                           Shared Objects (Used By Multiple Endpoints)
+// ==============================================================================================
+message Port {
+  enum Protocol {
+    TCP = 0;
+    SCTP = 1;
+    UDP = 2;
+  }
+
+  uint32 number = 1;
+
+  // The protocol that the port is listening on
+  Protocol protocol = 2;
+}
+
+message ServiceInfo {
+  // GUID of the service
+  string service_guid = 1;
+
+  // The IP address of the service inside the enclave
+  string private_ip_addr = 2;
+
+  // The ports on which the service is reachable inside the enclave, specified in user_specified_port_id -> port_info
+  // Will be exactly what was passed in at the time of starting the service
+  map<string, Port> private_ports = 3;
+
+  // Public IP address *outside* the enclave where the service is reachable
+  // NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
+  string maybe_public_ip_addr = 4;
+
+  // Mapping defining the ports that the service can be reached at *outside* the enclave, in the user_defined_port_id -> port_info where user_defined_port_id
+  //  corresponds to the ID that was passed in in StartServiceArgs
+  // NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
+  map<string, Port> maybe_public_ports = 5;
+}
+
+message ServiceConfig {
+  string container_image_name = 1;
+
+  // Definition of the ports *inside* the enclave that the container should have exposed, specified as user_friendly_port_id -> port_definition
+  map<string, Port> private_ports = 2;
+
+  //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+  map<string, Port> public_ports = 3;
+
+  // Corresponds to a Dockerfile's ENTRYPOINT directive; leave blank to do no overriding
+  repeated string entrypoint_args = 4;
+
+  // Corresponds to a Dockerfile's CMD directive; leave blank to do no overriding
+  repeated string cmd_args = 5;
+
+  // Containers environment variables that should be set in the service's container
+  map<string, string> env_vars = 6;
+
+  // Mapping of files_artifact_uuid -> filepath_on_container_to_mount_artifact_contents
+  map<string, string> files_artifact_mountpoints = 7;
+
+  // Corresponds to `millicpus`, 1000 millicpu = 1 CPU in both Docker and Kubernetes
+  uint64 cpu_allocation_millicpus = 8;
+
+  // Corresponds to available memory in megabytes in both Docker and Kubernetes
+  uint64 memory_allocation_megabytes = 9;
+
+  // The private IP address placeholder string used in entrypoint_args, cmd_args & env_vars that will be replaced with the private IP address inside the container
+  string private_ip_addr_placeholder = 10;
+}
+
+message ModuleInfo {
+  // GUID of the module
+  string guid = 1;
+
+  // The IP address of the module inside the enclave
+  string private_ip_addr = 2;
+
+  // The port inside the enclave where the module's gRPC server is running
+  Port private_grpc_port = 3;
+
+  // Public IP address *outside* the enclave where the module is reachable
+  // NOTE: Will be empty if the module isn't running or the backend doesn't support reporting public service info
+  string maybe_public_ip_addr = 4;
+
+  // Port where the module's gRPC server can be reached *outside* the enclave
+  // NOTE: Will be empty if the module isn't running or the backend doesn't support reporting public service info
+  Port maybe_public_grpc_port = 5;
+}
+
+// ==============================================================================================
+//                                     Load Module
+// ==============================================================================================
+message LoadModuleArgs {
+  string module_id = 1;
+
+  string container_image = 2;
+
+  // The serialized params object that will be passed, as-is, to the module for starting
+  // The serialization format is dependent on the module
+  string serialized_params = 3;
+}
+
+message LoadModuleResponse {
+  // The IP address of the module inside the enclave
+  string private_ip_addr = 1;
+
+  // The port on which the module is reachable inside the enclave
+  Port private_port = 2;
+
+  // Public IP address *outside* the enclave where the module is reachable
+  string public_ip_addr = 3;
+
+  // The port the module can be reached at *outside* the enclave
+  Port public_port = 4;
+
+  // The module's GUID
+  string guid = 5;
+}
+
+
+// ==============================================================================================
+//                                          Get Modules
+// ==============================================================================================
+message GetModulesArgs {
+  // "Set" of module IDs to fetch info for
+  // If empty, will fetch info for all modules
+  map<string, bool> ids = 1;
+}
+
+message GetModulesResponse {
+  // "Set" of current module IDs in the enclave -> info about the module
+  map<string, ModuleInfo> module_info = 1;
+}
+
+// ==============================================================================================
+//                                     Unload Module
+// ==============================================================================================
+message UnloadModuleArgs {
+  string module_id = 1;
+}
+message UnloadModuleResponse {
+  // The GUID of the module that was unloaded
+  string module_guid = 1;
+}
+
+// ==============================================================================================
+//                                     Execute Module
+// ==============================================================================================
+message ExecuteModuleArgs {
+  string module_id = 1;
+
+  // Serialized parameters data for the module's execute function
+  // The serialization format is dependent on the Module
+  string serialized_params = 2;
+}
+
+message ExecuteModuleResponse {
+  // Serialized result data from the module's execute function
+  // The serialization format is dependent on the Module
+  string serialized_result = 1;
+}
+
+// ==============================================================================================
+//                                        Start Service
+// ==============================================================================================
+message StartServicesArgs {
+  map<string, ServiceConfig> service_ids_to_configs = 1;
+
+  // The partition to start the service in
+  string partition_id = 2;
+}
+
+message StartServicesResponse {
+  // A map of Service IDs to info describing that newly started service
+  map<string, ServiceInfo> successful_service_ids_to_service_info = 1;
+
+  // A map of Service IDs that failed to start with the error causing the failure
+  map<string, string> failed_service_ids_to_error = 2;
+}
+
+// ==============================================================================================
+//                                          Get Services
+// ==============================================================================================
+message GetServicesArgs {
+  // "Set" of IDs to fetch info for
+  // If empty, will fetch info for all services
+  map<string, bool> service_ids = 1;
+}
+
+message GetServicesResponse {
+  // "Set" of current service IDs in the enclave -> info about the service
+  map<string, ServiceInfo> service_info = 1;
+}
+
+// ==============================================================================================
+//                                        Remove Service
+// ==============================================================================================
+message RemoveServiceArgs {
+  string service_id = 1;
+}
+
+message RemoveServiceResponse {
+  // The GUID of the service that was removed
+  string service_guid = 1;
+}
+
+// ==============================================================================================
+//                                          Repartition
+// ==============================================================================================
+message RepartitionArgs {
+  // Definition of partitionId -> services that should be inside the partition after repartitioning
+  map<string, PartitionServices> partition_services = 1;
+
+  // Definition of partitionIdA -> partitionIdB -> information defining the connection between A <-> B
+  map<string, PartitionConnections> partition_connections = 2;
+
+  // Information about the default inter-partition connection to set up if one is not defined in the
+  //  partition connections map
+  PartitionConnectionInfo default_connection = 3;
+}
+
+message PartitionServices {
+  // "Set" of service IDs in partition
+  map<string, bool> service_id_set = 1;
+}
+
+message PartitionConnections {
+  map<string, PartitionConnectionInfo> connection_info = 1;
+}
+
+message PartitionConnectionInfo {
+  // Percentage value of packet loss in a partition connection
+  float packet_loss_percentage = 1;
+}
+
+// ==============================================================================================
+//                                          Exec Command
+// ==============================================================================================
+message ExecCommandArgs {
+  // The service ID of the container that the command should be executed in
+  string service_id = 1;
+
+  repeated string command_args = 2;
+}
+
+// ==============================================================================================
+//                                          Pause/Unpause Service
+// ==============================================================================================
+message PauseServiceArgs {
+  // The service ID of the container that should be paused
+  string service_id = 1;
+}
+
+message UnpauseServiceArgs {
+  // The service ID of the container that should be unpaused
+  string service_id = 1;
+}
+
+message ExecCommandResponse {
+  int32 exit_code = 1;
+
+  // Assumes UTF-8 encoding
+  string log_output = 2;
+}
+
+// ==============================================================================================
+//                             Wait For HTTP Get Endpoint Availability
+// ==============================================================================================
+message WaitForHttpGetEndpointAvailabilityArgs {
+  //The ID of the service to check.
+  string service_id = 1;
+  //The port of the service to check. For instance 8080
+  uint32 port = 2;
+  //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
+  string path = 3;
+  //The number of milliseconds to wait until executing the first HTTP call
+  uint32 initial_delay_milliseconds = 4;
+  //Max number of HTTP call attempts that this will execute until giving up and returning an error
+  uint32 retries = 5;
+  //Number of milliseconds to wait between retries
+  uint32 retries_delay_milliseconds = 6;
+  //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
+  string body_text = 7;
+}
+
+// ==============================================================================================
+//                           Wait For HTTP Post Endpoint Availability
+// ==============================================================================================
+message WaitForHttpPostEndpointAvailabilityArgs {
+  //The ID of the service to check.
+  string service_id = 1;
+  //The port of the service to check. For instance 8080
+  uint32 port = 2;
+  //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
+  string path = 3;
+  //The content of the request body.
+  string request_body = 4;
+  //The number of milliseconds to wait until executing the first HTTP call
+  uint32 initial_delay_milliseconds = 5;
+  //Max number of HTTP call attempts that this will execute until giving up and returning an error
+  uint32 retries = 6;
+  //Number of milliseconds to wait between retries
+  uint32 retries_delay_milliseconds = 7;
+  //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
+  string body_text = 8;
+}
+
+// ==============================================================================================
+//                                          Upload Files Artifact
+// ==============================================================================================
+message UploadFilesArtifactArgs {
+  // Bytes of the files artifact to store
+  bytes data = 1;
+}
+
+message UploadFilesArtifactResponse {
+  // UUID of the files artifact, for use when referencing it in the future
+  string uuid = 1;
+}
+
+
+// ==============================================================================================
+//                                          Download Files Artifact
+// ==============================================================================================
+message DownloadFilesArtifactArgs {
+  // Files artifact ID to get bytes for
+  string id = 1;
+}
+
+message DownloadFilesArtifactResponse {
+  // Contents of the requested files artifact
+  bytes data = 1;
+}
+
+
+// ==============================================================================================
+//                                        Store Web Files Artifact
+// ==============================================================================================
+message StoreWebFilesArtifactArgs {
+  // URL to download the artifact from
+  string url = 1;
+}
+
+message StoreWebFilesArtifactResponse {
+  // UUID of the files artifact, for use when referencing it in the future
+  string uuid = 1;
+}
+
+
+// ==============================================================================================
+//                               Store Files Artifact From Service
+// ==============================================================================================
+
+message StoreFilesArtifactFromServiceArgs {
+  // ID that will be used to identify the service where the source files will be copied from
+  string service_id = 1;
+
+  // The absolute source path where the source files will be copied from
+  string source_path = 2;
+}
+
+message StoreFilesArtifactFromServiceResponse {
+  // UUID of the files artifact, for use when referencing it in the future
+  string uuid = 1;
+}
+
+// ==============================================================================================
+//                               Render Templates To Files Artifact
+// ==============================================================================================
+
+message RenderTemplatesToFilesArtifactArgs {
+  // An object representing the template and the data that needs to be inserted
+  message TemplateAndData {
+    // A string representation of the template file
+    string template = 1;
+
+    // A json string representation of the data to be written to template
+    string data_as_json = 2;
+  }
+
+  // A map of template and its data by the path of the file relative to the root of the files artifact it will be rendered into.
+  map <string, TemplateAndData> templates_and_data_by_destination_rel_filepath = 1;
+}
+
+message RenderTemplatesToFilesArtifactResponse {
+  // UUID of the files artifact, for use when referencing it in the future
+  string uuid = 1;
+}
