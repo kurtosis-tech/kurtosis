@@ -237,7 +237,7 @@ jobs:
       - checkout
       - run: core/api/typescript/scripts/build.sh
       - npm-publisher/publish-from-package-version:
-          package-path: api/typescript
+          package-path: core/api/typescript
           publish-token-variable: NPMJS_AUTH_TOKEN
 
   publish_files_artifacts_expander_image:
