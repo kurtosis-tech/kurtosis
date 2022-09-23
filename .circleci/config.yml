@@ -28,7 +28,7 @@ parameters:
     default: 16.13.0
   core-source-repo-name:
     type: string
-    default: core-sdk
+    default: kurtosis-core-sdk
   core-server-build-cache-key-prefix:
     type: string
     default: "core-server-go-mod-v1"   # Can bump this version to bust the cache
