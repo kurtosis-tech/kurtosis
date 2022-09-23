@@ -8,22 +8,22 @@ parameters:
   go-version:
     type: string
     default: "1.17"
-  cel-build-cache-key-prefix:
+  container-engine-lib-build-cache-key-prefix:
     type: string
     default: "go-mod-v1"   # Can bump this version to bust the cache
   # To upgrade the Docker Engine version, see which versions are supported at: https://circleci.com/docs/2.0/building-docker-images/#docker-version
-  core-docker-engine-version:
+  docker-engine-version:
     type: string
     default: 20.10.7
-  core-api-go-version:
+  api-go-version:
     type: string
     default: "1.15.13"
   # Separate (and newer) than the API version because we want lots of people to be able to use the Kurtosis API and the API doesn't need to be
   # the same version as the server
-  core-server-go-version:
+  server-go-version:
     type: string
     default: "1.17"
-  core-api-node-version:
+  api-node-version:
     type: string
     default: 16.13.0
   core-source-repo-name:
@@ -59,21 +59,21 @@ jobs:
       # Cache our dependencies
       - restore_cache:
           keys:
-            - << pipeline.parameters.cel-build-cache-key-prefix >>-{{ checksum "container-engine-lib/go.sum" }}
+            - << pipeline.parameters.container-engine-lib-build-cache-key-prefix >>-{{ checksum "container-engine-lib/go.sum" }}
 
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           container-engine-lib/scripts/build.sh
       - save_cache:
-          key: << pipeline.parameters.cel-build-cache-key-prefix >>-{{ checksum "container-engine-lib/go.sum" }}
+          key: << pipeline.parameters.container-engine-lib-build-cache-key-prefix >>-{{ checksum "container-engine-lib/go.sum" }}
           paths:
             - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
             - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
 
   build_core_api_golang:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.core-api-go-version>>"
+      - image: "cimg/go:<< pipeline.parameters.api-go-version>>"
     steps:
       - checkout
 
@@ -89,7 +89,7 @@ jobs:
 
   build_core_api_typescript:
     docker:
-      - image: "cimg/node:<< pipeline.parameters.core-api-node-version>>"
+      - image: "cimg/node:<< pipeline.parameters.api-node-version>>"
     steps:
       - checkout
 
@@ -104,7 +104,7 @@ jobs:
 
   build_files_artifacts_expander:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.core-server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
       # Install Kudet
       - run: |
@@ -122,7 +122,7 @@ jobs:
           fi
 
       - setup_remote_docker:
-          version: "<< pipeline.parameters.core-docker-engine-version>>"
+          version: "<< pipeline.parameters.docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Doesn't actually read any private repos so doesn't need the magic Go-private-repo Git config stuff
@@ -130,7 +130,7 @@ jobs:
 
   build_core_launcher:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.core-server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
       - checkout
 
@@ -150,7 +150,7 @@ jobs:
 
   build_api_container_server:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.core-server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
       # Install Kudet
       - run: |
@@ -168,7 +168,7 @@ jobs:
           fi
 
       - setup_remote_docker:
-          version: "<< pipeline.parameters.core-docker-engine-version>>"
+          version: "<< pipeline.parameters.docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Cache our dependencies
@@ -232,7 +232,7 @@ jobs:
 
   publish_core_api_typescript:
     docker:
-      - image: "cimg/node:<< pipeline.parameters.core-api-node-version>>"
+      - image: "cimg/node:<< pipeline.parameters.api-node-version>>"
     steps:
       - checkout
       - run: core/api/typescript/scripts/build.sh
@@ -242,7 +242,7 @@ jobs:
 
   publish_files_artifacts_expander_image:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.core-server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
       # Install Kudet
       - run: |
@@ -252,7 +252,7 @@ jobs:
       - checkout
 
       - setup_remote_docker:
-          version: "<< pipeline.parameters.core-docker-engine-version>>"
+          version: "<< pipeline.parameters.docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Doesn't actually use any Kurtosis private repos so doesn't need the Go-private-repo Git config magic
@@ -270,7 +270,7 @@ jobs:
 
   publish_api_container_server_image:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.core-server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
       # Install Kudet
       - run: |
@@ -281,7 +281,7 @@ jobs:
       - checkout
 
       - setup_remote_docker:
-          version: "<< pipeline.parameters.core-docker-engine-version>>"
+          version: "<< pipeline.parameters.docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
