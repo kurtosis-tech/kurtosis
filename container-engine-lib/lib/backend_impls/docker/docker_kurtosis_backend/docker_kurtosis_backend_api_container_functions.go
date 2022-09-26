@@ -417,7 +417,7 @@ func getApiContainerObjectFromContainerInfo(
 	privateIpAddrStr, found := labels[label_key_consts.PrivateIPDockerLabelKey.GetString()]
 	if !found {
 		return nil, stacktrace.NewError(
-			"Couldn't find the API container's private IP using label '%v' nor '%v'",
+			"Couldn't find the API container's private IP using label '%v'",
 			label_key_consts.PrivateIPDockerLabelKey.GetString(),
 		)
 	}
