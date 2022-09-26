@@ -2,7 +2,7 @@
 
 ### Fixes
 * Fix historical changelog for `kurtosis-core`
-* Fix a failing test for proxy port to be available
+* Don't check for grpc proxy to be available
 
 # 0.49.3
 
