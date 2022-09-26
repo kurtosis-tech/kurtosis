@@ -2177,17 +2177,33 @@ kurtosis-core-sdk@0.49.3:
     path-browserify "^1.0.1"
     tar "^6.1.11"
 
-kurtosis-engine-api-lib@1.34.7:
-  version "1.34.7"
-  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.34.7.tgz#a0098b78e55014d1d05e40731f3f06be36698a33"
-  integrity sha512-d9JD3M0ViuXmb2kiXR31d2F1IYFzoCQX4fK6s8CREbuohn6bFm9/2BZp6l+tsnCXGUvurDxcPEjEr3HV1z81iw==
+kurtosis-core-sdk@0.49.4:
+  version "0.49.4"
+  resolved "https://registry.yarnpkg.com/kurtosis-core-sdk/-/kurtosis-core-sdk-0.49.4.tgz#a3f43522d27e1570d516f4a67d75dd69befadfb6"
+  integrity sha512-QlqAMV3LgNNDjK8bCICmFQNMexiU2nYI8u20WitxCbZlrIhBVRgrMQ53Vf1UDkhAWQjwb4AAWuLhXR37LJnb5A==
+  dependencies:
+    "@grpc/grpc-js" "^1.4.4"
+    "@types/google-protobuf" "^3.15.5"
+    "@types/path-browserify" "^1.0.0"
+    browser-or-node "^2.0.0"
+    google-protobuf "^3.19.1"
+    grpc-web "^1.3.0"
+    loglevel "^1.7.1"
+    neverthrow "^4.2.2"
+    path-browserify "^1.0.1"
+    tar "^6.1.11"
+
+kurtosis-engine-api-lib@1.34.8:
+  version "1.34.8"
+  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.34.8.tgz#6e21c940e30312c12cb18b06f9c0152b320c4456"
+  integrity sha512-AGvx3pAQlRAPc54Z4rZX5QHmXLBhkseacVzUVVX5mbXQ951WqIFh4I8GLSsb/bi6LXzjlKmQq6CH1dc9HH1nFA==
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
     "@types/semver" "^7.3.9"
     browser-or-node "^2.0.0"
     google-protobuf "^3.17.3"
     grpc-web "^1.3.0"
-    kurtosis-core-sdk "0.49.3"
+    kurtosis-core-sdk "0.49.4"
     loglevel "^1.7.1"
     neverthrow "^4.2.2"
     semver "^7.3.5"

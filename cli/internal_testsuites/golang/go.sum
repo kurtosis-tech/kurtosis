@@ -70,8 +70,12 @@ github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-202112070208
 github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211207020830-504dbf5ed1a6/go.mod h1:LB2yqaqWgd0oSew+GsdpcI1jRTq3W7toM7tX8rcS7c4=
 github.com/kurtosis-tech/kurtosis-core-sdk/api/golang v0.0.0-20220923213123-a5b18db21de6 h1:rsFjNixbjYlhdFZcklQ1bpLvJsJY1ak1NdSBrI/E5I4=
 github.com/kurtosis-tech/kurtosis-core-sdk/api/golang v0.0.0-20220923213123-a5b18db21de6/go.mod h1:6QLdzF580ugsYQrAr3RP+atUc+6EefLaCUREL/X2uuY=
+github.com/kurtosis-tech/kurtosis-core-sdk/api/golang v0.0.0-20220926183752-90ae0bca6650 h1:T3oDBH1KxShmDdwTXDlY9Wmk2zd41QZw6NWUW5FjLiQ=
+github.com/kurtosis-tech/kurtosis-core-sdk/api/golang v0.0.0-20220926183752-90ae0bca6650/go.mod h1:6QLdzF580ugsYQrAr3RP+atUc+6EefLaCUREL/X2uuY=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220926170720-b58ef481629a h1:SMLk7DTJ4RafgwuOHIefurqiIvPQngjVB0LwWchmFhA=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220926170720-b58ef481629a/go.mod h1:DAIGdRNKU6xx+/0qVQA2OsjPpGZ1h8a8Xk7YBgCYkuQ=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220926190540-07592b9b0a0c h1:UW1beHI3b2bVym1rRJNDLRf4xDhmfeWfKD+fflRP5qw=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220926190540-07592b9b0a0c/go.mod h1:mhOFra53ZMqMmoc4/ZKAd/lT7GGCaGWfEoyRFj6tcK4=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 h1:YQTATifMUwZEtZYb0LVA7DK2pj8s71iY8rzweuUQ5+g=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409/go.mod h1:y5weVs5d9wXXHcDA1awRxkIhhHC1xxYJN8a7aXnE6S8=
 github.com/mholt/archiver v3.1.1+incompatible h1:1dCVxuqs0dJseYEhi5pl7MYPH9zDa1wBi7mF09cbNkU=
