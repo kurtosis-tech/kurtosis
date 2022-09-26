@@ -1,5 +1,12 @@
 # TBD
 
+### Breaking Changes
+* Use engine 1.34.8 and use core v0.49.4 from the `kurtosis` monorepo
+  * Users should restart their Kurtosis engine with `kurtosis engine restart`
+
+### Changes
+* Use engine 1.34.7 and use core v0.49.3 from the `kurtosis` monorepo
+
 # 0.30.1
 
 ### Changes
@@ -340,7 +347,7 @@ Accidentally-released empty release; no changes
 * Upgraded the engine to v1.17.3
     * Users should run `kurtosis engine restart` to use the latest version
     * Users should upgrade their version of `kurtosis-engine-api-lib` to 1.17.3 as well
-* Removed several methods from `EnclaveContext`; users should follow [the remediation steps here](https://docs.kurtosistech.com/kurtosis-core/changelog#1.45.3)
+* Removed several methods from `EnclaveContext`; users should follow [the remediation steps here](https://docs.kurtosistech.com/kurtosis/historical-core-changelog#1.45.3)
 
 # 0.14.1
 ### Features

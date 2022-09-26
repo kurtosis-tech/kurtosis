@@ -1,4 +1,4 @@
-import { ServiceContext } from "kurtosis-core-api-lib"
+import { ServiceContext } from "kurtosis-core-sdk"
 import * as apiServerApi from "example-api-server-api-lib";
 import { Result, ok, err } from "neverthrow"
 import log from "loglevel"

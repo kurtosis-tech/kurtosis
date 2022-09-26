@@ -5,7 +5,7 @@ import {
     PortSpec,
     ServiceContext,
     ServiceID
-} from "kurtosis-core-api-lib"
+} from "kurtosis-core-sdk"
 import {Result, ok, err} from "neverthrow"
 import log from "loglevel"
 
