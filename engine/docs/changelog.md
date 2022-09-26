@@ -1,5 +1,9 @@
 # TBD
 
+### Changes
+* Upgrade `kurtosis` to 0.49.3
+* Use the `kurtosis-core-sdk` for 0.49.3
+
 # 1.34.6
 
 ### Changes
