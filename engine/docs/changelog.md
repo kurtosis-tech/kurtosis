@@ -2,7 +2,7 @@
 
 ### Changes
 * Upgrade `kurtosis` to 0.49.3
-* Use the `kurtosis-core-sdk` for 0.49.3
+* Use the `kurtosis-core-sdk` 0.49.3 over `kurtosis-core-api-lib`
 
 # 1.34.6
 
