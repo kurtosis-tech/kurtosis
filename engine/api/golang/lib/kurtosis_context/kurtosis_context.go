@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis-core-sdk/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-core-sdk/api/golang/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_version"
 	"github.com/kurtosis-tech/stacktrace"
