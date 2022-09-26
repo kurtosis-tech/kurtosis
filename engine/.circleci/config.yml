@@ -220,8 +220,8 @@ workflows:
             {
                 "replacementPatterns": [
                     {
-                        "pattern": "^../kurtosis-core",
-                        "replacement": "https://docs.kurtosistech.com/kurtosis-core"
+                        "pattern": "^../kurtosis/",
+                        "replacement": "https://docs.kurtosistech.com/kurtosis/"
                     }
                 ]
             }

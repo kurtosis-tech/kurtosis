@@ -1,5 +1,9 @@
 # TBD
 
+### Changes
+* Upgrade `kurtosis` to 0.49.3
+* Use the `kurtosis-core-sdk` 0.49.3 over `kurtosis-core-api-lib`
+
 # 1.34.6
 
 ### Changes
@@ -344,7 +348,7 @@
 # 1.17.0
 ### Breaking Changes
 * Upgraded to Kurtosis Core 1.45.0
-    * Users should follow the changes [described in the changelog](https://docs.kurtosistech.com/kurtosis-core/changelog)
+    * Users should follow the changes [described in the changelog](https://docs.kurtosistech.com/kurtosis/historical-core-changelog)
 
 # 1.16.0
 ### Changes
@@ -353,7 +357,7 @@
 ### Breaking Changes
 * Upgraded to Kurtosis Core 1.44.0
     * Users should upgrade their engine-api-lib to version 1.44.0
-* The `EnclaveContext` has been modified fairly significantly; for a list of breaking changes and remediations see [the 1.44.0 docs](https://docs.kurtosistech.com/kurtosis-core/changelog)
+* The `EnclaveContext` has been modified fairly significantly; for a list of breaking changes and remediations see [the 1.44.0 docs](https://docs.kurtosistech.com/kurtosis/historical-core-changelog)
 
 # 1.15.6
 ### Features
@@ -605,7 +609,7 @@
 
 ### Breaking Changes
 * Upgraded to kurtosis-core 1.36.0, which changes the way partition connection information is defined during repartitioning
-  * Users should see [the Kurtosis Core changelog on the topic](https://docs.kurtosistech.com/kurtosis-core/changelog#breaking-changes) and implement the remediation there
+  * Users should see [the Kurtosis Core changelog on the topic](https://docs.kurtosistech.com/kurtosis/historical-core-changelog#breaking-changes) and implement the remediation there
 
 # 1.6.0
 _There aren't any changes in this release; it is being released to represent the breaking API change that should have happened in 1.5.7 due to Kurt Core's API version getting bumped_
