@@ -249,8 +249,8 @@ github.com/kurtosis-tech/kurtosis-core-sdk/api/golang v0.0.0-20220926183752-90ae
 github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0/go.mod h1:9agR34Ws/ALDUnPTioHl+DN5/HQdJ1fsZItW+ZCVLDE=
 github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.2-0.20220926183732-06b033c1d865 h1:i2skD6nuRiJ+zLDQgzfqn4u66dxKAuz9nXgSefNPSH8=
 github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.2-0.20220926183732-06b033c1d865/go.mod h1:9agR34Ws/ALDUnPTioHl+DN5/HQdJ1fsZItW+ZCVLDE=
-github.com/kurtosis-tech/kurtosis/core/launcher v0.0.2-0.20220926183732-06b033c1d865 h1:RjZBMKYKmHmcQejtK1RLfWMf4f6hilDlSKJSbOpkTpQ=
-github.com/kurtosis-tech/kurtosis/core/launcher v0.0.2-0.20220926183732-06b033c1d865/go.mod h1:943uFuVrsz0OKOBJuIeHCsH+1iZhLMzvnsHV1Lyl+Es=
+github.com/kurtosis-tech/kurtosis/core/launcher v0.0.1 h1:k7vi+XURck0Pi2WYDZ0Sa13s2f6ni6N78+Bo1dfU6Lw=
+github.com/kurtosis-tech/kurtosis/core/launcher v0.0.1/go.mod h1:943uFuVrsz0OKOBJuIeHCsH+1iZhLMzvnsHV1Lyl+Es=
 github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739 h1:iRUB05IfjPxizmRwsyjZ+jXaFRQ7atj3E+/aiK1nLcE=
 github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739/go.mod h1:tteWV+M47xMHxqCIPQmdmgPW80rhN8YfzrgRRWbQhOw=
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3 h1:Begoh17x/9rLWQLM64A8oINjoQk1DFKN2iwhQf1i0Rc=
