@@ -385,18 +385,6 @@ func (backend KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container grpc port '%v/%v' to become available", privateGrpcPortSpec.GetProtocol(), privateGrpcPortSpec.GetNumber())
 	}
 
-	if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
-		backend.kubernetesManager,
-		enclaveNamespaceName,
-		apiContainerPodName,
-		kurtosisApiContainerContainerName,
-		privateGrpcProxyPortSpec,
-		maxWaitForApiContainerContainerAvailabilityRetries,
-		timeBetweenWaitForApiContainerContainerAvailabilityRetries,
-	); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container grpc proxy port '%v/%v' to become available", privateGrpcProxyPortSpec.GetProtocol(), privateGrpcProxyPortSpec.GetNumber())
-	}
-
 	shouldRemoveRoleBinding = false
 	shouldRemoveRole = false
 	shouldRemoveServiceAccount = false
@@ -572,7 +560,9 @@ func (backend KubernetesKurtosisBackend) DestroyAPIContainers(
 }
 
 // ====================================================================================================
-//                                     Private Helper Methods
+//
+//	Private Helper Methods
+//
 // ====================================================================================================
 func (backend KubernetesKurtosisBackend) getMatchingApiContainerObjectsAndKubernetesResources(
 	ctx context.Context,
