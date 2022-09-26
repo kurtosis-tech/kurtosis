@@ -13,6 +13,7 @@ root_dirpath="$(dirname "${script_dirpath}")"
 BUILD_SCRIPT_RELATIVE_FILEPATHS=(
     "container-engine-lib/scripts/build.sh"
     "core/scripts/build.sh"
+    "engine/scripts/build.sh"
 )
 
 
