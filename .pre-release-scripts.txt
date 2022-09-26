@@ -1,2 +1,4 @@
 core/scripts/update-own-version-constants.sh
 core/scripts/update-package-versions.sh
+engine/scripts/update-own-version-constants.sh
+engine/scripts/update-package-versions.sh
