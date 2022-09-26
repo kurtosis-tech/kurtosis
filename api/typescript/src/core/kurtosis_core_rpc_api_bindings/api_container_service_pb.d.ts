@@ -337,6 +337,82 @@ export namespace ExecuteModuleResponse {
   }
 }
 
+export class ExecuteStartosisScriptArgs extends jspb.Message {
+  getSerializedScript(): SerializedStartosisScript | undefined;
+  setSerializedScript(value?: SerializedStartosisScript): ExecuteStartosisScriptArgs;
+  hasSerializedScript(): boolean;
+  clearSerializedScript(): ExecuteStartosisScriptArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ExecuteStartosisScriptArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: ExecuteStartosisScriptArgs): ExecuteStartosisScriptArgs.AsObject;
+  static serializeBinaryToWriter(message: ExecuteStartosisScriptArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ExecuteStartosisScriptArgs;
+  static deserializeBinaryFromReader(message: ExecuteStartosisScriptArgs, reader: jspb.BinaryReader): ExecuteStartosisScriptArgs;
+}
+
+export namespace ExecuteStartosisScriptArgs {
+  export type AsObject = {
+    serializedScript?: SerializedStartosisScript.AsObject,
+  }
+}
+
+export class ExecuteStartosisScriptResponse extends jspb.Message {
+  getSerializedScriptOutput(): SerializedStartosisScriptOutput | undefined;
+  setSerializedScriptOutput(value?: SerializedStartosisScriptOutput): ExecuteStartosisScriptResponse;
+  hasSerializedScriptOutput(): boolean;
+  clearSerializedScriptOutput(): ExecuteStartosisScriptResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ExecuteStartosisScriptResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ExecuteStartosisScriptResponse): ExecuteStartosisScriptResponse.AsObject;
+  static serializeBinaryToWriter(message: ExecuteStartosisScriptResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ExecuteStartosisScriptResponse;
+  static deserializeBinaryFromReader(message: ExecuteStartosisScriptResponse, reader: jspb.BinaryReader): ExecuteStartosisScriptResponse;
+}
+
+export namespace ExecuteStartosisScriptResponse {
+  export type AsObject = {
+    serializedScriptOutput?: SerializedStartosisScriptOutput.AsObject,
+  }
+}
+
+export class SerializedStartosisScript extends jspb.Message {
+  getSerializedScript(): string;
+  setSerializedScript(value: string): SerializedStartosisScript;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SerializedStartosisScript.AsObject;
+  static toObject(includeInstance: boolean, msg: SerializedStartosisScript): SerializedStartosisScript.AsObject;
+  static serializeBinaryToWriter(message: SerializedStartosisScript, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SerializedStartosisScript;
+  static deserializeBinaryFromReader(message: SerializedStartosisScript, reader: jspb.BinaryReader): SerializedStartosisScript;
+}
+
+export namespace SerializedStartosisScript {
+  export type AsObject = {
+    serializedScript: string,
+  }
+}
+
+export class SerializedStartosisScriptOutput extends jspb.Message {
+  getSerializedScriptOutput(): string;
+  setSerializedScriptOutput(value: string): SerializedStartosisScriptOutput;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SerializedStartosisScriptOutput.AsObject;
+  static toObject(includeInstance: boolean, msg: SerializedStartosisScriptOutput): SerializedStartosisScriptOutput.AsObject;
+  static serializeBinaryToWriter(message: SerializedStartosisScriptOutput, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SerializedStartosisScriptOutput;
+  static deserializeBinaryFromReader(message: SerializedStartosisScriptOutput, reader: jspb.BinaryReader): SerializedStartosisScriptOutput;
+}
+
+export namespace SerializedStartosisScriptOutput {
+  export type AsObject = {
+    serializedScriptOutput: string,
+  }
+}
+
 export class StartServicesArgs extends jspb.Message {
   getServiceIdsToConfigsMap(): jspb.Map<string, ServiceConfig>;
   clearServiceIdsToConfigsMap(): StartServicesArgs;

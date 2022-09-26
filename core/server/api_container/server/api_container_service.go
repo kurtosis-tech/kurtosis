@@ -21,6 +21,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
@@ -70,6 +71,10 @@ type ApiContainerService struct {
 
 	moduleStore *module_store.ModuleStore
 
+	startosisCompiler *startosis_engine.StartosisCompiler
+
+	startosisExecutor *startosis_engine.StartosisExecutor
+
 	metricsClient client.MetricsClient
 }
 
@@ -77,12 +82,16 @@ func NewApiContainerService(
 	filesArtifactStore *enclave_data_directory.FilesArtifactStore,
 	serviceNetwork *service_network.ServiceNetwork,
 	moduleStore *module_store.ModuleStore,
+	startosisCompiler *startosis_engine.StartosisCompiler,
+	startosisExecutor *startosis_engine.StartosisExecutor,
 	metricsClient client.MetricsClient,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
 		filesArtifactStore: filesArtifactStore,
 		serviceNetwork:     serviceNetwork,
 		moduleStore:        moduleStore,
+		startosisCompiler:  startosisCompiler,
+		startosisExecutor:  startosisExecutor,
 		metricsClient:      metricsClient,
 	}
 
@@ -169,6 +178,38 @@ func (apicService ApiContainerService) ExecuteModule(ctx context.Context, args *
 
 	resp := &kurtosis_core_rpc_api_bindings.ExecuteModuleResponse{SerializedResult: serializedResult}
 	return resp, nil
+}
+
+func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse, error) {
+	serializedStartosisScript := args.GetSerializedScript()
+
+	// TODO(gb): add metric tracking maybe?
+
+	instructions, err := apicService.startosisCompiler.Compile(serializedStartosisScript)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to compile startosis script: '%s'",
+			serializedStartosisScript)
+	}
+	logrus.Debugf("Successfully compiled startosis script into a serie of Kurtosis instructions: '%s'",
+		instructions)
+
+	scriptOutput, err := apicService.startosisExecutor.Execute(instructions)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error encountered running the kurtosis instructions: '%s'",
+			instructions)
+	}
+	logrus.Debugf("Successfully executed the set of kurtosis instructions: '%s'", scriptOutput)
+
+	var serializedScriptOutput string
+	for _, scriptOutputLine := range scriptOutput {
+		if scriptOutputLine.Output != "" {
+			serializedScriptOutput += scriptOutputLine.Output + "\n"
+		}
+	}
+
+	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
+		SerializedScriptOutput: binding_constructors.NewSerializedStartosisScriptResponse(serializedScriptOutput),
+	}, nil
 }
 
 func (apicService ApiContainerService) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {

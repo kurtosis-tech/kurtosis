@@ -20,6 +20,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/module_store/module_launcher"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/networking_sidecar"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
@@ -70,6 +71,7 @@ func runMain() error {
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't retrieve API container args from the environment")
 	}
+	enclaveId := enclave.EnclaveID(serverArgs.EnclaveId)
 
 	logLevel, err := logrus.ParseLevel(serverArgs.LogLevel)
 	if err != nil {
@@ -121,7 +123,7 @@ func runMain() error {
 		return stacktrace.NewError("Backend type '%v' was not recognized by API container.", serverArgs.KurtosisBackendType.String())
 	}
 
-	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(kurtosisBackend, enclaveDataDir, serverArgs, ownIpAddress)
+	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(enclaveId, kurtosisBackend, enclaveDataDir, serverArgs, ownIpAddress)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the service network & module store")
 	}
@@ -143,11 +145,16 @@ func runMain() error {
 		}
 	}()
 
+	startosisCompiler := startosis_engine.NewStartosisCompiler(enclaveId)
+	startosisExecutor := startosis_engine.NewStartosisExecutor(enclaveId, kurtosisBackend)
+
 	//Creation of ApiContainerService
 	apiContainerService, err := server.NewApiContainerService(
 		filesArtifactStore,
 		serviceNetwork,
 		moduleStore,
+		startosisCompiler,
+		startosisExecutor,
 		metricsClient,
 	)
 	if err != nil {
@@ -174,14 +181,12 @@ func runMain() error {
 }
 
 func createServiceNetworkAndModuleStore(
+	enclaveId enclave.EnclaveID,
 	kurtosisBackend backend_interface.KurtosisBackend,
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 	args *args.APIContainerArgs,
 	ownIpAddress net.IP,
 ) (*service_network.ServiceNetwork, *module_store.ModuleStore, error) {
-	enclaveIdStr := args.EnclaveId
-	enclaveId := enclave.EnclaveID(enclaveIdStr)
-
 	/*
 		filesArtifactStore, err := enclaveDataDir.GetFilesArtifactStore()
 		if err != nil {
