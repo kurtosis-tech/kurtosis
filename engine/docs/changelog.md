@@ -609,7 +609,7 @@
 
 ### Breaking Changes
 * Upgraded to kurtosis-core 1.36.0, which changes the way partition connection information is defined during repartitioning
-  * Users should see [the Kurtosis Core changelog on the topic](https://docs.kurtosistech.com/kurtosis-core/changelog#breaking-changes) and implement the remediation there
+  * Users should see [the Kurtosis Core changelog on the topic](https://docs.kurtosistech.com/kurtosis/historical-core-changelog#breaking-changes) and implement the remediation there
 
 # 1.6.0
 _There aren't any changes in this release; it is being released to represent the breaking API change that should have happened in 1.5.7 due to Kurt Core's API version getting bumped_
