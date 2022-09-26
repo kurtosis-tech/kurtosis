@@ -3,7 +3,7 @@ import * as semver from "semver"
 import * as jspb from "google-protobuf";
 import {err, ok, Result} from "neverthrow";
 import { isNode as isExecutionEnvNode} from "browser-or-node";
-import { EnclaveContext, EnclaveID } from "kurtosis-core-api-lib";
+import { EnclaveContext, EnclaveID } from "kurtosis-core-sdk";
 import { GenericEngineClient } from "./generic_engine_client";
 import { KURTOSIS_ENGINE_VERSION } from "../../kurtosis_engine_version/kurtosis_engine_version";
 import { GrpcWebEngineClient } from "./grpc_web_engine_client";
