@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+* Fix historical changelog for `kurtosis-core`
+
 # 0.49.3
 
 ### Fixes

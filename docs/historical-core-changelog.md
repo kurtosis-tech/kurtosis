@@ -1,4 +1,7 @@
-# TBD
+# Historical Changelogs
+
+These changelogs are from a time when `kurtosis-core` was its own repo. This isn't
+used anywhere and can be deleted but has been preserved to preserve history.
 
 # 1.59.6
 
