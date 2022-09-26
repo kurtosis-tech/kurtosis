@@ -1,5 +1,7 @@
 # TBD
 
+# 1.34.8
+
 ### Fixes
 * Use `kurtosis` 0.49.4 that fixes a grpc issue on Kubernetes 
 
