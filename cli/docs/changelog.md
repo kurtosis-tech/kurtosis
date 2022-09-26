@@ -1,5 +1,7 @@
 # TBD
 
+# 0.31.0
+
 ### Breaking Changes
 * Use engine 1.34.8 and use core v0.49.4 from the `kurtosis` monorepo
   * Users should restart their Kurtosis engine with `kurtosis engine restart`
