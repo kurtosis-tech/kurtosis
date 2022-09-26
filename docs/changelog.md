@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+* Added `kurtosis-engine-server` to the monorepo
+
 # 0.49.4
 
 ### Fixes
