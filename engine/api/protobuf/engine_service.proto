@@ -2,7 +2,7 @@ syntax = "proto3";
 package engine_api;
 // NOTE: It sucks that we have this Go-specific logic inside this file (which should be language-agnostic). However, the Protobuf team have
 // taken a hard stance on this being the way it should be done, so we have to do it this way.
-option go_package = "github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings";
+option go_package = "github.com/kurtosis-tech/kurtosis/engine/api/golang/kurtosis_engine_rpc_api_bindings";
 
 import "google/protobuf/empty.proto";
 

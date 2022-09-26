@@ -6,7 +6,7 @@
 package engine_server_launcher
 
 import (
-	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args"
+	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 )
 
 type KurtosisBackendConfigSupplier interface {

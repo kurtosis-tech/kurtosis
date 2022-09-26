@@ -2,7 +2,7 @@ package args
 
 import (
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args/kurtosis_backend_config"
+	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
 	"reflect"
 	"strings"
 

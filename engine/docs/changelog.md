@@ -730,7 +730,7 @@ _There aren't any changes in this release; it is being released to represent the
 * Refactored the entire structure of this repo to now contain the API
 
 ### Breaking Changes
-* The API now lives inside this repo in the `github.com/kurtosis-tech/kurtosis-engine-server/api/golang` package
+* The API now lives inside this repo in the `github.com/kurtosis-tech/kurtosis/engine/api/golang` package
 
 # 0.6.0
 ### Changes

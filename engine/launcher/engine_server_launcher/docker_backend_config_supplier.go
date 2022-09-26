@@ -6,8 +6,8 @@
 package engine_server_launcher
 
 import (
-	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args"
-	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args/kurtosis_backend_config"
+	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
+	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
 )
 
 type DockerBackendConfigSupplier struct {
@@ -17,7 +17,7 @@ func NewDockerKurtosisBackendConfigSupplier() DockerBackendConfigSupplier {
 	return DockerBackendConfigSupplier{}
 }
 
-func (backendConfigSupplier DockerBackendConfigSupplier) getKurtosisBackendConfig () (args.KurtosisBackendType, interface{}) {
+func (backendConfigSupplier DockerBackendConfigSupplier) getKurtosisBackendConfig() (args.KurtosisBackendType, interface{}) {
 	dockerBackendConfig := kurtosis_backend_config.DockerBackendConfig{}
 	return args.KurtosisBackendType_Docker, dockerBackendConfig
 }

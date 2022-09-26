@@ -1,5 +1,5 @@
 {
-    "name": "kurtosis-engine-api-lib",
+    "name": "kurtosis-engine-sdk",
     "version": "1.34.8",
     "main": "./build/index",
     "description": "This repo contains a Typescript client for communicating with the Kurtosis Engine server, which is responsible for creating and destroying Kurtosis Enclaves.",
@@ -13,7 +13,7 @@
     ],
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/kurtosis-tech/kurtosis-engine-api-lib.git"
+        "url": "git+https://github.com/kurtosis-tech/kurtosis-engine-sdk.git"
     },
     "keywords": [
         "kurtosis",
@@ -22,9 +22,9 @@
     "author": "Kurtosis Technologies Inc <support@kurtosistech.com> (https://www.kurtosistech.com/)",
     "license": "Apache-2.0",
     "bugs": {
-        "url": "https://github.com/kurtosis-tech/kurtosis-engine-api-lib/issues"
+        "url": "https://github.com/kurtosis-tech/kurtosis-engine-sdk/issues"
     },
-    "homepage": "https://github.com/kurtosis-tech/kurtosis-engine-api-lib#readme",
+    "homepage": "https://github.com/kurtosis-tech/kurtosis-engine-sdk#readme",
     "engines": {
         "node": ">=16.13.0"
     },

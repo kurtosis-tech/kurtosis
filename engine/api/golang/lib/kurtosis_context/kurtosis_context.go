@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/kurtosis-tech/kurtosis-core-sdk/api/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-core-sdk/api/golang/lib/enclaves"
-	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_version"
+	"github.com/kurtosis-tech/kurtosis/core/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/core/api/golang/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/engine/api/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/engine/api/golang/kurtosis_engine_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -262,14 +262,14 @@ func validateEngineApiVersion(ctx context.Context, engineServiceClient kurtosis_
 	doApiVersionsMatch := libraryEngineMajorVersion == runningEngineMajorVersion && libraryEngineMinorVersion == runningEngineMinorVersion
 
 	if !doApiVersionsMatch {
-		 return stacktrace.NewError(
-			 "An API version mismatch was detected between the running engine version '%v' and the engine version this Kurtosis SDK library expects, '%v'. You should:\n" +
-				 "  1) upgrade your Kurtosis CLI to latest using the instructions at https://docs.kurtosistech.com/installation.html\n" +
-				 "  2) use the Kurtosis CLI to restart your engine via 'kurtosis engine restart'\n"	+
-				 "  3) upgrade your Kurtosis SDK library using the instructions at https://github.com/kurtosis-tech/kurtosis-engine-api-lib\n",
-			 runningEngineSemver.String(),
-			 libraryEngineSemver.String(),
-		 )
+		return stacktrace.NewError(
+			"An API version mismatch was detected between the running engine version '%v' and the engine version this Kurtosis SDK library expects, '%v'. You should:\n"+
+				"  1) upgrade your Kurtosis CLI to latest using the instructions at https://docs.kurtosistech.com/installation.html\n"+
+				"  2) use the Kurtosis CLI to restart your engine via 'kurtosis engine restart'\n"+
+				"  3) upgrade your Kurtosis SDK library using the instructions at https://github.com/kurtosis-tech/kurtosis-engine-api-lib\n",
+			runningEngineSemver.String(),
+			libraryEngineSemver.String(),
+		)
 	}
 
 	return nil
