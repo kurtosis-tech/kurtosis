@@ -3,7 +3,7 @@ package enclave_manager
 import (
 	"fmt"
 	"github.com/blang/semver"
-	"github.com/kurtosis-tech/kurtosis-core/launcher/api_container_launcher"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
