@@ -8,8 +8,8 @@ import {
     ServiceID, 
     SoftPartitionConnection,
     UnblockedPartitionConnection
-} from "kurtosis-core-api-lib";
-import { PartitionConnection } from "kurtosis-core-api-lib/build/lib/enclaves/partition_connection";
+} from "kurtosis-core-sdk";
+import { PartitionConnection } from "kurtosis-core-sdk/build/lib/enclaves/partition_connection";
 import log from "loglevel";
 import { ok, Result, err } from "neverthrow";
 

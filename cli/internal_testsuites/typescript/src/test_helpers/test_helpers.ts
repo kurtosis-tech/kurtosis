@@ -8,7 +8,7 @@ import {
     PortSpec,
     PortProtocol,
     FilesArtifactUUID,
-} from "kurtosis-core-api-lib";
+} from "kurtosis-core-sdk";
 import * as datastoreApi from "example-datastore-server-api-lib";
 import * as serverApi from "example-api-server-api-lib";
 import { err, ok, Result } from "neverthrow";

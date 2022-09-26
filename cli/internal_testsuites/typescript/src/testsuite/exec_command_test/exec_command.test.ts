@@ -1,4 +1,4 @@
-import { ContainerConfig, ContainerConfigBuilder, ServiceContext } from "kurtosis-core-api-lib";
+import { ContainerConfig, ContainerConfigBuilder, ServiceContext } from "kurtosis-core-sdk";
 import log from "loglevel";
 import { err, ok, Result } from "neverthrow";
 

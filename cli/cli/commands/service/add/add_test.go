@@ -2,7 +2,7 @@ package add
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
+	"github.com/kurtosis-tech/kurtosis-core-sdk/api/golang/lib/services"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
