@@ -3,9 +3,9 @@ import * as semver from "semver"
 import * as jspb from "google-protobuf";
 import {err, ok, Result} from "neverthrow";
 import { isNode as isExecutionEnvNode} from "browser-or-node";
-import { EnclaveContext, EnclaveID } from "../../../../core/src";
+import { EnclaveContext, EnclaveID } from "../../../core";
 import { GenericEngineClient } from "./generic_engine_client";
-import { KURTOSIS_VERSION } from "../../../../kurtosis_version/kurtosis_version";
+import { KURTOSIS_VERSION } from "../../../kurtosis_version/kurtosis_version";
 import { GrpcWebEngineClient } from "./grpc_web_engine_client";
 import { GrpcNodeEngineClient } from "./grpc_node_engine_client";
 import {

@@ -27,7 +27,7 @@ fi
 echo "Successfully generated Go bindings in directory '${go_output_dirpath}'"
 
 # TypeScript
-typescript_output_dirpath="${api_dirpath}/${TYPESCRIPT_DIRNAME}/${ENGINE_DIR_NAME}/src/${RPC_BINDINGS_DIRNAME}"
+typescript_output_dirpath="${api_dirpath}/${TYPESCRIPT_DIRNAME}/src/${ENGINE_DIR_NAME}/${RPC_BINDINGS_DIRNAME}"
 if ! "${GENERATOR_SCRIPT_FILENAME}" "${input_dirpath}" "${typescript_output_dirpath}" typescript; then
     echo "Error: An error occurred generating TypeScript bindings in directory '${typescript_output_dirpath}'" >&2
     exit 1

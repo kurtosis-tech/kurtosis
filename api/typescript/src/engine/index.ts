@@ -1,5 +1,5 @@
 // Own Version
-export { KURTOSIS_VERSION } from "../../kurtosis_version/kurtosis_version";
+export { KURTOSIS_VERSION } from "../kurtosis_version/kurtosis_version";
 
 // TODO Remove this - shouldn't be necessary to be exported due to the newKurtosisContextFromLocalEngine() method
 export { KurtosisContext, DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM, DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM, DEFAULT_HTTP_LOGS_COLLECTOR_PORT_NUM } from "./lib/kurtosis_context/kurtosis_context";
