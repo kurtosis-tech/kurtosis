@@ -4,11 +4,14 @@
 set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 lang_root_dirpath="$(dirname "${script_dirpath}")"
+git_repo_dirpath="$(dirname "$(dirname "$(dirname "${lang_root_dirpath}")")")"
 
 
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
+
+${git_repo_dirpath}/core/api/typescript/scripts/build.sh
 cd "${lang_root_dirpath}"
 yarn install
 yarn test
