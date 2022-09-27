@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "outDir": "build",
+        "downlevelIteration": true,
+        "declaration": true,
+        "strict": true,
+        "target": "ES2015"
+    },
+    "include": [
+        "src/**/*"
+    ]
+}
