@@ -5,7 +5,7 @@ import {err, ok, Result} from "neverthrow";
 import { isNode as isExecutionEnvNode} from "browser-or-node";
 import { EnclaveContext, EnclaveID } from "../../../../core/src";
 import { GenericEngineClient } from "./generic_engine_client";
-import { KURTOSIS_ENGINE_VERSION } from "../../kurtosis_engine_version/kurtosis_engine_version";
+import { KURTOSIS_VERSION } from "../../../../kurtosis_version/kurtosis_version";
 import { GrpcWebEngineClient } from "./grpc_web_engine_client";
 import { GrpcNodeEngineClient } from "./grpc_node_engine_client";
 import {
@@ -256,9 +256,9 @@ export class KurtosisContext {
             log.warn(`We expected the running engine version to match format X.Y.Z, but instead got ${runningEngineVersionStr}; this means that we can't verify the API library and engine versions match so you may encounter runtime errors`)
         }
 
-        const libraryEngineSemver: semver.SemVer | null = semver.parse(KURTOSIS_ENGINE_VERSION)
+        const libraryEngineSemver: semver.SemVer | null = semver.parse(KURTOSIS_VERSION)
         if (libraryEngineSemver === null){
-            log.warn(`We expected the library engine version to match format X.Y.Z, but instead got ${KURTOSIS_ENGINE_VERSION}; this means that we can't verify the API library and engine versions match so you may encounter runtime errors`)
+            log.warn(`We expected the library engine version to match format X.Y.Z, but instead got ${KURTOSIS_VERSION}; this means that we can't verify the API library and engine versions match so you may encounter runtime errors`)
         }
 
         if(runningEngineSemver && libraryEngineSemver){

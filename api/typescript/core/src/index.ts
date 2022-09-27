@@ -1,5 +1,5 @@
 // Own Version
-export { KURTOSIS_CORE_VERSION } from "./kurtosis_core_version/kurtosis_core_version";
+export { KURTOSIS_VERSION } from "../../kurtosis_version/kurtosis_version";
 
 // Services
 export type { FilesArtifactUUID, ContainerConfig } from "./lib/services/container_config";
