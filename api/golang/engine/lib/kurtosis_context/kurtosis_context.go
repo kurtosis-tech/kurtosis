@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/kurtosis-tech/kurtosis/core/api/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/core/api/golang/lib/enclaves"
-	"github.com/kurtosis-tech/kurtosis/engine/api/golang/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/engine/api/golang/kurtosis_engine_version"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -176,7 +176,9 @@ func (kurtosisCtx *KurtosisContext) Clean(ctx context.Context, shouldCleanAll bo
 }
 
 // ====================================================================================================
-// 									   Private helper methods
+//
+//	Private helper methods
+//
 // ====================================================================================================
 func newEnclaveContextFromEnclaveInfo(
 	enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo,
