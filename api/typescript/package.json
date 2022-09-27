@@ -6,7 +6,7 @@
     "description": "This repo contains a Typescript client for communicating with the Kurtosis Engine server, which is responsible for creating, managing and destroying Kurtosis Enclaves.",
     "types": "./build/index",
     "scripts": {
-        "build": "tsc && cp -R src/core/kurtosis_core_rpc_api_bindings build/ && cp -R src/engine/kurtosis_engine_rpc_api_bindings build/",
+        "build": "tsc && cp -R src/core/kurtosis_core_rpc_api_bindings build/core/ && cp -R src/engine/kurtosis_engine_rpc_api_bindings build/engine/",
         "test": "ts-mocha -p tsconfig.json 'test/**/*.ts'"
     },
     "files": [
