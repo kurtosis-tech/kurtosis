@@ -4,6 +4,10 @@
 * Added `kurtosis-engine-server` to the monorepo
 * Merged the `kurtosis-engine-sdk` & `kurtosis-core-sdk`
 
+### Removals
+* Remove unused variables from Docker Kurtosis backend
+
+
 # 0.49.4
 
 ### Fixes
