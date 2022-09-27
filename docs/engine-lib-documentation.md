@@ -62,7 +62,7 @@ Destroys enclaves in the Kurtosis engine.
 
 _Found a bug? File it on [the repo][issues]!_
 
-[issues]: https://github.com/kurtosis-tech/kurtosis-engine-api-lib/issues
+[issues]: https://github.com/kurtosis-tech/kurtosis-engine-sdk/issues
 
 <!-- TODO Make the function definition not include args or return values, so we don't get these huge ugly links that break if we change the function signature -->
 <!-- TODO make the reference names a) be properly-cased (e.g. "Service.isAvailable" rather than "service_isavailable") and b) have an underscore in front of them, so they're easy to find-replace without accidentally over-replacing -->
