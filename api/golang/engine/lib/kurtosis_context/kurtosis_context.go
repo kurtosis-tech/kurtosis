@@ -33,7 +33,7 @@ const (
 
 var apiContainerLogLevel = logrus.DebugLevel
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
 type KurtosisContext struct {
 	client kurtosis_engine_rpc_api_bindings.EngineServiceClient
 }
@@ -66,7 +66,7 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 	return kurtosisContext, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
 func (kurtosisCtx *KurtosisContext) CreateEnclave(
 	ctx context.Context,
 	enclaveId enclaves.EnclaveID,
@@ -93,7 +93,7 @@ func (kurtosisCtx *KurtosisContext) CreateEnclave(
 	return enclaveContext, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
 func (kurtosisCtx *KurtosisContext) GetEnclaveContext(ctx context.Context, enclaveId enclaves.EnclaveID) (*enclaves.EnclaveContext, error) {
 	response, err := kurtosisCtx.client.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -118,7 +118,7 @@ func (kurtosisCtx *KurtosisContext) GetEnclaveContext(ctx context.Context, encla
 	return enclaveCtx, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
 func (kurtosisCtx *KurtosisContext) GetEnclaves(ctx context.Context) (map[enclaves.EnclaveID]bool, error) {
 	response, err := kurtosisCtx.client.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -136,7 +136,7 @@ func (kurtosisCtx *KurtosisContext) GetEnclaves(ctx context.Context) (map[enclav
 	return result, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
 func (kurtosisCtx *KurtosisContext) StopEnclave(ctx context.Context, enclaveId enclaves.EnclaveID) error {
 	stopEnclaveArgs := &kurtosis_engine_rpc_api_bindings.StopEnclaveArgs{
 		EnclaveId: string(enclaveId),
@@ -149,7 +149,7 @@ func (kurtosisCtx *KurtosisContext) StopEnclave(ctx context.Context, enclaveId e
 	return nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
 func (kurtosisCtx *KurtosisContext) DestroyEnclave(ctx context.Context, enclaveId enclaves.EnclaveID) error {
 	destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{
 		EnclaveId: string(enclaveId),
@@ -162,7 +162,7 @@ func (kurtosisCtx *KurtosisContext) DestroyEnclave(ctx context.Context, enclaveI
 	return nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
 func (kurtosisCtx *KurtosisContext) Clean(ctx context.Context, shouldCleanAll bool) (map[string]bool, error) {
 	cleanArgs := &kurtosis_engine_rpc_api_bindings.CleanArgs{
 		ShouldCleanAll: shouldCleanAll,

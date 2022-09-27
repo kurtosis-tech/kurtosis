@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+* Fixed a bug where engine launcher would try to launch older docker image `kurtosistech/kurtosis-engine-server`.
+
 # 0.49.5
 
 ### Changes
