@@ -71,7 +71,7 @@ type ApiContainerService struct {
 
 	moduleStore *module_store.ModuleStore
 
-	startosisCompiler *startosis_engine.StartosisCompiler
+	startosisInterpreter *startosis_engine.StartosisInterpreter
 
 	startosisExecutor *startosis_engine.StartosisExecutor
 
@@ -82,17 +82,17 @@ func NewApiContainerService(
 	filesArtifactStore *enclave_data_directory.FilesArtifactStore,
 	serviceNetwork *service_network.ServiceNetwork,
 	moduleStore *module_store.ModuleStore,
-	startosisCompiler *startosis_engine.StartosisCompiler,
+	startosisInterpreter *startosis_engine.StartosisInterpreter,
 	startosisExecutor *startosis_engine.StartosisExecutor,
 	metricsClient client.MetricsClient,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
-		filesArtifactStore: filesArtifactStore,
-		serviceNetwork:     serviceNetwork,
-		moduleStore:        moduleStore,
-		startosisCompiler:  startosisCompiler,
-		startosisExecutor:  startosisExecutor,
-		metricsClient:      metricsClient,
+		filesArtifactStore:   filesArtifactStore,
+		serviceNetwork:       serviceNetwork,
+		moduleStore:          moduleStore,
+		startosisInterpreter: startosisInterpreter,
+		startosisExecutor:    startosisExecutor,
+		metricsClient:        metricsClient,
 	}
 
 	return service, nil
@@ -185,30 +185,37 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 
 	// TODO(gb): add metric tracking maybe?
 
-	instructions, err := apicService.startosisCompiler.Compile(serializedStartosisScript)
+	interpretationOutput, potentialInterpretationError, generatedInstructionsList, err :=
+		apicService.startosisInterpreter.Interpret(serializedStartosisScript)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to compile startosis script: '%s'",
+		return nil, stacktrace.Propagate(err, "Unable to interpret Startosis script for an unexpected reason: \n%v",
 			serializedStartosisScript)
 	}
-	logrus.Debugf("Successfully compiled startosis script into a serie of Kurtosis instructions: '%s'",
-		instructions)
+	if potentialInterpretationError != nil {
+		return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
+			SerializedScriptOutput: interpretationOutput.Output,
+			InterpretationError:    potentialInterpretationError.Error,
+		}, nil
+	}
 
-	scriptOutput, err := apicService.startosisExecutor.Execute(instructions)
+	logrus.Debugf("Successfully interpreted Startosis script into a series of Kurtosis instructions: \n%v",
+		generatedInstructionsList)
+
+	executionError, err := apicService.startosisExecutor.Execute(generatedInstructionsList)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error encountered running the kurtosis instructions: '%s'",
-			instructions)
+		return nil, stacktrace.Propagate(err, "Unexpected error encountered running the Kurtosis instructions: \n%v",
+			generatedInstructionsList)
 	}
-	logrus.Debugf("Successfully executed the set of kurtosis instructions: '%s'", scriptOutput)
-
-	var serializedScriptOutput string
-	for _, scriptOutputLine := range scriptOutput {
-		if scriptOutputLine.Output != "" {
-			serializedScriptOutput += scriptOutputLine.Output + "\n"
-		}
+	if executionError != nil {
+		return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
+			SerializedScriptOutput: interpretationOutput.Output,
+			ExecutionError:         executionError.Error,
+		}, nil
 	}
+	logrus.Debugf("Successfully executed the list of Kurtosis instructions")
 
 	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
-		SerializedScriptOutput: binding_constructors.NewSerializedStartosisScriptResponse(serializedScriptOutput),
+		SerializedScriptOutput: interpretationOutput.Output,
 	}, nil
 }
 

@@ -1,27 +1,26 @@
 package startosis_engine
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
 type StartosisExecutor struct {
-	enclaveId enclave.EnclaveID
-
-	backend backend_interface.KurtosisBackend
 }
 
-func NewStartosisExecutor(enclaveId enclave.EnclaveID, backend backend_interface.KurtosisBackend) *StartosisExecutor {
+type ExecutionError struct {
+	Error string
+}
+
+func NewStartosisExecutor() *StartosisExecutor {
 	// TODO(gb): Implement the bindings to send instructions straight to the backend
-	return &StartosisExecutor{
-		enclaveId: enclaveId,
-		backend:   backend,
-	}
+	return &StartosisExecutor{}
 }
 
-func (executor *StartosisExecutor) Execute(instructions []kurtosis_instruction.KurtosisInstruction) ([]kurtosis_instruction.KurtosisInstructionOutput, error) {
+// Execute executes the list of Kurtosis instructions against the Kurtosis backend
+// It returns a potential execution error if something went wrong.
+// It returns a error if something unexpected happens outside the execution of the script
+func (executor *StartosisExecutor) Execute(instructions []kurtosis_instruction.KurtosisInstruction) (*ExecutionError, error) {
 	// TODO(gb): implement
 	return nil, stacktrace.NewError("not implemented")
 }

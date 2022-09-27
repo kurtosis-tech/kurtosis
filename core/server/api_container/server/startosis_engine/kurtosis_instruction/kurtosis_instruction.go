@@ -1,7 +1,5 @@
 package kurtosis_instruction
 
-import "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-
 type RawKurtosisInstruction struct {
 	instruction string
 }
@@ -13,7 +11,7 @@ type KurtosisInstructionOutput struct {
 type KurtosisInstruction interface {
 	GetRawInstruction() *RawKurtosisInstruction
 
-	Execute(backend backend_interface.KurtosisBackend) (*KurtosisInstructionOutput, error)
+	Execute() (*KurtosisInstructionOutput, error)
 
 	String() string
 }

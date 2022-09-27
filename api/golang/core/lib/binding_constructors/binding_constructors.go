@@ -110,17 +110,6 @@ func NewExecuteModuleResponse(serializedResult string) *kurtosis_core_rpc_api_bi
 
 // ==============================================================================================
 //
-//	Execute Startosis script
-//
-// ==============================================================================================
-func NewSerializedStartosisScriptResponse(serializedScriptOutput string) *kurtosis_core_rpc_api_bindings.SerializedStartosisScriptOutput {
-	return &kurtosis_core_rpc_api_bindings.SerializedStartosisScriptOutput{
-		SerializedScriptOutput: serializedScriptOutput,
-	}
-}
-
-// ==============================================================================================
-//
 //	Get Module Info
 //
 // ==============================================================================================
