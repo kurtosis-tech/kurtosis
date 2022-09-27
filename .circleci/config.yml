@@ -412,7 +412,7 @@ workflows:
                     {
                         "pattern": "^../kurtosis/",
                         "replacement": "https://docs.kurtosistech.com/kurtosis/"
-                    }            
+                    }
                 ],
                 "ignorePatterns": [
                     {
