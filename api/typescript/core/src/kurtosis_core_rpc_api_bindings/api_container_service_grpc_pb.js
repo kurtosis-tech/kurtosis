@@ -407,7 +407,7 @@ executeModule: {
     responseSerialize: serialize_api_container_api_ExecuteModuleResponse,
     responseDeserialize: deserialize_api_container_api_ExecuteModuleResponse,
   },
-  // Starts previously-registered services by creating containers for them
+  // Start services by creating containers for them
 startServices: {
     path: '/api_container_api.ApiContainerService/StartServices',
     requestStream: false,

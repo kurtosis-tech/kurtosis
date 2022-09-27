@@ -31,7 +31,7 @@ type ApiContainerServiceClient interface {
 	UnloadModule(ctx context.Context, in *UnloadModuleArgs, opts ...grpc.CallOption) (*UnloadModuleResponse, error)
 	// Executes an executable module on the user's behalf
 	ExecuteModule(ctx context.Context, in *ExecuteModuleArgs, opts ...grpc.CallOption) (*ExecuteModuleResponse, error)
-	// Starts previously-registered services by creating containers for them
+	// Start services by creating containers for them
 	StartServices(ctx context.Context, in *StartServicesArgs, opts ...grpc.CallOption) (*StartServicesResponse, error)
 	// Returns the IDs of the current services in the enclave
 	GetServices(ctx context.Context, in *GetServicesArgs, opts ...grpc.CallOption) (*GetServicesResponse, error)
@@ -244,7 +244,7 @@ type ApiContainerServiceServer interface {
 	UnloadModule(context.Context, *UnloadModuleArgs) (*UnloadModuleResponse, error)
 	// Executes an executable module on the user's behalf
 	ExecuteModule(context.Context, *ExecuteModuleArgs) (*ExecuteModuleResponse, error)
-	// Starts previously-registered services by creating containers for them
+	// Start services by creating containers for them
 	StartServices(context.Context, *StartServicesArgs) (*StartServicesResponse, error)
 	// Returns the IDs of the current services in the enclave
 	GetServices(context.Context, *GetServicesArgs) (*GetServicesResponse, error)
