@@ -390,4 +390,4 @@ _Found a bug? File it on [the repo][issues]!_
 
 [templateanddata]: #templateanddata
 
-[kurtosiscontext_createenclave]: ../kurtosis-engine-server/lib-documentation#lib-documentation.md#createenclaveenclaveid-enclaveid-boolean-ispartitioningenabled---enclavecontext-enclavecontext
+[kurtosiscontext_createenclave]: ./engine-lib-documentation.md#createenclaveenclaveid-enclaveid-boolean-ispartitioningenabled---enclavecontextenclavecontext-enclavecontext
