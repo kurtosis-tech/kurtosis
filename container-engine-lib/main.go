@@ -99,8 +99,8 @@ func runKurtosisBackendTesting() error {
 
 	engine, err := backend.CreateEngine(
 		ctx,
-		"kurtosistech/kurtosis-engine-server",
-		"1.29.0",
+		"kurtosistech/engine",
+		"0.49.5",
 		9710,
 		9711,
 		9712,
@@ -133,8 +133,8 @@ func runKurtosisBackendTesting() error {
 
 	engine2, err := backend.CreateEngine(
 		ctx,
-		"kurtosistech/kurtosis-engine-server",
-		"1.29.0",
+		"kurtosistech/engine",
+		"0.49.5",
 		9810,
 		9811,
 		9812,
@@ -233,7 +233,5 @@ func runKurtosisBackendTesting() error {
 
 	*/
 
-
 	return nil
 }
-

@@ -36,7 +36,7 @@ export const DEFAULT_HTTP_LOGS_COLLECTOR_PORT_NUM: number = 9712;
 // Blank tells the engine server to use the default
 const DEFAULT_API_CONTAINER_VERSION_TAG = "";
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
 export class KurtosisContext {
     private readonly client: GenericEngineClient
 
@@ -88,7 +88,7 @@ export class KurtosisContext {
         return ok(kurtosisContext)
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
     public async createEnclave(enclaveId: string, isPartitioningEnabled: boolean): Promise<Result<EnclaveContext, Error>> {
         const enclaveArgs: CreateEnclaveArgs = newCreateEnclaveArgs(
             enclaveId,
@@ -118,7 +118,7 @@ export class KurtosisContext {
         return ok(enclaveContext);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
     public async getEnclaveContext(enclaveId: EnclaveID): Promise<Result<EnclaveContext, Error>> {
         const getEnclavesResponseResult = await this.client.getEnclavesResponse();
         if (getEnclavesResponseResult.isErr()) {
@@ -140,7 +140,7 @@ export class KurtosisContext {
         return ok(newEnclaveContextResult.value);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
     public async getEnclaves(): Promise<Result<Set<EnclaveID>, Error>>{
         const getEnclavesResponseResult = await this.client.getEnclavesResponse();
         if (getEnclavesResponseResult.isErr()) {
@@ -156,7 +156,7 @@ export class KurtosisContext {
         return ok(enclaves);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
     public async stopEnclave(enclaveId: EnclaveID): Promise<Result<null, Error>>{
         const stopEnclaveArgs: StopEnclaveArgs = newStopEnclaveArgs(enclaveId)
         const stopEnclaveResult = await this.client.stopEnclave(stopEnclaveArgs)
@@ -167,7 +167,7 @@ export class KurtosisContext {
         return ok(null)
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
     public async destroyEnclave(enclaveId: EnclaveID): Promise<Result<null, Error>>{
         const destroyEnclaveArgs: DestroyEnclaveArgs = newDestroyEnclaveArgs(enclaveId);
         const destroyEnclaveResult = await this.client.destroyEnclave(destroyEnclaveArgs)
@@ -178,7 +178,7 @@ export class KurtosisContext {
         return ok(null)
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
     public async clean(shouldCleanAll : boolean): Promise<Result<Set<string>, Error>>{
         const cleanArgs: CleanArgs = newCleanArgs(shouldCleanAll);
         const cleanResponseResult = await this.client.clean(cleanArgs)
