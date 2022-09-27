@@ -12,10 +12,7 @@ root_dirpath="$(dirname "${script_dirpath}")"
 
 # Relative to root of repo
 declare -A REL_FILEPATH_UPDATE_PATTERNS
-REL_FILEPATH_UPDATE_PATTERNS["api/golang/kurtosis_engine_version/kurtosis_engine_version.go"]="KurtosisEngineVersion = \"%s\""
 REL_FILEPATH_UPDATE_PATTERNS["launcher/engine_server_launcher/engine_server_launcher.go"]="KurtosisEngineVersion = \"%s\""
-REL_FILEPATH_UPDATE_PATTERNS["api/typescript/src/kurtosis_engine_version/kurtosis_engine_version.ts"]="KURTOSIS_ENGINE_VERSION: string = \"%s\""
-
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation

@@ -14,8 +14,6 @@ API_SUPPORTED_LANGS_REL_FILEPATH="${API_DIRNAME}/supported-languages.txt"
 
 # Relative to root of repo
 declare -A REL_FILEPATH_UPDATE_PATTERNS
-REL_FILEPATH_UPDATE_PATTERNS["api/golang/kurtosis_core_version/kurtosis_core_version.go"]="KurtosisCoreVersion = \"%s\""
-REL_FILEPATH_UPDATE_PATTERNS["api/typescript/src/kurtosis_core_version/kurtosis_core_version.ts"]="KURTOSIS_CORE_VERSION: string = \"%s\""
 REL_FILEPATH_UPDATE_PATTERNS["launcher/api_container_launcher/api_container_launcher.go"]="DefaultVersion = \"%s\""
 
 # ==================================================================================================
