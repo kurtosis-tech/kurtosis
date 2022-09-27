@@ -279,7 +279,7 @@ jobs:
           cd /tmp/<< pipeline.parameters.source-repo-name >>/api
           # We need to consider the .proto files as well, b/c they (frustratingly) contain the Go module name
           for pattern in "*.go" "go.mod" "*.proto"; do
-            sed -i 's,github.com/kurtosis-tech/kurtosis/kurtosis,github.com/kurtosis-tech/<< pipeline.parameters.source-repo-name >>,g' $(find . -type f -name "${pattern}")
+            sed -i 's,github.com/kurtosis-tech/kurtosis,github.com/kurtosis-tech/<< pipeline.parameters.source-repo-name >>,g' $(find . -type f -name "${pattern}")
           done
       # Push the code up to the remote
       - run: |
