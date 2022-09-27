@@ -13,8 +13,8 @@ API_SUPPORTED_LANGS_REL_FILEPATH="supported-languages.txt"
 
 # Relative to root of repo
 declare -A REL_FILEPATH_UPDATE_PATTERNS
-REL_FILEPATH_UPDATE_PATTERNS["api/golang/kurtosis_version/kurtosis_version.go"]="KurtosisVersion = \"%s\""
-REL_FILEPATH_UPDATE_PATTERNS["api/typescript/src/kurtosis_version/kurtosis_version.ts"]="KURTOSIS_VERSION: string = \"%s\""
+REL_FILEPATH_UPDATE_PATTERNS["golang/kurtosis_version/kurtosis_version.go"]="KurtosisVersion = \"%s\""
+REL_FILEPATH_UPDATE_PATTERNS["typescript/src/kurtosis_version/kurtosis_version.ts"]="KURTOSIS_VERSION: string = \"%s\""
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
