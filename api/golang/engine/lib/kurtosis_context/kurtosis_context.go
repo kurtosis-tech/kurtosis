@@ -8,7 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_version"
+	"github.com/kurtosis-tech/kurtosis/api/golang/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -248,10 +248,10 @@ func validateEngineApiVersion(ctx context.Context, engineServiceClient kurtosis_
 		return nil
 	}
 
-	libraryEngineSemver, err := semver.StrictNewVersion(kurtosis_engine_version.KurtosisEngineVersion)
+	libraryEngineSemver, err := semver.StrictNewVersion(kurtosis_version.KurtosisVersion)
 	if err != nil {
 		logrus.Warnf("We expected the API library version to match format X.Y.Z, but instead got '%v'; "+
-			"this means that we can't verify the API library and engine versions match so you may encounter runtime errors", kurtosis_engine_version.KurtosisEngineVersion)
+			"this means that we can't verify the API library and engine versions match so you may encounter runtime errors", kurtosis_version.KurtosisVersion)
 		return nil
 	}
 
