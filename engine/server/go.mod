@@ -3,16 +3,15 @@ module github.com/kurtosis-tech/kurtosis/engine/server
 go 1.17
 
 replace (
-	github.com/kurtosis-tech/kurtosis/engine/api/golang => ../api/golang
 	github.com/kurtosis-tech/kurtosis/engine/launcher => ../launcher
 	github.com/kurtosis-tech/kurtosis/core/launcher => ../../core/launcher
 	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
-	github.com/kurtosis-tech/kurtosis/core/api/golang => ../../core/api/golang
+	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
 )
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/kurtosis-tech/kurtosis/engine/api/golang v0.0.0
+	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // local dependency

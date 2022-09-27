@@ -8,11 +8,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
-	"github.com/kurtosis-tech/kurtosis/engine/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
@@ -37,7 +37,8 @@ const (
 )
 
 // Nil indicates that the KurtosisBackend should not operate in API container mode, which is appropriate here
-//  because this isn't the API container
+//
+//	because this isn't the API container
 var apiContainerModeArgsForKurtosisBackend *backend_creator.APIContainerModeArgs = nil
 
 type doNothingMetricsClientCallback struct{}
