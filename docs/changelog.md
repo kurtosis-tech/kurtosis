@@ -1,7 +1,7 @@
 # TBD
 
 ### Removals
-* Remove unused variables from docker kurtosis backend
+* Remove unused variables from Docker kurtosis backend
 
 # 0.49.4
 
