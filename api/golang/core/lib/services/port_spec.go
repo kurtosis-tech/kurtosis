@@ -7,7 +7,7 @@ package services
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/core/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 )
 
 // Use a type alias here to make this a bit more user-friendly
