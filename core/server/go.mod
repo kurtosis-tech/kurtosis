@@ -3,16 +3,16 @@ module github.com/kurtosis-tech/kurtosis/core/server
 go 1.17
 
 replace (
+	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
 	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
-	github.com/kurtosis-tech/kurtosis/core/api/golang => ../api/golang
 	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander => ../files_artifacts_expander
 	github.com/kurtosis-tech/kurtosis/core/launcher => ../launcher
 )
 
 require (
 	github.com/google/uuid v1.3.0
+	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis/core/api/golang v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // Local dependency
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
@@ -28,6 +28,7 @@ require (
 require github.com/mholt/archiver v3.1.1+incompatible
 
 require (
+	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Microsoft/go-winio v0.4.17 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
@@ -56,10 +57,8 @@ require (
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
-	github.com/moby/term v0.0.0-20220808134915-39b0c02b01ae // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nwaples/rardecode v1.1.3 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
@@ -84,7 +83,6 @@ require (
 	gopkg.in/segmentio/analytics-go.v3 v3.1.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
-	gotest.tools/v3 v3.3.0 // indirect
 	k8s.io/api v0.24.0 // indirect
 	k8s.io/apimachinery v0.24.0 // indirect
 	k8s.io/client-go v0.24.0 // indirect

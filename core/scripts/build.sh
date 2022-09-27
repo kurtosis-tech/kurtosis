@@ -11,8 +11,6 @@ root_dirpath="$(dirname "${script_dirpath}")"
 #                                             Constants
 # ==================================================================================================
 BUILD_SCRIPT_RELATIVE_FILEPATHS=(
-    "api/golang/scripts/build.sh"
-    "api/typescript/scripts/build.sh"
     "launcher/scripts/build.sh"
     "server/scripts/build.sh"
     "files_artifacts_expander/scripts/build.sh"

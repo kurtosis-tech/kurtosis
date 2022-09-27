@@ -1,0 +1,59 @@
+{
+    "name": "kurtosis-sdk",
+    "//": "NOTE: DO NOT UPDATE THIS VERSION MANUALLY - IT WILL BE UPDATED DURING THE RELEASE PROCESS!",
+    "version": "0.49.4",
+    "main": "./build/index",
+    "description": "This repo contains a Typescript client for communicating with the Kurtosis Engine server, which is responsible for creating, managing and destroying Kurtosis Enclaves.",
+    "types": "./build/index",
+    "scripts": {
+        "build": "tsc && cp -R src/core/kurtosis_core_rpc_api_bindings build/core/ && cp -R src/engine/kurtosis_engine_rpc_api_bindings build/engine/",
+        "test": "ts-mocha -p tsconfig.json 'test/**/*.ts'"
+    },
+    "files": [
+        "build"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/kurtosis-tech/kurtosis-sdk.git"
+    },
+    "keywords": [
+        "kurtosis",
+        "engine",
+        "core",
+        "kurtosis-sdk"
+    ],
+    "author": "Kurtosis Technologies Inc <support@kurtosistech.com> (https://www.kurtosistech.com/)",
+    "license": "Apache-2.0",
+    "bugs": {
+        "url": "https://github.com/kurtosis-tech/kurtosis-sdk/issues"
+    },
+    "homepage": "https://github.com/kurtosis-tech/kurtosis-sdk#readme",
+    "engines": {
+        "node": ">=16.13.0"
+    },
+    "dependencies": {
+        "@grpc/grpc-js": "^1.4.4",
+        "@types/semver": "^7.3.9",
+        "browser-or-node": "^2.0.0",
+        "google-protobuf": "^3.17.3",
+        "grpc-web": "^1.3.0",
+        "loglevel": "^1.7.1",
+        "neverthrow": "^4.2.2",
+        "semver": "^7.3.5",
+        "@types/google-protobuf": "^3.15.5",
+        "@types/path-browserify": "^1.0.0",
+        "path-browserify": "^1.0.1",
+        "tar": "^6.1.11"
+    },
+    "devDependencies": {
+        "@types/chai": "^4.2.21",
+        "@types/google-protobuf": "^3.15.5",
+        "@types/mocha": "^9.0.0",
+        "chai": "^4.3.4",
+        "mocha": "^9.0.3",
+        "ts-mocha": "^8.0.0",
+        "typescript": "^4.3.5",
+        "@types/tar": "^6.1.1",
+        "@types/targz": "^1.0.1"
+    }
+}

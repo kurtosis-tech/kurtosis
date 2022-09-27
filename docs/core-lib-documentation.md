@@ -359,7 +359,7 @@ The data that needs to be rendered in the template. This will be converted into 
 
 _Found a bug? File it on [the repo][issues]!_
 
-[issues]: https://github.com/kurtosis-tech/kurtosis-core-api-lib/issues
+[issues]: https://github.com/kurtosis-tech/kurtosis-sdk/issues
 
 
 <!-- TODO Make the function definition not include args or return values, so we don't get these huge ugly links that break if we change the function signature -->
@@ -390,4 +390,4 @@ _Found a bug? File it on [the repo][issues]!_
 
 [templateanddata]: #templateanddata
 
-[kurtosiscontext_createenclave]: ../kurtosis-engine-server/lib-documentation#lib-documentation.md#createenclaveenclaveid-enclaveid-boolean-ispartitioningenabled---enclavecontext-enclavecontext
+[kurtosiscontext_createenclave]: ./engine-lib-documentation.md#createenclaveenclaveid-enclaveid-boolean-ispartitioningenabled---enclavecontextenclavecontext-enclavecontext
