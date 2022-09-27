@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
-# 2021-07-08 WATERMARK, DO NOT REMOVE - This script was generated from the Kurtosis Bash script template
 
 set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root_dirpath="$(dirname "${script_dirpath}")"
 
 
+
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
-API_DIRNAME="api"
-PACKAGE_JSON_FILEPATH="typescript/package.json"
-REPLACE_PATTERN="\"version\": \"%s\""
+API_SUPPORTED_LANGS_REL_FILEPATH="supported-languages.txt"
+
+# Relative to root of repo
+declare -A REL_FILEPATH_UPDATE_PATTERNS
+REL_FILEPATH_UPDATE_PATTERNS["api/golang/kurtosis_version/kurtosis_version.go"]="KurtosisVersion = \"%s\""
+REL_FILEPATH_UPDATE_PATTERNS["api/typescript/src/kurtosis_version/kurtosis_version.ts"]="KURTOSIS_VERSION: string = \"%s\""
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
@@ -19,7 +22,7 @@ REPLACE_PATTERN="\"version\": \"%s\""
 show_helptext_and_exit() {
     echo "Usage: $(basename "${0}") new_version"
     echo ""
-    echo "  new_version         The new version that the package files should contain"
+    echo "  new_version     The version of this repo that is about to be released"
     echo ""
     exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
 }
@@ -31,11 +34,19 @@ if [ -z "${new_version}" ]; then
     show_helptext_and_exit
 fi
 
+
+
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
-to_update_abs_filepath="${root_dirpath}/${API_DIRNAME}/${PACKAGE_JSON_FILEPATH}"
-if ! $(kudet update-version-in-file "${to_update_abs_filepath}" "${REPLACE_PATTERN}" "${new_version}"); then
-    echo "Error: An error occurred setting new version '${new_version}' in constants file '${constant_file_abs_filepath}' using pattern '${replace_pattern}'" >&2
-    exit 1
-fi
+echo "Updating own-version constants..."
+for rel_filepath in "${!REL_FILEPATH_UPDATE_PATTERNS[@]}"; do
+    replace_pattern="${REL_FILEPATH_UPDATE_PATTERNS["${rel_filepath}"]}"
+    constant_file_abs_filepath="${root_dirpath}/${rel_filepath}"
+    if ! $(kudet update-version-in-file "${constant_file_abs_filepath}" "${replace_pattern}" "${new_version}"); then
+        echo "Error: An error occurred setting new version '${new_version}' in constants file '${constant_file_abs_filepath}' using pattern '${replace_pattern}'" >&2
+        exit 1
+    fi
+    echo "Successfully updated '${constant_file_abs_filepath}'"
+done
+echo "Successfully updated all own-version constants"
