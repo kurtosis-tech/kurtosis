@@ -276,15 +276,15 @@ jobs:
           cp -r api "${dest_api_dirpath}"
       # Now, swap Go module names to match the new repo we're pushing the code to
       - run: |
-          cd /tmp/<< pipeline.parameters.core-source-repo-name >>/api
+          cd /tmp/<< pipeline.parameters.source-repo-name >>/api
           # We need to consider the .proto files as well, b/c they (frustratingly) contain the Go module name
           for pattern in "*.go" "go.mod" "*.proto"; do
-            sed -i 's,github.com/kurtosis-tech/kurtosis/kurtosis,github.com/kurtosis-tech/<< pipeline.parameters.core-source-repo-name >>,g' $(find . -type f -name "${pattern}")
+            sed -i 's,github.com/kurtosis-tech/kurtosis/kurtosis,github.com/kurtosis-tech/<< pipeline.parameters.source-repo-name >>,g' $(find . -type f -name "${pattern}")
           done
       # Push the code up to the remote
       - run: |
           version="$(kudet get-docker-tag)"
-          cd /tmp/<< pipeline.parameters.core-source-repo-name >>
+          cd /tmp/<< pipeline.parameters.source-repo-name >>
           git config --global user.name "${KURTOSISBOT_GITHUB_USERNAME}"
           git config --global user.email "${KURTOSISBOT_GITHUB_EMAIL}"
           git add .
