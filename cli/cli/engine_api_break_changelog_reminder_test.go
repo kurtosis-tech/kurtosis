@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/blang/semver"
-	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
+	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -18,7 +18,7 @@ const (
 	//    changelog whenever an engine API break happens
 	//  * Therefore, this constant must be manually updated to the X.Y version of the engine server version you just
 	//    bumped to, which will remind you to update the "Breaking Change" section of the changelog.
-	expectedEngineMajorMinorVersion = "1.34"
+	expectedEngineMajorMinorVersion = "0.49"
 	// !!!!!! BEFORE YOU UPDATE THIS CONSTANT TO FIX THE TEST, ADD A "BREAKING CHANGE" SECTION IN THE CHANGELOG !!!!!!
 )
 
