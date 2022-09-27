@@ -26,15 +26,12 @@ parameters:
   api-node-version:
     type: string
     default: 16.13.0
-  core-source-repo-name:
+  source-repo-name:
     type: string
-    default: kurtosis-core-sdk
+    default: kurtosis-sdk
   core-server-build-cache-key-prefix:
     type: string
     default: "core-server-go-mod-v1"   # Can bump this version to bust the cache
-  engine-source-repo-name:
-    type: string
-    default: kurtosis-engine-sdk
   engine-server-build-cache-key-prefix:
     type: string
     default: "engine-server-go-mod-v1"   # Can bump this version to bust the cache
@@ -77,7 +74,7 @@ jobs:
             - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
             - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
 
-  build_core_api_golang:
+  build_kurtosis_api_golang:
     docker:
       - image: "cimg/go:<< pipeline.parameters.api-go-version>>"
     steps:
@@ -91,9 +88,9 @@ jobs:
           fi
 
       # !!!!!!!!!! NOTE: We should NOT use our private Go repos here, because this API code will get published publicly !!!!!!!!
-      - run: core/api/golang/scripts/build.sh
+      - run: api/golang/scripts/build.sh
 
-  build_core_api_typescript:
+  build_kurtosis_api_typescript:
     docker:
       - image: "cimg/node:<< pipeline.parameters.api-node-version>>"
     steps:
@@ -106,7 +103,7 @@ jobs:
             circleci-agent step halt
           fi
 
-      - run: core/api/typescript/scripts/build.sh
+      - run: api/typescript/scripts/build.sh
 
   build_files_artifacts_expander:
     docker:
@@ -195,38 +192,6 @@ jobs:
             - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
             - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
 
-  build_engine_api_golang:
-    docker:
-      - image: "cimg/go:<< pipeline.parameters.api-go-version>>"
-    steps:
-      - checkout
-
-      # If the only changes are to the docs, don't run the slow (and expensive) code checks
-      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
-      - run: |
-          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
-            circleci-agent step halt
-          fi
-
-
-      # !!!!!!!!!! NOTE: We should NOT use our private Go repos here, because this API code will get published publicly !!!!!!!!
-      - run: engine/api/golang/scripts/build.sh
-
-  build_engine_api_typescript:
-    docker:
-      - image: "cimg/node:<< pipeline.parameters.api-node-version>>"
-    steps:
-      - checkout
-
-      # If the only changes are to the docs, don't run the slow (and expensive) code checks
-      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
-      - run: |
-          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
-            circleci-agent step halt
-          fi
-
-      - run: engine/api/typescript/scripts/build.sh
-
   build_engine_launcher:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
@@ -292,7 +257,7 @@ jobs:
   # -- End PR check jobs ---------------------------------------
 
   # -- Publish jobs --------------------------------------------
-  publish_core_api_source:
+  publish_kurtosis_api_source:
     docker:
       - image: cimg/base:2021.10
     steps:
@@ -304,21 +269,20 @@ jobs:
       - checkout
       - run: |
           cd /tmp/
-          git clone https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/kurtosis-tech/<< pipeline.parameters.core-source-repo-name >>.git
+          git clone https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/kurtosis-tech/<< pipeline.parameters.source-repo-name >>.git
       - run: |
-          dest_api_dirpath="/tmp/<< pipeline.parameters.core-source-repo-name >>/api"
+          dest_api_dirpath="/tmp/<< pipeline.parameters.source-repo-name >>/api"
           rm -rf "${dest_api_dirpath}"
-          cp -r core/api "${dest_api_dirpath}"
+          cp -r api "${dest_api_dirpath}"
       # Now, swap Go module names to match the new repo we're pushing the code to
       - run: |
           cd /tmp/<< pipeline.parameters.core-source-repo-name >>/api
           # We need to consider the .proto files as well, b/c they (frustratingly) contain the Go module name
           for pattern in "*.go" "go.mod" "*.proto"; do
-            sed -i 's,github.com/kurtosis-tech/kurtosis/core,github.com/kurtosis-tech/<< pipeline.parameters.core-source-repo-name >>,g' $(find . -type f -name "${pattern}")
+            sed -i 's,github.com/kurtosis-tech/kurtosis/kurtosis,github.com/kurtosis-tech/<< pipeline.parameters.core-source-repo-name >>,g' $(find . -type f -name "${pattern}")
           done
       # Push the code up to the remote
       - run: |
-          source core/server/scripts/_constants.env
           version="$(kudet get-docker-tag)"
           cd /tmp/<< pipeline.parameters.core-source-repo-name >>
           git config --global user.name "${KURTOSISBOT_GITHUB_USERNAME}"
@@ -330,14 +294,14 @@ jobs:
           git tag "v${version}"
           git push --tags
 
-  publish_core_api_typescript:
+  publish_kurtosis_api_typescript:
     docker:
       - image: "cimg/node:<< pipeline.parameters.api-node-version>>"
     steps:
       - checkout
-      - run: core/api/typescript/scripts/build.sh
+      - run: api/typescript/scripts/build.sh
       - npm-publisher/publish-from-package-version:
-          package-path: core/api/typescript
+          package-path: api/typescript
           publish-token-variable: NPMJS_AUTH_TOKEN
 
   publish_files_artifacts_expander_image:
@@ -400,75 +364,6 @@ jobs:
           docker tag "${image_name_with_version}" "${image_name_no_version}"
           docker push "${image_name_with_version}"
           docker push "${image_name_no_version}"
-
-  publish_engine_api_source:
-    docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
-    steps:
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
-          sudo apt get install yarn
-
-      - checkout
-
-      - run: |
-          cd /tmp/
-          git clone https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/kurtosis-tech/<< pipeline.parameters.engine-source-repo-name >>.git
-      - run: |
-          dest_api_dirpath="/tmp/<< pipeline.parameters.engine-source-repo-name >>/api"
-          rm -rf "${dest_api_dirpath}"
-          cp -r api "${dest_api_dirpath}"
-      # Now, swap Go module names to match the new repo we're pushing the code to
-      - run: |
-          cd /tmp/<< pipeline.parameters.engine-source-repo-name >>/api
-          # We need to consider the .proto files as well, b/c they (frustratingly) contain the Go module name
-          for pattern in "*.go" "go.mod" "*.proto"; do
-            sed -i 's,github.com/kurtosis-tech/kurtosis/core,github.com/kurtosis-tech/<< pipeline.parameters.core-source-repo-name >>,g' $(find . -type f -name "${pattern}")
-            sed -i 's,github.com/kurtosis-tech/kurtosis/engine,github.com/kurtosis-tech/<< pipeline.parameters.engine-source-repo-name >>,g' $(find . -type f -name "${pattern}")
-          done
-      # Remove the local replace
-      # Use the latest version of the kurtosis-core-sdk-module
-      - run: |
-          cd /tmp/<< pipeline.parameters.engine-source-repo-name >>/api/golang
-          go mod edit -dropreplace github.com/kurtosis-tech/kurtosis-core-sdk/api/golang
-          go mod edit -droprequire github.com/kurtosis-tech/kurtosis-core-sdk/api/golang
-          version="$(kudet get-docker-tag)"
-          go get github.com/kurtosis-tech/kurtosis-core-sdk@${version}
-          go mod tidy
-      # clean up the local dependency on kurtosis-engine-sdk for typescript
-      - run: |
-          cd /tmp/<< pipeline.parameters.engine-source-repo-name >>/api/typescript
-          yarn add kurtosis-core-sdk
-      # Push the code up to the remote
-      - run: |
-          source engine/server/scripts/_constants.env
-          version="$(kudet get-docker-tag)"
-          cd /tmp/<< pipeline.parameters.engine-source-repo-name >>
-          git config --global user.name "${KURTOSISBOT_GITHUB_USERNAME}"
-          git config --global user.email "${KURTOSISBOT_GITHUB_EMAIL}"
-          git add .
-          git commit -m "Committing ${version} files"
-          git push origin master
-          git tag "${version}"
-          git tag "v${version}"
-          git push --tags
-
-  publish_engine_api_typescript:
-    docker:
-      - image: "cimg/node:<< pipeline.parameters.api-node-version>>"
-    steps:
-      - checkout
-      - run: engine/api/typescript/scripts/build.sh
-      # remove local kurtosis-core-sdk dependency and publish
-      - run: |
-          cd /tmp/<< pipeline.parameters.engine-source-repo-name >>/api/typescript
-          yarn add kurtosis-core-sdk
-      - npm-publisher/publish-from-package-version:
-          package-path: api/typescript
-          publish-token-variable: NPMJS_AUTH_TOKEN
 
   publish_engine_server_image:
     docker:
@@ -538,14 +433,14 @@ workflows:
               ignore:
                 - master
 
-      - build_core_api_golang:
+      - build_kurtosis_api_golang:
           # NOTE: Do NOT add our private Github user here; the API must be publicly-accessible so must build without them
           context: []
           filters:
             branches:
               ignore:
                 - master
-      - build_core_api_typescript:
+      - build_kurtosis_api_typescript:
           filters:
             branches:
               ignore:
@@ -607,7 +502,7 @@ workflows:
       # -- End PR check jobs ---------------------------------------
 
       # -- Artifact-publishing jobs --------------------------------
-      - publish_core_api_source:
+      - publish_kurtosis_api_source:
           context:
             - github-user
           filters:
@@ -615,7 +510,7 @@ workflows:
               ignore: /.*/
             tags:
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
-      - publish_core_api_typescript:
+      - publish_kurtosis_api_typescript:
           context:
             - npmjs-user
           filters:
@@ -641,24 +536,6 @@ workflows:
             tags:
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
 
-      - publish_engine_api_source:
-          context:
-            - github-user
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
-          requires: [publish_core_api_source, publish_core_api_typescript]
-      - publish_engine_api_typescript:
-          context:
-            - npmjs-user
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
-          requires: [publish_core_api_typescript]
       - publish_engine_server_image:
           context:
             - github-user
