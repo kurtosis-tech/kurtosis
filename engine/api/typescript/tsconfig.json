@@ -1,6 +1,5 @@
 {
     "compilerOptions": {
-        "composite": true,
         "module": "commonjs",
         "outDir": "build",
         "downlevelIteration": true,
