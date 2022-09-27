@@ -470,18 +470,6 @@ workflows:
               ignore:
                 - master
 
-      - build_engine_api_golang:
-          # NOTE: Do NOT add our private Github user here; the API must be publicly-accessible so must build without them
-          context: []
-          filters:
-            branches:
-              ignore:
-                - master
-      - build_engine_api_typescript:
-          filters:
-            branches:
-              ignore:
-                - master
       - build_engine_launcher:
           context:
             # This pulls in KurtosisBot's Github token, so that we can read from our private repos
