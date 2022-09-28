@@ -1,5 +1,5 @@
 import { GetArgs, GetResponse, UpsertArgs } from "example-datastore-server-api-lib";
-import { ModuleContext, ModuleID, PortSpec, ServiceID } from "kurtosis-core-sdk"
+import { ModuleContext, ModuleID, PortSpec, ServiceID } from "kurtosis-sdk"
 import log from "loglevel"
 import { err, ok, Result } from "neverthrow";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";

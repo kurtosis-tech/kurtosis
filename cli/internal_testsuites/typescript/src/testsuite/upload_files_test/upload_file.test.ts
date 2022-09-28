@@ -4,7 +4,7 @@ import * as path from "path"
 import * as os from "os";
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import {checkFileContents, startFileServer} from "../../test_helpers/test_helpers";
-import {ServiceID} from "kurtosis-core-sdk";
+import {ServiceID} from "kurtosis-sdk";
 
 const ARCHIVE_DIRECTORY_TEST_PATTERN   = "upload-test-typescript-"
 const ARCHIVE_SUBDIRECTORY_TEST_PATTERN     = "sub-folder-"

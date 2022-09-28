@@ -1,8 +1,8 @@
 import {err, ok, Result} from "neverthrow";
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import {checkFileContents, startFileServer} from "../../test_helpers/test_helpers";
-import {TemplateAndData} from "kurtosis-core-sdk/build/lib/enclaves/template_and_data";
-import {ServiceID} from "kurtosis-core-sdk";
+import {TemplateAndData} from "kurtosis-sdk/build/core/lib/enclaves/template_and_data";
+import {ServiceID} from "kurtosis-sdk";
 
 const ENCLAVE_TEST_NAME         = "render-templates-test"
 const IS_PARTITIONING_ENABLED   = false

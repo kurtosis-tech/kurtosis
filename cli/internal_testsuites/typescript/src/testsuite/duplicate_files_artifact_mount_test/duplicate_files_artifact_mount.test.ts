@@ -5,7 +5,7 @@ import {
     PortProtocol,
     PortSpec,
     ServiceID
-} from "kurtosis-core-sdk";
+} from "kurtosis-sdk";
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import log from "loglevel";
 import {err, ok, Result} from "neverthrow";

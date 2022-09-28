@@ -4,7 +4,7 @@ import {
     PortProtocol, 
     PortSpec, 
     ServiceID, 
-} from "kurtosis-core-sdk"
+} from "kurtosis-sdk"
 import log from "loglevel"
 import { ok, Result } from "neverthrow"
 

@@ -1,12 +1,12 @@
 import { AddPersonArgs, IncrementBooksReadArgs } from "example-api-server-api-lib";
-import { PartitionConnection } from "kurtosis-core-sdk/build/lib/enclaves/partition_connection";
+import { PartitionConnection } from "kurtosis-sdk/build/core/lib/enclaves/partition_connection";
 import { 
     EnclaveContext, 
     PartitionID, 
     ServiceID, 
     BlockedPartitionConnection, 
     UnblockedPartitionConnection, 
-} from "kurtosis-core-sdk";
+} from "kurtosis-sdk";
 import log from "loglevel"
 import { Result, ok, err } from "neverthrow"
 import * as grpc from "@grpc/grpc-js"
