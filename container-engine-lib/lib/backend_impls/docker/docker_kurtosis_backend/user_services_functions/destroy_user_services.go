@@ -5,7 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/struct_persister"
 	"github.com/kurtosis-tech/stacktrace"
 	"sync"
 )
@@ -13,11 +13,14 @@ import (
 /*
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 This code is INCREDIBLY tricky, as a result of:
-1) Needing to do service registrations to get an IP address before the service container is started
-2) Docker not having a canonical way to represent a service registration-before-container-started,
-   which requires us to use an in-memory registration map
 
-        Be VERY careful when modifying this code, and ideally get Kevin's eyes on it!!
+ 1. Needing to do service registrations to get an IP address before the service container is started
+
+ 2. Docker not having a canonical way to represent a service registration-before-container-started,
+    which requires us to use an in-memory registration map
+
+    Be VERY careful when modifying this code, and ideally get Kevin's eyes on it!!
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 func DestroyUserServices(
@@ -26,7 +29,7 @@ func DestroyUserServices(
 	filters *service.ServiceFilters,
 	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration,
 	serviceRegistrationMutex *sync.Mutex,
-	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker,
+	enclaveFreeIpProviders map[enclave.EnclaveID]*struct_persister.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 ) (
 	resultSuccessfulGuids map[service.ServiceGUID]bool,
