@@ -43,6 +43,7 @@ fi
 #                                             Main Logic
 # ==================================================================================================
 
+rm -rf node_modules/kurtosis-sdk
 echo "Building the kurtosis-sdk in typescript as this script depends on it"
 typescript_sdk_build_path="${git_root_dirpath}/api/typescript/scripts/build.sh"
 if ! "${typescript_sdk_build_path}"; then
