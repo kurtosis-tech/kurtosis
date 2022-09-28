@@ -6,6 +6,11 @@
         "declaration": true,
         "strict": true
     },
+    "references": [
+        {
+            "path": "../../api/typescript"
+        }
+    ],
     "include": [
         "src/**/*"
     ]

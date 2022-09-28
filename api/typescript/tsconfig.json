@@ -5,7 +5,8 @@
         "downlevelIteration": true,
         "declaration": true,
         "strict": true,
-        "target": "ES2015"
+        "target": "ES2015",
+        "composite": true
     },
     "include": [
         "src/**/*"
