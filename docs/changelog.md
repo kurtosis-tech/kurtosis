@@ -1,5 +1,8 @@
 # TBD
 
+#### Fixes
+* Fixed a message that referred to an old repo.
+
 # 0.49.6
 
 ### Fixes
