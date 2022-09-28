@@ -443,7 +443,7 @@ jobs:
             equal: [ "minikube", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                source << pipeline.parameters.workspace-constants-path>>"
+                source << pipeline.parameters.workspace-constants-path>>
                 if ! ./internal_testsuites/golang/scripts/build.sh minikube; then
                   touch /tmp/testsuite-failed
                 fi
@@ -455,7 +455,7 @@ jobs:
             equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                source << pipeline.parameters.workspace-constants-path>>"
+                source << pipeline.parameters.workspace-constants-path>>
                 if ! ./internal_testsuites/golang/scripts/build.sh; then
                    touch /tmp/testsuite-failed
                  fi
@@ -504,7 +504,7 @@ jobs:
             equal: [ "minikube", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                source << pipeline.parameters.workspace-constants-path>>"                
+                source << pipeline.parameters.workspace-constants-path>>          
                 if ! ./internal_testsuites/typescript/scripts/build.sh minikube; then
                    touch /tmp/testsuite-failed
                 fi
@@ -513,7 +513,7 @@ jobs:
             equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                source << pipeline.parameters.workspace-constants-path>>"
+                source << pipeline.parameters.workspace-constants-path>>
                 if ! ./internal_testsuites/typescript/scripts/build.sh; then
                    touch /tmp/testsuite-failed
                  fi
