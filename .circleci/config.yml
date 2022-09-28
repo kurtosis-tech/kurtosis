@@ -29,6 +29,9 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
           minikube status
     - run: "${KURTOSIS_BINPATH} cluster set minikube"
     - run: "eval $(minikube docker-env)"
+    - run: "docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
+    - run: "docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
+    - run: "source << pipeline.parameters.workspace-constants-path>>"
     - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace"
     - run:
         command: "${KURTOSIS_BINPATH} gateway"
