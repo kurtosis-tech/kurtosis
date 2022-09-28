@@ -5,6 +5,7 @@ import log from "loglevel";
 
 const TEST_SUITE_NAME_ENCLAVE_ID_FRAGMENT = "ts-testsuite";
 const MILLISECONDS_IN_SECOND = 1000;
+const CORE_AND_ENGINE_VERSION = "CORE_ENGINE_VERSION_TAG"
 
 export async function createEnclave(testName:string, isPartitioningEnabled: boolean):
 	Promise<Result<{ 
@@ -21,7 +22,8 @@ export async function createEnclave(testName:string, isPartitioningEnabled: bool
 	const kurtosisContext = newKurtosisContextResult.value;
 	
 	const enclaveId:EnclaveID = `${TEST_SUITE_NAME_ENCLAVE_ID_FRAGMENT}.${testName}.${Math.round(Date.now()/MILLISECONDS_IN_SECOND)}`
-	const createEnclaveResult = await kurtosisContext.createEnclave(enclaveId, isPartitioningEnabled);
+	const apiContainerVersion = getAPIContainerVersionFromEnvironmentOrDefault()
+	const createEnclaveResult = await kurtosisContext.createEnclaveWithCustomAPIContainerVersion(enclaveId, isPartitioningEnabled, apiContainerVersion);
 	
 	if(createEnclaveResult.isErr()) {
         	log.error(`An error occurred creating enclave ${enclaveId}`)
@@ -50,4 +52,13 @@ export async function createEnclave(testName:string, isPartitioningEnabled: bool
 	}
 
 	return ok({ enclaveContext, stopEnclaveFunction, destroyEnclaveFunction })
+}
+
+function getAPIContainerVersionFromEnvironmentOrDefault() : string {
+	const apiContainerVersion = process.env[CORE_AND_ENGINE_VERSION];
+	if (apiContainerVersion === undefined) {
+		log.debug(`Environment variable ${CORE_AND_ENGINE_VERSION} not set, proceeding with the launchers default.`)
+		return ""
+	}
+	return apiContainerVersion
 }
