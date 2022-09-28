@@ -30,8 +30,8 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
     - run: "${KURTOSIS_BINPATH} cluster set minikube"
     - run: |
         eval $(minikube docker-env)"
-        docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
-        docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
+        docker load -i  << pipeline.parameters.workspace-engine-image-path >>
+        docker load -i  << pipeline.parameters.workspace-engine-core-path >>
         docker load -i  << pipeline.parameters.workspace-files-artifacts-expander-image-path >>
     - run: |
         source << pipeline.parameters.workspace-constants-path>>        
@@ -44,7 +44,7 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
 steps_prepare_testing_docker: &steps_prepare_testing_docker
   steps:
     - run: "docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
-    - run: "docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
+    - run: "docker load -i  << pipeline.parameters.workspace-core-image-path >>"
     - run: "docker load -i  << pipeline.parameters.workspace-files-artifacts-expander-image-path >>"
     - run: | 
         source << pipeline.parameters.workspace-constants-path>>
