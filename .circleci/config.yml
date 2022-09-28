@@ -32,8 +32,9 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
     - run: "docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
     - run: "docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
     - run: "docker load -i  << pipeline.parameters.workspace-files-artifacts-expander-image-path >>"
-    - run: "source << pipeline.parameters.workspace-constants-path>>"
-    - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace --version ${CORE_ENGINE_VERSION_TAG}"
+    - run: |
+        source << pipeline.parameters.workspace-constants-path>>        
+        ${KURTOSIS_BINPATH} engine start --cli-log-level trace --version ${CORE_ENGINE_VERSION_TAG}
     - run:
         command: "${KURTOSIS_BINPATH} gateway"
         background: true
@@ -607,7 +608,9 @@ jobs:
           <<: *steps_prepare_testing_docker
 
       # Basic service add & rm
-      - run: "${KURTOSIS_BINPATH} enclave new --id test-enclave ${CORE_ENGINE_VERSION_TAG}"
+      - run: |
+          source << pipeline.parameters.workspace-constants-path>>        
+          ${KURTOSIS_BINPATH} enclave new --id test-enclave ${CORE_ENGINE_VERSION_TAG}
       - run: "${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=80"
       - run: "${KURTOSIS_BINPATH} service rm test-enclave test1"
       - run: "${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=80"
