@@ -1,6 +1,7 @@
 package startosis_engine
 
 import (
+	"context"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/stacktrace"
 )
@@ -9,15 +10,36 @@ type StartosisInterpreter struct {
 }
 
 type SerializedInterpretationOutput struct {
-	Output string
+	output string
 }
+
 type InterpretationError struct {
-	Error string
+	error string
 }
 
 func NewStartosisInterpreter() *StartosisInterpreter {
 	// TODO(gb): build the bindings to populate an instruction list on interpret
 	return &StartosisInterpreter{}
+}
+
+func NewSerializedInterpretationOutput(output string) *SerializedInterpretationOutput {
+	return &SerializedInterpretationOutput{
+		output: output,
+	}
+}
+
+func (serializedInterpretationOutput *SerializedInterpretationOutput) Get() string {
+	return serializedInterpretationOutput.output
+}
+
+func NewInterpretationError(errorMsg string) *InterpretationError {
+	return &InterpretationError{
+		error: errorMsg,
+	}
+}
+
+func (interpretationError *InterpretationError) Get() string {
+	return interpretationError.error
 }
 
 // Interpret interprets the Startosis script and produce different outputs:
@@ -28,7 +50,7 @@ func NewStartosisInterpreter() *StartosisInterpreter {
 //     if the interpretation of the script failed
 //   - An error if something unexpected happens (crash independent of the Startosis script). This should be as rare as
 //     possible
-func (interpreter *StartosisInterpreter) Interpret(serializedScript string) (*SerializedInterpretationOutput, *InterpretationError, []kurtosis_instruction.KurtosisInstruction, error) {
+func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, serializedScript string) (*SerializedInterpretationOutput, *InterpretationError, []kurtosis_instruction.KurtosisInstruction, error) {
 	// TODO(gb): implement
 	return nil, nil, nil, stacktrace.NewError("not implemented")
 }

@@ -186,36 +186,36 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 	// TODO(gb): add metric tracking maybe?
 
 	interpretationOutput, potentialInterpretationError, generatedInstructionsList, err :=
-		apicService.startosisInterpreter.Interpret(serializedStartosisScript)
+		apicService.startosisInterpreter.Interpret(ctx, serializedStartosisScript)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to interpret Startosis script for an unexpected reason: \n%v",
 			serializedStartosisScript)
 	}
 	if potentialInterpretationError != nil {
 		return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
-			SerializedScriptOutput: interpretationOutput.Output,
-			InterpretationError:    potentialInterpretationError.Error,
+			SerializedScriptOutput: interpretationOutput.Get(),
+			InterpretationError:    potentialInterpretationError.Get(),
 		}, nil
 	}
 
 	logrus.Debugf("Successfully interpreted Startosis script into a series of Kurtosis instructions: \n%v",
 		generatedInstructionsList)
 
-	executionError, err := apicService.startosisExecutor.Execute(generatedInstructionsList)
+	executionError, err := apicService.startosisExecutor.Execute(ctx, generatedInstructionsList)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unexpected error encountered running the Kurtosis instructions: \n%v",
 			generatedInstructionsList)
 	}
 	if executionError != nil {
 		return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
-			SerializedScriptOutput: interpretationOutput.Output,
+			SerializedScriptOutput: interpretationOutput.Get(),
 			ExecutionError:         executionError.Error,
 		}, nil
 	}
 	logrus.Debugf("Successfully executed the list of Kurtosis instructions")
 
 	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
-		SerializedScriptOutput: interpretationOutput.Output,
+		SerializedScriptOutput: interpretationOutput.Get(),
 	}, nil
 }
 

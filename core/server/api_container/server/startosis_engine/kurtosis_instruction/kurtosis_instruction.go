@@ -1,17 +1,13 @@
 package kurtosis_instruction
 
-type RawKurtosisInstruction struct {
-	instruction string
-}
-
-type KurtosisInstructionOutput struct {
-	Output string
-}
+import "context"
 
 type KurtosisInstruction interface {
-	GetRawInstruction() *RawKurtosisInstruction
+	GetCanonicalInstruction() string
 
-	Execute() (*KurtosisInstructionOutput, error)
+	Execute(ctx context.Context) error
 
+	// String is only for easy printing in logs and error messages.
+	// Most of the time it will just call GetCanonicalInstruction()
 	String() string
 }
