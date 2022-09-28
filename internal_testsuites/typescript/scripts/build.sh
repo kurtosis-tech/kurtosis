@@ -4,6 +4,7 @@
 set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root_dirpath="$(dirname "${script_dirpath}")"
+git_root_dirpath="$(dirname ""$(dirname "${root_dirpath}")"")"
 
 # ==================================================================================================
 #                                             Constants
@@ -41,6 +42,14 @@ fi
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
+
+echo "Building the kurtosis-sdk in typescript as this script depends on it"
+typescript_sdk_build_path="${git_root_dirpath}/api/typescript/scripts/build.sh"
+if ! "${typescript_sdk_build_path}"; then
+    echo "Error: SDK buildscript at '${typescript_sdk_build_path}' failed" >&2
+    exit 1
+fi
+
 cd "${root_dirpath}"
 rm -rf build
 yarn install
