@@ -370,6 +370,7 @@ jobs:
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
 
       - run: |
+          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           scripts/create-server-images-and-populate-env.sh
           source _kurtosis_servers.env
