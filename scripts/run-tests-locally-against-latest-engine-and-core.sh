@@ -17,9 +17,29 @@ BUILD_SCRIPT_RELATIVE_FILEPATHS=(
     "cli/scripts/build.sh"
 )
 
+TESTSUITE_CLUSTER_BACKEND_DOCKER="docker"
+TESTSUITE_CLUSTER_BACKEND_MINIKUBE="minikube"
+
+# By default, run testsuite against docker
+DEFAULT_TESTSUITE_CLUSTER_BACKEND="${TESTSUITE_CLUSTER_BACKEND_DOCKER}"
+
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
+
+testsuite_cluster_backend_arg="${1:-${DEFAULT_TESTSUITE_CLUSTER_BACKEND}}"
+if [ "${testsuite_cluster_backend_arg}" != "${TESTSUITE_CLUSTER_BACKEND_DOCKER}" ] &&
+   [ "${testsuite_cluster_backend_arg}" != "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}" ]; then
+    echo "Error: unknown cluster provided to run tests against. Must be one of 'docker', 'minikube'"
+    show_helptext_and_exit
+fi
+
+# if the test suite is k8s we build & run images in k8s
+if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}" ]; then
+    eval $(minikube docker-env)
+    minikube start
+fi
+
 for build_script_rel_filepath in "${BUILD_SCRIPT_RELATIVE_FILEPATHS[@]}"; do
     build_script_abs_filepath="${root_dirpath}/${build_script_rel_filepath}"
     if ! bash "${build_script_abs_filepath}"; then
@@ -35,6 +55,14 @@ if ! bash "${cli_launch_path}" engine restart --version ${CORE_ENGINE_VERSION_TA
     echo "Error: Build script '${cli_launch_path}' failed" >&2
     exit 1
 fi
+
+# if minikube run engine gateway
+if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}" ]; then
+  if ! bash "${cli_launch_path}" gateway &; then
+      echo "Error: Build script '${cli_launch_path}' failed" >&2
+      exit 1
+  fi
+f
 
 if ! bash "${internal_test_suite_build_script_path}"; then
     echo "Error: Build script '${internal_test_suite_build_script_path}' failed" >&2
