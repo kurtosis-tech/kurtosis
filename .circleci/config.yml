@@ -28,6 +28,7 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
         command: |
           minikube status
     - run: "${KURTOSIS_BINPATH} cluster set minikube"
+    - run: "eval $(minikube docker-env)"
     - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace"
     - run:
         command: "${KURTOSIS_BINPATH} gateway"
@@ -97,6 +98,15 @@ parameters:
     type: string
     default: "/tmp/workspace"
   # The dirpath where CLI dist subdirectories are found, relative to the workspace root
+  workspace-core-image-path:
+    type: string
+    default: "/tmp/workspace/core-image.tgz"
+  workspace-engine-image-path:
+    type: string
+    default: "/tmp/workspace/engine-image.tgz"
+  workspace-constants-path:
+    type: string
+    default: "/tmp/workspace/_kurtosis_servers.env"
   cli-dist-home-relative-dirpath:
     type: string
     default: "cli/cli/dist"
@@ -347,6 +357,12 @@ jobs:
       # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
 
+      - run: |
+          scripts/create-server-images-and-populate-env.sh
+          source _kurtosis_servers.env
+          docker save -o core-image.tgz ${KURTOSIS_CORE_SERVER_IMAGE_AND_TAG}
+          docker save -o engine-image.tgz ${KURTOSIS_ENGINE_SERVER_IMAGE_AND_TAG}
+
       # Cache our dependencies
       - restore_cache:
           keys:
@@ -367,6 +383,9 @@ jobs:
           root: .
           paths:
             - "./<< pipeline.parameters.cli-dist-home-relative-dirpath >>"
+            - "_kurtosis_servers.env"
+            - "core-image.tgz"
+            - "engine-image.tgz"
 
   build_golang_testsuite:
     executor: ubuntu_vm
@@ -543,6 +562,7 @@ jobs:
       # Set up Kurtosis
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>"
+
       - run: |
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
           sudo apt update
@@ -551,6 +571,7 @@ jobs:
       - run: kurtosis config init dont-send-metrics
       - run: |
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+          echo 'export 
 
       # When backend is 'minikube' install minikube and start a Kurtosis gateway
       - when:

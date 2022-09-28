@@ -47,5 +47,5 @@ for build_script_rel_filepath in "${BUILD_SCRIPT_RELATIVE_FILEPATHS[@]}"; do
 done
 
 echo "Writing versions to a temporary file so that it can be exported"
-echo "export KURTOSIS_CORE_SERVER_IMAGE_AND_TAG=${core_image_name}" > /tmp/_kurtosis_servers.env
-echo "export KURTOSIS_ENGINE_SERVER_IMAGE_AND_TAG=${engine_image_name}" >> /tmp/_kurtosis_servers.env
+echo "export KURTOSIS_CORE_SERVER_IMAGE_AND_TAG=${core_image_name}" > _kurtosis_servers.env
+echo "export KURTOSIS_ENGINE_SERVER_IMAGE_AND_TAG=${engine_image_name}" >> _kurtosis_servers.env
