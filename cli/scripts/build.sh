@@ -11,7 +11,6 @@ root_dirpath="$(dirname "${script_dirpath}")"
 #                                             Constants
 # ==================================================================================================
 CLI_DIRNAME="cli"
-TESTSUITES_DIRNAME="internal_testsuites"
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
@@ -27,14 +26,14 @@ TESTSUITES_DIRNAME="internal_testsuites"
 #     echo ""
 #     exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
 # }
-# 
+#
 # # TODO Modify the arg-grabbing below, noting that:
 # # TODO - Non-constant variables are lower_snake_case
 # # TODO - The "${X:-}" syntax is necessary to pass Bash strict mode
 # some_filepath_arg="${1:-}"
 # some_other_arg="${2:-}"
 # some_optional_arg="${3:-"${DEFAULT_SOME_OPTIONAL_ARG_VALUE}"}"  # Note how optional arguments get a constant default value
-# 
+#
 # # TODO Modify this arg validation to match your arguments, keeping in mind:
 # # TODO - Almost every arg should be verified to be non-empty
 # # TODO - Filepath/dirpath ags often need to have their existence checked
@@ -60,12 +59,5 @@ TESTSUITES_DIRNAME="internal_testsuites"
 cli_buildscript_filepath="${root_dirpath}/${CLI_DIRNAME}/scripts/build.sh"
 if ! "${cli_buildscript_filepath}"; then
     echo "Error: An error occurred building the CLI" >&2
-    exit 1
-fi
-
-# Finally, run the testsuites to verify everything's groovy
-testsuites_buildscript_filepath="${root_dirpath}/${TESTSUITES_DIRNAME}/scripts/build.sh"
-if ! "${testsuites_buildscript_filepath}"; then
-    echo "Error: An error occurred building the testsuites" >&2
     exit 1
 fi

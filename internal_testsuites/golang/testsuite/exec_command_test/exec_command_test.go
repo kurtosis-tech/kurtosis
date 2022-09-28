@@ -3,7 +3,7 @@ package exec_command_test
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -11,18 +11,17 @@ import (
 )
 
 const (
-	testName = "exec-command"
+	testName              = "exec-command"
 	isPartitioningEnabled = false
 
-	execCmdTestImage      = "alpine:3.12.4"
-	inputForLogOutputTest = "hello"
-	expectedLogOutput     = "hello\n"
+	execCmdTestImage              = "alpine:3.12.4"
+	inputForLogOutputTest         = "hello"
+	expectedLogOutput             = "hello\n"
 	inputForAdvancedLogOutputTest = "hello && hello"
-	expectedAdvancedLogOutput = "hello && hello\n"
-	testServiceId         = "test"
+	expectedAdvancedLogOutput     = "hello && hello\n"
+	testServiceId                 = "test"
 
 	successExitCode int32 = 0
-
 )
 
 var execCommandThatShouldWork = []string{

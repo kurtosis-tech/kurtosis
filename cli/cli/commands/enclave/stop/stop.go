@@ -10,19 +10,19 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
 )
 
 const (
-	enclaveIdArg     = "enclave-id"
+	enclaveIdArg           = "enclave-id"
 	isEnclaveIdArgOptional = false
-	isEnclaveIdArgGreedy = true // The user can specify multiple enclaves to stop
+	isEnclaveIdArgGreedy   = true // The user can specify multiple enclaves to stop
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
-	engineClientCtxKey  = "engine-client"
+	engineClientCtxKey    = "engine-client"
 )
 
 var EnclaveStopCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -31,7 +31,7 @@ var EnclaveStopCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 	LongDescription:           "Stops the enclaves with the given IDs",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
-	Args:                      []*args.ArgConfig{
+	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIDArg(
 			enclaveIdArg,
 			engineClientCtxKey,
@@ -39,7 +39,7 @@ var EnclaveStopCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			isEnclaveIdArgGreedy,
 		),
 	},
-	RunFunc:                   run,
+	RunFunc: run,
 }
 
 func init() {

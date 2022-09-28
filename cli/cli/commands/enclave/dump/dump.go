@@ -9,20 +9,20 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
 
 const (
-	enclaveIdArg     = "enclave-id"
+	enclaveIdArg           = "enclave-id"
 	isEnclaveIdArgOptional = false
-	isEnclaveIdArgGreedy = false
+	isEnclaveIdArgGreedy   = false
 
 	outputDirpathArg = "output-dirpath"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
-	engineClientCtxKey  = "engine-client"
+	engineClientCtxKey    = "engine-client"
 )
 
 var EnclaveDumpCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -31,7 +31,7 @@ var EnclaveDumpCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 	LongDescription:           "Dumps all information about the enclave to the given directory",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
-	Args:                      []*args.ArgConfig{
+	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIDArg(
 			enclaveIdArg,
 			engineClientCtxKey,
@@ -40,10 +40,10 @@ var EnclaveDumpCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		),
 		// TODO Create a NewFilepathArg that has filepath tab-completion & validation set up
 		{
-			Key:             outputDirpathArg,
+			Key: outputDirpathArg,
 		},
 	},
-	RunFunc:                   run,
+	RunFunc: run,
 }
 
 func run(

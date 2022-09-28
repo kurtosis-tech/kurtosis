@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -14,19 +14,19 @@ import (
 )
 
 const (
-	testName = "files-artifact-mounting"
+	testName              = "files-artifact-mounting"
 	isPartitioningEnabled = false
 
-	fileServerServiceImage                          = "flashspys/nginx-static"
-	fileServerServiceId          services.ServiceID = "file-server"
-	fileServerPortId = "http"
-	fileServerPrivatePortNum = 80
+	fileServerServiceImage                      = "flashspys/nginx-static"
+	fileServerServiceId      services.ServiceID = "file-server"
+	fileServerPortId                            = "http"
+	fileServerPrivatePortNum                    = 80
 
 	waitForStartupTimeBetweenPolls = 500
 	waitForStartupMaxRetries       = 15
 	waitInitialDelayMilliseconds   = 0
 
-	testFilesArtifactUrl                          = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
+	testFilesArtifactUrl = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
 
 	// Filenames & contents for the files stored in the files artifact
 	file1Filename = "file1.txt"
@@ -37,6 +37,7 @@ const (
 
 	userServiceMountPointForTestFilesArtifact = "/static"
 )
+
 var fileServerPortSpec = services.NewPortSpec(
 	fileServerPrivatePortNum,
 	services.PortProtocol_TCP,

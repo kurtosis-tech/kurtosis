@@ -1,7 +1,7 @@
 package enclave_liveness_validator
 
 import (
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -14,8 +14,6 @@ func ValidateEnclaveLiveness(enclaveInfo *kurtosis_engine_rpc_api_bindings.Encla
 		return "", 0, stacktrace.NewError("The enclave's API container isn't running")
 	}
 	hostMachineInfo := enclaveInfo.GetApiContainerHostMachineInfo()
-
-
 
 	return hostMachineInfo.IpOnHostMachine, hostMachineInfo.GrpcPortOnHostMachine, nil
 }

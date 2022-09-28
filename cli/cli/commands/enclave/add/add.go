@@ -8,7 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -19,7 +19,7 @@ const (
 	apiContainerVersionArg   = "api-container-version"
 	apiContainerLogLevelArg  = "api-container-log-level"
 	isPartitioningEnabledArg = "with-partitioning"
-	enclaveIdArg = "id"
+	enclaveIdArg             = "id"
 
 	defaultIsPartitioningEnabled = false
 
@@ -33,10 +33,10 @@ var kurtosisLogLevelStr string
 var enclaveIdStr string
 
 var EnclaveAddCmd = &cobra.Command{
-	Use:   command_str_consts.EnclaveAddCmdStr,
-	Short: "Creates an enclave",
-	Long: "Creates a new, empty Kurtosis enclave",
-	RunE:  run,
+	Use:     command_str_consts.EnclaveAddCmdStr,
+	Short:   "Creates an enclave",
+	Long:    "Creates a new, empty Kurtosis enclave",
+	RunE:    run,
 	Aliases: []string{"new"}, // TODO remove this after 2022-08-16 when everyone should be using "add"
 }
 

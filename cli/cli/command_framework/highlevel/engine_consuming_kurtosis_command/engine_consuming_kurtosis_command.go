@@ -8,7 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -28,7 +28,6 @@ type EngineConsumingKurtosisCommand struct {
 
 	LongDescription string
 
-
 	// The name of the key that will be set during PreValidationAndRun where the KurtosisBackend can be found
 	KurtosisBackendContextKey string
 
@@ -46,9 +45,9 @@ type EngineConsumingKurtosisCommand struct {
 
 	RunFunc func(
 		ctx context.Context,
-		// TODO This is a hack that's only here temporarily because we have commands that use KurtosisBackend directly (they
-		//  should not), and EngineConsumingKurtosisCommand therefore needs to provide them with a KurtosisBackend. Once all our
-		//  commands only access the Kurtosis APIs, we can remove this.
+	// TODO This is a hack that's only here temporarily because we have commands that use KurtosisBackend directly (they
+	//  should not), and EngineConsumingKurtosisCommand therefore needs to provide them with a KurtosisBackend. Once all our
+	//  commands only access the Kurtosis APIs, we can remove this.
 		kurtosisBackend backend_interface.KurtosisBackend,
 		engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 		flags *flags.ParsedFlags,

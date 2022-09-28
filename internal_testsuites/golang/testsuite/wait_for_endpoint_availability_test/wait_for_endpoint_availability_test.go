@@ -3,19 +3,19 @@ package wait_for_endpoint_availability_test
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 const (
-	testName = "wait-for-endpoint-availability"
+	testName              = "wait-for-endpoint-availability"
 	isPartitioningEnabled = false
 
 	dockerGettingStartedImage                       = "docker/getting-started"
 	exampleServiceId             services.ServiceID = "docker-getting-started"
-	exampleServicePortId = "http"
+	exampleServicePortId                            = "http"
 	exampleServicePrivatePortNum                    = 80
 	healthCheckUrlSlug                              = ""
 	healthyValue                                    = ""
@@ -24,6 +24,7 @@ const (
 	waitForStartupMaxPolls         = 15
 	waitInitialDelayMilliseconds   = 500
 )
+
 var exampleServicePrivatePortSpec = services.NewPortSpec(
 	exampleServicePrivatePortNum,
 	services.PortProtocol_TCP,

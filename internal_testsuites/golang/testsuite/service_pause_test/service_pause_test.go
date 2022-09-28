@@ -8,7 +8,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"strconv"
@@ -73,18 +73,18 @@ func TestPauseUnpause(t *testing.T) {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getContainerConfig() *services.ContainerConfig{
+func getContainerConfig() *services.ContainerConfig {
 
-		// We spam timestamps so that we can measure pausing processes (no more log output) and unpausing (log output resumes)
-		entrypointArgs := []string{"/bin/sh", "-c"}
-		cmdArgs := []string{fmt.Sprintf("while sleep 1; do ts=$(date +\"%%s\") ; echo \"$ts\" >> %v ; done", testLogFilepath)}
+	// We spam timestamps so that we can measure pausing processes (no more log output) and unpausing (log output resumes)
+	entrypointArgs := []string{"/bin/sh", "-c"}
+	cmdArgs := []string{fmt.Sprintf("while sleep 1; do ts=$(date +\"%%s\") ; echo \"$ts\" >> %v ; done", testLogFilepath)}
 
-		containerConfig := services.NewContainerConfigBuilder(
-			pauseUnpauseTestImageName,
-		).WithEntrypointOverride(
-			entrypointArgs,
-		).WithCmdOverride(
-			cmdArgs,
-		).Build()
-		return containerConfig
+	containerConfig := services.NewContainerConfigBuilder(
+		pauseUnpauseTestImageName,
+	).WithEntrypointOverride(
+		entrypointArgs,
+	).WithCmdOverride(
+		cmdArgs,
+	).Build()
+	return containerConfig
 }

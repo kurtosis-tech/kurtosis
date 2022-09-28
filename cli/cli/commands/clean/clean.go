@@ -11,7 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"sort"
@@ -22,25 +22,24 @@ const (
 	shouldCleanRunningEnclavesFlagKey = "all"
 	defaultShouldCleanRunningEnclaves = "false"
 
-
 	// Titles of the cleaning phases
 	// Should be lowercased as they'll go into a string like "Cleaning XXXXX...."
 	oldEngineCleaningPhaseTitle = "old Kurtosis engine containers"
 	enclavesCleaningPhaseTitle  = "enclaves"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
-	engineClientCtxKey = "engine-client"
+	engineClientCtxKey    = "engine-client"
 )
 
 var CleanCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
-	CommandStr:              command_str_consts.CleanCmdStr,
+	CommandStr:       command_str_consts.CleanCmdStr,
 	ShortDescription: "Cleans up Kurtosis leftover artifacts",
 	LongDescription: fmt.Sprintf(
 		"Removes Kurtosis stopped Kurtosis enclaves (and live ones if the '%v' flag is set), as well as stopped engine containers",
 		shouldCleanRunningEnclavesFlagKey,
 	),
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
-	EngineClientContextKey:  engineClientCtxKey,
+	EngineClientContextKey:    engineClientCtxKey,
 	Flags: []*flags.FlagConfig{
 		{
 			Key:       shouldCleanRunningEnclavesFlagKey,
@@ -50,7 +49,7 @@ var CleanCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand
 			Default:   defaultShouldCleanRunningEnclaves,
 		},
 	},
-	RunFunc:                 run,
+	RunFunc: run,
 }
 
 func run(

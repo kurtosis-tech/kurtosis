@@ -20,9 +20,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/core/lib/binding_constructors"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -35,14 +35,14 @@ import (
 )
 
 const (
-	loadParamsFlagKey      = "load-params"
-	executeParamsFlagKey       = "execute-params"
-	apiContainerVersionFlagKey  = "api-container-version"
-	apiContainerLogLevelFlagKey = "api-container-log-level"
+	loadParamsFlagKey            = "load-params"
+	executeParamsFlagKey         = "execute-params"
+	apiContainerVersionFlagKey   = "api-container-version"
+	apiContainerLogLevelFlagKey  = "api-container-log-level"
 	enclaveIdFlagKey             = "enclave-id"
 	isPartitioningEnabledFlagKey = "with-partitioning"
 
-	moduleImageArgKey        = "module-image"
+	moduleImageArgKey = "module-image"
 
 	defaultLoadParams            = "{}"
 	defaultExecuteParams         = "{}"
@@ -51,14 +51,14 @@ const (
 
 	allowedEnclaveIdCharsRegexStr = `^[-A-Za-z0-9.]{1,63}$`
 
-	shouldFollowModuleLogs            = true
+	shouldFollowModuleLogs = true
 
 	netReadOpt = "read"
 
 	netReadOptFailBecauseSourceIsUsedOrClosedErrorText = "use of closed network connection"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
-	engineClientCtxKey = "engine-client"
+	engineClientCtxKey    = "engine-client"
 )
 
 var positionalArgs = []string{
@@ -73,26 +73,26 @@ var ModuleExecCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags: []*flags.FlagConfig{
 		{
-			Key:       loadParamsFlagKey,
-			Usage:     "The serialized params that should be passed to the module when loading it",
-			Type:      flags.FlagType_String,
-			Default:   defaultLoadParams,
+			Key:     loadParamsFlagKey,
+			Usage:   "The serialized params that should be passed to the module when loading it",
+			Type:    flags.FlagType_String,
+			Default: defaultLoadParams,
 		},
 		{
-			Key:       executeParamsFlagKey,
-			Usage:     "The serialized params that should be passed to the module when executing it",
-			Type:      flags.FlagType_String,
-			Default:   defaultExecuteParams,
+			Key:     executeParamsFlagKey,
+			Usage:   "The serialized params that should be passed to the module when executing it",
+			Type:    flags.FlagType_String,
+			Default: defaultExecuteParams,
 		},
 		{
-			Key:       apiContainerVersionFlagKey,
-			Usage:     "The image of the API container that should be started inside the enclave where the module will execute (blank will use the engine's default version)",
-			Type:      flags.FlagType_String,
-			Default:   defaults.DefaultAPIContainerVersion,
+			Key:     apiContainerVersionFlagKey,
+			Usage:   "The image of the API container that should be started inside the enclave where the module will execute (blank will use the engine's default version)",
+			Type:    flags.FlagType_String,
+			Default: defaults.DefaultAPIContainerVersion,
 		},
 		{
-			Key:       apiContainerLogLevelFlagKey,
-			Usage:     fmt.Sprintf(
+			Key: apiContainerLogLevelFlagKey,
+			Usage: fmt.Sprintf(
 				"The log level that the started API container should log at (%v)",
 				strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
 			),
@@ -101,35 +101,35 @@ var ModuleExecCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Default:   defaults.DefaultApiContainerLogLevel.String(),
 		},
 		{
-			Key:       enclaveIdFlagKey,
-			Usage:     fmt.Sprintf(
+			Key: enclaveIdFlagKey,
+			Usage: fmt.Sprintf(
 				"The ID to give the enclave that will be created to execute the module inside, which must match regex '%v' (default: use the module image and the current Unix time)",
 				// TODO Get this from the Kurtosis backend maybe????
 				allowedEnclaveIdCharsRegexStr,
 			),
-			Type:      flags.FlagType_String,
-			Default:   defaultEnclaveId,
+			Type:    flags.FlagType_String,
+			Default: defaultEnclaveId,
 		},
 		{
-			Key:       isPartitioningEnabledFlagKey,
-			Usage:     "If set to true, the enclave that the module executes in will have partitioning enabled so network partitioning simulations can be run",
-			Type:      flags.FlagType_Bool,
-			Default:   strconv.FormatBool(defaultIsPartitioningEnabled),
+			Key:     isPartitioningEnabledFlagKey,
+			Usage:   "If set to true, the enclave that the module executes in will have partitioning enabled so network partitioning simulations can be run",
+			Type:    flags.FlagType_Bool,
+			Default: strconv.FormatBool(defaultIsPartitioningEnabled),
 		},
 	},
 	Args: []*args.ArgConfig{
 		{
-			Key:             moduleImageArgKey,
+			Key: moduleImageArgKey,
 		},
 	},
-	RunFunc:                   run,
+	RunFunc: run,
 }
 
 func run(
 	ctx context.Context,
-	// TODO This is a hack that's only here temporarily because we have commands that use KurtosisBackend directly (they
-	//  should not), and EngineConsumingKurtosisCommand therefore needs to provide them with a KurtosisBackend. Once all our
-	//  commands only access the Kurtosis APIs, we can remove this.
+// TODO This is a hack that's only here temporarily because we have commands that use KurtosisBackend directly (they
+//  should not), and EngineConsumingKurtosisCommand therefore needs to provide them with a KurtosisBackend. Once all our
+//  commands only access the Kurtosis APIs, we can remove this.
 	kurtosisBackend backend_interface.KurtosisBackend,
 	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	flags *flags.ParsedFlags,
@@ -268,10 +268,10 @@ func run(
 	}
 	defer func() {
 		if !didModuleExecutionCompleteSuccessfully {
-			 logrus.Warnf(
-				 "Module execution didn't complete successfully; we've left the module and the services it started inside enclave '%v' for debugging",
-				 enclaveIdStr,
-			 )
+			logrus.Warnf(
+				"Module execution didn't complete successfully; we've left the module and the services it started inside enclave '%v' for debugging",
+				enclaveIdStr,
+			)
 		}
 	}()
 	logrus.Info("Module loaded successfully")

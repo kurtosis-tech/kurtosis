@@ -8,9 +8,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/core/lib/enclaves"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/engine/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/engine/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -24,15 +24,15 @@ const (
 	urlArgKey = "url"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
-	engineClientCtxKey  = "engine-client"
+	engineClientCtxKey    = "engine-client"
 )
 
 // TODO Maybe, instead of having 'storeweb' and 'storeservice' we could just have a flag that switches between the two??
 var FilesStoreWebCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
-	CommandStr:                command_str_consts.FilesStoreWebCmdStr,
-	ShortDescription:          "Downloads files from a URL",
-	LongDescription:           fmt.Sprintf(
-		"Instructs Kurtosis to download an archive file from the given URL and store it in the " +
+	CommandStr:       command_str_consts.FilesStoreWebCmdStr,
+	ShortDescription: "Downloads files from a URL",
+	LongDescription: fmt.Sprintf(
+		"Instructs Kurtosis to download an archive file from the given URL and store it in the "+
 			"enclave for later use (e.g. with '%v %v')",
 		command_str_consts.ServiceCmdStr,
 		command_str_consts.ServiceAddCmdStr,
@@ -47,7 +47,7 @@ var FilesStoreWebCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosi
 			isEnclaveIdArgGreedy,
 		),
 		{
-			Key:            urlArgKey,
+			Key: urlArgKey,
 		},
 	},
 	RunFunc: run,

@@ -8,15 +8,15 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"sort"
 	"strings"
 )
 
 const (
-	moduleGUIDColHeader  = "GUID"
-	moduleIDColHeader = "ID"
+	moduleGUIDColHeader          = "GUID"
+	moduleIDColHeader            = "ID"
 	modulePortsColHeader         = "Ports"
 	defaultEmptyIPAddrForModules = ""
 

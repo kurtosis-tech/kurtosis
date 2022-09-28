@@ -7,7 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"os/exec"
 	"runtime"
@@ -20,16 +20,16 @@ const (
 	kurtosisDiscordUrl = "https://discord.com/channels/783719264308953108/783719264308953111"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
-	engineClientCtxKey = "engine-client"
+	engineClientCtxKey    = "engine-client"
 )
 
 var DiscordCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
-	CommandStr:       command_str_consts.DiscordCmdStr,
-	ShortDescription: "Opens the Kurtosis Discord",
-	LongDescription: "Opens the #general channel on the Kurtosis Discord server",
-	RunFunc:          run,
+	CommandStr:                command_str_consts.DiscordCmdStr,
+	ShortDescription:          "Opens the Kurtosis Discord",
+	LongDescription:           "Opens the #general channel on the Kurtosis Discord server",
+	RunFunc:                   run,
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
-	EngineClientContextKey:  engineClientCtxKey,
+	EngineClientContextKey:    engineClientCtxKey,
 }
 
 func run(

@@ -15,7 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -23,16 +23,16 @@ import (
 )
 
 const (
-	enclaveIdArgKey   = "enclave-id"
+	enclaveIdArgKey        = "enclave-id"
 	isEnclaveIdArgOptional = false
-	isEnclaveIdArgGreedy = false
+	isEnclaveIdArgGreedy   = false
 
 	serviceGuidArgKey = "service-guid"
 
 	shouldFollowLogsFlagKey = "follow"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
-	engineClientCtxKey  = "engine-client"
+	engineClientCtxKey    = "engine-client"
 )
 
 var defaultShouldFollowLogs = strconv.FormatBool(false)
@@ -43,7 +43,7 @@ var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 	LongDescription:           "Show logs for a service inside an enclave",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
-	Flags:                     []*flags.FlagConfig{
+	Flags: []*flags.FlagConfig{
 		{
 			Key:       shouldFollowLogsFlagKey,
 			Usage:     "Continues to follow the logs until stopped",
@@ -61,10 +61,10 @@ var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		),
 		// TODO Create a NewServiceIDArg that adds autocomplete
 		{
-			Key:             serviceGuidArgKey,
+			Key: serviceGuidArgKey,
 		},
 	},
-	RunFunc:                   run,
+	RunFunc: run,
 }
 
 func run(

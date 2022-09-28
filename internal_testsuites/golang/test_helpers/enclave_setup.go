@@ -3,8 +3,8 @@ package test_helpers
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/core/lib/enclaves"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/engine/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"testing"

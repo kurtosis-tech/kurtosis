@@ -4,14 +4,14 @@ import (
 	"context"
 	"github.com/kurtosis-tech/example-api-server/api/golang/example_api_server_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 const (
-	testName = "basic-datastore-and-api"
+	testName              = "basic-datastore-and-api"
 	isPartitioningEnabled = false
 
 	datastoreServiceId services.ServiceID = "datastore"
@@ -28,7 +28,6 @@ func TestBasicDatastoreAndAPITest(t *testing.T) {
 	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
-
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	// TODO replace with datastore launcher inside the lib
@@ -49,7 +48,7 @@ func TestBasicDatastoreAndAPITest(t *testing.T) {
 	getPersonArgs := &example_api_server_rpc_api_bindings.GetPersonArgs{
 		PersonId: testPersonId,
 	}
-	 _, err = apiClient.GetPerson(ctx, getPersonArgs)
+	_, err = apiClient.GetPerson(ctx, getPersonArgs)
 	require.Error(t, err, "Expected an error trying to get a person who doesn't exist yet, but didn't receive one")
 	logrus.Infof("Verified that test person doesn't already exist")
 
@@ -57,7 +56,7 @@ func TestBasicDatastoreAndAPITest(t *testing.T) {
 	addPersonArgs := &example_api_server_rpc_api_bindings.AddPersonArgs{
 		PersonId: testPersonId,
 	}
-	 _, err = apiClient.AddPerson(ctx, addPersonArgs)
+	_, err = apiClient.AddPerson(ctx, addPersonArgs)
 	require.NoError(t, err, "An error occurred adding test person with ID '%v'", testPersonId)
 	logrus.Info("Test person added")
 

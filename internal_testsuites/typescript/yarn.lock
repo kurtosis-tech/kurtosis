@@ -2163,7 +2163,7 @@ kleur@^3.0.3:
 
 kurtosis-sdk@0.49.6:
   version "0.49.6"
-  resolved "https://registry.yarnpkg.com/kurtosis-sdk/-/kurtosis-sdk-0.49.6.tgz#f79dc27c2ccdd8df968f19ade805160ca103c79c"
+  resolved "https://registry.yarnpkg.com/kurtosis/-/kurtosis-sdk-0.49.6.tgz#f79dc27c2ccdd8df968f19ade805160ca103c79c"
   integrity sha512-ZBhE9KsjbjU3q8dQUUpwCB2uSqTfsttT2uYi2YHRXgRm/n8PVNR40M8/RnASE0OXNU45Bt3Ep8iyewtPn8pgoQ==
   dependencies:
     "@grpc/grpc-js" "^1.4.4"

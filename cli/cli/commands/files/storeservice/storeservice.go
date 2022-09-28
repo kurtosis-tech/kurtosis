@@ -8,32 +8,32 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/core/lib/enclaves"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/core/lib/services"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/engine/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/engine/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
+
 const (
 	enclaveIdArgKey        = "enclave-id"
 	isEnclaveIdArgOptional = false
 	isEnclaveIdArgGreedy   = false
 
-	serviceIdArgKey = "service-id"
+	serviceIdArgKey        = "service-id"
 	absoluteFilepathArgKey = "filepath"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
-	engineClientCtxKey  = "engine-client"
+	engineClientCtxKey    = "engine-client"
 )
 
-
 var FilesStoreServiceCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
-	CommandStr:                command_str_consts.FilesStoreServiceCmdStr,
-	ShortDescription:          "Store files from a service",
-	LongDescription:           fmt.Sprintf(
-		"Instructs Kurtosis to copy a file or folder from the given absolute filepath in " +
+	CommandStr:       command_str_consts.FilesStoreServiceCmdStr,
+	ShortDescription: "Store files from a service",
+	LongDescription: fmt.Sprintf(
+		"Instructs Kurtosis to copy a file or folder from the given absolute filepath in "+
 			"the given service and store it in the enclave for later use (e.g. with '%v %v')",
 		command_str_consts.ServiceCmdStr,
 		command_str_consts.ServiceAddCmdStr,

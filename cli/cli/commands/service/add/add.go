@@ -11,10 +11,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/core/lib/enclaves"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/core/lib/services"
-	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -53,8 +53,7 @@ const (
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
-
-	privateIPAddressPlaceholderKey = "ip-address-placeholder"
+	privateIPAddressPlaceholderKey     = "ip-address-placeholder"
 	privateIPAddressPlaceholderDefault = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
 	// Each envvar should be KEY1=VALUE1, which means we should have two components to each envvar declaration
@@ -64,9 +63,9 @@ const (
 var defaultPortProtocolStr = strings.ToLower(kurtosis_core_rpc_api_bindings.Port_TCP.String())
 
 var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
-	CommandStr:       command_str_consts.ServiceAddCmdStr,
-	ShortDescription: "Adds a service to an enclave",
-	LongDescription: "Adds a new service with the given parameters to the given enclave",
+	CommandStr:                command_str_consts.ServiceAddCmdStr,
+	ShortDescription:          "Adds a service to an enclave",
+	LongDescription:           "Adds a new service with the given parameters to the given enclave",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
 	Args: []*args.ArgConfig{
@@ -91,7 +90,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 	},
 	Flags: []*flags.FlagConfig{
 		{
-			Key: entrypointBinaryFlagKey,
+			Key:   entrypointBinaryFlagKey,
 			Usage: "ENTRYPOINT binary that will be used when running the container, overriding the image's default ENTRYPOINT",
 			// TODO Make this a string list
 			Type: flags.FlagType_String,
@@ -140,9 +139,9 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Type: flags.FlagType_String,
 		},
 		{
-			Key: privateIPAddressPlaceholderKey,
-			Usage: "Kurtosis will replace occurrences of this string in the ENTRYPOINT args, ENV vars and CMD args with the IP address of the container inside the enclave",
-			Type: flags.FlagType_String,
+			Key:     privateIPAddressPlaceholderKey,
+			Usage:   "Kurtosis will replace occurrences of this string in the ENTRYPOINT args, ENV vars and CMD args with the IP address of the container inside the enclave",
+			Type:    flags.FlagType_String,
 			Default: privateIPAddressPlaceholderDefault,
 		},
 	},
@@ -315,7 +314,7 @@ func getContainerConfig(
 	envvarsStr string,
 	filesArtifactMountsStr string,
 	privateIPAddressPlaceholder string,
-)  (*services.ContainerConfig, error) {
+) (*services.ContainerConfig, error) {
 	envvarsMap, err := parseEnvVarsStr(envvarsStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing environment variables string '%v'", envvarsStr)

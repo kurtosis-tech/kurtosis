@@ -3,6 +3,9 @@ module github.com/kurtosis-tech/kurtosis-cli/cli
 go 1.17
 
 replace github.com/kurtosis-tech/kurtosis-cli/commons => ../commons
+replace github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
+replace github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
+replace github.com/kurtosis-tech/kurtosis/engine/launcher => ../../engine/launcher
 
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
@@ -12,9 +15,9 @@ require (
 	github.com/dmarkham/enumer v1.5.5
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/go-yaml/yaml v2.1.0+incompatible
-	github.com/kurtosis-tech/kurtosis-sdk/api/golang v0.0.0-20220927193856-045eac411ae1
-	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.1
-	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0-20220927205134-a7b0c4fdd3d4
+	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0 // local dependency
+	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // local dependency
+	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0 // local dependency
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211205213337-f5088fc26465
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220225193403-74da3f3b98ce
