@@ -99,7 +99,7 @@ parameters:
   # The dirpath where CLI dist subdirectories are found, relative to the workspace root
   cli-dist-home-relative-dirpath:
     type: string
-    default: "cli/dist/dist"
+    default: "cli/cli/dist"
   # The filepath where the Linux AMD 64 CLI binary can be found, relative to the cli-dist-home-relative-dirpath
   cli-linux-amd-64-binary-relative-filepath:
     type: string
