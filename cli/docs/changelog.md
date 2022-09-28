@@ -1,5 +1,7 @@
 # TBD
 
+# 0.32.0
+
 ### Breaking changes
 * Uses the engine from `kurtosis` monorepo v 0.49.6
   * Users should restart their Kurtosis engine
