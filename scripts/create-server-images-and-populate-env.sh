@@ -6,6 +6,7 @@ script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 git_repo_dirpath="$(dirname "${script_dirpath}")"
 root_dirpath="$(dirname "${script_dirpath}")"
 core_server_constants="${git_repo_dirpath}/core/server/scripts/_constants.env"
+files_artifacts_expander_constants="${git_repo_dirpath}/core/files_artifacts_expander/scripts/_constants.env"
 engine_server_constants="${git_repo_dirpath}/engine/server/scripts/_constants.env"
 
 # ==================================================================================================
@@ -14,6 +15,7 @@ engine_server_constants="${git_repo_dirpath}/engine/server/scripts/_constants.en
 
 BUILD_SCRIPT_RELATIVE_FILEPATHS=(
   "core/server/scripts/build.sh"
+  "core/files_artifacts_expander/scripts/build.sh"
   "engine/server/scripts/build.sh"
 )
 
@@ -38,6 +40,9 @@ core_image_name="${IMAGE_ORG_AND_REPO}:${docker_tag}"
 source "${engine_server_constants}"
 engine_image_name="${IMAGE_ORG_AND_REPO}:${docker_tag}"
 
+source "${files_artifacts_expander_constants}"
+files_artifacts_expander_image_name="${IMAGE_ORG_AND_REPO}:${docker_tag}"
+
 for build_script_rel_filepath in "${BUILD_SCRIPT_RELATIVE_FILEPATHS[@]}"; do
     build_script_abs_filepath="${root_dirpath}/${build_script_rel_filepath}"
     if ! bash "${build_script_abs_filepath}"; then
@@ -49,4 +54,5 @@ done
 echo "Writing versions to a temporary file so that it can be exported"
 echo "export KURTOSIS_CORE_SERVER_IMAGE_AND_TAG=${core_image_name}" > _kurtosis_servers.env
 echo "export KURTOSIS_ENGINE_SERVER_IMAGE_AND_TAG=${engine_image_name}" >> _kurtosis_servers.env
+echo "export KURTOSIS_FILES_ARTIFACTS_EXPANDER_IMAGE_AND_TAG=${files_artifacts_expander_image_name}" >> _kurtosis_servers.env
 echo "export CORE_ENGINE_VERSION_TAG=${docker_tag}" >> _kurtosis_servers.env

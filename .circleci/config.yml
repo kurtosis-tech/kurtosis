@@ -31,6 +31,7 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
     - run: "eval $(minikube docker-env)"
     - run: "docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
     - run: "docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
+    - run: "docker load -i  << pipeline.parameters.workspace-files-artifacts-expander-image-path >>"
     - run: "source << pipeline.parameters.workspace-constants-path>>"
     - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace --version ${CORE_ENGINE_VERSION_TAG}"
     - run:
@@ -40,9 +41,9 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
 # Steps to prepare a job for Kubernetes testing
 steps_prepare_testing_docker: &steps_prepare_testing_docker
   steps:
-    - run: "eval $(minikube docker-env)"
     - run: "docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
     - run: "docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
+    - run: "docker load -i  << pipeline.parameters.workspace-files-artifacts-expander-image-path >>"
     - run: "source << pipeline.parameters.workspace-constants-path>>"
     - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace --version ${CORE_ENGINE_VERSION_TAG}"
 
@@ -116,6 +117,9 @@ parameters:
   workspace-engine-image-path:
     type: string
     default: "/tmp/workspace/engine-image.tgz"
+  workspace-files-artifacts-expander-image-path:
+    type: string
+    default: "/tmp/workspace/files-artifacts-expander-image.tgz"
   workspace-constants-path:
     type: string
     default: "/tmp/workspace/_kurtosis_servers.env"
@@ -379,6 +383,7 @@ jobs:
           source _kurtosis_servers.env
           docker save -o core-image.tgz ${KURTOSIS_CORE_SERVER_IMAGE_AND_TAG}
           docker save -o engine-image.tgz ${KURTOSIS_ENGINE_SERVER_IMAGE_AND_TAG}
+          docker save -o files-artifacts-expander-image.tgz ${KURTOSIS_FILES_ARTIFACTS_EXPANDER_IMAGE_AND_TAG}
 
       # Cache our dependencies
       - restore_cache:
@@ -403,6 +408,7 @@ jobs:
             - "_kurtosis_servers.env"
             - "core-image.tgz"
             - "engine-image.tgz"
+            - "files-artifacts-expander-image.tgz"
 
   build_golang_testsuite:
     executor: ubuntu_vm
