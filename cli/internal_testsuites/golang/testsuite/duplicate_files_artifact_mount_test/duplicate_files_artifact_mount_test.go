@@ -3,7 +3,7 @@ package duplicate_files_artifact_mount_test
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
-	"github.com/kurtosis-tech/kurtosis-core-sdk/api/golang/lib/services"
+	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/core/lib/services"
 	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"

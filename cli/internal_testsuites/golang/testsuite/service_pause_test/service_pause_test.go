@@ -8,7 +8,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
-	"github.com/kurtosis-tech/kurtosis-core-sdk/api/golang/lib/services"
+	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/core/lib/services"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"strconv"

@@ -1,5 +1,13 @@
 # TBD
 
+### Breaking changes
+* Uses the engine from `kurtosis` monorepo v 0.49.6
+  * Users should restart their Kurtosis engine
+
+### Changes
+* Uses the new `kurotsis-sdk` over `kurtosis-engine-api-lib` & `kurtosis-core-sdk`
+* Uses the engine from `kurtosis` monorepo
+
 # 0.31.0
 
 ### Breaking Changes

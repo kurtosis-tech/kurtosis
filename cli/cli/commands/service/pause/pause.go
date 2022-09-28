@@ -9,10 +9,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-core-sdk/api/golang/lib/enclaves"
-	"github.com/kurtosis-tech/kurtosis-core-sdk/api/golang/lib/services"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-sdk/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/stacktrace"
 )
 

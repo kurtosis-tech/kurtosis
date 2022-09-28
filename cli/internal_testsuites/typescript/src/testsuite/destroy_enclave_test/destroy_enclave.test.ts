@@ -1,4 +1,4 @@
-import { ContainerConfig, ContainerConfigBuilder, FilesArtifactUUID, PortProtocol, PortSpec, ServiceID } from "kurtosis-core-sdk"
+import { ContainerConfig, ContainerConfigBuilder, FilesArtifactUUID, PortProtocol, PortSpec, ServiceID } from "kurtosis-sdk"
 import log from "loglevel";
 import { Result, ok, err } from "neverthrow";
 

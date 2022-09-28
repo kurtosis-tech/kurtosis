@@ -1438,7 +1438,7 @@ globals@^11.1.0:
   resolved "https://registry.yarnpkg.com/globals/-/globals-11.12.0.tgz#ab8795338868a0babd8525758018c2a7eb95c42e"
   integrity sha512-WOBp/EEGUiIsJSp7wcv/y6MO+lV9UoncWqxuFfm8eBwzWNgyfBd6Gz+IeKQ9jCmyhoH99g15M3T+QaVHFjizVA==
 
-google-protobuf@^3.17.3, google-protobuf@^3.19.1:
+google-protobuf@^3.17.3:
   version "3.21.0"
   resolved "https://registry.yarnpkg.com/google-protobuf/-/google-protobuf-3.21.0.tgz#8dfa3fca16218618d373d414d3c1139e28034d6e"
   integrity sha512-byR7MBTK4tZ5PZEb+u5ZTzpt4SfrTxv5682MjPlHN16XeqgZE2/8HOIWeiXe8JKnT9OVbtBGhbq8mtvkK8cd5g==
@@ -2161,36 +2161,23 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-kurtosis-core-sdk@0.49.4:
-  version "0.49.4"
-  resolved "https://registry.yarnpkg.com/kurtosis-core-sdk/-/kurtosis-core-sdk-0.49.4.tgz#a3f43522d27e1570d516f4a67d75dd69befadfb6"
-  integrity sha512-QlqAMV3LgNNDjK8bCICmFQNMexiU2nYI8u20WitxCbZlrIhBVRgrMQ53Vf1UDkhAWQjwb4AAWuLhXR37LJnb5A==
+kurtosis-sdk@0.49.6:
+  version "0.49.6"
+  resolved "https://registry.yarnpkg.com/kurtosis-sdk/-/kurtosis-sdk-0.49.6.tgz#f79dc27c2ccdd8df968f19ade805160ca103c79c"
+  integrity sha512-ZBhE9KsjbjU3q8dQUUpwCB2uSqTfsttT2uYi2YHRXgRm/n8PVNR40M8/RnASE0OXNU45Bt3Ep8iyewtPn8pgoQ==
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
     "@types/google-protobuf" "^3.15.5"
     "@types/path-browserify" "^1.0.0"
-    browser-or-node "^2.0.0"
-    google-protobuf "^3.19.1"
-    grpc-web "^1.3.0"
-    loglevel "^1.7.1"
-    neverthrow "^4.2.2"
-    path-browserify "^1.0.1"
-    tar "^6.1.11"
-
-kurtosis-engine-api-lib@1.34.8:
-  version "1.34.8"
-  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.34.8.tgz#6e21c940e30312c12cb18b06f9c0152b320c4456"
-  integrity sha512-AGvx3pAQlRAPc54Z4rZX5QHmXLBhkseacVzUVVX5mbXQ951WqIFh4I8GLSsb/bi6LXzjlKmQq6CH1dc9HH1nFA==
-  dependencies:
-    "@grpc/grpc-js" "^1.4.4"
     "@types/semver" "^7.3.9"
     browser-or-node "^2.0.0"
     google-protobuf "^3.17.3"
     grpc-web "^1.3.0"
-    kurtosis-core-sdk "0.49.4"
     loglevel "^1.7.1"
     neverthrow "^4.2.2"
+    path-browserify "^1.0.1"
     semver "^7.3.5"
+    tar "^6.1.11"
 
 leven@^3.1.0:
   version "3.1.0"

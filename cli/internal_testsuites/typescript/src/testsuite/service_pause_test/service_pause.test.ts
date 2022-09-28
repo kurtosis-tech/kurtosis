@@ -1,5 +1,5 @@
 import {createEnclave} from "../../test_helpers/enclave_setup";
-import {ContainerConfig, ContainerConfigBuilder} from "kurtosis-core-sdk";
+import {ContainerConfig, ContainerConfigBuilder} from "kurtosis-sdk";
 import {err, ok, Result} from "neverthrow";
 import log from "loglevel";
 
