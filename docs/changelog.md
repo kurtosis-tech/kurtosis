@@ -1,7 +1,9 @@
 # TBD
 
-#### Fixes
+### Fixes
 * Fixed a message that referred to an old repo.
+### Changes
+* API container now saves free IPs on a local database
 
 # 0.49.6
 
