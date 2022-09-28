@@ -274,7 +274,7 @@ export class KurtosisContext {
                     `An API version mismatch was detected between the running engine version '${runningEngineSemver.version}' and the engine version this Kurtosis SDK library expects, '${libraryEngineSemver.version}'. You should:\n` +
                     `  1) upgrade your Kurtosis CLI to latest using the instructions at https://docs.kurtosistech.com/installation.html\n` +
                     `  2) use the Kurtosis CLI to restart your engine via 'kurtosis engine restart'\n`	+
-                    `  3) upgrade your Kurtosis SDK library using the instructions at https://github.com/kurtosis-tech/kurtosis-engine-api-lib\n`,
+                    `  3) upgrade your Kurtosis SDK library using the instructions at https://github.com/kurtosis-tech/kurtosis-sdk\n`,
                 ));
             }
         }
