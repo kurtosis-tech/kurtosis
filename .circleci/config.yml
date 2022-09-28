@@ -31,7 +31,7 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
     - run: |
         eval $(minikube docker-env)"
         docker load -i  << pipeline.parameters.workspace-engine-image-path >>
-        docker load -i  << pipeline.parameters.workspace-engine-core-path >>
+        docker load -i  << pipeline.parameters.workspace-core-image-path >>
         docker load -i  << pipeline.parameters.workspace-files-artifacts-expander-image-path >>
     - run: |
         source << pipeline.parameters.workspace-constants-path>>        
