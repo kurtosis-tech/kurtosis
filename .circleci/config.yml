@@ -29,7 +29,7 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
           minikube status
     - run: "${KURTOSIS_BINPATH} cluster set minikube"
     - run: |
-        eval $(minikube docker-env)"
+        eval $(minikube docker-env)
         docker load -i  << pipeline.parameters.workspace-engine-image-path >>
         docker load -i  << pipeline.parameters.workspace-core-image-path >>
         docker load -i  << pipeline.parameters.workspace-files-artifacts-expander-image-path >>
