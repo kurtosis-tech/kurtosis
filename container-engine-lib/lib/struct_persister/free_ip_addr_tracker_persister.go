@@ -16,7 +16,6 @@ func (tracker *FreeIpAddrTracker) GetFreeIpAddr() (ipAddr net.IP, err error) {
 	err = tracker.db.Update(func(tx *bolt.Tx) error {
 		ipAddr, err = tracker.freeIpAddrTracker.GetFreeIpAddr()
 		return tx.Bucket([]byte("taken-ip-addresses")).Put([]byte(ipAddr.String()), []byte{})
-		return nil
 	})
 	if err != nil {
 		return nil, err
@@ -28,7 +27,6 @@ func (tracker *FreeIpAddrTracker) ReleaseIpAddr(ip net.IP) (err error) {
 	err = tracker.db.Update(func(tx *bolt.Tx) error {
 		tracker.freeIpAddrTracker.ReleaseIpAddr(ip)
 		return tx.Bucket([]byte("taken-ip-addresses")).Delete([]byte(ip.String()))
-		return nil
 	})
 	if err != nil {
 		return err
