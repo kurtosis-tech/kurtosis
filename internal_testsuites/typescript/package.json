@@ -11,7 +11,7 @@
     "example-api-server-api-lib": "^0.3.4",
     "example-datastore-server-api-lib": "^0.4.4",
     "jest": "^27.3.1",
-    "kurtosis-sdk": "0.49.6",
+    "kurtosis-sdk": "../../api/typescript",
     "loglevel": "^1.8.0",
     "neverthrow": "^4.3.1",
     "ts-jest": "^28.0.8",
