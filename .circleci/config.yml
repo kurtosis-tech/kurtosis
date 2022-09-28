@@ -28,10 +28,11 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
         command: |
           minikube status
     - run: "${KURTOSIS_BINPATH} cluster set minikube"
-    - run: "eval $(minikube docker-env)"
-    - run: "docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
-    - run: "docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
-    - run: "docker load -i  << pipeline.parameters.workspace-files-artifacts-expander-image-path >>"
+    - run: |
+        eval $(minikube docker-env)"
+        docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
+        docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
+        docker load -i  << pipeline.parameters.workspace-files-artifacts-expander-image-path >>
     - run: |
         source << pipeline.parameters.workspace-constants-path>>        
         ${KURTOSIS_BINPATH} engine start --cli-log-level trace --version ${CORE_ENGINE_VERSION_TAG}
