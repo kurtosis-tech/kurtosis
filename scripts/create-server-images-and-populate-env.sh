@@ -49,3 +49,4 @@ done
 echo "Writing versions to a temporary file so that it can be exported"
 echo "export KURTOSIS_CORE_SERVER_IMAGE_AND_TAG=${core_image_name}" > _kurtosis_servers.env
 echo "export KURTOSIS_ENGINE_SERVER_IMAGE_AND_TAG=${engine_image_name}" >> _kurtosis_servers.env
+echo "export CORE_ENGINE_VERSION_TAG=${docker_tag}" >> _kurtosis_servers.env

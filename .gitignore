@@ -87,3 +87,5 @@ yarn-error.log
 
 # Typescript
 tsconfig.tsbuildinfo
+
+_kurtosis_servers.env

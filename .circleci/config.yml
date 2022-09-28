@@ -32,10 +32,19 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
     - run: "docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
     - run: "docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
     - run: "source << pipeline.parameters.workspace-constants-path>>"
-    - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace"
+    - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace --version ${CORE_ENGINE_VERSION_TAG}"
     - run:
         command: "${KURTOSIS_BINPATH} gateway"
         background: true
+
+# Steps to prepare a job for Kubernetes testing
+steps_prepare_testing_docker: &steps_prepare_testing_docker
+  steps:
+    - run: "eval $(minikube docker-env)"
+    - run: "docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
+    - run: "docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
+    - run: "source << pipeline.parameters.workspace-constants-path>>"
+    - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace --version ${CORE_ENGINE_VERSION_TAG}"
 
 # Run steps to dump kurtosis enclaves from docker
 run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
@@ -581,8 +590,14 @@ jobs:
           condition:
             equal: [ "minikube", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_k8s
+
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_docker
+
       # Basic service add & rm
-      - run: "${KURTOSIS_BINPATH} enclave new --id test-enclave"
+      - run: "${KURTOSIS_BINPATH} enclave new --id test-enclave ${CORE_ENGINE_VERSION_TAG}"
       - run: "${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=80"
       - run: "${KURTOSIS_BINPATH} service rm test-enclave test1"
       - run: "${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=80"
