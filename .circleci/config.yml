@@ -45,8 +45,9 @@ steps_prepare_testing_docker: &steps_prepare_testing_docker
     - run: "docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
     - run: "docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
     - run: "docker load -i  << pipeline.parameters.workspace-files-artifacts-expander-image-path >>"
-    - run: "source << pipeline.parameters.workspace-constants-path>>"
-    - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace --version ${CORE_ENGINE_VERSION_TAG}"
+    - run: | 
+        source << pipeline.parameters.workspace-constants-path>>"
+        ${KURTOSIS_BINPATH} engine start --cli-log-level trace --version ${CORE_ENGINE_VERSION_TAG}
 
 # Run steps to dump kurtosis enclaves from docker
 run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
@@ -430,7 +431,11 @@ jobs:
           condition:
             equal: [ "minikube", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_k8s
-      - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace"
+
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_docker
 
       # Run the testsuite for kubernetes and docker, but don't fail the job immediately so that we can upload the enclave dump
       - when:
@@ -438,15 +443,19 @@ jobs:
             equal: [ "minikube", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
+                source << pipeline.parameters.workspace-constants-path>>"
                 if ! ./internal_testsuites/golang/scripts/build.sh minikube; then
                   touch /tmp/testsuite-failed
                 fi
+
+
 
       - when:
           condition:
             equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
+                source << pipeline.parameters.workspace-constants-path>>"
                 if ! ./internal_testsuites/golang/scripts/build.sh; then
                    touch /tmp/testsuite-failed
                  fi
@@ -483,7 +492,11 @@ jobs:
           condition:
             equal: [ "minikube", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_k8s
-      - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace"
+
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_docker
 
       # Run the testsuite for either docker or kubernetes, but don't fail the job immediately so that we can upload the enclave dump
       - when:
@@ -491,6 +504,7 @@ jobs:
             equal: [ "minikube", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
+                source << pipeline.parameters.workspace-constants-path>>"                
                 if ! ./internal_testsuites/typescript/scripts/build.sh minikube; then
                    touch /tmp/testsuite-failed
                 fi
@@ -499,6 +513,7 @@ jobs:
             equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
+                source << pipeline.parameters.workspace-constants-path>>"
                 if ! ./internal_testsuites/typescript/scripts/build.sh; then
                    touch /tmp/testsuite-failed
                  fi
