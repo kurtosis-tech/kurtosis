@@ -197,7 +197,6 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 			InterpretationError:    potentialInterpretationError.Get(),
 		}, nil
 	}
-
 	logrus.Debugf("Successfully interpreted Startosis script into a series of Kurtosis instructions: \n%v",
 		generatedInstructionsList)
 

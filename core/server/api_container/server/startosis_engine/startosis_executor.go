@@ -3,10 +3,11 @@ package startosis_engine
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/kurtosis-tech/stacktrace"
+	"sync"
 )
 
 type StartosisExecutor struct {
+	mutex *sync.Mutex
 }
 
 type ExecutionError struct {
@@ -14,14 +15,22 @@ type ExecutionError struct {
 }
 
 func NewStartosisExecutor() *StartosisExecutor {
-	// TODO(gb): Implement the bindings to send instructions straight to the backend
-	return &StartosisExecutor{}
+	return &StartosisExecutor{
+		mutex: &sync.Mutex{},
+	}
 }
 
 // Execute executes the list of Kurtosis instructions against the Kurtosis backend
 // It returns a potential execution error if something went wrong.
 // It returns a error if something unexpected happens outside the execution of the script
 func (executor *StartosisExecutor) Execute(ctx context.Context, instructions []kurtosis_instruction.KurtosisInstruction) (*ExecutionError, error) {
-	// TODO(gb): implement
-	return nil, stacktrace.NewError("not implemented")
+	executor.mutex.Lock()
+	defer executor.mutex.Unlock()
+	for _, instruction := range instructions {
+		err := instruction.Execute(ctx)
+		if err != nil {
+			return &ExecutionError{err.Error()}, nil
+		}
+	}
+	return nil, nil
 }

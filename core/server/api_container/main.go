@@ -144,7 +144,7 @@ func runMain() error {
 		}
 	}()
 
-	startosisInterpreter := startosis_engine.NewStartosisInterpreter()
+	startosisInterpreter := startosis_engine.NewStartosisInterpreter(serviceNetwork)
 	startosisExecutor := startosis_engine.NewStartosisExecutor()
 
 	//Creation of ApiContainerService
