@@ -588,7 +588,6 @@ jobs:
       - run: kurtosis config init dont-send-metrics
       - run: |
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
-          echo 'export 
 
       # When backend is 'minikube' install minikube and start a Kurtosis gateway
       - when:
