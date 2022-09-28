@@ -1,0 +1,114 @@
+# This is an example .goreleaser.yml file with some sane defaults.
+# Make sure to check the documentation at http://goreleaser.com
+before:
+  hooks: []
+
+builds:
+  - id: cli
+    env:
+      # We need to set this to get a statically-linked binary, else we'll get a dynamically-linked binary that won't be able to be run anywhere
+      - CGO_ENABLED=0
+    main: .
+    binary: "{{ .Env.CLI_BINARY_FILENAME }}"
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - 386
+      - amd64
+      - arm64
+
+# In order for releasing-to-Github to work, we have to create these archives
+archives:
+  - id: cli
+    builds:
+      - cli
+    # Kurtosis is a private repo so we don't want to package any files except the binaries, but GoReleaser by default packages the README, LICENSE, and changelog
+    # Worse, setting this to be emptylist won't work because GoReleaser takes emptylist to mean "package the defaults" per:
+    #  https://github.com/goreleaser/goreleaser/blob/73641c71ac0d9f78e2409b0cea1bf5b42111b933/internal/pipe/archive/archive.go#L61
+    # Therefore, we set this to a glob of files that definitely don't exist
+    files:
+      - "*THIS_FILE_DOES_NOT_EXIST*"
+    name_template: kurtosis-cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+
+# Gemfury accepts deb & rpm packages but not APK, so we build these two separately
+nfpms:
+  - id: deb-and-rpm-packages
+    package_name: kurtosis-cli
+    homepage: https://kurtosistech.com
+    description: "Install the Kurtosis CLI"
+    vendor: Kurtosis Technologies Inc.
+    builds:
+      - cli
+    formats:
+      - deb
+      - rpm
+    maintainer: Kurtosis Technologies Inc. <hello@kurtosistech.com>
+  - id: apk-package
+    package_name: kurtosis-cli
+    homepage: https://kurtosistech.com
+    description: "Install the Kurtosis CLI"
+    vendor: Kurtosis Technologies Inc.
+    builds:
+      - cli
+    formats:
+      - apk
+    maintainer: Kurtosis Technologies Inc. <hello@kurtosistech.com>
+
+# In order for Homebrew to work, we have to create a repo where the CLI release artifacts will be uploaded
+release:
+  github:
+    owner: kurtosis-tech
+    name: kurtosis-cli-release-artifacts
+
+  name_template: "{{ .Version }}"
+
+  # NOTE: these are the archive IDs, not the build/binary IDs
+  ids:
+    - cli
+    - cli-linux-packages
+
+brews:
+  - name: kurtosis-cli
+    ids:
+      - cli
+    tap:
+      owner: kurtosis-tech
+      name: homebrew-tap
+    commit_author:
+      name: kurtosisbot
+    commit_msg_template: "Automated formula update for the CLI, version {{ .Tag }}"
+    homepage: "https://www.kurtosistech.com"
+    description: "CLI for managing Kurtosis environments."
+
+    # One day, we'll probably want to put a license
+    # license: SOME-SPDX-LICENSE
+
+    # NOTE: Goreleaser *should* automatically detect the binaries packaged inside the archives being installed by the Homebrew formula, but it doesn't due to:
+    #  https://github.com/goreleaser/goreleaser/issues/2488
+    # When this is fixed, we can remove this section
+    install: |
+      bin.install "kurtosis"
+
+publishers:
+  # Inspired by https://netdevops.me/2021/building-and-publishing-deb/rpm-packages-with-goreleaser-and-fury.io/
+  - name: fury.io
+    ids:
+    - deb-and-rpm-packages
+    dir: "{{ dir .ArtifactPath }}"
+    env:
+      # This will get set by CI; see the CI config for how
+      - 'FURY_TOKEN={{ .Env.FURY_TOKEN }}'
+    cmd: "curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/kurtosis-tech/"
+
+source:
+  # Kurt Core is a private project, and we definitely don't want to release source code
+  enabled: false
+
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Env.VERSION }}"
+changelog:
+  # We manage our own changelog
+  skip: true
