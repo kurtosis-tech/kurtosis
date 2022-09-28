@@ -119,6 +119,36 @@ export class KurtosisContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
+    public async createEnclaveWithCustomAPIContainerVersion(enclaveId: string, isPartitioningEnabled: boolean, apiContainerVersionTag: string): Promise<Result<EnclaveContext, Error>> {
+        const enclaveArgs: CreateEnclaveArgs = newCreateEnclaveArgs(
+            enclaveId,
+            apiContainerVersionTag,
+            API_CONTAINER_LOG_LEVEL,
+            isPartitioningEnabled,
+        );
+
+        const getEnclaveResponseResult = await this.client.createEnclaveResponse(enclaveArgs)
+        if(getEnclaveResponseResult.isErr()){
+            return err(getEnclaveResponseResult.error)
+        }
+
+        const enclaveResponse: CreateEnclaveResponse = getEnclaveResponseResult.value;
+        const enclaveInfo: EnclaveInfo | undefined = enclaveResponse.getEnclaveInfo();
+        if (enclaveInfo === undefined) {
+            return err(new Error("An error occurred creating enclave with ID " + enclaveId + " enclaveInfo is undefined; " +
+                "this is a bug on this library" ))
+        }
+
+        const newEnclaveContextResult: Result<EnclaveContext, Error> = await this.newEnclaveContextFromEnclaveInfo(enclaveInfo);
+        if (newEnclaveContextResult.isErr()) {
+            return err(new Error(`An error occurred creating an enclave context from a newly-created enclave; this should never happen`))
+        }
+
+        const enclaveContext = newEnclaveContextResult.value
+        return ok(enclaveContext);
+    }
+
+    // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
     public async getEnclaveContext(enclaveId: EnclaveID): Promise<Result<EnclaveContext, Error>> {
         const getEnclavesResponseResult = await this.client.getEnclavesResponse();
         if (getEnclavesResponseResult.isErr()) {
