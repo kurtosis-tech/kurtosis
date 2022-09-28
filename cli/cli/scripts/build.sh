@@ -4,7 +4,7 @@
 set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cli_module_dirpath="$(dirname "${script_dirpath}")"
-root_dirpath="$(dirname "${cli_module_dirpath}")"
+root_dirpath="$(dirname "$(dirname "${cli_module_dirpath}")")"
 
 
 
