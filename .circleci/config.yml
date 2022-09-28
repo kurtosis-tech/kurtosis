@@ -370,6 +370,7 @@ jobs:
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
 
       - run: |
+          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           scripts/create-server-images-and-populate-env.sh
           source _kurtosis_servers.env
           docker save -o core-image.tgz ${KURTOSIS_CORE_SERVER_IMAGE_AND_TAG}
