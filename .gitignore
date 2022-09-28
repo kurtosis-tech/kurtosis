@@ -84,3 +84,6 @@ yarn-error.log
 
 # Bazel
 /bazel-*
+
+# Typescript
+tsconfig.tsbuildinfo
