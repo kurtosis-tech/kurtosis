@@ -13,8 +13,8 @@ root_dirpath="$(dirname "${script_dirpath}")"
 BUILD_SCRIPT_RELATIVE_FILEPATHS=(
   "core/server/scripts/build.sh"
   "core/files_artifacts_expander/scripts/build.sh"
-  "cli/scripts/build.sh"
   "engine/server/scripts/build.sh"
+  "cli/scripts/build.sh"
 )
 
 RUN_PRE_RELEASE_SCRIPTS_SCRIPT_PATH="${script_dirpath}/run-pre-release-scripts.sh"
@@ -52,7 +52,7 @@ fi
 # ==================================================================================================
 
 if ! bash "${RUN_PRE_RELEASE_SCRIPTS_SCRIPT_PATH}"; then
-  echo "Error: Error running pre release scripts '${RUN_PRE_RELEASE_SCRIPTS_SCRIPT_PATH}' failed" >&2
+  echo "Error: Running pre release scripts '${RUN_PRE_RELEASE_SCRIPTS_SCRIPT_PATH}' failed" >&2
   exit 1
 fi
 
@@ -100,8 +100,8 @@ if ! bash "${CLI_LAUNCH_PATH}" engine stop; then
     exit 1
 fi
 
-if ! bash "${CLI_LAUNCH_PATH}" engine restart --version ${CORE_ENGINE_VERSION_TAG}; then
-    echo "Restarting the engine failed" >&2
+if ! bash "${CLI_LAUNCH_PATH}" engine start; then
+    echo "Error: Starting the engine failed" >&2
     exit 1
 fi
 
