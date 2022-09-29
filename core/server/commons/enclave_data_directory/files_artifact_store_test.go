@@ -103,7 +103,7 @@ func TestFileStore_RemoveFileRemovesFileFromDisk(t *testing.T) {
 func TestFileStore_RemoveFileFailsForNonExistentUuid(t *testing.T) {
 	fileStore := getTestFileStore(t)
 	nonExistentUuid, err := newFilesArtifactUUID()
-	require.NotNil(t, err)
+	require.Nil(t, err)
 
 	err = fileStore.RemoveFile(nonExistentUuid)
 	require.NotNil(t, err)
