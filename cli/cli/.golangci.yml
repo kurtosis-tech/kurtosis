@@ -15,6 +15,8 @@ issues:
       text: "`kubernetesConfig`"
     - path: "kurtosis_gateway/connection/connection.go"
       text: "field `remotePortNumberToPortSpecIdMap`"
+    - path: "commands/module/exec/exec.go"
+      text: "Error return value of `io.Copy` is not checked"
 
 linters-settings:
   staticcheck:

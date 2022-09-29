@@ -308,11 +308,7 @@ func run(
 
 	logrus.Infof("Executing the module with execute params '%v'...", executeParamsStr)
 	if readCloserLogs != nil {
-		go func() {
-			if _, err = io.Copy(logrus.StandardLogger().Out, readCloserLogs); err != nil {
-				logrus.Warnf("Failed copying to standard logger\n'%v'", err)
-			}
-		}()
+		go io.Copy(logrus.StandardLogger().Out, readCloserLogs)
 		logrus.Info("----------------------- MODULE LOGS ----------------------")
 	}
 
