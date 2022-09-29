@@ -5,6 +5,7 @@
 
 ### Changes
 * Added `cli` to the monorepo
+* Adds method `CreateEnclaveWithCustomAPIContainerVersion`  that allows you to create an enclave with custom APIC version.
 
 # 0.49.6
 
