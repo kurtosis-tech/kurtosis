@@ -4,7 +4,7 @@
 set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root_dirpath="$(dirname "${script_dirpath}")"
-run_pre_release_scripts_script_path="${script_dirpath}/run-tests-locally-against-latest-engine-and-core.sh"
+run_pre_release_scripts_script_path="${script_dirpath}/run-pre-release-scripts.sh"
 cli_launch_path="${root_dirpath}/cli/cli/scripts/launch-cli.sh"
 internal_test_suite_build_script_path="${root_dirpath}/internal_testsuites/scripts/build.sh"
 
@@ -50,7 +50,7 @@ fi
 #                                             Main Logic
 # ==================================================================================================
 
-if !bash "${run_pre_release_scripts_script_path}"; then
+if ! bash "${run_pre_release_scripts_script_path}"; then
   echo "Error: Error running pre release scripts '${run_pre_release_scripts_script_path}' failed" >&2
   exit 1
 fi
@@ -79,8 +79,47 @@ for build_script_rel_filepath in "${BUILD_SCRIPT_RELATIVE_FILEPATHS[@]}"; do
     fi
 done
 
+
+if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}" ]; then
+  if ! bash "${cli_launch_path}" cluster set "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}"; then
+      echo "Error: setting cluster to '${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}'" >&2
+      exit 1
+  fi
+fi
+
+if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_DOCKER}" ]; then
+  if ! bash "${cli_launch_path}" cluster set "${TESTSUITE_CLUSTER_BACKEND_DOCKER}"; then
+      echo "Error: setting cluster to '${TESTSUITE_CLUSTER_BACKEND_DOCKER}'" >&2
+      exit 1
+  fi
+fi
+
 # stop existing engine
 if ! bash "${cli_launch_path}" engine stop; then
     echo "Error: Stopping the engine failed" >&2
     exit 1
+fi
+
+if ! bash "${cli_launch_path}" engine restart --version ${CORE_ENGINE_VERSION_TAG}; then
+    echo "Restarting the engine failed" >&2
+    exit 1
+fi
+
+# if minikube run engine gateway
+gateway_pid=""
+if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}" ]; then
+  "${cli_launch_path}" "gateway" &
+  gateway_pid="${!}"
+  echo "Running gateway with pid '${gateway_pid}'"
+fi
+
+if ! bash "${internal_test_suite_build_script_path}" "${testsuite_cluster_backend_arg}"; then
+    echo "Error: Build script '${internal_test_suite_build_script_path}' failed" >&2
+    kill "${gateway_pid}"
+    exit 1
+fi
+
+# kill the gateway pid if its k8s
+if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}" ]; then
+  kill "${gateway_pid}"
 fi

@@ -31,9 +31,9 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
     - run: "${KURTOSIS_BINPATH} cluster set minikube"
     - run: |
         eval $(minikube docker-env)
-        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.workspace-engine-image-path >>"
-        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.workspace-core-image-path >>"
-        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.workspace-files-artifacts-expander-image-path >>"
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
     - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace"
     - run:
         command: "${KURTOSIS_BINPATH} gateway"
@@ -43,9 +43,9 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
 steps_prepare_testing_docker: &steps_prepare_testing_docker
   steps:
     - run: |
-        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.workspace-engine-image-path >>"
-        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.workspace-core-image-path >>"
-        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.workspace-files-artifacts-expander-image-path >>"
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
     - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace"
 
 # Run steps to dump kurtosis enclaves from docker
@@ -346,7 +346,7 @@ jobs:
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
-          engine/server/scripts/build.sh
+          engine/server/scripts/build.sh false
           source engine/server/scripts/_constants.env
           version_to_publish="$(kudet get-docker-tag)"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
