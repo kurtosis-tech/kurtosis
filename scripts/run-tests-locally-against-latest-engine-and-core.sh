@@ -62,15 +62,6 @@ if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE
     fi
 fi
 
-# build all server images
-for build_script_rel_filepath in "${BUILD_SCRIPT_RELATIVE_FILEPATHS[@]}"; do
-    build_script_abs_filepath="${root_dirpath}/${build_script_rel_filepath}"
-    if ! bash "${build_script_abs_filepath}"; then
-        echo "Error: Build script '${build_script_abs_filepath}' failed" >&2
-        exit 1
-    fi
-done
-
 # stop existing engine
 if ! bash "${cli_launch_path}" engine stop; then
     echo "Error: Stopping the engine failed" >&2
