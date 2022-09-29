@@ -374,7 +374,7 @@ jobs:
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
-          engine/server/scripts/build.sh false
+          engine/server/scripts/build.sh
           source engine/server/scripts/_constants.env
           version_to_publish="$(kudet get-docker-tag)"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
