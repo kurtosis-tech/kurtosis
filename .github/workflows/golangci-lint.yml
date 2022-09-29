@@ -33,11 +33,23 @@ jobs:
           version: v1.49.0
           working-directory: api/golang/
           args: --timeout=3m --issues-exit-code=0
+      - name: lint-core-server
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.49.0
+          working-directory: core/server
+          args: --timeout=3m --issues-exit-code=0
       - name: lint-core-launcher
         uses: golangci/golangci-lint-action@v3
         with:
           version: v1.49.0
           working-directory: core/launcher/
+          args: --timeout=3m --issues-exit-code=0
+      - name: lint-engine-server
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.49.0
+          working-directory: engine/server/
           args: --timeout=3m --issues-exit-code=0
       - name: lint-engine-launcher
         uses: golangci/golangci-lint-action@v3
@@ -56,16 +68,4 @@ jobs:
         with:
           version: v1.49.0
           working-directory: cli/cli/
-          args: --timeout=3m --issues-exit-code=0
-      - name: lint-core-server
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: v1.49.0
-          working-directory: core/server
-          args: --timeout=3m --issues-exit-code=0
-      - name: lint-engine-server
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: v1.49.0
-          working-directory: engine/server/
           args: --timeout=3m --issues-exit-code=0
