@@ -9,8 +9,6 @@ on:
 
 jobs:
   golangci:
-    strategy:
-      fail-fast: false
     name: golang-lint
     runs-on: ubuntu-latest
     steps:
@@ -29,12 +27,6 @@ jobs:
         with:
           version: latest
           working-directory: api/golang/
-          args: --timeout=3m --issues-exit-code=0
-      - name: lint-core-server
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: latest
-          working-directory: core/server
           args: --timeout=3m --issues-exit-code=0
       - name: lint-core-launcher
         uses: golangci/golangci-lint-action@v3
@@ -65,4 +57,10 @@ jobs:
         with:
           version: latest
           working-directory: cli/cli/
+          args: --timeout=3m --issues-exit-code=0
+      - name: lint-core-server
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: core/server
           args: --timeout=3m --issues-exit-code=0
