@@ -71,6 +71,28 @@ function deserialize_api_container_api_ExecuteModuleResponse(buffer_arg) {
   return api_container_service_pb.ExecuteModuleResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_ExecuteStartosisScriptArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.ExecuteStartosisScriptArgs)) {
+    throw new Error('Expected argument of type api_container_api.ExecuteStartosisScriptArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_ExecuteStartosisScriptArgs(buffer_arg) {
+  return api_container_service_pb.ExecuteStartosisScriptArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_ExecuteStartosisScriptResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.ExecuteStartosisScriptResponse)) {
+    throw new Error('Expected argument of type api_container_api.ExecuteStartosisScriptResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_ExecuteStartosisScriptResponse(buffer_arg) {
+  return api_container_service_pb.ExecuteStartosisScriptResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_GetModulesArgs(arg) {
   if (!(arg instanceof api_container_service_pb.GetModulesArgs)) {
     throw new Error('Expected argument of type api_container_api.GetModulesArgs');
@@ -406,6 +428,18 @@ executeModule: {
     requestDeserialize: deserialize_api_container_api_ExecuteModuleArgs,
     responseSerialize: serialize_api_container_api_ExecuteModuleResponse,
     responseDeserialize: deserialize_api_container_api_ExecuteModuleResponse,
+  },
+  // Executes a startosis script on the user's behalf
+executeStartosisScript: {
+    path: '/api_container_api.ApiContainerService/ExecuteStartosisScript',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.ExecuteStartosisScriptArgs,
+    responseType: api_container_service_pb.ExecuteStartosisScriptResponse,
+    requestSerialize: serialize_api_container_api_ExecuteStartosisScriptArgs,
+    requestDeserialize: deserialize_api_container_api_ExecuteStartosisScriptArgs,
+    responseSerialize: serialize_api_container_api_ExecuteStartosisScriptResponse,
+    responseDeserialize: deserialize_api_container_api_ExecuteStartosisScriptResponse,
   },
   // Start services by creating containers for them
 startServices: {

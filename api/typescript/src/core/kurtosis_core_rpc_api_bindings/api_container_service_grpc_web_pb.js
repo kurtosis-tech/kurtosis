@@ -319,6 +319,67 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeModule
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.ExecuteStartosisScriptArgs,
+ *   !proto.api_container_api.ExecuteStartosisScriptResponse>}
+ */
+const methodDescriptor_ApiContainerService_ExecuteStartosisScript = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/ExecuteStartosisScript',
+  grpc.web.MethodType.UNARY,
+  proto.api_container_api.ExecuteStartosisScriptArgs,
+  proto.api_container_api.ExecuteStartosisScriptResponse,
+  /**
+   * @param {!proto.api_container_api.ExecuteStartosisScriptArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.ExecuteStartosisScriptResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.ExecuteStartosisScriptArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.ExecuteStartosisScriptResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.ExecuteStartosisScriptResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.executeStartosisScript =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/ExecuteStartosisScript',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_ExecuteStartosisScript,
+      callback);
+};
+
+
+/**
+ * @param {!proto.api_container_api.ExecuteStartosisScriptArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.api_container_api.ExecuteStartosisScriptResponse>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeStartosisScript =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/ExecuteStartosisScript',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_ExecuteStartosisScript);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.api_container_api.StartServicesArgs,
  *   !proto.api_container_api.StartServicesResponse>}
  */

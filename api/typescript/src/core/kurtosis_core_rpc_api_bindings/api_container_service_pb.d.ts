@@ -337,6 +337,54 @@ export namespace ExecuteModuleResponse {
   }
 }
 
+export class ExecuteStartosisScriptArgs extends jspb.Message {
+  getSerializedScript(): string;
+  setSerializedScript(value: string): ExecuteStartosisScriptArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ExecuteStartosisScriptArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: ExecuteStartosisScriptArgs): ExecuteStartosisScriptArgs.AsObject;
+  static serializeBinaryToWriter(message: ExecuteStartosisScriptArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ExecuteStartosisScriptArgs;
+  static deserializeBinaryFromReader(message: ExecuteStartosisScriptArgs, reader: jspb.BinaryReader): ExecuteStartosisScriptArgs;
+}
+
+export namespace ExecuteStartosisScriptArgs {
+  export type AsObject = {
+    serializedScript: string,
+  }
+}
+
+export class ExecuteStartosisScriptResponse extends jspb.Message {
+  getSerializedScriptOutput(): string;
+  setSerializedScriptOutput(value: string): ExecuteStartosisScriptResponse;
+
+  getInterpretationError(): string;
+  setInterpretationError(value: string): ExecuteStartosisScriptResponse;
+
+  getValidationError(): string;
+  setValidationError(value: string): ExecuteStartosisScriptResponse;
+
+  getExecutionError(): string;
+  setExecutionError(value: string): ExecuteStartosisScriptResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ExecuteStartosisScriptResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ExecuteStartosisScriptResponse): ExecuteStartosisScriptResponse.AsObject;
+  static serializeBinaryToWriter(message: ExecuteStartosisScriptResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ExecuteStartosisScriptResponse;
+  static deserializeBinaryFromReader(message: ExecuteStartosisScriptResponse, reader: jspb.BinaryReader): ExecuteStartosisScriptResponse;
+}
+
+export namespace ExecuteStartosisScriptResponse {
+  export type AsObject = {
+    serializedScriptOutput: string,
+    interpretationError: string,
+    validationError: string,
+    executionError: string,
+  }
+}
+
 export class StartServicesArgs extends jspb.Message {
   getServiceIdsToConfigsMap(): jspb.Map<string, ServiceConfig>;
   clearServiceIdsToConfigsMap(): StartServicesArgs;

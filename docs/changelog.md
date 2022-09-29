@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+* Implement skeleton for the Startosis engine
+
 ### Fixes
 * Fixed a message that referred to an old repo.
 
@@ -31,7 +34,6 @@
 
 ### Fixes
 * Fix typescript package releases
-* 
 
 # 0.49.2
 
