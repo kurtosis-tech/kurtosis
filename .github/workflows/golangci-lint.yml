@@ -22,9 +22,10 @@ jobs:
           version: latest
           working-directory: container-engine-lib/
           args: --timeout=3m --issues-exit-code=0
+      - run:  go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+      - run:  go env
       - name: lint-api-golang
         uses: golangci/golangci-lint-action@v3
-        run:  go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
         with:
           version: latest
           working-directory: api/golang/
