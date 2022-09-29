@@ -36,6 +36,10 @@ fi
 
 
 # if the docker_tag isn't dirty we add -dirty to it
+# we do this as we could be in an uncommitted state locally
+# also if we set the non-dirty version and then build any image
+# it would pick the dirty version as the tag anyway as the repo has changed
+# assuming -dirty from the beginning makes this easier
 if [[ "${docker_tag}" != *"dirty"* ]]; then
   docker_tag="${docker_tag}-dirty"
 fi
