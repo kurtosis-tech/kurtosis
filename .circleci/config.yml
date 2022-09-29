@@ -16,6 +16,7 @@ param_cli_cluster_backend: &param_cli_cluster_backend
     type: enum
     enum: [ "docker", "minikube" ]
 
+
 # Steps to prepare a job for Kubernetes testing
 steps_prepare_testing_k8s: &steps_prepare_testing_k8s
   steps:
@@ -30,12 +31,10 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
     - run: "${KURTOSIS_BINPATH} cluster set minikube"
     - run: |
         eval $(minikube docker-env)
-        docker load -i  << pipeline.parameters.workspace-engine-image-path >>
-        docker load -i  << pipeline.parameters.workspace-core-image-path >>
-        docker load -i  << pipeline.parameters.workspace-files-artifacts-expander-image-path >>
-    - run: |
-        source << pipeline.parameters.workspace-constants-path>>        
-        ${KURTOSIS_BINPATH} engine start --cli-log-level trace --version ${CORE_ENGINE_VERSION_TAG}
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.workspace-engine-image-path >>"
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.workspace-core-image-path >>"
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.workspace-files-artifacts-expander-image-path >>"
+    - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace"
     - run:
         command: "${KURTOSIS_BINPATH} gateway"
         background: true
@@ -43,12 +42,11 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
 # Steps to prepare a job for Kubernetes testing
 steps_prepare_testing_docker: &steps_prepare_testing_docker
   steps:
-    - run: "docker load -i  << pipeline.parameters.workspace-engine-image-path >>"
-    - run: "docker load -i  << pipeline.parameters.workspace-core-image-path >>"
-    - run: "docker load -i  << pipeline.parameters.workspace-files-artifacts-expander-image-path >>"
-    - run: | 
-        source << pipeline.parameters.workspace-constants-path>>
-        ${KURTOSIS_BINPATH} engine start --cli-log-level trace --version ${CORE_ENGINE_VERSION_TAG}
+    - run: |
+        docker load -i  << pipeline.parameters.workspace-engine-image-path >>
+        docker load -i  << pipeline.parameters.workspace-core-image-path >>
+        docker load -i  << pipeline.parameters.workspace-files-artifacts-expander-image-path
+    - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace"
 
 # Run steps to dump kurtosis enclaves from docker
 run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
@@ -60,6 +58,19 @@ run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
       "${KURTOSIS_BINPATH}" enclave dump "${enclave_id}" "${output_dirname}/${enclave_id}"
     done
     zip -r "${output_dirname}.zip" "${output_dirname}"
+
+# Run pre-release scripts so that everything has the same -dirty version
+checkout_and_run_release_scripts_if_code_change: &checkout_and_run_release_scripts_if_code_change
+  - run: |
+      if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
+        circleci-agent step halt
+      fi
+  - run: |
+      echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+      sudo apt update
+      sudo apt install kudet
+  - checkout
+  - run: "<<pipeline.parameters.run-pre-release-scripts-script-path>>"
 
 
 ##############
@@ -110,22 +121,10 @@ parameters:
   cli-go-version:
     type: string
     default: "1.17"
-  workspace-with-cli-binary-mountpoint:
+  workspace-with-cli-binary-and-images-mountpoint:
     type: string
     default: "/tmp/workspace"
   # The dirpath where CLI dist subdirectories are found, relative to the workspace root
-  workspace-core-image-path:
-    type: string
-    default: "/tmp/workspace/core-image.tgz"
-  workspace-engine-image-path:
-    type: string
-    default: "/tmp/workspace/engine-image.tgz"
-  workspace-files-artifacts-expander-image-path:
-    type: string
-    default: "/tmp/workspace/files-artifacts-expander-image.tgz"
-  workspace-constants-path:
-    type: string
-    default: "/tmp/workspace/_kurtosis_servers.env"
   cli-dist-home-relative-dirpath:
     type: string
     default: "cli/cli/dist"
@@ -138,6 +137,20 @@ parameters:
   cli-build-cache-key-prefix:
     type: string
     default: "cli-go-mod-v1"
+  run-pre-release-scripts-script-path:
+    type: string
+    default: "scripts/run-pre-release-scripts.sh"
+  core-server-image-filename:
+    type: string
+    default: "core-server-image.tgz"
+  file-artifacts-expander-image-filename:
+    type: string
+    default: "file-artifacts-expander-image.tgz"
+  engine-server-image-filename:
+    type: string
+    default: "engine-server-image.tgz"
+
+
 
 
 # NOTE: Because CircleCI jobs run on separate machines from each other, we duplicate steps (like checkout) between jobs. This is because doing the "correct" DRY
@@ -163,6 +176,7 @@ jobs:
           if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
             circleci-agent step halt
           fi
+
       # Cache our dependencies
       - restore_cache:
           keys:
@@ -214,26 +228,25 @@ jobs:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
       # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
-
-      - checkout
-
-      # If the only changes are to the docs, don't run the slow (and expensive) code checks
-      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
-      - run: |
-          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
-            circleci-agent step halt
-          fi
+      - << : *checkout_and_run_release_scripts_if_code_change
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # Doesn't actually read any private repos so doesn't need the magic Go-private-repo Git config stuff
-      - run: core/files_artifacts_expander/scripts/build.sh
+      - run: |
+          core/files_artifacts_expander/scripts/build.sh
+          source core/files_artifacts_expander/scripts/_constants.env
+          version_to_publish="$(kudet get-docker-tag)"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          echo "Version that will be persisted to workspace: ${version_to_publish}"
+          docker save -o << pipeline.parameters.file-artifacts-expander-image-filename >> "${image_name_with_version}"          
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - << pipeline.parameters.file-artifacts-expander-image-filename >>
 
   build_core_launcher:
     docker:
@@ -259,20 +272,7 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
-
-      - checkout
-
-      # If the only changes are to the docs, don't run the slow (and expensive) code checks
-      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
-      - run: |
-          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
-            circleci-agent step halt
-          fi
+      - << : *checkout_and_run_release_scripts_if_code_change
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
@@ -289,12 +289,22 @@ jobs:
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           core/server/scripts/build.sh
+          source core/server/scripts/_constants.env
+          version_to_publish="$(kudet get-docker-tag)"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          echo "Version that will be persisted to workspace: ${version_to_publish}"
+          docker save -o << pipeline.parameters.core-server-image-filename >> "${image_name_with_version}"          
 
       - save_cache:
           key: << pipeline.parameters.core-server-build-cache-key-prefix>>-{{ checksum "core/server/go.sum" }}
           paths:
             - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
             - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - << pipeline.parameters.core-server-image-filename >>
 
   build_engine_launcher:
     docker:
@@ -320,20 +330,7 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
-
-      - checkout
-
-      # If the only changes are to the docs, don't run the slow (and expensive) code checks
-      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
-      - run: |
-          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
-            circleci-agent step halt
-          fi
+      - << : *checkout_and_run_release_scripts_if_code_change
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
@@ -350,12 +347,23 @@ jobs:
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           engine/server/scripts/build.sh
+          source engine/server/scripts/_constants.env
+          version_to_publish="$(kudet get-docker-tag)"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          echo "Version that will be persisted to workspace: ${version_to_publish}"
+          docker save -o << pipeline.parameters.engine-server-image-filename >> "${image_name_with_version}"          
+          
 
       - save_cache:
           key: << pipeline.parameters.engine-server-build-cache-key-prefix>>-{{ checksum "engine/server/go.sum" }}
           paths:
             - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
             - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - << pipeline.parameters.engine-server-image-filename >>
 
   build_cli:
     docker:
@@ -367,26 +375,11 @@ jobs:
           echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
           sudo apt update
           sudo apt install goreleaser
-      # Install Kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
-      - checkout
-      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
-      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
+
+      - << : *checkout_and_run_release_scripts_if_code_change
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
-
-      - run: |
-          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
-          scripts/create-server-images-and-populate-env.sh
-          source _kurtosis_servers.env
-          docker save -o core-image.tgz ${KURTOSIS_CORE_SERVER_IMAGE_AND_TAG}
-          docker save -o engine-image.tgz ${KURTOSIS_ENGINE_SERVER_IMAGE_AND_TAG}
-          docker save -o files-artifacts-expander-image.tgz ${KURTOSIS_FILES_ARTIFACTS_EXPANDER_IMAGE_AND_TAG}
 
       # Cache our dependencies
       - restore_cache:
@@ -408,10 +401,6 @@ jobs:
           root: .
           paths:
             - "./<< pipeline.parameters.cli-dist-home-relative-dirpath >>"
-            - "_kurtosis_servers.env"
-            - "core-image.tgz"
-            - "engine-image.tgz"
-            - "files-artifacts-expander-image.tgz"
 
   build_golang_testsuite:
     executor: ubuntu_vm
@@ -420,10 +409,10 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: "<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>"
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
       # We call Kurtosis a bunch later, so add it to the PATH so we can call it easily
       - run: |
-          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
       #Run config init to avoid metrics consent prompt when execute engine start command,
       #We do not send metrics from CI to not dirty the metrics data
@@ -444,7 +433,6 @@ jobs:
             equal: [ "minikube", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                source << pipeline.parameters.workspace-constants-path>>
                 if ! ./internal_testsuites/golang/scripts/build.sh minikube; then
                   touch /tmp/testsuite-failed
                 fi
@@ -456,7 +444,6 @@ jobs:
             equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                source << pipeline.parameters.workspace-constants-path>>
                 if ! ./internal_testsuites/golang/scripts/build.sh; then
                    touch /tmp/testsuite-failed
                  fi
@@ -477,10 +464,10 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: "<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>"
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
       # We call Kurtosis a bunch later, so add it to the PATH so we can call it easily
       - run: |
-          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       #Run install Yarn because TypeScript tests are managed with Yarn package manager
@@ -505,7 +492,6 @@ jobs:
             equal: [ "minikube", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                source << pipeline.parameters.workspace-constants-path>>          
                 if ! ./internal_testsuites/typescript/scripts/build.sh minikube; then
                    touch /tmp/testsuite-failed
                 fi
@@ -514,7 +500,6 @@ jobs:
             equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                source << pipeline.parameters.workspace-constants-path>>
                 if ! ./internal_testsuites/typescript/scripts/build.sh; then
                    touch /tmp/testsuite-failed
                  fi
@@ -534,7 +519,7 @@ jobs:
 
       # Set up Kurtosis
       - attach_workspace:
-          at: "<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>"
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
       - run: |
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
           sudo apt update
@@ -551,7 +536,7 @@ jobs:
       - run: kurtosis engine stop
 
       - run: |
-          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
 
       # Make sure we can still interact with the old enclaves
       - run: "${KURTOSIS_BINPATH} enclave ls"
@@ -601,7 +586,7 @@ jobs:
 
       # Set up Kurtosis
       - attach_workspace:
-          at: "<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>"
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
 
       - run: |
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
@@ -610,7 +595,7 @@ jobs:
       # We don't send metrics to avoid polluting our logs
       - run: kurtosis config init dont-send-metrics
       - run: |
-          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
 
       # When backend is 'minikube' install minikube and start a Kurtosis gateway
       - when:
@@ -625,8 +610,7 @@ jobs:
 
       # Basic service add & rm
       - run: |
-          source << pipeline.parameters.workspace-constants-path>>        
-          ${KURTOSIS_BINPATH} enclave new --id test-enclave ${CORE_ENGINE_VERSION_TAG}
+          ${KURTOSIS_BINPATH} enclave new --id test-enclave
       - run: "${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=80"
       - run: "${KURTOSIS_BINPATH} service rm test-enclave test1"
       - run: "${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=80"
@@ -692,9 +676,9 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: "<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>"
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
       - run: |
-          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
       - run: |
           function test_config_init_is_required() {
             if ${KURTOSIS_BINPATH} engine start --cli-log-level trace; then
