@@ -463,9 +463,7 @@ func (backend KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(c
 			return nil, stacktrace.Propagate(err, "An error occurred getting pods matching enclave ID '%v' in namespace '%v'", enclaveIdStr, namespace.GetName())
 		}
 		pods := []apiv1.Pod{}
-		for _, pod := range podsList.Items {
-			pods = append(pods, pod)
-		}
+		pods = append(pods, podsList.Items...)
 
 		// Services
 		servicesList, err := backend.kubernetesManager.GetServicesByLabels(
@@ -476,10 +474,8 @@ func (backend KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(c
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting services matching enclave ID '%v' in namespace '%v'", enclaveIdStr, namespace.GetName())
 		}
-		services := []apiv1.Service{}
-		for service := range servicesList.Items {
-			services = append(services, service)
-		}
+		var services []apiv1.Service
+		services = append(services, servicesList.Items...)
 
 		enclaveResources := &enclaveKubernetesResources{
 			namespace: namespace,

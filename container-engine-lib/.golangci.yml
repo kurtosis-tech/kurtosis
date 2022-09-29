@@ -17,6 +17,8 @@ issues:
     - path: "lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers/shared_helpers.go"
       text: "field `filesArtifactExpansionVolumeSizeInMegabytes` is unused (unused)"
     - path: "lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers/shared_helpers.go"
+      text: "field `filesArtifactExpansionVolumeSizeInMegabytes` is unused (unused)"
+    - path: "lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers/shared_helpers.go"
       text: "field `storageClassName` is unused"
     - path: "lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers/shared_helpers.go"
       text: "field `enclaveDataVolumeSizeInMegabytes` is unused (unused)"
