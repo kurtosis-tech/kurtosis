@@ -12,10 +12,14 @@ type FreeIpAddrTracker struct {
 	db                *bolt.DB
 }
 
+const (
+	dbBucketName = "taken-ip-addresses"
+)
+
 func (tracker *FreeIpAddrTracker) GetFreeIpAddr() (ipAddr net.IP, err error) {
 	err = tracker.db.Update(func(tx *bolt.Tx) error {
 		ipAddr, err = tracker.freeIpAddrTracker.GetFreeIpAddr()
-		return tx.Bucket([]byte("taken-ip-addresses")).Put([]byte(ipAddr.String()), []byte{})
+		return tx.Bucket([]byte(dbBucketName)).Put([]byte(ipAddr.String()), []byte{})
 	})
 	if err != nil {
 		return nil, err
@@ -26,7 +30,7 @@ func (tracker *FreeIpAddrTracker) GetFreeIpAddr() (ipAddr net.IP, err error) {
 func (tracker *FreeIpAddrTracker) ReleaseIpAddr(ip net.IP) (err error) {
 	err = tracker.db.Update(func(tx *bolt.Tx) error {
 		tracker.freeIpAddrTracker.ReleaseIpAddr(ip)
-		return tx.Bucket([]byte("taken-ip-addresses")).Delete([]byte(ip.String()))
+		return tx.Bucket([]byte(dbBucketName)).Delete([]byte(ip.String()))
 	})
 	if err != nil {
 		return err
@@ -41,7 +45,7 @@ func GetOrCreateNewFreeIpAddrTracker(log *logrus.Logger, subnet *net.IPNet, alre
 		takenIps[ipAddr] = true
 	}
 	err := db.Update(func(tx *bolt.Tx) error {
-		bucket, err := tx.CreateBucket([]byte("taken-ip-addresses"))
+		bucket, err := tx.CreateBucket([]byte(dbBucketName))
 		if err != nil {
 			return err
 		}
@@ -58,7 +62,7 @@ func GetOrCreateNewFreeIpAddrTracker(log *logrus.Logger, subnet *net.IPNet, alre
 		err = db.View(func(tx *bolt.Tx) error {
 			// Bucket does exist, hydrate alreadyTakenIps
 			takenIps = map[string]bool{}
-			bucket := tx.Bucket([]byte("taken-ip-addresses"))
+			bucket := tx.Bucket([]byte(dbBucketName))
 			return bucket.ForEach(func(k, v []byte) error {
 				takenIps[string(k)] = true
 				return nil
