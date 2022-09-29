@@ -1,6 +1,5 @@
 name: golangci-lint
-on:
-  pull_request:
+on: [push, pull_request]
 permissions:
   contents: read
   pull-requests: read
@@ -16,4 +15,6 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.29
+          version: v1.31
+          args: --issues-exit-code=0
+      - run: golangci-lint run --no-config cipher
