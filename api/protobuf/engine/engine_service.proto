@@ -23,6 +23,8 @@ service EngineService {
   rpc DestroyEnclave(DestroyEnclaveArgs) returns (google.protobuf.Empty) {};
   // Gets rid of old enclaves
   rpc Clean(CleanArgs) returns (CleanResponse) {};
+  // Get user service logs
+  rpc GetUserServiceLogs(GetUserServiceLogsArgs) returns (GetUserServiceLogsResponse) {};
 }
 
 // ==============================================================================================
@@ -158,4 +160,23 @@ message CleanResponse {
   // Set of removed enclave IDs
   map<string, bool> removed_enclave_ids = 1;
 
+}
+
+// ==============================================================================================
+//                                   Get User Service Logs
+// ==============================================================================================
+message GetUserServiceLogsArgs {
+  // The ID of the user service's Kurtosis Enclave
+  string enclave_id = 1;
+  // "Set" of service GUIDs in the enclave
+  map<string, bool> service_guid_set = 2;
+}
+
+message GetUserServiceLogsResponse {
+  // The user service log lines grouped by user service GUIDs
+  map<string, LogLine> user_service_logs_by_user_service_guid = 1;
+}
+
+message LogLine {
+  repeated string line = 1;
 }
