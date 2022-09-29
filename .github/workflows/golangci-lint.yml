@@ -1,4 +1,4 @@
-name: golangci-lint
+name: Golang Lint
 
 on:
   push:
@@ -8,9 +8,9 @@ on:
 
 
 jobs:
-  strategy:
-    fail-fast: false
   golangci:
+    strategy:
+      fail-fast: false
     name: golang-lint
     runs-on: ubuntu-latest
     steps:
