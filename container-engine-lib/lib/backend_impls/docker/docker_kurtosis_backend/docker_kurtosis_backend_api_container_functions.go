@@ -3,6 +3,7 @@ package docker_kurtosis_backend
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -15,7 +16,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -29,12 +29,6 @@ const (
 
 	maxWaitForApiContainerAvailabilityRetries         = 10
 	timeBetweenWaitForApiContainerAvailabilityRetries = 1 * time.Second
-
-	// We use a short timeout so the API container has time to clean up but the user isn't stuck waiting on a long timeout
-	apiContainerStopTimeout = 2 * time.Second
-
-	// TODO Delete this after 2022-05-28
-	pre_2022_03_28_IpAddrLabel = "com.kurtosistech.api-container-ip"
 )
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
@@ -45,7 +39,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	enclaveId enclave.EnclaveID,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
-// The dirpath on the API container where the enclave data volume should be mounted
+	// The dirpath on the API container where the enclave data volume should be mounted
 	enclaveDataVolumeDirpath string,
 	ownIpAddressEnvVar string,
 	customEnvVars map[string]string,
@@ -359,7 +353,9 @@ func (backend *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, 
 }
 
 // ====================================================================================================
-//                                      Private Helper Functions
+//
+//	Private Helper Functions
+//
 // ====================================================================================================
 // Gets API containers matching the search filters, indexed by their container ID
 func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[string]*api_container.APIContainer, error) {
@@ -420,16 +416,10 @@ func getApiContainerObjectFromContainerInfo(
 
 	privateIpAddrStr, found := labels[label_key_consts.PrivateIPDockerLabelKey.GetString()]
 	if !found {
-		// TODO DELETE THIS AFTER 2022-05-28 WHEN NO API CONTAINERS WON'T HAVE A PRIVATE IP
-		candidateIpAddrStr, found := labels[pre_2022_03_28_IpAddrLabel]
-		if !found {
-			return nil, stacktrace.NewError(
-				"Couldn't find the API container's private IP using label '%v' nor '%v'",
-				label_key_consts.PrivateIPDockerLabelKey.GetString(),
-				pre_2022_03_28_IpAddrLabel,
-			)
-		}
-		privateIpAddrStr = candidateIpAddrStr
+		return nil, stacktrace.NewError(
+			"Couldn't find the API container's private IP using label '%v'",
+			label_key_consts.PrivateIPDockerLabelKey.GetString(),
+		)
 	}
 	privateIpAddr := net.ParseIP(privateIpAddrStr)
 	if privateIpAddr == nil {

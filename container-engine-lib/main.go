@@ -53,7 +53,6 @@ func runDockerManagerTesting() error {
 	}
 	dockerManager := docker_manager.NewDockerManager(dockerClient)
 
-
 	// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv Arbitrary logic goes here vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 	result, err := dockerManager.GetContainersByLabels(ctx, map[string]string{}, false)
 	if err != nil {
@@ -79,7 +78,6 @@ func runKubernetesManagerTesting() error {
 	}
 	kubernetesManager := kubernetes_manager.NewKubernetesManager(clientSet, kubernetesConfig)
 
-
 	// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv Arbitrary logic goes here vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 	kubernetesManager.GetNamespace(ctx, "TODO")
 
@@ -89,7 +87,6 @@ func runKubernetesManagerTesting() error {
 // Can comment which backend you want to use
 func runKurtosisBackendTesting() error {
 	ctx := context.Background()
-
 
 	backend, err := backend_creator.GetLocalDockerKurtosisBackend(nil)
 	if err != nil {
@@ -102,8 +99,8 @@ func runKurtosisBackendTesting() error {
 
 	engine, err := backend.CreateEngine(
 		ctx,
-		"kurtosistech/kurtosis-engine-server",
-		"1.29.0",
+		"kurtosistech/engine",
+		"0.49.5",
 		9710,
 		9711,
 		serializedArgs,
@@ -113,21 +110,21 @@ func runKurtosisBackendTesting() error {
 	}
 	logrus.Infof("Engine 1 info: %+v", engine)
 
-		/*engineFil := &engine_object.EngineFilters{
-			GUIDs: map[engine_object.EngineGUID]bool{
-				engine.GetGUID(): true,
-			},
-			Statuses: map[container_status.ContainerStatus]bool{
-				container_status.ContainerStatus_Running: true,
-			},
-		}
-		stoppedEngineGuids, erroredEngineGuids, err := backend.StopEngines(ctx, engineFil)
-		if err != nil {
-			return err
-		}
-		logrus.Infof("Successfull stopped engines: %+v", stoppedEngineGuids)
-		logrus.Infof("Errored stopped engines: %+v", erroredEngineGuids)
-		*/
+	/*engineFil := &engine_object.EngineFilters{
+		GUIDs: map[engine_object.EngineGUID]bool{
+			engine.GetGUID(): true,
+		},
+		Statuses: map[container_status.ContainerStatus]bool{
+			container_status.ContainerStatus_Running: true,
+		},
+	}
+	stoppedEngineGuids, erroredEngineGuids, err := backend.StopEngines(ctx, engineFil)
+	if err != nil {
+		return err
+	}
+	logrus.Infof("Successfull stopped engines: %+v", stoppedEngineGuids)
+	logrus.Infof("Errored stopped engines: %+v", erroredEngineGuids)
+	*/
 
 
 		serializedArgs2 := map[string]string{
@@ -222,7 +219,6 @@ func runKurtosisBackendTesting() error {
 			return err
 		}
 	*/
-
 
 	// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv Arbitrary logic goes here vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 	// enclaveId := enclave.EnclaveID("test")  // TODO Make this whatever you need

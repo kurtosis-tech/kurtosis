@@ -10,6 +10,27 @@
 ### Changes
 * Untied the logs components containers and volumes creation and removal from the engine's crud in `container-engine-lib`
 
+### Features
+* Implement skeleton for the Startosis engine
+
+#### Fixes
+* Fixed a message that referred to an old repo.
+
+# 0.49.6
+
+### Fixes
+* Fixed a bug where engine launcher would try to launch older docker image `kurtosistech/kurtosis-engine-server`.
+
+# 0.49.5
+
+### Changes
+* Added `kurtosis-engine-server` to the monorepo
+* Merged the `kurtosis-engine-sdk` & `kurtosis-core-sdk`
+
+### Removals
+* Remove unused variables from Docker Kurtosis backend
+
+
 # 0.49.4
 
 ### Fixes
@@ -20,7 +41,6 @@
 
 ### Fixes
 * Fix typescript package releases
-* 
 
 # 0.49.2
 
