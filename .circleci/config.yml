@@ -579,6 +579,9 @@ jobs:
 
       - run: |
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+          docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
+          docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
+          docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"          
 
       # Make sure we can still interact with the old enclaves
       - run: "${KURTOSIS_BINPATH} enclave ls"
@@ -1084,6 +1087,9 @@ workflows:
             - docker-user
           requires:
             - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
           <<: *filters_ignore_master
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Kubernetes"
@@ -1102,6 +1108,9 @@ workflows:
             - docker-user
           requires:
             - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
           <<: *filters_ignore_master
       - test_config_init_edge_cases:
           requires:
