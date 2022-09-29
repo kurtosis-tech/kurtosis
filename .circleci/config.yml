@@ -60,8 +60,7 @@ run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
     zip -r "${output_dirname}.zip" "${output_dirname}"
 
 # Run pre-release scripts so that everything has the same -dirty version
-checkout_and_run_release_scripts_if_code_change: &checkout_and_run_release_scripts_if_code_change
-  - run: git clone -b "$CIRCLE_BRANCH" "$CIRCLE_REPOSITORY_URL"
+run_pre_release_scripts_if_change_or_halt: &run_pre_release_scripts_if_change_or_halt
   - run: |
       if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
         circleci-agent step halt
@@ -228,7 +227,8 @@ jobs:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
       # Install Kudet
-      - <<: *checkout_and_run_release_scripts_if_code_change
+      - checkout
+      - <<: *run_pre_release_scripts_if_change_or_halt
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
@@ -272,7 +272,8 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
-      - <<: *checkout_and_run_release_scripts_if_code_change
+      - checkout
+      - <<: *run_pre_release_scripts_if_change_or_halt
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
@@ -330,7 +331,8 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
-      - <<: *checkout_and_run_release_scripts_if_code_change
+      - checkout
+      - <<: *run_pre_release_scripts_if_change_or_halt
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
@@ -370,13 +372,14 @@ jobs:
       - image: "cimg/go:<< pipeline.parameters.cli-go-version >>"
     resource_class: large
     steps:
+      - checkout
+      - << : *run_pre_release_scripts_if_change_or_halt
+
       # Install goreleaser
       - run: |
           echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
           sudo apt update
           sudo apt install goreleaser
-
-      - << : *checkout_and_run_release_scripts_if_code_change
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
@@ -996,6 +999,9 @@ workflows:
             - docker-user
           requires:
             - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
           <<: *filters_ignore_master
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Kubernetes"
@@ -1004,6 +1010,9 @@ workflows:
             - docker-user
           requires:
             - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
           <<: *filters_ignore_master
 
       - build_golang_testsuite:
@@ -1013,6 +1022,9 @@ workflows:
             - docker-user
           requires:
             - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
           <<: *filters_ignore_master
       - build_golang_testsuite:
           name: "Build golang testsuite against Kubernetes"
@@ -1021,6 +1033,9 @@ workflows:
             - docker-user
           requires:
             - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
           <<: *filters_ignore_master
 
       - build_typescript_testsuite:
@@ -1038,6 +1053,9 @@ workflows:
             - docker-user
           requires:
             - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
           <<: *filters_ignore_master
 
       - test_old_enclave_continuity:
