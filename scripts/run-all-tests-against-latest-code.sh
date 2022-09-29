@@ -19,7 +19,9 @@ BUILD_SCRIPT_RELATIVE_FILEPATHS=(
 
 RUN_PRE_RELEASE_SCRIPTS_SCRIPT_PATH="${script_dirpath}/run-pre-release-scripts.sh"
 CLI_LAUNCH_PATH="${root_dirpath}/cli/cli/scripts/launch-cli.sh"
-INTERNAL_TESTSUITES_BUILDSCRIPT_PATH="${root_dirpath}/internal_testsuites/scripts/build.sh"
+
+GOLANG_INTERNAL_TESTSUITES_BUILDSCRIPT_PATH="${root_dirpath}/internal_testsuites/golang/scripts/build.sh"
+TYPESCRIPT_INTERNAL_TESTSUITES_BUILDSCRIPT_PATH="${root_dirpath}/internal_testsuites/typescript/scripts/build.sh"
 
 
 TESTSUITE_CLUSTER_BACKEND_DOCKER="docker"
@@ -113,8 +115,14 @@ if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE
   echo "Running gateway with pid '${gateway_pid}'"
 fi
 
-if ! bash "${INTERNAL_TESTSUITES_BUILDSCRIPT_PATH}" "${testsuite_cluster_backend_arg}"; then
-    echo "Error: Build script '${INTERNAL_TESTSUITES_BUILDSCRIPT_PATH}' failed" >&2
+if ! bash "${GOLANG_INTERNAL_TESTSUITES_BUILDSCRIPT_PATH}" "${testsuite_cluster_backend_arg}"; then
+    echo "Error: Build script '${GOLANG_INTERNAL_TESTSUITES_BUILDSCRIPT_PATH}' failed" >&2
+    kill "${gateway_pid}"
+    exit 1
+fi
+
+if ! bash "${TYPESCRIPT_INTERNAL_TESTSUITES_BUILDSCRIPT_PATH}" "${testsuite_cluster_backend_arg}"; then
+    echo "Error: Build script '${TYPESCRIPT_INTERNAL_TESTSUITES_BUILDSCRIPT_PATH}' failed" >&2
     kill "${gateway_pid}"
     exit 1
 fi
