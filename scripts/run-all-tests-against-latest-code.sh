@@ -53,6 +53,12 @@ fi
 #                                             Main Logic
 # ==================================================================================================
 
+echo "The following files will have versions changed to shortened-hash-dirty"
+echo "   cli/cli/kurtosis_cli_version/kurtosis_cli_version.go"
+echo "   core/launcher/api_container_launcher/api_container_launcher.go"
+echo "   engine/launcher/engine_server_launcher/engine_server_launcher.go"
+echo "Please undo the changes if you have to"
+
 if ! bash "${RUN_PRE_RELEASE_SCRIPTS_SCRIPT_PATH}"; then
   echo "Error: Running pre release scripts '${RUN_PRE_RELEASE_SCRIPTS_SCRIPT_PATH}' failed" >&2
   exit 1
@@ -118,13 +124,19 @@ fi
 
 if ! bash "${GOLANG_INTERNAL_TESTSUITES_BUILDSCRIPT_PATH}" "${testsuite_cluster_backend_arg}"; then
     echo "Error: Build script '${GOLANG_INTERNAL_TESTSUITES_BUILDSCRIPT_PATH}' failed" >&2
-    kill "${gateway_pid}"
+    # kill the gateway pid if its k8s if failure
+    if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}" ]; then
+      kill "${gateway_pid}"
+    fi
     exit 1
 fi
 
 if ! bash "${TYPESCRIPT_INTERNAL_TESTSUITES_BUILDSCRIPT_PATH}" "${testsuite_cluster_backend_arg}"; then
     echo "Error: Build script '${TYPESCRIPT_INTERNAL_TESTSUITES_BUILDSCRIPT_PATH}' failed" >&2
-    kill "${gateway_pid}"
+    # kill the gateway pid if its k8s if failure
+    if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}" ]; then
+      kill "${gateway_pid}"
+    fi
     exit 1
 fi
 
