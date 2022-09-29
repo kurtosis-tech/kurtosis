@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/binary"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/struct_persister"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"math"
@@ -166,8 +166,7 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 			return "", stacktrace.Propagate(err, "An error occurred finding a free network")
 		}
 
-		freeIpAddrTracker := lib.NewFreeIpAddrTracker(logrus.StandardLogger(), freeNetworkIpAndMask, map[string]bool{})
-		gatewayIp, err := freeIpAddrTracker.GetFreeIpAddr()
+		gatewayIp, err := struct_persister.GetFreeIpAddrFromSubnet(map[string]bool{}, freeNetworkIpAndMask)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred getting a free IP for the network gateway")
 		}
@@ -215,10 +214,11 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 }
 
 // NOTE: This is an intentionally non-deterministic algorithm!!!! The rationale: when many instances of Kurtosis
-//  are running at once, if we make the algorithm deterministic (e.g. start a 0.0.0.0, and keep checking subsequent
-//  subnets until you find a free one, which was the first iteration of this algo) then you get contention as the
-//  multiple instances are all trying to allocate the same networks at the same time. Therefore, we change the start
-//  to be different on every call
+//
+//	are running at once, if we make the algorithm deterministic (e.g. start a 0.0.0.0, and keep checking subsequent
+//	subnets until you find a free one, which was the first iteration of this algo) then you get contention as the
+//	multiple instances are all trying to allocate the same networks at the same time. Therefore, we change the start
+//	to be different on every call
 func findRandomFreeNetwork(networks []*net.IPNet) (*net.IPNet, error) {
 	var searchStartNetworkIpUint64 uint64
 	// There's no point in starting the search for a valid free network at a disallowed block, so keep rerolling
@@ -281,4 +281,3 @@ func isIpInDisallowedRange(ipUint32 uint32) bool {
 	}
 	return false
 }
-

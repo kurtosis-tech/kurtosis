@@ -18,13 +18,14 @@ const (
 	dbBucketName = "taken-ip-addresses"
 )
 
-func (tracker *FreeIpAddrTracker) GetFreeIpAddr() (ipAddr net.IP, err error) {
-	err = tracker.db.Update(func(tx *bolt.Tx) error {
+func (tracker *FreeIpAddrTracker) GetFreeIpAddr() (net.IP, error) {
+	var ipAddr net.IP
+	err := tracker.db.Update(func(tx *bolt.Tx) error {
 		takenIps, err := getTakenIpAddr(tx)
 		if err != nil {
 			return err
 		}
-		ipAddr, err = getFreeIpAddrFromSubnet(takenIps, tracker.subnet)
+		ipAddr, err = GetFreeIpAddrFromSubnet(takenIps, tracker.subnet)
 		if err != nil {
 			return err
 		}
@@ -36,8 +37,8 @@ func (tracker *FreeIpAddrTracker) GetFreeIpAddr() (ipAddr net.IP, err error) {
 	return ipAddr, nil
 }
 
-func (tracker *FreeIpAddrTracker) ReleaseIpAddr(ip net.IP) (err error) {
-	err = tracker.db.Update(func(tx *bolt.Tx) error {
+func (tracker *FreeIpAddrTracker) ReleaseIpAddr(ip net.IP) error {
+	err := tracker.db.Update(func(tx *bolt.Tx) error {
 		return tx.Bucket([]byte(dbBucketName)).Delete([]byte(ip.String()))
 	})
 	if err != nil {
@@ -97,7 +98,7 @@ Returns:
 	An IP from the subnet the tracker was initialized with that won't collide with any previously-given IP. The
 		actual IP returned is undefined.
 */
-func getFreeIpAddrFromSubnet(takenIps map[string]bool, subnet *net.IPNet) (ipAddr net.IP, err error) {
+func GetFreeIpAddrFromSubnet(takenIps map[string]bool, subnet *net.IPNet) (net.IP, error) {
 	// NOTE: This whole function will need to be rewritten if we support IPv6
 
 	// convert IPNet struct mask and address to uint32

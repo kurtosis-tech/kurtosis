@@ -85,7 +85,7 @@ func GetLocalDockerKurtosisBackend(
 			db,
 		)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating ip tracker")
+			return nil, stacktrace.Propagate(err, "An error occurred creating IP tracker")
 		}
 
 		enclaveFreeIpAddrTrackers[enclaveId] = freeIpAddrProvider
