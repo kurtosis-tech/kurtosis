@@ -26,7 +26,8 @@ jobs:
         with:
           version: v1.49.0
           working-directory: container-engine-lib/
-          args: --timeout=3m 
+          args: --timeout=3m
+          only-new-issues: true
       - name: lint-api-golang
         uses: golangci/golangci-lint-action@v3
         with:
