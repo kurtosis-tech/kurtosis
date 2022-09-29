@@ -1,12 +1,21 @@
 issues:
   exclude-rules:
-    - path: "container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
+    - path: "lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
       text: "field `enclaveDataVolumeSizeInMegabytes` is unused (unused)"
-    - path: "container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
+    - path: "lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
       text: "field `storageClassName` is unused (unused)"
-    - path: "container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
+    - path: "lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
       text: "field `filesArtifactExpansionVolumeSizeInMegabytes` is unused (unused)"
-    - path: "container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
+    - path: "lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
       text: "field `storageClassName` is unused (unused)"
-    - path: "container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
+    - path: "lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
       text: "field `filesArtifactExpansionVolumeSizeInMegabytes` is unused (unused)"
+    - path: "lib/backend_impls/docker/docker_kurtosis_backend/user_services_functions/start_user_services.go"
+      text: "S1009: should omit nil check; len() for map[string]*github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec.PortSpec is defined as zero (gosimple)"
+    - path: "lib/backend_impls/kubernetes/kubernetes_resource_collectors/postfilter_kubernetes_resources.go"
+      text: "S1009: should omit nil check; len() for map[string]bool is defined as zero (gosimple)"
+linters-settings:
+  staticcheck:
+    checks:
+      - all
+      - '-SA1019' # disable the rule SA1019

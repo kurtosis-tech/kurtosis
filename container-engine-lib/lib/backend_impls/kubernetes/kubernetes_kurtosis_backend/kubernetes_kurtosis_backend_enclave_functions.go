@@ -477,7 +477,7 @@ func (backend KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(c
 			return nil, stacktrace.Propagate(err, "An error occurred getting services matching enclave ID '%v' in namespace '%v'", enclaveIdStr, namespace.GetName())
 		}
 		services := []apiv1.Service{}
-		for _, service := range servicesList.Items {
+		for service := range servicesList.Items {
 			services = append(services, service)
 		}
 
