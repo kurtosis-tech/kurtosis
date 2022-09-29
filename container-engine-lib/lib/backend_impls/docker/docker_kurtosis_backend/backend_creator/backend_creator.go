@@ -26,12 +26,17 @@ type APIContainerModeArgs struct {
 	APIContainerIP net.IP
 }
 
+const (
+	databaseFilePath              = "kurtosis.db"
+	readWritePermissionToDatabase = 0666
+)
+
 // GetLocalDockerKurtosisBackend is the entrypoint method we expect users of container-engine-lib to call
 // ONLY the API container should pass in the extra API container args, which will unlock extra API container functionality
 func GetLocalDockerKurtosisBackend(
 	optionalApiContainerModeArgs *APIContainerModeArgs,
 ) (backend_interface.KurtosisBackend, error) {
-	db, err := bolt.Open("kurtosis.db", 0666, nil)
+	db, err := bolt.Open(databaseFilePath, readWritePermissionToDatabase, &bolt.Options{})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred opening local database")
 	}
