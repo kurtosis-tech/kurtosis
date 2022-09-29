@@ -80,7 +80,11 @@ func run(cmd *cobra.Command, args []string) error {
 	if startEngineErr != nil {
 		return stacktrace.Propagate(startEngineErr, "An error occurred starting the Kurtosis engine")
 	}
-	defer engineClientCloseFunc()
+	defer func() {
+		if err = engineClientCloseFunc(); err != nil {
+			logrus.Warnf("Error closing the engine client:\n'%v'", err)
+		}
+	}()
 
 	logrus.Infof("Engine restarted successfully")
 

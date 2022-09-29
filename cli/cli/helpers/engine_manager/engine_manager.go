@@ -118,11 +118,15 @@ func (manager *EngineManager) GetEngineStatus(
 	// TODO Replace this hacky method of defaulting to localhost:DefaultGrpcPort to get connected to the engine
 	runningEngineIpAndPort := getDefaultKurtosisEngineLocalhostMachineIpAndPort()
 
-	engineClient, clientCloseFunc, err := getEngineClientFromHostMachineIpAndPort(runningEngineIpAndPort)
+	engineClient, engineClientCloseFunc, err := getEngineClientFromHostMachineIpAndPort(runningEngineIpAndPort)
 	if err != nil {
 		return EngineStatus_ContainerRunningButServerNotResponding, runningEngineIpAndPort, "", nil
 	}
-	defer clientCloseFunc()
+	defer func() {
+		if err = engineClientCloseFunc(); err != nil {
+			logrus.Warnf("Error closing the engine client:\n'%v'", err)
+		}
+	}()
 
 	engineInfo, err := getEngineInfoWithTimeout(ctx, engineClient)
 	if err != nil {

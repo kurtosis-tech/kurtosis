@@ -34,7 +34,7 @@ func TestGetLatestCLIReleaseVersionFromCacheFile_CacheFileDoesNotExist(t *testin
 	filepath, removeTempFileFunc, err := createNewTempFileAndGetFilepath()
 	defer func() {
 		if err = removeTempFileFunc(); err != nil {
-			logrus.Debugf("Error removing temporary file during test")
+			logrus.Warnf("Error removing temporary file during test\n'%v'", err)
 		}
 	}()
 	require.NoError(t, err, "An error occurred getting the cache file filepath for test")
@@ -49,7 +49,7 @@ func TestGetLatestCLIReleaseVersionFromCacheFile_SaveVersionInCacheFileAndGetVer
 	filepath, removeTempFileFunc, err := createNewTempFileAndGetFilepath()
 	defer func() {
 		if err = removeTempFileFunc(); err != nil {
-			logrus.Debugf("Error removing temporary file during test")
+			logrus.Warnf("Error removing temporary file during test\n'%v'", err)
 		}
 	}()
 	require.NoError(t, err, "An error occurred getting the cache file filepath for test")
