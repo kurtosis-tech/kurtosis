@@ -16,7 +16,43 @@ jobs:
         with:
           go-version: 1.17
       - uses: actions/checkout@v3
-      - name: golangci-lint
+      - name: lint-container-engine-lib
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
+          working-directory: container-engine-lib/
+      - name: lint-api-golang
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: api/golang/
+      - name: lint-core-server
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: core/server
+      - name: lint-core-launcher
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: core/launcher/
+      - name: lint-engine-server
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: engine/server/
+      - name: lint-engine-launcher
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: engine/launcher/
+      - name: lint-internal-test-suites
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: internal_testsuites/golang/
+      - name: lint-cli
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: cli/cli/
