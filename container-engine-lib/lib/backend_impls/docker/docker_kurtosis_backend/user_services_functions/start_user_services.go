@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -15,7 +16,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/operation_parallelizer"
-	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
@@ -156,6 +156,8 @@ func StartUserServices(
 	logsCollectorServiceAddress := logsCollector.GetPrivateTcpAddress()
 	//The following docker labels will be added into the logs stream which is necessary for creating new tags
 	//in the logs database and then use it for querying them to get the specific user service's logs
+	//even the 'enclaveID' value is used for Fluentbit to send it to Loki as the "X-Scope-OrgID" request's header
+	//due Loki is now configured to use multi tenancy, and we established this relation: enclaveID = tenantID
 	logsCollectorLabels := logs_collector_functions.LogsCollectorLabels{
 		label_key_consts.EnclaveIDDockerLabelKey.GetString(),
 		label_key_consts.GUIDDockerLabelKey.GetString(),
