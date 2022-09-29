@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
@@ -16,10 +15,11 @@ const (
 )
 
 type KurtosisBackendLogClient struct {
-	kurtosisBackend backend_interface.KurtosisBackend
+	//TODO temporary hack replace it with backend_interface.KurtosisBackend when we add the KurtosisBackendMock with Mockery
+	kurtosisBackend MinimalKurtosisBackend
 }
 
-func NewKurtosisBackendLogClient(kurtosisBackend backend_interface.KurtosisBackend) *KurtosisBackendLogClient {
+func NewKurtosisBackendLogClient(kurtosisBackend MinimalKurtosisBackend) *KurtosisBackendLogClient {
 	return &KurtosisBackendLogClient{kurtosisBackend: kurtosisBackend}
 }
 

@@ -35,18 +35,16 @@ const (
 	expectedDirectionQueryParamValue        = "forward"
 )
 
-var (
-	enclaveId        = enclave.EnclaveID(testEnclaveId)
-	userServiceGuids = map[service.ServiceGUID]bool{
+
+func TestIfHttpRequestIsValidWhenCallingGetUserServiceLogs(t *testing.T) {
+	enclaveId        := enclave.EnclaveID(testEnclaveId)
+	userServiceGuids := map[service.ServiceGUID]bool{
 		testUserService1Guid: true,
 		testUserService2Guid: true,
 		testUserService3Guid: true,
 	}
-	httpClientObj      = NewMockedHttpClient()
-	logsDatabaseClient = NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, httpClientObj)
-)
-
-func TestIfHttpRequestIsValidWhenCallingGetUserServiceLogs(t *testing.T) {
+	httpClientObj      := NewMockedHttpClient()
+	logsDatabaseClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, httpClientObj)
 
 	ctx := context.Background()
 
@@ -114,7 +112,15 @@ func TestIfHttpRequestIsValidWhenCallingGetUserServiceLogs(t *testing.T) {
 
 }
 
-func TestDoRequestWithLokiLogsDatabaseClientRetunsValidResponse(t *testing.T) {
+func TestDoRequestWithLokiLogsDatabaseClientReturnsValidResponse(t *testing.T) {
+	enclaveId        := enclave.EnclaveID(testEnclaveId)
+	userServiceGuids := map[service.ServiceGUID]bool{
+		testUserService1Guid: true,
+		testUserService2Guid: true,
+		testUserService3Guid: true,
+	}
+	httpClientObj      := NewMockedHttpClient()
+	logsDatabaseClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, httpClientObj)
 
 	ctx := context.Background()
 
