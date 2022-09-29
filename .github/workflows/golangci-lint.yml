@@ -12,11 +12,11 @@ jobs:
     name: golang-lint
     runs-on: ubuntu-latest
     steps:
-      - run:  go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
       - uses: actions/setup-go@v3
         with:
           go-version: 1.17
       - uses: actions/checkout@v3
+      - run:  go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
       - name: lint-container-engine-lib
         uses: golangci/golangci-lint-action@v3
         with:
