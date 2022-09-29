@@ -3,16 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
-	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 	"os"
-	"path/filepath"
 )
 
 func main() {
@@ -45,6 +38,7 @@ func runMain() error {
 	return nil
 }
 
+/*
 func runDockerManagerTesting() error {
 	ctx := context.Background()
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -62,7 +56,9 @@ func runDockerManagerTesting() error {
 
 	return nil
 }
+*/
 
+/*
 func runKubernetesManagerTesting() error {
 	ctx := context.Background()
 	kubeConfigFileFilepath := filepath.Join(
@@ -86,6 +82,7 @@ func runKubernetesManagerTesting() error {
 
 	return nil
 }
+*/
 
 // Can comment which backend you want to use
 func runKurtosisBackendTesting() error {
