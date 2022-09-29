@@ -14,8 +14,18 @@ issues:
       text: "S1009: should omit nil check; len() for map[string]*github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec.PortSpec is defined as zero (gosimple)"
     - path: "lib/backend_impls/kubernetes/kubernetes_resource_collectors/postfilter_kubernetes_resources.go"
       text: "S1009: should omit nil check; len() for map[string]bool is defined as zero (gosimple)"
+    - path: "lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers/shared_helpers.go"
+      text: "field `filesArtifactExpansionVolumeSizeInMegabytes` is unused (unused)"
+    - path: "lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers/shared_helpers.go"
+      text: "field `storageClassName` is unused"
+    - path: "lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers/shared_helpers.go"
+      text: "field `enclaveDataVolumeSizeInMegabytes` is unused (unused)"
+    - path: "lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers/shared_helpers.go"
+      text: "field `storageClassName` is unused (unused)"
+
 linters-settings:
   staticcheck:
     checks:
       - all
-      - '-SA1019' # disable the rule SA1019
+      - '-SA1019' # disable the rule SA1019 - ioutils replaced with os
+      - '-S1009' # disable S1009 - should omit nil check; len() for map[interface]interface{}

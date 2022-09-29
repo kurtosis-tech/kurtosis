@@ -1061,7 +1061,7 @@ func (manager *DockerManager) getContainerHostConfig(
 	}
 
 	addedCapabilitiesSlice := []string{}
-	for capability, _ := range addedCapabilities {
+	for capability := range addedCapabilities {
 		capabilityStr := string(capability)
 		addedCapabilitiesSlice = append(addedCapabilitiesSlice, capabilityStr)
 	}
