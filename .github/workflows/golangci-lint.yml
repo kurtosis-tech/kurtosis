@@ -9,11 +9,6 @@ on:
       - master
   pull_request:
 
-# We cancel the previous run if a new push is made on the same PR
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
 jobs:
   golangci:
     name: golang-lint
