@@ -10,7 +10,7 @@ Developing
 * Run `cli/scripts/launch-cli.sh` to run arbitrary CLI commands with the locally-built binary
 * Run `internal_testsuites/scripts/build.sh` to build and run all the tests in all the supported languages.
 * Run `internal_testsuites/golang/scripts/build.sh` to run only `golang` tests. Replace `golang` with `typescript` to run typescript tests.
-* Run `internal_testsuites/golang/scripts/build.sh minikube` to build golang test suites against Kubernetes. Replace `golang` with `typescript` to run typescript tests against kubernetes
+* Run `internal_testsuites/golang/scripts/build.sh minikube` to build golang test suites against Kubernetes. Replace `golang` with `typescript` to run typescript tests against kubernetes. Note use `./scripts/run-all-tests-against-latest-code.sh minikube` if you want to run all tests and let the script handle Minikube setup for you.
 
 Launching the built `cli` before running the tests is recommended as it pulls the latest `kurtosis-engine` if you need one.
 

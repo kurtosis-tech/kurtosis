@@ -34,7 +34,7 @@ if ! [ -f "${cli_binary_filepath}" ]; then
     exit 1
 fi
 
-# The funky ${1+"${@}"} incantation is how you you feed arguments exactly as-is to a child script in Bash
+# The funky ${1+"${@}"} incantation is how you feed arguments exactly as-is to a child script in Bash
 # ${*} loses quoting and ${@} trips set -e if no arguments are passed, so this incantation says, "if and only if
 #  ${1} exists, evaluate ${@}"
 "${cli_binary_filepath}" ${1+"${@}"}
