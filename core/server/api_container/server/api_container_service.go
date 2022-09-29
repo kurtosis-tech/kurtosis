@@ -21,6 +21,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
@@ -70,6 +71,10 @@ type ApiContainerService struct {
 
 	moduleStore *module_store.ModuleStore
 
+	startosisInterpreter *startosis_engine.StartosisInterpreter
+
+	startosisExecutor *startosis_engine.StartosisExecutor
+
 	metricsClient client.MetricsClient
 }
 
@@ -77,13 +82,17 @@ func NewApiContainerService(
 	filesArtifactStore *enclave_data_directory.FilesArtifactStore,
 	serviceNetwork *service_network.ServiceNetwork,
 	moduleStore *module_store.ModuleStore,
+	startosisInterpreter *startosis_engine.StartosisInterpreter,
+	startosisExecutor *startosis_engine.StartosisExecutor,
 	metricsClient client.MetricsClient,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
-		filesArtifactStore: filesArtifactStore,
-		serviceNetwork:     serviceNetwork,
-		moduleStore:        moduleStore,
-		metricsClient:      metricsClient,
+		filesArtifactStore:   filesArtifactStore,
+		serviceNetwork:       serviceNetwork,
+		moduleStore:          moduleStore,
+		startosisInterpreter: startosisInterpreter,
+		startosisExecutor:    startosisExecutor,
+		metricsClient:        metricsClient,
 	}
 
 	return service, nil
@@ -169,6 +178,45 @@ func (apicService ApiContainerService) ExecuteModule(ctx context.Context, args *
 
 	resp := &kurtosis_core_rpc_api_bindings.ExecuteModuleResponse{SerializedResult: serializedResult}
 	return resp, nil
+}
+
+func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse, error) {
+	serializedStartosisScript := args.GetSerializedScript()
+
+	// TODO(gb): add metric tracking maybe?
+
+	interpretationOutput, potentialInterpretationError, generatedInstructionsList, err :=
+		apicService.startosisInterpreter.Interpret(ctx, serializedStartosisScript)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to interpret Startosis script for an unexpected reason: \n%v",
+			serializedStartosisScript)
+	}
+	if potentialInterpretationError != nil {
+		return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
+			SerializedScriptOutput: interpretationOutput.Get(),
+			InterpretationError:    potentialInterpretationError.Get(),
+		}, nil
+	}
+
+	logrus.Debugf("Successfully interpreted Startosis script into a series of Kurtosis instructions: \n%v",
+		generatedInstructionsList)
+
+	executionError, err := apicService.startosisExecutor.Execute(ctx, generatedInstructionsList)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unexpected error encountered running the Kurtosis instructions: \n%v",
+			generatedInstructionsList)
+	}
+	if executionError != nil {
+		return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
+			SerializedScriptOutput: interpretationOutput.Get(),
+			ExecutionError:         executionError.Error,
+		}, nil
+	}
+	logrus.Debugf("Successfully executed the list of Kurtosis instructions")
+
+	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
+		SerializedScriptOutput: interpretationOutput.Get(),
+	}, nil
 }
 
 func (apicService ApiContainerService) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {

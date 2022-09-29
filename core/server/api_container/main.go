@@ -20,6 +20,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/module_store/module_launcher"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/networking_sidecar"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
@@ -143,11 +144,16 @@ func runMain() error {
 		}
 	}()
 
+	startosisInterpreter := startosis_engine.NewStartosisInterpreter()
+	startosisExecutor := startosis_engine.NewStartosisExecutor()
+
 	//Creation of ApiContainerService
 	apiContainerService, err := server.NewApiContainerService(
 		filesArtifactStore,
 		serviceNetwork,
 		moduleStore,
+		startosisInterpreter,
+		startosisExecutor,
 		metricsClient,
 	)
 	if err != nil {
