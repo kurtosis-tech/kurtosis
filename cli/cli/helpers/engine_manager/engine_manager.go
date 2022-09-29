@@ -17,7 +17,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -25,20 +24,6 @@ import (
 const (
 	waitForEngineResponseTimeout = 5 * time.Second
 	defaultClusterName           = resolved_config.DefaultDockerClusterName
-
-	// --------------------------- Old port parsing constants ------------------------------------
-	// These are the old labels that the API container used to use before 2021-11-15 for declaring its port num protocol
-	// We can get rid of this after 2022-05-15, when we're confident no users will be running API containers with the old label
-	pre2021_11_15_portNum   = uint16(9710)
-	pre2021_11_15_portProto = schema.PortProtocol_TCP
-
-	// These are the old labels that the API container used to use before 2021-12-02 for declaring its port num protocol
-	// We can get rid of this after 2022-06-02, when we're confident no users will be running API containers with the old label
-	pre2021_12_02_portNumLabel    = "com.kurtosistech.port-number"
-	pre2021_12_02_portNumBase     = 10
-	pre2021_12_02_portNumUintBits = 16
-	pre2021_12_02_portProtocol    = schema.PortProtocol_TCP
-	// --------------------------- Old port parsing constants ------------------------------------
 )
 
 // Unfortunately, Docker doesn't have constants for the protocols it supports declared
@@ -285,59 +270,6 @@ func getEngineInfoWithTimeout(ctx context.Context, client kurtosis_engine_rpc_ap
 	return engineInfo, nil
 }
 
-func getPrivateEnginePort(containerLabels map[string]string) (*schema.PortSpec, error) {
-	serializedPortSpecs, found := containerLabels[schema.PortSpecsLabel]
-	if found {
-		portSpecs, err := schema.DeserializePortSpecs(serializedPortSpecs)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred deserializing engine server port spec string '%v'", serializedPortSpecs)
-		}
-		portSpec, foundInternalPortId := portSpecs[schema.KurtosisInternalContainerGRPCPortID]
-		if !foundInternalPortId {
-			return nil, stacktrace.NewError("No Kurtosis-internal port ID '%v' found in the engine server port specs", schema.KurtosisInternalContainerGRPCPortID)
-		}
-		return portSpec, nil
-	}
-
-	// We can get rid of this after 2022-06-02, when we're confident no users will be running API containers with this label
-	pre2021_12_02Port, err := getApiContainerPrivatePortUsingPre2021_12_02Label(containerLabels)
-	if err == nil {
-		return pre2021_12_02Port, nil
-	} else {
-		logrus.Debugf("An error occurred getting the engine container private port num using the pre-2021-12-02 label: %v", err)
-	}
-
-	// We can get rid of this after 2022-05-15, when we're confident no users will be running API containers with this label
-	pre2021_11_15Port, err := schema.NewPortSpec(pre2021_11_15_portNum, pre2021_11_15_portProto)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Couldn't create engine private port spec using pre-2021-11-15 constants")
-	}
-	return pre2021_11_15Port, nil
-}
-
-func getApiContainerPrivatePortUsingPre2021_12_02Label(containerLabels map[string]string) (*schema.PortSpec, error) {
-	// We can get rid of this after 2022-06-02, when we're confident no users will be running API containers with this label
-	portNumStr, found := containerLabels[pre2021_12_02_portNumLabel]
-	if !found {
-		return nil, stacktrace.NewError("Couldn't get engine container private port using the pre-2021-12-02 label '%v' because it doesn't exist", pre2021_12_02_portNumLabel)
-	}
-	portNumUint64, err := strconv.ParseUint(portNumStr, pre2021_12_02_portNumBase, pre2021_12_02_portNumUintBits)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred parsing pre-2021-12-02 private port num string '%v' to a uint16", portNumStr)
-	}
-	portNumUint16 := uint16(portNumUint64) // Safe to do because we pass in the number of bits to the ParseUint call above
-	result, err := schema.NewPortSpec(portNumUint16, pre2021_12_02_portProtocol)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating a new port spec using pre-2021-12-02 port num '%v' and protocol '%v'",
-			portNumUint16,
-			pre2021_12_02_portProtocol,
-		)
-	}
-	return result, nil
-}
-
 // getRunningEnginesFilter returns a filter for engines with status engine.EngineStatus_Running
 func getRunningEnginesFilter() *engine.EngineFilters {
 	return &engine.EngineFilters{
@@ -345,17 +277,6 @@ func getRunningEnginesFilter() *engine.EngineFilters {
 			container_status.ContainerStatus_Running: true,
 		},
 	}
-}
-
-// getFirstEngineFromMap returns the first value iterated by the `range` statement on a map
-// returns nil if the map is empty
-func getFirstEngineFromMap(engineMap map[string]*engine.Engine) *engine.Engine {
-	firstEngineInMap := (*engine.Engine)(nil)
-	for _, engineInMap := range engineMap {
-		firstEngineInMap = engineInMap
-		break
-	}
-	return firstEngineInMap
 }
 
 func getKurtosisConfig() (*resolved_config.KurtosisConfig, error) {

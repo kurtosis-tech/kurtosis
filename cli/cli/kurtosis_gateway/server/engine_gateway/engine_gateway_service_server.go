@@ -64,7 +64,7 @@ func NewEngineGatewayServiceServer(connectionProvider *connection.GatewayConnect
 	}
 	closeFunc := func() {
 		// Kill the running enclave gateways
-		for enclaveId, _ := range service.enclaveIdToRunningGatewayMap {
+		for enclaveId := range service.enclaveIdToRunningGatewayMap {
 			service.idempotentKillRunningGatewayForEnclaveId(enclaveId)
 		}
 	}

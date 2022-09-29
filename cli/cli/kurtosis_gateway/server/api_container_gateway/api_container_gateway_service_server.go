@@ -2,10 +2,10 @@ package api_container_gateway
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/connection"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -93,11 +93,11 @@ func (service *ApiContainerGatewayServiceServer) StartServices(ctx context.Conte
 		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
 	}
 	shouldRemoveServices := map[string]bool{}
-	for serviceID, _ := range remoteApiContainerResponse.GetSuccessfulServiceIdsToServiceInfo() {
+	for serviceID := range remoteApiContainerResponse.GetSuccessfulServiceIdsToServiceInfo() {
 		shouldRemoveServices[serviceID] = true
 	}
 	defer func() {
-		for serviceIDStr, _ := range shouldRemoveServices {
+		for serviceIDStr := range shouldRemoveServices {
 			removeServiceArgs := &kurtosis_core_rpc_api_bindings.RemoveServiceArgs{ServiceId: serviceIDStr}
 			if _, err := service.remoteApiContainerClient.RemoveService(ctx, removeServiceArgs); err != nil {
 				err = stacktrace.Propagate(err,
@@ -123,7 +123,7 @@ func (service *ApiContainerGatewayServiceServer) StartServices(ctx context.Conte
 	}
 
 	// Do not remove successful services
-	for serviceIDStr, _ := range successfulServices {
+	for serviceIDStr := range successfulServices {
 		delete(shouldRemoveServices, serviceIDStr)
 	}
 	startServicesResp := binding_constructors.NewStartServicesResponse(successfulServices, failedServicesPool)

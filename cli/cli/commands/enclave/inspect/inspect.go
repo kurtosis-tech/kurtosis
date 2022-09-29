@@ -8,7 +8,6 @@ package inspect
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
@@ -17,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_status_stringifier"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -43,7 +43,7 @@ const (
 	engineClientCtxKey    = "engine-client"
 )
 
-var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo kurtosis_engine_rpc_api_bindings.EnclaveInfo, isAPIContainerRunning bool) error{
+var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, isAPIContainerRunning bool) error{
 	"User Services":    printUserServices,
 	"Kurtosis Modules": printModules,
 }
@@ -137,9 +137,9 @@ func run(
 		numRunesInHeader := utf8.RuneCountInString(header) + 2 // 2 because there will be a space before and after the header
 		numPadChars := (headerWidthChars - numRunesInHeader) / 2
 		padStr := strings.Repeat(headerPadChar, numPadChars)
-		fmt.Println(fmt.Sprintf("%v %v %v", padStr, header, padStr))
+		fmt.Printf("%v %v %v", padStr, header, padStr)
 
-		if err := printingFunc(ctx, kurtosisBackend, *enclaveInfo, isApiContainerRunning); err != nil {
+		if err := printingFunc(ctx, kurtosisBackend, enclaveInfo, isApiContainerRunning); err != nil {
 			logrus.Error(err)
 			headersWithPrintErrs = append(headersWithPrintErrs, header)
 		}

@@ -16,8 +16,6 @@ import (
 const (
 	// If set to empty, then we'll use whichever default version the launcher provides
 	defaultEngineImageVersionTag = ""
-
-	engineDataDirPermBits = 0755
 )
 
 var engineRestartCmd = fmt.Sprintf(
