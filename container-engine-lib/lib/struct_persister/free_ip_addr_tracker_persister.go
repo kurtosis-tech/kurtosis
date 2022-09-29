@@ -2,6 +2,7 @@ package struct_persister
 
 import (
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
 	"net"
@@ -22,7 +23,7 @@ func (tracker *FreeIpAddrTracker) GetFreeIpAddr() (ipAddr net.IP, err error) {
 		return tx.Bucket([]byte(dbBucketName)).Put([]byte(ipAddr.String()), []byte{})
 	})
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "An error occurred while getting free IP address")
 	}
 	return ipAddr, nil
 }
@@ -33,7 +34,7 @@ func (tracker *FreeIpAddrTracker) ReleaseIpAddr(ip net.IP) (err error) {
 		return tx.Bucket([]byte(dbBucketName)).Delete([]byte(ip.String()))
 	})
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, "An error occurred while releasing used IP address")
 	}
 	return nil
 }
@@ -70,7 +71,7 @@ func GetOrCreateNewFreeIpAddrTracker(log *logrus.Logger, subnet *net.IPNet, alre
 		})
 	}
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "An error occurred while building free IP address tracker")
 	}
 	tracker := lib.NewFreeIpAddrTracker(log, subnet, takenIps)
 	return &FreeIpAddrTracker{
