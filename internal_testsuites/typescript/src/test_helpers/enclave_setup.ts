@@ -5,28 +5,26 @@ import log from "loglevel";
 
 const TEST_SUITE_NAME_ENCLAVE_ID_FRAGMENT = "ts-testsuite";
 const MILLISECONDS_IN_SECOND = 1000;
-const CORE_AND_ENGINE_VERSION = "CORE_ENGINE_VERSION_TAG"
 
 export async function createEnclave(testName:string, isPartitioningEnabled: boolean):
-	Promise<Result<{ 
-        enclaveContext: EnclaveContext, 
-        stopEnclaveFunction: () => void
+	Promise<Result<{
+		enclaveContext: EnclaveContext,
+		stopEnclaveFunction: () => void
 		destroyEnclaveFunction: () => Promise<Result<null, Error>>,
-    }, Error>> {
+	}, Error>> {
 
 	const newKurtosisContextResult = await KurtosisContext.newKurtosisContextFromLocalEngine()
 	if(newKurtosisContextResult.isErr()) {
-        	log.error(`An error occurred connecting to the Kurtosis engine for running test ${testName}`)
+		log.error(`An error occurred connecting to the Kurtosis engine for running test ${testName}`)
 		return err(newKurtosisContextResult.error)
 	}
 	const kurtosisContext = newKurtosisContextResult.value;
-	
+
 	const enclaveId:EnclaveID = `${TEST_SUITE_NAME_ENCLAVE_ID_FRAGMENT}.${testName}.${Math.round(Date.now()/MILLISECONDS_IN_SECOND)}`
-	const apiContainerVersion = getAPIContainerVersionFromEnvironmentOrDefault()
-	const createEnclaveResult = await kurtosisContext.createEnclaveWithCustomAPIContainerVersion(enclaveId, isPartitioningEnabled, apiContainerVersion);
-	
+	const createEnclaveResult = await kurtosisContext.createEnclave(enclaveId, isPartitioningEnabled);
+
 	if(createEnclaveResult.isErr()) {
-        	log.error(`An error occurred creating enclave ${enclaveId}`)
+		log.error(`An error occurred creating enclave ${enclaveId}`)
 		return err(createEnclaveResult.error)
 	}
 
@@ -52,13 +50,4 @@ export async function createEnclave(testName:string, isPartitioningEnabled: bool
 	}
 
 	return ok({ enclaveContext, stopEnclaveFunction, destroyEnclaveFunction })
-}
-
-function getAPIContainerVersionFromEnvironmentOrDefault() : string {
-	const apiContainerVersion = process.env[CORE_AND_ENGINE_VERSION];
-	if (apiContainerVersion === undefined) {
-		log.debug(`Environment variable ${CORE_AND_ENGINE_VERSION} not set, proceeding with the launchers default.`)
-		return ""
-	}
-	return apiContainerVersion
 }

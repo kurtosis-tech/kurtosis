@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	"os"
 	"testing"
 	"time"
 )
@@ -16,8 +15,6 @@ const (
 	testsuiteNameEnclaveIDFragment = "go-testsuite"
 
 	millisInNanos = 1000
-
-	coreAndEngineVersion = "CORE_ENGINE_VERSION_TAG"
 )
 
 func CreateEnclave(t *testing.T, ctx context.Context, testName string, isPartitioningEnabled bool) (resultEnclaveCtx *enclaves.EnclaveContext, resultStopEnclaveFunc func(), resultDestroyEnclaveFunc func() error, resultErr error) {
@@ -29,10 +26,7 @@ func CreateEnclave(t *testing.T, ctx context.Context, testName string, isPartiti
 		testName,
 		time.Now().UnixNano()/millisInNanos,
 	))
-
-	apiContainerVersion := getAPIContainerVersionFromEnvironmentOrDefault()
-
-	enclaveCtx, err := kurtosisCtx.CreateEnclaveWithCustomAPIContainerVersion(ctx, enclaveId, isPartitioningEnabled, apiContainerVersion)
+	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveId, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating enclave '%v'", enclaveId)
 	stopEnclaveFunc := func() {
 
@@ -52,12 +46,4 @@ func CreateEnclave(t *testing.T, ctx context.Context, testName string, isPartiti
 	}
 
 	return enclaveCtx, stopEnclaveFunc, destroyEnclaveFunc, nil
-}
-
-func getAPIContainerVersionFromEnvironmentOrDefault() string {
-	apiContainerVersion := os.Getenv(coreAndEngineVersion)
-	if apiContainerVersion == "" {
-		logrus.Debugf("Environment variable '%s' not set, proceeding with the launchers default.", coreAndEngineVersion)
-	}
-	return apiContainerVersion
 }

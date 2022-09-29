@@ -18,17 +18,6 @@ Creates a new Kurtosis enclave using the given parameters.
 **Returns**
 * `enclaveContext`: An [EnclaveContext][enclavecontext] object representing the new enclave.
 
-### createEnclaveWithCustomAPIContainerVersion(EnclaveID enclaveId, boolean isPartitioningEnabled, string apiContainerVersionTag) -\> [EnclaveContext][enclavecontext] enclaveContext
-Creates a new Kurtosis enclave using the given parameters.
-
-**Args**
-* `enclaveId`: The ID to give the new enclave.
-* `isPartitioningEnabled`: If set to true, the enclave will be set up to allow for repartitioning. This will make service addition & removal take slightly longer, but allow for calls to [EnclaveContext.repartitionNetwork][enclavecontext_repartitionnetwork].
-* `apiContainerVersionTag`: The docker image version tag for the API Container with which the enclave would start.
-
-**Returns**
-* `enclaveContext`: An [EnclaveContext][enclavecontext] object representing the new enclave.
-
 ### getEnclaveContext(EnclaveID enclaveId) -\> [EnclaveContext][enclavecontext] enclaveContext
 Gets the [EnclaveContext][enclavecontext] object for the given enclave ID.
 

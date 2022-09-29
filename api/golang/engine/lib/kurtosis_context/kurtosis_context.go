@@ -94,34 +94,6 @@ func (kurtosisCtx *KurtosisContext) CreateEnclave(
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
-func (kurtosisCtx *KurtosisContext) CreateEnclaveWithCustomAPIContainerVersion(
-	ctx context.Context,
-	enclaveId enclaves.EnclaveID,
-	isPartitioningEnabled bool,
-	apiContainerVersionTag string,
-) (*enclaves.EnclaveContext, error) {
-
-	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
-		EnclaveId:              string(enclaveId),
-		ApiContainerVersionTag: apiContainerVersionTag,
-		ApiContainerLogLevel:   apiContainerLogLevel.String(),
-		IsPartitioningEnabled:  isPartitioningEnabled,
-	}
-
-	response, err := kurtosisCtx.client.CreateEnclave(ctx, createEnclaveArgs)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveId)
-	}
-
-	enclaveContext, err := newEnclaveContextFromEnclaveInfo(response.EnclaveInfo)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave context from a newly-created enclave; this should never happen")
-	}
-
-	return enclaveContext, nil
-}
-
-// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
 func (kurtosisCtx *KurtosisContext) GetEnclaveContext(ctx context.Context, enclaveId enclaves.EnclaveID) (*enclaves.EnclaveContext, error) {
 	response, err := kurtosisCtx.client.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
