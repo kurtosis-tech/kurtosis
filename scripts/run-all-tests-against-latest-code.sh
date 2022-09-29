@@ -17,7 +17,7 @@ BUILD_SCRIPT_RELATIVE_FILEPATHS=(
 )
 
 ENGINE_SERVER_BUILDSCRIPT_PATH="${root_dirpath}/engine/server/scripts/build.sh"
-SHOULD_RUN_TESTS="false"
+SHOULD_RUN_UNITTESTS="false"
 
 RUN_PRE_RELEASE_SCRIPTS_SCRIPT_PATH="${script_dirpath}/run-pre-release-scripts.sh"
 CLI_LAUNCH_PATH="${root_dirpath}/cli/cli/scripts/launch-cli.sh"
@@ -75,7 +75,7 @@ if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE
 fi
 
 
-if ! bash "${ENGINE_SERVER_BUILDSCRIPT_PATH}" "${SHOULD_RUN_TESTS}"; then
+if ! bash "${ENGINE_SERVER_BUILDSCRIPT_PATH}" "${SHOULD_RUN_UNITTESTS}"; then
   echo "Error: Build script '${ENGINE_SERVER_BUILDSCRIPT_PATH}' failed" >&2
   exit 1
 fi

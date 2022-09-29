@@ -18,27 +18,6 @@ MAIN_GO_FILEPATH="${server_root_dirpath}/${MAIN_DIRNAME}/main.go"
 MAIN_BINARY_OUTPUT_FILENAME="kurtosis-engine"
 MAIN_BINARY_OUTPUT_FILEPATH="${server_root_dirpath}/${BUILD_DIRNAME}/${MAIN_BINARY_OUTPUT_FILENAME}"
 
-SHOULD_RUN_TEST_TRUE="true"
-SHOULD_RUN_TEST_FALSE="false"
-DEFAULT_SHOULD_RUN_TEST="${SHOULD_RUN_TEST_TRUE}"
-# ==================================================================================================
-#                                       Arg Parsing & Validation
-# ==================================================================================================
-show_helptext_and_exit() {
-    echo "Usage: $(basename "${0}") run_tests"
-    echo ""
-    echo "  should_run_test   Optional argument to decide whether to run tests. Must be one of 'true' 'false' (default: ${DEFAULT_SHOULD_RUN_TEST})"
-    echo ""
-    exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
-}
-
-should_run_test_arg="${1:-${DEFAULT_SHOULD_RUN_TEST}}"
-if [ "${should_run_test_arg}" != "${SHOULD_RUN_TEST_TRUE}" ] &&
-   [ "${should_run_test_arg}" != "${SHOULD_RUN_TEST_FALSE}" ]; then
-    echo "Error: unknown value for whether tests should be run. Should be one of 'true' or 'false'"
-    show_helptext_and_exit
-fi
-
 # =============================================================================
 #                                 Main Code
 # =============================================================================
@@ -49,19 +28,16 @@ if ! [ -f "${server_root_dirpath}"/.dockerignore ]; then
 fi
 
 # Test code
+echo "Running unit tests..."
 if ! cd "${server_root_dirpath}"; then
   echo "Couldn't cd to the server root dirpath '${server_root_dirpath}'" >&2
   exit 1
 fi
-
-if [ "${should_run_test_arg}" == "${SHOULD_RUN_TEST_TRUE}" ] ; then
-  echo "Running unit tests..."
-  if ! CGO_ENABLED=0 go test "./..."; then
-    echo "Tests failed!" >&2
-    exit 1
-  fi
-  echo "Tests succeeded"
+if ! CGO_ENABLED=0 go test "./..."; then
+  echo "Tests failed!" >&2
+  exit 1
 fi
+echo "Tests succeeded"
 
 # Build binary for packaging inside an Alpine Linux image
 echo "Building server main.go '${MAIN_GO_FILEPATH}'..."
