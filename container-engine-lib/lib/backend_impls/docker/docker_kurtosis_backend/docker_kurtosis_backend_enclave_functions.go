@@ -428,13 +428,15 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 }
 
 // ====================================================================================================
-// 									   Private helper methods
+//
+//	Private helper methods
+//
 // ====================================================================================================
 func (backend *DockerKurtosisBackend) getMatchingEnclaveNetworkInfo(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
-// Keyed by network ID
+	// Keyed by network ID
 	map[enclave.EnclaveID]*matchingNetworkInformation,
 	error,
 ) {
@@ -673,34 +675,6 @@ func dumpContainerInfo(
 	}
 
 	return nil
-}
-
-func (backend *DockerKurtosisBackend) waitForContainerExits(
-	ctx context.Context,
-	containers []*types.Container,
-) (
-	resultSuccessfulContainers map[string]bool,
-	resultErroredContainers map[string]error,
-) {
-	successfulContainers := map[string]bool{}
-	erroredContainers := map[string]error{}
-	// TODO Parallelize for perf
-	for _, container := range containers {
-		containerId := container.GetId()
-		if _, err := backend.dockerManager.WaitForExit(ctx, containerId); err != nil {
-			containerError := stacktrace.Propagate(
-				err,
-				"An error occurred waiting for container '%v' with ID '%v' to exit",
-				container.GetName(),
-				containerId,
-			)
-			erroredContainers[container.GetId()] = containerError
-			continue
-		}
-		successfulContainers[containerId] = true
-	}
-
-	return successfulContainers, erroredContainers
 }
 
 func destroyContainersInEnclaves(

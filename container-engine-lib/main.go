@@ -79,7 +79,10 @@ func runKubernetesManagerTesting() error {
 	kubernetesManager := kubernetes_manager.NewKubernetesManager(clientSet, kubernetesConfig)
 
 	// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv Arbitrary logic goes here vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-	kubernetesManager.GetNamespace(ctx, "TODO")
+	_, err = kubernetesManager.GetNamespace(ctx, "TODO")
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the name space")
+	}
 
 	return nil
 }

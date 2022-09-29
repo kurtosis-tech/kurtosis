@@ -2,8 +2,7 @@ package docker_kurtosis_backend
 
 import (
 	"context"
-	"errors"
-	"fmt"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/user_services_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -15,22 +14,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	"net"
-	"strings"
 	"sync"
 )
-
-// Unfortunately, Docker doesn't have an enum for the protocols it supports, so we have to create this translation map
-var portSpecProtosToDockerPortProtos = map[port_spec.PortProtocol]string{
-	port_spec.PortProtocol_TCP:  "tcp",
-	port_spec.PortProtocol_SCTP: "sctp",
-	port_spec.PortProtocol_UDP:  "udp",
-}
 
 type DockerKurtosisBackend struct {
 	dockerManager *docker_manager.DockerManager
@@ -259,41 +248,10 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 }
 
 // ====================================================================================================
-//                       Private helper functions shared by multiple subfunctions files
+//
+//	Private helper functions shared by multiple subfunctions files
+//
 // ====================================================================================================
-// TODO MOVE THIS TO WHOMEVER CALLS KURTOSISBACKEND
-// This is a helper function that will take multiple errors, each identified by an ID, and format them together
-// If no errors are returned, this function returns nil
-func buildCombinedError(errorsById map[string]error, titleStr string) error {
-	allErrorStrs := []string{}
-	for errorId, stopErr := range errorsById {
-		errorFormatStr := ">>>>>>>>>>>>> %v %v <<<<<<<<<<<<<\n" +
-			"%v\n" +
-			">>>>>>>>>>>>> END %v %v <<<<<<<<<<<<<"
-		errorStr := fmt.Sprintf(
-			errorFormatStr,
-			strings.ToUpper(titleStr),
-			errorId,
-			stopErr.Error(),
-			strings.ToUpper(titleStr),
-			errorId,
-		)
-		allErrorStrs = append(allErrorStrs, errorStr)
-	}
-
-	if len(allErrorStrs) > 0 {
-		// NOTE: This is one of the VERY rare cases where we don't want to use stacktrace.Propagate, because
-		// attaching stack information for this method (which simply combines errors) just isn't useful. The
-		// expected behaviour is that the caller of this function will use stacktrace.Propagate
-		return errors.New(strings.Join(
-			allErrorStrs,
-			"\n\n",
-		))
-	}
-
-	return nil
-}
-
 func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID) (*types.Network, error) {
 	networkSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():     label_value_consts.AppIDDockerLabelValue.GetString(),
@@ -338,6 +296,3 @@ func (backend *DockerKurtosisBackend) getEnclaveDataVolumeByEnclaveId(ctx contex
 	volume := foundVolumes[0]
 	return volume.Name, nil
 }
-
-
-
