@@ -69,7 +69,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEnginePod() (Ku
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
@@ -107,7 +107,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
@@ -130,7 +130,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineNamespace
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
