@@ -200,14 +200,14 @@ func TestOperationsInParallelUsingSharedChannelReturnsCorrectResults(t *testing.
 		"third":  sendDataInChannel,
 	}
 
-	success, _  := RunOperationsInParallel(operations)
+	success, _ := RunOperationsInParallel(operations)
 
 	numSucceeded := len(success)
 
 	require.Equal(t, 3, numSucceeded)
 	require.Equal(t, 3, len(operationData))
 	for _, _ = range success {
-		data :=<- operationData
+		data := <-operationData
 		require.Equal(t, "Hello!", data)
 	}
 }

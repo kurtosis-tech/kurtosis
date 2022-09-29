@@ -3,7 +3,6 @@ package docker_kurtosis_backend
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	docker_types "github.com/docker/docker/api/types"
 	"github.com/docker/docker/pkg/stdcopy"
@@ -347,11 +346,9 @@ func (backend *DockerKurtosisBackend) DumpEnclave(
 		}
 
 		// NOTE: We don't use stacktrace here because the actual stacktraces we care about are the ones from the threads!
-		return errors.New(fmt.Sprintf(
-			"The following errors occurred when trying to dump information about enclave '%v':\n%v",
+		return fmt.Errorf("The following errors occurred when trying to dump information about enclave '%v':\n%v",
 			enclaveId,
-			strings.Join(allIndexedResultErrStrs, "\n\n"),
-		))
+			strings.Join(allIndexedResultErrStrs, "\n\n"))
 	}
 	return nil
 }

@@ -22,10 +22,15 @@ issues:
       text: "field `enclaveDataVolumeSizeInMegabytes` is unused (unused)"
     - path: "lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers/shared_helpers.go"
       text: "field `storageClassName` is unused (unused)"
+    - path: "lib/operation_parallelizer/operation_parallelizer_test.go"
+      text: "unnecessary assignment to the blank identifier (gosimple)"
 
 linters-settings:
   staticcheck:
     checks:
       - all
       - '-SA1019' # disable the rule SA1019 - ioutils replaced with os
+  gosimple:
+    checks:
+      - all
       - '-S1009' # disable S1009 - should omit nil check; len() for map[interface]interface{}
