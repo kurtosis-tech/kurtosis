@@ -61,6 +61,7 @@ run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
 
 # Run pre-release scripts so that everything has the same -dirty version
 checkout_and_run_release_scripts_if_code_change: &checkout_and_run_release_scripts_if_code_change
+  - run: git clone -b "$CIRCLE_BRANCH" "$CIRCLE_REPOSITORY_URL"
   - run: |
       if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
         circleci-agent step halt
@@ -69,7 +70,6 @@ checkout_and_run_release_scripts_if_code_change: &checkout_and_run_release_scrip
       echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
       sudo apt update
       sudo apt install kudet
-  - run: git clone -b "$CIRCLE_BRANCH" "$CIRCLE_REPOSITORY_URL"
   - run: "<<pipeline.parameters.run-pre-release-scripts-script-path>>"
 
 
