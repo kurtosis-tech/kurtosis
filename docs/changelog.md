@@ -1,5 +1,9 @@
 # TBD
 
+### Changes
+* Added a linter
+* Made changes based on the linters output
+
 # 0.49.7
 
 ### Features
