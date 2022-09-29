@@ -68,4 +68,4 @@ jobs:
         with:
           version: v1.49.0
           working-directory: cli/cli/
-          args: --timeout=3m --issues-exit-code=0
+          args: --timeout=3m --issues-exit-code=0 --skip-files="cli/cli/commands/service/shell/shell.go"
