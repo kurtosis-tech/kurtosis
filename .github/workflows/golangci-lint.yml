@@ -70,4 +70,4 @@ jobs:
         with:
           version: v1.49.0
           working-directory: cli/cli/
-          args: --timeout=3m  --skip-files="cli/cli/commands/service/shell/shell.go"
+          args: --timeout=3m
