@@ -1,0 +1,12 @@
+issues:
+  exclude-rules:
+    - path: "container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
+      text: "field `enclaveDataVolumeSizeInMegabytes` is unused (unused)"
+    - path: "container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
+      text: "field `storageClassName` is unused (unused)"
+    - path: "container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
+      text: "field `filesArtifactExpansionVolumeSizeInMegabytes` is unused (unused)"
+    - path: "container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
+      text: "field `storageClassName` is unused (unused)"
+    - path: "container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
+      text: "field `filesArtifactExpansionVolumeSizeInMegabytes` is unused (unused)"
