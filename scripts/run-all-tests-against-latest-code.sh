@@ -82,6 +82,13 @@ for build_script_rel_filepath in "${BUILD_SCRIPT_RELATIVE_FILEPATHS[@]}"; do
     fi
 done
 
+
+# stop existing engine
+if ! bash "${CLI_LAUNCH_PATH}" engine stop; then
+    echo "Error: Stopping the engine failed" >&2
+    exit 1
+fi
+
 if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}" ]; then
   if ! bash "${CLI_LAUNCH_PATH}" cluster set "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}"; then
       echo "Error: setting cluster to '${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}'" >&2
@@ -94,12 +101,6 @@ if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_DOCKER}"
       echo "Error: setting cluster to '${TESTSUITE_CLUSTER_BACKEND_DOCKER}'" >&2
       exit 1
   fi
-fi
-
-# stop existing engine
-if ! bash "${CLI_LAUNCH_PATH}" engine stop; then
-    echo "Error: Stopping the engine failed" >&2
-    exit 1
 fi
 
 if ! bash "${CLI_LAUNCH_PATH}" engine start; then

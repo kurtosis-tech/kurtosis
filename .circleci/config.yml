@@ -399,7 +399,20 @@ jobs:
     resource_class: large
     steps:
       - checkout
-      - << : *run_pre_release_scripts_if_change_or_halt
+
+      - run: |
+          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
+            circleci-agent step halt
+          fi
+
+      # Install kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
+      # Run pre release scripts
+      - run: "<<pipeline.parameters.run-pre-release-scripts-script-path>>"
 
       # Install goreleaser
       - run: |
