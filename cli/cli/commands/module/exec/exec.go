@@ -310,7 +310,7 @@ func run(
 	if readCloserLogs != nil {
 		go func() {
 			if _, err = io.Copy(logrus.StandardLogger().Out, readCloserLogs); err != nil {
-				logrus.Warnf("Failed coping to standard logger\n'%v'", err)
+				logrus.Warnf("Failed copying to standard logger\n'%v'", err)
 			}
 		}()
 		logrus.Info("----------------------- MODULE LOGS ----------------------")
