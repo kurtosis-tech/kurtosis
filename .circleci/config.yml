@@ -59,19 +59,6 @@ run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
     done
     zip -r "${output_dirname}.zip" "${output_dirname}"
 
-# Run pre-release scripts so that everything has the same -dirty version
-run_pre_release_scripts_if_change_or_halt: &run_pre_release_scripts_if_change_or_halt
-  - run: |
-      if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
-        circleci-agent step halt
-      fi
-  - run: |
-      echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-      sudo apt update
-      sudo apt install kudet
-  - run: "<<pipeline.parameters.run-pre-release-scripts-script-path>>"
-
-
 ##############
 # CircleCI
 ##############
@@ -226,9 +213,22 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
-      # Install Kudet
       - checkout
-      - <<: *run_pre_release_scripts_if_change_or_halt
+
+      - run: |
+          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
+            circleci-agent step halt
+          fi
+
+      # Install kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
+      # Run pre release scripts
+      - run: "<<pipeline.parameters.run-pre-release-scripts-script-path>>"
+
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
@@ -273,7 +273,20 @@ jobs:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
       - checkout
-      - <<: *run_pre_release_scripts_if_change_or_halt
+
+      - run: |
+          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
+            circleci-agent step halt
+          fi
+
+      # Install kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
+      # Run pre release scripts
+      - run: "<<pipeline.parameters.run-pre-release-scripts-script-path>>"
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
@@ -332,7 +345,20 @@ jobs:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
       - checkout
-      - <<: *run_pre_release_scripts_if_change_or_halt
+
+      - run: |
+          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
+            circleci-agent step halt
+          fi
+
+      # Install kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
+      # Run pre release scripts
+      - run: "<<pipeline.parameters.run-pre-release-scripts-script-path>>"
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
