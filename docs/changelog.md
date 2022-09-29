@@ -3,8 +3,11 @@
 ### Features
 * Implement skeleton for the Startosis engine
 
-#### Fixes
+### Fixes
 * Fixed a message that referred to an old repo.
+
+### Changes
+* Added `cli` to the monorepo
 
 # 0.49.6
 
