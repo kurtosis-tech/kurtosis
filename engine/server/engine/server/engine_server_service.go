@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
-
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	user_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
@@ -27,15 +29,26 @@ type EngineServerService struct {
 
 	//User consent to send metrics
 	didUserAcceptSendingMetrics bool
+
+	//The client for consuming container logs from the logs' database server
+	logsDatabaseClient centralized_logs.LogsDatabaseClient
 }
 
-func NewEngineServerService(imageVersionTag string, enclaveManager *enclave_manager.EnclaveManager, metricsClient client.MetricsClient, metricsUserId string, didUserAcceptSendingMetrics bool) *EngineServerService {
+func NewEngineServerService(
+	imageVersionTag string,
+	enclaveManager *enclave_manager.EnclaveManager,
+	metricsClient client.MetricsClient,
+	metricsUserId string,
+	didUserAcceptSendingMetrics bool,
+	logsDatabaseClient centralized_logs.LogsDatabaseClient,
+) *EngineServerService {
 	service := &EngineServerService{
 		imageVersionTag:             imageVersionTag,
 		enclaveManager:              enclaveManager,
 		metricsClient:               metricsClient,
 		metricsUserID:               metricsUserId,
 		didUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
+		logsDatabaseClient: logsDatabaseClient,
 	}
 	return service
 }
@@ -125,4 +138,35 @@ func (service *EngineServerService) Clean(ctx context.Context, args *kurtosis_en
 
 	response := &kurtosis_engine_rpc_api_bindings.CleanResponse{RemovedEnclaveIds: enclaveIDs}
 	return response, nil
+}
+
+func (service *EngineServerService) GetUserServiceLogs(
+	ctx context.Context,
+	args *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsArgs,
+) (*kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse, error) {
+	enclaveId := enclave.EnclaveID(args.GetEnclaveId())
+	userServiceGuidsStr := args.GetServiceGuidSet()
+	userServiceGuids := make(map[user_service.ServiceGUID]bool, len(userServiceGuidsStr))
+
+	for userServiceGuidStr := range userServiceGuidsStr {
+		userServiceGuid := user_service.ServiceGUID(userServiceGuidStr)
+		userServiceGuids[userServiceGuid] = true
+	}
+
+	userServiceLogsByUserServiceGuid, err := service.logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service logs for GUIDs '%+v' in enclave with ID '%v'", userServiceGuids, enclaveId)
+	}
+
+	userServiceLogLinesByUserServiceGuid := make(map[string]*kurtosis_engine_rpc_api_bindings.LogLine, len(userServiceLogsByUserServiceGuid))
+
+	for userServiceGuid, logLinesStr := range userServiceLogsByUserServiceGuid {
+		userServiceGuidStr := string(userServiceGuid)
+		logLine := &kurtosis_engine_rpc_api_bindings.LogLine{Line: logLinesStr}
+		userServiceLogLinesByUserServiceGuid[userServiceGuidStr] = logLine
+	}
+
+	response := &kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse{UserServiceLogsByUserServiceGuid: userServiceLogLinesByUserServiceGuid}
+	return response, nil
+
 }

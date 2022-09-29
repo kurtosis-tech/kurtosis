@@ -1,4 +1,10 @@
 # TBD
+### Features
+* Created new engine's endpoint `GetUserServiceLogs` for consuming user service container logs from the logs database server
+* Added `LogsDatabaseClient` interface for defining the behaviour for consuming logs from the centralized logs database
+* Added `LokiLogsDatabaseClient` which implements `LogsDatabaseClient` for consuming logs from a Loki's server
+* Added `KurtosisBackendLogsClient` which implements `LogsDatabaseClient` for consuming user service container logs using `KurtosisBackend
+
 ### Breaking Changes
 * Updated `CreateEngine` method in `container-engine-lib`, removed the `logsCollectorHttpPortNumber` parameter
     * Users will need to update all the `CreateEngine` calls removing this new parameter
