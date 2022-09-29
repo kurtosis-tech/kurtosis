@@ -137,7 +137,7 @@ func run(
 		numRunesInHeader := utf8.RuneCountInString(header) + 2 // 2 because there will be a space before and after the header
 		numPadChars := (headerWidthChars - numRunesInHeader) / 2
 		padStr := strings.Repeat(headerPadChar, numPadChars)
-		fmt.Printf("%v %v %v", padStr, header, padStr)
+		fmt.Printf("%v %v %v\n", padStr, header, padStr)
 
 		if err := printingFunc(ctx, kurtosisBackend, enclaveInfo, isApiContainerRunning); err != nil {
 			logrus.Error(err)
