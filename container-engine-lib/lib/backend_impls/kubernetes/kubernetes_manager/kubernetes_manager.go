@@ -1165,10 +1165,10 @@ func (manager *KubernetesManager) getPodInfoBlockStr(
 
 func (manager *KubernetesManager) getSingleContainerLogs(ctx context.Context, namespaceName string, podName string, containerName string) string {
 	containerLogs, err := manager.GetContainerLogs(ctx, namespaceName, podName, containerName, shouldFollowContainerLogsWhenPrintingPodInfo, shouldAddTimestampsWhenPrintingPodInfo)
-	defer containerLogs.Close()
 	if err != nil {
 		return fmt.Sprintf("Cannot display container logs because an error occurred getting the logs:\n%v", err)
 	}
+	defer containerLogs.Close()
 
 	buffer := &bytes.Buffer{}
 	if _, copyErr := io.Copy(buffer, containerLogs); copyErr != nil {

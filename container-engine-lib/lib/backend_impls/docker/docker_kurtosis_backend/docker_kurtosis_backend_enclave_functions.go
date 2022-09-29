@@ -529,7 +529,7 @@ func (backend *DockerKurtosisBackend) getAllEnclaveContainers(
 	enclaveId enclave.EnclaveID,
 ) ([]*types.Container, error) {
 
-	containers := []*types.Container{}
+	var containers []*types.Container
 
 	searchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():     label_value_consts.AppIDDockerLabelValue.GetString(),
@@ -548,7 +548,7 @@ func getAllEnclaveVolumes(
 	enclaveId enclave.EnclaveID,
 ) ([]*docker_types.Volume, error) {
 
-	volumes := []*docker_types.Volume{}
+	var volumes []*docker_types.Volume
 
 	searchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():     label_value_consts.AppIDDockerLabelValue.GetString(),
