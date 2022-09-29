@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_log_streaming_readcloser"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -60,8 +60,8 @@ func (backend *DockerKurtosisBackend) CreateModule(
 	freeIpAddrProvider, found := backend.enclaveFreeIpProviders[enclaveId]
 	if !found {
 		return nil, stacktrace.NewError(
-			"Received a request to create module with ID '%v' in enclave '%v', but no free IP address provider was "+
-				"defined for this enclave; this likely means that the request is being called where it shouldn't "+
+			"Received a request to create module with ID '%v' in enclave '%v', but no free IP address provider was " +
+				"defined for this enclave; this likely means that the request is being called where it shouldn't " +
 				"be (i.e. outside the API container)",
 			id,
 			enclaveId,
@@ -138,14 +138,18 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		logrus.Warnf("Failed to pull the latest version of module container image '%v'; you may be running an out-of-date version", image)
 	}
 
-	logsCollectorServiceAddress, err := shared_helpers.GetLogsCollectorServiceAddress(ctx, backend.dockerManager)
+	logsCollector, err := backend.GetLogsCollector(ctx)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector service address")
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
+	}
+	if logsCollector == nil || logsCollector.GetStatus() != container_status.ContainerStatus_Running{
+		return nil, stacktrace.NewError("The user services can't be started because there is not logs collector running for sending the logs")
 	}
 
+	logsCollectorServiceAddress := logsCollector.GetPrivateTcpAddress()
 	//The following docker labels will be added into the logs stream which is necessary for creating new tags
 	//in the logs database and then using them for querying the database to get the specific user service's logs
-	logsCollectorLabels := logs_components.LogsCollectorLabels{
+	logsCollectorLabels := logs_collector_functions.LogsCollectorLabels{
 		label_key_consts.EnclaveIDDockerLabelKey.GetString(),
 		label_key_consts.GUIDDockerLabelKey.GetString(),
 		label_key_consts.ContainerTypeDockerLabelKey.GetString(),

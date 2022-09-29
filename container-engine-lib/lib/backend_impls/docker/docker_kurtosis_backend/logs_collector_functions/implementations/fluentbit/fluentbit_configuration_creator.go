@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	//We use this image and version because we already are using this in other projects so there is a high probability
-	//that the image is already downloaded in the local machine
+	// We use this image and version because we already are using this in other projects so there is a high probability
+	// that the image is in the local machine's cache
 	configuratorContainerImage = "alpine:3.12.4"
-	configuratorContainerName  = "kurtosis-fluentbit-configurator"
+	configuratorContainerName = "kurtosis-fluentbit-configurator"
 
 	shBinaryFilepath = "/bin/sh"
 	shCmdFlag        = "-c"
@@ -36,6 +36,7 @@ type fluentbitConfigurationCreator struct {
 func newFluentbitConfigurationCreator(config *FluentbitConfig) *fluentbitConfigurationCreator {
 	return &fluentbitConfigurationCreator{config: config}
 }
+
 
 func (fluent *fluentbitConfigurationCreator) CreateConfiguration(
 	ctx context.Context,
@@ -93,7 +94,7 @@ func (fluent *fluentbitConfigurationCreator) CreateConfiguration(
 	return nil
 }
 
-func (fluent *fluentbitConfigurationCreator) createFluentbitConfigFileInVolume(
+func (fluent *fluentbitConfigurationCreator)  createFluentbitConfigFileInVolume(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 	containerId string,

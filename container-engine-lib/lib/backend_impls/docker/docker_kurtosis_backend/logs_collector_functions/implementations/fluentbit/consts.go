@@ -20,7 +20,7 @@ const (
 
 	//these two values are used for configuring the filesystem buffer. See more here: https://docs.fluentbit.io/manual/administration/buffering-and-storage#filesystem-buffering-to-the-rescue
 	filesystemBufferStorageDirpath = configDirpathInContainer + "/storage/"
-	inputFilesystemStorageType     = "filesystem"
+	inputFilesystemStorageType = "filesystem"
 
 	configFileTemplateName = "fluentbitConfigFileTemplate"
 	configFileTemplate     = `

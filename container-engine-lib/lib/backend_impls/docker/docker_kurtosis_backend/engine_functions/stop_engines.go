@@ -71,13 +71,6 @@ func StopEngines(
 		)
 	}
 
-	//TODO we are removing the los components containers rather than stopping them because we are preparing the stage
-	//TODO for a single engine server, logs components containers have an static name, so if we stop the containers
-	//TODO the engine restart will fail because the container's name will be in use
-	if err := removeLogsComponentsGracefully(ctx, filters, dockerManager); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred removing the logs components containers")
-	}
-
 	return successfulGuids, erroredGuids, nil
 }
 

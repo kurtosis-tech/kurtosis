@@ -5,6 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_database_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_database_functions/implementations/loki"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/user_services_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -12,9 +16,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
@@ -88,7 +95,6 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
-	logsCollectorHttpPortNumber uint16,
 	envVars map[string]string,
 ) (
 	*engine.Engine,
@@ -100,7 +106,6 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 		imageVersionTag,
 		grpcPortNum,
 		grpcProxyPortNum,
-		logsCollectorHttpPortNumber,
 		envVars,
 		backend.dockerManager,
 		backend.objAttrsProvider,
@@ -140,12 +145,22 @@ func (backend *DockerKurtosisBackend) DestroyEngines(
 }
 
 func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceID]*service.ServiceConfig) (map[service.ServiceID]*service.Service, map[service.ServiceID]error, error) {
+
+	logsCollector, err := backend.GetLogsCollector(ctx)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
+	}
+	if logsCollector == nil || logsCollector.GetStatus() != container_status.ContainerStatus_Running{
+		return nil, nil, stacktrace.NewError("The user services can't be started because there is not logs collector running for sending the logs")
+	}
+
 	return user_service_functions.StartUserServices(
 		ctx,
 		enclaveId,
 		services,
 		backend.serviceRegistrations,
 		backend.serviceRegistrationMutex,
+		logsCollector,
 		backend.objAttrsProvider,
 		backend.enclaveFreeIpProviders,
 		backend.dockerManager)
@@ -258,6 +273,144 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 		backend.dockerManager)
 }
 
+func (backend *DockerKurtosisBackend) CreateLogsDatabase(
+	ctx context.Context,
+) (
+	*logs_database.LogsDatabase,
+	error,
+){
+
+	//Declaring the implementation
+	logsDatabaseContainer := loki.NewLokiLogDatabaseContainer()
+
+	return logs_database_functions.CreateLogsDatabase(
+		ctx,
+		logsDatabaseContainer,
+		backend.dockerManager,
+		backend.objAttrsProvider,
+	)
+}
+
+func (backend *DockerKurtosisBackend) GetLogsDatabase(
+	ctx context.Context,
+) (
+	*logs_database.LogsDatabase,
+	error,
+) {
+	return logs_database_functions.GetLogsDatabase(
+		ctx,
+		backend.dockerManager,
+	)
+}
+
+func (backend *DockerKurtosisBackend) StopLogsDatabase(
+	ctx context.Context,
+) (
+	error,
+) {
+
+	logsCollector, err := backend.GetLogsCollector(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the logs collector")
+	}
+
+	if logsCollector != nil && logsCollector.GetStatus() == container_status.ContainerStatus_Running {
+		return stacktrace.Propagate(err, "The logs database can't be stopped due the logs collector is running")
+	}
+
+	return logs_database_functions.StopLogsDatabase(
+		ctx,
+		backend.dockerManager,
+	)
+}
+
+func (backend *DockerKurtosisBackend) DestroyLogsDatabase(
+	ctx context.Context,
+) (
+	error,
+) {
+	logsCollector, err := backend.GetLogsCollector(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the logs collector")
+	}
+
+	if logsCollector != nil && logsCollector.GetStatus() == container_status.ContainerStatus_Running {
+		return stacktrace.Propagate(err, "The logs database can't be destroyed due the logs collector is running")
+	}
+
+	return logs_database_functions.DestroyLogsDatabase(
+		ctx,
+		backend.dockerManager,
+	)
+}
+
+func (backend *DockerKurtosisBackend) CreateLogsCollector(
+	ctx context.Context,
+	logsCollectorHttpPortNumber uint16,
+) (
+	*logs_collector.LogsCollector,
+	error,
+) {
+
+	//Declaring the implementation
+	logsCollectorContainer := fluentbit.NewFluentbitLogsCollectorContainer()
+
+	//TODO add a comment above GetLogsDatabase that says that we'd have to replace this part if we ever wanted to send to an external source
+	logsDatabase, err := backend.GetLogsDatabase(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database, it's not possible to run the logs collector without a logs database")
+	}
+
+	if logsDatabase.GetStatus() != container_status.ContainerStatus_Running {
+		return nil,stacktrace.NewError("The logs database is not running, it's not possible to run the logs collector without a running logs database")
+	}
+
+	return logs_collector_functions.CreateLogsCollector(
+		ctx,
+		logsCollectorHttpPortNumber,
+		logsCollectorContainer,
+		logsDatabase,
+		backend.dockerManager,
+		backend.objAttrsProvider,
+	)
+}
+
+func (backend *DockerKurtosisBackend) GetLogsCollector(
+	ctx context.Context,
+) (
+	*logs_collector.LogsCollector,
+	error,
+) {
+	return logs_collector_functions.GetLogsCollector(
+		ctx,
+		backend.dockerManager,
+	)
+}
+
+func (backend *DockerKurtosisBackend) StopLogsCollector(
+	ctx context.Context,
+) (
+	error,
+) {
+
+	return logs_collector_functions.StopLogsCollector(
+		ctx,
+		backend.dockerManager,
+	)
+}
+
+func (backend *DockerKurtosisBackend) DestroyLogsCollector(
+	ctx context.Context,
+) (
+	error,
+) {
+
+	return logs_collector_functions.DestroyLogsCollector(
+		ctx,
+		backend.dockerManager,
+	)
+}
+
 // ====================================================================================================
 //                       Private helper functions shared by multiple subfunctions files
 // ====================================================================================================
@@ -320,7 +473,7 @@ func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.C
 
 // Guaranteed to either return an enclave data volume name or throw an error
 func (backend *DockerKurtosisBackend) getEnclaveDataVolumeByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID) (string, error) {
-	volumeSearchLabels := map[string]string{
+	volumeSearchLabels :=  map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():      label_value_consts.AppIDDockerLabelValue.GetString(),
 		label_key_consts.EnclaveIDDockerLabelKey.GetString():  string(enclaveId),
 		label_key_consts.VolumeTypeDockerLabelKey.GetString(): label_value_consts.EnclaveDataVolumeTypeDockerLabelValue.GetString(),

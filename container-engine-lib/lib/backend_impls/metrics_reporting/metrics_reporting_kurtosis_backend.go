@@ -7,6 +7,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -37,7 +39,6 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
-	logsCollectorHttpPortNumber uint16,
 	envVars map[string]string,
 ) (*engine.Engine, error) {
 	result, err := backend.underlying.CreateEngine(
@@ -46,7 +47,6 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 		imageVersionTag,
 		grpcPortNum,
 		grpcProxyPortNum,
-		logsCollectorHttpPortNumber,
 		envVars,
 	)
 	if err != nil {
@@ -535,4 +535,114 @@ func (backend *MetricsReportingKurtosisBackend) DestroyNetworkingSidecars(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying networking sidecars using filters '%+v'", filters)
 	}
 	return successfulUserServiceGuids, erroredUserServiceGuids, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) CreateLogsDatabase(
+	ctx context.Context,
+) (
+	*logs_database.LogsDatabase,
+	error,
+){
+
+	logsDatabase, err := backend.underlying.CreateLogsDatabase(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database")
+	}
+
+	return logsDatabase, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) GetLogsDatabase(
+	ctx context.Context,
+) (
+	*logs_database.LogsDatabase,
+	error,
+) {
+	logsDatabase, err := backend.underlying.GetLogsDatabase(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database")
+	}
+
+	return logsDatabase, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) StopLogsDatabase(
+	ctx context.Context,
+) (
+	error,
+) {
+
+	if err := backend.underlying.StopLogsDatabase(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping the logs database")
+	}
+
+	return nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) DestroyLogsDatabase(
+	ctx context.Context,
+) (
+	error,
+) {
+	if err := backend.underlying.DestroyLogsDatabase(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the logs database")
+	}
+
+	return nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) CreateLogsCollector(
+	ctx context.Context,
+	logsCollectorHttpPortNumber uint16,
+) (
+	*logs_collector.LogsCollector,
+	error,
+) {
+
+	logsCollector, err := backend.underlying.CreateLogsCollector(ctx, logsCollectorHttpPortNumber)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector with HTTP port number '%v'", logsCollectorHttpPortNumber)
+	}
+
+	return logsCollector, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) GetLogsCollector(
+	ctx context.Context,
+) (
+	*logs_collector.LogsCollector,
+	error,
+) {
+	logsCollector, err := backend.underlying.GetLogsCollector(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
+	}
+
+	return logsCollector, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) StopLogsCollector(
+	ctx context.Context,
+) (
+	error,
+) {
+
+	if err := backend.underlying.StopLogsCollector(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping the logs collector")
+	}
+
+	return nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) DestroyLogsCollector(
+	ctx context.Context,
+) (
+	error,
+) {
+
+	if err := backend.underlying.DestroyLogsCollector(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the logs collector")
+	}
+
+	return nil
 }
