@@ -4,9 +4,6 @@
 set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root_dirpath="$(dirname "${script_dirpath}")"
-run_pre_release_scripts_script_path="${script_dirpath}/run-pre-release-scripts.sh"
-cli_launch_path="${root_dirpath}/cli/cli/scripts/launch-cli.sh"
-internal_test_suite_build_script_path="${root_dirpath}/internal_testsuites/scripts/build.sh"
 
 
 # ==================================================================================================
@@ -16,9 +13,15 @@ internal_test_suite_build_script_path="${root_dirpath}/internal_testsuites/scrip
 BUILD_SCRIPT_RELATIVE_FILEPATHS=(
   "core/server/scripts/build.sh"
   "core/files_artifacts_expander/scripts/build.sh"
-  "engine/server/scripts/build.sh"
   "cli/scripts/build.sh"
 )
+
+ENGINE_SERVER_BUILDSCRIPT_PATH="${root_dirpath}/engine/server/scripts/build.sh"
+SHOULD_RUN_TESTS="false"
+
+RUN_PRE_RELEASE_SCRIPTS_SCRIPT_PATH="${script_dirpath}/run-pre-release-scripts.sh"
+CLI_LAUNCH_PATH="${root_dirpath}/cli/cli/scripts/launch-cli.sh"
+INTERNAL_TESTSUITES_BUILDSCRIPT_PATH="${root_dirpath}/internal_testsuites/scripts/build.sh"
 
 
 TESTSUITE_CLUSTER_BACKEND_DOCKER="docker"
@@ -50,8 +53,8 @@ fi
 #                                             Main Logic
 # ==================================================================================================
 
-if ! bash "${run_pre_release_scripts_script_path}"; then
-  echo "Error: Error running pre release scripts '${run_pre_release_scripts_script_path}' failed" >&2
+if ! bash "${RUN_PRE_RELEASE_SCRIPTS_SCRIPT_PATH}"; then
+  echo "Error: Error running pre release scripts '${RUN_PRE_RELEASE_SCRIPTS_SCRIPT_PATH}' failed" >&2
   exit 1
 fi
 
@@ -71,6 +74,12 @@ if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE
     fi
 fi
 
+
+if ! bash "${ENGINE_SERVER_BUILDSCRIPT_PATH}" "${SHOULD_RUN_TESTS}"; then
+  echo "Error: Build script '${ENGINE_SERVER_BUILDSCRIPT_PATH}' failed" >&2
+  exit 1
+fi
+
 for build_script_rel_filepath in "${BUILD_SCRIPT_RELATIVE_FILEPATHS[@]}"; do
     build_script_abs_filepath="${root_dirpath}/${build_script_rel_filepath}"
     if ! bash "${build_script_abs_filepath}"; then
@@ -79,28 +88,27 @@ for build_script_rel_filepath in "${BUILD_SCRIPT_RELATIVE_FILEPATHS[@]}"; do
     fi
 done
 
-
 if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}" ]; then
-  if ! bash "${cli_launch_path}" cluster set "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}"; then
+  if ! bash "${CLI_LAUNCH_PATH}" cluster set "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}"; then
       echo "Error: setting cluster to '${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}'" >&2
       exit 1
   fi
 fi
 
 if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_DOCKER}" ]; then
-  if ! bash "${cli_launch_path}" cluster set "${TESTSUITE_CLUSTER_BACKEND_DOCKER}"; then
+  if ! bash "${CLI_LAUNCH_PATH}" cluster set "${TESTSUITE_CLUSTER_BACKEND_DOCKER}"; then
       echo "Error: setting cluster to '${TESTSUITE_CLUSTER_BACKEND_DOCKER}'" >&2
       exit 1
   fi
 fi
 
 # stop existing engine
-if ! bash "${cli_launch_path}" engine stop; then
+if ! bash "${CLI_LAUNCH_PATH}" engine stop; then
     echo "Error: Stopping the engine failed" >&2
     exit 1
 fi
 
-if ! bash "${cli_launch_path}" engine restart --version ${CORE_ENGINE_VERSION_TAG}; then
+if ! bash "${CLI_LAUNCH_PATH}" engine restart --version ${CORE_ENGINE_VERSION_TAG}; then
     echo "Restarting the engine failed" >&2
     exit 1
 fi
@@ -108,13 +116,13 @@ fi
 # if minikube run engine gateway
 gateway_pid=""
 if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}" ]; then
-  "${cli_launch_path}" "gateway" &
+  "${CLI_LAUNCH_PATH}" "gateway" &
   gateway_pid="${!}"
   echo "Running gateway with pid '${gateway_pid}'"
 fi
 
-if ! bash "${internal_test_suite_build_script_path}" "${testsuite_cluster_backend_arg}"; then
-    echo "Error: Build script '${internal_test_suite_build_script_path}' failed" >&2
+if ! bash "${INTERNAL_TESTSUITES_BUILDSCRIPT_PATH}" "${testsuite_cluster_backend_arg}"; then
+    echo "Error: Build script '${INTERNAL_TESTSUITES_BUILDSCRIPT_PATH}' failed" >&2
     kill "${gateway_pid}"
     exit 1
 fi

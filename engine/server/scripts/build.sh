@@ -54,8 +54,7 @@ if ! cd "${server_root_dirpath}"; then
   exit 1
 fi
 
-
-if [ "${should_run_test_arg}" == "${should_run_test_arg}" ] ; then
+if [ "${should_run_test_arg}" == "${SHOULD_RUN_TEST_TRUE}" ] ; then
   echo "Running unit tests..."
   if ! CGO_ENABLED=0 go test "./..."; then
     echo "Tests failed!" >&2
