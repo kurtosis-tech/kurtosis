@@ -19,7 +19,6 @@ import (
 
 const (
 	namespacePrefix               = "kurtosis-enclave"
-	filesArtifactsExpansionPrefix = "files-artifact-expansion"
 	userServicePrefix             = "user-service"
 	modulePrefix                  = "module"
 )
@@ -237,7 +236,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForModulePod(
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name '%s' and labels '%+v', and annotations '%+v'", name, labels, annotations)
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name '%s' and labels '%+v', and annotations '%+v'", name, labels, annotations)
 	}
 
 	return objectAttributes, nil

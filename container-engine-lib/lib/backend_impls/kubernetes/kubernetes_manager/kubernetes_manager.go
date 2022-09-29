@@ -10,10 +10,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -34,14 +30,6 @@ import (
 )
 
 const (
-	defaultPersistentVolumeClaimAccessMode = apiv1.ReadWriteOnce
-	binaryMegabytesSuffix                  = "Mi"
-	uintToIntStringConversionBase          = 10
-
-	waitForPersistentVolumeBoundInitialDelayMilliSeconds = 100
-	waitForPersistentVolumeBoundTimeout                  = 60 * time.Second
-	waitForPersistentVolumeBoundRetriesDelayMilliSeconds = 500
-
 	podWaitForAvailabilityTimeout          = 15 * time.Minute
 	podWaitForAvailabilityTimeBetweenPolls = 500 * time.Millisecond
 
@@ -998,6 +986,8 @@ func (manager KubernetesManager) GetJobCompletionAndSuccessFlags(ctx context.Con
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
+// TODO delete the following assuming we don't use it.
+/*
 func transformTypedLabelsToStrs(input map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue) map[string]string {
 	result := map[string]string{}
 	for key, value := range input {
@@ -1013,6 +1003,7 @@ func transformTypedAnnotationsToStrs(input map[*kubernetes_annotation_key.Kubern
 	}
 	return result
 }
+*/
 
 // TODO Delete this after 2022-08-01 if we're still not using PersistentVolumeClaims
 /*
