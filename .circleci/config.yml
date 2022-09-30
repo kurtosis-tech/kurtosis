@@ -123,9 +123,9 @@ parameters:
   cli-build-cache-key-prefix:
     type: string
     default: "cli-go-mod-v1"
-  run-pre-release-scripts-script-path:
+  generate-kurtosis-version-script-path:
     type: string
-    default: "scripts/run-pre-release-scripts.sh"
+    default: "scripts/generate-kurtosis-version.sh"
   core-server-image-filename:
     type: string
     default: "core-server-image.tgz"
@@ -226,8 +226,8 @@ jobs:
           sudo apt update
           sudo apt install kudet
 
-      # Run pre release scripts
-      - run: "<<pipeline.parameters.run-pre-release-scripts-script-path>>"
+      # Generate Kurtosis Version
+      - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
 
       - setup_remote_docker:
@@ -261,6 +261,9 @@ jobs:
             circleci-agent step halt
           fi
 
+      # Generate Kurtosis Version
+      - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
+
       # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
@@ -285,8 +288,8 @@ jobs:
           sudo apt update
           sudo apt install kudet
 
-      # Run pre release scripts
-      - run: "<<pipeline.parameters.run-pre-release-scripts-script-path>>"
+      # Generate Kurtosis Version
+      - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
@@ -333,6 +336,9 @@ jobs:
             circleci-agent step halt
           fi
 
+      # Generate Kurtosis Version
+      - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
+
       # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
@@ -357,8 +363,8 @@ jobs:
           sudo apt update
           sudo apt install kudet
 
-      # Run pre release scripts
-      - run: "<<pipeline.parameters.run-pre-release-scripts-script-path>>"
+      # Generate Kurtosis Version
+      - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
@@ -411,8 +417,8 @@ jobs:
           sudo apt update
           sudo apt install kudet
 
-      # Run pre release scripts
-      - run: "<<pipeline.parameters.run-pre-release-scripts-script-path>>"
+      # Generate Kurtosis Version
+      - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
       # Install goreleaser
       - run: |
