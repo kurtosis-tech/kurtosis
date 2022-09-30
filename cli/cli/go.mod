@@ -3,9 +3,9 @@ module github.com/kurtosis-tech/kurtosis/cli/cli
 go 1.17
 
 replace (
-	github.com/kurtosis-tech/kurtosis/cli/commons => ../commons
 
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
+	github.com/kurtosis-tech/kurtosis/cli/commons => ../commons
 
 	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
 
@@ -24,7 +24,7 @@ require (
 	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0 // local dependency
-	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // indirect; Local dependency generated during build
+	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // Local dependency generated during build
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211205213337-f5088fc26465
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220225193403-74da3f3b98ce
