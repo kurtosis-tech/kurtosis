@@ -55,7 +55,7 @@ func (client *KurtosisBackendLogClient) GetUserServiceLogs(
 		}
 		errorsFoundStr := strings.Join(errorsFoundInServices, "\n")
 
-		return nil, stacktrace.Propagate(err, "An error occurred getting user service logs for user service with GUIDs '%+v'. Errors found: \n%v", erroredUserServiceGuids, errorsFoundStr)
+		return nil, stacktrace.NewError("Some user services returned with error when calling for the logs using filters '%+v'. Errors returned: \n%v", userServiceFilters, errorsFoundStr)
 	}
 
 	for userServiceGuid, userServiceReadCloserLogs := range successfulUserServiceLogs {

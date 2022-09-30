@@ -2,6 +2,7 @@ package centralized_logs
 
 import (
 	"context"
+	"errors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"io"
@@ -17,17 +18,14 @@ const (
 	minimalKurtosisBackendMockTestUserService1LogLines = "This is the first user service #1 log line.\nThis is the second one.\nThis is the third one."
 	minimalKurtosisBackendMockTestUserService2LogLines = "This is the first user service #2 log line.\nThis is the second one.\nThis is the third one."
 	minimalKurtosisBackendMockTestUserService3LogLines = "This is the first user service #3 log line.\nThis is the second one.\nThis is the third one."
+
+	minimalKurtosisBackendMockFakeErrorStr = "fake error"
 )
 
-var minimalKurtosisBackendMockUserServiceLogLinesByGuids = map[service.ServiceGUID]string{
-	minimalKurtosisBackendMockTestUserService1Guid: minimalKurtosisBackendMockTestUserService1LogLines,
-	minimalKurtosisBackendMockTestUserService2Guid: minimalKurtosisBackendMockTestUserService2LogLines,
-	minimalKurtosisBackendMockTestUserService3Guid: minimalKurtosisBackendMockTestUserService3LogLines,
-}
 
 //TODO replace with the final KurtosisBackend's bock when we have it
 //This is a temporary hack until we get the real MockedKurtosisBackend created by Mockery
-type MinimalKurtosisBackendMock struct {}
+type MinimalKurtosisBackendMock struct{}
 
 func NewMinimalKurtosisBackendMock() *MinimalKurtosisBackendMock {
 	return &MinimalKurtosisBackendMock{}
@@ -43,16 +41,32 @@ func (mock MinimalKurtosisBackendMock) GetUserServiceLogs(
 	map[service.ServiceGUID]error,
 	error,
 ) {
+	var (
+		successfulUserServiceLogLinesByGuids = map[service.ServiceGUID]string{
+			minimalKurtosisBackendMockTestUserService1Guid: minimalKurtosisBackendMockTestUserService1LogLines,
+			minimalKurtosisBackendMockTestUserService2Guid: minimalKurtosisBackendMockTestUserService2LogLines,
+			minimalKurtosisBackendMockTestUserService3Guid: minimalKurtosisBackendMockTestUserService3LogLines,
+		}
+
+		fakeError = errors.New(minimalKurtosisBackendMockFakeErrorStr)
+	)
 
 	successfulUserServiceLogs := map[service.ServiceGUID]io.ReadCloser{}
+	erroredUserServices := map[service.ServiceGUID]error{}
 
-	for userServiceGuid, userServiceLogsLinesStr := range minimalKurtosisBackendMockUserServiceLogLinesByGuids {
+	for userServiceGuid := range filters.GUIDs {
 
-		logLinesReader := strings.NewReader(userServiceLogsLinesStr)
-		logLinesReadCloser := ioutil.NopCloser(logLinesReader)
+		if userServiceLogsLinesStr, found := successfulUserServiceLogLinesByGuids[userServiceGuid]; found {
+			logLinesReader := strings.NewReader(userServiceLogsLinesStr)
+			logLinesReadCloser := ioutil.NopCloser(logLinesReader)
 
-		successfulUserServiceLogs[userServiceGuid] = logLinesReadCloser
+			successfulUserServiceLogs[userServiceGuid] = logLinesReadCloser
+			continue
+		}
+
+		erroredUserServices[userServiceGuid] = fakeError
+
 	}
 
-	return successfulUserServiceLogs, nil, nil
+	return successfulUserServiceLogs, erroredUserServices, nil
 }
