@@ -20,6 +20,9 @@ service ApiContainerService {
   // Executes an executable module on the user's behalf
   rpc ExecuteModule(ExecuteModuleArgs) returns (ExecuteModuleResponse) {};
 
+  // Executes a startosis script on the user's behalf
+  rpc ExecuteStartosisScript(ExecuteStartosisScriptArgs) returns (ExecuteStartosisScriptResponse) {};
+
   // Start services by creating containers for them
   rpc StartServices(StartServicesArgs) returns (StartServicesResponse) {};
 
@@ -222,6 +225,23 @@ message ExecuteModuleResponse {
   // Serialized result data from the module's execute function
   // The serialization format is dependent on the Module
   string serialized_result = 1;
+}
+
+// ==============================================================================================
+//                                 Execute Startosis script
+// ==============================================================================================
+message ExecuteStartosisScriptArgs {
+  string serialized_script = 1;
+}
+
+message ExecuteStartosisScriptResponse {
+  string serialized_script_output = 1;
+
+  string interpretation_error = 2;
+
+  string validation_error = 3; // TODO(gb): no validation for now, but will be in the future
+
+  string execution_error = 4;
 }
 
 // ==============================================================================================

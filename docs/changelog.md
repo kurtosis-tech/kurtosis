@@ -1,9 +1,21 @@
 # TBD
 
+### Features
+* API container now saves free IPs on a local database
+
+### Fixes
+* Fix go.mod for commons & cli to reflect monorepo and replaced imports with write package name
+
+# 0.49.7
+
+### Features
+* Implement skeleton for the Startosis engine
+
 ### Fixes
 * Fixed a message that referred to an old repo.
+
 ### Changes
-* API container now saves free IPs on a local database
+* Added `cli` to the monorepo
 
 # 0.49.6
 
@@ -30,7 +42,6 @@
 
 ### Fixes
 * Fix typescript package releases
-* 
 
 # 0.49.2
 

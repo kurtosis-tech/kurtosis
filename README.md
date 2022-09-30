@@ -6,6 +6,7 @@ This repo currently contains
 - `core`
 - `engine`
 - `api`
+- `cli`
 
 ## Build Instructions
 
@@ -17,6 +18,7 @@ This repo currently contains
 6. To build just the engine run `./engine/scripts/build.sh`
 7. To regenerate the `engine` protobuf bindings do `./api/scripts/regenerate-engine-api-protobuf-bindings.sh`
 8. To regenerate the `core` protobuf bindings do `./api/scripts/regenerate-core-api-protobuf-bindings.sh`
+9. To build just the `cli` run `./cli/scripts/build.sh`
 
 ## Test Instructions
 
@@ -25,5 +27,16 @@ This repo currently contains
 3. To run the unit tests for the core launcher run `go test ./...` in `core/launcher`
 4. To run the unit tests for the engine server run `go test ./...` in `engine/server`
 5. To run the unit tests for the engine launcher run `go test ./...` in `engine/launcher`
+6. To run all the integration tests against Docker run `./scripts/run-all-tests-against-latest-code.sh docker`
+7. To run all the integration tests against Minikube run `./scripts/run-all-tests-against-latest-code.sh minikube`
 
 ## Run instructions
+1. To use the built cli run `./cli/cli/scripts/launch_cli.sh`
+
+### Developer Notes
+
+If you are developing the Typescript test, make sure that you have first built `api/typescript`. Any
+changes made to the Typescript package within `api/typescript` aren't hot loaded as of 2022-09-29.
+
+Running tests from the testsuite would build the `api/typescript` for you automatically so you don't have to
+worry about it.
