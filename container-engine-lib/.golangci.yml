@@ -26,6 +26,8 @@ issues:
       text: "field `storageClassName` is unused (unused)"
     - path: "lib/operation_parallelizer/operation_parallelizer_test.go"
       text: "unnecessary assignment to the blank identifier (gosimple)"
+    - text: "SA5001: should check returned error before deferring db.Close()"
+      path: "lib/free_ip_addr_tracker/free_ip_addr_tracker_test.go"
 
 linters-settings:
   staticcheck:

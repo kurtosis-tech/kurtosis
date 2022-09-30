@@ -511,7 +511,9 @@ func registerUserServices(
 		shouldFreeIp := true
 		defer func() {
 			if shouldFreeIp {
-				freeIpAddrProvider.ReleaseIpAddr(ipAddr)
+				if err = freeIpAddrProvider.ReleaseIpAddr(ipAddr); err != nil {
+					logrus.Errorf("Error releasing IP address '%v'", ipAddr)
+				}
 			}
 		}()
 

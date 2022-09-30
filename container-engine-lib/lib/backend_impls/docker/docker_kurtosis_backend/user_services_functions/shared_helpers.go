@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"strings"
 )
 
@@ -141,7 +142,10 @@ func destroyUserServicesUnlocked(
 
 	// Finalize deregistration
 	for guid, registration := range registrationsToDeregister {
-		freeIpAddrTrackerForEnclave.ReleaseIpAddr(registration.GetPrivateIP())
+		ipAddr := registration.GetPrivateIP()
+		if err = freeIpAddrTrackerForEnclave.ReleaseIpAddr(ipAddr); err != nil {
+			logrus.Errorf("Error releasing IP address '%v'", ipAddr)
+		}
 		delete(registrationsForEnclave, guid)
 	}
 
