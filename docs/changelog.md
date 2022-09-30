@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+* API container now saves free IPs on a local database
+
 ### Fixes
 * Fix go.mod for commons & cli to reflect monorepo and replaced imports with write package name
 
