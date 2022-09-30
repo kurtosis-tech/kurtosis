@@ -2,15 +2,16 @@ package engine_manager
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/kurtosis_config_getter"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
@@ -227,6 +228,10 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 		)
 	}
 
+	if err = manager.stopAndDestroyCentralizedLogsComponents(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping and destroying the centralized logs components")
+	}
+
 	return nil
 }
 
@@ -259,6 +264,25 @@ func (manager *EngineManager) startEngineWithGuarantor(ctx context.Context, curr
 	}
 
 	return engineClient, clientCloseFunc, nil
+}
+
+func (manager *EngineManager) stopAndDestroyCentralizedLogsComponents(ctx context.Context) error {
+
+	logsCollectorFilters := &logs_collector.LogsCollectorFilters{}
+
+	if err := manager.kurtosisBackend.StopLogsCollector(ctx, logsCollectorFilters); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping logs collector")
+	}
+	if err := manager.kurtosisBackend.StopLogsDatabase(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping logs database")
+	}
+	if err := manager.kurtosisBackend.DestroyLogsCollector(ctx, logsCollectorFilters); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping logs collector")
+	}
+	if err := manager.kurtosisBackend.DestroyLogsDatabase(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping logs collector")
+	}
+	return nil
 }
 
 func getEngineClientFromHostMachineIpAndPort(hostMachineIpAndPort *hostMachineIpAndPort) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {

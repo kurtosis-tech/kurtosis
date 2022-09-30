@@ -153,7 +153,10 @@ func StartUserServices(
 		return nil, nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveID)
 	}
 
-	logsCollectorServiceAddress := logsCollector.GetPrivateTcpAddress()
+	logsCollectorServiceAddress, err := logsCollector.GetPrivateTcpAddress()
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the private tcp address")
+	}
 	//The following docker labels will be added into the logs stream which is necessary for creating new tags
 	//in the logs database and then use it for querying them to get the specific user service's logs
 	//even the 'enclaveID' value is used for Fluentbit to send it to Loki as the "X-Scope-OrgID" request's header

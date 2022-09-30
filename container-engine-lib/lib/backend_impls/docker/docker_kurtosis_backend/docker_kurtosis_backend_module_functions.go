@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
@@ -138,7 +139,11 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		logrus.Warnf("Failed to pull the latest version of module container image '%v'; you may be running an out-of-date version", image)
 	}
 
-	logsCollector, err := backend.GetLogsCollector(ctx)
+	logsCollectorFilters := &logs_collector.LogsCollectorFilters{
+		Status: container_status.ContainerStatus_Running,
+	}
+
+	logsCollector, err := backend.GetLogsCollector(ctx, logsCollectorFilters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
@@ -146,7 +151,10 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		return nil, stacktrace.NewError("The user services can't be started because there is not logs collector running for sending the logs")
 	}
 
-	logsCollectorServiceAddress := logsCollector.GetPrivateTcpAddress()
+	logsCollectorServiceAddress, err := logsCollector.GetPrivateTcpAddress()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the private tcp address")
+	}
 	//The following docker labels will be added into the logs stream which is necessary for creating new tags
 	//in the logs database and then using them for querying the database to get the specific user service's logs
 	logsCollectorLabels := logs_collector_functions.LogsCollectorLabels{

@@ -361,17 +361,17 @@ func (backend *KubernetesKurtosisBackend) CreateLogsCollector(ctx context.Contex
 	return nil, stacktrace.NewError("Creating the logs collector isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) GetLogsCollector(ctx context.Context) (*logs_collector.LogsCollector, error) {
+func (backend *KubernetesKurtosisBackend) GetLogsCollector(ctx context.Context, filters *logs_collector.LogsCollectorFilters,) (*logs_collector.LogsCollector, error) {
 	// TODO IMPLEMENT
 	return nil, stacktrace.NewError("Getting the logs collector isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) StopLogsCollector(ctx context.Context) error {
+func (backend *KubernetesKurtosisBackend) StopLogsCollector(ctx context.Context, filters *logs_collector.LogsCollectorFilters,) error {
 	// TODO IMPLEMENT
 	return stacktrace.NewError("Stop the logs collector isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) DestroyLogsCollector(ctx context.Context) error {
+func (backend *KubernetesKurtosisBackend) DestroyLogsCollector(ctx context.Context, filters *logs_collector.LogsCollectorFilters,) error {
 	// TODO IMPLEMENT
 	return stacktrace.NewError("Destroy the logs collector isn't yet implemented on Kubernetes")
 }

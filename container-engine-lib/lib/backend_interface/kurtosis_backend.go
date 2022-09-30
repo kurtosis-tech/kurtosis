@@ -411,11 +411,20 @@ type KurtosisBackend interface {
 	)
 
 	// Gets the logs collector
-	GetLogsCollector(ctx context.Context) (*logs_collector.LogsCollector, error)
+	GetLogsCollector(
+		ctx context.Context,
+		filters *logs_collector.LogsCollectorFilters,
+	) (*logs_collector.LogsCollector, error)
 
 	// Stop the logs collector
-	StopLogsCollector(ctx context.Context) error
+	StopLogsCollector(
+		ctx context.Context,
+		filters *logs_collector.LogsCollectorFilters,
+	) error
 
 	// Destroy the logs collector
-	DestroyLogsCollector(ctx context.Context) error
+	DestroyLogsCollector(
+		ctx context.Context,
+		filters *logs_collector.LogsCollectorFilters,
+	) error
 }

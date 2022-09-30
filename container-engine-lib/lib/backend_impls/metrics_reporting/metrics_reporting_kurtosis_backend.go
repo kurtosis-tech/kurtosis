@@ -609,11 +609,12 @@ func (backend *MetricsReportingKurtosisBackend) CreateLogsCollector(
 
 func (backend *MetricsReportingKurtosisBackend) GetLogsCollector(
 	ctx context.Context,
+	filters *logs_collector.LogsCollectorFilters,
 ) (
 	*logs_collector.LogsCollector,
 	error,
 ) {
-	logsCollector, err := backend.underlying.GetLogsCollector(ctx)
+	logsCollector, err := backend.underlying.GetLogsCollector(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
@@ -623,11 +624,12 @@ func (backend *MetricsReportingKurtosisBackend) GetLogsCollector(
 
 func (backend *MetricsReportingKurtosisBackend) StopLogsCollector(
 	ctx context.Context,
+	filters *logs_collector.LogsCollectorFilters,
 ) (
 	error,
 ) {
 
-	if err := backend.underlying.StopLogsCollector(ctx); err != nil {
+	if err := backend.underlying.StopLogsCollector(ctx, filters); err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping the logs collector")
 	}
 
@@ -636,11 +638,12 @@ func (backend *MetricsReportingKurtosisBackend) StopLogsCollector(
 
 func (backend *MetricsReportingKurtosisBackend) DestroyLogsCollector(
 	ctx context.Context,
+	filters *logs_collector.LogsCollectorFilters,
 ) (
 	error,
 ) {
 
-	if err := backend.underlying.DestroyLogsCollector(ctx); err != nil {
+	if err := backend.underlying.DestroyLogsCollector(ctx, filters); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying the logs collector")
 	}
 
