@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/operation_parallelizer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -33,7 +34,7 @@ func StartUserServices(
 	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration,
 	serviceRegistrationMutex *sync.Mutex,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
-	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker,
+	enclaveFreeIpProviders map[enclave.EnclaveID]*free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 ) (
 	map[service.ServiceID]*service.Service,
@@ -198,7 +199,9 @@ func StartUserServices(
 }
 
 // ====================================================================================================
-//                       Private helper functions
+//
+//	Private helper functions
+//
 // ====================================================================================================
 func runStartServiceOperationsInParallel(
 	ctx context.Context,
@@ -206,7 +209,7 @@ func runStartServiceOperationsInParallel(
 	serviceConfigs map[service.ServiceID]*service.ServiceConfig,
 	serviceRegistrations map[service.ServiceID]*service.ServiceRegistration,
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
-	freeIpAddrProvider *lib.FreeIpAddrTracker,
+	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 	logsCollectorAddress logs_components.LogsCollectorAddress,
 	logsCollectorLabels logs_components.LogsCollectorLabels,
@@ -267,7 +270,7 @@ func createStartServiceOperation(
 	serviceRegistration *service.ServiceRegistration,
 	enclaveNetworkId string,
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
-	freeIpAddrProvider *lib.FreeIpAddrTracker,
+	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 	logsCollectorAddress logs_components.LogsCollectorAddress,
 	logsCollectorLabels logs_components.LogsCollectorLabels,
@@ -480,7 +483,7 @@ func registerUserServices(
 	enclaveId enclave.EnclaveID,
 	serviceIDs []service.ServiceID,
 	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration,
-	freeIpAddrProvider *lib.FreeIpAddrTracker) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
+	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
 	successfulServicesPool := map[service.ServiceID]*service.ServiceRegistration{}
 	failedServicesPool := map[service.ServiceID]error{}
 
