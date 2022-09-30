@@ -9,7 +9,6 @@ import (
 )
 
 type FreeIpAddrTracker struct {
-	log    *logrus.Logger
 	subnet *net.IPNet
 	db     *bolt.DB
 }
@@ -24,16 +23,16 @@ func (tracker *FreeIpAddrTracker) GetFreeIpAddr() (net.IP, error) {
 	err := tracker.db.Update(func(tx *bolt.Tx) error {
 		takenIps, err := getTakenIpAddrs(tx)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "An error occurred while getting taken IP addresses")
 		}
 		ipAddr, err = GetFreeIpAddrFromSubnet(takenIps, tracker.subnet)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "An error occurred while getting a free IP address from subnet")
 		}
 		return tx.Bucket(dbBucketName).Put([]byte(ipAddr.String()), emptyValueForKeySet)
 	})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while getting free IP address")
+		return nil, stacktrace.Propagate(err, "An error occurred while getting a free IP address")
 	}
 	return ipAddr, nil
 }
@@ -43,36 +42,37 @@ func (tracker *FreeIpAddrTracker) ReleaseIpAddr(ip net.IP) error {
 		return tx.Bucket(dbBucketName).Delete([]byte(ip.String()))
 	})
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while releasing used IP address")
+		return stacktrace.Propagate(err, "An error occurred while releasing used IP address '%v'", ip)
 	}
 	return nil
 }
 
-func GetOrCreateNewFreeIpAddrTracker(log *logrus.Logger, subnet *net.IPNet, alreadyTakenIps map[string]bool, db *bolt.DB) (*FreeIpAddrTracker, error) {
+func GetOrCreateNewFreeIpAddrTracker(subnet *net.IPNet, alreadyTakenIps map[string]bool, db *bolt.DB) (*FreeIpAddrTracker, error) {
+	bucketExists := false
 	err := db.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucket(dbBucketName)
 		if err != nil {
-			return err
+			bucketExists = true
+			return stacktrace.Propagate(err, "An error occurred while creating IP tracker database bucket")
 		}
 		// Bucket does not exist, populate database
 		for ipAddr, _ := range alreadyTakenIps {
 			if err != bucket.Put([]byte(ipAddr), emptyValueForKeySet) {
-				return err
+				return stacktrace.Propagate(err, "An error occurred writing IP to database '%v'", ipAddr)
 			}
 		}
 		return nil
 	})
-	if err != nil && err != bolt.ErrBucketExists {
+	if err != nil && !bucketExists {
 		return nil, stacktrace.Propagate(err, "An error occurred while building free IP address tracker")
 	}
 	// Bucket does exist, skipping population step
 	if err == bolt.ErrBucketExists {
-		log.Debugf("Taken IP addresses loaded from database")
+		logrus.Debugf("Taken IP addresses loaded from database")
 	} else {
-		log.Debugf("Taken IP addresses saved to database")
+		logrus.Debugf("Taken IP addresses saved to database")
 	}
 	return &FreeIpAddrTracker{
-		log,
 		subnet,
 		db,
 	}, nil

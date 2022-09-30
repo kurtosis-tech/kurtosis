@@ -6,7 +6,6 @@
 package free_ip_addr_tracker
 
 import (
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
 	"net"
@@ -24,7 +23,7 @@ func TestGetIp(t *testing.T) {
 	subnetMask := "1.2.3.4/16"
 	_, parsedSubnetMask, err := net.ParseCIDR(subnetMask)
 	require.Nil(t, err)
-	addrTracker, err := GetOrCreateNewFreeIpAddrTracker(logrus.StandardLogger(), parsedSubnetMask, map[string]bool{
+	addrTracker, err := GetOrCreateNewFreeIpAddrTracker(parsedSubnetMask, map[string]bool{
 		"1.2.0.2": true,
 		"1.2.0.3": true,
 	}, db)
@@ -53,7 +52,7 @@ func TestReleaseIp(t *testing.T) {
 	subnetMask := "1.2.3.4/16"
 	_, parsedSubnetMask, err := net.ParseCIDR(subnetMask)
 	require.Nil(t, err)
-	addrTracker, err := GetOrCreateNewFreeIpAddrTracker(logrus.StandardLogger(), parsedSubnetMask, map[string]bool{}, db)
+	addrTracker, err := GetOrCreateNewFreeIpAddrTracker(parsedSubnetMask, map[string]bool{}, db)
 	require.Nil(t, err)
 
 	ip, err := addrTracker.GetFreeIpAddr()
@@ -82,7 +81,7 @@ func TestIpTrackerDiskPersistence(t *testing.T) {
 	subnetMask := "1.2.3.4/16"
 	_, parsedSubnetMask, err := net.ParseCIDR(subnetMask)
 	require.Nil(t, err)
-	addrTracker, err := GetOrCreateNewFreeIpAddrTracker(logrus.StandardLogger(), parsedSubnetMask, map[string]bool{
+	addrTracker, err := GetOrCreateNewFreeIpAddrTracker(parsedSubnetMask, map[string]bool{
 		"1.2.0.2": true,
 		"1.2.0.3": true,
 	}, db)
@@ -92,7 +91,7 @@ func TestIpTrackerDiskPersistence(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, "1.2.0.1", ip.String())
 
-	addrTracker2, err := GetOrCreateNewFreeIpAddrTracker(logrus.StandardLogger(), parsedSubnetMask, map[string]bool{}, db)
+	addrTracker2, err := GetOrCreateNewFreeIpAddrTracker(parsedSubnetMask, map[string]bool{}, db)
 	require.Nil(t, err)
 
 	ip2, err := addrTracker2.GetFreeIpAddr()
