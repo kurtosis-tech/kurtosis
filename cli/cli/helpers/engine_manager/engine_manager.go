@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
@@ -269,18 +270,13 @@ func (manager *EngineManager) startEngineWithGuarantor(ctx context.Context, curr
 func (manager *EngineManager) stopAndDestroyCentralizedLogsComponents(ctx context.Context) error {
 
 	logsCollectorFilters := &logs_collector.LogsCollectorFilters{}
+	logsDatabaseFilters := &logs_database.LogsDatabaseFilters{}
 
-	if err := manager.kurtosisBackend.StopLogsCollector(ctx, logsCollectorFilters); err != nil {
-		return stacktrace.Propagate(err, "An error occurred stopping logs collector")
-	}
-	if err := manager.kurtosisBackend.StopLogsDatabase(ctx); err != nil {
-		return stacktrace.Propagate(err, "An error occurred stopping logs database")
-	}
 	if err := manager.kurtosisBackend.DestroyLogsCollector(ctx, logsCollectorFilters); err != nil {
-		return stacktrace.Propagate(err, "An error occurred stopping logs collector")
+		return stacktrace.Propagate(err, "An error occurred destroying the logs collector")
 	}
-	if err := manager.kurtosisBackend.DestroyLogsDatabase(ctx); err != nil {
-		return stacktrace.Propagate(err, "An error occurred stopping logs collector")
+	if err := manager.kurtosisBackend.DestroyLogsDatabase(ctx, logsDatabaseFilters); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the logs collector")
 	}
 	return nil
 }
