@@ -5,7 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/struct_persister"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/stacktrace"
 	"sync"
 )
@@ -29,7 +29,7 @@ func DestroyUserServices(
 	filters *service.ServiceFilters,
 	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration,
 	serviceRegistrationMutex *sync.Mutex,
-	enclaveFreeIpProviders map[enclave.EnclaveID]*struct_persister.FreeIpAddrTracker,
+	enclaveFreeIpProviders map[enclave.EnclaveID]*free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 ) (
 	resultSuccessfulGuids map[service.ServiceGUID]bool,

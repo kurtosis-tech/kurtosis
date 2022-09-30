@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/binary"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/struct_persister"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"math"
@@ -167,7 +167,7 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 			return "", stacktrace.Propagate(err, "An error occurred finding a free network")
 		}
 
-		gatewayIp, err := struct_persister.GetFreeIpAddrFromSubnet(emptyIpSet, freeNetworkIpAndMask)
+		gatewayIp, err := free_ip_addr_tracker.GetFreeIpAddrFromSubnet(emptyIpSet, freeNetworkIpAndMask)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred getting a free IP for the network gateway")
 		}

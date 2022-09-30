@@ -10,7 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/metrics_reporting"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/struct_persister"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
@@ -49,7 +49,7 @@ func GetLocalDockerKurtosisBackend(
 
 	// If running within the API container context, detect the network that the API container is running inside
 	// so we can create the free IP address trackers
-	enclaveFreeIpAddrTrackers := map[enclave.EnclaveID]*struct_persister.FreeIpAddrTracker{}
+	enclaveFreeIpAddrTrackers := map[enclave.EnclaveID]*free_ip_addr_tracker.FreeIpAddrTracker{}
 	if optionalApiContainerModeArgs != nil {
 		ctx := optionalApiContainerModeArgs.Context
 		enclaveId := optionalApiContainerModeArgs.EnclaveID
@@ -83,7 +83,7 @@ func GetLocalDockerKurtosisBackend(
 			apiContainerIp.String(): true,
 		}
 
-		freeIpAddrProvider, err := struct_persister.GetOrCreateNewFreeIpAddrTracker(
+		freeIpAddrProvider, err := free_ip_addr_tracker.GetOrCreateNewFreeIpAddrTracker(
 			logrus.StandardLogger(),
 			network.GetIpAndMask(),
 			alreadyTakenIps,

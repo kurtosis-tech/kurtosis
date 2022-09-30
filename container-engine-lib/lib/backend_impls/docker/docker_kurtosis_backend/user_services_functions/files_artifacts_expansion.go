@@ -9,7 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/struct_persister"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
@@ -26,7 +26,7 @@ func doFilesArtifactExpansionAndGetUserServiceVolumes(
 	ctx context.Context,
 	serviceGuid service.ServiceGUID,
 	objAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
-	freeIpAddrProvider *struct_persister.FreeIpAddrTracker,
+	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker,
 	enclaveNetworkId string,
 	expanderImage string,
 	expanderEnvVars map[string]string,
@@ -105,7 +105,7 @@ func runFilesArtifactsExpander(
 	ctx context.Context,
 	serviceGuid service.ServiceGUID,
 	objAttrProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
-	freeIpAddrProvider *struct_persister.FreeIpAddrTracker,
+	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker,
 	image string,
 	envVars map[string]string,
 	enclaveNetworkId string,
