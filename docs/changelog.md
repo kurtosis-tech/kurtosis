@@ -13,6 +13,12 @@
 * Fix go.mod for commons & cli to reflect monorepo and replaced imports with write package name
 * Move linter core/server linter config to within core/server
 
+### Removals
+* Removes remote-docker-setup from the `build_cli` job in Circle
+
+### Changes
+* Removes version constants within launchers and cli in favor of centralized generated version constant
+
 # 0.49.7
 
 ### Features
