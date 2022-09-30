@@ -34,6 +34,7 @@ linters-settings:
     checks:
       - all
       - '-SA1019' # disable the rule SA1019 - ioutils replaced with os
+      - '-SA1029' # disables a check that doesn't allow passing built in values to context.WithValue, its more annoyying than useful
   gosimple:
     checks:
       - all
