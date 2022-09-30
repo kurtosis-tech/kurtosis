@@ -14,14 +14,15 @@ type FreeIpAddrTracker struct {
 	db     *bolt.DB
 }
 
-const (
-	dbBucketName = "taken-ip-addresses"
+var (
+	emptyValueForKeySet = []byte{}
+	dbBucketName        = []byte("taken-ip-addresses")
 )
 
 func (tracker *FreeIpAddrTracker) GetFreeIpAddr() (net.IP, error) {
 	var ipAddr net.IP
 	err := tracker.db.Update(func(tx *bolt.Tx) error {
-		takenIps, err := getTakenIpAddr(tx)
+		takenIps, err := getTakenIpAddrs(tx)
 		if err != nil {
 			return err
 		}
@@ -29,7 +30,7 @@ func (tracker *FreeIpAddrTracker) GetFreeIpAddr() (net.IP, error) {
 		if err != nil {
 			return err
 		}
-		return tx.Bucket([]byte(dbBucketName)).Put([]byte(ipAddr.String()), []byte{})
+		return tx.Bucket(dbBucketName).Put([]byte(ipAddr.String()), emptyValueForKeySet)
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting free IP address")
@@ -39,7 +40,7 @@ func (tracker *FreeIpAddrTracker) GetFreeIpAddr() (net.IP, error) {
 
 func (tracker *FreeIpAddrTracker) ReleaseIpAddr(ip net.IP) error {
 	err := tracker.db.Update(func(tx *bolt.Tx) error {
-		return tx.Bucket([]byte(dbBucketName)).Delete([]byte(ip.String()))
+		return tx.Bucket(dbBucketName).Delete([]byte(ip.String()))
 	})
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while releasing used IP address")
@@ -49,14 +50,13 @@ func (tracker *FreeIpAddrTracker) ReleaseIpAddr(ip net.IP) error {
 
 func GetOrCreateNewFreeIpAddrTracker(log *logrus.Logger, subnet *net.IPNet, alreadyTakenIps map[string]bool, db *bolt.DB) (*FreeIpAddrTracker, error) {
 	err := db.Update(func(tx *bolt.Tx) error {
-		bucket, err := tx.CreateBucket([]byte(dbBucketName))
+		bucket, err := tx.CreateBucket(dbBucketName)
 		if err != nil {
 			return err
 		}
 		// Bucket does not exist, populate database
 		for ipAddr, _ := range alreadyTakenIps {
-			err = bucket.Put([]byte(ipAddr), []byte{})
-			if err != nil {
+			if err != bucket.Put([]byte(ipAddr), emptyValueForKeySet) {
 				return err
 			}
 		}
@@ -78,9 +78,10 @@ func GetOrCreateNewFreeIpAddrTracker(log *logrus.Logger, subnet *net.IPNet, alre
 	}, nil
 }
 
-func getTakenIpAddr(tx *bolt.Tx) (map[string]bool, error) {
+func getTakenIpAddrs(tx *bolt.Tx) (map[string]bool, error) {
 	takenIps := map[string]bool{}
-	err := tx.Bucket([]byte(dbBucketName)).ForEach(func(k, v []byte) error {
+	bucket := tx.Bucket(dbBucketName)
+	err := bucket.ForEach(func(k, v []byte) error {
 		takenIps[string(k)] = true
 		return nil
 	})
@@ -91,6 +92,7 @@ func getTakenIpAddr(tx *bolt.Tx) (map[string]bool, error) {
 }
 
 /*
+GetFreeIpAddrFromSubnet
 Gets a free IP address from the subnet that the IP tracker was initialized with.
 
 Returns:

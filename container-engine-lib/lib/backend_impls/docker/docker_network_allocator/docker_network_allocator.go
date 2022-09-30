@@ -33,6 +33,7 @@ const (
 var networkCidrMask = net.CIDRMask(int(supportedIpAddrBitLength-networkWidthBits), int(supportedIpAddrBitLength))
 var networkWidthUint64 = uint64(math.Pow(float64(2), float64(networkWidthBits)))
 var maxUint32PlusOne = uint64(math.MaxUint32) + 1
+var emptyIpSet = map[string]bool{}
 
 // These IP ranges are reserved, so we'll skip creating any networks in them
 // If we don't, Docker will throw an error of "failed to set gateway while updating gateway: route for the gateway X.X.X.X could not be found: network is unreachable"
@@ -166,7 +167,7 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 			return "", stacktrace.Propagate(err, "An error occurred finding a free network")
 		}
 
-		gatewayIp, err := struct_persister.GetFreeIpAddrFromSubnet(map[string]bool{}, freeNetworkIpAndMask)
+		gatewayIp, err := struct_persister.GetFreeIpAddrFromSubnet(emptyIpSet, freeNetworkIpAndMask)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred getting a free IP for the network gateway")
 		}
