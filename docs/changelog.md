@@ -1,7 +1,9 @@
 # TBD
 ### Breaking Changes
 * Updated `CreateEngine` method in `container-engine-lib`, removed the `logsCollectorHttpPortNumber` parameter
-    * Users will need to update all the `CreateEngine` calls removing this new parameter
+    * Users will need to update all the `CreateEngine` calls removing this parameter
+* Updated `NewEngineServerArgs`,  `LaunchWithDefaultVersion` and `LaunchWithCustomVersion` methods in `engine_server_launcher` removed the `logsCollectorHttpPortNumber` parameter
+  * Users will need to update these method calls removing this parameter
 
 ### Features
 * Created the `LogsDatabase` object in `container-engine-lib`

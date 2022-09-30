@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/Masterminds/semver/v3"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/stacktrace"
@@ -124,7 +124,6 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.logLevel,
 			kurtosis_context.DefaultGrpcEngineServerPortNum,
 			kurtosis_context.DefaultGrpcProxyEngineServerPortNum,
-			kurtosis_context.DefaultHttpLogsCollectorPortNum,
 			metricsUserId,
 			guarantor.shouldSendMetrics,
 			guarantor.engineServerKurtosisBackendConfigSupplier,
@@ -136,7 +135,6 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.logLevel,
 			kurtosis_context.DefaultGrpcEngineServerPortNum,
 			kurtosis_context.DefaultGrpcProxyEngineServerPortNum,
-			kurtosis_context.DefaultHttpLogsCollectorPortNum,
 			metricsUserId,
 			guarantor.shouldSendMetrics,
 			guarantor.engineServerKurtosisBackendConfigSupplier,
