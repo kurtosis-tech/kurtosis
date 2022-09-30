@@ -1,3 +1,6 @@
+# Ignoring the constants package at root
+/kurtosis_version
+
 # IntelliJ
 .idea
 *.iws
