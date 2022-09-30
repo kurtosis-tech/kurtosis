@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+* Startosis scripts can now be run from the CLI: `kurtosis startosis exec path/to/script/file --enclave-id <ENCLAVE_ID>`
+
 # 0.49.9
 
 ### Features

@@ -123,6 +123,15 @@ func (enclaveCtx *EnclaveContext) GetModuleContext(moduleId modules.ModuleID) (*
 	return moduleCtx, nil
 }
 
+func (enclaveCtx *EnclaveContext) ExecuteStartosisScript(serializedScript string) (resultScriptOutput string, resultInterpretationError string, resultValidationError string, resultExecutionError string, err error) {
+	executeStartosisResponse, err := enclaveCtx.client.ExecuteStartosisScript(context.Background(),
+		&kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs{SerializedScript: serializedScript})
+	if err != nil {
+		return "", "", "", "", stacktrace.Propagate(err, "Unexpected error happened executing Startosis script \n%v", serializedScript)
+	}
+	return executeStartosisResponse.SerializedScriptOutput, executeStartosisResponse.InterpretationError, executeStartosisResponse.ValidationError, executeStartosisResponse.ExecutionError, nil
+}
+
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) AddService(
 	serviceID services.ServiceID,

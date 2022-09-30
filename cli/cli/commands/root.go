@@ -19,6 +19,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/gateway"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/module"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/startosis"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/version"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
@@ -89,6 +90,7 @@ func init() {
 	RootCmd.AddCommand(enclave.EnclaveCmd)
 	RootCmd.AddCommand(service.ServiceCmd)
 	RootCmd.AddCommand(module.ModuleCmd)
+	RootCmd.AddCommand(startosis.StartosisCmd)
 	RootCmd.AddCommand(engine.EngineCmd)
 	RootCmd.AddCommand(version.VersionCmd)
 	RootCmd.AddCommand(gateway.GatewayCmd)
@@ -100,7 +102,9 @@ func init() {
 }
 
 // ====================================================================================================
-//                                       Private Helper Functions
+//
+//	Private Helper Functions
+//
 // ====================================================================================================
 func globalSetup(cmd *cobra.Command, args []string) error {
 	if err := setupCLILogs(cmd); err != nil {
@@ -177,7 +181,7 @@ func isLatestCLIVersion() (bool, string, error) {
 	return false, latestVersionStr, nil
 }
 
-func parseVersionStrToSemVer(versionStr string) (*semver.Version, error)  {
+func parseVersionStrToSemVer(versionStr string) (*semver.Version, error) {
 	semVer, err := semver.NewVersion(versionStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing version string '%v' to sem version", versionStr)

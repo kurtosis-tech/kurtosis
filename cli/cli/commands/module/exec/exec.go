@@ -28,7 +28,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -48,8 +47,6 @@ const (
 	defaultExecuteParams         = "{}"
 	defaultEnclaveId             = ""
 	defaultIsPartitioningEnabled = false
-
-	allowedEnclaveIdCharsRegexStr = `^[-A-Za-z0-9.]{1,63}$`
 
 	shouldFollowModuleLogs = true
 
@@ -96,8 +93,7 @@ var ModuleExecCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Key: enclaveIdFlagKey,
 			Usage: fmt.Sprintf(
 				"The ID to give the enclave that will be created to execute the module inside, which must match regex '%v' (default: use the module image and the current Unix time)",
-				// TODO Get this from the Kurtosis backend maybe????
-				allowedEnclaveIdCharsRegexStr,
+				execution_ids.AllowedEnclaveIdCharsRegexStr,
 			),
 			Type:    flags.FlagType_String,
 			Default: defaultEnclaveId,
@@ -119,9 +115,9 @@ var ModuleExecCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 
 func run(
 	ctx context.Context,
-// TODO This is a hack that's only here temporarily because we have commands that use KurtosisBackend directly (they
-//  should not), and EngineConsumingKurtosisCommand therefore needs to provide them with a KurtosisBackend. Once all our
-//  commands only access the Kurtosis APIs, we can remove this.
+	// TODO This is a hack that's only here temporarily because we have commands that use KurtosisBackend directly (they
+	//  should not), and EngineConsumingKurtosisCommand therefore needs to provide them with a KurtosisBackend. Once all our
+	//  commands only access the Kurtosis APIs, we can remove this.
 	kurtosisBackend backend_interface.KurtosisBackend,
 	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	flags *flags.ParsedFlags,
@@ -165,22 +161,9 @@ func run(
 	}
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
 
-	// TODO Push down into MetricsReportingKurtosisBackend
-	validEnclaveId, err := regexp.Match(allowedEnclaveIdCharsRegexStr, []byte(enclaveIdStr))
+	err = execution_ids.ValidateEnclaveId(enclaveIdStr)
 	if err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred validating that enclave ID '%v' matches allowed enclave ID regex '%v'",
-			enclaveIdStr,
-			allowedEnclaveIdCharsRegexStr,
-		)
-	}
-	if !validEnclaveId {
-		return stacktrace.NewError(
-			"Enclave ID '%v' doesn't match allowed enclave ID regex '%v'",
-			enclaveIdStr,
-			allowedEnclaveIdCharsRegexStr,
-		)
+		return stacktrace.Propagate(err, "Invalid enclave ID argument '%s'", enclaveIdStr)
 	}
 
 	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
@@ -333,7 +316,9 @@ func run(
 }
 
 // ====================================================================================================
-//                                      Private Helper Methods
+//
+//	Private Helper Methods
+//
 // ====================================================================================================
 func getImageNameWithUnixTimestamp(moduleImage string) string {
 	enclaveId := execution_ids.GetExecutionID()

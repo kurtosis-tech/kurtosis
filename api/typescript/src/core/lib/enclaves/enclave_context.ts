@@ -4,7 +4,7 @@
  */
 
 import {ok, err, Result, Err} from "neverthrow";
-import log from "loglevel";
+import log, {error} from "loglevel";
 import { isNode as  isExecutionEnvNode} from "browser-or-node";
 import * as jspb from "google-protobuf";
 import type {
@@ -59,7 +59,7 @@ import {
     ModuleInfo,
     PauseServiceArgs, ServiceInfo, UnloadModuleResponse,
     UnpauseServiceArgs,
-    StartServicesArgs,
+    StartServicesArgs, ExecuteStartosisScriptArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {should} from "chai";
 import {TemplateAndData} from "./template_and_data";
@@ -209,6 +209,12 @@ export class EnclaveContext {
 
         const moduleCtx: ModuleContext = new ModuleContext(this.backend, moduleId);
         return ok(moduleCtx)
+    }
+
+    public async executeStartosisScript(
+            serializedStartosisScript: String
+        ): Promise<Result<[String, String, String, String], Error>> {
+        return err(new Error(("Not implemented"))) // TODO(gb): implement
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
