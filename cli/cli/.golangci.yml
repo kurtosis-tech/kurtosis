@@ -28,4 +28,3 @@ linters-settings:
     checks:
       - all
       - '-S1009' # disable S1009 - should omit nil check; len() for map[interface]interface{}
-      - '-S1038' # disables a check that prefers fmt.Printf(..\n) over fmt.Println(fmt.Sprintf())

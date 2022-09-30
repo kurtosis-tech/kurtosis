@@ -3,16 +3,16 @@ package pause
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -77,6 +77,6 @@ func run(ctx context.Context,
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred trying to pause service '%v' in enclave '%v'", serviceId, enclaveId)
 	}
-	fmt.Println(fmt.Sprintf("Paused service '%v' in enclave '%v'", serviceId, enclaveId))
+	fmt.Printf("Paused service '%v' in enclave '%v'\n", serviceId, enclaveId)
 	return nil
 }
