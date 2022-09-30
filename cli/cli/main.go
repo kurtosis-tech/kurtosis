@@ -6,7 +6,7 @@
 package main
 
 import (
-	"github.com/kurtosis-tech/kurtosis-cli/cli/commands"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands"
 	"github.com/sirupsen/logrus"
 	"os"
 )

@@ -1,8 +1,8 @@
-module github.com/kurtosis-tech/kurtosis-cli/cli
+module github.com/kurtosis-tech/kurtosis/cli/cli
 
 go 1.17
 
-replace github.com/kurtosis-tech/kurtosis-cli/commons => ../commons
+replace github.com/kurtosis-tech/kurtosis/cli/commons => ../commons
 
 replace github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
 
@@ -13,7 +13,6 @@ replace github.com/kurtosis-tech/kurtosis/engine/launcher => ../../engine/launch
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/adrg/xdg v0.4.0
-	github.com/blang/semver v3.5.1+incompatible
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/dmarkham/enumer v1.5.5
 	github.com/docker/distribution v2.7.1+incompatible
