@@ -14,12 +14,9 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 	"strings"
-	"time"
 )
 
 const (
-	artifactExpansionObjectTimestampFormat = "2006-01-02T15.04.05.000"
-
 	apiContainerNameSuffix                 = "kurtosis-api"
 	userServiceContainerNameFragment       = "user-service"
 	networkingSidecarContainerNameFragment = "networking-sidecar"
@@ -465,25 +462,4 @@ func getLabelKeyValuesAsStrings(labels map[*docker_label_key.DockerLabelKey]*doc
 		result[key.GetString()] = value.GetString()
 	}
 	return result
-}
-
-// Gets the name for an artifact expansion object (either volume or container)
-func (provider *dockerEnclaveObjectAttributesProviderImpl) getArtifactExpansionObjectName(
-	objectLabel string,
-	forServiceGUID string,
-	artifactId string,
-) (*docker_object_name.DockerObjectName, error) {
-	name, err := provider.getNameForEnclaveObject([]string{
-		objectLabel,
-		"for",
-		forServiceGUID,
-		"using",
-		artifactId,
-		"at",
-		time.Now().Format(artifactExpansionObjectTimestampFormat), // We add this timestamp so that if the same artifact for the same service GUID expanded twice, we won't get collisions
-	})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the artifact expansion object name")
-	}
-	return name, nil
 }

@@ -131,7 +131,11 @@ func runFilesArtifactsExpander(
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't get a free IP to give the expander container '%v'", containerName)
 	}
-	defer freeIpAddrProvider.ReleaseIpAddr(ipAddr)
+	defer func() {
+		if err = freeIpAddrProvider.ReleaseIpAddr(ipAddr); err != nil {
+			logrus.Errorf("Error releasing IP address '%v'", ipAddr)
+		}
+	}()
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		image,

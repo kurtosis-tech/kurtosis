@@ -11,12 +11,12 @@ import (
 )
 
 const (
-	testName              = "basic-datastore"
-	isPartitioningEnabled = false
+	testName              string = "basic-datastore"
+	isPartitioningEnabled bool   = false
 
 	datastoreServiceId services.ServiceID = "datastore"
-	testKey                               = "test-key"
-	testValue                             = "test-value"
+	testKey            string             = "test-key"
+	testValue          string             = "test-value"
 )
 
 func TestBasicDatastoreTest(t *testing.T) {

@@ -291,13 +291,13 @@ func createStartServiceOperation(
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddrStr := privateIpAddr.String()
-		for index, _ := range entrypointArgs {
+		for index := range entrypointArgs {
 			entrypointArgs[index] = strings.Replace(entrypointArgs[index], privateIPAddrPlaceholder, privateIPAddrStr, unlimitedReplacements)
 		}
-		for index, _ := range cmdArgs {
+		for index := range cmdArgs {
 			cmdArgs[index] = strings.Replace(cmdArgs[index], privateIPAddrPlaceholder, privateIPAddrStr, unlimitedReplacements)
 		}
-		for key, _ := range envVars {
+		for key := range envVars {
 			envVars[key] = strings.Replace(envVars[key], privateIPAddrPlaceholder, privateIPAddrStr, unlimitedReplacements)
 		}
 
@@ -511,7 +511,9 @@ func registerUserServices(
 		shouldFreeIp := true
 		defer func() {
 			if shouldFreeIp {
-				freeIpAddrProvider.ReleaseIpAddr(ipAddr)
+				if err = freeIpAddrProvider.ReleaseIpAddr(ipAddr); err != nil {
+					logrus.Errorf("Error releasing IP address '%v'", ipAddr)
+				}
 			}
 		}()
 

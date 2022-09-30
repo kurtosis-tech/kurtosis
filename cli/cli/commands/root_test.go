@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cli_version"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
@@ -31,7 +32,11 @@ func TestVersion(t *testing.T) {
 
 func TestGetLatestCLIReleaseVersionFromCacheFile_CacheFileDoesNotExist(t *testing.T) {
 	filepath, removeTempFileFunc, err := createNewTempFileAndGetFilepath()
-	defer removeTempFileFunc()
+	defer func() {
+		if err = removeTempFileFunc(); err != nil {
+			logrus.Warnf("Error removing temporary file during test\n'%v'", err)
+		}
+	}()
 	require.NoError(t, err, "An error occurred getting the cache file filepath for test")
 
 	version, err := getLatestCLIReleaseVersionFromCacheFile(filepath)
@@ -42,7 +47,11 @@ func TestGetLatestCLIReleaseVersionFromCacheFile_CacheFileDoesNotExist(t *testin
 
 func TestGetLatestCLIReleaseVersionFromCacheFile_SaveVersionInCacheFileAndGetVersionFromIt(t *testing.T) {
 	filepath, removeTempFileFunc, err := createNewTempFileAndGetFilepath()
-	defer removeTempFileFunc()
+	defer func() {
+		if err = removeTempFileFunc(); err != nil {
+			logrus.Warnf("Error removing temporary file during test\n'%v'", err)
+		}
+	}()
 	require.NoError(t, err, "An error occurred getting the cache file filepath for test")
 
 	versionForTest := "1.1.99"

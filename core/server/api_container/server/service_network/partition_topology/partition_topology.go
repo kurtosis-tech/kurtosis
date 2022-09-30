@@ -169,6 +169,9 @@ func (topology *PartitionTopology) RemoveService(serviceId service.ServiceID) {
 	delete(topology.servicePartitions, serviceId)
 
 	servicesForPartition, found := topology.partitionServices[partitionId]
+	if !found {
+		return
+	}
 	delete(servicesForPartition, serviceId)
 }
 

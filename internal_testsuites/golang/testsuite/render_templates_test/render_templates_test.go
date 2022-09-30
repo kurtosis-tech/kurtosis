@@ -50,7 +50,7 @@ func testRenderedTemplates(
 	portNum uint16,
 ) error {
 
-	for renderedTemplateFilepath, _ := range templateDataByDestinationFilepath {
+	for renderedTemplateFilepath := range templateDataByDestinationFilepath {
 		if err := test_helpers.CheckFileContents(ipAddress, portNum, renderedTemplateFilepath, expectedContents); err != nil {
 			return stacktrace.Propagate(err, "There was an error testing the content of file '%s'.", renderedTemplateFilepath)
 		}

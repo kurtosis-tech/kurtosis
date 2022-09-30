@@ -181,7 +181,7 @@ func (store *ModuleStore) GetModules() map[module.ModuleID]bool {
 
 	moduleIDs := make(map[module.ModuleID]bool, len(store.modules))
 
-	for key, _ := range store.modules {
+	for key := range store.modules {
 		if _, ok := moduleIDs[key]; !ok {
 			moduleIDs[key] = true
 		}

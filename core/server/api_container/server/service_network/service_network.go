@@ -32,15 +32,15 @@ import (
 
 const (
 	defaultPartitionId                       service_network_types.PartitionID = "default"
-	startingDefaultConnectionPacketLossValue                                   = 0
+	startingDefaultConnectionPacketLossValue float32                           = 0
 
-	filesArtifactExpansionDirsParentDirpath = "/files-artifacts"
+	filesArtifactExpansionDirsParentDirpath string = "/files-artifacts"
 
 	// TODO This should be populated from the build flow that builds the files-artifacts-expander Docker image
-	filesArtifactsExpanderImage = "kurtosistech/files-artifacts-expander"
+	filesArtifactsExpanderImage string = "kurtosistech/files-artifacts-expander"
 
-	minMemoryLimit              = 6 // Docker doesn't allow memory limits less than 6 megabytes
-	defaultMemoryAllocMegabytes = 0
+	minMemoryLimit              uint64 = 6 // Docker doesn't allow memory limits less than 6 megabytes
+	defaultMemoryAllocMegabytes uint64 = 0
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos

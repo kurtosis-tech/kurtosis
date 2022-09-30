@@ -1,8 +1,8 @@
 package object_attributes_provider
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
@@ -69,7 +69,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEnginePod() (Ku
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
@@ -107,7 +107,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
@@ -130,7 +130,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineNamespace
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
@@ -153,7 +153,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineServiceAc
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
@@ -176,7 +176,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRo
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 
@@ -199,7 +199,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRo
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
 			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
 	}
 

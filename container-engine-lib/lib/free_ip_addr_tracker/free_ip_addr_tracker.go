@@ -56,7 +56,7 @@ func GetOrCreateNewFreeIpAddrTracker(subnet *net.IPNet, alreadyTakenIps map[stri
 			return stacktrace.Propagate(err, "An error occurred while creating IP tracker database bucket")
 		}
 		// Bucket does not exist, populate database
-		for ipAddr, _ := range alreadyTakenIps {
+		for ipAddr := range alreadyTakenIps {
 			if err != bucket.Put([]byte(ipAddr), emptyValueForKeySet) {
 				return stacktrace.Propagate(err, "An error occurred writing IP to database '%v'", ipAddr)
 			}

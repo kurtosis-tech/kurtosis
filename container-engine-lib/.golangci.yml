@@ -1,0 +1,41 @@
+issues:
+  exclude-rules:
+    - path: "lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
+      text: "field `enclaveDataVolumeSizeInMegabytes` is unused (unused)"
+    - path: "lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
+      text: "field `storageClassName` is unused (unused)"
+    - path: "lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
+      text: "field `filesArtifactExpansionVolumeSizeInMegabytes` is unused (unused)"
+    - path: "lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
+      text: "field `storageClassName` is unused (unused)"
+    - path: "lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"
+      text: "field `filesArtifactExpansionVolumeSizeInMegabytes` is unused (unused)"
+    - path: "lib/backend_impls/docker/docker_kurtosis_backend/user_services_functions/start_user_services.go"
+      text: "S1009: should omit nil check; len() for map[string]*github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec.PortSpec is defined as zero (gosimple)"
+    - path: "lib/backend_impls/kubernetes/kubernetes_resource_collectors/postfilter_kubernetes_resources.go"
+      text: "S1009: should omit nil check; len() for map[string]bool is defined as zero (gosimple)"
+    - path: "lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers/shared_helpers.go"
+      text: "filesArtifactExpansionVolumeSizeInMegabytes"
+    - path: "lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers/shared_helpers.go"
+      text: "field `filesArtifactExpansionVolumeSizeInMegabytes` is unused (unused)"
+    - path: "lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers/shared_helpers.go"
+      text: "field `storageClassName` is unused"
+    - path: "lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers/shared_helpers.go"
+      text: "enclaveDataVolumeSizeInMegabytes"
+    - path: "lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers/shared_helpers.go"
+      text: "field `storageClassName` is unused (unused)"
+    - path: "lib/operation_parallelizer/operation_parallelizer_test.go"
+      text: "unnecessary assignment to the blank identifier (gosimple)"
+    - text: "SA5001: should check returned error before deferring db.Close()"
+      path: "lib/free_ip_addr_tracker/free_ip_addr_tracker_test.go"
+
+linters-settings:
+  staticcheck:
+    checks:
+      - all
+      - '-SA1019' # disable the rule SA1019 - ioutils replaced with os
+      - '-SA1029' # disables a check that doesn't allow passing built in values to context.WithValue, its more annoyying than useful
+  gosimple:
+    checks:
+      - all
+      - '-S1009' # disable S1009 - should omit nil check; len() for map[interface]interface{}

@@ -3,7 +3,6 @@ package docker_kurtosis_backend
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	docker_types "github.com/docker/docker/api/types"
 	"github.com/docker/docker/pkg/stdcopy"
@@ -347,11 +346,9 @@ func (backend *DockerKurtosisBackend) DumpEnclave(
 		}
 
 		// NOTE: We don't use stacktrace here because the actual stacktraces we care about are the ones from the threads!
-		return errors.New(fmt.Sprintf(
-			"The following errors occurred when trying to dump information about enclave '%v':\n%v",
+		return fmt.Errorf("The following errors occurred when trying to dump information about enclave '%v':\n%v",
 			enclaveId,
-			strings.Join(allIndexedResultErrStrs, "\n\n"),
-		))
+			strings.Join(allIndexedResultErrStrs, "\n\n"))
 	}
 	return nil
 }
@@ -428,13 +425,15 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 }
 
 // ====================================================================================================
-// 									   Private helper methods
+//
+//	Private helper methods
+//
 // ====================================================================================================
 func (backend *DockerKurtosisBackend) getMatchingEnclaveNetworkInfo(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
-// Keyed by network ID
+	// Keyed by network ID
 	map[enclave.EnclaveID]*matchingNetworkInformation,
 	error,
 ) {
@@ -530,7 +529,7 @@ func (backend *DockerKurtosisBackend) getAllEnclaveContainers(
 	enclaveId enclave.EnclaveID,
 ) ([]*types.Container, error) {
 
-	containers := []*types.Container{}
+	var containers []*types.Container
 
 	searchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():     label_value_consts.AppIDDockerLabelValue.GetString(),
@@ -549,7 +548,7 @@ func getAllEnclaveVolumes(
 	enclaveId enclave.EnclaveID,
 ) ([]*docker_types.Volume, error) {
 
-	volumes := []*docker_types.Volume{}
+	var volumes []*docker_types.Volume
 
 	searchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():     label_value_consts.AppIDDockerLabelValue.GetString(),
@@ -673,34 +672,6 @@ func dumpContainerInfo(
 	}
 
 	return nil
-}
-
-func (backend *DockerKurtosisBackend) waitForContainerExits(
-	ctx context.Context,
-	containers []*types.Container,
-) (
-	resultSuccessfulContainers map[string]bool,
-	resultErroredContainers map[string]error,
-) {
-	successfulContainers := map[string]bool{}
-	erroredContainers := map[string]error{}
-	// TODO Parallelize for perf
-	for _, container := range containers {
-		containerId := container.GetId()
-		if _, err := backend.dockerManager.WaitForExit(ctx, containerId); err != nil {
-			containerError := stacktrace.Propagate(
-				err,
-				"An error occurred waiting for container '%v' with ID '%v' to exit",
-				container.GetName(),
-				containerId,
-			)
-			erroredContainers[container.GetId()] = containerError
-			continue
-		}
-		successfulContainers[containerId] = true
-	}
-
-	return successfulContainers, erroredContainers
 }
 
 func destroyContainersInEnclaves(

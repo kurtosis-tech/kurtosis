@@ -3,12 +3,12 @@ package inspect
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"sort"
 	"strings"
@@ -24,7 +24,7 @@ const (
 )
 
 // TODO TODO When gateway binds public ports for modules, use isAPIContainerRunning to know to query for public port bindings.
-func printModules(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo kurtosis_engine_rpc_api_bindings.EnclaveInfo, isAPIContainerRunning bool) error {
+func printModules(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, isAPIContainerRunning bool) error {
 	enclaveIdStr := enclaveInfo.GetEnclaveId()
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
 	moduleFilters := &module.ModuleFilters{

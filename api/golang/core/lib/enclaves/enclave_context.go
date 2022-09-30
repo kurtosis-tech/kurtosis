@@ -255,7 +255,7 @@ func (enclaveCtx *EnclaveContext) AddServicesToPartition(
 		shouldRemoveServices[services.ServiceID(serviceIDStr)] = true
 	}
 	defer func() {
-		for serviceID, _ := range shouldRemoveServices {
+		for serviceID := range shouldRemoveServices {
 			removeServiceArgs := binding_constructors.NewRemoveServiceArgs(string(serviceID))
 			_, err = enclaveCtx.client.RemoveService(context.Background(), removeServiceArgs)
 			if err != nil {
@@ -483,7 +483,7 @@ func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]bool, er
 
 	serviceIds := make(map[services.ServiceID]bool, len(response.GetServiceInfo()))
 
-	for key, _ := range response.GetServiceInfo() {
+	for key := range response.GetServiceInfo() {
 		serviceId := services.ServiceID(key)
 		if _, ok := serviceIds[serviceId]; !ok {
 			serviceIds[serviceId] = true
@@ -504,7 +504,7 @@ func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error
 
 	moduleIDs := make(map[modules.ModuleID]bool, len(response.GetModuleInfo()))
 
-	for key, _ := range response.GetModuleInfo() {
+	for key := range response.GetModuleInfo() {
 		moduleID := modules.ModuleID(key)
 		if _, ok := moduleIDs[moduleID]; !ok {
 			moduleIDs[moduleID] = true

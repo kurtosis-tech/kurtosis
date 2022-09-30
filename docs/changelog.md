@@ -1,5 +1,9 @@
 # TBD
 
+### Changes
+* Added a linter
+* Made changes based on the linters output
+
 ### Features
 * API container now saves free IPs on a local database
 

@@ -258,7 +258,7 @@ func extractEngineGuidFromUncastedEngineObj(uncastedEngineObj interface{}) (stri
 }
 
 func getAllLogsDatabaseContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]*types.Container, error) {
-	matchingLogsDatabaseContainers := []*types.Container{}
+	var matchingLogsDatabaseContainers []*types.Container
 
 	logsDatabaseContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),

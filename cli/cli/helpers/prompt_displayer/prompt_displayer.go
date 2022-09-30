@@ -86,7 +86,7 @@ func isConfirmationInput(input string) bool {
 func contains(s []validPromptInput, str string) bool {
 	for _, v := range s {
 		vStr := string(v)
-		if strings.ToLower(vStr) == strings.ToLower(str) {
+		if strings.EqualFold(vStr, str) {
 			return true
 		}
 	}

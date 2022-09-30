@@ -48,6 +48,9 @@ func GetKurtosisClusterConfig() (*resolved_config.KurtosisClusterConfig, error) 
 	}
 
 	kurtosisConfig, err := getKurtosisConfig()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting Kurtosis configuration")
+	}
 
 	clusterConfig, found := kurtosisConfig.GetKurtosisClusters()[clusterName]
 	if !found {
