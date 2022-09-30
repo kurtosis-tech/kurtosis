@@ -3,7 +3,7 @@ package api_container_gateway
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_gateway/connection"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/connection"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/stacktrace"

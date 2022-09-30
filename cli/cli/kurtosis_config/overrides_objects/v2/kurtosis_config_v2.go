@@ -1,6 +1,6 @@
 package v2
 
-import "github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/config_version"
+import "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/config_version"
 
 /*
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

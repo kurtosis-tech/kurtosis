@@ -1,7 +1,7 @@
 package kurtosis_config
 
 import (
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/resolved_config"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )

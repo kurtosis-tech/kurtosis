@@ -2,7 +2,7 @@ package commands
 
 import (
 	"bytes"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cli_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

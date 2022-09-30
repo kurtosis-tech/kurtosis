@@ -1,7 +1,7 @@
 package user_send_metrics_election
 
 import (
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_send_metrics_election/user_metrics_election_event_backlog"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_send_metrics_election/user_metrics_election_event_backlog"
 	"github.com/sirupsen/logrus"
 )
 
