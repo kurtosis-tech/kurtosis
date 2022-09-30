@@ -58,11 +58,7 @@ func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, serializ
 func (interpreter *StartosisInterpreter) buildBindings(scriptOutputBuffer *bytes.Buffer, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (*starlark.Thread, starlark.StringDict) {
 	thread := &starlark.Thread{
 		Name: starlarkGoThreadName,
-		Load: func(_ *starlark.Thread, fileToLoad string) (starlark.StringDict, error) {
-			// TODO(gb): remove when we implement the load feature
-			//  Also note we could return the position here by analysing the callstack in the thread object, but not worth it as this will go away soon
-			return nil, startosis_errors.NewInterpretationErrorWithCustomMsg("Loading external Startosis scripts is not supported yet", nil)
-		},
+		Load: kurtosis_instruction.MakeLoad(),
 		Print: func(_ *starlark.Thread, msg string) {
 			// From the Starlark spec, a print statement in Starlark is automatically followed by a newline
 			scriptOutputBuffer.WriteString(msg + "\n")
