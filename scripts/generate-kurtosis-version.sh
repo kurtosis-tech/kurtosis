@@ -27,8 +27,13 @@ show_helptext_and_exit() {
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
+if ! docker_tag="$(kudet get-docker-tag)"; then
+    echo "Error: Couldn't get the Docker image tag" >&2
+    exit 1
+fi
 
-if ! rm "-f" "${root_dirpath}/${KURTOSIS_VERSION_PACKAGE_DIR}"; then
+
+if ! rm "-rf" "${root_dirpath}/${KURTOSIS_VERSION_PACKAGE_DIR}"; then
   echo "Failed to remove '${root_dirpath}/${KURTOSIS_VERSION_PACKAGE_DIR}'"
   exit 1
 fi
@@ -38,7 +43,7 @@ if ! mkdir "${root_dirpath}/${KURTOSIS_VERSION_PACKAGE_DIR}" ; then
   exit 1
 fi
 
-if ! bash "cd" "${root_dirpath}/${KURTOSIS_VERSION_PACKAGE_DIR}"; then
+if ! cd "${root_dirpath}/${KURTOSIS_VERSION_PACKAGE_DIR}"; then
   echo "Failed to cd into directory '${root_dirpath}/${KURTOSIS_VERSION_PACKAGE_DIR}'" >&2
   exit 1
 fi
@@ -54,17 +59,12 @@ if ! touch "${go_sum_abs_path}" ; then
   exit 1
 fi
 
-if ! docker_tag="$(kudet get-docker-tag)"; then
-    echo "Error: Couldn't get the Docker image tag" >&2
-    exit 1
-fi
-
 kurtosis_version_go_file_abs_path="${root_dirpath}/${KURTOSIS_VERSION_PACKAGE_DIR}/${KURTOSIS_VERSION_GO_FILE}"
 echo "package ${KURTOSIS_VERSION_PACKAGE_DIR}" > "${kurtosis_version_go_file_abs_path}"
 echo "" >> "${kurtosis_version_go_file_abs_path}"
 echo "const (" >> "${kurtosis_version_go_file_abs_path}"
 echo "	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!" >> "${kurtosis_version_go_file_abs_path}"
-echo "	KurtosisVersion = "${docker_tag}"" >> "${kurtosis_version_go_file_abs_path}"
-echo "  // !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!"> "${kurtosis_version_go_file_abs_path}"
+echo "	KurtosisVersion = \"${docker_tag}\"" >> "${kurtosis_version_go_file_abs_path}"
+echo "   // !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!" >> "${kurtosis_version_go_file_abs_path}"
 echo ")" >> "${kurtosis_version_go_file_abs_path}"
 
