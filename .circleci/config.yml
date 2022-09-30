@@ -59,6 +59,21 @@ run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
     done
     zip -r "${output_dirname}.zip" "${output_dirname}"
 
+checkout_and_generate_kurtosis_version: &checkout_and_generate_kurtosis_version |-
+  checkout
+
+  run: |
+      if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
+        circleci-agent step halt
+      fi
+
+  run: |
+      echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+      sudo apt update
+      sudo apt install kudet
+
+  run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
+
 ##############
 # CircleCI
 ##############
@@ -213,22 +228,7 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
-      - checkout
-
-      - run: |
-          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
-            circleci-agent step halt
-          fi
-
-      # Install kudet
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kudet
-
-      # Generate Kurtosis Version
-      - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
-
+      - *checkout_and_generate_kurtosis_version
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
