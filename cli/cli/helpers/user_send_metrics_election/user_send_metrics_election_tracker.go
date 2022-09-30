@@ -1,9 +1,9 @@
 package user_send_metrics_election
 
 import (
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_user_id_store"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_send_metrics_election/user_metrics_election_event_backlog"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_send_metrics_election/user_metrics_election_event_backlog"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cli_version"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"

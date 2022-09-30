@@ -1,9 +1,9 @@
 package kurtosis_config_getter
 
 import (
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cluster_setting"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/resolved_config"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/stacktrace"
 )
 

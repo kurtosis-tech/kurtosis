@@ -1,8 +1,8 @@
 package resolved_config
 
 import (
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/config_version"
-	v2 "github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/overrides_objects/v2"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/config_version"
+	v2 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v2"
 	"github.com/kurtosis-tech/stacktrace"
 )
 

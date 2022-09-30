@@ -2,8 +2,8 @@ package version
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cli_version"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )

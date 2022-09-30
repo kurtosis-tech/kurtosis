@@ -1,8 +1,8 @@
-module github.com/kurtosis-tech/kurtosis-cli/cli
+module github.com/kurtosis-tech/kurtosis/cli/cli
 
 go 1.17
 
-replace github.com/kurtosis-tech/kurtosis-cli/commons => ../commons
+replace github.com/kurtosis-tech/kurtosis/cli/commons => ../commons
 
 replace github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
 

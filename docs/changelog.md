@@ -4,6 +4,9 @@
 * Added a linter
 * Made changes based on the linters output
 
+### Fixes
+* Fix go.mod for commons & cli to reflect monorepo and replaced imports with write package name
+
 # 0.49.7
 
 ### Features

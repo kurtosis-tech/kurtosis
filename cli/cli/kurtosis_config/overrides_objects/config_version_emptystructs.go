@@ -1,10 +1,10 @@
 package overrides_objects
 
 import (
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/config_version"
-	v0 "github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/overrides_objects/v0"
-	v1 "github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/overrides_objects/v1"
-	v2 "github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/overrides_objects/v2"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/config_version"
+	v0 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v0"
+	v1 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v1"
+	v2 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v2"
 )
 
 /*
