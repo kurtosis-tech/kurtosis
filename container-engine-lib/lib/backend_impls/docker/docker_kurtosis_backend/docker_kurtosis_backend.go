@@ -323,7 +323,7 @@ func (backend *DockerKurtosisBackend) StopLogsDatabase(
 	}
 
 	if logsCollector != nil && logsCollector.GetStatus() == container_status.ContainerStatus_Running {
-		return stacktrace.Propagate(err, "The logs database can't be stopped due the logs collector is running")
+		return stacktrace.NewError("The logs database can't be stopped due the logs collector is running")
 	}
 
 	return logs_database_functions.StopLogsDatabase(
@@ -348,7 +348,7 @@ func (backend *DockerKurtosisBackend) DestroyLogsDatabase(
 	}
 
 	if logsCollector != nil && logsCollector.GetStatus() == container_status.ContainerStatus_Running {
-		return stacktrace.Propagate(err, "The logs database can't be destroyed due the logs collector is running")
+		return stacktrace.NewError("The logs database can't be destroyed due the logs collector is running")
 	}
 
 	return logs_database_functions.DestroyLogsDatabase(

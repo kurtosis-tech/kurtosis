@@ -119,6 +119,7 @@ func getLogsCollectorObjectAndContainerIdMatching(
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "An error occurred getting all logs collector containers")
 	}
+
 	if len(allLogsCollectorContainers) == 0 {
 		return nil, "", nil
 	}
@@ -128,6 +129,7 @@ func getLogsCollectorObjectAndContainerIdMatching(
 
 	logsCollectorContainer := allLogsCollectorContainers[0]
 	logsCollectorContainerID := logsCollectorContainer.GetId()
+
 
 	logsCollectorObject, err := getLogsCollectorObjectFromContainerInfo(
 		ctx,
@@ -140,7 +142,9 @@ func getLogsCollectorObjectAndContainerIdMatching(
 		return nil, "", stacktrace.Propagate(err, "An error occurred getting logs collector object using container ID '%v', labels '%+v' and the status '%v'", logsCollectorContainer.GetId(), logsCollectorContainer.GetLabels(), logsCollectorContainer.GetStatus())
 	}
 
-	if filters == nil || logsCollectorObject.GetStatus() == filters.Status {
+	emptyFilter := logs_collector.LogsCollectorFilters{}
+
+	if filters == nil || *filters == emptyFilter || logsCollectorObject.GetStatus() == filters.Status {
 		return logsCollectorObject, logsCollectorContainerID, nil
 	}
 
