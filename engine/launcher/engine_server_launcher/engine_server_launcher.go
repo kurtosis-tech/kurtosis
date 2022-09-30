@@ -106,7 +106,6 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		imageVersionTag,
 		grpcListenPortNum,
 		grpcProxyListenPortNum,
-		logsCollectorHttpPortNumber,
 		envVars,
 	)
 	if err != nil {
