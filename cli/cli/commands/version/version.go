@@ -3,7 +3,7 @@ package version
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cli_version"
+	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -19,6 +19,6 @@ func init() {
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	fmt.Fprintln(logrus.StandardLogger().Out, kurtosis_cli_version.KurtosisCLIVersion)
+	fmt.Fprintln(logrus.StandardLogger().Out, kurtosis_version.KurtosisVersion)
 	return nil
 }

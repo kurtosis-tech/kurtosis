@@ -10,16 +10,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
+	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
 )
 
 const (
-	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-	KurtosisEngineVersion = "0.49.8"
-	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-
 	// TODO This should come from the same logic that builds the server image!!!!!
 	containerImage = "kurtosistech/engine"
 )
@@ -49,7 +46,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 ) {
 	publicIpAddr, publicGrpcPortSpec, err := launcher.LaunchWithCustomVersion(
 		ctx,
-		KurtosisEngineVersion,
+		kurtosis_version.KurtosisVersion,
 		logLevel,
 		grpcListenPortNum,
 		grpcProxyListenPortNum,
@@ -59,7 +56,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		backendConfigSupplier,
 	)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", KurtosisEngineVersion)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", kurtosis_version.KurtosisVersion)
 	}
 	return publicIpAddr, publicGrpcPortSpec, nil
 }
