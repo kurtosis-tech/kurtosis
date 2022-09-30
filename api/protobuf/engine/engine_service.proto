@@ -173,7 +173,7 @@ message GetUserServiceLogsArgs {
 }
 
 message GetUserServiceLogsResponse {
-  // The user service log lines grouped by user service GUIDs
+  // The user service log lines grouped by user service GUIDs and ordered in forward direction (oldest log line is the first element)
   map<string, LogLine> user_service_logs_by_user_service_guid = 1;
 }
 

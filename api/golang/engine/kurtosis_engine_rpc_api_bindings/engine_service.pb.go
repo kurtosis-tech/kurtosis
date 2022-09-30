@@ -853,7 +853,7 @@ type GetUserServiceLogsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The user service log lines grouped by user service GUIDs
+	// The user service log lines grouped by user service GUIDs and ordered in forward direction (oldest log line is the first element)
 	UserServiceLogsByUserServiceGuid map[string]*LogLine `protobuf:"bytes,1,rep,name=user_service_logs_by_user_service_guid,json=userServiceLogsByUserServiceGuid,proto3" json:"user_service_logs_by_user_service_guid,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
