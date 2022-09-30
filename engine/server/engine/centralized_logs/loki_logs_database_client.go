@@ -36,7 +36,7 @@ const (
 	directionQueryParamKey = "direction"
 
 	//We are establishing a big limit in order to get all the user-service's logs in one request
-	//We will improve this in the feature generating a pagination mechanism based on the limit number
+	//We will improve this in the future generating a pagination mechanism based on the limit number
 	//and the unix epoch time (as the start time for the next request) returned by newest stream's log line
 	defaultEntriesLimit = "4000"
 	//The oldest item is first when using direction=forward
@@ -145,7 +145,7 @@ func (client *LokiLogsDatabaseClient) GetUserServiceLogs(
 
 	httpResponseBodyBytes, err := client.doHttpRequestWithRetries(httpRequestWithContext)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred doing http request '%+v' with these retries '%+v'", httpRequest, httpRetriesBackoffSchedule)
+		return nil, stacktrace.Propagate(err, "An error occurred doing http request '%+v'", httpRequestWithContext)
 	}
 
 	lokiQueryRangeResponse := &LokiQueryRangeResponse{}
@@ -154,7 +154,7 @@ func (client *LokiLogsDatabaseClient) GetUserServiceLogs(
 	}
 
 	if lokiQueryRangeResponse == nil || lokiQueryRangeResponse.Data == nil {
-		return nil, stacktrace.Propagate(err, "The response body payload obtained by calling the Loki's query range endpoint is not what was expected; this is a bug in Kurtosis")
+		return nil, stacktrace.Propagate(err, "The response body's schema payload received '%+v' by calling the Loki's query range endpoint is not what was expected; this is a bug in Kurtosis", lokiQueryRangeResponse)
 	}
 
 	for _, queryRangeResult := range lokiQueryRangeResponse.Data.Result {
@@ -189,29 +189,31 @@ func (client *LokiLogsDatabaseClient) doHttpRequestWithRetries(request *http.Req
 	for _, retryBackoff := range httpRetriesBackoffSchedule {
 
 		httpResponse, httpResponseBodyBytes, err = client.doHttpRequest(request)
-		if err == nil {
-			if httpResponse.StatusCode == http.StatusOK {
-				break
-			}
-
-			//Do not retry if the status code indicate problems in the client side
-			if httpResponse.StatusCode > http.StatusBadRequest && httpResponse.StatusCode < http.StatusInternalServerError {
-				break
-			}
-			logrus.Debugf("Doing http request '%+v' returned with body '%v' and '%v' status code, retrying in '%v'", request, string(httpResponseBodyBytes), httpResponse.StatusCode, retryBackoff)
-		}
-
 		if err != nil {
 			logrus.Debugf("Doing http request '%+v' returned with the following error: %v", request, err.Error())
 		}
 
+		if httpResponse != nil {
+			logrus.Debugf("Doing http request '%+v' returned with body '%v' and '%v' status code", request, string(httpResponseBodyBytes), httpResponse.StatusCode)
+
+			if httpResponse.StatusCode == http.StatusOK {
+				return httpResponseBodyBytes, nil
+			}
+
+			//Do not retry if the status code indicate problems in the client side
+			if httpResponse.StatusCode > http.StatusBadRequest && httpResponse.StatusCode < http.StatusInternalServerError {
+				return nil, stacktrace.NewError("Executing the http request '%+v' returned not valid status code '%v'", request, httpResponse.StatusCode)
+			}
+		}
+
+		logrus.Debugf("Retrying request in '%v'", retryBackoff)
 		time.Sleep(retryBackoff)
 	}
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred doing http request '%+v' with retries", request)
+		return nil, stacktrace.Propagate(err, "An error occurred doing http request '%+v' even after applying this retry backoff schedule '%+v'", request, httpRetriesBackoffSchedule)
 	}
 
-	return httpResponseBodyBytes, nil
+	return nil, stacktrace.NewError("The request '%+v' could not be executed successfully, even after applying this retry backoff schedule '%+v', the status code '%v' was the last one received", request, httpRetriesBackoffSchedule, httpResponse.StatusCode)
 }
 
 
