@@ -10,11 +10,19 @@
 ### Changes
 * Untied the logs components containers and volumes creation and removal from the engine's crud in `container-engine-lib`
 
+### Fixes
+* Fix go.mod for commons & cli to reflect monorepo and replaced imports with write package name
+
+# 0.49.7
+
 ### Features
 * Implement skeleton for the Startosis engine
 
-#### Fixes
+### Fixes
 * Fixed a message that referred to an old repo.
+
+### Changes
+* Added `cli` to the monorepo
 
 # 0.49.6
 
