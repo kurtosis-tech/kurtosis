@@ -10,15 +10,16 @@ This repo currently contains
 
 ## Build Instructions
 
-1. To build the entire project run `./scripts/build.sh`
-2. To build just container-engine-lib run `./container-engine-lib/build.sh`
-3. To build just the core run `./core/scripts/build.sh`
-4. To build just the api run `./api/scripts/build.sh`
-5. You can choose to build APIs in just one language `./api/<typescript|golang>/build.sh`
-6. To build just the engine run `./engine/scripts/build.sh`
-7. To regenerate the `engine` protobuf bindings do `./api/scripts/regenerate-engine-api-protobuf-bindings.sh`
-8. To regenerate the `core` protobuf bindings do `./api/scripts/regenerate-core-api-protobuf-bindings.sh`
-9. To build just the `cli` run `./cli/scripts/build.sh`
+1. First you have to generate the versions file, `./scripts/build.sh` will do it for you or you could run `./scripts/generate-kurtosis-version.sh`
+2. To build the entire project run `./scripts/build.sh`
+3. To build just container-engine-lib run `./container-engine-lib/build.sh`
+4. To build just the core run `./core/scripts/build.sh`
+5. To build just the api run `./api/scripts/build.sh`
+6. You can choose to build APIs in just one language `./api/<typescript|golang>/build.sh`
+7. To build just the engine run `./engine/scripts/build.sh`
+8. To regenerate the `engine` protobuf bindings do `./api/scripts/regenerate-engine-api-protobuf-bindings.sh`
+9. To regenerate the `core` protobuf bindings do `./api/scripts/regenerate-core-api-protobuf-bindings.sh`
+10. To build just the `cli` run `./cli/scripts/build.sh`
 
 ## Test Instructions
 
