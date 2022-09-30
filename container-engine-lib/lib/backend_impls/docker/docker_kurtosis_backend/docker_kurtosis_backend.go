@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
@@ -24,7 +25,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	"net"
@@ -146,7 +146,7 @@ func (backend *DockerKurtosisBackend) DestroyEngines(
 
 func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceID]*service.ServiceConfig) (map[service.ServiceID]*service.Service, map[service.ServiceID]error, error) {
 
-	logsCollector, err := backend.GetLogsCollector(ctx)
+	logsCollector, err := backend.GetLogsCollector(ctx) //TODO fixing this now... because it will return an error if the container is stopped
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
@@ -309,7 +309,7 @@ func (backend *DockerKurtosisBackend) StopLogsDatabase(
 	error,
 ) {
 
-	logsCollector, err := backend.GetLogsCollector(ctx)
+	logsCollector, err := backend.GetLogsCollector(ctx) //TODO fixing this now... because it will return an error if the container is stopped
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
@@ -329,7 +329,7 @@ func (backend *DockerKurtosisBackend) DestroyLogsDatabase(
 ) (
 	error,
 ) {
-	logsCollector, err := backend.GetLogsCollector(ctx)
+	logsCollector, err := backend.GetLogsCollector(ctx) //TODO fixing this now... because it will return an error if the container is stopped
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
