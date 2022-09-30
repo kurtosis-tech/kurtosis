@@ -420,9 +420,6 @@ jobs:
           sudo apt update
           sudo apt install goreleaser
 
-      - setup_remote_docker:
-          version: "<< pipeline.parameters.docker-engine-version>>"
-
       # Cache our dependencies
       - restore_cache:
           keys:
