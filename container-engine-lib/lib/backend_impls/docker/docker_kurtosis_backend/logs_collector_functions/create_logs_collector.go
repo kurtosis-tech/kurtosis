@@ -37,7 +37,7 @@ func CreateLogsCollector(
 	}
 	targetNetworkId := logsCollectorNetwork.GetId()
 
-	logsDatabaseHost := logsDatabase.GetPrivateIpAddr().String()
+	logsDatabaseHost := logsDatabase.GetMaybePrivateIpAddr().String()
 	logsDatabasePort := logsDatabase.GetPrivateHttpPort().GetNumber()
 
 	containerId, containerLabels, removeLogsCollectorContainerFunc, err := logsCollectorContainer.CreateAndStart(

@@ -297,18 +297,21 @@ func (backend *DockerKurtosisBackend) CreateLogsDatabase(
 
 func (backend *DockerKurtosisBackend) GetLogsDatabase(
 	ctx context.Context,
+	filters *logs_database.LogsDatabaseFilters,
 ) (
 	*logs_database.LogsDatabase,
 	error,
 ) {
 	return logs_database_functions.GetLogsDatabase(
 		ctx,
+		filters,
 		backend.dockerManager,
 	)
 }
 
 func (backend *DockerKurtosisBackend) StopLogsDatabase(
 	ctx context.Context,
+	filters *logs_database.LogsDatabaseFilters,
 ) (
 	error,
 ) {
@@ -328,12 +331,14 @@ func (backend *DockerKurtosisBackend) StopLogsDatabase(
 
 	return logs_database_functions.StopLogsDatabase(
 		ctx,
+		filters,
 		backend.dockerManager,
 	)
 }
 
 func (backend *DockerKurtosisBackend) DestroyLogsDatabase(
 	ctx context.Context,
+	filters *logs_database.LogsDatabaseFilters,
 ) (
 	error,
 ) {
@@ -353,6 +358,7 @@ func (backend *DockerKurtosisBackend) DestroyLogsDatabase(
 
 	return logs_database_functions.DestroyLogsDatabase(
 		ctx,
+		filters,
 		backend.dockerManager,
 	)
 }
@@ -365,18 +371,22 @@ func (backend *DockerKurtosisBackend) CreateLogsCollector(
 	error,
 ) {
 
-	//Declaring the implementation
-	logsCollectorContainer := fluentbit.NewFluentbitLogsCollectorContainer()
+	logsDatabaseFilters := &logs_database.LogsDatabaseFilters{
+		Status: container_status.ContainerStatus_Running,
+	}
 
-	//TODO add a comment above GetLogsDatabase that says that we'd have to replace this part if we ever wanted to send to an external source
-	logsDatabase, err := backend.GetLogsDatabase(ctx)
+	//TODO we we'd have to replace this part if we ever wanted to send to an external source
+	logsDatabase, err := backend.GetLogsDatabase(ctx, logsDatabaseFilters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database, it's not possible to run the logs collector without a logs database")
 	}
 
-	if logsDatabase.GetStatus() != container_status.ContainerStatus_Running {
+	if logsDatabase == nil || logsDatabase.GetStatus() != container_status.ContainerStatus_Running {
 		return nil,stacktrace.NewError("The logs database is not running, it's not possible to run the logs collector without a running logs database")
 	}
+
+	//Declaring the implementation
+	logsCollectorContainer := fluentbit.NewFluentbitLogsCollectorContainer()
 
 	return logs_collector_functions.CreateLogsCollector(
 		ctx,

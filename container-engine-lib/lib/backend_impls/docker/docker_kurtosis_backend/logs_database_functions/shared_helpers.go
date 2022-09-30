@@ -50,19 +50,7 @@ func getLogsDatabaseObjectFromContainerInfo(
 	dockerManager *docker_manager.DockerManager,
 ) (*logs_database.LogsDatabase, error) {
 
-	privateIpAddrStr, err := dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the private IP address of container '%v' in network '%v'", containerId, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
-	}
-	privateIpAddr := net.ParseIP(privateIpAddrStr)
-	if privateIpAddr == nil {
-		return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
-	}
-
-	privateHttpPortSpec, err := getLogsDatabasePrivatePorts(labels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database container's private port specs from container '%v' with labels: %+v", containerId, labels)
-	}
+	privateIpAddr := net.IP{}
 
 	isContainerRunning, found := consts.IsContainerRunningDeterminer[containerStatus]
 	if !found {
@@ -72,8 +60,23 @@ func getLogsDatabaseObjectFromContainerInfo(
 	var logsDatabaseStatus container_status.ContainerStatus
 	if isContainerRunning {
 		logsDatabaseStatus = container_status.ContainerStatus_Running
+
+		privateIpAddrStr, err := dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the private IP address of container '%v' in network '%v'", containerId, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
+		}
+		privateIpAddr = net.ParseIP(privateIpAddrStr)
+		if privateIpAddr == nil {
+			return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
+		}
+
 	} else {
 		logsDatabaseStatus = container_status.ContainerStatus_Stopped
+	}
+
+	privateHttpPortSpec, err := getLogsDatabasePrivatePorts(labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database container's private port specs from container '%v' with labels: %+v", containerId, labels)
 	}
 
 	logsDatabaseObj := logs_database.NewLogsDatabase(
@@ -98,4 +101,44 @@ func getAllLogsDatabaseContainers(ctx context.Context, dockerManager *docker_man
 		return nil, stacktrace.Propagate(err, "An error occurred fetching logs database containers using labels: %+v", logsDatabaseContainerSearchLabels)
 	}
 	return matchingLogsDatabaseContainers, nil
+}
+
+func getLogsDatabaseObjectAndContainerIdMatching(
+	ctx context.Context,
+	filters *logs_database.LogsDatabaseFilters,
+	dockerManager *docker_manager.DockerManager,
+) (*logs_database.LogsDatabase, string, error) {
+	allLogsDatabaseContainers, err := getAllLogsDatabaseContainers(ctx, dockerManager)
+	if err != nil {
+		return nil, "", stacktrace.Propagate(err, "An error occurred getting all logs database containers")
+	}
+
+	if len(allLogsDatabaseContainers) == 0 {
+		return nil, "", nil
+	}
+	if len(allLogsDatabaseContainers) > 1 {
+		return nil, "", stacktrace.NewError("Found more than one logs database Docker container'; this is a bug in Kurtosis")
+	}
+
+	logsDatabaseContainer := allLogsDatabaseContainers[0]
+	logsDatabaseContainerID := logsDatabaseContainer.GetId()
+
+	logsDatabaseObject, err := getLogsDatabaseObjectFromContainerInfo(
+		ctx,
+		logsDatabaseContainerID,
+		logsDatabaseContainer.GetLabels(),
+		logsDatabaseContainer.GetStatus(),
+		dockerManager,
+	)
+	if err != nil {
+		return nil, "", stacktrace.Propagate(err, "An error occurred getting the logs database object using container ID '%v', labels '%+v' and the status '%v'", logsDatabaseContainer.GetId(), logsDatabaseContainer.GetLabels(), logsDatabaseContainer.GetStatus())
+	}
+
+	emptyFilter := logs_database.LogsDatabaseFilters{}
+
+	if filters == nil || *filters == emptyFilter || logsDatabaseObject.GetStatus() == filters.Status {
+		return logsDatabaseObject, logsDatabaseContainerID, nil
+	}
+
+	return nil, "", nil
 }
