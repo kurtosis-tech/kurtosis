@@ -41,6 +41,8 @@ const (
 	pre2021_12_02_portNumUintBits = 16
 	pre2021_12_02_portProtocol    = schema.PortProtocol_TCP
 	// --------------------------- Old port parsing constants ------------------------------------
+
+	defaultHttpLogsCollectorPortNum = uint16(9712)
 )
 
 // Unfortunately, Docker doesn't have constants for the protocols it supports declared
@@ -228,9 +230,13 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 			),
 		)
 	}
+	clusterType := manager.clusterConfig.GetClusterType()
 
-	if err = manager.stopAndDestroyCentralizedLogsComponents(ctx); err != nil {
-		return stacktrace.Propagate(err, "An error occurred stopping and destroying the centralized logs components")
+	//TODO This is a temporary hack we should remove it when centralized logs be implemented in the KubernetesBackend
+	if clusterType == resolved_config.KurtosisClusterType_Docker {
+		if err = manager.destroyCentralizedLogsComponents(ctx); err != nil {
+			return stacktrace.Propagate(err, "An error occurred destroying the centralized logs components")
+		}
 	}
 
 	return nil
@@ -267,7 +273,18 @@ func (manager *EngineManager) startEngineWithGuarantor(ctx context.Context, curr
 	return engineClient, clientCloseFunc, nil
 }
 
-func (manager *EngineManager) stopAndDestroyCentralizedLogsComponents(ctx context.Context) error {
+func (manager *EngineManager) startCentralizedLogsComponents(ctx context.Context) error {
+	if _, err := manager.kurtosisBackend.CreateLogsDatabase(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating the logs database")
+	}
+
+	if _, err := manager.kurtosisBackend.CreateLogsCollector(ctx, defaultHttpLogsCollectorPortNum); err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating the logs database with http port number '%v'", defaultHttpLogsCollectorPortNum)
+	}
+	return nil
+}
+
+func (manager *EngineManager) destroyCentralizedLogsComponents(ctx context.Context) error {
 
 	logsCollectorFilters := &logs_collector.LogsCollectorFilters{}
 	logsDatabaseFilters := &logs_database.LogsDatabaseFilters{}
