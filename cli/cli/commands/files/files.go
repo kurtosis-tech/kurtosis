@@ -1,11 +1,11 @@
 package files
 
 import (
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/files/rendertemplate"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/files/storeservice"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/files/storeweb"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/files/upload"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/files/rendertemplate"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/files/storeservice"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/files/storeweb"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/files/upload"
 	"github.com/spf13/cobra"
 )
 

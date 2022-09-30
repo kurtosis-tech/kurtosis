@@ -16,6 +16,9 @@
 ### Changes
 * Untied the logs components containers and volumes creation and removal from the engine's crud in `container-engine-lib`
 
+### Fixes
+* Fix go.mod for commons & cli to reflect monorepo and replaced imports with write package name
+
 # 0.49.7
 
 ### Features

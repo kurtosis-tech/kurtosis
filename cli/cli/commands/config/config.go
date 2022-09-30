@@ -6,9 +6,9 @@
 package config
 
 import (
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	init_config "github.com/kurtosis-tech/kurtosis-cli/cli/commands/config/init"
-	config_path "github.com/kurtosis-tech/kurtosis-cli/cli/commands/config/path"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	init_config "github.com/kurtosis-tech/kurtosis/cli/cli/commands/config/init"
+	config_path "github.com/kurtosis-tech/kurtosis/cli/cli/commands/config/path"
 	"github.com/spf13/cobra"
 )
 

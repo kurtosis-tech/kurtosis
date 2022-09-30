@@ -1,4 +1,4 @@
-module github.com/kurtosis-tech/kurtosis-cli/commons
+module github.com/kurtosis-tech/kurtosis/cli/commons
 
 go 1.15
 

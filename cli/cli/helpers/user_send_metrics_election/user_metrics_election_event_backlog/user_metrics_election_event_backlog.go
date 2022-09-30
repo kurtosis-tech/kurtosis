@@ -1,7 +1,7 @@
 package user_metrics_election_event_backlog
 
 import (
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"

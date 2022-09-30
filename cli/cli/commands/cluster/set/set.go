@@ -2,12 +2,12 @@ package set
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cluster_setting"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/stacktrace"
 )
 

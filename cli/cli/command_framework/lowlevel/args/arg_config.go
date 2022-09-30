@@ -2,7 +2,7 @@ package args
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 )
 
 type ArgConfig struct {

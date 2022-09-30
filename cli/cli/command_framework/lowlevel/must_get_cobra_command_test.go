@@ -2,8 +2,8 @@ package lowlevel
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 	"strings"

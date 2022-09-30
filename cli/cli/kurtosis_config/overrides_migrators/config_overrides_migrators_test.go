@@ -1,7 +1,7 @@
 package overrides_migrators
 
 import (
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config/config_version"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/config_version"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
