@@ -24,13 +24,15 @@ const (
 
 type StartosisInterpreter struct {
 	serviceNetwork *service_network.ServiceNetwork
+	packageManager *kurtosis_instruction.PackageManager
 }
 
 type SerializedInterpretationOutput string
 
-func NewStartosisInterpreter(serviceNetwork *service_network.ServiceNetwork) *StartosisInterpreter {
+func NewStartosisInterpreter(serviceNetwork *service_network.ServiceNetwork, enclaveDataVolume string) *StartosisInterpreter {
 	return &StartosisInterpreter{
 		serviceNetwork: serviceNetwork,
+		packageManager: kurtosis_instruction.NewPackageManager(enclaveDataVolume),
 	}
 }
 
@@ -57,8 +59,13 @@ func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, serializ
 
 func (interpreter *StartosisInterpreter) buildBindings(scriptOutputBuffer *bytes.Buffer, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (*starlark.Thread, starlark.StringDict) {
 	thread := &starlark.Thread{
+<<<<<<< HEAD
 		Name: starlarkGoThreadName,
 		Load: kurtosis_instruction.MakeLoad(),
+=======
+		Name: "Startosis interpreter thread",
+		Load: interpreter.packageManager.Load,
+>>>>>>> 3dc70dd9e (write safe)
 		Print: func(_ *starlark.Thread, msg string) {
 			// From the Starlark spec, a print statement in Starlark is automatically followed by a newline
 			scriptOutputBuffer.WriteString(msg + "\n")

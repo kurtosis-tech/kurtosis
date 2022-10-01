@@ -11,9 +11,13 @@ import (
 	"testing"
 )
 
-func TestStartosisInterpreter_SimplePrintScript(t *testing.T) {
+const (
+	enclaveDataVolumeDirpath = "/tmp/"
+)
+
+func TestStartosisCompiler_SimplePrintScript(t *testing.T) {
 	testString := "Hello World!"
-	interpreter := NewStartosisInterpreter(nil)
+	interpreter := NewStartosisInterpreter(nil, enclaveDataVolumeDirpath)
 	script := `
 print("` + testString + `")
 `
@@ -28,7 +32,7 @@ print("` + testString + `")
 }
 
 func TestStartosisInterpreter_ScriptFailingSingleError(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil)
+	interpreter := NewStartosisInterpreter(nil, enclaveDataVolumeDirpath)
 	script := `
 print("Starting Startosis script!")
 
@@ -48,8 +52,8 @@ unknownInstruction()
 	require.Equal(t, expectedError, interpretationError)
 }
 
-func TestStartosisInterpreter_ScriptFailingMultipleErrors(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil)
+func TestStartosisCompiler_ScriptFailingMultipleErrors(t *testing.T) {
+	interpreter := NewStartosisInterpreter(nil, enclaveDataVolumeDirpath)
 	script := `
 print("Starting Startosis script!")
 
@@ -75,7 +79,7 @@ unknownInstruction2()
 }
 
 func TestStartosisInterpreter_ScriptFailingSyntaxError(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil)
+	interpreter := NewStartosisInterpreter(nil, enclaveDataVolumeDirpath)
 	script := `
 print("Starting Startosis script!")
 
@@ -94,30 +98,8 @@ load("otherScript.start") # fails b/c load takes in at least 2 args
 	require.Equal(t, expectedError, interpretationError)
 }
 
-// TODO: remove when `load()` actually works
-func TestStartosisInterpreter_ScriptFailingLoadBindingError(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil)
-	script := `
-print("Starting Startosis script!")
-
-load("otherScript.star", "a") # fails b/c load current binding throws
-`
-
-	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
-	require.Equal(t, 0, len(instructions))
-	require.Empty(t, scriptOutput)
-
-	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
-		"Evaluation error: cannot load otherScript.star: Loading external Startosis scripts is not supported yet",
-		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(4, 1)),
-		},
-	)
-	require.Equal(t, expectedError, interpretationError)
-}
-
-func TestStartosisInterpreter_ValidSimpleScriptWithInstruction(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil)
+func TestStartosisCompiler_ValidSimpleScriptWithInstruction(t *testing.T) {
+	interpreter := NewStartosisInterpreter(nil, enclaveDataVolumeDirpath)
 	script := `
 print("Starting Startosis script!")
 
@@ -160,7 +142,7 @@ Adding service example-datastore-server
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionMissingContainerName(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil)
+	interpreter := NewStartosisInterpreter(nil, enclaveDataVolumeDirpath)
 	script := `
 print("Starting Startosis script!")
 
@@ -191,7 +173,7 @@ add_service(service_id = service_id, service_config = service_config)
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionTypoInProtocol(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil)
+	interpreter := NewStartosisInterpreter(nil, enclaveDataVolumeDirpath)
 	script := `
 print("Starting Startosis script!")
 
@@ -220,8 +202,8 @@ add_service(service_id = service_id, service_config = service_config)
 	require.Equal(t, expectedError, interpretationError)
 }
 
-func TestStartosisInterpreter_ValidSimpleScriptWithInstructionPortNumberAsString(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil)
+func TestStartosisCompiler_ValidSimpleScriptWithInstructionPortNumberAsString(t *testing.T) {
+	interpreter := NewStartosisInterpreter(nil, enclaveDataVolumeDirpath)
 	script := `
 print("Starting Startosis script!")
 
@@ -250,8 +232,8 @@ add_service(service_id = service_id, service_config = service_config)
 	require.Equal(t, expectedError, interpretationError)
 }
 
-func TestStartosisInterpreter_ValidScriptWithMultipleInstructions(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil)
+func TestStartosisCompiler_ValidScriptWithMultipleInstructions(t *testing.T) {
+	interpreter := NewStartosisInterpreter(nil, enclaveDataVolumeDirpath)
 	script := `
 print("Starting Startosis script!")
 
