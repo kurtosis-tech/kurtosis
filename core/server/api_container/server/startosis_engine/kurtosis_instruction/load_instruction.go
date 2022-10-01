@@ -31,11 +31,23 @@ type PackageManager struct {
 }
 
 func NewPackageManager(enclaveDataVolumeDirPath string) *PackageManager {
+	packageTmpDir := path.Join(enclaveDataVolumeDirPath, "tmp")
+	if _, err := os.Stat(packageTmpDir); err != nil {
+		if err = os.Mkdir(packageTmpDir, packagePerm); err != nil {
+			panic(fmt.Sprintf("Error creating temporary directory for repos to be cloned '%v'", packageTmpDir))
+		}
+	}
+	packageDir := path.Join(enclaveDataVolumeDirPath, starlarkPath)
+	if _, err := os.Stat(packageDir); err != nil {
+		if err = os.Mkdir(packageDir, packagePerm); err != nil {
+			panic(fmt.Sprintf("Error creating directory for packages '%v'", packageDir))
+		}
+	}
 	return &PackageManager{
 		enclaveDataVolume: enclaveDataVolumeDirPath,
 		cache:             make(map[string]*CacheEntry),
-		packageTmpDir:     path.Join(enclaveDataVolumeDirPath, "tmp"),
-		packageDir:        path.Join(enclaveDataVolumeDirPath, starlarkPath),
+		packageTmpDir:     packageTmpDir,
+		packageDir:        packageDir,
 	}
 }
 
