@@ -23,6 +23,15 @@ type CacheEntry struct {
 	err     error
 }
 
+/*
+PackageManager ... TODO Perhaps move this out of the `kurtsosis_instruction`
+this could be at the same level as the kurtosis_instruction
+and make it a cache that the load instruction uses
+make methods more cache like - add, get, delete
+perhaps update as well
+
+NOTES for monday for GYANI
+*/
 type PackageManager struct {
 	enclaveDataVolume string
 	cache             map[string]*CacheEntry
