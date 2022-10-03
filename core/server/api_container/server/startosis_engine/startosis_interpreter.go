@@ -24,8 +24,8 @@ const (
 )
 
 type StartosisInterpreter struct {
-	moduleCache        map[string]*ModuleCacheEntry
 	serviceNetwork     *service_network.ServiceNetwork
+	moduleCache        map[string]*ModuleCacheEntry
 	moduleManager      module_manager.ModuleManager
 	scriptOutputBuffer bytes.Buffer
 	instructionsQueue  []kurtosis_instruction.KurtosisInstruction
