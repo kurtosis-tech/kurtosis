@@ -269,7 +269,7 @@ func (manager *EngineManager) destroyCentralizedLogsComponents(ctx context.Conte
 		return stacktrace.Propagate(err, "An error occurred destroying the logs collector")
 	}
 	if err := manager.kurtosisBackend.DestroyLogsDatabase(ctx); err != nil {
-		return stacktrace.Propagate(err, "An error occurred destroying the logs collector")
+		return stacktrace.Propagate(err, "An error occurred destroying the logs database")
 	}
 	return nil
 }
