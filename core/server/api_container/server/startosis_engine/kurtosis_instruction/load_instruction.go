@@ -2,20 +2,9 @@ package kurtosis_instruction
 
 import (
 	"fmt"
-	"github.com/go-git/go-git/v5"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/module_manager"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"io"
-	"net/url"
-	"os"
-	"path"
-	"strings"
-)
-
-const (
-	starlarkPath            = "/starlark/"
-	packagePerm             = 0755
-	temporaryRepoDirPattern = "tmp-repo-dir-*"
 )
 
 type CacheEntry struct {
@@ -23,45 +12,19 @@ type CacheEntry struct {
 	err     error
 }
 
-/*
-PackageManager ... TODO Perhaps move this out of the `kurtsosis_instruction`
-this could be at the same level as the kurtosis_instruction
-and make it a cache that the load instruction uses
-make methods more cache like - add, get, delete
-perhaps update as well
-
-NOTES for monday for GYANI
-*/
-type PackageManager struct {
-	enclaveDataVolume string
-	cache             map[string]*CacheEntry
-	packageTmpDir     string
-	packageDir        string
+type LoadInstruction struct {
+	moduleCache   map[string]*CacheEntry
+	moduleManager *module_manager.ModuleManager
 }
 
-func NewPackageManager(enclaveDataVolumeDirPath string) *PackageManager {
-	packageTmpDir := path.Join(enclaveDataVolumeDirPath, "tmp")
-	if _, err := os.Stat(packageTmpDir); err != nil {
-		if err = os.Mkdir(packageTmpDir, packagePerm); err != nil {
-			panic(fmt.Sprintf("Error creating temporary directory for repos to be cloned '%v'", packageTmpDir))
-		}
-	}
-	packageDir := path.Join(enclaveDataVolumeDirPath, starlarkPath)
-	if _, err := os.Stat(packageDir); err != nil {
-		if err = os.Mkdir(packageDir, packagePerm); err != nil {
-			panic(fmt.Sprintf("Error creating directory for packages '%v'", packageDir))
-		}
-	}
-	return &PackageManager{
-		enclaveDataVolume: enclaveDataVolumeDirPath,
-		cache:             make(map[string]*CacheEntry),
-		packageTmpDir:     packageTmpDir,
-		packageDir:        packageDir,
+func NewLoadInstruction(moduleManager *module_manager.ModuleManager) *LoadInstruction {
+	return &LoadInstruction{
+		moduleManager: moduleManager,
 	}
 }
 
-func (p *PackageManager) Load(thread *starlark.Thread, module string) (starlark.StringDict, error) {
-	e, ok := p.cache[module]
+func (load *LoadInstruction) Load(thread *starlark.Thread, module string) (starlark.StringDict, error) {
+	e, ok := load.moduleCache[module]
 	if e == nil {
 		if ok {
 			// request for package whose loading is in progress
@@ -69,10 +32,11 @@ func (p *PackageManager) Load(thread *starlark.Thread, module string) (starlark.
 		}
 
 		// Add a placeholder to indicate "load in progress".
-		p.cache[module] = nil
+		load.moduleCache[module] = nil
 
 		// Load it.
-		contents, err := p.getPackageData(module)
+		moduleManager := *load.moduleManager
+		contents, err := moduleManager.GetModule(module)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while fetching contents of the module '%v'", module)
 		}
@@ -82,88 +46,8 @@ func (p *PackageManager) Load(thread *starlark.Thread, module string) (starlark.
 		e = &CacheEntry{globals, err}
 
 		// Update the cache.
-		p.cache[module] = e
+		load.moduleCache[module] = e
 	}
 	return e.globals, e.err
 }
 
-func (p *PackageManager) getPackageData(githubURL string) (string, error) {
-	parsedUrl, err := url.Parse(githubURL)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "Error parsing the url '%v'", githubURL)
-	}
-	if parsedUrl.Scheme != "https" {
-		return "", stacktrace.NewError("Expected the scheme to be 'https' got '%v'", parsedUrl.Scheme)
-	}
-	if parsedUrl.Host != "github.com" {
-		return "", stacktrace.NewError("We only support packages on Github for now")
-	}
-
-	splitURLPath := removeEmpty(strings.Split(parsedUrl.Path, "/"))
-
-	if len(splitURLPath) < 2 {
-		return "", stacktrace.NewError("URL path should contain at least 2 parts")
-	}
-
-	contents, err := os.ReadFile(p.getPathToStartosisFile(splitURLPath))
-	if err == nil {
-		return string(contents), nil
-	}
-
-	firstTwoSubPaths := strings.Join(splitURLPath[:2], "/")
-	authorName := splitURLPath[0]
-	gitRepo := "https://github.com/" + firstTwoSubPaths
-
-	tempRepoDirPath, err := os.MkdirTemp(p.packageTmpDir, temporaryRepoDirPattern)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "Error creating temporary directory for repo")
-	}
-	defer os.RemoveAll(tempRepoDirPath)
-	gitClonePath := path.Join(tempRepoDirPath, firstTwoSubPaths)
-	_, err = git.PlainClone(gitClonePath, false, &git.CloneOptions{URL: gitRepo, Progress: io.Discard})
-	if err != nil {
-		return "", stacktrace.Propagate(err, "Error in cloning git repo '%v'", gitRepo)
-	}
-	packageAuthorPath := path.Join(p.packageDir, authorName)
-	packagePath := path.Join(p.packageDir, firstTwoSubPaths)
-	_, err = os.Stat(packageAuthorPath)
-	if err != nil {
-		if err = os.Mkdir(packageAuthorPath, packagePerm); err != nil {
-			stacktrace.Propagate(err, "An error occurred while creating directory '%v'", packageAuthorPath)
-		}
-	}
-	if err = os.Rename(gitClonePath, packagePath); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while moving cloned file at temporary destination to final destination")
-	}
-
-	contents, err = os.ReadFile(p.getPathToStartosisFile(splitURLPath))
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred in reading contents of the StarLark file")
-	}
-
-	return string(contents), nil
-}
-
-func (p *PackageManager) getPathToStartosisFile(splitUrlPath []string) string {
-	lastItem := splitUrlPath[len(splitUrlPath)-1]
-	if !strings.HasSuffix(lastItem, ".star") {
-		if len(splitUrlPath) > 2 {
-			splitUrlPath[len(splitUrlPath)-1] = splitUrlPath[len(splitUrlPath)-1] + ".star"
-		} else {
-			splitUrlPath = append(splitUrlPath, "main.star")
-		}
-	}
-	splitUrlPath = append([]string{p.packageDir}, splitUrlPath...)
-	filePath := path.Join(splitUrlPath...)
-	return filePath
-}
-
-func removeEmpty(splitPath []string) []string {
-	var splitWithoutEmpties []string
-	for _, subPath := range splitPath {
-		if subPath != "" {
-			splitWithoutEmpties = append(splitWithoutEmpties, subPath)
-		}
-	}
-	return splitWithoutEmpties
-}

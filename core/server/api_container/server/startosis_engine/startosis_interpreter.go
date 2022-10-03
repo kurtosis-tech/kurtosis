@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/module_manager"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/resolve"
@@ -24,15 +25,15 @@ const (
 
 type StartosisInterpreter struct {
 	serviceNetwork *service_network.ServiceNetwork
-	packageManager *kurtosis_instruction.PackageManager
+	moduleManager  *module_manager.ModuleManager
 }
 
 type SerializedInterpretationOutput string
 
-func NewStartosisInterpreter(serviceNetwork *service_network.ServiceNetwork, enclaveDataVolume string) *StartosisInterpreter {
+func NewStartosisInterpreter(serviceNetwork *service_network.ServiceNetwork, moduleManager *module_manager.ModuleManager) *StartosisInterpreter {
 	return &StartosisInterpreter{
 		serviceNetwork: serviceNetwork,
-		packageManager: kurtosis_instruction.NewPackageManager(enclaveDataVolume),
+		moduleManager:  moduleManager,
 	}
 }
 
@@ -59,13 +60,8 @@ func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, serializ
 
 func (interpreter *StartosisInterpreter) buildBindings(scriptOutputBuffer *bytes.Buffer, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (*starlark.Thread, starlark.StringDict) {
 	thread := &starlark.Thread{
-<<<<<<< HEAD
 		Name: starlarkGoThreadName,
-		Load: kurtosis_instruction.MakeLoad(),
-=======
-		Name: "Startosis interpreter thread",
-		Load: interpreter.packageManager.Load,
->>>>>>> 3dc70dd9e (write safe)
+		Load: kurtosis_instruction.NewLoadInstruction(interpreter.moduleManager).Load,
 		Print: func(_ *starlark.Thread, msg string) {
 			// From the Starlark spec, a print statement in Starlark is automatically followed by a newline
 			scriptOutputBuffer.WriteString(msg + "\n")
