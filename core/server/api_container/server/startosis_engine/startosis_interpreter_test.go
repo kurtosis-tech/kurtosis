@@ -326,11 +326,11 @@ Done!
 
 func TestStartosisCompiler_SimpleLoading(t *testing.T) {
 	seedModules := make(map[string]string)
-	seedModules["github.com/foo/bar/lib.tar"] = "a=\"World!\""
+	seedModules["github.com/foo/bar/lib.star"] = "a=\"World!\""
 	moduleManager := module_manager.NewMockModuleManager(seedModules)
 	interpreter := NewStartosisInterpreter(nil, moduleManager)
 	script := `
-load("github.com/foo/bar/lib.tar", "a")
+load("github.com/foo/bar/lib.star", "a")
 print("Hello " + a)
 
 `
@@ -342,5 +342,49 @@ print("Hello " + a)
 	expectedOutput := `Hello World!
 `
 	assert.Equal(t, expectedOutput, scriptOutput)
+}
+
+func TestStartosisCompiler_TransitiveLoading(t *testing.T) {
+	seedModules := make(map[string]string)
+	seedModules["github.com/foo/bar/lib.star"] = `a="World!"`
+	seedModules["github.com/foo/doo/lib.star"] = `load("github.com/foo/bar/lib.star", "a")
+b = "Hello " + a
+`
+	moduleManager := module_manager.NewMockModuleManager(seedModules)
+	interpreter := NewStartosisInterpreter(nil, moduleManager)
+	script := `
+load("github.com/foo/doo/lib.star", "b")
+print(b)
+
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
+	assert.Nil(t, interpretationError)
+
+	expectedOutput := `Hello World!
+`
+	assert.Equal(t, expectedOutput, scriptOutput)
+}
+
+func TestStartosisCompiler_FailsOnCycle(t *testing.T) {
+	seedModules := make(map[string]string)
+	seedModules["github.com/foo/bar/lib.star"] = `load("github.com/foo/doo/lib.star", "b")
+
+a = "Hello" + b`
+	seedModules["github.com/foo/doo/lib.star"] = `load("github.com/foo/bar/lib.star", "a")
+
+b = "Hello " + a
+`
+	moduleManager := module_manager.NewMockModuleManager(seedModules)
+	interpreter := NewStartosisInterpreter(nil, moduleManager)
+	script := `
+load("github.com/foo/doo/lib.star", "b")
+print(b)
+`
+
+	_, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
+	assert.NotNil(t, interpretationError)
 }
 

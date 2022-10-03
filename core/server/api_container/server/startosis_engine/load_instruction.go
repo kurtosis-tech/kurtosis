@@ -1,4 +1,4 @@
-package kurtosis_instruction
+package startosis_engine
 
 import (
 	"fmt"

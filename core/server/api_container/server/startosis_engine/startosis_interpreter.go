@@ -61,7 +61,7 @@ func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, serializ
 func (interpreter *StartosisInterpreter) buildBindings(scriptOutputBuffer *bytes.Buffer, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (*starlark.Thread, starlark.StringDict) {
 	thread := &starlark.Thread{
 		Name: starlarkGoThreadName,
-		Load: kurtosis_instruction.NewLoadInstruction(interpreter.moduleManager).Load,
+		Load: NewLoadInstruction(interpreter.moduleManager).Load,
 		Print: func(_ *starlark.Thread, msg string) {
 			// From the Starlark spec, a print statement in Starlark is automatically followed by a newline
 			scriptOutputBuffer.WriteString(msg + "\n")
