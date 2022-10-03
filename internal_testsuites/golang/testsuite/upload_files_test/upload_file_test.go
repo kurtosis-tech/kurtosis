@@ -49,9 +49,7 @@ func TestUploadFiles(t *testing.T) {
 	defer destroyEnclaveFunc()
 
 	pathToUpload := filePathsMap[diskDirKeyword]
-	if pathToUpload == "" {
-		stacktrace.NewError("Failed to store uploadable path in path map.")
-	}
+	require.NotEmptyf(t, pathToUpload, "Failed to store uploadable path in path map.")
 	filesArtifactUUID, err := enclaveCtx.UploadFiles(filePathsMap[diskDirKeyword])
 	require.NoError(t, err)
 
@@ -108,7 +106,7 @@ func testDirectoryContents(
 		fileKeyword := fmt.Sprintf("%s%v", fileKeywordPattern, i)
 		relativePath := pathsMap[fileKeyword]
 		if relativePath == "" {
-			stacktrace.NewError("The file for keyword '%s' was not mapped in the paths map.", fileKeyword)
+			return stacktrace.NewError("The file for keyword '%s' was not mapped in the paths map.", fileKeyword)
 		}
 		if err := test_helpers.CheckFileContents(ipAddress, portNum, relativePath, archiveTestFileContent); err != nil {
 			return stacktrace.Propagate(err, "There was an error testing the content of file '%s'.", relativePath)

@@ -11,8 +11,6 @@ const (
 	arg3Value2 = "arg3Value2"
 	arg3Value3 = "arg3Value3"
 
-	flag1Key = "flag1"
-	flag2Key = "flag2"
 )
 
 var validArgsConfig = []*ArgConfig{

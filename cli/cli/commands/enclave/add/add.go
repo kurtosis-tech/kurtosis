@@ -86,7 +86,11 @@ func run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}
-	defer closeClientFunc()
+	defer func() {
+		if err = closeClientFunc(); err != nil {
+			logrus.Errorf("Error closing the engine client")
+		}
+	}()
 
 	logrus.Info("Creating new enclave...")
 	var enclaveId string

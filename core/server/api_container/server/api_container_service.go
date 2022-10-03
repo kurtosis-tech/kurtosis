@@ -446,7 +446,7 @@ func (apicService ApiContainerService) GetServices(ctx context.Context, args *ku
 	serviceInfos := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
 	filterServiceIds := args.ServiceIds
 
-	for serviceID, _ := range apicService.serviceNetwork.GetServiceIDs() {
+	for serviceID := range apicService.serviceNetwork.GetServiceIDs() {
 		serviceIDStr := string(serviceID)
 		if filterServiceIds != nil && len(filterServiceIds) > 0 {
 			if _, found := filterServiceIds[serviceIDStr]; !found {
@@ -468,7 +468,7 @@ func (apicService ApiContainerService) GetModules(ctx context.Context, args *kur
 	moduleInfos := map[string]*kurtosis_core_rpc_api_bindings.ModuleInfo{}
 	filterModuleIds := args.Ids
 
-	for moduleID, _ := range apicService.moduleStore.GetModules() {
+	for moduleID := range apicService.moduleStore.GetModules() {
 		moduleIDStr := string(moduleID)
 		if filterModuleIds != nil && len(filterModuleIds) > 0 {
 			if _, found := filterModuleIds[moduleIDStr]; !found {
@@ -860,6 +860,9 @@ func compressDirToTemporaryTarGzFile(tempDirForRenderedTemplates string) (string
 	}
 
 	compressedFilepath, err := getPathForTemporaryCompressedFile()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Error getting temporary compressed file")
+	}
 
 	tarArchiver := archiver.NewTarGz()
 	tarArchiver.OverwriteExisting = true

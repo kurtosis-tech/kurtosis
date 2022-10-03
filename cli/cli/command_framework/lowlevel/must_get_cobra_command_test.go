@@ -15,35 +15,10 @@ const (
 	arg2Key = "arg2"
 	arg3Key = "arg3"
 
-	arg1Value = "arg1Value"
-	arg2Value = "arg2Value"
-	arg3Value1 = "arg3Value1"
-	arg3Value2 = "arg3Value2"
-	arg3Value3 = "arg3Value3"
-
 	flag1Key = "flag1"
 	flag2Key = "flag2"
 )
 
-var validArgsConfig = []*args.ArgConfig{
-	{
-		Key: arg1Key,
-	},
-	{
-		Key: arg2Key,
-	},
-	{
-		Key:      arg3Key,
-		IsGreedy: true,
-	},
-}
-var validTokens = []string{
-	arg1Value,
-	arg2Value,
-	arg3Value1,
-	arg3Value2,
-	arg3Value3,
-}
 var doNothingFunc = func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
 	return nil
 }

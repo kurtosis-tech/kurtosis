@@ -891,7 +891,10 @@ func (manager DockerManager) PullImage(context context.Context, imageName string
 		return stacktrace.Propagate(err, "Failed to pull image %s", imageName)
 	}
 	defer out.Close()
-	io.Copy(ioutil.Discard, out)
+	_, err = io.Copy(ioutil.Discard, out)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred discarding the output")
+	}
 	return nil
 }
 
@@ -1058,7 +1061,7 @@ func (manager *DockerManager) getContainerHostConfig(
 	}
 
 	addedCapabilitiesSlice := []string{}
-	for capability, _ := range addedCapabilities {
+	for capability := range addedCapabilities {
 		capabilityStr := string(capability)
 		addedCapabilitiesSlice = append(addedCapabilitiesSlice, capabilityStr)
 	}

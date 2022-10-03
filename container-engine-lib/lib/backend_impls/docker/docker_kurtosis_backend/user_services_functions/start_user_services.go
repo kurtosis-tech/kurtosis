@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -15,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/operation_parallelizer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -35,7 +35,7 @@ func StartUserServices(
 	serviceRegistrationMutex *sync.Mutex,
 	logsCollector *logs_collector.LogsCollector,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
-	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker,
+	enclaveFreeIpProviders map[enclave.EnclaveID]*free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 ) (
 	map[service.ServiceID]*service.Service,
@@ -201,7 +201,9 @@ func StartUserServices(
 }
 
 // ====================================================================================================
-//                       Private helper functions
+//
+//	Private helper functions
+//
 // ====================================================================================================
 func runStartServiceOperationsInParallel(
 	ctx context.Context,
@@ -209,7 +211,7 @@ func runStartServiceOperationsInParallel(
 	serviceConfigs map[service.ServiceID]*service.ServiceConfig,
 	serviceRegistrations map[service.ServiceID]*service.ServiceRegistration,
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
-	freeIpAddrProvider *lib.FreeIpAddrTracker,
+	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 	logsCollectorAddress logs_collector.LogsCollectorAddress,
 	logsCollectorLabels logs_collector_functions.LogsCollectorLabels,
@@ -270,7 +272,7 @@ func createStartServiceOperation(
 	serviceRegistration *service.ServiceRegistration,
 	enclaveNetworkId string,
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
-	freeIpAddrProvider *lib.FreeIpAddrTracker,
+	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 	logsCollectorAddress logs_collector.LogsCollectorAddress,
 	logsCollectorLabels logs_collector_functions.LogsCollectorLabels,
@@ -292,13 +294,13 @@ func createStartServiceOperation(
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddrStr := privateIpAddr.String()
-		for index, _ := range entrypointArgs {
+		for index := range entrypointArgs {
 			entrypointArgs[index] = strings.Replace(entrypointArgs[index], privateIPAddrPlaceholder, privateIPAddrStr, unlimitedReplacements)
 		}
-		for index, _ := range cmdArgs {
+		for index := range cmdArgs {
 			cmdArgs[index] = strings.Replace(cmdArgs[index], privateIPAddrPlaceholder, privateIPAddrStr, unlimitedReplacements)
 		}
-		for key, _ := range envVars {
+		for key := range envVars {
 			envVars[key] = strings.Replace(envVars[key], privateIPAddrPlaceholder, privateIPAddrStr, unlimitedReplacements)
 		}
 
@@ -484,7 +486,7 @@ func registerUserServices(
 	enclaveId enclave.EnclaveID,
 	serviceIDs []service.ServiceID,
 	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration,
-	freeIpAddrProvider *lib.FreeIpAddrTracker) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
+	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker) (map[service.ServiceID]*service.ServiceRegistration, map[service.ServiceID]error, error) {
 	successfulServicesPool := map[service.ServiceID]*service.ServiceRegistration{}
 	failedServicesPool := map[service.ServiceID]error{}
 
@@ -513,7 +515,9 @@ func registerUserServices(
 		shouldFreeIp := true
 		defer func() {
 			if shouldFreeIp {
-				freeIpAddrProvider.ReleaseIpAddr(ipAddr)
+				if err = freeIpAddrProvider.ReleaseIpAddr(ipAddr); err != nil {
+					logrus.Errorf("Error releasing IP address '%v'", ipAddr)
+				}
 			}
 		}()
 

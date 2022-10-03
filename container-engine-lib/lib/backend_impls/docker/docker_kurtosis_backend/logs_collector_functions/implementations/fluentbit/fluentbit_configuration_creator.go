@@ -71,7 +71,7 @@ func (fluent *fluentbitConfigurationCreator) CreateConfiguration(
 	}
 	//The killing step has to be executed always in the success and also in the failed case
 	defer func() {
-		if dockerManager.RemoveContainer(context.Background(), containerId); err != nil {
+		if err = dockerManager.RemoveContainer(context.Background(), containerId); err != nil {
 			logrus.Errorf(
 				"Launching the Fluentbit configurator container with container ID '%v' didn't complete successfully so we "+
 					"tried to remove the container we started, but doing so exited with an error:\n%v",

@@ -3,7 +3,6 @@ package backend_creator
 import (
 	"context"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
@@ -11,8 +10,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/metrics_reporting"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
+	bolt "go.etcd.io/bbolt"
 	"net"
 )
 
@@ -25,12 +25,20 @@ type APIContainerModeArgs struct {
 	APIContainerIP net.IP
 }
 
+const (
+	databaseFilePath              = "kurtosis.db"
+	readWritePermissionToDatabase = 0666
+)
+
 // GetLocalDockerKurtosisBackend is the entrypoint method we expect users of container-engine-lib to call
 // ONLY the API container should pass in the extra API container args, which will unlock extra API container functionality
 func GetLocalDockerKurtosisBackend(
 	optionalApiContainerModeArgs *APIContainerModeArgs,
 ) (backend_interface.KurtosisBackend, error) {
-
+	db, err := bolt.Open(databaseFilePath, readWritePermissionToDatabase, &bolt.Options{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred opening local database")
+	}
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker client connected to the local environment")
@@ -40,7 +48,7 @@ func GetLocalDockerKurtosisBackend(
 
 	// If running within the API container context, detect the network that the API container is running inside
 	// so we can create the free IP address trackers
-	enclaveFreeIpAddrTrackers := map[enclave.EnclaveID]*lib.FreeIpAddrTracker{}
+	enclaveFreeIpAddrTrackers := map[enclave.EnclaveID]*free_ip_addr_tracker.FreeIpAddrTracker{}
 	if optionalApiContainerModeArgs != nil {
 		ctx := optionalApiContainerModeArgs.Context
 		enclaveId := optionalApiContainerModeArgs.EnclaveID
@@ -74,11 +82,14 @@ func GetLocalDockerKurtosisBackend(
 			apiContainerIp.String(): true,
 		}
 
-		freeIpAddrProvider := lib.NewFreeIpAddrTracker(
-			logrus.StandardLogger(),
+		freeIpAddrProvider, err := free_ip_addr_tracker.GetOrCreateNewFreeIpAddrTracker(
 			network.GetIpAndMask(),
 			alreadyTakenIps,
+			db,
 		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating IP tracker")
+		}
 
 		enclaveFreeIpAddrTrackers[enclaveId] = freeIpAddrProvider
 	}

@@ -8,8 +8,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"strings"
 )
 
@@ -18,7 +19,7 @@ func destroyUserServicesUnlocked(
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration,
-	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker,
+	enclaveFreeIpProviders map[enclave.EnclaveID]*free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 ) (
 	resultSuccessfulGuids map[service.ServiceGUID]bool,
@@ -141,7 +142,10 @@ func destroyUserServicesUnlocked(
 
 	// Finalize deregistration
 	for guid, registration := range registrationsToDeregister {
-		freeIpAddrTrackerForEnclave.ReleaseIpAddr(registration.GetPrivateIP())
+		ipAddr := registration.GetPrivateIP()
+		if err = freeIpAddrTrackerForEnclave.ReleaseIpAddr(ipAddr); err != nil {
+			logrus.Errorf("Error releasing IP address '%v'", ipAddr)
+		}
 		delete(registrationsForEnclave, guid)
 	}
 

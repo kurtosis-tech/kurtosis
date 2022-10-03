@@ -24,7 +24,7 @@ func RunDockerOperationInParallel(
 ) {
 	logrus.Debugf("Called RunDockerOperationInParallel on the following Docker object IDs: %+v", dockerObjectIdSet)
 	dockerOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
-	for dockerObjectID, _ := range dockerObjectIdSet {
+	for dockerObjectID := range dockerObjectIdSet {
 		opID := operation_parallelizer.OperationID(dockerObjectID)
 
 		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -40,10 +40,10 @@ func RunDockerOperationInParallel(
 
 	successfulOperationIDStrs := map[string]bool{}
 	failedOperationIDStrs := map[string]error{}
-	for opID, _ := range successfulOperations {
+	for opID := range successfulOperations {
 		successfulOperationIDStrs[string(opID)] = true
 	}
-	for opID, _ := range failedOperations {
+	for opID := range failedOperations {
 		failedOperationIDStrs[string(opID)] = failedOperations[opID]
 	}
 

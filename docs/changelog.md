@@ -12,6 +12,13 @@
 ### Changes
 * Untied the logs components containers and volumes creation and removal from the engine's crud in `container-engine-lib`
 
+### Changes
+* Added a linter
+* Made changes based on the linters output
+
+### Features
+* API container now saves free IPs on a local database
+
 ### Fixes
 * Fix go.mod for commons & cli to reflect monorepo and replaced imports with write package name
 

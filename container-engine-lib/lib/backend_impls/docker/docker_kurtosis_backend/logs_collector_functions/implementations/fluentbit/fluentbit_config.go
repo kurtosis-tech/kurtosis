@@ -18,7 +18,6 @@ const (
 	noSeparationChar        = ""
 
 	shouldChangeNextCharToUpperCaseInitialValue = false
-	shouldChangeCharToUpperCaseInitialValue     = false
 )
 
 type FluentbitConfig struct {
@@ -145,7 +144,7 @@ func getTenantIdKeyFromKurtosisLabels() string {
 func newValidFormatLabelValue(stringToModify string) string {
 	stringToModifyInLowerCase := strings.ToLower(stringToModify)
 	shouldChangeNextCharToUpperCase := shouldChangeNextCharToUpperCaseInitialValue
-	shouldChangeCharToUpperCase := shouldChangeCharToUpperCaseInitialValue
+	var shouldChangeCharToUpperCase bool
 	var newString string
 	for _, currenChar := range strings.Split(stringToModifyInLowerCase, noSeparationChar) {
 		newChar := currenChar
