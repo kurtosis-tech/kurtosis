@@ -7,7 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/module_manager"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/module_manager/mock_module_manager"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,8 +18,8 @@ const (
 	enclaveDataVolumeDirpath = "/tmp/"
 )
 
-func emptyMockModuleManager() *module_manager.MockModuleManager {
-	return module_manager.NewMockModuleManager(
+func emptyMockModuleManager() *mock_module_manager.MockModuleManager {
+	return mock_module_manager.NewMockModuleManager(
 		map[string]string{},
 	)
 }
@@ -329,7 +329,7 @@ func TestStartosisCompiler_SimpleLoading(t *testing.T) {
 	seedModules := make(map[string]string)
 	barModulePath := "github.com/foo/bar/lib.star"
 	seedModules[barModulePath] = "a=\"World!\""
-	moduleManager := module_manager.NewMockModuleManager(seedModules)
+	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
 	interpreter := NewStartosisInterpreter(nil, moduleManager)
 	script := `
 load("` + barModulePath + `", "a")
@@ -354,7 +354,7 @@ func TestStartosisCompiler_TransitiveLoading(t *testing.T) {
 	seedModules[dooModulePath] = `load("` + barModulePath + `", "a")
 b = "Hello " + a
 `
-	moduleManager := module_manager.NewMockModuleManager(seedModules)
+	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
 	interpreter := NewStartosisInterpreter(nil, moduleManager)
 	script := `
 load("` + dooModulePath + `", "b")
@@ -380,7 +380,7 @@ a = "Hello" + b`
 	seedModules[dooModulePath] = `load("` + barModulePath + `", "a")
 b = "Hello " + a
 `
-	moduleManager := module_manager.NewMockModuleManager(seedModules)
+	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
 	interpreter := NewStartosisInterpreter(nil, moduleManager)
 	script := `
 load("` + dooModulePath + `", "b")

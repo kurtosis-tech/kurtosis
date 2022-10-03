@@ -6,7 +6,7 @@
 package enclave_data_directory
 
 import (
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/module_manager"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/module_manager/git_module_manager"
 	"github.com/kurtosis-tech/stacktrace"
 	"path"
 )
@@ -43,7 +43,7 @@ func (dir EnclaveDataDirectory) GetFilesArtifactStore() (*FilesArtifactStore, er
 	return newFilesArtifactStore(absoluteDirpath, relativeDirpath), nil
 }
 
-func (dir EnclaveDataDirectory) GetGitModuleManager() (*module_manager.GitModuleManager, error) {
+func (dir EnclaveDataDirectory) GetGitModuleManager() (*git_module_manager.GitModuleManager, error) {
 	moduleStoreDirpath := path.Join(dir.absMountDirpath, startosisModuleStoreDirname)
 	if err := ensureDirpathExists(moduleStoreDirpath); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring the startosis module store dirpath '%v' exists.", moduleStoreDirpath)
@@ -54,5 +54,5 @@ func (dir EnclaveDataDirectory) GetGitModuleManager() (*module_manager.GitModule
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring the startosis temporary module store dirpath '%v' exists.", tempModuleStoreDirpath)
 	}
 
-	return module_manager.NewGitModuleManager(moduleStoreDirpath, tempModuleStoreDirpath), nil
+	return git_module_manager.NewGitModuleManager(moduleStoreDirpath, tempModuleStoreDirpath), nil
 }

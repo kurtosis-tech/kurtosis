@@ -1,4 +1,4 @@
-package module_manager
+package mock_module_manager
 
 import "github.com/kurtosis-tech/stacktrace"
 
