@@ -56,6 +56,7 @@ func (moduleManager *GitModuleManager) GetModule(packageURL string) (string, err
 
 // atomicClone This first clones to a temporary directory and then moves it
 func (moduleManager *GitModuleManager) atomicClone(parsedURL *ParsedGitURL) error {
+	// First we clone into a temporary directory
 	tempRepoDirPath, err := os.MkdirTemp(moduleManager.moduleTmpDir, temporaryRepoDirPattern)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error creating temporary directory for the repository to be cloned into")
@@ -67,6 +68,7 @@ func (moduleManager *GitModuleManager) atomicClone(parsedURL *ParsedGitURL) erro
 		return stacktrace.Propagate(err, "Error in cloning git repository '%v' to '%v'", parsedURL.gitURL, gitClonePath)
 	}
 
+	// Then we move it into the target directory
 	moduleAuthorPath := path.Join(moduleManager.moduleDir, parsedURL.moduleAuthor)
 	modulePath := path.Join(moduleManager.moduleDir, parsedURL.relativeModulePath)
 	_, err = os.Stat(moduleAuthorPath)
