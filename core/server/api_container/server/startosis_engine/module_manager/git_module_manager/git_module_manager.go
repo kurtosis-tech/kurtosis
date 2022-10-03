@@ -16,7 +16,6 @@ const (
 type GitModuleManager struct {
 	moduleTmpDir string
 	moduleDir    string
-	gitURL       string
 }
 
 func NewGitModuleManager(moduleDir string, tmpDir string) *GitModuleManager {
