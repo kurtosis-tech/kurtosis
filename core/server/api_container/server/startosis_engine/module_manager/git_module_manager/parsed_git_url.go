@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	githubDomain = "github.com"
-	httpsSchema  = "https"
+	githubDomain           = "github.com"
+	httpsSchema            = "https"
+	startosisFileExtension = ".star"
 )
 
 type parsedGitURL struct {
@@ -45,8 +46,13 @@ func parseGitURL(packageURL string) (*parsedGitURL, error) {
 
 	splitURLPath := removeEmptyStringsFromSlice(strings.Split(parsedUrl.Path, "/"))
 
-	if len(splitURLPath) < 2 {
-		return nil, stacktrace.NewError("URL path should contain at least 2 parts")
+	if len(splitURLPath) < 3 {
+		return nil, stacktrace.NewError("URL path should contain at least 3 subpaths")
+	}
+
+	lastItem := splitURLPath[len(splitURLPath)-1]
+	if !strings.HasSuffix(lastItem, startosisFileExtension) {
+		return nil, stacktrace.NewError("Expected last subpath to be a '%v' file but it wasn't", startosisFileExtension)
 	}
 
 	moduleAuthor := splitURLPath[0]
