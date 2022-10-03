@@ -1,5 +1,6 @@
 # This document explains why this runs on GitHub over Circle
 # https://www.notion.so/kurtosistech/Why-we-have-our-Linter-as-a-Github-Action-572b44c4a9b445009515b7b41d5f74ff
+# we use `skip-pkg-cache:true` as we run into https://github.com/golangci/golangci-lint-action/issues/244 if we don't
 
 name: Golang Lint
 
