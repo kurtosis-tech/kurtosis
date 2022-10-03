@@ -85,14 +85,6 @@ func (moduleManager *GitModuleManager) GetModule(githubURL string) (string, erro
 }
 
 func (moduleManager *GitModuleManager) getPathToStartosisFile(splitUrlPath []string) string {
-	lastItem := splitUrlPath[len(splitUrlPath)-1]
-	if !strings.HasSuffix(lastItem, ".star") {
-		if len(splitUrlPath) > 2 {
-			splitUrlPath[len(splitUrlPath)-1] = splitUrlPath[len(splitUrlPath)-1] + ".star"
-		} else {
-			splitUrlPath = append(splitUrlPath, "main.star")
-		}
-	}
 	splitUrlPath = append([]string{moduleManager.moduleDir}, splitUrlPath...)
 	filePath := path.Join(splitUrlPath...)
 	return filePath
