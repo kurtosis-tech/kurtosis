@@ -8,7 +8,7 @@ import (
 
 const (
 	moduleAuthor    = "kurtosis-tech"
-	moduleName      = "sample-startosis"
+	moduleName      = "sample-startosis-load"
 	fileName        = "sample.star"
 	githubSampleURL = "https://github.com/" + moduleAuthor + "/" + moduleName + "/" + fileName
 )
