@@ -21,6 +21,7 @@
 
 ### Fixes
 * Fix go.mod for commons & cli to reflect monorepo and replaced imports with write package name
+* Move linter core/server linter config to within core/server
 
 # 0.49.7
 
