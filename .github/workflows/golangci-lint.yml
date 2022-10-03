@@ -19,6 +19,12 @@ jobs:
         with:
           go-version: 1.17
       - uses: actions/checkout@v3
+      # Install kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+      # Generate versions
       - run: scripts/generate-kurtosis-version.sh
       - name: Configure git for private modules
         env:
