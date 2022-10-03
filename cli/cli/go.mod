@@ -3,7 +3,6 @@ module github.com/kurtosis-tech/kurtosis/cli/cli
 go 1.17
 
 replace (
-
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
 	github.com/kurtosis-tech/kurtosis/cli/commons => ../commons
 
