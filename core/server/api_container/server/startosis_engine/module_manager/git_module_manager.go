@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	packageDirPermission    = 0755
+	moduleDirPermission     = 0755
 	temporaryRepoDirPattern = "tmp-repo-dir-*"
 )
 
@@ -36,7 +36,7 @@ func (p *GitModuleManager) GetModule(githubURL string) (string, error) {
 		return "", stacktrace.NewError("Expected the scheme to be 'https' got '%v'", parsedUrl.Scheme)
 	}
 	if parsedUrl.Host != "github.com" {
-		return "", stacktrace.NewError("We only support packages on Github for now")
+		return "", stacktrace.NewError("We only support modules on Github for now")
 	}
 
 	splitURLPath := removeEmpty(strings.Split(parsedUrl.Path, "/"))
@@ -64,15 +64,15 @@ func (p *GitModuleManager) GetModule(githubURL string) (string, error) {
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error in cloning git repository '%v'", gitRepo)
 	}
-	packageAuthorPath := path.Join(p.moduleDir, authorName)
-	packagePath := path.Join(p.moduleDir, firstTwoSubPaths)
-	_, err = os.Stat(packageAuthorPath)
+	moduleAuthorPath := path.Join(p.moduleDir, authorName)
+	modulePath := path.Join(p.moduleDir, firstTwoSubPaths)
+	_, err = os.Stat(moduleAuthorPath)
 	if err != nil {
-		if err = os.Mkdir(packageAuthorPath, packageDirPermission); err != nil {
-			stacktrace.Propagate(err, "An error occurred while creating directory '%v'", packageAuthorPath)
+		if err = os.Mkdir(moduleAuthorPath, moduleDirPermission); err != nil {
+			stacktrace.Propagate(err, "An error occurred while creating directory '%v'", moduleAuthorPath)
 		}
 	}
-	if err = os.Rename(gitClonePath, packagePath); err != nil {
+	if err = os.Rename(gitClonePath, modulePath); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while moving module at temporary destination to final destination")
 	}
 

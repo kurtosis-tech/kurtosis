@@ -20,6 +20,7 @@ type LoadInstruction struct {
 func NewLoadInstruction(moduleManager module_manager.ModuleManager) *LoadInstruction {
 	return &LoadInstruction{
 		moduleManager: moduleManager,
+		moduleCache:   make(map[string]*CacheEntry),
 	}
 }
 

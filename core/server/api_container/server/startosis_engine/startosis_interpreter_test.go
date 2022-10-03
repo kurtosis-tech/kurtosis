@@ -6,7 +6,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/module_manager"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -15,9 +17,15 @@ const (
 	enclaveDataVolumeDirpath = "/tmp/"
 )
 
+func emptyMockPackageManager() *module_manager.MockModuleManager {
+	return module_manager.NewMockModuleManager(
+		map[string]string{},
+	)
+}
+
 func TestStartosisCompiler_SimplePrintScript(t *testing.T) {
 	testString := "Hello World!"
-	interpreter := NewStartosisInterpreter(nil, enclaveDataVolumeDirpath)
+	interpreter := NewStartosisInterpreter(nil, emptyMockPackageManager())
 	script := `
 print("` + testString + `")
 `
@@ -31,8 +39,8 @@ print("` + testString + `")
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
 
-func TestStartosisInterpreter_ScriptFailingSingleError(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil, enclaveDataVolumeDirpath)
+func TestStartosisCompiler_ScriptFailingSingleError(t *testing.T) {
+	interpreter := NewStartosisInterpreter(nil, emptyMockPackageManager())
 	script := `
 print("Starting Startosis script!")
 
@@ -53,7 +61,7 @@ unknownInstruction()
 }
 
 func TestStartosisCompiler_ScriptFailingMultipleErrors(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil, enclaveDataVolumeDirpath)
+	interpreter := NewStartosisInterpreter(nil, emptyMockPackageManager())
 	script := `
 print("Starting Startosis script!")
 
@@ -79,7 +87,7 @@ unknownInstruction2()
 }
 
 func TestStartosisInterpreter_ScriptFailingSyntaxError(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil, enclaveDataVolumeDirpath)
+	interpreter := NewStartosisInterpreter(nil, emptyMockPackageManager())
 	script := `
 print("Starting Startosis script!")
 
@@ -99,7 +107,7 @@ load("otherScript.start") # fails b/c load takes in at least 2 args
 }
 
 func TestStartosisCompiler_ValidSimpleScriptWithInstruction(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil, enclaveDataVolumeDirpath)
+	interpreter := NewStartosisInterpreter(nil, emptyMockPackageManager())
 	script := `
 print("Starting Startosis script!")
 
@@ -142,7 +150,7 @@ Adding service example-datastore-server
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionMissingContainerName(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil, enclaveDataVolumeDirpath)
+	interpreter := NewStartosisInterpreter(nil, emptyMockPackageManager())
 	script := `
 print("Starting Startosis script!")
 
@@ -173,7 +181,7 @@ add_service(service_id = service_id, service_config = service_config)
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionTypoInProtocol(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil, enclaveDataVolumeDirpath)
+	interpreter := NewStartosisInterpreter(nil, emptyMockPackageManager())
 	script := `
 print("Starting Startosis script!")
 
@@ -203,7 +211,7 @@ add_service(service_id = service_id, service_config = service_config)
 }
 
 func TestStartosisCompiler_ValidSimpleScriptWithInstructionPortNumberAsString(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil, enclaveDataVolumeDirpath)
+	interpreter := NewStartosisInterpreter(nil, emptyMockPackageManager())
 	script := `
 print("Starting Startosis script!")
 
@@ -233,7 +241,7 @@ add_service(service_id = service_id, service_config = service_config)
 }
 
 func TestStartosisCompiler_ValidScriptWithMultipleInstructions(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil, enclaveDataVolumeDirpath)
+	interpreter := NewStartosisInterpreter(nil, emptyMockPackageManager())
 	script := `
 print("Starting Startosis script!")
 
@@ -315,3 +323,24 @@ Done!
 `
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
+
+func TestStartosisCompiler_SimpleLoading(t *testing.T) {
+	seedModules := make(map[string]string)
+	seedModules["github.com/foo/bar/lib.tar"] = "a=\"World!\""
+	moduleManager := module_manager.NewMockModuleManager(seedModules)
+	interpreter := NewStartosisInterpreter(nil, moduleManager)
+	script := `
+load("github.com/foo/bar/lib.tar", "a")
+print("Hello " + a)
+
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
+	assert.Nil(t, interpretationError)
+
+	expectedOutput := `Hello World!
+`
+	assert.Equal(t, expectedOutput, scriptOutput)
+}
+
