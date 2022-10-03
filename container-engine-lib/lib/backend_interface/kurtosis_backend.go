@@ -396,12 +396,6 @@ type KurtosisBackend interface {
 		filters *logs_database.LogsDatabaseFilters,
 	) (*logs_database.LogsDatabase, error)
 
-	// Stop the logs database
-	StopLogsDatabase(
-		ctx context.Context,
-		filters *logs_database.LogsDatabaseFilters,
-	) error
-
 	// Destroy the logs database
 	DestroyLogsDatabase(
 		ctx context.Context,
@@ -423,12 +417,6 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *logs_collector.LogsCollectorFilters,
 	) (*logs_collector.LogsCollector, error)
-
-	// Stop the logs collector
-	StopLogsCollector(
-		ctx context.Context,
-		filters *logs_collector.LogsCollectorFilters,
-	) error
 
 	// Destroy the logs collector
 	DestroyLogsCollector(

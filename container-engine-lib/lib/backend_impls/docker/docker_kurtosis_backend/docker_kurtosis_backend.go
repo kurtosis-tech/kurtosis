@@ -298,33 +298,6 @@ func (backend *DockerKurtosisBackend) GetLogsDatabase(
 	)
 }
 
-func (backend *DockerKurtosisBackend) StopLogsDatabase(
-	ctx context.Context,
-	filters *logs_database.LogsDatabaseFilters,
-) (
-	error,
-) {
-
-	logsCollectorFilters := &logs_collector.LogsCollectorFilters{
-		Status: container_status.ContainerStatus_Running,
-	}
-
-	logsCollector, err := backend.GetLogsCollector(ctx, logsCollectorFilters)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the logs collector")
-	}
-
-	if logsCollector != nil && logsCollector.GetStatus() == container_status.ContainerStatus_Running {
-		return stacktrace.NewError("The logs database can't be stopped due the logs collector is running")
-	}
-
-	return logs_database_functions.StopLogsDatabase(
-		ctx,
-		filters,
-		backend.dockerManager,
-	)
-}
-
 func (backend *DockerKurtosisBackend) DestroyLogsDatabase(
 	ctx context.Context,
 	filters *logs_database.LogsDatabaseFilters,
@@ -395,20 +368,6 @@ func (backend *DockerKurtosisBackend) GetLogsCollector(
 	error,
 ) {
 	return logs_collector_functions.GetLogsCollector(
-		ctx,
-		filters,
-		backend.dockerManager,
-	)
-}
-
-func (backend *DockerKurtosisBackend) StopLogsCollector(
-	ctx context.Context,
-	filters *logs_collector.LogsCollectorFilters,
-) (
-	error,
-) {
-
-	return logs_collector_functions.StopLogsCollector(
 		ctx,
 		filters,
 		backend.dockerManager,
