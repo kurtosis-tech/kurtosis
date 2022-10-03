@@ -27,7 +27,7 @@ func NewGitModuleManager(moduleDir string, tmpDir string) *GitModuleManager {
 	}
 }
 
-func (p *GitModuleManager) GetModule(githubURL string) (string, error) {
+func (moduleManager *GitModuleManager) GetModule(githubURL string) (string, error) {
 	parsedUrl, err := url.Parse(githubURL)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error parsing the url '%v'", githubURL)
@@ -45,7 +45,7 @@ func (p *GitModuleManager) GetModule(githubURL string) (string, error) {
 		return "", stacktrace.NewError("URL path should contain at least 2 parts")
 	}
 
-	contents, err := os.ReadFile(p.getPathToStartosisFile(splitURLPath))
+	contents, err := os.ReadFile(moduleManager.getPathToStartosisFile(splitURLPath))
 	if err == nil {
 		return string(contents), nil
 	}
@@ -54,7 +54,7 @@ func (p *GitModuleManager) GetModule(githubURL string) (string, error) {
 	authorName := splitURLPath[0]
 	gitRepo := "https://github.com/" + firstTwoSubPaths
 
-	tempRepoDirPath, err := os.MkdirTemp(p.moduleTmpDir, temporaryRepoDirPattern)
+	tempRepoDirPath, err := os.MkdirTemp(moduleManager.moduleTmpDir, temporaryRepoDirPattern)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error creating temporary directory for the repository to be cloned into")
 	}
@@ -64,8 +64,8 @@ func (p *GitModuleManager) GetModule(githubURL string) (string, error) {
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error in cloning git repository '%v'", gitRepo)
 	}
-	moduleAuthorPath := path.Join(p.moduleDir, authorName)
-	modulePath := path.Join(p.moduleDir, firstTwoSubPaths)
+	moduleAuthorPath := path.Join(moduleManager.moduleDir, authorName)
+	modulePath := path.Join(moduleManager.moduleDir, firstTwoSubPaths)
 	_, err = os.Stat(moduleAuthorPath)
 	if err != nil {
 		if err = os.Mkdir(moduleAuthorPath, moduleDirPermission); err != nil {
@@ -76,7 +76,7 @@ func (p *GitModuleManager) GetModule(githubURL string) (string, error) {
 		return "", stacktrace.Propagate(err, "An error occurred while moving module at temporary destination to final destination")
 	}
 
-	contents, err = os.ReadFile(p.getPathToStartosisFile(splitURLPath))
+	contents, err = os.ReadFile(moduleManager.getPathToStartosisFile(splitURLPath))
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred in reading contents of the StarLark file")
 	}
@@ -84,7 +84,7 @@ func (p *GitModuleManager) GetModule(githubURL string) (string, error) {
 	return string(contents), nil
 }
 
-func (p *GitModuleManager) getPathToStartosisFile(splitUrlPath []string) string {
+func (moduleManager *GitModuleManager) getPathToStartosisFile(splitUrlPath []string) string {
 	lastItem := splitUrlPath[len(splitUrlPath)-1]
 	if !strings.HasSuffix(lastItem, ".star") {
 		if len(splitUrlPath) > 2 {
@@ -93,7 +93,7 @@ func (p *GitModuleManager) getPathToStartosisFile(splitUrlPath []string) string 
 			splitUrlPath = append(splitUrlPath, "main.star")
 		}
 	}
-	splitUrlPath = append([]string{p.moduleDir}, splitUrlPath...)
+	splitUrlPath = append([]string{moduleManager.moduleDir}, splitUrlPath...)
 	filePath := path.Join(splitUrlPath...)
 	return filePath
 }

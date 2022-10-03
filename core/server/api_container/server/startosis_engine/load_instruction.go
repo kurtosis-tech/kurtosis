@@ -1,7 +1,6 @@
 package startosis_engine
 
 import (
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/module_manager"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
@@ -25,11 +24,10 @@ func NewLoadInstruction(moduleManager module_manager.ModuleManager) *LoadInstruc
 }
 
 func (load *LoadInstruction) Load(thread *starlark.Thread, module string) (starlark.StringDict, error) {
-	e, ok := load.moduleCache[module]
-	if e == nil {
+	entries, ok := load.moduleCache[module]
+	if entries == nil {
 		if ok {
-			// request for package whose loading is in progress
-			return nil, fmt.Errorf("cycle in load graph")
+			return nil, stacktrace.NewError("There is a cycle in the load graph")
 		}
 
 		// Add a placeholder to indicate "load in progress".
@@ -43,11 +41,11 @@ func (load *LoadInstruction) Load(thread *starlark.Thread, module string) (starl
 
 		thread := &starlark.Thread{Name: "exec " + module, Load: thread.Load}
 		globals, err := starlark.ExecFile(thread, module, contents, nil)
-		e = &CacheEntry{globals, err}
+		entries = &CacheEntry{globals, err}
 
 		// Update the cache.
-		load.moduleCache[module] = e
+		load.moduleCache[module] = entries
 	}
-	return e.globals, e.err
+	return entries.globals, entries.err
 }
 

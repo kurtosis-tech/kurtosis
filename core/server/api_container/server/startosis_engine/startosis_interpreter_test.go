@@ -17,7 +17,7 @@ const (
 	enclaveDataVolumeDirpath = "/tmp/"
 )
 
-func emptyMockPackageManager() *module_manager.MockModuleManager {
+func emptyMockModuleManager() *module_manager.MockModuleManager {
 	return module_manager.NewMockModuleManager(
 		map[string]string{},
 	)
@@ -25,7 +25,7 @@ func emptyMockPackageManager() *module_manager.MockModuleManager {
 
 func TestStartosisCompiler_SimplePrintScript(t *testing.T) {
 	testString := "Hello World!"
-	interpreter := NewStartosisInterpreter(nil, emptyMockPackageManager())
+	interpreter := NewStartosisInterpreter(nil, emptyMockModuleManager())
 	script := `
 print("` + testString + `")
 `
@@ -40,7 +40,7 @@ print("` + testString + `")
 }
 
 func TestStartosisCompiler_ScriptFailingSingleError(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil, emptyMockPackageManager())
+	interpreter := NewStartosisInterpreter(nil, emptyMockModuleManager())
 	script := `
 print("Starting Startosis script!")
 
@@ -61,7 +61,7 @@ unknownInstruction()
 }
 
 func TestStartosisCompiler_ScriptFailingMultipleErrors(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil, emptyMockPackageManager())
+	interpreter := NewStartosisInterpreter(nil, emptyMockModuleManager())
 	script := `
 print("Starting Startosis script!")
 
@@ -87,7 +87,7 @@ unknownInstruction2()
 }
 
 func TestStartosisInterpreter_ScriptFailingSyntaxError(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil, emptyMockPackageManager())
+	interpreter := NewStartosisInterpreter(nil, emptyMockModuleManager())
 	script := `
 print("Starting Startosis script!")
 
@@ -107,7 +107,7 @@ load("otherScript.start") # fails b/c load takes in at least 2 args
 }
 
 func TestStartosisCompiler_ValidSimpleScriptWithInstruction(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil, emptyMockPackageManager())
+	interpreter := NewStartosisInterpreter(nil, emptyMockModuleManager())
 	script := `
 print("Starting Startosis script!")
 
@@ -150,7 +150,7 @@ Adding service example-datastore-server
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionMissingContainerName(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil, emptyMockPackageManager())
+	interpreter := NewStartosisInterpreter(nil, emptyMockModuleManager())
 	script := `
 print("Starting Startosis script!")
 
@@ -181,7 +181,7 @@ add_service(service_id = service_id, service_config = service_config)
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionTypoInProtocol(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil, emptyMockPackageManager())
+	interpreter := NewStartosisInterpreter(nil, emptyMockModuleManager())
 	script := `
 print("Starting Startosis script!")
 
@@ -211,7 +211,7 @@ add_service(service_id = service_id, service_config = service_config)
 }
 
 func TestStartosisCompiler_ValidSimpleScriptWithInstructionPortNumberAsString(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil, emptyMockPackageManager())
+	interpreter := NewStartosisInterpreter(nil, emptyMockModuleManager())
 	script := `
 print("Starting Startosis script!")
 
@@ -241,7 +241,7 @@ add_service(service_id = service_id, service_config = service_config)
 }
 
 func TestStartosisCompiler_ValidScriptWithMultipleInstructions(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil, emptyMockPackageManager())
+	interpreter := NewStartosisInterpreter(nil, emptyMockModuleManager())
 	script := `
 print("Starting Startosis script!")
 
@@ -386,5 +386,21 @@ print(b)
 	_, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
 	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
 	assert.NotNil(t, interpretationError)
+	assert.Containsf(t, interpretationError.Error(), "There is a cycle in the load graph", "Expected a cycle error got something else")
 }
+
+func TestStartosisCompiler_FailsOnNonExistentModule(t *testing.T) {
+	interpreter := NewStartosisInterpreter(nil, emptyMockModuleManager())
+	script := `
+load("github.com/non/existent/module.star", "b")
+print(b)
+`
+
+	_, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
+	assert.NotNil(t, interpretationError)
+
+	assert.Containsf(t, interpretationError.Error(), "An error occurred while fetching contents of the module", "Expected a cycle error got something else")
+}
+
 
