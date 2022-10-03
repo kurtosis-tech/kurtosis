@@ -3,10 +3,11 @@ package startosis_engine
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
@@ -14,30 +15,23 @@ import (
 	"go.starlark.net/syntax"
 )
 
+const (
+	starlarkGoThreadName                 = "Startosis interpreter thread"
+	starlarkFilenamePlaceholderAsNotUsed = "FILENAME_NOT_USED"
+
+	multipleInterpretationErrorMsg = "Multiple errors caught interpreting the Startosis script. Listing each of them below."
+)
+
 type StartosisInterpreter struct {
 	serviceNetwork *service_network.ServiceNetwork
 }
 
-type SerializedInterpretationOutput struct {
-	output string
-}
-
-type InterpretationError struct {
-	error string
-}
+type SerializedInterpretationOutput string
 
 func NewStartosisInterpreter(serviceNetwork *service_network.ServiceNetwork) *StartosisInterpreter {
 	return &StartosisInterpreter{
 		serviceNetwork: serviceNetwork,
 	}
-}
-
-func (serializedInterpretationOutput *SerializedInterpretationOutput) Get() string {
-	return serializedInterpretationOutput.output
-}
-
-func (interpretationError *InterpretationError) Get() string {
-	return interpretationError.error
 }
 
 // Interpret interprets the Startosis script and produce different outputs:
@@ -48,72 +42,79 @@ func (interpretationError *InterpretationError) Get() string {
 //     if the interpretation of the script failed
 //   - An error if something unexpected happens (crash independent of the Startosis script). This should be as rare as
 //     possible
-func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, serializedScript string) (*SerializedInterpretationOutput, *InterpretationError, []kurtosis_instruction.KurtosisInstruction, error) {
+func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, serializedScript string) (SerializedInterpretationOutput, *startosis_errors.InterpretationError, []kurtosis_instruction.KurtosisInstruction) {
 	var scriptOutputBuffer bytes.Buffer
 	var instructionQueue []kurtosis_instruction.KurtosisInstruction
 	thread, builtins := interpreter.buildBindings(&scriptOutputBuffer, &instructionQueue)
 
-	_, err := starlark.ExecFile(thread, "FILENAME_NOT_USED", serializedScript, builtins)
+	_, err := starlark.ExecFile(thread, starlarkFilenamePlaceholderAsNotUsed, serializedScript, builtins)
 	if err != nil {
-		interpretationError := generateErrorString(err)
-		return nil, &InterpretationError{interpretationError}, nil, nil
+		return "", generateInterpretationError(err), nil
 	}
 	logrus.Debugf("Successfully interpreted startosis script into instruction queue: \n%s", instructionQueue)
-	return &SerializedInterpretationOutput{scriptOutputBuffer.String()}, nil, instructionQueue, nil
+	return SerializedInterpretationOutput(scriptOutputBuffer.String()), nil, instructionQueue
 }
 
 func (interpreter *StartosisInterpreter) buildBindings(scriptOutputBuffer *bytes.Buffer, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (*starlark.Thread, starlark.StringDict) {
 	thread := &starlark.Thread{
-		Name: "Startosis interpreter thread",
+		Name: starlarkGoThreadName,
 		Load: func(_ *starlark.Thread, fileToLoad string) (starlark.StringDict, error) {
-			return nil, errors.New("Loading external Startosis scripts is not supported yet")
+			// TODO(gb): remove when we implement the load feature
+			//  Also note we could return the position here by analysing the callstack in the thread object, but not worth it as this will go away soon
+			return nil, startosis_errors.NewInterpretationErrorWithCustomMsg("Loading external Startosis scripts is not supported yet", nil)
 		},
 		Print: func(_ *starlark.Thread, msg string) {
-			// From the starlark spec, a print statement in starlark is automatically followed by a newline
+			// From the Starlark spec, a print statement in Starlark is automatically followed by a newline
 			scriptOutputBuffer.WriteString(msg + "\n")
 		},
 	}
 
 	builtins := starlark.StringDict{
-		starlarkstruct.Default.GoString():          starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
-		kurtosis_instruction.AddServiceBuiltinName: starlark.NewBuiltin(kurtosis_instruction.AddServiceBuiltinName, kurtosis_instruction.AddServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
+		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
+		add_service.AddServiceBuiltinName: starlark.NewBuiltin(add_service.AddServiceBuiltinName, add_service.GenerateAddServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 	}
 
 	return thread, builtins
 }
 
-func generateErrorString(err error) string {
-	errorStringBuffer := &bytes.Buffer{}
-	errorStringBuffer.WriteString("/!\\ Errors interpreting Startosis script /!\\\n")
+func generateInterpretationError(err error) *startosis_errors.InterpretationError {
 	switch err.(type) {
 	case resolve.Error:
 		slError := err.(resolve.Error)
-		writeStarlarkErrorToBuffer(errorStringBuffer, slError.Pos.Line, slError.Pos.Col, slError.Msg)
-		break
+		return startosis_errors.NewInterpretationErrorFromStacktrace(
+			[]startosis_errors.CallFrame{
+				*startosis_errors.NewCallFrame(slError.Msg, startosis_errors.NewScriptPosition(slError.Pos.Line, slError.Pos.Col)),
+			},
+		)
 	case syntax.Error:
 		slError := err.(syntax.Error)
-		writeStarlarkErrorToBuffer(errorStringBuffer, slError.Pos.Line, slError.Pos.Col, slError.Msg)
-		break
+		return startosis_errors.NewInterpretationErrorFromStacktrace(
+			[]startosis_errors.CallFrame{
+				*startosis_errors.NewCallFrame(slError.Msg, startosis_errors.NewScriptPosition(slError.Pos.Line, slError.Pos.Col)),
+			},
+		)
 	case resolve.ErrorList:
 		errorsList := err.(resolve.ErrorList)
+		// TODO(gb): a bit hacky but it's an acceptable way to wrap multiple errors into a single Interpretation
+		//  it's probably not worth adding another level of complexity here to handle InterpretationErrorList
+		stacktrace := make([]startosis_errors.CallFrame, 0)
 		for _, slError := range errorsList {
-			writeStarlarkErrorToBuffer(errorStringBuffer, slError.Pos.Line, slError.Pos.Col, slError.Msg)
+			stacktrace = append(stacktrace, *startosis_errors.NewCallFrame(slError.Msg, startosis_errors.NewScriptPosition(slError.Pos.Line, slError.Pos.Col)))
 		}
-		break
+		return startosis_errors.NewInterpretationErrorWithCustomMsg(
+			multipleInterpretationErrorMsg,
+			stacktrace,
+		)
 	case *starlark.EvalError:
 		slError := err.(*starlark.EvalError)
-		errorStringBuffer.WriteString(fmt.Sprintf("\tEvaluationError: %s\n", slError.Unwrap().Error()))
+		stacktrace := make([]startosis_errors.CallFrame, 0)
 		for _, callStack := range slError.CallStack {
-			errorStringBuffer.WriteString(fmt.Sprintf("\t\tat [%d:%d]: %s\n", callStack.Pos.Line, callStack.Pos.Col, callStack.Name))
+			stacktrace = append(stacktrace, *startosis_errors.NewCallFrame(callStack.Name, startosis_errors.NewScriptPosition(callStack.Pos.Line, callStack.Pos.Col)))
 		}
-		break
-	default:
-		errorStringBuffer.WriteString(fmt.Sprintf("\tUnkownError: %s\n", err.Error()))
-		break
+		return startosis_errors.NewInterpretationErrorWithCustomMsg(
+			fmt.Sprintf("Evaluation error: %s", slError.Unwrap().Error()),
+			stacktrace,
+		)
 	}
-	return errorStringBuffer.String()
-}
-
-func writeStarlarkErrorToBuffer(scriptOutputBuffer *bytes.Buffer, line int32, col int32, msg string) {
-	scriptOutputBuffer.WriteString(fmt.Sprintf("\t[%d:%d]: %s\n", line, col, msg))
+	return startosis_errors.NewInterpretationErrorWithCustomMsg(fmt.Sprintf("UnknownError: %s\n", err.Error()), nil)
 }

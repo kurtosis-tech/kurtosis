@@ -3,6 +3,7 @@ package startosis_engine
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/stacktrace"
 	"sync"
 )
 
@@ -22,15 +23,15 @@ func NewStartosisExecutor() *StartosisExecutor {
 
 // Execute executes the list of Kurtosis instructions against the Kurtosis backend
 // It returns a potential execution error if something went wrong.
-// It returns a error if something unexpected happens outside the execution of the script
-func (executor *StartosisExecutor) Execute(ctx context.Context, instructions []kurtosis_instruction.KurtosisInstruction) (*ExecutionError, error) {
+// It returns an error if something unexpected happens outside the execution of the script
+func (executor *StartosisExecutor) Execute(ctx context.Context, instructions []kurtosis_instruction.KurtosisInstruction) error {
 	executor.mutex.Lock()
 	defer executor.mutex.Unlock()
-	for _, instruction := range instructions {
+	for index, instruction := range instructions {
 		err := instruction.Execute(ctx)
 		if err != nil {
-			return &ExecutionError{err.Error()}, nil
+			return stacktrace.Propagate(err, "An error occurred executing instruction number '%v'", index)
 		}
 	}
-	return nil, nil
+	return nil
 }

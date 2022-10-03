@@ -2,31 +2,32 @@ package startosis_engine
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/stretchr/testify/assert"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
-func TestStartosisCompiler_SimplePrintScript(t *testing.T) {
+func TestStartosisInterpreter_SimplePrintScript(t *testing.T) {
+	testString := "Hello World!"
 	interpreter := NewStartosisInterpreter(nil)
 	script := `
-print("Hello World!")
+print("` + testString + `")
 `
 
-	scriptOutput, interpretationError, instructions, err := interpreter.Interpret(context.Background(), script)
-	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
-	assert.Nil(t, interpretationError)
-	assert.Nil(t, err)
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Equal(t, 0, len(instructions)) // No kurtosis instruction
+	require.Nil(t, interpretationError)
 
-	expectedOutput := `Hello World!
+	expectedOutput := testString + `
 `
-	assert.Equal(t, expectedOutput, fmt.Sprintf("%s", scriptOutput.Get()))
+	require.Equal(t, expectedOutput, string(scriptOutput))
 }
 
-func TestStartosisCompiler_ScriptFailingSingleError(t *testing.T) {
+func TestStartosisInterpreter_ScriptFailingSingleError(t *testing.T) {
 	interpreter := NewStartosisInterpreter(nil)
 	script := `
 print("Starting Startosis script!")
@@ -34,18 +35,20 @@ print("Starting Startosis script!")
 unknownInstruction()
 `
 
-	scriptOutput, interpretationError, instructions, err := interpreter.Interpret(context.Background(), script)
-	assert.Equal(t, 0, len(instructions))
-	assert.Nil(t, scriptOutput)
-	assert.Nil(t, err)
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Equal(t, 0, len(instructions))
+	require.Empty(t, scriptOutput)
 
-	expectedOutput := `/!\ Errors interpreting Startosis script /!\
-	[4:1]: undefined: unknownInstruction
-`
-	assert.Equal(t, expectedOutput, fmt.Sprintf("%s", interpretationError.Get()))
+	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
+		"Multiple errors caught interpreting the Startosis script. Listing each of them below.",
+		[]startosis_errors.CallFrame{
+			*startosis_errors.NewCallFrame("undefined: unknownInstruction", startosis_errors.NewScriptPosition(4, 1)),
+		},
+	)
+	require.Equal(t, expectedError, interpretationError)
 }
 
-func TestStartosisCompiler_ScriptFailingMultipleErrors(t *testing.T) {
+func TestStartosisInterpreter_ScriptFailingMultipleErrors(t *testing.T) {
 	interpreter := NewStartosisInterpreter(nil)
 	script := `
 print("Starting Startosis script!")
@@ -56,20 +59,22 @@ print(unknownVariable)
 unknownInstruction2()
 `
 
-	scriptOutput, interpretationError, instructions, err := interpreter.Interpret(context.Background(), script)
-	assert.Equal(t, 0, len(instructions))
-	assert.Nil(t, scriptOutput)
-	assert.Nil(t, err)
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Equal(t, 0, len(instructions))
+	require.Empty(t, scriptOutput)
 
-	expectedOutput := `/!\ Errors interpreting Startosis script /!\
-	[4:1]: undefined: unknownInstruction
-	[5:7]: undefined: unknownVariable
-	[7:1]: undefined: unknownInstruction2
-`
-	assert.Equal(t, expectedOutput, fmt.Sprintf("%s", interpretationError.Get()))
+	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
+		multipleInterpretationErrorMsg,
+		[]startosis_errors.CallFrame{
+			*startosis_errors.NewCallFrame("undefined: unknownInstruction", startosis_errors.NewScriptPosition(4, 1)),
+			*startosis_errors.NewCallFrame("undefined: unknownVariable", startosis_errors.NewScriptPosition(5, 7)),
+			*startosis_errors.NewCallFrame("undefined: unknownInstruction2", startosis_errors.NewScriptPosition(7, 1)),
+		},
+	)
+	require.Equal(t, expectedError, interpretationError)
 }
 
-func TestStartosisCompiler_ScriptFailingSyntaxError(t *testing.T) {
+func TestStartosisInterpreter_ScriptFailingSyntaxError(t *testing.T) {
 	interpreter := NewStartosisInterpreter(nil)
 	script := `
 print("Starting Startosis script!")
@@ -77,18 +82,20 @@ print("Starting Startosis script!")
 load("otherScript.start") # fails b/c load takes in at least 2 args
 `
 
-	scriptOutput, interpretationError, instructions, err := interpreter.Interpret(context.Background(), script)
-	assert.Equal(t, 0, len(instructions))
-	assert.Nil(t, scriptOutput)
-	assert.Nil(t, err)
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Equal(t, 0, len(instructions))
+	require.Empty(t, scriptOutput)
 
-	expectedOutput := `/!\ Errors interpreting Startosis script /!\
-	[4:5]: load statement must import at least 1 symbol
-`
-	assert.Equal(t, expectedOutput, fmt.Sprintf("%s", interpretationError.Get()))
+	expectedError := startosis_errors.NewInterpretationErrorFromStacktrace(
+		[]startosis_errors.CallFrame{
+			*startosis_errors.NewCallFrame("load statement must import at least 1 symbol", startosis_errors.NewScriptPosition(4, 5)),
+		},
+	)
+	require.Equal(t, expectedError, interpretationError)
 }
 
-func TestStartosisCompiler_ScriptFailingLoadBindingError(t *testing.T) {
+// TODO: remove when `load()` actually works
+func TestStartosisInterpreter_ScriptFailingLoadBindingError(t *testing.T) {
 	interpreter := NewStartosisInterpreter(nil)
 	script := `
 print("Starting Startosis script!")
@@ -96,19 +103,20 @@ print("Starting Startosis script!")
 load("otherScript.star", "a") # fails b/c load current binding throws
 `
 
-	scriptOutput, interpretationError, instructions, err := interpreter.Interpret(context.Background(), script)
-	assert.Equal(t, 0, len(instructions))
-	assert.Nil(t, scriptOutput)
-	assert.Nil(t, err)
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Equal(t, 0, len(instructions))
+	require.Empty(t, scriptOutput)
 
-	expectedOutput := `/!\ Errors interpreting Startosis script /!\
-	EvaluationError: cannot load otherScript.star: Loading external Startosis scripts is not supported yet
-		at [4:1]: <toplevel>
-`
-	assert.Equal(t, expectedOutput, fmt.Sprintf("%s", interpretationError.Get()))
+	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
+		"Evaluation error: cannot load otherScript.star: Loading external Startosis scripts is not supported yet",
+		[]startosis_errors.CallFrame{
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(4, 1)),
+		},
+	)
+	require.Equal(t, expectedError, interpretationError)
 }
 
-func TestStartosisCompiler_ValidSimpleScriptWithInstruction(t *testing.T) {
+func TestStartosisInterpreter_ValidSimpleScriptWithInstruction(t *testing.T) {
 	interpreter := NewStartosisInterpreter(nil)
 	script := `
 print("Starting Startosis script!")
@@ -125,12 +133,11 @@ service_config = struct(
 add_service(service_id = service_id, service_config = service_config)
 `
 
-	scriptOutput, interpretationError, instructions, err := interpreter.Interpret(context.Background(), script)
-	assert.Equal(t, 1, len(instructions))
-	assert.Nil(t, interpretationError)
-	assert.Nil(t, err)
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Equal(t, 1, len(instructions))
+	require.Nil(t, interpretationError)
 
-	addServiceInstruction := kurtosis_instruction.NewAddServiceInstruction(
+	addServiceInstruction := add_service.NewAddServiceInstruction(
 		nil,
 		*kurtosis_instruction.NewInstructionPosition(13, 12),
 		service.ServiceID("example-datastore-server"),
@@ -144,15 +151,15 @@ add_service(service_id = service_id, service_config = service_config)
 			},
 		})
 
-	assert.Equal(t, instructions[0], addServiceInstruction)
+	require.Equal(t, instructions[0], addServiceInstruction)
 
 	expectedOutput := `Starting Startosis script!
 Adding service example-datastore-server
 `
-	assert.Equal(t, expectedOutput, fmt.Sprintf("%s", scriptOutput.Get()))
+	require.Equal(t, expectedOutput, string(scriptOutput))
 }
 
-func TestStartosisCompiler_ValidSimpleScriptWithInstructionMissingContainerName(t *testing.T) {
+func TestStartosisInterpreter_ValidSimpleScriptWithInstructionMissingContainerName(t *testing.T) {
 	interpreter := NewStartosisInterpreter(nil)
 	script := `
 print("Starting Startosis script!")
@@ -169,19 +176,21 @@ service_config = struct(
 add_service(service_id = service_id, service_config = service_config)
 `
 
-	scriptOutput, interpretationError, instructions, err := interpreter.Interpret(context.Background(), script)
-	assert.Equal(t, 0, len(instructions))
-	assert.Nil(t, scriptOutput)
-	assert.Nil(t, err)
-	expectedOutput := `/!\ Errors interpreting Startosis script /!\
-	EvaluationError: Missing ` + "`container_image_name`" + ` as part of the struct object
-		at [13:12]: <toplevel>
-		at [0:0]: add_service
-`
-	assert.Equal(t, expectedOutput, fmt.Sprintf("%s", interpretationError.Get()))
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Equal(t, 0, len(instructions))
+	require.Empty(t, scriptOutput)
+
+	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
+		"Evaluation error: Missing value 'container_image_name' as element of the struct object 'service_config'",
+		[]startosis_errors.CallFrame{
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(13, 12)),
+			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(0, 0)),
+		},
+	)
+	require.Equal(t, expectedError, interpretationError)
 }
 
-func TestStartosisCompiler_ValidSimpleScriptWithInstructionTypoInProtocol(t *testing.T) {
+func TestStartosisInterpreter_ValidSimpleScriptWithInstructionTypoInProtocol(t *testing.T) {
 	interpreter := NewStartosisInterpreter(nil)
 	script := `
 print("Starting Startosis script!")
@@ -198,19 +207,20 @@ service_config = struct(
 add_service(service_id = service_id, service_config = service_config)
 `
 
-	scriptOutput, interpretationError, instructions, err := interpreter.Interpret(context.Background(), script)
-	assert.Equal(t, 0, len(instructions))
-	assert.Nil(t, scriptOutput)
-	assert.Nil(t, err)
-	expectedOutput := `/!\ Errors interpreting Startosis script /!\
-	EvaluationError: port protocol should be either ` + "`TCP`, `UDP` or `SCTP`" + `
-		at [13:12]: <toplevel>
-		at [0:0]: add_service
-`
-	assert.Equal(t, expectedOutput, fmt.Sprintf("%s", interpretationError.Get()))
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Equal(t, 0, len(instructions))
+	require.Empty(t, scriptOutput)
+	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
+		"Evaluation error: Port protocol should be either TCP, SCTP, UDP",
+		[]startosis_errors.CallFrame{
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(13, 12)),
+			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(0, 0)),
+		},
+	)
+	require.Equal(t, expectedError, interpretationError)
 }
 
-func TestStartosisCompiler_ValidSimpleScriptWithInstructionPortNumberAsString(t *testing.T) {
+func TestStartosisInterpreter_ValidSimpleScriptWithInstructionPortNumberAsString(t *testing.T) {
 	interpreter := NewStartosisInterpreter(nil)
 	script := `
 print("Starting Startosis script!")
@@ -227,19 +237,20 @@ service_config = struct(
 add_service(service_id = service_id, service_config = service_config)
 `
 
-	scriptOutput, interpretationError, instructions, err := interpreter.Interpret(context.Background(), script)
-	assert.Equal(t, 0, len(instructions))
-	assert.Nil(t, scriptOutput)
-	assert.Nil(t, err)
-	expectedOutput := `/!\ Errors interpreting Startosis script /!\
-	EvaluationError: ` + "`number` arg is expected to be a uint32" + `
-		at [13:12]: <toplevel>
-		at [0:0]: add_service
-`
-	assert.Equal(t, expectedOutput, fmt.Sprintf("%s", interpretationError.Get()))
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Equal(t, 0, len(instructions))
+	require.Empty(t, scriptOutput)
+	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
+		"Evaluation error: Argument 'number' is expected to be an integer. Got starlark.String",
+		[]startosis_errors.CallFrame{
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(13, 12)),
+			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(0, 0)),
+		},
+	)
+	require.Equal(t, expectedError, interpretationError)
 }
 
-func TestStartosisCompiler_ValidScriptWithMultipleInstructions(t *testing.T) {
+func TestStartosisInterpreter_ValidScriptWithMultipleInstructions(t *testing.T) {
 	interpreter := NewStartosisInterpreter(nil)
 	script := `
 print("Starting Startosis script!")
@@ -252,26 +263,27 @@ def deploy_datastore_services():
         unique_service_id = service_id + "-" + str(i)
         print("Adding service " + unique_service_id)
         service_config = struct(
-                container_image_name = "kurtosistech/example-datastore-server",
-                used_ports = {
-                    "grpc": struct(
-                        number = ports[i],
-                        protocol = "TCP")
-                })
+			container_image_name = "kurtosistech/example-datastore-server",
+			used_ports = {
+				"grpc": struct(
+					number = ports[i],
+					protocol = "TCP"
+				)
+			}
+		)
         add_service(service_id = unique_service_id, service_config = service_config)
 
 deploy_datastore_services()
 print("Done!")
 `
 
-	scriptOutput, interpretationError, instructions, err := interpreter.Interpret(context.Background(), script)
-	assert.Equal(t, 3, len(instructions))
-	assert.Nil(t, interpretationError)
-	assert.Nil(t, err)
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Equal(t, 3, len(instructions))
+	require.Nil(t, interpretationError)
 
-	addServiceInstruction0 := kurtosis_instruction.NewAddServiceInstruction(
+	addServiceInstruction0 := add_service.NewAddServiceInstruction(
 		nil,
-		*kurtosis_instruction.NewInstructionPosition(20, 26),
+		*kurtosis_instruction.NewInstructionPosition(22, 26),
 		service.ServiceID("example-datastore-server-0"),
 		&kurtosis_core_rpc_api_bindings.ServiceConfig{
 			ContainerImageName: "kurtosistech/example-datastore-server",
@@ -282,9 +294,9 @@ print("Done!")
 				},
 			},
 		})
-	addServiceInstruction1 := kurtosis_instruction.NewAddServiceInstruction(
+	addServiceInstruction1 := add_service.NewAddServiceInstruction(
 		nil,
-		*kurtosis_instruction.NewInstructionPosition(20, 26),
+		*kurtosis_instruction.NewInstructionPosition(22, 26),
 		service.ServiceID("example-datastore-server-1"),
 		&kurtosis_core_rpc_api_bindings.ServiceConfig{
 			ContainerImageName: "kurtosistech/example-datastore-server",
@@ -295,9 +307,9 @@ print("Done!")
 				},
 			},
 		})
-	addServiceInstruction2 := kurtosis_instruction.NewAddServiceInstruction(
+	addServiceInstruction2 := add_service.NewAddServiceInstruction(
 		nil,
-		*kurtosis_instruction.NewInstructionPosition(20, 26),
+		*kurtosis_instruction.NewInstructionPosition(22, 26),
 		service.ServiceID("example-datastore-server-2"),
 		&kurtosis_core_rpc_api_bindings.ServiceConfig{
 			ContainerImageName: "kurtosistech/example-datastore-server",
@@ -309,9 +321,9 @@ print("Done!")
 			},
 		})
 
-	assert.Equal(t, instructions[0], addServiceInstruction0)
-	assert.Equal(t, instructions[1], addServiceInstruction1)
-	assert.Equal(t, instructions[2], addServiceInstruction2)
+	require.Equal(t, instructions[0], addServiceInstruction0)
+	require.Equal(t, instructions[1], addServiceInstruction1)
+	require.Equal(t, instructions[2], addServiceInstruction2)
 
 	expectedOutput := `Starting Startosis script!
 Adding service example-datastore-server-0
@@ -319,5 +331,5 @@ Adding service example-datastore-server-1
 Adding service example-datastore-server-2
 Done!
 `
-	assert.Equal(t, expectedOutput, fmt.Sprintf("%s", scriptOutput.Get()))
+	require.Equal(t, expectedOutput, string(scriptOutput))
 }
