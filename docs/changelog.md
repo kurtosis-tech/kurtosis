@@ -12,9 +12,12 @@
 ### Changes
 * Untied the logs components containers and volumes creation and removal from the engine's crud in `container-engine-lib`
 
+# 0.49.8
+
 ### Changes
 * Added a linter
 * Made changes based on the linters output
+* Made the `discord` command a LowLevelKurtosisCommand instead of an EngineConsumingKurtosisCommand
 
 ### Features
 * API container now saves free IPs on a local database
