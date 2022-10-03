@@ -30,7 +30,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 		return stacktrace.Propagate(err, "Failed to get or initialize Kurtosis configuration")
 	}
 	var clusterList []string
-	for clusterName, _ := range kurtosisConfig.GetKurtosisClusters() {
+	for clusterName := range kurtosisConfig.GetKurtosisClusters() {
 		clusterList = append(clusterList, clusterName)
 	}
 	sort.Strings(clusterList)

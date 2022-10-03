@@ -165,7 +165,7 @@ func StartUserServices(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user service objects and Kubernetes resources matching service GUIDs '%v'", serviceGUIDsToFilter)
 	}
-	for serviceID, _ := range successfulRegistrations {
+	for serviceID := range successfulRegistrations {
 		if _, found := existingObjectsAndResources[serviceID]; !found {
 			failedServicesPool[serviceID] = stacktrace.NewError("Couldn't find any service registrations for service ID '%v'. This is a bug in Kurtosis.", serviceID)
 			delete(serviceConfigsToStart, serviceID)
@@ -284,13 +284,13 @@ func createStartServiceOperation(
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddr := matchingObjectAndResources.ServiceRegistration.GetPrivateIP().String()
-		for index, _ := range entrypointArgs {
+		for index := range entrypointArgs {
 			entrypointArgs[index] = strings.Replace(entrypointArgs[index], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
 		}
-		for index, _ := range cmdArgs {
+		for index := range cmdArgs {
 			cmdArgs[index] = strings.Replace(cmdArgs[index], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
 		}
-		for key, _ := range envVars {
+		for key := range envVars {
 			envVars[key] = strings.Replace(envVars[key], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
 		}
 

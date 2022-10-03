@@ -2,12 +2,12 @@ package engine_manager
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/kurtosis_config_getter"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
@@ -17,28 +17,14 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"strconv"
 	"strings"
 	"time"
 )
 
 const (
-	waitForEngineResponseTimeout = 5 * time.Second
-	defaultClusterName           = resolved_config.DefaultDockerClusterName
-
-	// --------------------------- Old port parsing constants ------------------------------------
-	// These are the old labels that the API container used to use before 2021-11-15 for declaring its port num protocol
-	// We can get rid of this after 2022-05-15, when we're confident no users will be running API containers with the old label
-	pre2021_11_15_portNum   = uint16(9710)
-	pre2021_11_15_portProto = schema.PortProtocol_TCP
-
-	// These are the old labels that the API container used to use before 2021-12-02 for declaring its port num protocol
-	// We can get rid of this after 2022-06-02, when we're confident no users will be running API containers with the old label
-	pre2021_12_02_portNumLabel    = "com.kurtosistech.port-number"
-	pre2021_12_02_portNumBase     = 10
-	pre2021_12_02_portNumUintBits = 16
-	pre2021_12_02_portProtocol    = schema.PortProtocol_TCP
-	// --------------------------- Old port parsing constants ------------------------------------
+	waitForEngineResponseTimeout    = 5 * time.Second
+	defaultClusterName              = resolved_config.DefaultDockerClusterName
+	defaultHttpLogsCollectorPortNum = uint16(9712)
 )
 
 // Unfortunately, Docker doesn't have constants for the protocols it supports declared
@@ -133,11 +119,15 @@ func (manager *EngineManager) GetEngineStatus(
 	// TODO Replace this hacky method of defaulting to localhost:DefaultGrpcPort to get connected to the engine
 	runningEngineIpAndPort := getDefaultKurtosisEngineLocalhostMachineIpAndPort()
 
-	engineClient, clientCloseFunc, err := getEngineClientFromHostMachineIpAndPort(runningEngineIpAndPort)
+	engineClient, engineClientCloseFunc, err := getEngineClientFromHostMachineIpAndPort(runningEngineIpAndPort)
 	if err != nil {
 		return EngineStatus_ContainerRunningButServerNotResponding, runningEngineIpAndPort, "", nil
 	}
-	defer clientCloseFunc()
+	defer func() {
+		if err = engineClientCloseFunc(); err != nil {
+			logrus.Warnf("Error closing the engine client:\n'%v'", err)
+		}
+	}()
 
 	engineInfo, err := getEngineInfoWithTimeout(ctx, engineClient)
 	if err != nil {
@@ -153,6 +143,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
 	}
+	clusterType := manager.clusterConfig.GetClusterType()
 	engineGuarantor := newEngineExistenceGuarantorWithDefaultVersion(
 		ctx,
 		maybeHostMachinePortBinding,
@@ -161,6 +152,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 		manager.engineServerKurtosisBackendConfigSupplier,
 		logLevel,
 		engineVersion,
+		clusterType,
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
 	//  before we can return an EngineClient
@@ -177,6 +169,8 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
 	}
+
+	clusterType := manager.clusterConfig.GetClusterType()
 	engineGuarantor := newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
 		maybeHostMachinePortBinding,
@@ -186,6 +180,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		engineImageVersionTag,
 		logLevel,
 		engineVersion,
+		clusterType,
 	)
 	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {
@@ -226,6 +221,14 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 			),
 		)
 	}
+	clusterType := manager.clusterConfig.GetClusterType()
+
+	//TODO This is a temporary hack we should remove it when centralized logs be implemented in the KubernetesBackend
+	if clusterType == resolved_config.KurtosisClusterType_Docker {
+		if err = manager.destroyCentralizedLogsComponents(ctx); err != nil {
+			return stacktrace.Propagate(err, "An error occurred destroying the centralized logs components")
+		}
+	}
 
 	return nil
 }
@@ -261,6 +264,16 @@ func (manager *EngineManager) startEngineWithGuarantor(ctx context.Context, curr
 	return engineClient, clientCloseFunc, nil
 }
 
+func (manager *EngineManager) destroyCentralizedLogsComponents(ctx context.Context) error {
+	if err := manager.kurtosisBackend.DestroyLogsCollector(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the logs collector")
+	}
+	if err := manager.kurtosisBackend.DestroyLogsDatabase(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the logs collector")
+	}
+	return nil
+}
+
 func getEngineClientFromHostMachineIpAndPort(hostMachineIpAndPort *hostMachineIpAndPort) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	url := hostMachineIpAndPort.GetURL()
 	conn, err := grpc.Dial(url, grpc.WithInsecure())
@@ -285,59 +298,6 @@ func getEngineInfoWithTimeout(ctx context.Context, client kurtosis_engine_rpc_ap
 	return engineInfo, nil
 }
 
-func getPrivateEnginePort(containerLabels map[string]string) (*schema.PortSpec, error) {
-	serializedPortSpecs, found := containerLabels[schema.PortSpecsLabel]
-	if found {
-		portSpecs, err := schema.DeserializePortSpecs(serializedPortSpecs)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred deserializing engine server port spec string '%v'", serializedPortSpecs)
-		}
-		portSpec, foundInternalPortId := portSpecs[schema.KurtosisInternalContainerGRPCPortID]
-		if !foundInternalPortId {
-			return nil, stacktrace.NewError("No Kurtosis-internal port ID '%v' found in the engine server port specs", schema.KurtosisInternalContainerGRPCPortID)
-		}
-		return portSpec, nil
-	}
-
-	// We can get rid of this after 2022-06-02, when we're confident no users will be running API containers with this label
-	pre2021_12_02Port, err := getApiContainerPrivatePortUsingPre2021_12_02Label(containerLabels)
-	if err == nil {
-		return pre2021_12_02Port, nil
-	} else {
-		logrus.Debugf("An error occurred getting the engine container private port num using the pre-2021-12-02 label: %v", err)
-	}
-
-	// We can get rid of this after 2022-05-15, when we're confident no users will be running API containers with this label
-	pre2021_11_15Port, err := schema.NewPortSpec(pre2021_11_15_portNum, pre2021_11_15_portProto)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Couldn't create engine private port spec using pre-2021-11-15 constants")
-	}
-	return pre2021_11_15Port, nil
-}
-
-func getApiContainerPrivatePortUsingPre2021_12_02Label(containerLabels map[string]string) (*schema.PortSpec, error) {
-	// We can get rid of this after 2022-06-02, when we're confident no users will be running API containers with this label
-	portNumStr, found := containerLabels[pre2021_12_02_portNumLabel]
-	if !found {
-		return nil, stacktrace.NewError("Couldn't get engine container private port using the pre-2021-12-02 label '%v' because it doesn't exist", pre2021_12_02_portNumLabel)
-	}
-	portNumUint64, err := strconv.ParseUint(portNumStr, pre2021_12_02_portNumBase, pre2021_12_02_portNumUintBits)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred parsing pre-2021-12-02 private port num string '%v' to a uint16", portNumStr)
-	}
-	portNumUint16 := uint16(portNumUint64) // Safe to do because we pass in the number of bits to the ParseUint call above
-	result, err := schema.NewPortSpec(portNumUint16, pre2021_12_02_portProtocol)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating a new port spec using pre-2021-12-02 port num '%v' and protocol '%v'",
-			portNumUint16,
-			pre2021_12_02_portProtocol,
-		)
-	}
-	return result, nil
-}
-
 // getRunningEnginesFilter returns a filter for engines with status engine.EngineStatus_Running
 func getRunningEnginesFilter() *engine.EngineFilters {
 	return &engine.EngineFilters{
@@ -345,17 +305,6 @@ func getRunningEnginesFilter() *engine.EngineFilters {
 			container_status.ContainerStatus_Running: true,
 		},
 	}
-}
-
-// getFirstEngineFromMap returns the first value iterated by the `range` statement on a map
-// returns nil if the map is empty
-func getFirstEngineFromMap(engineMap map[string]*engine.Engine) *engine.Engine {
-	firstEngineInMap := (*engine.Engine)(nil)
-	for _, engineInMap := range engineMap {
-		firstEngineInMap = engineInMap
-		break
-	}
-	return firstEngineInMap
 }
 
 func getKurtosisConfig() (*resolved_config.KurtosisConfig, error) {

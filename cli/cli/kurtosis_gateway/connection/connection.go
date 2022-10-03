@@ -96,7 +96,7 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 	}()
 	// Wait for the portforwarder to be ready with timeout
 	select {
-	case _ = <-portforwardReadyChannel:
+	case <-portforwardReadyChannel:
 	case <-time.After(portForwardTimeoutDuration):
 		return nil, stacktrace.NewError("Expected Kubernetes portforwarder to open local ports to the pod exposed by the portforward api at URL '%v', instead the Kubernetes portforwarder timed out binding local ports", podProxyEndpointUrl)
 	}

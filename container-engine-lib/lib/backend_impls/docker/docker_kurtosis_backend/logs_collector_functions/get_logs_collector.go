@@ -12,28 +12,9 @@ func GetLogsCollector(
 	dockerManager *docker_manager.DockerManager,
 ) (*logs_collector.LogsCollector, error){
 
-	allLogsCollectorContainers, err := getAllLogsCollectorContainers(ctx, dockerManager)
+	logsCollectorObject, _, err := getLogsCollectorObjectAndContainerIdMatching(ctx, dockerManager)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting all logs collector containers")
-	}
-	if len(allLogsCollectorContainers) == 0 {
-		return nil, nil
-	}
-	if len(allLogsCollectorContainers) > 1 {
-		return nil, stacktrace.NewError("Found more than one logs collector Docker container'; this is a bug in Kurtosis")
-	}
-
-	logsCollectorContainer := allLogsCollectorContainers[0]
-
-	logsCollectorObject, err := getLogsCollectorObjectFromContainerInfo(
-		ctx,
-		logsCollectorContainer.GetId(),
-		logsCollectorContainer.GetLabels(),
-		logsCollectorContainer.GetStatus(),
-		dockerManager,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector object using container ID '%v', labels '%+v' and the status '%v'", logsCollectorContainer.GetId(), logsCollectorContainer.GetLabels(), logsCollectorContainer.GetStatus())
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
 
 	return logsCollectorObject, nil

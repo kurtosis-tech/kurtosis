@@ -393,15 +393,11 @@ type KurtosisBackend interface {
 	// Gets the logs database
 	GetLogsDatabase(ctx context.Context) (*logs_database.LogsDatabase, error)
 
-	// Stop the logs database
-	StopLogsDatabase(ctx context.Context) error
-
 	// Destroy the logs database
 	DestroyLogsDatabase(ctx context.Context) error
 
-	//TODO I'd add a comment to CreateLogsCollector saying that it requires the logs DB to be up
-
 	// Create a new Logs Collector for sending container's logs to the logs database server
+	//The logs collector requires that the logs database to be up before
 	CreateLogsCollector(
 		ctx context.Context,
 		logsCollectorHttpPortNumber uint16,
@@ -412,9 +408,6 @@ type KurtosisBackend interface {
 
 	// Gets the logs collector
 	GetLogsCollector(ctx context.Context) (*logs_collector.LogsCollector, error)
-
-	// Stop the logs collector
-	StopLogsCollector(ctx context.Context) error
 
 	// Destroy the logs collector
 	DestroyLogsCollector(ctx context.Context) error

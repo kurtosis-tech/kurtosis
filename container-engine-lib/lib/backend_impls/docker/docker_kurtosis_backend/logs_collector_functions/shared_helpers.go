@@ -57,19 +57,7 @@ func getLogsCollectorObjectFromContainerInfo(
 	dockerManager *docker_manager.DockerManager,
 ) (*logs_collector.LogsCollector, error) {
 
-	privateIpAddrStr, err := dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the private IP address of container '%v' in network '%v'", containerId, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
-	}
-	privateIpAddr := net.ParseIP(privateIpAddrStr)
-	if privateIpAddr == nil {
-		return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
-	}
-
-	privateTcpPortSpec, privateHttpPortSpec, err := getLogsCollectorPrivatePorts(labels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector container's private port specs from container '%v' with labels: %+v", containerId, labels)
-	}
+	privateIpAddr := net.IP{}
 
 	isContainerRunning, found := consts.IsContainerRunningDeterminer[containerStatus]
 	if !found {
@@ -79,8 +67,22 @@ func getLogsCollectorObjectFromContainerInfo(
 	var logsCollectorStatus container_status.ContainerStatus
 	if isContainerRunning {
 		logsCollectorStatus = container_status.ContainerStatus_Running
+
+		privateIpAddrStr, err := dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the private IP address of container '%v' in network '%v'", containerId, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
+		}
+		privateIpAddr = net.ParseIP(privateIpAddrStr)
+		if privateIpAddr == nil {
+			return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
+		}
 	} else {
 		logsCollectorStatus = container_status.ContainerStatus_Stopped
+	}
+
+	privateTcpPortSpec, privateHttpPortSpec, err := getLogsCollectorPrivatePorts(labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector container's private port specs from container '%v' with labels: %+v", containerId, labels)
 	}
 
 	logsCollectorObj := logs_collector.NewLogsCollector(
@@ -94,8 +96,6 @@ func getLogsCollectorObjectFromContainerInfo(
 }
 
 func getAllLogsCollectorContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]*types.Container, error) {
-	matchingLogsCollectorContainers := []*types.Container{}
-
 	logsCollectorContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
 		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.LogsCollectorTypeDockerLabelValue.GetString(),
@@ -106,4 +106,38 @@ func getAllLogsCollectorContainers(ctx context.Context, dockerManager *docker_ma
 		return nil, stacktrace.Propagate(err, "An error occurred fetching logs collector containers using labels: %+v", logsCollectorContainerSearchLabels)
 	}
 	return matchingLogsCollectorContainers, nil
+}
+
+func getLogsCollectorObjectAndContainerIdMatching(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+) (*logs_collector.LogsCollector, string, error) {
+	allLogsCollectorContainers, err := getAllLogsCollectorContainers(ctx, dockerManager)
+	if err != nil {
+		return nil, "", stacktrace.Propagate(err, "An error occurred getting all logs collector containers")
+	}
+
+	if len(allLogsCollectorContainers) == 0 {
+		return nil, "", nil
+	}
+	if len(allLogsCollectorContainers) > 1 {
+		return nil, "", stacktrace.NewError("Found more than one logs collector Docker container'; this is a bug in Kurtosis")
+	}
+
+	logsCollectorContainer := allLogsCollectorContainers[0]
+	logsCollectorContainerID := logsCollectorContainer.GetId()
+
+
+	logsCollectorObject, err := getLogsCollectorObjectFromContainerInfo(
+		ctx,
+		logsCollectorContainerID,
+		logsCollectorContainer.GetLabels(),
+		logsCollectorContainer.GetStatus(),
+		dockerManager,
+	)
+	if err != nil {
+		return nil, "", stacktrace.Propagate(err, "An error occurred getting logs collector object using container ID '%v', labels '%+v' and the status '%v'", logsCollectorContainer.GetId(), logsCollectorContainer.GetLabels(), logsCollectorContainer.GetStatus())
+	}
+
+	return logsCollectorObject, logsCollectorContainerID, nil
 }

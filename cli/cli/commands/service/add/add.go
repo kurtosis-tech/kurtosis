@@ -3,7 +3,10 @@ package add
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
@@ -11,10 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -241,7 +241,7 @@ func run(
 	publicPorts := serviceCtx.GetPublicPorts()
 	publicIpAddr := serviceCtx.GetMaybePublicIPAddress()
 
-	fmt.Println(fmt.Sprintf("Service ID: %v", serviceId))
+	fmt.Printf("Service ID: %v\n", serviceId)
 	if len(privatePorts) > 0 {
 		fmt.Println("Ports Bindings:")
 	} else {

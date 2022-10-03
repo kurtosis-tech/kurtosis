@@ -7,7 +7,9 @@
 
 ### Breaking Changes
 * Updated `CreateEngine` method in `container-engine-lib`, removed the `logsCollectorHttpPortNumber` parameter
-    * Users will need to update all the `CreateEngine` calls removing this new parameter
+    * Users will need to update all the `CreateEngine` calls removing this parameter
+* Updated `NewEngineServerArgs`,  `LaunchWithDefaultVersion` and `LaunchWithCustomVersion` methods in `engine_server_launcher` removed the `logsCollectorHttpPortNumber` parameter
+  * Users will need to update these method calls removing this parameter
 
 ### Features
 * Created the `LogsDatabase` object in `container-engine-lib`
@@ -16,8 +18,19 @@
 ### Changes
 * Untied the logs components containers and volumes creation and removal from the engine's crud in `container-engine-lib`
 
+# 0.49.8
+
+### Changes
+* Added a linter
+* Made changes based on the linters output
+* Made the `discord` command a LowLevelKurtosisCommand instead of an EngineConsumingKurtosisCommand
+
+### Features
+* API container now saves free IPs on a local database
+
 ### Fixes
 * Fix go.mod for commons & cli to reflect monorepo and replaced imports with write package name
+* Move linter core/server linter config to within core/server
 
 # 0.49.7
 

@@ -5,11 +5,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
@@ -26,7 +26,7 @@ func doFilesArtifactExpansionAndGetUserServiceVolumes(
 	ctx context.Context,
 	serviceGuid service.ServiceGUID,
 	objAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
-	freeIpAddrProvider *lib.FreeIpAddrTracker,
+	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker,
 	enclaveNetworkId string,
 	expanderImage string,
 	expanderEnvVars map[string]string,
@@ -105,7 +105,7 @@ func runFilesArtifactsExpander(
 	ctx context.Context,
 	serviceGuid service.ServiceGUID,
 	objAttrProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
-	freeIpAddrProvider *lib.FreeIpAddrTracker,
+	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker,
 	image string,
 	envVars map[string]string,
 	enclaveNetworkId string,
@@ -131,7 +131,11 @@ func runFilesArtifactsExpander(
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't get a free IP to give the expander container '%v'", containerName)
 	}
-	defer freeIpAddrProvider.ReleaseIpAddr(ipAddr)
+	defer func() {
+		if err = freeIpAddrProvider.ReleaseIpAddr(ipAddr); err != nil {
+			logrus.Errorf("Error releasing IP address '%v'", ipAddr)
+		}
+	}()
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		image,

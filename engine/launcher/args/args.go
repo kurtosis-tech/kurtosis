@@ -72,7 +72,6 @@ func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
 func NewEngineServerArgs(
 	grpcListenPortNum uint16,
 	grpcProxyListenPortNum uint16,
-	logsCollectorHttpPortNum uint16,
 	logLevelStr string,
 	imageVersionTag string,
 	metricsUserID string,
@@ -83,7 +82,6 @@ func NewEngineServerArgs(
 	result := &EngineServerArgs{
 		GrpcListenPortNum:           grpcListenPortNum,
 		GrpcProxyListenPortNum:      grpcProxyListenPortNum,
-		LogsCollectorHttpPortNum:    logsCollectorHttpPortNum,
 		LogLevelStr:                 logLevelStr,
 		ImageVersionTag:             imageVersionTag,
 		MetricsUserID:               metricsUserID,

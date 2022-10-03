@@ -137,6 +137,9 @@ func getMatchingEngineKubernetesResources(
 		label_key_consts.IDKubernetesLabelKey.GetString(),
 		engineGuidStrs,
 	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while collecting matching cluster roles")
+	}
 	for engineGuidStr, clusterRolesForId := range clusterRoles {
 		engineGuid := engine.EngineGUID(engineGuidStr)
 		if len(clusterRolesForId) > 1 {
@@ -162,6 +165,9 @@ func getMatchingEngineKubernetesResources(
 		label_key_consts.IDKubernetesLabelKey.GetString(),
 		engineGuidStrs,
 	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while collecting matching cluster role bindings")
+	}
 	for engineGuidStr, clusterRoleBindingsForId := range clusterRoleBindings {
 		engineGuid := engine.EngineGUID(engineGuidStr)
 		if len(clusterRoleBindingsForId) > 1 {

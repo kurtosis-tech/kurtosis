@@ -1,0 +1,82 @@
+# This document explains why this runs on GitHub over Circle
+# https://www.notion.so/kurtosistech/Why-we-have-our-Linter-as-a-Github-Action-572b44c4a9b445009515b7b41d5f74ff
+# we use `skip-pkg-cache:true` as we run into https://github.com/golangci/golangci-lint-action/issues/244 if we don't
+
+name: Golang Lint
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  golangci:
+    name: golang-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.17
+      - uses: actions/checkout@v3
+      - name: Configure git for private modules
+        env:
+          RELEASER_TOKEN: ${{ secrets.RELEASER_TOKEN }}
+        run:  git config --global url."https://${RELEASER_TOKEN}@github.com/".insteadOf "https://github.com/"
+      - run:  go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+      - name: lint-container-engine-lib
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.49.0
+          working-directory: container-engine-lib/
+          args: --timeout=3m
+          skip-pkg-cache: true
+      - name: lint-api-golang
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.49.0
+          working-directory: api/golang/
+          args: --timeout=3m
+          skip-pkg-cache: true
+      - name: lint-core-server
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.49.0
+          working-directory: core/server
+          args: --timeout=3m
+          skip-pkg-cache: true
+      - name: lint-core-launcher
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.49.0
+          working-directory: core/launcher/
+          args: --timeout=3m
+          skip-pkg-cache: true
+      - name: lint-engine-server
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.49.0
+          working-directory: engine/server/
+          args: --timeout=3m
+          skip-pkg-cache: true
+      - name: lint-engine-launcher
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.49.0
+          working-directory: engine/launcher/
+          args: --timeout=3m
+          skip-pkg-cache: true
+      - name: lint-internal-test-suites
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.49.0
+          working-directory: internal_testsuites/golang/
+          args: --timeout=3m
+          skip-pkg-cache: true
+      - name: lint-cli
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.49.0
+          working-directory: cli/cli/
+          args: --timeout=3m
+          skip-pkg-cache: true

@@ -10,14 +10,12 @@ replace (
 )
 
 require (
-	github.com/blang/semver v3.5.1+incompatible
 	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3
-	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220225193403-74da3f3b98ce
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
@@ -51,6 +49,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d // indirect
+	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220424181051-c4a0b573dcaf // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -64,6 +63,7 @@ require (
 	github.com/segmentio/backo-go v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
+	go.etcd.io/bbolt v1.3.6 // indirect
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect

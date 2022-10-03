@@ -113,7 +113,7 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 
 	containerId, _, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
-		return "",  nil, nil,stacktrace.Propagate(err, "An error occurred starting the logs collector container with these args '%+v'", createAndStartArgs)
+		return "",  nil, nil, stacktrace.Propagate(err, "An error occurred starting the logs collector container with these args '%+v'", createAndStartArgs)
 	}
 	removeContainerFunc := func() {
 		removeCtx := context.Background()
@@ -136,8 +136,9 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 
 	logsCollectorAvailabilityChecker := newFluentbitAvailabilityChecker(privateHttpPortSpec.GetNumber())
 
-	if err := logsCollectorAvailabilityChecker.WaitForAvailability(); err != nil {
-
+	if err = logsCollectorAvailabilityChecker.WaitForAvailability(); err != nil {
+		return "", nil, nil,
+		stacktrace.Propagate(err,"An error occurred waiting for the logs collector availability")
 	}
 
 	shouldRemoveLogsCollectorContainer = false

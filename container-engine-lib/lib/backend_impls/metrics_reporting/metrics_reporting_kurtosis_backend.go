@@ -566,19 +566,6 @@ func (backend *MetricsReportingKurtosisBackend) GetLogsDatabase(
 	return logsDatabase, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) StopLogsDatabase(
-	ctx context.Context,
-) (
-	error,
-) {
-
-	if err := backend.underlying.StopLogsDatabase(ctx); err != nil {
-		return stacktrace.Propagate(err, "An error occurred stopping the logs database")
-	}
-
-	return nil
-}
-
 func (backend *MetricsReportingKurtosisBackend) DestroyLogsDatabase(
 	ctx context.Context,
 ) (
@@ -619,19 +606,6 @@ func (backend *MetricsReportingKurtosisBackend) GetLogsCollector(
 	}
 
 	return logsCollector, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) StopLogsCollector(
-	ctx context.Context,
-) (
-	error,
-) {
-
-	if err := backend.underlying.StopLogsCollector(ctx); err != nil {
-		return stacktrace.Propagate(err, "An error occurred stopping the logs collector")
-	}
-
-	return nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) DestroyLogsCollector(

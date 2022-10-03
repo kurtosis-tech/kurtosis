@@ -101,7 +101,9 @@ func (backend *DockerKurtosisBackend) CreateModule(
 	shouldReleaseIp := true
 	defer func() {
 		if shouldReleaseIp {
-			freeIpAddrProvider.ReleaseIpAddr(ipAddr)
+			if err = freeIpAddrProvider.ReleaseIpAddr(ipAddr); err != nil {
+				logrus.Errorf("Error releasing IP address '%v'", ipAddr)
+			}
 		}
 	}()
 
@@ -146,7 +148,10 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		return nil, stacktrace.NewError("The user services can't be started because there is not logs collector running for sending the logs")
 	}
 
-	logsCollectorServiceAddress := logsCollector.GetPrivateTcpAddress()
+	logsCollectorServiceAddress, err := logsCollector.GetPrivateTcpAddress()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the private tcp address")
+	}
 	//The following docker labels will be added into the logs stream which is necessary for creating new tags
 	//in the logs database and then using them for querying the database to get the specific user service's logs
 	logsCollectorLabels := logs_collector_functions.LogsCollectorLabels{

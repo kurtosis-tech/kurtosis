@@ -87,7 +87,9 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 	shouldReleaseIp := true
 	defer func() {
 		if shouldReleaseIp {
-			freeIpAddrProvider.ReleaseIpAddr(ipAddr)
+			if err = freeIpAddrProvider.ReleaseIpAddr(ipAddr); err != nil {
+				logrus.Errorf("Error releasing IP address '%v'", ipAddr)
+			}
 		}
 	}()
 

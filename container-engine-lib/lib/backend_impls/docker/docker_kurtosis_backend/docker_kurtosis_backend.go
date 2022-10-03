@@ -2,8 +2,6 @@ package docker_kurtosis_backend
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
@@ -22,22 +20,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	"net"
-	"strings"
 	"sync"
 )
-
-// Unfortunately, Docker doesn't have an enum for the protocols it supports, so we have to create this translation map
-var portSpecProtosToDockerPortProtos = map[port_spec.PortProtocol]string{
-	port_spec.PortProtocol_TCP:  "tcp",
-	port_spec.PortProtocol_SCTP: "sctp",
-	port_spec.PortProtocol_UDP:  "udp",
-}
 
 type DockerKurtosisBackend struct {
 	dockerManager *docker_manager.DockerManager
@@ -54,7 +43,7 @@ type DockerKurtosisBackend struct {
 	//  KurtosisBackend functionality that it shouldn't (e.g. GetUserServiceLogs). This should all flow through the API
 	//  container API instaed.
 	// This map is set exactly once, upon creation of the DockerKubernetesBackend, and never modified afterwards. Therefore, it doesn't need to be protected with a mutex (because the FreeIPProviders are themselves threadsafe)
-	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker
+	enclaveFreeIpProviders map[enclave.EnclaveID]*free_ip_addr_tracker.FreeIpAddrTracker
 
 	// TODO Migrate this to an on-disk database, so that the API container can be shut down & restarted!
 	// Canonical store of the registrations being tracked by this *DockerKurtosisBackend instance
@@ -68,7 +57,7 @@ type DockerKurtosisBackend struct {
 
 func NewDockerKurtosisBackend(
 	dockerManager *docker_manager.DockerManager,
-	enclaveFreeIpProviders map[enclave.EnclaveID]*lib.FreeIpAddrTracker,
+	enclaveFreeIpProviders map[enclave.EnclaveID]*free_ip_addr_tracker.FreeIpAddrTracker,
 ) *DockerKurtosisBackend {
 	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator(dockerManager)
 	serviceRegistrations := map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration{}
@@ -303,39 +292,19 @@ func (backend *DockerKurtosisBackend) GetLogsDatabase(
 	)
 }
 
-func (backend *DockerKurtosisBackend) StopLogsDatabase(
-	ctx context.Context,
-) (
-	error,
-) {
-
-	logsCollector, err := backend.GetLogsCollector(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the logs collector")
-	}
-
-	if logsCollector != nil && logsCollector.GetStatus() == container_status.ContainerStatus_Running {
-		return stacktrace.Propagate(err, "The logs database can't be stopped due the logs collector is running")
-	}
-
-	return logs_database_functions.StopLogsDatabase(
-		ctx,
-		backend.dockerManager,
-	)
-}
-
 func (backend *DockerKurtosisBackend) DestroyLogsDatabase(
 	ctx context.Context,
 ) (
 	error,
 ) {
+
 	logsCollector, err := backend.GetLogsCollector(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
 
 	if logsCollector != nil && logsCollector.GetStatus() == container_status.ContainerStatus_Running {
-		return stacktrace.Propagate(err, "The logs database can't be destroyed due the logs collector is running")
+		return stacktrace.NewError("The logs database can't be destroyed due the logs collector is running")
 	}
 
 	return logs_database_functions.DestroyLogsDatabase(
@@ -352,18 +321,18 @@ func (backend *DockerKurtosisBackend) CreateLogsCollector(
 	error,
 ) {
 
-	//Declaring the implementation
-	logsCollectorContainer := fluentbit.NewFluentbitLogsCollectorContainer()
-
-	//TODO add a comment above GetLogsDatabase that says that we'd have to replace this part if we ever wanted to send to an external source
+	//TODO we we'd have to replace this part if we ever wanted to send to an external source
 	logsDatabase, err := backend.GetLogsDatabase(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database, it's not possible to run the logs collector without a logs database")
 	}
 
-	if logsDatabase.GetStatus() != container_status.ContainerStatus_Running {
+	if logsDatabase == nil || logsDatabase.GetStatus() != container_status.ContainerStatus_Running {
 		return nil,stacktrace.NewError("The logs database is not running, it's not possible to run the logs collector without a running logs database")
 	}
+
+	//Declaring the implementation
+	logsCollectorContainer := fluentbit.NewFluentbitLogsCollectorContainer()
 
 	return logs_collector_functions.CreateLogsCollector(
 		ctx,
@@ -387,18 +356,6 @@ func (backend *DockerKurtosisBackend) GetLogsCollector(
 	)
 }
 
-func (backend *DockerKurtosisBackend) StopLogsCollector(
-	ctx context.Context,
-) (
-	error,
-) {
-
-	return logs_collector_functions.StopLogsCollector(
-		ctx,
-		backend.dockerManager,
-	)
-}
-
 func (backend *DockerKurtosisBackend) DestroyLogsCollector(
 	ctx context.Context,
 ) (
@@ -412,41 +369,10 @@ func (backend *DockerKurtosisBackend) DestroyLogsCollector(
 }
 
 // ====================================================================================================
-//                       Private helper functions shared by multiple subfunctions files
+//
+//	Private helper functions shared by multiple subfunctions files
+//
 // ====================================================================================================
-// TODO MOVE THIS TO WHOMEVER CALLS KURTOSISBACKEND
-// This is a helper function that will take multiple errors, each identified by an ID, and format them together
-// If no errors are returned, this function returns nil
-func buildCombinedError(errorsById map[string]error, titleStr string) error {
-	allErrorStrs := []string{}
-	for errorId, stopErr := range errorsById {
-		errorFormatStr := ">>>>>>>>>>>>> %v %v <<<<<<<<<<<<<\n" +
-			"%v\n" +
-			">>>>>>>>>>>>> END %v %v <<<<<<<<<<<<<"
-		errorStr := fmt.Sprintf(
-			errorFormatStr,
-			strings.ToUpper(titleStr),
-			errorId,
-			stopErr.Error(),
-			strings.ToUpper(titleStr),
-			errorId,
-		)
-		allErrorStrs = append(allErrorStrs, errorStr)
-	}
-
-	if len(allErrorStrs) > 0 {
-		// NOTE: This is one of the VERY rare cases where we don't want to use stacktrace.Propagate, because
-		// attaching stack information for this method (which simply combines errors) just isn't useful. The
-		// expected behaviour is that the caller of this function will use stacktrace.Propagate
-		return errors.New(strings.Join(
-			allErrorStrs,
-			"\n\n",
-		))
-	}
-
-	return nil
-}
-
 func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID) (*types.Network, error) {
 	networkSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():     label_value_consts.AppIDDockerLabelValue.GetString(),
@@ -473,7 +399,7 @@ func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.C
 
 // Guaranteed to either return an enclave data volume name or throw an error
 func (backend *DockerKurtosisBackend) getEnclaveDataVolumeByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID) (string, error) {
-	volumeSearchLabels :=  map[string]string{
+	volumeSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():      label_value_consts.AppIDDockerLabelValue.GetString(),
 		label_key_consts.EnclaveIDDockerLabelKey.GetString():  string(enclaveId),
 		label_key_consts.VolumeTypeDockerLabelKey.GetString(): label_value_consts.EnclaveDataVolumeTypeDockerLabelValue.GetString(),
@@ -491,6 +417,3 @@ func (backend *DockerKurtosisBackend) getEnclaveDataVolumeByEnclaveId(ctx contex
 	volume := foundVolumes[0]
 	return volume.Name, nil
 }
-
-
-
