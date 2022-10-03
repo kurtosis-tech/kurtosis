@@ -16,9 +16,6 @@ const (
 	macOSName          = "darwin"
 	windowsOSName      = "windows"
 	kurtosisDiscordUrl = "https://discord.com/channels/783719264308953108/783719264308953111"
-
-	kurtosisBackendCtxKey = "kurtosis-backend"
-	engineClientCtxKey    = "engine-client"
 )
 
 var DiscordCmd = &lowlevel.LowlevelKurtosisCommand{
