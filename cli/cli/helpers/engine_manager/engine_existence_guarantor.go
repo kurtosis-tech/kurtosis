@@ -7,7 +7,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -54,6 +57,9 @@ type engineExistenceGuarantor struct {
 	// IP:port information of the engine server on the host machine that is guaranteed to be started if the visiting didn't throw an error
 	// Will be empty before visiting
 	postVisitingHostMachineIpAndPort *hostMachineIpAndPort
+
+	//TODO This is a temporary hack we should remove it when centralized logs be implemented in the KubernetesBackend
+	kurtosisClusterType resolved_config.KurtosisClusterType
 }
 
 func newEngineExistenceGuarantorWithDefaultVersion(
@@ -64,6 +70,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier,
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
+	kurtosisClusterType resolved_config.KurtosisClusterType,
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
@@ -74,6 +81,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		defaultEngineImageVersionTag,
 		logLevel,
 		maybeCurrentlyRunningEngineVersionTag,
+		kurtosisClusterType,
 	)
 }
 
@@ -86,6 +94,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	imageVersionTag string,
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
+	kurtosisClusterType resolved_config.KurtosisClusterType,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
 		ctx:                                  ctx,
@@ -98,6 +107,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		maybeCurrentlyRunningEngineVersionTag:     maybeCurrentlyRunningEngineVersionTag,
 		postVisitingHostMachineIpAndPort:          nil, // Will be filled in upon successful visitation
 		shouldSendMetrics:                         shouldSendMetrics,
+		kurtosisClusterType:                       kurtosisClusterType,
 	}
 }
 
@@ -108,6 +118,24 @@ func (guarantor *engineExistenceGuarantor) getPostVisitingHostMachineIpAndPort()
 // If the engine is stopped, try to start it
 func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 	logrus.Infof("No Kurtosis engine was found; attempting to start one...")
+
+	logrus.Infof("Starting the centralized logs components first...")
+	shouldRemoveCentralizedLogsComponents := false
+	//TODO this condition is a temporary hack, we should removed it when the centralized logs in Kubernetes Kurtosis Backend is implemented
+	if guarantor.kurtosisClusterType == resolved_config.KurtosisClusterType_Docker {
+		ctx := context.Background()
+		removeCentralizedLogsComponentsFunc, err := guarantor.startCentralizedLogsComponents(ctx)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred starting the centralized logs components")
+		}
+		shouldRemoveCentralizedLogsComponents = true
+		defer func() {
+			if shouldRemoveCentralizedLogsComponents {
+				removeCentralizedLogsComponentsFunc()
+			}
+		}()
+	}
+	logrus.Infof("...centralized logs components started")
 
 	metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
 	metricsUserId, err := metricsUserIdStore.GetUserID()
@@ -145,6 +173,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 	// TODO Replace hacky method of defaulting engine connection to localhost on predetermined port
 	guarantor.postVisitingHostMachineIpAndPort = getDefaultKurtosisEngineLocalhostMachineIpAndPort()
 	logrus.Info("Successfully started Kurtosis engine")
+	shouldRemoveCentralizedLogsComponents = false
 	return nil
 }
 
@@ -230,4 +259,74 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 	}
 
 	return runningEngineSemver, launcherEngineSemver, nil
+}
+
+func (guarantor *engineExistenceGuarantor) startCentralizedLogsComponents(ctx context.Context) (func(), error) {
+	allStatusesLogsCollectorFilters := &logs_collector.LogsCollectorFilters{}
+	logsCollector, err := guarantor.kurtosisBackend.GetLogsCollector(ctx, allStatusesLogsCollectorFilters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector using filters '%+v'", allStatusesLogsCollectorFilters)
+	}
+
+	//Destroy any previous running or stopped logs collector
+	if logsCollector != nil {
+		if err = guarantor.kurtosisBackend.DestroyLogsCollector(ctx, allStatusesLogsCollectorFilters); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred destroying the logs database")
+		}
+	}
+
+	allStatusesLogsDatabaseFilters := &logs_database.LogsDatabaseFilters{}
+
+	logsDatabase, err := guarantor.kurtosisBackend.GetLogsDatabase(ctx, allStatusesLogsDatabaseFilters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database using filters '%+v'", allStatusesLogsDatabaseFilters)
+	}
+
+	//Destroy any previous running or stopped logs database
+	if logsDatabase != nil {
+		if err = guarantor.kurtosisBackend.DestroyLogsDatabase(ctx, allStatusesLogsDatabaseFilters); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred destroying the logs database")
+		}
+	}
+
+	if _, err := guarantor.kurtosisBackend.CreateLogsDatabase(ctx); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database")
+	}
+	shouldRemoveLogsDatabase := true
+	removeLogsDataBaseFunc := func() {
+		if err := guarantor.kurtosisBackend.DestroyLogsDatabase(ctx, allStatusesLogsDatabaseFilters); err != nil {
+			logrus.Errorf("Creating the centralized logs components didn't complete successfully, so we tried to delete the logs database that we created but an error was thrown:\n%v", err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs database Docker container!!!!!!!")
+		}
+	}
+	defer func() {
+		if shouldRemoveLogsDatabase {
+			removeLogsDataBaseFunc()
+		}
+	}()
+
+	if _, err := guarantor.kurtosisBackend.CreateLogsCollector(ctx, defaultHttpLogsCollectorPortNum); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database with http port number '%v'", defaultHttpLogsCollectorPortNum)
+	}
+	shouldRemoveLogsCollector := true
+	removeLogsCollectorFunc := func() {
+		if err := guarantor.kurtosisBackend.DestroyLogsCollector(ctx, allStatusesLogsCollectorFilters); err != nil {
+			logrus.Errorf("Creating the centralized logs components didn't complete successfully, so we tried to delete the logs collector that we created but an error was thrown:\n%v", err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector Docker container!!!!!!!")
+		}
+	}
+	defer func() {
+		if shouldRemoveLogsCollector {
+			removeLogsCollectorFunc()
+		}
+	}()
+
+	removeCentralizedLogsComponentsFunc := func() {
+		removeLogsCollectorFunc()
+		removeLogsDataBaseFunc()
+	}
+
+	shouldRemoveLogsCollector = false
+	shouldRemoveLogsDatabase = false
+	return removeCentralizedLogsComponentsFunc, nil
 }

@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	waitForEngineResponseTimeout = 5 * time.Second
-	defaultClusterName           = resolved_config.DefaultDockerClusterName
+	waitForEngineResponseTimeout    = 5 * time.Second
+	defaultClusterName              = resolved_config.DefaultDockerClusterName
 	defaultHttpLogsCollectorPortNum = uint16(9712)
 )
 
@@ -145,6 +145,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
 	}
+	clusterType := manager.clusterConfig.GetClusterType()
 	engineGuarantor := newEngineExistenceGuarantorWithDefaultVersion(
 		ctx,
 		maybeHostMachinePortBinding,
@@ -153,6 +154,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 		manager.engineServerKurtosisBackendConfigSupplier,
 		logLevel,
 		engineVersion,
+		clusterType,
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
 	//  before we can return an EngineClient
@@ -169,6 +171,8 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
 	}
+
+	clusterType := manager.clusterConfig.GetClusterType()
 	engineGuarantor := newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
 		maybeHostMachinePortBinding,
@@ -178,6 +182,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		engineImageVersionTag,
 		logLevel,
 		engineVersion,
+		clusterType,
 	)
 	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {
@@ -259,17 +264,6 @@ func (manager *EngineManager) startEngineWithGuarantor(ctx context.Context, curr
 	}
 
 	return engineClient, clientCloseFunc, nil
-}
-
-func (manager *EngineManager) startCentralizedLogsComponents(ctx context.Context) error {
-	if _, err := manager.kurtosisBackend.CreateLogsDatabase(ctx); err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the logs database")
-	}
-
-	if _, err := manager.kurtosisBackend.CreateLogsCollector(ctx, defaultHttpLogsCollectorPortNum); err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the logs database with http port number '%v'", defaultHttpLogsCollectorPortNum)
-	}
-	return nil
 }
 
 func (manager *EngineManager) destroyCentralizedLogsComponents(ctx context.Context) error {
