@@ -2,20 +2,20 @@ package module_manager
 
 import "github.com/kurtosis-tech/stacktrace"
 
-type MockPackageManager struct {
+type MockModuleManager struct {
 	packages map[string]string
 }
 
-func NewPackageManager(seedPackages map[string]string) *MockPackageManager {
-	return &MockPackageManager{
+func NewPackageManager(seedPackages map[string]string) *MockModuleManager {
+	return &MockModuleManager{
 		packages: seedPackages,
 	}
 }
 
-func (mockPackageManager *MockPackageManager) GetModule(packageURL string) (string, error) {
-	contents, found := mockPackageManager.packages[packageURL]
+func (mockPackageManager *MockModuleManager) GetModule(moduleURL string) (string, error) {
+	contents, found := mockPackageManager.packages[moduleURL]
 	if !found {
-		return "", stacktrace.NewError("Package '%v' not found", packageURL)
+		return "", stacktrace.NewError("Module '%v' not found", moduleURL)
 	}
 	return contents, nil
 }

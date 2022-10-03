@@ -1,7 +1,6 @@
 package module_manager
 
 import (
-	"fmt"
 	"github.com/go-git/go-git/v5"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
@@ -12,8 +11,6 @@ import (
 )
 
 const (
-	starlarkSubpath         = "starlark"
-	tmpSubpath              = "tmp"
 	packageDirPermission    = 0755
 	temporaryRepoDirPattern = "tmp-repo-dir-*"
 )
@@ -23,24 +20,11 @@ type GitModuleManager struct {
 	moduleDir    string
 }
 
-func NewGitModuleManager(enclaveDataVolumeDir string) (*GitModuleManager, error) {
-	moduleTmpDir := path.Join(enclaveDataVolumeDir, tmpSubpath)
-	if _, err := os.Stat(moduleTmpDir); err != nil {
-		if err = os.Mkdir(moduleTmpDir, packageDirPermission); err != nil {
-			panic(fmt.Sprintf("Error creating temporary directory for repositories to be cloned '%v'", moduleTmpDir))
-		}
-	}
-	moduleDir := path.Join(enclaveDataVolumeDir, starlarkSubpath)
-	if _, err := os.Stat(moduleDir); err != nil {
-		if err = os.Mkdir(moduleDir, packageDirPermission); err != nil {
-			panic(fmt.Sprintf("Error creating directory for modules '%v'", moduleDir))
-		}
-	}
-
+func NewGitModuleManager(moduleDir string, tmpDir string) *GitModuleManager {
 	return &GitModuleManager{
-		moduleTmpDir: moduleTmpDir,
 		moduleDir:    moduleDir,
-	}, nil
+		moduleTmpDir: tmpDir,
+	}
 }
 
 func (p *GitModuleManager) GetModule(githubURL string) (string, error) {

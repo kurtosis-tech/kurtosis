@@ -14,10 +14,10 @@ type CacheEntry struct {
 
 type LoadInstruction struct {
 	moduleCache   map[string]*CacheEntry
-	moduleManager *module_manager.ModuleManager
+	moduleManager module_manager.ModuleManager
 }
 
-func NewLoadInstruction(moduleManager *module_manager.ModuleManager) *LoadInstruction {
+func NewLoadInstruction(moduleManager module_manager.ModuleManager) *LoadInstruction {
 	return &LoadInstruction{
 		moduleManager: moduleManager,
 	}
@@ -35,8 +35,7 @@ func (load *LoadInstruction) Load(thread *starlark.Thread, module string) (starl
 		load.moduleCache[module] = nil
 
 		// Load it.
-		moduleManager := *load.moduleManager
-		contents, err := moduleManager.GetModule(module)
+		contents, err := load.moduleManager.GetModule(module)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while fetching contents of the module '%v'", module)
 		}

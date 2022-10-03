@@ -25,12 +25,12 @@ const (
 
 type StartosisInterpreter struct {
 	serviceNetwork *service_network.ServiceNetwork
-	moduleManager  *module_manager.ModuleManager
+	moduleManager  module_manager.ModuleManager
 }
 
 type SerializedInterpretationOutput string
 
-func NewStartosisInterpreter(serviceNetwork *service_network.ServiceNetwork, moduleManager *module_manager.ModuleManager) *StartosisInterpreter {
+func NewStartosisInterpreter(serviceNetwork *service_network.ServiceNetwork, moduleManager module_manager.ModuleManager) *StartosisInterpreter {
 	return &StartosisInterpreter{
 		serviceNetwork: serviceNetwork,
 		moduleManager:  moduleManager,
