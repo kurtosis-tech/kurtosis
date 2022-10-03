@@ -11,7 +11,9 @@ import type {
     DestroyEnclaveArgs,
     GetEnclavesResponse,
     GetEngineInfoResponse,
-    StopEnclaveArgs
+    StopEnclaveArgs,
+    GetUserServiceLogsArgs,
+    GetUserServiceLogsResponse
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 
 export class GrpcWebEngineClient implements GenericEngineClient {
@@ -160,5 +162,28 @@ export class GrpcWebEngineClient implements GenericEngineClient {
         }
 
         return ok(getEnclavesResponseResult.value);
+    }
+
+    public async getUserServiceLogs(getUserServiceLogsArgs: GetUserServiceLogsArgs): Promise<Result<GetUserServiceLogsResponse, Error>> {
+        const getUserServiceLogsPromise: Promise<Result<GetUserServiceLogsResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.getUserServiceLogs(getUserServiceLogsArgs, {},(error: grpc_web.RpcError  | null, response?: GetUserServiceLogsResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")))
+                    } else {
+                        resolve(ok(response));
+                    }
+                } else {
+                    resolve(err(error))
+                }
+            })
+        })
+
+        const getUserServiceLogsResponseResult: Result<GetUserServiceLogsResponse, Error> = await getUserServiceLogsPromise;
+        if (getUserServiceLogsResponseResult.isErr()) {
+            return err(getUserServiceLogsResponseResult.error);
+        }
+
+        return ok(getUserServiceLogsResponseResult.value);
     }
 }

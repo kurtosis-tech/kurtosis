@@ -60,6 +60,16 @@ Destroys enclaves in the Kurtosis engine.
 
 ---
 
+### getUserServiceLogs(EnclaveID enclaveId, Set\<ServiceGUID> userServiceGuids) -\> Map\<ServiceGUID, Array\<String\>\> userServiceLogsByUserServiceGuid
+Get the user service's container log lines (ordered in forward direction, the oldest line is the first) from user services identified by their GUID
+
+**Args**
+* `enclaveId`: ID of the user services' enclave.
+* `userServiceGuids`: A set of user service GUIDs identifying which are the ones that are wanted to get the logs
+
+**Returns**
+* `userServiceLogsByUserServiceGuid`: A map containing the user service's container logs grouped by user service GUID
+
 _Found a bug? File it on [the repo][issues]!_
 
 [issues]: https://github.com/kurtosis-tech/kurtosis-sdk/issues

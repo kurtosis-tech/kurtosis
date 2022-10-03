@@ -3,12 +3,12 @@ package kurtosis_context
 import (
 	"context"
 	"fmt"
-
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/kurtosis_version"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -171,6 +171,39 @@ func (kurtosisCtx *KurtosisContext) Clean(ctx context.Context, shouldCleanAll bo
 	}
 
 	return cleanResponse.RemovedEnclaveIds, nil
+}
+
+// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
+func (kurtosisCtx *KurtosisContext) GetUserServiceLogs(
+	ctx context.Context,
+	enclaveId enclaves.EnclaveID,
+	userServiceGuids map[service.ServiceGUID]bool,
+) (map[service.ServiceGUID][]string, error) {
+
+	userServiceLogsByUserServiceGuid := map[service.ServiceGUID][]string{}
+
+	userServiceGuidStrSet := make(map[string]bool, len(userServiceGuids))
+	for userServiceGuid, isUserServiceInSet := range userServiceGuids {
+		userServiceGuidStr := string(userServiceGuid)
+		userServiceGuidStrSet[userServiceGuidStr] = isUserServiceInSet
+	}
+
+	getUserServiceLogsArgs := &kurtosis_engine_rpc_api_bindings.GetUserServiceLogsArgs{
+		EnclaveId: string(enclaveId),
+		ServiceGuidSet: userServiceGuidStrSet,
+	}
+
+	gutUserServiceLogsResponse, err := kurtosisCtx.client.GetUserServiceLogs(ctx, getUserServiceLogsArgs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service logs using args '%v'", getUserServiceLogsArgs)
+	}
+
+	for userServiceGuidStr, userServiceLogLines := range gutUserServiceLogsResponse.UserServiceLogsByUserServiceGuid {
+		userServiceGuid := service.ServiceGUID(userServiceGuidStr)
+		userServiceLogsByUserServiceGuid[userServiceGuid] = userServiceLogLines.Line
+	}
+
+	return userServiceLogsByUserServiceGuid, nil
 }
 
 // ====================================================================================================

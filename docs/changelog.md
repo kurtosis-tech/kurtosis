@@ -8,6 +8,8 @@
 * Created the `LogsCollector` object in `container-engine-lib`
 * Added `LogsDatabase` CRUD methods in `Docker` Kurtosis backend
 * Added `LogsCollector` CRUD methods in `Docker` Kurtosis backend
+* Added `KurtosisContext.GetUserServiceLogs` method in `golang` and `typescript` api libraries
+* Added the public documentation for the new `KurtosisContext.GetUserServiceLogs` method
 
 ### Breaking Changes
 * Updated `CreateEngine` method in `container-engine-lib`, removed the `logsCollectorHttpPortNumber` parameter

@@ -7,3 +7,8 @@
 The identifier used for services within the enclave.
 */
 export type ServiceID = string;
+
+/*
+The globally unique identifier used for services within the enclave.
+*/
+export type ServiceGUID = string;
