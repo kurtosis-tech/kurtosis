@@ -327,11 +327,12 @@ Done!
 
 func TestStartosisCompiler_SimpleLoading(t *testing.T) {
 	seedModules := make(map[string]string)
-	seedModules["github.com/foo/bar/lib.star"] = "a=\"World!\""
+	barModulePath := "github.com/foo/bar/lib.star"
+	seedModules[barModulePath] = "a=\"World!\""
 	moduleManager := module_manager.NewMockModuleManager(seedModules)
 	interpreter := NewStartosisInterpreter(nil, moduleManager)
 	script := `
-load("github.com/foo/bar/lib.star", "a")
+load("` + barModulePath + `", "a")
 print("Hello " + a)
 
 `
@@ -342,19 +343,21 @@ print("Hello " + a)
 
 	expectedOutput := `Hello World!
 `
-	assert.Equal(t, expectedOutput, scriptOutput)
+	assert.Equal(t, expectedOutput, string(scriptOutput))
 }
 
 func TestStartosisCompiler_TransitiveLoading(t *testing.T) {
 	seedModules := make(map[string]string)
-	seedModules["github.com/foo/bar/lib.star"] = `a="World!"`
-	seedModules["github.com/foo/doo/lib.star"] = `load("github.com/foo/bar/lib.star", "a")
+	dooModulePath := "github.com/foo/doo/lib.star"
+	barModulePath := "github.com/foo/bar/lib.star"
+	seedModules[barModulePath] = `a="World!"`
+	seedModules[dooModulePath] = `load("` + barModulePath + `", "a")
 b = "Hello " + a
 `
 	moduleManager := module_manager.NewMockModuleManager(seedModules)
 	interpreter := NewStartosisInterpreter(nil, moduleManager)
 	script := `
-load("github.com/foo/doo/lib.star", "b")
+load("` + dooModulePath + `", "b")
 print(b)
 
 `
@@ -365,43 +368,52 @@ print(b)
 
 	expectedOutput := `Hello World!
 `
-	assert.Equal(t, expectedOutput, scriptOutput)
+	assert.Equal(t, expectedOutput, string(scriptOutput))
 }
 
 func TestStartosisCompiler_FailsOnCycle(t *testing.T) {
 	seedModules := make(map[string]string)
-	seedModules["github.com/foo/bar/lib.star"] = `load("github.com/foo/doo/lib.star", "b")
-
+	dooModulePath := "github.com/foo/doo/lib.star"
+	barModulePath := "github.com/foo/bar/lib.star"
+	seedModules[barModulePath] = `load("` + dooModulePath + `", "b")
 a = "Hello" + b`
-	seedModules["github.com/foo/doo/lib.star"] = `load("github.com/foo/bar/lib.star", "a")
-
+	seedModules[dooModulePath] = `load("` + barModulePath + `", "a")
 b = "Hello " + a
 `
 	moduleManager := module_manager.NewMockModuleManager(seedModules)
 	interpreter := NewStartosisInterpreter(nil, moduleManager)
 	script := `
-load("github.com/foo/doo/lib.star", "b")
+load("` + dooModulePath + `", "b")
 print(b)
 `
 
 	_, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
 	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
-	assert.NotNil(t, interpretationError)
-	expectedError := startosis_errors.NewInterpretationError(fmt.Sprintf("There is a cycle in the load graph"))
+	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
+		fmt.Sprintf("Evaluation error: cannot load %v: cannot load %v: cannot load %v: There is a cycle in the load graph", dooModulePath, barModulePath, dooModulePath),
+		[]startosis_errors.CallFrame{
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 1)),
+		},
+	)
 	assert.Equal(t, expectedError, interpretationError)
 }
 
 func TestStartosisCompiler_FailsOnNonExistentModule(t *testing.T) {
 	interpreter := NewStartosisInterpreter(nil, emptyMockModuleManager())
-	module := "github.com/non/existent/module.star"
+	nonExistentModulePath := "github.com/non/existent/module.star"
 	script := `
-load("` + module + `", "b")
+load("` + nonExistentModulePath + `", "b")
 print(b)
 `
-
 	_, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
 	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
-	expectedError := startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while fetching contents of the module '%v'", module))
+
+	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
+		fmt.Sprintf("Evaluation error: cannot load %v: An error occurred while fetching contents of the module '%v'", nonExistentModulePath, nonExistentModulePath),
+		[]startosis_errors.CallFrame{
+			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 1)),
+		},
+	)
 	assert.Equal(t, expectedError, interpretationError)
 }
 
