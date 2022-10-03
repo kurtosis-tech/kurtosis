@@ -419,32 +419,6 @@ print(b)
 	assert.Equal(t, expectedError, interpretationError)
 }
 
-func TestStartosisCompiler_GitModuleManagerSucceedsForExistentModule(t *testing.T) {
-	moduleDir := "/tmp/startosis-modules/"
-	err := os.Mkdir(moduleDir, dirPermission)
-	require.Nil(t, err)
-	defer os.RemoveAll(moduleDir)
-	moduleTmpDir := "/tmp/tmp-startosis-modules/"
-	err = os.Mkdir(moduleTmpDir, dirPermission)
-	require.Nil(t, err)
-	defer os.RemoveAll(moduleTmpDir)
-
-	gitModuleManager := git_module_manager.NewGitModuleManager(moduleDir, moduleTmpDir)
-
-	interpreter := NewStartosisInterpreter(nil, gitModuleManager)
-	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star"
-	script := `
-load("` + sampleStartosisModule + `", "a")
-print("Hello " + a)
-`
-	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
-	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
-	assert.Nil(t, interpretationError, "This test requires you to be connected to GitHub, ignore if you are offline")
-
-	expectedOutput := "Hello World!\n"
-	assert.Equal(t, expectedOutput, string(scriptOutput))
-}
-
 func TestStartosisCompiler_ValidSimpleScriptWithImportedStruct(t *testing.T) {
 	seedModules := make(map[string]string)
 	barModulePath := "github.com/foo/bar/lib.star"
@@ -461,7 +435,7 @@ service_config = struct(
 	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
 	interpreter := NewStartosisInterpreter(nil, moduleManager)
 	script := `
-load("github.com/foo/bar/lib.star", "service_id", "service_config")
+load("` + barModulePath + `", "service_id", "service_config")
 print("Starting Startosis script!")
 
 print("Adding service " + service_id)
@@ -493,6 +467,121 @@ Starting Startosis script!
 Adding service example-datastore-server
 `
 	require.Equal(t, expectedOutput, string(scriptOutput))
+}
+
+func TestStartosisCompiler_ValidScriptWithMultipleInstructionsImportedFromOtherModule(t *testing.T) {
+	seedModules := make(map[string]string)
+	barModulePath := "github.com/foo/bar/lib.star"
+	seedModules[barModulePath] = `
+service_id = "example-datastore-server"
+ports = [1323, 1324, 1325]
+
+def deploy_datastore_services():
+    for i in range(len(ports)):
+        unique_service_id = service_id + "-" + str(i)
+        print("Adding service " + unique_service_id)
+        service_config = struct(
+			container_image_name = "kurtosistech/example-datastore-server",
+			used_ports = {
+				"grpc": struct(
+					number = ports[i],
+					protocol = "TCP"
+				)
+			}
+		)
+        add_service(service_id = unique_service_id, service_config = service_config)
+`
+	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
+	interpreter := NewStartosisInterpreter(nil, moduleManager)
+	script := `
+load("` + barModulePath + `", "deploy_datastore_services")
+print("Starting Startosis script!")
+
+deploy_datastore_services()
+print("Done!")
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Equal(t, 3, len(instructions))
+	require.Nil(t, interpretationError)
+
+	addServiceInstruction0 := add_service.NewAddServiceInstruction(
+		nil,
+		*kurtosis_instruction.NewInstructionPosition(5, 26),
+		service.ServiceID("example-datastore-server-0"),
+		&kurtosis_core_rpc_api_bindings.ServiceConfig{
+			ContainerImageName: "kurtosistech/example-datastore-server",
+			PrivatePorts: map[string]*kurtosis_core_rpc_api_bindings.Port{
+				"grpc": {
+					Number:   1323,
+					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
+				},
+			},
+		})
+	addServiceInstruction1 := add_service.NewAddServiceInstruction(
+		nil,
+		*kurtosis_instruction.NewInstructionPosition(5, 26),
+		service.ServiceID("example-datastore-server-1"),
+		&kurtosis_core_rpc_api_bindings.ServiceConfig{
+			ContainerImageName: "kurtosistech/example-datastore-server",
+			PrivatePorts: map[string]*kurtosis_core_rpc_api_bindings.Port{
+				"grpc": {
+					Number:   1324,
+					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
+				},
+			},
+		})
+	addServiceInstruction2 := add_service.NewAddServiceInstruction(
+		nil,
+		*kurtosis_instruction.NewInstructionPosition(5, 26),
+		service.ServiceID("example-datastore-server-2"),
+		&kurtosis_core_rpc_api_bindings.ServiceConfig{
+			ContainerImageName: "kurtosistech/example-datastore-server",
+			PrivatePorts: map[string]*kurtosis_core_rpc_api_bindings.Port{
+				"grpc": {
+					Number:   1325,
+					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
+				},
+			},
+		})
+
+	require.Equal(t, instructions[0], addServiceInstruction0)
+	require.Equal(t, instructions[1], addServiceInstruction1)
+	require.Equal(t, instructions[2], addServiceInstruction2)
+
+	expectedOutput := `Starting Startosis script!
+Adding service example-datastore-server-0
+Adding service example-datastore-server-1
+Adding service example-datastore-server-2
+Done!
+`
+	require.Equal(t, expectedOutput, string(scriptOutput))
+}
+
+func TestStartosisCompiler_GitModuleManagerSucceedsForExistentModule(t *testing.T) {
+	moduleDir := "/tmp/startosis-modules/"
+	err := os.Mkdir(moduleDir, dirPermission)
+	require.Nil(t, err)
+	defer os.RemoveAll(moduleDir)
+	moduleTmpDir := "/tmp/tmp-startosis-modules/"
+	err = os.Mkdir(moduleTmpDir, dirPermission)
+	require.Nil(t, err)
+	defer os.RemoveAll(moduleTmpDir)
+
+	gitModuleManager := git_module_manager.NewGitModuleManager(moduleDir, moduleTmpDir)
+
+	interpreter := NewStartosisInterpreter(nil, gitModuleManager)
+	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star"
+	script := `
+load("` + sampleStartosisModule + `", "a")
+print("Hello " + a)
+`
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
+	assert.Nil(t, interpretationError, "This test requires you to be connected to GitHub, ignore if you are offline")
+
+	expectedOutput := "Hello World!\n"
+	assert.Equal(t, expectedOutput, string(scriptOutput))
 }
 
 func TestStartosisCompiler_GitModuleManagerFailsForNonExistentModule(t *testing.T) {
