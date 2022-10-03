@@ -391,16 +391,10 @@ type KurtosisBackend interface {
 	)
 
 	// Gets the logs database
-	GetLogsDatabase(
-		ctx context.Context,
-		filters *logs_database.LogsDatabaseFilters,
-	) (*logs_database.LogsDatabase, error)
+	GetLogsDatabase(ctx context.Context) (*logs_database.LogsDatabase, error)
 
 	// Destroy the logs database
-	DestroyLogsDatabase(
-		ctx context.Context,
-		filters *logs_database.LogsDatabaseFilters,
-	) error
+	DestroyLogsDatabase(ctx context.Context) error
 
 	// Create a new Logs Collector for sending container's logs to the logs database server
 	//The logs collector requires that the logs database to be up before
@@ -413,14 +407,8 @@ type KurtosisBackend interface {
 	)
 
 	// Gets the logs collector
-	GetLogsCollector(
-		ctx context.Context,
-		filters *logs_collector.LogsCollectorFilters,
-	) (*logs_collector.LogsCollector, error)
+	GetLogsCollector(ctx context.Context) (*logs_collector.LogsCollector, error)
 
 	// Destroy the logs collector
-	DestroyLogsCollector(
-		ctx context.Context,
-		filters *logs_collector.LogsCollectorFilters,
-	) error
+	DestroyLogsCollector(ctx context.Context) error
 }

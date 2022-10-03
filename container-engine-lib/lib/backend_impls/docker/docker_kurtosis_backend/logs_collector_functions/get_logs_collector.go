@@ -9,13 +9,12 @@ import (
 
 func GetLogsCollector(
 	ctx context.Context,
-	filters *logs_collector.LogsCollectorFilters,
 	dockerManager *docker_manager.DockerManager,
 ) (*logs_collector.LogsCollector, error){
 
-	logsCollectorObject, _, err := getLogsCollectorObjectAndContainerIdMatching(ctx, filters, dockerManager)
+	logsCollectorObject, _, err := getLogsCollectorObjectAndContainerIdMatching(ctx, dockerManager)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector using filters '%+v'", filters)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
 
 	return logsCollectorObject, nil

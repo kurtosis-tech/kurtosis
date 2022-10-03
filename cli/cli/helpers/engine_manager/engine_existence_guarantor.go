@@ -10,8 +10,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -272,29 +270,26 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 }
 
 func (guarantor *engineExistenceGuarantor) startCentralizedLogsComponents(ctx context.Context) (func(), error) {
-	allStatusesLogsCollectorFilters := &logs_collector.LogsCollectorFilters{}
-	logsCollector, err := guarantor.kurtosisBackend.GetLogsCollector(ctx, allStatusesLogsCollectorFilters)
+	logsCollector, err := guarantor.kurtosisBackend.GetLogsCollector(ctx)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector using filters '%+v'", allStatusesLogsCollectorFilters)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
 
 	//Destroy any previous running or stopped logs collector
 	if logsCollector != nil {
-		if err = guarantor.kurtosisBackend.DestroyLogsCollector(ctx, allStatusesLogsCollectorFilters); err != nil {
+		if err = guarantor.kurtosisBackend.DestroyLogsCollector(ctx); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred destroying the logs database")
 		}
 	}
 
-	allStatusesLogsDatabaseFilters := &logs_database.LogsDatabaseFilters{}
-
-	logsDatabase, err := guarantor.kurtosisBackend.GetLogsDatabase(ctx, allStatusesLogsDatabaseFilters)
+	logsDatabase, err := guarantor.kurtosisBackend.GetLogsDatabase(ctx)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database using filters '%+v'", allStatusesLogsDatabaseFilters)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database")
 	}
 
 	//Destroy any previous running or stopped logs database
 	if logsDatabase != nil {
-		if err = guarantor.kurtosisBackend.DestroyLogsDatabase(ctx, allStatusesLogsDatabaseFilters); err != nil {
+		if err = guarantor.kurtosisBackend.DestroyLogsDatabase(ctx); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred destroying the logs database")
 		}
 	}
@@ -304,7 +299,7 @@ func (guarantor *engineExistenceGuarantor) startCentralizedLogsComponents(ctx co
 	}
 	shouldRemoveLogsDatabase := true
 	removeLogsDataBaseFunc := func() {
-		if err := guarantor.kurtosisBackend.DestroyLogsDatabase(ctx, allStatusesLogsDatabaseFilters); err != nil {
+		if err := guarantor.kurtosisBackend.DestroyLogsDatabase(ctx); err != nil {
 			logrus.Errorf("Creating the centralized logs components didn't complete successfully, so we tried to delete the logs database that we created but an error was thrown:\n%v", err)
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs database Docker container!!!!!!!")
 		}
@@ -320,7 +315,7 @@ func (guarantor *engineExistenceGuarantor) startCentralizedLogsComponents(ctx co
 	}
 	shouldRemoveLogsCollector := true
 	removeLogsCollectorFunc := func() {
-		if err := guarantor.kurtosisBackend.DestroyLogsCollector(ctx, allStatusesLogsCollectorFilters); err != nil {
+		if err := guarantor.kurtosisBackend.DestroyLogsCollector(ctx); err != nil {
 			logrus.Errorf("Creating the centralized logs components didn't complete successfully, so we tried to delete the logs collector that we created but an error was thrown:\n%v", err)
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector Docker container!!!!!!!")
 		}
@@ -343,28 +338,26 @@ func (guarantor *engineExistenceGuarantor) startCentralizedLogsComponents(ctx co
 
 func (guarantor *engineExistenceGuarantor) ensureCentralizedLogsComponentesAreRunning(ctx context.Context) error {
 
-	allStatusesLogsCollectorFilters := &logs_collector.LogsCollectorFilters{}
-	logsCollector, err := guarantor.kurtosisBackend.GetLogsCollector(ctx, allStatusesLogsCollectorFilters)
+	logsCollector, err := guarantor.kurtosisBackend.GetLogsCollector(ctx)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the logs collector using filters '%+v'", allStatusesLogsCollectorFilters)
+		return stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
 
 	//Destroy no-running logs collector
 	if logsCollector != nil && logsCollector.GetStatus() != container_status.ContainerStatus_Running {
-		if err = guarantor.kurtosisBackend.DestroyLogsCollector(ctx, allStatusesLogsCollectorFilters); err != nil {
+		if err = guarantor.kurtosisBackend.DestroyLogsCollector(ctx); err != nil {
 			return stacktrace.Propagate(err, "An error occurred destroying the logs database")
 		}
 	}
 
-	allStatusesLogsDatabaseFilters := &logs_database.LogsDatabaseFilters{}
-	logsDatabase, err := guarantor.kurtosisBackend.GetLogsDatabase(ctx, allStatusesLogsDatabaseFilters)
+	logsDatabase, err := guarantor.kurtosisBackend.GetLogsDatabase(ctx)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the logs database using filters '%+v'", allStatusesLogsDatabaseFilters)
+		return stacktrace.Propagate(err, "An error occurred getting the logs database")
 	}
 
 	//Destroy no-running logs database
 	if logsDatabase != nil && logsDatabase.GetStatus() != container_status.ContainerStatus_Running{
-		if err = guarantor.kurtosisBackend.DestroyLogsDatabase(ctx, allStatusesLogsDatabaseFilters); err != nil {
+		if err = guarantor.kurtosisBackend.DestroyLogsDatabase(ctx); err != nil {
 			return stacktrace.Propagate(err, "An error occurred destroying the logs database")
 		}
 	}

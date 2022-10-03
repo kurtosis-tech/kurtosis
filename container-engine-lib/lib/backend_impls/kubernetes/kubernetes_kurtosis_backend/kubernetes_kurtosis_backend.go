@@ -343,7 +343,6 @@ func (backend *KubernetesKurtosisBackend) CreateLogsDatabase(ctx context.Context
 
 func (backend *KubernetesKurtosisBackend) GetLogsDatabase(
 	ctx context.Context,
-	filters *logs_database.LogsDatabaseFilters,
 ) (*logs_database.LogsDatabase, error) {
 	// TODO IMPLEMENT
 	return nil, stacktrace.NewError("Getting the logs database isn't yet implemented on Kubernetes")
@@ -351,7 +350,6 @@ func (backend *KubernetesKurtosisBackend) GetLogsDatabase(
 
 func (backend *KubernetesKurtosisBackend) DestroyLogsDatabase(
 	ctx context.Context,
-	filters *logs_database.LogsDatabaseFilters,
 ) error {
 	// TODO IMPLEMENT
 	return stacktrace.NewError("Destroy the logs database isn't yet implemented on Kubernetes")
@@ -362,12 +360,12 @@ func (backend *KubernetesKurtosisBackend) CreateLogsCollector(ctx context.Contex
 	return nil, stacktrace.NewError("Creating the logs collector isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) GetLogsCollector(ctx context.Context, filters *logs_collector.LogsCollectorFilters,) (*logs_collector.LogsCollector, error) {
+func (backend *KubernetesKurtosisBackend) GetLogsCollector(ctx context.Context) (*logs_collector.LogsCollector, error) {
 	// TODO IMPLEMENT
 	return nil, stacktrace.NewError("Getting the logs collector isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) DestroyLogsCollector(ctx context.Context, filters *logs_collector.LogsCollectorFilters,) error {
+func (backend *KubernetesKurtosisBackend) DestroyLogsCollector(ctx context.Context) error {
 	// TODO IMPLEMENT
 	return stacktrace.NewError("Destroy the logs collector isn't yet implemented on Kubernetes")
 }

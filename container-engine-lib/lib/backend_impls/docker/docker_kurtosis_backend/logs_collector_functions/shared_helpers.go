@@ -110,7 +110,6 @@ func getAllLogsCollectorContainers(ctx context.Context, dockerManager *docker_ma
 
 func getLogsCollectorObjectAndContainerIdMatching(
 	ctx context.Context,
-	filters *logs_collector.LogsCollectorFilters,
 	dockerManager *docker_manager.DockerManager,
 ) (*logs_collector.LogsCollector, string, error) {
 	allLogsCollectorContainers, err := getAllLogsCollectorContainers(ctx, dockerManager)
@@ -140,11 +139,5 @@ func getLogsCollectorObjectAndContainerIdMatching(
 		return nil, "", stacktrace.Propagate(err, "An error occurred getting logs collector object using container ID '%v', labels '%+v' and the status '%v'", logsCollectorContainer.GetId(), logsCollectorContainer.GetLabels(), logsCollectorContainer.GetStatus())
 	}
 
-	emptyFilter := logs_collector.LogsCollectorFilters{}
-
-	if filters == nil || *filters == emptyFilter || logsCollectorObject.GetStatus() == filters.Status {
-		return logsCollectorObject, logsCollectorContainerID, nil
-	}
-
-	return nil, "", nil
+	return logsCollectorObject, logsCollectorContainerID, nil
 }

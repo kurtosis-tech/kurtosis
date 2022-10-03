@@ -135,11 +135,7 @@ func (backend *DockerKurtosisBackend) DestroyEngines(
 
 func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceID]*service.ServiceConfig) (map[service.ServiceID]*service.Service, map[service.ServiceID]error, error) {
 
-	logsCollectorFilters := &logs_collector.LogsCollectorFilters{
-		Status: container_status.ContainerStatus_Running,
-	}
-
-	logsCollector, err := backend.GetLogsCollector(ctx, logsCollectorFilters)
+	logsCollector, err := backend.GetLogsCollector(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
@@ -286,30 +282,23 @@ func (backend *DockerKurtosisBackend) CreateLogsDatabase(
 
 func (backend *DockerKurtosisBackend) GetLogsDatabase(
 	ctx context.Context,
-	filters *logs_database.LogsDatabaseFilters,
 ) (
 	*logs_database.LogsDatabase,
 	error,
 ) {
 	return logs_database_functions.GetLogsDatabase(
 		ctx,
-		filters,
 		backend.dockerManager,
 	)
 }
 
 func (backend *DockerKurtosisBackend) DestroyLogsDatabase(
 	ctx context.Context,
-	filters *logs_database.LogsDatabaseFilters,
 ) (
 	error,
 ) {
 
-	logsCollectorFilters := &logs_collector.LogsCollectorFilters{
-		Status: container_status.ContainerStatus_Running,
-	}
-
-	logsCollector, err := backend.GetLogsCollector(ctx, logsCollectorFilters)
+	logsCollector, err := backend.GetLogsCollector(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
@@ -320,7 +309,6 @@ func (backend *DockerKurtosisBackend) DestroyLogsDatabase(
 
 	return logs_database_functions.DestroyLogsDatabase(
 		ctx,
-		filters,
 		backend.dockerManager,
 	)
 }
@@ -333,12 +321,8 @@ func (backend *DockerKurtosisBackend) CreateLogsCollector(
 	error,
 ) {
 
-	logsDatabaseFilters := &logs_database.LogsDatabaseFilters{
-		Status: container_status.ContainerStatus_Running,
-	}
-
 	//TODO we we'd have to replace this part if we ever wanted to send to an external source
-	logsDatabase, err := backend.GetLogsDatabase(ctx, logsDatabaseFilters)
+	logsDatabase, err := backend.GetLogsDatabase(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database, it's not possible to run the logs collector without a logs database")
 	}
@@ -362,28 +346,24 @@ func (backend *DockerKurtosisBackend) CreateLogsCollector(
 
 func (backend *DockerKurtosisBackend) GetLogsCollector(
 	ctx context.Context,
-	filters *logs_collector.LogsCollectorFilters,
 ) (
 	*logs_collector.LogsCollector,
 	error,
 ) {
 	return logs_collector_functions.GetLogsCollector(
 		ctx,
-		filters,
 		backend.dockerManager,
 	)
 }
 
 func (backend *DockerKurtosisBackend) DestroyLogsCollector(
 	ctx context.Context,
-	filters *logs_collector.LogsCollectorFilters,
 ) (
 	error,
 ) {
 
 	return logs_collector_functions.DestroyLogsCollector(
 		ctx,
-		filters,
 		backend.dockerManager,
 	)
 }

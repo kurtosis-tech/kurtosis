@@ -103,7 +103,6 @@ func getAllLogsDatabaseContainers(ctx context.Context, dockerManager *docker_man
 
 func getLogsDatabaseObjectAndContainerIdMatching(
 	ctx context.Context,
-	filters *logs_database.LogsDatabaseFilters,
 	dockerManager *docker_manager.DockerManager,
 ) (*logs_database.LogsDatabase, string, error) {
 	allLogsDatabaseContainers, err := getAllLogsDatabaseContainers(ctx, dockerManager)
@@ -132,11 +131,5 @@ func getLogsDatabaseObjectAndContainerIdMatching(
 		return nil, "", stacktrace.Propagate(err, "An error occurred getting the logs database object using container ID '%v', labels '%+v' and the status '%v'", logsDatabaseContainer.GetId(), logsDatabaseContainer.GetLabels(), logsDatabaseContainer.GetStatus())
 	}
 
-	emptyFilter := logs_database.LogsDatabaseFilters{}
-
-	if filters == nil || *filters == emptyFilter || logsDatabaseObject.GetStatus() == filters.Status {
-		return logsDatabaseObject, logsDatabaseContainerID, nil
-	}
-
-	return nil, "", nil
+	return logsDatabaseObject, logsDatabaseContainerID, nil
 }

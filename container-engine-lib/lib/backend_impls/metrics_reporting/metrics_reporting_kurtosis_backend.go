@@ -554,12 +554,11 @@ func (backend *MetricsReportingKurtosisBackend) CreateLogsDatabase(
 
 func (backend *MetricsReportingKurtosisBackend) GetLogsDatabase(
 	ctx context.Context,
-	filters *logs_database.LogsDatabaseFilters,
 ) (
 	*logs_database.LogsDatabase,
 	error,
 ) {
-	logsDatabase, err := backend.underlying.GetLogsDatabase(ctx, filters)
+	logsDatabase, err := backend.underlying.GetLogsDatabase(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database")
 	}
@@ -569,11 +568,10 @@ func (backend *MetricsReportingKurtosisBackend) GetLogsDatabase(
 
 func (backend *MetricsReportingKurtosisBackend) DestroyLogsDatabase(
 	ctx context.Context,
-	filters *logs_database.LogsDatabaseFilters,
 ) (
 	error,
 ) {
-	if err := backend.underlying.DestroyLogsDatabase(ctx, filters); err != nil {
+	if err := backend.underlying.DestroyLogsDatabase(ctx); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying the logs database")
 	}
 
@@ -598,12 +596,11 @@ func (backend *MetricsReportingKurtosisBackend) CreateLogsCollector(
 
 func (backend *MetricsReportingKurtosisBackend) GetLogsCollector(
 	ctx context.Context,
-	filters *logs_collector.LogsCollectorFilters,
 ) (
 	*logs_collector.LogsCollector,
 	error,
 ) {
-	logsCollector, err := backend.underlying.GetLogsCollector(ctx, filters)
+	logsCollector, err := backend.underlying.GetLogsCollector(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
@@ -613,12 +610,11 @@ func (backend *MetricsReportingKurtosisBackend) GetLogsCollector(
 
 func (backend *MetricsReportingKurtosisBackend) DestroyLogsCollector(
 	ctx context.Context,
-	filters *logs_collector.LogsCollectorFilters,
 ) (
 	error,
 ) {
 
-	if err := backend.underlying.DestroyLogsCollector(ctx, filters); err != nil {
+	if err := backend.underlying.DestroyLogsCollector(ctx); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying the logs collector")
 	}
 

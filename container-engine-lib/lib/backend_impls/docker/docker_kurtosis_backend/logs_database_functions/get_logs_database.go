@@ -9,13 +9,12 @@ import (
 
 func GetLogsDatabase(
 	ctx context.Context,
-	filters *logs_database.LogsDatabaseFilters,
 	dockerManager *docker_manager.DockerManager,
 ) (*logs_database.LogsDatabase, error){
 
-	logsDatabaseObject, _, err := getLogsDatabaseObjectAndContainerIdMatching(ctx, filters, dockerManager)
+	logsDatabaseObject, _, err := getLogsDatabaseObjectAndContainerIdMatching(ctx, dockerManager)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database using filters '%+v'", filters)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database")
 	}
 
 	return logsDatabaseObject, nil
