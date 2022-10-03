@@ -34,6 +34,9 @@ func newParsedGitURL(moduleAuthor, moduleName, gitURL, relativeModulePath, relat
 
 func parseGitURL(packageURL string) (*ParsedGitURL, error) {
 	parsedURL, err := url.Parse(packageURL)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error parsing the url '%v'", packageURL)
+	}
 	if parsedURL.Scheme != "" {
 		return nil, stacktrace.NewError("Expected schema to be empty got '%v'", parsedURL.Scheme)
 	}

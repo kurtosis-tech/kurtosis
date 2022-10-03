@@ -73,7 +73,7 @@ func (moduleManager *GitModuleManager) atomicClone(parsedURL *ParsedGitURL) erro
 	_, err = os.Stat(moduleAuthorPath)
 	if err != nil {
 		if err = os.Mkdir(moduleAuthorPath, moduleDirPermission); err != nil {
-			stacktrace.Propagate(err, "An error occurred while creating directory '%v'", moduleAuthorPath)
+			return stacktrace.Propagate(err, "An error occurred while creating directory '%v'", moduleAuthorPath)
 		}
 	}
 	if err = os.Rename(gitClonePath, modulePath); err != nil {
