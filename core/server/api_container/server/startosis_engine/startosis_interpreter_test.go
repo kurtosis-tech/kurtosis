@@ -558,6 +558,55 @@ Done!
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
 
+func TestStartosisCompiler_AddServiceInOtherModulePopulatesQueue(t *testing.T) {
+	seedModules := make(map[string]string)
+	barModulePath := "github.com/foo/bar/lib.star"
+	seedModules[barModulePath] = `
+service_id = "example-datastore-server"
+print("Constructing service_config")
+service_config = struct(
+	container_image_name = "kurtosistech/example-datastore-server",
+	used_ports = {
+		"grpc": struct(number = 1323, protocol = "TCP")
+	}
+)
+print("Adding service " + service_id)
+add_service(service_id = service_id, service_config = service_config)
+`
+	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
+	interpreter := NewStartosisInterpreter(nil, moduleManager)
+	script := `
+load("` + barModulePath + `", "service_id", "service_config")
+print("Starting Startosis script!")
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Equal(t, 1, len(instructions))
+	require.Nil(t, interpretationError)
+
+	addServiceInstruction := add_service.NewAddServiceInstruction(
+		nil,
+		*kurtosis_instruction.NewInstructionPosition(11, 12),
+		service.ServiceID("example-datastore-server"),
+		&kurtosis_core_rpc_api_bindings.ServiceConfig{
+			ContainerImageName: "kurtosistech/example-datastore-server",
+			PrivatePorts: map[string]*kurtosis_core_rpc_api_bindings.Port{
+				"grpc": {
+					Number:   1323,
+					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
+				},
+			},
+		})
+
+	require.Equal(t, instructions[0], addServiceInstruction)
+
+	expectedOutput := `Constructing service_config
+Adding service example-datastore-server
+Starting Startosis script!
+`
+	require.Equal(t, expectedOutput, string(scriptOutput))
+}
+
 func TestStartosisCompiler_GitModuleManagerSucceedsForExistentModule(t *testing.T) {
 	moduleDir := "/tmp/startosis-modules/"
 	err := os.Mkdir(moduleDir, dirPermission)
