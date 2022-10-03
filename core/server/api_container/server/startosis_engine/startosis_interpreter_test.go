@@ -432,7 +432,7 @@ func TestStartosisCompiler_GitModuleManagerSucceedsForExistentModule(t *testing.
 	gitModuleManager := git_module_manager.NewGitModuleManager(moduleDir, moduleTmpDir)
 
 	interpreter := NewStartosisInterpreter(nil, gitModuleManager)
-	sampleStartosisModule := "https://github.com/kurtosis-tech/sample-startosis-load/sample.star"
+	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star"
 	script := `
 load("` + sampleStartosisModule + `", "a")
 print("Hello " + a)
@@ -458,7 +458,7 @@ func TestStartosisCompiler_GitModuleManagerFailsForNonExistentModule(t *testing.
 	gitModuleManager := git_module_manager.NewGitModuleManager(moduleDir, moduleTmpDir)
 
 	interpreter := NewStartosisInterpreter(nil, gitModuleManager)
-	nonExistentModulePath := "https://github.com/kurtosis-tech/non-existent-startosis-load/sample.star"
+	nonExistentModulePath := "github.com/kurtosis-tech/non-existent-startosis-load/sample.star"
 	script := `
 load("` + nonExistentModulePath + `", "b")
 print(b)

@@ -10,7 +10,7 @@ const (
 	moduleAuthor    = "kurtosis-tech"
 	moduleName      = "sample-startosis-load"
 	fileName        = "sample.star"
-	githubSampleURL = "https://github.com/" + moduleAuthor + "/" + moduleName + "/" + fileName
+	githubSampleURL = "github.com/" + moduleAuthor + "/" + moduleName + "/" + fileName
 )
 
 func TestParsedGitURL_SimpleParse(t *testing.T) {
@@ -29,7 +29,7 @@ func TestParsedGitURL_SimpleParse(t *testing.T) {
 }
 
 func TestParsedGitURL_FailsOnNonGithubURL(t *testing.T) {
-	nonGithubURL := "https://kurtosis-git.com/" + moduleAuthor + "/" + moduleName + "/" + fileName
+	nonGithubURL := "kurtosis-git.com/" + moduleAuthor + "/" + moduleName + "/" + fileName
 	_, err := parseGitURL(nonGithubURL)
 	require.NotNil(t, err)
 
@@ -38,19 +38,19 @@ func TestParsedGitURL_FailsOnNonGithubURL(t *testing.T) {
 	require.Contains(t, err.Error(), expectedErrorMsg)
 }
 
-func TestParsedGitURL_FailsOnNonNonHTTPSSchema(t *testing.T) {
+func TestParsedGitURL_FailsOnNonNonEmptySchema(t *testing.T) {
 	ftpSchema := "ftp"
 	nonGithubURL := ftpSchema + "://github.com/" + moduleAuthor + "/" + moduleName + "/" + fileName
 	_, err := parseGitURL(nonGithubURL)
 	require.NotNil(t, err)
 
-	expectedErrorMsg := fmt.Sprintf("Expected the scheme to be 'https' got '%v'", ftpSchema)
+	expectedErrorMsg := fmt.Sprintf("Expected schema to be empty got '%v'", ftpSchema)
 
 	require.Contains(t, err.Error(), expectedErrorMsg)
 }
 
 func TestParsedGitURL_FailsWithoutPathToFile(t *testing.T) {
-	nonGithubURL := "https://github.com/" + moduleAuthor + "/" + moduleName
+	nonGithubURL := "github.com/" + moduleAuthor + "/" + moduleName
 	_, err := parseGitURL(nonGithubURL)
 	require.NotNil(t, err)
 
@@ -60,7 +60,7 @@ func TestParsedGitURL_FailsWithoutPathToFile(t *testing.T) {
 }
 
 func TestParsedGitURL_FailsForNonStartosisFile(t *testing.T) {
-	nonGithubURL := "https://github.com/" + moduleAuthor + "/" + moduleName + "/foo.srt"
+	nonGithubURL := "github.com/" + moduleAuthor + "/" + moduleName + "/foo.srt"
 	_, err := parseGitURL(nonGithubURL)
 	require.NotNil(t, err)
 

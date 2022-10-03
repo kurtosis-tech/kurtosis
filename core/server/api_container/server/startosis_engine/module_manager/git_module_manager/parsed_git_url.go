@@ -14,7 +14,7 @@ const (
 	startosisFileExtension = ".star"
 )
 
-type parsedGitURL struct {
+type ParsedGitURL struct {
 	moduleAuthor       string
 	moduleName         string
 	gitURL             string
@@ -22,8 +22,8 @@ type parsedGitURL struct {
 	relativeFilePath   string
 }
 
-func newParsedGitURL(moduleAuthor, moduleName, gitURL, relativeModulePath, relativeFilePath string) *parsedGitURL {
-	return &parsedGitURL{
+func newParsedGitURL(moduleAuthor, moduleName, gitURL, relativeModulePath, relativeFilePath string) *ParsedGitURL {
+	return &ParsedGitURL{
 		moduleAuthor:       moduleAuthor,
 		moduleName:         moduleName,
 		gitURL:             gitURL,
@@ -32,19 +32,22 @@ func newParsedGitURL(moduleAuthor, moduleName, gitURL, relativeModulePath, relat
 	}
 }
 
-func parseGitURL(packageURL string) (*parsedGitURL, error) {
-	parsedUrl, err := url.Parse(packageURL)
+func parseGitURL(packageURL string) (*ParsedGitURL, error) {
+	parsedURL, err := url.Parse(packageURL)
+	if parsedURL.Scheme != "" {
+		return nil, stacktrace.NewError("Expected schema to be empty got '%v'", parsedURL.Scheme)
+	}
+
+	packageURLPrefixedWithHttps := httpsSchema + "://" + packageURL
+	parsedURL, err = url.Parse(packageURLPrefixedWithHttps)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error parsing the url '%v'", packageURL)
 	}
-	if parsedUrl.Scheme != httpsSchema {
-		return nil, stacktrace.NewError("Expected the scheme to be 'https' got '%v'", parsedUrl.Scheme)
-	}
-	if parsedUrl.Host != githubDomain {
+	if parsedURL.Host != githubDomain {
 		return nil, stacktrace.NewError("We only support modules on Github for now")
 	}
 
-	splitURLPath := removeEmptyStringsFromSlice(strings.Split(parsedUrl.Path, "/"))
+	splitURLPath := removeEmptyStringsFromSlice(strings.Split(parsedURL.Path, "/"))
 
 	if len(splitURLPath) < 3 {
 		return nil, stacktrace.NewError("URL path should contain at least 3 subpaths")
@@ -61,7 +64,7 @@ func parseGitURL(packageURL string) (*parsedGitURL, error) {
 	relativeModulePath := path.Join(moduleAuthor, moduleName)
 	relativeFilePath := path.Join(splitURLPath...)
 
-	parsedURL := newParsedGitURL(
+	parsedGitURL := newParsedGitURL(
 		moduleAuthor,
 		moduleName,
 		gitURL,
@@ -69,7 +72,7 @@ func parseGitURL(packageURL string) (*parsedGitURL, error) {
 		relativeFilePath,
 	)
 
-	return parsedURL, nil
+	return parsedGitURL, nil
 }
 
 func removeEmptyStringsFromSlice(stringSlice []string) []string {
