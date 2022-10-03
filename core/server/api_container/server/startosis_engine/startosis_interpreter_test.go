@@ -2,6 +2,7 @@ package startosis_engine
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
@@ -386,21 +387,22 @@ print(b)
 	_, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
 	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
 	assert.NotNil(t, interpretationError)
-	assert.Containsf(t, interpretationError.Error(), "There is a cycle in the load graph", "Expected a cycle error got something else")
+	expectedError := startosis_errors.NewInterpretationError(fmt.Sprintf("There is a cycle in the load graph"))
+	assert.Equal(t, expectedError, interpretationError)
 }
 
 func TestStartosisCompiler_FailsOnNonExistentModule(t *testing.T) {
 	interpreter := NewStartosisInterpreter(nil, emptyMockModuleManager())
+	module := "github.com/non/existent/module.star"
 	script := `
-load("github.com/non/existent/module.star", "b")
+load("` + module + `", "b")
 print(b)
 `
 
 	_, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
 	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
-	assert.NotNil(t, interpretationError)
-
-	assert.Containsf(t, interpretationError.Error(), "An error occurred while fetching contents of the module", "Expected a cycle error got something else")
+	expectedError := startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while fetching contents of the module '%v'", module))
+	assert.Equal(t, expectedError, interpretationError)
 }
 
 

@@ -1,8 +1,9 @@
 package startosis_engine
 
 import (
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/module_manager"
-	"github.com/kurtosis-tech/stacktrace"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
 )
 
@@ -27,7 +28,7 @@ func (load *LoadInstruction) Load(thread *starlark.Thread, module string) (starl
 	entries, ok := load.moduleCache[module]
 	if entries == nil {
 		if ok {
-			return nil, stacktrace.NewError("There is a cycle in the load graph")
+			return nil, startosis_errors.NewInterpretationError("There is a cycle in the load graph")
 		}
 
 		// Add a placeholder to indicate "load in progress".
@@ -36,7 +37,7 @@ func (load *LoadInstruction) Load(thread *starlark.Thread, module string) (starl
 		// Load it.
 		contents, err := load.moduleManager.GetModule(module)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred while fetching contents of the module '%v'", module)
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while fetching contents of the module '%v'", module))
 		}
 
 		thread := &starlark.Thread{Name: "exec " + module, Load: thread.Load}

@@ -34,6 +34,7 @@ func (moduleManager *GitModuleManager) GetModule(packageURL string) (string, err
 		return "", stacktrace.Propagate(err, "An error occurred while validating URL")
 	}
 
+	parsedUrl, _ := url.Parse(packageURL)
 	splitURLPath := removeEmpty(strings.Split(parsedUrl.Path, "/"))
 	contents, err := os.ReadFile(moduleManager.getPathToStartosisFile(splitURLPath))
 	if err == nil {
