@@ -8,7 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -114,7 +114,7 @@ func (client *LokiLogsDatabaseClient) GetUserServiceLogs(
 
 	queryRangeUrl, err := url.Parse(queryRangeUrlStr)
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred parsing url string '%v'", queryRangeUrlStr)
+		return nil, stacktrace.Propagate(err, "An error occurred parsing url string '%v'", queryRangeUrlStr)
 	}
 
 	httpHeaderWithTenantID := http.Header{}
@@ -237,7 +237,7 @@ func (client *LokiLogsDatabaseClient) doHttpRequest(
 	defer httpResponse.Body.Close()
 
 	if httpResponse.StatusCode == http.StatusOK {
-		httpResponseBodyBytes, err = ioutil.ReadAll(httpResponse.Body)
+		httpResponseBodyBytes, err = io.ReadAll(httpResponse.Body)
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err,
 				"An error occurred reading the response body from '%v'", request.URL)

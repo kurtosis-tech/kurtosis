@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"io"
-	"io/ioutil"
 	"strings"
 )
 
@@ -58,7 +57,7 @@ func (mock MinimalKurtosisBackendMock) GetUserServiceLogs(
 
 		if userServiceLogsLinesStr, found := successfulUserServiceLogLinesByGuids[userServiceGuid]; found {
 			logLinesReader := strings.NewReader(userServiceLogsLinesStr)
-			logLinesReadCloser := ioutil.NopCloser(logLinesReader)
+			logLinesReadCloser := io.NopCloser(logLinesReader)
 
 			successfulUserServiceLogs[userServiceGuid] = logLinesReadCloser
 			continue
