@@ -439,7 +439,7 @@ print("Hello " + a)
 `
 	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
 	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
-	assert.Nil(t, interpretationError)
+	assert.Nil(t, interpretationError, "This test requires you to be connected to GitHub, ignore if you are offline")
 
 	expectedOutput := "Hello World!\n"
 	assert.Equal(t, expectedOutput, string(scriptOutput))
