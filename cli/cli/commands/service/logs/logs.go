@@ -6,19 +6,20 @@
 package logs
 
 import (
+	"bytes"
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io"
 	"strconv"
 )
 
@@ -70,7 +71,7 @@ var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 func run(
 	ctx context.Context,
 	kurtosisBackend backend_interface.KurtosisBackend,
-	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
@@ -78,19 +79,46 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave ID using arg key '%v'", enclaveIdArgKey)
 	}
-	enclaveId := enclave.EnclaveID(enclaveIdStr)
+	enclaveId := enclaves.EnclaveID(enclaveIdStr)
 
 	serviceGuidStr, err := args.GetNonGreedyArg(serviceGuidArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the service GUID using arg key '%v'", serviceGuidArgKey)
 	}
-	serviceGuid := service.ServiceGUID(serviceGuidStr)
+	serviceGuid := services.ServiceGUID(serviceGuidStr)
 
-	shouldFollowLogs, err := flags.GetBool(shouldFollowLogsFlagKey)
+	/*shouldFollowLogs, err := flags.GetBool(shouldFollowLogsFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the should-follow-logs flag using key '%v'", shouldFollowLogsFlagKey)
+	}*/
+
+	userServiceGuids := map[services.ServiceGUID]bool{
+		serviceGuid: true,
 	}
 
+	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
+	}
+
+	userServiceLogs, err := kurtosisCtx.GetUserServiceLogs(ctx, enclaveId, userServiceGuids)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting user service logs from user services with GUIDs '%+v' in enclave '%v'", userServiceGuids, enclaveId)
+	}
+
+	serviceLogs, found := userServiceLogs[serviceGuid]
+	if !found {
+		return stacktrace.NewError("Expected to find logs for user service with GUID '%v' on user service logs map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", serviceGuid, userServiceLogs)
+	}
+
+	logLineBuffer := bytes.NewBuffer([]byte{})
+	for _, logLine := range serviceLogs {
+		logLineBuffer.WriteString(logLine)
+	}
+	logrus.StandardLogger().Out.Write(logLineBuffer.Bytes())
+
+
+	/*
 	userServiceFilters := &service.ServiceFilters{
 		GUIDs: map[service.ServiceGUID]bool{
 			serviceGuid: true,
@@ -120,7 +148,7 @@ func run(
 
 	if _, err := io.Copy(logrus.StandardLogger().Out, userServiceReadCloserLog); err != nil {
 		return stacktrace.Propagate(err, "An error occurred copying the service logs to STDOUT")
-	}
+	}*/
 
 	return nil
 }
