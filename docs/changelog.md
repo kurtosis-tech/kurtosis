@@ -1,14 +1,18 @@
 # TBD
 
+# 0.49.8
+
 ### Changes
 * Added a linter
 * Made changes based on the linters output
+* Made the `discord` command a LowLevelKurtosisCommand instead of an EngineConsumingKurtosisCommand
 
 ### Features
 * API container now saves free IPs on a local database
 
 ### Fixes
 * Fix go.mod for commons & cli to reflect monorepo and replaced imports with write package name
+* Move linter core/server linter config to within core/server
 
 # 0.49.7
 
