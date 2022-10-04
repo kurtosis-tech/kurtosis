@@ -71,7 +71,10 @@ func (moduleManager *GitModuleManager) atomicClone(parsedURL *ParsedGitURL) erro
 	// Then we move it into the target directory
 	moduleAuthorPath := path.Join(moduleManager.moduleDir, parsedURL.moduleAuthor)
 	modulePath := path.Join(moduleManager.moduleDir, parsedURL.relativeModulePath)
-	_, err = os.Stat(moduleAuthorPath)
+	fileMode, err := os.Stat(moduleAuthorPath)
+	if err == nil && !fileMode.IsDir() {
+		return stacktrace.Propagate(err, "Expected '%v' to be a directory but it is something else", moduleAuthorPath)
+	}
 	if err != nil {
 		if err = os.Mkdir(moduleAuthorPath, moduleDirPermission); err != nil {
 			return stacktrace.Propagate(err, "An error occurred while creating the directory '%v'", moduleAuthorPath)
