@@ -1,5 +1,9 @@
 # TBD
 
+### Features
+* Implement Startosis add_service method
+* Enable linter on Startosis codebase
+
 # 0.49.8
 
 ### Changes
@@ -18,7 +22,6 @@
 
 ### Features
 * Implement skeleton for the Startosis engine
-* Implement Startosis add_service method
 
 ### Fixes
 * Fixed a message that referred to an old repo.

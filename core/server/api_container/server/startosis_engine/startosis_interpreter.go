@@ -78,30 +78,26 @@ func (interpreter *StartosisInterpreter) buildBindings(scriptOutputBuffer *bytes
 }
 
 func generateInterpretationError(err error) *startosis_errors.InterpretationError {
-	switch err.(type) {
+	switch slError := err.(type) {
 	case resolve.Error:
-		slError := err.(resolve.Error)
 		stacktrace := []startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame(slError.Msg, startosis_errors.NewScriptPosition(slError.Pos.Line, slError.Pos.Col)),
 		}
 		return startosis_errors.NewInterpretationErrorFromStacktrace(stacktrace)
 	case syntax.Error:
-		slError := err.(syntax.Error)
 		stacktrace := []startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame(slError.Msg, startosis_errors.NewScriptPosition(slError.Pos.Line, slError.Pos.Col)),
 		}
 		return startosis_errors.NewInterpretationErrorFromStacktrace(stacktrace)
 	case resolve.ErrorList:
-		errorsList := err.(resolve.ErrorList)
 		// TODO(gb): a bit hacky but it's an acceptable way to wrap multiple errors into a single Interpretation
 		//  it's probably not worth adding another level of complexity here to handle InterpretationErrorList
 		stacktrace := make([]startosis_errors.CallFrame, 0)
-		for _, slError := range errorsList {
+		for _, slError := range slError {
 			stacktrace = append(stacktrace, *startosis_errors.NewCallFrame(slError.Msg, startosis_errors.NewScriptPosition(slError.Pos.Line, slError.Pos.Col)))
 		}
 		return startosis_errors.NewInterpretationErrorWithCustomMsg(multipleInterpretationErrorMsg, stacktrace)
 	case *starlark.EvalError:
-		slError := err.(*starlark.EvalError)
 		stacktrace := make([]startosis_errors.CallFrame, 0)
 		for _, callStack := range slError.CallStack {
 			stacktrace = append(stacktrace, *startosis_errors.NewCallFrame(callStack.Name, startosis_errors.NewScriptPosition(callStack.Pos.Line, callStack.Pos.Col)))
