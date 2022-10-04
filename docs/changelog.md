@@ -1,5 +1,7 @@
 # TBD
 
+# 0.49.9
+
 ### Features
 * Implement Startosis add_service method
 * Enable linter on Startosis codebase
