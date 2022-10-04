@@ -33,17 +33,17 @@ const (
 	expectedQueryLogsQueryParamValueRegex   = `{kurtosisContainerType="user-service",kurtosisGUID=~"test-user-service-[1-3]\|test-user-service-[1-3]\|test-user-service-[1-3]"}`
 	expectedEntriesLimitQueryParamValue     = "4000"
 	expectedDirectionQueryParamValue        = "forward"
+	expectedAmountQueryParams               = 4
 )
 
-
 func TestIfHttpRequestIsValidWhenCallingGetUserServiceLogs(t *testing.T) {
-	enclaveId        := enclave.EnclaveID(testEnclaveId)
+	enclaveId := enclave.EnclaveID(testEnclaveId)
 	userServiceGuids := map[service.ServiceGUID]bool{
 		testUserService1Guid: true,
 		testUserService2Guid: true,
 		testUserService3Guid: true,
 	}
-	httpClientObj      := NewMockedHttpClient()
+	httpClientObj := NewMockedHttpClient()
 	logsDatabaseClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, httpClientObj)
 
 	ctx := context.Background()
@@ -75,12 +75,15 @@ func TestIfHttpRequestIsValidWhenCallingGetUserServiceLogs(t *testing.T) {
 	}
 	require.True(t, foundExpectedEnclaveId, "Expected to find enclave ID '%v' in request header values '%+v' for header with key '%v', but it was not found", expectedEnclaveId, organizationIds, expectedOrganizationIdHttpHeaderKey)
 
-	_, found = request.Form[expectedStartTimeQueryParamKey]
+	require.Equal(t, expectedAmountQueryParams, len(request.URL.Query()), "Expected to request contains '%v' query params, but '%v' query params were found", expectedAmountQueryParams, len(request.URL.Query()))
+
+	found = request.URL.Query().Has(expectedStartTimeQueryParamKey)
 	require.True(t, found, "Expected to find query param with key '%v' in request form values '%+v', but it was not found", expectedStartTimeQueryParamKey, request.Form)
 
-	queryLogsQueryParams, found := request.Form[expectedQueryLogsQueryParamKey]
+	found = request.URL.Query().Has(expectedQueryLogsQueryParamKey)
 	require.True(t, found, "Expected to find query param with key '%v' in request form values '%+v', but it was not found", expectedStartTimeQueryParamKey, request.Form)
 
+	queryLogsQueryParams := request.URL.Query().Get(expectedQueryLogsQueryParamKey)
 	require.Regexp(t, regexp.MustCompile(expectedQueryLogsQueryParamValueRegex), queryLogsQueryParams)
 
 	var (
@@ -88,38 +91,38 @@ func TestIfHttpRequestIsValidWhenCallingGetUserServiceLogs(t *testing.T) {
 		foundExpectedKurtosisGuidLokiTagKey          bool
 	)
 
-	for _, queryLogParam := range queryLogsQueryParams {
-		foundKurtosisContainerTypeLokiTagKey := strings.Contains(queryLogParam, expectedKurtosisContainerTypeLokiTagKey)
-		if foundKurtosisContainerTypeLokiTagKey {
-			foundExpectedKurtosisContainerTypeLokiTagKey = true
-		}
-		foundKurtosisGuidLokiTagKey := strings.Contains(queryLogParam, expectedKurtosisGuidLokiTagKey)
-		if foundKurtosisGuidLokiTagKey {
-			foundExpectedKurtosisGuidLokiTagKey = true
-		}
+	foundKurtosisContainerTypeLokiTagKey := strings.Contains(queryLogsQueryParams, expectedKurtosisContainerTypeLokiTagKey)
+	if foundKurtosisContainerTypeLokiTagKey {
+		foundExpectedKurtosisContainerTypeLokiTagKey = true
 	}
+	foundKurtosisGuidLokiTagKey := strings.Contains(queryLogsQueryParams, expectedKurtosisGuidLokiTagKey)
+	if foundKurtosisGuidLokiTagKey {
+		foundExpectedKurtosisGuidLokiTagKey = true
+	}
+
 	require.True(t, foundExpectedKurtosisContainerTypeLokiTagKey, "Expected to find Loki's tag key key '%v' in request query params '%+v', but it was not found", expectedKurtosisContainerTypeLokiTagKey, queryLogsQueryParams)
 	require.True(t, foundExpectedKurtosisGuidLokiTagKey, "Expected to find Loki's tag key key '%v' in request query params '%+v', but it was not found", expectedKurtosisGuidLokiTagKey, queryLogsQueryParams)
 
-
-	limitQueryParams, found := request.Form[expectedEntriesLimitQueryParamKey]
+	found = request.URL.Query().Has(expectedEntriesLimitQueryParamKey)
 	require.True(t, found, "Expected to find query param with key '%v' in request form values '%+v', but it was not found", expectedEntriesLimitQueryParamKey, request.Form)
-	require.Equal(t, expectedEntriesLimitQueryParamValue, limitQueryParams[0])
+	limitQueryParam := request.URL.Query().Get(expectedEntriesLimitQueryParamKey)
+	require.Equal(t, expectedEntriesLimitQueryParamValue, limitQueryParam)
 
-	directionQueryParams, found := request.Form[expectedDirectionQueryParamKey]
+	found = request.URL.Query().Has(expectedDirectionQueryParamKey)
 	require.True(t, found, "Expected to find query param with key '%v' in request form values '%+v', but it was not found", expectedDirectionQueryParamKey, request.Form)
-	require.Equal(t, expectedDirectionQueryParamValue, directionQueryParams[0])
+	directionQueryParam := request.URL.Query().Get(expectedDirectionQueryParamKey)
+	require.Equal(t, expectedDirectionQueryParamValue, directionQueryParam)
 
 }
 
 func TestDoRequestWithLokiLogsDatabaseClientReturnsValidResponse(t *testing.T) {
-	enclaveId        := enclave.EnclaveID(testEnclaveId)
+	enclaveId := enclave.EnclaveID(testEnclaveId)
 	userServiceGuids := map[service.ServiceGUID]bool{
 		testUserService1Guid: true,
 		testUserService2Guid: true,
 		testUserService3Guid: true,
 	}
-	httpClientObj      := NewMockedHttpClient()
+	httpClientObj := NewMockedHttpClient()
 	logsDatabaseClient := NewLokiLogsDatabaseClient(fakeLogsDatabaseAddress, httpClientObj)
 
 	ctx := context.Background()
