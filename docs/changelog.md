@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+* Implemented Startosis load method to load from external Github repositories
+
 # 0.49.9
 
 ### Features
