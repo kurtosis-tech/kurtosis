@@ -7,8 +7,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/module_manager"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
@@ -25,8 +25,8 @@ const (
 
 type StartosisInterpreter struct {
 	serviceNetwork     *service_network.ServiceNetwork
-	moduleCache        map[string]*ModuleCacheEntry
-	moduleManager      module_manager.ModuleManager
+	moduleCache        *startosis_modules.ModuleCache
+	moduleManager      startosis_modules.ModuleManager
 	scriptOutputBuffer bytes.Buffer
 	instructionsQueue  []kurtosis_instruction.KurtosisInstruction
 }
@@ -38,11 +38,11 @@ type ModuleCacheEntry struct {
 
 type SerializedInterpretationOutput string
 
-func NewStartosisInterpreter(serviceNetwork *service_network.ServiceNetwork, moduleManager module_manager.ModuleManager) *StartosisInterpreter {
+func NewStartosisInterpreter(serviceNetwork *service_network.ServiceNetwork, moduleManager startosis_modules.ModuleManager) *StartosisInterpreter {
 	return &StartosisInterpreter{
 		serviceNetwork: serviceNetwork,
 		moduleManager:  moduleManager,
-		moduleCache:    make(map[string]*ModuleCacheEntry),
+		moduleCache:    startosis_modules.NewModuleCache(),
 	}
 }
 
@@ -84,14 +84,14 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string) (*star
 }
 
 func (interpreter *StartosisInterpreter) Load(_ *starlark.Thread, module string) (starlark.StringDict, error) {
-	entries, ok := interpreter.moduleCache[module]
-	if entries == nil {
-		if ok {
+	entry, found := interpreter.moduleCache.Get(module)
+	if entry == nil {
+		if found {
 			return nil, startosis_errors.NewInterpretationError("There is a cycle in the load graph")
 		}
 
 		// Add a placeholder to indicate "load in progress".
-		interpreter.moduleCache[module] = nil
+		interpreter.moduleCache.Add(module, nil)
 
 		// Load it.
 		contents, err := interpreter.moduleManager.GetModule(module)
@@ -100,13 +100,13 @@ func (interpreter *StartosisInterpreter) Load(_ *starlark.Thread, module string)
 		}
 
 		thread, bindings := interpreter.buildBindings(fmt.Sprintf("%v:%v", starlarkGoThreadName, module))
-		globals, err := starlark.ExecFile(thread, module, contents, bindings)
-		entries = &ModuleCacheEntry{globals, err}
+		globalVariables, err := starlark.ExecFile(thread, module, contents, bindings)
 
 		// Update the cache.
-		interpreter.moduleCache[module] = entries
+		entry = startosis_modules.NewModuleCacheEntry(globalVariables, err)
+		interpreter.moduleCache.Add(module, entry)
 	}
-	return entries.globals, entries.err
+	return entry.GetGlobalVariables(), entry.GetError()
 }
 
 func generateInterpretationError(err error) *startosis_errors.InterpretationError {

@@ -6,7 +6,7 @@
 package enclave_data_directory
 
 import (
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/module_manager/git_module_manager"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/git_module_manager"
 	"github.com/kurtosis-tech/stacktrace"
 	"path"
 )
