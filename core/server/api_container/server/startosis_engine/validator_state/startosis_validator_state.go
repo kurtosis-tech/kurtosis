@@ -1,6 +1,7 @@
 package validator_state
 
 import (
+	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
 )
@@ -21,18 +22,18 @@ func (validatorState *StartosisValidatorState) AppendRequiredDockerImage(dockerI
 	validatorState.requiredDockerImages[dockerImage] = true
 }
 
-func (validatorState *StartosisValidatorState) Validate() error {
-	err := validatorState.validateDockerImages()
+func (validatorState *StartosisValidatorState) Validate(ctx context.Context) error {
+	err := validatorState.validateDockerImages(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed while validating images")
 	}
 	return nil
 }
 
-func (validatorState *StartosisValidatorState) validateDockerImages() error {
+func (validatorState *StartosisValidatorState) validateDockerImages(ctx context.Context) error {
 	// TODO(victor.colombo): Parallelize pull image calls
 	for image := range validatorState.requiredDockerImages {
-		err := (*validatorState.kurtosisBackend).PullImage(image)
+		err := (*validatorState.kurtosisBackend).PullImage(ctx, image)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed fetching the required image %v", image)
 		}

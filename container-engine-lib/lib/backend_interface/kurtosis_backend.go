@@ -25,7 +25,7 @@ import (
 // the underlying container engine?"
 type KurtosisBackend interface {
 	// Attempts to pull the image from remote to locally, overwriting the local if it exists
-	PullImage(image string) error
+	PullImage(ctx context.Context, image string) error
 
 	// Creates an engine with the given parameters
 	CreateEngine(
@@ -50,8 +50,8 @@ type KurtosisBackend interface {
 		filters *engine.EngineFilters,
 	) (
 		successfulEngineGuids map[engine.EngineGUID]bool, // "set" of engine GUIDs that were successfully stopped
-		erroredEngineGuids map[engine.EngineGUID]error,   // "set" of engine GUIDs that errored when stopping, with the error
-		resultErr error,                                  // Represents an error with the function itself, rather than the engines
+		erroredEngineGuids map[engine.EngineGUID]error, // "set" of engine GUIDs that errored when stopping, with the error
+		resultErr error, // Represents an error with the function itself, rather than the engines
 	)
 
 	// Destroys the engines matching the given filters, regardless of if they're running or not
@@ -60,8 +60,8 @@ type KurtosisBackend interface {
 		filters *engine.EngineFilters,
 	) (
 		successfulEngineGuids map[engine.EngineGUID]bool, // "set" of engine GUIDs that were successfully destroyed
-		erroredEngineGuids map[engine.EngineGUID]error,   // "set" of engine GUIDs that errored when destroying, with the error
-		resultErr error,                                  // Represents an error with the function itself, rather than the engines
+		erroredEngineGuids map[engine.EngineGUID]error, // "set" of engine GUIDs that errored when destroying, with the error
+		resultErr error, // Represents an error with the function itself, rather than the engines
 	)
 
 	// Creates an enclave with the given enclave ID
@@ -117,8 +117,8 @@ type KurtosisBackend interface {
 		grpcPortNum uint16,
 		grpcProxyPortNum uint16,
 		enclaveDataVolumeDirpath string,
-	// The environment variable that the user is requesting to populate with the container's own IP address
-	// Must not conflict with the custom environment variables
+		// The environment variable that the user is requesting to populate with the container's own IP address
+		// Must not conflict with the custom environment variables
 		ownIpAddressEnvVar string,
 		customEnvVars map[string]string,
 	) (
@@ -130,7 +130,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *api_container.APIContainerFilters,
 	) (
-	// Matching API containers, keyed by their enclave ID
+		// Matching API containers, keyed by their enclave ID
 		map[enclave.EnclaveID]*api_container.APIContainer,
 		error,
 	)
@@ -140,7 +140,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *api_container.APIContainerFilters,
 	) (
-	// Successful & errored API containers are keyed by their enclave ID
+		// Successful & errored API containers are keyed by their enclave ID
 		successfulApiContainerIds map[enclave.EnclaveID]bool,
 		erroredApiContainerIds map[enclave.EnclaveID]error,
 		resultErr error,
@@ -151,7 +151,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *api_container.APIContainerFilters,
 	) (
-	// Successful & errored API containers are keyed by their enclave ID
+		// Successful & errored API containers are keyed by their enclave ID
 		successfulApiContainerIds map[enclave.EnclaveID]bool,
 		erroredApiContainerIds map[enclave.EnclaveID]error,
 		resultErr error,
@@ -200,8 +200,8 @@ type KurtosisBackend interface {
 		filters *module.ModuleFilters,
 	) (
 		successfulModuleIds map[module.ModuleGUID]bool, // "set" of module IDs that were successfully stopped
-		erroredModuleIds map[module.ModuleGUID]error,   // "set" of module IDs that errored when being stopped, with the error
-		resultErr error,                                // Represents an error with the function itself, rather than the modules
+		erroredModuleIds map[module.ModuleGUID]error, // "set" of module IDs that errored when being stopped, with the error
+		resultErr error, // Represents an error with the function itself, rather than the modules
 	)
 
 	// Destroys the modules with the given filters, regardless of if they're running or not
@@ -211,8 +211,8 @@ type KurtosisBackend interface {
 		filters *module.ModuleFilters,
 	) (
 		successfulModuleIds map[module.ModuleGUID]bool, // "set" of module IDs that were successfully destroyed
-		erroredModuleIds map[module.ModuleGUID]error,   // "set" of module IDs that errored when destroying, with the error
-		resultErr error,                                // Represents an error with the function itself, rather than the modules
+		erroredModuleIds map[module.ModuleGUID]error, // "set" of module IDs that errored when destroying, with the error
+		resultErr error, // Represents an error with the function itself, rather than the modules
 	)
 
 	/*
@@ -232,8 +232,8 @@ type KurtosisBackend interface {
 		services map[service.ServiceID]*service.ServiceConfig,
 	) (
 		successfulServices map[service.ServiceID]*service.Service, // "set" of user service IDs that were successfully started
-		unsuccessfulServices map[service.ServiceID]error,          // "set" of user service IDs that errored when attempting to start, with the error
-		resultErr error,                                           // represents an error with the function itself, rather than the user services
+		unsuccessfulServices map[service.ServiceID]error, // "set" of user service IDs that errored when attempting to start, with the error
+		resultErr error, // represents an error with the function itself, rather than the user services
 	)
 
 	// Gets user services using the given filters, returning a map of matched user services identified by their GUID
@@ -315,8 +315,8 @@ type KurtosisBackend interface {
 		filters *service.ServiceFilters,
 	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully stopped
-		erroredUserServiceGuids map[service.ServiceGUID]error,   // "set" of user service GUIDs that errored when stopping, with the error
-		resultErr error,                                         // Represents an error with the function itself, rather than the user services
+		erroredUserServiceGuids map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when stopping, with the error
+		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
 	// DestroyUserServices destroys user services matching the given filters, removing all resources associated with it
@@ -326,8 +326,8 @@ type KurtosisBackend interface {
 		filters *service.ServiceFilters,
 	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully destroyed
-		erroredUserServiceGuids map[service.ServiceGUID]error,   // "set" of user service GUIDs that errored when destroying, with the error
-		resultErr error,                                         // Represents an error with the function itself, rather than the user services
+		erroredUserServiceGuids map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when destroying, with the error
+		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
 	// TODO Move this logic inside the user service, so that we have tighter controls on what can happen and what can't
