@@ -126,7 +126,7 @@ func runMain() error {
 			return stacktrace.NewError("It's not possible to run the engine serve due the current logs database container is not running")
 		}
 
-		privateLogsDatabaseAddress := fmt.Sprintf("%v:%v", logsDatabase.GetMaybePrivateIpAddr(), logsDatabase.GetPrivateHttpPort())
+		privateLogsDatabaseAddress := fmt.Sprintf("%v:%v", logsDatabase.GetMaybePrivateIpAddr(), logsDatabase.GetPrivateHttpPort().GetNumber())
 
 		logsDatabaseClient = centralized_logs.NewLokiLogsDatabaseClientWithDefaultHttpClient(privateLogsDatabaseAddress)
 
