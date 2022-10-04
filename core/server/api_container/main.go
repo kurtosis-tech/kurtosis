@@ -145,6 +145,7 @@ func runMain() error {
 	}()
 
 	startosisInterpreter := startosis_engine.NewStartosisInterpreter(serviceNetwork)
+	startosisValidator := startosis_engine.NewStartosisValidator(&kurtosisBackend)
 	startosisExecutor := startosis_engine.NewStartosisExecutor()
 
 	//Creation of ApiContainerService
@@ -153,6 +154,7 @@ func runMain() error {
 		serviceNetwork,
 		moduleStore,
 		startosisInterpreter,
+		startosisValidator,
 		startosisExecutor,
 		metricsClient,
 	)

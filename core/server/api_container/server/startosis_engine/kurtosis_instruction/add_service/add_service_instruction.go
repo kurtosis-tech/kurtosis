@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/validator_state"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -81,6 +82,12 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context) error {
 
 func (instruction *AddServiceInstruction) String() string {
 	return instruction.GetCanonicalInstruction()
+}
+
+func (instruction *AddServiceInstruction) Validate(validatorState *validator_state.StartosisValidatorState) error {
+	validatorState.AppendRequiredDockerImage(instruction.serviceConfig.ContainerImageName)
+	// No validation done at the step, we dedupe and validate only when all images are accumulated
+	return nil
 }
 
 func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (service.ServiceID, *kurtosis_core_rpc_api_bindings.ServiceConfig, *startosis_errors.InterpretationError) {

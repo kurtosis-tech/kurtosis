@@ -73,6 +73,8 @@ type ApiContainerService struct {
 
 	startosisInterpreter *startosis_engine.StartosisInterpreter
 
+	startosisValidator *startosis_engine.StartosisValidator
+
 	startosisExecutor *startosis_engine.StartosisExecutor
 
 	metricsClient client.MetricsClient
@@ -83,6 +85,7 @@ func NewApiContainerService(
 	serviceNetwork *service_network.ServiceNetwork,
 	moduleStore *module_store.ModuleStore,
 	startosisInterpreter *startosis_engine.StartosisInterpreter,
+	startosisValidator *startosis_engine.StartosisValidator,
 	startosisExecutor *startosis_engine.StartosisExecutor,
 	metricsClient client.MetricsClient,
 ) (*ApiContainerService, error) {
@@ -91,6 +94,7 @@ func NewApiContainerService(
 		serviceNetwork:       serviceNetwork,
 		moduleStore:          moduleStore,
 		startosisInterpreter: startosisInterpreter,
+		startosisValidator:   startosisValidator,
 		startosisExecutor:    startosisExecutor,
 		metricsClient:        metricsClient,
 	}
@@ -195,6 +199,15 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 	}
 	logrus.Debugf("Successfully interpreted Startosis script into a series of Kurtosis instructions: \n%v",
 		generatedInstructionsList)
+
+	validationError := apicService.startosisValidator.Validate(generatedInstructionsList)
+	if validationError != nil {
+		return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
+			SerializedScriptOutput: string(interpretationOutput),
+			ValidationError:        validationError.Error(),
+		}, nil
+	}
+	logrus.Debugf("Successfully validated Startosis script")
 
 	err := apicService.startosisExecutor.Execute(ctx, generatedInstructionsList)
 	if err != nil {
