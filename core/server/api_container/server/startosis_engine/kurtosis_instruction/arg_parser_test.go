@@ -129,7 +129,7 @@ func TestParsePortProtocol_Unknown(t *testing.T) {
 	input := "BLAH"
 	output, err := parsePortProtocol(input)
 	require.NotNil(t, err)
-	require.Equal(t, "Port protocol should be either TCP, SCTP, UDP", err.Error())
+	require.Equal(t, "Port protocol should be one of TCP, SCTP, UDP", err.Error())
 	require.Equal(t, kurtosis_core_rpc_api_bindings.Port_Protocol(-1), output)
 }
 
@@ -150,7 +150,7 @@ func TestParsePort_FailureWrongProtocol(t *testing.T) {
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parsePort(input)
 	require.NotNil(t, err)
-	require.Equal(t, "Port protocol should be either TCP, SCTP, UDP", err.Error())
+	require.Equal(t, "Port protocol should be one of TCP, SCTP, UDP", err.Error())
 	require.Nil(t, output)
 }
 
@@ -161,6 +161,6 @@ func TestParsePort_FailurePortNumberInvalid(t *testing.T) {
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parsePort(input)
 	require.NotNil(t, err)
-	require.Equal(t, "Port number should be strictly lower than 65535", err.Error())
+	require.Equal(t, "Port number should be less than or equal to 65535", err.Error())
 	require.Nil(t, output)
 }

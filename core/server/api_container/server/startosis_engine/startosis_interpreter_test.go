@@ -215,7 +215,7 @@ add_service(service_id = service_id, service_config = service_config)
 	require.Equal(t, 0, len(instructions))
 	require.Empty(t, scriptOutput)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
-		"Evaluation error: Port protocol should be either TCP, SCTP, UDP",
+		"Evaluation error: Port protocol should be one of TCP, SCTP, UDP",
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(13, 12)),
 			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(0, 0)),
