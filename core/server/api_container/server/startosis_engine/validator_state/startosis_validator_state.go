@@ -31,11 +31,21 @@ func (validatorState *StartosisValidatorState) Validate(ctx context.Context) err
 }
 
 func (validatorState *StartosisValidatorState) validateDockerImages(ctx context.Context) error {
-	// TODO(victor.colombo): Parallelize pull image calls
+	pullErrors := make(chan error)
 	for image := range validatorState.requiredDockerImages {
-		err := (*validatorState.kurtosisBackend).PullImage(ctx, image)
+		go func() {
+			err := (*validatorState.kurtosisBackend).PullImage(ctx, image)
+			if err != nil {
+				pullErrors <- stacktrace.Propagate(err, "Failed fetching the required image %v", image)
+			} else {
+				pullErrors <- nil
+			}
+		}()
+	}
+	for range validatorState.requiredDockerImages {
+		err := <-pullErrors
 		if err != nil {
-			return stacktrace.Propagate(err, "Failed fetching the required image %v", image)
+			return err
 		}
 	}
 	return nil
