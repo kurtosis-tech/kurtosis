@@ -31,11 +31,6 @@ type StartosisInterpreter struct {
 	instructionsQueue  []kurtosis_instruction.KurtosisInstruction
 }
 
-type ModuleCacheEntry struct {
-	globals starlark.StringDict
-	err     error
-}
-
 type SerializedInterpretationOutput string
 
 func NewStartosisInterpreter(serviceNetwork *service_network.ServiceNetwork, moduleManager startosis_modules.ModuleManager) *StartosisInterpreter {
