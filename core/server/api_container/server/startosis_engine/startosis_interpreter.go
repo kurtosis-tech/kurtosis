@@ -62,12 +62,8 @@ func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, serializ
 
 func (interpreter *StartosisInterpreter) buildBindings(threadName string) (*starlark.Thread, starlark.StringDict) {
 	thread := &starlark.Thread{
-		Name: starlarkGoThreadName,
-		Load: func(_ *starlark.Thread, fileToLoad string) (starlark.StringDict, error) {
-			// TODO(gb): remove when we implement the load feature
-			//  Also note we could return the position here by analysing the callstack in the thread object, but not worth it as this will go away soon
-			return nil, startosis_errors.NewInterpretationError("Loading external Startosis scripts is not supported yet")
-		},
+		Name: threadName,
+		Load: interpreter.Load,
 		Print: func(_ *starlark.Thread, msg string) {
 			// From the Starlark spec, a print statement in Starlark is automatically followed by a newline
 			interpreter.scriptOutputBuffer.WriteString(msg + "\n")
