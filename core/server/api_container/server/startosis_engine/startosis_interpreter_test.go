@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -11,9 +12,12 @@ import (
 	"testing"
 )
 
+// serviceNetwork is not used by the interpreter, it's used by the executor. Setting it to nil here is fine
+var testServiceNetwork *service_network.ServiceNetwork = nil
+
 func TestStartosisInterpreter_SimplePrintScript(t *testing.T) {
 	testString := "Hello World!"
-	interpreter := NewStartosisInterpreter(nil)
+	interpreter := NewStartosisInterpreter(testServiceNetwork)
 	script := `
 print("` + testString + `")
 `
@@ -28,7 +32,7 @@ print("` + testString + `")
 }
 
 func TestStartosisInterpreter_ScriptFailingSingleError(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil)
+	interpreter := NewStartosisInterpreter(testServiceNetwork)
 	script := `
 print("Starting Startosis script!")
 
@@ -49,7 +53,7 @@ unknownInstruction()
 }
 
 func TestStartosisInterpreter_ScriptFailingMultipleErrors(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil)
+	interpreter := NewStartosisInterpreter(testServiceNetwork)
 	script := `
 print("Starting Startosis script!")
 
@@ -75,7 +79,7 @@ unknownInstruction2()
 }
 
 func TestStartosisInterpreter_ScriptFailingSyntaxError(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil)
+	interpreter := NewStartosisInterpreter(testServiceNetwork)
 	script := `
 print("Starting Startosis script!")
 
@@ -96,7 +100,7 @@ load("otherScript.start") # fails b/c load takes in at least 2 args
 
 // TODO: remove when `load()` actually works
 func TestStartosisInterpreter_ScriptFailingLoadBindingError(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil)
+	interpreter := NewStartosisInterpreter(testServiceNetwork)
 	script := `
 print("Starting Startosis script!")
 
@@ -117,7 +121,7 @@ load("otherScript.star", "a") # fails b/c load current binding throws
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstruction(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil)
+	interpreter := NewStartosisInterpreter(testServiceNetwork)
 	script := `
 print("Starting Startosis script!")
 
@@ -160,7 +164,7 @@ Adding service example-datastore-server
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionMissingContainerName(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil)
+	interpreter := NewStartosisInterpreter(testServiceNetwork)
 	script := `
 print("Starting Startosis script!")
 
@@ -191,7 +195,7 @@ add_service(service_id = service_id, service_config = service_config)
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionTypoInProtocol(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil)
+	interpreter := NewStartosisInterpreter(testServiceNetwork)
 	script := `
 print("Starting Startosis script!")
 
@@ -211,7 +215,7 @@ add_service(service_id = service_id, service_config = service_config)
 	require.Equal(t, 0, len(instructions))
 	require.Empty(t, scriptOutput)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
-		"Evaluation error: Port protocol should be either TCP, SCTP, UDP",
+		"Evaluation error: Port protocol should be one of TCP, SCTP, UDP",
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(13, 12)),
 			*startosis_errors.NewCallFrame("add_service", startosis_errors.NewScriptPosition(0, 0)),
@@ -221,7 +225,7 @@ add_service(service_id = service_id, service_config = service_config)
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionPortNumberAsString(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil)
+	interpreter := NewStartosisInterpreter(testServiceNetwork)
 	script := `
 print("Starting Startosis script!")
 
@@ -251,7 +255,7 @@ add_service(service_id = service_id, service_config = service_config)
 }
 
 func TestStartosisInterpreter_ValidScriptWithMultipleInstructions(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil)
+	interpreter := NewStartosisInterpreter(testServiceNetwork)
 	script := `
 print("Starting Startosis script!")
 

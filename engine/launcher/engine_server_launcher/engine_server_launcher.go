@@ -17,7 +17,7 @@ import (
 
 const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-	KurtosisEngineVersion = "0.49.7"
+	KurtosisEngineVersion = "0.49.9"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
 	// TODO This should come from the same logic that builds the server image!!!!!

@@ -3,6 +3,7 @@ package kurtosis_instruction
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -48,10 +49,18 @@ func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core
 		return nil, interpretationError
 	}
 
-	return &kurtosis_core_rpc_api_bindings.ServiceConfig{
-		ContainerImageName: containerImageName,
-		PrivatePorts:       privatePorts,
-	}, nil
+	return binding_constructors.NewServiceConfig(
+		containerImageName,
+		privatePorts,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		0,
+		0,
+		"",
+	), nil
 }
 
 func parseServiceConfigContainerImageName(serviceConfig *starlarkstruct.Struct) (string, *startosis_errors.InterpretationError) {
@@ -105,7 +114,7 @@ func parsePort(portArg *starlarkstruct.Struct) (*kurtosis_core_rpc_api_bindings.
 		return nil, interpretationErr
 	}
 	if portNumber > maxPortNumber {
-		return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Port number should be strictly lower than %d", maxPortNumber))
+		return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Port number should be less than or equal to %d", maxPortNumber))
 	}
 
 	protocolRaw, interpretationErr := extractStringValue(portArg, portProtocolKey, usedPortsKey)
@@ -117,16 +126,13 @@ func parsePort(portArg *starlarkstruct.Struct) (*kurtosis_core_rpc_api_bindings.
 		return nil, interpretationErr
 	}
 
-	return &kurtosis_core_rpc_api_bindings.Port{
-		Number:   portNumber,
-		Protocol: protocol,
-	}, nil
+	return binding_constructors.NewPort(portNumber, protocol), nil
 }
 
 func parsePortProtocol(portProtocol string) (kurtosis_core_rpc_api_bindings.Port_Protocol, *startosis_errors.InterpretationError) {
 	parsedPortProtocol, err := port_spec.PortProtocolString(portProtocol)
 	if err != nil {
-		return -1, startosis_errors.NewInterpretationError(fmt.Sprintf("Port protocol should be either %s", strings.Join(port_spec.PortProtocolStrings(), ", ")))
+		return -1, startosis_errors.NewInterpretationError(fmt.Sprintf("Port protocol should be one of %s", strings.Join(port_spec.PortProtocolStrings(), ", ")))
 	}
 
 	// TODO(gb): once we stop exposing this in the API, use only port_spec.PortProtocol enum and remove the below
@@ -138,7 +144,7 @@ func parsePortProtocol(portProtocol string) (kurtosis_core_rpc_api_bindings.Port
 	case port_spec.PortProtocol_UDP:
 		return kurtosis_core_rpc_api_bindings.Port_UDP, nil
 	}
-	return -1, startosis_errors.NewInterpretationError(fmt.Sprintf("Port protocol should be either %s", strings.Join(port_spec.PortProtocolStrings(), ", ")))
+	return -1, startosis_errors.NewInterpretationError(fmt.Sprintf("Port protocol should be one of %s", strings.Join(port_spec.PortProtocolStrings(), ", ")))
 }
 
 func extractStringValue(structField *starlarkstruct.Struct, key string, argNameForLogging string) (string, *startosis_errors.InterpretationError) {

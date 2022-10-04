@@ -1,20 +1,29 @@
 # TBD
 
+# 0.49.9
+
+### Features
+* Implement Startosis add_service method
+* Enable linter on Startosis codebase
+
+# 0.49.8
+
 ### Changes
 * Added a linter
 * Made changes based on the linters output
+* Made the `discord` command a LowLevelKurtosisCommand instead of an EngineConsumingKurtosisCommand
 
 ### Features
 * API container now saves free IPs on a local database
 
 ### Fixes
 * Fix go.mod for commons & cli to reflect monorepo and replaced imports with write package name
+* Move linter core/server linter config to within core/server
 
 # 0.49.7
 
 ### Features
 * Implement skeleton for the Startosis engine
-* Implement Startosis add_service method
 
 ### Fixes
 * Fixed a message that referred to an old repo.

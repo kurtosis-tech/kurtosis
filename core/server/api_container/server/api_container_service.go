@@ -192,10 +192,12 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 	interpretationOutput, potentialInterpretationError, generatedInstructionsList :=
 		apicService.startosisInterpreter.Interpret(ctx, serializedStartosisScript)
 	if potentialInterpretationError != nil {
-		return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
-			SerializedScriptOutput: string(interpretationOutput),
-			InterpretationError:    potentialInterpretationError.Error(),
-		}, nil
+		return binding_constructors.NewExecuteStartosisScriptResponse(
+			string(interpretationOutput),
+			potentialInterpretationError.Error(),
+			"",
+			"",
+		), nil
 	}
 	logrus.Debugf("Successfully interpreted Startosis script into a series of Kurtosis instructions: \n%v",
 		generatedInstructionsList)
@@ -211,16 +213,21 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 
 	err := apicService.startosisExecutor.Execute(ctx, generatedInstructionsList)
 	if err != nil {
-		return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
-			SerializedScriptOutput: string(interpretationOutput),
-			ExecutionError:         err.Error(),
-		}, nil
+		return binding_constructors.NewExecuteStartosisScriptResponse(
+			string(interpretationOutput),
+			"",
+			"",
+			err.Error(),
+		), nil
 	}
 	logrus.Debugf("Successfully executed the list of Kurtosis instructions")
 
-	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
-		SerializedScriptOutput: string(interpretationOutput),
-	}, nil
+	return binding_constructors.NewExecuteStartosisScriptResponse(
+		string(interpretationOutput),
+		"",
+		"",
+		"",
+	), nil
 }
 
 func (apicService ApiContainerService) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {

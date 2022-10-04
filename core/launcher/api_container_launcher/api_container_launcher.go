@@ -17,7 +17,7 @@ import (
 
 const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-	DefaultVersion = "0.49.7"
+	DefaultVersion = "0.49.9"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
 	enclaveDataVolumeDirpath = "/kurtosis-data"

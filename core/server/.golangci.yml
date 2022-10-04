@@ -1,9 +1,3 @@
-# TODO remove startosis from here when its more furnished
-run:
-  skip-files:
-    - "api_container/server/startosis_engine/startosis_interpreter.go"
-    - "api_container/server/startosis_engine/startosis_executor.go"
-
 issues:
   exclude-rules:
     - path: "api_container/server/api_container_service.go"
