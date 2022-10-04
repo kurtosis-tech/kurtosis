@@ -1,5 +1,14 @@
 # TBD
 
+# 0.49.9
+
+### Features
+* Implement Startosis add_service method
+* Enable linter on Startosis codebase
+
+### Changes
+* Removes version constants within launchers and cli in favor of centralized generated version constant
+
 # 0.49.8
 
 ### Changes
@@ -18,7 +27,6 @@
 * Removes remote-docker-setup from the `build_cli` job in Circle
 
 ### Changes
-* Removes version constants within launchers and cli in favor of centralized generated version constant
 
 # 0.49.7
 
