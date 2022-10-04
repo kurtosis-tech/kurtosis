@@ -33,6 +33,7 @@ const (
 	expectedQueryLogsQueryParamValueRegex   = `{kurtosisContainerType="user-service",kurtosisGUID=~"test-user-service-[1-3]\|test-user-service-[1-3]\|test-user-service-[1-3]"}`
 	expectedEntriesLimitQueryParamValue     = "4000"
 	expectedDirectionQueryParamValue        = "forward"
+	expectedAmountQueryParams               = 4
 )
 
 func TestIfHttpRequestIsValidWhenCallingGetUserServiceLogs(t *testing.T) {
@@ -73,6 +74,8 @@ func TestIfHttpRequestIsValidWhenCallingGetUserServiceLogs(t *testing.T) {
 		}
 	}
 	require.True(t, foundExpectedEnclaveId, "Expected to find enclave ID '%v' in request header values '%+v' for header with key '%v', but it was not found", expectedEnclaveId, organizationIds, expectedOrganizationIdHttpHeaderKey)
+
+	require.Equal(t, expectedAmountQueryParams, len(request.URL.Query()), "Expected to request contains '%v' query params, but '%v' query params were found", expectedAmountQueryParams, len(request.URL.Query()))
 
 	found = request.URL.Query().Has(expectedStartTimeQueryParamKey)
 	require.True(t, found, "Expected to find query param with key '%v' in request form values '%+v', but it was not found", expectedStartTimeQueryParamKey, request.Form)
