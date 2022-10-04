@@ -48,7 +48,7 @@ func (moduleManager *GitModuleManager) GetModule(packageURL string) (string, err
 	// Load it after cloning
 	contents, err = os.ReadFile(pathToStartosisFile)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred in reading contents of the StarLark file")
+		return "", stacktrace.Propagate(err, "An error occurred in reading contents of the Startosis file")
 	}
 
 	return string(contents), nil
@@ -74,7 +74,7 @@ func (moduleManager *GitModuleManager) atomicClone(parsedURL *ParsedGitURL) erro
 	_, err = os.Stat(moduleAuthorPath)
 	if err != nil {
 		if err = os.Mkdir(moduleAuthorPath, moduleDirPermission); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while creating directory '%v'", moduleAuthorPath)
+			return stacktrace.Propagate(err, "An error occurred while creating the directory '%v'", moduleAuthorPath)
 		}
 	}
 	if err = os.Rename(gitClonePath, modulePath); err != nil {

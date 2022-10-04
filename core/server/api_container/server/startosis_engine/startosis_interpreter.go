@@ -79,28 +79,34 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string) (*star
 }
 
 func (interpreter *StartosisInterpreter) Load(_ *starlark.Thread, module string) (starlark.StringDict, error) {
+	// use a nil Entry to indicate a load in progress
+	var loadInProgress *startosis_modules.ModuleCacheEntry
+
 	entry, found := interpreter.moduleCache.Get(module)
-	if entry == nil {
-		if found {
-			return nil, startosis_errors.NewInterpretationError("There is a cycle in the load graph")
-		}
-
-		// Add a placeholder to indicate "load in progress".
-		interpreter.moduleCache.Add(module, nil)
-
-		// Load it.
-		contents, err := interpreter.moduleManager.GetModule(module)
-		if err != nil {
-			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while fetching contents of the module '%v'", module))
-		}
-
-		thread, bindings := interpreter.buildBindings(fmt.Sprintf("%v:%v", starlarkGoThreadName, module))
-		globalVariables, err := starlark.ExecFile(thread, module, contents, bindings)
-
-		// Update the cache.
-		entry = startosis_modules.NewModuleCacheEntry(globalVariables, err)
-		interpreter.moduleCache.Add(module, entry)
+	if found && entry == loadInProgress {
+		return nil, startosis_errors.NewInterpretationError("There is a cycle in the load graph")
 	}
+
+	if found && entry != loadInProgress {
+		return entry.GetGlobalVariables(), entry.GetError()
+	}
+
+	// Add a placeholder to indicate "load in progress".
+	interpreter.moduleCache.Add(module, loadInProgress)
+
+	// Load it.
+	contents, err := interpreter.moduleManager.GetModule(module)
+	if err != nil {
+		return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while fetching contents of the module '%v'", module))
+	}
+
+	thread, bindings := interpreter.buildBindings(fmt.Sprintf("%v:%v", starlarkGoThreadName, module))
+	globalVariables, err := starlark.ExecFile(thread, module, contents, bindings)
+
+	// Update the cache.
+	entry = startosis_modules.NewModuleCacheEntry(globalVariables, err)
+	interpreter.moduleCache.Add(module, entry)
+
 	return entry.GetGlobalVariables(), entry.GetError()
 }
 
