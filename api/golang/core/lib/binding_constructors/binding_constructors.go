@@ -145,6 +145,25 @@ func NewModuleInfo(
 
 // ==============================================================================================
 //
+//	Execute Startosis Script
+//
+// ==============================================================================================
+func NewExecuteStartosisScriptResponse(
+	serializedScriptOutput string,
+	interpretationError string,
+	validationError string,
+	executionError string,
+) *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse {
+	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
+		SerializedScriptOutput: serializedScriptOutput,
+		InterpretationError:    interpretationError,
+		ValidationError:        validationError,
+		ExecutionError:         executionError,
+	}
+}
+
+// ==============================================================================================
+//
 //	Start Service
 //
 // ==============================================================================================

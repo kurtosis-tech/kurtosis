@@ -18,6 +18,7 @@
 
 ### Features
 * Implement skeleton for the Startosis engine
+* Implement Startosis add_service method
 
 ### Fixes
 * Fixed a message that referred to an old repo.
