@@ -6,9 +6,9 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/kurtosis_version"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -177,10 +177,10 @@ func (kurtosisCtx *KurtosisContext) Clean(ctx context.Context, shouldCleanAll bo
 func (kurtosisCtx *KurtosisContext) GetUserServiceLogs(
 	ctx context.Context,
 	enclaveId enclaves.EnclaveID,
-	userServiceGuids map[service.ServiceGUID]bool,
-) (map[service.ServiceGUID][]string, error) {
+	userServiceGuids map[services.ServiceGUID]bool,
+) (map[services.ServiceGUID][]string, error) {
 
-	userServiceLogsByUserServiceGuid := map[service.ServiceGUID][]string{}
+	userServiceLogsByUserServiceGuid := map[services.ServiceGUID][]string{}
 
 	userServiceGuidStrSet := make(map[string]bool, len(userServiceGuids))
 	for userServiceGuid, isUserServiceInSet := range userServiceGuids {
@@ -199,7 +199,7 @@ func (kurtosisCtx *KurtosisContext) GetUserServiceLogs(
 	}
 
 	for userServiceGuidStr, userServiceLogLines := range gutUserServiceLogsResponse.UserServiceLogsByUserServiceGuid {
-		userServiceGuid := service.ServiceGUID(userServiceGuidStr)
+		userServiceGuid := services.ServiceGUID(userServiceGuidStr)
 		userServiceLogsByUserServiceGuid[userServiceGuid] = userServiceLogLines.Line
 	}
 

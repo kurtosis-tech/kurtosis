@@ -2,14 +2,11 @@ module github.com/kurtosis-tech/kurtosis/api/golang
 
 go 1.15
 
-replace github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
-
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/frankban/quicktest v1.14.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0-20221003162212-f3f70cc659a6
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/nwaples/rardecode v1.1.3 // indirect
