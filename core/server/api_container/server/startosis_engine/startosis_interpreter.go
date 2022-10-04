@@ -51,7 +51,7 @@ func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, serializ
 	if err != nil {
 		return "", generateInterpretationError(err), nil
 	}
-	logrus.Debugf("Successfully interpreted startosis script into instruction queue: \n%s", instructionQueue)
+	logrus.Debugf("Successfully interpreted Startosis script into instruction queue: \n%s", instructionQueue)
 	return SerializedInterpretationOutput(scriptOutputBuffer.String()), nil, instructionQueue
 }
 
@@ -61,7 +61,7 @@ func (interpreter *StartosisInterpreter) buildBindings(scriptOutputBuffer *bytes
 		Load: func(_ *starlark.Thread, fileToLoad string) (starlark.StringDict, error) {
 			// TODO(gb): remove when we implement the load feature
 			//  Also note we could return the position here by analysing the callstack in the thread object, but not worth it as this will go away soon
-			return nil, startosis_errors.NewInterpretationErrorWithCustomMsg("Loading external Startosis scripts is not supported yet", nil)
+			return nil, startosis_errors.NewInterpretationError("Loading external Startosis scripts is not supported yet")
 		},
 		Print: func(_ *starlark.Thread, msg string) {
 			// From the Starlark spec, a print statement in Starlark is automatically followed by a newline
@@ -81,18 +81,16 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 	switch err.(type) {
 	case resolve.Error:
 		slError := err.(resolve.Error)
-		return startosis_errors.NewInterpretationErrorFromStacktrace(
-			[]startosis_errors.CallFrame{
-				*startosis_errors.NewCallFrame(slError.Msg, startosis_errors.NewScriptPosition(slError.Pos.Line, slError.Pos.Col)),
-			},
-		)
+		stacktrace := []startosis_errors.CallFrame{
+			*startosis_errors.NewCallFrame(slError.Msg, startosis_errors.NewScriptPosition(slError.Pos.Line, slError.Pos.Col)),
+		}
+		return startosis_errors.NewInterpretationErrorFromStacktrace(stacktrace)
 	case syntax.Error:
 		slError := err.(syntax.Error)
-		return startosis_errors.NewInterpretationErrorFromStacktrace(
-			[]startosis_errors.CallFrame{
-				*startosis_errors.NewCallFrame(slError.Msg, startosis_errors.NewScriptPosition(slError.Pos.Line, slError.Pos.Col)),
-			},
-		)
+		stacktrace := []startosis_errors.CallFrame{
+			*startosis_errors.NewCallFrame(slError.Msg, startosis_errors.NewScriptPosition(slError.Pos.Line, slError.Pos.Col)),
+		}
+		return startosis_errors.NewInterpretationErrorFromStacktrace(stacktrace)
 	case resolve.ErrorList:
 		errorsList := err.(resolve.ErrorList)
 		// TODO(gb): a bit hacky but it's an acceptable way to wrap multiple errors into a single Interpretation
@@ -101,10 +99,7 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 		for _, slError := range errorsList {
 			stacktrace = append(stacktrace, *startosis_errors.NewCallFrame(slError.Msg, startosis_errors.NewScriptPosition(slError.Pos.Line, slError.Pos.Col)))
 		}
-		return startosis_errors.NewInterpretationErrorWithCustomMsg(
-			multipleInterpretationErrorMsg,
-			stacktrace,
-		)
+		return startosis_errors.NewInterpretationErrorWithCustomMsg(multipleInterpretationErrorMsg, stacktrace)
 	case *starlark.EvalError:
 		slError := err.(*starlark.EvalError)
 		stacktrace := make([]startosis_errors.CallFrame, 0)
@@ -116,5 +111,5 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 			stacktrace,
 		)
 	}
-	return startosis_errors.NewInterpretationErrorWithCustomMsg(fmt.Sprintf("UnknownError: %s\n", err.Error()), nil)
+	return startosis_errors.NewInterpretationError(fmt.Sprintf("UnknownError: %s\n", err.Error()))
 }

@@ -22,6 +22,7 @@ const (
 )
 
 func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork *service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		serviceId, serviceConfig, interpretationError := parseStartosisArgs(b, args, kwargs)
 		if interpretationError != nil {
@@ -99,7 +100,7 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 	var serviceIdArg starlark.String
 	var serviceConfigArg *starlarkstruct.Struct
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceIdArgName, &serviceIdArg, serviceConfigArgName, &serviceConfigArg); err != nil {
-		return "", nil, startosis_errors.NewInterpretationErrorWithCustomMsg(err.Error(), nil)
+		return "", nil, startosis_errors.NewInterpretationError(err.Error())
 	}
 
 	serviceId, interpretationErr := kurtosis_instruction.ParseServiceId(serviceIdArg)

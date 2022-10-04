@@ -1,6 +1,9 @@
 package startosis_errors
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 const (
 	errorDefaultMsg  = "/!\\ Errors interpreting Startosis script"
@@ -41,14 +44,14 @@ func NewInterpretationErrorWithCustomMsg(msg string, stacktrace []CallFrame) *In
 }
 
 func (err *InterpretationError) Error() string {
-	serializedError := ""
+	var serializedError strings.Builder
 	if err.msg == "" {
-		serializedError += errorDefaultMsg
+		serializedError.WriteString(errorDefaultMsg)
 	} else {
-		serializedError += err.msg
+		serializedError.WriteString(err.msg)
 	}
-	for _, stacktraceElt := range err.stacktrace {
-		serializedError += fmt.Sprintf("\n%s%s", stacktracePrefix, stacktraceElt.String())
+	for _, stacktraceElement := range err.stacktrace {
+		serializedError.WriteString(fmt.Sprintf("\n%s%s", stacktracePrefix, stacktraceElement.String()))
 	}
-	return serializedError
+	return serializedError.String()
 }
