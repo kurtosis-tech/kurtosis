@@ -2,13 +2,12 @@ module github.com/kurtosis-tech/kurtosis/cli/cli
 
 go 1.17
 
-replace github.com/kurtosis-tech/kurtosis/cli/commons => ../commons
-
-replace github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
-
-replace github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
-
-replace github.com/kurtosis-tech/kurtosis/engine/launcher => ../../engine/launcher
+replace (
+	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
+	github.com/kurtosis-tech/kurtosis/cli/commons => ../commons
+	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
+	github.com/kurtosis-tech/kurtosis/engine/launcher => ../../engine/launcher
+)
 
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
@@ -39,7 +38,6 @@ require (
 )
 
 require (
-	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Microsoft/go-winio v0.4.17 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect

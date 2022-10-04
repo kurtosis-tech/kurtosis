@@ -2,6 +2,8 @@ module github.com/kurtosis-tech/kurtosis/api/golang
 
 go 1.15
 
+replace github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
+
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/dsnet/compress v0.0.1 // indirect
