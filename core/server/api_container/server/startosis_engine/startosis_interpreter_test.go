@@ -335,7 +335,7 @@ func TestStartosisCompiler_SimpleLoading(t *testing.T) {
 	barModulePath := "github.com/foo/bar/lib.star"
 	seedModules[barModulePath] = "a=\"World!\""
 	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
-	interpreter := NewStartosisInterpreter(nil, moduleManager)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 load("` + barModulePath + `", "a")
 print("Hello " + a)
@@ -360,7 +360,7 @@ func TestStartosisCompiler_TransitiveLoading(t *testing.T) {
 b = "Hello " + a
 `
 	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
-	interpreter := NewStartosisInterpreter(nil, moduleManager)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 load("` + dooModulePath + `", "b")
 print(b)
@@ -386,7 +386,7 @@ a = "Hello" + b`
 b = "Hello " + a
 `
 	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
-	interpreter := NewStartosisInterpreter(nil, moduleManager)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 load("` + dooModulePath + `", "b")
 print(b)
@@ -404,7 +404,7 @@ print(b)
 }
 
 func TestStartosisCompiler_FailsOnNonExistentModule(t *testing.T) {
-	interpreter := NewStartosisInterpreter(nil, emptyMockModuleManager())
+	interpreter := NewStartosisInterpreter(testServiceNetwork, emptyMockModuleManager())
 	nonExistentModulePath := "github.com/non/existent/module.star"
 	script := `
 load("` + nonExistentModulePath + `", "b")
@@ -436,7 +436,7 @@ service_config = struct(
 )
 `
 	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
-	interpreter := NewStartosisInterpreter(nil, moduleManager)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 load("` + barModulePath + `", "service_id", "service_config")
 print("Starting Startosis script!")
@@ -495,7 +495,7 @@ def deploy_datastore_services():
         add_service(service_id = unique_service_id, service_config = service_config)
 `
 	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
-	interpreter := NewStartosisInterpreter(nil, moduleManager)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 load("` + barModulePath + `", "deploy_datastore_services")
 print("Starting Startosis script!")
@@ -577,7 +577,7 @@ print("Adding service " + service_id)
 add_service(service_id = service_id, service_config = service_config)
 `
 	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
-	interpreter := NewStartosisInterpreter(nil, moduleManager)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 load("` + barModulePath + `", "service_id", "service_config")
 print("Starting Startosis script!")
@@ -622,7 +622,7 @@ func TestStartosisCompiler_GitModuleManagerSucceedsForExistentModule(t *testing.
 
 	gitModuleManager := git_module_manager.NewGitModuleManager(moduleDir, moduleTmpDir)
 
-	interpreter := NewStartosisInterpreter(nil, gitModuleManager)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, gitModuleManager)
 	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star"
 	script := `
 load("` + sampleStartosisModule + `", "a")
@@ -648,7 +648,7 @@ func TestStartosisCompiler_GitModuleManagerFailsForNonExistentModule(t *testing.
 
 	gitModuleManager := git_module_manager.NewGitModuleManager(moduleDir, moduleTmpDir)
 
-	interpreter := NewStartosisInterpreter(nil, gitModuleManager)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, gitModuleManager)
 	nonExistentModulePath := "github.com/kurtosis-tech/non-existent-startosis-load/sample.star"
 	script := `
 load("` + nonExistentModulePath + `", "b")
