@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+* Implement Startosis add_service image pull validation
+
 # 0.49.9
 
 ### Features
