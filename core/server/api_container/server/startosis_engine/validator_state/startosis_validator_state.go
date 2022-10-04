@@ -33,14 +33,7 @@ func (validatorState *StartosisValidatorState) Validate(ctx context.Context) err
 func (validatorState *StartosisValidatorState) validateDockerImages(ctx context.Context) error {
 	pullErrors := make(chan error)
 	for image := range validatorState.requiredDockerImages {
-		go func() {
-			err := (*validatorState.kurtosisBackend).PullImage(ctx, image)
-			if err != nil {
-				pullErrors <- stacktrace.Propagate(err, "Failed fetching the required image %v", image)
-			} else {
-				pullErrors <- nil
-			}
-		}()
+		go pullImageFromBackend(ctx, validatorState.kurtosisBackend, image, pullErrors)
 	}
 	for range validatorState.requiredDockerImages {
 		err := <-pullErrors
@@ -49,4 +42,13 @@ func (validatorState *StartosisValidatorState) validateDockerImages(ctx context.
 		}
 	}
 	return nil
+}
+
+func pullImageFromBackend(ctx context.Context, backend *backend_interface.KurtosisBackend, image string, pullError chan error) {
+	err := (*backend).PullImage(ctx, image)
+	if err != nil {
+		pullError <- stacktrace.Propagate(err, "Failed fetching the required image %v", image)
+	} else {
+		pullError <- nil
+	}
 }
