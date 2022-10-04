@@ -108,19 +108,8 @@ func (client *LokiLogsDatabaseClient) GetUserServiceLogs(
 
 	resultLogsByKurtosisUserServiceGuid := map[service.ServiceGUID][]string{}
 
-	getLogsPath := baseLokiApiPath + queryRangeEndpointSubpath
-
-	queryRangeUrlStr := fmt.Sprintf("%v%v%v", httpProtocol, client.logsDatabaseAddress, getLogsPath)
-
-	queryRangeUrl, err := url.Parse(queryRangeUrlStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred parsing url string '%v'", queryRangeUrlStr)
-	}
-
 	httpHeaderWithTenantID := http.Header{}
 	httpHeaderWithTenantID.Add(organizationIdHttpHeaderKey, string(enclaveID))
-
-	httpValues := url.Values{}
 
 	kurtosisGuid := []string{}
 	for userServiceGuid := range userServiceGuids {
@@ -130,16 +119,28 @@ func (client *LokiLogsDatabaseClient) GetUserServiceLogs(
 	maxRetentionLogsTimeParamValue := getMaxRetentionLogsTimeParamValue()
 	queryParamValue := getQueryParamValue(userServiceContainerType, kurtosisGuid)
 
-	httpValues.Set(startTimeQueryParamKey, maxRetentionLogsTimeParamValue)
-	httpValues.Set(queryLogsQueryParamKey, queryParamValue)
-	httpValues.Set(entriesLimitQueryParamKey, defaultEntriesLimit)
-	httpValues.Set(directionQueryParamKey, defaultDirection)
+	getLogsPath := baseLokiApiPath + queryRangeEndpointSubpath
+
+	queryRangeEndpointUrlStr := fmt.Sprintf("%v%v%v", httpProtocol, client.logsDatabaseAddress, getLogsPath)
+
+	queryRangeEndpointUrl, err := url.Parse(queryRangeEndpointUrlStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred parsing url string '%v'", queryRangeEndpointUrlStr)
+	}
+
+	queryRangeEndpointQuery := queryRangeEndpointUrl.Query()
+
+	queryRangeEndpointQuery.Set(startTimeQueryParamKey, maxRetentionLogsTimeParamValue)
+	queryRangeEndpointQuery.Set(queryLogsQueryParamKey, queryParamValue)
+	queryRangeEndpointQuery.Set(entriesLimitQueryParamKey, defaultEntriesLimit)
+	queryRangeEndpointQuery.Set(directionQueryParamKey, defaultDirection)
+
+	queryRangeEndpointUrl.RawQuery = queryRangeEndpointQuery.Encode()
 
 	httpRequest := &http.Request{
 		Method: http.MethodGet,
-		URL:    queryRangeUrl,
+		URL:    queryRangeEndpointUrl,
 		Header: httpHeaderWithTenantID,
-		Form:   httpValues,
 	}
 	httpRequestWithContext := httpRequest.WithContext(ctx)
 
@@ -213,7 +214,7 @@ func (client *LokiLogsDatabaseClient) doHttpRequestWithRetries(request *http.Req
 		return nil, stacktrace.Propagate(err, "An error occurred doing http request '%+v' even after applying this retry backoff schedule '%+v'", request, httpRetriesBackoffSchedule)
 	}
 
-	return nil, stacktrace.NewError("The request '%+v' could not be executed successfully, even after applying this retry backoff schedule '%+v', the status code '%v' was the last one received", request, httpRetriesBackoffSchedule, httpResponse.StatusCode)
+	return nil, stacktrace.NewError("The request '%+v' could not be executed successfully, even after applying this retry backoff schedule '%+v', the status code '%v' and body '%v' were the last one received", request, httpRetriesBackoffSchedule, httpResponse.StatusCode, string(httpResponseBodyBytes))
 }
 
 
