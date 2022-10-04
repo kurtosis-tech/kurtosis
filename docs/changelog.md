@@ -1,5 +1,9 @@
 # TBD
 
+### Fixes
+* Fix IP address placeholder injected by default in Startosis instructions. It used to be empty, which is invalid now
+it is set to `KURTOSIS_IP_ADDR_PLACEHOLDER`
+
 # 0.49.9
 
 ### Features
