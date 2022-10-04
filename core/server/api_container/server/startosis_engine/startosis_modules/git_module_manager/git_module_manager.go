@@ -78,7 +78,7 @@ func (moduleManager *GitModuleManager) atomicClone(parsedURL *ParsedGitURL) erro
 		}
 	}
 	if err = os.Rename(gitClonePath, modulePath); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while moving module at temporary destination to final destination")
+		return stacktrace.Propagate(err, "An error occurred while moving module at temporary destination '%v' to final destination '%v'", gitClonePath, modulePath)
 	}
 
 	return nil
