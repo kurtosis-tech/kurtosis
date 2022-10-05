@@ -12,6 +12,7 @@ const (
 	githubDomain           = "github.com"
 	httpsSchema            = "https"
 	startosisFileExtension = ".star"
+	urlPathSeparator = "/"
 )
 
 // ParsedGitURL an object representing a parsed moduleURL
@@ -41,6 +42,8 @@ func newParsedGitURL(moduleAuthor, moduleName, gitURL, relativeModulePath, relat
 // parseGitURL this takes a Git url (GitHub) for now and converts it into the struct ParsedGitURL
 // This can in the future be extended to GitLab or BitBucket or any other Git Host
 func parseGitURL(packageURL string) (*ParsedGitURL, error) {
+	// we expect something like github.com/author/module/path.star
+	// we don't want schemas
 	parsedURL, err := url.Parse(packageURL)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error parsing the url '%v'", packageURL)
@@ -49,6 +52,7 @@ func parseGitURL(packageURL string) (*ParsedGitURL, error) {
 		return nil, stacktrace.NewError("Expected schema to be empty got '%v'", parsedURL.Scheme)
 	}
 
+	// we prefix schema and make sure that the URL still parses
 	packageURLPrefixedWithHttps := httpsSchema + "://" + packageURL
 	parsedURL, err = url.Parse(packageURLPrefixedWithHttps)
 	if err != nil {
@@ -58,7 +62,7 @@ func parseGitURL(packageURL string) (*ParsedGitURL, error) {
 		return nil, stacktrace.NewError("We only support modules on Github for now")
 	}
 
-	splitURLPath := removeEmptyStringsFromSlice(strings.Split(parsedURL.Path, "/"))
+	splitURLPath := cleanPathAndSplit(parsedURL.Path)
 
 	if len(splitURLPath) < 3 {
 		return nil, stacktrace.NewError("URL path should contain at least 3 subpaths")
@@ -86,10 +90,12 @@ func parseGitURL(packageURL string) (*ParsedGitURL, error) {
 	return parsedGitURL, nil
 }
 
-// removeEmptyStringsFromSlice removes empty "" from the string slice
-func removeEmptyStringsFromSlice(stringSlice []string) []string {
+// cleanPath removes empty "" from the string slice
+func cleanPathAndSplit(urlPath string) []string {
+	cleanPath := path.Clean(urlPath)
+	splitPath := strings.Split(cleanPath, urlPathSeparator)
 	var sliceWithoutEmptyStrings []string
-	for _, subPath := range stringSlice {
+	for _, subPath := range splitPath {
 		if subPath != "" {
 			sliceWithoutEmptyStrings = append(sliceWithoutEmptyStrings, subPath)
 		}
