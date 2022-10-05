@@ -7,6 +7,7 @@ replace (
 	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
 	github.com/kurtosis-tech/kurtosis/core/launcher => ../../core/launcher
 	github.com/kurtosis-tech/kurtosis/engine/launcher => ../launcher
+	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
 )
 
 require (
@@ -50,6 +51,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d // indirect
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220424181051-c4a0b573dcaf // indirect
+	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // indirect Locally generated on build
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect

@@ -7,6 +7,7 @@ replace (
 	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
 	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander => ../files_artifacts_expander
 	github.com/kurtosis-tech/kurtosis/core/launcher => ../launcher
+	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
 )
 
 require (

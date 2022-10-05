@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/Masterminds/semver/v3"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
+	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -225,7 +226,7 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 		return nil, nil, stacktrace.Propagate(err, "An error occurred parsing running engine version string '%v' to semantic version", guarantor.maybeCurrentlyRunningEngineVersionTag)
 	}
 
-	launcherEngineSemverStr := engine_server_launcher.KurtosisEngineVersion
+	launcherEngineSemverStr := kurtosis_version.KurtosisVersion
 	launcherEngineSemver, err := semver.StrictNewVersion(launcherEngineSemverStr)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred parsing CLI's engine version string '%v' to semantic version", launcherEngineSemverStr)
