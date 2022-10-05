@@ -63,8 +63,8 @@ kurtosis_version_go_file_abs_path="${root_dirpath}/${KURTOSIS_VERSION_PACKAGE_DI
 echo "package ${KURTOSIS_VERSION_PACKAGE_DIR}" > "${kurtosis_version_go_file_abs_path}"
 echo "" >> "${kurtosis_version_go_file_abs_path}"
 echo "const (" >> "${kurtosis_version_go_file_abs_path}"
-echo "	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!" >> "${kurtosis_version_go_file_abs_path}"
+echo "  // !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!" >> "${kurtosis_version_go_file_abs_path}"
 echo "	KurtosisVersion = \"${docker_tag}\"" >> "${kurtosis_version_go_file_abs_path}"
-echo "   // !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!" >> "${kurtosis_version_go_file_abs_path}"
+echo "  // !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!" >> "${kurtosis_version_go_file_abs_path}"
 echo ")" >> "${kurtosis_version_go_file_abs_path}"
 
