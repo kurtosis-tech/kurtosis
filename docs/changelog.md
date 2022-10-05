@@ -3,6 +3,10 @@
 ### Features
 * Implement Startosis add_service image pull validation
 
+### Removals
+* Removes version constants within launchers and cli in favor of centralized generated version constant
+* Removes remote-docker-setup from the `build_cli` job in Circle
+
 # 0.49.9
 
 ### Features
