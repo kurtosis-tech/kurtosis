@@ -467,7 +467,7 @@ Adding service example-datastore-server
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
 
-func TestStartosisInterpreter_ValidScriptWithMultipleInstructionsImportedFromOtherModule(t *testing.T) {
+func TestStartosisInterpreter_ValidScriptWithFunctionsImportedFromOtherModule(t *testing.T) {
 	seedModules := make(map[string]string)
 	moduleBar := "github.com/foo/bar/lib.star"
 	seedModules[moduleBar] = `
