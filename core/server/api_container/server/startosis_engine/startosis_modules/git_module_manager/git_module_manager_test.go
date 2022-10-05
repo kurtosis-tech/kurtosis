@@ -42,7 +42,7 @@ func TestStartosisInterpreter_GitModuleManagerFailsForNonExistentModule(t *testi
 	nonExistentModulePath := "github.com/kurtosis-tech/non-existent-startosis-load/sample.star"
 
 	_, err = gitModuleManager.GetModule(nonExistentModulePath)
-	require.NotNil(t, nonExistentModulePath)
+	require.NotNil(t, err)
 }
 
 
