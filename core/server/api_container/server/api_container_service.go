@@ -204,10 +204,12 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 
 	validationError := apicService.startosisValidator.Validate(ctx, generatedInstructionsList)
 	if validationError != nil {
-		return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
-			SerializedScriptOutput: string(interpretationOutput),
-			ValidationError:        validationError.Error(),
-		}, nil
+		return binding_constructors.NewExecuteStartosisScriptResponse(
+			string(interpretationOutput),
+			"",
+			validationError.Error(),
+			"",
+		), nil
 	}
 	logrus.Debugf("Successfully validated Startosis script")
 
