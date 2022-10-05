@@ -409,7 +409,7 @@ print(b)
 	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
-		fmt.Sprintf("Evaluation error: cannot load %v: An error occurred while fetching contents of the module '%v'", nonExistentModule, nonExistentModule),
+		fmt.Sprintf("Evaluation error: cannot load %v: An error occurred while loading the module '%v'", nonExistentModule, nonExistentModule),
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 1)),
 		},
