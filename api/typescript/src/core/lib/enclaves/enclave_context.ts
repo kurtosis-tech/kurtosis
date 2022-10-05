@@ -59,7 +59,7 @@ import {
     ModuleInfo,
     PauseServiceArgs, ServiceInfo, UnloadModuleResponse,
     UnpauseServiceArgs,
-    StartServicesArgs, ExecuteStartosisScriptArgs,
+    StartServicesArgs, ExecuteStartosisScriptArgs, ExecuteStartosisScriptResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {should} from "chai";
 import {TemplateAndData} from "./template_and_data";
@@ -212,9 +212,11 @@ export class EnclaveContext {
     }
 
     public async executeStartosisScript(
-            serializedStartosisScript: String
-        ): Promise<Result<[String, String, String, String], Error>> {
-        return err(new Error(("Not implemented"))) // TODO(gb): implement
+            serializedStartosisScript: string
+        ): Promise<Result<ExecuteStartosisScriptResponse, Error>> {
+        const args = new ExecuteStartosisScriptArgs();
+        args.setSerializedScript(serializedStartosisScript)
+        return this.backend.executeStartosisScript(args)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
