@@ -17,6 +17,26 @@ func NewModuleCache() *ModuleCache {
 	}
 }
 
+// A nil entry to indicate that a load is in progress
+var loadInProgress *ModuleCacheEntry
+
+func (moduleCache *ModuleCache) SetLoadInProgress(module string) {
+	moduleCache.mutex.Lock()
+	defer moduleCache.mutex.Unlock()
+	moduleCache.cache[module] = loadInProgress
+}
+
+func (moduleCache *ModuleCache) IsLoadInProgress(module string) bool {
+	moduleCache.mutex.Lock()
+	defer moduleCache.mutex.Unlock()
+	entry, found := moduleCache.cache[module]
+	if found && entry == loadInProgress {
+		return true
+	}
+	return false
+}
+
+
 func (moduleCache *ModuleCache) Add(module string, entry *ModuleCacheEntry) {
 	moduleCache.mutex.Lock()
 	defer moduleCache.mutex.Unlock()

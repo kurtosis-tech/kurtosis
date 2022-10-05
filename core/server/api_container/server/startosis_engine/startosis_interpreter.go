@@ -80,19 +80,17 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string) (*star
 
 func (interpreter *StartosisInterpreter) Load(_ *starlark.Thread, module string) (starlark.StringDict, error) {
 	// use a nil Entry to indicate a load in progress
-	var loadInProgress *startosis_modules.ModuleCacheEntry
-
-	entry, found := interpreter.moduleCache.Get(module)
-	if found && entry == loadInProgress {
+	if interpreter.moduleCache.IsLoadInProgress(module) {
 		return nil, startosis_errors.NewInterpretationError("There is a cycle in the load graph")
 	}
 
-	if found && entry != loadInProgress {
+	entry, found := interpreter.moduleCache.Get(module)
+	if found {
 		return entry.GetGlobalVariables(), entry.GetError()
 	}
 
 	// Add a placeholder to indicate "load in progress".
-	interpreter.moduleCache.Add(module, loadInProgress)
+	interpreter.moduleCache.SetLoadInProgress(module)
 
 	// Load it.
 	contents, err := interpreter.moduleManager.GetModule(module)
