@@ -27,8 +27,6 @@ type StartosisInterpreter struct {
 	serviceNetwork     *service_network.ServiceNetwork
 	moduleCache        *startosis_modules.ModuleCache
 	moduleManager      startosis_modules.ModuleManager
-	scriptOutputBuffer bytes.Buffer
-	instructionsQueue  []kurtosis_instruction.KurtosisInstruction
 }
 
 type SerializedInterpretationOutput string
@@ -50,60 +48,68 @@ func NewStartosisInterpreter(serviceNetwork *service_network.ServiceNetwork, mod
 //   - An error if something unexpected happens (crash independent of the Startosis script). This should be as rare as
 //     possible
 func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, serializedScript string) (SerializedInterpretationOutput, *startosis_errors.InterpretationError, []kurtosis_instruction.KurtosisInstruction) {
-	thread, builtins := interpreter.buildBindings(starlarkGoThreadName)
+	var scriptOutputBuffer bytes.Buffer
+	var instructionsQueue  []kurtosis_instruction.KurtosisInstruction
+	thread, builtins := interpreter.buildBindings(starlarkGoThreadName, &instructionsQueue, &scriptOutputBuffer)
 
 	_, err := starlark.ExecFile(thread, starlarkFilenamePlaceholderAsNotUsed, serializedScript, builtins)
 	if err != nil {
 		return "", generateInterpretationError(err), nil
 	}
-	logrus.Debugf("Successfully interpreted Startosis script into instruction queue: \n%s", interpreter.instructionsQueue)
-	return SerializedInterpretationOutput(interpreter.scriptOutputBuffer.String()), nil, interpreter.instructionsQueue
+	logrus.Debugf("Successfully interpreted Startosis script into instruction queue: \n%s", instructionsQueue)
+	return SerializedInterpretationOutput(scriptOutputBuffer.String()), nil, instructionsQueue
 }
 
-func (interpreter *StartosisInterpreter) buildBindings(threadName string) (*starlark.Thread, starlark.StringDict) {
+func (interpreter *StartosisInterpreter) buildBindings(threadName string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, scriptOutputBuffer *bytes.Buffer) (*starlark.Thread, starlark.StringDict) {
 	thread := &starlark.Thread{
 		Name: threadName,
-		Load: interpreter.Load,
-		Print: func(_ *starlark.Thread, msg string) {
-			// From the Starlark spec, a print statement in Starlark is automatically followed by a newline
-			interpreter.scriptOutputBuffer.WriteString(msg + "\n")
-		},
+		Load: interpreter.makeLoad(instructionsQueue, scriptOutputBuffer),
+		Print: makePrint(scriptOutputBuffer),
 	}
 
 	builtins := starlark.StringDict{
 		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
-		add_service.AddServiceBuiltinName: starlark.NewBuiltin(add_service.AddServiceBuiltinName, add_service.GenerateAddServiceBuiltin(&interpreter.instructionsQueue, interpreter.serviceNetwork)),
+		add_service.AddServiceBuiltinName: starlark.NewBuiltin(add_service.AddServiceBuiltinName, add_service.GenerateAddServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 	}
 
 	return thread, builtins
 }
 
-func (interpreter *StartosisInterpreter) Load(_ *starlark.Thread, moduleID string) (starlark.StringDict, error) {
-	if interpreter.moduleCache.IsLoadInProgress(moduleID) {
-		return nil, startosis_errors.NewInterpretationError("There is a cycle in the load graph")
-	}
+func (interpreter *StartosisInterpreter) makeLoad(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, scriptOutputBuffer *bytes.Buffer) func(_ *starlark.Thread, moduleID string) (starlark.StringDict, error) {
+	return func(_ *starlark.Thread, moduleID string) (starlark.StringDict, error) {
+		if interpreter.moduleCache.IsLoadInProgress(moduleID) {
+			return nil, startosis_errors.NewInterpretationError("There is a cycle in the load graph")
+		}
 
-	entry, found := interpreter.moduleCache.Get(moduleID)
-	if found {
+		entry, found := interpreter.moduleCache.Get(moduleID)
+		if found {
+			return entry.GetGlobalVariables(), entry.GetError()
+		}
+
+		interpreter.moduleCache.SetLoadInProgress(moduleID)
+
+		// Load it.
+		contents, err := interpreter.moduleManager.GetModule(moduleID)
+		if err != nil {
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while loading the module '%v'", moduleID))
+		}
+
+		thread, bindings := interpreter.buildBindings(fmt.Sprintf("%v:%v", starlarkGoThreadName, moduleID), instructionsQueue, scriptOutputBuffer)
+		globalVariables, err := starlark.ExecFile(thread, moduleID, contents, bindings)
+
+		// Update the cache.
+		entry = startosis_modules.NewModuleCacheEntry(globalVariables, err)
+		interpreter.moduleCache.Add(moduleID, entry)
+
 		return entry.GetGlobalVariables(), entry.GetError()
 	}
+}
 
-	interpreter.moduleCache.SetLoadInProgress(moduleID)
-
-	// Load it.
-	contents, err := interpreter.moduleManager.GetModule(moduleID)
-	if err != nil {
-		return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while loading the module '%v'", moduleID))
+func makePrint(scriptOutputBuffer *bytes.Buffer) func( *starlark.Thread, string) {
+	return func(_ *starlark.Thread, msg string) {
+		// From the Starlark spec, a print statement in Starlark is automatically followed by a newline
+		scriptOutputBuffer.WriteString(msg + "\n")
 	}
-
-	thread, bindings := interpreter.buildBindings(fmt.Sprintf("%v:%v", starlarkGoThreadName, moduleID))
-	globalVariables, err := starlark.ExecFile(thread, moduleID, contents, bindings)
-
-	// Update the cache.
-	entry = startosis_modules.NewModuleCacheEntry(globalVariables, err)
-	interpreter.moduleCache.Add(moduleID, entry)
-
-	return entry.GetGlobalVariables(), entry.GetError()
 }
 
 func generateInterpretationError(err error) *startosis_errors.InterpretationError {
