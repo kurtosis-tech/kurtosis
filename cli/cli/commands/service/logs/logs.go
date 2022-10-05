@@ -8,6 +8,7 @@ package logs
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -113,7 +114,8 @@ func run(
 
 	logLineBuffer := bytes.NewBuffer([]byte{})
 	for _, logLine := range serviceLogs {
-		logLineBuffer.WriteString(logLine)
+		logLineWithLineBreak := fmt.Sprintf("%v\n", logLine)
+		logLineBuffer.WriteString(logLineWithLineBreak)
 	}
 	logrus.StandardLogger().Out.Write(logLineBuffer.Bytes())
 
