@@ -26,11 +26,11 @@ const (
 	expectedQueryLogsQueryParamKey          = "query"
 	expectedEntriesLimitQueryParamKey       = "limit"
 	expectedDirectionQueryParamKey          = "direction"
-	expectedKurtosisContainerTypeLokiTagKey = "kurtosisContainerType"
-	expectedKurtosisGuidLokiTagKey          = "kurtosisGUID"
+	expectedKurtosisContainerTypeLokiTagKey = "comKurtosistechContainerType"
+	expectedKurtosisGuidLokiTagKey          = "comKurtosistechGuid"
 	expectedURLScheme                       = "http"
 	expectedQueryRangeURLPath               = "/loki/api/v1/query_range"
-	expectedQueryLogsQueryParamValueRegex   = `{kurtosisContainerType="user-service",kurtosisGUID=~"test-user-service-[1-3]\|test-user-service-[1-3]\|test-user-service-[1-3]"}`
+	expectedQueryLogsQueryParamValueRegex   = `{comKurtosistechContainerType="user-service",comKurtosistechGuid=~"test-user-service-[1-3]\|test-user-service-[1-3]\|test-user-service-[1-3]"}`
 	expectedEntriesLimitQueryParamValue     = "4000"
 	expectedDirectionQueryParamValue        = "forward"
 	expectedAmountQueryParams               = 4
