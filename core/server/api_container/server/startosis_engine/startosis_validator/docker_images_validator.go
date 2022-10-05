@@ -44,7 +44,7 @@ func (validator *DockerImagesValidator) ValidateFinalEnvironment(ctx context.Con
 }
 
 func pullImageFromBackend(ctx context.Context, wg *sync.WaitGroup, backend *backend_interface.KurtosisBackend, image string, pullError chan<- error) {
-	err := (*backend).PullImage(ctx, image)
+	err := (*backend).FetchImage(ctx, image)
 	if err != nil {
 		pullError <- stacktrace.Propagate(err, "Failed fetching the required image %v", image)
 	}

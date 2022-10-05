@@ -67,8 +67,8 @@ func NewDockerKurtosisBackend(
 	}
 }
 
-func (backend *DockerKurtosisBackend) PullImage(ctx context.Context, image string) error {
-	return backend.dockerManager.PullImage(ctx, image)
+func (backend *DockerKurtosisBackend) FetchImage(ctx context.Context, image string) error {
+	return backend.dockerManager.FetchImage(ctx, image)
 }
 
 func (backend *DockerKurtosisBackend) CreateEngine(

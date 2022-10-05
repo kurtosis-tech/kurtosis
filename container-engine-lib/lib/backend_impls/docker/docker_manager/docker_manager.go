@@ -371,20 +371,9 @@ func (manager DockerManager) CreateAndStartContainer(
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
 
-	logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
-	imageExistsLocally, err := manager.isImageAvailableLocally(ctx, dockerImage)
+	err := manager.FetchImage(ctx, dockerImage)
 	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image %v", dockerImage)
-	}
-	logrus.Tracef("Is image available locally?: %v", imageExistsLocally)
-
-	if !imageExistsLocally {
-		logrus.Tracef("Image doesn't exist locally, so attempting to pull it...")
-		err = manager.PullImage(ctx, dockerImage)
-		if err != nil {
-			return "", nil, stacktrace.Propagate(err, "Failed to pull Docker image %v from remote image repository", dockerImage)
-		}
-		logrus.Tracef("Image successfully pulled from remote to local")
+		return "", nil, stacktrace.Propagate(err, "An error occurred fetching image %v", dockerImage)
 	}
 
 	idFilterArgs := filters.NewArgs(filters.KeyValuePair{
@@ -882,6 +871,26 @@ func (manager DockerManager) GetContainersByLabels(ctx context.Context, labels m
 		return nil, stacktrace.Propagate(err, "An error occurred getting containers with labels '%+v'", labelsFilterList)
 	}
 	return result, nil
+}
+
+func (manager DockerManager) FetchImage(ctx context.Context, dockerImage string) error {
+	logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
+	imageExistsLocally, err := manager.isImageAvailableLocally(ctx, dockerImage)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image %v", dockerImage)
+	}
+	logrus.Tracef("Is image available locally?: %v", imageExistsLocally)
+
+	if !imageExistsLocally {
+		logrus.Tracef("Image doesn't exist locally, so attempting to pull it...")
+		err = manager.PullImage(ctx, dockerImage)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to pull Docker image %v from remote image repository", dockerImage)
+		}
+		logrus.Tracef("Image successfully pulled from remote to local")
+	}
+
+	return nil
 }
 
 func (manager DockerManager) PullImage(context context.Context, imageName string) (err error) {
