@@ -17,7 +17,7 @@ BUILD_SCRIPT_RELATIVE_FILEPATHS=(
   "cli/scripts/build.sh"
 )
 
-RUN_PRE_RELEASE_SCRIPTS_SCRIPT_PATH="${script_dirpath}/run-pre-release-scripts.sh"
+GENERATE_KURTOSIS_VERSION_SCRIPT_PATH="${script_dirpath}/generate-kurtosis-version.sh"
 CLI_LAUNCH_PATH="${root_dirpath}/cli/cli/scripts/launch-cli.sh"
 
 GOLANG_INTERNAL_TESTSUITES_BUILDSCRIPT_PATH="${root_dirpath}/internal_testsuites/golang/scripts/build.sh"
@@ -59,8 +59,8 @@ echo "   core/launcher/api_container_launcher/api_container_launcher.go"
 echo "   engine/launcher/engine_server_launcher/engine_server_launcher.go"
 echo "Please undo the changes if you have to"
 
-if ! bash "${RUN_PRE_RELEASE_SCRIPTS_SCRIPT_PATH}"; then
-  echo "Error: Running pre release scripts '${RUN_PRE_RELEASE_SCRIPTS_SCRIPT_PATH}' failed" >&2
+if ! bash "${GENERATE_KURTOSIS_VERSION_SCRIPT_PATH}"; then
+  echo "Error: Running generating Kurtosis Version '${GENERATE_KURTOSIS_VERSION_SCRIPT_PATH}' failed" >&2
   exit 1
 fi
 
