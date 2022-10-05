@@ -18,8 +18,8 @@ func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend) *
 	}
 }
 
-func (interpreter *StartosisValidator) Validate(ctx context.Context, instructions []kurtosis_instruction.KurtosisInstruction) error {
-	validatorState := validator_state.NewStartosisValidatorState(interpreter.kurtosisBackend)
+func (validator *StartosisValidator) Validate(ctx context.Context, instructions []kurtosis_instruction.KurtosisInstruction) error {
+	validatorState := validator_state.NewStartosisValidatorState(validator.kurtosisBackend)
 	for _, instruction := range instructions {
 		err := instruction.Validate(validatorState)
 		if err != nil {
