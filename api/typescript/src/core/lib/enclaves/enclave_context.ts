@@ -4,7 +4,7 @@
  */
 
 import {ok, err, Result, Err} from "neverthrow";
-import log, {error} from "loglevel";
+import log from "loglevel";
 import { isNode as  isExecutionEnvNode} from "browser-or-node";
 import * as jspb from "google-protobuf";
 import type {

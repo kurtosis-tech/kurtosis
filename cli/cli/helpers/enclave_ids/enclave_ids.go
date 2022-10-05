@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 2021 - present Kurtosis Technologies Inc.
+ * Copyright (c) 2022 - present Kurtosis Technologies Inc.
  * All Rights Reserved.
  */
 
-package execution_ids
+package enclave_ids
 
 import (
 	"fmt"
@@ -15,16 +15,13 @@ import (
 const (
 	EnclaveIdMaxLength            = 63 // If changing this, change also the regexp AllowedEnclaveIdCharsRegexStr below
 	AllowedEnclaveIdCharsRegexStr = `^[-A-Za-z0-9.]{1,63}$`
-)
 
-const (
 	kurtosisPrefix = "kt"
-
 	// YYYY-MM-DDTHH-MM-SS-sss
 	executionTimestampFormat = "2006-01-02t15-04-05-000"
 )
 
-func GetExecutionID() string {
+func GenerateNewEnclaveID() string {
 	return fmt.Sprintf(
 		"%v%v",
 		kurtosisPrefix,

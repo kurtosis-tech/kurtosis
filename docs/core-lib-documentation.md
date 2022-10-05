@@ -61,6 +61,22 @@ Gets the [ModuleContext][modulecontext] associated with an already-running modul
 
 * `moduleContext`: The [ModuleContext][modulecontext] representation of the running module container, which allows execution of the module's execute function (if it exists).
 
+### executeStartosisScript(String serializedStartosisScript) -\> (ExecuteStartosisScriptResult executionResult, Error error)
+
+Execute a provide Startosis script inside the enclave.
+
+**Args**
+
+* `serializedStartosisScript`: The Startosis script provided as a string
+
+**Returns**
+
+* `executionResult`: The result of the execution. It contains 4 fields:
+  * `interpretationError`: an interpretation error is returned if the script couldn't be interpreted by Kurtosis backend
+  * `validationError`: a validationError is returned if the script was successfully interpreted but could not be validated by Kurtosis backend
+  * `executionError`: an execution error is returned if the script failed during its execution by Kurtosis backend
+  * `scriptOutput`: the output of the script that was successfully executed inside the enclave
+
 <!-- TODO DELETE THIS!!! -->
 ### registerFilesArtifacts(Map\<FilesArtifactID, String\> filesArtifactUrls)
 Downloads the given files artifacts to the Kurtosis engine, associating them with the given IDs, so they can be mounted inside a service's filespace at creation time via [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].

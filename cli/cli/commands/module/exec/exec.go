@@ -17,8 +17,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/enclave_ids"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/enclave_liveness_validator"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/execution_ids"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -93,7 +93,7 @@ var ModuleExecCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Key: enclaveIdFlagKey,
 			Usage: fmt.Sprintf(
 				"The ID to give the enclave that will be created to execute the module inside, which must match regex '%v' (default: use the module image and the current Unix time)",
-				execution_ids.AllowedEnclaveIdCharsRegexStr,
+				enclave_ids.AllowedEnclaveIdCharsRegexStr,
 			),
 			Type:    flags.FlagType_String,
 			Default: defaultEnclaveId,
@@ -161,7 +161,7 @@ func run(
 	}
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
 
-	err = execution_ids.ValidateEnclaveId(enclaveIdStr)
+	err = enclave_ids.ValidateEnclaveId(enclaveIdStr)
 	if err != nil {
 		return stacktrace.Propagate(err, "Invalid enclave ID argument '%s'", enclaveIdStr)
 	}
@@ -321,7 +321,7 @@ func run(
 //
 // ====================================================================================================
 func getImageNameWithUnixTimestamp(moduleImage string) string {
-	enclaveId := execution_ids.GetExecutionID()
+	enclaveId := enclave_ids.GenerateNewEnclaveID()
 	parsedModuleImage, err := reference.Parse(moduleImage)
 	if err != nil {
 		logrus.Warnf("Couldn't parse the module image string '%v'; using enclave ID '%v'", moduleImage, enclaveId)

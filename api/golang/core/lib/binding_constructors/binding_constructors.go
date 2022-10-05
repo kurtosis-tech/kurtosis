@@ -148,6 +148,12 @@ func NewModuleInfo(
 //	Execute Startosis Script
 //
 // ==============================================================================================
+func NewExecuteStartosisScriptArgs(serializedString string) *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs {
+	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs{
+		SerializedScript: serializedString,
+	}
+}
+
 func NewExecuteStartosisScriptResponse(
 	serializedScriptOutput string,
 	interpretationError string,

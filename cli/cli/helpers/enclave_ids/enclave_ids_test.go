@@ -1,4 +1,9 @@
-package execution_ids
+/*
+ * Copyright (c) 2022 - present Kurtosis Technologies Inc.
+ * All Rights Reserved.
+ */
+
+package enclave_ids
 
 import (
 	"github.com/stretchr/testify/require"
