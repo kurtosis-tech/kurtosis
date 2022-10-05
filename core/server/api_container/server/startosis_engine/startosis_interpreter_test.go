@@ -604,3 +604,95 @@ Starting Startosis script!
 `
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
+
+func TestStartosisInterpreter_TestInstructionQueueAndOutputBufferDontHaveDupesInterpretingAnotherScript(t *testing.T) {
+	seedModules := make(map[string]string)
+	moduleBar := "github.com/foo/bar/lib.star"
+	seedModules[moduleBar] = `
+service_id = "example-datastore-server"
+print("Constructing service_config")
+service_config = struct(
+	container_image_name = "kurtosistech/example-datastore-server",
+	used_ports = {
+		"grpc": struct(number = 1323, protocol = "TCP")
+	}
+)
+print("Adding service " + service_id)
+add_service(service_id = service_id, service_config = service_config)
+`
+	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	scriptA := `
+load("` + moduleBar + `", "service_id", "service_config")
+print("Starting Startosis script!")
+`
+
+
+	addServiceInstructionFromScriptA := add_service.NewAddServiceInstruction(
+		nil,
+		*kurtosis_instruction.NewInstructionPosition(11, 12),
+		service.ServiceID("example-datastore-server"),
+		&kurtosis_core_rpc_api_bindings.ServiceConfig{
+			ContainerImageName: "kurtosistech/example-datastore-server",
+			PrivatePorts: map[string]*kurtosis_core_rpc_api_bindings.Port{
+				"grpc": {
+					Number:   1323,
+					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
+				},
+			},
+		})
+
+	expectedOutputFromScriptA := `Constructing service_config
+Adding service example-datastore-server
+Starting Startosis script!
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), scriptA)
+	require.Equal(t, 1, len(instructions))
+	require.Nil(t, interpretationError)
+
+
+	require.Equal(t, instructions[0], addServiceInstructionFromScriptA)
+	require.Equal(t, expectedOutputFromScriptA, string(scriptOutput))
+
+	scriptB := `
+print("Starting Startosis script!")
+
+service_id = "example-datastore-server"
+print("Adding service " + service_id)
+
+service_config = struct(
+	container_image_name = "kurtosistech/example-datastore-server",
+	used_ports = {
+		"grpc": struct(number = 1323, protocol = "TCP")
+	}
+)
+add_service(service_id = service_id, service_config = service_config)
+`
+	addServiceInstructionFromScriptB := add_service.NewAddServiceInstruction(
+		nil,
+		*kurtosis_instruction.NewInstructionPosition(13, 12),
+		service.ServiceID("example-datastore-server"),
+		&kurtosis_core_rpc_api_bindings.ServiceConfig{
+			ContainerImageName: "kurtosistech/example-datastore-server",
+			PrivatePorts: map[string]*kurtosis_core_rpc_api_bindings.Port{
+				"grpc": {
+					Number:   1323,
+					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
+				},
+			},
+	})
+	expectedOutputFromScriptB := `Starting Startosis script!
+Adding service example-datastore-server
+`
+
+
+	scriptOutput, interpretationError, instructions = interpreter.Interpret(context.Background(), scriptB)
+	require.Nil(t, interpretationError)
+	require.Equal(t, 1, len(instructions))
+	require.Equal(t, instructions[0], addServiceInstructionFromScriptB)
+	require.Equal(t, expectedOutputFromScriptB, string(scriptOutput))
+
+
+}
+
