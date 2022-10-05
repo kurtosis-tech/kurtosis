@@ -331,9 +331,10 @@ Done!
 }
 
 func TestStartosisInterpreter_SimpleLoading(t *testing.T) {
-	seedModules := make(map[string]string)
 	barModulePath := "github.com/foo/bar/lib.star"
-	seedModules[barModulePath] = "a=\"World!\""
+	seedModules := map[string]string {
+		barModulePath: "a=\"World!\"",
+	}
 	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
