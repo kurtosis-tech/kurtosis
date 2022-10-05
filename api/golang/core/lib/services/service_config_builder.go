@@ -20,7 +20,7 @@ type ServiceConfigBuilder struct {
 
 func NewServiceConfigBuilder(containerImageName string) *ServiceConfigBuilder {
 	return &ServiceConfigBuilder{
-		containerImageName:         "",
+		containerImageName:         containerImageName,
 		privatePorts:               map[string]*kurtosis_core_rpc_api_bindings.Port{},
 		publicPorts:                map[string]*kurtosis_core_rpc_api_bindings.Port{},
 		entrypointArgs:             []string{},
