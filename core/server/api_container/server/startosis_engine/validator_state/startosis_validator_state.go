@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
+	"sync"
 )
 
 type StartosisValidatorState struct {
@@ -31,24 +32,25 @@ func (validatorState *StartosisValidatorState) Validate(ctx context.Context) err
 }
 
 func (validatorState *StartosisValidatorState) validateDockerImages(ctx context.Context) error {
-	pullErrors := make(chan error)
+	pullErrors := make(chan error, len(validatorState.requiredDockerImages))
+	var wg sync.WaitGroup
 	for image := range validatorState.requiredDockerImages {
-		go pullImageFromBackend(ctx, validatorState.kurtosisBackend, image, pullErrors)
+		wg.Add(1)
+		go pullImageFromBackend(ctx, &wg, validatorState.kurtosisBackend, image, pullErrors)
 	}
-	for range validatorState.requiredDockerImages {
-		err := <-pullErrors
-		if err != nil {
-			return err
-		}
+	wg.Wait()
+	close(pullErrors)
+	for pullError := range pullErrors {
+		// TODO(victor.colombo): ValidationError
+		return pullError
 	}
 	return nil
 }
 
-func pullImageFromBackend(ctx context.Context, backend *backend_interface.KurtosisBackend, image string, pullError chan error) {
+func pullImageFromBackend(ctx context.Context, wg *sync.WaitGroup, backend *backend_interface.KurtosisBackend, image string, pullError chan<- error) {
 	err := (*backend).PullImage(ctx, image)
 	if err != nil {
 		pullError <- stacktrace.Propagate(err, "Failed fetching the required image %v", image)
-	} else {
-		pullError <- nil
 	}
+	wg.Done()
 }
