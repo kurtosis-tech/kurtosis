@@ -2,9 +2,9 @@ package startosis_validator
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/pkg/errors"
 	"sync"
 )
 
@@ -37,7 +37,7 @@ func (validator *DockerImagesValidator) ValidateFinalEnvironment(ctx context.Con
 		if wrappedErrors == nil {
 			wrappedErrors = pullError
 		} else {
-			wrappedErrors = errors.Wrap(wrappedErrors, pullError.Error())
+			wrappedErrors = fmt.Errorf(pullError.Error(), wrappedErrors)
 		}
 	}
 	return wrappedErrors
