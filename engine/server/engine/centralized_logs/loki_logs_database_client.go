@@ -42,8 +42,8 @@ const (
 	//The oldest item is first when using direction=forward
 	defaultDirection = "forward"
 
-	kurtosisContainerTypeLokiTagKey = "kurtosisContainerType"
-	kurtosisGuidLokiTagKey          = "kurtosisGUID"
+	kurtosisContainerTypeLokiTagKey = "comKurtosistechContainerType"
+	kurtosisGuidLokiTagKey          = "comKurtosistechGuid"
 
 	orTagsOperator = "|"
 
@@ -74,8 +74,8 @@ type LokiQueryRangeResponse struct {
 		ResultType string `json:"resultType"`
 		Result     []struct {
 			Stream struct {
-				KurtosisContainerType string `json:"kurtosisContainerType"`
-				KurtosisGUID          string `json:"kurtosisGUID"`
+				KurtosisContainerType string `json:"comKurtosistechContainerType"`
+				KurtosisGUID          string `json:"comKurtosistechGuid"`
 			} `json:"stream"`
 			Values [][]string `json:"values"`
 		} `json:"result"`
