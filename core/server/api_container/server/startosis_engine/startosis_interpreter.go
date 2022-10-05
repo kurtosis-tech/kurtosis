@@ -93,7 +93,7 @@ func (interpreter *StartosisInterpreter) Load(_ *starlark.Thread, moduleID strin
 	// Load it.
 	contents, err := interpreter.moduleManager.GetModule(moduleID)
 	if err != nil {
-		return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while fetching contents of the module '%v'", moduleID))
+		return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while loading the module '%v'", moduleID))
 	}
 
 	thread, bindings := interpreter.buildBindings(fmt.Sprintf("%v:%v", starlarkGoThreadName, moduleID))
