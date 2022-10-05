@@ -25,10 +25,10 @@ func NewGitModuleManager(moduleDir string, tmpDir string) *GitModuleManager {
 	}
 }
 
-func (moduleManager *GitModuleManager) GetModule(moduleID string) (string, error) {
-	parsedURL, err := parseGitURL(moduleID)
+func (moduleManager *GitModuleManager) GetModule(moduleURL string) (string, error) {
+	parsedURL, err := parseGitURL(moduleURL)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while parsing URL")
+		return "", stacktrace.Propagate(err, "An error occurred while parsing URL '%v'", moduleURL)
 	}
 
 	pathToStartosisFile := path.Join(moduleManager.moduleDir, parsedURL.relativeFilePath)
@@ -42,13 +42,13 @@ func (moduleManager *GitModuleManager) GetModule(moduleID string) (string, error
 	// Otherwise Clone It
 	err = moduleManager.atomicClone(parsedURL)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while cloning the Git Repo")
+		return "", stacktrace.Propagate(err, "An error occurred while cloning the Git Repo '%v'", parsedURL)
 	}
 
 	// Load it after cloning
 	contents, err = os.ReadFile(pathToStartosisFile)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred in reading contents of the Startosis file")
+		return "", stacktrace.Propagate(err, "An error occurred in reading contents of the Startosis file '%v'", pathToStartosisFile)
 	}
 
 	return string(contents), nil
