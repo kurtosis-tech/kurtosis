@@ -354,16 +354,16 @@ print("Hello " + a)
 
 func TestStartosisInterpreter_TransitiveLoading(t *testing.T) {
 	seedModules := make(map[string]string)
-	dooModulePath := "github.com/foo/doo/lib.star"
-	barModulePath := "github.com/foo/bar/lib.star"
-	seedModules[barModulePath] = `a="World!"`
-	seedModules[dooModulePath] = `load("` + barModulePath + `", "a")
+	moduleBar := "github.com/foo/bar/lib.star"
+	seedModules[moduleBar] = `a="World!"`
+	moduleDooWhichLoadsModuleBar := "github.com/foo/doo/lib.star"
+	seedModules[moduleDooWhichLoadsModuleBar] = `load("` + moduleBar + `", "a")
 b = "Hello " + a
 `
 	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
-load("` + dooModulePath + `", "b")
+load("` + moduleDooWhichLoadsModuleBar + `", "b")
 print(b)
 
 `
@@ -379,24 +379,24 @@ print(b)
 
 func TestStartosisInterpreter_FailsOnCycle(t *testing.T) {
 	seedModules := make(map[string]string)
-	dooModulePath := "github.com/foo/doo/lib.star"
-	barModulePath := "github.com/foo/bar/lib.star"
-	seedModules[barModulePath] = `load("` + dooModulePath + `", "b")
+	moduleBarLoadsModuleDoo := "github.com/foo/bar/lib.star"
+	seedModules[moduleBarLoadsModuleDoo] = `load("` + moduleDooLoadsModuleBar + `", "b")
 a = "Hello" + b`
-	seedModules[dooModulePath] = `load("` + barModulePath + `", "a")
+	moduleDooLoadsModuleBar := "github.com/foo/doo/lib.star"
+	seedModules[moduleDooLoadsModuleBar] = `load("` + moduleBarLoadsModuleDoo + `", "a")
 b = "Hello " + a
 `
 	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
-load("` + dooModulePath + `", "b")
+load("` + moduleDooLoadsModuleBar + `", "b")
 print(b)
 `
 
 	_, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
 	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
-		fmt.Sprintf("Evaluation error: cannot load %v: cannot load %v: cannot load %v: There is a cycle in the load graph", dooModulePath, barModulePath, dooModulePath),
+		fmt.Sprintf("Evaluation error: cannot load %v: cannot load %v: cannot load %v: There is a cycle in the load graph", moduleDooLoadsModuleBar, moduleBarLoadsModuleDoo, moduleDooLoadsModuleBar),
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 1)),
 		},
@@ -406,16 +406,16 @@ print(b)
 
 func TestStartosisInterpreter_FailsOnNonExistentModule(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, emptyMockModuleManager())
-	nonExistentModulePath := "github.com/non/existent/module.star"
+	nonExistentModule := "github.com/non/existent/module.star"
 	script := `
-load("` + nonExistentModulePath + `", "b")
+load("` + nonExistentModule + `", "b")
 print(b)
 `
 	_, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
 	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
-		fmt.Sprintf("Evaluation error: cannot load %v: An error occurred while fetching contents of the module '%v'", nonExistentModulePath, nonExistentModulePath),
+		fmt.Sprintf("Evaluation error: cannot load %v: An error occurred while fetching contents of the module '%v'", nonExistentModule, nonExistentModule),
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 1)),
 		},
@@ -425,8 +425,8 @@ print(b)
 
 func TestStartosisInterpreter_ValidSimpleScriptWithImportedStruct(t *testing.T) {
 	seedModules := make(map[string]string)
-	barModulePath := "github.com/foo/bar/lib.star"
-	seedModules[barModulePath] = `
+	moduleBar := "github.com/foo/bar/lib.star"
+	seedModules[moduleBar] = `
 service_id = "example-datastore-server"
 print("Constructing service_config")
 service_config = struct(
@@ -439,7 +439,7 @@ service_config = struct(
 	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
-load("` + barModulePath + `", "service_id", "service_config")
+load("` + moduleBar + `", "service_id", "service_config")
 print("Starting Startosis script!")
 
 print("Adding service " + service_id)
@@ -475,8 +475,8 @@ Adding service example-datastore-server
 
 func TestStartosisInterpreter_ValidScriptWithMultipleInstructionsImportedFromOtherModule(t *testing.T) {
 	seedModules := make(map[string]string)
-	barModulePath := "github.com/foo/bar/lib.star"
-	seedModules[barModulePath] = `
+	moduleBar := "github.com/foo/bar/lib.star"
+	seedModules[moduleBar] = `
 service_id = "example-datastore-server"
 ports = [1323, 1324, 1325]
 
@@ -498,7 +498,7 @@ def deploy_datastore_services():
 	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
-load("` + barModulePath + `", "deploy_datastore_services")
+load("` + moduleBar + `", "deploy_datastore_services")
 print("Starting Startosis script!")
 
 deploy_datastore_services()
@@ -564,8 +564,8 @@ Done!
 
 func TestStartosisInterpreter_AddServiceInOtherModulePopulatesQueue(t *testing.T) {
 	seedModules := make(map[string]string)
-	barModulePath := "github.com/foo/bar/lib.star"
-	seedModules[barModulePath] = `
+	moduleBar := "github.com/foo/bar/lib.star"
+	seedModules[moduleBar] = `
 service_id = "example-datastore-server"
 print("Constructing service_config")
 service_config = struct(
@@ -580,7 +580,7 @@ add_service(service_id = service_id, service_config = service_config)
 	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
-load("` + barModulePath + `", "service_id", "service_config")
+load("` + moduleBar + `", "service_id", "service_config")
 print("Starting Startosis script!")
 `
 
