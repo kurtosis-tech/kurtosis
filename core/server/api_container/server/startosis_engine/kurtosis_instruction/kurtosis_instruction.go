@@ -2,7 +2,7 @@ package kurtosis_instruction
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/validator_state"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 )
 
 type InstructionPosition struct {
@@ -21,9 +21,8 @@ type KurtosisInstruction interface {
 	// Most of the time it will just call GetCanonicalInstruction()
 	String() string
 
-	// Validate check if the current instruction applied to the current 'validatorState' is valid
-	// If it is, it might modify validatorState, otherwise will return error
-	Validate(validatorState *validator_state.StartosisValidatorState) error
+	// UpdateEnvironment mutates environment to reflect how Kurtosis would look like after this instruction
+	UpdateEnvironment(environment *startosis_validator.ValidatorEnvironment)
 }
 
 func NewInstructionPosition(line int32, col int32) *InstructionPosition {
