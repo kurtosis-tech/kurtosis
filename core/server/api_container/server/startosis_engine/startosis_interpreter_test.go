@@ -29,7 +29,7 @@ func emptyMockModuleManager() *mock_module_manager.MockModuleManager {
 
 var testServiceNetwork *service_network.ServiceNetwork = nil
 
-func TestStartosisCompiler_SimplePrintScript(t *testing.T) {
+func TestStartosisInterpreter_SimplePrintScript(t *testing.T) {
 	testString := "Hello World!"
 	interpreter := NewStartosisInterpreter(testServiceNetwork, emptyMockModuleManager())
 	script := `
@@ -45,7 +45,7 @@ print("` + testString + `")
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
 
-func TestStartosisCompiler_ScriptFailingSingleError(t *testing.T) {
+func TestStartosisInterpreter_ScriptFailingSingleError(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, emptyMockModuleManager())
 	script := `
 print("Starting Startosis script!")
@@ -66,7 +66,7 @@ unknownInstruction()
 	require.Equal(t, expectedError, interpretationError)
 }
 
-func TestStartosisCompiler_ScriptFailingMultipleErrors(t *testing.T) {
+func TestStartosisInterpreter_ScriptFailingMultipleErrors(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, emptyMockModuleManager())
 	script := `
 print("Starting Startosis script!")
@@ -216,7 +216,7 @@ add_service(service_id = service_id, service_config = service_config)
 	require.Equal(t, expectedError, interpretationError)
 }
 
-func TestStartosisCompiler_ValidSimpleScriptWithInstructionPortNumberAsString(t *testing.T) {
+func TestStartosisInterpreter_ValidSimpleScriptWithInstructionPortNumberAsString(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, emptyMockModuleManager())
 	script := `
 print("Starting Startosis script!")
@@ -246,7 +246,7 @@ add_service(service_id = service_id, service_config = service_config)
 	require.Equal(t, expectedError, interpretationError)
 }
 
-func TestStartosisCompiler_ValidScriptWithMultipleInstructions(t *testing.T) {
+func TestStartosisInterpreter_ValidScriptWithMultipleInstructions(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, emptyMockModuleManager())
 	script := `
 print("Starting Startosis script!")
@@ -330,7 +330,7 @@ Done!
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
 
-func TestStartosisCompiler_SimpleLoading(t *testing.T) {
+func TestStartosisInterpreter_SimpleLoading(t *testing.T) {
 	seedModules := make(map[string]string)
 	barModulePath := "github.com/foo/bar/lib.star"
 	seedModules[barModulePath] = "a=\"World!\""
@@ -351,7 +351,7 @@ print("Hello " + a)
 	assert.Equal(t, expectedOutput, string(scriptOutput))
 }
 
-func TestStartosisCompiler_TransitiveLoading(t *testing.T) {
+func TestStartosisInterpreter_TransitiveLoading(t *testing.T) {
 	seedModules := make(map[string]string)
 	dooModulePath := "github.com/foo/doo/lib.star"
 	barModulePath := "github.com/foo/bar/lib.star"
@@ -376,7 +376,7 @@ print(b)
 	assert.Equal(t, expectedOutput, string(scriptOutput))
 }
 
-func TestStartosisCompiler_FailsOnCycle(t *testing.T) {
+func TestStartosisInterpreter_FailsOnCycle(t *testing.T) {
 	seedModules := make(map[string]string)
 	dooModulePath := "github.com/foo/doo/lib.star"
 	barModulePath := "github.com/foo/bar/lib.star"
@@ -403,7 +403,7 @@ print(b)
 	assert.Equal(t, expectedError, interpretationError)
 }
 
-func TestStartosisCompiler_FailsOnNonExistentModule(t *testing.T) {
+func TestStartosisInterpreter_FailsOnNonExistentModule(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, emptyMockModuleManager())
 	nonExistentModulePath := "github.com/non/existent/module.star"
 	script := `
@@ -422,7 +422,7 @@ print(b)
 	assert.Equal(t, expectedError, interpretationError)
 }
 
-func TestStartosisCompiler_ValidSimpleScriptWithImportedStruct(t *testing.T) {
+func TestStartosisInterpreter_ValidSimpleScriptWithImportedStruct(t *testing.T) {
 	seedModules := make(map[string]string)
 	barModulePath := "github.com/foo/bar/lib.star"
 	seedModules[barModulePath] = `
@@ -472,7 +472,7 @@ Adding service example-datastore-server
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
 
-func TestStartosisCompiler_ValidScriptWithMultipleInstructionsImportedFromOtherModule(t *testing.T) {
+func TestStartosisInterpreter_ValidScriptWithMultipleInstructionsImportedFromOtherModule(t *testing.T) {
 	seedModules := make(map[string]string)
 	barModulePath := "github.com/foo/bar/lib.star"
 	seedModules[barModulePath] = `
@@ -561,7 +561,7 @@ Done!
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
 
-func TestStartosisCompiler_AddServiceInOtherModulePopulatesQueue(t *testing.T) {
+func TestStartosisInterpreter_AddServiceInOtherModulePopulatesQueue(t *testing.T) {
 	seedModules := make(map[string]string)
 	barModulePath := "github.com/foo/bar/lib.star"
 	seedModules[barModulePath] = `
@@ -610,7 +610,7 @@ Starting Startosis script!
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
 
-func TestStartosisCompiler_GitModuleManagerSucceedsForExistentModule(t *testing.T) {
+func TestStartosisInterpreter_GitModuleManagerSucceedsForExistentModule(t *testing.T) {
 	moduleDir := "/tmp/startosis-modules/"
 	err := os.Mkdir(moduleDir, dirPermission)
 	require.Nil(t, err)
@@ -636,7 +636,7 @@ print("Hello " + a)
 	assert.Equal(t, expectedOutput, string(scriptOutput))
 }
 
-func TestStartosisCompiler_GitModuleManagerFailsForNonExistentModule(t *testing.T) {
+func TestStartosisInterpreter_GitModuleManagerFailsForNonExistentModule(t *testing.T) {
 	moduleDir := "/tmp/startosis-modules/"
 	err := os.Mkdir(moduleDir, dirPermission)
 	require.Nil(t, err)
