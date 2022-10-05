@@ -15,10 +15,6 @@ import (
 	"testing"
 )
 
-const (
-	dirPermission = 0755
-)
-
 func emptyMockModuleManager() *mock_module_manager.MockModuleManager {
 	return mock_module_manager.NewMockModuleManager(
 		map[string]string{},

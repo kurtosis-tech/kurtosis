@@ -1,12 +1,13 @@
 package git_module_manager
 
 import (
-	"fmt"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
+)
+
+const (
+	dirPermission = 0755
 )
 
 func TestStartosisInterpreter_GitModuleManagerSucceedsForExistentModule(t *testing.T) {
@@ -19,20 +20,12 @@ func TestStartosisInterpreter_GitModuleManagerSucceedsForExistentModule(t *testi
 	require.Nil(t, err)
 	defer os.RemoveAll(moduleTmpDir)
 
-	gitModuleManager := git_module_manager.NewGitModuleManager(moduleDir, moduleTmpDir)
+	gitModuleManager := NewGitModuleManager(moduleDir, moduleTmpDir)
 
-	interpreter := NewStartosisInterpreter(testServiceNetwork, gitModuleManager)
 	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star"
-	script := `
-load("` + sampleStartosisModule + `", "a")
-print("Hello " + a)
-`
-	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
-	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
-	assert.Nil(t, interpretationError, "This test requires you to be connected to GitHub, ignore if you are offline")
-
-	expectedOutput := "Hello World!\n"
-	assert.Equal(t, expectedOutput, string(scriptOutput))
+	contents, err := gitModuleManager.GetModule(sampleStartosisModule)
+	require.Nil(t, err)
+	require.Equal(t, "a = \"World!\"\n", contents)
 }
 
 func TestStartosisInterpreter_GitModuleManagerFailsForNonExistentModule(t *testing.T) {
@@ -45,24 +38,11 @@ func TestStartosisInterpreter_GitModuleManagerFailsForNonExistentModule(t *testi
 	require.Nil(t, err)
 	os.RemoveAll(moduleTmpDir)
 
-	gitModuleManager := git_module_manager.NewGitModuleManager(moduleDir, moduleTmpDir)
-
-	interpreter := NewStartosisInterpreter(testServiceNetwork, gitModuleManager)
+	gitModuleManager := NewGitModuleManager(moduleDir, moduleTmpDir)
 	nonExistentModulePath := "github.com/kurtosis-tech/non-existent-startosis-load/sample.star"
-	script := `
-load("` + nonExistentModulePath + `", "b")
-print(b)
-`
-	_, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
-	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
 
-	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
-		fmt.Sprintf("Evaluation error: cannot load %v: An error occurred while fetching contents of the module '%v'", nonExistentModulePath, nonExistentModulePath),
-		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(2, 1)),
-		},
-	)
-	assert.Equal(t, expectedError, interpretationError)
+	_, err = gitModuleManager.GetModule(nonExistentModulePath)
+	require.NotNil(t, nonExistentModulePath)
 }
 
 
