@@ -14,11 +14,17 @@ const (
 	startosisFileExtension = ".star"
 )
 
+// ParsedGitURL an object representing a parsed moduleURL
 type ParsedGitURL struct {
+	// moduleAuthor the git of the module (GitHub user or org)
 	moduleAuthor       string
+	// moduleName the name of the module
 	moduleName         string
+	// gitURL the url ending with `.git` where the module lives
 	gitURL             string
+	// relativeModulePath the relative path to the module this would be /moduleAuthor/moduleName/
 	relativeModulePath string
+	// relativeFilePath the full path of the file relative to the module store /relativeModulePath/path/to/file.star
 	relativeFilePath   string
 }
 
@@ -32,6 +38,8 @@ func newParsedGitURL(moduleAuthor, moduleName, gitURL, relativeModulePath, relat
 	}
 }
 
+// parseGitURL this takes a Git url (GitHub) for now and converts it into the struct ParsedGitURL
+// This can in the future be extended to GitLab or BitBucket or any other Git Host
 func parseGitURL(packageURL string) (*ParsedGitURL, error) {
 	parsedURL, err := url.Parse(packageURL)
 	if err != nil {
@@ -78,6 +86,7 @@ func parseGitURL(packageURL string) (*ParsedGitURL, error) {
 	return parsedGitURL, nil
 }
 
+// removeEmptyStringsFromSlice removes empty "" from the string slice
 func removeEmptyStringsFromSlice(stringSlice []string) []string {
 	var sliceWithoutEmptyStrings []string
 	for _, subPath := range stringSlice {
