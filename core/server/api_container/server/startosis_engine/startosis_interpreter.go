@@ -78,30 +78,30 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string) (*star
 	return thread, builtins
 }
 
-func (interpreter *StartosisInterpreter) Load(_ *starlark.Thread, module string) (starlark.StringDict, error) {
-	if interpreter.moduleCache.IsLoadInProgress(module) {
+func (interpreter *StartosisInterpreter) Load(_ *starlark.Thread, moduleID string) (starlark.StringDict, error) {
+	if interpreter.moduleCache.IsLoadInProgress(moduleID) {
 		return nil, startosis_errors.NewInterpretationError("There is a cycle in the load graph")
 	}
 
-	entry, found := interpreter.moduleCache.Get(module)
+	entry, found := interpreter.moduleCache.Get(moduleID)
 	if found {
 		return entry.GetGlobalVariables(), entry.GetError()
 	}
 
-	interpreter.moduleCache.SetLoadInProgress(module)
+	interpreter.moduleCache.SetLoadInProgress(moduleID)
 
 	// Load it.
-	contents, err := interpreter.moduleManager.GetModule(module)
+	contents, err := interpreter.moduleManager.GetModule(moduleID)
 	if err != nil {
-		return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while fetching contents of the module '%v'", module))
+		return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while fetching contents of the module '%v'", moduleID))
 	}
 
-	thread, bindings := interpreter.buildBindings(fmt.Sprintf("%v:%v", starlarkGoThreadName, module))
-	globalVariables, err := starlark.ExecFile(thread, module, contents, bindings)
+	thread, bindings := interpreter.buildBindings(fmt.Sprintf("%v:%v", starlarkGoThreadName, moduleID))
+	globalVariables, err := starlark.ExecFile(thread, moduleID, contents, bindings)
 
 	// Update the cache.
 	entry = startosis_modules.NewModuleCacheEntry(globalVariables, err)
-	interpreter.moduleCache.Add(module, entry)
+	interpreter.moduleCache.Add(moduleID, entry)
 
 	return entry.GetGlobalVariables(), entry.GetError()
 }

@@ -12,10 +12,10 @@ func NewMockModuleManager(seedModules map[string]string) *MockModuleManager {
 	}
 }
 
-func (moduleManager *MockModuleManager) GetModule(moduleURL string) (string, error) {
-	contents, found := moduleManager.modules[moduleURL]
+func (moduleManager *MockModuleManager) GetModule(moduleID string) (string, error) {
+	contents, found := moduleManager.modules[moduleID]
 	if !found {
-		return "", stacktrace.NewError("Module '%v' not found", moduleURL)
+		return "", stacktrace.NewError("Module '%v' not found", moduleID)
 	}
 	return contents, nil
 }
