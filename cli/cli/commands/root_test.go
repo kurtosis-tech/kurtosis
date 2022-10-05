@@ -27,7 +27,7 @@ func TestVersion(t *testing.T) {
 	err := root.Execute()
 	require.NoError(t, err)
 
-	assert.Equal(t, kurtosis_version.KurtosisVersion+"\n", buf.String())
+	assert.Equal(t, kurtosis_version.KurtosisVersion + "\n", buf.String())
 }
 
 func TestGetLatestCLIReleaseVersionFromCacheFile_CacheFileDoesNotExist(t *testing.T) {
