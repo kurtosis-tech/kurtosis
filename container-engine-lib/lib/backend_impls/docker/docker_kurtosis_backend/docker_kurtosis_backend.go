@@ -3,6 +3,10 @@ package docker_kurtosis_backend
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_database_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_database_functions/implementations/loki"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/user_services_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -10,9 +14,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/stacktrace"
@@ -77,7 +84,6 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
-	logsCollectorHttpPortNumber uint16,
 	envVars map[string]string,
 ) (
 	*engine.Engine,
@@ -89,7 +95,6 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 		imageVersionTag,
 		grpcPortNum,
 		grpcProxyPortNum,
-		logsCollectorHttpPortNumber,
 		envVars,
 		backend.dockerManager,
 		backend.objAttrsProvider,
@@ -129,12 +134,22 @@ func (backend *DockerKurtosisBackend) DestroyEngines(
 }
 
 func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enclaveId enclave.EnclaveID, services map[service.ServiceID]*service.ServiceConfig) (map[service.ServiceID]*service.Service, map[service.ServiceID]error, error) {
+
+	logsCollector, err := backend.GetLogsCollector(ctx)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
+	}
+	if logsCollector == nil || logsCollector.GetStatus() != container_status.ContainerStatus_Running{
+		return nil, nil, stacktrace.NewError("The user services can't be started because no logs collector is running for sending the logs to")
+	}
+
 	return user_service_functions.StartUserServices(
 		ctx,
 		enclaveId,
 		services,
 		backend.serviceRegistrations,
 		backend.serviceRegistrationMutex,
+		logsCollector,
 		backend.objAttrsProvider,
 		backend.enclaveFreeIpProviders,
 		backend.dockerManager)
@@ -245,6 +260,132 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 		backend.serviceRegistrationMutex,
 		backend.enclaveFreeIpProviders,
 		backend.dockerManager)
+}
+
+func (backend *DockerKurtosisBackend) CreateLogsDatabase(
+	ctx context.Context,
+) (
+	*logs_database.LogsDatabase,
+	error,
+){
+
+	//Declaring the implementation
+	logsDatabaseContainer := loki.NewLokiLogDatabaseContainer()
+
+	logsDatabase, err := logs_database_functions.CreateLogsDatabase(
+		ctx,
+		logsDatabaseContainer,
+		backend.dockerManager,
+		backend.objAttrsProvider,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database using the logs database container '%+v'", logsDatabaseContainer)
+	}
+	return logsDatabase, nil
+}
+
+//If nothing is found returns nil
+func (backend *DockerKurtosisBackend) GetLogsDatabase(
+	ctx context.Context,
+) (
+	resultMaybeLogsDatabase *logs_database.LogsDatabase,
+	resultErr error,
+) {
+	maybeLogsDatabase, err := logs_database_functions.GetLogsDatabase(
+		ctx,
+		backend.dockerManager,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database")
+	}
+
+	return maybeLogsDatabase, nil
+}
+
+func (backend *DockerKurtosisBackend) DestroyLogsDatabase(
+	ctx context.Context,
+) (
+	error,
+) {
+
+	if err := logs_database_functions.DestroyLogsDatabase(
+		ctx,
+		backend.dockerManager,
+	); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the logs database")
+	}
+
+	return nil
+}
+
+func (backend *DockerKurtosisBackend) CreateLogsCollector(
+	ctx context.Context,
+	logsCollectorHttpPortNumber uint16,
+) (
+	*logs_collector.LogsCollector,
+	error,
+) {
+
+	//TODO we we'd have to replace this part if we ever wanted to send to an external source
+	logsDatabase, err := backend.GetLogsDatabase(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database; the logs collector cannot be run without a logs database")
+	}
+
+	if logsDatabase == nil || logsDatabase.GetStatus() != container_status.ContainerStatus_Running {
+		return nil, stacktrace.NewError("The logs database is not running; the logs collector cannot be run without a running logs database")
+	}
+
+	//Declaring the implementation
+	logsCollectorContainer := fluentbit.NewFluentbitLogsCollectorContainer()
+
+	logsCollector, err := logs_collector_functions.CreateLogsCollector(
+		ctx,
+		logsCollectorHttpPortNumber,
+		logsCollectorContainer,
+		logsDatabase,
+		backend.dockerManager,
+		backend.objAttrsProvider,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector using the '%v' HTTP port number and the los collector container '%+v'", logsCollectorHttpPortNumber, logsCollectorContainer)
+	}
+
+	return logsCollector, nil
+}
+
+//If nothing is found returns nil
+func (backend *DockerKurtosisBackend) GetLogsCollector(
+	ctx context.Context,
+) (
+	resultMaybeLogsCollector *logs_collector.LogsCollector,
+	resultErr error,
+) {
+	maybeLogsCollector, err := logs_collector_functions.GetLogsCollector(
+		ctx,
+		backend.dockerManager,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
+	}
+
+	return maybeLogsCollector, nil
+}
+
+func (backend *DockerKurtosisBackend) DestroyLogsCollector(
+	ctx context.Context,
+) (
+	error,
+) {
+
+	if err := logs_collector_functions.DestroyLogsCollector(
+		ctx,
+		backend.dockerManager,
+	); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the logs collector")
+	}
+
+	return nil
 }
 
 // ====================================================================================================

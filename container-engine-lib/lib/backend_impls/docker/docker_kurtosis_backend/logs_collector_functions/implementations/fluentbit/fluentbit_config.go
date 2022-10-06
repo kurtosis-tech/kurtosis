@@ -36,9 +36,9 @@ type Service struct {
 }
 
 type Input struct {
-	Name        string
-	Listen      string
-	Port        uint16
+	Name   string
+	Listen string
+	Port   uint16
 	StorageType string
 }
 

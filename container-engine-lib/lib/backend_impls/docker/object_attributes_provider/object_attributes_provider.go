@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	engineServerNamePrefix = "kurtosis-engine"
-	logsDatabaseName       = "kurtosis-logs-db"
-	logsCollectorName      = "kurtosis-logs-collector"
+	engineServerNamePrefix   = "kurtosis-engine"
+	logsDatabaseName         = "kurtosis-logs-db"
+	logsCollectorName        = "kurtosis-logs-collector"
 
 	//We always use the same name because we are going to have only one instance of this volume,
 	//so when the engine is restarted it mounts the same volume with the previous logs

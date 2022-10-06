@@ -6,6 +6,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -33,7 +35,6 @@ type KurtosisBackend interface {
 		imageVersionTag string,
 		grpcPortNum uint16,
 		grpcProxyPortNum uint16,
-		logsCollectorHttpPortNumber uint16,
 		envVars map[string]string,
 	) (
 		*engine.Engine,
@@ -215,13 +216,13 @@ type KurtosisBackend interface {
 	)
 
 	/*
-			                           KURTOSIS SERVICE STATE DIAGRAM
-		                                .-----------------DestroyServices--------------------.
-		                               /                                                      \
-			  StartServices--> RUNNING ---StopServices---> STOPPED ---DestroyServices---> DESTROYED
+		                           KURTOSIS SERVICE STATE DIAGRAM
+	                                .-----------------DestroyServices--------------------.
+	                               /                                                      \
+		  StartServices--> RUNNING ---StopServices---> STOPPED ---DestroyServices---> DESTROYED
 
-			- Note the above state diagram doesn't account for PauseService or UnpauseService
-			- As of 2022-05-15, Kurtosis services can never be restarted once stopped.
+		- Note the above state diagram doesn't account for PauseService or UnpauseService
+		- As of 2022-05-15, Kurtosis services can never be restarted once stopped.
 	*/
 
 	// StartUserService consumes service registrations to create auser container for each registration, given each service config
@@ -379,4 +380,34 @@ type KurtosisBackend interface {
 		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultErr error,
 	)
+
+	// Create a new Logs Database for storing and requesting the container's logs
+	CreateLogsDatabase(
+		ctx context.Context,
+	) (
+		*logs_database.LogsDatabase,
+		error,
+	)
+
+	// Gets the logs database, if nothing is found returns nil
+	GetLogsDatabase(ctx context.Context) (*logs_database.LogsDatabase, error)
+
+	// Destroy the logs database
+	DestroyLogsDatabase(ctx context.Context) error
+
+	// Create a new Logs Collector for sending container's logs to the logs database server
+	//The logs collector requires that the logs database to be up before
+	CreateLogsCollector(
+		ctx context.Context,
+		logsCollectorHttpPortNumber uint16,
+	) (
+		*logs_collector.LogsCollector,
+		error,
+	)
+
+	// Gets the logs collector, if nothing is found returns nil
+	GetLogsCollector(ctx context.Context) (*logs_collector.LogsCollector, error)
+
+	// Destroy the logs collector
+	DestroyLogsCollector(ctx context.Context) error
 }

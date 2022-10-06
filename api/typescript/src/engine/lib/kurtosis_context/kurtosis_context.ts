@@ -31,7 +31,6 @@ const API_CONTAINER_LOG_LEVEL: string = "debug";
 
 export const DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM: number = 9710;
 export const DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM: number = 9711;
-export const DEFAULT_HTTP_LOGS_COLLECTOR_PORT_NUM: number = 9712;
 
 // Blank tells the engine server to use the default
 const DEFAULT_API_CONTAINER_VERSION_TAG = "";
