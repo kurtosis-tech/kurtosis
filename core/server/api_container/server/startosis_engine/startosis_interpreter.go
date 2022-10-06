@@ -25,6 +25,7 @@ const (
 
 type StartosisInterpreter struct {
 	serviceNetwork     *service_network.ServiceNetwork
+	// TODO AUTH there will be a leak here in case people with different repo visibility access a module
 	moduleCache        *startosis_modules.ModuleCache
 	moduleManager      startosis_modules.ModuleManager
 }
@@ -87,6 +88,7 @@ func (interpreter *StartosisInterpreter) makeLoad(instructionsQueue *[]kurtosis_
 		}
 
 		interpreter.moduleCache.SetLoadInProgress(moduleID)
+		defer interpreter.moduleCache.LoadFinished(moduleID)
 
 		// Load it.
 		contents, err := interpreter.moduleManager.GetModule(moduleID)

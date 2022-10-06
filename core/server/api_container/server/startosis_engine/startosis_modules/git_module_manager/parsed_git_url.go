@@ -59,13 +59,13 @@ func parseGitURL(packageURL string) (*ParsedGitURL, error) {
 		return nil, stacktrace.Propagate(err, "Error parsing the url '%v'", packageURL)
 	}
 	if parsedURL.Host != githubDomain {
-		return nil, stacktrace.NewError("We only support modules on Github for now")
+		return nil, stacktrace.NewError("We only support modules on Github for now but got '%v'", packageURL)
 	}
 
 	splitURLPath := cleanPathAndSplit(parsedURL.Path)
 
 	if len(splitURLPath) < 3 {
-		return nil, stacktrace.NewError("URL path should contain at least 3 subpaths")
+		return nil, stacktrace.NewError("URL '%v' path should contain at least 3 subpaths got '%v'", packageURL, splitURLPath)
 	}
 
 	lastItem := splitURLPath[len(splitURLPath)-1]

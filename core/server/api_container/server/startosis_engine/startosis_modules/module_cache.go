@@ -1,7 +1,6 @@
 package startosis_modules
 
 import (
-	"go.starlark.net/starlark"
 	"sync"
 )
 
@@ -17,30 +16,35 @@ func NewModuleCache() *ModuleCache {
 	}
 }
 
-// A nil entry to indicate that a load is in progress
-var loadInProgress *ModuleCacheEntry
-
 func (moduleCache *ModuleCache) SetLoadInProgress(moduleID string) {
 	moduleCache.mutex.Lock()
 	defer moduleCache.mutex.Unlock()
 	moduleCache.cache[moduleID] = loadInProgress
 }
 
-func (moduleCache *ModuleCache) IsLoadInProgress(module string) bool {
+func (moduleCache *ModuleCache) IsLoadInProgress(moduleID string) bool {
 	moduleCache.mutex.Lock()
 	defer moduleCache.mutex.Unlock()
-	entry, found := moduleCache.cache[module]
+	entry, found := moduleCache.cache[moduleID]
 	if found && entry == loadInProgress {
 		return true
 	}
 	return false
 }
 
-
-func (moduleCache *ModuleCache) Add(module string, entry *ModuleCacheEntry) {
+func (moduleCache *ModuleCache) Add(moduleID string, entry *ModuleCacheEntry) {
 	moduleCache.mutex.Lock()
 	defer moduleCache.mutex.Unlock()
-	moduleCache.cache[module] = entry
+	moduleCache.cache[moduleID] = entry
+}
+
+func (moduleCache *ModuleCache) LoadFinished(moduleID string) {
+	moduleCache.mutex.Lock()
+	defer moduleCache.mutex.Unlock()
+	entry, found := moduleCache.cache[moduleID]
+	if found && entry == loadInProgress {
+		delete(moduleCache.cache, moduleID)
+	}
 }
 
 func (moduleCache *ModuleCache) Get(module string) (*ModuleCacheEntry, bool) {
@@ -48,25 +52,4 @@ func (moduleCache *ModuleCache) Get(module string) (*ModuleCacheEntry, bool) {
 	defer moduleCache.mutex.Unlock()
 	entry, found := moduleCache.cache[module]
 	return entry, found
-}
-
-// ModuleCacheEntry The module cache entry
-type ModuleCacheEntry struct {
-	globalVariables starlark.StringDict
-	err             error
-}
-
-func NewModuleCacheEntry(globalVariables starlark.StringDict, err error) *ModuleCacheEntry {
-	return &ModuleCacheEntry{
-		globalVariables: globalVariables,
-		err:             err,
-	}
-}
-
-func (moduleCacheEntry *ModuleCacheEntry) GetGlobalVariables() starlark.StringDict {
-	return moduleCacheEntry.globalVariables
-}
-
-func (moduleCacheEntry *ModuleCacheEntry) GetError() error {
-	return moduleCacheEntry.err
 }

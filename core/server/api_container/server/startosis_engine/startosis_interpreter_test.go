@@ -15,17 +15,13 @@ import (
 	"testing"
 )
 
-func emptyMockModuleManager() *mock_module_manager.MockModuleManager {
-	return mock_module_manager.NewMockModuleManager(
-		map[string]string{},
-	)
-}
-
 var testServiceNetwork *service_network.ServiceNetwork = nil
 
 func TestStartosisInterpreter_SimplePrintScript(t *testing.T) {
 	testString := "Hello World!"
-	interpreter := NewStartosisInterpreter(testServiceNetwork, emptyMockModuleManager())
+	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	startosisInterpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	interpreter := startosisInterpreter
 	script := `
 print("` + testString + `")
 `
@@ -40,7 +36,8 @@ print("` + testString + `")
 }
 
 func TestStartosisInterpreter_ScriptFailingSingleError(t *testing.T) {
-	interpreter := NewStartosisInterpreter(testServiceNetwork, emptyMockModuleManager())
+	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 print("Starting Startosis script!")
 
@@ -61,7 +58,8 @@ unknownInstruction()
 }
 
 func TestStartosisInterpreter_ScriptFailingMultipleErrors(t *testing.T) {
-	interpreter := NewStartosisInterpreter(testServiceNetwork, emptyMockModuleManager())
+	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 print("Starting Startosis script!")
 
@@ -87,7 +85,8 @@ unknownInstruction2()
 }
 
 func TestStartosisInterpreter_ScriptFailingSyntaxError(t *testing.T) {
-	interpreter := NewStartosisInterpreter(testServiceNetwork, emptyMockModuleManager())
+	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 print("Starting Startosis script!")
 
@@ -107,7 +106,8 @@ load("otherScript.start") # fails b/c load takes in at least 2 args
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstruction(t *testing.T) {
-	interpreter := NewStartosisInterpreter(testServiceNetwork, emptyMockModuleManager())
+	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 print("Starting Startosis script!")
 
@@ -150,7 +150,8 @@ Adding service example-datastore-server
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionMissingContainerName(t *testing.T) {
-	interpreter := NewStartosisInterpreter(testServiceNetwork, emptyMockModuleManager())
+	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 print("Starting Startosis script!")
 
@@ -181,7 +182,8 @@ add_service(service_id = service_id, service_config = service_config)
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionTypoInProtocol(t *testing.T) {
-	interpreter := NewStartosisInterpreter(testServiceNetwork, emptyMockModuleManager())
+	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 print("Starting Startosis script!")
 
@@ -211,7 +213,8 @@ add_service(service_id = service_id, service_config = service_config)
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionPortNumberAsString(t *testing.T) {
-	interpreter := NewStartosisInterpreter(testServiceNetwork, emptyMockModuleManager())
+	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 print("Starting Startosis script!")
 
@@ -241,7 +244,8 @@ add_service(service_id = service_id, service_config = service_config)
 }
 
 func TestStartosisInterpreter_ValidScriptWithMultipleInstructions(t *testing.T) {
-	interpreter := NewStartosisInterpreter(testServiceNetwork, emptyMockModuleManager())
+	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 print("Starting Startosis script!")
 
@@ -334,9 +338,7 @@ func TestStartosisInterpreter_SimpleLoading(t *testing.T) {
 	script := `
 load("` + barModulePath + `", "a")
 print("Hello " + a)
-
 `
-
 	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
 	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
 	assert.Nil(t, interpretationError)
@@ -399,7 +401,8 @@ print(b)
 }
 
 func TestStartosisInterpreter_FailsOnNonExistentModule(t *testing.T) {
-	interpreter := NewStartosisInterpreter(testServiceNetwork, emptyMockModuleManager())
+	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	nonExistentModule := "github.com/non/existent/module.star"
 	script := `
 load("` + nonExistentModule + `", "b")
@@ -415,6 +418,31 @@ print(b)
 		},
 	)
 	assert.Equal(t, expectedError, interpretationError)
+}
+
+func TestStartosisInterpreter_LoadingAValidModuleThatPreviouslyFailedToLoadSucceeds(t *testing.T) {
+	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	barModulePath := "github.com/foo/bar/lib.star"
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	script := `
+load("` + barModulePath + `", "a")
+print("Hello " + a)
+`
+
+	// assert that first load fails
+	_, interpretationError, _ := interpreter.Interpret(context.Background(), script)
+	assert.NotNil(t, interpretationError)
+
+
+	barModuleContents := "a=\"World!\""
+	moduleManager.Add(barModulePath, barModuleContents)
+	expectedOutput := `Hello World!
+`
+	// assert that second load succeeds
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	assert.Nil(t, interpretationError)
+	assert.Equal(t, 0, len(instructions)) // No kurtosis instruction
+	assert.Equal(t, expectedOutput, string(scriptOutput))
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithImportedStruct(t *testing.T) {
@@ -626,8 +654,6 @@ add_service(service_id = service_id, service_config = service_config)
 load("` + moduleBar + `", "service_id", "service_config")
 print("Starting Startosis script!")
 `
-
-
 	addServiceInstructionFromScriptA := add_service.NewAddServiceInstruction(
 		nil,
 		*kurtosis_instruction.NewInstructionPosition(11, 12),
@@ -650,8 +676,6 @@ Starting Startosis script!
 	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), scriptA)
 	require.Equal(t, 1, len(instructions))
 	require.Nil(t, interpretationError)
-
-
 	require.Equal(t, instructions[0], addServiceInstructionFromScriptA)
 	require.Equal(t, expectedOutputFromScriptA, string(scriptOutput))
 
@@ -686,13 +710,10 @@ add_service(service_id = service_id, service_config = service_config)
 Adding service example-datastore-server
 `
 
-
 	scriptOutput, interpretationError, instructions = interpreter.Interpret(context.Background(), scriptB)
 	require.Nil(t, interpretationError)
 	require.Equal(t, 1, len(instructions))
 	require.Equal(t, instructions[0], addServiceInstructionFromScriptB)
 	require.Equal(t, expectedOutputFromScriptB, string(scriptOutput))
-
-
 }
 
