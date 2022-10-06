@@ -18,12 +18,12 @@ func NewDockerImagesValidator(kurtosisBackend *backend_interface.KurtosisBackend
 	}
 }
 
-func (validator *DockerImagesValidator) ValidateIntermediateEnvironment(ctx context.Context, environment *ValidatorEnvironment) error {
+func (validator *DockerImagesValidator) ValidateDynamicEnvironment(ctx context.Context, environment *ValidatorEnvironment) error {
 	// We wait for all images to be fetched before validating
 	return nil
 }
 
-func (validator *DockerImagesValidator) ValidateFinalEnvironment(ctx context.Context, environment *ValidatorEnvironment) error {
+func (validator *DockerImagesValidator) ValidateStaticEnvironment(ctx context.Context, environment *ValidatorEnvironment) error {
 	pullErrors := make(chan error, len(environment.requiredDockerImages))
 	var wg sync.WaitGroup
 	for image := range environment.requiredDockerImages {

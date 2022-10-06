@@ -39,7 +39,7 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 
 func (validator *StartosisValidator) validateIntermediateEnvironment(ctx context.Context, environment *startosis_validator.ValidatorEnvironment) error {
 	for _, validator := range validator.validators {
-		err := validator.ValidateIntermediateEnvironment(ctx, environment)
+		err := validator.ValidateDynamicEnvironment(ctx, environment)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error while validating intermediate state of script")
 		}
@@ -49,7 +49,7 @@ func (validator *StartosisValidator) validateIntermediateEnvironment(ctx context
 
 func (validator *StartosisValidator) validateFinalEnvironment(ctx context.Context, environment *startosis_validator.ValidatorEnvironment) error {
 	for _, validator := range validator.validators {
-		err := validator.ValidateFinalEnvironment(ctx, environment)
+		err := validator.ValidateStaticEnvironment(ctx, environment)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error while validating final environment of script")
 		}
