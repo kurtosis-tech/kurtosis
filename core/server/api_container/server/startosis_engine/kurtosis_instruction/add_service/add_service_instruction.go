@@ -85,7 +85,7 @@ func (instruction *AddServiceInstruction) String() string {
 	return instruction.GetCanonicalInstruction()
 }
 
-func (instruction *AddServiceInstruction) UpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) {
+func (instruction *AddServiceInstruction) UpdateValidationEnvironment(environment *startosis_validator.ValidatorEnvironment) {
 	environment.AppendRequiredDockerImage(instruction.serviceConfig.ContainerImageName)
 }
 

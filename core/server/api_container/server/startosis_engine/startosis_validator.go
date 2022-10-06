@@ -24,7 +24,7 @@ func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend) *
 func (validator *StartosisValidator) Validate(ctx context.Context, instructions []kurtosis_instruction.KurtosisInstruction) error {
 	environment := startosis_validator.NewValidatorEnvironment()
 	for _, instruction := range instructions {
-		instruction.UpdateEnvironment(environment)
+		instruction.UpdateValidationEnvironment(environment)
 		err := validator.validateIntermediateEnvironment(ctx, environment)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error while validating instruction %v", instruction.String())

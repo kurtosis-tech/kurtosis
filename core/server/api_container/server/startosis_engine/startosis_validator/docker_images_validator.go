@@ -28,7 +28,7 @@ func (validator *DockerImagesValidator) ValidateFinalEnvironment(ctx context.Con
 	var wg sync.WaitGroup
 	for image := range environment.requiredDockerImages {
 		wg.Add(1)
-		go pullImageFromBackend(ctx, &wg, validator.kurtosisBackend, image, pullErrors)
+		go fetchImageFromBackend(ctx, &wg, validator.kurtosisBackend, image, pullErrors)
 	}
 	wg.Wait()
 	close(pullErrors)
@@ -43,7 +43,7 @@ func (validator *DockerImagesValidator) ValidateFinalEnvironment(ctx context.Con
 	return wrappedErrors
 }
 
-func pullImageFromBackend(ctx context.Context, wg *sync.WaitGroup, backend *backend_interface.KurtosisBackend, image string, pullError chan<- error) {
+func fetchImageFromBackend(ctx context.Context, wg *sync.WaitGroup, backend *backend_interface.KurtosisBackend, image string, pullError chan<- error) {
 	defer wg.Done()
 	err := (*backend).FetchImage(ctx, image)
 	if err != nil {
