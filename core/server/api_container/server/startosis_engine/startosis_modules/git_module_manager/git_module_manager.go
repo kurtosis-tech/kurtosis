@@ -55,6 +55,7 @@ func (moduleManager *GitModuleManager) GetModule(moduleURL string) (string, erro
 }
 
 // atomicClone This first clones to a temporary directory and then moves it
+// TODO make this support versioning via tags, commit hashes or branches
 func (moduleManager *GitModuleManager) atomicClone(parsedURL *ParsedGitURL) error {
 	// First we clone into a temporary directory
 	tempRepoDirPath, err := os.MkdirTemp(moduleManager.moduleTmpDir, temporaryRepoDirPattern)
