@@ -2,6 +2,7 @@
 
 ### Features
 * Startosis scripts can now be run from the CLI: `kurtosis startosis exec path/to/script/file --enclave-id <ENCLAVE_ID>`
+* Implemented Startosis load method to load from Github repositories
 
 ### Fixes
 * Fix IP address placeholder injected by default in Startosis instructions. It used to be empty, which is invalid now

@@ -90,6 +90,11 @@ func runMain() error {
 		return stacktrace.NewError("Kurtosis backend type is '%v' but cluster configuration parameters are null.", args.KurtosisBackendType_Kubernetes.String())
 	}
 
+	gitModuleManager, err := enclaveDataDir.GetGitModuleManager()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while creating the git module manager")
+	}
+
 	// TODO Extract into own function
 	var kurtosisBackend backend_interface.KurtosisBackend
 	switch serverArgs.KurtosisBackendType {
@@ -144,7 +149,7 @@ func runMain() error {
 		}
 	}()
 
-	startosisInterpreter := startosis_engine.NewStartosisInterpreter(serviceNetwork)
+	startosisInterpreter := startosis_engine.NewStartosisInterpreter(serviceNetwork, gitModuleManager)
 	startosisExecutor := startosis_engine.NewStartosisExecutor()
 
 	//Creation of ApiContainerService
