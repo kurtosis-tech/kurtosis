@@ -27,13 +27,11 @@ const (
 	// This needs to be bind-mounted into the engine & API containers so they can manipulate Docker
 	DockerSocketFilepath = "/var/run/docker.sock"
 
-	//Centralized logs component port IDs
-	LogsDatabaseHttpPortId  = "http"
-	LogsCollectorTcpPortId  = "tcp"
-	LogsCollectorHttpPortId = "http"
 
-	//The Docker network name where all the containers in the engine context will be added
-	NameOfNetworkToStartEngineContainersIn = "bridge"
+
+	//The Docker network name where all the containers in the engine and logs service context will be added
+	NameOfNetworkToStartEngineAndLogServiceContainersIn = "bridge"
+
 )
 
 // This maps a Docker container's status to a binary "is the container considered running?" determiner

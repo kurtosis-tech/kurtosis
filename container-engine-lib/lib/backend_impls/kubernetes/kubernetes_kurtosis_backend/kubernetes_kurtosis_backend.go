@@ -14,6 +14,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
@@ -43,11 +45,11 @@ func newKubernetesKurtosisBackend(
 ) *KubernetesKurtosisBackend {
 	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	return &KubernetesKurtosisBackend{
-		kubernetesManager:    kubernetesManager,
-		objAttrsProvider:     objAttrsProvider,
-		cliModeArgs:          cliModeArgs,
-		engineServerModeArgs: engineServerModeArgs,
-		apiContainerModeArgs: apiContainerModeArgs,
+		kubernetesManager:               kubernetesManager,
+		objAttrsProvider:                objAttrsProvider,
+		cliModeArgs:                     cliModeArgs,
+		engineServerModeArgs:            engineServerModeArgs,
+		apiContainerModeArgs:            apiContainerModeArgs,
 	}
 }
 
@@ -91,20 +93,20 @@ func NewCLIModeKubernetesKurtosisBackend(
 
 func NewKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
-// TODO Remove the necessity for these different args by splitting the *KubernetesKurtosisBackend into multiple backends per consumer, e.g.
-//  APIContainerKurtosisBackend, CLIKurtosisBackend, EngineKurtosisBackend, etc. This can only happen once the CLI
-//  no longer uses the same functionality as API container, engine, etc. though
+	// TODO Remove the necessity for these different args by splitting the *KubernetesKurtosisBackend into multiple backends per consumer, e.g.
+	//  APIContainerKurtosisBackend, CLIKurtosisBackend, EngineKurtosisBackend, etc. This can only happen once the CLI
+	//  no longer uses the same functionality as API container, engine, etc. though
 	cliModeArgs *shared_helpers.CliModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	apiContainerModeargs *shared_helpers.ApiContainerModeArgs,
 ) *KubernetesKurtosisBackend {
 	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	return &KubernetesKurtosisBackend{
-		kubernetesManager:    kubernetesManager,
-		objAttrsProvider:     objAttrsProvider,
-		cliModeArgs:          cliModeArgs,
-		engineServerModeArgs: engineServerModeArgs,
-		apiContainerModeArgs: apiContainerModeargs,
+		kubernetesManager:               kubernetesManager,
+		objAttrsProvider:                objAttrsProvider,
+		cliModeArgs:                     cliModeArgs,
+		engineServerModeArgs:            engineServerModeArgs,
+		apiContainerModeArgs:            apiContainerModeargs,
 	}
 }
 
@@ -118,7 +120,6 @@ func (backend KubernetesKurtosisBackend) CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
-	logsCollectorHttpPortNumber uint16,
 	envVars map[string]string,
 ) (
 	*engine.Engine,
@@ -335,6 +336,43 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 		backend.kubernetesManager)
 }
 
+func (backend *KubernetesKurtosisBackend) CreateLogsDatabase(ctx context.Context) (*logs_database.LogsDatabase, error) {
+	// TODO IMPLEMENT
+	return nil, stacktrace.NewError("Creating the logs database isn't yet implemented on Kubernetes")
+}
+
+func (backend *KubernetesKurtosisBackend) GetLogsDatabase(
+	ctx context.Context,
+) (*logs_database.LogsDatabase, error) {
+	// TODO IMPLEMENT
+	return nil, stacktrace.NewError("Getting the logs database isn't yet implemented on Kubernetes")
+}
+
+func (backend *KubernetesKurtosisBackend) DestroyLogsDatabase(
+	ctx context.Context,
+) error {
+	// TODO IMPLEMENT
+	return stacktrace.NewError("Destroying the logs database isn't yet implemented on Kubernetes")
+}
+
+func (backend *KubernetesKurtosisBackend) CreateLogsCollector(ctx context.Context, logsCollectorHttpPortNumber uint16) (*logs_collector.LogsCollector, error) {
+	// TODO IMPLEMENT
+	return nil, stacktrace.NewError("Creating the logs collector isn't yet implemented on Kubernetes")
+}
+
+func (backend *KubernetesKurtosisBackend) GetLogsCollector(ctx context.Context) (*logs_collector.LogsCollector, error) {
+	// TODO IMPLEMENT
+	return nil, stacktrace.NewError("Getting the logs collector isn't yet implemented on Kubernetes")
+}
+
+func (backend *KubernetesKurtosisBackend) DestroyLogsCollector(ctx context.Context) error {
+	// TODO IMPLEMENT
+	return stacktrace.NewError("Destroying the logs collector isn't yet implemented on Kubernetes")
+}
+
+// ====================================================================================================
+//                                      Private Helper Functions
+// ====================================================================================================
 func (backend *KubernetesKurtosisBackend) getEnclaveNamespaceName(ctx context.Context, enclaveId enclave.EnclaveID) (string, error) {
 	// TODO This is a big janky hack that results from *KubernetesKurtosisBackend containing functions for all of API containers, engines, and CLIs
 	//  We want to fix this by splitting the *KubernetesKurtosisBackend into a bunch of different backends, one per user, but we can only
@@ -364,7 +402,7 @@ func (backend *KubernetesKurtosisBackend) getEnclaveNamespaceName(ctx context.Co
 	} else if backend.apiContainerModeArgs != nil {
 		if enclaveId != backend.apiContainerModeArgs.GetOwnEnclaveId() {
 			return "", stacktrace.NewError(
-				"Received a request to get namespace for enclave '%v', but the Kubernetes Kurtosis backend is running in an API "+
+				"Received a request to get namespace for enclave '%v', but the Kubernetes Kurtosis backend is running in an API " +
 					"container in a different enclave '%v' (so Kubernetes would throw a permission error)",
 				enclaveId,
 				backend.apiContainerModeArgs.GetOwnEnclaveId(),

@@ -2,12 +2,12 @@ package engine_manager
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/kurtosis_config_getter"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
@@ -22,8 +22,9 @@ import (
 )
 
 const (
-	waitForEngineResponseTimeout = 5 * time.Second
-	defaultClusterName           = resolved_config.DefaultDockerClusterName
+	waitForEngineResponseTimeout    = 5 * time.Second
+	defaultClusterName              = resolved_config.DefaultDockerClusterName
+	defaultHttpLogsCollectorPortNum = uint16(9712)
 )
 
 // Unfortunately, Docker doesn't have constants for the protocols it supports declared
@@ -142,6 +143,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
 	}
+	clusterType := manager.clusterConfig.GetClusterType()
 	engineGuarantor := newEngineExistenceGuarantorWithDefaultVersion(
 		ctx,
 		maybeHostMachinePortBinding,
@@ -150,6 +152,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 		manager.engineServerKurtosisBackendConfigSupplier,
 		logLevel,
 		engineVersion,
+		clusterType,
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
 	//  before we can return an EngineClient
@@ -166,6 +169,8 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
 	}
+
+	clusterType := manager.clusterConfig.GetClusterType()
 	engineGuarantor := newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
 		maybeHostMachinePortBinding,
@@ -175,6 +180,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		engineImageVersionTag,
 		logLevel,
 		engineVersion,
+		clusterType,
 	)
 	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {
@@ -215,6 +221,14 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 			),
 		)
 	}
+	clusterType := manager.clusterConfig.GetClusterType()
+
+	//TODO This is a temporary hack we should remove it when centralized logs be implemented in the KubernetesBackend
+	if clusterType == resolved_config.KurtosisClusterType_Docker {
+		if err = manager.destroyCentralizedLogsComponentsIdempotently(ctx); err != nil {
+			return stacktrace.Propagate(err, "An error occurred destroying the centralized logs components")
+		}
+	}
 
 	return nil
 }
@@ -248,6 +262,18 @@ func (manager *EngineManager) startEngineWithGuarantor(ctx context.Context, curr
 	}
 
 	return engineClient, clientCloseFunc, nil
+}
+
+func (manager *EngineManager) destroyCentralizedLogsComponentsIdempotently(ctx context.Context) error {
+	//DestroyLogsCollector is idempotent does not return an error if nothing exists
+	if err := manager.kurtosisBackend.DestroyLogsCollector(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the logs collector")
+	}
+	//DestroyLogsDatabase is idempotent does not return an error if nothing exists
+	if err := manager.kurtosisBackend.DestroyLogsDatabase(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the logs database")
+	}
+	return nil
 }
 
 func getEngineClientFromHostMachineIpAndPort(hostMachineIpAndPort *hostMachineIpAndPort) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {

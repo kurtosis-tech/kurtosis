@@ -55,8 +55,8 @@ type Configs struct {
 	From        string `yaml:"from"`
 	Store       string `yaml:"store"`
 	ObjectStore string `yaml:"object_store"`
-	Schema      string `yaml:"schema"`
-	Index       Index  `yaml:"index"`
+	Schema string `yaml:"schema"`
+	Index  Index  `yaml:"index"`
 }
 
 type SchemaConfig struct {
@@ -160,9 +160,9 @@ func newDefaultLokiConfigForKurtosisCentralizedLogs() *LokiConfig {
 		},
 		Ingester: Ingester{
 			Wal: IngesterWal{
-				Enabled:         enableIngesterWal,
-				Directory:       ingesterWalDirpath,
-				FlushOnShutdown: flushIngesterWalOnShutdown,
+				Enabled:            enableIngesterWal,
+				Directory:          ingesterWalDirpath,
+				FlushOnShutdown:    flushIngesterWalOnShutdown,
 				CheckpointDuration: checkpointDuration,
 			},
 		},

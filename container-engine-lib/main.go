@@ -103,7 +103,6 @@ func runKurtosisBackendTesting() error {
 		"0.49.5",
 		9710,
 		9711,
-		9712,
 		serializedArgs,
 	)
 	if err != nil {
@@ -127,25 +126,25 @@ func runKurtosisBackendTesting() error {
 	logrus.Infof("Errored stopped engines: %+v", erroredEngineGuids)
 	*/
 
-	serializedArgs2 := map[string]string{
-		"SERIALIZED_ARGS": `{"grpcListenPortNum":9810,"grpcProxyListenPortNum":9811,"logLevelStr":"debug","imageVersionTag":"1.29.0","metricsUserId":"552f","didUserAcceptSendingMetrics":false,"kurtosisBackendType":"docker","kurtosisBackendConfig":{}}`,
-	}
 
-	engine2, err := backend.CreateEngine(
-		ctx,
-		"kurtosistech/engine",
-		"0.49.5",
-		9810,
-		9811,
-		9812,
-		serializedArgs2,
-	)
-	if err != nil {
-		return err
-	}
-	logrus.Infof("Engine 2 info: %+v", engine2)
+		serializedArgs2 := map[string]string{
+			"SERIALIZED_ARGS": `{"grpcListenPortNum":9810,"grpcProxyListenPortNum":9811,"logLevelStr":"debug","imageVersionTag":"1.29.0","metricsUserId":"552f","didUserAcceptSendingMetrics":false,"kurtosisBackendType":"docker","kurtosisBackendConfig":{}}`,
+		}
 
-	/*
+		engine2, err := backend.CreateEngine(
+			ctx,
+			"kurtosistech/kurtosis-engine-server",
+			"1.29.0",
+			9810,
+			9811,
+			serializedArgs2,
+		)
+		if err != nil {
+			return err
+		}
+		logrus.Infof("Engine 2 info: %+v", engine2)
+
+/*
 		engineFil2 := &engine_object.EngineFilters{
 			GUIDs: map[engine_object.EngineGUID]bool{
 				engine.GetGUID(): true,
@@ -233,5 +232,7 @@ func runKurtosisBackendTesting() error {
 
 	*/
 
+
 	return nil
 }
+

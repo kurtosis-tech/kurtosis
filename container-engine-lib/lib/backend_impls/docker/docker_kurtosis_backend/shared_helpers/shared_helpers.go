@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/logs_components"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
@@ -32,8 +31,6 @@ const (
 	hostMachinePortNumStrParsingBits = 16
 
 	netstatSuccessExitCode = 0
-
-	shouldShowStoppedLogsCollectorContainers = true
 )
 
 // !!!WARNING!!!
@@ -261,6 +258,7 @@ func GetIpAndPortInfoFromContainer(
 	return privateIp, privatePortSpecs, containerPublicIp, publicPortSpecs, nil
 }
 
+
 // Gets the service objects & Docker resources for services matching the given filters
 func GetMatchingUserServiceObjsAndDockerResourcesNoMutex(
 	ctx context.Context,
@@ -413,89 +411,33 @@ func WaitForPortAvailabilityUsingNetstat(
 	)
 }
 
-func GetLogsCollectorServiceAddress(
+func GetEngineAndLogsComponentsNetwork(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
-) (logs_components.LogsCollectorAddress, error) {
-	logsCollectorContainer, err := getLogsCollectorContainer(ctx, dockerManager)
+) (*types.Network, error){
+	matchingNetworks, err := dockerManager.GetNetworksByName(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the logs collector container")
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting networks matching the network we want to start the engine in, '%v'",
+			consts.NameOfNetworkToStartEngineAndLogServiceContainersIn,
+		)
 	}
-
-	isLogsCollectorContainerRunning, found := consts.IsContainerRunningDeterminer[logsCollectorContainer.GetStatus()]
-	if !found {
-		// This should never happen because we enforce completeness in a unit test
-		return "", stacktrace.NewError("No is-running designation found for logs collector container status '%v'; this is a bug in Kurtosis!", logsCollectorContainer.GetStatus().String())
+	numMatchingNetworks := len(matchingNetworks)
+	if numMatchingNetworks == 0 && numMatchingNetworks > 1 {
+		return nil, stacktrace.NewError(
+			"Expected exactly one network matching the name of the network that we want to start the engine in, '%v', but got %v",
+			consts.NameOfNetworkToStartEngineAndLogServiceContainersIn,
+			numMatchingNetworks,
+		)
 	}
-
-	if !isLogsCollectorContainerRunning {
-		return "", stacktrace.NewError("The logs collector container is not running")
-	}
-
-	privateIpStr, err := dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineContainersIn, logsCollectorContainer.GetId())
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the logs collector private IP address for Docker network '%v'", consts.NameOfNetworkToStartEngineContainersIn)
-	}
-
-	containerLabels := logsCollectorContainer.GetLabels()
-
-	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsDockerLabelKey.GetString()]
-	if !found {
-		return "", stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsDockerLabelKey.GetString())
-	}
-
-	portSpecs, err := docker_port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred deserializing port specs string '%v'", serializedPortSpecs)
-	}
-
-	tcpPortSpec, foundPortSpec := portSpecs[consts.LogsCollectorTcpPortId]
-	if !foundPortSpec {
-		return "", stacktrace.NewError("No tcp port with ID '%v' found in the port specs", consts.LogsCollectorTcpPortId)
-	}
-
-	logsCollectorAddressStr := fmt.Sprintf("%v:%v", privateIpStr, tcpPortSpec.GetNumber())
-	logsCollectorAddress := logs_components.LogsCollectorAddress(logsCollectorAddressStr)
-
-	return logsCollectorAddress, nil
-}
-
-//This is public because we need to use it inside this package and in the "engine_functions" package also
-func GetAllLogsCollectorContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]*types.Container, error) {
-	var matchingLogsCollectorContainers []*types.Container
-
-	logsCollectorContainerSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.LogsCollectorTypeDockerLabelValue.GetString(),
-	}
-
-	matchingLogsCollectorContainers, err := dockerManager.GetContainersByLabels(ctx, logsCollectorContainerSearchLabels, shouldShowStoppedLogsCollectorContainers)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred fetching logs collector containers using labels: %+v", logsCollectorContainerSearchLabels)
-	}
-	return matchingLogsCollectorContainers, nil
+	targetNetwork := matchingNetworks[0]
+	return targetNetwork, nil
 }
 
 // ====================================================================================================
 //                                      Private Helper Functions
 // ====================================================================================================
-func getLogsCollectorContainer(ctx context.Context, dockerManager *docker_manager.DockerManager) (*types.Container, error) {
-	allLogsCollectorContainers, err := GetAllLogsCollectorContainers(ctx, dockerManager)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector containers")
-	}
-	if len(allLogsCollectorContainers) == 0 {
-		return nil, stacktrace.NewError("Didn't find any logs collector Docker container'; this is a bug in Kurtosis")
-	}
-	if len(allLogsCollectorContainers) > 1 {
-		return nil, stacktrace.NewError("Found more than one logs collector Docker container'; this is a bug in Kurtosis")
-	}
-
-	logsCollectorContainer := allLogsCollectorContainers[0]
-
-	return logsCollectorContainer, nil
-}
-
 func getMatchingUserServiceDockerResources(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
