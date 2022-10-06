@@ -11,15 +11,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
+	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
 
 const (
-	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-	DefaultVersion = "0.49.9"
-	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-
 	enclaveDataVolumeDirpath = "/kurtosis-data"
 
 	// TODO This should come from the same logic that builds the server image!!!!!
@@ -50,7 +47,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 ) {
 	resultApiContainer, err := launcher.LaunchWithCustomVersion(
 		ctx,
-		DefaultVersion,
+		kurtosis_version.KurtosisVersion,
 		logLevel,
 		enclaveId,
 		grpcListenPort,
@@ -61,7 +58,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		backendConfigSupplier,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", DefaultVersion)
+		return nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", kurtosis_version.KurtosisVersion)
 	}
 	return resultApiContainer, nil
 }

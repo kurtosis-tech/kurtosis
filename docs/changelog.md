@@ -4,6 +4,10 @@
 * Fix IP address placeholder injected by default in Startosis instructions. It used to be empty, which is invalid now
 it is set to `KURTOSIS_IP_ADDR_PLACEHOLDER`
 
+### Removals
+* Removes version constants within launchers and cli in favor of centralized generated version constant
+* Removes remote-docker-setup from the `build_cli` job in Circle
+
 # 0.49.9
 
 ### Features
