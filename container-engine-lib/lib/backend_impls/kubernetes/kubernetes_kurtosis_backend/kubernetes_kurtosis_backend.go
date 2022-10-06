@@ -110,7 +110,7 @@ func NewKubernetesKurtosisBackend(
 }
 
 func (backend *KubernetesKurtosisBackend) FetchImage(ctx context.Context, image string) error {
-	logrus.Warnf("PullImage isn't implemented for Kubernetes yet")
+	logrus.Warnf("FetchImage isn't implemented for Kubernetes yet")
 	return nil
 }
 
