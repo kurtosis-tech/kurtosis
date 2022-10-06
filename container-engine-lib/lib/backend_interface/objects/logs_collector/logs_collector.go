@@ -44,11 +44,12 @@ func (logsCollector *LogsCollector) GetPrivateHttpPort() *port_spec.PortSpec {
 }
 
 func (logsCollector *LogsCollector) GetPrivateTcpAddress() (LogsCollectorAddress, error){
-	if logsCollector.GetStatus() != container_status.ContainerStatus_Running {
-		return "", stacktrace.NewError("The logs collector is not running, so it's impossible to get private TCP address")
+	if logsCollector.maybePrivateIpAddr == nil {
+		return "", stacktrace.NewError("It is impossible to returns the logs collector private TCP address due the value of its private IP address is nil")
 	}
+	privateIpAddress := logsCollector.maybePrivateIpAddr.String()
 
-	logsCollectorAddressStr := fmt.Sprintf("%v%v%v", logsCollector.GetMaybePrivateIpAddr(), ipAndPortSeparator, logsCollector.GetPrivateTcpPort().GetNumber())
+	logsCollectorAddressStr := fmt.Sprintf("%v%v%v", privateIpAddress, ipAndPortSeparator, logsCollector.privateTcpPort.GetNumber())
 	logsCollectorAddress := LogsCollectorAddress(logsCollectorAddressStr)
 
 	return logsCollectorAddress, nil

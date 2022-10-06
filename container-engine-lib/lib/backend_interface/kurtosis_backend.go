@@ -390,7 +390,7 @@ type KurtosisBackend interface {
 		error,
 	)
 
-	// Gets the logs database
+	// Gets the logs database, if nothing is found returns nil
 	GetLogsDatabase(ctx context.Context) (*logs_database.LogsDatabase, error)
 
 	// Destroy the logs database
@@ -406,7 +406,7 @@ type KurtosisBackend interface {
 		error,
 	)
 
-	// Gets the logs collector
+	// Gets the logs collector, if nothing is found returns nil
 	GetLogsCollector(ctx context.Context) (*logs_collector.LogsCollector, error)
 
 	// Destroy the logs collector

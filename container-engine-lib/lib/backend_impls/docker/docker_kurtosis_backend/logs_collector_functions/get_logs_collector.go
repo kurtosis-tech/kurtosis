@@ -7,15 +7,19 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
+//If nothing is found returns nil
 func GetLogsCollector(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
-) (*logs_collector.LogsCollector, error){
+) (
+	resultMaybeLogsCollector *logs_collector.LogsCollector,
+	resultErr error,
+){
 
-	logsCollectorObject, _, err := getLogsCollectorObjectAndContainerIdMatching(ctx, dockerManager)
+	maybeLogsCollectorObject, _, err := getLogsCollectorObjectAndContainerId(ctx, dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
 
-	return logsCollectorObject, nil
+	return maybeLogsCollectorObject, nil
 }

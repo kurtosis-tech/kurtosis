@@ -37,12 +37,12 @@ func getLogsCollectorPrivatePorts(containerLabels map[string]string) (
 
 	tcpPortSpec, foundTcpPort := portSpecs[logsCollectorTcpPortId]
 	if !foundTcpPort {
-		return nil, nil, stacktrace.NewError("No logs collector tcp port with ID '%v' found in the logs collector port specs", logsCollectorTcpPortId)
+		return nil, nil, stacktrace.NewError("No logs collector TCP port with ID '%v' found in the logs collector port specs", logsCollectorTcpPortId)
 	}
 
 	httpPortSpec, foundHttpPort := portSpecs[logsCollectorHttpPortId]
 	if !foundHttpPort {
-		return nil, nil, stacktrace.NewError("No logs collector http port with ID '%v' found in the logs collector port specs", logsCollectorHttpPortId)
+		return nil, nil, stacktrace.NewError("No logs collector HTTP port with ID '%v' found in the logs collector port specs", logsCollectorHttpPortId)
 	}
 
 	return tcpPortSpec, httpPortSpec, nil
@@ -108,10 +108,15 @@ func getAllLogsCollectorContainers(ctx context.Context, dockerManager *docker_ma
 	return matchingLogsCollectorContainers, nil
 }
 
-func getLogsCollectorObjectAndContainerIdMatching(
+//If nothing is found returns nil
+func getLogsCollectorObjectAndContainerId(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
-) (*logs_collector.LogsCollector, string, error) {
+) (
+	resultMaybeLogsCollector *logs_collector.LogsCollector,
+	resultMaybeContainerId string,
+	resultErr error,
+) {
 	allLogsCollectorContainers, err := getAllLogsCollectorContainers(ctx, dockerManager)
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "An error occurred getting all logs collector containers")
@@ -126,7 +131,6 @@ func getLogsCollectorObjectAndContainerIdMatching(
 
 	logsCollectorContainer := allLogsCollectorContainers[0]
 	logsCollectorContainerID := logsCollectorContainer.GetId()
-
 
 	logsCollectorObject, err := getLogsCollectorObjectFromContainerInfo(
 		ctx,

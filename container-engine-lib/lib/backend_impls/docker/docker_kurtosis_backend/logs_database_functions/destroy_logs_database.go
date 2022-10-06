@@ -11,19 +11,22 @@ func DestroyLogsDatabase(
 	dockerManager *docker_manager.DockerManager,
 ) error {
 
-	_, logsDatabaseContainerId, err := getLogsDatabaseObjectAndContainerIdMatching(ctx, dockerManager)
+	_, maybeLogsDatabaseContainerId, err := getLogsDatabaseObjectAndContainerId(ctx, dockerManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the logs database")
 	}
 
-	if logsDatabaseContainerId != "" {
-		if err := dockerManager.StopContainer(ctx, logsDatabaseContainerId, stopLogsDatabaseContainersTimeout); err != nil {
-			return stacktrace.Propagate(err, "An error occurred stopping the logs database container with ID '%v'", logsDatabaseContainerId)
-		}
-
-		if err := dockerManager.RemoveContainer(ctx, logsDatabaseContainerId); err != nil {
-			return stacktrace.Propagate(err, "An error occurred removing the logs database container with ID '%v'", logsDatabaseContainerId)
-		}
+	if maybeLogsDatabaseContainerId == "" {
+		return nil
 	}
+
+	if err := dockerManager.StopContainer(ctx, maybeLogsDatabaseContainerId, stopLogsDatabaseContainersTimeout); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping the logs database container with ID '%v'", maybeLogsDatabaseContainerId)
+	}
+
+	if err := dockerManager.RemoveContainer(ctx, maybeLogsDatabaseContainerId); err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing the logs database container with ID '%v'", maybeLogsDatabaseContainerId)
+	}
+
 	return nil
 }
