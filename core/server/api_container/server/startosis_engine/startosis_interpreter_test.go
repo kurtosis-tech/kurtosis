@@ -3,6 +3,7 @@ package startosis_engine
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
@@ -14,6 +15,8 @@ import (
 
 // serviceNetwork is not used by the interpreter, it's used by the executor. Setting it to nil here is fine
 var testServiceNetwork *service_network.ServiceNetwork = nil
+
+const testContainerImageName = "kurtosistech/example-datastore-server"
 
 func TestStartosisInterpreter_SimplePrintScript(t *testing.T) {
 	testString := "Hello World!"
@@ -129,7 +132,7 @@ service_id = "example-datastore-server"
 print("Adding service " + service_id)
 
 service_config = struct(
-	container_image_name = "kurtosistech/example-datastore-server",
+	container_image_name = "` + testContainerImageName + `",
 	used_ports = {
 		"grpc": struct(number = 1323, protocol = "TCP")
 	}
@@ -144,16 +147,18 @@ add_service(service_id = service_id, service_config = service_config)
 	addServiceInstruction := add_service.NewAddServiceInstruction(
 		nil,
 		*kurtosis_instruction.NewInstructionPosition(13, 12),
-		service.ServiceID("example-datastore-server"),
-		&kurtosis_core_rpc_api_bindings.ServiceConfig{
-			ContainerImageName: "kurtosistech/example-datastore-server",
-			PrivatePorts: map[string]*kurtosis_core_rpc_api_bindings.Port{
+		"example-datastore-server",
+		services.NewServiceConfigBuilder(
+			testContainerImageName,
+		).WithPrivatePorts(
+			map[string]*kurtosis_core_rpc_api_bindings.Port{
 				"grpc": {
 					Number:   1323,
 					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
 				},
 			},
-		})
+		).Build(),
+	)
 
 	require.Equal(t, instructions[0], addServiceInstruction)
 
@@ -203,7 +208,7 @@ service_id = "example-datastore-server"
 print("Adding service " + service_id)
 
 service_config = struct(
-	container_image_name = "kurtosistech/example-datastore-server",
+	container_image_name = "` + testContainerImageName + `",
 	used_ports = {
 		"grpc": struct(number = 1323, protocol = "TCPK") # typo in protocol
 	}
@@ -233,7 +238,7 @@ service_id = "example-datastore-server"
 print("Adding service " + service_id)
 
 service_config = struct(
-	container_image_name = "kurtosistech/example-datastore-server",
+	container_image_name = "` + testContainerImageName + `",
 	used_ports = {
 		"grpc": struct(number = "1234", protocol = "TCP") # port number should be an int
 	}
@@ -267,7 +272,7 @@ def deploy_datastore_services():
         unique_service_id = service_id + "-" + str(i)
         print("Adding service " + unique_service_id)
         service_config = struct(
-			container_image_name = "kurtosistech/example-datastore-server",
+			container_image_name = "` + testContainerImageName + `",
 			used_ports = {
 				"grpc": struct(
 					number = ports[i],
@@ -289,41 +294,47 @@ print("Done!")
 		nil,
 		*kurtosis_instruction.NewInstructionPosition(22, 26),
 		service.ServiceID("example-datastore-server-0"),
-		&kurtosis_core_rpc_api_bindings.ServiceConfig{
-			ContainerImageName: "kurtosistech/example-datastore-server",
-			PrivatePorts: map[string]*kurtosis_core_rpc_api_bindings.Port{
+		services.NewServiceConfigBuilder(
+			testContainerImageName,
+		).WithPrivatePorts(
+			map[string]*kurtosis_core_rpc_api_bindings.Port{
 				"grpc": {
 					Number:   1323,
 					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
 				},
 			},
-		})
+		).Build(),
+	)
 	addServiceInstruction1 := add_service.NewAddServiceInstruction(
 		nil,
 		*kurtosis_instruction.NewInstructionPosition(22, 26),
 		service.ServiceID("example-datastore-server-1"),
-		&kurtosis_core_rpc_api_bindings.ServiceConfig{
-			ContainerImageName: "kurtosistech/example-datastore-server",
-			PrivatePorts: map[string]*kurtosis_core_rpc_api_bindings.Port{
+		services.NewServiceConfigBuilder(
+			testContainerImageName,
+		).WithPrivatePorts(
+			map[string]*kurtosis_core_rpc_api_bindings.Port{
 				"grpc": {
 					Number:   1324,
 					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
 				},
 			},
-		})
+		).Build(),
+	)
 	addServiceInstruction2 := add_service.NewAddServiceInstruction(
 		nil,
 		*kurtosis_instruction.NewInstructionPosition(22, 26),
 		service.ServiceID("example-datastore-server-2"),
-		&kurtosis_core_rpc_api_bindings.ServiceConfig{
-			ContainerImageName: "kurtosistech/example-datastore-server",
-			PrivatePorts: map[string]*kurtosis_core_rpc_api_bindings.Port{
+		services.NewServiceConfigBuilder(
+			testContainerImageName,
+		).WithPrivatePorts(
+			map[string]*kurtosis_core_rpc_api_bindings.Port{
 				"grpc": {
 					Number:   1325,
 					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
 				},
 			},
-		})
+		).Build(),
+	)
 
 	require.Equal(t, instructions[0], addServiceInstruction0)
 	require.Equal(t, instructions[1], addServiceInstruction1)
