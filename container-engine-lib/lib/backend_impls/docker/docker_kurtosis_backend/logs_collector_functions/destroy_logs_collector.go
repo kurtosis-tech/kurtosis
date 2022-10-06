@@ -11,19 +11,23 @@ func DestroyLogsCollector(
 	dockerManager *docker_manager.DockerManager,
 ) error {
 
-	_, logsCollectorContainerId, err := getLogsCollectorObjectAndContainerIdMatching(ctx, dockerManager)
+	_, maybeLogsCollectorContainerId, err := getLogsCollectorObjectAndContainerId(ctx, dockerManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
 
-	if logsCollectorContainerId != "" {
-		if err := dockerManager.StopContainer(ctx, logsCollectorContainerId, stopLogsCollectorContainersTimeout); err != nil {
-			return stacktrace.Propagate(err, "An error occurred stopping the logs collector container with ID '%v'", logsCollectorContainerId)
-		}
-
-		if err := dockerManager.RemoveContainer(ctx, logsCollectorContainerId); err != nil {
-			return stacktrace.Propagate(err, "An error occurred removing the logs collector container with ID '%v'", logsCollectorContainerId)
-		}
+	if maybeLogsCollectorContainerId == "" {
+		return nil
 	}
+
+	if err := dockerManager.StopContainer(ctx, maybeLogsCollectorContainerId, stopLogsCollectorContainersTimeout); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping the logs collector container with ID '%v'", maybeLogsCollectorContainerId)
+	}
+
+	// TODO Allow removeContainer to gracefully stop
+	if err := dockerManager.RemoveContainer(ctx, maybeLogsCollectorContainerId); err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing the logs collector container with ID '%v'", maybeLogsCollectorContainerId)
+	}
+
 	return nil
 }

@@ -155,7 +155,7 @@ func StartUserServices(
 
 	logsCollectorServiceAddress, err := logsCollector.GetPrivateTcpAddress()
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the private tcp address")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the private TCP address")
 	}
 	//The following docker labels will be added into the logs stream which is necessary for creating new tags
 	//in the logs database and then use it for querying them to get the specific user service's logs

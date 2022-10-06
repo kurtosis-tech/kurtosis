@@ -10,6 +10,10 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
+const (
+	defaultContainerStatusForNewLogsDatabaseContainer = types.ContainerStatus_Running
+)
+
 func CreateLogsDatabase(
 	ctx context.Context,
 	logsDatabaseContainer LogsDatabaseContainer,
@@ -60,12 +64,12 @@ func CreateLogsDatabase(
 		ctx,
 		containerId,
 		containerLabels,
-		types.ContainerStatus_Running,
+		defaultContainerStatusForNewLogsDatabaseContainer,
 		dockerManager,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(
-			err, "An error occurred getting logs database object using container ID '%v', labels '%+v' and the status '%v'", containerId, containerLabels, types.ContainerStatus_Running)
+			err, "An error occurred getting logs database object using container ID '%v', labels '%+v' and the status '%v'", containerId, containerLabels, defaultContainerStatusForNewLogsDatabaseContainer)
 	}
 
 	shouldRemoveLogsDatabaseContainer = false

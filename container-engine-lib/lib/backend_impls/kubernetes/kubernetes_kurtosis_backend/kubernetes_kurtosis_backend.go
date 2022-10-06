@@ -352,7 +352,7 @@ func (backend *KubernetesKurtosisBackend) DestroyLogsDatabase(
 	ctx context.Context,
 ) error {
 	// TODO IMPLEMENT
-	return stacktrace.NewError("Destroy the logs database isn't yet implemented on Kubernetes")
+	return stacktrace.NewError("Destroying the logs database isn't yet implemented on Kubernetes")
 }
 
 func (backend *KubernetesKurtosisBackend) CreateLogsCollector(ctx context.Context, logsCollectorHttpPortNumber uint16) (*logs_collector.LogsCollector, error) {
@@ -367,7 +367,7 @@ func (backend *KubernetesKurtosisBackend) GetLogsCollector(ctx context.Context) 
 
 func (backend *KubernetesKurtosisBackend) DestroyLogsCollector(ctx context.Context) error {
 	// TODO IMPLEMENT
-	return stacktrace.NewError("Destroy the logs collector isn't yet implemented on Kubernetes")
+	return stacktrace.NewError("Destroying the logs collector isn't yet implemented on Kubernetes")
 }
 
 // ====================================================================================================

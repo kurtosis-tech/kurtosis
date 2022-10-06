@@ -7,15 +7,19 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
+//If nothing is found returns nil
 func GetLogsDatabase(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
-) (*logs_database.LogsDatabase, error){
+) (
+	resultMaybeLogsDatabase *logs_database.LogsDatabase,
+	resultErr error,
+){
 
-	logsDatabaseObject, _, err := getLogsDatabaseObjectAndContainerIdMatching(ctx, dockerManager)
+	maybeLogsDatabaseObject, _, err := getLogsDatabaseObjectAndContainerId(ctx, dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database")
 	}
 
-	return logsDatabaseObject, nil
+	return maybeLogsDatabaseObject, nil
 }

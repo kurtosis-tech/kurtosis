@@ -3,7 +3,7 @@ package user_send_metrics_election
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_send_metrics_election/user_metrics_election_event_backlog"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cli_version"
+	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
@@ -36,7 +36,7 @@ func SendAnyBackloggedUserMetricsElectionEvent() error {
 		// This is a special metrics client that, will record their decision about whether to send metrics or not
 		metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
 			source.KurtosisCLISource,
-			kurtosis_cli_version.KurtosisCLIVersion,
+			kurtosis_version.KurtosisVersion,
 			metricsUserId,
 			didUserAcceptSendingMetricsValueForMetricsClientCreation,
 			shouldFlushMetricsClientQueueOnEachEvent,
