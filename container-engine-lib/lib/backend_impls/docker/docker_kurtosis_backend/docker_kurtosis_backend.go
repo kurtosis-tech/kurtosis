@@ -308,15 +308,6 @@ func (backend *DockerKurtosisBackend) DestroyLogsDatabase(
 	error,
 ) {
 
-	logsCollector, err := backend.GetLogsCollector(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the logs collector")
-	}
-
-	if logsCollector != nil && logsCollector.GetStatus() == container_status.ContainerStatus_Running {
-		return stacktrace.NewError("The logs database can't be destroyed because the logs collector is still running, meaning it wouldn't have anywhere to send the logs to")
-	}
-
 	if err := logs_database_functions.DestroyLogsDatabase(
 		ctx,
 		backend.dockerManager,
