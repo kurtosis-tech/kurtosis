@@ -487,15 +487,17 @@ add_service(service_id = service_id, service_config = service_config)
 		nil,
 		*kurtosis_instruction.NewInstructionPosition(6, 12),
 		service.ServiceID("example-datastore-server"),
-		&kurtosis_core_rpc_api_bindings.ServiceConfig{
-			ContainerImageName: "kurtosistech/example-datastore-server",
-			PrivatePorts: map[string]*kurtosis_core_rpc_api_bindings.Port{
+		services.NewServiceConfigBuilder(
+			testContainerImageName,
+		).WithPrivatePorts(
+			map[string]*kurtosis_core_rpc_api_bindings.Port{
 				"grpc": {
 					Number:   1323,
 					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
 				},
 			},
-		})
+		).Build(),
+	)
 
 	require.Equal(t, instructions[0], addServiceInstruction)
 
@@ -546,41 +548,47 @@ print("Done!")
 		nil,
 		*kurtosis_instruction.NewInstructionPosition(5, 26),
 		service.ServiceID("example-datastore-server-0"),
-		&kurtosis_core_rpc_api_bindings.ServiceConfig{
-			ContainerImageName: "kurtosistech/example-datastore-server",
-			PrivatePorts: map[string]*kurtosis_core_rpc_api_bindings.Port{
+		services.NewServiceConfigBuilder(
+			testContainerImageName,
+		).WithPrivatePorts(
+			map[string]*kurtosis_core_rpc_api_bindings.Port{
 				"grpc": {
 					Number:   1323,
 					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
 				},
 			},
-		})
+		).Build(),
+	)
 	addServiceInstruction1 := add_service.NewAddServiceInstruction(
 		nil,
 		*kurtosis_instruction.NewInstructionPosition(5, 26),
 		service.ServiceID("example-datastore-server-1"),
-		&kurtosis_core_rpc_api_bindings.ServiceConfig{
-			ContainerImageName: "kurtosistech/example-datastore-server",
-			PrivatePorts: map[string]*kurtosis_core_rpc_api_bindings.Port{
+		services.NewServiceConfigBuilder(
+			testContainerImageName,
+		).WithPrivatePorts(
+			map[string]*kurtosis_core_rpc_api_bindings.Port{
 				"grpc": {
 					Number:   1324,
 					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
 				},
 			},
-		})
+		).Build(),
+	)
 	addServiceInstruction2 := add_service.NewAddServiceInstruction(
 		nil,
 		*kurtosis_instruction.NewInstructionPosition(5, 26),
 		service.ServiceID("example-datastore-server-2"),
-		&kurtosis_core_rpc_api_bindings.ServiceConfig{
-			ContainerImageName: "kurtosistech/example-datastore-server",
-			PrivatePorts: map[string]*kurtosis_core_rpc_api_bindings.Port{
+		services.NewServiceConfigBuilder(
+			testContainerImageName,
+		).WithPrivatePorts(
+			map[string]*kurtosis_core_rpc_api_bindings.Port{
 				"grpc": {
 					Number:   1325,
 					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
 				},
 			},
-		})
+		).Build(),
+	)
 
 	require.Equal(t, instructions[0], addServiceInstruction0)
 	require.Equal(t, instructions[1], addServiceInstruction1)
@@ -625,15 +633,17 @@ print("Starting Startosis script!")
 		nil,
 		*kurtosis_instruction.NewInstructionPosition(11, 12),
 		service.ServiceID("example-datastore-server"),
-		&kurtosis_core_rpc_api_bindings.ServiceConfig{
-			ContainerImageName: "kurtosistech/example-datastore-server",
-			PrivatePorts: map[string]*kurtosis_core_rpc_api_bindings.Port{
+		services.NewServiceConfigBuilder(
+			testContainerImageName,
+		).WithPrivatePorts(
+			map[string]*kurtosis_core_rpc_api_bindings.Port{
 				"grpc": {
 					Number:   1323,
 					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
 				},
 			},
-		})
+		).Build(),
+	)
 
 	require.Equal(t, instructions[0], addServiceInstruction)
 
@@ -669,15 +679,17 @@ print("Starting Startosis script!")
 		nil,
 		*kurtosis_instruction.NewInstructionPosition(11, 12),
 		service.ServiceID("example-datastore-server"),
-		&kurtosis_core_rpc_api_bindings.ServiceConfig{
-			ContainerImageName: "kurtosistech/example-datastore-server",
-			PrivatePorts: map[string]*kurtosis_core_rpc_api_bindings.Port{
+		services.NewServiceConfigBuilder(
+			testContainerImageName,
+		).WithPrivatePorts(
+			map[string]*kurtosis_core_rpc_api_bindings.Port{
 				"grpc": {
 					Number:   1323,
 					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
 				},
 			},
-		})
+		).Build(),
+	)
 
 	expectedOutputFromScriptA := `Constructing service_config
 Adding service example-datastore-server
@@ -708,15 +720,17 @@ add_service(service_id = service_id, service_config = service_config)
 		nil,
 		*kurtosis_instruction.NewInstructionPosition(13, 12),
 		service.ServiceID("example-datastore-server"),
-		&kurtosis_core_rpc_api_bindings.ServiceConfig{
-			ContainerImageName: "kurtosistech/example-datastore-server",
-			PrivatePorts: map[string]*kurtosis_core_rpc_api_bindings.Port{
+		services.NewServiceConfigBuilder(
+			testContainerImageName,
+		).WithPrivatePorts(
+			map[string]*kurtosis_core_rpc_api_bindings.Port{
 				"grpc": {
 					Number:   1323,
 					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
 				},
 			},
-	})
+		).Build(),
+	)
 	expectedOutputFromScriptB := `Starting Startosis script!
 Adding service example-datastore-server
 `
