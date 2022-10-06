@@ -680,6 +680,22 @@ jobs:
       - run: "${KURTOSIS_BINPATH} module exec --enclave-id test-enclave kurtosistech/datastore-army-module --execute-params '{\"numDatastores\":2}'"
       - run: "${KURTOSIS_BINPATH} enclave ls"
       - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"
+
+      # Execute simple startosis script in new enclave
+      - run:
+          name: "Execute basic startosis script inside the test-enclave"
+          command: |
+            tee /tmp/basic_cli_functionality_test_startosis_script.star \<< EOT
+            service_config = struct(
+              container_image_name = "kurtosistech/example-datastore-server",
+              used_ports = {
+                "grpc": struct(number = 1323, protocol = "TCP")
+              }
+            )
+            add_service(service_id = "example-datastore-server-startosis", service_config = service_config)
+            EOT
+            ${KURTOSIS_BINPATH} startosis exec --enclave-id test-enclave /tmp/basic_cli_functionality_test_startosis_script.star
+
       - run: "${KURTOSIS_BINPATH} enclave stop test-enclave"
       - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"   # Ensure we can still inspect stopped enclaves
       - run: "${KURTOSIS_BINPATH} clean -a"
