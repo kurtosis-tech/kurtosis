@@ -18,6 +18,9 @@ import (
 const (
 	// If set to empty, then we'll use whichever default version the launcher provides
 	defaultEngineImageVersionTag = ""
+
+	shouldForceLogsComponentsContainersRestartWhenEngineContainerIsRunning = false
+	shouldForceLogsComponentsContainersRestartWhenEngineContainerIsStopped = true
 )
 
 var engineRestartCmd = fmt.Sprintf(
@@ -119,22 +122,14 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 	logrus.Infof("No Kurtosis engine was found; attempting to start one...")
 
 	logrus.Infof("Starting the centralized logs components first...")
-	shouldRemoveCentralizedLogsComponents := false
 	//TODO this condition is a temporary hack, we should removed it when the centralized logs in Kubernetes Kurtosis Backend is implemented
 	if guarantor.kurtosisClusterType == resolved_config.KurtosisClusterType_Docker {
 		ctx := context.Background()
-		removeCentralizedLogsComponentsFunc, err := guarantor.startCentralizedLogsComponents(ctx)
-		if err != nil {
+		if err := guarantor.ensureCentralizedLogsComponentsAreRunning(ctx, shouldForceLogsComponentsContainersRestartWhenEngineContainerIsStopped); err != nil {
 			return stacktrace.Propagate(err, "An error occurred starting the centralized logs components")
 		}
-		shouldRemoveCentralizedLogsComponents = true
-		defer func() {
-			if shouldRemoveCentralizedLogsComponents {
-				removeCentralizedLogsComponentsFunc()
-			}
-		}()
 	}
-	logrus.Infof("...centralized logs components started")
+	logrus.Infof("Centralized logs components started")
 
 	metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
 	metricsUserId, err := metricsUserIdStore.GetUserID()
@@ -172,7 +167,6 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 	// TODO Replace hacky method of defaulting engine connection to localhost on predetermined port
 	guarantor.postVisitingHostMachineIpAndPort = getDefaultKurtosisEngineLocalhostMachineIpAndPort()
 	logrus.Info("Successfully started Kurtosis engine")
-	shouldRemoveCentralizedLogsComponents = false
 	return nil
 }
 
@@ -201,7 +195,7 @@ func (guarantor *engineExistenceGuarantor) VisitRunning() error {
 	//TODO this condition is a temporary hack, we should removed it when the centralized logs in Kubernetes Kurtosis Backend is implemented
 	if guarantor.kurtosisClusterType == resolved_config.KurtosisClusterType_Docker {
 		ctx := context.Background()
-		if err := guarantor.ensureCentralizedLogsComponentesAreRunning(ctx); err != nil {
+		if err := guarantor.ensureCentralizedLogsComponentsAreRunning(ctx, shouldForceLogsComponentsContainersRestartWhenEngineContainerIsRunning); err != nil {
 			return stacktrace.Propagate(err, "An error occurred ensuring that the centralized logs components are running")
 		}
 	}
@@ -269,106 +263,45 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 	return runningEngineSemver, launcherEngineSemver, nil
 }
 
-func (guarantor *engineExistenceGuarantor) startCentralizedLogsComponents(ctx context.Context) (func(), error) {
-	logsCollector, err := guarantor.kurtosisBackend.GetLogsCollector(ctx)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
-	}
-
-	//Destroy any previous running or stopped logs collector
-	if logsCollector != nil {
-		if err = guarantor.kurtosisBackend.DestroyLogsCollector(ctx); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred destroying the logs database")
-		}
-	}
-
-	logsDatabase, err := guarantor.kurtosisBackend.GetLogsDatabase(ctx)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database")
-	}
-
-	//Destroy any previous running or stopped logs database
-	if logsDatabase != nil {
-		if err = guarantor.kurtosisBackend.DestroyLogsDatabase(ctx); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred destroying the logs database")
-		}
-	}
-
-	if _, err := guarantor.kurtosisBackend.CreateLogsDatabase(ctx); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database")
-	}
-	shouldRemoveLogsDatabase := true
-	removeLogsDataBaseFunc := func() {
-		if err := guarantor.kurtosisBackend.DestroyLogsDatabase(ctx); err != nil {
-			logrus.Errorf("Creating the centralized logs components didn't complete successfully, so we tried to delete the logs database that we created but an error was thrown:\n%v", err)
-			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs database Docker container!!!!!!!")
-		}
-	}
-	defer func() {
-		if shouldRemoveLogsDatabase {
-			removeLogsDataBaseFunc()
-		}
-	}()
-
-	if _, err := guarantor.kurtosisBackend.CreateLogsCollector(ctx, defaultHttpLogsCollectorPortNum); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector with http port number '%v'", defaultHttpLogsCollectorPortNum)
-	}
-	shouldRemoveLogsCollector := true
-	removeLogsCollectorFunc := func() {
-		if err := guarantor.kurtosisBackend.DestroyLogsCollector(ctx); err != nil {
-			logrus.Errorf("Creating the centralized logs components didn't complete successfully, so we tried to delete the logs collector that we created but an error was thrown:\n%v", err)
-			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector Docker container!!!!!!!")
-		}
-	}
-	defer func() {
-		if shouldRemoveLogsCollector {
-			removeLogsCollectorFunc()
-		}
-	}()
-
-	removeCentralizedLogsComponentsFunc := func() {
-		removeLogsCollectorFunc()
-		removeLogsDataBaseFunc()
-	}
-
-	shouldRemoveLogsCollector = false
-	shouldRemoveLogsDatabase = false
-	return removeCentralizedLogsComponentsFunc, nil
-}
-
-func (guarantor *engineExistenceGuarantor) ensureCentralizedLogsComponentesAreRunning(ctx context.Context) error {
+func (guarantor *engineExistenceGuarantor) ensureCentralizedLogsComponentsAreRunning(ctx context.Context, shouldForceContainerRestart bool) error {
 
 	logsCollector, err := guarantor.kurtosisBackend.GetLogsCollector(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
+	isThereLogsCollector := logsCollector != nil
+	isThereNotRunningLogsCollector := isThereLogsCollector && logsCollector.GetStatus() != container_status.ContainerStatus_Running
 
-	//Destroy no-running logs collector
-	if logsCollector != nil && logsCollector.GetStatus() != container_status.ContainerStatus_Running {
+	//Destroy the logs collector if caller requested it or if the container is not running
+	if shouldForceContainerRestart || isThereNotRunningLogsCollector {
 		if err = guarantor.kurtosisBackend.DestroyLogsCollector(ctx); err != nil {
 			return stacktrace.Propagate(err, "An error occurred destroying the logs database")
 		}
+		isThereLogsCollector = false
 	}
 
 	logsDatabase, err := guarantor.kurtosisBackend.GetLogsDatabase(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the logs database")
 	}
+	isThereLogsDatabase := logsDatabase != nil
+	isThereNotRunningLogsDatabase := isThereLogsDatabase && logsDatabase.GetStatus() != container_status.ContainerStatus_Running
 
-	//Destroy no-running logs database
-	if logsDatabase != nil && logsDatabase.GetStatus() != container_status.ContainerStatus_Running{
+	//Destroy the logs database if caller requested it or if the container is not running
+	if shouldForceContainerRestart || isThereNotRunningLogsDatabase {
 		if err = guarantor.kurtosisBackend.DestroyLogsDatabase(ctx); err != nil {
 			return stacktrace.Propagate(err, "An error occurred destroying the logs database")
 		}
+		isThereLogsDatabase = false
 	}
 
-	if logsDatabase == nil || logsDatabase.GetStatus() != container_status.ContainerStatus_Running {
+	if !isThereLogsDatabase {
 		if _, err := guarantor.kurtosisBackend.CreateLogsDatabase(ctx); err != nil {
 			return stacktrace.Propagate(err, "An error occurred creating the logs database")
 		}
 	}
 
-	if logsCollector == nil || logsCollector.GetStatus() != container_status.ContainerStatus_Running {
+	if !isThereLogsCollector {
 		if _, err := guarantor.kurtosisBackend.CreateLogsCollector(ctx, defaultHttpLogsCollectorPortNum); err != nil {
 			return stacktrace.Propagate(err, "An error occurred creating the logs collector with http port number '%v'", defaultHttpLogsCollectorPortNum)
 		}
