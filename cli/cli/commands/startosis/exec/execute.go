@@ -1,4 +1,4 @@
-package execute
+package exec
 
 import (
 	"context"
@@ -36,7 +36,7 @@ var StartosisExecCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:       command_str_consts.StartosisExecCmdStr,
 	ShortDescription: "Execute a Startosis script",
 	LongDescription: "Execute a Startosis script in an enclave. If the enclave-id param is provided, Kurtosis " +
-		"will execute the script inside this enclave, or create it if it doesn't exist. If no enclave-id param is " +
+		"will exec the script inside this enclave, or create it if it doesn't exist. If no enclave-id param is " +
 		"provided, Kurtosis will create a new enclave with a default name derived from the script name.",
 	Flags: []*flags.FlagConfig{
 		{

@@ -216,7 +216,11 @@ export class EnclaveContext {
         ): Promise<Result<ExecuteStartosisScriptResponse, Error>> {
         const args = new ExecuteStartosisScriptArgs();
         args.setSerializedScript(serializedStartosisScript)
-        return this.backend.executeStartosisScript(args)
+        const resultScriptExecution : Result<ExecuteStartosisScriptResponse, Error> = await this.backend.executeStartosisScript(args)
+        if (resultScriptExecution.isErr()) {
+            return err(new Error(`Unexpected error happened executing Startosis script \n${resultScriptExecution.error}`))
+        }
+        return ok(resultScriptExecution.value)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation

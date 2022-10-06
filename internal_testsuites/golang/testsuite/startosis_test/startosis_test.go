@@ -2,12 +2,9 @@ package startosis_test
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	"os"
-	"strings"
 	"testing"
 )
 
@@ -15,12 +12,28 @@ const (
 	testName              = "module"
 	isPartitioningEnabled = false
 
-	scriptFilePath = "../../static_files/startosis_valid_script.star"
+	serviceId = "example-datastore-server-1"
+	portId    = "grpc"
 
-	serviceIdPlaceholder = "[!SERVICE_ID_PLACEHOLDER]"
-	serviceId            = "example-datastore-server-1"
-	portIdPlaceholder    = "[!PORT_ID_PLACEHOLDER]"
-	portId               = "grpc"
+	startosisScript = `
+DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
+DATASTORE_SERVICE_ID = "` + serviceId + `"
+DATASTORE_PORT_ID = "` + portId + `"
+DATASTORE_PORT_NUMBER = 1323
+DATASTORE_PORT_PROTOCOL = "TCP"
+
+print("Adding service " + DATASTORE_SERVICE_ID + ".")
+
+service_config = struct(
+    container_image_name = DATASTORE_IMAGE,
+    used_ports = {
+        DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
+    }
+)
+
+add_service(service_id = DATASTORE_SERVICE_ID, service_config = service_config)
+print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
+`
 )
 
 func TestStartosis(t *testing.T) {
@@ -31,17 +44,12 @@ func TestStartosis(t *testing.T) {
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
 
-	// ------------------------------------- TEST SETUP ----------------------------------------------
-	rawStartosisScript, err := os.ReadFile(scriptFilePath)
-	require.NoError(t, err, "Error reading Startosis script file")
-	renderedStartosisScript := injectAllScriptPlaceholders(string(rawStartosisScript))
-
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Infof("Executing Startosis script '%s'...", scriptFilePath)
-	logrus.Debugf("Startosis script content: \n%v", renderedStartosisScript)
+	logrus.Infof("Executing Startosis script...")
+	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	executionResult, err := enclaveCtx.ExecuteStartosisScript(renderedStartosisScript)
-	require.NoError(t, err, "Unexpected error executing startosis script '%s'", scriptFilePath)
+	executionResult, err := enclaveCtx.ExecuteStartosisScript(startosisScript)
+	require.NoError(t, err, "Unexpected error executing startosis script")
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
 Service example-datastore-server-1 deployed successfully.
@@ -50,7 +58,7 @@ Service example-datastore-server-1 deployed successfully.
 	require.Empty(t, executionResult.ValidationError, "Unexpected validation error")
 	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
 	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
-	logrus.Infof("Successfully ran Startosis script '%s'", scriptFilePath)
+	logrus.Infof("Successfully ran Startosis script")
 
 	// Check that the service added by the script is functional
 	logrus.Infof("Checking that services are all healthy")
@@ -61,19 +69,4 @@ Service example-datastore-server-1 deployed successfully.
 		serviceId,
 	)
 	logrus.Infof("All services added via the module work as expected")
-}
-
-func injectAllScriptPlaceholders(scriptStr string) string {
-	// TODO: this is a hack to be able to pass dynamic param to the Startosis script. Once we have a first class way
-	//  to do this, remove this bit
-	renderedScript := injectPlaceholderString(scriptStr, serviceIdPlaceholder, serviceId)
-	renderedScript = injectPlaceholderString(renderedScript, portIdPlaceholder, portId)
-	return renderedScript
-}
-
-func injectPlaceholderString(src string, placeholderKey string, value string) string {
-	if !strings.Contains(src, placeholderKey) {
-		logrus.Warnf("Placeholder '%s' not found in source script. Test will continue but this might be a signal for a bug in the test", placeholderKey)
-	}
-	return strings.ReplaceAll(src, placeholderKey, fmt.Sprintf("\"%s\"", value))
 }

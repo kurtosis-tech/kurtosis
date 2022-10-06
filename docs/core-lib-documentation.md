@@ -71,11 +71,7 @@ Execute a provide Startosis script inside the enclave.
 
 **Returns**
 
-* `executionResult`: The result of the execution. It contains 4 fields:
-  * `interpretationError`: an interpretation error is returned if the script couldn't be interpreted by Kurtosis backend
-  * `validationError`: a validationError is returned if the script was successfully interpreted but could not be validated by Kurtosis backend
-  * `executionError`: an execution error is returned if the script failed during its execution by Kurtosis backend
-  * `scriptOutput`: the output of the script that was successfully executed inside the enclave
+* `executionResult`: The result of the execution, as a [ExecuteStartosisScriptResult][executestartosisscriptresult] object
 
 <!-- TODO DELETE THIS!!! -->
 ### registerFilesArtifacts(Map\<FilesArtifactID, String\> filesArtifactUrls)
@@ -305,6 +301,23 @@ ContainerConfigBuilder
 The builder that should be used to create [ContainerConfig][containerconfig] instances. The functions on this builder will correspond to the properties on the [ContainerConfig][containerconfig] object, in the form `withPropertyName` (e.g. `withUsedPorts` sets the ports used by the container).
 
 
+ExecuteStartosisScriptResult
+----------------------------
+
+This is an object representing the result of the execution of a Startosis script. It has 4 fields:
+
+### String `interpretationError`
+An interpretation error is returned if the script couldn't be interpreted by Kurtosis backend
+
+### String `validationError`
+A validationError is returned if the script was successfully interpreted but could not be validated by Kurtosis backend
+
+### String `executionError`
+An execution error is returned if the script failed during its execution by Kurtosis backend
+
+### String `scriptOutput`
+The output of the script that was successfully executed inside the enclave
+
 
 ServiceContext
 --------------
@@ -400,6 +413,8 @@ _Found a bug? File it on [the repo][issues]!_
 [enclavecontext_rendertemplates]: #rendertemplatesmapstring-templateanddata-templateanddatabydestinationrelfilepaths
 
 [partitionconnection]: #partitionconnection
+
+[executestartosisscriptresult]: #executestartosisscriptresult
 
 [servicecontext]: #servicecontext
 [servicecontext_getpublicports]: #getpublicports---mapportid-portspec

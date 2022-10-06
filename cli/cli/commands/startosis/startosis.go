@@ -2,7 +2,7 @@ package startosis
 
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/startosis/execute"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/startosis/exec"
 	"github.com/spf13/cobra"
 )
 
@@ -13,5 +13,5 @@ var StartosisCmd = &cobra.Command{
 }
 
 func init() {
-	StartosisCmd.AddCommand(execute.StartosisExecCmd.MustGetCobraCommand())
+	StartosisCmd.AddCommand(exec.StartosisExecCmd.MustGetCobraCommand())
 }
