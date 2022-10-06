@@ -20,6 +20,7 @@
 ### Fixes
 * Fix IP address placeholder injected by default in Startosis instructions. It used to be empty, which is invalid now
 it is set to `KURTOSIS_IP_ADDR_PLACEHOLDER`
+* Fix enclave inspect CLI command error when there are additional port bindings
 
 ### Removals
 * Removes version constants within launchers and cli in favor of centralized generated version constant
