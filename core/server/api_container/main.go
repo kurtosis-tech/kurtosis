@@ -149,6 +149,7 @@ func runMain() error {
 		}
 	}()
 
+	// TODO: Consolidate Interpreter, Validator and Executor into a single interface
 	startosisInterpreter := startosis_engine.NewStartosisInterpreter(serviceNetwork, gitModuleManager)
 	startosisValidator := startosis_engine.NewStartosisValidator(&kurtosisBackend)
 	startosisExecutor := startosis_engine.NewStartosisExecutor()
