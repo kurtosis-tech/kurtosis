@@ -20,6 +20,8 @@ const (
 	startosisModuleStoreDirname = "startosis-modules"
 
 	// The name of the directory INSIDE THE ENCLAVE DATA DIR where temporary modules will be stored
+	// We place the temp folder here so that the move to the final destination is atomic
+	// Move from places outside of the enclave data dir are not atomic as they're over the network
 	tmpModuleStoreDirname = "tmp-startosis-modules"
 )
 
