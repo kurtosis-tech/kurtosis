@@ -16,7 +16,7 @@ import (
 	"testing"
 )
 
-var testServiceNetwork *service_network.ServiceNetwork = nil
+var testServiceNetwork service_network.ServiceNetwork = service_network.NewMockServiceNetwork()
 
 const testContainerImageName = "kurtosistech/example-datastore-server"
 
@@ -131,7 +131,7 @@ add_service(service_id = service_id, service_config = service_config)
 	require.Nil(t, interpretationError)
 
 	addServiceInstruction := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(13, 12),
 		"example-datastore-server",
 		services.NewServiceConfigBuilder(
@@ -281,7 +281,7 @@ print("Done!")
 	require.Nil(t, interpretationError)
 
 	addServiceInstruction0 := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(22, 26),
 		service.ServiceID("example-datastore-server-0"),
 		services.NewServiceConfigBuilder(
@@ -296,7 +296,7 @@ print("Done!")
 		).Build(),
 	)
 	addServiceInstruction1 := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(22, 26),
 		service.ServiceID("example-datastore-server-1"),
 		services.NewServiceConfigBuilder(
@@ -311,7 +311,7 @@ print("Done!")
 		).Build(),
 	)
 	addServiceInstruction2 := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(22, 26),
 		service.ServiceID("example-datastore-server-2"),
 		services.NewServiceConfigBuilder(
@@ -341,7 +341,7 @@ Done!
 
 func TestStartosisInterpreter_SimpleLoading(t *testing.T) {
 	barModulePath := "github.com/foo/bar/lib.star"
-	seedModules := map[string]string {
+	seedModules := map[string]string{
 		barModulePath: "a=\"World!\"",
 	}
 	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
@@ -444,7 +444,6 @@ print("Hello " + a)
 	_, interpretationError, _ := interpreter.Interpret(context.Background(), script)
 	assert.NotNil(t, interpretationError)
 
-
 	barModuleContents := "a=\"World!\""
 	moduleManager.Add(barModulePath, barModuleContents)
 	expectedOutput := `Hello World!
@@ -484,7 +483,7 @@ add_service(service_id = service_id, service_config = service_config)
 	require.Nil(t, interpretationError)
 
 	addServiceInstruction := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(6, 12),
 		service.ServiceID("example-datastore-server"),
 		services.NewServiceConfigBuilder(
@@ -545,7 +544,7 @@ print("Done!")
 	require.Nil(t, interpretationError)
 
 	addServiceInstruction0 := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(5, 26),
 		service.ServiceID("example-datastore-server-0"),
 		services.NewServiceConfigBuilder(
@@ -560,7 +559,7 @@ print("Done!")
 		).Build(),
 	)
 	addServiceInstruction1 := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(5, 26),
 		service.ServiceID("example-datastore-server-1"),
 		services.NewServiceConfigBuilder(
@@ -575,7 +574,7 @@ print("Done!")
 		).Build(),
 	)
 	addServiceInstruction2 := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(5, 26),
 		service.ServiceID("example-datastore-server-2"),
 		services.NewServiceConfigBuilder(
@@ -630,7 +629,7 @@ print("Starting Startosis script!")
 	require.Nil(t, interpretationError)
 
 	addServiceInstruction := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(11, 12),
 		service.ServiceID("example-datastore-server"),
 		services.NewServiceConfigBuilder(
@@ -676,7 +675,7 @@ load("` + moduleBar + `", "service_id", "service_config")
 print("Starting Startosis script!")
 `
 	addServiceInstructionFromScriptA := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(11, 12),
 		service.ServiceID("example-datastore-server"),
 		services.NewServiceConfigBuilder(
@@ -717,7 +716,7 @@ service_config = struct(
 add_service(service_id = service_id, service_config = service_config)
 `
 	addServiceInstructionFromScriptB := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(13, 12),
 		service.ServiceID("example-datastore-server"),
 		services.NewServiceConfigBuilder(
@@ -741,4 +740,3 @@ Adding service example-datastore-server
 	require.Equal(t, instructions[0], addServiceInstructionFromScriptB)
 	require.Equal(t, expectedOutputFromScriptB, string(scriptOutput))
 }
-

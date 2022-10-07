@@ -21,7 +21,7 @@ const (
 	serviceConfigArgName = "service_config"
 )
 
-func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork *service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		serviceId, serviceConfig, interpretationError := parseStartosisArgs(b, args, kwargs)
@@ -35,14 +35,14 @@ func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtosi
 }
 
 type AddServiceInstruction struct {
-	serviceNetwork *service_network.ServiceNetwork
+	serviceNetwork service_network.ServiceNetwork
 
 	position      kurtosis_instruction.InstructionPosition
 	serviceId     kurtosis_backend_service.ServiceID
 	serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig
 }
 
-func NewAddServiceInstruction(serviceNetwork *service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) *AddServiceInstruction {
+func NewAddServiceInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) *AddServiceInstruction {
 	return &AddServiceInstruction{
 		serviceNetwork: serviceNetwork,
 		position:       position,
