@@ -189,7 +189,7 @@ func createServiceNetworkAndModuleStore(
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 	args *args.APIContainerArgs,
 	ownIpAddress net.IP,
-) (*service_network.ServiceNetwork, *module_store.ModuleStore, error) {
+) (*service_network.DefaultServiceNetwork, *module_store.ModuleStore, error) {
 	enclaveIdStr := args.EnclaveId
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
 
@@ -221,7 +221,7 @@ func createServiceNetworkAndModuleStore(
 		kurtosisBackend,
 		enclaveId)
 
-	serviceNetwork := service_network.NewServiceNetwork(
+	serviceNetwork := service_network.NewDefaultServiceNetwork(
 		enclaveId,
 		ownIpAddress,
 		args.GrpcListenPortNum,

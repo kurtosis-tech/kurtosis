@@ -24,15 +24,15 @@ const (
 )
 
 type StartosisInterpreter struct {
-	serviceNetwork     *service_network.ServiceNetwork
+	serviceNetwork service_network.ServiceNetwork
 	// TODO AUTH there will be a leak here in case people with different repo visibility access a module
-	moduleCache        *startosis_modules.ModuleCache
-	moduleManager      startosis_modules.ModuleManager
+	moduleCache   *startosis_modules.ModuleCache
+	moduleManager startosis_modules.ModuleManager
 }
 
 type SerializedInterpretationOutput string
 
-func NewStartosisInterpreter(serviceNetwork *service_network.ServiceNetwork, moduleManager startosis_modules.ModuleManager) *StartosisInterpreter {
+func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, moduleManager startosis_modules.ModuleManager) *StartosisInterpreter {
 	return &StartosisInterpreter{
 		serviceNetwork: serviceNetwork,
 		moduleManager:  moduleManager,
@@ -50,7 +50,7 @@ func NewStartosisInterpreter(serviceNetwork *service_network.ServiceNetwork, mod
 //     possible
 func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, serializedScript string) (SerializedInterpretationOutput, *startosis_errors.InterpretationError, []kurtosis_instruction.KurtosisInstruction) {
 	var scriptOutputBuffer bytes.Buffer
-	var instructionsQueue  []kurtosis_instruction.KurtosisInstruction
+	var instructionsQueue []kurtosis_instruction.KurtosisInstruction
 	thread, builtins := interpreter.buildBindings(starlarkGoThreadName, &instructionsQueue, &scriptOutputBuffer)
 
 	_, err := starlark.ExecFile(thread, starlarkFilenamePlaceholderAsNotUsed, serializedScript, builtins)
@@ -63,8 +63,8 @@ func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, serializ
 
 func (interpreter *StartosisInterpreter) buildBindings(threadName string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, scriptOutputBuffer *bytes.Buffer) (*starlark.Thread, starlark.StringDict) {
 	thread := &starlark.Thread{
-		Name: threadName,
-		Load: interpreter.makeLoad(instructionsQueue, scriptOutputBuffer),
+		Name:  threadName,
+		Load:  interpreter.makeLoad(instructionsQueue, scriptOutputBuffer),
 		Print: makePrint(scriptOutputBuffer),
 	}
 
@@ -107,7 +107,7 @@ func (interpreter *StartosisInterpreter) makeLoad(instructionsQueue *[]kurtosis_
 	}
 }
 
-func makePrint(scriptOutputBuffer *bytes.Buffer) func( *starlark.Thread, string) {
+func makePrint(scriptOutputBuffer *bytes.Buffer) func(*starlark.Thread, string) {
 	return func(_ *starlark.Thread, msg string) {
 		// From the Starlark spec, a print statement in Starlark is automatically followed by a newline
 		scriptOutputBuffer.WriteString(msg + "\n")
