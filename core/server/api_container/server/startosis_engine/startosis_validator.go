@@ -9,13 +9,13 @@ import (
 )
 
 type StartosisValidator struct {
-	validators []startosis_validator.ValidatorInterface
+	validators []startosis_validator.Validator
 }
 
 func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend) *StartosisValidator {
 	dockerImagesValidator := startosis_validator.NewDockerImagesValidator(kurtosisBackend)
 	return &StartosisValidator{
-		validators: []startosis_validator.ValidatorInterface{
+		validators: []startosis_validator.Validator{
 			dockerImagesValidator,
 		},
 	}

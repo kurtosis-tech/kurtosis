@@ -2,7 +2,7 @@ package startosis_validator
 
 import "context"
 
-type ValidatorInterface interface {
+type Validator interface {
 	// ValidateDynamicEnvironment validates if an environment is valid after the execution of a set of instructions.
 	ValidateDynamicEnvironment(ctx context.Context, environment *ValidatorEnvironment) error
 	// ValidateStaticEnvironment validates if an environment is valid after all instructions have been executed
