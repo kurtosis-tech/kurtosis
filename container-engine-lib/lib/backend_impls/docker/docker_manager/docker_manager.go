@@ -891,7 +891,7 @@ func (manager DockerManager) GetContainersByLabels(ctx context.Context, labels m
 
 func (manager DockerManager) FetchImage(ctx context.Context, dockerImage string) error {
 	logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
-	imageExistsLocally, err := manager.isImageAvailableLocally(ctx, dockerImage)
+	imageExistsLocally, err := manager.doesImageExistLocally(ctx, dockerImage)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image '%v'", dockerImage)
 	}
@@ -976,7 +976,7 @@ func (manager DockerManager) CopyFromContainer(ctx context.Context, containerId 
 //	INSTANCE HELPER FUNCTIONS
 //
 // =================================================================================================================
-func (manager DockerManager) isImageAvailableLocally(ctx context.Context, imageName string) (isAvailable bool, err error) {
+func (manager DockerManager) doesImageExistLocally(ctx context.Context, imageName string) (existsLocally bool, err error) {
 	referenceArg := filters.Arg("reference", imageName)
 	filters := filters.NewArgs(referenceArg)
 	images, err := manager.dockerClient.ImageList(
