@@ -75,7 +75,7 @@ func NewDockerKurtosisBackend(
 }
 
 func (backend *DockerKurtosisBackend) FetchImage(ctx context.Context, image string) error {
-	return backend.dockerManager.FetchImage(ctx, image)
+	return stacktrace.Propagate(backend.dockerManager.FetchImage(ctx, image), "An error occurred fetching image from kurtosis backend")
 }
 
 func (backend *DockerKurtosisBackend) CreateEngine(
@@ -139,7 +139,7 @@ func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enc
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
-	if logsCollector == nil || logsCollector.GetStatus() != container_status.ContainerStatus_Running{
+	if logsCollector == nil || logsCollector.GetStatus() != container_status.ContainerStatus_Running {
 		return nil, nil, stacktrace.NewError("The user services can't be started because no logs collector is running for sending the logs to")
 	}
 
@@ -267,7 +267,7 @@ func (backend *DockerKurtosisBackend) CreateLogsDatabase(
 ) (
 	*logs_database.LogsDatabase,
 	error,
-){
+) {
 
 	//Declaring the implementation
 	logsDatabaseContainer := loki.NewLokiLogDatabaseContainer()
@@ -284,7 +284,7 @@ func (backend *DockerKurtosisBackend) CreateLogsDatabase(
 	return logsDatabase, nil
 }
 
-//If nothing is found returns nil
+// If nothing is found returns nil
 func (backend *DockerKurtosisBackend) GetLogsDatabase(
 	ctx context.Context,
 ) (
@@ -304,9 +304,7 @@ func (backend *DockerKurtosisBackend) GetLogsDatabase(
 
 func (backend *DockerKurtosisBackend) DestroyLogsDatabase(
 	ctx context.Context,
-) (
-	error,
-) {
+) error {
 
 	if err := logs_database_functions.DestroyLogsDatabase(
 		ctx,
@@ -354,7 +352,7 @@ func (backend *DockerKurtosisBackend) CreateLogsCollector(
 	return logsCollector, nil
 }
 
-//If nothing is found returns nil
+// If nothing is found returns nil
 func (backend *DockerKurtosisBackend) GetLogsCollector(
 	ctx context.Context,
 ) (
@@ -374,9 +372,7 @@ func (backend *DockerKurtosisBackend) GetLogsCollector(
 
 func (backend *DockerKurtosisBackend) DestroyLogsCollector(
 	ctx context.Context,
-) (
-	error,
-) {
+) error {
 
 	if err := logs_collector_functions.DestroyLogsCollector(
 		ctx,
