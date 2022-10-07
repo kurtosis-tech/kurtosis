@@ -976,7 +976,7 @@ func (manager DockerManager) CopyFromContainer(ctx context.Context, containerId 
 //	INSTANCE HELPER FUNCTIONS
 //
 // =================================================================================================================
-func (manager DockerManager) doesImageExistLocally(ctx context.Context, imageName string) (existsLocally bool, err error) {
+func (manager DockerManager) doesImageExistLocally(ctx context.Context, imageName string) (bool, error) {
 	referenceArg := filters.Arg("reference", imageName)
 	filters := filters.NewArgs(referenceArg)
 	images, err := manager.dockerClient.ImageList(
