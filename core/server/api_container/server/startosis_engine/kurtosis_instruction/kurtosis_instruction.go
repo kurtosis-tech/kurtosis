@@ -21,9 +21,9 @@ type KurtosisInstruction interface {
 	// Most of the time it will just call GetCanonicalInstruction()
 	String() string
 
-	// UpdateValidationEnvironment mutates environment to reflect how Kurtosis would look like after this instruction
-	// is successfully executed.
-	UpdateValidationEnvironment(environment *startosis_validator.ValidatorEnvironment)
+	// ValidateAndUpdateEnvironment validates if the instruction can be applied to an environment, and mutates that
+	// environment to reflect how Kurtosis would look like after this instruction is successfully executed.
+	ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error
 }
 
 func NewInstructionPosition(line int32, col int32) *InstructionPosition {

@@ -24,32 +24,13 @@ func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend) *
 func (validator *StartosisValidator) Validate(ctx context.Context, instructions []kurtosis_instruction.KurtosisInstruction) error {
 	environment := startosis_validator.NewValidatorEnvironment()
 	for _, instruction := range instructions {
-		instruction.UpdateValidationEnvironment(environment)
-		err := validator.validateIntermediateEnvironment(ctx, environment)
+		err := instruction.ValidateAndUpdateEnvironment(environment)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error while validating instruction %v", instruction.String())
 		}
 	}
-	err := validator.validateFinalEnvironment(ctx, environment)
-	if err != nil {
-		return stacktrace.Propagate(err, "Error while validating script")
-	}
-	return nil
-}
-
-func (validator *StartosisValidator) validateIntermediateEnvironment(ctx context.Context, environment *startosis_validator.ValidatorEnvironment) error {
 	for _, validator := range validator.validators {
-		err := validator.ValidateDynamicEnvironment(ctx, environment)
-		if err != nil {
-			return stacktrace.Propagate(err, "Error while validating intermediate state of script")
-		}
-	}
-	return nil
-}
-
-func (validator *StartosisValidator) validateFinalEnvironment(ctx context.Context, environment *startosis_validator.ValidatorEnvironment) error {
-	for _, validator := range validator.validators {
-		err := validator.ValidateStaticEnvironment(ctx, environment)
+		err := validator.Validate(ctx, environment)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error while validating final environment of script")
 		}
