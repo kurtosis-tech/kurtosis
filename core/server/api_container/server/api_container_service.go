@@ -52,6 +52,10 @@ const (
 	tempDirForRenderedTemplatesPrefix = "temp-dir-for-rendered-templates-"
 
 	compressedRenderedTemplatesFilenamePattern = "compressed-rendered-templates-*.tgz"
+
+	noExecutionError      = ""
+	noInterpretationError = ""
+	noValidationError     = ""
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -195,8 +199,8 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 		return binding_constructors.NewExecuteStartosisScriptResponse(
 			string(interpretationOutput),
 			potentialInterpretationError.Error(),
-			"",
-			"",
+			noValidationError,
+			noExecutionError,
 		), nil
 	}
 	logrus.Debugf("Successfully interpreted Startosis script into a series of Kurtosis instructions: \n%v",
@@ -206,9 +210,9 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 	if validationError != nil {
 		return binding_constructors.NewExecuteStartosisScriptResponse(
 			string(interpretationOutput),
-			"",
+			noInterpretationError,
 			validationError.Error(),
-			"",
+			noExecutionError,
 		), nil
 	}
 	logrus.Debugf("Successfully validated Startosis script")
@@ -217,8 +221,8 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 	if err != nil {
 		return binding_constructors.NewExecuteStartosisScriptResponse(
 			string(interpretationOutput),
-			"",
-			"",
+			noInterpretationError,
+			noValidationError,
 			err.Error(),
 		), nil
 	}
@@ -226,9 +230,9 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 
 	return binding_constructors.NewExecuteStartosisScriptResponse(
 		string(interpretationOutput),
-		"",
-		"",
-		"",
+		noInterpretationError,
+		noValidationError,
+		noExecutionError,
 	), nil
 }
 
