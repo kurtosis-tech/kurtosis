@@ -81,11 +81,11 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 }
 
 /*
-   makeLoadFunction This function returns a sequential (not parallel) implementation of `load` in Starlark
-   This function takes in an instructionsQueue, scriptOutputBuffer & returns a closed function that implements Starlark loading, with the custom provider
+	   makeLoadFunction This function returns a sequential (not parallel) implementation of `load` in Starlark
+	   This function takes in an instructionsQueue, scriptOutputBuffer & returns a closed function that implements Starlark loading, with the custom provider
 
-	instructionsQueue -> the instructions Queue from the parent thread to add instructions to
-	scriptsOutputBuffer -> the scripts output buffer from the parent thread where output form interpreted scripts will be written to
+		instructionsQueue -> the instructions Queue from the parent thread to add instructions to
+		scriptsOutputBuffer -> the scripts output buffer from the parent thread where output form interpreted scripts will be written to
 
 We wrap the function to provide a closure for the above two arguments, as we can't change the signature of the returned function
 

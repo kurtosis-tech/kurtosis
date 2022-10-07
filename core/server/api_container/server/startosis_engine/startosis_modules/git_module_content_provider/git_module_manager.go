@@ -13,19 +13,19 @@ const (
 	temporaryRepoDirPattern = "tmp-repo-dir-*"
 )
 
-type GitModuleManager struct {
+type GitModuleContentProvider struct {
 	moduleTmpDir string
 	moduleDir    string
 }
 
-func NewGitModuleManager(moduleDir string, tmpDir string) *GitModuleManager {
-	return &GitModuleManager{
+func NewGitModuleContentProvider(moduleDir string, tmpDir string) *GitModuleContentProvider {
+	return &GitModuleContentProvider{
 		moduleDir:    moduleDir,
 		moduleTmpDir: tmpDir,
 	}
 }
 
-func (moduleManager *GitModuleManager) GetModuleContents(moduleURL string) (string, error) {
+func (moduleManager *GitModuleContentProvider) GetModuleContents(moduleURL string) (string, error) {
 	parsedURL, err := parseGitURL(moduleURL)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while parsing URL '%v'", moduleURL)
@@ -56,7 +56,7 @@ func (moduleManager *GitModuleManager) GetModuleContents(moduleURL string) (stri
 
 // atomicClone This first clones to a temporary directory and then moves it
 // TODO make this support versioning via tags, commit hashes or branches
-func (moduleManager *GitModuleManager) atomicClone(parsedURL *ParsedGitURL) error {
+func (moduleManager *GitModuleContentProvider) atomicClone(parsedURL *ParsedGitURL) error {
 	// First we clone into a temporary directory
 	tempRepoDirPath, err := os.MkdirTemp(moduleManager.moduleTmpDir, temporaryRepoDirPattern)
 	if err != nil {

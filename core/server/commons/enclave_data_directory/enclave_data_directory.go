@@ -45,7 +45,7 @@ func (dir EnclaveDataDirectory) GetFilesArtifactStore() (*FilesArtifactStore, er
 	return newFilesArtifactStore(absoluteDirpath, relativeDirpath), nil
 }
 
-func (dir EnclaveDataDirectory) GetGitModuleManager() (*git_module_content_provider.GitModuleManager, error) {
+func (dir EnclaveDataDirectory) GetGitModuleContentProvider() (*git_module_content_provider.GitModuleContentProvider, error) {
 	moduleStoreDirpath := path.Join(dir.absMountDirpath, startosisModuleStoreDirname)
 	if err := ensureDirpathExists(moduleStoreDirpath); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring the Startosis module store dirpath '%v' exists.", moduleStoreDirpath)
@@ -56,5 +56,5 @@ func (dir EnclaveDataDirectory) GetGitModuleManager() (*git_module_content_provi
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring the Startosis temporary module store dirpath '%v' exists.", tempModuleStoreDirpath)
 	}
 
-	return git_module_content_provider.NewGitModuleManager(moduleStoreDirpath, tempModuleStoreDirpath), nil
+	return git_module_content_provider.NewGitModuleContentProvider(moduleStoreDirpath, tempModuleStoreDirpath), nil
 }

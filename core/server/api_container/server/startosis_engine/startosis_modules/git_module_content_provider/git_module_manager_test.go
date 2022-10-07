@@ -20,7 +20,7 @@ func TestStartosisInterpreter_GitModuleManagerSucceedsForExistentModule(t *testi
 	require.Nil(t, err)
 	defer os.RemoveAll(moduleTmpDir)
 
-	gitModuleManager := NewGitModuleManager(moduleDir, moduleTmpDir)
+	gitModuleManager := NewGitModuleContentProvider(moduleDir, moduleTmpDir)
 
 	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star"
 	contents, err := gitModuleManager.GetModuleContents(sampleStartosisModule)
@@ -38,7 +38,7 @@ func TestStartosisInterpreter_GitModuleManagerFailsForNonExistentModule(t *testi
 	require.Nil(t, err)
 	os.RemoveAll(moduleTmpDir)
 
-	gitModuleManager := NewGitModuleManager(moduleDir, moduleTmpDir)
+	gitModuleManager := NewGitModuleContentProvider(moduleDir, moduleTmpDir)
 	nonExistentModulePath := "github.com/kurtosis-tech/non-existent-startosis-load/sample.star"
 
 	_, err = gitModuleManager.GetModuleContents(nonExistentModulePath)
