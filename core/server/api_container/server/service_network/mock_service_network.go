@@ -16,6 +16,10 @@ const (
 type MockServiceNetwork struct {
 }
 
+func NewMockServiceNetwork() *MockServiceNetwork {
+	return &MockServiceNetwork{}
+}
+
 func (m *MockServiceNetwork) Repartition(ctx context.Context, newPartitionServices map[service_network_types.PartitionID]map[service.ServiceID]bool, newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection, newDefaultConnection partition_topology.PartitionConnection) error {
 	//TODO implement me
 	panic(unimplementedMsg)
@@ -59,8 +63,4 @@ func (m *MockServiceNetwork) CopyFilesFromService(ctx context.Context, serviceId
 func (m *MockServiceNetwork) GetServiceIDs() map[service.ServiceID]bool {
 	//TODO implement me
 	panic(unimplementedMsg)
-}
-
-func NewMockServiceNetwork() *MockServiceNetwork {
-	return &MockServiceNetwork{}
 }
