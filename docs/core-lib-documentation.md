@@ -61,7 +61,7 @@ Gets the [ModuleContext][modulecontext] associated with an already-running modul
 
 * `moduleContext`: The [ModuleContext][modulecontext] representation of the running module container, which allows execution of the module's execute function (if it exists).
 
-### executeStartosisScript(String serializedStartosisScript) -\> (ExecuteStartosisScriptResult executionResult, Error error)
+### executeStartosisScript(String serializedStartosisScript) -\> ([ExecuteStartosisScriptResult][executestartosisscriptresult] executionResult, Error error)
 
 Execute a provide Startosis script inside the enclave.
 
