@@ -25,6 +25,8 @@ const (
 )
 
 type StartosisInterpreter struct {
+	// This is mutex protected as interpreting two different scripts in parallel could potentially cause
+	// problems with the moduleGlobalsCache & moduleManager. Fixing this is quite complicated, which we decided not to do.
 	mutex              *sync.Mutex
 	serviceNetwork     service_network.ServiceNetwork
 	moduleGlobalsCache map[string]*startosis_modules.ModuleCacheEntry
@@ -105,6 +107,7 @@ func (interpreter *StartosisInterpreter) makeLoad(instructionsQueue *[]kurtosis_
 
 		thread, bindings := interpreter.buildBindings(fmt.Sprintf("%v:%v", starlarkGoThreadName, moduleID), instructionsQueue, scriptOutputBuffer)
 		globalVariables, err := starlark.ExecFile(thread, moduleID, contents, bindings)
+		// the above error goes unchecked as it needs to be persisted to the cache and then returned to the parent loader
 
 		// Update the cache.
 		entry = startosis_modules.NewModuleCacheEntry(globalVariables, err)
@@ -112,6 +115,7 @@ func (interpreter *StartosisInterpreter) makeLoad(instructionsQueue *[]kurtosis_
 
 		shouldUnsetLoadInProgress = false
 		return entry.GetGlobalVariables(), entry.GetError()
+		// this error isn't propagated as its returned to the interpreter & persisted in the cache
 	}
 }
 
