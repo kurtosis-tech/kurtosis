@@ -20,7 +20,7 @@ func NewEmptyMockModuleProvider() *MockModuleContentProvider {
 	)
 }
 
-func (moduleManager *MockModuleContentProvider) GetModuleContentProvider(moduleID string) (string, error) {
+func (moduleManager *MockModuleContentProvider) GetModuleContents(moduleID string) (string, error) {
 	contents, found := moduleManager.modules[moduleID]
 	if !found {
 		return "", stacktrace.NewError("Module '%v' not found", moduleID)

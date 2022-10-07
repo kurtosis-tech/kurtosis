@@ -14,6 +14,7 @@ import (
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 	"go.starlark.net/syntax"
+	"sync"
 )
 
 const (
@@ -24,9 +25,10 @@ const (
 )
 
 type StartosisInterpreter struct {
-	serviceNetwork service_network.ServiceNetwork
+	mutex              *sync.Mutex
+	serviceNetwork     service_network.ServiceNetwork
+	moduleGlobalsCache map[string]*startosis_modules.ModuleCacheEntry
 	// TODO AUTH there will be a leak here in case people with different repo visibility access a module
-	moduleCache   *startosis_modules.ModuleCache
 	moduleManager startosis_modules.ModuleContentProvider
 }
 
@@ -34,9 +36,9 @@ type SerializedInterpretationOutput string
 
 func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, moduleManager startosis_modules.ModuleContentProvider) *StartosisInterpreter {
 	return &StartosisInterpreter{
-		serviceNetwork: serviceNetwork,
-		moduleManager:  moduleManager,
-		moduleCache:    startosis_modules.NewModuleCache(),
+		serviceNetwork:     serviceNetwork,
+		moduleManager:      moduleManager,
+		moduleGlobalsCache: make(map[string]*startosis_modules.ModuleCacheEntry),
 	}
 }
 
@@ -77,21 +79,26 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 }
 
 func (interpreter *StartosisInterpreter) makeLoad(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, scriptOutputBuffer *bytes.Buffer) func(_ *starlark.Thread, moduleID string) (starlark.StringDict, error) {
+	// A nil entry to indicate that a load is in progress
 	return func(_ *starlark.Thread, moduleID string) (starlark.StringDict, error) {
-		if interpreter.moduleCache.IsLoadInProgress(moduleID) {
+		var loadInProgress *startosis_modules.ModuleCacheEntry
+		entry, found := interpreter.moduleGlobalsCache[moduleID]
+		if found && entry == loadInProgress {
 			return nil, startosis_errors.NewInterpretationError("There is a cycle in the load graph")
-		}
-
-		entry, found := interpreter.moduleCache.Get(moduleID)
-		if found {
+		} else if found {
 			return entry.GetGlobalVariables(), entry.GetError()
 		}
 
-		interpreter.moduleCache.SetLoadInProgress(moduleID)
-		defer interpreter.moduleCache.LoadFinished(moduleID)
+		interpreter.moduleGlobalsCache[moduleID] = loadInProgress
+		shouldUnsetLoadInProgress := true
+		defer func() {
+			if shouldUnsetLoadInProgress {
+				delete(interpreter.moduleGlobalsCache, moduleID)
+			}
+		}()
 
 		// Load it.
-		contents, err := interpreter.moduleManager.GetModuleContentProvider(moduleID)
+		contents, err := interpreter.moduleManager.GetModuleContents(moduleID)
 		if err != nil {
 			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while loading the module '%v'", moduleID))
 		}
@@ -101,8 +108,9 @@ func (interpreter *StartosisInterpreter) makeLoad(instructionsQueue *[]kurtosis_
 
 		// Update the cache.
 		entry = startosis_modules.NewModuleCacheEntry(globalVariables, err)
-		interpreter.moduleCache.Add(moduleID, entry)
+		interpreter.moduleGlobalsCache[moduleID] = entry
 
+		shouldUnsetLoadInProgress = false
 		return entry.GetGlobalVariables(), entry.GetError()
 	}
 }

@@ -25,7 +25,7 @@ func NewGitModuleManager(moduleDir string, tmpDir string) *GitModuleManager {
 	}
 }
 
-func (moduleManager *GitModuleManager) GetModuleContentProvider(moduleURL string) (string, error) {
+func (moduleManager *GitModuleManager) GetModuleContents(moduleURL string) (string, error) {
 	parsedURL, err := parseGitURL(moduleURL)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while parsing URL '%v'", moduleURL)
