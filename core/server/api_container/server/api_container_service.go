@@ -206,12 +206,12 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 	logrus.Debugf("Successfully interpreted Startosis script into a series of Kurtosis instructions: \n%v",
 		generatedInstructionsList)
 
-	validationError := apicService.startosisValidator.Validate(ctx, generatedInstructionsList)
-	if validationError != nil {
+	err := apicService.startosisValidator.Validate(ctx, generatedInstructionsList)
+	if err != nil {
 		return binding_constructors.NewExecuteStartosisScriptResponse(
 			string(interpretationOutput),
 			noInterpretationError,
-			validationError.Error(),
+			err.Error(),
 			noExecutionError,
 		), nil
 	}
