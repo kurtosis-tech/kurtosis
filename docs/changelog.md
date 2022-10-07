@@ -16,12 +16,14 @@
 
 ### Features
 * Implement Startosis add_service image pull validation
+* Startosis scripts can now be run from the CLI: `kurtosis startosis exec path/to/script/file --enclave-id <ENCLAVE_ID>`
 * Implemented Startosis load method to load from Github repositories
 
 ### Fixes
 * Fix IP address placeholder injected by default in Startosis instructions. It used to be empty, which is invalid now
 it is set to `KURTOSIS_IP_ADDR_PLACEHOLDER`
 * Fix enclave inspect CLI command error when there are additional port bindings
+* Fix a stale message the run-all-test-against-latest-code script
 
 ### Removals
 * Removes version constants within launchers and cli in favor of centralized generated version constant

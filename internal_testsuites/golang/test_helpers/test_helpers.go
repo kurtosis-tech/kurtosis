@@ -45,11 +45,33 @@ const (
 	fileServerPrivatePortNum = 80
 
 	waitForStartupTimeBetweenPolls = 500
-	waitForStartupMaxRetries       = 15
-	waitInitialDelayMilliseconds   = 0
-	waitForAvailabilityBodyText    = ""
+	/*
+		NOTE: on 2022-05-16 this failed with the following error so we bumped the num polls to 20.
+
+		time="2022-05-16T23:58:21Z" level=info msg="Sanity-checking that all 4 datastore services added via the module work as expected..."
+		--- FAIL: TestModule (21.46s)
+			module_test.go:81:
+					Error Trace:	module_test.go:81
+					Error:      	Received unexpected error:
+									The service didn't return a success code, even after 15 retries with 1000 milliseconds in between retries
+									 --- at /home/circleci/project/internal_testsuites/golang/test_helpers/test_helpers.go:179 (WaitForHealthy) ---
+									Caused by: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing dial tcp 127.0.0.1:49188: connect: connection refused"
+					Test:       	TestModule
+					Messages:   	An error occurred waiting for the datastore service to become available
+
+		NOTE: On 2022-05-21 this failed again at 20s. I opened the enclave logs and it's weird because nothing is failing and
+		the datastore service is showing itself as up *before* we even start the check-if-available wait. We're in crunch mode
+		so I'm going to bump this up to 30s, but I suspect there's some sort of nondeterministic underlying failure happening.
+	*/
+	waitForStartupMaxRetries     = 30
+	waitInitialDelayMilliseconds = 0
+	waitForAvailabilityBodyText  = ""
 
 	userServiceMountPointForTestFilesArtifact = "/static"
+
+	// datastore server dummy test values
+	testDatastoreKey   = "my-key"
+	testDatastoreValue = "test-value"
 )
 
 var fileServerPortSpec = services.NewPortSpec(
@@ -99,7 +121,7 @@ func AddDatastoreService(
 
 	publicIp := serviceCtx.GetMaybePublicIPAddress()
 	publicPortNum := publicPort.GetNumber()
-	client, clientCloseFunc, err := CreateDatastoreClient(publicIp, publicPortNum)
+	client, clientCloseFunc, err := createDatastoreClient(publicIp, publicPortNum)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(
 			err,
@@ -115,19 +137,54 @@ func AddDatastoreService(
 	return serviceCtx, client, clientCloseFunc, nil
 }
 
-func CreateDatastoreClient(ipAddr string, portNum uint16) (datastore_rpc_api_bindings.DatastoreServiceClient, func(), error) {
-	url := fmt.Sprintf("%v:%v", ipAddr, portNum)
-	conn, err := grpc.Dial(url, grpc.WithInsecure())
+func ValidateDatastoreServiceHealthy(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceId services.ServiceID, portId string) error {
+	serviceCtx, err := enclaveCtx.GetServiceContext(serviceId)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to datastore service on URL '%v'", url)
+		return stacktrace.Propagate(err, "Error retrieving service context for service '%s'", serviceId)
 	}
-	clientCloseFunc := func() {
-		if err := conn.Close(); err != nil {
-			logrus.Warnf("We tried to close the datastore client, but doing so threw an error:\n%v", err)
-		}
+	ipAddr := serviceCtx.GetMaybePublicIPAddress()
+
+	publicPort, found := serviceCtx.GetPublicPorts()[portId]
+	if !found {
+		return stacktrace.Propagate(err, "No public port found for service '%s' and port ID '%s'", serviceId, portId)
 	}
-	client := datastore_rpc_api_bindings.NewDatastoreServiceClient(conn)
-	return client, clientCloseFunc, nil
+
+	datastoreClient, datastoreClientConnCloseFunc, err := createDatastoreClient(
+		ipAddr,
+		publicPort.GetNumber(),
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", serviceId, ipAddr)
+	}
+	defer datastoreClientConnCloseFunc()
+
+	err = WaitForHealthy(context.Background(), datastoreClient, waitForStartupMaxRetries, waitForStartupTimeBetweenPolls)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred waiting for datastore service '%v' to become available", serviceId)
+	}
+
+	upsertArgs := &datastore_rpc_api_bindings.UpsertArgs{
+		Key:   testDatastoreKey,
+		Value: testDatastoreValue,
+	}
+	_, err = datastoreClient.Upsert(ctx, upsertArgs)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred adding the test key to datastore service '%v'", serviceId)
+	}
+
+	getArgs := &datastore_rpc_api_bindings.GetArgs{
+		Key: testDatastoreKey,
+	}
+	getResponse, err := datastoreClient.Get(ctx, getArgs)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the test key from datastore service '%v'", serviceId)
+	}
+
+	actualValue := getResponse.GetValue()
+	if testDatastoreValue != actualValue {
+		return stacktrace.NewError("Datastore service '%v' is storing value '%v' for the test key '%v', which doesn't match the expected value '%v'", serviceId, actualValue, testDatastoreKey, testDatastoreValue)
+	}
+	return nil
 }
 
 func AddAPIService(ctx context.Context, serviceId services.ServiceID, enclaveCtx *enclaves.EnclaveContext, datastorePrivateIp string) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
@@ -172,7 +229,7 @@ func AddAPIServiceToPartition(ctx context.Context, serviceId services.ServiceID,
 	}
 	client := example_api_server_rpc_api_bindings.NewExampleAPIServerServiceClient(conn)
 
-	if err := WaitForHealthy(context.Background(), client, apiWaitForStartupMaxPolls, apiWaitForStartupDelayMilliseconds); err != nil {
+	if err := WaitForHealthy(ctx, client, apiWaitForStartupMaxPolls, apiWaitForStartupDelayMilliseconds); err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the API service to become available")
 	}
 	return serviceCtx, client, clientCloseFunc, nil
@@ -344,4 +401,19 @@ func getFileServerContainerConfig(filesArtifactMountPoints map[services.FilesArt
 		filesArtifactMountPoints,
 	).Build()
 	return containerConfig
+}
+
+func createDatastoreClient(ipAddr string, portNum uint16) (datastore_rpc_api_bindings.DatastoreServiceClient, func(), error) {
+	url := fmt.Sprintf("%v:%v", ipAddr, portNum)
+	conn, err := grpc.Dial(url, grpc.WithInsecure())
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to datastore service on URL '%v'", url)
+	}
+	clientCloseFunc := func() {
+		if err := conn.Close(); err != nil {
+			logrus.Warnf("We tried to close the datastore client, but doing so threw an error:\n%v", err)
+		}
+	}
+	client := datastore_rpc_api_bindings.NewDatastoreServiceClient(conn)
+	return client, clientCloseFunc, nil
 }

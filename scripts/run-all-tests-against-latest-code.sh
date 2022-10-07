@@ -52,13 +52,6 @@ fi
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
-
-echo "The following files will have versions changed to shortened-hash-dirty"
-echo "   cli/cli/kurtosis_cli_version/kurtosis_cli_version.go"
-echo "   core/launcher/api_container_launcher/api_container_launcher.go"
-echo "   engine/launcher/engine_server_launcher/engine_server_launcher.go"
-echo "Please undo the changes if you have to"
-
 if ! bash "${GENERATE_KURTOSIS_VERSION_SCRIPT_PATH}"; then
   echo "Error: Running generating Kurtosis Version '${GENERATE_KURTOSIS_VERSION_SCRIPT_PATH}' failed" >&2
   exit 1

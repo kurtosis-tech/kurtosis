@@ -59,7 +59,7 @@ import {
     ModuleInfo,
     PauseServiceArgs, ServiceInfo, UnloadModuleResponse,
     UnpauseServiceArgs,
-    StartServicesArgs,
+    StartServicesArgs, ExecuteStartosisScriptArgs, ExecuteStartosisScriptResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {should} from "chai";
 import {TemplateAndData} from "./template_and_data";
@@ -209,6 +209,18 @@ export class EnclaveContext {
 
         const moduleCtx: ModuleContext = new ModuleContext(this.backend, moduleId);
         return ok(moduleCtx)
+    }
+
+    public async executeStartosisScript(
+            serializedStartosisScript: string
+        ): Promise<Result<ExecuteStartosisScriptResponse, Error>> {
+        const args = new ExecuteStartosisScriptArgs();
+        args.setSerializedScript(serializedStartosisScript)
+        const resultScriptExecution : Result<ExecuteStartosisScriptResponse, Error> = await this.backend.executeStartosisScript(args)
+        if (resultScriptExecution.isErr()) {
+            return err(new Error(`Unexpected error happened executing Startosis script \n${resultScriptExecution.error}`))
+        }
+        return ok(resultScriptExecution.value)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
