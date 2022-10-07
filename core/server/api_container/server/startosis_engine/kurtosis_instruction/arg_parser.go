@@ -20,6 +20,9 @@ const (
 
 	containerImageNameKey = "container_image_name"
 	usedPortsKey          = "used_ports"
+	entryPointArgsKey     = "entry_point_args"
+	cmdArgsKey            = "cmd_args"
+	envVarArgsKey         = "env_vars"
 
 	portNumberKey   = "number"
 	portProtocolKey = "protocol"
@@ -45,12 +48,37 @@ func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core
 		return nil, interpretationErr
 	}
 
-	privatePorts, interpretationError := parseServiceConfigPrivatePorts(serviceConfig)
-	if interpretationError != nil {
-		return nil, interpretationError
+	privatePorts, interpretationErr := parseServiceConfigPrivatePorts(serviceConfig)
+	if interpretationErr != nil {
+		return nil, interpretationErr
 	}
 
-	return services.NewServiceConfigBuilder(containerImageName).WithPrivatePorts(privatePorts).Build(), nil
+	entryPointArgs, interpretationErr := parseEntryPointArgs(serviceConfig)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	cmdArgs, interpretationErr := parseCmdArgs(serviceConfig)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	envVars, interpretationErr := parseEnvVars(serviceConfig)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	builtConfig := services.NewServiceConfigBuilder(containerImageName).WithPrivatePorts(
+		privatePorts,
+	).WithEntryPointArgs(
+		entryPointArgs,
+	).WithCmdArgs(
+		cmdArgs,
+	).WithEnvVars(
+		envVars,
+	).Build()
+
+	return builtConfig, nil
 }
 
 func parseServiceConfigContainerImageName(serviceConfig *starlarkstruct.Struct) (string, *startosis_errors.InterpretationError) {
@@ -137,6 +165,42 @@ func parsePortProtocol(portProtocol string) (kurtosis_core_rpc_api_bindings.Port
 	return -1, startosis_errors.NewInterpretationError(fmt.Sprintf("Port protocol should be one of %s", strings.Join(port_spec.PortProtocolStrings(), ", ")))
 }
 
+func parseEntryPointArgs(serviceConfig *starlarkstruct.Struct) ([]string, *startosis_errors.InterpretationError) {
+	_, err := serviceConfig.Attr(entryPointArgsKey)
+	if err != nil {
+		return []string{}, nil
+	}
+	entryPointArgs, interpretationErr := extractStringSliceValue(serviceConfig, entryPointArgsKey, serviceConfigArgName)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	return entryPointArgs, nil
+}
+
+func parseCmdArgs(serviceConfig *starlarkstruct.Struct) ([]string, *startosis_errors.InterpretationError) {
+	_, err := serviceConfig.Attr(cmdArgsKey)
+	if err != nil {
+		return []string{}, nil
+	}
+	entryPointArgs, interpretationErr := extractStringSliceValue(serviceConfig, cmdArgsKey, serviceConfigArgName)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	return entryPointArgs, nil
+}
+
+func parseEnvVars(serviceConfig *starlarkstruct.Struct) (map[string]string, *startosis_errors.InterpretationError) {
+	_, err := serviceConfig.Attr(envVarArgsKey)
+	if err != nil {
+		return map[string]string{}, nil
+	}
+	envVarArgs, interpretationErr := extractMapStringStringValue(serviceConfig, envVarArgsKey, serviceConfigArgName)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	return envVarArgs, nil
+}
+
 func extractStringValue(structField *starlarkstruct.Struct, key string, argNameForLogging string) (string, *startosis_errors.InterpretationError) {
 	value, err := structField.Attr(key)
 	if err != nil {
@@ -161,6 +225,30 @@ func extractUint32Value(structField *starlarkstruct.Struct, key string, argNameF
 	return uint32Value, nil
 }
 
+func extractStringSliceValue(structField *starlarkstruct.Struct, key string, argNameForLogging string) ([]string, *startosis_errors.InterpretationError) {
+	value, err := structField.Attr(key)
+	if err != nil {
+		return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Missing value '%s' as element of the struct object '%s'", key, argNameForLogging))
+	}
+	stringSliceValue, interpretationErr := safeCastToStringSlice(value, key)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	return stringSliceValue, nil
+}
+
+func extractMapStringStringValue(structField *starlarkstruct.Struct, key string, argNameForLogging string) (map[string]string, *startosis_errors.InterpretationError) {
+	value, err := structField.Attr(key)
+	if err != nil {
+		return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Missing value '%s' as element of the struct object '%s'", key, argNameForLogging))
+	}
+	mapStringStringValue, interpretationErr := safeCastToMapStringString(value, key)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	return mapStringStringValue, nil
+}
+
 func safeCastToString(expectedValueString starlark.Value, argNameForLogging string) (string, *startosis_errors.InterpretationError) {
 	castValue, ok := expectedValueString.(starlark.String)
 	if !ok {
@@ -182,4 +270,44 @@ func safeCastToUint32(expectedValueString starlark.Value, argNameForLogging stri
 	}
 	return uint32(uint64Value), nil
 
+}
+
+func safeCastToStringSlice(expectedValueTuple starlark.Value, argNameForLogging string) ([]string, *startosis_errors.InterpretationError) {
+	listValue, ok := expectedValueTuple.(*starlark.List)
+	if !ok {
+		return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' argument is expected to be a list. Got %s", argNameForLogging, reflect.TypeOf(expectedValueTuple)))
+	}
+	var castValue []string
+	tupleIterator := listValue.Iterate()
+	var value starlark.Value
+	for tupleIterator.Next(&value) {
+		stringValue, ok := value.(starlark.String)
+		if !ok {
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' in tuple '%s' is expected to be strings. Got %s", value.String(), argNameForLogging, reflect.TypeOf(value)))
+		}
+		castValue = append(castValue, stringValue.GoString())
+	}
+	return castValue, nil
+}
+
+func safeCastToMapStringString(expectedValue starlark.Value, argNameForLogging string) (map[string]string, *startosis_errors.InterpretationError) {
+	dictValue, ok := expectedValue.(*starlark.Dict)
+	if !ok {
+		return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' argument is expected to be a dict. Got %s", argNameForLogging, reflect.TypeOf(expectedValue)))
+	}
+	castValue := make(map[string]string)
+	for _, item := range dictValue.Items() {
+		key := item[0]
+		stringKey, ok := key.(starlark.String)
+		if !ok {
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' key in dict '%s' is expected to be a string. Got %s", key.String(), argNameForLogging, reflect.TypeOf(key)))
+		}
+		value := item[1]
+		stringValue, ok := value.(starlark.String)
+		if !ok {
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' value in dict '%s' is expected to be a string. Got %s", value.String(), argNameForLogging, reflect.TypeOf(value)))
+		}
+		castValue[stringKey.GoString()] = stringValue.GoString()
+	}
+	return castValue, nil
 }

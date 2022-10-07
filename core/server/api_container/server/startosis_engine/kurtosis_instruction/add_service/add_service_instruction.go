@@ -2,6 +2,7 @@ package add_service
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -12,13 +13,19 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
+	"regexp"
+	"strings"
 )
 
 const (
 	AddServiceBuiltinName = "add_service"
 
-	serviceIdArgName     = "service_id"
-	serviceConfigArgName = "service_config"
+	serviceIdArgName          = "service_id"
+	serviceConfigArgName      = "service_config"
+	ipAddressReplacementRegex = "(?P<all>\\{\\{(?P<service_id>[a-zAZ0-9-_]*)\\.ip_address\\}\\})"
+
+	unlimitedMatches = -1
+	singleMatch      = 1
 )
 
 func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -30,7 +37,11 @@ func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtosi
 		}
 		addServiceInstruction := NewAddServiceInstruction(serviceNetwork, getPosition(thread), serviceId, serviceConfig)
 		*instructionsQueue = append(*instructionsQueue, addServiceInstruction)
-		return starlark.None, nil
+		returnValue, interpretationError := makeAddServiceInterpretationReturnValue(serviceId, serviceConfig)
+		if interpretationError != nil {
+			return nil, interpretationError
+		}
+		return returnValue, nil
 	}
 }
 
@@ -82,6 +93,79 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context) error {
 
 func (instruction *AddServiceInstruction) String() string {
 	return instruction.GetCanonicalInstruction()
+}
+
+// TODO test this when we have a mock for service network
+func (instruction *AddServiceInstruction) ReplaceIPAddress() error {
+	entryPointArgs := instruction.serviceConfig.EntrypointArgs
+	for index, value := range entryPointArgs {
+		replacedValue, err := instruction.replaceIPAddressInString(value)
+		if err != nil {
+			return stacktrace.Propagate(err, "Error occurred while replacing IP address in entry point args")
+		}
+		entryPointArgs[index] = replacedValue
+	}
+
+	cmdArgs := instruction.serviceConfig.CmdArgs
+	for index, value := range cmdArgs {
+		replacedValue, err := instruction.replaceIPAddressInString(value)
+		if err != nil {
+			return stacktrace.Propagate(err, "Error occurred while replacing IP address in commands args")
+		}
+		cmdArgs[index] = replacedValue
+	}
+
+	envVars := instruction.serviceConfig.EnvVars
+	for index, value := range envVars {
+		replacedValue, err := instruction.replaceIPAddressInString(value)
+		if err != nil {
+			return stacktrace.Propagate(err, "Error occurred while replacing IP address in env vars")
+		}
+		envVars[index] = replacedValue
+	}
+
+	return nil
+}
+
+// TODO test this when we have a mock for service network
+func (instruction *AddServiceInstruction) replaceIPAddressInString(originalString string) (string, error) {
+	compiledRegex := regexp.MustCompile(ipAddressReplacementRegex)
+	matches := compiledRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
+	replacedString := originalString
+	for _, match := range matches {
+		serviceIDMatchIndex := compiledRegex.SubexpIndex("service_id")
+		serviceID := service.ServiceID(match[serviceIDMatchIndex])
+		ipAddress, found := instruction.serviceNetwork.GetIPAddressForService(serviceID)
+		ipAddressStr := ipAddress.String()
+		if !found {
+			return "", stacktrace.NewError("'%v' depends on the IP address of '%v' but we don't have any registrations for it", instruction.serviceId, serviceID)
+		}
+		allMatchIndex := compiledRegex.SubexpIndex("all")
+		allMatch := match[allMatchIndex]
+		replacedString = strings.Replace(replacedString, allMatch, ipAddressStr, singleMatch)
+	}
+	return replacedString, nil
+}
+
+func makeAddServiceInterpretationReturnValue(serviceID service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) (*starlarkstruct.Struct, *startosis_errors.InterpretationError) {
+	ports := serviceConfig.GetPrivatePorts()
+	startosisPortsDict := starlark.NewDict(len(ports))
+	for portId, port := range ports {
+		portNumberStarlarkValue := starlark.MakeUint(uint(port.GetNumber()))
+		protocolStarlarkValue := starlark.String(port.GetProtocol().String())
+		portStarlarkStringDict := starlark.StringDict{"port": portNumberStarlarkValue, "protocol": protocolStarlarkValue}
+		startosisPortProtocol := starlarkstruct.FromStringDict(starlark.String("port_protocol"), portStarlarkStringDict)
+		err := startosisPortsDict.SetKey(starlark.String(portId), startosisPortProtocol)
+		if err != nil {
+			return nil, startosis_errors.NewInterpretationError("An error occurred while creating the return value of add_service")
+		}
+	}
+	returnValueDict := starlark.StringDict{
+		"ip_address": starlark.String(fmt.Sprintf("{{%v.ip_address}}", serviceID)),
+		"ports":      startosisPortsDict,
+	}
+	returnValueStruct := starlarkstruct.FromStringDict(starlark.String("service"), returnValueDict)
+	return returnValueStruct, nil
 }
 
 func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (service.ServiceID, *kurtosis_core_rpc_api_bindings.ServiceConfig, *startosis_errors.InterpretationError) {
