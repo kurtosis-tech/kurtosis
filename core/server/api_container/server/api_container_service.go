@@ -217,7 +217,7 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 	}
 	logrus.Debugf("Successfully validated Startosis script")
 
-	err := apicService.startosisExecutor.Execute(ctx, generatedInstructionsList)
+	err = apicService.startosisExecutor.Execute(ctx, generatedInstructionsList)
 	if err != nil {
 		return binding_constructors.NewExecuteStartosisScriptResponse(
 			string(interpretationOutput),
