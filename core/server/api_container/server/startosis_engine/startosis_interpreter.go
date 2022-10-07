@@ -38,6 +38,7 @@ type SerializedInterpretationOutput string
 
 func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, moduleContentProvider startosis_modules.ModuleContentProvider) *StartosisInterpreter {
 	return &StartosisInterpreter{
+		mutex:                 &sync.Mutex{},
 		serviceNetwork:        serviceNetwork,
 		moduleContentProvider: moduleContentProvider,
 		moduleGlobalsCache:    make(map[string]*startosis_modules.ModuleCacheEntry),
