@@ -12,30 +12,30 @@ const (
 	githubDomain           = "github.com"
 	httpsSchema            = "https"
 	startosisFileExtension = ".star"
-	urlPathSeparator = "/"
+	urlPathSeparator       = "/"
 )
 
 // ParsedGitURL an object representing a parsed moduleURL
 type ParsedGitURL struct {
 	// moduleAuthor the git of the module (GitHub user or org)
-	moduleAuthor       string
+	moduleAuthor string
 	// moduleName the name of the module
-	moduleName         string
+	moduleName string
 	// gitURL the url ending with `.git` where the module lives
-	gitURL             string
-	// relativeModulePath the relative path to the module this would be /moduleAuthor/moduleName/
-	relativeModulePath string
-	// relativeFilePath the full path of the file relative to the module store /relativeModulePath/path/to/file.star
-	relativeFilePath   string
+	gitURL string
+	// relativeRepoPath the relative path to the repo this would be moduleAuthor/moduleName/
+	relativeRepoPath string
+	// relativeFilePath the full path of the file relative to the module store relativeRepoPath/path/to/file.star
+	relativeFilePath string
 }
 
-func newParsedGitURL(moduleAuthor, moduleName, gitURL, relativeModulePath, relativeFilePath string) *ParsedGitURL {
+func newParsedGitURL(moduleAuthor, moduleName, gitURL, relativeRepoPath, relativeFilePath string) *ParsedGitURL {
 	return &ParsedGitURL{
-		moduleAuthor:       moduleAuthor,
-		moduleName:         moduleName,
-		gitURL:             gitURL,
-		relativeModulePath: relativeModulePath,
-		relativeFilePath:   relativeFilePath,
+		moduleAuthor:     moduleAuthor,
+		moduleName:       moduleName,
+		gitURL:           gitURL,
+		relativeRepoPath: relativeRepoPath,
+		relativeFilePath: relativeFilePath,
 	}
 }
 

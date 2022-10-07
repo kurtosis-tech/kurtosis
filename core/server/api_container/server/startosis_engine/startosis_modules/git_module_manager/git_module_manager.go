@@ -63,7 +63,7 @@ func (moduleManager *GitModuleManager) atomicClone(parsedURL *ParsedGitURL) erro
 		return stacktrace.Propagate(err, "Error creating temporary directory for the repository to be cloned into")
 	}
 	defer os.RemoveAll(tempRepoDirPath)
-	gitClonePath := path.Join(tempRepoDirPath, parsedURL.relativeModulePath)
+	gitClonePath := path.Join(tempRepoDirPath, parsedURL.relativeRepoPath)
 	_, err = git.PlainClone(gitClonePath, false, &git.CloneOptions{URL: parsedURL.gitURL, Progress: io.Discard})
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in cloning git repository '%v' to '%v'", parsedURL.gitURL, gitClonePath)
@@ -71,7 +71,7 @@ func (moduleManager *GitModuleManager) atomicClone(parsedURL *ParsedGitURL) erro
 
 	// Then we move it into the target directory
 	moduleAuthorPath := path.Join(moduleManager.moduleDir, parsedURL.moduleAuthor)
-	modulePath := path.Join(moduleManager.moduleDir, parsedURL.relativeModulePath)
+	modulePath := path.Join(moduleManager.moduleDir, parsedURL.relativeRepoPath)
 	fileMode, err := os.Stat(moduleAuthorPath)
 	if err == nil && !fileMode.IsDir() {
 		return stacktrace.Propagate(err, "Expected '%v' to be a directory but it is something else", moduleAuthorPath)
