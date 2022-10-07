@@ -16,7 +16,7 @@ import (
 	"testing"
 )
 
-var testServiceNetwork service_network.ServiceNetwork = service_network.NewMockServiceNetwork()
+var testServiceNetwork service_network.ServiceNetwork = service_network.NewEmptyMockServiceNetwork()
 
 const testContainerImageName = "kurtosistech/example-datastore-server"
 

@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
+	"net"
 )
 
 const (
@@ -14,6 +15,15 @@ const (
 )
 
 type MockServiceNetwork struct {
+	ipAddresses map[service.ServiceID]net.IP
+}
+
+func NewMockServiceNetwork(ipAddresses map[service.ServiceID]net.IP) *MockServiceNetwork {
+	return &MockServiceNetwork{ipAddresses: ipAddresses}
+}
+
+func NewEmptyMockServiceNetwork() *MockServiceNetwork {
+	return &MockServiceNetwork{}
 }
 
 func (m *MockServiceNetwork) Repartition(ctx context.Context, newPartitionServices map[service_network_types.PartitionID]map[service.ServiceID]bool, newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection, newDefaultConnection partition_topology.PartitionConnection) error {
@@ -61,6 +71,7 @@ func (m *MockServiceNetwork) GetServiceIDs() map[service.ServiceID]bool {
 	panic(unimplementedMsg)
 }
 
-func NewMockServiceNetwork() *MockServiceNetwork {
-	return &MockServiceNetwork{}
+func (m *MockServiceNetwork) GetIPAddressForService(serviceID service.ServiceID) (net.IP, bool) {
+	ipAddress, found := m.ipAddresses[serviceID]
+	return ipAddress, found
 }
