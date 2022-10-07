@@ -26,21 +26,21 @@ const (
 
 type StartosisInterpreter struct {
 	// This is mutex protected as interpreting two different scripts in parallel could potentially cause
-	// problems with the moduleGlobalsCache & moduleManager. Fixing this is quite complicated, which we decided not to do.
+	// problems with the moduleGlobalsCache & moduleContentProvider. Fixing this is quite complicated, which we decided not to do.
 	mutex              *sync.Mutex
 	serviceNetwork     service_network.ServiceNetwork
 	moduleGlobalsCache map[string]*startosis_modules.ModuleCacheEntry
 	// TODO AUTH there will be a leak here in case people with different repo visibility access a module
-	moduleManager startosis_modules.ModuleContentProvider
+	moduleContentProvider startosis_modules.ModuleContentProvider
 }
 
 type SerializedInterpretationOutput string
 
-func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, moduleManager startosis_modules.ModuleContentProvider) *StartosisInterpreter {
+func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, moduleContentProvider startosis_modules.ModuleContentProvider) *StartosisInterpreter {
 	return &StartosisInterpreter{
-		serviceNetwork:     serviceNetwork,
-		moduleManager:      moduleManager,
-		moduleGlobalsCache: make(map[string]*startosis_modules.ModuleCacheEntry),
+		serviceNetwork:        serviceNetwork,
+		moduleContentProvider: moduleContentProvider,
+		moduleGlobalsCache:    make(map[string]*startosis_modules.ModuleCacheEntry),
 	}
 }
 
@@ -80,6 +80,26 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 	return thread, builtins
 }
 
+/*
+   makeLoadFunction This function returns a sequential (not parallel) implementation of `load` in Starlark
+   This function takes in an instructionsQueue, scriptOutputBuffer & returns a closed function that implements Starlark loading, with the custom provider
+
+	instructionsQueue -> the instructions Queue from the parent thread to add instructions to
+	scriptsOutputBuffer -> the scripts output buffer from the parent thread where output form interpreted scripts will be written to
+
+We wrap the function to provide a closure for the above two arguments, as we can't change the signature of the returned function
+
+How does the returned function work?
+1. The function first checks whether a module is currently, loading, if so then there's cycle and it errors immediately,
+2. The function checks then interpreter.modulesGlobalCache for preloaded symbols or previous interpretation errors, if there is either of them it returns
+3. At this point this is a new module for this instance of the interpreter, we set load to in progress (this is useful for cycle detection).
+5. We defer undo the loading in case there is a failure loading the contents of the module. We don't want it to be the loading state as the next call to load the module would incorrectly return a cycle error.
+6. We then load the contents of the module file using a custom provider which fetches Git repos.
+7. After we have the contents of the module, we create a Starlark thread, and call ExecFile on that thread, which interprets the other module and returns its symbols
+8. At this point we cache the symbols from the loaded module
+9. We now return the contents of the module and any interpretation errors
+This function is recursive in the sense, to load a module that loads modules we call the same function
+*/
 func (interpreter *StartosisInterpreter) makeLoadFunction(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, scriptOutputBuffer *bytes.Buffer) func(_ *starlark.Thread, moduleID string) (starlark.StringDict, error) {
 	// A nil entry to indicate that a load is in progress
 	return func(_ *starlark.Thread, moduleID string) (starlark.StringDict, error) {
@@ -100,7 +120,7 @@ func (interpreter *StartosisInterpreter) makeLoadFunction(instructionsQueue *[]k
 		}()
 
 		// Load it.
-		contents, err := interpreter.moduleManager.GetModuleContents(moduleID)
+		contents, err := interpreter.moduleContentProvider.GetModuleContents(moduleID)
 		if err != nil {
 			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while loading the module '%v'", moduleID))
 		}
