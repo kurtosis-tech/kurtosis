@@ -1,4 +1,4 @@
-package git_module_manager
+package git_module_content_provider
 
 import (
 	"github.com/stretchr/testify/require"
@@ -23,7 +23,7 @@ func TestStartosisInterpreter_GitModuleManagerSucceedsForExistentModule(t *testi
 	gitModuleManager := NewGitModuleManager(moduleDir, moduleTmpDir)
 
 	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star"
-	contents, err := gitModuleManager.GetModule(sampleStartosisModule)
+	contents, err := gitModuleManager.GetModuleContentProvider(sampleStartosisModule)
 	require.Nil(t, err)
 	require.Equal(t, "a = \"World!\"\n", contents)
 }
@@ -41,8 +41,6 @@ func TestStartosisInterpreter_GitModuleManagerFailsForNonExistentModule(t *testi
 	gitModuleManager := NewGitModuleManager(moduleDir, moduleTmpDir)
 	nonExistentModulePath := "github.com/kurtosis-tech/non-existent-startosis-load/sample.star"
 
-	_, err = gitModuleManager.GetModule(nonExistentModulePath)
+	_, err = gitModuleManager.GetModuleContentProvider(nonExistentModulePath)
 	require.NotNil(t, err)
 }
-
-

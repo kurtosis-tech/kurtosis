@@ -27,12 +27,12 @@ type StartosisInterpreter struct {
 	serviceNetwork service_network.ServiceNetwork
 	// TODO AUTH there will be a leak here in case people with different repo visibility access a module
 	moduleCache   *startosis_modules.ModuleCache
-	moduleManager startosis_modules.ModuleManager
+	moduleManager startosis_modules.ModuleContentProvider
 }
 
 type SerializedInterpretationOutput string
 
-func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, moduleManager startosis_modules.ModuleManager) *StartosisInterpreter {
+func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, moduleManager startosis_modules.ModuleContentProvider) *StartosisInterpreter {
 	return &StartosisInterpreter{
 		serviceNetwork: serviceNetwork,
 		moduleManager:  moduleManager,
@@ -91,7 +91,7 @@ func (interpreter *StartosisInterpreter) makeLoad(instructionsQueue *[]kurtosis_
 		defer interpreter.moduleCache.LoadFinished(moduleID)
 
 		// Load it.
-		contents, err := interpreter.moduleManager.GetModule(moduleID)
+		contents, err := interpreter.moduleManager.GetModuleContentProvider(moduleID)
 		if err != nil {
 			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while loading the module '%v'", moduleID))
 		}

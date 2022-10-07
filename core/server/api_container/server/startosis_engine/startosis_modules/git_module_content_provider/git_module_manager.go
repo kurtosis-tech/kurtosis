@@ -1,4 +1,4 @@
-package git_module_manager
+package git_module_content_provider
 
 import (
 	"github.com/go-git/go-git/v5"
@@ -25,7 +25,7 @@ func NewGitModuleManager(moduleDir string, tmpDir string) *GitModuleManager {
 	}
 }
 
-func (moduleManager *GitModuleManager) GetModule(moduleURL string) (string, error) {
+func (moduleManager *GitModuleManager) GetModuleContentProvider(moduleURL string) (string, error) {
 	parsedURL, err := parseGitURL(moduleURL)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while parsing URL '%v'", moduleURL)

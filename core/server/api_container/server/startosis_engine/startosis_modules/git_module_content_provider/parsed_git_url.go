@@ -1,4 +1,4 @@
-package git_module_manager
+package git_module_content_provider
 
 import (
 	"fmt"

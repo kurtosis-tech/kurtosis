@@ -10,7 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/mock_module_manager"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/mock_module_content_provider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -22,7 +22,7 @@ const testContainerImageName = "kurtosistech/example-datastore-server"
 
 func TestStartosisInterpreter_SimplePrintScript(t *testing.T) {
 	testString := "Hello World!"
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	moduleManager := mock_module_content_provider.NewEmptyMockModuleProvider()
 	startosisInterpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	interpreter := startosisInterpreter
 	script := `
@@ -39,7 +39,7 @@ print("` + testString + `")
 }
 
 func TestStartosisInterpreter_ScriptFailingSingleError(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	moduleManager := mock_module_content_provider.NewEmptyMockModuleProvider()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 print("Starting Startosis script!")
@@ -61,7 +61,7 @@ unknownInstruction()
 }
 
 func TestStartosisInterpreter_ScriptFailingMultipleErrors(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	moduleManager := mock_module_content_provider.NewEmptyMockModuleProvider()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 print("Starting Startosis script!")
@@ -88,7 +88,7 @@ unknownInstruction2()
 }
 
 func TestStartosisInterpreter_ScriptFailingSyntaxError(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	moduleManager := mock_module_content_provider.NewEmptyMockModuleProvider()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 print("Starting Startosis script!")
@@ -109,7 +109,7 @@ load("otherScript.start") # fails b/c load takes in at least 2 args
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstruction(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	moduleManager := mock_module_content_provider.NewEmptyMockModuleProvider()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 print("Starting Startosis script!")
@@ -155,7 +155,7 @@ Adding service example-datastore-server
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionMissingContainerName(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	moduleManager := mock_module_content_provider.NewEmptyMockModuleProvider()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 print("Starting Startosis script!")
@@ -187,7 +187,7 @@ add_service(service_id = service_id, service_config = service_config)
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionTypoInProtocol(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	moduleManager := mock_module_content_provider.NewEmptyMockModuleProvider()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 print("Starting Startosis script!")
@@ -218,7 +218,7 @@ add_service(service_id = service_id, service_config = service_config)
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionPortNumberAsString(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	moduleManager := mock_module_content_provider.NewEmptyMockModuleProvider()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 print("Starting Startosis script!")
@@ -249,7 +249,7 @@ add_service(service_id = service_id, service_config = service_config)
 }
 
 func TestStartosisInterpreter_ValidScriptWithMultipleInstructions(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	moduleManager := mock_module_content_provider.NewEmptyMockModuleProvider()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 print("Starting Startosis script!")
@@ -344,7 +344,7 @@ func TestStartosisInterpreter_SimpleLoading(t *testing.T) {
 	seedModules := map[string]string{
 		barModulePath: "a=\"World!\"",
 	}
-	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
+	moduleManager := mock_module_content_provider.NewMockModuleContentProvider(seedModules)
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 load("` + barModulePath + `", "a")
@@ -367,7 +367,7 @@ func TestStartosisInterpreter_TransitiveLoading(t *testing.T) {
 	seedModules[moduleDooWhichLoadsModuleBar] = `load("` + moduleBar + `", "a")
 b = "Hello " + a
 `
-	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
+	moduleManager := mock_module_content_provider.NewMockModuleContentProvider(seedModules)
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 load("` + moduleDooWhichLoadsModuleBar + `", "b")
@@ -393,7 +393,7 @@ a = "Hello" + b`
 	seedModules[moduleDooLoadsModuleBar] = `load("` + moduleBarLoadsModuleDoo + `", "a")
 b = "Hello " + a
 `
-	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
+	moduleManager := mock_module_content_provider.NewMockModuleContentProvider(seedModules)
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 load("` + moduleDooLoadsModuleBar + `", "b")
@@ -412,7 +412,7 @@ print(b)
 }
 
 func TestStartosisInterpreter_FailsOnNonExistentModule(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	moduleManager := mock_module_content_provider.NewEmptyMockModuleProvider()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	nonExistentModule := "github.com/non/existent/module.star"
 	script := `
@@ -432,7 +432,7 @@ print(b)
 }
 
 func TestStartosisInterpreter_LoadingAValidModuleThatPreviouslyFailedToLoadSucceeds(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	moduleManager := mock_module_content_provider.NewEmptyMockModuleProvider()
 	barModulePath := "github.com/foo/bar/lib.star"
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
@@ -468,7 +468,7 @@ service_config = struct(
 	}
 )
 `
-	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
+	moduleManager := mock_module_content_provider.NewMockModuleContentProvider(seedModules)
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 load("` + moduleBar + `", "service_id", "service_config")
@@ -529,7 +529,7 @@ def deploy_datastore_services():
 		)
         add_service(service_id = unique_service_id, service_config = service_config)
 `
-	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
+	moduleManager := mock_module_content_provider.NewMockModuleContentProvider(seedModules)
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 load("` + moduleBar + `", "deploy_datastore_services")
@@ -617,7 +617,7 @@ service_config = struct(
 print("Adding service " + service_id)
 add_service(service_id = service_id, service_config = service_config)
 `
-	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
+	moduleManager := mock_module_content_provider.NewMockModuleContentProvider(seedModules)
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 load("` + moduleBar + `", "service_id", "service_config")
@@ -668,7 +668,7 @@ service_config = struct(
 print("Adding service " + service_id)
 add_service(service_id = service_id, service_config = service_config)
 `
-	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
+	moduleManager := mock_module_content_provider.NewMockModuleContentProvider(seedModules)
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	scriptA := `
 load("` + moduleBar + `", "service_id", "service_config")
