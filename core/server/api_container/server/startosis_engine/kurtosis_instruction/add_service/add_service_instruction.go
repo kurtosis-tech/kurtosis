@@ -97,9 +97,10 @@ func (instruction *AddServiceInstruction) String() string {
 
 // TODO test this when we have a mock for service network
 func (instruction *AddServiceInstruction) ReplaceIPAddress() error {
+	serviceIDStr := string(instruction.serviceId)
 	entryPointArgs := instruction.serviceConfig.EntrypointArgs
 	for index, value := range entryPointArgs {
-		replacedValue, err := instruction.replaceIPAddressInString(value)
+		replacedValue, err := replaceIPAddressInString(value, instruction.serviceNetwork, serviceIDStr)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in entry point args")
 		}
@@ -108,7 +109,7 @@ func (instruction *AddServiceInstruction) ReplaceIPAddress() error {
 
 	cmdArgs := instruction.serviceConfig.CmdArgs
 	for index, value := range cmdArgs {
-		replacedValue, err := instruction.replaceIPAddressInString(value)
+		replacedValue, err := replaceIPAddressInString(value, instruction.serviceNetwork, serviceIDStr)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in commands args")
 		}
@@ -117,7 +118,7 @@ func (instruction *AddServiceInstruction) ReplaceIPAddress() error {
 
 	envVars := instruction.serviceConfig.EnvVars
 	for index, value := range envVars {
-		replacedValue, err := instruction.replaceIPAddressInString(value)
+		replacedValue, err := replaceIPAddressInString(value, instruction.serviceNetwork, serviceIDStr)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in env vars")
 		}
@@ -127,18 +128,17 @@ func (instruction *AddServiceInstruction) ReplaceIPAddress() error {
 	return nil
 }
 
-// TODO test this when we have a mock for service network
-func (instruction *AddServiceInstruction) replaceIPAddressInString(originalString string) (string, error) {
+func replaceIPAddressInString(originalString string, network service_network.ServiceNetwork, serviceIDForLogging string) (string, error) {
 	compiledRegex := regexp.MustCompile(ipAddressReplacementRegex)
 	matches := compiledRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
 	replacedString := originalString
 	for _, match := range matches {
 		serviceIDMatchIndex := compiledRegex.SubexpIndex("service_id")
 		serviceID := service.ServiceID(match[serviceIDMatchIndex])
-		ipAddress, found := instruction.serviceNetwork.GetIPAddressForService(serviceID)
+		ipAddress, found := network.GetIPAddressForService(serviceID)
 		ipAddressStr := ipAddress.String()
 		if !found {
-			return "", stacktrace.NewError("'%v' depends on the IP address of '%v' but we don't have any registrations for it", instruction.serviceId, serviceID)
+			return "", stacktrace.NewError("'%v' depends on the IP address of '%v' but we don't have any registrations for it", serviceIDForLogging, serviceID)
 		}
 		allMatchIndex := compiledRegex.SubexpIndex("all")
 		allMatch := match[allMatchIndex]
