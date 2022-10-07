@@ -13,10 +13,10 @@ const (
 
 func TestStartosisInterpreter_GitModuleManagerSucceedsForExistentModule(t *testing.T) {
 	moduleDir, err := os.MkdirTemp("", moduleDirRelPath)
-	require.NotNil(t, err)
+	require.Nil(t, err)
 	defer os.RemoveAll(moduleDir)
 	moduleTmpDir, err := os.MkdirTemp("", moduleTmpDirRelPath)
-	require.NotNil(t, err)
+	require.Nil(t, err)
 	defer os.RemoveAll(moduleTmpDir)
 
 	gitModuleManager := NewGitModuleContentProvider(moduleDir, moduleTmpDir)
@@ -29,10 +29,10 @@ func TestStartosisInterpreter_GitModuleManagerSucceedsForExistentModule(t *testi
 
 func TestStartosisInterpreter_GitModuleManagerFailsForNonExistentModule(t *testing.T) {
 	moduleDir, err := os.MkdirTemp("", moduleDirRelPath)
-	require.NotNil(t, err)
+	require.Nil(t, err)
 	defer os.RemoveAll(moduleDir)
 	moduleTmpDir, err := os.MkdirTemp("", moduleTmpDirRelPath)
-	require.NotNil(t, err)
+	require.Nil(t, err)
 	defer os.RemoveAll(moduleTmpDir)
 
 	gitModuleManager := NewGitModuleContentProvider(moduleDir, moduleTmpDir)
