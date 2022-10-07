@@ -124,6 +124,7 @@ NewDockerManager
 Creates a new Docker manager for manipulating the Docker engine using the given client.
 
 Args:
+
 	dockerClient: The Docker client that will be used when interacting with the underlying Docker engine the Docker engine.
 */
 func NewDockerManager(dockerClient *client.Client) *DockerManager {
@@ -137,6 +138,7 @@ CreateNetwork
 Creates a new Docker network with the given parameters; does nothing if a network with the given name already exists.
 
 Args:
+
 	context: The Context that this request is running in (useful for cancellation)
 	name: The name to give the new Docker network
 	subnetMask: The subnet mask defining allowed IPs for the Docker network
@@ -144,6 +146,7 @@ Args:
 	labels: Labels to give the network object
 
 Returns:
+
 	id: The Docker-managed ID of the network
 */
 func (manager DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP net.IP, labels map[string]string) (id string, err error) {
@@ -235,9 +238,11 @@ RemoveNetwork
 Removes the Docker network with the given id
 
 NOTE: All containers attached to the network must be shut off or disconnected, else the call will fail!
+
 	otherwise, the remove call will fail)
 
 Args:
+
 	context: The Context that this request is running in (useful for cancellation)
 	networkId: ID of Docker network to remove
 */
@@ -253,6 +258,7 @@ CreateVolume
 Creates a Docker volume identified by the given name.
 
 Args:
+
 	context: The Context that this request is running in (useful for cancellation)
 	volumeName: The unique identifier used by Docker to identify this volume (NOTE: at time of writing, Docker doesn't
 		even give volumes IDs - this name is all there is)
@@ -284,6 +290,7 @@ GetVolumesByName
 Searches for volumes whose names match the given one
 
 Args:
+
 	context: The Context that this request is running in (useful for cancellation)
 	volumeName: The unique identifier used by Docker to identify this volume (NOTE: at time of writing, Docker doesn't
 		even give volumes IDs - this name is all there is)
@@ -332,6 +339,7 @@ RemoveVolume
 Removes a Docker volume identified by the given name, deleting it permanently
 
 Args:
+
 	context: The Context that this request is running in (useful for cancellation)
 	volumeName: The unique identifier used by Docker to identify the volume that will get removed
 */
@@ -355,6 +363,7 @@ CreateAndStartContainer
 Creates a Docker container with the given args and starts it.
 
 Returns:
+
 	containerId: The Docker container ID of the newly-created container
 	hostMachinePortBindings: For every port in the args' "usedPorts" object that has publishing turned on, an entry
 		will be generated in this map with the binding on the host machine where the port can be found
@@ -373,7 +382,7 @@ func (manager DockerManager) CreateAndStartContainer(
 
 	err := manager.FetchImage(ctx, dockerImage)
 	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred fetching image %v", dockerImage)
+		return "", nil, stacktrace.Propagate(err, "An error occurred fetching image '%v'", dockerImage)
 	}
 
 	idFilterArgs := filters.NewArgs(filters.KeyValuePair{
@@ -575,7 +584,8 @@ func (manager DockerManager) CreateAndStartContainer(
 GetContainerIP
 Gets the container's IP on a given network
 NOTE: Yes, it's a testament to how poorly-designed the Docker API is that we need to use network name here even though
- everywhere else in the Docker API uses network ID
+
+	everywhere else in the Docker API uses network ID
 */
 func (manager DockerManager) GetContainerIP(ctx context.Context, networkName string, containerId string) (string, error) {
 	resp, err := manager.dockerClient.ContainerInspect(ctx, containerId)
@@ -609,6 +619,7 @@ StopContainer
 Stops the container with the given container ID, waiting for the provided timeout before forcefully terminating the container
 
 Args:
+
 	context: The context that the stopping runs in (useful for cancellation)
 	containerId: ID of Docker container to stop
 	timeout: How long to wait for container stoppage before throwing an error
@@ -626,6 +637,7 @@ KillContainer
 Kills the container with the given ID if it's running, giving it no opportunity to gracefully exit
 
 Args:
+
 	context: The context that the kill runs in
 	containerId: ID of Docker container to kill
 */
@@ -647,6 +659,7 @@ RemoveContainer
 Removes the container with the given ID, deleting it permanently
 
 Args:
+
 	context: The context that the removal runs in
 	containerId: ID of Docker container to remove
 */
@@ -667,10 +680,12 @@ WaitForExit
 Blocks until the given container exits or the context is cancelled.
 
 Args:
+
 	context: Context the waiting will run in (useful for cancellation)
 	containerId: The ID of the Docker container that should be waited on
 
 Returns:
+
 	exitCode: The exit code of the container if it stopped
 	err: The error if an error occurred waiting for exit
 */
@@ -693,6 +708,7 @@ func (manager DockerManager) WaitForExit(context context.Context, containerId st
 GetContainerLogs gets the logs for the given container as a io.ReadCloser. The caller is responsible for closing the ReadCloser!!!
 
 NOTE: These logs have STDOUT and STDERR multiplexed together, and the 'stdcopy' package needs to be used to
+
 	demultiplex them per https://github.com/moby/moby/issues/32794
 */
 func (manager DockerManager) GetContainerLogs(
@@ -877,7 +893,7 @@ func (manager DockerManager) FetchImage(ctx context.Context, dockerImage string)
 	logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
 	imageExistsLocally, err := manager.isImageAvailableLocally(ctx, dockerImage)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image %v", dockerImage)
+		return stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image '%v'", dockerImage)
 	}
 	logrus.Tracef("Is image available locally?: %v", imageExistsLocally)
 
@@ -885,7 +901,7 @@ func (manager DockerManager) FetchImage(ctx context.Context, dockerImage string)
 		logrus.Tracef("Image doesn't exist locally, so attempting to pull it...")
 		err = manager.PullImage(ctx, dockerImage)
 		if err != nil {
-			return stacktrace.Propagate(err, "Failed to pull Docker image %v from remote image repository", dockerImage)
+			return stacktrace.Propagate(err, "Failed to pull Docker image '%v' from remote image repository", dockerImage)
 		}
 		logrus.Tracef("Image successfully pulled from remote to local")
 	}
@@ -956,7 +972,9 @@ func (manager DockerManager) CopyFromContainer(ctx context.Context, containerId 
 }
 
 // =================================================================================================================
-//                                          INSTANCE HELPER FUNCTIONS
+//
+//	INSTANCE HELPER FUNCTIONS
+//
 // =================================================================================================================
 func (manager DockerManager) isImageAvailableLocally(ctx context.Context, imageName string) (isAvailable bool, err error) {
 	referenceArg := filters.Arg("reference", imageName)
@@ -1003,6 +1021,7 @@ Creates a Docker-Container-To-Host Port mapping, defining how a Container's JSON
 mapped to the host ports.
 
 Args:
+
 	bindMounts: Mapping of (host file) -> (mountpoint on container) that will be mounted at container startup (used when
 		sharing data between the host filesystem - in our case, the test initializer - and a Docker container)
 	volumeMounts: Mapping of (volume name) -> (mountpoint on container) that will be mounted at container startup (used
@@ -1012,7 +1031,6 @@ Args:
 		host machine (if at all)
 	needsToAccessDockerHostMachine: If true, adds a "host.docker.internal:host-gateway" extra host binding, which is necessary
 		for machines that will need to access the machine hosting Docker itself.
-
 */
 func (manager *DockerManager) getContainerHostConfig(
 	addedCapabilities map[ContainerCapability]bool,
