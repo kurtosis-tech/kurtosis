@@ -68,8 +68,8 @@ func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, serializ
 func (interpreter *StartosisInterpreter) buildBindings(threadName string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, scriptOutputBuffer *bytes.Buffer) (*starlark.Thread, starlark.StringDict) {
 	thread := &starlark.Thread{
 		Name:  threadName,
-		Load:  interpreter.makeLoad(instructionsQueue, scriptOutputBuffer),
-		Print: makePrint(scriptOutputBuffer),
+		Load:  interpreter.makeLoadFunction(instructionsQueue, scriptOutputBuffer),
+		Print: makePrintFunction(scriptOutputBuffer),
 	}
 
 	builtins := starlark.StringDict{
@@ -80,7 +80,7 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 	return thread, builtins
 }
 
-func (interpreter *StartosisInterpreter) makeLoad(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, scriptOutputBuffer *bytes.Buffer) func(_ *starlark.Thread, moduleID string) (starlark.StringDict, error) {
+func (interpreter *StartosisInterpreter) makeLoadFunction(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, scriptOutputBuffer *bytes.Buffer) func(_ *starlark.Thread, moduleID string) (starlark.StringDict, error) {
 	// A nil entry to indicate that a load is in progress
 	return func(_ *starlark.Thread, moduleID string) (starlark.StringDict, error) {
 		var loadInProgress *startosis_modules.ModuleCacheEntry
@@ -119,7 +119,7 @@ func (interpreter *StartosisInterpreter) makeLoad(instructionsQueue *[]kurtosis_
 	}
 }
 
-func makePrint(scriptOutputBuffer *bytes.Buffer) func(*starlark.Thread, string) {
+func makePrintFunction(scriptOutputBuffer *bytes.Buffer) func(*starlark.Thread, string) {
 	return func(_ *starlark.Thread, msg string) {
 		// From the Starlark spec, a print statement in Starlark is automatically followed by a newline
 		scriptOutputBuffer.WriteString(msg + "\n")
