@@ -53,6 +53,8 @@ func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, modu
 //   - An error if something unexpected happens (crash independent of the Startosis script). This should be as rare as
 //     possible
 func (interpreter *StartosisInterpreter) Interpret(ctx context.Context, serializedScript string) (SerializedInterpretationOutput, *startosis_errors.InterpretationError, []kurtosis_instruction.KurtosisInstruction) {
+	interpreter.mutex.Lock()
+	defer interpreter.mutex.Unlock()
 	var scriptOutputBuffer bytes.Buffer
 	var instructionsQueue []kurtosis_instruction.KurtosisInstruction
 	thread, builtins := interpreter.buildBindings(starlarkGoThreadName, &instructionsQueue, &scriptOutputBuffer)
