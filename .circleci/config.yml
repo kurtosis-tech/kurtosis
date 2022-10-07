@@ -135,6 +135,9 @@ parameters:
   engine-server-image-filename:
     type: string
     default: "engine-server-image.tgz"
+  startosis-test-script-file-relative-path:
+    type: string
+    default: "internal_testsuites/startosis/ci_tests/startosis_simple_script.star"
 
 
 
@@ -458,6 +461,7 @@ jobs:
           root: .
           paths:
             - "./<< pipeline.parameters.cli-dist-home-relative-dirpath >>"
+            - "./<< pipeline.parameters.startosis-test-script-file-relative-path >>"
 
   build_golang_testsuite:
     executor: ubuntu_vm
@@ -680,6 +684,10 @@ jobs:
       - run: "${KURTOSIS_BINPATH} module exec --enclave-id test-enclave kurtosistech/datastore-army-module --execute-params '{\"numDatastores\":2}'"
       - run: "${KURTOSIS_BINPATH} enclave ls"
       - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"
+
+      # Execute simple startosis script in new enclave
+      - run: "${KURTOSIS_BINPATH} startosis exec --enclave-id test-enclave << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.startosis-test-script-file-relative-path >>"
+
       - run: "${KURTOSIS_BINPATH} enclave stop test-enclave"
       - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"   # Ensure we can still inspect stopped enclaves
       - run: "${KURTOSIS_BINPATH} clean -a"
