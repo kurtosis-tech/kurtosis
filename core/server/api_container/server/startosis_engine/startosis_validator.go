@@ -9,15 +9,13 @@ import (
 )
 
 type StartosisValidator struct {
-	validators []startosis_validator.Validator
+	dockerImagesValidator *startosis_validator.DockerImagesValidator
 }
 
 func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend) *StartosisValidator {
 	dockerImagesValidator := startosis_validator.NewDockerImagesValidator(kurtosisBackend)
 	return &StartosisValidator{
-		validators: []startosis_validator.Validator{
-			dockerImagesValidator,
-		},
+		dockerImagesValidator,
 	}
 }
 
@@ -29,11 +27,9 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 			return stacktrace.Propagate(err, "Error while validating instruction %v", instruction.String())
 		}
 	}
-	for _, validator := range validator.validators {
-		err := validator.Validate(ctx, environment)
-		if err != nil {
-			return stacktrace.Propagate(err, "Error while validating final environment of script")
-		}
+	err := validator.dockerImagesValidator.Validate(ctx, environment)
+	if err != nil {
+		return stacktrace.Propagate(err, "Error while validating final environment of script")
 	}
 	return nil
 }
