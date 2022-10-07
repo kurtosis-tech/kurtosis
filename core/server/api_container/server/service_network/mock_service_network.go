@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	unimplementedMsg = "Method is unimplemented panic"
+	unimplementedMsg = "Method is unimplemented!!!"
 )
 
 type MockServiceNetwork struct {
