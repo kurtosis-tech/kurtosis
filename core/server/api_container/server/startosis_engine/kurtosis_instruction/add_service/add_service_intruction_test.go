@@ -1,6 +1,7 @@
 package add_service
 
 import (
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -8,6 +9,16 @@ import (
 	"github.com/stretchr/testify/require"
 	"net"
 	"testing"
+)
+
+const (
+	testServiceID                   = "test-service-id"
+	testServiceDependence1ServiceID = "test-service-id-1"
+	testServiceDependence1IPAddress = "172.17.13.3"
+	testServiceDependence2ServiceID = "test-service-id-2"
+	testServiceDependence2IPAddress = "172.17.13.45"
+
+	unknownServiceID = "unknown_service"
 )
 
 func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {
@@ -50,30 +61,42 @@ func TestAddServiceInstruction_EntryPointArgsAreReplaced(t *testing.T) {
 		})
 
 	err := addServiceInstruction.ReplaceIPAddress()
-	require.Equal(t, addServiceInstruction.serviceConfig.EntrypointArgs[0], "-- 172.17.3.13")
 	require.Nil(t, err)
-
+	require.Equal(t, addServiceInstruction.serviceConfig.EntrypointArgs[0], "-- 172.17.3.13")
 }
 
 func TestAddServiceInstruction_MultipleOccurrencesOfSameStringReplaced(t *testing.T) {
 	ipAddresses := map[service.ServiceID]net.IP{}
-	ipAddresses["example_service"] = net.ParseIP("172.17.3.13")
+	ipAddresses[testServiceDependence1ServiceID] = net.ParseIP(testServiceDependence1IPAddress)
 	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
-	serviceID := "test service id"
-	originalString := "{{example_service.ip_address}} something in the middle {{example_service.ip_address}}"
-	replacedString, err := replaceIPAddressInString(originalString, serviceNetwork, serviceID)
+	originalString := fmt.Sprintf("{{%v.ip_address}} something in the middle {{%v.ip_address}}", testServiceDependence1ServiceID, testServiceDependence1ServiceID)
+
+	expectedString := fmt.Sprintf("%v something in the middle %v", testServiceDependence1IPAddress, testServiceDependence1IPAddress)
+	replacedString, err := replaceIPAddressInString(originalString, serviceNetwork, testServiceID)
 	require.Nil(t, err)
-	require.Equal(t, "172.17.3.13 something in the middle 172.17.3.13", replacedString)
+	require.Equal(t, expectedString, replacedString)
 }
 
-func TestAddServiceInstruction_MultipleReplacesOfStrings(t *testing.T) {
+func TestAddServiceInstruction_MultipleReplacesOfDifferentStrings(t *testing.T) {
 	ipAddresses := map[service.ServiceID]net.IP{}
-	ipAddresses["example_service"] = net.ParseIP("172.17.3.13")
-	ipAddresses["different_service"] = net.ParseIP("172.17.3.169")
+	ipAddresses[testServiceDependence1ServiceID] = net.ParseIP(testServiceDependence1IPAddress)
+	ipAddresses[testServiceDependence2ServiceID] = net.ParseIP(testServiceDependence2IPAddress)
 	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
-	placeHolderServiceID := "test service id"
-	originalString := "{{example_service.ip_address}} {{different_service.ip_address}} {{example_service.ip_address}}"
-	replacedString, err := replaceIPAddressInString(originalString, serviceNetwork, placeHolderServiceID)
+	originalString := fmt.Sprintf("{{%v.ip_address}} {{%v.ip_address}} {{%v.ip_address}}", testServiceDependence1ServiceID, testServiceDependence2ServiceID, testServiceDependence1ServiceID)
+
+	expectedString := fmt.Sprintf("%v %v %v", testServiceDependence1IPAddress, testServiceDependence2IPAddress, testServiceDependence1IPAddress)
+	replacedString, err := replaceIPAddressInString(originalString, serviceNetwork, testServiceID)
 	require.Nil(t, err)
-	require.Equal(t, "172.17.3.13 172.17.3.169 172.17.3.13", replacedString)
+	require.Equal(t, expectedString, replacedString)
+}
+
+func TestAddServiceInstruction_ReplacementFailsForUnknownServiceID(t *testing.T) {
+	ipAddresses := map[service.ServiceID]net.IP{}
+	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
+	originalString := fmt.Sprintf("{{%v.ip_address}}", unknownServiceID)
+
+	expectedErr := fmt.Sprintf("'%v' depends on the IP address of '%v' but we don't have any registrations for it", testServiceID, unknownServiceID)
+	_, err := replaceIPAddressInString(originalString, serviceNetwork, testServiceID)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), expectedErr)
 }
