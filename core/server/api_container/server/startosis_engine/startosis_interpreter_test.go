@@ -765,8 +765,8 @@ print("The datastore service ip address is " + datastore_service.ip_address)
 	require.Nil(t, interpretationError)
 
 	addServiceInstruction := add_service.NewAddServiceInstruction(
-		nil,
-		*kurtosis_instruction.NewInstructionPosition(13, 32),
+		testServiceNetwork,
+		*kurtosis_instruction.NewInstructionPosition(11, 32),
 		service.ServiceID("example-datastore-server"),
 		services.NewServiceConfigBuilder(
 			testContainerImageName,
@@ -825,7 +825,7 @@ add_service(service_id = client_service_id, service_config = client_service_conf
 
 	dataSourceAddServiceInstruction := add_service.NewAddServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(13, 32),
+		*kurtosis_instruction.NewInstructionPosition(11, 32),
 		service.ServiceID("example-datastore-server"),
 		services.NewServiceConfigBuilder(
 			testContainerImageName,
@@ -841,7 +841,7 @@ add_service(service_id = client_service_id, service_config = client_service_conf
 
 	clientAddServiceInstruction := add_service.NewAddServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(27, 12),
+		*kurtosis_instruction.NewInstructionPosition(23, 12),
 		service.ServiceID("example-datastore-client"),
 		services.NewServiceConfigBuilder(
 			"kurtosistech/example-datastore-client",
