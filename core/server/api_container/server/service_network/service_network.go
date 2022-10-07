@@ -61,4 +61,6 @@ type ServiceNetwork interface {
 		enclave_data_directory.FilesArtifactUUID,
 		error,
 	)
+
+	GetServiceIDs() map[service.ServiceID]bool
 }

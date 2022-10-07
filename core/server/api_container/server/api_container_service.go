@@ -67,7 +67,7 @@ type ApiContainerService struct {
 
 	filesArtifactStore *enclave_data_directory.FilesArtifactStore
 
-	serviceNetwork *service_network.DefaultServiceNetwork
+	serviceNetwork service_network.ServiceNetwork
 
 	moduleStore *module_store.ModuleStore
 
@@ -80,7 +80,7 @@ type ApiContainerService struct {
 
 func NewApiContainerService(
 	filesArtifactStore *enclave_data_directory.FilesArtifactStore,
-	serviceNetwork *service_network.DefaultServiceNetwork,
+	serviceNetwork service_network.ServiceNetwork,
 	moduleStore *module_store.ModuleStore,
 	startosisInterpreter *startosis_engine.StartosisInterpreter,
 	startosisExecutor *startosis_engine.StartosisExecutor,
@@ -296,7 +296,7 @@ func (apicService ApiContainerService) RemoveService(ctx context.Context, args *
 }
 
 func (apicService ApiContainerService) Repartition(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RepartitionArgs) (*emptypb.Empty, error) {
-	// No need to check for dupes here - that happens at the lowest-level call to DefaultServiceNetwork.Repartition (as it should)
+	// No need to check for dupes here - that happens at the lowest-level call to ServiceNetwork.Repartition (as it should)
 	partitionServices := map[service_network_types.PartitionID]map[kurtosis_backend_service.ServiceID]bool{}
 	for partitionIdStr, servicesInPartition := range args.PartitionServices {
 		partitionId := service_network_types.PartitionID(partitionIdStr)
