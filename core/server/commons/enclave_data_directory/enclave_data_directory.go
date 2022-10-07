@@ -46,12 +46,12 @@ func (dir EnclaveDataDirectory) GetFilesArtifactStore() (*FilesArtifactStore, er
 func (dir EnclaveDataDirectory) GetGitModuleManager() (*git_module_manager.GitModuleManager, error) {
 	moduleStoreDirpath := path.Join(dir.absMountDirpath, startosisModuleStoreDirname)
 	if err := ensureDirpathExists(moduleStoreDirpath); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred ensuring the startosis module store dirpath '%v' exists.", moduleStoreDirpath)
+		return nil, stacktrace.Propagate(err, "An error occurred ensuring the Startosis module store dirpath '%v' exists.", moduleStoreDirpath)
 	}
 
 	tempModuleStoreDirpath := path.Join(dir.absMountDirpath, tmpModuleStoreDirname)
 	if err := ensureDirpathExists(tempModuleStoreDirpath); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred ensuring the startosis temporary module store dirpath '%v' exists.", tempModuleStoreDirpath)
+		return nil, stacktrace.Propagate(err, "An error occurred ensuring the Startosis temporary module store dirpath '%v' exists.", tempModuleStoreDirpath)
 	}
 
 	return git_module_manager.NewGitModuleManager(moduleStoreDirpath, tempModuleStoreDirpath), nil

@@ -92,7 +92,7 @@ func runMain() error {
 
 	gitModuleManager, err := enclaveDataDir.GetGitModuleManager()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while creating the git module manager")
+		return stacktrace.Propagate(err, "An error occurred while creating the Git module manager")
 	}
 
 	// TODO Extract into own function
