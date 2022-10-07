@@ -85,8 +85,9 @@ func (instruction *AddServiceInstruction) String() string {
 	return instruction.GetCanonicalInstruction()
 }
 
-func (instruction *AddServiceInstruction) UpdateValidationEnvironment(environment *startosis_validator.ValidatorEnvironment) {
+func (instruction *AddServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
 	environment.AppendRequiredDockerImage(instruction.serviceConfig.ContainerImageName)
+	return nil
 }
 
 func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (service.ServiceID, *kurtosis_core_rpc_api_bindings.ServiceConfig, *startosis_errors.InterpretationError) {
