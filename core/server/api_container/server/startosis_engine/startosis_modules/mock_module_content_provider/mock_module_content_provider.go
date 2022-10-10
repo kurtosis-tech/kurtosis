@@ -14,20 +14,20 @@ func NewMockModuleContentProvider(seedModules map[string]string) *MockModuleCont
 	}
 }
 
-func NewEmptyMockModuleProvider() *MockModuleContentProvider {
+func NewEmptyMockModuleContentProvider() *MockModuleContentProvider {
 	return NewMockModuleContentProvider(
 		map[string]string{},
 	)
 }
 
-func (moduleManager *MockModuleContentProvider) GetModuleContents(moduleID string) (string, error) {
-	contents, found := moduleManager.modules[moduleID]
+func (provider *MockModuleContentProvider) GetModuleContents(moduleID string) (string, error) {
+	contents, found := provider.modules[moduleID]
 	if !found {
 		return "", stacktrace.NewError("Module '%v' not found", moduleID)
 	}
 	return contents, nil
 }
 
-func (moduleManager *MockModuleContentProvider) Add(moduleID string, contents string) {
-	moduleManager.modules[moduleID] = contents
+func (provider *MockModuleContentProvider) Add(moduleID string, contents string) {
+	provider.modules[moduleID] = contents
 }
