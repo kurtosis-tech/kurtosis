@@ -20,9 +20,15 @@ import (
 const (
 	AddServiceBuiltinName = "add_service"
 
-	serviceIdArgName          = "service_id"
-	serviceConfigArgName      = "service_config"
+	serviceIdArgName     = "service_id"
+	serviceConfigArgName = "service_config"
+
 	ipAddressReplacementRegex = "(?P<all>\\{\\{(?P<service_id>[a-zAZ0-9-_]*)\\.ip_address\\}\\})"
+	serviceIdSubgroupName     = "service_id"
+	allSubgroupName           = "all"
+
+	serviceReturnValueStructName  = starlark.String("service")
+	portSpecReturnValueStructName = starlark.String("port_spec")
 
 	unlimitedMatches = -1
 	singleMatch      = 1
@@ -138,14 +144,14 @@ func replaceIPAddressInString(originalString string, network service_network.Ser
 	matches := compiledRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
 	replacedString := originalString
 	for _, match := range matches {
-		serviceIDMatchIndex := compiledRegex.SubexpIndex("service_id")
+		serviceIDMatchIndex := compiledRegex.SubexpIndex(serviceIdSubgroupName)
 		serviceID := service.ServiceID(match[serviceIDMatchIndex])
 		ipAddress, found := network.GetIPAddressForService(serviceID)
 		ipAddressStr := ipAddress.String()
 		if !found {
 			return "", stacktrace.NewError("'%v' depends on the IP address of '%v' but we don't have any registrations for it", serviceIDForLogging, serviceID)
 		}
-		allMatchIndex := compiledRegex.SubexpIndex("all")
+		allMatchIndex := compiledRegex.SubexpIndex(allSubgroupName)
 		allMatch := match[allMatchIndex]
 		replacedString = strings.Replace(replacedString, allMatch, ipAddressStr, singleMatch)
 	}
@@ -159,7 +165,7 @@ func makeAddServiceInterpretationReturnValue(serviceID service.ServiceID, servic
 		portNumber := starlark.MakeUint(uint(port.GetNumber()))
 		portProtocol := starlark.String(port.GetProtocol().String())
 		portSpecStringDict := starlark.StringDict{"port": portNumber, "protocol": portProtocol}
-		portSpecStruct := starlarkstruct.FromStringDict(starlark.String("port_spec"), portSpecStringDict)
+		portSpecStruct := starlarkstruct.FromStringDict(portSpecReturnValueStructName, portSpecStringDict)
 		err := portSpecsDict.SetKey(starlark.String(portId), portSpecStruct)
 		if err != nil {
 			return nil, startosis_errors.NewInterpretationError("An error occurred while creating a port spec for the add instruction return value")
@@ -169,7 +175,7 @@ func makeAddServiceInterpretationReturnValue(serviceID service.ServiceID, servic
 		"ip_address": starlark.String(fmt.Sprintf("{{%v.ip_address}}", serviceID)),
 		"ports":      portSpecsDict,
 	}
-	returnValueStruct := starlarkstruct.FromStringDict(starlark.String("service"), returnValueDict)
+	returnValueStruct := starlarkstruct.FromStringDict(serviceReturnValueStructName, returnValueDict)
 	return returnValueStruct, nil
 }
 
