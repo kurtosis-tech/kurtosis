@@ -77,9 +77,9 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context) error {
 		instruction.serviceId: instruction.serviceConfig,
 	}
 
-	err := instruction.ReplaceIPAddress()
+	err := instruction.replaceIPAddress()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred replacing IP Address with actual values in instruction number '%v'", index)
+		return stacktrace.Propagate(err, "An error occurred replacing IP Address with actual values in add service instruction for service '%v'", instruction.serviceId)
 	}
 
 	// TODO Pull partition from user in Starlark
@@ -101,7 +101,7 @@ func (instruction *AddServiceInstruction) String() string {
 }
 
 // TODO test this when we have a mock for service network
-func (instruction *AddServiceInstruction) ReplaceIPAddress() error {
+func (instruction *AddServiceInstruction) replaceIPAddress() error {
 	serviceIDStr := string(instruction.serviceId)
 	entryPointArgs := instruction.serviceConfig.EntrypointArgs
 	for index, value := range entryPointArgs {

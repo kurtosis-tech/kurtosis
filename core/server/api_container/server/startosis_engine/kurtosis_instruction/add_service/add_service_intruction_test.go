@@ -60,7 +60,7 @@ func TestAddServiceInstruction_EntryPointArgsAreReplaced(t *testing.T) {
 			EntrypointArgs: []string{"-- {{foo_service.ip_address}}"},
 		})
 
-	err := addServiceInstruction.ReplaceIPAddress()
+	err := addServiceInstruction.replaceIPAddress()
 	require.Nil(t, err)
 	require.Equal(t, addServiceInstruction.serviceConfig.EntrypointArgs[0], "-- 172.17.3.13")
 }
