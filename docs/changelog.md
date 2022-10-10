@@ -4,6 +4,7 @@
 * Created the `LogsCollector` object in `container-engine-lib`
 * Added `LogsDatabase` CRUD methods in `Docker` Kurtosis backend
 * Added `LogsCollector` CRUD methods in `Docker` Kurtosis backend
+* Added `ServiceNetwork` (interface), `DefaultServiceNetwork` and `MockServiceNetwork` 
 
 ### Breaking Changes
 * Updated `CreateEngine` method in `container-engine-lib`, removed the `logsCollectorHttpPortNumber` parameter
@@ -13,6 +14,7 @@
   
 ### Changes
 * Untied the logs components containers and volumes creation and removal from the engine's crud in `container-engine-lib`
+* Made some changes to the implementation of the module manager based on some PR comments by Kevin
 
 ### Features
 * Implement Startosis add_service image pull validation
@@ -24,6 +26,7 @@
 it is set to `KURTOSIS_IP_ADDR_PLACEHOLDER`
 * Fix enclave inspect CLI command error when there are additional port bindings
 * Fix a stale message the run-all-test-against-latest-code script
+* Fix bug that creates database while running local unit tests
 
 ### Removals
 * Removes version constants within launchers and cli in favor of centralized generated version constant

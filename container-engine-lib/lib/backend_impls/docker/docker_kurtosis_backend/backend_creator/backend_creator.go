@@ -35,10 +35,6 @@ const (
 func GetLocalDockerKurtosisBackend(
 	optionalApiContainerModeArgs *APIContainerModeArgs,
 ) (backend_interface.KurtosisBackend, error) {
-	db, err := bolt.Open(databaseFilePath, readWritePermissionToDatabase, &bolt.Options{})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred opening local database")
-	}
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker client connected to the local environment")
@@ -50,6 +46,10 @@ func GetLocalDockerKurtosisBackend(
 	// so we can create the free IP address trackers
 	enclaveFreeIpAddrTrackers := map[enclave.EnclaveID]*free_ip_addr_tracker.FreeIpAddrTracker{}
 	if optionalApiContainerModeArgs != nil {
+		db, err := bolt.Open(databaseFilePath, readWritePermissionToDatabase, &bolt.Options{})
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred opening local database")
+		}
 		ctx := optionalApiContainerModeArgs.Context
 		enclaveId := optionalApiContainerModeArgs.EnclaveID
 

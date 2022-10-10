@@ -10,20 +10,20 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/mock_module_manager"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/mock_module_content_provider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
-var testServiceNetwork *service_network.ServiceNetwork = nil
+var testServiceNetwork service_network.ServiceNetwork = service_network.NewMockServiceNetwork()
 
 const testContainerImageName = "kurtosistech/example-datastore-server"
 
 func TestStartosisInterpreter_SimplePrintScript(t *testing.T) {
 	testString := "Hello World!"
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
-	startosisInterpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
+	startosisInterpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	interpreter := startosisInterpreter
 	script := `
 print("` + testString + `")
@@ -39,8 +39,8 @@ print("` + testString + `")
 }
 
 func TestStartosisInterpreter_ScriptFailingSingleError(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 print("Starting Startosis script!")
 
@@ -61,8 +61,8 @@ unknownInstruction()
 }
 
 func TestStartosisInterpreter_ScriptFailingMultipleErrors(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 print("Starting Startosis script!")
 
@@ -88,8 +88,8 @@ unknownInstruction2()
 }
 
 func TestStartosisInterpreter_ScriptFailingSyntaxError(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 print("Starting Startosis script!")
 
@@ -109,8 +109,8 @@ load("otherScript.start") # fails b/c load takes in at least 2 args
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstruction(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 print("Starting Startosis script!")
 
@@ -131,7 +131,7 @@ add_service(service_id = service_id, service_config = service_config)
 	require.Nil(t, interpretationError)
 
 	addServiceInstruction := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(13, 12),
 		"example-datastore-server",
 		services.NewServiceConfigBuilder(
@@ -155,8 +155,8 @@ Adding service example-datastore-server
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionMissingContainerName(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 print("Starting Startosis script!")
 
@@ -187,8 +187,8 @@ add_service(service_id = service_id, service_config = service_config)
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionTypoInProtocol(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 print("Starting Startosis script!")
 
@@ -218,8 +218,8 @@ add_service(service_id = service_id, service_config = service_config)
 }
 
 func TestStartosisInterpreter_ValidSimpleScriptWithInstructionPortNumberAsString(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 print("Starting Startosis script!")
 
@@ -249,8 +249,8 @@ add_service(service_id = service_id, service_config = service_config)
 }
 
 func TestStartosisInterpreter_ValidScriptWithMultipleInstructions(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 print("Starting Startosis script!")
 
@@ -281,7 +281,7 @@ print("Done!")
 	require.Nil(t, interpretationError)
 
 	addServiceInstruction0 := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(22, 26),
 		service.ServiceID("example-datastore-server-0"),
 		services.NewServiceConfigBuilder(
@@ -296,7 +296,7 @@ print("Done!")
 		).Build(),
 	)
 	addServiceInstruction1 := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(22, 26),
 		service.ServiceID("example-datastore-server-1"),
 		services.NewServiceConfigBuilder(
@@ -311,7 +311,7 @@ print("Done!")
 		).Build(),
 	)
 	addServiceInstruction2 := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(22, 26),
 		service.ServiceID("example-datastore-server-2"),
 		services.NewServiceConfigBuilder(
@@ -341,11 +341,11 @@ Done!
 
 func TestStartosisInterpreter_SimpleLoading(t *testing.T) {
 	barModulePath := "github.com/foo/bar/lib.star"
-	seedModules := map[string]string {
+	seedModules := map[string]string{
 		barModulePath: "a=\"World!\"",
 	}
-	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider(seedModules)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 load("` + barModulePath + `", "a")
 print("Hello " + a)
@@ -367,8 +367,8 @@ func TestStartosisInterpreter_TransitiveLoading(t *testing.T) {
 	seedModules[moduleDooWhichLoadsModuleBar] = `load("` + moduleBar + `", "a")
 b = "Hello " + a
 `
-	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider(seedModules)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 load("` + moduleDooWhichLoadsModuleBar + `", "b")
 print(b)
@@ -393,8 +393,8 @@ a = "Hello" + b`
 	seedModules[moduleDooLoadsModuleBar] = `load("` + moduleBarLoadsModuleDoo + `", "a")
 b = "Hello " + a
 `
-	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider(seedModules)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 load("` + moduleDooLoadsModuleBar + `", "b")
 print(b)
@@ -412,8 +412,8 @@ print(b)
 }
 
 func TestStartosisInterpreter_FailsOnNonExistentModule(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	nonExistentModule := "github.com/non/existent/module.star"
 	script := `
 load("` + nonExistentModule + `", "b")
@@ -432,9 +432,9 @@ print(b)
 }
 
 func TestStartosisInterpreter_LoadingAValidModuleThatPreviouslyFailedToLoadSucceeds(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
 	barModulePath := "github.com/foo/bar/lib.star"
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 load("` + barModulePath + `", "a")
 print("Hello " + a)
@@ -444,9 +444,8 @@ print("Hello " + a)
 	_, interpretationError, _ := interpreter.Interpret(context.Background(), script)
 	assert.NotNil(t, interpretationError)
 
-
 	barModuleContents := "a=\"World!\""
-	moduleManager.Add(barModulePath, barModuleContents)
+	moduleContentProvider.Add(barModulePath, barModuleContents)
 	expectedOutput := `Hello World!
 `
 	// assert that second load succeeds
@@ -469,8 +468,8 @@ service_config = struct(
 	}
 )
 `
-	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider(seedModules)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 load("` + moduleBar + `", "service_id", "service_config")
 print("Starting Startosis script!")
@@ -484,7 +483,7 @@ add_service(service_id = service_id, service_config = service_config)
 	require.Nil(t, interpretationError)
 
 	addServiceInstruction := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(6, 12),
 		service.ServiceID("example-datastore-server"),
 		services.NewServiceConfigBuilder(
@@ -530,8 +529,8 @@ def deploy_datastore_services():
 		)
         add_service(service_id = unique_service_id, service_config = service_config)
 `
-	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider(seedModules)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 load("` + moduleBar + `", "deploy_datastore_services")
 print("Starting Startosis script!")
@@ -545,7 +544,7 @@ print("Done!")
 	require.Nil(t, interpretationError)
 
 	addServiceInstruction0 := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(5, 26),
 		service.ServiceID("example-datastore-server-0"),
 		services.NewServiceConfigBuilder(
@@ -560,7 +559,7 @@ print("Done!")
 		).Build(),
 	)
 	addServiceInstruction1 := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(5, 26),
 		service.ServiceID("example-datastore-server-1"),
 		services.NewServiceConfigBuilder(
@@ -575,7 +574,7 @@ print("Done!")
 		).Build(),
 	)
 	addServiceInstruction2 := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(5, 26),
 		service.ServiceID("example-datastore-server-2"),
 		services.NewServiceConfigBuilder(
@@ -618,8 +617,8 @@ service_config = struct(
 print("Adding service " + service_id)
 add_service(service_id = service_id, service_config = service_config)
 `
-	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider(seedModules)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 load("` + moduleBar + `", "service_id", "service_config")
 print("Starting Startosis script!")
@@ -630,7 +629,7 @@ print("Starting Startosis script!")
 	require.Nil(t, interpretationError)
 
 	addServiceInstruction := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(11, 12),
 		service.ServiceID("example-datastore-server"),
 		services.NewServiceConfigBuilder(
@@ -669,14 +668,14 @@ service_config = struct(
 print("Adding service " + service_id)
 add_service(service_id = service_id, service_config = service_config)
 `
-	moduleManager := mock_module_manager.NewMockModuleManager(seedModules)
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider(seedModules)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	scriptA := `
 load("` + moduleBar + `", "service_id", "service_config")
 print("Starting Startosis script!")
 `
 	addServiceInstructionFromScriptA := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(11, 12),
 		service.ServiceID("example-datastore-server"),
 		services.NewServiceConfigBuilder(
@@ -717,7 +716,7 @@ service_config = struct(
 add_service(service_id = service_id, service_config = service_config)
 `
 	addServiceInstructionFromScriptB := add_service.NewAddServiceInstruction(
-		nil,
+		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(13, 12),
 		service.ServiceID("example-datastore-server"),
 		services.NewServiceConfigBuilder(
@@ -741,4 +740,3 @@ Adding service example-datastore-server
 	require.Equal(t, instructions[0], addServiceInstructionFromScriptB)
 	require.Equal(t, expectedOutputFromScriptB, string(scriptOutput))
 }
-

@@ -6,7 +6,7 @@
 package enclave_data_directory
 
 import (
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/git_module_manager"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/git_module_content_provider"
 	"github.com/kurtosis-tech/stacktrace"
 	"path"
 )
@@ -20,6 +20,8 @@ const (
 	startosisModuleStoreDirname = "startosis-modules"
 
 	// The name of the directory INSIDE THE ENCLAVE DATA DIR where temporary modules will be stored
+	// We place the temp folder here so that the move to the final destination is atomic
+	// Move from places outside of the enclave data dir are not atomic as they're over the network
 	tmpModuleStoreDirname = "tmp-startosis-modules"
 )
 
@@ -43,16 +45,16 @@ func (dir EnclaveDataDirectory) GetFilesArtifactStore() (*FilesArtifactStore, er
 	return newFilesArtifactStore(absoluteDirpath, relativeDirpath), nil
 }
 
-func (dir EnclaveDataDirectory) GetGitModuleManager() (*git_module_manager.GitModuleManager, error) {
+func (dir EnclaveDataDirectory) GetGitModuleContentProvider() (*git_module_content_provider.GitModuleContentProvider, error) {
 	moduleStoreDirpath := path.Join(dir.absMountDirpath, startosisModuleStoreDirname)
 	if err := ensureDirpathExists(moduleStoreDirpath); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred ensuring the startosis module store dirpath '%v' exists.", moduleStoreDirpath)
+		return nil, stacktrace.Propagate(err, "An error occurred ensuring the Startosis module store dirpath '%v' exists.", moduleStoreDirpath)
 	}
 
 	tempModuleStoreDirpath := path.Join(dir.absMountDirpath, tmpModuleStoreDirname)
 	if err := ensureDirpathExists(tempModuleStoreDirpath); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred ensuring the startosis temporary module store dirpath '%v' exists.", tempModuleStoreDirpath)
+		return nil, stacktrace.Propagate(err, "An error occurred ensuring the Startosis temporary module store dirpath '%v' exists.", tempModuleStoreDirpath)
 	}
 
-	return git_module_manager.NewGitModuleManager(moduleStoreDirpath, tempModuleStoreDirpath), nil
+	return git_module_content_provider.NewGitModuleContentProvider(moduleStoreDirpath, tempModuleStoreDirpath), nil
 }

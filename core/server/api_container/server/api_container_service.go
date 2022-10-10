@@ -74,7 +74,7 @@ type ApiContainerService struct {
 
 	filesArtifactStore *enclave_data_directory.FilesArtifactStore
 
-	serviceNetwork *service_network.ServiceNetwork
+	serviceNetwork service_network.ServiceNetwork
 
 	moduleStore *module_store.ModuleStore
 
@@ -89,7 +89,7 @@ type ApiContainerService struct {
 
 func NewApiContainerService(
 	filesArtifactStore *enclave_data_directory.FilesArtifactStore,
-	serviceNetwork *service_network.ServiceNetwork,
+	serviceNetwork service_network.ServiceNetwork,
 	moduleStore *module_store.ModuleStore,
 	startosisInterpreter *startosis_engine.StartosisInterpreter,
 	startosisValidator *startosis_engine.StartosisValidator,
