@@ -154,20 +154,20 @@ func replaceIPAddressInString(originalString string, network service_network.Ser
 
 func makeAddServiceInterpretationReturnValue(serviceID service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) (*starlarkstruct.Struct, *startosis_errors.InterpretationError) {
 	ports := serviceConfig.GetPrivatePorts()
-	startosisPortsDict := starlark.NewDict(len(ports))
+	portSpecsDict := starlark.NewDict(len(ports))
 	for portId, port := range ports {
-		portNumberStarlarkValue := starlark.MakeUint(uint(port.GetNumber()))
-		protocolStarlarkValue := starlark.String(port.GetProtocol().String())
-		portStarlarkStringDict := starlark.StringDict{"port": portNumberStarlarkValue, "protocol": protocolStarlarkValue}
-		startosisPortProtocol := starlarkstruct.FromStringDict(starlark.String("port_protocol"), portStarlarkStringDict)
-		err := startosisPortsDict.SetKey(starlark.String(portId), startosisPortProtocol)
+		portNumber := starlark.MakeUint(uint(port.GetNumber()))
+		portProtocol := starlark.String(port.GetProtocol().String())
+		portSpecStringDict := starlark.StringDict{"port": portNumber, "protocol": portProtocol}
+		portSpecStruct := starlarkstruct.FromStringDict(starlark.String("port_spec"), portSpecStringDict)
+		err := portSpecsDict.SetKey(starlark.String(portId), portSpecStruct)
 		if err != nil {
-			return nil, startosis_errors.NewInterpretationError("An error occurred while creating the return value of add_service")
+			return nil, startosis_errors.NewInterpretationError("An error occurred while creating a port spec for the add instruction return value")
 		}
 	}
 	returnValueDict := starlark.StringDict{
 		"ip_address": starlark.String(fmt.Sprintf("{{%v.ip_address}}", serviceID)),
-		"ports":      startosisPortsDict,
+		"ports":      portSpecsDict,
 	}
 	returnValueStruct := starlarkstruct.FromStringDict(starlark.String("service"), returnValueDict)
 	return returnValueStruct, nil
