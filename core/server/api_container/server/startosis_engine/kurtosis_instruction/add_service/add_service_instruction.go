@@ -77,6 +77,8 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context) error {
 		instruction.serviceId: instruction.serviceConfig,
 	}
 
+	instruction.ReplaceIPAddress()
+
 	// TODO Pull partition from user in Starlark
 	serviceSuccessful, serviceFailed, err := instruction.serviceNetwork.StartServices(ctx, serviceConfigMap, service_network_types.PartitionID(""))
 	if err != nil {

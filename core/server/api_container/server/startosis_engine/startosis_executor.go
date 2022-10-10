@@ -3,7 +3,6 @@ package startosis_engine
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/stacktrace"
 	"sync"
 )
@@ -29,7 +28,6 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, instructions []k
 	executor.mutex.Lock()
 	defer executor.mutex.Unlock()
 	for index, instruction := range instructions {
-		err := executor.replaceIPAddressIfAddService(instruction)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred replacing IP Address with actual values in instruction number '%v'", index)
 		}
@@ -39,13 +37,4 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, instructions []k
 		}
 	}
 	return nil
-}
-
-func (executor *StartosisExecutor) replaceIPAddressIfAddService(instruction kurtosis_instruction.KurtosisInstruction) error {
-	addServiceInstruction, ok := instruction.(*add_service.AddServiceInstruction)
-	if !ok {
-		return nil
-	}
-	err := addServiceInstruction.ReplaceIPAddress()
-	return err
 }
