@@ -272,15 +272,15 @@ func safeCastToUint32(expectedValueString starlark.Value, argNameForLogging stri
 
 }
 
-func safeCastToStringSlice(expectedValueTuple starlark.Value, argNameForLogging string) ([]string, *startosis_errors.InterpretationError) {
-	listValue, ok := expectedValueTuple.(*starlark.List)
+func safeCastToStringSlice(expectedValueList starlark.Value, argNameForLogging string) ([]string, *startosis_errors.InterpretationError) {
+	listValue, ok := expectedValueList.(*starlark.List)
 	if !ok {
-		return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' argument is expected to be a list. Got %s", argNameForLogging, reflect.TypeOf(expectedValueTuple)))
+		return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' argument is expected to be a list. Got %s", argNameForLogging, reflect.TypeOf(expectedValueList)))
 	}
 	var castValue []string
-	tupleIterator := listValue.Iterate()
+	listIterator := listValue.Iterate()
 	var value starlark.Value
-	for tupleIterator.Next(&value) {
+	for listIterator.Next(&value) {
 		stringValue, ok := value.(starlark.String)
 		if !ok {
 			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' in list '%s' is expected to be a string. Got %s", value.String(), argNameForLogging, reflect.TypeOf(value)))
