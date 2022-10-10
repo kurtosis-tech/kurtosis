@@ -742,7 +742,7 @@ Adding service example-datastore-server
 }
 
 func TestStartosisInterpreter_AddServiceReturnValueTest(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	moduleManager := mock_module_content_provider.NewEmptyMockModuleContentProvider()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 print("Starting Startosis script!")
@@ -792,7 +792,7 @@ The datastore service ip address is {{example-datastore-server.ip_address}}
 }
 
 func TestStartosisInterpreter_AddServiceWithEnvVarsCmdArgsAndEntryPointArgs(t *testing.T) {
-	moduleManager := mock_module_manager.NewEmptyMockModuleManager()
+	moduleManager := mock_module_content_provider.NewEmptyMockModuleContentProvider()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleManager)
 	script := `
 print("Starting Startosis script!")
