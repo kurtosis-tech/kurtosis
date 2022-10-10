@@ -2,7 +2,6 @@ package startosis_validator
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/stacktrace"
 	"sync"
@@ -18,7 +17,7 @@ func NewDockerImagesValidator(kurtosisBackend *backend_interface.KurtosisBackend
 	}
 }
 
-func (validator *DockerImagesValidator) Validate(ctx context.Context, environment *ValidatorEnvironment) error {
+func (validator *DockerImagesValidator) Validate(ctx context.Context, environment *ValidatorEnvironment) []error {
 	pullErrors := make(chan error, len(environment.requiredDockerImages))
 	var wg sync.WaitGroup
 	for image := range environment.requiredDockerImages {
@@ -27,15 +26,11 @@ func (validator *DockerImagesValidator) Validate(ctx context.Context, environmen
 	}
 	wg.Wait()
 	close(pullErrors)
-	var wrappedErrors error
+	errors := []error{}
 	for pullError := range pullErrors {
-		if wrappedErrors == nil {
-			wrappedErrors = pullError
-		} else {
-			wrappedErrors = fmt.Errorf("%v; %w", pullError, wrappedErrors)
-		}
+		errors = append(errors, pullError)
 	}
-	return wrappedErrors
+	return errors
 }
 
 func fetchImageFromBackend(ctx context.Context, wg *sync.WaitGroup, backend *backend_interface.KurtosisBackend, image string, pullError chan<- error) {

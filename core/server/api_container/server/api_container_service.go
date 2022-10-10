@@ -55,7 +55,10 @@ const (
 
 	noExecutionError      = ""
 	noInterpretationError = ""
-	noValidationError     = ""
+)
+
+var (
+	noValidationErrors = []*kurtosis_core_rpc_api_bindings.StartosisValidationError{}
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -199,30 +202,31 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 		return binding_constructors.NewExecuteStartosisScriptResponse(
 			string(interpretationOutput),
 			potentialInterpretationError.Error(),
-			noValidationError,
+			noValidationErrors,
 			noExecutionError,
 		), nil
 	}
 	logrus.Debugf("Successfully interpreted Startosis script into a series of Kurtosis instructions: \n%v",
 		generatedInstructionsList)
 
-	err := apicService.startosisValidator.Validate(ctx, generatedInstructionsList)
-	if err != nil {
+	// TODO: Abstract this into a ValidationError
+	validationErrors := apicService.startosisValidator.Validate(ctx, generatedInstructionsList)
+	if validationErrors != nil {
 		return binding_constructors.NewExecuteStartosisScriptResponse(
 			string(interpretationOutput),
 			noInterpretationError,
-			err.Error(),
+			validationErrors,
 			noExecutionError,
 		), nil
 	}
 	logrus.Debugf("Successfully validated Startosis script")
 
-	err = apicService.startosisExecutor.Execute(ctx, generatedInstructionsList)
+	err := apicService.startosisExecutor.Execute(ctx, generatedInstructionsList)
 	if err != nil {
 		return binding_constructors.NewExecuteStartosisScriptResponse(
 			string(interpretationOutput),
 			noInterpretationError,
-			noValidationError,
+			noValidationErrors,
 			err.Error(),
 		), nil
 	}
@@ -231,7 +235,7 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 	return binding_constructors.NewExecuteStartosisScriptResponse(
 		string(interpretationOutput),
 		noInterpretationError,
-		noValidationError,
+		noValidationErrors,
 		noExecutionError,
 	), nil
 }

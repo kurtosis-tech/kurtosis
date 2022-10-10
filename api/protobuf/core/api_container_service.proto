@@ -239,7 +239,7 @@ message ExecuteStartosisScriptResponse {
 
   string interpretation_error = 2;
 
-  string validation_error = 3; // TODO(gb): no validation for now, but will be in the future
+  repeated StartosisValidationError validation_errors = 3;
 
   string execution_error = 4;
 }
@@ -469,4 +469,12 @@ message RenderTemplatesToFilesArtifactArgs {
 message RenderTemplatesToFilesArtifactResponse {
   // UUID of the files artifact, for use when referencing it in the future
   string uuid = 1;
+}
+
+// ==============================================================================================
+//                                 Startosis errors
+// ==============================================================================================
+
+message StartosisValidationError {
+  string error = 1;
 }
