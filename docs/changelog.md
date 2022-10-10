@@ -14,6 +14,7 @@
   
 ### Changes
 * Untied the logs components containers and volumes creation and removal from the engine's crud in `container-engine-lib`
+* Made some changes to the implementation of the module manager based on some PR comments by Kevin
 
 ### Features
 * Startosis scripts can now be run from the CLI: `kurtosis startosis exec path/to/script/file --enclave-id <ENCLAVE_ID>`
