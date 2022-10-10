@@ -116,7 +116,7 @@ func (instruction *AddServiceInstruction) replaceIPAddress() error {
 	for index, value := range cmdArgs {
 		replacedValue, err := replaceIPAddressInString(value, instruction.serviceNetwork, serviceIDStr)
 		if err != nil {
-			return stacktrace.Propagate(err, "Error occurred while replacing IP address in commands args")
+			return stacktrace.Propagate(err, "Error occurred while replacing IP address in command args")
 		}
 		cmdArgs[index] = replacedValue
 	}

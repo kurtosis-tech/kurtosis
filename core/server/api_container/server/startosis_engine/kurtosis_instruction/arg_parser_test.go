@@ -46,6 +46,66 @@ func TestSafeCastToString_Failure(t *testing.T) {
 	require.Equal(t, "", output)
 }
 
+func TestSafeCastToStringSlice_Success(t *testing.T) {
+	input := starlark.NewList([]starlark.Value{starlark.String("string_1"), starlark.String("string_2")})
+	output, err := safeCastToStringSlice(input, "test")
+	require.Nil(t, err)
+	require.Equal(t, []string{"string_1", "string_2"}, output)
+}
+
+func TestSafeCastToStringSlice_FailureWrongTypeInsideList(t *testing.T) {
+	input := starlark.NewList([]starlark.Value{starlark.String("string_1"), starlark.MakeInt(42)})
+	output, err := safeCastToStringSlice(input, "test")
+	require.NotNil(t, err)
+	require.Equal(t, "'42' in list 'test' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, []string(nil), output)
+}
+
+func TestSafeCastToStringSlice_FailureNotList(t *testing.T) {
+	input := starlark.MakeInt(42)
+	output, err := safeCastToStringSlice(input, "test")
+	require.NotNil(t, err)
+	require.Equal(t, "'test' argument is expected to be a list. Got starlark.Int", err.Error())
+	require.Equal(t, []string(nil), output)
+}
+
+func TestSafeCastToMapStringString_Success(t *testing.T) {
+	input := starlark.NewDict(1)
+	err := input.SetKey(starlark.String("key"), starlark.String("value"))
+	require.Nil(t, err)
+	output, err := safeCastToMapStringString(input, "test")
+	require.Nil(t, err)
+	require.Equal(t, map[string]string{"key": "value"}, output)
+}
+
+func TestSafeCastToMapStringString_Failure(t *testing.T) {
+	input := starlark.MakeInt(32)
+	output, err := safeCastToMapStringString(input, "test")
+	require.NotNil(t, err)
+	require.Equal(t, "'test' argument is expected to be a dict. Got starlark.Int", err.Error())
+	require.Equal(t, map[string]string(nil), output)
+}
+
+func TestSafeCastToMapStringString_FailureValueIsNotString(t *testing.T) {
+	input := starlark.NewDict(1)
+	err := input.SetKey(starlark.String("key"), starlark.MakeInt(42))
+	require.Nil(t, err)
+	output, err := safeCastToMapStringString(input, "test")
+	require.NotNil(t, err)
+	require.Equal(t, "'42' value in dict 'test' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, map[string]string(nil), output)
+}
+
+func TestSafeCastToMapStringString_FailureKeyIsNotString(t *testing.T) {
+	input := starlark.NewDict(1)
+	err := input.SetKey(starlark.MakeInt(42), starlark.String("value"))
+	require.Nil(t, err)
+	output, err := safeCastToMapStringString(input, "test")
+	require.NotNil(t, err)
+	require.Equal(t, "'42' key in dict 'test' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, map[string]string(nil), output)
+}
+
 func TestExtractStringValueFromStruct_Success(t *testing.T) {
 	dict := starlark.StringDict{}
 	dict["key"] = starlark.String("value")
@@ -102,6 +162,45 @@ func TestExtractUint32ValueFromStruct_FailureWrongType(t *testing.T) {
 	require.NotNil(t, err)
 	require.Equal(t, "'key' argument is expected to be a an integer greater than 0 and lower than 4294967295", err.Error())
 	require.Equal(t, uint32(0), output)
+}
+
+func TestExtractSliceValue_Success(t *testing.T) {
+	dict := starlark.StringDict{}
+	dict["key"] = starlark.NewList([]starlark.Value{starlark.String("test")})
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	output, err := extractStringSliceValue(input, "key", "dict")
+	require.Nil(t, err)
+	require.Equal(t, []string{"test"}, output)
+}
+
+func TestExtractSliceValue_FailureMissing(t *testing.T) {
+	dict := starlark.StringDict{}
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	output, err := extractStringSliceValue(input, "missingKey", "dict")
+	require.NotNil(t, err)
+	require.Equal(t, "Missing value 'missingKey' as element of the struct object 'dict'", err.Error())
+	require.Equal(t, []string(nil), output)
+}
+
+func TestExtractMapStringString_Success(t *testing.T) {
+	subDict := starlark.NewDict(1)
+	err := subDict.SetKey(starlark.String("key"), starlark.String("value"))
+	require.Nil(t, err)
+	dict := starlark.StringDict{}
+	dict["key"] = subDict
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	output, err := extractMapStringStringValue(input, "key", "dict")
+	require.Nil(t, err)
+	require.Equal(t, map[string]string{"key": "value"}, output)
+}
+
+func TestExtractMapStringString_FailureMissing(t *testing.T) {
+	dict := starlark.StringDict{}
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	output, err := extractMapStringStringValue(input, "missingKey", "dict")
+	require.NotNil(t, err)
+	require.Equal(t, "Missing value 'missingKey' as element of the struct object 'dict'", err.Error())
+	require.Equal(t, map[string]string(nil), output)
 }
 
 func TestParsePortProtocol_TCP(t *testing.T) {
@@ -163,4 +262,104 @@ func TestParsePort_FailurePortNumberInvalid(t *testing.T) {
 	require.NotNil(t, err)
 	require.Equal(t, "Port number should be less than or equal to 65535", err.Error())
 	require.Nil(t, output)
+}
+
+func TestParseEntryPointArgs_Success(t *testing.T) {
+	dict := starlark.StringDict{}
+	dict["entry_point_args"] = starlark.NewList([]starlark.Value{starlark.String("hello"), starlark.String("world")})
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	output, err := parseEntryPointArgs(input)
+	require.Nil(t, err)
+	require.Equal(t, []string{"hello", "world"}, output)
+}
+
+func TestParseEntryPointArgs_SuccessOnMissingValue(t *testing.T) {
+	dict := starlark.StringDict{}
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	output, err := parseEntryPointArgs(input)
+	require.Nil(t, err)
+	require.Equal(t, []string{}, output)
+}
+
+func TestParseEntryPointArgs_FailureOnListContainingNonStringValues(t *testing.T) {
+	dict := starlark.StringDict{}
+	dict["entry_point_args"] = starlark.NewList([]starlark.Value{starlark.MakeInt(42)})
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	output, err := parseEntryPointArgs(input)
+	require.NotNil(t, err)
+	require.Equal(t, "'42' in list 'entry_point_args' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, []string(nil), output)
+}
+
+func TestParseCommandArgs_Success(t *testing.T) {
+	dict := starlark.StringDict{}
+	dict["cmd_args"] = starlark.NewList([]starlark.Value{starlark.String("hello"), starlark.String("world")})
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	output, err := parseCmdArgs(input)
+	require.Nil(t, err)
+	require.Equal(t, []string{"hello", "world"}, output)
+}
+
+func TestParseCommandArgs_SuccessOnMissingValue(t *testing.T) {
+	dict := starlark.StringDict{}
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	output, err := parseCmdArgs(input)
+	require.Nil(t, err)
+	require.Equal(t, []string{}, output)
+}
+
+func TestParseCommandArgs_FailureOnListContainingNonStringValues(t *testing.T) {
+	dict := starlark.StringDict{}
+	dict["cmd_args"] = starlark.NewList([]starlark.Value{starlark.MakeInt(42)})
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	output, err := parseCmdArgs(input)
+	require.NotNil(t, err)
+	require.Equal(t, "'42' in list 'cmd_args' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, []string(nil), output)
+}
+
+func TestParseEnvVars_Success(t *testing.T) {
+	subDict := starlark.NewDict(1)
+	err := subDict.SetKey(starlark.String("key"), starlark.String("value"))
+	require.Nil(t, err)
+	dict := starlark.StringDict{}
+	dict["env_vars"] = subDict
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	output, err := parseEnvVars(input)
+	require.Nil(t, err)
+	require.Equal(t, map[string]string{"key": "value"}, output)
+}
+
+func TestParseEnvVars_SuccessOnMissingValue(t *testing.T) {
+	dict := starlark.StringDict{}
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	output, err := parseEnvVars(input)
+	require.Nil(t, err)
+	require.Equal(t, map[string]string{}, output)
+}
+
+func TestParseEnvVars_FailureOnNonStringKey(t *testing.T) {
+	subDict := starlark.NewDict(1)
+	err := subDict.SetKey(starlark.MakeInt(42), starlark.String("value"))
+	require.Nil(t, err)
+	dict := starlark.StringDict{}
+	dict["env_vars"] = subDict
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	output, err := parseEnvVars(input)
+	require.NotNil(t, err)
+	require.Equal(t, "'42' key in dict 'env_vars' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, map[string]string(nil), output)
+}
+
+func TestParseEnvVars_FailureOnNonStringValue(t *testing.T) {
+	subDict := starlark.NewDict(1)
+	err := subDict.SetKey(starlark.String("key"), starlark.MakeInt(42))
+	require.Nil(t, err)
+	dict := starlark.StringDict{}
+	dict["env_vars"] = subDict
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	output, err := parseEnvVars(input)
+	require.NotNil(t, err)
+	require.Equal(t, "'42' value in dict 'env_vars' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, map[string]string(nil), output)
 }

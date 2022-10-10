@@ -283,7 +283,7 @@ func safeCastToStringSlice(expectedValueTuple starlark.Value, argNameForLogging 
 	for tupleIterator.Next(&value) {
 		stringValue, ok := value.(starlark.String)
 		if !ok {
-			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' in tuple '%s' is expected to be strings. Got %s", value.String(), argNameForLogging, reflect.TypeOf(value)))
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' in list '%s' is expected to be a string. Got %s", value.String(), argNameForLogging, reflect.TypeOf(value)))
 		}
 		castValue = append(castValue, stringValue.GoString())
 	}
