@@ -31,13 +31,13 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 			}
 		}
 	}
-	//errors := validator.dockerImagesValidator.Validate(ctx, environment)
-	//if errors != nil {
-	//	propagatedErrors := []*kurtosis_core_rpc_api_bindings.StartosisValidationError{}
-	//	for _, err := range errors {
-	//		propagatedErrors = append(propagatedErrors, binding_constructors.NewStartosisValidationError(stacktrace.Propagate(err, "Error while validating final environment of script").Error()))
-	//	}
-	//	return propagatedErrors
-	//}
+	errors := validator.dockerImagesValidator.Validate(ctx, environment)
+	if errors != nil {
+		propagatedErrors := []*kurtosis_core_rpc_api_bindings.StartosisValidationError{}
+		for _, err := range errors {
+			propagatedErrors = append(propagatedErrors, binding_constructors.NewStartosisValidationError(stacktrace.Propagate(err, "Error while validating final environment of script").Error()))
+		}
+		return propagatedErrors
+	}
 	return nil
 }

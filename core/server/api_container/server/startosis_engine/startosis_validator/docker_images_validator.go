@@ -26,11 +26,14 @@ func (validator *DockerImagesValidator) Validate(ctx context.Context, environmen
 	}
 	wg.Wait()
 	close(pullErrors)
-	errors := []error{}
-	for pullError := range pullErrors {
-		errors = append(errors, pullError)
+	if len(pullErrors) > 0 {
+		errors := []error{}
+		for pullError := range pullErrors {
+			errors = append(errors, pullError)
+		}
+		return errors
 	}
-	return errors
+	return nil
 }
 
 func fetchImageFromBackend(ctx context.Context, wg *sync.WaitGroup, backend *backend_interface.KurtosisBackend, image string, pullError chan<- error) {
