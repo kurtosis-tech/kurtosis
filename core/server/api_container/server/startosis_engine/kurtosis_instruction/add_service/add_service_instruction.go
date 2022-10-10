@@ -73,13 +73,13 @@ func (instruction *AddServiceInstruction) GetCanonicalInstruction() string {
 }
 
 func (instruction *AddServiceInstruction) Execute(ctx context.Context) error {
-	serviceConfigMap := map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig{
-		instruction.serviceId: instruction.serviceConfig,
-	}
-
 	err := instruction.replaceIPAddress()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred replacing IP Address with actual values in add service instruction for service '%v'", instruction.serviceId)
+	}
+
+	serviceConfigMap := map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig{
+		instruction.serviceId: instruction.serviceConfig,
 	}
 
 	// TODO Pull partition from user in Starlark
