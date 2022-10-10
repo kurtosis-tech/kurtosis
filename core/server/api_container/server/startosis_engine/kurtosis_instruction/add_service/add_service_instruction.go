@@ -164,7 +164,7 @@ func makeAddServiceInterpretationReturnValue(serviceID service.ServiceID, servic
 	for portId, port := range ports {
 		portNumber := starlark.MakeUint(uint(port.GetNumber()))
 		portProtocol := starlark.String(port.GetProtocol().String())
-		portSpecStringDict := starlark.StringDict{"port": portNumber, "protocol": portProtocol}
+		portSpecStringDict := starlark.StringDict{"number": portNumber, "protocol": portProtocol}
 		portSpecStruct := starlarkstruct.FromStringDict(portSpecReturnValueStructName, portSpecStringDict)
 		err := portSpecsDict.SetKey(starlark.String(portId), portSpecStruct)
 		if err != nil {

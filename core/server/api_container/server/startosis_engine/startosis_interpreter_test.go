@@ -755,7 +755,7 @@ service_config = struct(
 	}
 )
 datastore_service = add_service(service_id = service_id, service_config = service_config)
-print("The grpc port is " + str(datastore_service.ports["grpc"].port))
+print("The grpc port is " + str(datastore_service.ports["grpc"].number))
 print("The grpc port protocol is " + datastore_service.ports["grpc"].protocol)
 print("The datastore service ip address is " + datastore_service.ip_address)
 `
@@ -812,7 +812,7 @@ client_service_config = struct(
 	used_ports = {
 		"grpc": struct(number = 1337, protocol = "TCP")
 	},
-	entry_point_args = ["--store-port " + str(datastore_service.ports["grpc"].port), "--store-ip " + datastore_service.ip_address],
+	entry_point_args = ["--store-port " + str(datastore_service.ports["grpc"].number), "--store-ip " + datastore_service.ip_address],
 	cmd_args = ["ping", datastore_service.ip_address],
 	env_vars = {"STORE_IP": datastore_service.ip_address}
 )
