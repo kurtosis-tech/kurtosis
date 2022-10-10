@@ -28,10 +28,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, instructions []k
 	executor.mutex.Lock()
 	defer executor.mutex.Unlock()
 	for index, instruction := range instructions {
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred replacing IP Address with actual values in instruction number '%v'", index)
-		}
-		err = instruction.Execute(ctx)
+		err := instruction.Execute(ctx)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred executing instruction number '%v'", index)
 		}
