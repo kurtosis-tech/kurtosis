@@ -8,6 +8,7 @@ import (
 // We put all the command strings here so that when we need to give users remediation instructions, we can give them the
 //  commands they need to run
 var KurtosisCmdStr = path.Base(os.Args[0])
+
 const (
 	CleanCmdStr = "clean"
 	ClusterCmdStr = "cluster"
@@ -41,10 +42,11 @@ const (
 		ServiceRmCmdStr = "rm"
 		ServiceUnpauseCmdStr = "unpause"
 		ServiceShellCmdStr   = "shell"
+	StartosisCmdStr     = "startosis"
+		StartosisExecCmdStr = "exec"
 	ConfigCmdStr             = "config"
 		InitCmdStr = "init"
 		PathCmdStr = "path"
 	VersionCmdStr = "version"
 	GatewayCmdStr = "gateway"
 )
-

@@ -26,8 +26,8 @@ func NewMetricsReportingKurtosisBackend(underlying backend_interface.KurtosisBac
 	return &MetricsReportingKurtosisBackend{underlying: underlying}
 }
 
-func (backend *MetricsReportingKurtosisBackend) PullImage(image string) error {
-	if err := backend.underlying.PullImage(image); err != nil {
+func (backend *MetricsReportingKurtosisBackend) FetchImage(ctx context.Context, image string) error {
+	if err := backend.underlying.FetchImage(ctx, image); err != nil {
 		return stacktrace.Propagate(err, "An error occurred pulling image '%v'", image)
 	}
 	return nil

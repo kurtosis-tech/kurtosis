@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -21,7 +22,7 @@ const (
 	serviceConfigArgName = "service_config"
 )
 
-func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork *service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		serviceId, serviceConfig, interpretationError := parseStartosisArgs(b, args, kwargs)
@@ -35,14 +36,14 @@ func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtosi
 }
 
 type AddServiceInstruction struct {
-	serviceNetwork *service_network.ServiceNetwork
+	serviceNetwork service_network.ServiceNetwork
 
 	position      kurtosis_instruction.InstructionPosition
 	serviceId     kurtosis_backend_service.ServiceID
 	serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig
 }
 
-func NewAddServiceInstruction(serviceNetwork *service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) *AddServiceInstruction {
+func NewAddServiceInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) *AddServiceInstruction {
 	return &AddServiceInstruction{
 		serviceNetwork: serviceNetwork,
 		position:       position,
@@ -82,6 +83,11 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context) error {
 
 func (instruction *AddServiceInstruction) String() string {
 	return instruction.GetCanonicalInstruction()
+}
+
+func (instruction *AddServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
+	environment.AppendRequiredDockerImage(instruction.serviceConfig.ContainerImageName)
+	return nil
 }
 
 func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (service.ServiceID, *kurtosis_core_rpc_api_bindings.ServiceConfig, *startosis_errors.InterpretationError) {

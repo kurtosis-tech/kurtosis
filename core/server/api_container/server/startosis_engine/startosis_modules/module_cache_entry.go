@@ -8,9 +8,6 @@ type ModuleCacheEntry struct {
 	err             error
 }
 
-// A nil entry to indicate that a load is in progress
-var loadInProgress *ModuleCacheEntry
-
 func NewModuleCacheEntry(globalVariables starlark.StringDict, err error) *ModuleCacheEntry {
 	return &ModuleCacheEntry{
 		globalVariables: globalVariables,

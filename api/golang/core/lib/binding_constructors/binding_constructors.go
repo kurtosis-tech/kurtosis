@@ -148,16 +148,22 @@ func NewModuleInfo(
 //	Execute Startosis Script
 //
 // ==============================================================================================
+func NewExecuteStartosisScriptArgs(serializedString string) *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs {
+	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs{
+		SerializedScript: serializedString,
+	}
+}
+
 func NewExecuteStartosisScriptResponse(
 	serializedScriptOutput string,
 	interpretationError string,
-	validationError string,
+	validationErrors []*kurtosis_core_rpc_api_bindings.StartosisValidationError,
 	executionError string,
 ) *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse {
 	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
 		SerializedScriptOutput: serializedScriptOutput,
 		InterpretationError:    interpretationError,
-		ValidationError:        validationError,
+		ValidationErrors:       validationErrors,
 		ExecutionError:         executionError,
 	}
 }
@@ -402,5 +408,15 @@ func NewRenderTemplatesToFilesArtifactArgs(templatesAndDataByDestinationRelFilep
 func NewRenderTemplatesToFilesArtifactResponse(filesArtifactUuid string) *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse {
 	return &kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse{
 		Uuid: filesArtifactUuid,
+	}
+}
+
+// ==============================================================================================
+//                                 Startosis errors
+// ==============================================================================================
+
+func NewStartosisValidationError(error string) *kurtosis_core_rpc_api_bindings.StartosisValidationError {
+	return &kurtosis_core_rpc_api_bindings.StartosisValidationError{
+		Error: error,
 	}
 }

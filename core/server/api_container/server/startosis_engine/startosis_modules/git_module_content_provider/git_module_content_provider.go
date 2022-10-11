@@ -1,4 +1,4 @@
-package git_module_manager
+package git_module_content_provider
 
 import (
 	"github.com/go-git/go-git/v5"
@@ -13,25 +13,25 @@ const (
 	temporaryRepoDirPattern = "tmp-repo-dir-*"
 )
 
-type GitModuleManager struct {
+type GitModuleContentProvider struct {
 	moduleTmpDir string
 	moduleDir    string
 }
 
-func NewGitModuleManager(moduleDir string, tmpDir string) *GitModuleManager {
-	return &GitModuleManager{
+func NewGitModuleContentProvider(moduleDir string, tmpDir string) *GitModuleContentProvider {
+	return &GitModuleContentProvider{
 		moduleDir:    moduleDir,
 		moduleTmpDir: tmpDir,
 	}
 }
 
-func (moduleManager *GitModuleManager) GetModule(moduleURL string) (string, error) {
+func (provider *GitModuleContentProvider) GetModuleContents(moduleURL string) (string, error) {
 	parsedURL, err := parseGitURL(moduleURL)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while parsing URL '%v'", moduleURL)
 	}
 
-	pathToStartosisFile := path.Join(moduleManager.moduleDir, parsedURL.relativeFilePath)
+	pathToStartosisFile := path.Join(provider.moduleDir, parsedURL.relativeFilePath)
 
 	// Load the file if it already exists
 	contents, err := os.ReadFile(pathToStartosisFile)
@@ -40,7 +40,7 @@ func (moduleManager *GitModuleManager) GetModule(moduleURL string) (string, erro
 	}
 
 	// Otherwise Clone It
-	err = moduleManager.atomicClone(parsedURL)
+	err = provider.atomicClone(parsedURL)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while cloning the Git Repo '%v'", parsedURL)
 	}
@@ -56,22 +56,22 @@ func (moduleManager *GitModuleManager) GetModule(moduleURL string) (string, erro
 
 // atomicClone This first clones to a temporary directory and then moves it
 // TODO make this support versioning via tags, commit hashes or branches
-func (moduleManager *GitModuleManager) atomicClone(parsedURL *ParsedGitURL) error {
+func (provider *GitModuleContentProvider) atomicClone(parsedURL *ParsedGitURL) error {
 	// First we clone into a temporary directory
-	tempRepoDirPath, err := os.MkdirTemp(moduleManager.moduleTmpDir, temporaryRepoDirPattern)
+	tempRepoDirPath, err := os.MkdirTemp(provider.moduleTmpDir, temporaryRepoDirPattern)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error creating temporary directory for the repository to be cloned into")
 	}
 	defer os.RemoveAll(tempRepoDirPath)
-	gitClonePath := path.Join(tempRepoDirPath, parsedURL.relativeModulePath)
+	gitClonePath := path.Join(tempRepoDirPath, parsedURL.relativeRepoPath)
 	_, err = git.PlainClone(gitClonePath, false, &git.CloneOptions{URL: parsedURL.gitURL, Progress: io.Discard})
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in cloning git repository '%v' to '%v'", parsedURL.gitURL, gitClonePath)
 	}
 
 	// Then we move it into the target directory
-	moduleAuthorPath := path.Join(moduleManager.moduleDir, parsedURL.moduleAuthor)
-	modulePath := path.Join(moduleManager.moduleDir, parsedURL.relativeModulePath)
+	moduleAuthorPath := path.Join(provider.moduleDir, parsedURL.moduleAuthor)
+	modulePath := path.Join(provider.moduleDir, parsedURL.relativeRepoPath)
 	fileMode, err := os.Stat(moduleAuthorPath)
 	if err == nil && !fileMode.IsDir() {
 		return stacktrace.Propagate(err, "Expected '%v' to be a directory but it is something else", moduleAuthorPath)
