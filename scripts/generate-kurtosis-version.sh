@@ -19,19 +19,25 @@ KURTOSIS_VERSION_PACKAGE_GOSUM_PATH="go.sum"
 #                                       Arg Parsing & Validation
 # ==================================================================================================
 show_helptext_and_exit() {
-    echo "Usage: $(basename "${0}")"
-    exit 1
+    echo "Usage: $(basename "${0}") new_version"
+    echo ""
+    echo "  new_version     The version to be generate the version constants with, otherwise uses 'kudet get-docker-tag'"
+    echo ""
+    exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
 }
 
 
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
-if ! docker_tag="$(kudet get-docker-tag)"; then
-    echo "Error: Couldn't get the Docker image tag" >&2
-    exit 1
-fi
+new_version="${1:-}"
 
+if [ -z "${new_version}" ]; then
+  if ! new_version="$(kudet get-docker-tag)"; then
+    echo "Error: No new version provided and couldn't generate one" >&2
+    show_helptext_and_exit
+  fi
+fi
 
 if ! rm "-rf" "${root_dirpath}/${KURTOSIS_VERSION_PACKAGE_DIR}"; then
   echo "Failed to remove '${root_dirpath}/${KURTOSIS_VERSION_PACKAGE_DIR}'"
@@ -64,7 +70,7 @@ echo "package ${KURTOSIS_VERSION_PACKAGE_DIR}" > "${kurtosis_version_go_file_abs
 echo "" >> "${kurtosis_version_go_file_abs_path}"
 echo "const (" >> "${kurtosis_version_go_file_abs_path}"
 echo "  // !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE BUILD PROCESS !!!!!!!!!!!!!!!" >> "${kurtosis_version_go_file_abs_path}"
-echo "	KurtosisVersion = \"${docker_tag}\"" >> "${kurtosis_version_go_file_abs_path}"
+echo "	KurtosisVersion = \"${new_version}\"" >> "${kurtosis_version_go_file_abs_path}"
 echo "  // !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE BUILD PROCESS !!!!!!!!!!!!!!!" >> "${kurtosis_version_go_file_abs_path}"
 echo ")" >> "${kurtosis_version_go_file_abs_path}"
 

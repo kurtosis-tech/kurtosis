@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+* Fix generate scripts to take passed version on release
+
 # 0.50.0
 ### Features
 * Created the `LogsDatabase` object in `container-engine-lib`
