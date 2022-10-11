@@ -255,6 +255,66 @@ export namespace CleanResponse {
   }
 }
 
+export class GetUserServiceLogsArgs extends jspb.Message {
+  getEnclaveId(): string;
+  setEnclaveId(value: string): GetUserServiceLogsArgs;
+
+  getServiceGuidSetMap(): jspb.Map<string, boolean>;
+  clearServiceGuidSetMap(): GetUserServiceLogsArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetUserServiceLogsArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: GetUserServiceLogsArgs): GetUserServiceLogsArgs.AsObject;
+  static serializeBinaryToWriter(message: GetUserServiceLogsArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetUserServiceLogsArgs;
+  static deserializeBinaryFromReader(message: GetUserServiceLogsArgs, reader: jspb.BinaryReader): GetUserServiceLogsArgs;
+}
+
+export namespace GetUserServiceLogsArgs {
+  export type AsObject = {
+    enclaveId: string,
+    serviceGuidSetMap: Array<[string, boolean]>,
+  }
+}
+
+export class GetUserServiceLogsResponse extends jspb.Message {
+  getUserServiceLogsByUserServiceGuidMap(): jspb.Map<string, LogLine>;
+  clearUserServiceLogsByUserServiceGuidMap(): GetUserServiceLogsResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetUserServiceLogsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: GetUserServiceLogsResponse): GetUserServiceLogsResponse.AsObject;
+  static serializeBinaryToWriter(message: GetUserServiceLogsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetUserServiceLogsResponse;
+  static deserializeBinaryFromReader(message: GetUserServiceLogsResponse, reader: jspb.BinaryReader): GetUserServiceLogsResponse;
+}
+
+export namespace GetUserServiceLogsResponse {
+  export type AsObject = {
+    userServiceLogsByUserServiceGuidMap: Array<[string, LogLine.AsObject]>,
+  }
+}
+
+export class LogLine extends jspb.Message {
+  getLineList(): Array<string>;
+  setLineList(value: Array<string>): LogLine;
+  clearLineList(): LogLine;
+  addLine(value: string, index?: number): LogLine;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): LogLine.AsObject;
+  static toObject(includeInstance: boolean, msg: LogLine): LogLine.AsObject;
+  static serializeBinaryToWriter(message: LogLine, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): LogLine;
+  static deserializeBinaryFromReader(message: LogLine, reader: jspb.BinaryReader): LogLine;
+}
+
+export namespace LogLine {
+  export type AsObject = {
+    lineList: Array<string>,
+  }
+}
+
 export enum EnclaveContainersStatus { 
   ENCLAVECONTAINERSSTATUS_EMPTY = 0,
   ENCLAVECONTAINERSSTATUS_RUNNING = 1,
