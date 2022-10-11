@@ -22,6 +22,7 @@
 * Made some changes to the implementation of the module manager based on some PR comments by Kevin
 
 ### Features
+* Implement Startosis add_service image pull validation
 * Startosis scripts can now be run from the CLI: `kurtosis startosis exec path/to/script/file --enclave-id <ENCLAVE_ID>`
 * Implemented Startosis load method to load from Github repositories
 

@@ -52,6 +52,13 @@ const (
 	tempDirForRenderedTemplatesPrefix = "temp-dir-for-rendered-templates-"
 
 	compressedRenderedTemplatesFilenamePattern = "compressed-rendered-templates-*.tgz"
+
+	noExecutionError      = ""
+	noInterpretationError = ""
+)
+
+var (
+	noValidationErrors = []*kurtosis_core_rpc_api_bindings.StartosisValidationError{}
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -73,6 +80,8 @@ type ApiContainerService struct {
 
 	startosisInterpreter *startosis_engine.StartosisInterpreter
 
+	startosisValidator *startosis_engine.StartosisValidator
+
 	startosisExecutor *startosis_engine.StartosisExecutor
 
 	metricsClient client.MetricsClient
@@ -83,6 +92,7 @@ func NewApiContainerService(
 	serviceNetwork service_network.ServiceNetwork,
 	moduleStore *module_store.ModuleStore,
 	startosisInterpreter *startosis_engine.StartosisInterpreter,
+	startosisValidator *startosis_engine.StartosisValidator,
 	startosisExecutor *startosis_engine.StartosisExecutor,
 	metricsClient client.MetricsClient,
 ) (*ApiContainerService, error) {
@@ -91,6 +101,7 @@ func NewApiContainerService(
 		serviceNetwork:       serviceNetwork,
 		moduleStore:          moduleStore,
 		startosisInterpreter: startosisInterpreter,
+		startosisValidator:   startosisValidator,
 		startosisExecutor:    startosisExecutor,
 		metricsClient:        metricsClient,
 	}
@@ -191,19 +202,31 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 		return binding_constructors.NewExecuteStartosisScriptResponse(
 			string(interpretationOutput),
 			potentialInterpretationError.Error(),
-			"",
-			"",
+			noValidationErrors,
+			noExecutionError,
 		), nil
 	}
 	logrus.Debugf("Successfully interpreted Startosis script into a series of Kurtosis instructions: \n%v",
 		generatedInstructionsList)
 
+	// TODO: Abstract this into a ValidationError
+	validationErrors := apicService.startosisValidator.Validate(ctx, generatedInstructionsList)
+	if validationErrors != nil {
+		return binding_constructors.NewExecuteStartosisScriptResponse(
+			string(interpretationOutput),
+			noInterpretationError,
+			validationErrors,
+			noExecutionError,
+		), nil
+	}
+	logrus.Debugf("Successfully validated Startosis script")
+
 	err := apicService.startosisExecutor.Execute(ctx, generatedInstructionsList)
 	if err != nil {
 		return binding_constructors.NewExecuteStartosisScriptResponse(
 			string(interpretationOutput),
-			"",
-			"",
+			noInterpretationError,
+			noValidationErrors,
 			err.Error(),
 		), nil
 	}
@@ -211,9 +234,9 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 
 	return binding_constructors.NewExecuteStartosisScriptResponse(
 		string(interpretationOutput),
-		"",
-		"",
-		"",
+		noInterpretationError,
+		noValidationErrors,
+		noExecutionError,
 	), nil
 }
 

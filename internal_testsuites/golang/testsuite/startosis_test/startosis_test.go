@@ -55,7 +55,7 @@ func TestStartosis(t *testing.T) {
 Service example-datastore-server-1 deployed successfully.
 `
 	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error")
-	require.Empty(t, executionResult.ValidationError, "Unexpected validation error")
+	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
 	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
 	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
 	logrus.Infof("Successfully ran Startosis script")
