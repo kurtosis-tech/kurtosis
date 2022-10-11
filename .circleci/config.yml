@@ -1126,6 +1126,15 @@ workflows:
             - build_files_artifacts_expander
           <<: *filters_ignore_master
 
+      - test_old_enclave_continuity:
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_master
       - test_config_init_edge_cases:
           requires:
             - build_cli
