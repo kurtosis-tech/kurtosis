@@ -1,5 +1,5 @@
 # Ignoring the constants package at root
-*kurtosis_version*
+/kurtosis_version
 
 # IntelliJ
 .idea
