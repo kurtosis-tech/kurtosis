@@ -77,7 +77,7 @@ func TestAddServiceInstruction_MultipleOccurrencesOfSameStringReplaced(t *testin
 	require.Equal(t, expectedString, replacedString)
 }
 
-func TestAddServiceInstruction_MultipleReplacesOfDifferentStrings(t *testing.T) {
+func TestReplaceIPAddressInString_MultipleReplacesOfDifferentStrings(t *testing.T) {
 	ipAddresses := map[service.ServiceID]net.IP{}
 	ipAddresses[testServiceDependence1ServiceID] = net.ParseIP(testServiceDependence1IPAddress)
 	ipAddresses[testServiceDependence2ServiceID] = net.ParseIP(testServiceDependence2IPAddress)
@@ -90,7 +90,7 @@ func TestAddServiceInstruction_MultipleReplacesOfDifferentStrings(t *testing.T) 
 	require.Equal(t, expectedString, replacedString)
 }
 
-func TestAddServiceInstruction_ReplacementFailsForUnknownServiceID(t *testing.T) {
+func TestReplaceIPAddressInString_ReplacementFailsForUnknownServiceID(t *testing.T) {
 	ipAddresses := map[service.ServiceID]net.IP{}
 	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
 	originalString := fmt.Sprintf("{{%v.ip_address}}", unknownServiceID)

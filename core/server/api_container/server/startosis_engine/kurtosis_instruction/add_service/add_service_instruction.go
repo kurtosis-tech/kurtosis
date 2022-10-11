@@ -106,50 +106,49 @@ func (instruction *AddServiceInstruction) String() string {
 	return instruction.GetCanonicalInstruction()
 }
 
-// TODO test this when we have a mock for service network
 func (instruction *AddServiceInstruction) replaceIPAddress() error {
-	serviceIDStr := string(instruction.serviceId)
+	serviceIdStr := string(instruction.serviceId)
 	entryPointArgs := instruction.serviceConfig.EntrypointArgs
 	for index, value := range entryPointArgs {
-		replacedValue, err := replaceIPAddressInString(value, instruction.serviceNetwork, serviceIDStr)
+		valueWithIPAddress, err := replaceIPAddressInString(value, instruction.serviceNetwork, serviceIdStr)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in entry point args")
 		}
-		entryPointArgs[index] = replacedValue
+		entryPointArgs[index] = valueWithIPAddress
 	}
 
 	cmdArgs := instruction.serviceConfig.CmdArgs
 	for index, value := range cmdArgs {
-		replacedValue, err := replaceIPAddressInString(value, instruction.serviceNetwork, serviceIDStr)
+		valueWithIPAddress, err := replaceIPAddressInString(value, instruction.serviceNetwork, serviceIdStr)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in command args")
 		}
-		cmdArgs[index] = replacedValue
+		cmdArgs[index] = valueWithIPAddress
 	}
 
 	envVars := instruction.serviceConfig.EnvVars
-	for index, value := range envVars {
-		replacedValue, err := replaceIPAddressInString(value, instruction.serviceNetwork, serviceIDStr)
+	for key, value := range envVars {
+		valueWithIPAddress, err := replaceIPAddressInString(value, instruction.serviceNetwork, serviceIdStr)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error occurred while replacing IP address in env vars")
 		}
-		envVars[index] = replacedValue
+		envVars[key] = valueWithIPAddress
 	}
 
 	return nil
 }
 
-func replaceIPAddressInString(originalString string, network service_network.ServiceNetwork, serviceIDForLogging string) (string, error) {
+func replaceIPAddressInString(originalString string, network service_network.ServiceNetwork, serviceIdForLogging string) (string, error) {
 	compiledRegex := regexp.MustCompile(ipAddressReplacementRegex)
 	matches := compiledRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
 	replacedString := originalString
 	for _, match := range matches {
-		serviceIDMatchIndex := compiledRegex.SubexpIndex(serviceIdSubgroupName)
-		serviceID := service.ServiceID(match[serviceIDMatchIndex])
-		ipAddress, found := network.GetIPAddressForService(serviceID)
+		serviceIdMatchIndex := compiledRegex.SubexpIndex(serviceIdSubgroupName)
+		serviceId := service.ServiceID(match[serviceIdMatchIndex])
+		ipAddress, found := network.GetIPAddressForService(serviceId)
 		ipAddressStr := ipAddress.String()
 		if !found {
-			return "", stacktrace.NewError("'%v' depends on the IP address of '%v' but we don't have any registrations for it", serviceIDForLogging, serviceID)
+			return "", stacktrace.NewError("'%v' depends on the IP address of '%v' but we don't have any registrations for it", serviceIdForLogging, serviceId)
 		}
 		allMatchIndex := compiledRegex.SubexpIndex(allSubgroupName)
 		allMatch := match[allMatchIndex]
@@ -158,7 +157,7 @@ func replaceIPAddressInString(originalString string, network service_network.Ser
 	return replacedString, nil
 }
 
-func makeAddServiceInterpretationReturnValue(serviceID service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) (*starlarkstruct.Struct, *startosis_errors.InterpretationError) {
+func makeAddServiceInterpretationReturnValue(serviceId service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) (*starlarkstruct.Struct, *startosis_errors.InterpretationError) {
 	ports := serviceConfig.GetPrivatePorts()
 	portSpecsDict := starlark.NewDict(len(ports))
 	for portId, port := range ports {
@@ -172,7 +171,7 @@ func makeAddServiceInterpretationReturnValue(serviceID service.ServiceID, servic
 		}
 	}
 	returnValueDict := starlark.StringDict{
-		"ip_address": starlark.String(fmt.Sprintf("{{%v.ip_address}}", serviceID)),
+		"ip_address": starlark.String(fmt.Sprintf("{{%v.ip_address}}", serviceId)),
 		"ports":      portSpecsDict,
 	}
 	returnValueStruct := starlarkstruct.FromStringDict(serviceReturnValueStructName, returnValueDict)
