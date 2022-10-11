@@ -24,7 +24,7 @@ const (
 	serviceIdArgName     = "service_id"
 	serviceConfigArgName = "service_config"
 
-	ipAddressReplacementRegex = "(?P<all>\\{\\{kurtosis:(?P<service_id>[a-zA-Z0-9-_]*)\\.ip_address\\}\\})"
+	ipAddressReplacementRegex = "(?P<all>\\{\\{kurtosis:(?P<service_id>" + service.ServiceIDRegex + ")\\.ip_address\\}\\})"
 	serviceIdSubgroupName     = "service_id"
 	allSubgroupName           = "all"
 
