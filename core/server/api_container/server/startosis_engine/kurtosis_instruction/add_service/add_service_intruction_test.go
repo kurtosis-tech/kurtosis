@@ -57,12 +57,12 @@ func TestAddServiceInstruction_EntryPointArgsAreReplaced(t *testing.T) {
 					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
 				},
 			},
-			EntrypointArgs: []string{"-- {{foo_service.ip_address}}"},
+			EntrypointArgs: []string{"-- {{kurtosis:foo_service.ip_address}}"},
 		})
 
 	err := addServiceInstruction.replaceIPAddress()
 	require.Nil(t, err)
-	require.Equal(t, addServiceInstruction.serviceConfig.EntrypointArgs[0], "-- 172.17.3.13")
+	require.Equal(t, "-- 172.17.3.13", addServiceInstruction.serviceConfig.EntrypointArgs[0])
 }
 
 func TestAddServiceInstruction_MultipleOccurrencesOfSameStringReplaced(t *testing.T) {
@@ -70,7 +70,7 @@ func TestAddServiceInstruction_MultipleOccurrencesOfSameStringReplaced(t *testin
 		testServiceDependence1ServiceID: net.ParseIP(testServiceDependence1IPAddress),
 	}
 	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
-	originalString := fmt.Sprintf("{{%v.ip_address}} something in the middle {{%v.ip_address}}", testServiceDependence1ServiceID, testServiceDependence1ServiceID)
+	originalString := fmt.Sprintf("{{kurtosis:%v.ip_address}} something in the middle {{kurtosis:%v.ip_address}}", testServiceDependence1ServiceID, testServiceDependence1ServiceID)
 
 	expectedString := fmt.Sprintf("%v something in the middle %v", testServiceDependence1IPAddress, testServiceDependence1IPAddress)
 	replacedString, err := replaceIPAddressInString(originalString, serviceNetwork, testServiceID)
@@ -84,7 +84,7 @@ func TestReplaceIPAddressInString_MultipleReplacesOfDifferentStrings(t *testing.
 		testServiceDependence2ServiceID: net.ParseIP(testServiceDependence2IPAddress),
 	}
 	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
-	originalString := fmt.Sprintf("{{%v.ip_address}} {{%v.ip_address}} {{%v.ip_address}}", testServiceDependence1ServiceID, testServiceDependence2ServiceID, testServiceDependence1ServiceID)
+	originalString := fmt.Sprintf("{{kurtosis:%v.ip_address}} {{kurtosis:%v.ip_address}} {{kurtosis:%v.ip_address}}", testServiceDependence1ServiceID, testServiceDependence2ServiceID, testServiceDependence1ServiceID)
 
 	expectedString := fmt.Sprintf("%v %v %v", testServiceDependence1IPAddress, testServiceDependence2IPAddress, testServiceDependence1IPAddress)
 	replacedString, err := replaceIPAddressInString(originalString, serviceNetwork, testServiceID)
@@ -95,7 +95,7 @@ func TestReplaceIPAddressInString_MultipleReplacesOfDifferentStrings(t *testing.
 func TestReplaceIPAddressInString_ReplacementFailsForUnknownServiceID(t *testing.T) {
 	ipAddresses := map[service.ServiceID]net.IP{}
 	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
-	originalString := fmt.Sprintf("{{%v.ip_address}}", unknownServiceID)
+	originalString := fmt.Sprintf("{{kurtosis:%v.ip_address}}", unknownServiceID)
 
 	expectedErr := fmt.Sprintf("'%v' depends on the IP address of '%v' but we don't have any registrations for it", testServiceID, unknownServiceID)
 	_, err := replaceIPAddressInString(originalString, serviceNetwork, testServiceID)

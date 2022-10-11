@@ -24,7 +24,7 @@ const (
 	serviceIdArgName     = "service_id"
 	serviceConfigArgName = "service_config"
 
-	ipAddressReplacementRegex = "(?P<all>\\{\\{(?P<service_id>[a-zA-Z0-9-_]*)\\.ip_address\\}\\})"
+	ipAddressReplacementRegex = "(?P<all>\\{\\{kurtosis:(?P<service_id>[a-zA-Z0-9-_]*)\\.ip_address\\}\\})"
 	serviceIdSubgroupName     = "service_id"
 	allSubgroupName           = "all"
 
@@ -175,7 +175,7 @@ func makeAddServiceInterpretationReturnValue(serviceId service.ServiceID, servic
 		}
 	}
 	returnValueDict := starlark.StringDict{
-		"ip_address": starlark.String(fmt.Sprintf("{{%v.ip_address}}", serviceId)),
+		"ip_address": starlark.String(fmt.Sprintf("{{kurtosis:%v.ip_address}}", serviceId)),
 		"ports":      portSpecsDict,
 	}
 	returnValueStruct := starlarkstruct.FromStringDict(serviceReturnValueStructName, returnValueDict)

@@ -809,11 +809,11 @@ add_service(service_id = client_service_id, service_config = client_service_conf
 				},
 			},
 		).WithEntryPointArgs(
-			[]string{"--store-port 1323", "--store-ip {{example-datastore-server.ip_address}}"},
+			[]string{"--store-port 1323", "--store-ip {{kurtosis:example-datastore-server.ip_address}}"},
 		).WithCmdArgs(
-			[]string{"ping", "{{example-datastore-server.ip_address}}"},
+			[]string{"ping", "{{kurtosis:example-datastore-server.ip_address}}"},
 		).WithEnvVars(
-			map[string]string{"STORE_IP": "{{example-datastore-server.ip_address}}"},
+			map[string]string{"STORE_IP": "{{kurtosis:example-datastore-server.ip_address}}"},
 		).Build(),
 	)
 
