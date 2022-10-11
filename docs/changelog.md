@@ -1,4 +1,6 @@
 # TBD
+
+# 0.50.0
 ### Features
 * Created the `LogsDatabase` object in `container-engine-lib`
 * Created the `LogsCollector` object in `container-engine-lib`
