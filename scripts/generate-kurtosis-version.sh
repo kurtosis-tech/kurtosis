@@ -23,7 +23,7 @@ show_helptext_and_exit() {
     echo ""
     echo "  new_version     The version to be generate the version constants with, otherwise uses 'kudet get-docker-tag'"
     echo ""
-    exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
+    exit 1
 }
 
 
