@@ -1,5 +1,18 @@
 # TBD
 
+### Changes
+* Add back old enclave continuity test
+
+# 0.50.2
+
+### Fixes
+* Fixes how the push cli artifacts & publish engine runs by generating kurtosis_version before hand
+
+# 0.50.1
+
+### Fixes
+* Fix generate scripts to take passed version on release
+
 # 0.50.0
 ### Features
 * Created the `LogsDatabase` object in `container-engine-lib`
