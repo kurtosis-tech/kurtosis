@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
@@ -155,17 +154,14 @@ func StartUserServices(
 
 	logsCollectorServiceAddress, err := logsCollector.GetPrivateTcpAddress()
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the private tcp address")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the private TCP address")
 	}
+
 	//The following docker labels will be added into the logs stream which is necessary for creating new tags
 	//in the logs database and then use it for querying them to get the specific user service's logs
 	//even the 'enclaveID' value is used for Fluentbit to send it to Loki as the "X-Scope-OrgID" request's header
 	//due Loki is now configured to use multi tenancy, and we established this relation: enclaveID = tenantID
-	logsCollectorLabels := logs_collector_functions.LogsCollectorLabels{
-		label_key_consts.EnclaveIDDockerLabelKey.GetString(),
-		label_key_consts.GUIDDockerLabelKey.GetString(),
-		label_key_consts.ContainerTypeDockerLabelKey.GetString(),
-	}
+	logsCollectorLabels := logs_collector_functions.GetKurtosisTrackedLogsCollectorLabels()
 
 	successfulStarts, failedStarts, err := runStartServiceOperationsInParallel(
 		ctx,

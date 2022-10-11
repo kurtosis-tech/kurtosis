@@ -362,8 +362,10 @@ export class ExecuteStartosisScriptResponse extends jspb.Message {
   getInterpretationError(): string;
   setInterpretationError(value: string): ExecuteStartosisScriptResponse;
 
-  getValidationError(): string;
-  setValidationError(value: string): ExecuteStartosisScriptResponse;
+  getValidationErrorsList(): Array<StartosisValidationError>;
+  setValidationErrorsList(value: Array<StartosisValidationError>): ExecuteStartosisScriptResponse;
+  clearValidationErrorsList(): ExecuteStartosisScriptResponse;
+  addValidationErrors(value?: StartosisValidationError, index?: number): StartosisValidationError;
 
   getExecutionError(): string;
   setExecutionError(value: string): ExecuteStartosisScriptResponse;
@@ -380,7 +382,7 @@ export namespace ExecuteStartosisScriptResponse {
   export type AsObject = {
     serializedScriptOutput: string,
     interpretationError: string,
-    validationError: string,
+    validationErrorsList: Array<StartosisValidationError.AsObject>,
     executionError: string,
   }
 }
@@ -961,6 +963,24 @@ export class RenderTemplatesToFilesArtifactResponse extends jspb.Message {
 export namespace RenderTemplatesToFilesArtifactResponse {
   export type AsObject = {
     uuid: string,
+  }
+}
+
+export class StartosisValidationError extends jspb.Message {
+  getError(): string;
+  setError(value: string): StartosisValidationError;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StartosisValidationError.AsObject;
+  static toObject(includeInstance: boolean, msg: StartosisValidationError): StartosisValidationError.AsObject;
+  static serializeBinaryToWriter(message: StartosisValidationError, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StartosisValidationError;
+  static deserializeBinaryFromReader(message: StartosisValidationError, reader: jspb.BinaryReader): StartosisValidationError;
+}
+
+export namespace StartosisValidationError {
+  export type AsObject = {
+    error: string,
   }
 }
 

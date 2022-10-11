@@ -1,13 +1,29 @@
 # TBD
+
+### Changes
+* Add back old enclave continuity test
+
+# 0.50.2
+
+### Fixes
+* Fixes how the push cli artifacts & publish engine runs by generating kurtosis_version before hand
+
+# 0.50.1
+
+### Fixes
+* Fix generate scripts to take passed version on release
+
+# 0.50.0
 ### Features
 * Created new engine's endpoint `GetUserServiceLogs` for consuming user service container logs from the logs database server
 * Added `LogsDatabaseClient` interface for defining the behaviour for consuming logs from the centralized logs database
 * Added `LokiLogsDatabaseClient` which implements `LogsDatabaseClient` for consuming logs from a Loki's server
-* Added `KurtosisBackendLogsClient` which implements `LogsDatabaseClient` for consuming user service container logs using `KurtosisBackend
+* Added `KurtosisBackendLogsClient` which implements `LogsDatabaseClient` for consuming user service container logs using `KurtosisBackend`
 * Created the `LogsDatabase` object in `container-engine-lib`
 * Created the `LogsCollector` object in `container-engine-lib`
 * Added `LogsDatabase` CRUD methods in `Docker` Kurtosis backend
 * Added `LogsCollector` CRUD methods in `Docker` Kurtosis backend
+* Added `ServiceNetwork` (interface), `DefaultServiceNetwork` and `MockServiceNetwork` 
 * Added `KurtosisContext.GetUserServiceLogs` method in `golang` and `typescript` api libraries
 * Added the public documentation for the new `KurtosisContext.GetUserServiceLogs` method
 
@@ -19,6 +35,30 @@
   
 ### Changes
 * Untied the logs components containers and volumes creation and removal from the engine's crud in `container-engine-lib`
+* Made some changes to the implementation of the module manager based on some PR comments by Kevin
+
+### Features
+* Implement Startosis add_service image pull validation
+* Startosis scripts can now be run from the CLI: `kurtosis startosis exec path/to/script/file --enclave-id <ENCLAVE_ID>`
+* Implemented Startosis load method to load from Github repositories
+
+### Fixes
+* Fix IP address placeholder injected by default in Startosis instructions. It used to be empty, which is invalid now
+it is set to `KURTOSIS_IP_ADDR_PLACEHOLDER`
+* Fix enclave inspect CLI command error when there are additional port bindings
+* Fix a stale message the run-all-test-against-latest-code script
+* Fix bug that creates database while running local unit tests
+* Manually truncate string instead of using `k8s.io/utils/strings`
+
+### Removals
+* Removes version constants within launchers and cli in favor of centralized generated version constant
+* Removes remote-docker-setup from the `build_cli` job in Circle
+
+# 0.49.9
+
+### Features
+* Implement Startosis add_service method
+* Enable linter on Startosis codebase
 
 # 0.49.8
 ### Changes

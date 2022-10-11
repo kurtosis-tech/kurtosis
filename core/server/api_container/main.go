@@ -90,6 +90,11 @@ func runMain() error {
 		return stacktrace.NewError("Kurtosis backend type is '%v' but cluster configuration parameters are null.", args.KurtosisBackendType_Kubernetes.String())
 	}
 
+	gitModuleContentProvider, err := enclaveDataDir.GetGitModuleContentProvider()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while creating the Git module content provider")
+	}
+
 	// TODO Extract into own function
 	var kurtosisBackend backend_interface.KurtosisBackend
 	switch serverArgs.KurtosisBackendType {
@@ -144,7 +149,9 @@ func runMain() error {
 		}
 	}()
 
-	startosisInterpreter := startosis_engine.NewStartosisInterpreter()
+	// TODO: Consolidate Interpreter, Validator and Executor into a single interface
+	startosisValidator := startosis_engine.NewStartosisValidator(&kurtosisBackend)
+	startosisInterpreter := startosis_engine.NewStartosisInterpreter(serviceNetwork, gitModuleContentProvider)
 	startosisExecutor := startosis_engine.NewStartosisExecutor()
 
 	//Creation of ApiContainerService
@@ -153,6 +160,7 @@ func runMain() error {
 		serviceNetwork,
 		moduleStore,
 		startosisInterpreter,
+		startosisValidator,
 		startosisExecutor,
 		metricsClient,
 	)
@@ -184,7 +192,7 @@ func createServiceNetworkAndModuleStore(
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 	args *args.APIContainerArgs,
 	ownIpAddress net.IP,
-) (*service_network.ServiceNetwork, *module_store.ModuleStore, error) {
+) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
 	enclaveIdStr := args.EnclaveId
 	enclaveId := enclave.EnclaveID(enclaveIdStr)
 
@@ -216,7 +224,7 @@ func createServiceNetworkAndModuleStore(
 		kurtosisBackend,
 		enclaveId)
 
-	serviceNetwork := service_network.NewServiceNetwork(
+	serviceNetwork := service_network.NewDefaultServiceNetwork(
 		enclaveId,
 		ownIpAddress,
 		args.GrpcListenPortNum,

@@ -11,6 +11,10 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
+const (
+	defaultContainerStatusForNewLogsCollectorContainer = types.ContainerStatus_Running
+)
+
 func CreateLogsCollector(
 	ctx context.Context,
 	logsCollectorHttpPortNumber uint16,
@@ -37,6 +41,10 @@ func CreateLogsCollector(
 	}
 	targetNetworkId := logsCollectorNetwork.GetId()
 
+	if logsDatabase.GetMaybePrivateIpAddr() == nil {
+		return nil, stacktrace.NewError("Expected the logs database has private IP address but this is nil")
+	}
+
 	logsDatabaseHost := logsDatabase.GetMaybePrivateIpAddr().String()
 	logsDatabasePort := logsDatabase.GetPrivateHttpPort().GetNumber()
 
@@ -54,7 +62,7 @@ func CreateLogsCollector(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred running the logs collector container with logs database host '%v', logs database port '%v', http port '%v', tcp port id '%v', and http port id '%v' in Docker network with ID '%v'",
+			"An error occurred running the logs collector container with logs database host '%v', logs database port '%v', HTTP port number '%v', TCP port id '%v', and HTTP port id '%v' in Docker network with ID '%v'",
 			logsDatabaseHost,
 			logsDatabasePort,
 			logsCollectorHttpPortNumber,
@@ -74,11 +82,11 @@ func CreateLogsCollector(
 		ctx,
 		containerId,
 		containerLabels,
-		types.ContainerStatus_Running,
+		defaultContainerStatusForNewLogsCollectorContainer,
 		dockerManager,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector object using container ID '%v', labels '%+v' and the status '%v'", containerId, containerLabels, types.ContainerStatus_Running)
+		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector object using container ID '%v', labels '%+v' and the status '%v'", containerId, containerLabels, defaultContainerStatusForNewLogsCollectorContainer)
 	}
 
 	shouldRemoveLogsCollectorContainerFunc = false

@@ -225,7 +225,7 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 
 	//TODO This is a temporary hack we should remove it when centralized logs be implemented in the KubernetesBackend
 	if clusterType == resolved_config.KurtosisClusterType_Docker {
-		if err = manager.destroyCentralizedLogsComponents(ctx); err != nil {
+		if err = manager.destroyCentralizedLogsComponentsIdempotently(ctx); err != nil {
 			return stacktrace.Propagate(err, "An error occurred destroying the centralized logs components")
 		}
 	}
@@ -264,10 +264,12 @@ func (manager *EngineManager) startEngineWithGuarantor(ctx context.Context, curr
 	return engineClient, clientCloseFunc, nil
 }
 
-func (manager *EngineManager) destroyCentralizedLogsComponents(ctx context.Context) error {
+func (manager *EngineManager) destroyCentralizedLogsComponentsIdempotently(ctx context.Context) error {
+	//DestroyLogsCollector is idempotent does not return an error if nothing exists
 	if err := manager.kurtosisBackend.DestroyLogsCollector(ctx); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying the logs collector")
 	}
+	//DestroyLogsDatabase is idempotent does not return an error if nothing exists
 	if err := manager.kurtosisBackend.DestroyLogsDatabase(ctx); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying the logs database")
 	}

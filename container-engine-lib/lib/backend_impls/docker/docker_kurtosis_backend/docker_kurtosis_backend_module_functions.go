@@ -145,20 +145,19 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
 	if logsCollector == nil || logsCollector.GetStatus() != container_status.ContainerStatus_Running{
-		return nil, stacktrace.NewError("The user services can't be started because there is not logs collector running for sending the logs")
+		return nil, stacktrace.NewError("The user services can't be started because there is no logs collector running for sending the logs")
 	}
 
 	logsCollectorServiceAddress, err := logsCollector.GetPrivateTcpAddress()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the private tcp address")
+		return nil, stacktrace.Propagate(err, "An error occurred getting the private TCP address")
 	}
+
 	//The following docker labels will be added into the logs stream which is necessary for creating new tags
-	//in the logs database and then using them for querying the database to get the specific user service's logs
-	logsCollectorLabels := logs_collector_functions.LogsCollectorLabels{
-		label_key_consts.EnclaveIDDockerLabelKey.GetString(),
-		label_key_consts.GUIDDockerLabelKey.GetString(),
-		label_key_consts.ContainerTypeDockerLabelKey.GetString(),
-	}
+	//in the logs database and then use it for querying them to get the specific user service's logs
+	//even the 'enclaveID' value is used for Fluentbit to send it to Loki as the "X-Scope-OrgID" request's header
+	//due Loki is now configured to use multi tenancy, and we established this relation: enclaveID = tenantID
+	logsCollectorLabels := logs_collector_functions.GetKurtosisTrackedLogsCollectorLabels()
 
 	logsCollectorAddressStr := string(logsCollectorServiceAddress)
 

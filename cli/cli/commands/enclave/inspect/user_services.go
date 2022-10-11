@@ -85,7 +85,7 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 		}
 
 		for _, additionalPortBindingLine := range additionalPortBindingLines {
-			if err := tablePrinter.AddRow("", "", additionalPortBindingLine); err != nil {
+			if err := tablePrinter.AddRow("", "", additionalPortBindingLine, ""); err != nil {
 				return stacktrace.Propagate(
 					err,
 					"An error occurred adding additional port binding row '%v' for user service with GUID '%v' to the table printer",

@@ -19,11 +19,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/gateway"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/module"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/startosis"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/version"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_send_metrics_election"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cli_version"
+	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -89,6 +90,7 @@ func init() {
 	RootCmd.AddCommand(enclave.EnclaveCmd)
 	RootCmd.AddCommand(service.ServiceCmd)
 	RootCmd.AddCommand(module.ModuleCmd)
+	RootCmd.AddCommand(startosis.StartosisCmd)
 	RootCmd.AddCommand(engine.EngineCmd)
 	RootCmd.AddCommand(version.VersionCmd)
 	RootCmd.AddCommand(gateway.GatewayCmd)
@@ -100,7 +102,9 @@ func init() {
 }
 
 // ====================================================================================================
-//                                       Private Helper Functions
+//
+//	Private Helper Functions
+//
 // ====================================================================================================
 func globalSetup(cmd *cobra.Command, args []string) error {
 	if err := setupCLILogs(cmd); err != nil {
@@ -140,7 +144,7 @@ func checkCLIVersion(cmd *cobra.Command) {
 	if err != nil {
 		logrus.Warning("An error occurred trying to check if you are running the latest Kurtosis CLI version.")
 		logrus.Debugf("Checking latest version error: %v", err)
-		logrus.Warningf("Your current version is '%v'", kurtosis_cli_version.KurtosisCLIVersion)
+		logrus.Warningf("Your current version is '%v'", kurtosis_version.KurtosisVersion)
 		logrus.Warningf("You can manually upgrade the CLI tool following these instructions: %v", upgradeCLIInstructionsDocsPageURL)
 		return
 	}
@@ -151,7 +155,7 @@ func checkCLIVersion(cmd *cobra.Command) {
 }
 
 func isLatestCLIVersion() (bool, string, error) {
-	ownVersionStr := kurtosis_cli_version.KurtosisCLIVersion
+	ownVersionStr := kurtosis_version.KurtosisVersion
 	latestVersionStr, err := getLatestCLIReleaseVersion()
 	if err != nil {
 		return false, "", stacktrace.Propagate(err, "An error occurred getting the latest release version number from the GitHub public API")
@@ -177,7 +181,7 @@ func isLatestCLIVersion() (bool, string, error) {
 	return false, latestVersionStr, nil
 }
 
-func parseVersionStrToSemVer(versionStr string) (*semver.Version, error)  {
+func parseVersionStrToSemVer(versionStr string) (*semver.Version, error) {
 	semVer, err := semver.NewVersion(versionStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing version string '%v' to sem version", versionStr)

@@ -74,8 +74,12 @@ func NewDockerKurtosisBackend(
 	}
 }
 
-func (backend *DockerKurtosisBackend) PullImage(image string) error {
-	return stacktrace.NewError("PullImage isn't implemented for Docker yet")
+func (backend *DockerKurtosisBackend) FetchImage(ctx context.Context, image string) error {
+	err := backend.dockerManager.FetchImage(ctx, image)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred fetching image from kurtosis backend")
+	}
+	return nil
 }
 
 func (backend *DockerKurtosisBackend) CreateEngine(
@@ -139,8 +143,8 @@ func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enc
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
-	if logsCollector == nil || logsCollector.GetStatus() != container_status.ContainerStatus_Running{
-		return nil, nil, stacktrace.NewError("The user services can't be started because there is not logs collector running for sending the logs")
+	if logsCollector == nil || logsCollector.GetStatus() != container_status.ContainerStatus_Running {
+		return nil, nil, stacktrace.NewError("The user services can't be started because no logs collector is running for sending the logs to")
 	}
 
 	return user_service_functions.StartUserServices(
@@ -267,50 +271,53 @@ func (backend *DockerKurtosisBackend) CreateLogsDatabase(
 ) (
 	*logs_database.LogsDatabase,
 	error,
-){
+) {
 
 	//Declaring the implementation
 	logsDatabaseContainer := loki.NewLokiLogDatabaseContainer()
 
-	return logs_database_functions.CreateLogsDatabase(
+	logsDatabase, err := logs_database_functions.CreateLogsDatabase(
 		ctx,
 		logsDatabaseContainer,
 		backend.dockerManager,
 		backend.objAttrsProvider,
 	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database using the logs database container '%+v'", logsDatabaseContainer)
+	}
+	return logsDatabase, nil
 }
 
+// If nothing is found returns nil
 func (backend *DockerKurtosisBackend) GetLogsDatabase(
 	ctx context.Context,
 ) (
-	*logs_database.LogsDatabase,
-	error,
+	resultMaybeLogsDatabase *logs_database.LogsDatabase,
+	resultErr error,
 ) {
-	return logs_database_functions.GetLogsDatabase(
+	maybeLogsDatabase, err := logs_database_functions.GetLogsDatabase(
 		ctx,
 		backend.dockerManager,
 	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database")
+	}
+
+	return maybeLogsDatabase, nil
 }
 
 func (backend *DockerKurtosisBackend) DestroyLogsDatabase(
 	ctx context.Context,
-) (
-	error,
-) {
+) error {
 
-	logsCollector, err := backend.GetLogsCollector(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the logs collector")
-	}
-
-	if logsCollector != nil && logsCollector.GetStatus() == container_status.ContainerStatus_Running {
-		return stacktrace.NewError("The logs database can't be destroyed due the logs collector is running")
-	}
-
-	return logs_database_functions.DestroyLogsDatabase(
+	if err := logs_database_functions.DestroyLogsDatabase(
 		ctx,
 		backend.dockerManager,
-	)
+	); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the logs database")
+	}
+
+	return nil
 }
 
 func (backend *DockerKurtosisBackend) CreateLogsCollector(
@@ -324,17 +331,17 @@ func (backend *DockerKurtosisBackend) CreateLogsCollector(
 	//TODO we we'd have to replace this part if we ever wanted to send to an external source
 	logsDatabase, err := backend.GetLogsDatabase(ctx)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database, it's not possible to run the logs collector without a logs database")
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database; the logs collector cannot be run without a logs database")
 	}
 
 	if logsDatabase == nil || logsDatabase.GetStatus() != container_status.ContainerStatus_Running {
-		return nil,stacktrace.NewError("The logs database is not running, it's not possible to run the logs collector without a running logs database")
+		return nil, stacktrace.NewError("The logs database is not running; the logs collector cannot be run without a running logs database")
 	}
 
 	//Declaring the implementation
 	logsCollectorContainer := fluentbit.NewFluentbitLogsCollectorContainer()
 
-	return logs_collector_functions.CreateLogsCollector(
+	logsCollector, err := logs_collector_functions.CreateLogsCollector(
 		ctx,
 		logsCollectorHttpPortNumber,
 		logsCollectorContainer,
@@ -342,30 +349,43 @@ func (backend *DockerKurtosisBackend) CreateLogsCollector(
 		backend.dockerManager,
 		backend.objAttrsProvider,
 	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector using the '%v' HTTP port number and the los collector container '%+v'", logsCollectorHttpPortNumber, logsCollectorContainer)
+	}
+
+	return logsCollector, nil
 }
 
+// If nothing is found returns nil
 func (backend *DockerKurtosisBackend) GetLogsCollector(
 	ctx context.Context,
 ) (
-	*logs_collector.LogsCollector,
-	error,
+	resultMaybeLogsCollector *logs_collector.LogsCollector,
+	resultErr error,
 ) {
-	return logs_collector_functions.GetLogsCollector(
+	maybeLogsCollector, err := logs_collector_functions.GetLogsCollector(
 		ctx,
 		backend.dockerManager,
 	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
+	}
+
+	return maybeLogsCollector, nil
 }
 
 func (backend *DockerKurtosisBackend) DestroyLogsCollector(
 	ctx context.Context,
-) (
-	error,
-) {
+) error {
 
-	return logs_collector_functions.DestroyLogsCollector(
+	if err := logs_collector_functions.DestroyLogsCollector(
 		ctx,
 		backend.dockerManager,
-	)
+	); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the logs collector")
+	}
+
+	return nil
 }
 
 // ====================================================================================================
