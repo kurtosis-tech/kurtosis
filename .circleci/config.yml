@@ -908,6 +908,12 @@ jobs:
 
       - checkout
 
+      # Generate Kurtosis Version
+      - run: |
+          tag=$(git describe)
+          "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $tag
+
+
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
@@ -945,6 +951,11 @@ jobs:
           sudo apt update
           sudo apt install kudet
       - checkout
+
+      # Generate Kurtosis Version
+      - run: |
+          tag=$(git describe)
+          "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $tag
 
       # Cache our dependencies
       - restore_cache:

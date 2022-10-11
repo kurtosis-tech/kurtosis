@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+* Fixes how the push cli artifacts & publish engine runs by generating kurtosis_version before hand
+
 # 0.50.1
 
 ### Fixes
