@@ -7,8 +7,8 @@ var mockedResponseBodyStr = `{
         "result": [
             {
                 "stream": {
-                    "kurtosisContainerType": "user-service",
-                    "kurtosisGUID": "test-user-service-1"
+                    "comKurtosistechContainerType": "user-service",
+                    "comKurtosistechGuid": "test-user-service-1"
                 },
                 "values": [
                     [
@@ -27,8 +27,8 @@ var mockedResponseBodyStr = `{
             },
             {
                 "stream": {
-                    "kurtosisContainerType": "user-service",
-                    "kurtosisGUID": "test-user-service-2"
+                    "comKurtosistechContainerType": "user-service",
+                    "comKurtosistechGuid": "test-user-service-2"
                 },
                 "values": [
                     [
@@ -51,8 +51,8 @@ var mockedResponseBodyStr = `{
             },
 			{
                 "stream": {
-                    "kurtosisContainerType": "user-service",
-                    "kurtosisGUID": "test-user-service-3"
+                    "comKurtosistechContainerType": "user-service",
+                    "comKurtosistechGuid": "test-user-service-3"
                 },
                 "values": [
                     [

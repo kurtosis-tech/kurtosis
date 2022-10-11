@@ -2,7 +2,7 @@ package commands
 
 import (
 	"bytes"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cli_version"
+	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -27,7 +27,7 @@ func TestVersion(t *testing.T) {
 	err := root.Execute()
 	require.NoError(t, err)
 
-	assert.Equal(t, kurtosis_cli_version.KurtosisCLIVersion + "\n", buf.String())
+	assert.Equal(t, kurtosis_version.KurtosisVersion + "\n", buf.String())
 }
 
 func TestGetLatestCLIReleaseVersionFromCacheFile_CacheFileDoesNotExist(t *testing.T) {

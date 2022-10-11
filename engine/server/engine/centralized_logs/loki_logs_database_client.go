@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_database_functions/implementations/loki"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_database_functions/implementations/loki/tags"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
@@ -23,7 +27,7 @@ const (
 	queryRangeEndpointSubpath = "/query_range"
 
 	//the global retention period store logs for 30 days = 720h.
-	maxRetentionPeriod = 720 * time.Hour
+	maxRetentionPeriodHours = loki.LimitsRetentionPeriodHours * time.Hour
 
 	//We use this header because we are using the Loki multi-tenancy feature to split logs by the EnclaveID
 	//Read more about it here: https://grafana.com/docs/loki/latest/operations/multi-tenancy/
@@ -38,16 +42,12 @@ const (
 	//We are establishing a big limit in order to get all the user-service's logs in one request
 	//We will improve this in the future generating a pagination mechanism based on the limit number
 	//and the unix epoch time (as the start time for the next request) returned by newest stream's log line
+	//We chose 4k because 4000 x 1kb lines = 4 MB, which is just under the Protobuf limit of 5MB
 	defaultEntriesLimit = "4000"
 	//The oldest item is first when using direction=forward
 	defaultDirection = "forward"
 
-	kurtosisContainerTypeLokiTagKey = "kurtosisContainerType"
-	kurtosisGuidLokiTagKey          = "kurtosisGUID"
-
-	orTagsOperator = "|"
-
-	userServiceContainerType = "user-service"
+	disjunctionTagOperator = "|"
 
 	//A stream value should contain 2 items, the timestamp as the first one, and the log line
 	//More here: https://grafana.com/docs/loki/latest/api/
@@ -68,39 +68,40 @@ var httpRetriesBackoffSchedule = []time.Duration{
 	1 * time.Second,
 }
 
-type LokiQueryRangeResponse struct {
+//fields are public because it's needed for JSON decoding
+type lokiQueryRangeResponse struct {
 	Status string `json:"status"`
 	Data   *struct {
 		ResultType string `json:"resultType"`
 		Result     []struct {
 			Stream struct {
-				KurtosisContainerType string `json:"kurtosisContainerType"`
-				KurtosisGUID          string `json:"kurtosisGUID"`
+				KurtosisContainerType string `json:"comKurtosistechContainerType"`
+				KurtosisGUID          string `json:"comKurtosistechGuid"`
 			} `json:"stream"`
 			Values [][]string `json:"values"`
 		} `json:"result"`
 	} `json:"data"`
 }
 
-type LogLine struct {
+type logLine struct {
 	Log string `json:"log"`
 }
 
-type LokiLogsDatabaseClient struct {
+type lokiLogsDatabaseClient struct {
 	logsDatabaseAddress string
 	httpClient          httpClient
 }
 
-func NewLokiLogsDatabaseClient(logsDatabaseAddress string, httpClient httpClient) *LokiLogsDatabaseClient {
-	return &LokiLogsDatabaseClient{logsDatabaseAddress: logsDatabaseAddress, httpClient: httpClient}
+func NewLokiLogsDatabaseClient(logsDatabaseAddress string, httpClient httpClient) *lokiLogsDatabaseClient {
+	return &lokiLogsDatabaseClient{logsDatabaseAddress: logsDatabaseAddress, httpClient: httpClient}
 }
 
-func NewLokiLogsDatabaseClientWithDefaultHttpClient(logsDatabaseAddress string) *LokiLogsDatabaseClient {
+func NewLokiLogsDatabaseClientWithDefaultHttpClient(logsDatabaseAddress string) *lokiLogsDatabaseClient {
 	httpClientObj := &http.Client{Timeout: defaultHttpClientTimeOut}
-	return &LokiLogsDatabaseClient{logsDatabaseAddress: logsDatabaseAddress, httpClient: httpClientObj}
+	return &lokiLogsDatabaseClient{logsDatabaseAddress: logsDatabaseAddress, httpClient: httpClientObj}
 }
 
-func (client *LokiLogsDatabaseClient) GetUserServiceLogs(
+func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
 	userServiceGuids map[service.ServiceGUID]bool,
@@ -117,7 +118,10 @@ func (client *LokiLogsDatabaseClient) GetUserServiceLogs(
 	}
 
 	maxRetentionLogsTimeParamValue := getMaxRetentionLogsTimeParamValue()
-	queryParamValue := getQueryParamValue(userServiceContainerType, kurtosisGuid)
+
+	userServiceContainerTypeDockerValue := label_value_consts.UserServiceContainerTypeDockerLabelValue.GetString()
+
+	queryParamValue := getQueryParamValue(userServiceContainerTypeDockerValue, kurtosisGuid)
 
 	getLogsPath := baseLokiApiPath + queryRangeEndpointSubpath
 
@@ -146,19 +150,19 @@ func (client *LokiLogsDatabaseClient) GetUserServiceLogs(
 
 	httpResponseBodyBytes, err := client.doHttpRequestWithRetries(httpRequestWithContext)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred doing http request '%+v'", httpRequestWithContext)
+		return nil, stacktrace.Propagate(err, "An error occurred doing HTTP request '%+v'", httpRequestWithContext)
 	}
 
-	lokiQueryRangeResponse := &LokiQueryRangeResponse{}
-	if err = json.Unmarshal(httpResponseBodyBytes, lokiQueryRangeResponse); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred unmarshalling the loki query range response")
+	lokiQueryRangeResponseObj := &lokiQueryRangeResponse{}
+	if err = json.Unmarshal(httpResponseBodyBytes, lokiQueryRangeResponseObj); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred unmarshalling the Loki query range response")
 	}
 
-	if lokiQueryRangeResponse == nil || lokiQueryRangeResponse.Data == nil {
-		return nil, stacktrace.Propagate(err, "The response body's schema payload received '%+v' by calling the Loki's query range endpoint is not what was expected; this is a bug in Kurtosis", lokiQueryRangeResponse)
+	if lokiQueryRangeResponseObj == nil || lokiQueryRangeResponseObj.Data == nil {
+		return nil, stacktrace.Propagate(err, "The response body's schema payload received '%+v' by calling the Loki's query range endpoint is not what was expected; this is a bug in Kurtosis", lokiQueryRangeResponseObj)
 	}
 
-	for _, queryRangeResult := range lokiQueryRangeResponse.Data.Result {
+	for _, queryRangeResult := range lokiQueryRangeResponseObj.Data.Result {
 		resultKurtosisGuidStr := queryRangeResult.Stream.KurtosisGUID
 		resultKurtosisGuid := service.ServiceGUID(resultKurtosisGuidStr)
 		resultKurtosisGuidLogLinesStr := make([]string, len(queryRangeResult.Values))
@@ -179,7 +183,7 @@ func (client *LokiLogsDatabaseClient) GetUserServiceLogs(
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func (client *LokiLogsDatabaseClient) doHttpRequestWithRetries(request *http.Request) ([]byte, error)  {
+func (client *lokiLogsDatabaseClient) doHttpRequestWithRetries(request *http.Request) ([]byte, error)  {
 
 	var (
 		httpResponse          *http.Response
@@ -191,11 +195,11 @@ func (client *LokiLogsDatabaseClient) doHttpRequestWithRetries(request *http.Req
 
 		httpResponse, httpResponseBodyBytes, err = client.doHttpRequest(request)
 		if err != nil {
-			logrus.Debugf("Doing http request '%+v' returned with the following error: %v", request, err.Error())
+			logrus.Debugf("Doing HTTP request '%+v' returned with the following error: %v", request, err.Error())
 		}
 
 		if httpResponse != nil {
-			logrus.Debugf("Doing http request '%+v' returned with body '%v' and '%v' status code", request, string(httpResponseBodyBytes), httpResponse.StatusCode)
+			logrus.Debugf("Doing HTTP request '%+v' returned with body '%v' and '%v' status code", request, string(httpResponseBodyBytes), httpResponse.StatusCode)
 
 			if httpResponse.StatusCode == http.StatusOK {
 				return httpResponseBodyBytes, nil
@@ -203,7 +207,7 @@ func (client *LokiLogsDatabaseClient) doHttpRequestWithRetries(request *http.Req
 
 			//Do not retry if the status code indicate problems in the client side
 			if httpResponse.StatusCode > http.StatusBadRequest && httpResponse.StatusCode < http.StatusInternalServerError {
-				return nil, stacktrace.NewError("Executing the http request '%+v' returned not valid status code '%v'", request, httpResponse.StatusCode)
+				return nil, stacktrace.NewError("Executing the HTTP request '%+v' returned not valid status code '%v'", request, httpResponse.StatusCode)
 			}
 		}
 
@@ -211,14 +215,14 @@ func (client *LokiLogsDatabaseClient) doHttpRequestWithRetries(request *http.Req
 		time.Sleep(retryBackoff)
 	}
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred doing http request '%+v' even after applying this retry backoff schedule '%+v'", request, httpRetriesBackoffSchedule)
+		return nil, stacktrace.Propagate(err, "An error occurred doing HTTP request '%+v' even after applying this retry backoff schedule '%+v'", request, httpRetriesBackoffSchedule)
 	}
 
 	return nil, stacktrace.NewError("The request '%+v' could not be executed successfully, even after applying this retry backoff schedule '%+v', the status code '%v' and body '%v' were the last one received", request, httpRetriesBackoffSchedule, httpResponse.StatusCode, string(httpResponseBodyBytes))
 }
 
 
-func (client *LokiLogsDatabaseClient) doHttpRequest(
+func (client *lokiLogsDatabaseClient) doHttpRequest(
 	request *http.Request,
 ) (
 	resultResponse *http.Response,
@@ -233,7 +237,7 @@ func (client *LokiLogsDatabaseClient) doHttpRequest(
 
 	httpResponse, err := client.httpClient.Do(request)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred doing http request '%+v'", request)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred doing HTTP request '%+v'", request)
 	}
 	defer httpResponse.Body.Close()
 
@@ -250,7 +254,7 @@ func (client *LokiLogsDatabaseClient) doHttpRequest(
 
 func getMaxRetentionLogsTimeParamValue() string {
 	now := time.Now()
-	maxRetentionLogsTime := now.Add(-maxRetentionPeriod)
+	maxRetentionLogsTime := now.Add(-maxRetentionPeriodHours)
 	maxRetentionLogsTimeNano := maxRetentionLogsTime.UnixNano()
 	maxRetentionLogsTimeNanoStr := fmt.Sprintf("%v", maxRetentionLogsTimeNano)
 	return maxRetentionLogsTimeNanoStr
@@ -260,7 +264,17 @@ func getQueryParamValue(
 	kurtosisContainerType string,
 	kurtosisGuids []string,
 ) string {
-	kurtosisGuidParaValues := getKurtosisGuidParaValues(kurtosisGuids)
+	kurtosisGuidParaValues := getKurtosisGuidParamValues(kurtosisGuids)
+
+	allLogsDatabaseKurtosisTrackedValidLokiTagsByDockerLabelKey := docker_kurtosis_backend.GetAllLogsDatabaseKurtosisTrackedValidLokiTagsByDockerLabelKey()
+
+	kurtosisContainerTypeDockerLabelKey := label_key_consts.ContainerTypeDockerLabelKey
+
+	kurtosisContainerTypeLokiTagKey := allLogsDatabaseKurtosisTrackedValidLokiTagsByDockerLabelKey[kurtosisContainerTypeDockerLabelKey]
+
+	kurtosisGuidDockerLabelKey := label_key_consts.GUIDDockerLabelKey
+
+	kurtosisGuidLokiTagKey := allLogsDatabaseKurtosisTrackedValidLokiTagsByDockerLabelKey[kurtosisGuidDockerLabelKey]
 
 	queryParamWithKurtosisTagsQueryValue := fmt.Sprintf(
 		`{%v="%v",%v=~"%v"}`,
@@ -272,8 +286,8 @@ func getQueryParamValue(
 	return queryParamWithKurtosisTagsQueryValue
 }
 
-func getKurtosisGuidParaValues(kurtosisGuids []string) string {
-	kurtosisGuidsParamValues := strings.Join(kurtosisGuids, orTagsOperator)
+func getKurtosisGuidParamValues(kurtosisGuids []string) string {
+	kurtosisGuidsParamValues := strings.Join(kurtosisGuids, disjunctionTagOperator)
 	return kurtosisGuidsParamValues
 }
 
@@ -284,7 +298,7 @@ func getLogLineStrFromStreamValue(streamValue []string) (string, error) {
 
 	logLineStr := streamValue[streamValueLogLineIndex]
 	logLineBytes := []byte(logLineStr)
-	logLineObj := &LogLine{}
+	logLineObj := &logLine{}
 
 	if err := json.Unmarshal(logLineBytes, logLineObj); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred unmarshalling logline '%+v'", logLineObj)

@@ -11,6 +11,7 @@ const (
 	containerImage          = "grafana/loki:main-19c7315"
 	httpPortNumber   uint16 = 3100 // Default Loki HTTP API port number, more here: https://grafana.com/docs/loki/latest/api/
 	httpPortProtocol        = port_spec.PortProtocol_TCP
+	logLevel                = "info"
 
 	configFilepath = configDirpath + "local-config.yaml"
 	binaryFilepath = "/usr/bin/loki"
@@ -52,8 +53,8 @@ const (
 
 	//The next values are used to configure the Compactor component which allows us to enable the retention period
 	//See more here: https://grafana.com/docs/loki/latest/operations/storage/retention/
-	compactorWorkingDirectory           = dirpath + "/compactor"
-	compactorRetentionEnabled           = true
+	compactorWorkingDirectory = dirpath + "/compactor"
+	compactorRetentionEnabled = true
 	//More about retention delete delay here: https://grafana.com/docs/loki/latest/operations/storage/retention/#compactor
 	compactorRetentionDeleteDelay       = "1h"
 	compactorRetentionDeleteWorkerCount = 150
@@ -61,7 +62,8 @@ const (
 	compactorDeletionMode = "filter-and-delete"
 	//It's the global retention period (the retention period by TenantID overrides this value)
 	//the global retention period store logs for 30 days = 720h.
-	limitsRetentionPeriod = "720h"
+	LimitsRetentionPeriodHours         = 720
+	limitsRetentionPeriodHourIndicator = "h"
 	//This value enables the deletion API
 	allowDeletes = true
 
@@ -73,9 +75,9 @@ const (
 	runtimeConfigFileInitialContent = "overrides:"
 
 	//The configuration for the ingester WAL, it's important for storing chunks when the server is shutdown. See more here: https://grafana.com/docs/loki/latest/configuration/#ingester
-	enableIngesterWal = true
-	ingesterWalDirpath  = dirpath + "/wal"
+	enableIngesterWal          = true
+	ingesterWalDirpath         = dirpath + "/wal"
 	flushIngesterWalOnShutdown = true //It's useful for graceful shutdowns
-	checkpointDuration = "1s" //It's useful for ungraceful shutdowns, whe the server is restarted the WAL loads the last checkpoint saved
+	checkpointDuration         = "1s" //It's useful for ungraceful shutdowns, whe the server is restarted the WAL loads the last checkpoint saved
 	////////////////////////--FINISH--LOKI CONFIGURATION SECTION--/////////////////////////////
 )

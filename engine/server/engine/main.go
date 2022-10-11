@@ -123,7 +123,7 @@ func runMain() error {
 		}
 
 		if logsDatabase == nil || logsDatabase.GetStatus() == container_status.ContainerStatus_Stopped {
-			return stacktrace.NewError("It's not possible to run the engine serve due the current logs database container is not running")
+			return stacktrace.NewError("The engine server cannot be run because the logs database container is not running")
 		}
 
 		privateLogsDatabaseAddress := fmt.Sprintf("%v:%v", logsDatabase.GetMaybePrivateIpAddr(), logsDatabase.GetPrivateHttpPort().GetNumber())

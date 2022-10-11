@@ -84,6 +84,15 @@ func (service *ApiContainerGatewayServiceServer) ExecuteModule(ctx context.Conte
 	return remoteApiContainerResponse, nil
 }
 
+func (service *ApiContainerGatewayServiceServer) ExecuteStartosisScript(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse, error) {
+	remoteApiContainerResponse, err := service.remoteApiContainerClient.ExecuteStartosisScript(ctx, args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to call the remote api container from the gateway, instead a non nil err was returned")
+	}
+
+	return remoteApiContainerResponse, nil
+}
+
 func (service *ApiContainerGatewayServiceServer) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {
 	service.mutex.Lock()
 	defer service.mutex.Unlock()
@@ -252,7 +261,7 @@ func (service *ApiContainerGatewayServiceServer) RenderTemplatesToFilesArtifact(
 	return remoteApiContainerResponse, nil
 }
 
-//writeOverServiceInfoFieldsWithLocalConnectionInformation overwites the `MaybePublicPorts` and `MaybePublicIpAdrr` fields to connect to local ports forwarding requests to private ports in Kubernetes
+// writeOverServiceInfoFieldsWithLocalConnectionInformation overwites the `MaybePublicPorts` and `MaybePublicIpAdrr` fields to connect to local ports forwarding requests to private ports in Kubernetes
 // Only TCP Private Ports are forwarded
 func (service *ApiContainerGatewayServiceServer) writeOverServiceInfoFieldsWithLocalConnectionInformation(serviceInfo *kurtosis_core_rpc_api_bindings.ServiceInfo) error {
 	// If the service has no private ports, then don't overwrite any of the service info fields

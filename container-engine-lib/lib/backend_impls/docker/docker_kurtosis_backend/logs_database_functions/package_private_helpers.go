@@ -101,10 +101,15 @@ func getAllLogsDatabaseContainers(ctx context.Context, dockerManager *docker_man
 	return matchingLogsDatabaseContainers, nil
 }
 
-func getLogsDatabaseObjectAndContainerIdMatching(
+//If nothing is found returns nil
+func getLogsDatabaseObjectAndContainerId(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
-) (*logs_database.LogsDatabase, string, error) {
+) (
+	resultMaybeLogsDatabase *logs_database.LogsDatabase,
+	resultMaybeContainerId string,
+	resultErr error,
+) {
 	allLogsDatabaseContainers, err := getAllLogsDatabaseContainers(ctx, dockerManager)
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "An error occurred getting all logs database containers")

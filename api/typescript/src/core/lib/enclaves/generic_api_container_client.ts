@@ -9,6 +9,8 @@ import {
     ExecCommandResponse,
     ExecuteModuleArgs,
     ExecuteModuleResponse,
+    ExecuteStartosisScriptArgs,
+    ExecuteStartosisScriptResponse,
     GetModulesArgs,
     GetModulesResponse,
     GetServicesArgs,
@@ -39,6 +41,7 @@ export interface GenericApiContainerClient {
     getEnclaveId(): EnclaveID
     loadModule(loadModuleArgs: LoadModuleArgs): Promise<Result<null, Error>>
     unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<UnloadModuleResponse,Error>>
+    executeStartosisScript(serializedStartosisScript: ExecuteStartosisScriptArgs): Promise<Result<ExecuteStartosisScriptResponse, Error>>
     startServices(startServicesArgs: StartServicesArgs): Promise<Result<StartServicesResponse, Error>>
     removeService(args: RemoveServiceArgs): Promise<Result<RemoveServiceResponse, Error>>
     repartitionNetwork(repartitionArgs: RepartitionArgs): Promise<Result<null, Error>>

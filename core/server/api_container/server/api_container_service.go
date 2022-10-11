@@ -52,6 +52,13 @@ const (
 	tempDirForRenderedTemplatesPrefix = "temp-dir-for-rendered-templates-"
 
 	compressedRenderedTemplatesFilenamePattern = "compressed-rendered-templates-*.tgz"
+
+	noExecutionError      = ""
+	noInterpretationError = ""
+)
+
+var (
+	noValidationErrors = []*kurtosis_core_rpc_api_bindings.StartosisValidationError{}
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -67,11 +74,13 @@ type ApiContainerService struct {
 
 	filesArtifactStore *enclave_data_directory.FilesArtifactStore
 
-	serviceNetwork *service_network.ServiceNetwork
+	serviceNetwork service_network.ServiceNetwork
 
 	moduleStore *module_store.ModuleStore
 
 	startosisInterpreter *startosis_engine.StartosisInterpreter
+
+	startosisValidator *startosis_engine.StartosisValidator
 
 	startosisExecutor *startosis_engine.StartosisExecutor
 
@@ -80,9 +89,10 @@ type ApiContainerService struct {
 
 func NewApiContainerService(
 	filesArtifactStore *enclave_data_directory.FilesArtifactStore,
-	serviceNetwork *service_network.ServiceNetwork,
+	serviceNetwork service_network.ServiceNetwork,
 	moduleStore *module_store.ModuleStore,
 	startosisInterpreter *startosis_engine.StartosisInterpreter,
+	startosisValidator *startosis_engine.StartosisValidator,
 	startosisExecutor *startosis_engine.StartosisExecutor,
 	metricsClient client.MetricsClient,
 ) (*ApiContainerService, error) {
@@ -91,6 +101,7 @@ func NewApiContainerService(
 		serviceNetwork:       serviceNetwork,
 		moduleStore:          moduleStore,
 		startosisInterpreter: startosisInterpreter,
+		startosisValidator:   startosisValidator,
 		startosisExecutor:    startosisExecutor,
 		metricsClient:        metricsClient,
 	}
@@ -185,38 +196,48 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 
 	// TODO(gb): add metric tracking maybe?
 
-	interpretationOutput, potentialInterpretationError, generatedInstructionsList, err :=
+	interpretationOutput, potentialInterpretationError, generatedInstructionsList :=
 		apicService.startosisInterpreter.Interpret(ctx, serializedStartosisScript)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to interpret Startosis script for an unexpected reason: \n%v",
-			serializedStartosisScript)
-	}
 	if potentialInterpretationError != nil {
-		return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
-			SerializedScriptOutput: interpretationOutput.Get(),
-			InterpretationError:    potentialInterpretationError.Get(),
-		}, nil
+		return binding_constructors.NewExecuteStartosisScriptResponse(
+			string(interpretationOutput),
+			potentialInterpretationError.Error(),
+			noValidationErrors,
+			noExecutionError,
+		), nil
 	}
-
 	logrus.Debugf("Successfully interpreted Startosis script into a series of Kurtosis instructions: \n%v",
 		generatedInstructionsList)
 
-	executionError, err := apicService.startosisExecutor.Execute(ctx, generatedInstructionsList)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unexpected error encountered running the Kurtosis instructions: \n%v",
-			generatedInstructionsList)
+	// TODO: Abstract this into a ValidationError
+	validationErrors := apicService.startosisValidator.Validate(ctx, generatedInstructionsList)
+	if validationErrors != nil {
+		return binding_constructors.NewExecuteStartosisScriptResponse(
+			string(interpretationOutput),
+			noInterpretationError,
+			validationErrors,
+			noExecutionError,
+		), nil
 	}
-	if executionError != nil {
-		return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
-			SerializedScriptOutput: interpretationOutput.Get(),
-			ExecutionError:         executionError.Error,
-		}, nil
+	logrus.Debugf("Successfully validated Startosis script")
+
+	err := apicService.startosisExecutor.Execute(ctx, generatedInstructionsList)
+	if err != nil {
+		return binding_constructors.NewExecuteStartosisScriptResponse(
+			string(interpretationOutput),
+			noInterpretationError,
+			noValidationErrors,
+			err.Error(),
+		), nil
 	}
 	logrus.Debugf("Successfully executed the list of Kurtosis instructions")
 
-	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
-		SerializedScriptOutput: interpretationOutput.Get(),
-	}, nil
+	return binding_constructors.NewExecuteStartosisScriptResponse(
+		string(interpretationOutput),
+		noInterpretationError,
+		noValidationErrors,
+		noExecutionError,
+	), nil
 }
 
 func (apicService ApiContainerService) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {

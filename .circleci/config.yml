@@ -123,9 +123,9 @@ parameters:
   cli-build-cache-key-prefix:
     type: string
     default: "cli-go-mod-v1"
-  run-pre-release-scripts-script-path:
+  generate-kurtosis-version-script-path:
     type: string
-    default: "scripts/run-pre-release-scripts.sh"
+    default: "scripts/generate-kurtosis-version.sh"
   core-server-image-filename:
     type: string
     default: "core-server-image.tgz"
@@ -135,6 +135,9 @@ parameters:
   engine-server-image-filename:
     type: string
     default: "engine-server-image.tgz"
+  startosis-test-script-file-relative-path:
+    type: string
+    default: "internal_testsuites/startosis/ci_tests/startosis_simple_script.star"
 
 
 
@@ -226,8 +229,8 @@ jobs:
           sudo apt update
           sudo apt install kudet
 
-      # Run pre release scripts
-      - run: "<<pipeline.parameters.run-pre-release-scripts-script-path>>"
+      # Generate Kurtosis Version
+      - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
 
       - setup_remote_docker:
@@ -261,6 +264,15 @@ jobs:
             circleci-agent step halt
           fi
 
+      # Install Kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
+      # Generate Kurtosis Version
+      - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
+
       # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
@@ -285,8 +297,8 @@ jobs:
           sudo apt update
           sudo apt install kudet
 
-      # Run pre release scripts
-      - run: "<<pipeline.parameters.run-pre-release-scripts-script-path>>"
+      # Generate Kurtosis Version
+      - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
@@ -333,6 +345,15 @@ jobs:
             circleci-agent step halt
           fi
 
+      # Install Kudet
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kudet
+
+      # Generate Kurtosis Version
+      - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
+
       # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
@@ -357,8 +378,8 @@ jobs:
           sudo apt update
           sudo apt install kudet
 
-      # Run pre release scripts
-      - run: "<<pipeline.parameters.run-pre-release-scripts-script-path>>"
+      # Generate Kurtosis Version
+      - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
@@ -411,17 +432,14 @@ jobs:
           sudo apt update
           sudo apt install kudet
 
-      # Run pre release scripts
-      - run: "<<pipeline.parameters.run-pre-release-scripts-script-path>>"
+      # Generate Kurtosis Version
+      - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
       # Install goreleaser
       - run: |
           echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
           sudo apt update
           sudo apt install goreleaser
-
-      - setup_remote_docker:
-          version: "<< pipeline.parameters.docker-engine-version>>"
 
       # Cache our dependencies
       - restore_cache:
@@ -443,6 +461,7 @@ jobs:
           root: .
           paths:
             - "./<< pipeline.parameters.cli-dist-home-relative-dirpath >>"
+            - "./<< pipeline.parameters.startosis-test-script-file-relative-path >>"
 
   build_golang_testsuite:
     executor: ubuntu_vm
@@ -665,6 +684,10 @@ jobs:
       - run: "${KURTOSIS_BINPATH} module exec --enclave-id test-enclave kurtosistech/datastore-army-module --execute-params '{\"numDatastores\":2}'"
       - run: "${KURTOSIS_BINPATH} enclave ls"
       - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"
+
+      # Execute simple startosis script in new enclave
+      - run: "${KURTOSIS_BINPATH} startosis exec --enclave-id test-enclave << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.startosis-test-script-file-relative-path >>"
+
       - run: "${KURTOSIS_BINPATH} enclave stop test-enclave"
       - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"   # Ensure we can still inspect stopped enclaves
       - run: "${KURTOSIS_BINPATH} clean -a"
@@ -885,6 +908,12 @@ jobs:
 
       - checkout
 
+      # Generate Kurtosis Version
+      - run: |
+          tag=$(git describe)
+          "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $tag
+
+
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
@@ -922,6 +951,11 @@ jobs:
           sudo apt update
           sudo apt install kudet
       - checkout
+
+      # Generate Kurtosis Version
+      - run: |
+          tag=$(git describe)
+          "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $tag
 
       # Cache our dependencies
       - restore_cache:

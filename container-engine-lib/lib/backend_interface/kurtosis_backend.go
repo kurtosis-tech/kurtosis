@@ -26,8 +26,7 @@ import (
 // The heuristic for "do I need a method in KurtosisBackend?" here is "will I make one or more calls to
 // the underlying container engine?"
 type KurtosisBackend interface {
-	// Attempts to pull the image from remote to locally, overwriting the local if it exists
-	PullImage(image string) error
+	FetchImage(ctx context.Context, image string) error
 
 	// Creates an engine with the given parameters
 	CreateEngine(
@@ -233,8 +232,8 @@ type KurtosisBackend interface {
 		services map[service.ServiceID]*service.ServiceConfig,
 	) (
 		successfulServices map[service.ServiceID]*service.Service, // "set" of user service IDs that were successfully started
-		unsuccessfulServices map[service.ServiceID]error,          // "set" of user service IDs that errored when attempting to start, with the error
-		resultErr error,                                           // represents an error with the function itself, rather than the user services
+		unsuccessfulServices map[service.ServiceID]error, // "set" of user service IDs that errored when attempting to start, with the error
+		resultErr error, // represents an error with the function itself, rather than the user services
 	)
 
 	// Gets user services using the given filters, returning a map of matched user services identified by their GUID
@@ -390,7 +389,7 @@ type KurtosisBackend interface {
 		error,
 	)
 
-	// Gets the logs database
+	// Gets the logs database, if nothing is found returns nil
 	GetLogsDatabase(ctx context.Context) (*logs_database.LogsDatabase, error)
 
 	// Destroy the logs database
@@ -406,7 +405,7 @@ type KurtosisBackend interface {
 		error,
 	)
 
-	// Gets the logs collector
+	// Gets the logs collector, if nothing is found returns nil
 	GetLogsCollector(ctx context.Context) (*logs_collector.LogsCollector, error)
 
 	// Destroy the logs collector

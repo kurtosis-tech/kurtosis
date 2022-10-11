@@ -160,10 +160,14 @@ func (service *EngineServerService) GetUserServiceLogs(
 
 	userServiceLogLinesByUserServiceGuid := make(map[string]*kurtosis_engine_rpc_api_bindings.LogLine, len(userServiceLogsByUserServiceGuid))
 
-	for userServiceGuid, logLinesStr := range userServiceLogsByUserServiceGuid {
+	for userServiceGuid := range userServiceGuids {
 		userServiceGuidStr := string(userServiceGuid)
-		logLine := &kurtosis_engine_rpc_api_bindings.LogLine{Line: logLinesStr}
-		userServiceLogLinesByUserServiceGuid[userServiceGuidStr] = logLine
+		userServiceLogLinesStr, found := userServiceLogsByUserServiceGuid[userServiceGuid]
+		if !found {
+			userServiceLogLinesByUserServiceGuid[userServiceGuidStr] = &kurtosis_engine_rpc_api_bindings.LogLine{}
+		}
+		logLines := &kurtosis_engine_rpc_api_bindings.LogLine{Line: userServiceLogLinesStr}
+		userServiceLogLinesByUserServiceGuid[userServiceGuidStr] = logLines
 	}
 
 	response := &kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse{UserServiceLogsByUserServiceGuid: userServiceLogLinesByUserServiceGuid}
