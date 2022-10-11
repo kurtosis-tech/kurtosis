@@ -1,5 +1,8 @@
 # TBD
 
+### Changes
+* Add back old enclave continuity test
+
 # 0.50.2
 
 ### Fixes
