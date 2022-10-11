@@ -1,5 +1,7 @@
 package loki
 
+import "fmt"
+
 type LokiConfig struct {
 	AuthEnabled   bool          `yaml:"auth_enabled"`
 	Server        Server        `yaml:"server"`
@@ -150,7 +152,7 @@ func newDefaultLokiConfigForKurtosisCentralizedLogs() *LokiConfig {
 			DeletionMode:               compactorDeletionMode,
 		},
 		LimitsConfig: LimitsConfig{
-			RetentionPeriod: limitsRetentionPeriod,
+			RetentionPeriod: fmt.Sprintf("%v%v", LimitsRetentionPeriodHours, limitsRetentionPeriodHourIndicator),
 			AllowDeletes:    allowDeletes,
 		},
 		Analytics: Analytics{

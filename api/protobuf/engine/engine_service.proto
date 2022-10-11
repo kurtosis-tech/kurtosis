@@ -177,6 +177,7 @@ message GetUserServiceLogsResponse {
   map<string, LogLine> user_service_logs_by_user_service_guid = 1;
 }
 
+// TODO add timestamp as well, for when we do timestamp-handling on the client side
 message LogLine {
   repeated string line = 1;
 }

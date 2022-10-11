@@ -62,7 +62,8 @@ const (
 	compactorDeletionMode = "filter-and-delete"
 	//It's the global retention period (the retention period by TenantID overrides this value)
 	//the global retention period store logs for 30 days = 720h.
-	limitsRetentionPeriod = "720h"
+	LimitsRetentionPeriodHours         = 720
+	limitsRetentionPeriodHourIndicator = "h"
 	//This value enables the deletion API
 	allowDeletes = true
 
