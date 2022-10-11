@@ -82,6 +82,28 @@ function deserialize_engine_api_GetEngineInfoResponse(buffer_arg) {
   return engine_service_pb.GetEngineInfoResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_engine_api_GetUserServiceLogsArgs(arg) {
+  if (!(arg instanceof engine_service_pb.GetUserServiceLogsArgs)) {
+    throw new Error('Expected argument of type engine_api.GetUserServiceLogsArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_engine_api_GetUserServiceLogsArgs(buffer_arg) {
+  return engine_service_pb.GetUserServiceLogsArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_engine_api_GetUserServiceLogsResponse(arg) {
+  if (!(arg instanceof engine_service_pb.GetUserServiceLogsResponse)) {
+    throw new Error('Expected argument of type engine_api.GetUserServiceLogsResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_engine_api_GetUserServiceLogsResponse(buffer_arg) {
+  return engine_service_pb.GetUserServiceLogsResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_engine_api_StopEnclaveArgs(arg) {
   if (!(arg instanceof engine_service_pb.StopEnclaveArgs)) {
     throw new Error('Expected argument of type engine_api.StopEnclaveArgs');
@@ -180,6 +202,18 @@ clean: {
     requestDeserialize: deserialize_engine_api_CleanArgs,
     responseSerialize: serialize_engine_api_CleanResponse,
     responseDeserialize: deserialize_engine_api_CleanResponse,
+  },
+  // Get user service logs
+getUserServiceLogs: {
+    path: '/engine_api.EngineService/GetUserServiceLogs',
+    requestStream: false,
+    responseStream: false,
+    requestType: engine_service_pb.GetUserServiceLogsArgs,
+    responseType: engine_service_pb.GetUserServiceLogsResponse,
+    requestSerialize: serialize_engine_api_GetUserServiceLogsArgs,
+    requestDeserialize: deserialize_engine_api_GetUserServiceLogsArgs,
+    responseSerialize: serialize_engine_api_GetUserServiceLogsResponse,
+    responseDeserialize: deserialize_engine_api_GetUserServiceLogsResponse,
   },
 };
 

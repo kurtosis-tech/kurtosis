@@ -51,6 +51,13 @@ export class EngineServiceClient {
                response: engine_service_pb.CleanResponse) => void
   ): grpcWeb.ClientReadableStream<engine_service_pb.CleanResponse>;
 
+  getUserServiceLogs(
+    request: engine_service_pb.GetUserServiceLogsArgs,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: engine_service_pb.GetUserServiceLogsResponse) => void
+  ): grpcWeb.ClientReadableStream<engine_service_pb.GetUserServiceLogsResponse>;
+
 }
 
 export class EngineServicePromiseClient {
@@ -87,6 +94,11 @@ export class EngineServicePromiseClient {
     request: engine_service_pb.CleanArgs,
     metadata?: grpcWeb.Metadata
   ): Promise<engine_service_pb.CleanResponse>;
+
+  getUserServiceLogs(
+    request: engine_service_pb.GetUserServiceLogsArgs,
+    metadata?: grpcWeb.Metadata
+  ): Promise<engine_service_pb.GetUserServiceLogsResponse>;
 
 }
 

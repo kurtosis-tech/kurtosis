@@ -2,7 +2,8 @@ package fluentbit
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_database_functions/implementations/loki/tags"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_labels_for_logs"
 	"strings"
 )
 
@@ -12,12 +13,11 @@ const (
 
 	renameModifyFilterRuleAction = "rename"
 
+	//This is the "record accesor" character used by Fluentbit to dinamically get content from
+	//a log stream in JSON format
 	labelsVarPrefix = "$"
 
-	notAllowedCharsInLabels = " .-"
-	noSeparationChar        = ""
 
-	shouldChangeNextCharToUpperCaseInitialValue = false
 )
 
 type FluentbitConfig struct {
@@ -90,7 +90,7 @@ func newDefaultFluentbitConfigForKurtosisCentralizedLogs(
 			Port:        lokiPort,
 			Labels:      getOutputKurtosisLabelsForLogs(),
 			LineFormat:  jsonLineFormat,
-			TenantIDKey: getTenantIdKeyFromKurtosisLabels(),
+			TenantIDKey: docker_labels_for_logs.LogsDatabaseKurtosisTrackedDockerLabelUsedForIdentifyTenants.GetString(),
 			RetryLimit:  unlimitedOutputRetry,
 		},
 	}
@@ -108,10 +108,10 @@ func getModifyFilterRulesKurtosisLabels() []string {
 
 	modifyFilterRules := []string{}
 
-	kurtosisLabelsForLogs := getTrackedKurtosisLabelsForLogs()
-	for _, kurtosisLabel := range kurtosisLabelsForLogs {
-		validFormatLabelValue := newValidFormatLabelValue(kurtosisLabel)
-		modifyFilterRule := fmt.Sprintf("%v %v %v", renameModifyFilterRuleAction, kurtosisLabel, validFormatLabelValue)
+	kurtosisValidLokiTagsByDockerLabelKey := docker_kurtosis_backend.GetAllLogsDatabaseKurtosisTrackedValidLokiTagsByDockerLabelKey()
+	for kurtosisDockerLabelKey, kurtosisValidLokiTag := range kurtosisValidLokiTagsByDockerLabelKey {
+		kurtosisDockerLabelKeyStr := kurtosisDockerLabelKey.GetString()
+		modifyFilterRule := fmt.Sprintf("%v %v %v", renameModifyFilterRuleAction, kurtosisDockerLabelKeyStr, kurtosisValidLokiTag)
 		modifyFilterRules = append(modifyFilterRules, modifyFilterRule)
 	}
 	return modifyFilterRules
@@ -120,44 +120,10 @@ func getModifyFilterRulesKurtosisLabels() []string {
 func getOutputKurtosisLabelsForLogs() []string {
 	outputLabels := []string{}
 
-	kurtosisLabelsForLogs := getTrackedKurtosisLabelsForLogs()
-	for _, kurtosisLabel := range kurtosisLabelsForLogs {
-		validFormatLabelValue := newValidFormatLabelValue(kurtosisLabel)
-		outputLabel := fmt.Sprintf("%v%v", labelsVarPrefix, validFormatLabelValue)
+	kurtosisLokiTagsForLogs := docker_kurtosis_backend.GetAllLogsDatabaseKurtosisTrackedValidLokiTags()
+	for _, kurtosisLokiTag := range kurtosisLokiTagsForLogs {
+		outputLabel := fmt.Sprintf("%v%v", labelsVarPrefix, kurtosisLokiTag)
 		outputLabels = append(outputLabels, outputLabel)
 	}
 	return outputLabels
-}
-
-func getTrackedKurtosisLabelsForLogs() []string {
-	kurtosisLabelsForLogs := []string{
-		label_key_consts.GUIDDockerLabelKey.GetString(),
-		label_key_consts.ContainerTypeDockerLabelKey.GetString(),
-	}
-	return kurtosisLabelsForLogs
-}
-
-func getTenantIdKeyFromKurtosisLabels() string {
-	return label_key_consts.EnclaveIDDockerLabelKey.GetString()
-}
-
-func newValidFormatLabelValue(stringToModify string) string {
-	stringToModifyInLowerCase := strings.ToLower(stringToModify)
-	shouldChangeNextCharToUpperCase := shouldChangeNextCharToUpperCaseInitialValue
-	var shouldChangeCharToUpperCase bool
-	var newString string
-	for _, currenChar := range strings.Split(stringToModifyInLowerCase, noSeparationChar) {
-		newChar := currenChar
-		shouldChangeCharToUpperCase = shouldChangeNextCharToUpperCase
-		if shouldChangeCharToUpperCase {
-			newChar = strings.ToUpper(newChar)
-		}
-		if strings.ContainsAny(currenChar, notAllowedCharsInLabels) {
-			shouldChangeNextCharToUpperCase = true
-		} else {
-			shouldChangeNextCharToUpperCase = false
-			newString = newString + newChar
-		}
-	}
-	return newString
 }
