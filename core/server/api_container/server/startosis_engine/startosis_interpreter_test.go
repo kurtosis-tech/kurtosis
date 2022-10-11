@@ -155,7 +155,7 @@ print("The datastore service ip address is " + datastore_service.ip_address)
 Adding service example-datastore-server
 The grpc port is 1323
 The grpc port protocol is TCP
-The datastore service ip address is {{example-datastore-server.ip_address}}
+The datastore service ip address is {{kurtosis:example-datastore-server.ip_address}}
 `
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
