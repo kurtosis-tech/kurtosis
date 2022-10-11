@@ -1,5 +1,7 @@
 package loki
 
+import "fmt"
+
 type LokiConfig struct {
 	AuthEnabled   bool          `yaml:"auth_enabled"`
 	Server        Server        `yaml:"server"`
@@ -16,6 +18,7 @@ type LokiConfig struct {
 
 type Server struct {
 	HTTPListenPort uint16 `yaml:"http_listen_port"`
+	LogLevel       string `yaml:"log_level"`
 }
 
 type Filesystem struct {
@@ -55,8 +58,8 @@ type Configs struct {
 	From        string `yaml:"from"`
 	Store       string `yaml:"store"`
 	ObjectStore string `yaml:"object_store"`
-	Schema string `yaml:"schema"`
-	Index  Index  `yaml:"index"`
+	Schema      string `yaml:"schema"`
+	Index       Index  `yaml:"index"`
 }
 
 type SchemaConfig struct {
@@ -100,13 +103,14 @@ type RuntimeConfig struct {
 	Period string `yaml:"period"`
 }
 
-//The following Loki configuration values are specific for the Kurtosis centralized logs Loki implementation
-//some values were suggested by the Loki's documentation and this video: https://grafana.com/go/webinar/logging-with-loki-essential-configuration-settings/?pg=docs-loki&plcmt=footer-resources-2
+// The following Loki configuration values are specific for the Kurtosis centralized logs Loki implementation
+// some values were suggested by the Loki's documentation and this video: https://grafana.com/go/webinar/logging-with-loki-essential-configuration-settings/?pg=docs-loki&plcmt=footer-resources-2
 func newDefaultLokiConfigForKurtosisCentralizedLogs() *LokiConfig {
 	newConfig := &LokiConfig{
 		AuthEnabled: authEnabled,
 		Server: Server{
 			HTTPListenPort: httpPortNumber,
+			LogLevel:       logLevel,
 		},
 		Common: Common{
 			PathPrefix: dirpath,
@@ -148,7 +152,7 @@ func newDefaultLokiConfigForKurtosisCentralizedLogs() *LokiConfig {
 			DeletionMode:               compactorDeletionMode,
 		},
 		LimitsConfig: LimitsConfig{
-			RetentionPeriod: limitsRetentionPeriod,
+			RetentionPeriod: fmt.Sprintf("%v%v", LimitsRetentionPeriodHours, limitsRetentionPeriodHourIndicator),
 			AllowDeletes:    allowDeletes,
 		},
 		Analytics: Analytics{

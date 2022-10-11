@@ -12,9 +12,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
@@ -81,7 +83,12 @@ func runMain() error {
 		return stacktrace.NewError("Backend configuration parameters are null - there must be backend configuration parameters.")
 	}
 
-	enclaveManager, err := getEnclaveManager(ctx, serverArgs.KurtosisBackendType, backendConfig)
+	kurtosisBackend, err := getKurtosisBackend(ctx, serverArgs.KurtosisBackendType, backendConfig)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis backend for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
+	}
+
+	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
@@ -103,7 +110,31 @@ func runMain() error {
 		}
 	}()
 
-	engineServerService := server.NewEngineServerService(serverArgs.ImageVersionTag, enclaveManager, metricsClient, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics)
+	var logsDatabaseClient centralized_logs.LogsDatabaseClient
+
+	//TODO this is a hack until we completely finish the centralized logs for Kubernetes Backend
+	//TODO Create the logs database client depending on the Kurtosis Backend type (momentarily)
+	//TODO Then should be only one way, the one which uses the Loki's server
+	if serverArgs.KurtosisBackendType == args.KurtosisBackendType_Docker {
+
+		logsDatabase, err := kurtosisBackend.GetLogsDatabase(ctx)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting the logs database")
+		}
+
+		if logsDatabase == nil || logsDatabase.GetStatus() == container_status.ContainerStatus_Stopped {
+			return stacktrace.NewError("The engine server cannot be run because the logs database container is not running")
+		}
+
+		privateLogsDatabaseAddress := fmt.Sprintf("%v:%v", logsDatabase.GetMaybePrivateIpAddr(), logsDatabase.GetPrivateHttpPort().GetNumber())
+
+		logsDatabaseClient = centralized_logs.NewLokiLogsDatabaseClientWithDefaultHttpClient(privateLogsDatabaseAddress)
+
+	} else {
+		logsDatabaseClient = centralized_logs.NewKurtosisBackendLogClient(kurtosisBackend)
+	}
+
+	engineServerService := server.NewEngineServerService(serverArgs.ImageVersionTag, enclaveManager, metricsClient, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, logsDatabaseClient)
 
 	engineServerServiceRegistrationFunc := func(grpcServer *grpc.Server) {
 		kurtosis_engine_rpc_api_bindings.RegisterEngineServiceServer(grpcServer, engineServerService)
@@ -123,17 +154,32 @@ func runMain() error {
 	return nil
 }
 
-func getEnclaveManager(ctx context.Context, kurtosisBackendType args.KurtosisBackendType, backendConfig interface{}) (*enclave_manager.EnclaveManager, error) {
+func getEnclaveManager(kurtosisBackend backend_interface.KurtosisBackend, kurtosisBackendType args.KurtosisBackendType) (*enclave_manager.EnclaveManager, error) {
+	var apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
+	switch kurtosisBackendType {
+	case args.KurtosisBackendType_Docker:
+		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewDockerKurtosisBackendConfigSupplier()
+	case args.KurtosisBackendType_Kubernetes:
+		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewKubernetesKurtosisBackendConfigSupplier()
+	default:
+		return nil, stacktrace.NewError("Backend type '%v' was not recognized by engine server.", kurtosisBackendType.String())
+	}
+
+	enclaveManager := enclave_manager.NewEnclaveManager(kurtosisBackend, apiContainerKurtosisBackendConfigSupplier)
+
+	return enclaveManager, nil
+}
+
+
+func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBackendType, backendConfig interface{}) (backend_interface.KurtosisBackend, error) {
 	var kurtosisBackend backend_interface.KurtosisBackend
 	var err error
-	var apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
 	switch kurtosisBackendType {
 	case args.KurtosisBackendType_Docker:
 		kurtosisBackend, err = backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgsForKurtosisBackend)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 		}
-		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewDockerKurtosisBackendConfigSupplier()
 	case args.KurtosisBackendType_Kubernetes:
 		// Use this with more properties
 		_, ok := (backendConfig).(kurtosis_backend_config.KubernetesBackendConfig)
@@ -144,12 +190,9 @@ func getEnclaveManager(ctx context.Context, kurtosisBackendType args.KurtosisBac
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to get a Kubernetes backend")
 		}
-		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewKubernetesKurtosisBackendConfigSupplier()
 	default:
 		return nil, stacktrace.NewError("Backend type '%v' was not recognized by engine server.", kurtosisBackendType.String())
 	}
 
-	enclaveManager := enclave_manager.NewEnclaveManager(kurtosisBackend, apiContainerKurtosisBackendConfigSupplier)
-
-	return enclaveManager, nil
+	return kurtosisBackend, nil
 }
