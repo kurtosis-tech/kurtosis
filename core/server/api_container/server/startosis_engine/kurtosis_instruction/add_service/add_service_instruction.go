@@ -23,7 +23,7 @@ const (
 	serviceIdArgName     = "service_id"
 	serviceConfigArgName = "service_config"
 
-	ipAddressReplacementRegex = "(?P<all>\\{\\{(?P<service_id>[a-zAZ0-9-_]*)\\.ip_address\\}\\})"
+	ipAddressReplacementRegex = "(?P<all>\\{\\{(?P<service_id>[a-zA-Z0-9-_]*)\\.ip_address\\}\\})"
 	serviceIdSubgroupName     = "service_id"
 	allSubgroupName           = "all"
 
@@ -33,6 +33,10 @@ const (
 	unlimitedMatches = -1
 	singleMatch      = 1
 )
+
+// The compiled regular expression to do IP address replacements
+// Treat this as a constant
+var compiledRegex = regexp.MustCompile(ipAddressReplacementRegex)
 
 func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
@@ -139,7 +143,6 @@ func (instruction *AddServiceInstruction) replaceIPAddress() error {
 }
 
 func replaceIPAddressInString(originalString string, network service_network.ServiceNetwork, serviceIdForLogging string) (string, error) {
-	compiledRegex := regexp.MustCompile(ipAddressReplacementRegex)
 	matches := compiledRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
 	replacedString := originalString
 	for _, match := range matches {

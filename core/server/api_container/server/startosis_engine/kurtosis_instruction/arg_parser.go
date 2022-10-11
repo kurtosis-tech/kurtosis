@@ -167,6 +167,7 @@ func parsePortProtocol(portProtocol string) (kurtosis_core_rpc_api_bindings.Port
 
 func parseEntryPointArgs(serviceConfig *starlarkstruct.Struct) ([]string, *startosis_errors.InterpretationError) {
 	_, err := serviceConfig.Attr(entryPointArgsKey)
+	//an error here means that no argument was found which is alright as this is an optional
 	if err != nil {
 		return []string{}, nil
 	}
@@ -179,6 +180,7 @@ func parseEntryPointArgs(serviceConfig *starlarkstruct.Struct) ([]string, *start
 
 func parseCmdArgs(serviceConfig *starlarkstruct.Struct) ([]string, *startosis_errors.InterpretationError) {
 	_, err := serviceConfig.Attr(cmdArgsKey)
+	//an error here means that no argument was found which is alright as this is an optional
 	if err != nil {
 		return []string{}, nil
 	}
@@ -191,6 +193,7 @@ func parseCmdArgs(serviceConfig *starlarkstruct.Struct) ([]string, *startosis_er
 
 func parseEnvVars(serviceConfig *starlarkstruct.Struct) (map[string]string, *startosis_errors.InterpretationError) {
 	_, err := serviceConfig.Attr(envVarArgsKey)
+	//an error here means that no argument was found which is alright as this is an optional
 	if err != nil {
 		return map[string]string{}, nil
 	}
@@ -296,13 +299,15 @@ func safeCastToMapStringString(expectedValue starlark.Value, argNameForLogging s
 		return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' argument is expected to be a dict. Got %s", argNameForLogging, reflect.TypeOf(expectedValue)))
 	}
 	castValue := make(map[string]string)
-	for _, item := range dictValue.Items() {
-		key := item[0]
+	for _, key := range dictValue.Keys() {
 		stringKey, ok := key.(starlark.String)
 		if !ok {
 			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' key in dict '%s' is expected to be a string. Got %s", key.String(), argNameForLogging, reflect.TypeOf(key)))
 		}
-		value := item[1]
+		value, found, err := dictValue.Get(key)
+		if !found || err != nil {
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' key in dict '%s' doesn't have a value we could retrieve. This is a Kurtosis bug.", key.String(), argNameForLogging))
+		}
 		stringValue, ok := value.(starlark.String)
 		if !ok {
 			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' value in dict '%s' is expected to be a string. Got %s", value.String(), argNameForLogging, reflect.TypeOf(value)))

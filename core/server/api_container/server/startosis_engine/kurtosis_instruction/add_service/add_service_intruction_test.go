@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	testServiceID                   = "test-service-id"
+	testServiceID                   = "tesT-SerVice-id"
 	testServiceDependence1ServiceID = "test-service-id-1"
 	testServiceDependence1IPAddress = "172.17.13.3"
 	testServiceDependence2ServiceID = "test-service-id-2"
