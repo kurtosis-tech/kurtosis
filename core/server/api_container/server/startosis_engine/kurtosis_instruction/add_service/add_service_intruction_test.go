@@ -66,8 +66,9 @@ func TestAddServiceInstruction_EntryPointArgsAreReplaced(t *testing.T) {
 }
 
 func TestAddServiceInstruction_MultipleOccurrencesOfSameStringReplaced(t *testing.T) {
-	ipAddresses := map[service.ServiceID]net.IP{}
-	ipAddresses[testServiceDependence1ServiceID] = net.ParseIP(testServiceDependence1IPAddress)
+	ipAddresses := map[service.ServiceID]net.IP{
+		testServiceDependence1ServiceID : net.ParseIP(testServiceDependence1IPAddress),
+	}
 	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
 	originalString := fmt.Sprintf("{{%v.ip_address}} something in the middle {{%v.ip_address}}", testServiceDependence1ServiceID, testServiceDependence1ServiceID)
 
@@ -78,9 +79,10 @@ func TestAddServiceInstruction_MultipleOccurrencesOfSameStringReplaced(t *testin
 }
 
 func TestReplaceIPAddressInString_MultipleReplacesOfDifferentStrings(t *testing.T) {
-	ipAddresses := map[service.ServiceID]net.IP{}
-	ipAddresses[testServiceDependence1ServiceID] = net.ParseIP(testServiceDependence1IPAddress)
-	ipAddresses[testServiceDependence2ServiceID] = net.ParseIP(testServiceDependence2IPAddress)
+	ipAddresses := map[service.ServiceID]net.IP{
+		testServiceDependence1ServiceID : net.ParseIP(testServiceDependence1IPAddress),
+		testServiceDependence2ServiceID : net.ParseIP(testServiceDependence2IPAddress)
+	}
 	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
 	originalString := fmt.Sprintf("{{%v.ip_address}} {{%v.ip_address}} {{%v.ip_address}}", testServiceDependence1ServiceID, testServiceDependence2ServiceID, testServiceDependence1ServiceID)
 
