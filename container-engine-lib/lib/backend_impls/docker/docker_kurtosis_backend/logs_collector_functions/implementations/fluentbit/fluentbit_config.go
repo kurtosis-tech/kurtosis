@@ -127,16 +127,3 @@ func getOutputKurtosisLabelsForLogs() []string {
 	}
 	return outputLabels
 }
-
-func getTrackedKurtosisLabelsForLogs() []string {
-
-	kurtosisLabelsForLogs := []string{}
-
-	for _, logsDatabaseKurtosisTrackedDockerLabel := range docker_labels_for_logs.LogsDatabaseKurtosisTrackedDockerLabelsForIdentifyLogsStream {
-		kurtosisLabelsForLogs = append(kurtosisLabelsForLogs, logsDatabaseKurtosisTrackedDockerLabel.GetString())
-	}
-
-	return kurtosisLabelsForLogs
-}
-
-
