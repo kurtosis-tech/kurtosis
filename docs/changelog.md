@@ -1,5 +1,7 @@
 # TBD
 
+# 0.50.1
+
 ### Fixes
 * Fix generate scripts to take passed version on release
 
