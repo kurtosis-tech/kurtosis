@@ -161,6 +161,27 @@ func replaceIPAddressInString(originalString string, network service_network.Ser
 	return replacedString, nil
 }
 
+/*
+This returns a struct that looks like
+value = struct ("service",
+
+	   ip_address = "{{kurtosis:service_id.ip_address}}"
+	   ports = struct "port_spec", {
+	      "port_id" : struct("port_spec",
+	         "protocol": "TCP"
+	         "number: 1337,
+	      )
+	   })
+	)
+
+You can address things in this like
+value.ip_address
+value["port_id"].number
+value["port_id"].protocol
+
+if you print it, it looks like
+"service"(ip_address = "{{kurtosis:service_id.ip_address}}", ports = {"grpc": "port_spec"(number = 1337, protocol = "TCP")})
+*/
 func makeAddServiceInterpretationReturnValue(serviceId service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) (*starlarkstruct.Struct, *startosis_errors.InterpretationError) {
 	ports := serviceConfig.GetPrivatePorts()
 	portSpecsDict := starlark.NewDict(len(ports))
