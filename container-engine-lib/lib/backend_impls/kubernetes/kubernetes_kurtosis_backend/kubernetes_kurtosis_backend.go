@@ -18,6 +18,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"io"
 	"net"
 	"strings"
@@ -110,8 +111,9 @@ func NewKubernetesKurtosisBackend(
 	}
 }
 
-func (backend *KubernetesKurtosisBackend) PullImage(image string) error {
-	return stacktrace.NewError("PullImage isn't implemented for Kubernetes yet")
+func (backend *KubernetesKurtosisBackend) FetchImage(ctx context.Context, image string) error {
+	logrus.Warnf("FetchImage isn't implemented for Kubernetes yet")
+	return nil
 }
 
 func (backend KubernetesKurtosisBackend) CreateEngine(
@@ -455,4 +457,3 @@ func buildCombinedError(errorsById map[string]error, titleStr string) error {
 
 	return nil
 }
-

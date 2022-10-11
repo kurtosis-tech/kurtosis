@@ -121,8 +121,8 @@ func run(
 	if executionResponse.InterpretationError != "" {
 		return stacktrace.NewError("There was an error interpreting the Startosis script '%s': \n%v", startosisScriptPath, executionResponse.InterpretationError)
 	}
-	if executionResponse.ValidationError != "" {
-		return stacktrace.NewError("There was an error validating the Startosis script '%s': \n%v", startosisScriptPath, executionResponse.ValidationError)
+	if len(executionResponse.ValidationErrors) > 0 {
+		return stacktrace.NewError("There was an error validating the Startosis script '%s': \n%v", startosisScriptPath, executionResponse.ValidationErrors)
 	}
 	if executionResponse.ExecutionError != "" {
 		return stacktrace.NewError("There was an error executing the Startosis script '%s': \n%v", startosisScriptPath, executionResponse.ExecutionError)
