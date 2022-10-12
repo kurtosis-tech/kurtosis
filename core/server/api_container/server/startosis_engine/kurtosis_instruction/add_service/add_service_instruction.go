@@ -159,7 +159,7 @@ func replaceIPAddressInString(originalString string, network service_network.Ser
 	return replacedString, nil
 }
 
-func makeAddServiceInterpretationReturnValue(serviceId service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) (*kurtosis_types.AddServiceInstructionReturnType, *startosis_errors.InterpretationError) {
+func makeAddServiceInterpretationReturnValue(serviceId service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) (*kurtosis_types.Service, *startosis_errors.InterpretationError) {
 	ports := serviceConfig.GetPrivatePorts()
 	portSpecsDict := starlark.NewDict(len(ports))
 	for portId, port := range ports {
@@ -172,7 +172,7 @@ func makeAddServiceInterpretationReturnValue(serviceId service.ServiceID, servic
 		}
 	}
 	ipAddress := starlark.String(fmt.Sprintf("{{kurtosis:%v.ip_address}}", serviceId))
-	returnValue := kurtosis_types.NewAddServiceInstructionReturnType(ipAddress, portSpecsDict)
+	returnValue := kurtosis_types.NewService(ipAddress, portSpecsDict)
 	return returnValue, nil
 }
 
