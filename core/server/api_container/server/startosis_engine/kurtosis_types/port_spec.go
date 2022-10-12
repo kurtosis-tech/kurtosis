@@ -21,22 +21,27 @@ func NewPortSpec(number starlark.Int, protocol starlark.String) *PortSpec {
 	}
 }
 
+// String the starlark.Value interface
 func (ps *PortSpec) String() string {
 	return fmt.Sprintf("%v: number:'%v', protocol:'%v'", portSpecTypeName, ps.number, ps.protocol)
 }
 
+// Type implements the starlark.Value interface
 func (ps *PortSpec) Type() string {
 	return portSpecTypeName
 }
 
+// Freeze implements the starlark.Value interface
 func (ps *PortSpec) Freeze() {
 	// this is a no-op its already immutable
 }
 
+// Truth implements the starlark.Value interface
 func (ps *PortSpec) Truth() starlark.Bool {
 	return ps.protocol != "" && ps.number != starlark.MakeUint(0)
 }
 
+// Hash implements the starlark.Value interface
 func (ps *PortSpec) Hash() (uint32, error) {
 	return 0, fmt.Errorf("unhashable type: '%v'", portSpecTypeName)
 }

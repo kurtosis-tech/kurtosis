@@ -21,22 +21,27 @@ func NewService(ipAddress starlark.String, ports *starlark.Dict) *Service {
 	}
 }
 
+// String the starlark.Value interface
 func (rv *Service) String() string {
 	return fmt.Sprintf("%v: ip_address:'%v', ports:'%v'", serviceTypeName, rv.ipAddress, rv.ports)
 }
 
+// Type implements the starlark.Value interface
 func (rv *Service) Type() string {
 	return serviceTypeName
 }
 
+// Freeze implements the starlark.Value interface
 func (rv *Service) Freeze() {
 	// this is a no-op its already immutable
 }
 
+// Truth implements the starlark.Value interface
 func (rv *Service) Truth() starlark.Bool {
 	return rv.ipAddress != "" && rv.ports != nil
 }
 
+// Hash implements the starlark.Value interface
 func (rv *Service) Hash() (uint32, error) {
 	return 0, fmt.Errorf("unhashable type: '%v'", serviceTypeName)
 }
