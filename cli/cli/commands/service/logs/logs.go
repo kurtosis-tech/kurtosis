@@ -120,9 +120,13 @@ func run(
 		logLineBuffer := bytes.NewBuffer([]byte{})
 		for _, logLine := range serviceLogs {
 			logLineWithLineBreak := fmt.Sprintf("%v\n", logLine)
-			logLineBuffer.WriteString(logLineWithLineBreak)
+			if _, err := logLineBuffer.WriteString(logLineWithLineBreak); err != nil {
+				return stacktrace.Propagate(err, "An error occurred writing the service logs to the buffer")
+			}
 		}
-		logrus.StandardLogger().Out.Write(logLineBuffer.Bytes())
+		if _, err := logrus.StandardLogger().Out.Write(logLineBuffer.Bytes()); err != nil {
+			return stacktrace.Propagate(err, "An error occurred writing the service logs to STDOUT")
+		}
 
 		return nil
 	}
@@ -145,7 +149,9 @@ func run(
 	}
 	defer func() {
 		for _, readCloser := range successfulUserServiceLogs {
-			readCloser.Close()
+			if err := readCloser.Close(); err != nil{
+				logrus.Warnf("We tried to close the user service logs read-closer-objects after we're done using it, but doing so threw an error:\n%v", err)
+			}
 		}
 	}()
 
