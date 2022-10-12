@@ -61,7 +61,8 @@ Destroys enclaves in the Kurtosis engine.
 ---
 
 ### getUserServiceLogs(EnclaveID enclaveId, Set\<ServiceGUID> userServiceGuids) -\> Map\<ServiceGUID, Array\<String\>\> userServiceLogsByUserServiceGuid
-Get the user service's container log lines (ordered in forward direction, the oldest line is the first) from user services identified by their GUID
+Get the user service's container log lines (ordered in ascending direction, the oldest line is the first) from user services identified by their GUID.
+The result will contain the last 4000 log lines max for each user service's container
 
 **Args**
 * `enclaveId`: ID of the user services' enclave.

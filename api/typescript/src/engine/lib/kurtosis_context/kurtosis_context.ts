@@ -204,10 +204,10 @@ export class KurtosisContext {
 
     // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
     public async getUserServiceLogs(
-        enclaveId: EnclaveID,
-        userServiceGuids: Set<ServiceGUID>
+        enclaveID: EnclaveID,
+        userServiceGUIDs: Set<ServiceGUID>
     ): Promise<Result<Map<ServiceGUID, Array<string>>, Error>> {
-        const getUserServiceLogsArgs: GetUserServiceLogsArgs = newGetUserServiceLogsArgs(enclaveId, userServiceGuids);
+        const getUserServiceLogsArgs: GetUserServiceLogsArgs = newGetUserServiceLogsArgs(enclaveID, userServiceGUIDs);
         const getUserServiceLogsResult = await this.client.getUserServiceLogs(getUserServiceLogsArgs)
         if(getUserServiceLogsResult.isErr()){
             return err(getUserServiceLogsResult.error)
@@ -217,8 +217,8 @@ export class KurtosisContext {
         const result: Map<ServiceGUID, Array<string>> = new Map<ServiceGUID, Array<string>>;
 
         getUserServiceLogsResponse.getUserServiceLogsByUserServiceGuidMap().forEach(
-            (userServiceLogLine, userServiceGuidStr) => {
-                result.set(userServiceGuidStr, userServiceLogLine.getLineList())
+            (userServiceLogLine, userServiceGUIDStr) => {
+                result.set(userServiceGUIDStr, userServiceLogLine.getLineList())
             }
         )
         return ok(result)
