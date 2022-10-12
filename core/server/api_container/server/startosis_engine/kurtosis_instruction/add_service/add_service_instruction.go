@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
@@ -27,9 +28,6 @@ const (
 	ipAddressReplacementRegex = "(?P<all>\\{\\{kurtosis:(?P<service_id>" + service.ServiceIDRegex + ")\\.ip_address\\}\\})"
 	serviceIdSubgroupName     = "service_id"
 	allSubgroupName           = "all"
-
-	serviceReturnValueStructName  = starlark.String("service")
-	portSpecReturnValueStructName = starlark.String("port_spec")
 
 	unlimitedMatches = -1
 	singleMatch      = 1
@@ -161,46 +159,21 @@ func replaceIPAddressInString(originalString string, network service_network.Ser
 	return replacedString, nil
 }
 
-/*
-This returns a struct that looks like
-value = struct ("service",
-
-	   ip_address = "{{kurtosis:service_id.ip_address}}"
-	   ports = struct "port_spec", {
-	      "port_id" : struct("port_spec",
-	         "protocol": "TCP"
-	         "number: 1337,
-	      )
-	   })
-	)
-
-You can address things in this like
-value.ip_address
-value["port_id"].number
-value["port_id"].protocol
-
-if you print it, it looks like
-"service"(ip_address = "{{kurtosis:service_id.ip_address}}", ports = {"grpc": "port_spec"(number = 1337, protocol = "TCP")})
-*/
-func makeAddServiceInterpretationReturnValue(serviceId service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) (*starlarkstruct.Struct, *startosis_errors.InterpretationError) {
+func makeAddServiceInterpretationReturnValue(serviceId service.ServiceID, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) (*kurtosis_types.AddServiceInstructionReturnType, *startosis_errors.InterpretationError) {
 	ports := serviceConfig.GetPrivatePorts()
 	portSpecsDict := starlark.NewDict(len(ports))
 	for portId, port := range ports {
 		portNumber := starlark.MakeUint(uint(port.GetNumber()))
 		portProtocol := starlark.String(port.GetProtocol().String())
-		portSpecStringDict := starlark.StringDict{"number": portNumber, "protocol": portProtocol}
-		portSpecStruct := starlarkstruct.FromStringDict(portSpecReturnValueStructName, portSpecStringDict)
-		err := portSpecsDict.SetKey(starlark.String(portId), portSpecStruct)
+		portSpec := kurtosis_types.NewPortSpec(portNumber, portProtocol)
+		err := portSpecsDict.SetKey(starlark.String(portId), portSpec)
 		if err != nil {
 			return nil, startosis_errors.NewInterpretationError("An error occurred while creating a port spec for the add instruction return value")
 		}
 	}
-	returnValueDict := starlark.StringDict{
-		"ip_address": starlark.String(fmt.Sprintf("{{kurtosis:%v.ip_address}}", serviceId)),
-		"ports":      portSpecsDict,
-	}
-	returnValueStruct := starlarkstruct.FromStringDict(serviceReturnValueStructName, returnValueDict)
-	return returnValueStruct, nil
+	ipAddress := starlark.String(fmt.Sprintf("{{kurtosis:%v.ip_address}}", serviceId))
+	returnValue := kurtosis_types.NewAddServiceInstructionReturnType(ipAddress, portSpecsDict)
+	return returnValue, nil
 }
 
 func (instruction *AddServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
