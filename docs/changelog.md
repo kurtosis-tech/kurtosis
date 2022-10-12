@@ -6,6 +6,7 @@
 
 ### Changes
 * Add back old enclave continuity test
+* Refactored `service logs` Kurtosis CLI command in order to get the user service logs from the `logs database` (implemented in Docker cluster so far)
 
 # 0.50.2
 ### Fixes
