@@ -166,8 +166,7 @@ func makeAddServiceInterpretationReturnValue(serviceId service.ServiceID, servic
 		portNumber := starlark.MakeUint(uint(port.GetNumber()))
 		portProtocol := starlark.String(port.GetProtocol().String())
 		portSpec := kurtosis_types.NewPortSpec(portNumber, portProtocol)
-		err := portSpecsDict.SetKey(starlark.String(portId), portSpec)
-		if err != nil {
+		if err := portSpecsDict.SetKey(starlark.String(portId), portSpec); err != nil {
 			return nil, startosis_errors.NewInterpretationError("An error occurred while creating a port spec for the add instruction return value")
 		}
 	}
