@@ -3,6 +3,9 @@
 ### Changes
 * Add back old enclave continuity test
 
+### Features
+* * Implemented IP address references for services
+
 # 0.50.2
 
 ### Fixes
@@ -24,7 +27,6 @@
 * Added `LogsDatabase` CRUD methods in `Docker` Kurtosis backend
 * Added `LogsCollector` CRUD methods in `Docker` Kurtosis backend
 * Added `ServiceNetwork` (interface), `DefaultServiceNetwork` and `MockServiceNetwork`* ADded `ServiceNetwork` (interface), `DefaultServiceNetwork` and `MockServiceNetwork`
-* Implemented IP address references for services
 
 ### Breaking Changes
 * Updated `CreateEngine` method in `container-engine-lib`, removed the `logsCollectorHttpPortNumber` parameter
