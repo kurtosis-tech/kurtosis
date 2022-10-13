@@ -3,6 +3,9 @@
 ### Changes
 * Add back old enclave continuity test
 
+### Features
+* Added a `exec` command to Startosis
+
 # 0.50.2
 
 ### Fixes
