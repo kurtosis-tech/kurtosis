@@ -78,7 +78,7 @@ func (instruction *ExecInstruction) ValidateAndUpdateEnvironment(_ *startosis_va
 func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (service.ServiceID, []string, *startosis_errors.InterpretationError) {
 
 	var serviceIdArg starlark.String
-	var commandArg starlark.List
+	var commandArg *starlark.List
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceIdArgName, &serviceIdArg, commandArgsArgName, &commandArg); err != nil {
 		return "", nil, startosis_errors.NewInterpretationError(err.Error())
 	}
@@ -88,7 +88,7 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 		return "", nil, interpretationErr
 	}
 
-	command, interpretationErr := kurtosis_instruction.ParseCommand(&commandArg)
+	command, interpretationErr := kurtosis_instruction.ParseCommand(commandArg)
 	if interpretationErr != nil {
 		return "", nil, interpretationErr
 	}

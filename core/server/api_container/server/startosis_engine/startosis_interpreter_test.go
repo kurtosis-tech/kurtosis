@@ -748,7 +748,7 @@ func TestStartosisInterpreter_ValidExecScript(t *testing.T) {
 	script := `
 print("Executing mkdir!")
 
-exec(service_id = "example_service", command = ["mkdir", "/tmp/foo"])
+exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 `
 
 	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
@@ -757,7 +757,7 @@ exec(service_id = "example_service", command = ["mkdir", "/tmp/foo"])
 
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(4, 4),
+		*kurtosis_instruction.NewInstructionPosition(4, 5),
 		"example-datastore-server",
 		[]string{"mkdir", "/tmp/foo"},
 	)
