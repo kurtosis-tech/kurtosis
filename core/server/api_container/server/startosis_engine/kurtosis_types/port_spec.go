@@ -12,6 +12,9 @@ const (
 	portProtocolAttr = "protocol"
 )
 
+// PortSpec A starlark.Value that represents a port number & protocol
+// TODO add a Make method so that this can be added as a built in
+// TODO use this in the add_service primitive while passing service config
 type PortSpec struct {
 	number   starlark.Int
 	protocol starlark.String
