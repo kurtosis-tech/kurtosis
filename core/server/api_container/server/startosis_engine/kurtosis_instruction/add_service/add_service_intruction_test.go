@@ -3,6 +3,7 @@ package add_service
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
@@ -12,6 +13,8 @@ import (
 )
 
 const (
+	testContainerImageName = "kurtosistech/example-datastore-server"
+
 	testServiceID                   = "tesT-SerVice-id"
 	testServiceDependence1ServiceID = "test-service-id-1"
 	testServiceDependence1IPAddress = "172.17.13.3"
@@ -26,15 +29,17 @@ func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {
 		nil,
 		*kurtosis_instruction.NewInstructionPosition(22, 26),
 		service.ServiceID("example-datastore-server-2"),
-		&kurtosis_core_rpc_api_bindings.ServiceConfig{
-			ContainerImageName: "kurtosistech/example-datastore-server",
-			PrivatePorts: map[string]*kurtosis_core_rpc_api_bindings.Port{
+		services.NewServiceConfigBuilder(
+			testContainerImageName,
+		).WithPrivatePorts(
+			map[string]*kurtosis_core_rpc_api_bindings.Port{
 				"grpc": {
-					Number:   1325,
+					Number:   1323,
 					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
 				},
 			},
-		})
+		).Build(),
+	)
 
 	// TODO: Update when we implement this
 	expectedOutput := "add_service(...)"
@@ -42,30 +47,34 @@ func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {
 }
 
 func TestAddServiceInstruction_EntryPointArgsAreReplaced(t *testing.T) {
-	ipAddresses := map[service.ServiceID]net.IP{}
-	ipAddresses["foo_service"] = net.ParseIP("172.17.3.13")
+	ipAddresses := map[service.ServiceID]net.IP{
+		"foo_service": net.ParseIP("172.17.3.13"),
+	}
 	serviceNetwork := service_network.NewMockServiceNetwork(ipAddresses)
 	addServiceInstruction := NewAddServiceInstruction(
 		serviceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(22, 26),
-		service.ServiceID("example-datastore-server-2"),
-		&kurtosis_core_rpc_api_bindings.ServiceConfig{
-			ContainerImageName: "kurtosistech/example-datastore-server",
-			PrivatePorts: map[string]*kurtosis_core_rpc_api_bindings.Port{
+		"example-datastore-server-2",
+		services.NewServiceConfigBuilder(
+			testContainerImageName,
+		).WithPrivatePorts(
+			map[string]*kurtosis_core_rpc_api_bindings.Port{
 				"grpc": {
-					Number:   1325,
+					Number:   1323,
 					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
 				},
 			},
-			EntrypointArgs: []string{"-- {{kurtosis:foo_service.ip_address}}"},
-		})
+		).WithEntryPointArgs(
+			[]string{"-- {{kurtosis:foo_service.ip_address}}"},
+		).Build(),
+	)
 
 	err := addServiceInstruction.replaceIPAddress()
 	require.Nil(t, err)
 	require.Equal(t, "-- 172.17.3.13", addServiceInstruction.serviceConfig.EntrypointArgs[0])
 }
 
-func TestAddServiceInstruction_MultipleOccurrencesOfSameStringReplaced(t *testing.T) {
+func TestReplaceIPAddressInString_MultipleOccurrencesOfSameStringReplaced(t *testing.T) {
 	ipAddresses := map[service.ServiceID]net.IP{
 		testServiceDependence1ServiceID: net.ParseIP(testServiceDependence1IPAddress),
 	}
