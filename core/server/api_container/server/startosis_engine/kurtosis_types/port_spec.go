@@ -7,6 +7,8 @@ import (
 
 const (
 	portSpecTypeName = "port_spec"
+	portNumberAttr   = "number"
+	portProtocolAttr = "protocol"
 )
 
 type PortSpec struct {
@@ -42,6 +44,7 @@ func (ps *PortSpec) Truth() starlark.Bool {
 }
 
 // Hash implements the starlark.Value interface
+// TODO maybe implement this, otherwise this can't be used as a key to a dictionary
 func (ps *PortSpec) Hash() (uint32, error) {
 	return 0, fmt.Errorf("unhashable type: '%v'", portSpecTypeName)
 }
@@ -49,9 +52,9 @@ func (ps *PortSpec) Hash() (uint32, error) {
 // Attr implements the starlark.HasAttrs interface.
 func (ps *PortSpec) Attr(name string) (starlark.Value, error) {
 	switch name {
-	case "number":
+	case portNumberAttr:
 		return ps.number, nil
-	case "protocol":
+	case portProtocolAttr:
 		return ps.protocol, nil
 	default:
 		return nil, nil
@@ -60,5 +63,5 @@ func (ps *PortSpec) Attr(name string) (starlark.Value, error) {
 
 // AttrNames implements the starlark.HasAttrs interface.
 func (ps *PortSpec) AttrNames() []string {
-	return []string{"number", "protocol"}
+	return []string{portNumberAttr, portProtocolAttr}
 }

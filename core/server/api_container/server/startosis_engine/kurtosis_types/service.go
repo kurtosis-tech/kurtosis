@@ -7,6 +7,8 @@ import (
 
 const (
 	serviceTypeName = "service_type"
+	ipAddressAttr   = "ip_address"
+	portsAttr       = "ports"
 )
 
 type Service struct {
@@ -42,6 +44,7 @@ func (rv *Service) Truth() starlark.Bool {
 }
 
 // Hash implements the starlark.Value interface
+// TODO maybe implement this, otherwise this can't be used as a key to a dictionary
 func (rv *Service) Hash() (uint32, error) {
 	return 0, fmt.Errorf("unhashable type: '%v'", serviceTypeName)
 }
@@ -49,9 +52,9 @@ func (rv *Service) Hash() (uint32, error) {
 // Attr implements the starlark.HasAttrs interface.
 func (rv *Service) Attr(name string) (starlark.Value, error) {
 	switch name {
-	case "ip_address":
+	case ipAddressAttr:
 		return rv.ipAddress, nil
-	case "ports":
+	case portsAttr:
 		return rv.ports, nil
 	default:
 		return nil, nil
@@ -60,5 +63,5 @@ func (rv *Service) Attr(name string) (starlark.Value, error) {
 
 // AttrNames implements the starlark.HasAttrs interface.
 func (rv *Service) AttrNames() []string {
-	return []string{"ip_address", "ports"}
+	return []string{ipAddressAttr, portsAttr}
 }
