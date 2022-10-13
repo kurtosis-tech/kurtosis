@@ -16,7 +16,7 @@ const (
 	ExecBuiltinName = "exec"
 
 	serviceIdArgName   = "service_id"
-	commandArgsArgName = "commandArgs"
+	commandArgsArgName = "command"
 )
 
 func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
