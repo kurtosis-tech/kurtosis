@@ -21,9 +21,6 @@ const (
 
 	containerImageNameKey = "container_image_name"
 	usedPortsKey          = "used_ports"
-	entryPointArgsKey     = "entry_point_args"
-	cmdArgsKey            = "cmd_args"
-	envVarArgsKey         = "env_vars"
 
 	portNumberKey   = "number"
 	portProtocolKey = "protocol"
