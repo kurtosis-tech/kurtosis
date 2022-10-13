@@ -26,7 +26,7 @@
 * Created the `LogsCollector` object in `container-engine-lib`
 * Added `LogsDatabase` CRUD methods in `Docker` Kurtosis backend
 * Added `LogsCollector` CRUD methods in `Docker` Kurtosis backend
-* Added `ServiceNetwork` (interface), `DefaultServiceNetwork` and `MockServiceNetwork`* ADded `ServiceNetwork` (interface), `DefaultServiceNetwork` and `MockServiceNetwork`
+* Added `ServiceNetwork` (interface), `DefaultServiceNetwork` and `MockServiceNetwork`
 
 ### Breaking Changes
 * Updated `CreateEngine` method in `container-engine-lib`, removed the `logsCollectorHttpPortNumber` parameter

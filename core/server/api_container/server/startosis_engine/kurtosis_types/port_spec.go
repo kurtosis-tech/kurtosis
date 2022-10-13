@@ -50,7 +50,7 @@ func (ps *PortSpec) Freeze() {
 
 // Truth implements the starlark.Value interface
 func (ps *PortSpec) Truth() starlark.Bool {
-	return ps.protocol != "" && ps.number != starlark.MakeUint(0)
+	return ps.protocol != "" && ps.number != starlark.Int{}
 }
 
 // Hash implements the starlark.Value interface
@@ -67,7 +67,7 @@ func (ps *PortSpec) Attr(name string) (starlark.Value, error) {
 	case portProtocolAttr:
 		return ps.protocol, nil
 	default:
-		return nil, fmt.Errorf("'%v' has no attribute '%v", portSpecTypeName, name)
+		return nil, fmt.Errorf("'%v' has no attribute '%v;", portSpecTypeName, name)
 	}
 }
 
