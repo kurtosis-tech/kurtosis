@@ -115,7 +115,7 @@ func (instruction *AddServiceInstruction) replaceIPAddress() error {
 	for index, value := range entryPointArgs {
 		valueWithIPAddress, err := replaceIPAddressInString(value, instruction.serviceNetwork, serviceIdStr)
 		if err != nil {
-			return stacktrace.Propagate(err, "Error occurred while replacing IP address in entry point args")
+			return stacktrace.Propagate(err, "Error occurred while replacing IP address in entry point args for '%v'", value)
 		}
 		entryPointArgs[index] = valueWithIPAddress
 	}
@@ -124,7 +124,7 @@ func (instruction *AddServiceInstruction) replaceIPAddress() error {
 	for index, value := range cmdArgs {
 		valueWithIPAddress, err := replaceIPAddressInString(value, instruction.serviceNetwork, serviceIdStr)
 		if err != nil {
-			return stacktrace.Propagate(err, "Error occurred while replacing IP address in command args")
+			return stacktrace.Propagate(err, "Error occurred while replacing IP address in command args for '%v'", value)
 		}
 		cmdArgs[index] = valueWithIPAddress
 	}
@@ -133,7 +133,7 @@ func (instruction *AddServiceInstruction) replaceIPAddress() error {
 	for key, value := range envVars {
 		valueWithIPAddress, err := replaceIPAddressInString(value, instruction.serviceNetwork, serviceIdStr)
 		if err != nil {
-			return stacktrace.Propagate(err, "Error occurred while replacing IP address in env vars")
+			return stacktrace.Propagate(err, "Error occurred while replacing IP address in env vars for '%v'", value)
 		}
 		envVars[key] = valueWithIPAddress
 	}
