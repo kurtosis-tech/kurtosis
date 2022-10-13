@@ -3,6 +3,7 @@ package kurtosis_types
 import (
 	"fmt"
 	"go.starlark.net/starlark"
+	"strings"
 )
 
 const (
@@ -25,7 +26,13 @@ func NewPortSpec(number starlark.Int, protocol starlark.String) *PortSpec {
 
 // String the starlark.Value interface
 func (ps *PortSpec) String() string {
-	return fmt.Sprintf("%v: number:'%v', protocol:'%v'", portSpecTypeName, ps.number, ps.protocol)
+	buffer := new(strings.Builder)
+	buffer.WriteString(portSpecTypeName + "(")
+	buffer.WriteString(portNumberAttr + "=")
+	buffer.WriteString(fmt.Sprintf("%v, ", ps.number))
+	buffer.WriteString(portProtocolAttr + "=")
+	buffer.WriteString(fmt.Sprintf("%v)", ps.protocol))
+	return buffer.String()
 }
 
 // Type implements the starlark.Value interface

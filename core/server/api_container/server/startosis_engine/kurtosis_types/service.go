@@ -3,10 +3,11 @@ package kurtosis_types
 import (
 	"fmt"
 	"go.starlark.net/starlark"
+	"strings"
 )
 
 const (
-	serviceTypeName = "service_type"
+	serviceTypeName = "service"
 	ipAddressAttr   = "ip_address"
 	portsAttr       = "ports"
 )
@@ -25,7 +26,13 @@ func NewService(ipAddress starlark.String, ports *starlark.Dict) *Service {
 
 // String the starlark.Value interface
 func (rv *Service) String() string {
-	return fmt.Sprintf("%v: ip_address:'%v', ports:'%v'", serviceTypeName, rv.ipAddress, rv.ports)
+	buffer := new(strings.Builder)
+	buffer.WriteString(serviceTypeName + "(")
+	buffer.WriteString(ipAddressAttr + "=")
+	buffer.WriteString(fmt.Sprintf("%v, ", rv.ipAddress))
+	buffer.WriteString(portsAttr + "=")
+	buffer.WriteString(fmt.Sprintf("%v)", rv.ports.String()))
+	return buffer.String()
 }
 
 // Type implements the starlark.Value interface
