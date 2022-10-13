@@ -1,14 +1,13 @@
 # TBD
+
 ### Features
 * Added `KurtosisContext.GetUserServiceLogs` method in `golang` and `typescript` api libraries
 * Added the public documentation for the new `KurtosisContext.GetUserServiceLogs` method
 * Added `GetUserServiceLogs` in Kurtosis engine gateway
-
+* Added a `exec` command to Startosis
+ 
 ### Changes
 * Add back old enclave continuity test
-
-### Features
-* Added a `exec` command to Startosis
 
 # 0.50.2
 ### Fixes
