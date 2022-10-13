@@ -124,7 +124,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 
 	//TODO this condition is a temporary hack, we should removed it when the centralized logs in Kubernetes Kurtosis Backend is implemented
 	if guarantor.kurtosisClusterType == resolved_config.KurtosisClusterType_Docker {
-		logrus.Infof("Starting the centralized logs components first...")
+		logrus.Infof("Starting the centralized logs components...")
 		ctx := context.Background()
 		if err := guarantor.ensureCentralizedLogsComponentsAreRunning(ctx, shouldForceLogsComponentsContainersRestartWhenEngineContainerIsStopped); err != nil {
 			return stacktrace.Propagate(err, "An error occurred starting the centralized logs components")

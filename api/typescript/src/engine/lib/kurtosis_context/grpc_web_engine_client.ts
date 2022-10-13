@@ -15,6 +15,7 @@ import type {
     GetUserServiceLogsArgs,
     GetUserServiceLogsResponse
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
+import {NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG} from "../consts";
 
 export class GrpcWebEngineClient implements GenericEngineClient {
     private readonly client: EngineServiceClientWeb
@@ -30,7 +31,7 @@ export class GrpcWebEngineClient implements GenericEngineClient {
             this.client.getEngineInfo(emptyArg, {}, (error: grpc_web.RpcError | null, response?: GetEngineInfoResponse) => {
                 if (error === null) {
                     if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never " + "happen")));
+                        resolve(err(new Error(NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG)));
                     } else {
                         resolve(ok(response!));
                     }
@@ -58,7 +59,7 @@ export class GrpcWebEngineClient implements GenericEngineClient {
             this.client.createEnclave(createEnclaveArgs, {}, (error: grpc_web.RpcError | null, response?: CreateEnclaveResponse) => {
                 if (error === null) {
                     if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                        resolve(err(new Error(NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG)));
                     } else {
                         resolve(ok(response!));
                     }
@@ -120,8 +121,7 @@ export class GrpcWebEngineClient implements GenericEngineClient {
             this.client.clean(cleanArgs, {}, (error: grpc_web.RpcError | null, response?: CleanResponse) => {
                 if (error === null) {
                     if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this " +
-                            "should never happen")));
+                        resolve(err(new Error(NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG)));
                     } else {
                         resolve(ok(response!));
                     }
@@ -146,7 +146,7 @@ export class GrpcWebEngineClient implements GenericEngineClient {
             this.client.getEnclaves(emptyArg, {}, (error: grpc_web.RpcError | null, response?: GetEnclavesResponse) => {
                 if (error === null) {
                     if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                        resolve(err(new Error(NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG)));
                     } else {
                         resolve(ok(response!));
                     }
@@ -169,7 +169,7 @@ export class GrpcWebEngineClient implements GenericEngineClient {
             this.client.getUserServiceLogs(getUserServiceLogsArgs, {},(error: grpc_web.RpcError  | null, response?: GetUserServiceLogsResponse) => {
                 if (error === null) {
                     if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")))
+                        resolve(err(new Error(NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG)))
                     } else {
                         resolve(ok(response));
                     }

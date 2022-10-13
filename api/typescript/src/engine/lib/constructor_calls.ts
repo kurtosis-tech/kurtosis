@@ -46,14 +46,15 @@ export function newCleanArgs(shouldCleanAll:boolean): CleanArgs {
 }
 
 export function newGetUserServiceLogsArgs(
-        enclaveId: string,
-        userServiceGuids: Set<ServiceGUID>): GetUserServiceLogsArgs {
+        enclaveID: string,
+        userServiceGUIDs: Set<ServiceGUID>): GetUserServiceLogsArgs {
 
     const result: GetUserServiceLogsArgs = new GetUserServiceLogsArgs();
-    result.setEnclaveId(enclaveId)
-    const serviceGuidSetMap: jspb.Map<string, boolean> = result.getServiceGuidSetMap();
-    for (const serviceGuid of userServiceGuids) {
-        serviceGuidSetMap.set(serviceGuid, true);
+    result.setEnclaveId(enclaveID);
+    const serviceGUIDSetMap: jspb.Map<string, boolean> = result.getServiceGuidSetMap();
+    const isServiceGUIDInSet: boolean = true;
+    for (const serviceGUID of userServiceGUIDs) {
+        serviceGUIDSetMap.set(serviceGUID, isServiceGUIDInSet);
     }
     return result;
 }

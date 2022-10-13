@@ -176,34 +176,34 @@ func (kurtosisCtx *KurtosisContext) Clean(ctx context.Context, shouldCleanAll bo
 // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
 func (kurtosisCtx *KurtosisContext) GetUserServiceLogs(
 	ctx context.Context,
-	enclaveId enclaves.EnclaveID,
-	userServiceGuids map[services.ServiceGUID]bool,
+	enclaveID enclaves.EnclaveID,
+	userServiceGUIDs map[services.ServiceGUID]bool,
 ) (map[services.ServiceGUID][]string, error) {
 
-	userServiceLogsByUserServiceGuid := map[services.ServiceGUID][]string{}
+	userServiceLogsByUserServiceGUID := map[services.ServiceGUID][]string{}
 
-	userServiceGuidStrSet := make(map[string]bool, len(userServiceGuids))
-	for userServiceGuid, isUserServiceInSet := range userServiceGuids {
-		userServiceGuidStr := string(userServiceGuid)
-		userServiceGuidStrSet[userServiceGuidStr] = isUserServiceInSet
+	userServiceGUIDStrSet := make(map[string]bool, len(userServiceGUIDs))
+	for userServiceGUID, isUserServiceInSet := range userServiceGUIDs {
+		userServiceGUIDStr := string(userServiceGUID)
+		userServiceGUIDStrSet[userServiceGUIDStr] = isUserServiceInSet
 	}
 
 	getUserServiceLogsArgs := &kurtosis_engine_rpc_api_bindings.GetUserServiceLogsArgs{
-		EnclaveId: string(enclaveId),
-		ServiceGuidSet: userServiceGuidStrSet,
+		EnclaveId:      string(enclaveID),
+		ServiceGuidSet: userServiceGUIDStrSet,
 	}
 
 	gutUserServiceLogsResponse, err := kurtosisCtx.client.GetUserServiceLogs(ctx, getUserServiceLogsArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user service logs using args '%v'", getUserServiceLogsArgs)
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service logs using args '%+v'", getUserServiceLogsArgs)
 	}
 
-	for userServiceGuidStr, userServiceLogLines := range gutUserServiceLogsResponse.UserServiceLogsByUserServiceGuid {
-		userServiceGuid := services.ServiceGUID(userServiceGuidStr)
-		userServiceLogsByUserServiceGuid[userServiceGuid] = userServiceLogLines.Line
+	for userServiceGUIDStr, userServiceLogLine := range gutUserServiceLogsResponse.UserServiceLogsByUserServiceGuid {
+		userServiceGUID := services.ServiceGUID(userServiceGUIDStr)
+		userServiceLogsByUserServiceGUID[userServiceGUID] = userServiceLogLine.Line
 	}
 
-	return userServiceLogsByUserServiceGuid, nil
+	return userServiceLogsByUserServiceGUID, nil
 }
 
 // ====================================================================================================
