@@ -1,0 +1,108 @@
+package exec
+
+import (
+	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/stacktrace"
+	"go.starlark.net/starlark"
+)
+
+const (
+	ExecBuiltinName = "exec"
+
+	serviceIdArgName   = "service_id"
+	commandArgsArgName = "commandArgs"
+)
+
+func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	// TODO: Force returning an InterpretationError rather than a normal error
+	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+		serviceId, commandArgs, interpretationError := parseStartosisArgs(b, args, kwargs)
+		if interpretationError != nil {
+			return nil, interpretationError
+		}
+		execInstruction := NewExecInstruction(serviceNetwork, getPosition(thread), serviceId, commandArgs)
+		*instructionsQueue = append(*instructionsQueue, execInstruction)
+		return starlark.None, nil
+	}
+}
+
+type ExecInstruction struct {
+	serviceNetwork service_network.ServiceNetwork
+
+	position    kurtosis_instruction.InstructionPosition
+	serviceId   kurtosis_backend_service.ServiceID
+	commandArgs []string
+}
+
+func NewExecInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, commandArgs []string) *ExecInstruction {
+	return &ExecInstruction{
+		serviceNetwork: serviceNetwork,
+		position:       position,
+		serviceId:      serviceId,
+		commandArgs:    commandArgs,
+	}
+}
+
+func (instruction *ExecInstruction) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
+	return &instruction.position
+}
+
+func (instruction *ExecInstruction) GetCanonicalInstruction() string {
+	// TODO(gm): implement when we need to return the canonicalized version of the script.
+	//  Maybe there's a way to retrieve the serialized instruction from starlark-go
+	return "exec(...)"
+}
+
+func (instruction *ExecInstruction) Execute(ctx context.Context) error {
+
+	// TODO Pull partition from user in Starlark
+	_, _, err := instruction.serviceNetwork.ExecCommand(ctx, instruction.serviceId, instruction.commandArgs)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to execute command")
+	}
+	return nil
+}
+
+func (instruction *ExecInstruction) String() string {
+	return instruction.GetCanonicalInstruction()
+}
+
+func (instruction *ExecInstruction) ValidateAndUpdateEnvironment(_ *startosis_validator.ValidatorEnvironment) error {
+	return nil
+}
+
+func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (service.ServiceID, []string, *startosis_errors.InterpretationError) {
+
+	var serviceIdArg starlark.String
+	var commandArg starlark.List
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceIdArgName, &serviceIdArg, commandArgsArgName, &commandArg); err != nil {
+		return "", nil, startosis_errors.NewInterpretationError(err.Error())
+	}
+
+	serviceId, interpretationErr := kurtosis_instruction.ParseServiceId(serviceIdArg)
+	if interpretationErr != nil {
+		return "", nil, interpretationErr
+	}
+
+	command, interpretationErr := kurtosis_instruction.ParseCommand(&commandArg)
+	if interpretationErr != nil {
+		return "", nil, interpretationErr
+	}
+	return serviceId, command, nil
+}
+
+func getPosition(thread *starlark.Thread) kurtosis_instruction.InstructionPosition {
+	// TODO(gb): can do better by returning the entire callstack positions, but it's a good start
+	if len(thread.CallStack()) == 0 {
+		panic("empty call stack is unexpected, this should not happen")
+	}
+	// position of current instruction is  store at the bottom of the call stack
+	callFrame := thread.CallStack().At(len(thread.CallStack()) - 1)
+	return *kurtosis_instruction.NewInstructionPosition(callFrame.Pos.Line, callFrame.Pos.Col)
+}
