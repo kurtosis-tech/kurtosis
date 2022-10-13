@@ -148,10 +148,10 @@ func replaceIPAddressInString(originalString string, network service_network.Ser
 		serviceIdMatchIndex := compiledRegex.SubexpIndex(serviceIdSubgroupName)
 		serviceId := service.ServiceID(match[serviceIdMatchIndex])
 		ipAddress, found := network.GetIPAddressForService(serviceId)
-		ipAddressStr := ipAddress.String()
 		if !found {
 			return "", stacktrace.NewError("'%v' depends on the IP address of '%v' but we don't have any registrations for it", serviceIdForLogging, serviceId)
 		}
+		ipAddressStr := ipAddress.String()
 		allMatchIndex := compiledRegex.SubexpIndex(allSubgroupName)
 		allMatch := match[allMatchIndex]
 		replacedString = strings.Replace(replacedString, allMatch, ipAddressStr, singleMatch)
