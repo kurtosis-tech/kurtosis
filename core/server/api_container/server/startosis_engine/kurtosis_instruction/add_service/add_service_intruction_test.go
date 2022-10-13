@@ -28,7 +28,7 @@ func TestAddServiceInstruction_GetCanonicalizedInstruction(t *testing.T) {
 	addServiceInstruction := NewAddServiceInstruction(
 		nil,
 		*kurtosis_instruction.NewInstructionPosition(22, 26),
-		service.ServiceID("example-datastore-server-2"),
+		"example-datastore-server-2",
 		services.NewServiceConfigBuilder(
 			testContainerImageName,
 		).WithPrivatePorts(
