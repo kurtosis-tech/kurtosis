@@ -2,6 +2,7 @@ package kurtosis_instruction
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 )
 
@@ -31,4 +32,8 @@ func NewInstructionPosition(line int32, col int32) *InstructionPosition {
 		line: line,
 		col:  col,
 	}
+}
+
+func (ip *InstructionPosition) String() string {
+	return fmt.Sprintf("%v:%v", ip.line, ip.col)
 }
