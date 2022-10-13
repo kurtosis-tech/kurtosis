@@ -64,7 +64,7 @@ func (rv *Service) Attr(name string) (starlark.Value, error) {
 	case portsAttr:
 		return rv.ports, nil
 	default:
-		return nil, nil
+		return nil, fmt.Errorf("'%v' has no attribute '%v", serviceTypeName, name)
 	}
 }
 

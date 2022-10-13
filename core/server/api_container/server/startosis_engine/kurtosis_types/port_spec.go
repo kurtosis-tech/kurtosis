@@ -67,7 +67,7 @@ func (ps *PortSpec) Attr(name string) (starlark.Value, error) {
 	case portProtocolAttr:
 		return ps.protocol, nil
 	default:
-		return nil, nil
+		return nil, fmt.Errorf("'%v' has no attribute '%v", serviceTypeName, name)
 	}
 }
 
