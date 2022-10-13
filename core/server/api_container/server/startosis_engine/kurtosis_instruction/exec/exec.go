@@ -54,14 +54,12 @@ func (instruction *ExecInstruction) GetPositionInOriginalScript() *kurtosis_inst
 }
 
 func (instruction *ExecInstruction) GetCanonicalInstruction() string {
-	// TODO(gm): implement when we need to return the canonicalized version of the script.
+	// TODO(gm): implement when we need to return the canonical version of the script.
 	//  Maybe there's a way to retrieve the serialized instruction from starlark-go
 	return "exec(...)"
 }
 
 func (instruction *ExecInstruction) Execute(ctx context.Context) error {
-
-	// TODO Pull partition from user in Starlark
 	_, _, err := instruction.serviceNetwork.ExecCommand(ctx, instruction.serviceId, instruction.commandArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to execute command")
