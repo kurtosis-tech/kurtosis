@@ -195,7 +195,7 @@ func (kurtosisCtx *KurtosisContext) GetUserServiceLogs(
 
 	gutUserServiceLogsResponse, err := kurtosisCtx.client.GetUserServiceLogs(ctx, getUserServiceLogsArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user service logs using args '%v'", getUserServiceLogsArgs)
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service logs using args '%+v'", getUserServiceLogsArgs)
 	}
 
 	for userServiceGUIDStr, userServiceLogLine := range gutUserServiceLogsResponse.UserServiceLogsByUserServiceGuid {
