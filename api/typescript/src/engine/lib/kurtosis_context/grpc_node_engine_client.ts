@@ -1,8 +1,8 @@
 import {err, ok, Result} from "neverthrow";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
-import type { ServiceError } from "@grpc/grpc-js";
-import type { EngineServiceClient as EngineServiceClientNode } from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb";
-import type { GenericEngineClient } from "./generic_engine_client";
+import type {ServiceError} from "@grpc/grpc-js";
+import type {EngineServiceClient as EngineServiceClientNode} from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb";
+import type {GenericEngineClient} from "./generic_engine_client";
 import type {
     CleanArgs,
     CleanResponse,
@@ -11,8 +11,11 @@ import type {
     DestroyEnclaveArgs,
     GetEnclavesResponse,
     GetEngineInfoResponse,
+    GetUserServiceLogsArgs,
+    GetUserServiceLogsResponse,
     StopEnclaveArgs
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
+import {NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG} from "../consts";
 
 export class GrpcNodeEngineClient implements GenericEngineClient {
     private readonly client: EngineServiceClientNode
@@ -30,7 +33,7 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
             this.client.getEngineInfo(emptyArg, (error: ServiceError | null, response?: GetEngineInfoResponse) => {
                 if (error === null) {
                     if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never " + "happen")));
+                        resolve(err(new Error(NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG)));
                     } else {
                         resolve(ok(response!));
                     }
@@ -59,7 +62,7 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
             this.client.createEnclave(args, {}, (error: ServiceError | null, response?: CreateEnclaveResponse) => {
                 if (error === null) {
                     if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                        resolve(err(new Error(NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG)));
                     } else {
                         resolve(ok(response!));
                     }
@@ -121,8 +124,7 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
             this.client.clean(cleanArgs, (error: ServiceError | null, response?: CleanResponse) => {
                 if (error === null) {
                     if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this " +
-                            "should never happen")));
+                        resolve(err(new Error(NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG)));
                     } else {
                         resolve(ok(response!));
                     }
@@ -134,7 +136,7 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
 
         const cleanResult: Result<CleanResponse, Error> = await cleanPromise;
         if (cleanResult.isErr()) {
-            return err(cleanResult.error)
+            return err(cleanResult.error);
         }
 
         const cleanResponse: CleanResponse = cleanResult.value;
@@ -147,7 +149,7 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
             this.client.getEnclaves(emptyArg, (error: ServiceError | null, response?: GetEnclavesResponse) => {
                 if (error === null) {
                     if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                        resolve(err(new Error(NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG)));
                     } else {
                         resolve(ok(response!));
                     }
@@ -158,10 +160,33 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
         });
         
         const getEnclavesResponseResult: Result<GetEnclavesResponse, Error> = await getEnclavesPromise;
-        if (!getEnclavesResponseResult.isOk()) {
-            return err(getEnclavesResponseResult.error)
+        if (getEnclavesResponseResult.isErr()) {
+            return err(getEnclavesResponseResult.error);
         }
 
         return ok(getEnclavesResponseResult.value);
+    }
+
+    public async getUserServiceLogs(getUserServiceLogsArgs: GetUserServiceLogsArgs): Promise<Result<GetUserServiceLogsResponse, Error>> {
+        const getUserServiceLogsPromise: Promise<Result<GetUserServiceLogsResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.getUserServiceLogs(getUserServiceLogsArgs, (error: ServiceError | null, response?: GetUserServiceLogsResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error(NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG)))
+                    } else {
+                        resolve(ok(response));
+                    }
+                } else {
+                    resolve(err(error))
+                }
+            })
+        })
+
+        const getUserServiceLogsResponseResult: Result<GetUserServiceLogsResponse, Error> = await getUserServiceLogsPromise;
+        if (getUserServiceLogsResponseResult.isErr()) {
+            return err(getUserServiceLogsResponseResult.error);
+        }
+
+        return ok(getUserServiceLogsResponseResult.value);
     }
 }

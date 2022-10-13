@@ -2,8 +2,11 @@ import {
     CleanArgs,
     CreateEnclaveArgs,
     DestroyEnclaveArgs,
+    GetUserServiceLogsArgs,
     StopEnclaveArgs
 } from "../kurtosis_engine_rpc_api_bindings/engine_service_pb";
+import * as jspb from "google-protobuf";
+import {ServiceGUID} from "../../core/lib/services/service";
 
 // ====================================================================================================
 //                                    Kurtosis Context
@@ -39,5 +42,19 @@ export function newDestroyEnclaveArgs(enclaveId:string): DestroyEnclaveArgs {
 export function newCleanArgs(shouldCleanAll:boolean): CleanArgs {
     const result: CleanArgs = new CleanArgs();
     result.setShouldCleanAll(shouldCleanAll);
+    return result;
+}
+
+export function newGetUserServiceLogsArgs(
+        enclaveID: string,
+        userServiceGUIDs: Set<ServiceGUID>): GetUserServiceLogsArgs {
+
+    const result: GetUserServiceLogsArgs = new GetUserServiceLogsArgs();
+    result.setEnclaveId(enclaveID);
+    const serviceGUIDSetMap: jspb.Map<string, boolean> = result.getServiceGuidSetMap();
+    const isServiceGUIDInSet: boolean = true;
+    for (const serviceGUID of userServiceGUIDs) {
+        serviceGUIDSetMap.set(serviceGUID, isServiceGUIDInSet);
+    }
     return result;
 }

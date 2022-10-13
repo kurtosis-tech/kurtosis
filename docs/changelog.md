@@ -1,10 +1,13 @@
 # TBD
+### Features
+* Added `KurtosisContext.GetUserServiceLogs` method in `golang` and `typescript` api libraries
+* Added the public documentation for the new `KurtosisContext.GetUserServiceLogs` method
+* Added `GetUserServiceLogs` in Kurtosis engine gateway
 
 ### Changes
 * Add back old enclave continuity test
 
 # 0.50.2
-
 ### Fixes
 * Fixes how the push cli artifacts & publish engine runs by generating kurtosis_version before hand
 
@@ -23,7 +26,7 @@
 * Created the `LogsCollector` object in `container-engine-lib`
 * Added `LogsDatabase` CRUD methods in `Docker` Kurtosis backend
 * Added `LogsCollector` CRUD methods in `Docker` Kurtosis backend
-* Added `ServiceNetwork` (interface), `DefaultServiceNetwork` and `MockServiceNetwork` 
+* Added `ServiceNetwork` (interface), `DefaultServiceNetwork` and `MockServiceNetwork`
 
 ### Breaking Changes
 * Updated `CreateEngine` method in `container-engine-lib`, removed the `logsCollectorHttpPortNumber` parameter
