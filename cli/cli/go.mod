@@ -5,11 +5,8 @@ go 1.17
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
 	github.com/kurtosis-tech/kurtosis/cli/commons => ../commons
-
 	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
-
 	github.com/kurtosis-tech/kurtosis/engine/launcher => ../../engine/launcher
-
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
 )
 

@@ -43,7 +43,7 @@ export class ServiceContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public async execCommand(command: string[], ): Promise<Result<[number, string], Error>> {
+    public async execCommand(command: string[]): Promise<Result<[number, string], Error>> {
         const execCommandArgs: ExecCommandArgs = newExecCommandArgs(this.serviceId, command);
 
         const execCommandResponseResult = await this.client.execCommand(execCommandArgs)

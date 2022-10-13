@@ -3,7 +3,7 @@ import * as semver from "semver"
 import * as jspb from "google-protobuf";
 import {err, ok, Result} from "neverthrow";
 import { isNode as isExecutionEnvNode} from "browser-or-node";
-import { EnclaveContext, EnclaveID } from "../../../index";
+import {EnclaveContext, EnclaveID, ServiceGUID} from "../../../index";
 import { GenericEngineClient } from "./generic_engine_client";
 import { KURTOSIS_VERSION } from "../../../kurtosis_version/kurtosis_version";
 import { GrpcWebEngineClient } from "./grpc_web_engine_client";
@@ -21,9 +21,17 @@ import {
     EnclaveInfo,
     GetEnclavesResponse,
     GetEngineInfoResponse,
-    StopEnclaveArgs
+    StopEnclaveArgs,
+    GetUserServiceLogsArgs,
+    GetUserServiceLogsResponse,
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
-import { newCleanArgs, newCreateEnclaveArgs, newDestroyEnclaveArgs, newStopEnclaveArgs } from "../constructor_calls";
+import {
+    newCleanArgs,
+    newCreateEnclaveArgs,
+    newDestroyEnclaveArgs,
+    newGetUserServiceLogsArgs,
+    newStopEnclaveArgs
+} from "../constructor_calls";
 
 const LOCAL_HOSTNAME: string = "localhost";
 
@@ -178,7 +186,7 @@ export class KurtosisContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
-    public async clean(shouldCleanAll : boolean): Promise<Result<Set<string>, Error>>{
+    public async clean(shouldCleanAll: boolean): Promise<Result<Set<string>, Error>>{
         const cleanArgs: CleanArgs = newCleanArgs(shouldCleanAll);
         const cleanResponseResult = await this.client.clean(cleanArgs)
         if(cleanResponseResult.isErr()){
@@ -191,6 +199,28 @@ export class KurtosisContext {
             result.add(enclaveID);
         }
 
+        return ok(result)
+    }
+
+    // Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
+    public async getUserServiceLogs(
+        enclaveID: EnclaveID,
+        userServiceGUIDs: Set<ServiceGUID>
+    ): Promise<Result<Map<ServiceGUID, Array<string>>, Error>> {
+        const getUserServiceLogsArgs: GetUserServiceLogsArgs = newGetUserServiceLogsArgs(enclaveID, userServiceGUIDs);
+        const getUserServiceLogsResult = await this.client.getUserServiceLogs(getUserServiceLogsArgs)
+        if(getUserServiceLogsResult.isErr()){
+            return err(getUserServiceLogsResult.error)
+        }
+
+        const getUserServiceLogsResponse: GetUserServiceLogsResponse = getUserServiceLogsResult.value
+        const result: Map<ServiceGUID, Array<string>> = new Map<ServiceGUID, Array<string>>;
+
+        getUserServiceLogsResponse.getUserServiceLogsByUserServiceGuidMap().forEach(
+            (userServiceLogLine, userServiceGUIDStr) => {
+                result.set(userServiceGUIDStr, userServiceLogLine.getLineList())
+            }
+        )
         return ok(result)
     }
 
