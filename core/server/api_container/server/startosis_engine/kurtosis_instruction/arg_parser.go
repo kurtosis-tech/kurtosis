@@ -180,7 +180,7 @@ func extractUint32Value(structField *starlarkstruct.Struct, key string, argNameF
 func safeCastToString(expectedValueString starlark.Value, argNameForLogging string) (string, *startosis_errors.InterpretationError) {
 	castValue, ok := expectedValueString.(starlark.String)
 	if !ok {
-		return "", startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' is expected to be a string. Got %s", argNameForLogging, reflect.TypeOf(expectedValueString)))
+		return "", startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' argument is expected to be a string. Got %s", argNameForLogging, reflect.TypeOf(expectedValueString)))
 	}
 	return castValue.GoString(), nil
 }
