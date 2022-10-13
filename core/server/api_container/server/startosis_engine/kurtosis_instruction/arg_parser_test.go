@@ -42,7 +42,7 @@ func TestSafeCastToString_Failure(t *testing.T) {
 	input := starlark.MakeInt(32)
 	output, err := safeCastToString(input, "test")
 	require.NotNil(t, err)
-	require.Equal(t, "'test' argument is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, "'test' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, "", output)
 }
 
@@ -57,7 +57,7 @@ func TestSafeCastToStringSlice_FailureWrongTypeInsideList(t *testing.T) {
 	input := starlark.NewList([]starlark.Value{starlark.String("string_1"), starlark.MakeInt(42)})
 	output, err := safeCastToStringSlice(input, "test")
 	require.NotNil(t, err)
-	require.Equal(t, "'42' in list 'test' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, "'test[1]' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, []string(nil), output)
 }
 
@@ -92,7 +92,7 @@ func TestSafeCastToMapStringString_FailureValueIsNotString(t *testing.T) {
 	require.Nil(t, err)
 	output, err := safeCastToMapStringString(input, "test")
 	require.NotNil(t, err)
-	require.Equal(t, "'42' value in dict 'test' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, "'test[\"key\"]' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, map[string]string(nil), output)
 }
 
@@ -102,7 +102,7 @@ func TestSafeCastToMapStringString_FailureKeyIsNotString(t *testing.T) {
 	require.Nil(t, err)
 	output, err := safeCastToMapStringString(input, "test")
 	require.NotNil(t, err)
-	require.Equal(t, "'42' key in dict 'test' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, "'test.key:42' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, map[string]string(nil), output)
 }
 
@@ -131,7 +131,7 @@ func TestExtractStringValueFromStruct_FailureWrongValue(t *testing.T) {
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := extractStringValue(input, "key", "dict")
 	require.NotNil(t, err)
-	require.Equal(t, "'key' argument is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, "'key' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, "", output)
 }
 
@@ -287,7 +287,7 @@ func TestParseEntryPointArgs_FailureOnListContainingNonStringValues(t *testing.T
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseEntryPointArgs(input)
 	require.NotNil(t, err)
-	require.Equal(t, "'42' in list 'entry_point_args' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, "'entry_point_args[0]' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, []string(nil), output)
 }
 
@@ -314,7 +314,7 @@ func TestParseCommandArgs_FailureOnListContainingNonStringValues(t *testing.T) {
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseCmdArgs(input)
 	require.NotNil(t, err)
-	require.Equal(t, "'42' in list 'cmd_args' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, "'cmd_args[0]' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, []string(nil), output)
 }
 
@@ -347,7 +347,7 @@ func TestParseEnvVars_FailureOnNonStringKey(t *testing.T) {
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseEnvVars(input)
 	require.NotNil(t, err)
-	require.Equal(t, "'42' key in dict 'env_vars' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, "'env_vars.key:42' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, map[string]string(nil), output)
 }
 
@@ -360,6 +360,6 @@ func TestParseEnvVars_FailureOnNonStringValue(t *testing.T) {
 	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	output, err := parseEnvVars(input)
 	require.NotNil(t, err)
-	require.Equal(t, "'42' value in dict 'env_vars' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, "'env_vars[\"key\"]' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, map[string]string(nil), output)
 }

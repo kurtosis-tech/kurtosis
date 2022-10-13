@@ -255,7 +255,7 @@ func extractMapStringStringValue(structField *starlarkstruct.Struct, key string,
 func safeCastToString(expectedValueString starlark.Value, argNameForLogging string) (string, *startosis_errors.InterpretationError) {
 	castValue, ok := expectedValueString.(starlark.String)
 	if !ok {
-		return "", startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' argument is expected to be a string. Got %s", argNameForLogging, reflect.TypeOf(expectedValueString)))
+		return "", startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' is expected to be a string. Got %s", argNameForLogging, reflect.TypeOf(expectedValueString)))
 	}
 	return castValue.GoString(), nil
 }
@@ -283,12 +283,14 @@ func safeCastToStringSlice(expectedValueList starlark.Value, argNameForLogging s
 	var castValue []string
 	listIterator := listValue.Iterate()
 	var value starlark.Value
+	var index = 0
 	for listIterator.Next(&value) {
-		stringValue, ok := value.(starlark.String)
-		if !ok {
-			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' in list '%s' is expected to be a string. Got %s", value.String(), argNameForLogging, reflect.TypeOf(value)))
+		stringValue, err := safeCastToString(value, fmt.Sprintf("%v[%v]", argNameForLogging, index))
+		if err != nil {
+			return nil, err
 		}
-		castValue = append(castValue, stringValue.GoString())
+		castValue = append(castValue, stringValue)
+		index += 1
 	}
 	return castValue, nil
 }
@@ -300,19 +302,19 @@ func safeCastToMapStringString(expectedValue starlark.Value, argNameForLogging s
 	}
 	castValue := make(map[string]string)
 	for _, key := range dictValue.Keys() {
-		stringKey, ok := key.(starlark.String)
-		if !ok {
-			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' key in dict '%s' is expected to be a string. Got %s", key.String(), argNameForLogging, reflect.TypeOf(key)))
+		stringKey, castErr := safeCastToString(key, fmt.Sprintf("%v.key:%v", argNameForLogging, key))
+		if castErr != nil {
+			return nil, castErr
 		}
-		value, found, err := dictValue.Get(key)
-		if !found || err != nil {
+		value, found, dictErr := dictValue.Get(key)
+		if !found || dictErr != nil {
 			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' key in dict '%s' doesn't have a value we could retrieve. This is a Kurtosis bug.", key.String(), argNameForLogging))
 		}
-		stringValue, ok := value.(starlark.String)
-		if !ok {
-			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' value in dict '%s' is expected to be a string. Got %s", value.String(), argNameForLogging, reflect.TypeOf(value)))
+		stringValue, castErr := safeCastToString(value, fmt.Sprintf("%v[\"%v\"]", argNameForLogging, stringKey))
+		if castErr != nil {
+			return nil, castErr
 		}
-		castValue[stringKey.GoString()] = stringValue.GoString()
+		castValue[stringKey] = stringValue
 	}
 	return castValue, nil
 }
