@@ -3,10 +3,10 @@ package kurtosis_context
 import (
 	"context"
 	"fmt"
-
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
@@ -171,6 +171,39 @@ func (kurtosisCtx *KurtosisContext) Clean(ctx context.Context, shouldCleanAll bo
 	}
 
 	return cleanResponse.RemovedEnclaveIds, nil
+}
+
+// Docs available at https://docs.kurtosistech.com/kurtosis/engine-lib-documentation
+func (kurtosisCtx *KurtosisContext) GetUserServiceLogs(
+	ctx context.Context,
+	enclaveID enclaves.EnclaveID,
+	userServiceGUIDs map[services.ServiceGUID]bool,
+) (map[services.ServiceGUID][]string, error) {
+
+	userServiceLogsByUserServiceGUID := map[services.ServiceGUID][]string{}
+
+	userServiceGUIDStrSet := make(map[string]bool, len(userServiceGUIDs))
+	for userServiceGUID, isUserServiceInSet := range userServiceGUIDs {
+		userServiceGUIDStr := string(userServiceGUID)
+		userServiceGUIDStrSet[userServiceGUIDStr] = isUserServiceInSet
+	}
+
+	getUserServiceLogsArgs := &kurtosis_engine_rpc_api_bindings.GetUserServiceLogsArgs{
+		EnclaveId:      string(enclaveID),
+		ServiceGuidSet: userServiceGUIDStrSet,
+	}
+
+	gutUserServiceLogsResponse, err := kurtosisCtx.client.GetUserServiceLogs(ctx, getUserServiceLogsArgs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service logs using args '%+v'", getUserServiceLogsArgs)
+	}
+
+	for userServiceGUIDStr, userServiceLogLine := range gutUserServiceLogsResponse.UserServiceLogsByUserServiceGuid {
+		userServiceGUID := services.ServiceGUID(userServiceGUIDStr)
+		userServiceLogsByUserServiceGUID[userServiceGUID] = userServiceLogLine.Line
+	}
+
+	return userServiceLogsByUserServiceGUID, nil
 }
 
 // ====================================================================================================

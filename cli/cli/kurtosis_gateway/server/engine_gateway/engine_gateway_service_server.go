@@ -3,12 +3,12 @@ package engine_gateway
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/connection"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/live_engine_client_supplier"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/port_utils"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/run/api_container_gateway"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -203,6 +203,21 @@ func (service *EngineGatewayServiceServer) GetEngineInfo(ctx context.Context, em
 	remoteEngineResponse, err := remoteEngineClient.GetEngineInfo(ctx, emptyArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting engine info through the remote engine")
+	}
+	return remoteEngineResponse, nil
+}
+
+func (service *EngineGatewayServiceServer) GetUserServiceLogs(
+	ctx context.Context,
+	args *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsArgs,
+) (*kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse, error) {
+	remoteEngineClient, err := service.engineClientSupplier.GetEngineClient()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get a client for a live Kurtosis engine, instead a non nil error was returned")
+	}
+	remoteEngineResponse, err := remoteEngineClient.GetUserServiceLogs(ctx, args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service logs through the remote engine, using these arguments '%+v'", args)
 	}
 	return remoteEngineResponse, nil
 }

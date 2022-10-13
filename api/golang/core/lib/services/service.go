@@ -21,3 +21,8 @@ package services
 The identifier used for services within the enclave.
 */
 type ServiceID string
+
+/*
+The globally unique identifier used for services within the enclave.
+*/
+type ServiceGUID string
