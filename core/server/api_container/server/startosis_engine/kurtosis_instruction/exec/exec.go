@@ -22,7 +22,7 @@ const (
 	expectedExitCodeArgName    = "expected_exit_code?"
 	nonOptionalExitCodeArgName = "expected_exit_code"
 
-	commaSeparator = `", "`
+	commandSeparator = `", "`
 )
 
 func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -67,7 +67,7 @@ func (instruction *ExecInstruction) GetCanonicalInstruction() string {
 	buffer.WriteString(serviceIdArgName + "=\"")
 	buffer.WriteString(fmt.Sprintf("%v\", ", instruction.serviceId))
 	buffer.WriteString(commandArgName + "=[\"")
-	buffer.WriteString(fmt.Sprintf("%v\"], ", strings.Join(instruction.command, commaSeparator)))
+	buffer.WriteString(fmt.Sprintf("%v\"], ", strings.Join(instruction.command, commandSeparator)))
 	buffer.WriteString(nonOptionalExitCodeArgName + "=")
 	buffer.WriteString(fmt.Sprintf("%v)", instruction.expectedExitCode))
 	return buffer.String()
@@ -89,6 +89,8 @@ func (instruction *ExecInstruction) String() string {
 }
 
 func (instruction *ExecInstruction) ValidateAndUpdateEnvironment(_ *startosis_validator.ValidatorEnvironment) error {
+	// this doesn't do anything but can't return an error as the validator runs this regardless
+	// this is a no-op
 	return nil
 }
 
