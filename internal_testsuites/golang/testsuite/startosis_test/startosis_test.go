@@ -78,5 +78,5 @@ Service example-datastore-server-1 deployed successfully.
 	serviceCtx, err := enclaveCtx.GetServiceContext(serviceId)
 	require.Nil(t, err, "Unexpected Error Creating Service Context")
 	exitCode, _, err := serviceCtx.ExecCommand([]string{"ls", directoryToBeCreated})
-	require.Equal(t, 0, exitCode)
+	require.Equal(t, int32(0), exitCode)
 }
