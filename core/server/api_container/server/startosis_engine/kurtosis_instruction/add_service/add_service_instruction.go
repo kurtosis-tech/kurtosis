@@ -174,7 +174,7 @@ func makeAddServiceInterpretationReturnValue(serviceId service.ServiceID, servic
 		portProtocol := starlark.String(port.GetProtocol().String())
 		portSpec := kurtosis_types.NewPortSpec(portNumber, portProtocol)
 		if err := portSpecsDict.SetKey(starlark.String(portId), portSpec); err != nil {
-			return nil, startosis_errors.NewInterpretationError("An error occurred while creating a port spec for the add instruction return value")
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while creating a port spec for values (number: '%v', port: '%v') the add instruction return value", portNumber, portProtocol))
 		}
 	}
 	ipAddress := starlark.String(fmt.Sprintf("{{kurtosis:%v.ip_address}}", serviceId))
