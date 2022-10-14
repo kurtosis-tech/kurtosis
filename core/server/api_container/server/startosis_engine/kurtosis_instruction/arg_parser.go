@@ -32,6 +32,7 @@ const (
 
 	maxPortNumber = 65535
 
+	// https://stackoverflow.com/a/6878625
 	minUnit32 = uint32(0)
 	maxUint32 = ^minUnit32
 	maxInt32  = int32(maxUint32 >> 1)
