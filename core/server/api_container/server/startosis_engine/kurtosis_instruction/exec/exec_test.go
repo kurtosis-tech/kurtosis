@@ -15,8 +15,9 @@ func TestExecInstruction_StringRepresentationWorks(t *testing.T) {
 		*kurtosis_instruction.NewInstructionPosition(1, 1),
 		"example-service-id",
 		[]string{"mkdir", "-p", "/tmp/store"},
+		0,
 	)
-	expectedStr := `exec(service_id="example-service-id", command=["mkdir", "-p", "/tmp/store"])`
+	expectedStr := `exec(service_id="example-service-id", command=["mkdir", "-p", "/tmp/store"], expected_exit_code=0)`
 	require.Equal(t, expectedStr, execInstruction.GetCanonicalInstruction())
 	require.Equal(t, expectedStr, execInstruction.String())
 }

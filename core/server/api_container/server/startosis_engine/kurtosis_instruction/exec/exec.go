@@ -17,9 +17,10 @@ import (
 const (
 	ExecBuiltinName = "exec"
 
-	serviceIdArgName        = "service_id"
-	commandArgName          = "command"
-	expectedExitCodeArgName = "expected_exit_code?"
+	serviceIdArgName           = "service_id"
+	commandArgName             = "command"
+	expectedExitCodeArgName    = "expected_exit_code?"
+	nonOptionalExitCodeArgName = "expected_exit_code"
 
 	commaSeparator = `", "`
 )
@@ -66,7 +67,9 @@ func (instruction *ExecInstruction) GetCanonicalInstruction() string {
 	buffer.WriteString(serviceIdArgName + "=\"")
 	buffer.WriteString(fmt.Sprintf("%v\", ", instruction.serviceId))
 	buffer.WriteString(commandArgName + "=[\"")
-	buffer.WriteString(fmt.Sprintf("%v\"])", strings.Join(instruction.command, commaSeparator)))
+	buffer.WriteString(fmt.Sprintf("%v\"], ", strings.Join(instruction.command, commaSeparator)))
+	buffer.WriteString(nonOptionalExitCodeArgName + "=")
+	buffer.WriteString(fmt.Sprintf("%v)", instruction.expectedExitCode))
 	return buffer.String()
 }
 

@@ -828,7 +828,7 @@ Adding service example-datastore-client
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
 
-func TestStartosisInterpreter_ValidExecScript(t *testing.T) {
+func TestStartosisInterpreter_ValidExecScriptWithoutExitCodeDefaultsTo0(t *testing.T) {
 	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
@@ -845,6 +845,61 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 		*kurtosis_instruction.NewInstructionPosition(3, 5),
 		"example-datastore-server",
 		[]string{"mkdir", "/tmp/foo"},
+		0,
+	)
+
+	require.Equal(t, instructions[0], execInstruction)
+
+	expectedOutput := `Executing mkdir!
+`
+	require.Equal(t, expectedOutput, string(scriptOutput))
+}
+
+func TestStartosisInterpreter_NegativeExitCodeIsValid(t *testing.T) {
+	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `
+print("Executing mkdir!")
+exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], expected_exit_code = -7)
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Equal(t, 1, len(instructions))
+	require.Nil(t, interpretationError)
+
+	execInstruction := exec.NewExecInstruction(
+		testServiceNetwork,
+		*kurtosis_instruction.NewInstructionPosition(3, 5),
+		"example-datastore-server",
+		[]string{"mkdir", "/tmp/foo"},
+		-7,
+	)
+
+	require.Equal(t, instructions[0], execInstruction)
+
+	expectedOutput := `Executing mkdir!
+`
+	require.Equal(t, expectedOutput, string(scriptOutput))
+}
+
+func TestStartosisInterpreter_PositiveExitCodeIsValid(t *testing.T) {
+	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `
+print("Executing mkdir!")
+exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], expected_exit_code = 7)
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Equal(t, 1, len(instructions))
+	require.Nil(t, interpretationError)
+
+	execInstruction := exec.NewExecInstruction(
+		testServiceNetwork,
+		*kurtosis_instruction.NewInstructionPosition(3, 5),
+		"example-datastore-server",
+		[]string{"mkdir", "/tmp/foo"},
+		7,
 	)
 
 	require.Equal(t, instructions[0], execInstruction)
