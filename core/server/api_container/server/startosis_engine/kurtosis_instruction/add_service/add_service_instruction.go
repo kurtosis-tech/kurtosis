@@ -29,7 +29,7 @@ const (
 	allSubgroupName       = "all"
 	kurtosisNamespace     = "kurtosis"
 	// The placeholder format & regex should align
-	ipAddressReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + serviceIdArgName + ">" + service.ServiceIDRegexp + ")\\.ip_address\\}\\})"
+	ipAddressReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + serviceIdArgName + ">" + service.ServiceIdRegexp + ")\\.ip_address\\}\\})"
 	ipAddressReplacementPlaceholderFormat = "{{" + kurtosisNamespace + ":%v.ip_address}}"
 
 	unlimitedMatches = -1
