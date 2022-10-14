@@ -6,6 +6,10 @@ import (
 	"net"
 )
 
+const (
+	ServiceIdRegexp = "[a-zA-Z0-9-_]+"
+)
+
 type ServiceID string
 type ServiceGUID string
 
