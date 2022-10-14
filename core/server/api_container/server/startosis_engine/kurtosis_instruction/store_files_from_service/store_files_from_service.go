@@ -20,6 +20,8 @@ const (
 
 	serviceIdArgName = "service_id"
 	srcPathArgName   = "src_path"
+
+	artifactUuidSuffix = "artifact_uuid"
 )
 
 type StoreFilesFromServicePosition struct {
@@ -39,7 +41,7 @@ func GenerateStoreFilesFromServiceBuiltin(instructionsQueue *[]kurtosis_instruct
 		}
 		execInstruction := NewStoreFilesFromServicePosition(serviceNetwork, kurtosis_instruction.GetPositionFromThread(thread), serviceId, srcPath)
 		*instructionsQueue = append(*instructionsQueue, execInstruction)
-		return starlark.None, nil
+		return starlark.String(execInstruction.position.MagicString(artifactUuidSuffix)), nil
 	}
 }
 
