@@ -25,9 +25,12 @@ const (
 	serviceIdArgName     = "service_id"
 	serviceConfigArgName = "service_config"
 
-	serviceIdSubgroupName     = "service_id"
-	allSubgroupName           = "all"
-	ipAddressReplacementRegex = "(?P<" + allSubgroupName + ">\\{\\{kurtosis:(?P<" + serviceIdArgName + ">" + service.ServiceIDRegexp + ")\\.ip_address\\}\\})"
+	serviceIdSubgroupName = "service_id"
+	allSubgroupName       = "all"
+	kurtosisNamespace     = "kurtosis"
+	// The placeholder format & regex should align
+	ipAddressReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + serviceIdArgName + ">" + service.ServiceIDRegexp + ")\\.ip_address\\}\\})"
+	ipAddressReplacementPlaceholderFormat = "{{" + kurtosisNamespace + ":%v.ip_address}}"
 
 	unlimitedMatches = -1
 	singleMatch      = 1
@@ -177,7 +180,7 @@ func makeAddServiceInterpretationReturnValue(serviceId service.ServiceID, servic
 			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while creating a port spec for values (number: '%v', port: '%v') the add instruction return value", portNumber, portProtocol))
 		}
 	}
-	ipAddress := starlark.String(fmt.Sprintf("{{kurtosis:%v.ip_address}}", serviceId))
+	ipAddress := starlark.String(fmt.Sprintf(ipAddressReplacementPlaceholderFormat, serviceId))
 	returnValue := kurtosis_types.NewService(ipAddress, portSpecsDict)
 	return returnValue, nil
 }

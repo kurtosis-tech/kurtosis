@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/stretchr/testify/require"
 	"net"
+	"regexp"
 	"testing"
 )
 
@@ -110,4 +111,11 @@ func TestReplaceIPAddressInString_ReplacementFailsForUnknownServiceID(t *testing
 	_, err := replaceIPAddressInString(originalString, serviceNetwork, testServiceID)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), expectedErr)
+}
+
+func TestReplaceIPAddressInString_EnforceRegexAndPlaceholderAlign(t *testing.T) {
+	ipAddressPlaceholder := fmt.Sprintf(ipAddressReplacementPlaceholderFormat, testServiceID)
+	regex := regexp.MustCompile(ipAddressReplacementRegex)
+	hasMatches := regex.MatchString(ipAddressPlaceholder)
+	require.True(t, hasMatches)
 }
