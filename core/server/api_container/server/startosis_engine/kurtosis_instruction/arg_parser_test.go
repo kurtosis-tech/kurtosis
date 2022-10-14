@@ -135,6 +135,27 @@ func TestExtractStringValueFromStruct_FailureWrongValue(t *testing.T) {
 	require.Equal(t, "", output)
 }
 
+func TestSafeCastToInt32_ValidPositiveValue(t *testing.T) {
+	input := starlark.MakeInt(32)
+	output, err := safeCastToInt32(input, "test")
+	require.Nil(t, err)
+	require.Equal(t, int32(32), output)
+}
+
+func TestSafeCastToInt32_ValidNegativeValue(t *testing.T) {
+	input := starlark.MakeInt(-32)
+	output, err := safeCastToInt32(input, "test")
+	require.Nil(t, err)
+	require.Equal(t, int32(-32), output)
+}
+
+func TestSafeCastToInt32_ValidZeroValue(t *testing.T) {
+	input := starlark.MakeInt(0)
+	output, err := safeCastToInt32(input, "test")
+	require.Nil(t, err)
+	require.Equal(t, int32(0), output)
+}
+
 func TestExtractUint32ValueFromStruct_Success(t *testing.T) {
 	dict := starlark.StringDict{}
 	dict["key"] = starlark.MakeInt(32)
@@ -362,4 +383,11 @@ func TestParseEnvVars_FailureOnNonStringValue(t *testing.T) {
 	require.NotNil(t, err)
 	require.Equal(t, "'env_vars[\"key\"]' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, map[string]string(nil), output)
+}
+
+func TestParseExpectedExitCode_ValidValue(t *testing.T) {
+	validValue := starlark.MakeInt(32)
+	output, err := ParseExpectedExitCode(validValue)
+	require.Nil(t, err)
+	require.Equal(t, int32(32), output)
 }
