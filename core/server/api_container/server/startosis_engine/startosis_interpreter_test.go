@@ -842,7 +842,7 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 
 	execInstruction := exec.NewExecInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(4, 5),
+		*kurtosis_instruction.NewInstructionPosition(3, 5),
 		"example-datastore-server",
 		[]string{"mkdir", "/tmp/foo"},
 	)
