@@ -31,6 +31,7 @@ const (
 
 	unlimitedMatches = -1
 	singleMatch      = 1
+	subExpNotFound   = -1
 )
 
 // The compiled regular expression to do IP address replacements
@@ -146,6 +147,9 @@ func replaceIPAddressInString(originalString string, network service_network.Ser
 	replacedString := originalString
 	for _, match := range matches {
 		serviceIdMatchIndex := compiledRegex.SubexpIndex(serviceIdSubgroupName)
+		if serviceIdMatchIndex == subExpNotFound {
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledRegex.String())
+		}
 		serviceId := service.ServiceID(match[serviceIdMatchIndex])
 		ipAddress, found := network.GetIPAddressForService(serviceId)
 		if !found {
@@ -153,6 +157,9 @@ func replaceIPAddressInString(originalString string, network service_network.Ser
 		}
 		ipAddressStr := ipAddress.String()
 		allMatchIndex := compiledRegex.SubexpIndex(allSubgroupName)
+		if allMatchIndex == subExpNotFound {
+			return "", stacktrace.NewError("There was an error in finding the sub group '%v' in regexp '%v'. This is a Kurtosis Bug", serviceIdSubgroupName, compiledRegex.String())
+		}
 		allMatch := match[allMatchIndex]
 		replacedString = strings.Replace(replacedString, allMatch, ipAddressStr, singleMatch)
 	}
