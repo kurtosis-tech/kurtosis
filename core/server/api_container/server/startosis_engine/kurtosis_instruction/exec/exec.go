@@ -70,7 +70,7 @@ func (instruction *ExecInstruction) GetCanonicalInstruction() string {
 func (instruction *ExecInstruction) Execute(ctx context.Context) error {
 	_, _, err := instruction.serviceNetwork.ExecCommand(ctx, instruction.serviceId, instruction.command)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to execute command")
+		return stacktrace.Propagate(err, "Failed to execute command '%v' on service '%v'", instruction.command, instruction.serviceId)
 	}
 	return nil
 }
