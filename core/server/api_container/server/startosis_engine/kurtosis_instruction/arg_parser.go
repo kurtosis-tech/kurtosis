@@ -23,7 +23,7 @@ const (
 	entryPointArgsKey     = "entry_point_args"
 	cmdArgsKey            = "cmd_args"
 	envVarArgsKey         = "env_vars"
-	commandsArgKey        = "command"
+	commandKey            = "command"
 
 	portNumberKey   = "number"
 	portProtocolKey = "protocol"
@@ -83,7 +83,7 @@ func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core
 }
 
 func ParseCommand(commandsRaw *starlark.List) ([]string, *startosis_errors.InterpretationError) {
-	commandArgs, interpretationErr := safeCastToStringSlice(commandsRaw, commandsArgKey)
+	commandArgs, interpretationErr := safeCastToStringSlice(commandsRaw, commandKey)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
