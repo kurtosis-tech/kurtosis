@@ -116,30 +116,30 @@ func (instruction *AddServiceInstruction) String() string {
 func (instruction *AddServiceInstruction) replaceIPAddress() error {
 	serviceIdStr := string(instruction.serviceId)
 	entryPointArgs := instruction.serviceConfig.EntrypointArgs
-	for index, value := range entryPointArgs {
-		valueWithIPAddress, err := replaceIPAddressInString(value, instruction.serviceNetwork, serviceIdStr)
+	for index, entryPointArg := range entryPointArgs {
+		entryPointArgWithIPAddressReplaced, err := replaceIPAddressInString(entryPointArg, instruction.serviceNetwork, serviceIdStr)
 		if err != nil {
-			return stacktrace.Propagate(err, "Error occurred while replacing IP address in entry point args for '%v'", value)
+			return stacktrace.Propagate(err, "Error occurred while replacing IP address in entry point args for '%v'", entryPointArg)
 		}
-		entryPointArgs[index] = valueWithIPAddress
+		entryPointArgs[index] = entryPointArgWithIPAddressReplaced
 	}
 
 	cmdArgs := instruction.serviceConfig.CmdArgs
-	for index, value := range cmdArgs {
-		valueWithIPAddress, err := replaceIPAddressInString(value, instruction.serviceNetwork, serviceIdStr)
+	for index, cmdArg := range cmdArgs {
+		cmdArgWithIPAddressReplaced, err := replaceIPAddressInString(cmdArg, instruction.serviceNetwork, serviceIdStr)
 		if err != nil {
-			return stacktrace.Propagate(err, "Error occurred while replacing IP address in command args for '%v'", value)
+			return stacktrace.Propagate(err, "Error occurred while replacing IP address in command args for '%v'", cmdArg)
 		}
-		cmdArgs[index] = valueWithIPAddress
+		cmdArgs[index] = cmdArgWithIPAddressReplaced
 	}
 
 	envVars := instruction.serviceConfig.EnvVars
-	for key, value := range envVars {
-		valueWithIPAddress, err := replaceIPAddressInString(value, instruction.serviceNetwork, serviceIdStr)
+	for envVarName, envVarValue := range envVars {
+		envVarValueWithIPAddressReplaced, err := replaceIPAddressInString(envVarValue, instruction.serviceNetwork, serviceIdStr)
 		if err != nil {
-			return stacktrace.Propagate(err, "Error occurred while replacing IP address in env vars for '%v'", value)
+			return stacktrace.Propagate(err, "Error occurred while replacing IP address in env vars for '%v'", envVarValue)
 		}
-		envVars[key] = valueWithIPAddress
+		envVars[envVarName] = envVarValueWithIPAddressReplaced
 	}
 
 	return nil
