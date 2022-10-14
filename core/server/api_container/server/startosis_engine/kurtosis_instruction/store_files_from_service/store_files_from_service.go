@@ -73,7 +73,7 @@ func (instruction *StoreFilesFromServicePosition) Execute(ctx context.Context, e
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to copy file '%v' from service '%v", instruction.srcPath, instruction.serviceId)
 	}
-	environment.SetArtifactUuid(instruction.position, string(artifactUuid))
+	environment.SetArtifactUuid(instruction.position.MagicString(artifactUuidSuffix), string(artifactUuid))
 	return nil
 }
 
