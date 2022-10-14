@@ -15,8 +15,8 @@ import (
 const (
 	ExecBuiltinName = "exec"
 
-	serviceIdArgName   = "service_id"
-	commandArgsArgName = "command"
+	serviceIdArgName = "service_id"
+	commandArgName   = "command"
 )
 
 func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -35,17 +35,17 @@ func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstr
 type ExecInstruction struct {
 	serviceNetwork service_network.ServiceNetwork
 
-	position    kurtosis_instruction.InstructionPosition
-	serviceId   kurtosis_backend_service.ServiceID
-	commandArgs []string
+	position  kurtosis_instruction.InstructionPosition
+	serviceId kurtosis_backend_service.ServiceID
+	command   []string
 }
 
-func NewExecInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, commandArgs []string) *ExecInstruction {
+func NewExecInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, command []string) *ExecInstruction {
 	return &ExecInstruction{
 		serviceNetwork: serviceNetwork,
 		position:       position,
 		serviceId:      serviceId,
-		commandArgs:    commandArgs,
+		command:        command,
 	}
 }
 
@@ -60,7 +60,7 @@ func (instruction *ExecInstruction) GetCanonicalInstruction() string {
 }
 
 func (instruction *ExecInstruction) Execute(ctx context.Context) error {
-	_, _, err := instruction.serviceNetwork.ExecCommand(ctx, instruction.serviceId, instruction.commandArgs)
+	_, _, err := instruction.serviceNetwork.ExecCommand(ctx, instruction.serviceId, instruction.command)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to execute command")
 	}
@@ -79,7 +79,7 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 
 	var serviceIdArg starlark.String
 	var commandArg *starlark.List
-	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceIdArgName, &serviceIdArg, commandArgsArgName, &commandArg); err != nil {
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceIdArgName, &serviceIdArg, commandArgName, &commandArg); err != nil {
 		return "", nil, startosis_errors.NewInterpretationError(err.Error())
 	}
 
