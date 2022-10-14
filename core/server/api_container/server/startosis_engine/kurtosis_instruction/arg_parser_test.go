@@ -386,8 +386,27 @@ func TestParseEnvVars_FailureOnNonStringValue(t *testing.T) {
 }
 
 func TestParseExpectedExitCode_ValidValue(t *testing.T) {
-	validValue := starlark.MakeInt(32)
-	output, err := ParseExpectedExitCode(validValue)
+	input := starlark.MakeInt(32)
+	output, err := ParseExpectedExitCode(input)
 	require.Nil(t, err)
 	require.Equal(t, int32(32), output)
+}
+
+func TestParseExpectedExitCode_OverflowForLargeUnsignedInt64(t *testing.T) {
+	input := starlark.MakeUint64(^uint64(0))
+	_, err := ParseExpectedExitCode(input)
+	require.NotNil(t, err)
+}
+
+func TestParseCommand_ValidValue(t *testing.T) {
+	command := starlark.NewList([]starlark.Value{starlark.String("foo"), starlark.String("bar")})
+	output, err := ParseCommand(command)
+	require.Nil(t, err)
+	require.Equal(t, []string{"foo", "bar"}, output)
+}
+
+func TestParseCommand_InvalidCommandsWithIntegers(t *testing.T) {
+	command := starlark.NewList([]starlark.Value{starlark.String("foo"), starlark.MakeInt(42)})
+	_, err := ParseCommand(command)
+	require.NotNil(t, err)
 }
