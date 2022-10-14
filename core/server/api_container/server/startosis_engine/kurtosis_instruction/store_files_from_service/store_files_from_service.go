@@ -64,7 +64,7 @@ func (instruction *StoreFilesFromServicePosition) GetCanonicalInstruction() stri
 	buffer.WriteString(serviceIdArgName + "=\"")
 	buffer.WriteString(fmt.Sprintf("%v\", ", instruction.serviceId))
 	buffer.WriteString(srcPathArgName + "=\"")
-	buffer.WriteString(fmt.Sprintf("%v)", instruction.srcPath))
+	buffer.WriteString(fmt.Sprintf("%v\")", instruction.srcPath))
 	return buffer.String()
 }
 
