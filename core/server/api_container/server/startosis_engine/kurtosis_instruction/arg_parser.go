@@ -27,6 +27,8 @@ const (
 	commandKey          = "command"
 	expectedExitCodeKey = "expected_exit_code"
 
+	srcPathKey = "src_path"
+
 	portNumberKey   = "number"
 	portProtocolKey = "protocol"
 
@@ -107,6 +109,17 @@ func ParseExpectedExitCode(expectedExitCodeRaw starlark.Int) (int32, *startosis_
 		return 0, interpretationErr
 	}
 	return expectedExitCode, nil
+}
+
+func ParseSrcPath(serviceIdRaw starlark.String) (string, *startosis_errors.InterpretationError) {
+	srcPath, interpretationErr := safeCastToString(serviceIdRaw, srcPathKey)
+	if interpretationErr != nil {
+		return "", interpretationErr
+	}
+	if len(srcPath) == 0 {
+		return "", startosis_errors.NewInterpretationError("Source path cannot be empty")
+	}
+	return srcPath, nil
 }
 
 func parseServiceConfigContainerImageName(serviceConfig *starlarkstruct.Struct) (string, *startosis_errors.InterpretationError) {
