@@ -103,6 +103,7 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 	return serviceId, command, nil
 }
 
+// move this to a common place
 func getPosition(thread *starlark.Thread) kurtosis_instruction.InstructionPosition {
 	// TODO(gb): can do better by returning the entire callstack positions, but it's a good start
 	if len(thread.CallStack()) == 0 {
