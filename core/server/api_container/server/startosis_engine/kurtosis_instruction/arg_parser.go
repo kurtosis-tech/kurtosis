@@ -23,12 +23,19 @@ const (
 	entryPointArgsKey     = "entry_point_args"
 	cmdArgsKey            = "cmd_args"
 	envVarArgsKey         = "env_vars"
-	commandKey            = "command"
+
+	commandKey          = "command"
+	expectedExitCodeKey = "expected_exit_code"
 
 	portNumberKey   = "number"
 	portProtocolKey = "protocol"
 
 	maxPortNumber = 65535
+
+	minUnit32 = uint32(0)
+	maxUint32 = ^minUnit32
+	maxInt32  = int32(maxUint32 >> 1)
+	minInt32  = -maxInt32 - 1
 )
 
 func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceID, *startosis_errors.InterpretationError) {
@@ -91,6 +98,14 @@ func ParseCommand(commandsRaw *starlark.List) ([]string, *startosis_errors.Inter
 		return nil, startosis_errors.NewInterpretationError("Command cannot be empty")
 	}
 	return commandArgs, nil
+}
+
+func ParseExpectedExitCode(expectedExitCodeRaw starlark.Int) (int32, *startosis_errors.InterpretationError) {
+	expectedExitCode, interpretationErr := safeCastToInt32(expectedExitCodeRaw, expectedExitCodeKey)
+	if interpretationErr != nil {
+		return 0, interpretationErr
+	}
+	return expectedExitCode, nil
 }
 
 func parseServiceConfigContainerImageName(serviceConfig *starlarkstruct.Struct) (string, *startosis_errors.InterpretationError) {
@@ -329,4 +344,19 @@ func safeCastToMapStringString(expectedValue starlark.Value, argNameForLogging s
 		castValue[stringKey] = stringValue
 	}
 	return castValue, nil
+}
+
+func safeCastToInt32(expectedValueString starlark.Value, argNameForLogging string) (int32, *startosis_errors.InterpretationError) {
+	castValue, ok := expectedValueString.(starlark.Int)
+	if !ok {
+		return 0, startosis_errors.NewInterpretationError(fmt.Sprintf("Argument '%s' is expected to be an integer. Got %s", argNameForLogging, reflect.TypeOf(expectedValueString)))
+	}
+
+	int64Value, ok := castValue.Int64()
+	if !ok || int64Value != int64(int32(int64Value)) {
+		// second clause if to safeguard against "overflow"
+		return 0, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' argument is expected to be a an integer greater than %d and lower than %d", argNameForLogging, minInt32, maxInt32))
+	}
+	return int32(int64Value), nil
+
 }
