@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
@@ -85,7 +86,7 @@ func (instruction *AddServiceInstruction) GetCanonicalInstruction() string {
 	return "add_service(...)"
 }
 
-func (instruction *AddServiceInstruction) Execute(ctx context.Context) error {
+func (instruction *AddServiceInstruction) Execute(ctx context.Context, _ *startosis_executor.ExecutionEnvironment) error {
 	err := instruction.replaceIPAddress()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred replacing IP Address with actual values in add service instruction for service '%v'", instruction.serviceId)
