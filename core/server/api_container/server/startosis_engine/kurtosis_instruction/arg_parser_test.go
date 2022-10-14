@@ -399,14 +399,14 @@ func TestParseExpectedExitCode_OverflowForLargeUnsignedInt64(t *testing.T) {
 }
 
 func TestParseCommand_ValidValue(t *testing.T) {
-	command := starlark.NewList([]starlark.Value{starlark.String("foo"), starlark.String("bar")})
-	output, err := ParseCommand(command)
+	input := starlark.NewList([]starlark.Value{starlark.String("foo"), starlark.String("bar")})
+	output, err := ParseCommand(input)
 	require.Nil(t, err)
 	require.Equal(t, []string{"foo", "bar"}, output)
 }
 
 func TestParseCommand_InvalidCommandsWithIntegers(t *testing.T) {
-	command := starlark.NewList([]starlark.Value{starlark.String("foo"), starlark.MakeInt(42)})
-	_, err := ParseCommand(command)
+	input := starlark.NewList([]starlark.Value{starlark.String("foo"), starlark.MakeInt(42)})
+	_, err := ParseCommand(input)
 	require.NotNil(t, err)
 }
