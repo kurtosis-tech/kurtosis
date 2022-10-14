@@ -2,6 +2,7 @@ package exec
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -10,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
+	"strings"
 )
 
 const (
@@ -17,6 +19,8 @@ const (
 
 	serviceIdArgName = "service_id"
 	commandArgName   = "command"
+
+	commaSeparator = `", "`
 )
 
 func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -54,9 +58,13 @@ func (instruction *ExecInstruction) GetPositionInOriginalScript() *kurtosis_inst
 }
 
 func (instruction *ExecInstruction) GetCanonicalInstruction() string {
-	// TODO(gm): implement when we need to return the canonical version of the script.
-	//  Maybe there's a way to retrieve the serialized instruction from starlark-go
-	return "exec(...)"
+	buffer := new(strings.Builder)
+	buffer.WriteString(ExecBuiltinName + "(")
+	buffer.WriteString(serviceIdArgName + "=\"")
+	buffer.WriteString(fmt.Sprintf("%v\", ", instruction.serviceId))
+	buffer.WriteString(commandArgName + "=[\"")
+	buffer.WriteString(fmt.Sprintf("%v\"])", strings.Join(instruction.command, commaSeparator)))
+	return buffer.String()
 }
 
 func (instruction *ExecInstruction) Execute(ctx context.Context) error {
