@@ -16,7 +16,7 @@ import (
 	"testing"
 )
 
-var testServiceNetwork service_network.ServiceNetwork = service_network.NewMockServiceNetwork()
+var testServiceNetwork service_network.ServiceNetwork = service_network.NewEmptyMockServiceNetwork()
 
 const testContainerImageName = "kurtosistech/example-datastore-server"
 
@@ -123,7 +123,10 @@ service_config = struct(
 		"grpc": struct(number = 1323, protocol = "TCP")
 	}
 )
-add_service(service_id = service_id, service_config = service_config)
+datastore_service = add_service(service_id = service_id, service_config = service_config)
+print("The grpc port is " + str(datastore_service.ports["grpc"].number))
+print("The grpc port protocol is " + datastore_service.ports["grpc"].protocol)
+print("The datastore service ip address is " + datastore_service.ip_address)
 `
 
 	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
@@ -132,7 +135,7 @@ add_service(service_id = service_id, service_config = service_config)
 
 	addServiceInstruction := add_service.NewAddServiceInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(13, 12),
+		*kurtosis_instruction.NewInstructionPosition(13, 32),
 		"example-datastore-server",
 		services.NewServiceConfigBuilder(
 			testContainerImageName,
@@ -150,6 +153,9 @@ add_service(service_id = service_id, service_config = service_config)
 
 	expectedOutput := `Starting Startosis script!
 Adding service example-datastore-server
+The grpc port is 1323
+The grpc port protocol is TCP
+The datastore service ip address is {{kurtosis:example-datastore-server.ip_address}}
 `
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
@@ -739,4 +745,84 @@ Adding service example-datastore-server
 	require.Equal(t, 1, len(instructions))
 	require.Equal(t, instructions[0], addServiceInstructionFromScriptB)
 	require.Equal(t, expectedOutputFromScriptB, string(scriptOutput))
+}
+
+func TestStartosisInterpreter_AddServiceWithEnvVarsCmdArgsAndEntryPointArgs(t *testing.T) {
+	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `
+print("Starting Startosis script!")
+service_id = "example-datastore-server"
+print("Adding service " + service_id)
+store_service_config = struct(
+	container_image_name = "kurtosistech/example-datastore-server",
+	used_ports = {
+		"grpc": struct(number = 1323, protocol = "TCP")
+	}
+)
+datastore_service = add_service(service_id = service_id, service_config = store_service_config)
+client_service_id = "example-datastore-client"
+print("Adding service " + client_service_id)
+client_service_config = struct(
+	container_image_name = "kurtosistech/example-datastore-client",
+	used_ports = {
+		"grpc": struct(number = 1337, protocol = "TCP")
+	},
+	entry_point_args = ["--store-port " + str(datastore_service.ports["grpc"].number), "--store-ip " + datastore_service.ip_address],
+	cmd_args = ["ping", datastore_service.ip_address],
+	env_vars = {"STORE_IP": datastore_service.ip_address}
+)
+add_service(service_id = client_service_id, service_config = client_service_config)
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Nil(t, interpretationError)
+	require.Equal(t, 2, len(instructions))
+
+	dataSourceAddServiceInstruction := add_service.NewAddServiceInstruction(
+		testServiceNetwork,
+		*kurtosis_instruction.NewInstructionPosition(11, 32),
+		service.ServiceID("example-datastore-server"),
+		services.NewServiceConfigBuilder(
+			testContainerImageName,
+		).WithPrivatePorts(
+			map[string]*kurtosis_core_rpc_api_bindings.Port{
+				"grpc": {
+					Number:   1323,
+					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
+				},
+			},
+		).Build(),
+	)
+
+	clientAddServiceInstruction := add_service.NewAddServiceInstruction(
+		testServiceNetwork,
+		*kurtosis_instruction.NewInstructionPosition(23, 12),
+		service.ServiceID("example-datastore-client"),
+		services.NewServiceConfigBuilder(
+			"kurtosistech/example-datastore-client",
+		).WithPrivatePorts(
+			map[string]*kurtosis_core_rpc_api_bindings.Port{
+				"grpc": {
+					Number:   1337,
+					Protocol: kurtosis_core_rpc_api_bindings.Port_TCP,
+				},
+			},
+		).WithEntryPointArgs(
+			[]string{"--store-port 1323", "--store-ip {{kurtosis:example-datastore-server.ip_address}}"},
+		).WithCmdArgs(
+			[]string{"ping", "{{kurtosis:example-datastore-server.ip_address}}"},
+		).WithEnvVars(
+			map[string]string{"STORE_IP": "{{kurtosis:example-datastore-server.ip_address}}"},
+		).Build(),
+	)
+
+	require.Equal(t, instructions[0], dataSourceAddServiceInstruction)
+	require.Equal(t, instructions[1], clientAddServiceInstruction)
+
+	expectedOutput := `Starting Startosis script!
+Adding service example-datastore-server
+Adding service example-datastore-client
+`
+	require.Equal(t, expectedOutput, string(scriptOutput))
 }

@@ -606,6 +606,16 @@ func (network *DefaultServiceNetwork) CopyFilesFromService(ctx context.Context, 
 	return storeFileResult.filesArtifactUuid, nil
 }
 
+func (network *DefaultServiceNetwork) GetIPAddressForService(serviceID service.ServiceID) (net.IP, bool) {
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	registration, found := network.registeredServiceInfo[serviceID]
+	if !found {
+		return nil, false
+	}
+	return registration.GetPrivateIP(), true
+}
+
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================

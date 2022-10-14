@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
+	"net"
 )
 
 type ServiceNetwork interface {
@@ -63,4 +64,6 @@ type ServiceNetwork interface {
 	)
 
 	GetServiceIDs() map[service.ServiceID]bool
+
+	GetIPAddressForService(serviceID service.ServiceID) (net.IP, bool)
 }
