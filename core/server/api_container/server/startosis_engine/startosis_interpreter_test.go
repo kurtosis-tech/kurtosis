@@ -856,7 +856,7 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
 
-func TestSitaristInterpreter_PassedExitCodeIsInterpretedCorrectly(t *testing.T) {
+func TestStartosisInterpreter_PassedExitCodeIsInterpretedCorrectly(t *testing.T) {
 	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
@@ -883,7 +883,7 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
 
-func TestSitaristInterpreter_StoreFileFromService(t *testing.T) {
+func TestStartosisInterpreter_StoreFileFromService(t *testing.T) {
 	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
