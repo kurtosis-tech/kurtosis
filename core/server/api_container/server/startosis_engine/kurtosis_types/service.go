@@ -51,7 +51,7 @@ func (rv *Service) Truth() starlark.Bool {
 }
 
 // Hash implements the starlark.Value interface
-// TODO maybe implement this, otherwise this can't be used as a key to a dictionary
+// This shouldn't be hashed, users should use a portId instead
 func (rv *Service) Hash() (uint32, error) {
 	return 0, fmt.Errorf("unhashable type: '%v'", serviceTypeName)
 }
