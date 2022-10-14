@@ -296,7 +296,7 @@ func safeCastToUint32(expectedValueString starlark.Value, argNameForLogging stri
 	uint64Value, ok := castValue.Uint64()
 	if !ok || uint64Value != uint64(uint32(uint64Value)) {
 		// second clause if to safeguard against "overflow"
-		return 0, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' argument is expected to be a an integer greater than 0 and lower than %d", argNameForLogging, ^uint32(0)))
+		return 0, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' argument is expected to be a an integer greater than 0 and lower than %d", argNameForLogging, maxUint32))
 	}
 	return uint32(uint64Value), nil
 
