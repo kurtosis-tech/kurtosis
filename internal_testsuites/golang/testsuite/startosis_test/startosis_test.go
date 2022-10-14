@@ -33,6 +33,7 @@ service_config = struct(
 
 add_service(service_id = DATASTORE_SERVICE_ID, service_config = service_config)
 print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
+exec(service_id = DATASTORE_SERVICE_ID, command = ["mkdir", "/tmp/foo"])
 `
 )
 
