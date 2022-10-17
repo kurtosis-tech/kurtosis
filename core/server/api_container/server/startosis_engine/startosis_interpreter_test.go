@@ -896,7 +896,7 @@ print(artifact_uuid)
 	require.Nil(t, interpretationError)
 	require.Equal(t, 1, len(instructions))
 
-	execInstruction := store_files_from_service.NewStoreFilesFromServicePosition(
+	execInstruction := store_files_from_service.NewStoreFilesFromServiceInstruction(
 		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(3, 38),
 		"example-datastore-server",

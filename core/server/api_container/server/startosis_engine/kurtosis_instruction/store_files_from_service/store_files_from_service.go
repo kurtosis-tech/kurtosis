@@ -24,7 +24,7 @@ const (
 	artifactUuidSuffix = "artifact_uuid"
 )
 
-type StoreFilesFromServicePosition struct {
+type StoreFilesFromServiceInstruction struct {
 	serviceNetwork service_network.ServiceNetwork
 
 	position  kurtosis_instruction.InstructionPosition
@@ -39,14 +39,14 @@ func GenerateStoreFilesFromServiceBuiltin(instructionsQueue *[]kurtosis_instruct
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		execInstruction := NewStoreFilesFromServicePosition(serviceNetwork, kurtosis_instruction.GetPositionFromThread(thread), serviceId, srcPath)
-		*instructionsQueue = append(*instructionsQueue, execInstruction)
-		return starlark.String(execInstruction.position.MagicString(artifactUuidSuffix)), nil
+		storeFilesFromServiceInstruction := NewStoreFilesFromServiceInstruction(serviceNetwork, kurtosis_instruction.GetPositionFromThread(thread), serviceId, srcPath)
+		*instructionsQueue = append(*instructionsQueue, storeFilesFromServiceInstruction)
+		return starlark.String(storeFilesFromServiceInstruction.position.MagicString(artifactUuidSuffix)), nil
 	}
 }
 
-func NewStoreFilesFromServicePosition(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, srcPath string) *StoreFilesFromServicePosition {
-	return &StoreFilesFromServicePosition{
+func NewStoreFilesFromServiceInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, serviceId kurtosis_backend_service.ServiceID, srcPath string) *StoreFilesFromServiceInstruction {
+	return &StoreFilesFromServiceInstruction{
 		serviceNetwork: serviceNetwork,
 		position:       position,
 		serviceId:      serviceId,
@@ -54,11 +54,11 @@ func NewStoreFilesFromServicePosition(serviceNetwork service_network.ServiceNetw
 	}
 }
 
-func (instruction *StoreFilesFromServicePosition) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
+func (instruction *StoreFilesFromServiceInstruction) GetPositionInOriginalScript() *kurtosis_instruction.InstructionPosition {
 	return &instruction.position
 }
 
-func (instruction *StoreFilesFromServicePosition) GetCanonicalInstruction() string {
+func (instruction *StoreFilesFromServiceInstruction) GetCanonicalInstruction() string {
 	buffer := new(strings.Builder)
 	buffer.WriteString(StoreFileFromServiceBuiltinName + "(")
 	buffer.WriteString(serviceIdArgName + "=\"")
@@ -68,7 +68,7 @@ func (instruction *StoreFilesFromServicePosition) GetCanonicalInstruction() stri
 	return buffer.String()
 }
 
-func (instruction *StoreFilesFromServicePosition) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
+func (instruction *StoreFilesFromServiceInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
 	artifactUuid, err := instruction.serviceNetwork.CopyFilesFromService(ctx, instruction.serviceId, instruction.srcPath)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to copy file '%v' from service '%v", instruction.srcPath, instruction.serviceId)
@@ -77,11 +77,11 @@ func (instruction *StoreFilesFromServicePosition) Execute(ctx context.Context, e
 	return nil
 }
 
-func (instruction *StoreFilesFromServicePosition) String() string {
+func (instruction *StoreFilesFromServiceInstruction) String() string {
 	return instruction.GetCanonicalInstruction()
 }
 
-func (instruction *StoreFilesFromServicePosition) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
+func (instruction *StoreFilesFromServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
 	// this doesn't do anything but can't return an error as the validator runs this regardless
 	// this is a no-op
 	return nil
