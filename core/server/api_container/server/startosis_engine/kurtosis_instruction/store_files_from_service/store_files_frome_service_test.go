@@ -10,13 +10,13 @@ import (
 var emptyServiceNetwork = service_network.NewEmptyMockServiceNetwork()
 
 func TestStoreFilesFromService_StringRepresentationWorks(t *testing.T) {
-	execInstruction := NewStoreFilesFromServicePosition(
+	storeFileFromServiceInstruction := NewStoreFilesFromServicePosition(
 		emptyServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(1, 1),
 		"example-service-id",
 		"/tmp/foo",
 	)
 	expectedStr := `store_file_from_service(service_id="example-service-id", src_path="/tmp/foo")`
-	require.Equal(t, expectedStr, execInstruction.GetCanonicalInstruction())
-	require.Equal(t, expectedStr, execInstruction.String())
+	require.Equal(t, expectedStr, storeFileFromServiceInstruction.GetCanonicalInstruction())
+	require.Equal(t, expectedStr, storeFileFromServiceInstruction.String())
 }
