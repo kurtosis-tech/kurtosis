@@ -10,7 +10,7 @@ import (
 var emptyServiceNetwork = service_network.NewEmptyMockServiceNetwork()
 
 func TestStoreFilesFromService_StringRepresentationWorks(t *testing.T) {
-	storeFileFromServiceInstruction := NewStoreFilesFromServicePosition(
+	storeFileFromServiceInstruction := NewStoreFilesFromServiceInstruction(
 		emptyServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(1, 1),
 		"example-service-id",
