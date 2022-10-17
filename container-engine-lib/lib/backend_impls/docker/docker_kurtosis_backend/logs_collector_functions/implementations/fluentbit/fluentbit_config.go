@@ -62,6 +62,7 @@ type Output struct {
 func newDefaultFluentbitConfigForKurtosisCentralizedLogs(
 	lokiHost string,
 	lokiPort uint16,
+	tcpPortNumber uint16,
 	httpPortNumber uint16,
 ) *FluentbitConfig {
 	return &FluentbitConfig{
