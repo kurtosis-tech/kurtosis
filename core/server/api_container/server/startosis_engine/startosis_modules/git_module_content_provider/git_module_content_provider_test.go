@@ -43,7 +43,7 @@ func TestGitModuleProvider_FailsForNonExistentModule(t *testing.T) {
 	require.NotNil(t, err)
 }
 
-func TestGitModuleProvider_ValidRelativePath(t *testing.T) {
+func TestGetAbsolutePath_ValidRelativePath(t *testing.T) {
 	moduleDir := "/kurtosis-data/startosis-modules"
 	provider := NewGitModuleContentProvider(moduleDir, "/kurtosis-data/tmp-startosis-modules")
 
@@ -57,7 +57,7 @@ func TestGitModuleProvider_ValidRelativePath(t *testing.T) {
 	require.Equal(t, expectedAbsolutePath, result)
 }
 
-func TestGitModuleProvider_UnsafePathsLeadToErrors(t *testing.T) {
+func TestGetAbsolutePath_UnsafePathsLeadToErrors(t *testing.T) {
 	moduleDir := "/kurtosis-data/startosis-modules"
 	provider := NewGitModuleContentProvider(moduleDir, "/kurtosis-data/tmp-startosis-modules")
 
@@ -68,7 +68,7 @@ func TestGitModuleProvider_UnsafePathsLeadToErrors(t *testing.T) {
 	require.NotNil(t, err)
 }
 
-func TestGitModuleProvider_RelativeLoadWithInvalidFilePathFails(t *testing.T) {
+func TestGetAbsolutePath_RelativeLoadWithInvalidFilePathFails(t *testing.T) {
 	moduleDir := "/kurtosis-data/startosis-modules"
 	provider := NewGitModuleContentProvider(moduleDir, "/kurtosis-data/tmp-startosis-modules")
 
@@ -77,4 +77,20 @@ func TestGitModuleProvider_RelativeLoadWithInvalidFilePathFails(t *testing.T) {
 
 	_, err := provider.getAbsolutePath(fileBeingInterpreted, relativeFilePathToLoad)
 	require.NotNil(t, err)
+}
+
+func TestIsGithubPath_WorksForPathThatStartsWithTheGithubDomain(t *testing.T) {
+	moduleDir := "/kurtosis-data/startosis-modules"
+	provider := NewGitModuleContentProvider(moduleDir, "/kurtosis-data/tmp-startosis-modules")
+
+	validGitHubPath := "github.com/fizz/buzz/main.star"
+	require.True(t, provider.IsGithubPath(validGitHubPath))
+}
+
+func TestIsGithubPath_FalseForPathWithoutGithubDomain(t *testing.T) {
+	moduleDir := "/kurtosis-data/startosis-modules"
+	provider := NewGitModuleContentProvider(moduleDir, "/kurtosis-data/tmp-startosis-modules")
+
+	validGitHubPath := "gitlab.com/fizz/buzz/main.star"
+	require.False(t, provider.IsGithubPath(validGitHubPath))
 }

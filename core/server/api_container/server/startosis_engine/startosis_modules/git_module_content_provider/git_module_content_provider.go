@@ -69,8 +69,8 @@ func (provider *GitModuleContentProvider) GetFileAtRelativePath(fileBeingInterpr
 	return string(fileContents), nil
 }
 
-func (provider *GitModuleContentProvider) IsAbsoluteGitPath(path string) bool {
-	if strings.HasSuffix(path, githubDomain) {
+func (provider *GitModuleContentProvider) IsGithubPath(path string) bool {
+	if strings.HasPrefix(path, githubDomain) {
 		return true
 	}
 	return false
