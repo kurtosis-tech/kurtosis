@@ -2,6 +2,10 @@ package kurtosis_instruction
 
 import "go.starlark.net/starlark"
 
+const (
+	ArtifactUUIDSuffix = "artifact_uuid"
+)
+
 func GetPositionFromThread(thread *starlark.Thread) InstructionPosition {
 	// TODO(gb): can do better by returning the entire callstack positions, but it's a good start
 	if len(thread.CallStack()) == 0 {
