@@ -2,7 +2,9 @@ package logs_collector_functions
 
 import (
 	"context"
+	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
@@ -54,10 +56,19 @@ func getLogsCollectorObjectFromContainerInfo(
 	containerId string,
 	labels map[string]string,
 	containerStatus types.ContainerStatus,
+	allHostMachinePortBindings map[nat.Port]*nat.PortBinding,
 	dockerManager *docker_manager.DockerManager,
 ) (*logs_collector.LogsCollector, error) {
 
-	privateIpAddr := net.IP{}
+	var privateIpAddr net.IP
+	var publicIpAddr net.IP
+	var publicTcpPortSpec *port_spec.PortSpec
+	var publicHttpPortSpec *port_spec.PortSpec
+
+	privateTcpPortSpec, privateHttpPortSpec, err := getLogsCollectorPrivatePorts(labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector container's private port specs from container '%v' with labels: %+v", containerId, labels)
+	}
 
 	isContainerRunning, found := consts.IsContainerRunningDeterminer[containerStatus]
 	if !found {
@@ -76,13 +87,22 @@ func getLogsCollectorObjectFromContainerInfo(
 		if privateIpAddr == nil {
 			return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
 		}
+
+		candidatePublicIpAddr, candidatePublicTcpPortSpec, err := shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateTcpPortSpec, allHostMachinePortBindings)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "The logs collector is running, but an error occurred getting the public port spec for the TCP private port spec")
+		}
+		publicIpAddr = candidatePublicIpAddr
+		publicTcpPortSpec = candidatePublicTcpPortSpec
+
+		_, candidatePublicHttpPortSpec, err := shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateHttpPortSpec, allHostMachinePortBindings)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "The logs collector is running, but an error occurred getting the public port spec for the HTTP private port spec")
+		}
+		publicHttpPortSpec = candidatePublicHttpPortSpec
+
 	} else {
 		logsCollectorStatus = container_status.ContainerStatus_Stopped
-	}
-
-	privateTcpPortSpec, privateHttpPortSpec, err := getLogsCollectorPrivatePorts(labels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector container's private port specs from container '%v' with labels: %+v", containerId, labels)
 	}
 
 	logsCollectorObj := logs_collector.NewLogsCollector(
@@ -90,6 +110,9 @@ func getLogsCollectorObjectFromContainerInfo(
 		privateIpAddr,
 		privateTcpPortSpec,
 		privateHttpPortSpec,
+		publicIpAddr,
+		publicTcpPortSpec,
+		publicHttpPortSpec,
 	)
 
 	return logsCollectorObj, nil
@@ -131,16 +154,18 @@ func getLogsCollectorObjectAndContainerId(
 
 	logsCollectorContainer := allLogsCollectorContainers[0]
 	logsCollectorContainerID := logsCollectorContainer.GetId()
+	hostMachinePortBindings := logsCollectorContainer.GetHostPortBindings()
 
 	logsCollectorObject, err := getLogsCollectorObjectFromContainerInfo(
 		ctx,
 		logsCollectorContainerID,
 		logsCollectorContainer.GetLabels(),
 		logsCollectorContainer.GetStatus(),
+		hostMachinePortBindings,
 		dockerManager,
 	)
 	if err != nil {
-		return nil, "", stacktrace.Propagate(err, "An error occurred getting logs collector object using container ID '%v', labels '%+v' and the status '%v'", logsCollectorContainer.GetId(), logsCollectorContainer.GetLabels(), logsCollectorContainer.GetStatus())
+		return nil, "", stacktrace.Propagate(err, "An error occurred getting logs collector object using container ID '%v', labels '%+v', status '%v' and host machine port bindings '%+v'", logsCollectorContainer.GetId(), logsCollectorContainer.GetLabels(), logsCollectorContainer.GetStatus(), hostMachinePortBindings)
 	}
 
 	return logsCollectorObject, logsCollectorContainerID, nil

@@ -5,6 +5,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_log_streaming_readcloser"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -148,7 +149,23 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		return nil, stacktrace.NewError("The user services can't be started because there is no logs collector running for sending the logs")
 	}
 
-	logsCollectorServiceAddress, err := logsCollector.GetPrivateTcpAddress()
+	if logsCollector.GetMaybePrivateIpAddr() == nil {
+		return nil, stacktrace.NewError("Expected the logs collector has private IP address but this is nil")
+	}
+
+	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(logsCollector.GetMaybePrivateIpAddr(), logsCollector.GetPrivateHttpPort().GetNumber())
+
+	//Check if the logs collector is still available
+	//this is important because the container logs will be sent in async mode to the logs collector
+	//so if it is not prepared to receive them we won't know at least we check for it before, as we do now
+	if err = logsCollectorAvailabilityChecker.WaitForAvailability(); err != nil {
+		return nil,
+			stacktrace.Propagate(err,"An error occurred waiting for the logs collector availability")
+	}
+
+	//We use the public TCP address because the logging driver connection link is from the Docker demon to the logs collector container
+	//so the direction is from the host machine to the container inside the Docker cluster
+	logsCollectorServiceAddress, err := logsCollector.GetPublicTcpAddress()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the private TCP address")
 	}

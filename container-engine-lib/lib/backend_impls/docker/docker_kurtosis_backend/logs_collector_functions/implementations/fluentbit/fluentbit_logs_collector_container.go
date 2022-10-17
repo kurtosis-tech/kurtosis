@@ -2,6 +2,8 @@ package fluentbit
 
 import (
 	"context"
+	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/stacktrace"
@@ -18,6 +20,7 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 	ctx context.Context,
 	logsDatabaseHost string,
 	logsDatabasePort uint16,
+	tcpPortNumber uint16,
 	httpPortNumber uint16,
 	logsCollectorTcpPortId string,
 	logsCollectorHttpPortId string,
@@ -27,21 +30,22 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 ) (
 	resultContainerId  string,
 	resultContainerLabels map[string]string,
+	resultHostMachinePortBindings map[nat.Port]*nat.PortBinding,
 	resultRemoveLogsCollectorContainerFunc func(),
 	resultErr error,
 ) {
 
-	logsCollectorConfigurationCreator := createFluentbitConfigurationCreatorForKurtosis(logsDatabaseHost, logsDatabasePort, httpPortNumber)
-	logsCollectorContainerConfigProvider := createFluentbitContainerConfigProviderForKurtosis(logsDatabaseHost, logsDatabasePort, httpPortNumber)
+	logsCollectorConfigurationCreator := createFluentbitConfigurationCreatorForKurtosis(logsDatabaseHost, logsDatabasePort, tcpPortNumber, httpPortNumber)
+	logsCollectorContainerConfigProvider := createFluentbitContainerConfigProviderForKurtosis(logsDatabaseHost, logsDatabasePort, tcpPortNumber, httpPortNumber)
 
 	privateTcpPortSpec, err := logsCollectorContainerConfigProvider.GetPrivateTcpPortSpec()
 	if err != nil {
-		return "", nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector private TCP port spec")
+		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector private TCP port spec")
 	}
 
 	privateHttpPortSpec, err := logsCollectorContainerConfigProvider.GetPrivateHttpPortSpec()
 	if err != nil {
-		return "",  nil, nil,stacktrace.Propagate(err, "An error occurred getting the logs collector private HTTP port spec")
+		return "",  nil, nil, nil,stacktrace.Propagate(err, "An error occurred getting the logs collector private HTTP port spec")
 	}
 
 	logsCollectorAttrs, err := objAttrsProvider.ForLogsCollector(
@@ -51,7 +55,7 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 		privateHttpPortSpec,
 	)
 	if err != nil {
-		return "",  nil, nil,stacktrace.Propagate(
+		return "",  nil, nil, nil,stacktrace.Propagate(
 			err,
 			"An error occurred getting the logs collector container attributes with TCP port spec '%+v' and HTTP port spec '%+v'",
 			privateTcpPortSpec,
@@ -67,7 +71,7 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 
 	logsCollectorVolumeAttrs, err := objAttrsProvider.ForLogsCollectorVolume()
 	if err != nil {
-		return "",  nil, nil,stacktrace.Propagate(err, "An error occurred getting the logs collector volume attributes")
+		return "",  nil, nil, nil,stacktrace.Propagate(err, "An error occurred getting the logs collector volume attributes")
 	}
 
 	volumeName := logsCollectorVolumeAttrs.GetName().GetString()
@@ -80,7 +84,7 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 	//From Docker docs: If you specify a volume name already in use on the current driver, Docker assumes you want to re-use the existing volume and does not return an error.
 	//https://docs.docker.com/engine/reference/commandline/volume_create/
 	if err := dockerManager.CreateVolume(ctx, volumeName, volumeLabelStrs); err != nil {
-		return "",  nil, nil,stacktrace.Propagate(
+		return "",  nil, nil, nil,stacktrace.Propagate(
 			err,
 			"An error occurred creating logs collector volume with name '%v' and labels '%+v'",
 			volumeName,
@@ -91,7 +95,7 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 	//for this reason the logs collector volume creation has to be idempotent, we ALWAYS want to create it if it doesn't exist, no matter what
 
 	if err := logsCollectorConfigurationCreator.CreateConfiguration(context.Background(), targetNetworkId, volumeName, dockerManager); err != nil {
-		return "",  nil, nil,stacktrace.Propagate(
+		return "",  nil, nil, nil,stacktrace.Propagate(
 			err,
 			"An error occurred running the logs collector configuration creator in network ID '%v' and with volume name '%+v'",
 			targetNetworkId,
@@ -101,7 +105,7 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 
 	createAndStartArgs, err := logsCollectorContainerConfigProvider.GetContainerArgs(containerName, containerLabelStrs, volumeName, targetNetworkId)
 	if err != nil {
-		return "",  nil, nil,
+		return "",  nil, nil, nil,
 			stacktrace.Propagate(
 				err,
 				"An error occurred getting the logs-collector-container-args with container name '%v', labels '%+v', and network ID '%v",
@@ -111,9 +115,9 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 			)
 	}
 
-	containerId, _, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	containerId, hostMachinePortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
-		return "",  nil, nil, stacktrace.Propagate(err, "An error occurred starting the logs collector container with these args '%+v'", createAndStartArgs)
+		return "",  nil, nil, nil, stacktrace.Propagate(err, "An error occurred starting the logs collector container with these args '%+v'", createAndStartArgs)
 	}
 	removeContainerFunc := func() {
 		removeCtx := context.Background()
@@ -134,13 +138,18 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 		}
 	}()
 
-	logsCollectorAvailabilityChecker := newFluentbitAvailabilityChecker(privateHttpPortSpec.GetNumber())
+	publicIpAddr, publicHttpPortSpec, err := shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateHttpPortSpec, hostMachinePortBindings)
+	if err != nil {
+		return "", nil, nil, nil,stacktrace.Propagate(err, "The logs collector is running, but an error occurred getting the public port spec for the HTTP private port spec")
+	}
+
+	logsCollectorAvailabilityChecker := NewFluentbitAvailabilityChecker(publicIpAddr, publicHttpPortSpec.GetNumber())
 
 	if err = logsCollectorAvailabilityChecker.WaitForAvailability(); err != nil {
-		return "", nil, nil,
+		return "", nil, nil, nil,
 		stacktrace.Propagate(err,"An error occurred waiting for the logs collector availability")
 	}
 
 	shouldRemoveLogsCollectorContainer = false
-	return containerId, containerLabelStrs, removeContainerFunc, nil
+	return containerId, containerLabelStrs, hostMachinePortBindings, removeContainerFunc, nil
 }

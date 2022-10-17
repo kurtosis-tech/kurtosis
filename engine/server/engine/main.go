@@ -126,6 +126,10 @@ func runMain() error {
 			return stacktrace.NewError("The engine server cannot be run because the logs database container is not running")
 		}
 
+		if logsDatabase.GetMaybePrivateIpAddr() == nil {
+			return stacktrace.NewError("The engine server cannot be run because the private IP address of the logs database is nil")
+		}
+
 		privateLogsDatabaseAddress := fmt.Sprintf("%v:%v", logsDatabase.GetMaybePrivateIpAddr(), logsDatabase.GetPrivateHttpPort().GetNumber())
 
 		logsDatabaseClient = centralized_logs.NewLokiLogsDatabaseClientWithDefaultHttpClient(privateLogsDatabaseAddress)

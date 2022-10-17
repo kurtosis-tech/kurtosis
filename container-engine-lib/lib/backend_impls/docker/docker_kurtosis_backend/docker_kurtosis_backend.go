@@ -147,6 +147,12 @@ func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enc
 		return nil, nil, stacktrace.NewError("The user services can't be started because no logs collector is running for sending the logs to")
 	}
 
+	if logsCollector.GetMaybePrivateIpAddr() == nil {
+		return nil, nil, stacktrace.NewError("Expected the logs collector has private IP address but this is nil")
+	}
+
+	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(logsCollector.GetMaybePrivateIpAddr(), logsCollector.GetPrivateHttpPort().GetNumber())
+
 	return user_service_functions.StartUserServices(
 		ctx,
 		enclaveId,
@@ -154,6 +160,7 @@ func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enc
 		backend.serviceRegistrations,
 		backend.serviceRegistrationMutex,
 		logsCollector,
+		logsCollectorAvailabilityChecker,
 		backend.objAttrsProvider,
 		backend.enclaveFreeIpProviders,
 		backend.dockerManager)
@@ -322,6 +329,7 @@ func (backend *DockerKurtosisBackend) DestroyLogsDatabase(
 
 func (backend *DockerKurtosisBackend) CreateLogsCollector(
 	ctx context.Context,
+	logsCollectorTcpPortNumber uint16,
 	logsCollectorHttpPortNumber uint16,
 ) (
 	*logs_collector.LogsCollector,
@@ -343,6 +351,7 @@ func (backend *DockerKurtosisBackend) CreateLogsCollector(
 
 	logsCollector, err := logs_collector_functions.CreateLogsCollector(
 		ctx,
+		logsCollectorTcpPortNumber,
 		logsCollectorHttpPortNumber,
 		logsCollectorContainer,
 		logsDatabase,
@@ -350,7 +359,7 @@ func (backend *DockerKurtosisBackend) CreateLogsCollector(
 		backend.objAttrsProvider,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector using the '%v' HTTP port number and the los collector container '%+v'", logsCollectorHttpPortNumber, logsCollectorContainer)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector using the '%v' TCP port number, the '%v' HTTP port number and the los collector container '%+v'", logsCollectorTcpPortNumber, logsCollectorHttpPortNumber, logsCollectorContainer)
 	}
 
 	return logsCollector, nil

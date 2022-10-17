@@ -33,6 +33,7 @@ func StartUserServices(
 	serviceRegistrations map[enclave.EnclaveID]map[service.ServiceGUID]*service.ServiceRegistration,
 	serviceRegistrationMutex *sync.Mutex,
 	logsCollector *logs_collector.LogsCollector,
+	logsCollectorAvailabilityChecker logs_collector_functions.LogsCollectorAvailabilityChecker,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	enclaveFreeIpProviders map[enclave.EnclaveID]*free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
@@ -152,7 +153,17 @@ func StartUserServices(
 		return nil, nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveID)
 	}
 
-	logsCollectorServiceAddress, err := logsCollector.GetPrivateTcpAddress()
+	//Check if the logs collector is still available
+	//this is important because the container logs will be sent in async mode to the logs collector
+	//so if it is not prepared to receive them we won't know at least we check for it before, as we do now
+	if err = logsCollectorAvailabilityChecker.WaitForAvailability(); err != nil {
+		return nil, nil,
+			stacktrace.Propagate(err,"An error occurred waiting for the logs collector availability")
+	}
+
+	//We use the public TCP address because the logging driver connection link is from the Docker demon to the logs collector container
+	//so the direction is from the host machine to the container inside the Docker cluster
+	logsCollectorServiceAddress, err := logsCollector.GetPublicTcpAddress()
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the private TCP address")
 	}
