@@ -303,8 +303,8 @@ func (guarantor *engineExistenceGuarantor) ensureCentralizedLogsComponentsAreRun
 	}
 
 	if !isThereLogsCollector {
-		if _, err := guarantor.kurtosisBackend.CreateLogsCollector(ctx, defaultHttpLogsCollectorPortNum); err != nil {
-			return stacktrace.Propagate(err, "An error occurred creating the logs collector with http port number '%v'", defaultHttpLogsCollectorPortNum)
+		if _, err := guarantor.kurtosisBackend.CreateLogsCollector(ctx, defaultTcpLogsCollectorPortNum, defaultHttpLogsCollectorPortNum); err != nil {
+			return stacktrace.Propagate(err, "An error occurred creating the logs collector with TCP port number '%v' and HTTP port number '%v'", defaultTcpLogsCollectorPortNum, defaultHttpLogsCollectorPortNum)
 		}
 	}
 

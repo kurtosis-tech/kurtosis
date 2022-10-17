@@ -3,6 +3,7 @@ package fluentbit
 import (
 	"fmt"
 	"github.com/kurtosis-tech/stacktrace"
+	"net"
 	"net/http"
 	"time"
 )
@@ -14,16 +15,18 @@ const (
 )
 
 type fluentbitAvailabilityChecker struct {
+	ipAddr net.IP
 	httpPortNumber uint16
 }
 
-func newFluentbitAvailabilityChecker(httpPortNumber uint16) *fluentbitAvailabilityChecker {
-	return &fluentbitAvailabilityChecker{httpPortNumber: httpPortNumber}
+func NewFluentbitAvailabilityChecker(ipAddr net.IP, httpPortNumber uint16) *fluentbitAvailabilityChecker {
+	return &fluentbitAvailabilityChecker{ipAddr: ipAddr, httpPortNumber: httpPortNumber}
 }
 
 func (fluent *fluentbitAvailabilityChecker) WaitForAvailability() error {
+
 	return waitForEndpointAvailability(
-		localhostStr,
+		fluent.ipAddr.String(),
 		fluent.httpPortNumber,
 		healthCheckEndpointPath,
 		waitForAvailabilityInitialDelayMilliseconds,

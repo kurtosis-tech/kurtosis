@@ -581,15 +581,16 @@ func (backend *MetricsReportingKurtosisBackend) DestroyLogsDatabase(
 
 func (backend *MetricsReportingKurtosisBackend) CreateLogsCollector(
 	ctx context.Context,
+	logsCollectorTcpPortNumber uint16,
 	logsCollectorHttpPortNumber uint16,
 ) (
 	*logs_collector.LogsCollector,
 	error,
 ) {
 
-	logsCollector, err := backend.underlying.CreateLogsCollector(ctx, logsCollectorHttpPortNumber)
+	logsCollector, err := backend.underlying.CreateLogsCollector(ctx, logsCollectorTcpPortNumber, logsCollectorHttpPortNumber)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector with HTTP port number '%v'", logsCollectorHttpPortNumber)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector with TCP port number '%v' and HTTP port number '%v'", logsCollectorTcpPortNumber, logsCollectorHttpPortNumber)
 	}
 
 	return logsCollector, nil
