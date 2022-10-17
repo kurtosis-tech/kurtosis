@@ -162,7 +162,7 @@ func replaceArtifactMountPointsInString(originalString string, serviceIdForLoggi
 	for _, match := range matches {
 		artifactUuid, found := environment.GetArtifactUuid(originalString)
 		if !found {
-			return "", stacktrace.NewError("Couldn't find '%v' in the execution environment", originalString)
+			return "", stacktrace.NewError("Couldn't find '%v' in the execution environment which is required by service '%v'", originalString, serviceIdForLogging)
 		}
 		replacedString = strings.Replace(replacedString, match, artifactUuid, singleMatch)
 	}
