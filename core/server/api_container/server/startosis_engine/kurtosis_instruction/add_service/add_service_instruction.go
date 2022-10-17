@@ -86,10 +86,19 @@ func (instruction *AddServiceInstruction) GetCanonicalInstruction() string {
 	return "add_service(...)"
 }
 
-func (instruction *AddServiceInstruction) Execute(ctx context.Context, _ *startosis_executor.ExecutionEnvironment) error {
+func (instruction *AddServiceInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
 	err := instruction.replaceIPAddress()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred replacing IP Address with actual values in add service instruction for service '%v'", instruction.serviceId)
+	}
+
+	for artifactUuid, pathOnContainer := range instruction.serviceConfig.FilesArtifactMountpoints {
+		artifactUuidActualValue, err := replaceArtifactMountPointsInString(artifactUuid, string(instruction.serviceId), environment)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred while replacing the placeholder '%v' artifact uuid with actual value", artifactUuid)
+		}
+		delete(instruction.serviceConfig.FilesArtifactMountpoints, artifactUuid)
+		instruction.serviceConfig.FilesArtifactMountpoints[artifactUuidActualValue] = pathOnContainer
 	}
 
 	serviceConfigMap := map[service.ServiceID]*kurtosis_core_rpc_api_bindings.ServiceConfig{
@@ -144,6 +153,20 @@ func (instruction *AddServiceInstruction) replaceIPAddress() error {
 	}
 
 	return nil
+}
+
+func replaceArtifactMountPointsInString(originalString string, serviceIdForLogging string, environment *startosis_executor.ExecutionEnvironment) (string, error) {
+	compiledArtifactUuidRegex := regexp.MustCompile(kurtosis_instruction.GetRegularExpressionForInstruction("artifact_uuid"))
+	matches := compiledArtifactUuidRegex.FindAllString(originalString, unlimitedMatches)
+	replacedString := originalString
+	for _, match := range matches {
+		artifactUuid, found := environment.GetArtifactUuid(originalString)
+		if !found {
+			return "", stacktrace.NewError("Couldn't find '%v' in the execution environment", originalString)
+		}
+		replacedString = strings.Replace(replacedString, match, artifactUuid, singleMatch)
+	}
+	return replacedString, nil
 }
 
 func replaceIPAddressInString(originalString string, network service_network.ServiceNetwork, serviceIdForLogging string) (string, error) {
