@@ -20,8 +20,6 @@ const (
 
 	serviceIdArgName = "service_id"
 	srcPathArgName   = "src_path"
-
-	artifactUuidSuffix = "artifact_uuid"
 )
 
 type StoreFilesFromServiceInstruction struct {
@@ -41,7 +39,7 @@ func GenerateStoreFilesFromServiceBuiltin(instructionsQueue *[]kurtosis_instruct
 		}
 		storeFilesFromServiceInstruction := NewStoreFilesFromServiceInstruction(serviceNetwork, kurtosis_instruction.GetPositionFromThread(thread), serviceId, srcPath)
 		*instructionsQueue = append(*instructionsQueue, storeFilesFromServiceInstruction)
-		return starlark.String(storeFilesFromServiceInstruction.position.MagicString(artifactUuidSuffix)), nil
+		return starlark.String(storeFilesFromServiceInstruction.position.MagicString(kurtosis_instruction.ArtifactUUIDSuffix)), nil
 	}
 }
 
@@ -73,7 +71,7 @@ func (instruction *StoreFilesFromServiceInstruction) Execute(ctx context.Context
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to copy file '%v' from service '%v", instruction.srcPath, instruction.serviceId)
 	}
-	environment.SetArtifactUuid(instruction.position.MagicString(artifactUuidSuffix), string(artifactUuid))
+	environment.SetArtifactUuid(instruction.position.MagicString(kurtosis_instruction.ArtifactUUIDSuffix), string(artifactUuid))
 	return nil
 }
 

@@ -1,14 +1,22 @@
 # TBD
+### Breaking Changes
+* Updated `kurtosisBackend.CreateLogsCollector` method in `container-engine-lib`, added the `logsCollectorTcpPortNumber` parameter
+  * Users will need to update all the `kurtosisBackend.CreateLogsCollector` setting the logs collector `TCP` port number 
 
 ### Features
 * Added `KurtosisContext.GetUserServiceLogs` method in `golang` and `typescript` api libraries
 * Added the public documentation for the new `KurtosisContext.GetUserServiceLogs` method
 * Added `GetUserServiceLogs` in Kurtosis engine gateway
 * Implemented IP address references for services
+* Added the `defaultTcpLogsCollectorPortNum` with `9713` value in `EngineManager`
+* Added the `LogsCollectorAvailabilityChecker` interface
 * Added an `exec` command to Startosis
+* Added a `store_files_from_service` command to Startosis
 
 ### Changes
 * Add back old enclave continuity test
+* Updated the `FluentbitAvailabilityChecker` constructor now it also receives the IP address as a parameter instead of using `localhost`
+* Published the `FluentbitAvailabilityChecker` constructor for using it during starting modules and user services
 
 # 0.50.2
 ### Fixes

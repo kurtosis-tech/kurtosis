@@ -357,7 +357,7 @@ func (backend *KubernetesKurtosisBackend) DestroyLogsDatabase(
 	return stacktrace.NewError("Destroying the logs database isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateLogsCollector(ctx context.Context, logsCollectorHttpPortNumber uint16) (*logs_collector.LogsCollector, error) {
+func (backend *KubernetesKurtosisBackend) CreateLogsCollector(ctx context.Context, logsCollectorTcpPortNumber uint16, logsCollectorHttpPortNumber uint16) (*logs_collector.LogsCollector, error) {
 	// TODO IMPLEMENT
 	return nil, stacktrace.NewError("Creating the logs collector isn't yet implemented on Kubernetes")
 }
