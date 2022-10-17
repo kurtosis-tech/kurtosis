@@ -6,13 +6,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"go.starlark.net/starlark"
 	"strings"
 )
 
 const (
-	ReadFileBuiltinName = "store_file_from_service"
+	ReadFileBuiltinName = "read_file"
 
 	srcPathArgName = "src_path"
 )
@@ -22,7 +23,7 @@ type ReadFileInstruction struct {
 	srcPath  string
 }
 
-func GenerateReadFileBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+func GenerateReadFileBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, provider startosis_modules.ModuleContentProvider) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	// TODO: Force returning an InterpretationError rather than a normal error
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		srcPath, interpretationError := parseStartosisArgs(b, args, kwargs)
@@ -31,7 +32,11 @@ func GenerateReadFileBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisI
 		}
 		execInstruction := NewReadFileInstruction(kurtosis_instruction.GetPositionFromThread(thread), srcPath)
 		*instructionsQueue = append(*instructionsQueue, execInstruction)
-		return starlark.None, nil
+		fileContents, interpretationError := readFile(kurtosis_instruction.GetFileNameFromThread(thread), srcPath, provider)
+		if interpretationError != nil {
+			return nil, interpretationError
+		}
+		return starlark.String(fileContents), nil
 	}
 }
 
@@ -54,7 +59,8 @@ func (instruction *ReadFileInstruction) GetCanonicalInstruction() string {
 	return buffer.String()
 }
 
-func (instruction *ReadFileInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
+func (instruction *ReadFileInstruction) Execute(_ context.Context, _ *startosis_executor.ExecutionEnvironment) error {
+	// this does nothing as file gets read during interpretation
 	return nil
 }
 
@@ -66,6 +72,23 @@ func (instruction *ReadFileInstruction) ValidateAndUpdateEnvironment(environment
 	// this doesn't do anything but can't return an error as the validator runs this regardless
 	// this is a no-op
 	return nil
+}
+
+func readFile(fileBeingInterpretedName string, fileToRead string, provider startosis_modules.ModuleContentProvider) (string, *startosis_errors.InterpretationError) {
+	if provider.IsGithubPath(fileToRead) {
+		fileContents, err := provider.GetModuleContents(fileToRead)
+		if err != nil {
+			return "", startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while reading from '%v' from Github", fileToRead))
+		}
+		return fileContents, nil
+	}
+
+	fileContents, err := provider.GetFileAtRelativePath(fileToRead, fileBeingInterpretedName)
+	if err != nil {
+		return "", startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while reading from '%v' from disk", fileToRead))
+	}
+
+	return fileContents, nil
 }
 
 func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (string, *startosis_errors.InterpretationError) {

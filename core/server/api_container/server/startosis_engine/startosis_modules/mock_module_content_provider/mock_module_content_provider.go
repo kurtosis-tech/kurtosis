@@ -4,6 +4,10 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
+const (
+	unimplementedMsg = "The method isn't implemented"
+)
+
 type MockModuleContentProvider struct {
 	modules map[string]string
 }
@@ -30,4 +34,14 @@ func (provider *MockModuleContentProvider) GetModuleContents(moduleID string) (s
 
 func (provider *MockModuleContentProvider) Add(moduleID string, contents string) {
 	provider.modules[moduleID] = contents
+}
+
+func (provider *MockModuleContentProvider) GetFileAtRelativePath(_ string, _ string) (string, error) {
+	//TODO implement me
+	panic(unimplementedMsg)
+}
+
+func (provider *MockModuleContentProvider) IsGithubPath(_ string) bool {
+	//TODO implement me
+	panic(unimplementedMsg)
 }
