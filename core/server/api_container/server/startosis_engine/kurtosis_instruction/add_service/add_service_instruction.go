@@ -33,6 +33,8 @@ const (
 	ipAddressReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + serviceIdArgName + ">" + service.ServiceIdRegexp + ")\\.ip_address\\}\\})"
 	ipAddressReplacementPlaceholderFormat = "{{" + kurtosisNamespace + ":%v.ip_address}}"
 
+	artifactUuidSuffix = "artifact_uuid"
+
 	unlimitedMatches = -1
 	singleMatch      = 1
 	subExpNotFound   = -1
@@ -156,7 +158,7 @@ func (instruction *AddServiceInstruction) replaceIPAddress() error {
 }
 
 func replaceArtifactMountPointsInString(originalString string, serviceIdForLogging string, environment *startosis_executor.ExecutionEnvironment) (string, error) {
-	compiledArtifactUuidRegex := regexp.MustCompile(kurtosis_instruction.GetRegularExpressionForInstruction("artifact_uuid"))
+	compiledArtifactUuidRegex := regexp.MustCompile(kurtosis_instruction.GetRegularExpressionForInstruction(artifactUuidSuffix))
 	matches := compiledArtifactUuidRegex.FindAllString(originalString, unlimitedMatches)
 	replacedString := originalString
 	for _, match := range matches {
