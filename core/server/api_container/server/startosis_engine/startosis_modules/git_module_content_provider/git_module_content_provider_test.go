@@ -3,6 +3,7 @@ package git_module_content_provider
 import (
 	"github.com/stretchr/testify/require"
 	"os"
+	"path"
 	"testing"
 )
 
@@ -39,5 +40,41 @@ func TestGitModuleProvider_FailsForNonExistentModule(t *testing.T) {
 	nonExistentModulePath := "github.com/kurtosis-tech/non-existent-startosis-load/sample.star"
 
 	_, err = provider.GetModuleContents(nonExistentModulePath)
+	require.NotNil(t, err)
+}
+
+func TestGitModuleProvider_ValidRelativePath(t *testing.T) {
+	moduleDir := "/kurtosis-data/startosis-modules"
+	provider := NewGitModuleContentProvider(moduleDir, "/kurtosis-data/tmp-startosis-modules")
+
+	fileBeingInterpreted := path.Join(moduleDir, "fizz", "buzz", "main.star")
+	relativeFilePathToLoad := "./lib/lib.star"
+
+	expectedAbsolutePath := path.Join(moduleDir, "fizz", "buzz", relativeFilePathToLoad)
+
+	result, err := provider.getAbsolutePath(fileBeingInterpreted, relativeFilePathToLoad)
+	require.Nil(t, err)
+	require.Equal(t, expectedAbsolutePath, result)
+}
+
+func TestGitModuleProvider_UnsafePathsLeadToErrors(t *testing.T) {
+	moduleDir := "/kurtosis-data/startosis-modules"
+	provider := NewGitModuleContentProvider(moduleDir, "/kurtosis-data/tmp-startosis-modules")
+
+	fileBeingInterpreted := path.Join(moduleDir, "fizz", "buzz", "main.star")
+	pathThatEscapesOutOfModule := "./../../lib.star"
+
+	_, err := provider.getAbsolutePath(fileBeingInterpreted, pathThatEscapesOutOfModule)
+	require.NotNil(t, err)
+}
+
+func TestGitModuleProvider_RelativeLoadWithInvalidFilePathFails(t *testing.T) {
+	moduleDir := "/kurtosis-data/startosis-modules"
+	provider := NewGitModuleContentProvider(moduleDir, "/kurtosis-data/tmp-startosis-modules")
+
+	fileBeingInterpreted := "fileNameNotInUse"
+	relativeFilePathToLoad := "./lib/lib.star"
+
+	_, err := provider.getAbsolutePath(fileBeingInterpreted, relativeFilePathToLoad)
 	require.NotNil(t, err)
 }

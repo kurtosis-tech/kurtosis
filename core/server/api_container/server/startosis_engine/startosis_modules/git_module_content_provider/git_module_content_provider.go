@@ -6,11 +6,14 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
 )
 
 const (
-	moduleDirPermission     = 0755
-	temporaryRepoDirPattern = "tmp-repo-dir-*"
+	moduleDirPermission                      = 0755
+	temporaryRepoDirPattern                  = "tmp-repo-dir-*"
+	minimumNumberOfSubPathsInInterpretedFile = 4
+	moduleSubPathPosition                    = 4
 )
 
 type GitModuleContentProvider struct {
@@ -52,6 +55,44 @@ func (provider *GitModuleContentProvider) GetModuleContents(moduleURL string) (s
 	}
 
 	return string(contents), nil
+}
+
+func (provider *GitModuleContentProvider) GetFileAtRelativePath(fileBeingInterpreted string, relFilepathOfFileToRead string) (string, error) {
+	absoluteFilePath, err := provider.getAbsolutePath(fileBeingInterpreted, relFilepathOfFileToRead)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while getting the absolute path for file '%v' relative to file being interpreted '%v'", relFilepathOfFileToRead, fileBeingInterpreted)
+	}
+	fileContents, err := os.ReadFile(absoluteFilePath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while reading the file '%v'", absoluteFilePath)
+	}
+	return string(fileContents), nil
+}
+
+func (provider *GitModuleContentProvider) IsAbsoluteGitPath(path string) bool {
+	if strings.HasSuffix(path, githubDomain) {
+		return true
+	}
+	return false
+}
+
+func (provider *GitModuleContentProvider) getAbsolutePath(fileBeingInterpreted string, relFilepathOfFileToRead string) (string, error) {
+	if !strings.HasPrefix(fileBeingInterpreted, provider.moduleDir) {
+		return "", stacktrace.NewError("File being interpreted '%v' seems to have an illegal path. This is a bug in Kurtosis.", fileBeingInterpreted)
+	}
+	fileBeingInterpretedSplit := cleanPathAndSplit(fileBeingInterpreted)
+	if len(fileBeingInterpretedSplit) < minimumNumberOfSubPathsInInterpretedFile {
+		return "", stacktrace.NewError("File being interpreted '%v' seems to have an illegal path. This is a bug in Kurtosis.", fileBeingInterpreted)
+	}
+	dirNameOfFileBeingInterpreted := path.Dir(fileBeingInterpreted)
+	absPathOfFileToRead := path.Join(dirNameOfFileBeingInterpreted, relFilepathOfFileToRead)
+	absPathOfFileToRead = path.Clean(absPathOfFileToRead)
+
+	moduleDirOfInterpretedFile := string(os.PathSeparator) + path.Join(fileBeingInterpretedSplit[0:moduleSubPathPosition]...)
+	if !strings.HasPrefix(absPathOfFileToRead, moduleDirOfInterpretedFile) {
+		return "", stacktrace.NewError("Final path of file '%v' seems to be outside of module '%v', which in unsafe.", absPathOfFileToRead, dirNameOfFileBeingInterpreted)
+	}
+	return absPathOfFileToRead, nil
 }
 
 // atomicClone This first clones to a temporary directory and then moves it
