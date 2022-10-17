@@ -38,6 +38,21 @@ func (builder *ServiceConfigBuilder) WithPrivatePorts(privatePorts map[string]*k
 	return builder
 }
 
+func (builder *ServiceConfigBuilder) WithEntryPointArgs(entryPointArgs []string) *ServiceConfigBuilder {
+	builder.entrypointArgs = entryPointArgs
+	return builder
+}
+
+func (builder *ServiceConfigBuilder) WithCmdArgs(cmdArgs []string) *ServiceConfigBuilder {
+	builder.cmdArgs = cmdArgs
+	return builder
+}
+
+func (builder *ServiceConfigBuilder) WithEnvVars(envVars map[string]string) *ServiceConfigBuilder {
+	builder.envVars = envVars
+	return builder
+}
+
 func (builder *ServiceConfigBuilder) Build() *kurtosis_core_rpc_api_bindings.ServiceConfig {
 	return binding_constructors.NewServiceConfig(
 		builder.containerImageName,

@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
+	"net"
 )
 
 const (
@@ -14,9 +15,14 @@ const (
 )
 
 type MockServiceNetwork struct {
+	ipAddresses map[service.ServiceID]net.IP
 }
 
-func NewMockServiceNetwork() *MockServiceNetwork {
+func NewMockServiceNetwork(ipAddresses map[service.ServiceID]net.IP) *MockServiceNetwork {
+	return &MockServiceNetwork{ipAddresses: ipAddresses}
+}
+
+func NewEmptyMockServiceNetwork() *MockServiceNetwork {
 	return &MockServiceNetwork{}
 }
 
@@ -63,4 +69,9 @@ func (m *MockServiceNetwork) CopyFilesFromService(ctx context.Context, serviceId
 func (m *MockServiceNetwork) GetServiceIDs() map[service.ServiceID]bool {
 	//TODO implement me
 	panic(unimplementedMsg)
+}
+
+func (m *MockServiceNetwork) GetIPAddressForService(serviceID service.ServiceID) (net.IP, bool) {
+	ipAddress, found := m.ipAddresses[serviceID]
+	return ipAddress, found
 }

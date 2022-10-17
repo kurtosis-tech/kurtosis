@@ -17,6 +17,7 @@ const (
 
 func CreateLogsCollector(
 	ctx context.Context,
+	logsCollectorTcpPortNumber uint16,
 	logsCollectorHttpPortNumber uint16,
 	logsCollectorContainer LogsCollectorContainer,
 	logsDatabase *logs_database.LogsDatabase,
@@ -48,10 +49,11 @@ func CreateLogsCollector(
 	logsDatabaseHost := logsDatabase.GetMaybePrivateIpAddr().String()
 	logsDatabasePort := logsDatabase.GetPrivateHttpPort().GetNumber()
 
-	containerId, containerLabels, removeLogsCollectorContainerFunc, err := logsCollectorContainer.CreateAndStart(
+	containerId, containerLabels, hostMachinePortBindings, removeLogsCollectorContainerFunc, err := logsCollectorContainer.CreateAndStart(
 		ctx,
 		logsDatabaseHost,
 		logsDatabasePort,
+		logsCollectorTcpPortNumber,
 		logsCollectorHttpPortNumber,
 		logsCollectorTcpPortId,
 		logsCollectorHttpPortId,
@@ -83,10 +85,11 @@ func CreateLogsCollector(
 		containerId,
 		containerLabels,
 		defaultContainerStatusForNewLogsCollectorContainer,
+		hostMachinePortBindings,
 		dockerManager,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector object using container ID '%v', labels '%+v' and the status '%v'", containerId, containerLabels, defaultContainerStatusForNewLogsCollectorContainer)
+		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector object using container ID '%v', labels '%+v', status '%v' and host machine port bindings '%+v'", containerId, containerLabels, defaultContainerStatusForNewLogsCollectorContainer, hostMachinePortBindings)
 	}
 
 	shouldRemoveLogsCollectorContainerFunc = false

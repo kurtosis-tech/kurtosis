@@ -9,7 +9,6 @@ const (
 
 	////////////////////////--LOKI CONTAINER CONFIGURATION SECTION--/////////////////////////////
 	containerImage          = "fluent/fluent-bit:1.9.7"
-	tcpPortNumber    uint16 = 24224 // Default Fluentbit TCP port number, more here: https://docs.fluentbit.io/manual/pipeline/outputs/forward
 	tcpPortProtocol         = port_spec.PortProtocol_TCP
 	httpPortProtocol        = port_spec.PortProtocol_TCP
 

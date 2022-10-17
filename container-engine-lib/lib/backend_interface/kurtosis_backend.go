@@ -399,6 +399,7 @@ type KurtosisBackend interface {
 	//The logs collector requires that the logs database to be up before
 	CreateLogsCollector(
 		ctx context.Context,
+		logsCollectorTcpPortNumber uint16,
 		logsCollectorHttpPortNumber uint16,
 	) (
 		*logs_collector.LogsCollector,
