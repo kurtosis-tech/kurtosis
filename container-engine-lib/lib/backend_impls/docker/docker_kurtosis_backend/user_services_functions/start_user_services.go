@@ -153,12 +153,12 @@ func StartUserServices(
 		return nil, nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveID)
 	}
 
-	//Check if the logs collector is still available
-	//this is important because the container logs will be sent in async mode to the logs collector
-	//so if it is not prepared to receive them we won't know at least we check for it before, as we do now
+	// Check if the logs collector is available
+	// As the container logs are sent asynchronously we'd not know whether they're being received by the collector and there would be no errors if the collector never comes up
+	// The least we can do is check if the collector server is healthy before starting the user service, if in case it gets shut down later we can't do much about it anyway.
 	if err = logsCollectorAvailabilityChecker.WaitForAvailability(); err != nil {
 		return nil, nil,
-			stacktrace.Propagate(err,"An error occurred waiting for the logs collector availability")
+			stacktrace.Propagate(err,"An error occurred while waiting for the log container to become available")
 	}
 
 	//We use the public TCP address because the logging driver connection link is from the Docker demon to the logs collector container

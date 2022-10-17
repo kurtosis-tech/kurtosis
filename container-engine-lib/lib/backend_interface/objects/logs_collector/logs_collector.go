@@ -79,11 +79,11 @@ func (logsCollector *LogsCollector) GetPublicHttpPort() *port_spec.PortSpec {
 
 func (logsCollector *LogsCollector) GetPublicTcpAddress() (LogsCollectorAddress, error) {
 	if logsCollector.maybePublicIpAddr == nil {
-		return "", stacktrace.NewError("It is impossible to returns the logs collector public TCP address due the value of its public IP address is nil")
+		return "", stacktrace.NewError("It is impossible to return the logs collector public TCP address because the value of its public IP address is nil")
 	}
 
 	if logsCollector.publicTcpPort == nil {
-		return "", stacktrace.NewError("It is impossible to returns the logs collector public TCP address due the value of its public TCP port spec is nil")
+		return "", stacktrace.NewError("It is impossible to return the logs collector public TCP address because the value of its public TCP port spec is nil")
 	}
 
 	logsCollectorAddressStr := fmt.Sprintf("%v%v%v", logsCollector.maybePublicIpAddr, ipAndPortSeparator, logsCollector.publicTcpPort.GetNumber())

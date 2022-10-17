@@ -149,18 +149,19 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		return nil, stacktrace.NewError("The user services can't be started because there is no logs collector running for sending the logs")
 	}
 
-	if logsCollector.GetMaybePrivateIpAddr() == nil {
+	privateIpAddr := logsCollector.GetMaybePrivateIpAddr()
+	if privateIpAddr == nil {
 		return nil, stacktrace.NewError("Expected the logs collector has private IP address but this is nil")
 	}
 
-	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(logsCollector.GetMaybePrivateIpAddr(), logsCollector.GetPrivateHttpPort().GetNumber())
+	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(privateIpAddr, logsCollector.GetPrivateHttpPort().GetNumber())
 
-	//Check if the logs collector is still available
-	//this is important because the container logs will be sent in async mode to the logs collector
-	//so if it is not prepared to receive them we won't know at least we check for it before, as we do now
+	// Check if the logs collector is available
+	// As the container logs are sent asynchronously we'd not know whether they're being received by the collector and there would be no errors if the collector never comes up
+	// The least we can do is check if the collector server is healthy before starting the module, if in case it gets shut down later we can't do much about it anyway.
 	if err = logsCollectorAvailabilityChecker.WaitForAvailability(); err != nil {
 		return nil,
-			stacktrace.Propagate(err,"An error occurred waiting for the logs collector availability")
+			stacktrace.Propagate(err,"An error occurred while waiting for the log container to become available")
 	}
 
 	//We use the public TCP address because the logging driver connection link is from the Docker demon to the logs collector container

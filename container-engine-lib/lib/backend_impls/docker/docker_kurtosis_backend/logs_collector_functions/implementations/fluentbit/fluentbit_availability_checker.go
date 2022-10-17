@@ -24,6 +24,7 @@ func NewFluentbitAvailabilityChecker(ipAddr net.IP, httpPortNumber uint16) *flue
 }
 
 func (fluent *fluentbitAvailabilityChecker) WaitForAvailability() error {
+
 	return waitForEndpointAvailability(
 		fluent.ipAddr.String(),
 		fluent.httpPortNumber,

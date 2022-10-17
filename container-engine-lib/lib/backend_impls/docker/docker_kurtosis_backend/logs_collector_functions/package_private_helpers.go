@@ -60,10 +60,15 @@ func getLogsCollectorObjectFromContainerInfo(
 	dockerManager *docker_manager.DockerManager,
 ) (*logs_collector.LogsCollector, error) {
 
-	var privateIpAddr net.IP
-	var publicIpAddr net.IP
-	var publicTcpPortSpec *port_spec.PortSpec
-	var publicHttpPortSpec *port_spec.PortSpec
+	var (
+		logsCollectorStatus container_status.ContainerStatus
+		privateIpAddr net.IP
+		publicIpAddr net.IP
+		publicTcpPortSpec *port_spec.PortSpec
+		publicHttpPortSpec *port_spec.PortSpec
+		privateIpAddrStr string
+		err error
+	)
 
 	privateTcpPortSpec, privateHttpPortSpec, err := getLogsCollectorPrivatePorts(labels)
 	if err != nil {
@@ -75,11 +80,11 @@ func getLogsCollectorObjectFromContainerInfo(
 		// This should never happen because we enforce completeness in a unit test
 		return nil, stacktrace.NewError("No is-running designation found for logs collector container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
 	}
-	var logsCollectorStatus container_status.ContainerStatus
+
 	if isContainerRunning {
 		logsCollectorStatus = container_status.ContainerStatus_Running
 
-		privateIpAddrStr, err := dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
+		privateIpAddrStr, err = dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the private IP address of container '%v' in network '%v'", containerId, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
 		}
@@ -88,18 +93,16 @@ func getLogsCollectorObjectFromContainerInfo(
 			return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
 		}
 
-		candidatePublicIpAddr, candidatePublicTcpPortSpec, err := shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateTcpPortSpec, allHostMachinePortBindings)
+		publicIpAddr, publicTcpPortSpec, err = shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateTcpPortSpec, allHostMachinePortBindings)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "The logs collector is running, but an error occurred getting the public port spec for the TCP private port spec")
+			return nil,
+			stacktrace.Propagate(err, "The logs collector is running, but an error occurred getting the public port spec for the TCP private port spec '%+v'", privateTcpPortSpec)
 		}
-		publicIpAddr = candidatePublicIpAddr
-		publicTcpPortSpec = candidatePublicTcpPortSpec
 
-		_, candidatePublicHttpPortSpec, err := shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateHttpPortSpec, allHostMachinePortBindings)
+		_, publicHttpPortSpec, err = shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateHttpPortSpec, allHostMachinePortBindings)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "The logs collector is running, but an error occurred getting the public port spec for the HTTP private port spec")
+			return nil, stacktrace.Propagate(err, "The logs collector is running, but an error occurred getting the public port spec for the HTTP private port spec '%+v'", privateHttpPortSpec)
 		}
-		publicHttpPortSpec = candidatePublicHttpPortSpec
 
 	} else {
 		logsCollectorStatus = container_status.ContainerStatus_Stopped

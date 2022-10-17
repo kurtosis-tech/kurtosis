@@ -140,14 +140,15 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 
 	publicIpAddr, publicHttpPortSpec, err := shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateHttpPortSpec, hostMachinePortBindings)
 	if err != nil {
-		return "", nil, nil, nil,stacktrace.Propagate(err, "The logs collector is running, but an error occurred getting the public port spec for the HTTP private port spec")
+		return "", nil, nil, nil,
+		stacktrace.Propagate(err, "The logs collector is running, but an error occurred getting the public port spec for the HTTP private port spec '%+v'", privateHttpPortSpec)
 	}
 
 	logsCollectorAvailabilityChecker := NewFluentbitAvailabilityChecker(publicIpAddr, publicHttpPortSpec.GetNumber())
 
 	if err = logsCollectorAvailabilityChecker.WaitForAvailability(); err != nil {
 		return "", nil, nil, nil,
-		stacktrace.Propagate(err,"An error occurred waiting for the logs collector availability")
+		stacktrace.Propagate(err,"An error occurred while waiting for the log container to become available")
 	}
 
 	shouldRemoveLogsCollectorContainer = false

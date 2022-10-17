@@ -147,11 +147,12 @@ func (backend *DockerKurtosisBackend) StartUserServices(ctx context.Context, enc
 		return nil, nil, stacktrace.NewError("The user services can't be started because no logs collector is running for sending the logs to")
 	}
 
-	if logsCollector.GetMaybePrivateIpAddr() == nil {
+	privateIpAddr := logsCollector.GetMaybePrivateIpAddr()
+	if privateIpAddr == nil {
 		return nil, nil, stacktrace.NewError("Expected the logs collector has private IP address but this is nil")
 	}
 
-	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(logsCollector.GetMaybePrivateIpAddr(), logsCollector.GetPrivateHttpPort().GetNumber())
+	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(privateIpAddr, logsCollector.GetPrivateHttpPort().GetNumber())
 
 	return user_service_functions.StartUserServices(
 		ctx,
