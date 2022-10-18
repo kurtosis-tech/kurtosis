@@ -897,14 +897,14 @@ print(artifact_uuid)
 	require.Nil(t, interpretationError)
 	require.Equal(t, 1, len(instructions))
 
-	execInstruction := store_files_from_service.NewStoreFilesFromServiceInstruction(
+	storeInstruction := store_files_from_service.NewStoreFilesFromServiceInstruction(
 		testServiceNetwork,
 		*kurtosis_instruction.NewInstructionPosition(3, 38),
 		"example-datastore-server",
 		"/foo/bar",
 	)
 
-	require.Equal(t, instructions[0], execInstruction)
+	require.Equal(t, instructions[0], storeInstruction)
 
 	expectedOutput := `Storing file from service!
 {{kurtosis:3:38.artifact_uuid}}
@@ -929,12 +929,12 @@ print(file_contents)
 	require.Nil(t, interpretationError)
 	require.Equal(t, 1, len(instructions))
 
-	execInstruction := read_file.NewReadFileInstruction(
+	readInstruction := read_file.NewReadFileInstruction(
 		*kurtosis_instruction.NewInstructionPosition(3, 24),
 		srcPath,
 	)
 
-	require.Equal(t, instructions[0], execInstruction)
+	require.Equal(t, instructions[0], readInstruction)
 
 	expectedOutput := `Reading file from GitHub!
 this is a test string
@@ -959,12 +959,12 @@ print(file_contents)
 	require.Nil(t, interpretationError)
 	require.Equal(t, 1, len(instructions))
 
-	execInstruction := read_file.NewReadFileInstruction(
+	readInstruction := read_file.NewReadFileInstruction(
 		*kurtosis_instruction.NewInstructionPosition(3, 24),
 		srcPath,
 	)
 
-	require.Equal(t, instructions[0], execInstruction)
+	require.Equal(t, instructions[0], readInstruction)
 
 	expectedOutput := `Reading file from GitHub!
 this is a test string
