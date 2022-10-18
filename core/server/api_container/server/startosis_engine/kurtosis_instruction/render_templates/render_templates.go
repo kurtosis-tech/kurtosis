@@ -82,15 +82,15 @@ func (instruction *RenderTemplatesInstruction) ValidateAndUpdateEnvironment(envi
 
 func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, *startosis_errors.InterpretationError) {
 
-	var templatesAndData starlark.Dict
-	if err := starlark.UnpackArgs(b.Name(), args, kwargs, templateAndDataByDestinationRelFilepathArg, &templatesAndData); err != nil {
+	var templatesAndDataArg starlark.Dict
+	if err := starlark.UnpackArgs(b.Name(), args, kwargs, templateAndDataByDestinationRelFilepathArg, &templatesAndDataArg); err != nil {
 		return nil, startosis_errors.NewInterpretationError(err.Error())
 	}
 
-	//serviceId, interpretationErr := kurtosis_instruction.ParseServiceId(serviceIdArg)
-	//if interpretationErr != nil {
-	//	return "", "", interpretationErr
-	//}
+	templatesAndDataByDestRelFilepath, interpretationErr := kurtosis_instruction.ParseTemplatesAndData(templatesAndDataArg)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
 
-	return nil, nil
+	return templatesAndDataByDestRelFilepath, nil
 }
