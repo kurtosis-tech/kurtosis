@@ -25,13 +25,13 @@ const (
 	cmdArgsKey            = "cmd_args"
 	envVarArgsKey         = "env_vars"
 
-	commandKey          = "command"
-	expectedExitCodeKey = "expected_exit_code"
-
-	srcPathKey = "src_path"
-
 	portNumberKey   = "number"
 	portProtocolKey = "protocol"
+
+	commandArgName          = "command"
+	expectedExitCodeArgName = "expected_exit_code"
+
+	srcPathArgName = "src_path"
 
 	maxPortNumber = 65535
 )
@@ -88,7 +88,7 @@ func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core
 }
 
 func ParseCommand(commandsRaw *starlark.List) ([]string, *startosis_errors.InterpretationError) {
-	commandArgs, interpretationErr := safeCastToStringSlice(commandsRaw, commandKey)
+	commandArgs, interpretationErr := safeCastToStringSlice(commandsRaw, commandArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -99,7 +99,7 @@ func ParseCommand(commandsRaw *starlark.List) ([]string, *startosis_errors.Inter
 }
 
 func ParseExpectedExitCode(expectedExitCodeRaw starlark.Int) (int32, *startosis_errors.InterpretationError) {
-	expectedExitCode, interpretationErr := safeCastToInt32(expectedExitCodeRaw, expectedExitCodeKey)
+	expectedExitCode, interpretationErr := safeCastToInt32(expectedExitCodeRaw, expectedExitCodeArgName)
 	if interpretationErr != nil {
 		return 0, interpretationErr
 	}
@@ -107,7 +107,7 @@ func ParseExpectedExitCode(expectedExitCodeRaw starlark.Int) (int32, *startosis_
 }
 
 func ParseSrcPath(serviceIdRaw starlark.String) (string, *startosis_errors.InterpretationError) {
-	srcPath, interpretationErr := safeCastToString(serviceIdRaw, srcPathKey)
+	srcPath, interpretationErr := safeCastToString(serviceIdRaw, srcPathArgName)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
