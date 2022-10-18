@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
@@ -30,9 +31,9 @@ func GenerateReadFileBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisI
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		execInstruction := NewReadFileInstruction(kurtosis_instruction.GetPositionFromThread(thread), srcPath)
+		execInstruction := NewReadFileInstruction(*shared_helpers.GetPositionFromThread(thread), srcPath)
 		*instructionsQueue = append(*instructionsQueue, execInstruction)
-		fileContents, interpretationError := readFile(kurtosis_instruction.GetFileNameFromThread(thread), srcPath, provider)
+		fileContents, interpretationError := readFile(shared_helpers.GetFileNameFromThread(thread), srcPath, provider)
 		if interpretationError != nil {
 			return nil, interpretationError
 		}

@@ -7,6 +7,7 @@ import (
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
@@ -24,6 +25,8 @@ const (
 	nonOptionalExitCodeArgName = "expected_exit_code"
 
 	commandSeparator = `", "`
+
+	successfulExitCode = 0
 )
 
 func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -33,7 +36,7 @@ func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstr
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		execInstruction := NewExecInstruction(serviceNetwork, kurtosis_instruction.GetPositionFromThread(thread), serviceId, commandArgs, expectedExitCode)
+		execInstruction := NewExecInstruction(serviceNetwork, *shared_helpers.GetPositionFromThread(thread), serviceId, commandArgs, expectedExitCode)
 		*instructionsQueue = append(*instructionsQueue, execInstruction)
 		return starlark.None, nil
 	}
@@ -99,7 +102,7 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 
 	var serviceIdArg starlark.String
 	var commandArg *starlark.List
-	var expectedExitCodeArg = starlark.MakeInt(0)
+	var expectedExitCodeArg = starlark.MakeInt(successfulExitCode)
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceIdArgName, &serviceIdArg, commandArgName, &commandArg, expectedExitCodeArgName, &expectedExitCodeArg); err != nil {
 		return "", nil, 0, startosis_errors.NewInterpretationError(err.Error())
 	}

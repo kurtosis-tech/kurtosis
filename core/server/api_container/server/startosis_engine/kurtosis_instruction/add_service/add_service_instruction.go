@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
@@ -49,7 +50,7 @@ func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtosi
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		addServiceInstruction := NewAddServiceInstruction(serviceNetwork, kurtosis_instruction.GetPositionFromThread(thread), serviceId, serviceConfig)
+		addServiceInstruction := NewAddServiceInstruction(serviceNetwork, *shared_helpers.GetPositionFromThread(thread), serviceId, serviceConfig)
 		*instructionsQueue = append(*instructionsQueue, addServiceInstruction)
 		returnValue, interpretationError := makeAddServiceInterpretationReturnValue(serviceId, serviceConfig)
 		if interpretationError != nil {
@@ -92,12 +93,12 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context, environme
 		return stacktrace.Propagate(err, "An error occurred replacing IP Address with actual values in add service instruction for service '%v'", instruction.serviceId)
 	}
 
-	for artifactUuid, pathOnContainer := range instruction.serviceConfig.FilesArtifactMountpoints {
-		artifactUuidActualValue, err := replaceArtifactMountPointsInString(artifactUuid, string(instruction.serviceId), environment)
+	for maybeArtifactUuidMagicStringValue, pathOnContainer := range instruction.serviceConfig.FilesArtifactMountpoints {
+		artifactUuidActualValue, err := shared_helpers.ReplaceMagicStringWithValue(shared_helpers.ArtifactUUIDSuffix, maybeArtifactUuidMagicStringValue, string(instruction.serviceId), environment)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred while replacing the placeholder '%v' artifact uuid with actual value", artifactUuid)
+			return stacktrace.Propagate(err, "An error occurred while replacing the placeholder '%v' artifact uuid with actual value", maybeArtifactUuidMagicStringValue)
 		}
-		delete(instruction.serviceConfig.FilesArtifactMountpoints, artifactUuid)
+		delete(instruction.serviceConfig.FilesArtifactMountpoints, maybeArtifactUuidMagicStringValue)
 		instruction.serviceConfig.FilesArtifactMountpoints[artifactUuidActualValue] = pathOnContainer
 	}
 
@@ -153,20 +154,6 @@ func (instruction *AddServiceInstruction) replaceIPAddress() error {
 	}
 
 	return nil
-}
-
-func replaceArtifactMountPointsInString(originalString string, serviceIdForLogging string, environment *startosis_executor.ExecutionEnvironment) (string, error) {
-	compiledArtifactUuidRegex := regexp.MustCompile(kurtosis_instruction.GetRegularExpressionForInstruction(kurtosis_instruction.ArtifactUUIDSuffix))
-	matches := compiledArtifactUuidRegex.FindAllString(originalString, unlimitedMatches)
-	replacedString := originalString
-	for _, match := range matches {
-		artifactUuid, found := environment.GetArtifactUuid(originalString)
-		if !found {
-			return "", stacktrace.NewError("Couldn't find '%v' in the execution environment which is required by service '%v'", originalString, serviceIdForLogging)
-		}
-		replacedString = strings.Replace(replacedString, match, artifactUuid, singleMatch)
-	}
-	return replacedString, nil
 }
 
 func replaceIPAddressInString(originalString string, network service_network.ServiceNetwork, serviceIdForLogging string) (string, error) {
