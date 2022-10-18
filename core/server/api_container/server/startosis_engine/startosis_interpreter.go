@@ -16,6 +16,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
 	"go.starlark.net/syntax"
 	"sync"
@@ -86,6 +87,7 @@ func (interpreter *StartosisInterpreter) buildBindings(threadName string, instru
 		store_files_from_service.StoreFileFromServiceBuiltinName: starlark.NewBuiltin(store_files_from_service.StoreFileFromServiceBuiltinName, store_files_from_service.GenerateStoreFilesFromServiceBuiltin(instructionsQueue, interpreter.serviceNetwork)),
 		read_file.ReadFileBuiltinName:                            starlark.NewBuiltin(read_file.ReadFileBuiltinName, read_file.GenerateReadFileBuiltin(instructionsQueue, interpreter.moduleContentProvider)),
 		render_templates.RenderTemplatesBuiltinName:              starlark.NewBuiltin(render_templates.RenderTemplatesBuiltinName, render_templates.GenerateRenderTemplatesBuiltin(instructionsQueue, interpreter.serviceNetwork)),
+		starlarkjson.Module.Name:                                 starlarkjson.Module,
 	}
 
 	return thread, builtins

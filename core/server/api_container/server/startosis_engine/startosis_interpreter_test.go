@@ -980,16 +980,17 @@ func TestStartosisInterpreter_RenderTemplates(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 print("Rendering template to disk!")
-data = {
-	"/foo/bar/test.txt" : {
-		"template": "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}.",
-		"template_data": {
+encoded_json = json.encode({
 			"Name" : "Stranger",
 			"Answer": 6,
 			"Numbers": [1, 2, 3],
 			"UnixTimeStamp": 1257894000,
 			"LargeFloat": 1231231243.43,
-		}
+})
+data = {
+	"/foo/bar/test.txt" : {
+		"template": "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}.",
+		"template_data": encoded_json
     }
 }
 artifact_uuid = render_templates(template_and_data_by_dest_rel_filepath = data)
@@ -1011,14 +1012,14 @@ print(artifact_uuid)
 
 	renderInstruction := render_templates.NewRenderTemplatesInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(15, 33),
+		*kurtosis_instruction.NewInstructionPosition(16, 33),
 		templateAndDataByDestFilepath,
 	)
 
 	require.Equal(t, renderInstruction, instructions[0])
 
 	expectedOutput := `Rendering template to disk!
-{{kurtosis:15:33.artifact_uuid}}
+{{kurtosis:16:33.artifact_uuid}}
 `
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
