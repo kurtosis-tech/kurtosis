@@ -4,6 +4,9 @@
 * Added an `exec` command to Startosis
 * Added a `store_files_from_service` command to Startosis
 
+### Changes
+* Fixed a typo in a filename
+
 # 0.51.0
 ### Breaking Changes
 * Updated `kurtosisBackend.CreateLogsCollector` method in `container-engine-lib`, added the `logsCollectorTcpPortNumber` parameter
