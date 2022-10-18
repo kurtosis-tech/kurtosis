@@ -7,6 +7,7 @@ import (
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
@@ -37,9 +38,9 @@ func GenerateStoreFilesFromServiceBuiltin(instructionsQueue *[]kurtosis_instruct
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		storeFilesFromServiceInstruction := NewStoreFilesFromServiceInstruction(serviceNetwork, *kurtosis_instruction.GetPositionFromThread(thread), serviceId, srcPath)
+		storeFilesFromServiceInstruction := NewStoreFilesFromServiceInstruction(serviceNetwork, *shared_helpers.GetPositionFromThread(thread), serviceId, srcPath)
 		*instructionsQueue = append(*instructionsQueue, storeFilesFromServiceInstruction)
-		return starlark.String(storeFilesFromServiceInstruction.position.MagicString(kurtosis_instruction.ArtifactUUIDSuffix)), nil
+		return starlark.String(storeFilesFromServiceInstruction.position.MagicString(shared_helpers.ArtifactUUIDSuffix)), nil
 	}
 }
 
@@ -71,7 +72,7 @@ func (instruction *StoreFilesFromServiceInstruction) Execute(ctx context.Context
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to copy file '%v' from service '%v", instruction.srcPath, instruction.serviceId)
 	}
-	environment.SetArtifactUuid(instruction.position.MagicString(kurtosis_instruction.ArtifactUUIDSuffix), string(artifactUuid))
+	environment.SetArtifactUuid(instruction.position.MagicString(shared_helpers.ArtifactUUIDSuffix), string(artifactUuid))
 	return nil
 }
 

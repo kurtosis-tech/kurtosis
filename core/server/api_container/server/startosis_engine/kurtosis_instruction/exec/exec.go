@@ -7,6 +7,7 @@ import (
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
@@ -35,7 +36,7 @@ func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstr
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		execInstruction := NewExecInstruction(serviceNetwork, *kurtosis_instruction.GetPositionFromThread(thread), serviceId, commandArgs, expectedExitCode)
+		execInstruction := NewExecInstruction(serviceNetwork, *shared_helpers.GetPositionFromThread(thread), serviceId, commandArgs, expectedExitCode)
 		*instructionsQueue = append(*instructionsQueue, execInstruction)
 		return starlark.None, nil
 	}

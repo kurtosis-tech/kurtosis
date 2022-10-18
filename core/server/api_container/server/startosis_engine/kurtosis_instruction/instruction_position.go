@@ -1,6 +1,8 @@
 package kurtosis_instruction
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const (
 	placeholderFormat = "{{kurtosis:%v:%v.%v}}"
