@@ -46,8 +46,5 @@ func (provider *MockModuleContentProvider) GetFileAtRelativePath(_ string, path 
 }
 
 func (provider *MockModuleContentProvider) IsGithubPath(path string) bool {
-	if strings.HasPrefix(path, githubDomain) {
-		return true
-	}
-	return false
+	return strings.HasPrefix(path, githubDomain)
 }

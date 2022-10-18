@@ -10,21 +10,20 @@ import (
 )
 
 const (
-	moduleDirPermission                      = 0755
-	temporaryRepoDirPattern                  = "tmp-repo-dir-*"
-	minimumNumberOfSubPathsInInterpretedFile = 4
-	moduleSubPathPosition                    = 4
+	moduleDirPermission           = 0755
+	temporaryRepoDirPattern       = "tmp-repo-dir-*"
+	authorAndModuleNameAdjustment = 2
 )
 
 type GitModuleContentProvider struct {
-	moduleTmpDir string
-	moduleDir    string
+	modulesTmpDir string
+	modulesDir    string
 }
 
 func NewGitModuleContentProvider(moduleDir string, tmpDir string) *GitModuleContentProvider {
 	return &GitModuleContentProvider{
-		moduleDir:    moduleDir,
-		moduleTmpDir: tmpDir,
+		modulesDir:    moduleDir,
+		modulesTmpDir: tmpDir,
 	}
 }
 
@@ -34,7 +33,7 @@ func (provider *GitModuleContentProvider) GetModuleContents(moduleURL string) (s
 		return "", stacktrace.Propagate(err, "An error occurred while parsing URL '%v'", moduleURL)
 	}
 
-	pathToStartosisFile := path.Join(provider.moduleDir, parsedURL.relativeFilePath)
+	pathToStartosisFile := path.Join(provider.modulesDir, parsedURL.relativeFilePath)
 
 	// Load the file if it already exists
 	contents, err := os.ReadFile(pathToStartosisFile)
@@ -80,20 +79,18 @@ func (provider *GitModuleContentProvider) IsGithubPath(path string) bool {
 }
 
 func (provider *GitModuleContentProvider) getAbsolutePath(fileBeingInterpreted string, relFilepathOfFileToRead string) (string, error) {
-	if !strings.HasPrefix(fileBeingInterpreted, provider.moduleDir) {
+	if !strings.HasPrefix(fileBeingInterpreted, provider.modulesDir) {
 		return "", stacktrace.NewError("File being interpreted '%v' seems to have an illegal path. This is a bug in Kurtosis.", fileBeingInterpreted)
 	}
 	fileBeingInterpretedSplit := cleanPathAndSplit(fileBeingInterpreted)
-	if len(fileBeingInterpretedSplit) < minimumNumberOfSubPathsInInterpretedFile {
-		return "", stacktrace.NewError("File being interpreted '%v' seems to have an illegal path. This is a bug in Kurtosis.", fileBeingInterpreted)
-	}
 	dirNameOfFileBeingInterpreted := path.Dir(fileBeingInterpreted)
 	absPathOfFileToRead := path.Join(dirNameOfFileBeingInterpreted, relFilepathOfFileToRead)
 	absPathOfFileToRead = path.Clean(absPathOfFileToRead)
 
-	moduleDirOfInterpretedFile := string(os.PathSeparator) + path.Join(fileBeingInterpretedSplit[0:moduleSubPathPosition]...)
+	moduleRootPosition := len(cleanPathAndSplit(provider.modulesDir)) + authorAndModuleNameAdjustment
+	moduleDirOfInterpretedFile := string(os.PathSeparator) + path.Join(fileBeingInterpretedSplit[0:moduleRootPosition]...)
 	if !strings.HasPrefix(absPathOfFileToRead, moduleDirOfInterpretedFile) {
-		return "", stacktrace.NewError("Final path of file '%v' seems to be outside of module '%v', which in unsafe.", absPathOfFileToRead, dirNameOfFileBeingInterpreted)
+		return "", stacktrace.NewError("Final path of file '%v' seems to be outside of module '%v', which is unsafe.", absPathOfFileToRead, moduleDirOfInterpretedFile)
 	}
 	return absPathOfFileToRead, nil
 }
@@ -102,7 +99,7 @@ func (provider *GitModuleContentProvider) getAbsolutePath(fileBeingInterpreted s
 // TODO make this support versioning via tags, commit hashes or branches
 func (provider *GitModuleContentProvider) atomicClone(parsedURL *ParsedGitURL) error {
 	// First we clone into a temporary directory
-	tempRepoDirPath, err := os.MkdirTemp(provider.moduleTmpDir, temporaryRepoDirPattern)
+	tempRepoDirPath, err := os.MkdirTemp(provider.modulesTmpDir, temporaryRepoDirPattern)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error creating temporary directory for the repository to be cloned into")
 	}
@@ -114,8 +111,8 @@ func (provider *GitModuleContentProvider) atomicClone(parsedURL *ParsedGitURL) e
 	}
 
 	// Then we move it into the target directory
-	moduleAuthorPath := path.Join(provider.moduleDir, parsedURL.moduleAuthor)
-	modulePath := path.Join(provider.moduleDir, parsedURL.relativeRepoPath)
+	moduleAuthorPath := path.Join(provider.modulesDir, parsedURL.moduleAuthor)
+	modulePath := path.Join(provider.modulesDir, parsedURL.relativeRepoPath)
 	fileMode, err := os.Stat(moduleAuthorPath)
 	if err == nil && !fileMode.IsDir() {
 		return stacktrace.Propagate(err, "Expected '%v' to be a directory but it is something else", moduleAuthorPath)
