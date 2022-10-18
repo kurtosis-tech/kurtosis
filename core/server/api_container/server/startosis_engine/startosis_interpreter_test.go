@@ -2,6 +2,7 @@ package startosis_engine
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
@@ -978,12 +979,16 @@ func TestStartosisInterpreter_RenderTemplates(t *testing.T) {
 	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
-print("Rendering template to disk")
+print("Rendering template to disk!")
 data = {
 	"/foo/bar/test.txt" : {
-		"template": "Hello {{.Name}}",
+		"template": "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}.",
 		"template_data": {
-			"Name" : "TestMan" 
+			"Name" : "Stranger",
+			"Answer": 6,
+			"Numbers": [1, 2, 3],
+			"UnixTimeStamp": 1257894000,
+			"LargeFloat": 1231231243.43,
 		}
     }
 }
@@ -995,21 +1000,25 @@ print(artifact_uuid)
 	require.Nil(t, interpretationError)
 	require.Equal(t, 1, len(instructions))
 
-	templateAndData := binding_constructors.NewTemplateAndData("Hello {{.Name}}", "{\"Name\": \"TestMan\"}")
+	template := "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}."
+	templateData := map[string]interface{}{"Name": "Stranger", "Answer": 6, "Numbers": []int{1, 2, 3}, "UnixTimeStamp": 1257894000, "LargeFloat": 1231231243.43}
+	templateDataAsJson, err := json.Marshal(templateData)
+	require.Nil(t, err)
+	templateAndData := binding_constructors.NewTemplateAndData(template, string(templateDataAsJson))
 	templateAndDataByDestFilepath := map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
 		"/foo/bar/test.txt": templateAndData,
 	}
 
-	execInstruction := render_templates.NewRenderTemplatesInstruction(
+	renderInstruction := render_templates.NewRenderTemplatesInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(11, 33),
+		*kurtosis_instruction.NewInstructionPosition(15, 33),
 		templateAndDataByDestFilepath,
 	)
 
-	require.Equal(t, instructions[0], execInstruction)
+	require.Equal(t, renderInstruction, instructions[0])
 
-	expectedOutput := `Storing file from service!
-{{kurtosis:11:33.artifact_uuid}}
+	expectedOutput := `Rendering template to disk!
+{{kurtosis:15:33.artifact_uuid}}
 `
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }

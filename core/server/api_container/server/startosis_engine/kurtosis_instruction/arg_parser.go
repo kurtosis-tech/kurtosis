@@ -1,7 +1,6 @@
 package kurtosis_instruction
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
@@ -149,11 +148,7 @@ func ParseTemplatesAndData(templatesAndData starlark.Dict) (map[string]*kurtosis
 		if !found || dictErr != nil {
 			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateDataFieldKey))
 		}
-		templateDataAsJson, err := json.Marshal(templateDataStarlarkValue)
-		if err != nil {
-			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("There was an error in marshalling template data '%v' to json", templateDataStarlarkValue))
-		}
-		templateAndData := binding_constructors.NewTemplateAndData(templateStr, string(templateDataAsJson))
+		templateAndData := binding_constructors.NewTemplateAndData(templateStr, templateDataStarlarkValue.String())
 		templateAndDataByDestRelFilepath[stringKey] = templateAndData
 	}
 	return templateAndDataByDestRelFilepath, nil
