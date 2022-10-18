@@ -31,7 +31,7 @@ func ReplaceMagicStringWithValue(suffixToReplace string, originalString string, 
 	matches := compiledArtifactUuidRegex.FindAllString(originalString, unlimitedMatches)
 	replacedString := originalString
 	for _, match := range matches {
-		artifactUuid, found := environment.GetArtifactUuid(originalString)
+		artifactUuid, found := environment.GetArtifactUuid(match)
 		if !found {
 			return "", stacktrace.NewError("Couldn't find '%v' in the execution environment which is required by service '%v'", originalString, serviceIdForLogging)
 		}
