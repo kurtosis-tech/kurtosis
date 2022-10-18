@@ -1,4 +1,6 @@
 # TBD
+
+# 0.51.0
 ### Breaking Changes
 * Updated `kurtosisBackend.CreateLogsCollector` method in `container-engine-lib`, added the `logsCollectorTcpPortNumber` parameter
   * Users will need to update all the `kurtosisBackend.CreateLogsCollector` setting the logs collector `TCP` port number 
