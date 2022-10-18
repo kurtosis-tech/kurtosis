@@ -25,15 +25,19 @@ const (
 	cmdArgsKey            = "cmd_args"
 	envVarArgsKey         = "env_vars"
 
-	commandKey          = "command"
-	expectedExitCodeKey = "expected_exit_code"
-
-	srcPathKey = "src_path"
-
 	portNumberKey   = "number"
 	portProtocolKey = "protocol"
 
 	maxPortNumber = 65535
+
+	commandArgName          = "command"
+	expectedExitCodeArgName = "expected_exit_code"
+
+	srcPathArgName = "src_path"
+
+	templatesAndDataArgName = "template_and_data_by_dest_rel_filepath"
+	templateFieldKey        = "template"
+	templateDataFieldKey    = "template_data"
 )
 
 func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceID, *startosis_errors.InterpretationError) {
@@ -88,7 +92,7 @@ func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core
 }
 
 func ParseCommand(commandsRaw *starlark.List) ([]string, *startosis_errors.InterpretationError) {
-	commandArgs, interpretationErr := safeCastToStringSlice(commandsRaw, commandKey)
+	commandArgs, interpretationErr := safeCastToStringSlice(commandsRaw, commandArgName)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -99,7 +103,7 @@ func ParseCommand(commandsRaw *starlark.List) ([]string, *startosis_errors.Inter
 }
 
 func ParseExpectedExitCode(expectedExitCodeRaw starlark.Int) (int32, *startosis_errors.InterpretationError) {
-	expectedExitCode, interpretationErr := safeCastToInt32(expectedExitCodeRaw, expectedExitCodeKey)
+	expectedExitCode, interpretationErr := safeCastToInt32(expectedExitCodeRaw, expectedExitCodeArgName)
 	if interpretationErr != nil {
 		return 0, interpretationErr
 	}
@@ -107,7 +111,7 @@ func ParseExpectedExitCode(expectedExitCodeRaw starlark.Int) (int32, *startosis_
 }
 
 func ParseSrcPath(serviceIdRaw starlark.String) (string, *startosis_errors.InterpretationError) {
-	srcPath, interpretationErr := safeCastToString(serviceIdRaw, srcPathKey)
+	srcPath, interpretationErr := safeCastToString(serviceIdRaw, srcPathArgName)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
@@ -115,6 +119,35 @@ func ParseSrcPath(serviceIdRaw starlark.String) (string, *startosis_errors.Inter
 		return "", startosis_errors.NewInterpretationError("Source path cannot be empty")
 	}
 	return srcPath, nil
+}
+
+func ParseTemplatesAndData(templatesAndData starlark.Dict) (map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, *startosis_errors.InterpretationError) {
+	templateAndDataByDestRelFilepath := make(map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData)
+	for _, key := range templatesAndData.Keys() {
+		stringKey, castErr := safeCastToString(key, fmt.Sprintf("%v.key:%v", templatesAndDataArgName, key))
+		if castErr != nil {
+			return nil, castErr
+		}
+		value, found, dictErr := templatesAndData.Get(key)
+		if !found || dictErr != nil {
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' key in dict '%s' doesn't have a value we could retrieve. This is a Kurtosis bug.", key.String(), templatesAndDataArgName))
+		}
+		dictValue, castErr := safeCastToMapStringString(value, fmt.Sprintf("%v[\"%v\"]", templatesAndDataArgName, stringKey))
+		if castErr != nil {
+			return nil, castErr
+		}
+		template, found := dictValue[templateFieldKey]
+		if !found {
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateFieldKey))
+		}
+		templateData, found := dictValue[templateDataFieldKey]
+		if !found {
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateDataFieldKey))
+		}
+		templateAndData := binding_constructors.NewTemplateAndData(template, templateData)
+		templateAndDataByDestRelFilepath[template] = templateAndData
+	}
+	return templateAndDataByDestRelFilepath, nil
 }
 
 func parseServiceConfigContainerImageName(serviceConfig *starlarkstruct.Struct) (string, *startosis_errors.InterpretationError) {

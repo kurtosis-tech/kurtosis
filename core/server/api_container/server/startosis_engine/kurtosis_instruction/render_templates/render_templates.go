@@ -3,7 +3,7 @@ package render_templates
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
@@ -18,14 +18,14 @@ import (
 const (
 	RenderTemplatesBuiltinName = "render_templates"
 
-	templateAndDataByDestinationRelFilepathArg = "templates_and_data_by_destination_rel_filepath"
+	templateAndDataByDestinationRelFilepathArg = "template_and_data_by_dest_rel_filepath"
 )
 
 type RenderTemplatesInstruction struct {
 	serviceNetwork service_network.ServiceNetwork
 
-	position         kurtosis_instruction.InstructionPosition
-	templatesAndData map[string]*enclaves.TemplateAndData
+	position                          kurtosis_instruction.InstructionPosition
+	templatesAndDataByDestRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData
 }
 
 func GenerateRenderTemplatesBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -41,11 +41,11 @@ func GenerateRenderTemplatesBuiltin(instructionsQueue *[]kurtosis_instruction.Ku
 	}
 }
 
-func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, templatesAndData map[string]*enclaves.TemplateAndData) *RenderTemplatesInstruction {
+func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork, position kurtosis_instruction.InstructionPosition, templatesAndDataByDestRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData) *RenderTemplatesInstruction {
 	return &RenderTemplatesInstruction{
-		serviceNetwork:   serviceNetwork,
-		position:         position,
-		templatesAndData: templatesAndData,
+		serviceNetwork:                    serviceNetwork,
+		position:                          position,
+		templatesAndDataByDestRelFilepath: templatesAndDataByDestRelFilepath,
 	}
 }
 
@@ -57,14 +57,14 @@ func (instruction *RenderTemplatesInstruction) GetCanonicalInstruction() string 
 	buffer := new(strings.Builder)
 	buffer.WriteString(RenderTemplatesBuiltinName + "(")
 	buffer.WriteString(templateAndDataByDestinationRelFilepathArg + "=\"")
-	buffer.WriteString(fmt.Sprintf("%v\")", instruction.templatesAndData))
+	buffer.WriteString(fmt.Sprintf("%v\")", instruction.templatesAndDataByDestRelFilepath))
 	return buffer.String()
 }
 
 func (instruction *RenderTemplatesInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
-	artifactUuid, err := instruction.serviceNetwork.CopyFilesFromService(ctx, "", "")
+	artifactUuid, err := instruction.serviceNetwork.RenderTemplates(instruction.templatesAndDataByDestRelFilepath)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to render template '%v'", instruction.templatesAndData)
+		return stacktrace.Propagate(err, "Failed to render template '%v'", instruction.templatesAndDataByDestRelFilepath)
 	}
 	environment.SetArtifactUuid(instruction.position.MagicString(shared_helpers.ArtifactUUIDSuffix), string(artifactUuid))
 	return nil
@@ -80,9 +80,9 @@ func (instruction *RenderTemplatesInstruction) ValidateAndUpdateEnvironment(envi
 	return nil
 }
 
-func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (map[string]*enclaves.TemplateAndData, *startosis_errors.InterpretationError) {
+func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, *startosis_errors.InterpretationError) {
 
-	var templatesAndData starlark.Value
+	var templatesAndData starlark.Dict
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, templateAndDataByDestinationRelFilepathArg, &templatesAndData); err != nil {
 		return nil, startosis_errors.NewInterpretationError(err.Error())
 	}
