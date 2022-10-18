@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	moduleDirRelPath    = "startosis-modules"
-	moduleTmpDirRelPath = "tmp-startosis-modules"
+	moduleDirRelPath         = "startosis-modules"
+	moduleTmpDirRelPath      = "tmp-startosis-modules"
+	testFileBeingInterpreted = "test.star"
 )
 
 func TestGitModuleProvider_SucceedsForValidModule(t *testing.T) {
@@ -91,6 +92,16 @@ func TestIsGithubPath_FalseForPathWithoutGithubDomain(t *testing.T) {
 	moduleDir := "/kurtosis-data/startosis-modules"
 	provider := NewGitModuleContentProvider(moduleDir, "/kurtosis-data/tmp-startosis-modules")
 
-	validGitHubPath := "gitlab.com/fizz/buzz/main.star"
-	require.False(t, provider.IsGithubPath(validGitHubPath))
+	invalidGitlabPath := "gitlab.com/fizz/buzz/main.star"
+	require.False(t, provider.IsGithubPath(invalidGitlabPath))
+}
+
+func TestGetFileAtRelativePath_FailsForAbsolutePath(t *testing.T) {
+	moduleDir := "/kurtosis-data/startosis-modules"
+	provider := NewGitModuleContentProvider(moduleDir, "/kurtosis-data/tmp-startosis-modules")
+
+	inputPath := "/absolute/path/main.star"
+	_, err := provider.GetFileAtRelativePath(testFileBeingInterpreted, inputPath)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Expected a relative path but got absolute path")
 }

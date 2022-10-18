@@ -58,6 +58,9 @@ func (provider *GitModuleContentProvider) GetModuleContents(moduleURL string) (s
 }
 
 func (provider *GitModuleContentProvider) GetFileAtRelativePath(fileBeingInterpreted string, relFilepathOfFileToRead string) (string, error) {
+	if path.IsAbs(relFilepathOfFileToRead) {
+		return "", stacktrace.NewError("Expected a relative path but got absolute path '%v'", relFilepathOfFileToRead)
+	}
 	absoluteFilePath, err := provider.getAbsolutePath(fileBeingInterpreted, relFilepathOfFileToRead)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while getting the absolute path for file '%v' relative to file being interpreted '%v'", relFilepathOfFileToRead, fileBeingInterpreted)
