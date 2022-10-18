@@ -34,7 +34,7 @@ func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstr
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		execInstruction := NewExecInstruction(serviceNetwork, kurtosis_instruction.GetPositionFromThread(thread), serviceId, commandArgs, expectedExitCode)
+		execInstruction := NewExecInstruction(serviceNetwork, *kurtosis_instruction.GetPositionFromThread(thread), serviceId, commandArgs, expectedExitCode)
 		*instructionsQueue = append(*instructionsQueue, execInstruction)
 		return starlark.None, nil
 	}
