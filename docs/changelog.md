@@ -3,6 +3,7 @@
 ### Features
 * Added an `exec` command to Startosis
 * Added a `store_files_from_service` command to Startosis
+* Added a `read_file` command to Startosis
 
 ### Changes
 * Fixed a typo in a filename
