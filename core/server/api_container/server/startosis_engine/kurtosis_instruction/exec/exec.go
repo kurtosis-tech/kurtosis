@@ -23,6 +23,8 @@ const (
 	nonOptionalExitCodeArgName = "expected_exit_code"
 
 	commandSeparator = `", "`
+
+	successfulExitCode = 0
 )
 
 func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction, serviceNetwork service_network.ServiceNetwork) func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
@@ -98,7 +100,7 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 
 	var serviceIdArg starlark.String
 	var commandArg *starlark.List
-	var expectedExitCodeArg = starlark.MakeInt(0)
+	var expectedExitCodeArg = starlark.MakeInt(successfulExitCode)
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, serviceIdArgName, &serviceIdArg, commandArgName, &commandArg, expectedExitCodeArgName, &expectedExitCodeArg); err != nil {
 		return "", nil, 0, startosis_errors.NewInterpretationError(err.Error())
 	}
