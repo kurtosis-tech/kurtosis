@@ -84,7 +84,7 @@ func readFile(fileBeingInterpretedName string, fileToRead string, provider start
 		return fileContents, nil
 	}
 
-	fileContents, err := provider.GetFileAtRelativePath(fileToRead, fileBeingInterpretedName)
+	fileContents, err := provider.GetFileAtRelativePath(fileBeingInterpretedName, fileToRead)
 	if err != nil {
 		return "", startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while reading from '%v' from disk", fileToRead))
 	}

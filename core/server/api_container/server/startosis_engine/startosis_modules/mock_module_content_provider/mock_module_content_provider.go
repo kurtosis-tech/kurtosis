@@ -2,10 +2,11 @@ package mock_module_content_provider
 
 import (
 	"github.com/kurtosis-tech/stacktrace"
+	"strings"
 )
 
 const (
-	unimplementedMsg = "The method isn't implemented"
+	githubDomain = "github.com"
 )
 
 type MockModuleContentProvider struct {
@@ -36,12 +37,17 @@ func (provider *MockModuleContentProvider) Add(moduleID string, contents string)
 	provider.modules[moduleID] = contents
 }
 
-func (provider *MockModuleContentProvider) GetFileAtRelativePath(_ string, _ string) (string, error) {
-	//TODO implement me
-	panic(unimplementedMsg)
+func (provider *MockModuleContentProvider) GetFileAtRelativePath(_ string, path string) (string, error) {
+	contents, found := provider.modules[path]
+	if !found {
+		return "", stacktrace.NewError("File not found %v", path)
+	}
+	return contents, nil
 }
 
-func (provider *MockModuleContentProvider) IsGithubPath(_ string) bool {
-	//TODO implement me
-	panic(unimplementedMsg)
+func (provider *MockModuleContentProvider) IsGithubPath(path string) bool {
+	if strings.HasPrefix(path, githubDomain) {
+		return true
+	}
+	return false
 }
