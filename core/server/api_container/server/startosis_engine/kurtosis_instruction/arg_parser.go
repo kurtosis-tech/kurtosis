@@ -28,8 +28,6 @@ const (
 	portNumberKey   = "number"
 	portProtocolKey = "protocol"
 
-	maxPortNumber = 65535
-
 	commandArgName          = "command"
 	expectedExitCodeArgName = "expected_exit_code"
 
@@ -38,6 +36,8 @@ const (
 	templatesAndDataArgName = "template_and_data_by_dest_rel_filepath"
 	templateFieldKey        = "template"
 	templateDataFieldKey    = "template_data"
+
+	maxPortNumber = 65535
 )
 
 func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceID, *startosis_errors.InterpretationError) {
