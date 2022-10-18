@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
+	"math"
 	"reflect"
 	"strings"
 )
@@ -26,6 +27,9 @@ const (
 
 	portNumberKey   = "number"
 	portProtocolKey = "protocol"
+
+	commandArgName          = "command"
+	expectedExitCodeArgName = "expected_exit_code"
 
 	maxPortNumber = 65535
 )
@@ -79,6 +83,25 @@ func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core
 	).Build()
 
 	return builtConfig, nil
+}
+
+func ParseCommand(commandsRaw *starlark.List) ([]string, *startosis_errors.InterpretationError) {
+	commandArgs, interpretationErr := safeCastToStringSlice(commandsRaw, commandArgName)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if len(commandArgs) == 0 {
+		return nil, startosis_errors.NewInterpretationError("Command cannot be empty")
+	}
+	return commandArgs, nil
+}
+
+func ParseExpectedExitCode(expectedExitCodeRaw starlark.Int) (int32, *startosis_errors.InterpretationError) {
+	expectedExitCode, interpretationErr := safeCastToInt32(expectedExitCodeRaw, expectedExitCodeArgName)
+	if interpretationErr != nil {
+		return 0, interpretationErr
+	}
+	return expectedExitCode, nil
 }
 
 func parseServiceConfigContainerImageName(serviceConfig *starlarkstruct.Struct) (string, *startosis_errors.InterpretationError) {
@@ -269,7 +292,7 @@ func safeCastToUint32(expectedValueString starlark.Value, argNameForLogging stri
 	uint64Value, ok := castValue.Uint64()
 	if !ok || uint64Value != uint64(uint32(uint64Value)) {
 		// second clause if to safeguard against "overflow"
-		return 0, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' argument is expected to be a an integer greater than 0 and lower than %d", argNameForLogging, ^uint32(0)))
+		return 0, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' argument is expected to be a an integer greater than 0 and lower than %d", argNameForLogging, math.MaxUint32))
 	}
 	return uint32(uint64Value), nil
 
@@ -317,4 +340,19 @@ func safeCastToMapStringString(expectedValue starlark.Value, argNameForLogging s
 		castValue[stringKey] = stringValue
 	}
 	return castValue, nil
+}
+
+func safeCastToInt32(expectedValueString starlark.Value, argNameForLogging string) (int32, *startosis_errors.InterpretationError) {
+	castValue, ok := expectedValueString.(starlark.Int)
+	if !ok {
+		return 0, startosis_errors.NewInterpretationError(fmt.Sprintf("Argument '%s' is expected to be an integer. Got %s", argNameForLogging, reflect.TypeOf(expectedValueString)))
+	}
+
+	int64Value, ok := castValue.Int64()
+	if !ok || int64Value != int64(int32(int64Value)) {
+		// second clause if to safeguard against "overflow"
+		return 0, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' argument is expected to be a an integer greater than %d and lower than %d", argNameForLogging, math.MinInt32, math.MaxInt32))
+	}
+	return int32(int64Value), nil
+
 }

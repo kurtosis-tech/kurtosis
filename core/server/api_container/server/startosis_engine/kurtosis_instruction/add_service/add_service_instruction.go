@@ -48,7 +48,7 @@ func GenerateAddServiceBuiltin(instructionsQueue *[]kurtosis_instruction.Kurtosi
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		addServiceInstruction := NewAddServiceInstruction(serviceNetwork, getPosition(thread), serviceId, serviceConfig)
+		addServiceInstruction := NewAddServiceInstruction(serviceNetwork, *kurtosis_instruction.GetPositionFromThread(thread), serviceId, serviceConfig)
 		*instructionsQueue = append(*instructionsQueue, addServiceInstruction)
 		returnValue, interpretationError := makeAddServiceInterpretationReturnValue(serviceId, serviceConfig)
 		if interpretationError != nil {
@@ -219,14 +219,4 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 		return "", nil, interpretationErr
 	}
 	return serviceId, serviceConfig, nil
-}
-
-func getPosition(thread *starlark.Thread) kurtosis_instruction.InstructionPosition {
-	// TODO(gb): can do better by returning the entire callstack positions, but it's a good start
-	if len(thread.CallStack()) == 0 {
-		panic("empty call stack is unexpected, this should not happen")
-	}
-	// position of current instruction is  store at the bottom of the call stack
-	callFrame := thread.CallStack().At(len(thread.CallStack()) - 1)
-	return *kurtosis_instruction.NewInstructionPosition(callFrame.Pos.Line, callFrame.Pos.Col)
 }

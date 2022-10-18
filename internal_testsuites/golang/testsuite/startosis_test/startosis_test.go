@@ -12,8 +12,9 @@ const (
 	testName              = "module"
 	isPartitioningEnabled = false
 
-	serviceId = "example-datastore-server-1"
-	portId    = "grpc"
+	serviceId            = "example-datastore-server-1"
+	portId               = "grpc"
+	directoryToBeCreated = "/tmp/foo"
 
 	startosisScript = `
 DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
@@ -21,6 +22,7 @@ DATASTORE_SERVICE_ID = "` + serviceId + `"
 DATASTORE_PORT_ID = "` + portId + `"
 DATASTORE_PORT_NUMBER = 1323
 DATASTORE_PORT_PROTOCOL = "TCP"
+DIRECTORY_TO_BE_CREATED = "` + directoryToBeCreated + `"
 
 print("Adding service " + DATASTORE_SERVICE_ID + ".")
 
@@ -33,6 +35,7 @@ service_config = struct(
 
 add_service(service_id = DATASTORE_SERVICE_ID, service_config = service_config)
 print("Service " + DATASTORE_SERVICE_ID + " deployed successfully.")
+exec(service_id = DATASTORE_SERVICE_ID, command = ["mkdir", DIRECTORY_TO_BE_CREATED])
 `
 )
 
@@ -69,4 +72,12 @@ Service example-datastore-server-1 deployed successfully.
 		serviceId,
 	)
 	logrus.Infof("All services added via the module work as expected")
+
+	// Check that the directory got created
+	logrus.Infof("Checking that the directory got created")
+	serviceCtx, err := enclaveCtx.GetServiceContext(serviceId)
+	require.Nil(t, err, "Unexpected Error Creating Service Context")
+	exitCode, _, err := serviceCtx.ExecCommand([]string{"ls", directoryToBeCreated})
+	require.Nil(t, err, "Unexpected err running verification on created dir")
+	require.Equal(t, int32(0), exitCode)
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
+	"math"
 	"testing"
 )
 
@@ -133,6 +134,45 @@ func TestExtractStringValueFromStruct_FailureWrongValue(t *testing.T) {
 	require.NotNil(t, err)
 	require.Equal(t, "'key' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, "", output)
+}
+
+func TestSafeCastToInt32_ValidPositiveValue(t *testing.T) {
+	input := starlark.MakeInt(32)
+	output, err := safeCastToInt32(input, "test")
+	require.Nil(t, err)
+	require.Equal(t, int32(32), output)
+}
+
+func TestSafeCastToInt32_ValidNegativeValue(t *testing.T) {
+	input := starlark.MakeInt(-32)
+	output, err := safeCastToInt32(input, "test")
+	require.Nil(t, err)
+	require.Equal(t, int32(-32), output)
+}
+
+func TestSafeCastToInt32_ValidZeroValue(t *testing.T) {
+	input := starlark.MakeInt(0)
+	output, err := safeCastToInt32(input, "test")
+	require.Nil(t, err)
+	require.Equal(t, int32(0), output)
+}
+
+func TestSafeCastToInt32_FailsForValuesGreaterThanMaxInt32(t *testing.T) {
+	input := starlark.MakeInt(math.MaxInt32 + 1)
+	_, err := safeCastToInt32(input, "test")
+	require.NotNil(t, err)
+}
+
+func TestSafeCastToInt32_FailsForValuesLowerThanMinInt32(t *testing.T) {
+	input := starlark.MakeInt(math.MinInt32 - 1)
+	_, err := safeCastToInt32(input, "test")
+	require.NotNil(t, err)
+}
+
+func TestSafeCastToInt32_FailsForString(t *testing.T) {
+	input := starlark.String("hello")
+	_, err := safeCastToInt32(input, "test")
+	require.NotNil(t, err)
 }
 
 func TestExtractUint32ValueFromStruct_Success(t *testing.T) {
@@ -362,4 +402,30 @@ func TestParseEnvVars_FailureOnNonStringValue(t *testing.T) {
 	require.NotNil(t, err)
 	require.Equal(t, "'env_vars[\"key\"]' is expected to be a string. Got starlark.Int", err.Error())
 	require.Equal(t, map[string]string(nil), output)
+}
+
+func TestParseExpectedExitCode_ValidValue(t *testing.T) {
+	input := starlark.MakeInt(32)
+	output, err := ParseExpectedExitCode(input)
+	require.Nil(t, err)
+	require.Equal(t, int32(32), output)
+}
+
+func TestParseExpectedExitCode_OverflowForLargeUnsignedInt64(t *testing.T) {
+	input := starlark.MakeUint64(^uint64(0))
+	_, err := ParseExpectedExitCode(input)
+	require.NotNil(t, err)
+}
+
+func TestParseCommand_ValidValue(t *testing.T) {
+	input := starlark.NewList([]starlark.Value{starlark.String("foo"), starlark.String("bar")})
+	output, err := ParseCommand(input)
+	require.Nil(t, err)
+	require.Equal(t, []string{"foo", "bar"}, output)
+}
+
+func TestParseCommand_InvalidCommandsWithIntegers(t *testing.T) {
+	input := starlark.NewList([]starlark.Value{starlark.String("foo"), starlark.MakeInt(42)})
+	_, err := ParseCommand(input)
+	require.NotNil(t, err)
 }
