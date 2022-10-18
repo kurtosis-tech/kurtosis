@@ -1,6 +1,7 @@
 package kurtosis_instruction
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
@@ -132,20 +133,28 @@ func ParseTemplatesAndData(templatesAndData starlark.Dict) (map[string]*kurtosis
 		if !found || dictErr != nil {
 			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' key in dict '%s' doesn't have a value we could retrieve. This is a Kurtosis bug.", key.String(), templatesAndDataArgName))
 		}
-		dictValue, castErr := safeCastToMapStringString(value, fmt.Sprintf("%v[\"%v\"]", templatesAndDataArgName, stringKey))
+		dictValue, ok := value.(*starlark.Dict)
+		if !ok {
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected %v[\"%v\"] to be a dict. Got '%s'", templatesAndData, stringKey, reflect.TypeOf(value)))
+		}
+		template, found, dictErr := dictValue.Get(starlark.String(templateFieldKey))
+		if !found || dictErr != nil {
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateFieldKey))
+		}
+		templateStr, castErr := safeCastToString(template, fmt.Sprintf("%v[\"%v\"][\"%v\"", templatesAndDataArgName, stringKey, templateDataFieldKey))
 		if castErr != nil {
 			return nil, castErr
 		}
-		template, found := dictValue[templateFieldKey]
-		if !found {
-			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateFieldKey))
-		}
-		templateData, found := dictValue[templateDataFieldKey]
-		if !found {
+		templateDataStarlarkValue, found, dictErr := dictValue.Get(starlark.String(templateDataFieldKey))
+		if !found || dictErr != nil {
 			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateDataFieldKey))
 		}
-		templateAndData := binding_constructors.NewTemplateAndData(template, templateData)
-		templateAndDataByDestRelFilepath[template] = templateAndData
+		templateDataAsJson, err := json.Marshal(templateDataStarlarkValue)
+		if err != nil {
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("There was an error in marshalling template data '%v' to json", templateDataStarlarkValue))
+		}
+		templateAndData := binding_constructors.NewTemplateAndData(templateStr, string(templateDataAsJson))
+		templateAndDataByDestRelFilepath[stringKey] = templateAndData
 	}
 	return templateAndDataByDestRelFilepath, nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -11,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/read_file"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_files_from_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/mock_module_content_provider"
@@ -968,6 +970,46 @@ print(file_contents)
 
 	expectedOutput := `Reading file from GitHub!
 this is a test string
+`
+	require.Equal(t, expectedOutput, string(scriptOutput))
+}
+
+func TestStartosisInterpreter_RenderTemplates(t *testing.T) {
+	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `
+print("Rendering template to disk")
+data = {
+	"/foo/bar/test.txt" : {
+		"template": "Hello {{.Name}}",
+		"template_data": {
+			"Name" : "TestMan" 
+		}
+    }
+}
+artifact_uuid = render_templates(template_and_data_by_dest_rel_filepath = data)
+print(artifact_uuid)
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Nil(t, interpretationError)
+	require.Equal(t, 1, len(instructions))
+
+	templateAndData := binding_constructors.NewTemplateAndData("Hello {{.Name}}", "{\"Name\": \"TestMan\"}")
+	templateAndDataByDestFilepath := map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
+		"/foo/bar/test.txt": templateAndData,
+	}
+
+	execInstruction := render_templates.NewRenderTemplatesInstruction(
+		testServiceNetwork,
+		*kurtosis_instruction.NewInstructionPosition(11, 33),
+		templateAndDataByDestFilepath,
+	)
+
+	require.Equal(t, instructions[0], execInstruction)
+
+	expectedOutput := `Storing file from service!
+{{kurtosis:11:33.artifact_uuid}}
 `
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }

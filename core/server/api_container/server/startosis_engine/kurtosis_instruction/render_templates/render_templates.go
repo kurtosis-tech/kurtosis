@@ -2,7 +2,6 @@ package render_templates
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
@@ -55,9 +54,15 @@ func (instruction *RenderTemplatesInstruction) GetPositionInOriginalScript() *ku
 
 func (instruction *RenderTemplatesInstruction) GetCanonicalInstruction() string {
 	buffer := new(strings.Builder)
-	buffer.WriteString(RenderTemplatesBuiltinName + "(")
-	buffer.WriteString(templateAndDataByDestinationRelFilepathArg + "=\"")
-	buffer.WriteString(fmt.Sprintf("%v\")", instruction.templatesAndDataByDestRelFilepath))
+	//buffer.WriteString(RenderTemplatesBuiltinName + "(")
+	//buffer.WriteString(templateAndDataByDestinationRelFilepathArg + "=\"")
+	//for destinationPath, templateData := range instruction.templatesAndDataByDestRelFilepath {
+	//	buffer.WriteString(fmt.Sprintf("%v:{", destinationPath))
+	//	template := templateData.Template
+	//	templateData := templateData.DataAsJson
+	//	buffer.WriteString("}, ")
+	//}
+	//buffer.WriteString(")")
 	return buffer.String()
 }
 
@@ -82,12 +87,12 @@ func (instruction *RenderTemplatesInstruction) ValidateAndUpdateEnvironment(envi
 
 func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, *startosis_errors.InterpretationError) {
 
-	var templatesAndDataArg starlark.Dict
+	var templatesAndDataArg *starlark.Dict
 	if err := starlark.UnpackArgs(b.Name(), args, kwargs, templateAndDataByDestinationRelFilepathArg, &templatesAndDataArg); err != nil {
 		return nil, startosis_errors.NewInterpretationError(err.Error())
 	}
 
-	templatesAndDataByDestRelFilepath, interpretationErr := kurtosis_instruction.ParseTemplatesAndData(templatesAndDataArg)
+	templatesAndDataByDestRelFilepath, interpretationErr := kurtosis_instruction.ParseTemplatesAndData(*templatesAndDataArg)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
