@@ -169,6 +169,12 @@ func TestSafeCastToInt32_FailsForValuesLowerThanMinInt32(t *testing.T) {
 	require.NotNil(t, err)
 }
 
+func TestSafeCastToInt32_FailsForString(t *testing.T) {
+	input := starlark.String("hello")
+	_, err := safeCastToInt32(input, "test")
+	require.NotNil(t, err)
+}
+
 func TestExtractUint32ValueFromStruct_Success(t *testing.T) {
 	dict := starlark.StringDict{}
 	dict["key"] = starlark.MakeInt(32)
