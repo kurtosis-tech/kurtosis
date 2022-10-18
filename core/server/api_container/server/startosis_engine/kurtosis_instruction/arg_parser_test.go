@@ -5,6 +5,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
+	"math"
 	"testing"
 )
 
@@ -154,6 +155,24 @@ func TestSafeCastToInt32_ValidZeroValue(t *testing.T) {
 	output, err := safeCastToInt32(input, "test")
 	require.Nil(t, err)
 	require.Equal(t, int32(0), output)
+}
+
+func TestSafeCastToInt32_FailsForValuesGreaterThanMaxInt32(t *testing.T) {
+	input := starlark.MakeInt(math.MaxInt32 + 1)
+	_, err := safeCastToInt32(input, "test")
+	require.NotNil(t, err)
+}
+
+func TestSafeCastToInt32_FailsForValuesLowerThanMinInt32(t *testing.T) {
+	input := starlark.MakeInt(math.MinInt32 - 1)
+	_, err := safeCastToInt32(input, "test")
+	require.NotNil(t, err)
+}
+
+func TestSafeCastToInt32_FailsForString(t *testing.T) {
+	input := starlark.String("hello")
+	_, err := safeCastToInt32(input, "test")
+	require.NotNil(t, err)
 }
 
 func TestExtractUint32ValueFromStruct_Success(t *testing.T) {

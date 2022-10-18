@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
+	"math"
 	"reflect"
 	"strings"
 )
@@ -33,12 +34,6 @@ const (
 	portProtocolKey = "protocol"
 
 	maxPortNumber = 65535
-
-	// https://stackoverflow.com/a/6878625
-	minUnit32 = uint32(0)
-	maxUint32 = ^minUnit32
-	maxInt32  = int32(maxUint32 >> 1)
-	minInt32  = -maxInt32 - 1
 )
 
 func ParseServiceId(serviceIdRaw starlark.String) (service.ServiceID, *startosis_errors.InterpretationError) {
@@ -310,7 +305,7 @@ func safeCastToUint32(expectedValueString starlark.Value, argNameForLogging stri
 	uint64Value, ok := castValue.Uint64()
 	if !ok || uint64Value != uint64(uint32(uint64Value)) {
 		// second clause if to safeguard against "overflow"
-		return 0, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' argument is expected to be a an integer greater than 0 and lower than %d", argNameForLogging, maxUint32))
+		return 0, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' argument is expected to be a an integer greater than 0 and lower than %d", argNameForLogging, math.MaxUint32))
 	}
 	return uint32(uint64Value), nil
 
@@ -369,7 +364,7 @@ func safeCastToInt32(expectedValueString starlark.Value, argNameForLogging strin
 	int64Value, ok := castValue.Int64()
 	if !ok || int64Value != int64(int32(int64Value)) {
 		// second clause if to safeguard against "overflow"
-		return 0, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' argument is expected to be a an integer greater than %d and lower than %d", argNameForLogging, minInt32, maxInt32))
+		return 0, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' argument is expected to be a an integer greater than %d and lower than %d", argNameForLogging, math.MinInt32, math.MaxInt32))
 	}
 	return int32(int64Value), nil
 

@@ -37,7 +37,7 @@ func GenerateStoreFilesFromServiceBuiltin(instructionsQueue *[]kurtosis_instruct
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		storeFilesFromServiceInstruction := NewStoreFilesFromServiceInstruction(serviceNetwork, kurtosis_instruction.GetPositionFromThread(thread), serviceId, srcPath)
+		storeFilesFromServiceInstruction := NewStoreFilesFromServiceInstruction(serviceNetwork, *kurtosis_instruction.GetPositionFromThread(thread), serviceId, srcPath)
 		*instructionsQueue = append(*instructionsQueue, storeFilesFromServiceInstruction)
 		return starlark.String(storeFilesFromServiceInstruction.position.MagicString(kurtosis_instruction.ArtifactUUIDSuffix)), nil
 	}
