@@ -626,6 +626,10 @@ func (network *DefaultServiceNetwork) GetIPAddressForService(serviceID service.S
 }
 
 func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData) (enclave_data_directory.FilesArtifactUUID, error) {
+	// calling mutex just in case, even though we don't change or read from the network, just get the file store
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+
 	tempDirForRenderedTemplates, err := os.MkdirTemp("", tempDirForRenderedTemplatesPrefix)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while creating a temp dir for rendered templates '%v'", tempDirForRenderedTemplates)
