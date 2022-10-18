@@ -72,10 +72,7 @@ func (provider *GitModuleContentProvider) GetFileAtRelativePath(fileBeingInterpr
 }
 
 func (provider *GitModuleContentProvider) IsGithubPath(path string) bool {
-	if strings.HasPrefix(path, githubDomain) {
-		return true
-	}
-	return false
+	return strings.HasPrefix(path, githubDomain)
 }
 
 func (provider *GitModuleContentProvider) getAbsolutePath(fileBeingInterpreted string, relFilepathOfFileToRead string) (string, error) {
