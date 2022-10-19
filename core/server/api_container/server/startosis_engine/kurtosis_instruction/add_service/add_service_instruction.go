@@ -187,6 +187,10 @@ func makeAddServiceInterpretationReturnValue(serviceId service.ServiceID, servic
 
 func (instruction *AddServiceInstruction) ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error {
 	environment.AppendRequiredDockerImage(instruction.serviceConfig.ContainerImageName)
+	if environment.DoesServiceIdExist(instruction.serviceId) {
+		return stacktrace.NewError("There was an error validating '%v': service ID '%v' already exists", instruction.String(), instruction.serviceId)
+	}
+	environment.AddServiceId(instruction.serviceId)
 	return nil
 }
 
