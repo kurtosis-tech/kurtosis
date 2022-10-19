@@ -122,7 +122,7 @@ func ParseSrcPath(serviceIdRaw starlark.String) (string, *startosis_errors.Inter
 	return srcPath, nil
 }
 
-func ParseTemplatesAndData(templatesAndData starlark.Dict) (map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, *startosis_errors.InterpretationError) {
+func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, *startosis_errors.InterpretationError) {
 	templateAndDataByDestRelFilepath := make(map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData)
 	for _, key := range templatesAndData.Keys() {
 		stringKey, castErr := safeCastToString(key, fmt.Sprintf("%v.key:%v", templatesAndDataArgName, key))

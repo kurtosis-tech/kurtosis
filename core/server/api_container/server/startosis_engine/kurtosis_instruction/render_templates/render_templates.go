@@ -100,7 +100,7 @@ func parseStartosisArgs(b *starlark.Builtin, args starlark.Tuple, kwargs []starl
 		return nil, startosis_errors.NewInterpretationError(err.Error())
 	}
 
-	templatesAndDataByDestRelFilepath, interpretationErr := kurtosis_instruction.ParseTemplatesAndData(*templatesAndDataArg)
+	templatesAndDataByDestRelFilepath, interpretationErr := kurtosis_instruction.ParseTemplatesAndData(templatesAndDataArg)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
