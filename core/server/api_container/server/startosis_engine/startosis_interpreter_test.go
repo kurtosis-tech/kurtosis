@@ -979,17 +979,17 @@ func TestStartosisInterpreter_RenderTemplates(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
 print("Rendering template to disk!")
-encoded_json = json.encode({
+template_data = {
 			"Name" : "Stranger",
 			"Answer": 6,
 			"Numbers": [1, 2, 3],
 			"UnixTimeStamp": 1257894000,
-			"LargeFloat": 1.23123124343e+09,
-})
+			"LargeFloat": 1231231243.43,
+}
 data = {
 	"/foo/bar/test.txt" : {
 		"template": "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}.",
-		"template_data": encoded_json
+		"template_data": template_data
     }
 }
 artifact_uuid = render_templates(template_and_data_by_dest_rel_filepath = data)
@@ -1001,7 +1001,8 @@ print(artifact_uuid)
 	require.Equal(t, 1, len(instructions))
 
 	template := "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}."
-	templateDataAsJson := "{\"Answer\":6,\"LargeFloat\":1.23123124343e+09,\"Name\":\"Stranger\",\"Numbers\":[1,2,3],\"UnixTimeStamp\":1257894000}"
+	// note that Starlark converts the float to a scientific notation
+	templateDataAsJson := "{\"Name\": \"Stranger\", \"Answer\": 6, \"Numbers\": [1, 2, 3], \"UnixTimeStamp\": 1257894000, \"LargeFloat\": 1.23123124343e+09}"
 	templateAndData := binding_constructors.NewTemplateAndData(template, string(templateDataAsJson))
 	templateAndDataByDestFilepath := map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
 		"/foo/bar/test.txt": templateAndData,

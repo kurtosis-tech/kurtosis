@@ -144,15 +144,11 @@ func ParseTemplatesAndData(templatesAndData starlark.Dict) (map[string]*kurtosis
 		if castErr != nil {
 			return nil, castErr
 		}
-		templateDataJsonStarlarkValue, found, dictErr := dictValue.Get(starlark.String(templateDataFieldKey))
+		templateDataStarlarkValue, found, dictErr := dictValue.Get(starlark.String(templateDataFieldKey))
 		if !found || dictErr != nil {
 			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateDataFieldKey))
 		}
-		templateDataJsonStr, castErr := safeCastToString(templateDataJsonStarlarkValue, fmt.Sprintf("%v[\"%v\"][\"%v\"]", templatesAndDataArgName, stringKey, templateDataFieldKey))
-		if castErr != nil {
-			return nil, castErr
-		}
-		templateAndData := binding_constructors.NewTemplateAndData(templateStr, templateDataJsonStr)
+		templateAndData := binding_constructors.NewTemplateAndData(templateStr, templateDataStarlarkValue.String())
 		templateAndDataByDestRelFilepath[stringKey] = templateAndData
 	}
 	return templateAndDataByDestRelFilepath, nil
