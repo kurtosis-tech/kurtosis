@@ -83,7 +83,7 @@ func (instruction *ExecInstruction) Execute(ctx context.Context, _ *startosis_ex
 		return stacktrace.Propagate(err, "Failed to execute command '%v' on service '%v'", instruction.command, instruction.serviceId)
 	}
 	if instruction.expectedExitCode != exitCode {
-		return stacktrace.Propagate(err, "The exit code expected '%v' wasn't the exit code received '%v' while running the command", instruction.expectedExitCode, exitCode)
+		return stacktrace.NewError("The exit code expected '%v' wasn't the exit code received '%v' while running the command", instruction.expectedExitCode, exitCode)
 	}
 	return nil
 }
