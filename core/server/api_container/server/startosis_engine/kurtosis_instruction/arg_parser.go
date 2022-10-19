@@ -1,6 +1,7 @@
 package kurtosis_instruction
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
@@ -148,7 +149,23 @@ func ParseTemplatesAndData(templatesAndData starlark.Dict) (map[string]*kurtosis
 		if !found || dictErr != nil {
 			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateDataFieldKey))
 		}
-		templateAndData := binding_constructors.NewTemplateAndData(templateStr, templateDataStarlarkValue.String())
+		// Massive Hack
+		// We do this for a couple of reasons,
+		// 1. There is no good way to go from Starlark to JSON, the `String()` method seems to work, this ensures that it does
+		// 2. Unmarshalling followed by Marshalling, allows for the non-scientific notation of floats to be preserved
+		// 3. Don't have to write a custom way to jsonify Starlark
+		// 4. This behaves as close to marshalling primitives in Golang as possible
+		var temporaryUnmarshalledValue interface{}
+		err := json.Unmarshal([]byte(templateDataStarlarkValue.String()), &temporaryUnmarshalledValue)
+		if err != nil {
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while converting the template data as string '%v' to temporary object", templateDataStarlarkValue))
+		}
+		templateDataJson, err := json.Marshal(temporaryUnmarshalledValue)
+		if err != nil {
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while converting the template data '%v' to JSON", temporaryUnmarshalledValue))
+		}
+		// end Massive Hack
+		templateAndData := binding_constructors.NewTemplateAndData(templateStr, string(templateDataJson))
 		templateAndDataByDestRelFilepath[stringKey] = templateAndData
 	}
 	return templateAndDataByDestRelFilepath, nil
