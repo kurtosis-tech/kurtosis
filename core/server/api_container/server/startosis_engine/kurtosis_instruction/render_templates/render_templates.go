@@ -64,7 +64,7 @@ func (instruction *RenderTemplatesInstruction) GetCanonicalInstruction() string 
 		buffer.WriteString(fmt.Sprintf("\"%v\":{", destinationPath))
 		buffer.WriteString(fmt.Sprintf("\"template\":\"%v\"", templateData.Template))
 		buffer.WriteString(", ")
-		buffer.WriteString(fmt.Sprintf("\"template_data\":%v", templateData.DataAsJson))
+		buffer.WriteString(fmt.Sprintf("\"template_data\":\"%v\"", templateData.DataAsJson))
 		buffer.WriteString("}")
 		if index < numberOfTemplates {
 			buffer.WriteString(", ")

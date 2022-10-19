@@ -985,7 +985,7 @@ encoded_json = json.encode({
 			"Answer": 6,
 			"Numbers": [1, 2, 3],
 			"UnixTimeStamp": 1257894000,
-			"LargeFloat": 1231231243.43,
+			"LargeFloat": 1.23123124343e+09,
 })
 data = {
 	"/foo/bar/test.txt" : {
