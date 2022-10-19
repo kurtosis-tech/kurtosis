@@ -59,16 +59,6 @@ func TestParsedGitURL_FailsWithoutPathToFile(t *testing.T) {
 	require.Contains(t, err.Error(), expectedErrorMsg)
 }
 
-func TestParsedGitURL_FailsForNonStartosisFile(t *testing.T) {
-	nonGithubURL := "github.com/" + testModuleAuthor + "/" + testModuleName + "/foo.srt"
-	_, err := parseGitURL(nonGithubURL)
-	require.NotNil(t, err)
-
-	expectedErrorMsg := fmt.Sprintf("Expected last subpath to be a '%v' file but it wasn't", startosisFileExtension)
-
-	require.Contains(t, err.Error(), expectedErrorMsg)
-}
-
 func TestParsedGitURL_ParsingGetsRidOfAnyPathEscapes(t *testing.T) {
 	escapedURLWithoutStartosisFile := "github.com/../etc/passwd"
 	_, err := parseGitURL(escapedURLWithoutStartosisFile)
