@@ -2,6 +2,7 @@
 
 ### Features
 * Added an `exec` command to Startosis
+* Validate service IDs on Startosis commands
 
 ### Changes
 * Fixed a typo in a filename
