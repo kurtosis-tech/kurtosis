@@ -490,7 +490,7 @@ func TestParseFilesArtifactMountDirpaths_FailureOnNonStringValue(t *testing.T) {
 	require.Equal(t, map[string]string(nil), output)
 }
 
-func TestParseTemplatesAndDataValidCase(t *testing.T) {
+func TestParseTemplatesAndData_SimpleCase(t *testing.T) {
 	templateDataDict := starlark.NewDict(3)
 	err := templateDataDict.SetKey(starlark.String("Name"), starlark.String("John"))
 	require.Nil(t, err)
