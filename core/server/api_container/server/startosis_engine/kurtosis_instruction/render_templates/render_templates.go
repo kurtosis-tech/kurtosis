@@ -2,6 +2,7 @@ package render_templates
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
@@ -54,15 +55,22 @@ func (instruction *RenderTemplatesInstruction) GetPositionInOriginalScript() *ku
 
 func (instruction *RenderTemplatesInstruction) GetCanonicalInstruction() string {
 	buffer := new(strings.Builder)
-	//buffer.WriteString(RenderTemplatesBuiltinName + "(")
-	//buffer.WriteString(templateAndDataByDestinationRelFilepathArg + "=\"")
-	//for destinationPath, templateData := range instruction.templatesAndDataByDestRelFilepath {
-	//	buffer.WriteString(fmt.Sprintf("%v:{", destinationPath))
-	//	template := templateData.Template
-	//	templateData := templateData.DataAsJson
-	//	buffer.WriteString("}, ")
-	//}
-	//buffer.WriteString(")")
+	buffer.WriteString(RenderTemplatesBuiltinName + "(")
+	buffer.WriteString(templateAndDataByDestinationRelFilepathArg + "=")
+	numberOfTemplates := len(instruction.templatesAndDataByDestRelFilepath)
+	index := 0
+	for destinationPath, templateData := range instruction.templatesAndDataByDestRelFilepath {
+		index += 1
+		buffer.WriteString(fmt.Sprintf("\"%v\":{", destinationPath))
+		buffer.WriteString(fmt.Sprintf("\"template\":\"%v\"", templateData.Template))
+		buffer.WriteString(", ")
+		buffer.WriteString(fmt.Sprintf("\"template_data\":%v", templateData.DataAsJson))
+		buffer.WriteString("}")
+		if index < numberOfTemplates {
+			buffer.WriteString(", ")
+		}
+	}
+	buffer.WriteString(")")
 	return buffer.String()
 }
 
