@@ -444,6 +444,52 @@ func TestParseSrcPath_EmptyStringFails(t *testing.T) {
 	require.NotNil(t, err)
 }
 
+func TestParseFilesArtifactMountDirpaths_Success(t *testing.T) {
+	subDict := starlark.NewDict(1)
+	err := subDict.SetKey(starlark.String("key"), starlark.String("value"))
+	require.Nil(t, err)
+	dict := starlark.StringDict{}
+	dict["files_artifact_mount_dirpaths"] = subDict
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	output, err := parseFilesArtifactMountDirpaths(input)
+	require.Nil(t, err)
+	require.Equal(t, map[string]string{"key": "value"}, output)
+}
+
+func TestParseFilesArtifactMountDirpaths_SuccessOnMissingValue(t *testing.T) {
+	dict := starlark.StringDict{}
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	output, err := parseFilesArtifactMountDirpaths(input)
+	require.Nil(t, err)
+	require.Equal(t, map[string]string{}, output)
+}
+
+func TestParseFilesArtifactMountDirpaths_FailureOnNonStringKey(t *testing.T) {
+	subDict := starlark.NewDict(1)
+	err := subDict.SetKey(starlark.MakeInt(42), starlark.String("value"))
+	require.Nil(t, err)
+	dict := starlark.StringDict{}
+	dict["files_artifact_mount_dirpaths"] = subDict
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	output, err := parseFilesArtifactMountDirpaths(input)
+	require.NotNil(t, err)
+	require.Equal(t, "'files_artifact_mount_dirpaths.key:42' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, map[string]string(nil), output)
+}
+
+func TestParseFilesArtifactMountDirpaths_FailureOnNonStringValue(t *testing.T) {
+	subDict := starlark.NewDict(1)
+	err := subDict.SetKey(starlark.String("key"), starlark.MakeInt(42))
+	require.Nil(t, err)
+	dict := starlark.StringDict{}
+	dict["files_artifact_mount_dirpaths"] = subDict
+	input := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	output, err := parseFilesArtifactMountDirpaths(input)
+	require.NotNil(t, err)
+	require.Equal(t, "'files_artifact_mount_dirpaths[\"key\"]' is expected to be a string. Got starlark.Int", err.Error())
+	require.Equal(t, map[string]string(nil), output)
+}
+
 func TestParseTemplatesAndDataValidCase(t *testing.T) {
 	templateDataDict := starlark.NewDict(3)
 	err := templateDataDict.SetKey(starlark.String("Name"), starlark.String("John"))

@@ -1,5 +1,18 @@
 # TBD
 
+### Features
+* Added an `exec` command to Startosis
+* Added a `store_files_from_service` command to Startosis
+* Added the ability to pass `files_artifact_mount_dirpaths` to the service config
+* Added a `read_file` command to Startosis
+* Added a `render_templates` command to Startotis
+
+### Changes
+* Fixed a typo in a filename
+
+### Fixes
+* Fixed a bug in exec where we'd propagate a `nil` error
+
 # 0.51.0
 ### Breaking Changes
 * Updated `kurtosisBackend.CreateLogsCollector` method in `container-engine-lib`, added the `logsCollectorTcpPortNumber` parameter
@@ -12,8 +25,6 @@
 * Implemented IP address references for services
 * Added the `defaultTcpLogsCollectorPortNum` with `9713` value in `EngineManager`
 * Added the `LogsCollectorAvailabilityChecker` interface
-* Added an `exec` command to Startosis
-* Added a `store_files_from_service` command to Startosis
 
 ### Changes
 * Add back old enclave continuity test

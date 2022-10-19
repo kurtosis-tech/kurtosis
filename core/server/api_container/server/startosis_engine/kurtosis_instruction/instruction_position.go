@@ -20,7 +20,6 @@ func NewInstructionPosition(line int32, col int32) *InstructionPosition {
 		col:  col,
 	}
 }
-
 func (ip *InstructionPosition) MagicString(suffix string) string {
 	return fmt.Sprintf(placeholderFormat, ip.line, ip.col, suffix)
 }

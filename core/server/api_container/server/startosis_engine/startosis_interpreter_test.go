@@ -932,12 +932,12 @@ print(file_contents)
 	require.Nil(t, interpretationError)
 	require.Equal(t, 1, len(instructions))
 
-	execInstruction := read_file.NewReadFileInstruction(
+	readInstruction := read_file.NewReadFileInstruction(
 		*kurtosis_instruction.NewInstructionPosition(3, 24),
 		srcPath,
 	)
 
-	require.Equal(t, instructions[0], execInstruction)
+	require.Equal(t, instructions[0], readInstruction)
 
 	expectedOutput := `Reading file from GitHub!
 this is a test string
@@ -962,12 +962,12 @@ print(file_contents)
 	require.Nil(t, interpretationError)
 	require.Equal(t, 1, len(instructions))
 
-	execInstruction := read_file.NewReadFileInstruction(
+	readInstruction := read_file.NewReadFileInstruction(
 		*kurtosis_instruction.NewInstructionPosition(3, 24),
 		srcPath,
 	)
 
-	require.Equal(t, instructions[0], execInstruction)
+	require.Equal(t, instructions[0], readInstruction)
 
 	expectedOutput := `Reading file from GitHub!
 this is a test string
