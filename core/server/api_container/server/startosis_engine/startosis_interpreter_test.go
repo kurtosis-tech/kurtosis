@@ -2,7 +2,6 @@ package startosis_engine
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
@@ -1002,9 +1001,7 @@ print(artifact_uuid)
 	require.Equal(t, 1, len(instructions))
 
 	template := "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}."
-	templateData := map[string]interface{}{"Name": "Stranger", "Answer": 6, "Numbers": []int{1, 2, 3}, "UnixTimeStamp": 1257894000, "LargeFloat": 1231231243.43}
-	templateDataAsJson, err := json.Marshal(templateData)
-	require.Nil(t, err)
+	templateDataAsJson := "{\"Answer\":6,\"LargeFloat\":1.23123124343e+09,\"Name\":\"Stranger\",\"Numbers\":[1,2,3],\"UnixTimeStamp\":1257894000}"
 	templateAndData := binding_constructors.NewTemplateAndData(template, string(templateDataAsJson))
 	templateAndDataByDestFilepath := map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
 		"/foo/bar/test.txt": templateAndData,
