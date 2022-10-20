@@ -31,8 +31,8 @@ func NewInstructionPosition(line int32, col int32) *InstructionPosition {
 // If an instruction returns multiple things, use different suffixes for each object
 // This string gets assigned to the object during interpretation time and replaced during
 // execution time
-func (ip *InstructionPosition) MagicString(suffix string) string {
-	return fmt.Sprintf(magicStringFormat, ip.line, ip.col, suffix)
+func (position *InstructionPosition) MagicString(suffix string) string {
+	return fmt.Sprintf(magicStringFormat, position.line, position.col, suffix)
 }
 
 // GetRegularExpressionForInstruction this function allows you to get a regular expression
