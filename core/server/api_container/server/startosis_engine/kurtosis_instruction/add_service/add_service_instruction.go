@@ -94,7 +94,7 @@ func (instruction *AddServiceInstruction) Execute(ctx context.Context, environme
 	}
 
 	for maybeArtifactUuidMagicStringValue, pathOnContainer := range instruction.serviceConfig.FilesArtifactMountpoints {
-		artifactUuidActualValue, err := shared_helpers.ReplaceMagicStringWithValue(shared_helpers.ArtifactUUIDSuffix, maybeArtifactUuidMagicStringValue, string(instruction.serviceId), environment)
+		artifactUuidActualValue, err := shared_helpers.ReplaceArtifactUuidMagicStringWithValue(maybeArtifactUuidMagicStringValue, string(instruction.serviceId), environment)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred while replacing the placeholder '%v' artifact uuid with actual value", maybeArtifactUuidMagicStringValue)
 		}
