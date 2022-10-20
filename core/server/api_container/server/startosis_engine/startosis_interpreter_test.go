@@ -950,7 +950,7 @@ func TestStartosisInterpreter_ReadRelativePath(t *testing.T) {
 	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider(seed)
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
 	script := `
-print("Reading file from GitHub!")
+print("Reading file from disk!")
 file_contents=read_file("` + srcPath + `")
 print(file_contents)
 `
@@ -966,7 +966,7 @@ print(file_contents)
 
 	require.Equal(t, instructions[0], readInstruction)
 
-	expectedOutput := `Reading file from GitHub!
+	expectedOutput := `Reading file from disk!
 this is a test string
 `
 	require.Equal(t, expectedOutput, string(scriptOutput))
