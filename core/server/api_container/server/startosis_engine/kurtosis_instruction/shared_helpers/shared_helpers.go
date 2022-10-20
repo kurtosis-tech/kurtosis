@@ -35,10 +35,10 @@ func GetFileNameFromThread(thread *starlark.Thread) string {
 	return callFrame.Pos.Filename()
 }
 
-// ReplaceMagicStringWithValue This function gets used to replace magic strings generated during interpretation time with actual values during execution time
-// The user of this function needs to ensure that the suffixes during interpretation and execution are the same
-func ReplaceMagicStringWithValue(suffixToReplace string, originalString string, serviceIdForLogging string, environment *startosis_executor.ExecutionEnvironment) (string, error) {
-	compiledArtifactUuidRegex := regexp.MustCompile(kurtosis_instruction.GetRegularExpressionForInstruction(suffixToReplace))
+// ReplaceArtifactUuidMagicStringWithValue This function gets used to replace artifact uuid magic strings generated during interpretation time with actual values during execution time
+// TODO extend this in the future to be generic, instead of environment one could pass in a func(string) -> string maybe
+func ReplaceArtifactUuidMagicStringWithValue(originalString string, serviceIdForLogging string, environment *startosis_executor.ExecutionEnvironment) (string, error) {
+	compiledArtifactUuidRegex := regexp.MustCompile(kurtosis_instruction.GetRegularExpressionForInstruction(ArtifactUUIDSuffix))
 	matches := compiledArtifactUuidRegex.FindAllString(originalString, unlimitedMatches)
 	replacedString := originalString
 	for _, match := range matches {

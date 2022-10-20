@@ -20,7 +20,7 @@ func TestReplaceMagicStringWithValue_SimpleCase(t *testing.T) {
 	environment.SetArtifactUuid(inputStr, testUuid)
 
 	expectedOutput := testUuid
-	replacedStr, err := ReplaceMagicStringWithValue(ArtifactUUIDSuffix, inputStr, testServiceId, environment)
+	replacedStr, err := ReplaceArtifactUuidMagicStringWithValue(inputStr, testServiceId, environment)
 
 	require.Nil(t, err)
 	require.Equal(t, expectedOutput, replacedStr)
@@ -41,7 +41,7 @@ func TestReplaceMagicStringWithValue_ValidMultipleReplaces(t *testing.T) {
 	environment.SetArtifactUuid(magicStringA, testUuidA)
 	environment.SetArtifactUuid(magicStringB, testUuidB)
 
-	replacedStr, err := ReplaceMagicStringWithValue(ArtifactUUIDSuffix, inputStr, testServiceId, environment)
+	replacedStr, err := ReplaceArtifactUuidMagicStringWithValue(inputStr, testServiceId, environment)
 	require.Nil(t, err)
 	require.Equal(t, expectedOutput, replacedStr)
 }
@@ -50,6 +50,6 @@ func TestReplaceMagicStringWithValue_MagicStringNotInEnvironment(t *testing.T) {
 	instruction := kurtosis_instruction.NewInstructionPosition(5, 3)
 	magicString := instruction.MagicString(ArtifactUUIDSuffix)
 	emptyEnvironment := startosis_executor.NewExecutionEnvironment()
-	_, err := ReplaceMagicStringWithValue(ArtifactUUIDSuffix, magicString, testServiceId, emptyEnvironment)
+	_, err := ReplaceArtifactUuidMagicStringWithValue(magicString, testServiceId, emptyEnvironment)
 	require.NotNil(t, err)
 }
