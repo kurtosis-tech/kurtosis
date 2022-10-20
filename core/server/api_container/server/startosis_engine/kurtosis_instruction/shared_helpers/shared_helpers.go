@@ -26,6 +26,8 @@ func GetPositionFromThread(thread *starlark.Thread) *kurtosis_instruction.Instru
 	return kurtosis_instruction.NewInstructionPosition(callFrame.Pos.Line, callFrame.Pos.Col)
 }
 
+// ReplaceMagicStringWithValue This function gets used to replace magic strings generated during interpretation time with actual values during execution time
+// The user of this function needs to ensure that the suffixes during interpretation and execution are the same
 func ReplaceMagicStringWithValue(suffixToReplace string, originalString string, serviceIdForLogging string, environment *startosis_executor.ExecutionEnvironment) (string, error) {
 	compiledArtifactUuidRegex := regexp.MustCompile(kurtosis_instruction.GetRegularExpressionForInstruction(suffixToReplace))
 	matches := compiledArtifactUuidRegex.FindAllString(originalString, unlimitedMatches)

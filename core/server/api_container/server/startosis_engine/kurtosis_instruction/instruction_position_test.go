@@ -9,7 +9,7 @@ import (
 
 func TestInstructionPosition_RegularExpressionAndPlaceholderAlign(t *testing.T) {
 	dummySuffix := "dummySuffix"
-	placeHolderStr := fmt.Sprintf(placeholderFormat, 5, 6, dummySuffix)
+	placeHolderStr := fmt.Sprintf(magicStringFormat, 5, 6, dummySuffix)
 	compiledRegex := regexp.MustCompile(fmt.Sprintf(regexFormat, dummySuffix))
 	hasMatches := compiledRegex.MatchString(placeHolderStr)
 	require.True(t, hasMatches)
