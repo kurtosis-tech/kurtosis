@@ -11,6 +11,9 @@
 ### Fixes
 * Fixed a bug in exec where we'd propagate a `nil` error
 
+### Removals
+* Removed  stale `scripts/run-pre-release-scripts` which isn't used anywhere and is invalid.
+
 # 0.51.0
 ### Breaking Changes
 * Updated `kurtosisBackend.CreateLogsCollector` method in `container-engine-lib`, added the `logsCollectorTcpPortNumber` parameter
