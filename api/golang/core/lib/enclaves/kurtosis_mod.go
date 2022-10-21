@@ -7,10 +7,10 @@ import (
 )
 
 type KurtosisMod struct {
-	Module KurtosisModule `yaml:"module"`
+	Module Module `yaml:"module"`
 }
 
-type KurtosisModule struct {
+type Module struct {
 	ModuleName string `yaml:"name"`
 }
 
