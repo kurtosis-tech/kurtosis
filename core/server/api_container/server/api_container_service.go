@@ -56,6 +56,8 @@ const (
 
 	noExecutionError      = ""
 	noInterpretationError = ""
+
+	mainStartosisFile = "main.star"
 )
 
 var (
@@ -255,14 +257,14 @@ func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Contex
 		return nil, stacktrace.Propagate(err, "An error occurred while writing module to disk '%v'", err)
 	}
 
-	pathToMainFile := path.Join(moduleRootPathOnDisk, "main.star")
+	pathToMainFile := path.Join(moduleRootPathOnDisk, mainStartosisFile)
 	_, err = os.Stat(pathToMainFile)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while verifying that main.star exists on root of module '%v' at '%v'", moduleId, pathToMainFile)
+		return nil, stacktrace.Propagate(err, "An error occurred while verifying that '%v' exists on root of module '%v' at '%v'", mainStartosisFile, moduleId, pathToMainFile)
 	}
 
 	scriptWithMainToExecute := `
-load("` + moduleId + `/main.star", "main")
+load("` + moduleId + `/` + mainStartosisFile + `", "main")
 main()
 	`
 	executeStartosisScriptArgs := binding_constructors.NewExecuteStartosisScriptArgs(scriptWithMainToExecute)
