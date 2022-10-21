@@ -230,7 +230,7 @@ export class EnclaveContext {
         const kurtosisModFilepath = path.join(moduleRootPath, KURTOSIS_MOD_FILENAME)
         //Check if the kurtosis mod exists
         if (!fs.existsSync(kurtosisModFilepath)) {
-            return err(new Error(`The '${kurtosisModFilepath}' does not exist.`))
+            return err(new Error(`The file '${kurtosisModFilepath}' does not exist.`))
         }
         const kurtosisModFile = fs.readFileSync(kurtosisModFilepath, UTF8_ENCODING)
         const parsedYAML = (yaml.load(kurtosisModFile) as KurtosisMod)
