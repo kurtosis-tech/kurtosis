@@ -32,7 +32,9 @@ func (provider *GitModuleContentProvider) GetModuleContents(moduleURL string) (s
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while parsing URL '%v'", moduleURL)
 	}
-
+	if parsedURL.relativeFilePath == "" {
+		return "", stacktrace.NewError("The relative path to file is empty for '%v'", moduleURL)
+	}
 	pathToFile := path.Join(provider.modulesDir, parsedURL.relativeFilePath)
 
 	// Load the file if it already exists
