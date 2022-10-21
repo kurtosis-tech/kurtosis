@@ -21,7 +21,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/modules"
@@ -58,14 +57,6 @@ type EnclaveContext struct {
 	client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
 
 	enclaveId EnclaveID
-}
-
-type KurtosisMod struct {
-	Module KurtosisModule `yaml:"module"`
-}
-
-type KurtosisModule struct {
-	ModuleName string `yaml:"name"`
 }
 
 /*
@@ -144,32 +135,24 @@ func (enclaveCtx *EnclaveContext) ExecuteStartosisScript(serializedScript string
 	return executeStartosisResponse, nil
 }
 
-func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(pathToStartosisModule string) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleResponse, error) {
-	pathToKurtosisMod := path.Join(pathToStartosisModule, modFilename)
-	kurtosisModContents, err := ioutil.ReadFile(pathToKurtosisMod)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while reading the '%v' file at '%v'", modFilename, pathToKurtosisMod)
-	}
+func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(moduleRootPath string) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleResponse, error) {
+	kurtosisModFilepath := path.Join(moduleRootPath, modFilename)
 
-	var kurtosisModule KurtosisMod
-	err = yaml.Unmarshal(kurtosisModContents, &kurtosisModule)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while parsing the '%v' file at '%v'", modFilename, pathToKurtosisMod)
-	}
+	kurtosisMod, err := parseKurtosisMod(kurtosisModFilepath)
 
-	moduleName := kurtosisModule.Module.ModuleName
+	moduleName := kurtosisMod.Module.ModuleName
 	if len(moduleName) == 0 {
 		return nil, stacktrace.NewError("Module Name cannot be empty")
 	}
 
-	compressedModule, err := compressPath(pathToStartosisModule)
+	compressedModule, err := compressPath(moduleRootPath)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", pathToStartosisModule)
+		return nil, stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", moduleRootPath)
 	}
 	executeStartosisModuleArgs := binding_constructors.NewExecuteStartosisModuleArgs(moduleName, compressedModule)
 	executeStartosisResponse, err := enclaveCtx.client.ExecuteStartosisModule(context.Background(), executeStartosisModuleArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unexpected error happened executing Startosis module \n%v", pathToStartosisModule)
+		return nil, stacktrace.Propagate(err, "Unexpected error happened executing Startosis module \n%v", moduleRootPath)
 	}
 	return executeStartosisResponse, nil
 }
