@@ -422,7 +422,7 @@ func NewStartosisValidationError(error string) *kurtosis_core_rpc_api_bindings.S
 }
 
 // ==============================================================================================
-//                                 Startosis Module Exec Response
+//                                 Startosis Module Exec Args
 // ==============================================================================================
 
 func NewExecuteStartosisModuleArgs(moduleId string, compressedModule []byte) *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs {
