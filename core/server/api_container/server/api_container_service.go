@@ -9,6 +9,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
@@ -25,6 +26,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/mholt/archiver"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io/ioutil"
@@ -32,6 +34,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"text/template"
 	"time"
 )
 
@@ -45,11 +48,14 @@ const (
 	// The string returned by the API if a service's public IP address doesn't exist
 	missingPublicIpAddrStr = ""
 
+	folderPermission = 0755
+
+	tempDirForRenderedTemplatesPrefix = "temp-dir-for-rendered-templates-"
+
+	compressedRenderedTemplatesFilenamePattern = "compressed-rendered-templates-*.tgz"
+
 	noExecutionError      = ""
 	noInterpretationError = ""
-
-	validModuleIdLength = 3
-	moduleIdSeparator   = "/"
 )
 
 var (
@@ -91,8 +97,8 @@ func NewApiContainerService(
 	startosisInterpreter *startosis_engine.StartosisInterpreter,
 	startosisValidator *startosis_engine.StartosisValidator,
 	startosisExecutor *startosis_engine.StartosisExecutor,
-	metricsClient client.MetricsClient,
 	startosisModuleContentProvider startosis_modules.ModuleContentProvider,
+	metricsClient client.MetricsClient,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
 		filesArtifactStore:             filesArtifactStore,
@@ -601,11 +607,64 @@ func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context
 
 func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse, error) {
 	templatesAndDataByDestinationRelFilepath := args.TemplatesAndDataByDestinationRelFilepath
-	filesArtifactUuid, err := apicService.serviceNetwork.RenderTemplates(templatesAndDataByDestinationRelFilepath)
+
+	tempDirForRenderedTemplates, err := os.MkdirTemp("", tempDirForRenderedTemplatesPrefix)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while render templates to files artifact")
+		return nil, stacktrace.Propagate(err, "An error occurred while creating a temp dir for rendered templates '%v'", tempDirForRenderedTemplates)
 	}
+	defer os.RemoveAll(tempDirForRenderedTemplates)
+
+	for destinationRelFilepath, templateAndData := range templatesAndDataByDestinationRelFilepath {
+		templateAsAString := templateAndData.Template
+		templateDataAsJson := templateAndData.DataAsJson
+
+		templateDataJsonAsBytes := []byte(templateDataAsJson)
+		templateDataJsonReader := bytes.NewReader(templateDataJsonAsBytes)
+
+		// We don't use standard json.Unmarshal as that converts large integers to floats
+		// Using this custom decoder we get the json.Number representation which is closer to other json implementations
+		// This talks about the issue further https://github.com/square/go-jose/issues/351#issuecomment-847193900
+		decoder := json.NewDecoder(templateDataJsonReader)
+		decoder.UseNumber()
+
+		var templateData interface{}
+		if err = decoder.Decode(&templateData); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while decoding the template data json '%v' for file '%v'", templateDataAsJson, destinationRelFilepath)
+		}
+
+		destinationFilepath := path.Join(tempDirForRenderedTemplates, destinationRelFilepath)
+		if err = renderTemplateToFile(templateAsAString, templateData, destinationFilepath); err != nil {
+			return nil, stacktrace.Propagate(err, "There was an error in rendering template for file '%v'", destinationRelFilepath)
+		}
+	}
+
+	compressedFilepath, err := compressDirToTemporaryTarGzFile(tempDirForRenderedTemplates)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "There was an error archiving rendered templates to a temporary file")
+	}
+	defer os.Remove(compressedFilepath)
+
+	compressedFile, err := os.Open(compressedFilepath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while opening the compressed file '%v'", compressedFilepath)
+	}
+	defer compressedFile.Close()
+
+	filesArtifactUuid, err := apicService.filesArtifactStore.StoreFile(compressedFile)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while storing the file '%v' in the files artifact store", compressedFile)
+	}
+	shouldDeleteFilesArtifact := true
+	defer func() {
+		if shouldDeleteFilesArtifact {
+			if err = apicService.filesArtifactStore.RemoveFile(filesArtifactUuid); err != nil {
+				logrus.Errorf("We tried to clean up the files artifact '%v' we had stored but failed:\n%v", filesArtifactUuid, err)
+			}
+		}
+	}()
+
 	response := binding_constructors.NewRenderTemplatesToFilesArtifactResponse(string(filesArtifactUuid))
+	shouldDeleteFilesArtifact = false
 	return response, nil
 }
 
@@ -813,4 +872,66 @@ func (apicService ApiContainerService) getModuleInfo(ctx context.Context, module
 		publicApiPort,
 	)
 	return response, nil
+}
+
+func renderTemplateToFile(templateAsAString string, templateData interface{}, destinationFilepath string) error {
+	parsedTemplate, err := template.New(path.Base(destinationFilepath)).Parse(templateAsAString)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred in parsing the template string '%v'", destinationFilepath)
+	}
+
+	// Creat all parent directories to account for nesting
+	destinationFileDir := path.Dir(destinationFilepath)
+	if err = os.MkdirAll(destinationFileDir, folderPermission); err != nil {
+		return stacktrace.Propagate(err, "There was an error in creating the parent directory '%v' to write the file '%v' into.", destinationFileDir, destinationFilepath)
+	}
+
+	renderedTemplateFile, err := os.Create(destinationFilepath)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while creating temporary file to render template into for file '%v'.", destinationFilepath)
+	}
+	defer renderedTemplateFile.Close()
+
+	if err = parsedTemplate.Execute(renderedTemplateFile, templateData); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while writing the rendered template to destination '%v'", destinationFilepath)
+	}
+	return nil
+}
+
+func compressDirToTemporaryTarGzFile(tempDirForRenderedTemplates string) (string, error) {
+
+	// the list of path will contain absolute paths to all files & dirs in the root of the temp dir
+	// this allows us to preserve the intended nesting
+	var pathsToArchive []string
+	filesInTempDirForRenderedTemplates, err := os.ReadDir(tempDirForRenderedTemplates)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "There was an error in reading the contents of the temp dir for rendered templates '%v'", tempDirForRenderedTemplates)
+	}
+	for _, fileInTempDirForRenderedTemplates := range filesInTempDirForRenderedTemplates {
+		pathToArchive := path.Join(tempDirForRenderedTemplates, fileInTempDirForRenderedTemplates.Name())
+		pathsToArchive = append(pathsToArchive, pathToArchive)
+	}
+
+	compressedFilepath, err := getPathForTemporaryCompressedFile()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Error getting temporary compressed file")
+	}
+
+	tarArchiver := archiver.NewTarGz()
+	tarArchiver.OverwriteExisting = true
+	if err = tarArchiver.Archive(pathsToArchive, compressedFilepath); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while archiving the rendered template files to '%v'", compressedFilepath)
+	}
+	return compressedFilepath, nil
+}
+
+func getPathForTemporaryCompressedFile() (string, error) {
+	compressedFile, err := os.CreateTemp("", compressedRenderedTemplatesFilenamePattern)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while creating temporary file to archive rendered templates")
+	}
+	defer compressedFile.Close()
+
+	compressedFilepath := compressedFile.Name()
+	return compressedFilepath, nil
 }
