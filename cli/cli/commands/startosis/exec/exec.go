@@ -86,7 +86,7 @@ func run(
 
 	startosisScriptOrModulePath, err := args.GetNonGreedyArg(scriptOrModulePathKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "Error reading the Startosis script file at '%s'. Does it exist?", startosisScriptOrModulePath)
+		return stacktrace.Propagate(err, "Error reading the Startosis script or module dir at '%s'. Does it exist?", startosisScriptOrModulePath)
 	}
 
 	// Get or create enclave in Kurtosis
