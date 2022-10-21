@@ -945,36 +945,6 @@ this is a test string
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
 
-func TestStartosisInterpreter_ReadRelativePath(t *testing.T) {
-	srcPath := "../main.star"
-	seed := map[string]string{
-		srcPath: "this is a test string",
-	}
-	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider(seed)
-	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
-	script := `
-print("Reading file from GitHub!")
-file_contents=read_file("` + srcPath + `")
-print(file_contents)
-`
-
-	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
-	require.Nil(t, interpretationError)
-	require.Equal(t, 1, len(instructions))
-
-	readInstruction := read_file.NewReadFileInstruction(
-		*kurtosis_instruction.NewInstructionPosition(3, 24),
-		srcPath,
-	)
-
-	require.Equal(t, instructions[0], readInstruction)
-
-	expectedOutput := `Reading file from GitHub!
-this is a test string
-`
-	require.Equal(t, expectedOutput, string(scriptOutput))
-}
-
 func TestStartosisInterpreter_RenderTemplates(t *testing.T) {
 	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
 	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)

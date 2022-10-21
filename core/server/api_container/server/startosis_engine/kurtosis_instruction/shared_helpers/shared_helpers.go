@@ -26,15 +26,6 @@ func GetPositionFromThread(thread *starlark.Thread) *kurtosis_instruction.Instru
 	return kurtosis_instruction.NewInstructionPosition(callFrame.Pos.Line, callFrame.Pos.Col)
 }
 
-func GetFileNameFromThread(thread *starlark.Thread) string {
-	if len(thread.CallStack()) == 0 {
-		panic("empty call stack is unexpected, this should not happen")
-	}
-	// position of current instruction is  store at the bottom of the call stack
-	callFrame := thread.CallStack().At(len(thread.CallStack()) - 1)
-	return callFrame.Pos.Filename()
-}
-
 // ReplaceArtifactUuidMagicStringWithValue This function gets used to replace artifact uuid magic strings generated during interpretation time with actual values during execution time
 // TODO extend this in the future to be generic, instead of environment one could pass in a func(string) -> string maybe
 func ReplaceArtifactUuidMagicStringWithValue(originalString string, serviceIdForLogging string, environment *startosis_executor.ExecutionEnvironment) (string, error) {

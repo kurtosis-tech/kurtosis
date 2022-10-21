@@ -6,12 +6,16 @@ import (
 	"testing"
 )
 
+const (
+	filePath = "github.com/foo/bar/file.star"
+)
+
 func TestReadFile_StringRepresentation(t *testing.T) {
 	testInstruction := NewReadFileInstruction(
 		*kurtosis_instruction.NewInstructionPosition(3, 33),
-		"path/to/file.star",
+		filePath,
 	)
-	expectedStr := `read_file(src_path="path/to/file.star")`
+	expectedStr := `read_file(src_path="` + filePath + `")`
 	require.Equal(t, expectedStr, testInstruction.String())
 	require.Equal(t, expectedStr, testInstruction.GetCanonicalInstruction())
 }

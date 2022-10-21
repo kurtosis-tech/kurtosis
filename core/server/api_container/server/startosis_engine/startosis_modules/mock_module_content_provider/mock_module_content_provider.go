@@ -2,11 +2,6 @@ package mock_module_content_provider
 
 import (
 	"github.com/kurtosis-tech/stacktrace"
-	"strings"
-)
-
-const (
-	githubDomain = "github.com"
 )
 
 type MockModuleContentProvider struct {
@@ -35,16 +30,4 @@ func (provider *MockModuleContentProvider) GetModuleContents(moduleID string) (s
 
 func (provider *MockModuleContentProvider) Add(moduleID string, contents string) {
 	provider.modules[moduleID] = contents
-}
-
-func (provider *MockModuleContentProvider) GetFileAtRelativePath(_ string, path string) (string, error) {
-	contents, found := provider.modules[path]
-	if !found {
-		return "", stacktrace.NewError("File not found %v", path)
-	}
-	return contents, nil
-}
-
-func (provider *MockModuleContentProvider) IsGithubPath(path string) bool {
-	return strings.HasPrefix(path, githubDomain)
 }

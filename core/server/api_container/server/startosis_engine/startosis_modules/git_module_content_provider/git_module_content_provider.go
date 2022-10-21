@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path"
-	"strings"
 )
 
 const (
@@ -54,42 +53,6 @@ func (provider *GitModuleContentProvider) GetModuleContents(moduleURL string) (s
 	}
 
 	return string(contents), nil
-}
-
-func (provider *GitModuleContentProvider) GetFileAtRelativePath(fileBeingInterpreted string, relFilepathOfFileToRead string) (string, error) {
-	if path.IsAbs(relFilepathOfFileToRead) {
-		return "", stacktrace.NewError("Expected a relative path but got absolute path '%v'", relFilepathOfFileToRead)
-	}
-	absoluteFilePath, err := provider.getAbsolutePath(fileBeingInterpreted, relFilepathOfFileToRead)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while getting the absolute path for file '%v' relative to file being interpreted '%v'", relFilepathOfFileToRead, fileBeingInterpreted)
-	}
-	fileContents, err := os.ReadFile(absoluteFilePath)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while reading the file '%v'", absoluteFilePath)
-	}
-	return string(fileContents), nil
-}
-
-func (provider *GitModuleContentProvider) IsGithubPath(path string) bool {
-	return strings.HasPrefix(path, githubDomain)
-}
-
-func (provider *GitModuleContentProvider) getAbsolutePath(fileBeingInterpreted string, relFilepathOfFileToRead string) (string, error) {
-	if !strings.HasPrefix(fileBeingInterpreted, provider.modulesDir) {
-		return "", stacktrace.NewError("File being interpreted '%v' seems to have an illegal path. This is a bug in Kurtosis.", fileBeingInterpreted)
-	}
-	fileBeingInterpretedSplit := cleanPathAndSplit(fileBeingInterpreted)
-	dirNameOfFileBeingInterpreted := path.Dir(fileBeingInterpreted)
-	absPathOfFileToRead := path.Join(dirNameOfFileBeingInterpreted, relFilepathOfFileToRead)
-	absPathOfFileToRead = path.Clean(absPathOfFileToRead)
-
-	moduleRootPosition := len(cleanPathAndSplit(provider.modulesDir)) + authorAndModuleNameAdjustment
-	moduleDirOfInterpretedFile := string(os.PathSeparator) + path.Join(fileBeingInterpretedSplit[0:moduleRootPosition]...)
-	if !strings.HasPrefix(absPathOfFileToRead, moduleDirOfInterpretedFile) {
-		return "", stacktrace.NewError("Final path of file '%v' seems to be outside of module '%v', which is unsafe.", absPathOfFileToRead, moduleDirOfInterpretedFile)
-	}
-	return absPathOfFileToRead, nil
 }
 
 // atomicClone This first clones to a temporary directory and then moves it
