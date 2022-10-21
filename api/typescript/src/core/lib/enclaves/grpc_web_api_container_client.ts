@@ -31,11 +31,12 @@ import {
     RenderTemplatesToFilesArtifactArgs,
     RenderTemplatesToFilesArtifactResponse,
     ExecuteStartosisScriptArgs,
-    ExecuteStartosisScriptResponse,
+    ExecuteStartosisScriptResponse, ExecuteStartosisModuleArgs, ExecuteStartosisModuleResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
 import { EnclaveID } from "./enclave_context";
+import {ServiceError} from "@grpc/grpc-js";
 
 export class GrpcWebApiContainerClient implements GenericApiContainerClient {
 
@@ -115,6 +116,27 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
             return err(resultExecuteStartosisScript.error)
         }
         return ok(resultExecuteStartosisScript.value)
+    }
+
+    public async executeStartosisModule(startosisModuleArgs:ExecuteStartosisModuleArgs): Promise<Result<ExecuteStartosisModuleResponse, Error>> {
+        const promiseExecuteStartosisModule: Promise<Result<ExecuteStartosisModuleResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.executeStartosisModule(startosisModuleArgs, {}, (error: grpc_web.RpcError | null, response?: ExecuteStartosisModuleResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        })
+        const resultExecuteStartosisModule: Result<ExecuteStartosisModuleResponse, Error> = await promiseExecuteStartosisModule;
+        if (resultExecuteStartosisModule.isErr()) {
+            return err(resultExecuteStartosisModule.error)
+        }
+        return ok(resultExecuteStartosisModule.value)
     }
 
     public async startServices(startServicesArgs: StartServicesArgs): Promise<Result<StartServicesResponse, Error>>{

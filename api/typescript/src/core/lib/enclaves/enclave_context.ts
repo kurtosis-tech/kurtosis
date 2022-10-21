@@ -57,9 +57,15 @@ import type { PartitionConnection } from "./partition_connection";
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
 import {
     ModuleInfo,
-    PauseServiceArgs, ServiceInfo, UnloadModuleResponse,
+    PauseServiceArgs,
+    ServiceInfo,
+    UnloadModuleResponse,
     UnpauseServiceArgs,
-    StartServicesArgs, ExecuteStartosisScriptArgs, ExecuteStartosisScriptResponse,
+    StartServicesArgs,
+    ExecuteStartosisScriptArgs,
+    ExecuteStartosisScriptResponse,
+    ExecuteStartosisModuleArgs,
+    ExecuteStartosisModuleResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {should} from "chai";
 import {TemplateAndData} from "./template_and_data";
@@ -209,6 +215,18 @@ export class EnclaveContext {
 
         const moduleCtx: ModuleContext = new ModuleContext(this.backend, moduleId);
         return ok(moduleCtx)
+    }
+
+    public async executeStartosisModule(
+        moduleRootPath: string,
+    ): Promise<Result<ExecuteStartosisModuleResponse, Error>> {
+        const args = new ExecuteStartosisModuleArgs;
+        // add stuff
+        const resultModuleExecution : Result<ExecuteStartosisModuleResponse, Error> = await this.backend.executeStartosisModule(args)
+        if (resultModuleExecution.isErr()) {
+            return err(new Error(`Unexpected error happened executing Startosis module \n${resultModuleExecution.error}`))
+        }
+        return ok(resultModuleExecution.value)
     }
 
     public async executeStartosisScript(
