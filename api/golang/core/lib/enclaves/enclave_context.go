@@ -139,6 +139,9 @@ func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(moduleRootPath string) 
 	kurtosisModFilepath := path.Join(moduleRootPath, modFilename)
 
 	kurtosisMod, err := parseKurtosisMod(kurtosisModFilepath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", modFilename, moduleRootPath)
+	}
 
 	moduleName := kurtosisMod.Module.ModuleName
 	if len(moduleName) == 0 {

@@ -20,11 +20,11 @@ func parseKurtosisMod(kurtosisModFilepath string) (*KurtosisMod, error) {
 		return nil, stacktrace.Propagate(err, "An error occurred while reading the '%v' file at '%v'", modFilename, kurtosisModFilepath)
 	}
 
-	var kurtosisModule *KurtosisMod
-	err = yaml.Unmarshal(kurtosisModContents, kurtosisModule)
+	var kurtosisModule KurtosisMod
+	err = yaml.Unmarshal(kurtosisModContents, &kurtosisModule)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while parsing the '%v' file at '%v'", modFilename, kurtosisModFilepath)
 	}
 
-	return kurtosisModule, nil
+	return &kurtosisModule, nil
 }

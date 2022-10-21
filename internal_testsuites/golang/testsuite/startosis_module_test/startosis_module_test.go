@@ -13,10 +13,10 @@ import (
 const (
 	testName               = "startosis_module_test"
 	isPartitioningEnabled  = false
-	sampleModuleRelDirpath = "../../static_files/sample-kurtosis-module"
+	sampleModuleRelDirpath = "../../../startosis/sample-kurtosis-module"
 )
 
-func TestStartosis(t *testing.T) {
+func TestStartosisModule(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
@@ -31,7 +31,7 @@ func TestStartosis(t *testing.T) {
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Infof("Executing Startosis Module...")
 
-	logrus.Debugf("Startosis module path: \n%v", moduleDirpath)
+	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
 	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath)
 	require.NoError(t, err, "Unexpected error executing startosis module")
