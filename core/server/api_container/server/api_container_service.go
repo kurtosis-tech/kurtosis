@@ -97,8 +97,8 @@ func NewApiContainerService(
 	startosisInterpreter *startosis_engine.StartosisInterpreter,
 	startosisValidator *startosis_engine.StartosisValidator,
 	startosisExecutor *startosis_engine.StartosisExecutor,
-	startosisModuleContentProvider startosis_modules.ModuleContentProvider,
 	metricsClient client.MetricsClient,
+	startosisModuleContentProvider startosis_modules.ModuleContentProvider,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
 		filesArtifactStore:             filesArtifactStore,
@@ -250,12 +250,12 @@ func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Contex
 	moduleId := args.ModuleId
 	moduleData := args.Data
 
-	pathOnDisk, err := apicService.startosisModuleContentProvider.StoreModuleContents(moduleId, moduleData)
+	moduleRootPathOnDisk, err := apicService.startosisModuleContentProvider.StoreModuleContents(moduleId, moduleData)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while writing module to disk '%v'", err)
 	}
 
-	pathToMainFile := path.Join(pathOnDisk, "main.star")
+	pathToMainFile := path.Join(moduleRootPathOnDisk, "main.star")
 	_, err = os.Stat(pathToMainFile)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while verifying that main.star exists on root of module '%v' at '%v'", moduleId, pathToMainFile)
@@ -268,6 +268,10 @@ main()
 	executeStartosisScriptArgs := binding_constructors.NewExecuteStartosisScriptArgs(scriptWithMainToExecute)
 
 	scriptExecutionResponse, err := apicService.ExecuteStartosisScript(ctx, executeStartosisScriptArgs)
+
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while executing the main function in the file '%v' in module '%v'", pathToMainFile, moduleRootPathOnDisk)
+	}
 
 	return binding_constructors.NewExecuteStartosisModuleResponse(scriptExecutionResponse), nil
 }
