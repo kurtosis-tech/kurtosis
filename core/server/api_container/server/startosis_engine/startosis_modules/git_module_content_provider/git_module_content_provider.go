@@ -33,10 +33,10 @@ func (provider *GitModuleContentProvider) GetModuleContents(moduleURL string) (s
 		return "", stacktrace.Propagate(err, "An error occurred while parsing URL '%v'", moduleURL)
 	}
 
-	pathToStartosisFile := path.Join(provider.modulesDir, parsedURL.relativeFilePath)
+	pathToFile := path.Join(provider.modulesDir, parsedURL.relativeFilePath)
 
 	// Load the file if it already exists
-	contents, err := os.ReadFile(pathToStartosisFile)
+	contents, err := os.ReadFile(pathToFile)
 	if err == nil {
 		return string(contents), nil
 	}
@@ -48,16 +48,16 @@ func (provider *GitModuleContentProvider) GetModuleContents(moduleURL string) (s
 	}
 
 	// Load it after cloning
-	contents, err = os.ReadFile(pathToStartosisFile)
+	contents, err = os.ReadFile(pathToFile)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred in reading contents of the Startosis file '%v'", pathToStartosisFile)
+		return "", stacktrace.Propagate(err, "An error occurred in reading contents of the file '%v'", pathToFile)
 	}
 
 	return string(contents), nil
 }
 
 func (provider *GitModuleContentProvider) StoreModuleContents(moduleId string, moduleTar []byte) (string, error) {
-	parsedModuleId, err := parseModuleId(moduleId)
+	parsedModuleId, err := parseGitURL(moduleId)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while parsing the moduleId '%v'", moduleId)
 	}

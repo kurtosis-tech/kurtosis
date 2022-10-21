@@ -9,10 +9,10 @@ import (
 )
 
 const (
-	githubDomain           = "github.com"
-	httpsSchema            = "https"
-	startosisFileExtension = ".star"
-	urlPathSeparator       = "/"
+	githubDomain                  = "github.com"
+	httpsSchema                   = "https"
+	urlPathSeparator              = "/"
+	minimumSubPathsForValidGitURL = 2
 )
 
 // ParsedGitURL an object representing a parsed moduleURL
@@ -26,6 +26,7 @@ type ParsedGitURL struct {
 	// relativeRepoPath the relative path to the repo this would be moduleAuthor/moduleName/
 	relativeRepoPath string
 	// relativeFilePath the full path of the file relative to the module store relativeRepoPath/path/to/file.star
+	// empty if there is no file
 	relativeFilePath string
 }
 
@@ -64,15 +65,19 @@ func parseGitURL(packageURL string) (*ParsedGitURL, error) {
 
 	splitURLPath := cleanPathAndSplit(parsedURL.Path)
 
-	if len(splitURLPath) < 3 {
-		return nil, stacktrace.NewError("URL '%v' path should contain at least 3 subpaths got '%v'", packageURL, splitURLPath)
+	if len(splitURLPath) < minimumSubPathsForValidGitURL {
+		return nil, stacktrace.NewError("URL '%v' path should contain at least %v subpaths got '%v'", packageURL, minimumSubPathsForValidGitURL, splitURLPath)
 	}
 
 	moduleAuthor := splitURLPath[0]
 	moduleName := splitURLPath[1]
 	gitURL := fmt.Sprintf("%v://%v/%v/%v.git", httpsSchema, githubDomain, moduleAuthor, moduleName)
 	relativeModulePath := path.Join(moduleAuthor, moduleName)
-	relativeFilePath := path.Join(splitURLPath...)
+
+	relativeFilePath := ""
+	if len(splitURLPath) > minimumSubPathsForValidGitURL {
+		relativeFilePath = path.Join(splitURLPath...)
+	}
 
 	parsedGitURL := newParsedGitURL(
 		moduleAuthor,
@@ -80,48 +85,6 @@ func parseGitURL(packageURL string) (*ParsedGitURL, error) {
 		gitURL,
 		relativeModulePath,
 		relativeFilePath,
-	)
-
-	return parsedGitURL, nil
-}
-
-// TODO Add Tests
-func parseModuleId(moduleId string) (*ParsedGitURL, error) {
-	parsedURL, err := url.Parse(moduleId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error parsing the moduleId '%v'", moduleId)
-	}
-	if parsedURL.Scheme != "" {
-		return nil, stacktrace.NewError("Expected schema to be empty got '%v'", parsedURL.Scheme)
-	}
-
-	// we prefix schema and make sure that the URL still parses
-	packageURLPrefixedWithHttps := httpsSchema + "://" + moduleId
-	parsedURL, err = url.Parse(packageURLPrefixedWithHttps)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error parsing the url '%v'", moduleId)
-	}
-	if parsedURL.Host != githubDomain {
-		return nil, stacktrace.NewError("We only support modules on Github for now but got '%v'", moduleId)
-	}
-
-	splitURLPath := cleanPathAndSplit(parsedURL.Path)
-
-	if len(splitURLPath) != 2 {
-		return nil, stacktrace.NewError("URL '%v' moduleId should contain exactly 2 subpaths got '%v'", moduleId, splitURLPath)
-	}
-
-	moduleAuthor := splitURLPath[0]
-	moduleName := splitURLPath[1]
-	gitURL := fmt.Sprintf("%v://%v/%v/%v.git", httpsSchema, githubDomain, moduleAuthor, moduleName)
-	relativeModulePath := path.Join(moduleAuthor, moduleName)
-
-	parsedGitURL := newParsedGitURL(
-		moduleAuthor,
-		moduleName,
-		gitURL,
-		relativeModulePath,
-		"",
 	)
 
 	return parsedGitURL, nil
