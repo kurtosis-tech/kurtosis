@@ -144,7 +144,6 @@ func (enclaveCtx *EnclaveContext) ExecuteStartosisScript(serializedScript string
 
 func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(pathToStartosisModule string) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleResponse, error) {
 	pathToKurtosisMod := path.Join(pathToStartosisModule, "kurtosis.mod")
-	// check main.star
 	kurtosisModContents, err := os.ReadFile(pathToKurtosisMod)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while reading the kurtosis.mod file at '%v'", pathToKurtosisMod)
