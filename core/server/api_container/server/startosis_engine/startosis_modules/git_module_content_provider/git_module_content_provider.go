@@ -73,12 +73,14 @@ func (provider *GitModuleContentProvider) StoreModuleContents(moduleId string, m
 	if err != nil {
 		return "", stacktrace.NewError("An error occurred while creating temporary file to write compressed '%v' to", moduleId)
 	}
+	defer os.Remove(tempFile.Name())
+
 	bytesWritten, err := tempFile.Write(moduleTar)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while writing contents of '%v' to '%v'", moduleId, tempFile.Name())
 	}
 	if bytesWritten != len(moduleTar) {
-		return "", stacktrace.NewError("An error occurred while writing contents of '%v' to '%v'", moduleId, tempFile.Name())
+		return "", stacktrace.NewError("Expected to write '%v' bytes but wrote '%v'", len(moduleTar), bytesWritten)
 	}
 	err = archiver.Unarchive(tempFile.Name(), modulePathOnDisk)
 	if err != nil {
