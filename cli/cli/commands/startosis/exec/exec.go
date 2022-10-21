@@ -36,7 +36,7 @@ var StartosisExecCmd = &lowlevel.LowlevelKurtosisCommand{
 	ShortDescription: "Execute a Startosis script or module",
 	LongDescription: "Execute a Startosis module or script in an enclave. If the enclave-id param is provided, Kurtosis " +
 		"will exec the script inside this enclave, or create it if it doesn't exist. If no enclave-id param is " +
-		"provided, Kurtosis will create a new enclave with a default name derived from the script name.",
+		"provided, Kurtosis will create a new enclave with a default name derived from the script or module name.",
 	Flags: []*flags.FlagConfig{
 		{
 			Key: enclaveIdFlagKey,
@@ -63,7 +63,7 @@ var StartosisExecCmd = &lowlevel.LowlevelKurtosisCommand{
 			IsOptional:     false,
 			DefaultValue:   "",
 			IsGreedy:       false,
-			ValidationFunc: validateScriptPath,
+			ValidationFunc: validateScriptOrModulePath,
 		},
 	},
 	RunFunc: run,
@@ -131,7 +131,7 @@ func run(
 	return nil
 }
 
-func validateScriptPath(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
+func validateScriptOrModulePath(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
 	scriptOrModulePath, err := args.GetNonGreedyArg(scriptOrModulePathKey)
 	if scriptOrModulePath == "" || err != nil {
 		return stacktrace.Propagate(err, "Unable to get %v argument '%s'. It should be non empty", scriptOrModulePathKey, scriptOrModulePath)
@@ -142,7 +142,7 @@ func validateScriptPath(ctx context.Context, flags *flags.ParsedFlags, args *arg
 		return stacktrace.Propagate(err, "Error reading script file or module dir '%s'", scriptOrModulePath)
 	}
 	if !fileInfo.Mode().IsRegular() && !fileInfo.Mode().IsDir() {
-		return stacktrace.Propagate(err, "Script path should point to a file on disk or to a directory '%s'", scriptOrModulePath)
+		return stacktrace.Propagate(err, "Script or module path should point to a file on disk or to a directory '%s'", scriptOrModulePath)
 	}
 	return nil
 }
