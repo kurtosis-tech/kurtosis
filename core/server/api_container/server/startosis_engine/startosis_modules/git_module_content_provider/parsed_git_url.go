@@ -68,11 +68,6 @@ func parseGitURL(packageURL string) (*ParsedGitURL, error) {
 		return nil, stacktrace.NewError("URL '%v' path should contain at least 3 subpaths got '%v'", packageURL, splitURLPath)
 	}
 
-	lastItem := splitURLPath[len(splitURLPath)-1]
-	if !strings.HasSuffix(lastItem, startosisFileExtension) {
-		return nil, stacktrace.NewError("Expected last subpath to be a '%v' file but it wasn't", startosisFileExtension)
-	}
-
 	moduleAuthor := splitURLPath[0]
 	moduleName := splitURLPath[1]
 	gitURL := fmt.Sprintf("%v://%v/%v/%v.git", httpsSchema, githubDomain, moduleAuthor, moduleName)
@@ -85,6 +80,48 @@ func parseGitURL(packageURL string) (*ParsedGitURL, error) {
 		gitURL,
 		relativeModulePath,
 		relativeFilePath,
+	)
+
+	return parsedGitURL, nil
+}
+
+// TODO Add Tests
+func parseModuleId(moduleId string) (*ParsedGitURL, error) {
+	parsedURL, err := url.Parse(moduleId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error parsing the moduleId '%v'", moduleId)
+	}
+	if parsedURL.Scheme != "" {
+		return nil, stacktrace.NewError("Expected schema to be empty got '%v'", parsedURL.Scheme)
+	}
+
+	// we prefix schema and make sure that the URL still parses
+	packageURLPrefixedWithHttps := httpsSchema + "://" + moduleId
+	parsedURL, err = url.Parse(packageURLPrefixedWithHttps)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error parsing the url '%v'", moduleId)
+	}
+	if parsedURL.Host != githubDomain {
+		return nil, stacktrace.NewError("We only support modules on Github for now but got '%v'", moduleId)
+	}
+
+	splitURLPath := cleanPathAndSplit(parsedURL.Path)
+
+	if len(splitURLPath) != 2 {
+		return nil, stacktrace.NewError("URL '%v' moduleId should contain exactly 2 subpaths got '%v'", moduleId, splitURLPath)
+	}
+
+	moduleAuthor := splitURLPath[0]
+	moduleName := splitURLPath[1]
+	gitURL := fmt.Sprintf("%v://%v/%v/%v.git", httpsSchema, githubDomain, moduleAuthor, moduleName)
+	relativeModulePath := path.Join(moduleAuthor, moduleName)
+
+	parsedGitURL := newParsedGitURL(
+		moduleAuthor,
+		moduleName,
+		gitURL,
+		relativeModulePath,
+		"",
 	)
 
 	return parsedGitURL, nil

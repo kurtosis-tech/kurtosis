@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/modules"
@@ -31,6 +32,7 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -54,6 +56,14 @@ type EnclaveContext struct {
 	client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
 
 	enclaveId EnclaveID
+}
+
+type KurtosisMod struct {
+	Module KurtosisModule `yaml:"module"`
+}
+
+type KurtosisModule struct {
+	ModuleName string `yaml:"name"`
 }
 
 /*
@@ -128,6 +138,37 @@ func (enclaveCtx *EnclaveContext) ExecuteStartosisScript(serializedScript string
 	executeStartosisResponse, err := enclaveCtx.client.ExecuteStartosisScript(context.Background(), executeStartosisScriptArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unexpected error happened executing Startosis script \n%v", serializedScript)
+	}
+	return executeStartosisResponse, nil
+}
+
+func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(pathToStartosisModule string) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleResponse, error) {
+	pathToKurtosisMod := path.Join(pathToStartosisModule, "kurtosis.mod")
+	// check main.star
+	kurtosisModContents, err := os.ReadFile(pathToKurtosisMod)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while reading the kurtosis.mod file at '%v'", pathToKurtosisMod)
+	}
+
+	var kurtosisModule KurtosisMod
+	err = yaml.Unmarshal(kurtosisModContents, &kurtosisModule)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while parsing the kurtosis.mod file at '%v'", pathToKurtosisMod)
+	}
+
+	moduleId := kurtosisModule.Module.ModuleName
+	if len(moduleId) == 0 {
+		return nil, stacktrace.NewError("Module ID cannot be empty")
+	}
+
+	compressedModule, err := compressPath(pathToStartosisModule)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", pathToStartosisModule)
+	}
+	executeStartosisModuleArgs := binding_constructors.NewExecuteStartosisModuleArgs(moduleId, compressedModule)
+	executeStartosisResponse, err := enclaveCtx.client.ExecuteStartosisModule(context.Background(), executeStartosisModuleArgs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unexpected error happened executing Startosis module \n%v", pathToStartosisModule)
 	}
 	return executeStartosisResponse, nil
 }
@@ -525,58 +566,11 @@ func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string) (services.FilesArtifactUUID, error) {
-	pathToUpload = strings.TrimRight(pathToUpload, string(filepath.Separator))
-	uploadFileInfo, err := os.Stat(pathToUpload)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "There was a path error for '%s' during file uploading.", pathToUpload)
-	}
-
-	// This allows us to archive contents of dirs in root instead of nesting
-	var filepathsToUpload []string
-	if uploadFileInfo.IsDir() {
-		filesInDirectory, err := ioutil.ReadDir(pathToUpload)
-		if err != nil {
-			return "", stacktrace.Propagate(err, "There was an error in getting a list of files in the directory '%s' provided", pathToUpload)
-		}
-		if len(filesInDirectory) == 0 {
-			return "", stacktrace.NewError("The directory '%s' you are trying to upload is empty", pathToUpload)
-		}
-
-		for _, fileInDirectory := range filesInDirectory {
-			filepathToUpload := filepath.Join(pathToUpload, fileInDirectory.Name())
-			filepathsToUpload = append(filepathsToUpload, filepathToUpload)
-		}
-	} else {
-		filepathsToUpload = append(filepathsToUpload, pathToUpload)
-	}
-
-	tempDir, err := ioutil.TempDir("", tempCompressionDirPattern)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "Failed to create temporary directory '%s' for compression.", tempDir)
-	}
-
-	compressedFilePath := filepath.Join(tempDir, filepath.Base(pathToUpload)+compressionExtension)
-	if err = archiver.Archive(filepathsToUpload, compressedFilePath); err != nil {
-		return "", stacktrace.Propagate(err, "Failed to compress '%s'.", pathToUpload)
-	}
-
-	compressedFileInfo, err := os.Stat(compressedFilePath)
+	content, err := compressPath(pathToUpload)
 	if err != nil {
 		return "", stacktrace.Propagate(err,
-			"Failed to create a temporary archive file at '%s' during files upload for '%s'.",
-			tempDir, pathToUpload)
-	}
-
-	if compressedFileInfo.Size() >= grpcDataTransferLimit {
-		return "", stacktrace.Propagate(err,
-			"The files you are trying to upload, which are now compressed, exceed or reach 4mb, a limit imposed by gRPC. "+
-				"Please reduce the total file size and ensure it can compress to a size below 4mb.")
-	}
-	content, err := ioutil.ReadFile(compressedFilePath)
-	if err != nil {
-		return "", stacktrace.Propagate(err,
-			"There was an error reading from the temporary tar file '%s' recently compressed for upload.",
-			compressedFileInfo.Name())
+			"There was an error compressing the file '%v' before upload",
+			pathToUpload)
 	}
 
 	args := binding_constructors.NewUploadFilesArtifactArgs(content)
@@ -689,4 +683,62 @@ func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc
 		)
 	}
 	return result, nil
+}
+
+func compressPath(pathToCompress string) ([]byte, error) {
+	pathToCompress = strings.TrimRight(pathToCompress, string(filepath.Separator))
+	uploadFileInfo, err := os.Stat(pathToCompress)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "There was a path error for '%s' during file compression.", pathToCompress)
+	}
+
+	// This allows us to archive contents of dirs in root instead of nesting
+	var filepathsToUpload []string
+	if uploadFileInfo.IsDir() {
+		filesInDirectory, err := ioutil.ReadDir(pathToCompress)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "There was an error in getting a list of files in the directory '%s' provided", pathToCompress)
+		}
+		if len(filesInDirectory) == 0 {
+			return nil, stacktrace.NewError("The directory '%s' you are trying to compress is empty", pathToCompress)
+		}
+
+		for _, fileInDirectory := range filesInDirectory {
+			filepathToUpload := filepath.Join(pathToCompress, fileInDirectory.Name())
+			filepathsToUpload = append(filepathsToUpload, filepathToUpload)
+		}
+	} else {
+		filepathsToUpload = append(filepathsToUpload, pathToCompress)
+	}
+
+	tempDir, err := ioutil.TempDir("", tempCompressionDirPattern)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create temporary directory '%s' for compression.", tempDir)
+	}
+
+	compressedFilePath := filepath.Join(tempDir, filepath.Base(pathToCompress)+compressionExtension)
+	if err = archiver.Archive(filepathsToUpload, compressedFilePath); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to compress '%s'.", pathToCompress)
+	}
+
+	compressedFileInfo, err := os.Stat(compressedFilePath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,
+			"Failed to create a temporary archive file at '%s' during files upload for '%s'.",
+			tempDir, pathToCompress)
+	}
+
+	if compressedFileInfo.Size() >= grpcDataTransferLimit {
+		return nil, stacktrace.Propagate(err,
+			"The files you are trying to upload, which are now compressed, exceed or reach 4mb, a limit imposed by gRPC. "+
+				"Please reduce the total file size and ensure it can compress to a size below 4mb.")
+	}
+	content, err := ioutil.ReadFile(compressedFilePath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,
+			"There was an error reading from the temporary tar file '%s' recently compressed for upload.",
+			compressedFileInfo.Name())
+	}
+
+	return content, nil
 }

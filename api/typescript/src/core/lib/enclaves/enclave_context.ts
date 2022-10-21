@@ -212,7 +212,7 @@ export class EnclaveContext {
     }
 
     public async executeStartosisScript(
-            serializedStartosisScript: string
+            serializedStartosisScript: string,
         ): Promise<Result<ExecuteStartosisScriptResponse, Error>> {
         const args = new ExecuteStartosisScriptArgs();
         args.setSerializedScript(serializedStartosisScript)

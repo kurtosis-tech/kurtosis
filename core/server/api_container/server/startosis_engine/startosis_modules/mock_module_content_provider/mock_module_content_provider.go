@@ -4,6 +4,10 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
+const (
+	unimplementedMessage = "This method isn't implemented!!!!"
+)
+
 type MockModuleContentProvider struct {
 	modules map[string]string
 }
@@ -26,6 +30,10 @@ func (provider *MockModuleContentProvider) GetModuleContents(moduleID string) (s
 		return "", stacktrace.NewError("Module '%v' not found", moduleID)
 	}
 	return contents, nil
+}
+
+func (provider *MockModuleContentProvider) StoreModuleContents(string, []byte) (string, error) {
+	panic(unimplementedMessage)
 }
 
 func (provider *MockModuleContentProvider) Add(moduleID string, contents string) {

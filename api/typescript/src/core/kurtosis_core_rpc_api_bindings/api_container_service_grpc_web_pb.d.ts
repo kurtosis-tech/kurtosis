@@ -44,6 +44,13 @@ export class ApiContainerServiceClient {
                response: api_container_service_pb.ExecuteStartosisScriptResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.ExecuteStartosisScriptResponse>;
 
+  executeStartosisModule(
+    request: api_container_service_pb.ExecuteStartosisModuleArgs,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: api_container_service_pb.ExecuteStartosisModuleResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.ExecuteStartosisModuleResponse>;
+
   startServices(
     request: api_container_service_pb.StartServicesArgs,
     metadata: grpcWeb.Metadata | undefined,
@@ -173,6 +180,11 @@ export class ApiContainerServicePromiseClient {
     request: api_container_service_pb.ExecuteStartosisScriptArgs,
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.ExecuteStartosisScriptResponse>;
+
+  executeStartosisModule(
+    request: api_container_service_pb.ExecuteStartosisModuleArgs,
+    metadata?: grpcWeb.Metadata
+  ): Promise<api_container_service_pb.ExecuteStartosisModuleResponse>;
 
   startServices(
     request: api_container_service_pb.StartServicesArgs,

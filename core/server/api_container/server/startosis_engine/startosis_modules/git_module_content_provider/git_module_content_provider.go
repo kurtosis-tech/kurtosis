@@ -3,25 +3,27 @@ package git_module_content_provider
 import (
 	"github.com/go-git/go-git/v5"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/mholt/archiver"
 	"io"
 	"os"
 	"path"
 )
 
 const (
-	moduleDirPermission     = 0755
-	temporaryRepoDirPattern = "tmp-repo-dir-*"
+	moduleDirPermission         = 0755
+	temporaryRepoDirPattern     = "tmp-repo-dir-*"
+	temporaryArchiveFilePattern = "temp-module-archive-*.tgz"
 )
 
 type GitModuleContentProvider struct {
-	moduleTmpDir string
-	moduleDir    string
+	modulesTmpDir string
+	modulesDir    string
 }
 
 func NewGitModuleContentProvider(moduleDir string, tmpDir string) *GitModuleContentProvider {
 	return &GitModuleContentProvider{
-		moduleDir:    moduleDir,
-		moduleTmpDir: tmpDir,
+		modulesDir:    moduleDir,
+		modulesTmpDir: tmpDir,
 	}
 }
 
@@ -31,7 +33,7 @@ func (provider *GitModuleContentProvider) GetModuleContents(moduleURL string) (s
 		return "", stacktrace.Propagate(err, "An error occurred while parsing URL '%v'", moduleURL)
 	}
 
-	pathToStartosisFile := path.Join(provider.moduleDir, parsedURL.relativeFilePath)
+	pathToStartosisFile := path.Join(provider.modulesDir, parsedURL.relativeFilePath)
 
 	// Load the file if it already exists
 	contents, err := os.ReadFile(pathToStartosisFile)
@@ -54,11 +56,41 @@ func (provider *GitModuleContentProvider) GetModuleContents(moduleURL string) (s
 	return string(contents), nil
 }
 
+func (provider *GitModuleContentProvider) StoreModuleContents(moduleId string, moduleTar []byte) (string, error) {
+	parsedModuleId, err := parseModuleId(moduleId)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while parsing the moduleId '%v'", moduleId)
+	}
+	modulePathOnDisk := path.Join(provider.modulesDir, parsedModuleId.relativeRepoPath)
+	_, err = os.Stat(modulePathOnDisk)
+	if err == nil {
+		return "", stacktrace.NewError("Module '%v' already exists on disk, not overwriting", modulePathOnDisk)
+	}
+
+	tempFile, err := os.CreateTemp("", temporaryArchiveFilePattern)
+	if err != nil {
+		return "", stacktrace.NewError("An error occurred while creating temporary file to write compressed '%v' to", moduleId)
+	}
+	bytesWritten, err := tempFile.Write(moduleTar)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while writing contents of '%v' to '%v'", moduleId, tempFile.Name())
+	}
+	if bytesWritten != len(moduleTar) {
+		return "", stacktrace.NewError("An error occurred while writing contents of '%v' to '%v'", moduleId, tempFile.Name())
+	}
+	err = archiver.Unarchive(tempFile.Name(), modulePathOnDisk)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while unarchiving '%v' to '%v'", tempFile.Name(), modulePathOnDisk)
+	}
+
+	return modulePathOnDisk, nil
+}
+
 // atomicClone This first clones to a temporary directory and then moves it
 // TODO make this support versioning via tags, commit hashes or branches
 func (provider *GitModuleContentProvider) atomicClone(parsedURL *ParsedGitURL) error {
 	// First we clone into a temporary directory
-	tempRepoDirPath, err := os.MkdirTemp(provider.moduleTmpDir, temporaryRepoDirPattern)
+	tempRepoDirPath, err := os.MkdirTemp(provider.modulesTmpDir, temporaryRepoDirPattern)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error creating temporary directory for the repository to be cloned into")
 	}
@@ -70,8 +102,8 @@ func (provider *GitModuleContentProvider) atomicClone(parsedURL *ParsedGitURL) e
 	}
 
 	// Then we move it into the target directory
-	moduleAuthorPath := path.Join(provider.moduleDir, parsedURL.moduleAuthor)
-	modulePath := path.Join(provider.moduleDir, parsedURL.relativeRepoPath)
+	moduleAuthorPath := path.Join(provider.modulesDir, parsedURL.moduleAuthor)
+	modulePath := path.Join(provider.modulesDir, parsedURL.relativeRepoPath)
 	fileMode, err := os.Stat(moduleAuthorPath)
 	if err == nil && !fileMode.IsDir() {
 		return stacktrace.Propagate(err, "Expected '%v' to be a directory but it is something else", moduleAuthorPath)

@@ -23,6 +23,9 @@ service ApiContainerService {
   // Executes a startosis script on the user's behalf
   rpc ExecuteStartosisScript(ExecuteStartosisScriptArgs) returns (ExecuteStartosisScriptResponse) {};
 
+  // Executes a startosis module on the user's behalf
+  rpc ExecuteStartosisModule(ExecuteStartosisModuleArgs) returns (ExecuteStartosisModuleResponse) {};
+
   // Start services by creating containers for them
   rpc StartServices(StartServicesArgs) returns (StartServicesResponse) {};
 
@@ -477,4 +480,23 @@ message RenderTemplatesToFilesArtifactResponse {
 
 message StartosisValidationError {
   string error = 1;
+}
+
+// ==============================================================================================
+//                                 Execute Startosis Module
+// ==============================================================================================
+
+message ExecuteStartosisModuleArgs {
+  string module_id = 1;
+  bytes data = 2;
+}
+
+message ExecuteStartosisModuleResponse {
+  string serialized_script_output = 1;
+
+  string interpretation_error = 2;
+
+  repeated StartosisValidationError validation_errors = 3;
+
+  string execution_error = 4;
 }
