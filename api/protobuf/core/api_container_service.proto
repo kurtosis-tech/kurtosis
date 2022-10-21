@@ -21,10 +21,10 @@ service ApiContainerService {
   rpc ExecuteModule(ExecuteModuleArgs) returns (ExecuteModuleResponse) {};
 
   // Executes a startosis script on the user's behalf
-  rpc ExecuteStartosisScript(ExecuteStartosisScriptArgs) returns (ExecuteStartosisScriptResponse) {};
+  rpc ExecuteStartosisScript(ExecuteStartosisScriptArgs) returns (ExecuteStartosisResponse) {};
 
   // Executes a startosis module on the user's behalf
-  rpc ExecuteStartosisModule(ExecuteStartosisModuleArgs) returns (ExecuteStartosisModuleResponse) {};
+  rpc ExecuteStartosisModule(ExecuteStartosisModuleArgs) returns (ExecuteStartosisResponse) {};
 
   // Start services by creating containers for them
   rpc StartServices(StartServicesArgs) returns (StartServicesResponse) {};
@@ -237,7 +237,7 @@ message ExecuteStartosisScriptArgs {
   string serialized_script = 1;
 }
 
-message ExecuteStartosisScriptResponse {
+message ExecuteStartosisResponse {
   string serialized_script_output = 1;
 
   string interpretation_error = 2;
@@ -489,14 +489,4 @@ message StartosisValidationError {
 message ExecuteStartosisModuleArgs {
   string module_id = 1;
   bytes data = 2;
-}
-
-message ExecuteStartosisModuleResponse {
-  string serialized_script_output = 1;
-
-  string interpretation_error = 2;
-
-  repeated StartosisValidationError validation_errors = 3;
-
-  string execution_error = 4;
 }

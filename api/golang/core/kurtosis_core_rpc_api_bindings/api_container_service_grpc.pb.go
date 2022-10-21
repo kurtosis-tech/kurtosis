@@ -32,9 +32,9 @@ type ApiContainerServiceClient interface {
 	// Executes an executable module on the user's behalf
 	ExecuteModule(ctx context.Context, in *ExecuteModuleArgs, opts ...grpc.CallOption) (*ExecuteModuleResponse, error)
 	// Executes a startosis script on the user's behalf
-	ExecuteStartosisScript(ctx context.Context, in *ExecuteStartosisScriptArgs, opts ...grpc.CallOption) (*ExecuteStartosisScriptResponse, error)
+	ExecuteStartosisScript(ctx context.Context, in *ExecuteStartosisScriptArgs, opts ...grpc.CallOption) (*ExecuteStartosisResponse, error)
 	// Executes a startosis module on the user's behalf
-	ExecuteStartosisModule(ctx context.Context, in *ExecuteStartosisModuleArgs, opts ...grpc.CallOption) (*ExecuteStartosisModuleResponse, error)
+	ExecuteStartosisModule(ctx context.Context, in *ExecuteStartosisModuleArgs, opts ...grpc.CallOption) (*ExecuteStartosisResponse, error)
 	// Start services by creating containers for them
 	StartServices(ctx context.Context, in *StartServicesArgs, opts ...grpc.CallOption) (*StartServicesResponse, error)
 	// Returns the IDs of the current services in the enclave
@@ -110,8 +110,8 @@ func (c *apiContainerServiceClient) ExecuteModule(ctx context.Context, in *Execu
 	return out, nil
 }
 
-func (c *apiContainerServiceClient) ExecuteStartosisScript(ctx context.Context, in *ExecuteStartosisScriptArgs, opts ...grpc.CallOption) (*ExecuteStartosisScriptResponse, error) {
-	out := new(ExecuteStartosisScriptResponse)
+func (c *apiContainerServiceClient) ExecuteStartosisScript(ctx context.Context, in *ExecuteStartosisScriptArgs, opts ...grpc.CallOption) (*ExecuteStartosisResponse, error) {
+	out := new(ExecuteStartosisResponse)
 	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/ExecuteStartosisScript", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -119,8 +119,8 @@ func (c *apiContainerServiceClient) ExecuteStartosisScript(ctx context.Context, 
 	return out, nil
 }
 
-func (c *apiContainerServiceClient) ExecuteStartosisModule(ctx context.Context, in *ExecuteStartosisModuleArgs, opts ...grpc.CallOption) (*ExecuteStartosisModuleResponse, error) {
-	out := new(ExecuteStartosisModuleResponse)
+func (c *apiContainerServiceClient) ExecuteStartosisModule(ctx context.Context, in *ExecuteStartosisModuleArgs, opts ...grpc.CallOption) (*ExecuteStartosisResponse, error) {
+	out := new(ExecuteStartosisResponse)
 	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/ExecuteStartosisModule", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -267,9 +267,9 @@ type ApiContainerServiceServer interface {
 	// Executes an executable module on the user's behalf
 	ExecuteModule(context.Context, *ExecuteModuleArgs) (*ExecuteModuleResponse, error)
 	// Executes a startosis script on the user's behalf
-	ExecuteStartosisScript(context.Context, *ExecuteStartosisScriptArgs) (*ExecuteStartosisScriptResponse, error)
+	ExecuteStartosisScript(context.Context, *ExecuteStartosisScriptArgs) (*ExecuteStartosisResponse, error)
 	// Executes a startosis module on the user's behalf
-	ExecuteStartosisModule(context.Context, *ExecuteStartosisModuleArgs) (*ExecuteStartosisModuleResponse, error)
+	ExecuteStartosisModule(context.Context, *ExecuteStartosisModuleArgs) (*ExecuteStartosisResponse, error)
 	// Start services by creating containers for them
 	StartServices(context.Context, *StartServicesArgs) (*StartServicesResponse, error)
 	// Returns the IDs of the current services in the enclave
@@ -318,10 +318,10 @@ func (UnimplementedApiContainerServiceServer) UnloadModule(context.Context, *Unl
 func (UnimplementedApiContainerServiceServer) ExecuteModule(context.Context, *ExecuteModuleArgs) (*ExecuteModuleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecuteModule not implemented")
 }
-func (UnimplementedApiContainerServiceServer) ExecuteStartosisScript(context.Context, *ExecuteStartosisScriptArgs) (*ExecuteStartosisScriptResponse, error) {
+func (UnimplementedApiContainerServiceServer) ExecuteStartosisScript(context.Context, *ExecuteStartosisScriptArgs) (*ExecuteStartosisResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecuteStartosisScript not implemented")
 }
-func (UnimplementedApiContainerServiceServer) ExecuteStartosisModule(context.Context, *ExecuteStartosisModuleArgs) (*ExecuteStartosisModuleResponse, error) {
+func (UnimplementedApiContainerServiceServer) ExecuteStartosisModule(context.Context, *ExecuteStartosisModuleArgs) (*ExecuteStartosisResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecuteStartosisModule not implemented")
 }
 func (UnimplementedApiContainerServiceServer) StartServices(context.Context, *StartServicesArgs) (*StartServicesResponse, error) {

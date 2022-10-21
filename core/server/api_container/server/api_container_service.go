@@ -196,7 +196,7 @@ func (apicService ApiContainerService) ExecuteModule(ctx context.Context, args *
 	return resp, nil
 }
 
-func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse, error) {
+func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
 	serializedStartosisScript := args.GetSerializedScript()
 
 	// TODO(gb): add metric tracking maybe?
@@ -204,7 +204,7 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 	interpretationOutput, potentialInterpretationError, generatedInstructionsList :=
 		apicService.startosisInterpreter.Interpret(ctx, serializedStartosisScript)
 	if potentialInterpretationError != nil {
-		return binding_constructors.NewExecuteStartosisScriptResponse(
+		return binding_constructors.NewExecuteStartosisResponse(
 			string(interpretationOutput),
 			potentialInterpretationError.Error(),
 			noValidationErrors,
@@ -217,7 +217,7 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 	// TODO: Abstract this into a ValidationError
 	validationErrors := apicService.startosisValidator.Validate(ctx, generatedInstructionsList)
 	if validationErrors != nil {
-		return binding_constructors.NewExecuteStartosisScriptResponse(
+		return binding_constructors.NewExecuteStartosisResponse(
 			string(interpretationOutput),
 			noInterpretationError,
 			validationErrors,
@@ -228,7 +228,7 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 
 	err := apicService.startosisExecutor.Execute(ctx, generatedInstructionsList)
 	if err != nil {
-		return binding_constructors.NewExecuteStartosisScriptResponse(
+		return binding_constructors.NewExecuteStartosisResponse(
 			string(interpretationOutput),
 			noInterpretationError,
 			noValidationErrors,
@@ -237,7 +237,7 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 	}
 	logrus.Debugf("Successfully executed the list of Kurtosis instructions")
 
-	return binding_constructors.NewExecuteStartosisScriptResponse(
+	return binding_constructors.NewExecuteStartosisResponse(
 		string(interpretationOutput),
 		noInterpretationError,
 		noValidationErrors,
@@ -245,7 +245,7 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 	), nil
 }
 
-func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleResponse, error) {
+func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
 
 	moduleId := args.ModuleId
 	moduleData := args.Data
@@ -273,7 +273,7 @@ main()
 		return nil, stacktrace.Propagate(err, "An error occurred while executing the main function in the file '%v' in module '%v'", pathToMainFile, moduleRootPathOnDisk)
 	}
 
-	return binding_constructors.NewExecuteStartosisModuleResponse(scriptExecutionResponse), nil
+	return scriptExecutionResponse, nil
 }
 
 func (apicService ApiContainerService) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {

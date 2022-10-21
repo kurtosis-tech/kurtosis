@@ -126,7 +126,7 @@ func (enclaveCtx *EnclaveContext) GetModuleContext(moduleId modules.ModuleID) (*
 	return moduleCtx, nil
 }
 
-func (enclaveCtx *EnclaveContext) ExecuteStartosisScript(serializedScript string) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse, error) {
+func (enclaveCtx *EnclaveContext) ExecuteStartosisScript(serializedScript string) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
 	executeStartosisScriptArgs := binding_constructors.NewExecuteStartosisScriptArgs(serializedScript)
 	executeStartosisResponse, err := enclaveCtx.client.ExecuteStartosisScript(context.Background(), executeStartosisScriptArgs)
 	if err != nil {
@@ -135,7 +135,7 @@ func (enclaveCtx *EnclaveContext) ExecuteStartosisScript(serializedScript string
 	return executeStartosisResponse, nil
 }
 
-func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(moduleRootPath string) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleResponse, error) {
+func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(moduleRootPath string) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
 	kurtosisModFilepath := path.Join(moduleRootPath, modFilename)
 
 	kurtosisMod, err := parseKurtosisMod(kurtosisModFilepath)

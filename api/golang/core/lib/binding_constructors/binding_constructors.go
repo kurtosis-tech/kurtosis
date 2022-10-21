@@ -154,13 +154,13 @@ func NewExecuteStartosisScriptArgs(serializedString string) *kurtosis_core_rpc_a
 	}
 }
 
-func NewExecuteStartosisScriptResponse(
+func NewExecuteStartosisResponse(
 	serializedScriptOutput string,
 	interpretationError string,
 	validationErrors []*kurtosis_core_rpc_api_bindings.StartosisValidationError,
 	executionError string,
-) *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse {
-	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
+) *kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse {
+	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse{
 		SerializedScriptOutput: serializedScriptOutput,
 		InterpretationError:    interpretationError,
 		ValidationErrors:       validationErrors,
@@ -429,16 +429,5 @@ func NewExecuteStartosisModuleArgs(moduleId string, compressedModule []byte) *ku
 	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs{
 		ModuleId: moduleId,
 		Data:     compressedModule,
-	}
-}
-
-func NewExecuteStartosisModuleResponse(
-	execScriptResponse *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse,
-) *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleResponse {
-	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleResponse{
-		SerializedScriptOutput: execScriptResponse.SerializedScriptOutput,
-		InterpretationError:    execScriptResponse.InterpretationError,
-		ValidationErrors:       execScriptResponse.ValidationErrors,
-		ExecutionError:         execScriptResponse.ExecutionError,
 	}
 }

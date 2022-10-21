@@ -63,9 +63,8 @@ import {
     UnpauseServiceArgs,
     StartServicesArgs,
     ExecuteStartosisScriptArgs,
-    ExecuteStartosisScriptResponse,
     ExecuteStartosisModuleArgs,
-    ExecuteStartosisModuleResponse,
+    ExecuteStartosisResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {should} from "chai";
 import {TemplateAndData} from "./template_and_data";
@@ -227,7 +226,7 @@ export class EnclaveContext {
 
     public async executeStartosisModule(
         moduleRootPath: string,
-    ): Promise<Result<ExecuteStartosisModuleResponse, Error>> {
+    ): Promise<Result<ExecuteStartosisResponse, Error>> {
         const kurtosisModFilepath = path.join(moduleRootPath, KURTOSIS_MOD_FILENAME)
         //Check if the kurtosis mod exists
         if (!fs.existsSync(kurtosisModFilepath)) {
@@ -248,7 +247,7 @@ export class EnclaveContext {
         const args = new ExecuteStartosisModuleArgs;
         args.setData(archiverResponse.value)
         args.setModuleId(parsedYAML.module.name)
-        const resultModuleExecution : Result<ExecuteStartosisModuleResponse, Error> = await this.backend.executeStartosisModule(args)
+        const resultModuleExecution : Result<ExecuteStartosisResponse, Error> = await this.backend.executeStartosisModule(args)
         if (resultModuleExecution.isErr()) {
             return err(new Error(`Unexpected error happened executing Startosis module \n${resultModuleExecution.error}`))
         }
@@ -257,10 +256,10 @@ export class EnclaveContext {
 
     public async executeStartosisScript(
             serializedStartosisScript: string,
-        ): Promise<Result<ExecuteStartosisScriptResponse, Error>> {
+        ): Promise<Result<ExecuteStartosisResponse, Error>> {
         const args = new ExecuteStartosisScriptArgs();
         args.setSerializedScript(serializedStartosisScript)
-        const resultScriptExecution : Result<ExecuteStartosisScriptResponse, Error> = await this.backend.executeStartosisScript(args)
+        const resultScriptExecution : Result<ExecuteStartosisResponse, Error> = await this.backend.executeStartosisScript(args)
         if (resultScriptExecution.isErr()) {
             return err(new Error(`Unexpected error happened executing Startosis script \n${resultScriptExecution.error}`))
         }

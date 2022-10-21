@@ -31,7 +31,7 @@ import {
     RenderTemplatesToFilesArtifactArgs,
     RenderTemplatesToFilesArtifactResponse,
     ExecuteStartosisScriptArgs,
-    ExecuteStartosisScriptResponse, ExecuteStartosisModuleArgs, ExecuteStartosisModuleResponse,
+    ExecuteStartosisModuleArgs, ExecuteStartosisResponse
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -97,9 +97,9 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         return ok(unloadModuleResult.value);
     }
 
-    public async executeStartosisScript(serializedStartosisScript: ExecuteStartosisScriptArgs): Promise<Result<ExecuteStartosisScriptResponse, Error>> {
-        const promiseExecuteStartosisScript: Promise<Result<ExecuteStartosisScriptResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.executeStartosisScript(serializedStartosisScript, {}, (error: grpc_web.RpcError | null, response?: ExecuteStartosisScriptResponse) => {
+    public async executeStartosisScript(serializedStartosisScript: ExecuteStartosisScriptArgs): Promise<Result<ExecuteStartosisResponse, Error>> {
+        const promiseExecuteStartosisScript: Promise<Result<ExecuteStartosisResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.executeStartosisScript(serializedStartosisScript, {}, (error: grpc_web.RpcError | null, response?: ExecuteStartosisResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -111,16 +111,16 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
                 }
             })
         })
-        const resultExecuteStartosisScript: Result<ExecuteStartosisScriptResponse, Error> = await promiseExecuteStartosisScript;
+        const resultExecuteStartosisScript: Result<ExecuteStartosisResponse, Error> = await promiseExecuteStartosisScript;
         if (resultExecuteStartosisScript.isErr()) {
             return err(resultExecuteStartosisScript.error)
         }
         return ok(resultExecuteStartosisScript.value)
     }
 
-    public async executeStartosisModule(startosisModuleArgs:ExecuteStartosisModuleArgs): Promise<Result<ExecuteStartosisModuleResponse, Error>> {
-        const promiseExecuteStartosisModule: Promise<Result<ExecuteStartosisModuleResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.executeStartosisModule(startosisModuleArgs, {}, (error: grpc_web.RpcError | null, response?: ExecuteStartosisModuleResponse) => {
+    public async executeStartosisModule(startosisModuleArgs:ExecuteStartosisModuleArgs): Promise<Result<ExecuteStartosisResponse, Error>> {
+        const promiseExecuteStartosisModule: Promise<Result<ExecuteStartosisResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.executeStartosisModule(startosisModuleArgs, {}, (error: grpc_web.RpcError | null, response?: ExecuteStartosisResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -132,7 +132,7 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
                 }
             })
         })
-        const resultExecuteStartosisModule: Result<ExecuteStartosisModuleResponse, Error> = await promiseExecuteStartosisModule;
+        const resultExecuteStartosisModule: Result<ExecuteStartosisResponse, Error> = await promiseExecuteStartosisModule;
         if (resultExecuteStartosisModule.isErr()) {
             return err(resultExecuteStartosisModule.error)
         }
