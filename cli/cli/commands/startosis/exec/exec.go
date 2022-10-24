@@ -16,11 +16,13 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
 const (
 	scriptOrModulePathKey = "script-or-module-path"
+	startosisExtension    = ".star"
 
 	enclaveIdFlagKey                   = "enclave-id"
 	defaultEnclaveId                   = ""
@@ -34,7 +36,8 @@ const (
 var StartosisExecCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:       command_str_consts.StartosisExecCmdStr,
 	ShortDescription: "Execute a Startosis script or module",
-	LongDescription: "Execute a Startosis module or script in an enclave. If the enclave-id param is provided, Kurtosis " +
+	LongDescription: "Execute a Startosis module or script in an enclave. For a script we expect a path to a " + startosisExtension + " file. For a module we expect path to a directory containing kurtosis.mod. " +
+		"If the enclave-id param is provided, Kurtosis " +
 		"will exec the script inside this enclave, or create it if it doesn't exist. If no enclave-id param is " +
 		"provided, Kurtosis will create a new enclave with a default name derived from the script or module name.",
 	Flags: []*flags.FlagConfig{
@@ -59,6 +62,9 @@ var StartosisExecCmd = &lowlevel.LowlevelKurtosisCommand{
 	},
 	Args: []*args.ArgConfig{
 		&args.ArgConfig{
+			// for a module we expect a path to a directory
+			// for a script we expect a script with a `.star` extension
+			// TODO add a `Usage` description here when ArgConfig supports it
 			Key:            scriptOrModulePathKey,
 			IsOptional:     false,
 			DefaultValue:   "",
@@ -116,6 +122,9 @@ func run(
 	}
 
 	if fileOrDir.Mode().IsRegular() {
+		if !strings.HasSuffix(startosisScriptOrModulePath, startosisExtension) {
+			return stacktrace.Propagate(err, "Expected a script with a %s extension but got file '%v' with a different extension", startosisExtension, startosisScriptOrModulePath)
+		}
 		err = executeScript(enclaveCtx, startosisScriptOrModulePath)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred while executing script '%v'", startosisScriptOrModulePath)
