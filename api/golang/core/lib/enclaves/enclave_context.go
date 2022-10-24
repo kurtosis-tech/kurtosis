@@ -145,9 +145,6 @@ func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(moduleRootPath string) 
 	}
 
 	moduleName := kurtosisMod.Module.ModuleName
-	if len(moduleName) == 0 {
-		return nil, stacktrace.NewError("Module Name cannot be empty")
-	}
 
 	compressedModule, err := compressPath(moduleRootPath)
 	if err != nil {

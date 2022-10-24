@@ -26,5 +26,9 @@ func parseKurtosisMod(kurtosisModFilepath string) (*KurtosisMod, error) {
 		return nil, stacktrace.Propagate(err, "An error occurred while parsing the '%v' file at '%v'", modFilename, kurtosisModFilepath)
 	}
 
+	if kurtosisModule.Module.ModuleName == "" {
+		return nil, stacktrace.NewError("Field module.name in %v needs to be set and cannot be empty", modFilename)
+	}
+
 	return &kurtosisModule, nil
 }
