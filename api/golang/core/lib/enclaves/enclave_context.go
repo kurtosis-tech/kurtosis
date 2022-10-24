@@ -48,6 +48,7 @@ const (
 	grpcDataTransferLimit     = 3999000 //3.999 Mb. 1kb wiggle room. 1kb being about the size of a simple 2 paragraph readme.
 	tempCompressionDirPattern = "upload-compression-cache-"
 	compressionExtension      = ".tgz"
+	defaultTmpDir             = ""
 
 	modFilename = "kurtosis.mod"
 )
@@ -698,7 +699,7 @@ func compressPath(pathToCompress string) ([]byte, error) {
 		filepathsToUpload = append(filepathsToUpload, pathToCompress)
 	}
 
-	tempDir, err := ioutil.TempDir("", tempCompressionDirPattern)
+	tempDir, err := ioutil.TempDir(defaultTmpDir, tempCompressionDirPattern)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create temporary directory '%s' for compression.", tempDir)
 	}
