@@ -32,6 +32,9 @@ import {
     newGetUserServiceLogsArgs,
     newStopEnclaveArgs
 } from "../constructor_calls";
+import * as grpc from "@grpc/grpc-js";
+import * as engine_service_pb from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
+import {Stream, Readable} from "stream";
 
 const LOCAL_HOSTNAME: string = "localhost";
 
@@ -222,6 +225,38 @@ export class KurtosisContext {
             }
         )
         return ok(result)
+    }
+
+    public async streamUserServiceLogs(
+        enclaveID: EnclaveID,
+        userServiceGUIDs: Set<ServiceGUID>,
+        callback: () => void
+    ): Promise<Result<Readable, Error>> {
+        const getUserServiceLogsArgs: GetUserServiceLogsArgs = newGetUserServiceLogsArgs(enclaveID, userServiceGUIDs);
+
+        const streamUserServiceLogsResult = await this.client.streamUserServiceLogs(getUserServiceLogsArgs)
+        if(streamUserServiceLogsResult.isErr()){
+            return err(streamUserServiceLogsResult.error)
+        }
+
+        const streamUserServiceLogsResponse: grpc.ClientReadableStream<engine_service_pb.GetUserServiceLogsResponse> = streamUserServiceLogsResult.value
+
+        const readableStream = new Stream.Readable();
+
+        streamUserServiceLogsResponse.on('data', function(getUserServiceLogsResponse: GetUserServiceLogsResponse) {
+            getUserServiceLogsResponse.getUserServiceLogsByUserServiceGuidMap().forEach(
+                (userServiceLogLine, userServiceGUIDStr) => {
+                    const userServiceLogLinesByServiceGuid: Map<ServiceGUID, Array<string>> = new Map<ServiceGUID, Array<string>>;
+                    userServiceLogLinesByServiceGuid.set(userServiceGUIDStr, userServiceLogLine.getLineList());
+                    readableStream.push(userServiceLogLinesByServiceGuid)
+                }
+            )
+        });
+        streamUserServiceLogsResponse.on('end', callback);
+
+        readableStream.read()
+
+        return ok(readableStream)
     }
 
 

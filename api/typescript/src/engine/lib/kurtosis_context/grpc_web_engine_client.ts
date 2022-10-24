@@ -16,6 +16,8 @@ import type {
     GetUserServiceLogsResponse
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 import {NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG} from "../consts";
+import * as grpc from "@grpc/grpc-js";
+import * as engine_service_pb from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 
 export class GrpcWebEngineClient implements GenericEngineClient {
     private readonly client: EngineServiceClientWeb
@@ -185,5 +187,19 @@ export class GrpcWebEngineClient implements GenericEngineClient {
         }
 
         return ok(getUserServiceLogsResponseResult.value);
+    }
+
+    public async streamUserServiceLogs(getUserServiceLogsArgs: GetUserServiceLogsArgs): Promise<Result<grpc.ClientReadableStream<GetUserServiceLogsResponse>, Error>> {
+        const streamUserServiceLogsPromise: Promise<Result<grpc.ClientReadableStream<engine_service_pb.GetUserServiceLogsResponse>, Error>> = new Promise((resolve, _unusedReject) => {
+            const getUserServiceLogsStreamResponse: grpc.ClientReadableStream<engine_service_pb.GetUserServiceLogsResponse> = this.client.streamUserServiceLogs(getUserServiceLogsArgs)
+            resolve(ok(getUserServiceLogsStreamResponse))
+        })
+
+        const streamUserServiceLogsResponseResult: Result<grpc.ClientReadableStream<engine_service_pb.GetUserServiceLogsResponse>, Error> = await streamUserServiceLogsPromise;
+        if (streamUserServiceLogsResponseResult.isErr()){
+            return err(streamUserServiceLogsResponseResult.error);
+        }
+
+        return ok(streamUserServiceLogsResponseResult.value);
     }
 }
