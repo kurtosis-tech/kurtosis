@@ -3,6 +3,7 @@ package exec
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
@@ -31,6 +32,9 @@ const (
 
 	isPartitioningEnabledFlagKey = "with-partitioning"
 	defaultIsPartitioningEnabled = false
+
+	scriptArgForLogging = "script"
+	moduleArgForLogging = "module"
 )
 
 var StartosisExecCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -167,17 +171,11 @@ func executeScript(enclaveCtx *enclaves.EnclaveContext, scriptPath string) error
 		return stacktrace.Propagate(err, "An unexpected error occurred executing the Startosis script '%s'", scriptPath)
 	}
 
-	if executionResponse.InterpretationError != "" {
-		return stacktrace.NewError("There was an error interpreting the Startosis script '%s': \n%v", scriptPath, executionResponse.InterpretationError)
-	}
-	if len(executionResponse.ValidationErrors) > 0 {
-		return stacktrace.NewError("There was an error validating the Startosis script '%s': \n%v", scriptPath, executionResponse.ValidationErrors)
-	}
-	if executionResponse.ExecutionError != "" {
-		return stacktrace.NewError("There was an error executing the Startosis script '%s': \n%v", scriptPath, executionResponse.ExecutionError)
+	err = validateExecutionResponse(executionResponse, scriptPath, scriptArgForLogging)
+	if err != nil {
+		return stacktrace.Propagate(err, "Ran into a few errors while interpreting, validating or executing the script '%v'", scriptPath)
 	}
 
-	logrus.Infof("Startosis script executed successfully. Output of the script was: \n%v", executionResponse.SerializedScriptOutput)
 	return nil
 }
 
@@ -188,17 +186,26 @@ func executeModule(enclaveCtx *enclaves.EnclaveContext, modulePath string) error
 		return stacktrace.Propagate(err, "An unexpected error occurred executing the Startosis module '%s'", modulePath)
 	}
 
-	if executionResponse.InterpretationError != "" {
-		return stacktrace.NewError("There was an error interpreting the Startosis module '%s': \n%v", modulePath, executionResponse.InterpretationError)
-	}
-	if len(executionResponse.ValidationErrors) > 0 {
-		return stacktrace.NewError("There was an error validating the Startosis module '%s': \n%v", modulePath, executionResponse.ValidationErrors)
-	}
-	if executionResponse.ExecutionError != "" {
-		return stacktrace.NewError("There was an error executing the Startosis module '%s': \n%v", modulePath, executionResponse.ExecutionError)
+	err = validateExecutionResponse(executionResponse, modulePath, moduleArgForLogging)
+	if err != nil {
+		return stacktrace.Propagate(err, "Ran into a few errors while interpreting, validating or executing the module '%v'", modulePath)
 	}
 
-	logrus.Infof("Startosis script executed successfully. Output of the module was: \n%v", executionResponse.SerializedScriptOutput)
+	return nil
+}
+
+func validateExecutionResponse(executionResponse *kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, scriptOrModulePath string, scriptOrModuleArg string) error {
+	if executionResponse.InterpretationError != "" {
+		return stacktrace.NewError("There was an error interpreting the Startosis %s '%s': \n%v", scriptOrModulePath, scriptOrModuleArg, executionResponse.InterpretationError)
+	}
+	if len(executionResponse.ValidationErrors) > 0 {
+		return stacktrace.NewError("There was an error validating the Startosis %s '%s': \n%v", scriptOrModulePath, scriptOrModuleArg, executionResponse.ValidationErrors)
+	}
+	if executionResponse.ExecutionError != "" {
+		return stacktrace.NewError("There was an error executing the Startosis %s '%s': \n%v", scriptOrModulePath, scriptOrModuleArg, executionResponse.ExecutionError)
+	}
+
+	logrus.Infof("Startosis %s executed successfully. Output of the module was: \n%v", scriptOrModuleArg, executionResponse.SerializedScriptOutput)
 	return nil
 }
 
