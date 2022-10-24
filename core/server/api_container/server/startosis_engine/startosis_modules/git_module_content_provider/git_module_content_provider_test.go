@@ -7,15 +7,15 @@ import (
 )
 
 const (
-	moduleDirRelPath    = "startosis-modules"
-	moduleTmpDirRelPath = "tmp-startosis-modules"
+	modulesDirRelPath    = "startosis-modules"
+	modulesTmpDirRelPath = "tmp-startosis-modules"
 )
 
 func TestGitModuleProvider_SucceedsForValidModule(t *testing.T) {
-	moduleDir, err := os.MkdirTemp("", moduleDirRelPath)
+	moduleDir, err := os.MkdirTemp("", modulesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(moduleDir)
-	moduleTmpDir, err := os.MkdirTemp("", moduleTmpDirRelPath)
+	moduleTmpDir, err := os.MkdirTemp("", modulesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(moduleTmpDir)
 
@@ -27,11 +27,27 @@ func TestGitModuleProvider_SucceedsForValidModule(t *testing.T) {
 	require.Equal(t, "a = \"World!\"\n", contents)
 }
 
-func TestGitModuleProvider_FailsForNonExistentModule(t *testing.T) {
-	moduleDir, err := os.MkdirTemp("", moduleDirRelPath)
+func TestGitModuleProvider_SucceedsForNonStartosisFile(t *testing.T) {
+	moduleDir, err := os.MkdirTemp("", modulesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(moduleDir)
-	moduleTmpDir, err := os.MkdirTemp("", moduleTmpDirRelPath)
+	moduleTmpDir, err := os.MkdirTemp("", modulesTmpDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(moduleTmpDir)
+
+	provider := NewGitModuleContentProvider(moduleDir, moduleTmpDir)
+
+	sampleStartosisModule := "github.com/kurtosis-tech/eth2-merge-kurtosis-module/kurtosis-module/static_files/prometheus-config/prometheus.yml.tmpl"
+	contents, err := provider.GetModuleContents(sampleStartosisModule)
+	require.Nil(t, err)
+	require.NotEmpty(t, contents)
+}
+
+func TestGitModuleProvider_FailsForNonExistentModule(t *testing.T) {
+	moduleDir, err := os.MkdirTemp("", modulesDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(moduleDir)
+	moduleTmpDir, err := os.MkdirTemp("", modulesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(moduleTmpDir)
 
