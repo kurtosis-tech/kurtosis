@@ -172,7 +172,7 @@ func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.Fact
 	if recipe.GetConstantFact() != nil {
 		return recipe.GetConstantFact().GetFactValue(), nil
 	}
-	return nil, fmt.Errorf("an error ocurred when running recipe")
+	return nil, stacktrace.NewError("An error occurred when running recipe")
 }
 
 func (engine *FactsEngine) updateFactValue(factId string, timestamp string, value []byte) error {
