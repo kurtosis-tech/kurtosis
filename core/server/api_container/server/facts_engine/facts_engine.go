@@ -22,10 +22,10 @@ var (
 	factRecipesBucketName = []byte("fact_recipes")
 )
 
-func NewFactsEngine(db *bolt.DB, recipeChanel chan *kurtosis_core_rpc_api_bindings.FactRecipe) *FactsEngine {
+func NewFactsEngine(db *bolt.DB) *FactsEngine {
 	return &FactsEngine{
 		db,
-		recipeChanel,
+		make(chan *kurtosis_core_rpc_api_bindings.FactRecipe),
 		[]chan bool{},
 	}
 }
@@ -39,9 +39,14 @@ func (engine *FactsEngine) Start() {
 }
 
 func (engine *FactsEngine) Stop() {
+	close(engine.recipeChannel)
 	for _, doneChannel := range engine.doneChannelList {
 		doneChannel <- true
 	}
+}
+
+func (engine *FactsEngine) PushRecipe(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) {
+	engine.recipeChannel <- recipe
 }
 
 func (engine *FactsEngine) FetchLatestFactValue(factId string) (string, *kurtosis_core_rpc_api_bindings.FactValue, error) {
