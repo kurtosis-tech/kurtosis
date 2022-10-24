@@ -263,6 +263,9 @@ func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Contex
 		return nil, stacktrace.Propagate(err, "An error occurred while verifying that '%v' exists on root of module '%v' at '%v'", mainStartosisFile, moduleId, pathToMainFile)
 	}
 
+	// This is the boot script! We do it this way as if we were to interpret the main file,
+	// we'd only read the symbols, and maybe there's nothing that calls in `main()`
+	// This way, we're guaranteed that the `main()` function gets called within main.star
 	scriptWithMainToExecute := `
 load("` + moduleId + `/` + mainStartosisFile + `", "main")
 main()
