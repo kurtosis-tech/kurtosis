@@ -66,12 +66,9 @@ import {
     ExecuteStartosisModuleArgs,
     ExecuteStartosisResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
-import {should} from "chai";
 import {TemplateAndData} from "./template_and_data";
 import * as path from "path";
-import * as fs from "fs";
-import * as yaml from "js-yaml";
-import {KurtosisMod} from "./kurtosis_mod";
+import {parseKurtosisMod} from "./kurtosis_mod";
 
 export type EnclaveID = string;
 export type PartitionID = string;
@@ -82,7 +79,6 @@ const DEFAULT_PARTITION_ID: PartitionID = "";
 
 const KURTOSIS_MOD_FILENAME = "kurtosis.mod";
 
-const UTF8_ENCODING = "utf-8";
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class EnclaveContext {
@@ -228,16 +224,12 @@ export class EnclaveContext {
         moduleRootPath: string,
     ): Promise<Result<ExecuteStartosisResponse, Error>> {
         const kurtosisModFilepath = path.join(moduleRootPath, KURTOSIS_MOD_FILENAME)
-        //Check if the kurtosis mod exists
-        if (!fs.existsSync(kurtosisModFilepath)) {
-            return err(new Error(`The file '${kurtosisModFilepath}' does not exist.`))
-        }
-        const kurtosisModFile = fs.readFileSync(kurtosisModFilepath, UTF8_ENCODING)
-        const parsedYAML = (yaml.load(kurtosisModFile) as KurtosisMod)
 
-        if (parsedYAML.module === undefined || parsedYAML.module.name === undefined || parsedYAML.module.name === "") {
-            return err(new Error(`The module.name property does not exist or is empty.`))
+        const  resultParseKurtosisMod = await parseKurtosisMod(kurtosisModFilepath)
+        if (resultParseKurtosisMod.isErr()) {
+            return err(resultParseKurtosisMod.error)
         }
+        const kurtosisMod = resultParseKurtosisMod.value
 
         const archiverResponse = await this.genericTgzArchiver.createTgzByteArray(moduleRootPath)
         if (archiverResponse.isErr()){
@@ -246,7 +238,7 @@ export class EnclaveContext {
 
         const args = new ExecuteStartosisModuleArgs;
         args.setData(archiverResponse.value)
-        args.setModuleId(parsedYAML.module.name)
+        args.setModuleId(kurtosisMod.module.name)
         const resultModuleExecution : Result<ExecuteStartosisResponse, Error> = await this.backend.executeStartosisModule(args)
         if (resultModuleExecution.isErr()) {
             return err(new Error(`Unexpected error happened executing Startosis module \n${resultModuleExecution.error}`))
