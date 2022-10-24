@@ -13,6 +13,7 @@ const (
 	moduleDirPermission         = 0755
 	temporaryRepoDirPattern     = "tmp-repo-dir-*"
 	temporaryArchiveFilePattern = "temp-module-archive-*.tgz"
+	defaultTmpDir               = ""
 )
 
 type GitModuleContentProvider struct {
@@ -69,7 +70,7 @@ func (provider *GitModuleContentProvider) StoreModuleContents(moduleId string, m
 		return "", stacktrace.NewError("Module '%v' already exists on disk, not overwriting", modulePathOnDisk)
 	}
 
-	tempFile, err := os.CreateTemp("", temporaryArchiveFilePattern)
+	tempFile, err := os.CreateTemp(defaultTmpDir, temporaryArchiveFilePattern)
 	if err != nil {
 		return "", stacktrace.NewError("An error occurred while creating temporary file to write compressed '%v' to", moduleId)
 	}
