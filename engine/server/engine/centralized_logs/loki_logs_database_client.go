@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/websocket"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_database_functions/implementations/loki"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_database_functions/implementations/loki/tags"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
@@ -13,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -22,30 +24,39 @@ import (
 const (
 	defaultHttpClientTimeOut = 1 * time.Minute
 
-	httpProtocol              = "http://"
+	httpScheme                = "http"
+	websocketScheme           = "ws"
 	baseLokiApiPath           = "/loki/api/v1"
 	queryRangeEndpointSubpath = "/query_range"
+	tailEndpointSubpath       = "/tail"
 
 	//the global retention period store logs for 30 days = 720h.
 	maxRetentionPeriodHours = loki.LimitsRetentionPeriodHours * time.Hour
+
 
 	//We use this header because we are using the Loki multi-tenancy feature to split logs by the EnclaveID
 	//Read more about it here: https://grafana.com/docs/loki/latest/operations/multi-tenancy/
 	//tenantID = enclaveID
 	organizationIdHttpHeaderKey = "X-Scope-OrgID"
 
-	startTimeQueryParamKey = "start"
-	queryLogsQueryParamKey = "query"
+	startTimeQueryParamKey    = "start"
+	queryLogsQueryParamKey    = "query"
 	entriesLimitQueryParamKey = "limit"
-	directionQueryParamKey = "direction"
+	directionQueryParamKey    = "direction"
+	delayForQueryParamKey     = "delay_for"
 
 	//We are establishing a big limit in order to get all the user-service's logs in one request
 	//We will improve this in the future generating a pagination mechanism based on the limit number
 	//and the unix epoch time (as the start time for the next request) returned by newest stream's log line
 	//We chose 4k because 4000 x 1kb lines = 4 MB, which is just under the Protobuf limit of 5MB
 	defaultEntriesLimit = "4000"
+	//For tailing logs a lower entries limit is established because the websocket endpoint will be constantly streaming the new lines
+	defaultEntriesLimitForTailingLogs = "100"
 	//The oldest item is first when using direction=forward
 	defaultDirection = "forward"
+
+	//The number of seconds to delay retrieving logs to let slow loggers catch up. Defaults to 0 and cannot be larger than 5.
+	defaultDelayForSeconds = "0"
 
 	disjunctionTagOperator = "|"
 
@@ -55,6 +66,8 @@ const (
 
 	streamValueLogLineIndex = 1
 
+	//Left the connection open from the server-side for 4 days
+	maxAllowedWebsocketConnectionDurationOnServerSide = loki.TailMaxDurationHours * time.Hour
 )
 
 // A backoff schedule for when and how often to retry failed HTTP
@@ -72,15 +85,13 @@ var httpRetriesBackoffSchedule = []time.Duration{
 type lokiQueryRangeResponse struct {
 	Status string `json:"status"`
 	Data   *struct {
-		ResultType string `json:"resultType"`
-		Result     []struct {
-			Stream struct {
-				KurtosisContainerType string `json:"comKurtosistechContainerType"`
-				KurtosisGUID          string `json:"comKurtosistechGuid"`
-			} `json:"stream"`
-			Values [][]string `json:"values"`
-		} `json:"result"`
+		ResultType string            `json:"resultType"`
+		Result     []lokiStreamValue `json:"result"`
 	} `json:"data"`
+}
+
+type lokiStreamLogsResponse struct {
+	Streams []lokiStreamValue `json:"streams"`
 }
 
 type logLine struct {
@@ -90,6 +101,13 @@ type logLine struct {
 type lokiLogsDatabaseClient struct {
 	logsDatabaseAddress string
 	httpClient          httpClient
+}
+type lokiStreamValue struct {
+	Stream struct {
+		KurtosisContainerType string `json:"comKurtosistechContainerType"`
+		KurtosisGUID          string `json:"comKurtosistechGuid"`
+	} `json:"stream"`
+	Values [][]string `json:"values"`
 }
 
 func NewLokiLogsDatabaseClient(logsDatabaseAddress string, httpClient httpClient) *lokiLogsDatabaseClient {
@@ -104,33 +122,31 @@ func NewLokiLogsDatabaseClientWithDefaultHttpClient(logsDatabaseAddress string) 
 func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
-	userServiceGuids map[service.ServiceGUID]bool,
-) (map[service.ServiceGUID][]string, error) {
+	userServiceGUIDs map[service.ServiceGUID]bool,
+) (
+	map[service.ServiceGUID][]string,
+	error,
+) {
 
 	resultLogsByKurtosisUserServiceGuid := map[service.ServiceGUID][]string{}
 
 	httpHeaderWithTenantID := http.Header{}
 	httpHeaderWithTenantID.Add(organizationIdHttpHeaderKey, string(enclaveID))
 
-	kurtosisGuid := []string{}
-	for userServiceGuid := range userServiceGuids {
-		kurtosisGuid = append(kurtosisGuid, string(userServiceGuid))
+	kurtosisGuids := []string{}
+	for userServiceGuid := range userServiceGUIDs {
+		kurtosisGuids = append(kurtosisGuids, string(userServiceGuid))
 	}
 
 	maxRetentionLogsTimeParamValue := getMaxRetentionLogsTimeParamValue()
 
 	userServiceContainerTypeDockerValue := label_value_consts.UserServiceContainerTypeDockerLabelValue.GetString()
 
-	queryParamValue := getQueryParamValue(userServiceContainerTypeDockerValue, kurtosisGuid)
+	queryParamValue := getQueryParamValue(userServiceContainerTypeDockerValue, kurtosisGuids)
 
 	getLogsPath := baseLokiApiPath + queryRangeEndpointSubpath
 
-	queryRangeEndpointUrlStr := fmt.Sprintf("%v%v%v", httpProtocol, client.logsDatabaseAddress, getLogsPath)
-
-	queryRangeEndpointUrl, err := url.Parse(queryRangeEndpointUrlStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred parsing url string '%v'", queryRangeEndpointUrlStr)
-	}
+	queryRangeEndpointUrl := &url.URL{Scheme: httpScheme, Host: client.logsDatabaseAddress, Path: getLogsPath}
 
 	queryRangeEndpointQuery := queryRangeEndpointUrl.Query()
 
@@ -162,28 +178,97 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 		return nil, stacktrace.Propagate(err, "The response body's schema payload received '%+v' by calling the Loki's query range endpoint is not what was expected; this is a bug in Kurtosis", lokiQueryRangeResponseObj)
 	}
 
-	for _, queryRangeResult := range lokiQueryRangeResponseObj.Data.Result {
-		resultKurtosisGuidStr := queryRangeResult.Stream.KurtosisGUID
-		resultKurtosisGuid := service.ServiceGUID(resultKurtosisGuidStr)
-		resultKurtosisGuidLogLinesStr := make([]string, len(queryRangeResult.Values))
-		for queryRangeIndex, queryRangeValue := range queryRangeResult.Values {
-			logLineStr, err := getLogLineStrFromStreamValue(queryRangeValue)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred getting log line string from stream value '%+v'", queryRangeValue)
-			}
-			resultKurtosisGuidLogLinesStr[queryRangeIndex] = logLineStr
-		}
-		resultLogsByKurtosisUserServiceGuid[resultKurtosisGuid] = resultKurtosisGuidLogLinesStr
-	}
+	lokiStreams := lokiQueryRangeResponseObj.Data.Result
 
+	resultLogsByKurtosisUserServiceGuid, err = newUserServiceLogLinesByUserServiceGuidFromLokiStreams(lokiStreams)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service log lines from loki streams '%+v'", lokiStreams)
+	}
 
 	return resultLogsByKurtosisUserServiceGuid, nil
 }
 
+func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
+	ctx context.Context,
+	enclaveID enclave.EnclaveID,
+	userServiceGUIDs map[service.ServiceGUID]bool,
+) (
+	chan map[service.ServiceGUID][]string,
+	chan error,
+	error,
+) {
+
+	tailLogsEndpointURL, httpHeaderWithTenantID := client.getTailLogEndpointURLAndHeader(enclaveID, userServiceGUIDs)
+
+	websocketDeadlineTime := getWebsocketDeadlineTime()
+
+	websocketCallCtxWithDeadline, websocketCallCtxCancelFunc := context.WithDeadline(ctx, websocketDeadlineTime)
+
+	logsByKurtosisUserServiceGuidChan := make(chan map[service.ServiceGUID][]string, 2)
+	errChan := make(chan error, 2)
+
+	tailLogsWebsocketConn, tailLogsHttpResponse, err := websocket.DefaultDialer.DialContext(websocketCallCtxWithDeadline, tailLogsEndpointURL.String(), httpHeaderWithTenantID)
+	if err != nil {
+		websocketCallCtxCancelFunc()
+		errMsg := fmt.Sprintf("An error occurred calling the logs-database-tail-logs-endpoint with URL '%v' using headers '%+v'", tailLogsEndpointURL.String(), httpHeaderWithTenantID)
+		if tailLogsHttpResponse != nil {
+			errMsg = errMsg + fmt.Sprintf("; the '%v' status code was received from the server", tailLogsHttpResponse.StatusCode)
+		}
+		return nil, nil, stacktrace.Propagate(err, errMsg)
+	}
+	//We can't defer the websocket connection close method here because we need the connection open after returning
+
+	if err = tailLogsWebsocketConn.SetReadDeadline(websocketDeadlineTime); err != nil {
+		websocketCallCtxCancelFunc()
+		return nil, nil, stacktrace.Propagate(err, "An error occurred setting the websocket read deadline time '%v'", websocketDeadlineTime.String())
+	}
+
+	go func() {
+	sendStreamLogsLoop:
+		for {
+			select {
+			case <-websocketCallCtxWithDeadline.Done():
+				errChan <- stacktrace.Propagate(websocketCallCtxWithDeadline.Err(), "An error occurred streaming user service logs from the Loki logs database client, the stream context has done")
+				break sendStreamLogsLoop
+			default:
+				streamResponse := &lokiStreamLogsResponse{}
+
+				if err = tailLogsWebsocketConn.ReadJSON(streamResponse); err != nil {
+					logrus.Debugf("Reading the tail logs streams response has retunerd the following error:\n'%v'", err)
+					readTailLogsStreamsJsonErr := stacktrace.Propagate(err, "An error occurred reading the websocket endpoint")
+					if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+						logrus.Debugf("Reading the tail logs streams has reached the time out, error description:\n'%v'", err)
+					}
+					errChan <- readTailLogsStreamsJsonErr
+					break sendStreamLogsLoop
+				}
+
+				resultLogsByKurtosisUserServiceGuid, err := newUserServiceLogLinesByUserServiceGuidFromLokiStreams(streamResponse.Streams)
+				if err != nil {
+					errChan <-  stacktrace.Propagate(err, "An error occurred getting user service log lines from loki streams '%+v'", streamResponse.Streams)
+					break sendStreamLogsLoop
+				}
+				logsByKurtosisUserServiceGuidChan <- resultLogsByKurtosisUserServiceGuid
+			}
+		}
+
+		//Closing open resources
+		websocketCallCtxCancelFunc()
+		if err := tailLogsWebsocketConn.Close(); err != nil {
+			logrus.Warnf("We tried to close the tail logs websocket connection, but doing so threw an error:\n%v", err)
+		}
+		close(logsByKurtosisUserServiceGuidChan)
+		close(errChan)
+	}()
+
+	return logsByKurtosisUserServiceGuidChan, errChan, nil
+}
+
+
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func (client *lokiLogsDatabaseClient) doHttpRequestWithRetries(request *http.Request) ([]byte, error)  {
+func (client *lokiLogsDatabaseClient) doHttpRequestWithRetries(request *http.Request) ([]byte, error) {
 
 	var (
 		httpResponse          *http.Response
@@ -221,18 +306,17 @@ func (client *lokiLogsDatabaseClient) doHttpRequestWithRetries(request *http.Req
 	return nil, stacktrace.NewError("The request '%+v' could not be executed successfully, even after applying this retry backoff schedule '%+v', the status code '%v' and body '%v' were the last one received", request, httpRetriesBackoffSchedule, httpResponse.StatusCode, string(httpResponseBodyBytes))
 }
 
-
 func (client *lokiLogsDatabaseClient) doHttpRequest(
 	request *http.Request,
 ) (
 	resultResponse *http.Response,
 	resultResponseBodyBytes []byte,
 	resultErr error,
-)  {
+) {
 
 	var (
 		httpResponseBodyBytes []byte
-		err error
+		err                   error
 	)
 
 	httpResponse, err := client.httpClient.Do(request)
@@ -291,7 +375,71 @@ func getKurtosisGuidParamValues(kurtosisGuids []string) string {
 	return kurtosisGuidsParamValues
 }
 
-func getLogLineStrFromStreamValue(streamValue []string) (string, error) {
+func (client *lokiLogsDatabaseClient) getTailLogEndpointURLAndHeader(
+	enclaveID enclave.EnclaveID,
+	userServiceGuids map[service.ServiceGUID]bool,
+) (url.URL, http.Header) {
+
+	kurtosisGuids := []string{}
+	for userServiceGuid := range userServiceGuids {
+		kurtosisGuids = append(kurtosisGuids, string(userServiceGuid))
+	}
+
+	maxRetentionLogsTimeForTailingLogsParamValue := getStartTimeForStreamingLogsParaValue()
+
+	userServiceContainerTypeDockerValue := label_value_consts.UserServiceContainerTypeDockerLabelValue.GetString()
+
+	queryParamValue := getQueryParamValue(userServiceContainerTypeDockerValue, kurtosisGuids)
+
+	tailLogsPath := baseLokiApiPath + tailEndpointSubpath
+
+	tailLogsEndpointUrl := url.URL{Scheme: websocketScheme, Host: client.logsDatabaseAddress, Path: tailLogsPath}
+
+	tailLogsEndpointQuery := tailLogsEndpointUrl.Query()
+
+	tailLogsEndpointQuery.Set(queryLogsQueryParamKey, queryParamValue)
+	tailLogsEndpointQuery.Set(delayForQueryParamKey, defaultDelayForSeconds)
+	tailLogsEndpointQuery.Set(entriesLimitQueryParamKey, defaultEntriesLimitForTailingLogs)
+	tailLogsEndpointQuery.Set(startTimeQueryParamKey, maxRetentionLogsTimeForTailingLogsParamValue)
+
+	tailLogsEndpointUrl.RawQuery = tailLogsEndpointQuery.Encode()
+
+	httpHeaderWithTenantID := http.Header{}
+	httpHeaderWithTenantID.Add(organizationIdHttpHeaderKey, string(enclaveID))
+
+	return tailLogsEndpointUrl, httpHeaderWithTenantID
+}
+
+func getStartTimeForStreamingLogsParaValue() string {
+	now := time.Now()
+	startTime := now.Add(-time.Hour)
+	startTimeNano := startTime.UnixNano()
+	startTimeNanoStr := fmt.Sprintf("%v", startTimeNano)
+	return startTimeNanoStr
+}
+
+func newUserServiceLogLinesByUserServiceGuidFromLokiStreams(lokiStreams []lokiStreamValue) (map[service.ServiceGUID][]string, error) {
+
+	resultLogsByKurtosisUserServiceGuid := map[service.ServiceGUID][]string{}
+
+	for _, queryRangeResult := range lokiStreams {
+		resultKurtosisGuidStr := queryRangeResult.Stream.KurtosisGUID
+		resultKurtosisGuid := service.ServiceGUID(resultKurtosisGuidStr)
+		resultKurtosisGuidLogLinesStr := make([]string, len(queryRangeResult.Values))
+		for queryRangeIndex, queryRangeValue := range queryRangeResult.Values {
+			logLineStr, err := newLogLineStrFromStreamValue(queryRangeValue)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred getting log line string from stream value '%+v'", queryRangeValue)
+			}
+			resultKurtosisGuidLogLinesStr[queryRangeIndex] = logLineStr
+		}
+		resultLogsByKurtosisUserServiceGuid[resultKurtosisGuid] = resultKurtosisGuidLogLinesStr
+	}
+
+	return resultLogsByKurtosisUserServiceGuid, nil
+}
+
+func newLogLineStrFromStreamValue(streamValue []string) (string, error) {
 	if len(streamValue) > streamValueNumOfItems {
 		return "", stacktrace.NewError("The stream value '%+v' should contains only 2 items but '%v' items were found, this should never happen; this is a bug in Kurtosis", streamValue, len(streamValue))
 	}
@@ -305,4 +453,10 @@ func getLogLineStrFromStreamValue(streamValue []string) (string, error) {
 	}
 
 	return logLineObj.Log, nil
+}
+
+func getWebsocketDeadlineTime() time.Time {
+	now := time.Now()
+	deadlineTime := now.Add(maxAllowedWebsocketConnectionDurationOnServerSide)
+	return deadlineTime
 }

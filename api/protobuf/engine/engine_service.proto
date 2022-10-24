@@ -25,6 +25,8 @@ service EngineService {
   rpc Clean(CleanArgs) returns (CleanResponse) {};
   // Get user service logs
   rpc GetUserServiceLogs(GetUserServiceLogsArgs) returns (GetUserServiceLogsResponse) {};
+  // Stream user service stream logs
+  rpc StreamUserServiceLogs(GetUserServiceLogsArgs) returns (stream GetUserServiceLogsResponse) {};
 }
 
 // ==============================================================================================

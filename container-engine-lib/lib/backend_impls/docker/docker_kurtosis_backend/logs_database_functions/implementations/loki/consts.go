@@ -79,5 +79,10 @@ const (
 	ingesterWalDirpath         = dirpath + "/wal"
 	flushIngesterWalOnShutdown = true //It's useful for graceful shutdowns
 	checkpointDuration         = "1s" //It's useful for ungraceful shutdowns, whe the server is restarted the WAL loads the last checkpoint saved
+
+	//Maximum duration for which the live tailing requests should be served. More here: https://grafana.com/docs/loki/latest/configuration/#querier
+	//Left the connection open from the server-side for 4 days
+	TailMaxDurationHours = 96
+	tailMaxDurationHoursIndicator = "h"
 	////////////////////////--FINISH--LOKI CONFIGURATION SECTION--/////////////////////////////
 )

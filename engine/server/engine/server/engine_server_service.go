@@ -146,31 +146,71 @@ func (service *EngineServerService) GetUserServiceLogs(
 ) (*kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse, error) {
 	enclaveId := enclave.EnclaveID(args.GetEnclaveId())
 	userServiceGuidsStr := args.GetServiceGuidSet()
-	userServiceGuids := make(map[user_service.ServiceGUID]bool, len(userServiceGuidsStr))
+	requestedUserServiceGuids := make(map[user_service.ServiceGUID]bool, len(userServiceGuidsStr))
 
 	for userServiceGuidStr := range userServiceGuidsStr {
 		userServiceGuid := user_service.ServiceGUID(userServiceGuidStr)
-		userServiceGuids[userServiceGuid] = true
+		requestedUserServiceGuids[userServiceGuid] = true
 	}
 
-	userServiceLogsByUserServiceGuid, err := service.logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, userServiceGuids)
+	userServiceLogsByUserServiceGuid, err := service.logsDatabaseClient.GetUserServiceLogs(ctx, enclaveId, requestedUserServiceGuids)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user service logs for GUIDs '%+v' in enclave with ID '%v'", userServiceGuids, enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service logs for GUIDs '%+v' in enclave with ID '%v'", requestedUserServiceGuids, enclaveId)
 	}
 
-	userServiceLogLinesByUserServiceGuid := make(map[string]*kurtosis_engine_rpc_api_bindings.LogLine, len(userServiceLogsByUserServiceGuid))
+	getUserServiceLogsResponse := newUserLogsResponseFromUserServiceLogsByGuid(requestedUserServiceGuids, userServiceLogsByUserServiceGuid)
 
-	for userServiceGuid := range userServiceGuids {
+	return getUserServiceLogsResponse, nil
+
+}
+
+func (service *EngineServerService) StreamUserServiceLogs(
+	args *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsArgs,
+	stream kurtosis_engine_rpc_api_bindings.EngineService_StreamUserServiceLogsServer,
+) error {
+
+	enclaveId := enclave.EnclaveID(args.GetEnclaveId())
+	userServiceGuidsStr := args.GetServiceGuidSet()
+	requestedUserServiceGuids := make(map[user_service.ServiceGUID]bool, len(userServiceGuidsStr))
+
+	for userServiceGuidStr := range userServiceGuidsStr {
+		userServiceGuid := user_service.ServiceGUID(userServiceGuidStr)
+		requestedUserServiceGuids[userServiceGuid] = true
+	}
+
+	userServiceLogsByServiceGuidChan, errChan, err := service.logsDatabaseClient.StreamUserServiceLogs(stream.Context(), enclaveId, requestedUserServiceGuids)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred streaming user service logs for GUIDs '%+v' in enclave with ID '%v'", requestedUserServiceGuids, enclaveId)
+	}
+
+	for  {
+		select {
+		case userServiceLogsByServiceGuid := <-userServiceLogsByServiceGuidChan:
+			getUserServiceLogsResponse := newUserLogsResponseFromUserServiceLogsByGuid(requestedUserServiceGuids, userServiceLogsByServiceGuid)
+			if err = stream.Send(getUserServiceLogsResponse); err != nil {
+				return stacktrace.Propagate(err, "An error occurred sending the stream logs for user service logs response '%+v'", getUserServiceLogsResponse)
+			}
+		case <-stream.Context().Done():
+			return stacktrace.Propagate(stream.Context().Err(), "An error occurred streaming user service logs, the stream context has done")
+		case errFromChan := <- errChan:
+			return stacktrace.Propagate(errFromChan, "An error occurred streaming user service logs")
+		}
+	}
+}
+
+func newUserLogsResponseFromUserServiceLogsByGuid(requestedUserServiceGuids map[user_service.ServiceGUID]bool, userServiceLogsByUserServiceGuid map[user_service.ServiceGUID][]string) *kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse {
+	userServiceLogLinesByGuid := make(map[string]*kurtosis_engine_rpc_api_bindings.LogLine, len(userServiceLogsByUserServiceGuid))
+
+	for userServiceGuid := range requestedUserServiceGuids {
 		userServiceGuidStr := string(userServiceGuid)
 		userServiceLogLinesStr, found := userServiceLogsByUserServiceGuid[userServiceGuid]
 		if !found {
-			userServiceLogLinesByUserServiceGuid[userServiceGuidStr] = &kurtosis_engine_rpc_api_bindings.LogLine{}
+			userServiceLogLinesByGuid[userServiceGuidStr] = &kurtosis_engine_rpc_api_bindings.LogLine{}
 		}
 		logLines := &kurtosis_engine_rpc_api_bindings.LogLine{Line: userServiceLogLinesStr}
-		userServiceLogLinesByUserServiceGuid[userServiceGuidStr] = logLines
+		userServiceLogLinesByGuid[userServiceGuidStr] = logLines
 	}
 
-	response := &kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse{UserServiceLogsByUserServiceGuid: userServiceLogLinesByUserServiceGuid}
-	return response, nil
-
+	getUserServiceLogsResponse := &kurtosis_engine_rpc_api_bindings.GetUserServiceLogsResponse{UserServiceLogsByUserServiceGuid: userServiceLogLinesByGuid}
+	return getUserServiceLogsResponse
 }

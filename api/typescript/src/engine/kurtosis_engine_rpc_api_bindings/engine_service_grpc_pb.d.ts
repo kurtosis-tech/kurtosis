@@ -15,6 +15,7 @@ interface IEngineServiceService extends grpc.ServiceDefinition<grpc.UntypedServi
   destroyEnclave: grpc.MethodDefinition<engine_service_pb.DestroyEnclaveArgs, google_protobuf_empty_pb.Empty>;
   clean: grpc.MethodDefinition<engine_service_pb.CleanArgs, engine_service_pb.CleanResponse>;
   getUserServiceLogs: grpc.MethodDefinition<engine_service_pb.GetUserServiceLogsArgs, engine_service_pb.GetUserServiceLogsResponse>;
+  streamUserServiceLogs: grpc.MethodDefinition<engine_service_pb.GetUserServiceLogsArgs, engine_service_pb.GetUserServiceLogsResponse>;
 }
 
 export const EngineServiceService: IEngineServiceService;
@@ -27,6 +28,7 @@ export interface IEngineServiceServer extends grpc.UntypedServiceImplementation 
   destroyEnclave: grpc.handleUnaryCall<engine_service_pb.DestroyEnclaveArgs, google_protobuf_empty_pb.Empty>;
   clean: grpc.handleUnaryCall<engine_service_pb.CleanArgs, engine_service_pb.CleanResponse>;
   getUserServiceLogs: grpc.handleUnaryCall<engine_service_pb.GetUserServiceLogsArgs, engine_service_pb.GetUserServiceLogsResponse>;
+  streamUserServiceLogs: grpc.handleServerStreamingCall<engine_service_pb.GetUserServiceLogsArgs, engine_service_pb.GetUserServiceLogsResponse>;
 }
 
 export class EngineServiceClient extends grpc.Client {
@@ -52,4 +54,6 @@ export class EngineServiceClient extends grpc.Client {
   getUserServiceLogs(argument: engine_service_pb.GetUserServiceLogsArgs, callback: grpc.requestCallback<engine_service_pb.GetUserServiceLogsResponse>): grpc.ClientUnaryCall;
   getUserServiceLogs(argument: engine_service_pb.GetUserServiceLogsArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<engine_service_pb.GetUserServiceLogsResponse>): grpc.ClientUnaryCall;
   getUserServiceLogs(argument: engine_service_pb.GetUserServiceLogsArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<engine_service_pb.GetUserServiceLogsResponse>): grpc.ClientUnaryCall;
+  streamUserServiceLogs(argument: engine_service_pb.GetUserServiceLogsArgs, metadataOrOptions?: grpc.Metadata | grpc.CallOptions | null): grpc.ClientReadableStream<engine_service_pb.GetUserServiceLogsResponse>;
+  streamUserServiceLogs(argument: engine_service_pb.GetUserServiceLogsArgs, metadata?: grpc.Metadata | null, options?: grpc.CallOptions | null): grpc.ClientReadableStream<engine_service_pb.GetUserServiceLogsResponse>;
 }

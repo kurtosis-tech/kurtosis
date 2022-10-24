@@ -50,8 +50,8 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d // indirect
-	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220424181051-c4a0b573dcaf // indirect
-	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // indirect Locally generated on build
+	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // indirect; indirect Locally generated on build
+	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220424181051-c4a0b573dcaf
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -87,4 +87,17 @@ require (
 	sigs.k8s.io/json v0.0.0-20211208200746-9f7c6b3444d2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
+)
+
+require github.com/gorilla/websocket v1.4.2
+
+require (
+	github.com/Masterminds/semver/v3 v3.1.1 // indirect
+	github.com/dsnet/compress v0.0.1 // indirect
+	github.com/golang/snappy v0.0.4 // indirect
+	github.com/mholt/archiver v3.1.1+incompatible // indirect
+	github.com/nwaples/rardecode v1.1.3 // indirect
+	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
+	github.com/ulikunitz/xz v0.5.10 // indirect
+	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 )
