@@ -15,7 +15,10 @@ func TestFactEngineLoop(t *testing.T) {
 	defer os.Remove(file.Name())
 	require.Nil(t, err)
 	db, err := bolt.Open(file.Name(), 0666, nil)
-	defer db.Close()
+	defer func() {
+		err := db.Close()
+		require.Nil(t, err)
+	}()
 	require.Nil(t, err)
 	recipeChannel := make(chan *kurtosis_core_rpc_api_bindings.FactRecipe)
 	defer close(recipeChannel)
@@ -67,9 +70,13 @@ func TestFactRecipePersistence(t *testing.T) {
 	}
 	time.Sleep(1 * time.Second) // Wait for the background workers to perform operations
 	factsEngine.Stop()
-	db.Close()
+	err = db.Close()
+	require.Nil(t, err)
 	otherDb, err := bolt.Open(file.Name(), 0666, nil)
-	defer otherDb.Close()
+	defer func() {
+		err := otherDb.Close()
+		require.Nil(t, err)
+	}()
 	require.Nil(t, err)
 	secondEngineTimestamp := time.Now().UnixNano()
 	otherRecipeChannel := make(chan *kurtosis_core_rpc_api_bindings.FactRecipe)

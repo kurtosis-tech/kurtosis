@@ -82,12 +82,12 @@ func (engine *FactsEngine) restoreStoredRecipes() error {
 		}
 		restoredRecipes := 0
 		err := bucket.ForEach(func(key, value []byte) error {
-			unmarshaledFactRecipe := &kurtosis_core_rpc_api_bindings.FactRecipe{}
-			err := proto.Unmarshal(key, unmarshaledFactRecipe)
+			unmarshalledFactRecipe := &kurtosis_core_rpc_api_bindings.FactRecipe{}
+			err := proto.Unmarshal(key, unmarshalledFactRecipe)
 			if err != nil {
 				return stacktrace.Propagate(err, "An error occurred when restoring recipe")
 			}
-			engine.recipeChannel <- unmarshaledFactRecipe
+			engine.recipeChannel <- unmarshalledFactRecipe
 			restoredRecipes += 1
 			return nil
 		})
@@ -101,7 +101,11 @@ func (engine *FactsEngine) restoreStoredRecipes() error {
 
 func (engine *FactsEngine) consumeRecipeChannel() {
 	for recipe := range engine.recipeChannel {
-		engine.persistRecipe(recipe)
+		err := engine.persistRecipe(recipe)
+		if err != nil {
+			logrus.Errorf(stacktrace.Propagate(err, "An error occurred when persisting recipe").Error())
+			continue
+		}
 		doneChannel := make(chan bool)
 		engine.doneChannelList = append(engine.doneChannelList, doneChannel)
 		go engine.runRecipeLoop(doneChannel, recipe)
