@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_files_from_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/mock_module_content_provider"
 	"github.com/stretchr/testify/assert"
@@ -878,6 +879,34 @@ exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], e
 	require.Equal(t, instructions[0], execInstruction)
 
 	expectedOutput := `Executing mkdir!
+`
+	require.Equal(t, expectedOutput, string(scriptOutput))
+}
+
+func TestStartosisInterpreter_StoreFileFromService(t *testing.T) {
+	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `
+print("Storing file from service!")
+artifact_uuid=store_file_from_service(service_id="example-datastore-server", src_path="/foo/bar")
+print(artifact_uuid)
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Nil(t, interpretationError)
+	require.Equal(t, 1, len(instructions))
+
+	storeInstruction := store_files_from_service.NewStoreFilesFromServiceInstruction(
+		testServiceNetwork,
+		*kurtosis_instruction.NewInstructionPosition(3, 38),
+		"example-datastore-server",
+		"/foo/bar",
+	)
+
+	require.Equal(t, instructions[0], storeInstruction)
+
+	expectedOutput := `Storing file from service!
+{{kurtosis:3:38.artifact_uuid}}
 `
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }

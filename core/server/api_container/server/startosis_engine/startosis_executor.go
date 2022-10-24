@@ -3,12 +3,14 @@ package startosis_engine
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/kurtosis-tech/stacktrace"
 	"sync"
 )
 
 type StartosisExecutor struct {
-	mutex *sync.Mutex
+	mutex       *sync.Mutex
+	environment *startosis_executor.ExecutionEnvironment
 }
 
 type ExecutionError struct {
@@ -17,7 +19,8 @@ type ExecutionError struct {
 
 func NewStartosisExecutor() *StartosisExecutor {
 	return &StartosisExecutor{
-		mutex: &sync.Mutex{},
+		mutex:       &sync.Mutex{},
+		environment: startosis_executor.NewExecutionEnvironment(),
 	}
 }
 
@@ -28,7 +31,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, instructions []k
 	executor.mutex.Lock()
 	defer executor.mutex.Unlock()
 	for index, instruction := range instructions {
-		err := instruction.Execute(ctx)
+		err := instruction.Execute(ctx, executor.environment)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred executing instruction number '%v'", index)
 		}

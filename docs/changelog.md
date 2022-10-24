@@ -3,9 +3,17 @@
 ### Features
 * Added an `exec` command to Startosis
 * Validate service IDs on Startosis commands
+* Added a `store_files_from_service` command to Startosis
+* Added the ability to pass `files_artifact_mount_dirpaths` to the service config
 
 ### Changes
 * Fixed a typo in a filename
+
+### Fixes
+* Fixed a bug in exec where we'd propagate a `nil` error
+
+### Removals
+* Removed  stale `scripts/run-pre-release-scripts` which isn't used anywhere and is invalid.
 
 # 0.51.0
 ### Breaking Changes
