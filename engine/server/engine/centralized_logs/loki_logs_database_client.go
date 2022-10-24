@@ -128,8 +128,6 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 	error,
 ) {
 
-	resultLogsByKurtosisUserServiceGuid := map[service.ServiceGUID][]string{}
-
 	httpHeaderWithTenantID := http.Header{}
 	httpHeaderWithTenantID.Add(organizationIdHttpHeaderKey, string(enclaveID))
 
@@ -180,7 +178,7 @@ func (client *lokiLogsDatabaseClient) GetUserServiceLogs(
 
 	lokiStreams := lokiQueryRangeResponseObj.Data.Result
 
-	resultLogsByKurtosisUserServiceGuid, err = newUserServiceLogLinesByUserServiceGuidFromLokiStreams(lokiStreams)
+	resultLogsByKurtosisUserServiceGuid, err := newUserServiceLogLinesByUserServiceGuidFromLokiStreams(lokiStreams)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting user service log lines from loki streams '%+v'", lokiStreams)
 	}
