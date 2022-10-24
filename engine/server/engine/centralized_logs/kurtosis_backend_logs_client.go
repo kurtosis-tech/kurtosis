@@ -98,8 +98,8 @@ func (client *kurtosisBackendLogClient) StreamUserServiceLogs(
 	}
 	//We can't directly defer the read closer's close calls here because we need them open, this is a stream flow
 
-	closeUserServiceReadClosersFunc := func(userServiceReadClosers map[service.ServiceGUID]io.ReadCloser) {
-		for _, userServiceReadCloserLogs := range userServiceReadClosers {
+	closeUserServiceReadClosersFunc := func() {
+		for _, userServiceReadCloserLogs := range successfulUserServiceLogs {
 			userServiceReadCloserLogs.Close()
 		}
 	}
@@ -112,7 +112,7 @@ func (client *kurtosisBackendLogClient) StreamUserServiceLogs(
 		}
 		errorsFoundStr := strings.Join(errorsFoundInServices, "\n")
 
-		closeUserServiceReadClosersFunc(successfulUserServiceLogs)
+		closeUserServiceReadClosersFunc()
 		return nil, nil, stacktrace.NewError("Some user services returned with error when calling for the logs using filters '%+v'. Errors returned: \n%v", userServiceFilters, errorsFoundStr)
 	}
 
