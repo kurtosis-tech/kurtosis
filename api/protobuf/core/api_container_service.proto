@@ -478,3 +478,26 @@ message RenderTemplatesToFilesArtifactResponse {
 message StartosisValidationError {
   string error = 1;
 }
+
+// ==============================================================================================
+//                                 Facts Engine
+// ==============================================================================================
+
+message FactValue {
+  oneof fact_value {
+    string string_value = 1;
+  }
+}
+
+message ConstantFactRecipe {
+    FactValue fact_value = 1;
+}
+message ExecFactRecipe {}
+
+message FactRecipe {
+  string service_id = 1;
+  string fact_name = 2;
+  oneof fact_recipe {
+    ConstantFactRecipe constant_fact = 3;
+  }
+}

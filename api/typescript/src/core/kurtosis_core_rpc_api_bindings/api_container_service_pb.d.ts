@@ -984,3 +984,97 @@ export namespace StartosisValidationError {
   }
 }
 
+export class FactValue extends jspb.Message {
+  getStringValue(): string;
+  setStringValue(value: string): FactValue;
+
+  getFactValueCase(): FactValue.FactValueCase;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FactValue.AsObject;
+  static toObject(includeInstance: boolean, msg: FactValue): FactValue.AsObject;
+  static serializeBinaryToWriter(message: FactValue, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FactValue;
+  static deserializeBinaryFromReader(message: FactValue, reader: jspb.BinaryReader): FactValue;
+}
+
+export namespace FactValue {
+  export type AsObject = {
+    stringValue: string,
+  }
+
+  export enum FactValueCase { 
+    FACT_VALUE_NOT_SET = 0,
+    STRING_VALUE = 1,
+  }
+}
+
+export class ConstantFactRecipe extends jspb.Message {
+  getFactValue(): FactValue | undefined;
+  setFactValue(value?: FactValue): ConstantFactRecipe;
+  hasFactValue(): boolean;
+  clearFactValue(): ConstantFactRecipe;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ConstantFactRecipe.AsObject;
+  static toObject(includeInstance: boolean, msg: ConstantFactRecipe): ConstantFactRecipe.AsObject;
+  static serializeBinaryToWriter(message: ConstantFactRecipe, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ConstantFactRecipe;
+  static deserializeBinaryFromReader(message: ConstantFactRecipe, reader: jspb.BinaryReader): ConstantFactRecipe;
+}
+
+export namespace ConstantFactRecipe {
+  export type AsObject = {
+    factValue?: FactValue.AsObject,
+  }
+}
+
+export class ExecFactRecipe extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ExecFactRecipe.AsObject;
+  static toObject(includeInstance: boolean, msg: ExecFactRecipe): ExecFactRecipe.AsObject;
+  static serializeBinaryToWriter(message: ExecFactRecipe, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ExecFactRecipe;
+  static deserializeBinaryFromReader(message: ExecFactRecipe, reader: jspb.BinaryReader): ExecFactRecipe;
+}
+
+export namespace ExecFactRecipe {
+  export type AsObject = {
+  }
+}
+
+export class FactRecipe extends jspb.Message {
+  getServiceId(): string;
+  setServiceId(value: string): FactRecipe;
+
+  getFactName(): string;
+  setFactName(value: string): FactRecipe;
+
+  getConstantFact(): ConstantFactRecipe | undefined;
+  setConstantFact(value?: ConstantFactRecipe): FactRecipe;
+  hasConstantFact(): boolean;
+  clearConstantFact(): FactRecipe;
+
+  getFactRecipeCase(): FactRecipe.FactRecipeCase;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FactRecipe.AsObject;
+  static toObject(includeInstance: boolean, msg: FactRecipe): FactRecipe.AsObject;
+  static serializeBinaryToWriter(message: FactRecipe, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FactRecipe;
+  static deserializeBinaryFromReader(message: FactRecipe, reader: jspb.BinaryReader): FactRecipe;
+}
+
+export namespace FactRecipe {
+  export type AsObject = {
+    serviceId: string,
+    factName: string,
+    constantFact?: ConstantFactRecipe.AsObject,
+  }
+
+  export enum FactRecipeCase { 
+    FACT_RECIPE_NOT_SET = 0,
+    CONSTANT_FACT = 3,
+  }
+}
+

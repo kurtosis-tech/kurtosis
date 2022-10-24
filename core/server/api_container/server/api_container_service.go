@@ -78,6 +78,8 @@ type ApiContainerService struct {
 
 	moduleStore *module_store.ModuleStore
 
+	recipeChannel chan *kurtosis_core_rpc_api_bindings.FactRecipe
+
 	startosisInterpreter *startosis_engine.StartosisInterpreter
 
 	startosisValidator *startosis_engine.StartosisValidator
