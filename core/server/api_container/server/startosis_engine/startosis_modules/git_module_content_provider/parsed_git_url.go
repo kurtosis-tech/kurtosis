@@ -68,11 +68,6 @@ func parseGitURL(packageURL string) (*ParsedGitURL, error) {
 		return nil, stacktrace.NewError("URL '%v' path should contain at least 3 subpaths got '%v'", packageURL, splitURLPath)
 	}
 
-	lastItem := splitURLPath[len(splitURLPath)-1]
-	if !strings.HasSuffix(lastItem, startosisFileExtension) {
-		return nil, stacktrace.NewError("Expected last subpath to be a '%v' file but it wasn't", startosisFileExtension)
-	}
-
 	moduleAuthor := splitURLPath[0]
 	moduleName := splitURLPath[1]
 	gitURL := fmt.Sprintf("%v://%v/%v/%v.git", httpsSchema, githubDomain, moduleAuthor, moduleName)

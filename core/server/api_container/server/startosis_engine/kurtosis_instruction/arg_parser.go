@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
+	"math"
 	"reflect"
 	"strings"
 )
@@ -18,14 +19,20 @@ const (
 	serviceIdArgName     = "service_id"
 	serviceConfigArgName = "service_config"
 
-	containerImageNameKey = "container_image_name"
-	usedPortsKey          = "used_ports"
-	entryPointArgsKey     = "entry_point_args"
-	cmdArgsKey            = "cmd_args"
-	envVarArgsKey         = "env_vars"
+	containerImageNameKey         = "container_image_name"
+	usedPortsKey                  = "used_ports"
+	entryPointArgsKey             = "entry_point_args"
+	cmdArgsKey                    = "cmd_args"
+	envVarArgsKey                 = "env_vars"
+	filesArtifactMountDirpathsKey = "files_artifact_mount_dirpaths"
 
 	portNumberKey   = "number"
 	portProtocolKey = "protocol"
+
+	commandArgName          = "command"
+	expectedExitCodeArgName = "expected_exit_code"
+
+	srcPathArgName = "src_path"
 
 	maxPortNumber = 65535
 )
@@ -68,6 +75,11 @@ func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core
 		return nil, interpretationErr
 	}
 
+	filesArtifactMountDirpaths, interpretationErr := parseFilesArtifactMountDirpaths(serviceConfig)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
 	builtConfig := services.NewServiceConfigBuilder(containerImageName).WithPrivatePorts(
 		privatePorts,
 	).WithEntryPointArgs(
@@ -76,9 +88,41 @@ func ParseServiceConfigArg(serviceConfig *starlarkstruct.Struct) (*kurtosis_core
 		cmdArgs,
 	).WithEnvVars(
 		envVars,
+	).WithFilesArtifactMountDirpaths(
+		filesArtifactMountDirpaths,
 	).Build()
 
 	return builtConfig, nil
+}
+
+func ParseCommand(commandsRaw *starlark.List) ([]string, *startosis_errors.InterpretationError) {
+	commandArgs, interpretationErr := safeCastToStringSlice(commandsRaw, commandArgName)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if len(commandArgs) == 0 {
+		return nil, startosis_errors.NewInterpretationError("Command cannot be empty")
+	}
+	return commandArgs, nil
+}
+
+func ParseExpectedExitCode(expectedExitCodeRaw starlark.Int) (int32, *startosis_errors.InterpretationError) {
+	expectedExitCode, interpretationErr := safeCastToInt32(expectedExitCodeRaw, expectedExitCodeArgName)
+	if interpretationErr != nil {
+		return 0, interpretationErr
+	}
+	return expectedExitCode, nil
+}
+
+func ParseSrcPath(serviceIdRaw starlark.String) (string, *startosis_errors.InterpretationError) {
+	srcPath, interpretationErr := safeCastToString(serviceIdRaw, srcPathArgName)
+	if interpretationErr != nil {
+		return "", interpretationErr
+	}
+	if len(srcPath) == 0 {
+		return "", startosis_errors.NewInterpretationError("Source path cannot be empty")
+	}
+	return srcPath, nil
 }
 
 func parseServiceConfigContainerImageName(serviceConfig *starlarkstruct.Struct) (string, *startosis_errors.InterpretationError) {
@@ -204,6 +248,19 @@ func parseEnvVars(serviceConfig *starlarkstruct.Struct) (map[string]string, *sta
 	return envVarArgs, nil
 }
 
+func parseFilesArtifactMountDirpaths(serviceConfig *starlarkstruct.Struct) (map[string]string, *startosis_errors.InterpretationError) {
+	_, err := serviceConfig.Attr(filesArtifactMountDirpathsKey)
+	//an error here means that no argument was found which is alright as this is an optional
+	if err != nil {
+		return map[string]string{}, nil
+	}
+	entryPointArgs, interpretationErr := extractMapStringStringValue(serviceConfig, filesArtifactMountDirpathsKey, serviceConfigArgName)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	return entryPointArgs, nil
+}
+
 func extractStringValue(structField *starlarkstruct.Struct, key string, argNameForLogging string) (string, *startosis_errors.InterpretationError) {
 	value, err := structField.Attr(key)
 	if err != nil {
@@ -269,7 +326,7 @@ func safeCastToUint32(expectedValueString starlark.Value, argNameForLogging stri
 	uint64Value, ok := castValue.Uint64()
 	if !ok || uint64Value != uint64(uint32(uint64Value)) {
 		// second clause if to safeguard against "overflow"
-		return 0, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' argument is expected to be a an integer greater than 0 and lower than %d", argNameForLogging, ^uint32(0)))
+		return 0, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' argument is expected to be a an integer greater than 0 and lower than %d", argNameForLogging, math.MaxUint32))
 	}
 	return uint32(uint64Value), nil
 
@@ -317,4 +374,19 @@ func safeCastToMapStringString(expectedValue starlark.Value, argNameForLogging s
 		castValue[stringKey] = stringValue
 	}
 	return castValue, nil
+}
+
+func safeCastToInt32(expectedValueString starlark.Value, argNameForLogging string) (int32, *startosis_errors.InterpretationError) {
+	castValue, ok := expectedValueString.(starlark.Int)
+	if !ok {
+		return 0, startosis_errors.NewInterpretationError(fmt.Sprintf("Argument '%s' is expected to be an integer. Got %s", argNameForLogging, reflect.TypeOf(expectedValueString)))
+	}
+
+	int64Value, ok := castValue.Int64()
+	if !ok || int64Value != int64(int32(int64Value)) {
+		// second clause if to safeguard against "overflow"
+		return 0, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' argument is expected to be a an integer greater than %d and lower than %d", argNameForLogging, math.MinInt32, math.MaxInt32))
+	}
+	return int32(int64Value), nil
+
 }

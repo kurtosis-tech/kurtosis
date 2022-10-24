@@ -8,6 +8,21 @@
 ### Changes
 * Updated the CLI `service logs` command in order to use the new `KurtosisContext.StreamUserServiceLogs` when user requested to follow logs
 
+### Features
+* Added an `exec` command to Startosis
+* Added a `store_files_from_service` command to Startosis
+* Added the ability to pass `files_artifact_mount_dirpaths` to the service config
+* Added a `read_file` command to Startosis
+
+### Changes
+* Fixed a typo in a filename
+
+### Fixes
+* Fixed a bug in exec where we'd propagate a `nil` error
+
+### Removals
+* Removed  stale `scripts/run-pre-release-scripts` which isn't used anywhere and is invalid.
+
 # 0.51.0
 ### Breaking Changes
 * Updated `kurtosisBackend.CreateLogsCollector` method in `container-engine-lib`, added the `logsCollectorTcpPortNumber` parameter

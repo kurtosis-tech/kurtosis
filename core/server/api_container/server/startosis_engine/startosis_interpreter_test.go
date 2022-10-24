@@ -9,6 +9,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/read_file"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_files_from_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/mock_module_content_provider"
 	"github.com/stretchr/testify/assert"
@@ -823,6 +826,118 @@ add_service(service_id = client_service_id, service_config = client_service_conf
 	expectedOutput := `Starting Startosis script!
 Adding service example-datastore-server
 Adding service example-datastore-client
+`
+	require.Equal(t, expectedOutput, string(scriptOutput))
+}
+
+func TestStartosisInterpreter_ValidExecScriptWithoutExitCodeDefaultsTo0(t *testing.T) {
+	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `
+print("Executing mkdir!")
+exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"])
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Equal(t, 1, len(instructions))
+	require.Nil(t, interpretationError)
+
+	execInstruction := exec.NewExecInstruction(
+		testServiceNetwork,
+		*kurtosis_instruction.NewInstructionPosition(3, 5),
+		"example-datastore-server",
+		[]string{"mkdir", "/tmp/foo"},
+		0,
+	)
+
+	require.Equal(t, instructions[0], execInstruction)
+
+	expectedOutput := `Executing mkdir!
+`
+	require.Equal(t, expectedOutput, string(scriptOutput))
+}
+
+func TestStartosisInterpreter_PassedExitCodeIsInterpretedCorrectly(t *testing.T) {
+	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `
+print("Executing mkdir!")
+exec(service_id = "example-datastore-server", command = ["mkdir", "/tmp/foo"], expected_exit_code = -7)
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Equal(t, 1, len(instructions))
+	require.Nil(t, interpretationError)
+
+	execInstruction := exec.NewExecInstruction(
+		testServiceNetwork,
+		*kurtosis_instruction.NewInstructionPosition(3, 5),
+		"example-datastore-server",
+		[]string{"mkdir", "/tmp/foo"},
+		-7,
+	)
+
+	require.Equal(t, instructions[0], execInstruction)
+
+	expectedOutput := `Executing mkdir!
+`
+	require.Equal(t, expectedOutput, string(scriptOutput))
+}
+
+func TestStartosisInterpreter_StoreFileFromService(t *testing.T) {
+	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `
+print("Storing file from service!")
+artifact_uuid=store_file_from_service(service_id="example-datastore-server", src_path="/foo/bar")
+print(artifact_uuid)
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Nil(t, interpretationError)
+	require.Equal(t, 1, len(instructions))
+
+	storeInstruction := store_files_from_service.NewStoreFilesFromServiceInstruction(
+		testServiceNetwork,
+		*kurtosis_instruction.NewInstructionPosition(3, 38),
+		"example-datastore-server",
+		"/foo/bar",
+	)
+
+	require.Equal(t, instructions[0], storeInstruction)
+
+	expectedOutput := `Storing file from service!
+{{kurtosis:3:38.artifact_uuid}}
+`
+	require.Equal(t, expectedOutput, string(scriptOutput))
+}
+
+func TestStartosisInterpreter_ReadFileFromGithub(t *testing.T) {
+	srcPath := "github.com/foo/bar/static_files/main.txt"
+	seed := map[string]string{
+		srcPath: "this is a test string",
+	}
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider(seed)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `
+print("Reading file from GitHub!")
+file_contents=read_file("` + srcPath + `")
+print(file_contents)
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Nil(t, interpretationError)
+	require.Equal(t, 1, len(instructions))
+
+	readInstruction := read_file.NewReadFileInstruction(
+		*kurtosis_instruction.NewInstructionPosition(3, 24),
+		srcPath,
+	)
+
+	require.Equal(t, instructions[0], readInstruction)
+
+	expectedOutput := `Reading file from GitHub!
+this is a test string
 `
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
