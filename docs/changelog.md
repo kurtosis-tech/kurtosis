@@ -2,6 +2,7 @@
 
 ### Features
 * Added an `exec` command to Startosis
+* Implemented backend for facts engine
 
 ### Changes
 * Fixed a typo in a filename

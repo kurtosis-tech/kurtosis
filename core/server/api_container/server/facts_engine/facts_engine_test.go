@@ -65,7 +65,7 @@ func TestFactRecipePersistence(t *testing.T) {
 			},
 		},
 	}
-	time.Sleep(1 * time.Second)
+	time.Sleep(1 * time.Second) // Wait for the background workers to perform operations
 	factsEngine.Stop()
 	db.Close()
 	otherDb, err := bolt.Open(file.Name(), 0666, nil)
@@ -75,7 +75,7 @@ func TestFactRecipePersistence(t *testing.T) {
 	otherRecipeChannel := make(chan *kurtosis_core_rpc_api_bindings.FactRecipe)
 	otherFactsEngine := NewFactsEngine(otherDb, otherRecipeChannel)
 	otherFactsEngine.Start()
-	time.Sleep(1 * time.Second)
+	time.Sleep(1 * time.Second) // Wait for the background workers to perform operations
 	savedTimestampStr, _, err := otherFactsEngine.FetchLatestFactValue("service_id.fact_name")
 	require.Nil(t, err)
 	savedTimestamp, err := strconv.ParseInt(savedTimestampStr, 10, 64)
