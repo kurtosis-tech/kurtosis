@@ -492,7 +492,6 @@ message FactValue {
 message ConstantFactRecipe {
     FactValue fact_value = 1;
 }
-message ExecFactRecipe {}
 
 message FactRecipe {
   string service_id = 1;
