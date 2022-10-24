@@ -19,6 +19,9 @@ const (
 	mountPathOnDependentService   = "/tmp/doo"
 	pathToCheckOnDependentService = mountPathOnDependentService + "/foo"
 	fileToRead                    = "github.com/kurtosis-tech/sample-startosis-load/sample.star"
+	renderedConfigMountPath       = "/config"
+	renderedConfigRelativePath    = "foo/bar.yml"
+	renderedConfigFile            = renderedConfigMountPath + "/" + renderedConfigRelativePath
 
 	startosisScript = `
 DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
@@ -31,6 +34,10 @@ FILE_TO_READ = "` + fileToRead + `"
 
 SERVICE_DEPENDENT_ON_DATASTORE_SERVICE = "` + serviceIdForDependentService + `"
 PATH_TO_MOUNT_ON_DEPENDENT_SERVICE =  "` + pathToCheckOnDependentService + `"
+
+TEMPLATE_FILE_TO_RENDER="github.com/kurtosis-tech/eth2-merge-kurtosis-module/kurtosis-module/static_files/prometheus-config/prometheus.yml.tmpl"
+PATH_TO_MOUNT_RENDERED_CONFIG="` + renderedConfigMountPath + `"
+RENDER_RELATIVE_PATH = "` + renderedConfigRelativePath + `"
 
 print("Adding service " + DATASTORE_SERVICE_ID + ".")
 
@@ -47,16 +54,33 @@ exec(service_id = DATASTORE_SERVICE_ID, command = ["touch", FILE_TO_BE_CREATED])
 
 artifact_uuid = store_file_from_service(service_id = DATASTORE_SERVICE_ID, src_path = FILE_TO_BE_CREATED)
 
+template_str = read_file(TEMPLATE_FILE_TO_RENDER)
+
+template_data = {
+	"CLNodesMetricsInfo" : [{"name" : "foo", "path": "/foo/path", "url": "foobar.com"}]
+}
+
+template_data_by_path = {
+	RENDER_RELATIVE_PATH : {
+		"template": template_str,
+		"template_data": template_data
+	}
+}
+
+rendered_artifact = render_templates(template_data_by_path)
+
 dependent_service_config = struct(
     container_image_name = DATASTORE_IMAGE,
     used_ports = {
         DATASTORE_PORT_ID: struct(number = DATASTORE_PORT_NUMBER, protocol = DATASTORE_PORT_PROTOCOL)
     },
 	files_artifact_mount_dirpaths = {
-		artifact_uuid : PATH_TO_MOUNT_ON_DEPENDENT_SERVICE
+		artifact_uuid : PATH_TO_MOUNT_ON_DEPENDENT_SERVICE,
+		rendered_artifact : PATH_TO_MOUNT_RENDERED_CONFIG
 	}
 )
 add_service(service_id = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, service_config = dependent_service_config)
+
 
 file_contents = read_file(FILE_TO_READ)
 print("file_contents = " + file_contents)
@@ -120,4 +144,25 @@ file_contents = a = "World!"
 	exitCode, _, err = serviceCtx.ExecCommand([]string{"ls", pathToCheckOnDependentService})
 	require.Nil(t, err, "Unexpected err running verification on mounted file on "+serviceIdForDependentService)
 	require.Equal(t, int32(0), exitCode)
+
+	// Check that the file got rendered on the second service
+	expectedConfigFile := `global:
+  scrape_interval:     15s # By default, scrape targets every 15 seconds.
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+   
+   - job_name: 'foo'
+     metrics_path: /foo/path
+     static_configs:
+       - targets: ['foobar.com']
+   `
+	logrus.Infof("Checking that the file got mounted on " + serviceIdForDependentService)
+	serviceCtx, err = enclaveCtx.GetServiceContext(serviceIdForDependentService)
+	require.Nil(t, err, "Unexpected Error Creating Service Context")
+	exitCode, configFileContent, err := serviceCtx.ExecCommand([]string{"cat", renderedConfigFile})
+	require.Nil(t, err, "Unexpected err running verification on rendered file on "+serviceIdForDependentService)
+	require.Equal(t, int32(0), exitCode)
+	require.Equal(t, expectedConfigFile, configFileContent, "Rendered file contents don't match expected contents")
 }
