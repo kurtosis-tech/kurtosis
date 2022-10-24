@@ -7,7 +7,9 @@ import (
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
@@ -34,7 +36,7 @@ func GenerateExecBuiltin(instructionsQueue *[]kurtosis_instruction.KurtosisInstr
 		if interpretationError != nil {
 			return nil, interpretationError
 		}
-		execInstruction := NewExecInstruction(serviceNetwork, *kurtosis_instruction.GetPositionFromThread(thread), serviceId, commandArgs, expectedExitCode)
+		execInstruction := NewExecInstruction(serviceNetwork, *shared_helpers.GetPositionFromThread(thread), serviceId, commandArgs, expectedExitCode)
 		*instructionsQueue = append(*instructionsQueue, execInstruction)
 		return starlark.None, nil
 	}
@@ -75,13 +77,13 @@ func (instruction *ExecInstruction) GetCanonicalInstruction() string {
 	return buffer.String()
 }
 
-func (instruction *ExecInstruction) Execute(ctx context.Context) error {
+func (instruction *ExecInstruction) Execute(ctx context.Context, _ *startosis_executor.ExecutionEnvironment) error {
 	exitCode, _, err := instruction.serviceNetwork.ExecCommand(ctx, instruction.serviceId, instruction.command)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to execute command '%v' on service '%v'", instruction.command, instruction.serviceId)
 	}
 	if instruction.expectedExitCode != exitCode {
-		return stacktrace.Propagate(err, "The exit code expected '%v' wasn't the exit code received '%v' while running the command", instruction.expectedExitCode, exitCode)
+		return stacktrace.NewError("The exit code expected '%v' wasn't the exit code received '%v' while running the command", instruction.expectedExitCode, exitCode)
 	}
 	return nil
 }

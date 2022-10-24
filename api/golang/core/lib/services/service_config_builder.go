@@ -53,6 +53,11 @@ func (builder *ServiceConfigBuilder) WithEnvVars(envVars map[string]string) *Ser
 	return builder
 }
 
+func (builder *ServiceConfigBuilder) WithFilesArtifactMountDirpaths(filesArtifactMountDirpaths map[string]string) *ServiceConfigBuilder {
+	builder.filesArtifactMountDirpaths = filesArtifactMountDirpaths
+	return builder
+}
+
 func (builder *ServiceConfigBuilder) Build() *kurtosis_core_rpc_api_bindings.ServiceConfig {
 	return binding_constructors.NewServiceConfig(
 		builder.containerImageName,
