@@ -4,11 +4,15 @@ import { err, ok, Result } from "neverthrow";
 import { createEnclave } from "../../test_helpers/enclave_setup";
 import * as path from "path";
 
-const TEST_NAME = "startosis-module-command";
 const IS_PARTITIONING_ENABLED = false;
+
+const VALID_CASE_TEST_NAME = "startosis-module-valid";
 const VALID_KURTOSIS_MODULE_REL_PATH = "../../../../startosis/valid-kurtosis-module"
+const INVALID_KURTOSIS_MOD_TEST_NAME = "startosis-module-invalid-mod-file"
 const INVALID_KURTOSIS_MOD_IN_MODULE_REL_PATH = "../../../../startosis/invalid-mod-file"
+const MISSING_MAIN_STAR_TEST_NAME = "startosis-module-missing-main-star"
 const MODULE_WITH_NO_MAIN_STAR_REL_PATH = "../../../../startosis/no-main-star"
+const MISSING_MAIN_FUNCTION_TEST_NAME = "startosis-module-missing-main"
 const MODULE_WITH_NO_MAIN_IN_MAIN_STAR_REL_PATH = "../../../../startosis/no-main-in-main-star"
 
 
@@ -16,7 +20,7 @@ jest.setTimeout(180000)
 
 test("Test valid startosis module execution", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
-    const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
+    const createEnclaveResult = await createEnclave(VALID_CASE_TEST_NAME, IS_PARTITIONING_ENABLED)
 
     if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
 
@@ -61,7 +65,7 @@ test("Test valid startosis module execution", async () => {
 
 test("Test invalid module with invalid mod file", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
-    const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
+    const createEnclaveResult = await createEnclave(INVALID_KURTOSIS_MOD_TEST_NAME, IS_PARTITIONING_ENABLED)
 
     if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
 
@@ -89,7 +93,7 @@ test("Test invalid module with invalid mod file", async () => {
 
 test("Test invalid module with no main.star", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
-    const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
+    const createEnclaveResult = await createEnclave(MISSING_MAIN_STAR_TEST_NAME, IS_PARTITIONING_ENABLED)
 
     if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
 
@@ -117,7 +121,7 @@ test("Test invalid module with no main.star", async () => {
 
 test("Test invalid module with no main in main.star", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
-    const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
+    const createEnclaveResult = await createEnclave(MISSING_MAIN_FUNCTION_TEST_NAME, IS_PARTITIONING_ENABLED)
 
     if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
 
