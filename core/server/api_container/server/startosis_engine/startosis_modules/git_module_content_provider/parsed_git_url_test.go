@@ -7,10 +7,10 @@ import (
 )
 
 const (
-	moduleAuthor    = "kurtosis-tech"
-	moduleName      = "sample-startosis-load"
-	fileName        = "sample.star"
-	githubSampleURL = "github.com/" + moduleAuthor + "/" + moduleName + "/" + fileName
+	testModuleAuthor = "kurtosis-tech"
+	testModuleName   = "sample-startosis-load"
+	testFileName     = "sample.star"
+	githubSampleURL  = "github.com/" + testModuleAuthor + "/" + testModuleName + "/" + testFileName
 )
 
 func TestParsedGitURL_SimpleParse(t *testing.T) {
@@ -18,18 +18,18 @@ func TestParsedGitURL_SimpleParse(t *testing.T) {
 	require.Nil(t, err)
 
 	expectedParsedURL := newParsedGitURL(
-		moduleAuthor,
-		moduleName,
-		fmt.Sprintf("https://github.com/%v/%v.git", moduleAuthor, moduleName),
-		fmt.Sprintf("%v/%v", moduleAuthor, moduleName),
-		fmt.Sprintf("%v/%v/%v", moduleAuthor, moduleName, fileName),
+		testModuleAuthor,
+		testModuleName,
+		fmt.Sprintf("https://github.com/%v/%v.git", testModuleAuthor, testModuleName),
+		fmt.Sprintf("%v/%v", testModuleAuthor, testModuleName),
+		fmt.Sprintf("%v/%v/%v", testModuleAuthor, testModuleName, testFileName),
 	)
 
 	require.Equal(t, expectedParsedURL, parsedURL)
 }
 
 func TestParsedGitURL_FailsOnNonGithubURL(t *testing.T) {
-	nonGithubURL := "kurtosis-git.com/" + moduleAuthor + "/" + moduleName + "/" + fileName
+	nonGithubURL := "kurtosis-git.com/" + testModuleAuthor + "/" + testModuleName + "/" + testFileName
 	_, err := parseGitURL(nonGithubURL)
 	require.NotNil(t, err)
 
@@ -40,7 +40,7 @@ func TestParsedGitURL_FailsOnNonGithubURL(t *testing.T) {
 
 func TestParsedGitURL_FailsOnNonNonEmptySchema(t *testing.T) {
 	ftpSchema := "ftp"
-	nonGithubURL := ftpSchema + "://github.com/" + moduleAuthor + "/" + moduleName + "/" + fileName
+	nonGithubURL := ftpSchema + "://github.com/" + testModuleAuthor + "/" + testModuleName + "/" + testFileName
 	_, err := parseGitURL(nonGithubURL)
 	require.NotNil(t, err)
 
@@ -49,35 +49,21 @@ func TestParsedGitURL_FailsOnNonNonEmptySchema(t *testing.T) {
 	require.Contains(t, err.Error(), expectedErrorMsg)
 }
 
-func TestParsedGitURL_FailsWithoutPathToFile(t *testing.T) {
-	nonGithubURL := "github.com/" + moduleAuthor + "/" + moduleName
-	_, err := parseGitURL(nonGithubURL)
-	require.NotNil(t, err)
-
-	expectedErrorMsg := fmt.Sprintf("URL '%v' path should contain at least 3 subpaths got '[%v %v]'", nonGithubURL, moduleAuthor, moduleName)
-
-	require.Contains(t, err.Error(), expectedErrorMsg)
-}
-
-func TestParsedGitURL_FailsForNonStartosisFile(t *testing.T) {
-	nonGithubURL := "github.com/" + moduleAuthor + "/" + moduleName + "/foo.srt"
-	_, err := parseGitURL(nonGithubURL)
-	require.NotNil(t, err)
-
-	expectedErrorMsg := fmt.Sprintf("Expected last subpath to be a '%v' file but it wasn't", startosisFileExtension)
-
-	require.Contains(t, err.Error(), expectedErrorMsg)
+func TestParsedGitURL_IfNoFileThenRelativeFilePathIsEmpty(t *testing.T) {
+	pathWithoutFile := "github.com/" + testModuleAuthor + "/" + testModuleName
+	parsedURL, err := parseGitURL(pathWithoutFile)
+	require.Nil(t, err)
+	require.Equal(t, "", parsedURL.relativeFilePath)
 }
 
 func TestParsedGitURL_ParsingGetsRidOfAnyPathEscapes(t *testing.T) {
 	escapedURLWithoutStartosisFile := "github.com/../etc/passwd"
-	_, err := parseGitURL(escapedURLWithoutStartosisFile)
-	require.NotNil(t, err)
-	expectedErrorMsg := fmt.Sprintf("URL '%v' path should contain at least 3 subpaths got '[etc passwd]'", escapedURLWithoutStartosisFile)
-	require.Contains(t, err.Error(), expectedErrorMsg)
+	parsedURL, err := parseGitURL(escapedURLWithoutStartosisFile)
+	require.Nil(t, err)
+	require.Equal(t, "", parsedURL.relativeFilePath)
 
 	escapedURLWithStartosisFile := "github.com/../../etc/passwd/startosis.star"
-	parsedURL, err := parseGitURL(escapedURLWithStartosisFile)
+	parsedURL, err = parseGitURL(escapedURLWithStartosisFile)
 	require.Nil(t, err)
 	require.Equal(t, parsedURL.moduleAuthor, "etc")
 	require.Equal(t, parsedURL.moduleName, "passwd")
@@ -94,9 +80,9 @@ func TestParsedGitURL_ParsingGetsRidOfAnyPathEscapes(t *testing.T) {
 	require.Equal(t, parsedURL.relativeFilePath, "etc/passwd/startosis.star")
 	require.Equal(t, parsedURL.relativeRepoPath, "etc/passwd")
 
-	escapedURLWithStartosisFile = "github.com/foo/../etc/../passwd/startosis.star"
+	escapedURLWithStartosisFile = "github.com/foo/../etc/../passwd"
 	_, err = parseGitURL(escapedURLWithStartosisFile)
 	require.NotNil(t, err)
-	expectedErrorMsg = fmt.Sprintf("URL '%v' path should contain at least 3 subpaths got '[passwd startosis.star]'", escapedURLWithStartosisFile)
+	expectedErrorMsg := fmt.Sprintf("URL '%v' path should contain at least 2 subpaths got '[passwd]'", escapedURLWithStartosisFile)
 	require.Contains(t, err.Error(), expectedErrorMsg)
 }
