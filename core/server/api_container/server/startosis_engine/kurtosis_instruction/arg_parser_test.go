@@ -589,3 +589,22 @@ func TestParseTemplatesAndData_SimpleStringTemplateData(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, expectedOutput, output)
 }
+
+func TestParseTemplatesAndData_FailsForInvalidJSONWithIntegerKeys(t *testing.T) {
+	templateDataDict := starlark.NewDict(1)
+	err := templateDataDict.SetKey(starlark.MakeInt(53), starlark.String("John"))
+	require.Nil(t, err)
+
+	subDict := starlark.NewDict(2)
+	template := "Hello {{.Name}}"
+	err = subDict.SetKey(starlark.String("template"), starlark.String(template))
+	require.Nil(t, err)
+	err = subDict.SetKey(starlark.String("template_data"), templateDataDict)
+	require.Nil(t, err)
+	input := starlark.NewDict(1)
+	err = input.SetKey(starlark.String("/foo/bar"), subDict)
+	require.Nil(t, err)
+
+	_, err = ParseTemplatesAndData(input)
+	require.NotNil(t, err)
+}

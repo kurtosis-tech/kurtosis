@@ -166,11 +166,11 @@ func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 		var temporaryUnmarshalledValue interface{}
 		err := json.Unmarshal([]byte(templateDataStarlarkValue.String()), &temporaryUnmarshalledValue)
 		if err != nil {
-			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while converting the template data as string '%v' to temporary object", templateDataStarlarkValue))
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while marshaling the template data as string '%v' to temporary object", templateDataStarlarkValue))
 		}
 		templateDataJson, err := json.Marshal(temporaryUnmarshalledValue)
 		if err != nil {
-			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while converting the template data '%v' to JSON", temporaryUnmarshalledValue))
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while unmarshaling the temporary template data object '%v' to JSON", temporaryUnmarshalledValue))
 		}
 		// end Massive Hack
 		templateAndData := binding_constructors.NewTemplateAndData(templateStr, string(templateDataJson))
