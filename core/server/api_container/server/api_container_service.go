@@ -22,6 +22,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
@@ -55,6 +56,19 @@ const (
 
 	noExecutionError      = ""
 	noInterpretationError = ""
+
+	mainStartosisFile = "main.star"
+
+	// We do it this way as if we were to interpret the main file,
+	// we'd only read the symbols, and maybe there's nothing that calls in `main()`
+	// This way, we're guaranteed that the `main()` function gets called within main.star
+	bootScript = `
+load("%v/` + mainStartosisFile + `", "main")
+main()
+	`
+	// Overwrite existing module with new module, this allows user to iterate on an enclave with a
+	// given module
+	doOverwriteExistingModule = true
 )
 
 var (
@@ -85,6 +99,8 @@ type ApiContainerService struct {
 	startosisExecutor *startosis_engine.StartosisExecutor
 
 	metricsClient client.MetricsClient
+
+	startosisModuleContentProvider startosis_modules.ModuleContentProvider
 }
 
 func NewApiContainerService(
@@ -95,15 +111,17 @@ func NewApiContainerService(
 	startosisValidator *startosis_engine.StartosisValidator,
 	startosisExecutor *startosis_engine.StartosisExecutor,
 	metricsClient client.MetricsClient,
+	startosisModuleContentProvider startosis_modules.ModuleContentProvider,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
-		filesArtifactStore:   filesArtifactStore,
-		serviceNetwork:       serviceNetwork,
-		moduleStore:          moduleStore,
-		startosisInterpreter: startosisInterpreter,
-		startosisValidator:   startosisValidator,
-		startosisExecutor:    startosisExecutor,
-		metricsClient:        metricsClient,
+		filesArtifactStore:             filesArtifactStore,
+		serviceNetwork:                 serviceNetwork,
+		moduleStore:                    moduleStore,
+		startosisInterpreter:           startosisInterpreter,
+		startosisValidator:             startosisValidator,
+		startosisExecutor:              startosisExecutor,
+		metricsClient:                  metricsClient,
+		startosisModuleContentProvider: startosisModuleContentProvider,
 	}
 
 	return service, nil
@@ -191,7 +209,7 @@ func (apicService ApiContainerService) ExecuteModule(ctx context.Context, args *
 	return resp, nil
 }
 
-func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse, error) {
+func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
 	serializedStartosisScript := args.GetSerializedScript()
 
 	// TODO(gb): add metric tracking maybe?
@@ -199,7 +217,7 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 	interpretationOutput, potentialInterpretationError, generatedInstructionsList :=
 		apicService.startosisInterpreter.Interpret(ctx, serializedStartosisScript)
 	if potentialInterpretationError != nil {
-		return binding_constructors.NewExecuteStartosisScriptResponse(
+		return binding_constructors.NewExecuteStartosisResponse(
 			string(interpretationOutput),
 			potentialInterpretationError.Error(),
 			noValidationErrors,
@@ -212,7 +230,7 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 	// TODO: Abstract this into a ValidationError
 	validationErrors := apicService.startosisValidator.Validate(ctx, generatedInstructionsList)
 	if validationErrors != nil {
-		return binding_constructors.NewExecuteStartosisScriptResponse(
+		return binding_constructors.NewExecuteStartosisResponse(
 			string(interpretationOutput),
 			noInterpretationError,
 			validationErrors,
@@ -223,7 +241,7 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 
 	err := apicService.startosisExecutor.Execute(ctx, generatedInstructionsList)
 	if err != nil {
-		return binding_constructors.NewExecuteStartosisScriptResponse(
+		return binding_constructors.NewExecuteStartosisResponse(
 			string(interpretationOutput),
 			noInterpretationError,
 			noValidationErrors,
@@ -232,12 +250,41 @@ func (apicService ApiContainerService) ExecuteStartosisScript(ctx context.Contex
 	}
 	logrus.Debugf("Successfully executed the list of Kurtosis instructions")
 
-	return binding_constructors.NewExecuteStartosisScriptResponse(
+	return binding_constructors.NewExecuteStartosisResponse(
 		string(interpretationOutput),
 		noInterpretationError,
 		noValidationErrors,
 		noExecutionError,
 	), nil
+}
+
+func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
+
+	moduleId := args.ModuleId
+	moduleData := args.Data
+
+	moduleRootPathOnDisk, err := apicService.startosisModuleContentProvider.StoreModuleContents(moduleId, moduleData, doOverwriteExistingModule)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while writing module to disk '%v'", err)
+	}
+
+	pathToMainFile := path.Join(moduleRootPathOnDisk, mainStartosisFile)
+	_, err = os.Stat(pathToMainFile)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while verifying that '%v' exists on root of module '%v' at '%v'", mainStartosisFile, moduleId, pathToMainFile)
+	}
+
+	scriptWithMainToExecute := fmt.Sprintf(bootScript, moduleId)
+
+	executeStartosisScriptArgs := binding_constructors.NewExecuteStartosisScriptArgs(scriptWithMainToExecute)
+
+	scriptExecutionResponse, err := apicService.ExecuteStartosisScript(ctx, executeStartosisScriptArgs)
+
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while executing the main function in the file '%v' in module '%v'", pathToMainFile, moduleRootPathOnDisk)
+	}
+
+	return scriptExecutionResponse, nil
 }
 
 func (apicService ApiContainerService) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {

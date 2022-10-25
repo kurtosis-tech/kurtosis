@@ -57,12 +57,18 @@ import type { PartitionConnection } from "./partition_connection";
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
 import {
     ModuleInfo,
-    PauseServiceArgs, ServiceInfo, UnloadModuleResponse,
+    PauseServiceArgs,
+    ServiceInfo,
+    UnloadModuleResponse,
     UnpauseServiceArgs,
-    StartServicesArgs, ExecuteStartosisScriptArgs, ExecuteStartosisScriptResponse,
+    StartServicesArgs,
+    ExecuteStartosisScriptArgs,
+    ExecuteStartosisModuleArgs,
+    ExecuteStartosisResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
-import {should} from "chai";
 import {TemplateAndData} from "./template_and_data";
+import * as path from "path";
+import {parseKurtosisMod} from "./kurtosis_mod";
 
 export type EnclaveID = string;
 export type PartitionID = string;
@@ -70,6 +76,9 @@ export type PartitionID = string;
 // This will always resolve to the default partition ID (regardless of whether such a partition exists in the enclave,
 //  or it was repartitioned away)
 const DEFAULT_PARTITION_ID: PartitionID = "";
+
+const KURTOSIS_MOD_FILENAME = "kurtosis.mod";
+
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class EnclaveContext {
@@ -211,12 +220,38 @@ export class EnclaveContext {
         return ok(moduleCtx)
     }
 
+    public async executeStartosisModule(
+        moduleRootPath: string,
+    ): Promise<Result<ExecuteStartosisResponse, Error>> {
+        const kurtosisModFilepath = path.join(moduleRootPath, KURTOSIS_MOD_FILENAME)
+
+        const  resultParseKurtosisMod = await parseKurtosisMod(kurtosisModFilepath)
+        if (resultParseKurtosisMod.isErr()) {
+            return err(resultParseKurtosisMod.error)
+        }
+        const kurtosisMod = resultParseKurtosisMod.value
+
+        const archiverResponse = await this.genericTgzArchiver.createTgzByteArray(moduleRootPath)
+        if (archiverResponse.isErr()){
+            return err(archiverResponse.error)
+        }
+
+        const args = new ExecuteStartosisModuleArgs;
+        args.setData(archiverResponse.value)
+        args.setModuleId(kurtosisMod.module.name)
+        const resultModuleExecution : Result<ExecuteStartosisResponse, Error> = await this.backend.executeStartosisModule(args)
+        if (resultModuleExecution.isErr()) {
+            return err(new Error(`Unexpected error happened executing Startosis module \n${resultModuleExecution.error}`))
+        }
+        return ok(resultModuleExecution.value)
+    }
+
     public async executeStartosisScript(
-            serializedStartosisScript: string
-        ): Promise<Result<ExecuteStartosisScriptResponse, Error>> {
+            serializedStartosisScript: string,
+        ): Promise<Result<ExecuteStartosisResponse, Error>> {
         const args = new ExecuteStartosisScriptArgs();
         args.setSerializedScript(serializedStartosisScript)
-        const resultScriptExecution : Result<ExecuteStartosisScriptResponse, Error> = await this.backend.executeStartosisScript(args)
+        const resultScriptExecution : Result<ExecuteStartosisResponse, Error> = await this.backend.executeStartosisScript(args)
         if (resultScriptExecution.isErr()) {
             return err(new Error(`Unexpected error happened executing Startosis script \n${resultScriptExecution.error}`))
         }

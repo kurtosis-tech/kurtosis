@@ -3,15 +3,17 @@ package git_module_content_provider
 import (
 	"github.com/go-git/go-git/v5"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/mholt/archiver"
 	"io"
 	"os"
 	"path"
 )
 
 const (
-	moduleDirPermission           = 0755
-	temporaryRepoDirPattern       = "tmp-repo-dir-*"
-	authorAndModuleNameAdjustment = 2
+	moduleDirPermission         = 0755
+	temporaryRepoDirPattern     = "tmp-repo-dir-*"
+	temporaryArchiveFilePattern = "temp-module-archive-*.tgz"
+	defaultTmpDir               = ""
 )
 
 type GitModuleContentProvider struct {
@@ -31,7 +33,9 @@ func (provider *GitModuleContentProvider) GetModuleContents(moduleURL string) (s
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while parsing URL '%v'", moduleURL)
 	}
-
+	if parsedURL.relativeFilePath == "" {
+		return "", stacktrace.NewError("The relative path to file is empty for '%v'", moduleURL)
+	}
 	pathToFile := path.Join(provider.modulesDir, parsedURL.relativeFilePath)
 
 	// Load the file if it already exists
@@ -53,6 +57,46 @@ func (provider *GitModuleContentProvider) GetModuleContents(moduleURL string) (s
 	}
 
 	return string(contents), nil
+}
+
+func (provider *GitModuleContentProvider) StoreModuleContents(moduleId string, moduleTar []byte, overwriteExisting bool) (string, error) {
+	parsedModuleId, err := parseGitURL(moduleId)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while parsing the module ID '%v'", moduleId)
+	}
+	modulePathOnDisk := path.Join(provider.modulesDir, parsedModuleId.relativeRepoPath)
+
+	if overwriteExisting {
+		err = os.RemoveAll(modulePathOnDisk)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred while removing the existing module '%v' from disk at '%v'", moduleId, modulePathOnDisk)
+		}
+	}
+
+	_, err = os.Stat(modulePathOnDisk)
+	if err == nil {
+		return "", stacktrace.NewError("Module '%v' already exists on disk, not overwriting", modulePathOnDisk)
+	}
+
+	tempFile, err := os.CreateTemp(defaultTmpDir, temporaryArchiveFilePattern)
+	if err != nil {
+		return "", stacktrace.NewError("An error occurred while creating temporary file to write compressed '%v' to", moduleId)
+	}
+	defer os.Remove(tempFile.Name())
+
+	bytesWritten, err := tempFile.Write(moduleTar)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while writing contents of '%v' to '%v'", moduleId, tempFile.Name())
+	}
+	if bytesWritten != len(moduleTar) {
+		return "", stacktrace.NewError("Expected to write '%v' bytes but wrote '%v'", len(moduleTar), bytesWritten)
+	}
+	err = archiver.Unarchive(tempFile.Name(), modulePathOnDisk)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while unarchiving '%v' to '%v'", tempFile.Name(), modulePathOnDisk)
+	}
+
+	return modulePathOnDisk, nil
 }
 
 // atomicClone This first clones to a temporary directory and then moves it
