@@ -157,14 +157,17 @@ func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 		if !found || dictErr != nil {
 			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateDataFieldKey))
 		}
+		templateDataJsonStrValue, castErr := safeCastToString(templateDataStarlarkValue, fmt.Sprintf("%v[\"%v\"][\"%v\"]", templatesAndDataArgName, relPathInFilesArtifactStr, templateDataFieldKey))
+		if castErr != nil {
+			return nil, castErr
+		}
 		// Massive Hack
 		// We do this for a couple of reasons,
-		// 1. There is no good way to go from Starlark to JSON, the `String()` method seems to work, this ensures that it does
-		// 2. Unmarshalling followed by Marshalling, allows for the non-scientific notation of floats to be preserved
-		// 3. Don't have to write a custom way to jsonify Starlark
-		// 4. This behaves as close to marshalling primitives in Golang as possible
+		// 1. Unmarshalling followed by Marshalling, allows for the non-scientific notation of floats to be preserved
+		// 2. Don't have to write a custom way to jsonify Starlark
+		// 3. This behaves as close to marshalling primitives in Golang as possible
 		var temporaryUnmarshalledValue interface{}
-		err := json.Unmarshal([]byte(templateDataStarlarkValue.String()), &temporaryUnmarshalledValue)
+		err := json.Unmarshal([]byte(templateDataJsonStrValue), &temporaryUnmarshalledValue)
 		if err != nil {
 			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Template data for file '%v', '%v' isn't valid JSON", relPathInFilesArtifactStr, templateDataStarlarkValue))
 		}

@@ -491,44 +491,12 @@ func TestParseFilesArtifactMountDirpaths_FailureOnNonStringValue(t *testing.T) {
 }
 
 func TestParseTemplatesAndData_SimpleCase(t *testing.T) {
-	templateDataDict := starlark.NewDict(1)
-	err := templateDataDict.SetKey(starlark.String("Name"), starlark.String("John"))
-	require.Nil(t, err)
-
+	dataAsJson := `{"LargeFloat":1231231243.43,"Name":"John","UnixTs":1257894000}`
 	subDict := starlark.NewDict(2)
-	template := "Hello {{.Name}}"
-	err = subDict.SetKey(starlark.String("template"), starlark.String(template))
+	template := "Hello {{.Name}}. {{.LargeFloat}} {{.UnixTs}}"
+	err := subDict.SetKey(starlark.String("template"), starlark.String(template))
 	require.Nil(t, err)
-	err = subDict.SetKey(starlark.String("template_data"), templateDataDict)
-	require.Nil(t, err)
-	input := starlark.NewDict(1)
-	err = input.SetKey(starlark.String("/foo/bar"), subDict)
-	require.Nil(t, err)
-
-	expectedTemplateAndData := binding_constructors.NewTemplateAndData(template, `{"Name":"John"}`)
-	expectedOutput := map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
-		"/foo/bar": expectedTemplateAndData,
-	}
-
-	output, err := ParseTemplatesAndData(input)
-	require.Nil(t, err)
-	require.Equal(t, expectedOutput, output)
-}
-
-func TestParseTemplatesAndData_MultiKeyMultiTypeDictionary(t *testing.T) {
-	templateDataDict := starlark.NewDict(3)
-	err := templateDataDict.SetKey(starlark.String("Name"), starlark.String("John"))
-	require.Nil(t, err)
-	err = templateDataDict.SetKey(starlark.String("LargeFloat"), starlark.Float(1231231243.43))
-	require.Nil(t, err)
-	err = templateDataDict.SetKey(starlark.String("UnixTs"), starlark.MakeUint64(1257894000))
-	require.Nil(t, err)
-
-	subDict := starlark.NewDict(2)
-	template := "Hello {{.Name}} {{.LargeFloat}} {{.UnixTs}}"
-	err = subDict.SetKey(starlark.String("template"), starlark.String(template))
-	require.Nil(t, err)
-	err = subDict.SetKey(starlark.String("template_data"), templateDataDict)
+	err = subDict.SetKey(starlark.String("template_data"), starlark.String(dataAsJson))
 	require.Nil(t, err)
 	input := starlark.NewDict(1)
 	err = input.SetKey(starlark.String("/foo/bar"), subDict)
@@ -542,70 +510,4 @@ func TestParseTemplatesAndData_MultiKeyMultiTypeDictionary(t *testing.T) {
 	output, err := ParseTemplatesAndData(input)
 	require.Nil(t, err)
 	require.Equal(t, expectedOutput, output)
-}
-
-func TestParseTemplatesAndData_SimpleNumberTemplateData(t *testing.T) {
-	templateDataInt := starlark.MakeInt(42)
-
-	subDict := starlark.NewDict(2)
-	template := "Hello {{.Name}}"
-	err := subDict.SetKey(starlark.String("template"), starlark.String(template))
-	require.Nil(t, err)
-	err = subDict.SetKey(starlark.String("template_data"), templateDataInt)
-	require.Nil(t, err)
-	input := starlark.NewDict(1)
-	err = input.SetKey(starlark.String("/foo/bar"), subDict)
-	require.Nil(t, err)
-
-	expectedTemplateAndData := binding_constructors.NewTemplateAndData(template, "42")
-	expectedOutput := map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
-		"/foo/bar": expectedTemplateAndData,
-	}
-
-	output, err := ParseTemplatesAndData(input)
-	require.Nil(t, err)
-	require.Equal(t, expectedOutput, output)
-}
-
-func TestParseTemplatesAndData_SimpleStringTemplateData(t *testing.T) {
-	templateDataInt := starlark.String("hello world")
-
-	subDict := starlark.NewDict(2)
-	template := "Hello {{.Name}}"
-	err := subDict.SetKey(starlark.String("template"), starlark.String(template))
-	require.Nil(t, err)
-	err = subDict.SetKey(starlark.String("template_data"), templateDataInt)
-	require.Nil(t, err)
-	input := starlark.NewDict(1)
-	err = input.SetKey(starlark.String("/foo/bar"), subDict)
-	require.Nil(t, err)
-
-	expectedTemplateAndData := binding_constructors.NewTemplateAndData(template, "\"hello world\"")
-	expectedOutput := map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
-		"/foo/bar": expectedTemplateAndData,
-	}
-
-	output, err := ParseTemplatesAndData(input)
-	require.Nil(t, err)
-	require.Equal(t, expectedOutput, output)
-}
-
-func TestParseTemplatesAndData_FailsForInvalidJSONWithIntegerKeys(t *testing.T) {
-	templateDataDict := starlark.NewDict(1)
-	err := templateDataDict.SetKey(starlark.MakeInt(53), starlark.String("John"))
-	require.Nil(t, err)
-
-	subDict := starlark.NewDict(2)
-	template := "Hello {{.Name}}"
-	err = subDict.SetKey(starlark.String("template"), starlark.String(template))
-	require.Nil(t, err)
-	err = subDict.SetKey(starlark.String("template_data"), templateDataDict)
-	require.Nil(t, err)
-	input := starlark.NewDict(1)
-	err = input.SetKey(starlark.String("/foo/bar"), subDict)
-	require.Nil(t, err)
-
-	_, err = ParseTemplatesAndData(input)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "isn't valid JSON")
 }

@@ -956,11 +956,13 @@ template_data = {
 			"Numbers": [1, 2, 3],
 			"UnixTimeStamp": 1257894000,
 			"LargeFloat": 1231231243.43,
+			"Alive": True
 }
+encoded_json = json.encode(template_data)
 data = {
 	"/foo/bar/test.txt" : {
-		"template": "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}.",
-		"template_data": template_data
+		"template": "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}",
+		"template_data": encoded_json
     }
 }
 artifact_uuid = render_templates(template_and_data_by_dest_rel_filepath = data)
@@ -971,8 +973,8 @@ print(artifact_uuid)
 	require.Nil(t, interpretationError)
 	require.Equal(t, 1, len(instructions))
 
-	template := "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}."
-	templateData := map[string]interface{}{"Name": "Stranger", "Answer": 6, "Numbers": []int{1, 2, 3}, "UnixTimeStamp": 1257894000, "LargeFloat": 1231231243.43}
+	template := "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}"
+	templateData := map[string]interface{}{"Name": "Stranger", "Answer": 6, "Numbers": []int{1, 2, 3}, "UnixTimeStamp": 1257894000, "LargeFloat": 1231231243.43, "Alive": true}
 	templateDataAsJson, err := json.Marshal(templateData)
 	require.Nil(t, err)
 	templateAndData := binding_constructors.NewTemplateAndData(template, string(templateDataAsJson))
@@ -982,14 +984,14 @@ print(artifact_uuid)
 
 	renderInstruction := render_templates.NewRenderTemplatesInstruction(
 		testServiceNetwork,
-		*kurtosis_instruction.NewInstructionPosition(16, 33),
+		*kurtosis_instruction.NewInstructionPosition(18, 33),
 		templateAndDataByDestFilepath,
 	)
 
 	require.Equal(t, renderInstruction, instructions[0])
 
 	expectedOutput := `Rendering template to disk!
-{{kurtosis:16:33.artifact_uuid}}
+{{kurtosis:18:33.artifact_uuid}}
 `
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
