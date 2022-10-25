@@ -18,7 +18,6 @@ const (
 	fileToBeCreated               = "/tmp/foo"
 	mountPathOnDependentService   = "/tmp/doo"
 	pathToCheckOnDependentService = mountPathOnDependentService + "/foo"
-	fileToRead                    = "github.com/kurtosis-tech/sample-startosis-load/sample.star"
 	renderedConfigMountPath       = "/config"
 	renderedConfigRelativePath    = "foo/bar.yml"
 	renderedConfigFile            = renderedConfigMountPath + "/" + renderedConfigRelativePath
@@ -30,7 +29,6 @@ DATASTORE_PORT_ID = "` + portId + `"
 DATASTORE_PORT_NUMBER = 1323
 DATASTORE_PORT_PROTOCOL = "TCP"
 FILE_TO_BE_CREATED = "` + fileToBeCreated + `"
-FILE_TO_READ = "` + fileToRead + `"
 
 SERVICE_DEPENDENT_ON_DATASTORE_SERVICE = "` + serviceIdForDependentService + `"
 PATH_TO_MOUNT_ON_DEPENDENT_SERVICE =  "` + pathToCheckOnDependentService + `"
@@ -80,10 +78,6 @@ dependent_service_config = struct(
 	}
 )
 add_service(service_id = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, service_config = dependent_service_config)
-
-
-file_contents = read_file(FILE_TO_READ)
-print("file_contents = " + file_contents)
 `
 )
 
@@ -104,8 +98,6 @@ func TestStartosis(t *testing.T) {
 
 	expectedScriptOutput := `Adding service example-datastore-server-1.
 Service example-datastore-server-1 deployed successfully.
-file_contents = a = "World!"
-
 `
 	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
 	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
