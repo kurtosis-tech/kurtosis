@@ -144,11 +144,15 @@ func run(
 	return nil
 }
 
-func validateScriptOrModulePath(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
+func validateScriptOrModulePath(_ context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
 	scriptOrModulePath, err := args.GetNonGreedyArg(scriptOrModulePathKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Unable to get argument '%s'", scriptOrModulePathKey)
+	}
+
 	scriptOrModulePath = strings.TrimSpace(scriptOrModulePath)
-	if scriptOrModulePath == "" || err != nil {
-		return stacktrace.Propagate(err, "Unable to get '%v' argument '%s'. It should be non empty", scriptOrModulePathKey, scriptOrModulePath)
+	if scriptOrModulePath == "" {
+		return stacktrace.NewError("Received an empty '%v'. It should be a non empty string.", scriptOrModulePathKey)
 	}
 
 	fileInfo, err := os.Stat(scriptOrModulePath)
