@@ -17,6 +17,8 @@ var global = Function('return this')();
 
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 goog.object.extend(proto, google_protobuf_empty_pb);
+var google_protobuf_duration_pb = require('google-protobuf/google/protobuf/duration_pb.js');
+goog.object.extend(proto, google_protobuf_duration_pb);
 goog.exportSymbol('proto.api_container_api.ConstantFactRecipe', null, global);
 goog.exportSymbol('proto.api_container_api.DownloadFilesArtifactArgs', null, global);
 goog.exportSymbol('proto.api_container_api.DownloadFilesArtifactResponse', null, global);
@@ -9121,7 +9123,8 @@ proto.api_container_api.FactRecipe.toObject = function(includeInstance, msg) {
     factName: jspb.Message.getFieldWithDefault(msg, 2, ""),
     constantFact: (f = msg.getConstantFact()) && proto.api_container_api.ConstantFactRecipe.toObject(includeInstance, f),
     execFact: (f = msg.getExecFact()) && proto.api_container_api.ExecFactRecipe.toObject(includeInstance, f),
-    httpRequestFact: (f = msg.getHttpRequestFact()) && proto.api_container_api.HttpRequestFactRecipe.toObject(includeInstance, f)
+    httpRequestFact: (f = msg.getHttpRequestFact()) && proto.api_container_api.HttpRequestFactRecipe.toObject(includeInstance, f),
+    refreshInterval: (f = msg.getRefreshInterval()) && google_protobuf_duration_pb.Duration.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -9180,6 +9183,11 @@ proto.api_container_api.FactRecipe.deserializeBinaryFromReader = function(msg, r
       var value = new proto.api_container_api.HttpRequestFactRecipe;
       reader.readMessage(value,proto.api_container_api.HttpRequestFactRecipe.deserializeBinaryFromReader);
       msg.setHttpRequestFact(value);
+      break;
+    case 10:
+      var value = new google_protobuf_duration_pb.Duration;
+      reader.readMessage(value,google_protobuf_duration_pb.Duration.deserializeBinaryFromReader);
+      msg.setRefreshInterval(value);
       break;
     default:
       reader.skipField();
@@ -9246,6 +9254,14 @@ proto.api_container_api.FactRecipe.serializeBinaryToWriter = function(message, w
       5,
       f,
       proto.api_container_api.HttpRequestFactRecipe.serializeBinaryToWriter
+    );
+  }
+  f = message.getRefreshInterval();
+  if (f != null) {
+    writer.writeMessage(
+      10,
+      f,
+      google_protobuf_duration_pb.Duration.serializeBinaryToWriter
     );
   }
 };
@@ -9395,6 +9411,43 @@ proto.api_container_api.FactRecipe.prototype.clearHttpRequestFact = function() {
  */
 proto.api_container_api.FactRecipe.prototype.hasHttpRequestFact = function() {
   return jspb.Message.getField(this, 5) != null;
+};
+
+
+/**
+ * optional google.protobuf.Duration refresh_interval = 10;
+ * @return {?proto.google.protobuf.Duration}
+ */
+proto.api_container_api.FactRecipe.prototype.getRefreshInterval = function() {
+  return /** @type{?proto.google.protobuf.Duration} */ (
+    jspb.Message.getWrapperField(this, google_protobuf_duration_pb.Duration, 10));
+};
+
+
+/**
+ * @param {?proto.google.protobuf.Duration|undefined} value
+ * @return {!proto.api_container_api.FactRecipe} returns this
+*/
+proto.api_container_api.FactRecipe.prototype.setRefreshInterval = function(value) {
+  return jspb.Message.setWrapperField(this, 10, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api_container_api.FactRecipe} returns this
+ */
+proto.api_container_api.FactRecipe.prototype.clearRefreshInterval = function() {
+  return this.setRefreshInterval(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.FactRecipe.prototype.hasRefreshInterval = function() {
+  return jspb.Message.getField(this, 10) != null;
 };
 
 

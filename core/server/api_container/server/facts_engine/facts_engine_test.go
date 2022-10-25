@@ -5,10 +5,16 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"os"
 	"strconv"
 	"testing"
 	"time"
+)
+
+const (
+	refreshInterval          = time.Millisecond
+	waitUntilFactsAreUpdated = 100 * refreshInterval
 )
 
 func TestFactEngineLoop(t *testing.T) {
@@ -28,7 +34,7 @@ func TestFactEngineLoop(t *testing.T) {
 			StringValue: "value",
 		},
 	}
-	factsEngine.PushRecipe(&kurtosis_core_rpc_api_bindings.FactRecipe{
+	err = factsEngine.PushRecipe(&kurtosis_core_rpc_api_bindings.FactRecipe{
 		ServiceId: "service_id",
 		FactName:  "fact_name",
 		FactRecipe: &kurtosis_core_rpc_api_bindings.FactRecipe_ConstantFact{
@@ -36,8 +42,10 @@ func TestFactEngineLoop(t *testing.T) {
 				FactValue: factValue,
 			},
 		},
+		RefreshInterval: durationpb.New(refreshInterval),
 	})
-	time.Sleep(1 * time.Second) // Wait for the background workers to perform operations
+	require.Nil(t, err)
+	time.Sleep(waitUntilFactsAreUpdated) // Wait for the background workers to perform operations
 	_, fetchedFactValue, err := factsEngine.FetchLatestFactValue("service_id.fact_name")
 	require.Nil(t, err)
 	require.Equal(t, fetchedFactValue.GetStringValue(), factValue.GetStringValue())
@@ -56,7 +64,7 @@ func TestFactRecipePersistence(t *testing.T) {
 			StringValue: "value",
 		},
 	}
-	factsEngine.PushRecipe(&kurtosis_core_rpc_api_bindings.FactRecipe{
+	err = factsEngine.PushRecipe(&kurtosis_core_rpc_api_bindings.FactRecipe{
 		ServiceId: "service_id",
 		FactName:  "fact_name",
 		FactRecipe: &kurtosis_core_rpc_api_bindings.FactRecipe_ConstantFact{
@@ -64,8 +72,10 @@ func TestFactRecipePersistence(t *testing.T) {
 				FactValue: factValue,
 			},
 		},
+		RefreshInterval: durationpb.New(refreshInterval),
 	})
-	time.Sleep(1 * time.Second) // Wait for the background workers to perform operations
+	require.Nil(t, err)
+	time.Sleep(waitUntilFactsAreUpdated) // Wait for the background workers to perform operations
 	factsEngine.Stop()
 	err = db.Close()
 	require.Nil(t, err)
@@ -78,7 +88,7 @@ func TestFactRecipePersistence(t *testing.T) {
 	secondEngineTimestamp := time.Now().UnixNano()
 	otherFactsEngine := NewFactsEngine(otherDb, service_network.NewEmptyMockServiceNetwork())
 	otherFactsEngine.Start()
-	time.Sleep(1 * time.Second) // Wait for the background workers to perform operations
+	time.Sleep(waitUntilFactsAreUpdated) // Wait for the background workers to perform operations
 	savedTimestampStr, _, err := otherFactsEngine.FetchLatestFactValue("service_id.fact_name")
 	require.Nil(t, err)
 	savedTimestamp, err := strconv.ParseInt(savedTimestampStr, 10, 64)

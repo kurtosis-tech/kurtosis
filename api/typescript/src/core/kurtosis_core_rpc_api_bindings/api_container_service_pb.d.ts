@@ -1,6 +1,7 @@
 import * as jspb from 'google-protobuf'
 
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
+import * as google_protobuf_duration_pb from 'google-protobuf/google/protobuf/duration_pb';
 
 
 export class Port extends jspb.Message {
@@ -1107,6 +1108,11 @@ export class FactRecipe extends jspb.Message {
   hasHttpRequestFact(): boolean;
   clearHttpRequestFact(): FactRecipe;
 
+  getRefreshInterval(): google_protobuf_duration_pb.Duration | undefined;
+  setRefreshInterval(value?: google_protobuf_duration_pb.Duration): FactRecipe;
+  hasRefreshInterval(): boolean;
+  clearRefreshInterval(): FactRecipe;
+
   getFactRecipeCase(): FactRecipe.FactRecipeCase;
 
   serializeBinary(): Uint8Array;
@@ -1124,6 +1130,7 @@ export namespace FactRecipe {
     constantFact?: ConstantFactRecipe.AsObject,
     execFact?: ExecFactRecipe.AsObject,
     httpRequestFact?: HttpRequestFactRecipe.AsObject,
+    refreshInterval?: google_protobuf_duration_pb.Duration.AsObject,
   }
 
   export enum FactRecipeCase { 
