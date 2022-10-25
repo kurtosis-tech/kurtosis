@@ -200,13 +200,13 @@ func executeModule(enclaveCtx *enclaves.EnclaveContext, modulePath string) error
 
 func validateExecutionResponse(executionResponse *kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, scriptOrModulePath string, scriptOrModuleArg string) error {
 	if executionResponse.InterpretationError != "" {
-		return stacktrace.NewError("There was an error interpreting the Startosis %s '%s': \n%v", scriptOrModulePath, scriptOrModuleArg, executionResponse.InterpretationError)
+		return stacktrace.NewError("There was an error interpreting the Startosis %s '%s': \n%v", scriptOrModuleArg, scriptOrModulePath, executionResponse.InterpretationError)
 	}
 	if len(executionResponse.ValidationErrors) > 0 {
-		return stacktrace.NewError("There was an error validating the Startosis %s '%s': \n%v", scriptOrModulePath, scriptOrModuleArg, executionResponse.ValidationErrors)
+		return stacktrace.NewError("There was an error validating the Startosis %s '%s': \n%v", scriptOrModuleArg, scriptOrModulePath, executionResponse.ValidationErrors)
 	}
 	if executionResponse.ExecutionError != "" {
-		return stacktrace.NewError("There was an error executing the Startosis %s '%s': \n%v", scriptOrModulePath, scriptOrModuleArg, executionResponse.ExecutionError)
+		return stacktrace.NewError("There was an error executing the Startosis %s '%s': \n%v", scriptOrModuleArg, scriptOrModulePath, executionResponse.ExecutionError)
 	}
 
 	logrus.Infof("Startosis %s executed successfully. Output of the module was: \n%v", scriptOrModuleArg, executionResponse.SerializedScriptOutput)
