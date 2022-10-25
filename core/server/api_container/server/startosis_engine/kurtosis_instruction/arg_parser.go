@@ -36,8 +36,8 @@ const (
 	srcPathArgName = "src_path"
 
 	templatesAndDataArgName = "template_and_data_by_dest_rel_filepath"
-	templateFieldKey        = "template"
-	templateDataFieldKey    = "template_data"
+	templateFieldKey        = starlark.String("template")
+	templateDataFieldKey    = starlark.String("template_data")
 
 	maxPortNumber = 65535
 )
@@ -145,7 +145,7 @@ func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 		if !ok {
 			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected %v[\"%v\"] to be a dict. Got '%s'", templatesAndData, stringKey, reflect.TypeOf(value)))
 		}
-		template, found, dictErr := dictValue.Get(starlark.String(templateFieldKey))
+		template, found, dictErr := dictValue.Get(templateFieldKey)
 		if !found || dictErr != nil {
 			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateFieldKey))
 		}
@@ -153,7 +153,7 @@ func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 		if castErr != nil {
 			return nil, castErr
 		}
-		templateDataStarlarkValue, found, dictErr := dictValue.Get(starlark.String(templateDataFieldKey))
+		templateDataStarlarkValue, found, dictErr := dictValue.Get(templateDataFieldKey)
 		if !found || dictErr != nil {
 			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateDataFieldKey))
 		}
