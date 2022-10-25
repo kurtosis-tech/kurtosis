@@ -62,7 +62,7 @@ func (provider *GitModuleContentProvider) GetModuleContents(moduleURL string) (s
 func (provider *GitModuleContentProvider) StoreModuleContents(moduleId string, moduleTar []byte) (string, error) {
 	parsedModuleId, err := parseGitURL(moduleId)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while parsing the moduleId '%v'", moduleId)
+		return "", stacktrace.Propagate(err, "An error occurred while parsing the module ID '%v'", moduleId)
 	}
 	modulePathOnDisk := path.Join(provider.modulesDir, parsedModuleId.relativeRepoPath)
 	_, err = os.Stat(modulePathOnDisk)

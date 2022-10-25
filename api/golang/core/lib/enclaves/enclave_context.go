@@ -144,13 +144,11 @@ func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(moduleRootPath string) 
 		return nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", modFilename, moduleRootPath)
 	}
 
-	moduleName := kurtosisMod.Module.ModuleName
-
 	compressedModule, err := compressPath(moduleRootPath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", moduleRootPath)
 	}
-	executeStartosisModuleArgs := binding_constructors.NewExecuteStartosisModuleArgs(moduleName, compressedModule)
+	executeStartosisModuleArgs := binding_constructors.NewExecuteStartosisModuleArgs(kurtosisMod.Module.ModuleName, compressedModule)
 	executeStartosisResponse, err := enclaveCtx.client.ExecuteStartosisModule(context.Background(), executeStartosisModuleArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unexpected error happened executing Startosis module \n%v", moduleRootPath)

@@ -122,12 +122,12 @@ func run(
 
 	fileOrDir, err := os.Stat(startosisScriptOrModulePath)
 	if err != nil {
-		return stacktrace.NewError("There was an error reading file or module from disk at '%v'", startosisScriptOrModulePath)
+		return stacktrace.Propagate(err, "There was an error reading file or module from disk at '%v'", startosisScriptOrModulePath)
 	}
 
 	if fileOrDir.Mode().IsRegular() {
 		if !strings.HasSuffix(startosisScriptOrModulePath, startosisExtension) {
-			return stacktrace.Propagate(err, "Expected a script with a %s extension but got file '%v' with a different extension", startosisExtension, startosisScriptOrModulePath)
+			return stacktrace.Propagate(err, "Expected a script with a '%s' extension but got file '%v' with a different extension", startosisExtension, startosisScriptOrModulePath)
 		}
 		err = executeScript(enclaveCtx, startosisScriptOrModulePath)
 		if err != nil {
@@ -147,7 +147,7 @@ func run(
 func validateScriptOrModulePath(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
 	scriptOrModulePath, err := args.GetNonGreedyArg(scriptOrModulePathKey)
 	if scriptOrModulePath == "" || err != nil {
-		return stacktrace.Propagate(err, "Unable to get %v argument '%s'. It should be non empty", scriptOrModulePathKey, scriptOrModulePath)
+		return stacktrace.Propagate(err, "Unable to get '%v' argument '%s'. It should be non empty", scriptOrModulePathKey, scriptOrModulePath)
 	}
 
 	fileInfo, err := os.Stat(scriptOrModulePath)
@@ -180,7 +180,6 @@ func executeScript(enclaveCtx *enclaves.EnclaveContext, scriptPath string) error
 }
 
 func executeModule(enclaveCtx *enclaves.EnclaveContext, modulePath string) error {
-
 	executionResponse, err := enclaveCtx.ExecuteStartosisModule(modulePath)
 	if err != nil {
 		return stacktrace.Propagate(err, "An unexpected error occurred executing the Startosis module '%s'", modulePath)

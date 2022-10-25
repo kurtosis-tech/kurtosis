@@ -16,7 +16,7 @@ class Module {
 
 const UTF8_ENCODING = "utf-8";
 
-export async  function parseKurtosisMod(kurtosisModFilepath :string): Promise<Result<KurtosisMod, Error>> {
+export async  function parseKurtosisMod(kurtosisModFilepath: string): Promise<Result<KurtosisMod, Error>> {
     // check if the mod file actually exists
     if (!fs.existsSync(kurtosisModFilepath)) {
         return err(new Error(`The file '${kurtosisModFilepath}' does not exist.`))
