@@ -27,7 +27,7 @@ func TestFactEngineLoop(t *testing.T) {
 			StringValue: "value",
 		},
 	}
-	factsEngine.PushRecipe(&kurtosis_core_rpc_api_bindings.FactRecipe{
+	err = factsEngine.PushRecipe(&kurtosis_core_rpc_api_bindings.FactRecipe{
 		ServiceId: "service_id",
 		FactName:  "fact_name",
 		FactRecipe: &kurtosis_core_rpc_api_bindings.FactRecipe_ConstantFact{
@@ -36,6 +36,7 @@ func TestFactEngineLoop(t *testing.T) {
 			},
 		},
 	})
+	require.Nil(t, err)
 	time.Sleep(1 * time.Second) // Wait for the background workers to perform operations
 	_, fetchedFactValue, err := factsEngine.FetchLatestFactValue("service_id.fact_name")
 	require.Nil(t, err)
@@ -55,7 +56,7 @@ func TestFactRecipePersistence(t *testing.T) {
 			StringValue: "value",
 		},
 	}
-	factsEngine.PushRecipe(&kurtosis_core_rpc_api_bindings.FactRecipe{
+	err = factsEngine.PushRecipe(&kurtosis_core_rpc_api_bindings.FactRecipe{
 		ServiceId: "service_id",
 		FactName:  "fact_name",
 		FactRecipe: &kurtosis_core_rpc_api_bindings.FactRecipe_ConstantFact{
@@ -64,6 +65,7 @@ func TestFactRecipePersistence(t *testing.T) {
 			},
 		},
 	})
+	require.Nil(t, err)
 	time.Sleep(1 * time.Second) // Wait for the background workers to perform operations
 	factsEngine.Stop()
 	err = db.Close()

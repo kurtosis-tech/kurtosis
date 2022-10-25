@@ -100,7 +100,10 @@ func (engine *FactsEngine) restoreStoredRecipes() error {
 			if err != nil {
 				return stacktrace.Propagate(err, "An error occurred when restoring recipe")
 			}
-			engine.PushRecipe(unmarshalledFactRecipe)
+			err = engine.PushRecipe(unmarshalledFactRecipe)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred when restoring recipe")
+			}
 			restoredRecipes += 1
 			return nil
 		})
@@ -131,11 +134,12 @@ func (engine *FactsEngine) persistRecipe(recipe *kurtosis_core_rpc_api_bindings.
 }
 
 func (engine *FactsEngine) runRecipeLoop(factId FactId, exit <-chan bool, recipe *kurtosis_core_rpc_api_bindings.FactRecipe) {
+	ticker := time.NewTicker(defaultWaitTimeBetweenFactPool)
 	for {
 		select {
 		case <-exit:
 			return
-		case <-time.Tick(defaultWaitTimeBetweenFactPool):
+		case <-ticker.C:
 			// TODO(victor.colombo): Take hint from protobuf on how long to wait for it
 			timestamp := strconv.FormatInt(time.Now().UnixNano(), 10)
 			factValue, err := engine.runRecipe(recipe)
