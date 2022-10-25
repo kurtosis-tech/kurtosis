@@ -32,7 +32,7 @@ func (provider *MockModuleContentProvider) GetModuleContents(moduleID string) (s
 	return contents, nil
 }
 
-func (provider *MockModuleContentProvider) StoreModuleContents(string, []byte) (string, error) {
+func (provider *MockModuleContentProvider) StoreModuleContents(string, []byte, bool) (string, error) {
 	panic(unimplementedMessage)
 }
 

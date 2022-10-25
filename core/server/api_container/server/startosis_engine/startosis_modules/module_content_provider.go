@@ -4,5 +4,5 @@ package startosis_modules
 // It fetches the contents of the module for you
 type ModuleContentProvider interface {
 	GetModuleContents(string) (string, error)
-	StoreModuleContents(string, []byte) (string, error)
+	StoreModuleContents(string, []byte, bool) (string, error)
 }

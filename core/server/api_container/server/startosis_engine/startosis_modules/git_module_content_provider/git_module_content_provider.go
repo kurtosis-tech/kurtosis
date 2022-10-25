@@ -59,12 +59,20 @@ func (provider *GitModuleContentProvider) GetModuleContents(moduleURL string) (s
 	return string(contents), nil
 }
 
-func (provider *GitModuleContentProvider) StoreModuleContents(moduleId string, moduleTar []byte) (string, error) {
+func (provider *GitModuleContentProvider) StoreModuleContents(moduleId string, moduleTar []byte, overwriteExisting bool) (string, error) {
 	parsedModuleId, err := parseGitURL(moduleId)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while parsing the module ID '%v'", moduleId)
 	}
 	modulePathOnDisk := path.Join(provider.modulesDir, parsedModuleId.relativeRepoPath)
+
+	if overwriteExisting {
+		err = os.RemoveAll(modulePathOnDisk)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred while removing the existing module '%v' from disk at '%v'", moduleId, modulePathOnDisk)
+		}
+	}
+
 	_, err = os.Stat(modulePathOnDisk)
 	if err == nil {
 		return "", stacktrace.NewError("Module '%v' already exists on disk, not overwriting", modulePathOnDisk)

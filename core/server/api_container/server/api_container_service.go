@@ -66,6 +66,9 @@ const (
 load("%v/` + mainStartosisFile + `", "main")
 main()
 	`
+	// Overwrite existing module with new module, this allows user to iterate on an enclave with a
+	// given module
+	doOverwriteExistingModule = true
 )
 
 var (
@@ -260,7 +263,7 @@ func (apicService ApiContainerService) ExecuteStartosisModule(ctx context.Contex
 	moduleId := args.ModuleId
 	moduleData := args.Data
 
-	moduleRootPathOnDisk, err := apicService.startosisModuleContentProvider.StoreModuleContents(moduleId, moduleData)
+	moduleRootPathOnDisk, err := apicService.startosisModuleContentProvider.StoreModuleContents(moduleId, moduleData, doOverwriteExistingModule)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while writing module to disk '%v'", err)
 	}
