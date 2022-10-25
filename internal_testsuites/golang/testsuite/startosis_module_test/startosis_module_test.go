@@ -16,7 +16,7 @@ const (
 	validKurtosisModuleRelPath          = "../../../startosis/valid-kurtosis-module"
 	invalidCaseModFileTestName          = "startosis-module-invalid-mod-file"
 	moduleWithInvalidKurtosisModRelPath = "../../../startosis/invalid-mod-file"
-	invalidCaseMainStarMissingTestName  = "startosis-module-missing-main-star"
+	invalidCaseMainStarMissingTestName  = "startosis-module-no-main-file"
 	moduleWithNoMainStarRelPath         = "../../../startosis/no-main-star"
 	invalidCaseNoMainInMainStarTestName = "startosis-module-missing-main"
 	moduleWithNoMainInMainStarRelPath   = "../../../startosis/no-main-in-main-star"
