@@ -4,10 +4,16 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"os"
 	"strconv"
 	"testing"
 	"time"
+)
+
+const (
+	refreshInterval          = time.Millisecond
+	waitUntilFactsAreUpdated = 100 * refreshInterval
 )
 
 func TestFactEngineLoop(t *testing.T) {
@@ -35,9 +41,10 @@ func TestFactEngineLoop(t *testing.T) {
 				FactValue: factValue,
 			},
 		},
+		RefreshInterval: durationpb.New(refreshInterval),
 	})
 	require.Nil(t, err)
-	time.Sleep(1 * time.Second) // Wait for the background workers to perform operations
+	time.Sleep(waitUntilFactsAreUpdated) // Wait for the background workers to perform operations
 	_, fetchedFactValue, err := factsEngine.FetchLatestFactValue("service_id.fact_name")
 	require.Nil(t, err)
 	require.Equal(t, fetchedFactValue.GetStringValue(), factValue.GetStringValue())
@@ -64,9 +71,10 @@ func TestFactRecipePersistence(t *testing.T) {
 				FactValue: factValue,
 			},
 		},
+		RefreshInterval: durationpb.New(refreshInterval),
 	})
 	require.Nil(t, err)
-	time.Sleep(1 * time.Second) // Wait for the background workers to perform operations
+	time.Sleep(waitUntilFactsAreUpdated) // Wait for the background workers to perform operations
 	factsEngine.Stop()
 	err = db.Close()
 	require.Nil(t, err)
@@ -79,7 +87,7 @@ func TestFactRecipePersistence(t *testing.T) {
 	secondEngineTimestamp := time.Now().UnixNano()
 	otherFactsEngine := NewFactsEngine(otherDb)
 	otherFactsEngine.Start()
-	time.Sleep(1 * time.Second) // Wait for the background workers to perform operations
+	time.Sleep(waitUntilFactsAreUpdated) // Wait for the background workers to perform operations
 	savedTimestampStr, _, err := otherFactsEngine.FetchLatestFactValue("service_id.fact_name")
 	require.Nil(t, err)
 	savedTimestamp, err := strconv.ParseInt(savedTimestampStr, 10, 64)

@@ -135,6 +135,9 @@ func (engine *FactsEngine) persistRecipe(recipe *kurtosis_core_rpc_api_bindings.
 
 func (engine *FactsEngine) runRecipeLoop(factId FactId, exit <-chan bool, recipe *kurtosis_core_rpc_api_bindings.FactRecipe) {
 	ticker := time.NewTicker(defaultWaitTimeBetweenFactPool)
+	if recipe.GetRefreshInterval() != nil {
+		ticker = time.NewTicker(recipe.GetRefreshInterval().AsDuration())
+	}
 	for {
 		select {
 		case <-exit:

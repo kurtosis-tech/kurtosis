@@ -6,6 +6,7 @@ package api_container_api;
 option go_package = "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings";
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/duration.proto";
 
 service ApiContainerService {
   // Starts a module container in the enclave
@@ -502,6 +503,7 @@ message FactRecipe {
   oneof fact_recipe {
     ConstantFactRecipe constant_fact = 3;
   }
+  google.protobuf.Duration refresh_interval = 4;
 }
 
 // ==============================================================================================
