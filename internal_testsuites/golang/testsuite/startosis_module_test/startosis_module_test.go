@@ -11,11 +11,14 @@ import (
 )
 
 const (
-	testName                            = "startosis_module_test"
 	isPartitioningEnabled               = false
+	validCaseTestName                   = "startosis-module-valid"
 	validKurtosisModuleRelPath          = "../../../startosis/valid-kurtosis-module"
+	invalidCaseModFileTestName          = "startosis-module-invalid-mod-file"
 	moduleWithInvalidKurtosisModRelPath = "../../../startosis/invalid-mod-file"
+	invalidCaseMainStarMissingTestName  = "startosis-module-missing-main-star"
 	moduleWithNoMainStarRelPath         = "../../../startosis/no-main-star"
+	invalidCaseNoMainInMainStarTestName = "startosis-module-missing-main"
 	moduleWithNoMainInMainStarRelPath   = "../../../startosis/no-main-in-main-star"
 )
 
@@ -23,7 +26,7 @@ func TestStartosisModule_SimpleValidCase(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, validCaseTestName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
 
@@ -52,7 +55,7 @@ func TestStartosisModule_InvalidModFile(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, invalidCaseModFileTestName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
 
@@ -75,7 +78,7 @@ func TestStartosisModule_NoMainFile(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, invalidCaseMainStarMissingTestName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
 
@@ -98,7 +101,7 @@ func TestStartosisModule_NoMainInMainStar(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, invalidCaseNoMainInMainStarTestName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
 
