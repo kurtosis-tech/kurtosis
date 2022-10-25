@@ -5,7 +5,8 @@
 * Added a `store_files_from_service` command to Startosis
 * Added the ability to pass `files_artifact_mount_dirpaths` to the service config
 * Added a `read_file` command to Startosis
-* Added a `render_templates` command to Startotis
+* Added the ability to execute local modules in Startosis
+* Added a `render_templates` command to Startosis
 
 ### Changes
 * Fixed a typo in a filename
