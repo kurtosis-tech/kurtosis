@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/read_file"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_files_from_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/mock_module_content_provider"
@@ -907,6 +908,36 @@ print(artifact_uuid)
 
 	expectedOutput := `Storing file from service!
 {{kurtosis:3:38.artifact_uuid}}
+`
+	require.Equal(t, expectedOutput, string(scriptOutput))
+}
+
+func TestStartosisInterpreter_ReadFileFromGithub(t *testing.T) {
+	srcPath := "github.com/foo/bar/static_files/main.txt"
+	seed := map[string]string{
+		srcPath: "this is a test string",
+	}
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider(seed)
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `
+print("Reading file from GitHub!")
+file_contents=read_file("` + srcPath + `")
+print(file_contents)
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Nil(t, interpretationError)
+	require.Equal(t, 1, len(instructions))
+
+	readInstruction := read_file.NewReadFileInstruction(
+		*kurtosis_instruction.NewInstructionPosition(3, 24),
+		srcPath,
+	)
+
+	require.Equal(t, instructions[0], readInstruction)
+
+	expectedOutput := `Reading file from GitHub!
+this is a test string
 `
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }

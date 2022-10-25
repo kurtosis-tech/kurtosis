@@ -163,6 +163,7 @@ func runMain() error {
 		startosisValidator,
 		startosisExecutor,
 		metricsClient,
+		gitModuleContentProvider,
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the API container service")

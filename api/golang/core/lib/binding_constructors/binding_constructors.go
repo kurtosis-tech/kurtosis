@@ -154,13 +154,13 @@ func NewExecuteStartosisScriptArgs(serializedString string) *kurtosis_core_rpc_a
 	}
 }
 
-func NewExecuteStartosisScriptResponse(
+func NewExecuteStartosisResponse(
 	serializedScriptOutput string,
 	interpretationError string,
 	validationErrors []*kurtosis_core_rpc_api_bindings.StartosisValidationError,
 	executionError string,
-) *kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse {
-	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisScriptResponse{
+) *kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse {
+	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse{
 		SerializedScriptOutput: serializedScriptOutput,
 		InterpretationError:    interpretationError,
 		ValidationErrors:       validationErrors,
@@ -418,5 +418,16 @@ func NewRenderTemplatesToFilesArtifactResponse(filesArtifactUuid string) *kurtos
 func NewStartosisValidationError(error string) *kurtosis_core_rpc_api_bindings.StartosisValidationError {
 	return &kurtosis_core_rpc_api_bindings.StartosisValidationError{
 		Error: error,
+	}
+}
+
+// ==============================================================================================
+//                                 Startosis Module Exec Args
+// ==============================================================================================
+
+func NewExecuteStartosisModuleArgs(moduleId string, compressedModule []byte) *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs {
+	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs{
+		ModuleId: moduleId,
+		Data:     compressedModule,
 	}
 }

@@ -15,11 +15,18 @@ import (
 	"time"
 )
 
+type FactId string
+
 type FactsEngine struct {
+<<<<<<< HEAD
 	db              *bolt.DB
 	recipeChannel   chan *kurtosis_core_rpc_api_bindings.FactRecipe
 	doneChannelList []chan bool
 	serviceNetwork  service_network.ServiceNetwork
+=======
+	db          *bolt.DB
+	exitChanMap map[FactId]chan bool
+>>>>>>> vcolombo/facts-engine
 }
 
 var (
@@ -27,17 +34,25 @@ var (
 	factRecipesBucketName = []byte("fact_recipes")
 )
 
+<<<<<<< HEAD
 func NewFactsEngine(db *bolt.DB, serviceNetwork service_network.ServiceNetwork) *FactsEngine {
 	return &FactsEngine{
 		db,
 		make(chan *kurtosis_core_rpc_api_bindings.FactRecipe),
 		[]chan bool{},
 		serviceNetwork,
+=======
+const defaultWaitTimeBetweenFactPool = 2 * time.Second
+
+func NewFactsEngine(db *bolt.DB) *FactsEngine {
+	return &FactsEngine{
+		db,
+		make(map[FactId]chan bool),
+>>>>>>> vcolombo/facts-engine
 	}
 }
 
 func (engine *FactsEngine) Start() {
-	go engine.consumeRecipeChannel()
 	err := engine.restoreStoredRecipes()
 	if err != nil {
 		logrus.Infof("No fact recipes were found on the database")
@@ -45,14 +60,21 @@ func (engine *FactsEngine) Start() {
 }
 
 func (engine *FactsEngine) Stop() {
-	close(engine.recipeChannel)
-	for _, doneChannel := range engine.doneChannelList {
-		doneChannel <- true
+	for _, exitChan := range engine.exitChanMap {
+		exitChan <- true
+		close(exitChan)
 	}
 }
 
-func (engine *FactsEngine) PushRecipe(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) {
-	engine.recipeChannel <- recipe
+func (engine *FactsEngine) PushRecipe(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) error {
+	err := engine.persistRecipe(recipe)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred when persisting recipe")
+	}
+	factId := GetFactIdFromRecipe(recipe)
+	engine.exitChanMap[factId] = make(chan bool)
+	go engine.runRecipeLoop(factId, engine.exitChanMap[factId], recipe)
+	return nil
 }
 
 func (engine *FactsEngine) FetchLatestFactValue(factId string) (string, *kurtosis_core_rpc_api_bindings.FactValue, error) {
@@ -98,7 +120,7 @@ func (engine *FactsEngine) restoreStoredRecipes() error {
 			if err != nil {
 				return stacktrace.Propagate(err, "An error occurred when restoring recipe")
 			}
-			engine.recipeChannel <- unmarshalledFactRecipe
+			engine.PushRecipe(unmarshalledFactRecipe)
 			restoredRecipes += 1
 			return nil
 		})
@@ -108,19 +130,6 @@ func (engine *FactsEngine) restoreStoredRecipes() error {
 		}
 		return nil
 	})
-}
-
-func (engine *FactsEngine) consumeRecipeChannel() {
-	for recipe := range engine.recipeChannel {
-		err := engine.persistRecipe(recipe)
-		if err != nil {
-			logrus.Errorf(stacktrace.Propagate(err, "An error occurred when persisting recipe").Error())
-			continue
-		}
-		doneChannel := make(chan bool)
-		engine.doneChannelList = append(engine.doneChannelList, doneChannel)
-		go engine.runRecipeLoop(doneChannel, recipe)
-	}
 }
 
 func (engine *FactsEngine) persistRecipe(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) error {
@@ -141,37 +150,38 @@ func (engine *FactsEngine) persistRecipe(recipe *kurtosis_core_rpc_api_bindings.
 	})
 }
 
-func (engine *FactsEngine) runRecipeLoop(done <-chan bool, recipe *kurtosis_core_rpc_api_bindings.FactRecipe) {
+func (engine *FactsEngine) runRecipeLoop(factId FactId, exit <-chan bool, recipe *kurtosis_core_rpc_api_bindings.FactRecipe) {
 	for {
 		select {
-		case <-done:
+		case <-exit:
 			return
-		default:
-			factId := fmt.Sprintf("%v.%v", recipe.GetServiceId(), recipe.GetFactName())
+		case <-time.Tick(defaultWaitTimeBetweenFactPool):
+			// TODO(victor.colombo): Take hint from protobuf on how long to wait for it
 			timestamp := strconv.FormatInt(time.Now().UnixNano(), 10)
 			factValue, err := engine.runRecipe(recipe)
 			if err != nil {
 				logrus.Errorf(stacktrace.Propagate(err, "An error occurred when running recipe").Error())
 				// TODO(victor.colombo): Run exponential backoff
-				time.Sleep(2 * time.Second)
 				continue
 			}
 			marshaledFactValue, err := proto.Marshal(factValue)
 			if err != nil {
 				logrus.Errorf(stacktrace.Propagate(err, "An error occurred when marshaling fact value").Error())
-				// TODO(victor.colombo): Run exponential backoff
-				time.Sleep(2 * time.Second)
+				// TODO(victor.colombo): Define what to do in case, and when this happens
 				continue
 			}
 			err = engine.updateFactValue(factId, timestamp, marshaledFactValue)
 			if err != nil {
-				logrus.Errorf(err.Error())
-				time.Sleep(2 * time.Second)
+				logrus.Errorf(stacktrace.Propagate(err, "An error occurred when updating fact value").Error())
+				// TODO(victor.colombo): Define what to do in case, and when this happens
 				continue
 			}
-			time.Sleep(2 * time.Second)
 		}
 	}
+}
+
+func GetFactIdFromRecipe(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) FactId {
+	return FactId(fmt.Sprintf("%v.%v", recipe.GetServiceId(), recipe.GetFactName()))
 }
 
 func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) (*kurtosis_core_rpc_api_bindings.FactValue, error) {
@@ -215,7 +225,7 @@ func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.Fact
 	panic("Recipe type not implemented!!!")
 }
 
-func (engine *FactsEngine) updateFactValue(factId string, timestamp string, value []byte) error {
+func (engine *FactsEngine) updateFactValue(factId FactId, timestamp string, value []byte) error {
 	err := engine.db.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(factValuesBucketName)
 		if err != nil {
@@ -225,7 +235,7 @@ func (engine *FactsEngine) updateFactValue(factId string, timestamp string, valu
 		if err != nil {
 			return stacktrace.Propagate(err, "Failure creating or retrieving bucket '%v'", factId)
 		}
-		err = factBucket.Put([]byte(timestamp), []byte(value))
+		err = factBucket.Put([]byte(timestamp), value)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failure saving timestamp and value '%v' '%v'", timestamp, value)
 		}
