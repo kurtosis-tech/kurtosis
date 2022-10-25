@@ -457,7 +457,7 @@ print("Hello " + a)
 	assert.NotNil(t, interpretationError)
 
 	barModuleContents := "a=\"World!\""
-	moduleContentProvider.Add(barModulePath, barModuleContents)
+	moduleContentProvider.AddFileContent(barModulePath, barModuleContents)
 	expectedOutput := `Hello World!
 `
 	// assert that second load succeeds
