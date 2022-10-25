@@ -54,9 +54,9 @@ artifact_uuid = store_file_from_service(service_id = DATASTORE_SERVICE_ID, src_p
 
 template_str = read_file(TEMPLATE_FILE_TO_RENDER)
 
-template_data = {
+template_data = json.encode({
 	"CLNodesMetricsInfo" : [{"name" : "foo", "path": "/foo/path", "url": "foobar.com"}]
-}
+})
 
 template_data_by_path = {
 	RENDER_RELATIVE_PATH : {
