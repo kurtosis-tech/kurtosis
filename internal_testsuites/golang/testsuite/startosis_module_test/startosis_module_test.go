@@ -11,12 +11,15 @@ import (
 )
 
 const (
-	testName               = "startosis_module_test"
-	isPartitioningEnabled  = false
-	sampleModuleRelDirpath = "../../../startosis/sample-kurtosis-module"
+	testName                            = "startosis_module_test"
+	isPartitioningEnabled               = false
+	validKurtosisModuleRelPath          = "../../../startosis/valid-kurtosis-module"
+	moduleWithInvalidKurtosisModRelPath = "../../../startosis/invalid-mod-file"
+	moduleWithNoMainStarRelPath         = "../../../startosis/no-main-star"
+	moduleWithNoMainInMainStarRelPath   = "../../../startosis/no-main-in-main-star"
 )
 
-func TestStartosisModule(t *testing.T) {
+func TestStartosisModule_SimpleValidCase(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
@@ -26,7 +29,7 @@ func TestStartosisModule(t *testing.T) {
 
 	currentWorkingDirectory, err := os.Getwd()
 	require.Nil(t, err)
-	moduleDirpath := path.Join(currentWorkingDirectory, sampleModuleRelDirpath)
+	moduleDirpath := path.Join(currentWorkingDirectory, validKurtosisModuleRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Infof("Executing Startosis Module...")
@@ -43,4 +46,77 @@ func TestStartosisModule(t *testing.T) {
 	require.Empty(t, executionResult.ExecutionError, "Unexpected execution error")
 	require.Equal(t, expectedScriptOutput, executionResult.SerializedScriptOutput)
 	logrus.Infof("Successfully ran Startosis module")
+}
+
+func TestStartosisModule_InvalidModFile(t *testing.T) {
+	ctx := context.Background()
+
+	// ------------------------------------- ENGINE SETUP ----------------------------------------------
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	require.NoError(t, err, "An error occurred creating an enclave")
+	defer destroyEnclaveFunc()
+
+	currentWorkingDirectory, err := os.Getwd()
+	require.Nil(t, err)
+	moduleDirpath := path.Join(currentWorkingDirectory, moduleWithInvalidKurtosisModRelPath)
+
+	// ------------------------------------- TEST RUN ----------------------------------------------
+	logrus.Infof("Executing Startosis Module...")
+
+	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
+
+	expectedErrorContents := "Field module.name in kurtosis.mod needs to be set and cannot be empty"
+	_, err = enclaveCtx.ExecuteStartosisModule(moduleDirpath)
+	require.NotNil(t, err, "Unexpected error executing startosis module")
+	require.Contains(t, err.Error(), expectedErrorContents)
+}
+
+func TestStartosisModule_NoMainFile(t *testing.T) {
+	ctx := context.Background()
+
+	// ------------------------------------- ENGINE SETUP ----------------------------------------------
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	require.NoError(t, err, "An error occurred creating an enclave")
+	defer destroyEnclaveFunc()
+
+	currentWorkingDirectory, err := os.Getwd()
+	require.Nil(t, err)
+	moduleDirpath := path.Join(currentWorkingDirectory, moduleWithNoMainStarRelPath)
+
+	// ------------------------------------- TEST RUN ----------------------------------------------
+	logrus.Infof("Executing Startosis Module...")
+
+	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
+
+	expectedErrorContents := "An error occurred while verifying that 'main.star' exists on root of module"
+	_, err = enclaveCtx.ExecuteStartosisModule(moduleDirpath)
+	require.NotNil(t, err, "Unexpected error executing startosis module")
+	require.Contains(t, err.Error(), expectedErrorContents)
+}
+
+func TestStartosisModule_NoMainInMainStar(t *testing.T) {
+	ctx := context.Background()
+
+	// ------------------------------------- ENGINE SETUP ----------------------------------------------
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	require.NoError(t, err, "An error occurred creating an enclave")
+	defer destroyEnclaveFunc()
+
+	currentWorkingDirectory, err := os.Getwd()
+	require.Nil(t, err)
+	moduleDirpath := path.Join(currentWorkingDirectory, moduleWithNoMainInMainStarRelPath)
+
+	// ------------------------------------- TEST RUN ----------------------------------------------
+	logrus.Infof("Executing Startosis Module...")
+
+	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
+
+	expectedInterpretationErr := "Evaluation error: load: name main not found in module github.com/sample/sample-kurtosis-module/main.star"
+	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath)
+	require.Nil(t, err, "Unexpected error executing startosis module")
+	require.NotNil(t, executionResult.InterpretationError)
+	require.Contains(t, executionResult.InterpretationError, expectedInterpretationErr)
+	require.Nil(t, executionResult.ValidationErrors)
+	require.Empty(t, executionResult.ExecutionError)
+	require.Empty(t, executionResult.SerializedScriptOutput)
 }

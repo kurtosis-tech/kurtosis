@@ -24,7 +24,7 @@ export async  function parseKurtosisMod(kurtosisModFilepath: string): Promise<Re
     const kurtosisModFile = fs.readFileSync(kurtosisModFilepath, UTF8_ENCODING)
     const parsedYAML = (yaml.load(kurtosisModFile) as KurtosisMod)
 
-    if (parsedYAML.module === undefined || parsedYAML.module.name === undefined || parsedYAML.module.name === "") {
+    if (parsedYAML.module === null || parsedYAML.module.name === null || parsedYAML.module.name === "") {
         return err(new Error(`Field module.name in kurtosis.mod needs to be set and cannot be empty`))
     }
 
