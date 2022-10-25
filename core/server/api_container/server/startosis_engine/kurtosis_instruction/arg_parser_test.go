@@ -607,4 +607,5 @@ func TestParseTemplatesAndData_FailsForInvalidJSONWithIntegerKeys(t *testing.T) 
 
 	_, err = ParseTemplatesAndData(input)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "isn't valid JSON")
 }

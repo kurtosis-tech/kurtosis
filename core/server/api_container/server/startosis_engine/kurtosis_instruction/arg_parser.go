@@ -132,24 +132,24 @@ func ParseSrcPath(serviceIdRaw starlark.String) (string, *startosis_errors.Inter
 
 func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, *startosis_errors.InterpretationError) {
 	templateAndDataByDestRelFilepath := make(map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData)
-	for _, key := range templatesAndData.Keys() {
-		stringKey, castErr := safeCastToString(key, fmt.Sprintf("%v.key:%v", templatesAndDataArgName, key))
+	for _, relPathInFilesArtifactKey := range templatesAndData.Keys() {
+		relPathInFilesArtifactStr, castErr := safeCastToString(relPathInFilesArtifactKey, fmt.Sprintf("%v.key:%v", templatesAndDataArgName, relPathInFilesArtifactKey))
 		if castErr != nil {
 			return nil, castErr
 		}
-		value, found, dictErr := templatesAndData.Get(key)
+		value, found, dictErr := templatesAndData.Get(relPathInFilesArtifactKey)
 		if !found || dictErr != nil {
-			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' key in dict '%s' doesn't have a value we could retrieve. This is a Kurtosis bug.", key.String(), templatesAndDataArgName))
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' key in dict '%s' doesn't have a value we could retrieve. This is a Kurtosis bug.", relPathInFilesArtifactKey.String(), templatesAndDataArgName))
 		}
 		dictValue, ok := value.(*starlark.Dict)
 		if !ok {
-			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected %v[\"%v\"] to be a dict. Got '%s'", templatesAndData, stringKey, reflect.TypeOf(value)))
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected %v[\"%v\"] to be a dict. Got '%s'", templatesAndData, relPathInFilesArtifactStr, reflect.TypeOf(value)))
 		}
 		template, found, dictErr := dictValue.Get(templateFieldKey)
 		if !found || dictErr != nil {
 			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateFieldKey))
 		}
-		templateStr, castErr := safeCastToString(template, fmt.Sprintf("%v[\"%v\"][\"%v\"]", templatesAndDataArgName, stringKey, templateFieldKey))
+		templateStr, castErr := safeCastToString(template, fmt.Sprintf("%v[\"%v\"][\"%v\"]", templatesAndDataArgName, relPathInFilesArtifactStr, templateFieldKey))
 		if castErr != nil {
 			return nil, castErr
 		}
@@ -166,15 +166,15 @@ func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 		var temporaryUnmarshalledValue interface{}
 		err := json.Unmarshal([]byte(templateDataStarlarkValue.String()), &temporaryUnmarshalledValue)
 		if err != nil {
-			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while marshaling the template data as string '%v' to temporary object", templateDataStarlarkValue))
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Template data for file '%v', '%v' isn't valid JSON", relPathInFilesArtifactStr, templateDataStarlarkValue))
 		}
 		templateDataJson, err := json.Marshal(temporaryUnmarshalledValue)
 		if err != nil {
-			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("An error occurred while unmarshaling the temporary template data object '%v' to JSON", temporaryUnmarshalledValue))
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Template data for file '%v', '%v' isn't valid JSON", relPathInFilesArtifactStr, templateDataStarlarkValue))
 		}
 		// end Massive Hack
 		templateAndData := binding_constructors.NewTemplateAndData(templateStr, string(templateDataJson))
-		templateAndDataByDestRelFilepath[stringKey] = templateAndData
+		templateAndDataByDestRelFilepath[relPathInFilesArtifactStr] = templateAndData
 	}
 	return templateAndDataByDestRelFilepath, nil
 }
