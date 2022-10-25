@@ -40,8 +40,8 @@ const (
 var StartosisExecCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:       command_str_consts.StartosisExecCmdStr,
 	ShortDescription: "Execute a Startosis script or module",
-	LongDescription: "Execute a Startosis module or script in an enclave. For a script we expect a path to a " + startosisExtension + " file. For a module we expect path to a directory containing kurtosis.mod. " +
-		"If the enclave-id param is provided, Kurtosis " +
+	LongDescription: "Execute a Startosis module or script in an enclave. For a script we expect a path to a " + startosisExtension +
+		" file. For a module we expect path to a directory containing kurtosis.mod. If the enclave-id param is provided, Kurtosis " +
 		"will exec the script inside this enclave, or create it if it doesn't exist. If no enclave-id param is " +
 		"provided, Kurtosis will create a new enclave with a default name derived from the script or module name.",
 	Flags: []*flags.FlagConfig{
