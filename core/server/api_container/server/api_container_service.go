@@ -615,7 +615,7 @@ func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx contex
 	templatesAndDataByDestinationRelFilepath := args.TemplatesAndDataByDestinationRelFilepath
 	filesArtifactUuid, err := apicService.serviceNetwork.RenderTemplates(templatesAndDataByDestinationRelFilepath)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while render templates to files artifact")
+		return nil, stacktrace.Propagate(err, "An error occurred while rendering templates to files artifact")
 	}
 	response := binding_constructors.NewRenderTemplatesToFilesArtifactResponse(string(filesArtifactUuid))
 	return response, nil
