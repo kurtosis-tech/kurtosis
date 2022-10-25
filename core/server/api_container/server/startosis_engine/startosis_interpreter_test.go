@@ -962,7 +962,7 @@ encoded_json = json.encode(template_data)
 data = {
 	"/foo/bar/test.txt" : {
 		"template": "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}",
-		"template_data": encoded_json
+		"template_data_json": encoded_json
     }
 }
 artifact_uuid = render_templates(template_and_data_by_dest_rel_filepath = data)

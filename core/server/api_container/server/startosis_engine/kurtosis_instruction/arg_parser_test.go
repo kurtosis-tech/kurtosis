@@ -496,7 +496,7 @@ func TestParseTemplatesAndData_SimpleCase(t *testing.T) {
 	template := "Hello {{.Name}}. {{.LargeFloat}} {{.UnixTs}}"
 	err := subDict.SetKey(starlark.String("template"), starlark.String(template))
 	require.Nil(t, err)
-	err = subDict.SetKey(starlark.String("template_data"), starlark.String(dataAsJson))
+	err = subDict.SetKey(starlark.String("template_data_json"), starlark.String(dataAsJson))
 	require.Nil(t, err)
 	input := starlark.NewDict(1)
 	err = input.SetKey(starlark.String("/foo/bar"), subDict)

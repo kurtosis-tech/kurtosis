@@ -61,7 +61,7 @@ template_data = json.encode({
 template_data_by_path = {
 	RENDER_RELATIVE_PATH : {
 		"template": template_str,
-		"template_data": template_data
+		"template_data_json": template_data
 	}
 }
 

@@ -25,7 +25,7 @@ func TestRenderTemplate_TestStringRepresentation(t *testing.T) {
 		templateAndDataByDestFilepath,
 	)
 
-	expectedStr := `render_templates(template_and_data_by_dest_rel_filepath="/foo/bar/test.txt":{"template":"Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}.", "template_data":"{"Answer":6,"LargeFloat":1231231243.43,"Name":"Stranger","Numbers":[1,2,3],"UnixTimeStamp":1257894000}"})`
+	expectedStr := `render_templates(template_and_data_by_dest_rel_filepath="/foo/bar/test.txt":{"template":"Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}.", "template_data_json":"{"Answer":6,"LargeFloat":1231231243.43,"Name":"Stranger","Numbers":[1,2,3],"UnixTimeStamp":1257894000}"})`
 
 	require.Equal(t, expectedStr, renderInstruction.String())
 }
@@ -46,8 +46,8 @@ func TestRenderTemplate_TestMultipleTemplates(t *testing.T) {
 	stringRep := renderInstruction.String()
 
 	// as template_data_by_dest_rel_filepath is a map, the output can be either of the two
-	expectedStrOne := `render_templates(template_and_data_by_dest_rel_filepath="/foo/bar/test.txt":{"template":"Hello {{.Name}}", "template_data":"{"Name": "John"}"}, "/fizz/buzz/test.txt":{"template":"Hello {{.LastName}}", "template_data":"{"LastName": "Doe"}"})`
-	expectedStrTwo := `render_templates(template_and_data_by_dest_rel_filepath="/fizz/buzz/test.txt":{"template":"Hello {{.LastName}}", "template_data":"{"LastName": "Doe"}"}, "/foo/bar/test.txt":{"template":"Hello {{.Name}}", "template_data":"{"Name": "John"}"})`
+	expectedStrOne := `render_templates(template_and_data_by_dest_rel_filepath="/foo/bar/test.txt":{"template":"Hello {{.Name}}", "template_data_json":"{"Name": "John"}"}, "/fizz/buzz/test.txt":{"template":"Hello {{.LastName}}", "template_data_json":"{"LastName": "Doe"}"})`
+	expectedStrTwo := `render_templates(template_and_data_by_dest_rel_filepath="/fizz/buzz/test.txt":{"template":"Hello {{.LastName}}", "template_data_json":"{"LastName": "Doe"}"}, "/foo/bar/test.txt":{"template":"Hello {{.Name}}", "template_data_json":"{"Name": "John"}"})`
 	comparison := func() bool { return stringRep == expectedStrTwo || stringRep == expectedStrOne }
 	require.Condition(t, comparison)
 }

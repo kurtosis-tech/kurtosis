@@ -35,9 +35,9 @@ const (
 
 	srcPathArgName = "src_path"
 
-	templatesAndDataArgName = "template_and_data_by_dest_rel_filepath"
-	templateFieldKey        = starlark.String("template")
-	templateDataFieldKey    = starlark.String("template_data")
+	templatesAndDataArgName  = "template_and_data_by_dest_rel_filepath"
+	templateFieldKey         = starlark.String("template")
+	templateDataJSONFieldKey = starlark.String("template_data_json")
 
 	maxPortNumber = 65535
 )
@@ -153,11 +153,11 @@ func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 		if castErr != nil {
 			return nil, castErr
 		}
-		templateDataStarlarkValue, found, dictErr := dictValue.Get(templateDataFieldKey)
+		templateDataStarlarkValue, found, dictErr := dictValue.Get(templateDataJSONFieldKey)
 		if !found || dictErr != nil {
-			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateDataFieldKey))
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateDataJSONFieldKey))
 		}
-		templateDataJsonStrValue, castErr := safeCastToString(templateDataStarlarkValue, fmt.Sprintf("%v[\"%v\"][\"%v\"]", templatesAndDataArgName, relPathInFilesArtifactStr, templateDataFieldKey))
+		templateDataJsonStrValue, castErr := safeCastToString(templateDataStarlarkValue, fmt.Sprintf("%v[\"%v\"][\"%v\"]", templatesAndDataArgName, relPathInFilesArtifactStr, templateDataJSONFieldKey))
 		if castErr != nil {
 			return nil, castErr
 		}
