@@ -77,7 +77,7 @@ func (instruction *RenderTemplatesInstruction) GetCanonicalInstruction() string 
 func (instruction *RenderTemplatesInstruction) Execute(ctx context.Context, environment *startosis_executor.ExecutionEnvironment) error {
 	artifactUuid, err := instruction.serviceNetwork.RenderTemplates(instruction.templatesAndDataByDestRelFilepath)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to render template '%v'", instruction.templatesAndDataByDestRelFilepath)
+		return stacktrace.Propagate(err, "Failed to render templates '%v'", instruction.templatesAndDataByDestRelFilepath)
 	}
 	environment.SetArtifactUuid(instruction.position.MagicString(shared_helpers.ArtifactUUIDSuffix), string(artifactUuid))
 	return nil
