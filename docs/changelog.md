@@ -1,5 +1,7 @@
 # TBD
 
+# 0.51.1
+
 ### Features
 * Added an `exec` command to Startosis
 * Added a `store_files_from_service` command to Startosis
