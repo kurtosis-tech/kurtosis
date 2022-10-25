@@ -493,10 +493,30 @@ message ConstantFactRecipe {
     FactValue fact_value = 1;
 }
 
+message ExecFactRecipe {
+  string exec_string = 1;
+}
+
+enum HttpRequestMethod {
+  GET = 0;
+  POST = 1;
+}
+
+message HttpRequestFactRecipe {
+  string port_id = 1;
+  string endpoint = 2;
+  HttpRequestMethod method = 3;
+  string content_type = 4;
+  string body = 5;
+  string post_processing_step = 6;
+}
+
 message FactRecipe {
   string service_id = 1;
   string fact_name = 2;
   oneof fact_recipe {
     ConstantFactRecipe constant_fact = 3;
+    ExecFactRecipe exec_fact = 4;
+    HttpRequestFactRecipe http_request_fact = 5;
   }
 }

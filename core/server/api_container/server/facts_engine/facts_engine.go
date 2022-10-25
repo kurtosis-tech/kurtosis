@@ -1,12 +1,16 @@
 package facts_engine
 
 import (
+	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
 	"google.golang.org/protobuf/proto"
+	"io"
 	"strconv"
 	"time"
 )
@@ -15,6 +19,7 @@ type FactsEngine struct {
 	db              *bolt.DB
 	recipeChannel   chan *kurtosis_core_rpc_api_bindings.FactRecipe
 	doneChannelList []chan bool
+	serviceNetwork  service_network.ServiceNetwork
 }
 
 var (
@@ -22,11 +27,12 @@ var (
 	factRecipesBucketName = []byte("fact_recipes")
 )
 
-func NewFactsEngine(db *bolt.DB) *FactsEngine {
+func NewFactsEngine(db *bolt.DB, serviceNetwork service_network.ServiceNetwork) *FactsEngine {
 	return &FactsEngine{
 		db,
 		make(chan *kurtosis_core_rpc_api_bindings.FactRecipe),
 		[]chan bool{},
+		serviceNetwork,
 	}
 }
 
@@ -172,7 +178,41 @@ func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.Fact
 	if recipe.GetConstantFact() != nil {
 		return recipe.GetConstantFact().GetFactValue(), nil
 	}
-	return nil, stacktrace.NewError("An error occurred when running recipe")
+	if recipe.GetExecFact() != nil {
+		_, result, err := engine.serviceNetwork.ExecCommand(context.Background(), service.ServiceID(recipe.GetServiceId()), []string{recipe.GetExecFact().GetExecString()})
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred when running exec recipe")
+		}
+		return &kurtosis_core_rpc_api_bindings.FactValue{
+			FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
+				StringValue: result,
+			},
+		}, nil
+	}
+	if recipe.GetHttpRequestFact() != nil {
+		response, err := engine.serviceNetwork.HttpRequestService(
+			context.Background(),
+			service.ServiceID(recipe.GetServiceId()),
+			recipe.GetHttpRequestFact().GetPortId(),
+			recipe.GetHttpRequestFact().GetMethod().String(),
+			recipe.GetHttpRequestFact().GetContentType(),
+			recipe.GetHttpRequestFact().GetEndpoint(),
+			recipe.GetHttpRequestFact().GetBody(),
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred when running HTTP request recipe")
+		}
+		body, err := io.ReadAll(response.Body)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred when reading HTTP response body")
+		}
+		return &kurtosis_core_rpc_api_bindings.FactValue{
+			FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
+				StringValue: string(body),
+			},
+		}, nil
+	}
+	panic("Recipe type not implemented!!!")
 }
 
 func (engine *FactsEngine) updateFactValue(factId string, timestamp string, value []byte) error {

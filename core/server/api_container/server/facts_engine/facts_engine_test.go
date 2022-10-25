@@ -2,6 +2,7 @@ package facts_engine
 
 import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
 	"os"
@@ -20,7 +21,7 @@ func TestFactEngineLoop(t *testing.T) {
 		require.Nil(t, err)
 	}()
 	require.Nil(t, err)
-	factsEngine := NewFactsEngine(db)
+	factsEngine := NewFactsEngine(db, service_network.NewEmptyMockServiceNetwork())
 	factsEngine.Start()
 	factValue := &kurtosis_core_rpc_api_bindings.FactValue{
 		FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
@@ -48,7 +49,7 @@ func TestFactRecipePersistence(t *testing.T) {
 	require.Nil(t, err)
 	db, err := bolt.Open(file.Name(), 0666, nil)
 	require.Nil(t, err)
-	factsEngine := NewFactsEngine(db)
+	factsEngine := NewFactsEngine(db, service_network.NewEmptyMockServiceNetwork())
 	factsEngine.Start()
 	factValue := &kurtosis_core_rpc_api_bindings.FactValue{
 		FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
@@ -75,7 +76,7 @@ func TestFactRecipePersistence(t *testing.T) {
 	}()
 	require.Nil(t, err)
 	secondEngineTimestamp := time.Now().UnixNano()
-	otherFactsEngine := NewFactsEngine(otherDb)
+	otherFactsEngine := NewFactsEngine(otherDb, service_network.NewEmptyMockServiceNetwork())
 	otherFactsEngine.Start()
 	time.Sleep(1 * time.Second) // Wait for the background workers to perform operations
 	savedTimestampStr, _, err := otherFactsEngine.FetchLatestFactValue("service_id.fact_name")

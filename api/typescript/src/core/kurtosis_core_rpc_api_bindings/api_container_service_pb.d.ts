@@ -1030,6 +1030,9 @@ export namespace ConstantFactRecipe {
 }
 
 export class ExecFactRecipe extends jspb.Message {
+  getExecString(): string;
+  setExecString(value: string): ExecFactRecipe;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ExecFactRecipe.AsObject;
   static toObject(includeInstance: boolean, msg: ExecFactRecipe): ExecFactRecipe.AsObject;
@@ -1040,6 +1043,45 @@ export class ExecFactRecipe extends jspb.Message {
 
 export namespace ExecFactRecipe {
   export type AsObject = {
+    execString: string,
+  }
+}
+
+export class HttpRequestFactRecipe extends jspb.Message {
+  getPortId(): string;
+  setPortId(value: string): HttpRequestFactRecipe;
+
+  getEndpoint(): string;
+  setEndpoint(value: string): HttpRequestFactRecipe;
+
+  getMethod(): HttpRequestMethod;
+  setMethod(value: HttpRequestMethod): HttpRequestFactRecipe;
+
+  getContentType(): string;
+  setContentType(value: string): HttpRequestFactRecipe;
+
+  getBody(): string;
+  setBody(value: string): HttpRequestFactRecipe;
+
+  getPostProcessingStep(): string;
+  setPostProcessingStep(value: string): HttpRequestFactRecipe;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): HttpRequestFactRecipe.AsObject;
+  static toObject(includeInstance: boolean, msg: HttpRequestFactRecipe): HttpRequestFactRecipe.AsObject;
+  static serializeBinaryToWriter(message: HttpRequestFactRecipe, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): HttpRequestFactRecipe;
+  static deserializeBinaryFromReader(message: HttpRequestFactRecipe, reader: jspb.BinaryReader): HttpRequestFactRecipe;
+}
+
+export namespace HttpRequestFactRecipe {
+  export type AsObject = {
+    portId: string,
+    endpoint: string,
+    method: HttpRequestMethod,
+    contentType: string,
+    body: string,
+    postProcessingStep: string,
   }
 }
 
@@ -1054,6 +1096,16 @@ export class FactRecipe extends jspb.Message {
   setConstantFact(value?: ConstantFactRecipe): FactRecipe;
   hasConstantFact(): boolean;
   clearConstantFact(): FactRecipe;
+
+  getExecFact(): ExecFactRecipe | undefined;
+  setExecFact(value?: ExecFactRecipe): FactRecipe;
+  hasExecFact(): boolean;
+  clearExecFact(): FactRecipe;
+
+  getHttpRequestFact(): HttpRequestFactRecipe | undefined;
+  setHttpRequestFact(value?: HttpRequestFactRecipe): FactRecipe;
+  hasHttpRequestFact(): boolean;
+  clearHttpRequestFact(): FactRecipe;
 
   getFactRecipeCase(): FactRecipe.FactRecipeCase;
 
@@ -1070,11 +1122,19 @@ export namespace FactRecipe {
     serviceId: string,
     factName: string,
     constantFact?: ConstantFactRecipe.AsObject,
+    execFact?: ExecFactRecipe.AsObject,
+    httpRequestFact?: HttpRequestFactRecipe.AsObject,
   }
 
   export enum FactRecipeCase { 
     FACT_RECIPE_NOT_SET = 0,
     CONSTANT_FACT = 3,
+    EXEC_FACT = 4,
+    HTTP_REQUEST_FACT = 5,
   }
 }
 
+export enum HttpRequestMethod { 
+  GET = 0,
+  POST = 1,
+}
