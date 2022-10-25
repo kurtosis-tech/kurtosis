@@ -12,6 +12,7 @@
 
 ### Fixes
 * Fixed a bug in exec where we'd propagate a `nil` error
+* Made the `startosis_module_test` in js & golang deterministic and avoid race conditions during parallel runs
 
 ### Removals
 * Removed  stale `scripts/run-pre-release-scripts` which isn't used anywhere and is invalid.
