@@ -146,6 +146,7 @@ func run(
 
 func validateScriptOrModulePath(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
 	scriptOrModulePath, err := args.GetNonGreedyArg(scriptOrModulePathKey)
+	scriptOrModulePath = strings.TrimSpace(scriptOrModulePath)
 	if scriptOrModulePath == "" || err != nil {
 		return stacktrace.Propagate(err, "Unable to get '%v' argument '%s'. It should be non empty", scriptOrModulePathKey, scriptOrModulePath)
 	}
