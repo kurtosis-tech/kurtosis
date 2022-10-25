@@ -503,7 +503,7 @@ message FactRecipe {
   oneof fact_recipe {
     ConstantFactRecipe constant_fact = 3;
   }
-  google.protobuf.Duration refresh_interval = 4;
+  google.protobuf.Duration refresh_interval = 10;
 }
 
 // ==============================================================================================
