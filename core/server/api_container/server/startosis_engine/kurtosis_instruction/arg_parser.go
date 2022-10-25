@@ -153,11 +153,11 @@ func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 		if castErr != nil {
 			return nil, castErr
 		}
-		templateDataStarlarkValue, found, dictErr := dictValue.Get(templateDataJSONFieldKey)
+		templateDataJSONStarlarkValue, found, dictErr := dictValue.Get(templateDataJSONFieldKey)
 		if !found || dictErr != nil {
 			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateDataJSONFieldKey))
 		}
-		templateDataJsonStrValue, castErr := safeCastToString(templateDataStarlarkValue, fmt.Sprintf("%v[\"%v\"][\"%v\"]", templatesAndDataArgName, relPathInFilesArtifactStr, templateDataJSONFieldKey))
+		templateDataJSONStrValue, castErr := safeCastToString(templateDataJSONStarlarkValue, fmt.Sprintf("%v[\"%v\"][\"%v\"]", templatesAndDataArgName, relPathInFilesArtifactStr, templateDataJSONFieldKey))
 		if castErr != nil {
 			return nil, castErr
 		}
@@ -166,14 +166,15 @@ func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 		// 1. Unmarshalling followed by Marshalling, allows for the non-scientific notation of floats to be preserved
 		// 2. Don't have to write a custom way to jsonify Starlark
 		// 3. This behaves as close to marshalling primitives in Golang as possible
+		// 4. Allows us to validate that string input is valid JSON
 		var temporaryUnmarshalledValue interface{}
-		err := json.Unmarshal([]byte(templateDataJsonStrValue), &temporaryUnmarshalledValue)
+		err := json.Unmarshal([]byte(templateDataJSONStrValue), &temporaryUnmarshalledValue)
 		if err != nil {
-			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Template data for file '%v', '%v' isn't valid JSON", relPathInFilesArtifactStr, templateDataStarlarkValue))
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Template data for file '%v', '%v' isn't valid JSON", relPathInFilesArtifactStr, templateDataJSONStrValue))
 		}
 		templateDataJson, err := json.Marshal(temporaryUnmarshalledValue)
 		if err != nil {
-			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Template data for file '%v', '%v' isn't valid JSON", relPathInFilesArtifactStr, templateDataStarlarkValue))
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Template data for file '%v', '%v' isn't valid JSON", relPathInFilesArtifactStr, templateDataJSONStrValue))
 		}
 		// end Massive Hack
 		templateAndData := binding_constructors.NewTemplateAndData(templateStr, string(templateDataJson))
