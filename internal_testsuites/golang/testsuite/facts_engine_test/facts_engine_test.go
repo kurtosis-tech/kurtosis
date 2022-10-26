@@ -17,7 +17,7 @@ const (
 	isPartitioningEnabled = false
 
 	factsEngineTestImage = "httpd:2.4.54"
-	containerPortId      = "port_id"
+	containerPortId      = "port-id"
 
 	inputForExecFactTest                   = "hello"
 	expectedOutputForConstantFactOutput    = "value"
