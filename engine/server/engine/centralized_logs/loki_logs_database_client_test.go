@@ -151,3 +151,71 @@ func TestDoRequestWithLokiLogsDatabaseClientReturnsValidResponse(t *testing.T) {
 		require.Equal(t, expectedFirstLogLineOnEachService, logLines[0])
 	}
 }
+
+func TestNewUserServiceLogLinesByUserServiceGuidFromLokiStreamsReturnSuccessfullyForLogTailJsonResponseBody(t *testing.T) {
+
+	expectedLogLines := []string{"kurtosis", "test", "running", "successfully"}
+	userServiceGuidStr := "stream-logs-test-service-1666785469"
+	userServiceGuid := service.ServiceGUID(userServiceGuidStr)
+
+	lokiStreams := []lokiStreamValue{
+		 {
+			 Stream: struct {
+				 KurtosisContainerType string `json:"comKurtosistechContainerType"`
+				 KurtosisGUID          string `json:"comKurtosistechGuid"`
+			 }(struct {
+				 KurtosisContainerType string
+				 KurtosisGUID          string
+			 }{KurtosisContainerType: "user-service", KurtosisGUID: userServiceGuidStr}),
+			 Values: [][]string{
+				 {"1666785473000000000", "{\"container_id\":\"b0735bc50a76a0476928607aca13a4c73c814036bdbf8b989c2f3b458cc21eab\",\"container_name\":\"/ts-testsuite.stream-logs-test.1666785464--user-service--stream-logs-test-service-1666785469\",\"source\":\"stdout\",\"log\":\"kurtosis\",\"comKurtosistechGuid\":\"stream-logs-test-service-1666785469\",\"comKurtosistechContainerType\":\"user-service\",\"com.kurtosistech.enclave-id\":\"ts-testsuite.stream-logs-test.1666785464\"}"},
+			 },
+
+		},
+		{
+			Stream: struct {
+				KurtosisContainerType string `json:"comKurtosistechContainerType"`
+				KurtosisGUID          string `json:"comKurtosistechGuid"`
+			}(struct {
+				KurtosisContainerType string
+				KurtosisGUID          string
+			}{KurtosisContainerType: "user-service", KurtosisGUID: userServiceGuidStr}),
+			Values: [][]string{
+				{"1666785473000000000", "{\"comKurtosistechGuid\":\"stream-logs-test-service-1666785469\",\"container_id\":\"b0735bc50a76a0476928607aca13a4c73c814036bdbf8b989c2f3b458cc21eab\",\"container_name\":\"/ts-testsuite.stream-logs-test.1666785464--user-service--stream-logs-test-service-1666785469\",\"source\":\"stdout\",\"log\":\"test\",\"comKurtosistechContainerType\":\"user-service\",\"com.kurtosistech.enclave-id\":\"ts-testsuite.stream-logs-test.1666785464\"}"},
+			},
+
+		},
+		{
+			Stream: struct {
+				KurtosisContainerType string `json:"comKurtosistechContainerType"`
+				KurtosisGUID          string `json:"comKurtosistechGuid"`
+			}(struct {
+				KurtosisContainerType string
+				KurtosisGUID          string
+			}{KurtosisContainerType: "user-service", KurtosisGUID: userServiceGuidStr}),
+			Values: [][]string{
+				{"1666785473000000000", "{\"comKurtosistechContainerType\":\"user-service\",\"com.kurtosistech.enclave-id\":\"ts-testsuite.stream-logs-test.1666785464\",\"comKurtosistechGuid\":\"stream-logs-test-service-1666785469\",\"container_id\":\"b0735bc50a76a0476928607aca13a4c73c814036bdbf8b989c2f3b458cc21eab\",\"container_name\":\"/ts-testsuite.stream-logs-test.1666785464--user-service--stream-logs-test-service-1666785469\",\"source\":\"stdout\",\"log\":\"running\"}"},
+			},
+
+		},
+		{
+			Stream: struct {
+				KurtosisContainerType string `json:"comKurtosistechContainerType"`
+				KurtosisGUID          string `json:"comKurtosistechGuid"`
+			}(struct {
+				KurtosisContainerType string
+				KurtosisGUID          string
+			}{KurtosisContainerType: "user-service", KurtosisGUID: userServiceGuidStr}),
+			Values: [][]string{
+				{"1666785473000000000", "{\"container_name\":\"/ts-testsuite.stream-logs-test.1666785464--user-service--stream-logs-test-service-1666785469\",\"source\":\"stdout\",\"log\":\"successfully\",\"comKurtosistechGuid\":\"stream-logs-test-service-1666785469\",\"comKurtosistechContainerType\":\"user-service\",\"com.kurtosistech.enclave-id\":\"ts-testsuite.stream-logs-test.1666785464\",\"container_id\":\"b0735bc50a76a0476928607aca13a4c73c814036bdbf8b989c2f3b458cc21eab\"}"},
+			},
+
+		},
+	}
+
+	resultLogsByKurtosisUserServiceGuid, err := newUserServiceLogLinesByUserServiceGuidFromLokiStreams(lokiStreams)
+	require.NoError(t, err)
+	require.NotNil(t, resultLogsByKurtosisUserServiceGuid)
+	require.Equal(t, len(lokiStreams), len(resultLogsByKurtosisUserServiceGuid[userServiceGuid]))
+	require.Equal(t, expectedLogLines, resultLogsByKurtosisUserServiceGuid[userServiceGuid])
+}

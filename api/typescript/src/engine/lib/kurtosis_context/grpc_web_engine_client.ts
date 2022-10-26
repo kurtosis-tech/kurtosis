@@ -16,8 +16,8 @@ import type {
     GetUserServiceLogsResponse
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 import {NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG} from "../consts";
-import * as grpc from "@grpc/grpc-js";
-import * as engine_service_pb from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
+import {ClientReadableStream} from "grpc-web";
+import {Stream, Readable, pipeline} from "stream";
 
 export class GrpcWebEngineClient implements GenericEngineClient {
     private readonly client: EngineServiceClientWeb
@@ -189,17 +189,21 @@ export class GrpcWebEngineClient implements GenericEngineClient {
         return ok(getUserServiceLogsResponseResult.value);
     }
 
-    public async streamUserServiceLogs(getUserServiceLogsArgs: GetUserServiceLogsArgs): Promise<Result<grpc.ClientReadableStream<GetUserServiceLogsResponse>, Error>> {
-        const streamUserServiceLogsPromise: Promise<Result<grpc.ClientReadableStream<engine_service_pb.GetUserServiceLogsResponse>, Error>> = new Promise((resolve, _unusedReject) => {
-            const getUserServiceLogsStreamResponse: grpc.ClientReadableStream<engine_service_pb.GetUserServiceLogsResponse> = this.client.streamUserServiceLogs(getUserServiceLogsArgs)
+    public async streamUserServiceLogs(getUserServiceLogsArgs: GetUserServiceLogsArgs): Promise<Result<Map<string, Readable>, Error>> {
+        const streamUserServiceLogsPromise: Promise<Result<ClientReadableStream<GetUserServiceLogsResponse>, Error>> = new Promise((resolve, _unusedReject) => {
+            const getUserServiceLogsStreamResponse: ClientReadableStream<GetUserServiceLogsResponse> = this.client.streamUserServiceLogs(getUserServiceLogsArgs)
             resolve(ok(getUserServiceLogsStreamResponse))
         })
 
-        const streamUserServiceLogsResponseResult: Result<grpc.ClientReadableStream<engine_service_pb.GetUserServiceLogsResponse>, Error> = await streamUserServiceLogsPromise;
+        const streamUserServiceLogsResponseResult: Result<ClientReadableStream<GetUserServiceLogsResponse>, Error> = await streamUserServiceLogsPromise;
         if (streamUserServiceLogsResponseResult.isErr()){
             return err(streamUserServiceLogsResponseResult.error);
         }
 
-        return ok(streamUserServiceLogsResponseResult.value);
+        //TODO Fail with unimplemented loudly
+
+        const userServiceReadableLogsByServiceGuidStr: Map<string, Readable> = new Map<string, Readable>();
+
+        return ok(userServiceReadableLogsByServiceGuidStr); //TODO do not return this, fail loudly instead
     }
 }

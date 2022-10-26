@@ -11,8 +11,7 @@ import {
     GetUserServiceLogsArgs,
     GetUserServiceLogsResponse,
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
-import * as grpc from "@grpc/grpc-js";
-import * as engine_service_pb from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
+import {Readable} from "stream";
 
 export interface GenericEngineClient {
     getEngineInfo(): Promise<Result<GetEngineInfoResponse,Error>>
@@ -22,5 +21,5 @@ export interface GenericEngineClient {
     destroyEnclave(destroyEnclaveArgs: DestroyEnclaveArgs): Promise<Result<null, Error>>
     clean(cleanArgs: CleanArgs): Promise<Result<CleanResponse, Error>>
     getUserServiceLogs(getUserServiceLogsArgs: GetUserServiceLogsArgs): Promise<Result<GetUserServiceLogsResponse, Error>>
-    streamUserServiceLogs(getUserServiceLogsArgs: GetUserServiceLogsArgs): Promise<Result<grpc.ClientReadableStream<engine_service_pb.GetUserServiceLogsResponse>, Error>>
+    streamUserServiceLogs(getUserServiceLogsArgs: GetUserServiceLogsArgs): Promise<Result<Map<string, Readable>, Error>>
 }

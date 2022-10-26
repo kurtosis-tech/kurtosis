@@ -55,7 +55,7 @@ func (loki *lokiContainerConfigProvider) GetContainerArgs(
 	}
 
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
-		privateHttpDockerPort: docker_manager.NewNoPublishingSpec(),
+		privateHttpDockerPort: docker_manager.NewManualPublishingSpec(privateHttpPortSpec.GetNumber()),
 	}
 
 	volumeMounts := map[string]string{

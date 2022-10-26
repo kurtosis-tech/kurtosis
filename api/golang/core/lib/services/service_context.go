@@ -28,6 +28,7 @@ import (
 type ServiceContext struct {
 	client    kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
 	serviceId ServiceID
+	serviceGuid ServiceGUID
 
 	// Network location inside the enclave
 	privateIpAddr string
@@ -38,40 +39,45 @@ type ServiceContext struct {
 	publicPorts  map[string]*PortSpec
 }
 
-func NewServiceContext(client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient, serviceId ServiceID, privateIpAddr string, privatePorts map[string]*PortSpec, publicIpAddr string, publicPorts map[string]*PortSpec) *ServiceContext {
-	return &ServiceContext{client: client, serviceId: serviceId, privateIpAddr: privateIpAddr, privatePorts: privatePorts, publicIpAddr: publicIpAddr, publicPorts: publicPorts}
+func NewServiceContext(client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient, serviceId ServiceID, serviceGuid ServiceGUID, privateIpAddr string, privatePorts map[string]*PortSpec, publicIpAddr string, publicPorts map[string]*PortSpec) *ServiceContext {
+	return &ServiceContext{client: client, serviceId: serviceId, serviceGuid: serviceGuid, privateIpAddr: privateIpAddr, privatePorts: privatePorts, publicIpAddr: publicIpAddr, publicPorts: publicPorts}
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (self *ServiceContext) GetServiceID() ServiceID {
-	return self.serviceId
+func (service *ServiceContext) GetServiceID() ServiceID {
+	return service.serviceId
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (self *ServiceContext) GetPrivateIPAddress() string {
-	return self.privateIpAddr
+func (service *ServiceContext) GetServiceGUID() ServiceGUID {
+	return service.serviceGuid
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (self *ServiceContext) GetPrivatePorts() map[string]*PortSpec {
-	return self.privatePorts
+func (service *ServiceContext) GetPrivateIPAddress() string {
+	return service.privateIpAddr
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (self *ServiceContext) GetMaybePublicIPAddress() string {
-	return self.publicIpAddr
+func (service *ServiceContext) GetPrivatePorts() map[string]*PortSpec {
+	return service.privatePorts
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (self *ServiceContext) GetPublicPorts() map[string]*PortSpec {
-	return self.publicPorts
+func (service *ServiceContext) GetMaybePublicIPAddress() string {
+	return service.publicIpAddr
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (self *ServiceContext) ExecCommand(command []string) (int32, string, error) {
-	serviceId := self.serviceId
+func (service *ServiceContext) GetPublicPorts() map[string]*PortSpec {
+	return service.publicPorts
+}
+
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+func (service *ServiceContext) ExecCommand(command []string) (int32, string, error) {
+	serviceId := service.serviceId
 	args := binding_constructors.NewExecCommandArgs(string(serviceId), command)
-	resp, err := self.client.ExecCommand(context.Background(), args)
+	resp, err := service.client.ExecCommand(context.Background(), args)
 	if err != nil {
 		return 0, "", stacktrace.Propagate(
 			err,

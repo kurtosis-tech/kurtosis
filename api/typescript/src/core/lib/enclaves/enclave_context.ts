@@ -383,6 +383,7 @@ export class EnclaveContext {
                 const serviceContext: ServiceContext = new ServiceContext(
                     this.backend,
                     serviceId,
+                    "",
                     serviceInfo.getPrivateIpAddr(),
                     serviceCtxPrivatePorts,
                     serviceInfo.getMaybePublicIpAddr(),
@@ -451,6 +452,7 @@ export class EnclaveContext {
         const serviceContext: ServiceContext = new ServiceContext(
             this.backend,
             serviceId,
+            serviceInfo.getServiceGuid(),
             serviceInfo.getPrivateIpAddr(),
             serviceCtxPrivatePorts,
             serviceInfo.getMaybePublicIpAddr(),

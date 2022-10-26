@@ -232,25 +232,25 @@ func (kurtosisCtx *KurtosisContext) StreamUserServiceLogs(
 	go func() {
 		receiveStreamLogsLoop:
 			for {
-			getUserServiceLogResponse, errReceivingStream := stream.Recv()
-			if errReceivingStream != nil {
-				if errReceivingStream == io.EOF {
+				getUserServiceLogResponse, errReceivingStream := stream.Recv()
+				if errReceivingStream != nil {
+					if errReceivingStream == io.EOF {
+						break receiveStreamLogsLoop
+					}
+					logrus.Errorf("An error occurred receveing user service logs stream for user services '%+v' in enclave '%v'. Error:\n%v", userServiceGUIDs, enclaveID, errReceivingStream)
+					if errCloseSend := stream.CloseSend(); errCloseSend != nil {
+						logrus.Errorf("Streaming user service logs has thrown an error, so we tried to close the send direction of the stream, but an error was thrown:\n%v", errCloseSend)
+					}
 					break receiveStreamLogsLoop
 				}
-				logrus.Errorf("An error occurred receveing user service logs stream for user services '%+v' in enclave '%v'. Error:\n%v", userServiceGUIDs, enclaveID, err)
-				if errCloseSend := stream.CloseSend(); errCloseSend != nil {
-					logrus.Errorf("Streaming user service logs has thrown an error, so we tried to close the send direction of the stream, but an error was thrown:\n%v", err)
+				for userServiceGuidStr, userServiceLogLine := range getUserServiceLogResponse.UserServiceLogsByUserServiceGuid {
+					userServiceGuid := services.ServiceGUID(userServiceGuidStr)
+					 if err := streamNewUserServiceLogLines(userServiceGuid, userServiceReadCloserLogsByServiceGuid, userServiceLogLine); err != nil {
+						 logrus.Errorf("An error occurred streaming new user service log lines '%+v' for user service with GUID '%v'. Error:\n%v", userServiceLogLine, userServiceGuid, err)
+						 break receiveStreamLogsLoop
+					 }
 				}
-				break receiveStreamLogsLoop
 			}
-			for userServiceGuidStr, userServiceLogLine := range getUserServiceLogResponse.UserServiceLogsByUserServiceGuid {
-				userServiceGuid := services.ServiceGUID(userServiceGuidStr)
-				 if err := streamNewUserServiceLogLines(userServiceGuid, userServiceReadCloserLogsByServiceGuid, userServiceLogLine); err != nil {
-					 logrus.Errorf("An error occurred streaming new user service log lines '%+v' for user service with GUID '%v'. Error:\n%v", userServiceLogLine, userServiceGuid, err)
-					 break receiveStreamLogsLoop
-				 }
-			}
-		}
 
 		//Closing all the open resources
 		cancelCtxFunc()

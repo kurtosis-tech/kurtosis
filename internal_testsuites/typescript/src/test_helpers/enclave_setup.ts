@@ -1,5 +1,4 @@
-import { EnclaveContext, EnclaveID } from "kurtosis-sdk"
-import { KurtosisContext } from "kurtosis-sdk"
+import { EnclaveContext, EnclaveID, KurtosisContext } from "kurtosis-sdk"
 import {Result, err, ok} from "neverthrow"
 import log from "loglevel";
 

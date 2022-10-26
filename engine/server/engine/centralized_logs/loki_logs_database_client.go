@@ -431,7 +431,13 @@ func newUserServiceLogLinesByUserServiceGuidFromLokiStreams(lokiStreams []lokiSt
 			}
 			resultKurtosisGuidLogLinesStr[queryRangeIndex] = logLineStr
 		}
-		resultLogsByKurtosisUserServiceGuid[resultKurtosisGuid] = resultKurtosisGuidLogLinesStr
+		userServiceLogLines, found := resultLogsByKurtosisUserServiceGuid[resultKurtosisGuid]
+		if found {
+			userServiceLogLines = append(userServiceLogLines, resultKurtosisGuidLogLinesStr...)
+		} else {
+			userServiceLogLines = resultKurtosisGuidLogLinesStr
+		}
+		resultLogsByKurtosisUserServiceGuid[resultKurtosisGuid] = userServiceLogLines
 	}
 
 	return resultLogsByKurtosisUserServiceGuid, nil

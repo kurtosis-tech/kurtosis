@@ -1,6 +1,5 @@
 import {err, ok, Result} from "neverthrow";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
-import type {ServiceError} from "@grpc/grpc-js";
 import type {EngineServiceClient as EngineServiceClientNode} from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb";
 import type {GenericEngineClient} from "./generic_engine_client";
 import type {
@@ -16,8 +15,8 @@ import type {
     StopEnclaveArgs
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 import {NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG} from "../consts";
-import * as grpc from "@grpc/grpc-js";
-import * as engine_service_pb from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
+import type {ClientReadableStream, ServiceError} from "@grpc/grpc-js";
+import {Readable, Stream} from "stream";
 
 export class GrpcNodeEngineClient implements GenericEngineClient {
     private readonly client: EngineServiceClientNode
@@ -192,17 +191,57 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
         return ok(getUserServiceLogsResponseResult.value);
     }
 
-    public async streamUserServiceLogs(getUserServiceLogsArgs: GetUserServiceLogsArgs): Promise<Result<grpc.ClientReadableStream<GetUserServiceLogsResponse>, Error>> {
-        const streamUserServiceLogsPromise: Promise<Result<grpc.ClientReadableStream<engine_service_pb.GetUserServiceLogsResponse>, Error>> = new Promise((resolve, _unusedReject) => {
-            const getUserServiceLogsStreamResponse: grpc.ClientReadableStream<engine_service_pb.GetUserServiceLogsResponse> = this.client.streamUserServiceLogs(getUserServiceLogsArgs)
+    public async streamUserServiceLogs(getUserServiceLogsArgs: GetUserServiceLogsArgs): Promise<Result<Map<string, Readable>, Error>> {
+        const streamUserServiceLogsPromise: Promise<Result<ClientReadableStream<GetUserServiceLogsResponse>, Error>> = new Promise((resolve, _unusedReject) => {
+            const getUserServiceLogsStreamResponse: ClientReadableStream<GetUserServiceLogsResponse> = this.client.streamUserServiceLogs(getUserServiceLogsArgs)
             resolve(ok(getUserServiceLogsStreamResponse))
         })
 
-        const streamUserServiceLogsResponseResult: Result<grpc.ClientReadableStream<engine_service_pb.GetUserServiceLogsResponse>, Error> = await streamUserServiceLogsPromise;
+        const streamUserServiceLogsResponseResult: Result<ClientReadableStream<GetUserServiceLogsResponse>, Error> = await streamUserServiceLogsPromise;
         if (streamUserServiceLogsResponseResult.isErr()){
             return err(streamUserServiceLogsResponseResult.error);
         }
 
-        return ok(streamUserServiceLogsResponseResult.value);
+        const streamUserServiceLogsResponse: ClientReadableStream<GetUserServiceLogsResponse> = streamUserServiceLogsResponseResult.value;
+
+        const userServiceReadableLogsByServiceGuidStr: Map<string, Readable> = new Map<string, Readable>();
+        getUserServiceLogsArgs.getServiceGuidSetMap().forEach((isUserServiceGuidInSet, userServiceGuidStr) => {
+            const userServiceLogsReadableStream = new Stream.Readable({
+                read() {
+                    return true;
+                }
+            })
+            userServiceReadableLogsByServiceGuidStr.set(userServiceGuidStr, userServiceLogsReadableStream)
+        })
+
+        streamUserServiceLogsResponse.on('data', function(getUserServiceLogsResponse: GetUserServiceLogsResponse) {
+            getUserServiceLogsResponse.getUserServiceLogsByUserServiceGuidMap().forEach(
+                (userServiceLogLine, userServiceGUIDStr) => {
+                    const userServiceLogsReadableStream: Readable | undefined = userServiceReadableLogsByServiceGuidStr.get(userServiceGUIDStr)
+                    if (userServiceLogsReadableStream !== undefined) {
+                        userServiceLogLine.getLineList().forEach((logline) => {
+                            userServiceLogsReadableStream.push(logline)
+                        })
+                    }
+                }
+            )
+        })
+
+        streamUserServiceLogsResponse.on('error', (streamLogsErr) => {
+            return err(streamLogsErr)
+        })
+
+        streamUserServiceLogsResponse.on('end', function(getUserServiceLogsResponse: GetUserServiceLogsResponse) {
+            getUserServiceLogsResponse.getUserServiceLogsByUserServiceGuidMap().forEach(
+                (userServiceLogLine, userServiceGUIDStr) => {
+                    const userServiceLogsReadableStream: Readable | undefined = userServiceReadableLogsByServiceGuidStr.get(userServiceGUIDStr)
+                    if (userServiceLogsReadableStream !== undefined) {
+                        userServiceLogsReadableStream.emit('end')
+                    }
+                }
+            )
+        })
+
+        return ok(userServiceReadableLogsByServiceGuidStr);
     }
 }
