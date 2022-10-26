@@ -21,8 +21,8 @@ func TestFactEngineLoop(t *testing.T) {
 	defer os.Remove(file.Name())
 	require.Nil(t, err)
 	db, err := bolt.Open(file.Name(), 0666, nil)
-	defer db.Close()
 	require.Nil(t, err)
+	defer db.Close()
 	factsEngine := NewFactsEngine(db)
 	factsEngine.Start()
 	factValue := &kurtosis_core_rpc_api_bindings.FactValue{
