@@ -1,9 +1,12 @@
 # TBD
 ### Features
 * Implemented the new `StreamUserServiceLogs` endpoint in the Kurtosis engine server
-* Added the new `StreamUserServiceLogs` in the Kurtosis engine golang library
+* Added the new `StreamUserServiceLogs` in the Kurtosis engine Golang library
+* Added the new `StreamUserServiceLogs` in the Kurtosis engine Typescript library
 * Added the `StreamUserServiceLogs` method in Loki logs database client
 * Added the `StreamUserServiceLogs` method in Kurtosis backend logs client
+* Added `strem-logs` test in Golang and Typescript `internal-testsuites`
+* Added `service.GUID` field in `Service.Ctx` in the Kurtosis SDK
 
 ### Changes
 * Updated the CLI `service logs` command in order to use the new `KurtosisContext.StreamUserServiceLogs` when user requested to follow logs
