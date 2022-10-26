@@ -6,6 +6,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/frankban/quicktest v1.14.3 // indirect
+	github.com/go-yaml/yaml v2.1.0+incompatible // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/mholt/archiver v3.1.1+incompatible

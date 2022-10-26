@@ -1,6 +1,7 @@
 package kurtosis_instruction
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
@@ -33,6 +34,10 @@ const (
 	expectedExitCodeArgName = "expected_exit_code"
 
 	srcPathArgName = "src_path"
+
+	templatesAndDataArgName  = "template_and_data_by_dest_rel_filepath"
+	templateFieldKey         = starlark.String("template")
+	templateDataJSONFieldKey = starlark.String("template_data_json")
 
 	maxPortNumber = 65535
 )
@@ -123,6 +128,59 @@ func ParseSrcPath(serviceIdRaw starlark.String) (string, *startosis_errors.Inter
 		return "", startosis_errors.NewInterpretationError("Source path cannot be empty")
 	}
 	return srcPath, nil
+}
+
+func ParseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, *startosis_errors.InterpretationError) {
+	templateAndDataByDestRelFilepath := make(map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData)
+	for _, relPathInFilesArtifactKey := range templatesAndData.Keys() {
+		relPathInFilesArtifactStr, castErr := safeCastToString(relPathInFilesArtifactKey, fmt.Sprintf("%v.key:%v", templatesAndDataArgName, relPathInFilesArtifactKey))
+		if castErr != nil {
+			return nil, castErr
+		}
+		value, found, dictErr := templatesAndData.Get(relPathInFilesArtifactKey)
+		if !found || dictErr != nil {
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("'%s' key in dict '%s' doesn't have a value we could retrieve. This is a Kurtosis bug.", relPathInFilesArtifactKey.String(), templatesAndDataArgName))
+		}
+		dictValue, ok := value.(*starlark.Dict)
+		if !ok {
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected %v[\"%v\"] to be a dict. Got '%s'", templatesAndData, relPathInFilesArtifactStr, reflect.TypeOf(value)))
+		}
+		template, found, dictErr := dictValue.Get(templateFieldKey)
+		if !found || dictErr != nil {
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateFieldKey))
+		}
+		templateStr, castErr := safeCastToString(template, fmt.Sprintf("%v[\"%v\"][\"%v\"]", templatesAndDataArgName, relPathInFilesArtifactStr, templateFieldKey))
+		if castErr != nil {
+			return nil, castErr
+		}
+		templateDataJSONStarlarkValue, found, dictErr := dictValue.Get(templateDataJSONFieldKey)
+		if !found || dictErr != nil {
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Expected values in '%v' to have a '%v' field", templatesAndDataArgName, templateDataJSONFieldKey))
+		}
+		templateDataJSONStrValue, castErr := safeCastToString(templateDataJSONStarlarkValue, fmt.Sprintf("%v[\"%v\"][\"%v\"]", templatesAndDataArgName, relPathInFilesArtifactStr, templateDataJSONFieldKey))
+		if castErr != nil {
+			return nil, castErr
+		}
+		// Massive Hack
+		// We do this for a couple of reasons,
+		// 1. Unmarshalling followed by Marshalling, allows for the non-scientific notation of floats to be preserved
+		// 2. Don't have to write a custom way to jsonify Starlark
+		// 3. This behaves as close to marshalling primitives in Golang as possible
+		// 4. Allows us to validate that string input is valid JSON
+		var temporaryUnmarshalledValue interface{}
+		err := json.Unmarshal([]byte(templateDataJSONStrValue), &temporaryUnmarshalledValue)
+		if err != nil {
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Template data for file '%v', '%v' isn't valid JSON", relPathInFilesArtifactStr, templateDataJSONStrValue))
+		}
+		templateDataJson, err := json.Marshal(temporaryUnmarshalledValue)
+		if err != nil {
+			return nil, startosis_errors.NewInterpretationError(fmt.Sprintf("Template data for file '%v', '%v' isn't valid JSON", relPathInFilesArtifactStr, templateDataJSONStrValue))
+		}
+		// end Massive Hack
+		templateAndData := binding_constructors.NewTemplateAndData(templateStr, string(templateDataJson))
+		templateAndDataByDestRelFilepath[relPathInFilesArtifactStr] = templateAndData
+	}
+	return templateAndDataByDestRelFilepath, nil
 }
 
 func parseServiceConfigContainerImageName(serviceConfig *starlarkstruct.Struct) (string, *startosis_errors.InterpretationError) {

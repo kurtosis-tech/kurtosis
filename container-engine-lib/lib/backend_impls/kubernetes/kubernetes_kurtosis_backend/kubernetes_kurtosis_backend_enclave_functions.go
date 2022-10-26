@@ -86,7 +86,7 @@ func (backend KubernetesKurtosisBackend) CreateEnclave(
 	}
 	namespaceList, err := backend.kubernetesManager.GetNamespacesByLabels(ctx, searchNamespaceLabels)
 	if err != nil {
-		return nil, stacktrace.NewError("Failed to list namespaces from Kubernetes, so can not verify if enclave '%v' already exists.", enclaveId)
+		return nil, stacktrace.Propagate(err, "Failed to list namespaces from Kubernetes, so can not verify if enclave '%v' already exists.", enclaveId)
 	}
 	if len(namespaceList.Items) > 0 {
 		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because an enclave with ID '%v' already exists", enclaveId, enclaveId)
@@ -327,7 +327,9 @@ func (backend KubernetesKurtosisBackend) DestroyEnclaves(
 }
 
 // ====================================================================================================
-//                                     Private Helper Methods
+//
+//	Private Helper Methods
+//
 // ====================================================================================================
 func (backend KubernetesKurtosisBackend) getMatchingEnclaveObjectsAndKubernetesResources(
 	ctx context.Context,
