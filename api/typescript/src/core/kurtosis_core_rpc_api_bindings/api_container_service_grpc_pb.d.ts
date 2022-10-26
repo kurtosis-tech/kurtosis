@@ -19,6 +19,8 @@ interface IApiContainerServiceService extends grpc.ServiceDefinition<grpc.Untype
   removeService: grpc.MethodDefinition<api_container_service_pb.RemoveServiceArgs, api_container_service_pb.RemoveServiceResponse>;
   repartition: grpc.MethodDefinition<api_container_service_pb.RepartitionArgs, google_protobuf_empty_pb.Empty>;
   execCommand: grpc.MethodDefinition<api_container_service_pb.ExecCommandArgs, api_container_service_pb.ExecCommandResponse>;
+  defineFact: grpc.MethodDefinition<api_container_service_pb.DefineFactArgs, api_container_service_pb.DefineFactResponse>;
+  getFactValues: grpc.MethodDefinition<api_container_service_pb.GetFactValuesArgs, api_container_service_pb.GetFactValuesResponse>;
   pauseService: grpc.MethodDefinition<api_container_service_pb.PauseServiceArgs, google_protobuf_empty_pb.Empty>;
   unpauseService: grpc.MethodDefinition<api_container_service_pb.UnpauseServiceArgs, google_protobuf_empty_pb.Empty>;
   waitForHttpGetEndpointAvailability: grpc.MethodDefinition<api_container_service_pb.WaitForHttpGetEndpointAvailabilityArgs, google_protobuf_empty_pb.Empty>;
@@ -44,6 +46,8 @@ export interface IApiContainerServiceServer extends grpc.UntypedServiceImplement
   removeService: grpc.handleUnaryCall<api_container_service_pb.RemoveServiceArgs, api_container_service_pb.RemoveServiceResponse>;
   repartition: grpc.handleUnaryCall<api_container_service_pb.RepartitionArgs, google_protobuf_empty_pb.Empty>;
   execCommand: grpc.handleUnaryCall<api_container_service_pb.ExecCommandArgs, api_container_service_pb.ExecCommandResponse>;
+  defineFact: grpc.handleUnaryCall<api_container_service_pb.DefineFactArgs, api_container_service_pb.DefineFactResponse>;
+  getFactValues: grpc.handleUnaryCall<api_container_service_pb.GetFactValuesArgs, api_container_service_pb.GetFactValuesResponse>;
   pauseService: grpc.handleUnaryCall<api_container_service_pb.PauseServiceArgs, google_protobuf_empty_pb.Empty>;
   unpauseService: grpc.handleUnaryCall<api_container_service_pb.UnpauseServiceArgs, google_protobuf_empty_pb.Empty>;
   waitForHttpGetEndpointAvailability: grpc.handleUnaryCall<api_container_service_pb.WaitForHttpGetEndpointAvailabilityArgs, google_protobuf_empty_pb.Empty>;
@@ -90,6 +94,12 @@ export class ApiContainerServiceClient extends grpc.Client {
   execCommand(argument: api_container_service_pb.ExecCommandArgs, callback: grpc.requestCallback<api_container_service_pb.ExecCommandResponse>): grpc.ClientUnaryCall;
   execCommand(argument: api_container_service_pb.ExecCommandArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ExecCommandResponse>): grpc.ClientUnaryCall;
   execCommand(argument: api_container_service_pb.ExecCommandArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ExecCommandResponse>): grpc.ClientUnaryCall;
+  defineFact(argument: api_container_service_pb.DefineFactArgs, callback: grpc.requestCallback<api_container_service_pb.DefineFactResponse>): grpc.ClientUnaryCall;
+  defineFact(argument: api_container_service_pb.DefineFactArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.DefineFactResponse>): grpc.ClientUnaryCall;
+  defineFact(argument: api_container_service_pb.DefineFactArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.DefineFactResponse>): grpc.ClientUnaryCall;
+  getFactValues(argument: api_container_service_pb.GetFactValuesArgs, callback: grpc.requestCallback<api_container_service_pb.GetFactValuesResponse>): grpc.ClientUnaryCall;
+  getFactValues(argument: api_container_service_pb.GetFactValuesArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.GetFactValuesResponse>): grpc.ClientUnaryCall;
+  getFactValues(argument: api_container_service_pb.GetFactValuesArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.GetFactValuesResponse>): grpc.ClientUnaryCall;
   pauseService(argument: api_container_service_pb.PauseServiceArgs, callback: grpc.requestCallback<google_protobuf_empty_pb.Empty>): grpc.ClientUnaryCall;
   pauseService(argument: api_container_service_pb.PauseServiceArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<google_protobuf_empty_pb.Empty>): grpc.ClientUnaryCall;
   pauseService(argument: api_container_service_pb.PauseServiceArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<google_protobuf_empty_pb.Empty>): grpc.ClientUnaryCall;

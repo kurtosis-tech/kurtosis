@@ -45,6 +45,10 @@ type ApiContainerServiceClient interface {
 	Repartition(ctx context.Context, in *RepartitionArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Executes the given command inside a running container
 	ExecCommand(ctx context.Context, in *ExecCommandArgs, opts ...grpc.CallOption) (*ExecCommandResponse, error)
+	// Define fact
+	DefineFact(ctx context.Context, in *DefineFactArgs, opts ...grpc.CallOption) (*DefineFactResponse, error)
+	// Get a list of values of a fact
+	GetFactValues(ctx context.Context, in *GetFactValuesArgs, opts ...grpc.CallOption) (*GetFactValuesResponse, error)
 	// Pauses all processes running in the service container
 	PauseService(ctx context.Context, in *PauseServiceArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Unpauses all paused processes running in the service container
@@ -173,6 +177,24 @@ func (c *apiContainerServiceClient) ExecCommand(ctx context.Context, in *ExecCom
 	return out, nil
 }
 
+func (c *apiContainerServiceClient) DefineFact(ctx context.Context, in *DefineFactArgs, opts ...grpc.CallOption) (*DefineFactResponse, error) {
+	out := new(DefineFactResponse)
+	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/DefineFact", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *apiContainerServiceClient) GetFactValues(ctx context.Context, in *GetFactValuesArgs, opts ...grpc.CallOption) (*GetFactValuesResponse, error) {
+	out := new(GetFactValuesResponse)
+	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/GetFactValues", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *apiContainerServiceClient) PauseService(ctx context.Context, in *PauseServiceArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/PauseService", in, out, opts...)
@@ -280,6 +302,10 @@ type ApiContainerServiceServer interface {
 	Repartition(context.Context, *RepartitionArgs) (*emptypb.Empty, error)
 	// Executes the given command inside a running container
 	ExecCommand(context.Context, *ExecCommandArgs) (*ExecCommandResponse, error)
+	// Define fact
+	DefineFact(context.Context, *DefineFactArgs) (*DefineFactResponse, error)
+	// Get a list of values of a fact
+	GetFactValues(context.Context, *GetFactValuesArgs) (*GetFactValuesResponse, error)
 	// Pauses all processes running in the service container
 	PauseService(context.Context, *PauseServiceArgs) (*emptypb.Empty, error)
 	// Unpauses all paused processes running in the service container
@@ -338,6 +364,12 @@ func (UnimplementedApiContainerServiceServer) Repartition(context.Context, *Repa
 }
 func (UnimplementedApiContainerServiceServer) ExecCommand(context.Context, *ExecCommandArgs) (*ExecCommandResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecCommand not implemented")
+}
+func (UnimplementedApiContainerServiceServer) DefineFact(context.Context, *DefineFactArgs) (*DefineFactResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DefineFact not implemented")
+}
+func (UnimplementedApiContainerServiceServer) GetFactValues(context.Context, *GetFactValuesArgs) (*GetFactValuesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFactValues not implemented")
 }
 func (UnimplementedApiContainerServiceServer) PauseService(context.Context, *PauseServiceArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PauseService not implemented")
@@ -577,6 +609,42 @@ func _ApiContainerService_ExecCommand_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApiContainerService_DefineFact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DefineFactArgs)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiContainerServiceServer).DefineFact(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api_container_api.ApiContainerService/DefineFact",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiContainerServiceServer).DefineFact(ctx, req.(*DefineFactArgs))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApiContainerService_GetFactValues_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFactValuesArgs)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiContainerServiceServer).GetFactValues(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api_container_api.ApiContainerService/GetFactValues",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiContainerServiceServer).GetFactValues(ctx, req.(*GetFactValuesArgs))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ApiContainerService_PauseService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PauseServiceArgs)
 	if err := dec(in); err != nil {
@@ -789,6 +857,14 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ExecCommand",
 			Handler:    _ApiContainerService_ExecCommand_Handler,
+		},
+		{
+			MethodName: "DefineFact",
+			Handler:    _ApiContainerService_DefineFact_Handler,
+		},
+		{
+			MethodName: "GetFactValues",
+			Handler:    _ApiContainerService_GetFactValues_Handler,
 		},
 		{
 			MethodName: "PauseService",

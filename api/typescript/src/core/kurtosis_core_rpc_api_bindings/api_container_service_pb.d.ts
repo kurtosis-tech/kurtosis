@@ -985,6 +985,82 @@ export namespace StartosisValidationError {
   }
 }
 
+export class DefineFactArgs extends jspb.Message {
+  getFactRecipe(): FactRecipe | undefined;
+  setFactRecipe(value?: FactRecipe): DefineFactArgs;
+  hasFactRecipe(): boolean;
+  clearFactRecipe(): DefineFactArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): DefineFactArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: DefineFactArgs): DefineFactArgs.AsObject;
+  static serializeBinaryToWriter(message: DefineFactArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): DefineFactArgs;
+  static deserializeBinaryFromReader(message: DefineFactArgs, reader: jspb.BinaryReader): DefineFactArgs;
+}
+
+export namespace DefineFactArgs {
+  export type AsObject = {
+    factRecipe?: FactRecipe.AsObject,
+  }
+}
+
+export class DefineFactResponse extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): DefineFactResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: DefineFactResponse): DefineFactResponse.AsObject;
+  static serializeBinaryToWriter(message: DefineFactResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): DefineFactResponse;
+  static deserializeBinaryFromReader(message: DefineFactResponse, reader: jspb.BinaryReader): DefineFactResponse;
+}
+
+export namespace DefineFactResponse {
+  export type AsObject = {
+  }
+}
+
+export class GetFactValuesArgs extends jspb.Message {
+  getServiceId(): string;
+  setServiceId(value: string): GetFactValuesArgs;
+
+  getFactName(): string;
+  setFactName(value: string): GetFactValuesArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetFactValuesArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: GetFactValuesArgs): GetFactValuesArgs.AsObject;
+  static serializeBinaryToWriter(message: GetFactValuesArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetFactValuesArgs;
+  static deserializeBinaryFromReader(message: GetFactValuesArgs, reader: jspb.BinaryReader): GetFactValuesArgs;
+}
+
+export namespace GetFactValuesArgs {
+  export type AsObject = {
+    serviceId: string,
+    factName: string,
+  }
+}
+
+export class GetFactValuesResponse extends jspb.Message {
+  getFactValuesList(): Array<FactValue>;
+  setFactValuesList(value: Array<FactValue>): GetFactValuesResponse;
+  clearFactValuesList(): GetFactValuesResponse;
+  addFactValues(value?: FactValue, index?: number): FactValue;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetFactValuesResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: GetFactValuesResponse): GetFactValuesResponse.AsObject;
+  static serializeBinaryToWriter(message: GetFactValuesResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetFactValuesResponse;
+  static deserializeBinaryFromReader(message: GetFactValuesResponse, reader: jspb.BinaryReader): GetFactValuesResponse;
+}
+
+export namespace GetFactValuesResponse {
+  export type AsObject = {
+    factValuesList: Array<FactValue.AsObject>,
+  }
+}
+
 export class FactValue extends jspb.Message {
   getStringValue(): string;
   setStringValue(value: string): FactValue;
@@ -1031,8 +1107,10 @@ export namespace ConstantFactRecipe {
 }
 
 export class ExecFactRecipe extends jspb.Message {
-  getExecString(): string;
-  setExecString(value: string): ExecFactRecipe;
+  getCmdArgsList(): Array<string>;
+  setCmdArgsList(value: Array<string>): ExecFactRecipe;
+  clearCmdArgsList(): ExecFactRecipe;
+  addCmdArgs(value: string, index?: number): ExecFactRecipe;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ExecFactRecipe.AsObject;
@@ -1044,7 +1122,7 @@ export class ExecFactRecipe extends jspb.Message {
 
 export namespace ExecFactRecipe {
   export type AsObject = {
-    execString: string,
+    cmdArgsList: Array<string>,
   }
 }
 

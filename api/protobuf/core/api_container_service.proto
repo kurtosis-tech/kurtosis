@@ -42,6 +42,12 @@ service ApiContainerService {
   // Executes the given command inside a running container
   rpc ExecCommand(ExecCommandArgs) returns (ExecCommandResponse) {};
 
+  // Define fact
+  rpc DefineFact(DefineFactArgs) returns (DefineFactResponse) {};
+
+  // Get a list of values of a fact
+  rpc GetFactValues(GetFactValuesArgs) returns (GetFactValuesResponse) {};
+
   // Pauses all processes running in the service container
   rpc PauseService(PauseServiceArgs) returns (google.protobuf.Empty) {};
 
@@ -487,6 +493,21 @@ message StartosisValidationError {
 //                                 Facts Engine
 // ==============================================================================================
 
+message DefineFactArgs {
+  FactRecipe fact_recipe = 1;
+}
+
+message DefineFactResponse {}
+
+message GetFactValuesArgs {
+  string service_id = 1;
+  string fact_name = 2;
+}
+
+message GetFactValuesResponse {
+  repeated FactValue fact_values = 1;
+}
+
 message FactValue {
   oneof fact_value {
     string string_value = 1;
@@ -498,7 +519,7 @@ message ConstantFactRecipe {
 }
 
 message ExecFactRecipe {
-  string exec_string = 1;
+  repeated string cmd_args = 1;
 }
 
 enum HttpRequestMethod {

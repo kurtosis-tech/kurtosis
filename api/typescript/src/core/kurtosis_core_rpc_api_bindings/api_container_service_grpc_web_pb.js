@@ -748,6 +748,128 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.execCommand =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.DefineFactArgs,
+ *   !proto.api_container_api.DefineFactResponse>}
+ */
+const methodDescriptor_ApiContainerService_DefineFact = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/DefineFact',
+  grpc.web.MethodType.UNARY,
+  proto.api_container_api.DefineFactArgs,
+  proto.api_container_api.DefineFactResponse,
+  /**
+   * @param {!proto.api_container_api.DefineFactArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.DefineFactResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.DefineFactArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.DefineFactResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.DefineFactResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.defineFact =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/DefineFact',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_DefineFact,
+      callback);
+};
+
+
+/**
+ * @param {!proto.api_container_api.DefineFactArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.api_container_api.DefineFactResponse>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.defineFact =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/DefineFact',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_DefineFact);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.GetFactValuesArgs,
+ *   !proto.api_container_api.GetFactValuesResponse>}
+ */
+const methodDescriptor_ApiContainerService_GetFactValues = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/GetFactValues',
+  grpc.web.MethodType.UNARY,
+  proto.api_container_api.GetFactValuesArgs,
+  proto.api_container_api.GetFactValuesResponse,
+  /**
+   * @param {!proto.api_container_api.GetFactValuesArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.GetFactValuesResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.GetFactValuesArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.GetFactValuesResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.GetFactValuesResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.getFactValues =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/GetFactValues',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_GetFactValues,
+      callback);
+};
+
+
+/**
+ * @param {!proto.api_container_api.GetFactValuesArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.api_container_api.GetFactValuesResponse>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.getFactValues =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/GetFactValues',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_GetFactValues);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.api_container_api.PauseServiceArgs,
  *   !proto.google.protobuf.Empty>}
  */

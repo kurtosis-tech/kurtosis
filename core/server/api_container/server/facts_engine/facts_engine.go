@@ -18,15 +18,9 @@ import (
 type FactId string
 
 type FactsEngine struct {
-<<<<<<< HEAD
-	db              *bolt.DB
-	recipeChannel   chan *kurtosis_core_rpc_api_bindings.FactRecipe
-	doneChannelList []chan bool
-	serviceNetwork  service_network.ServiceNetwork
-=======
-	db          *bolt.DB
-	exitChanMap map[FactId]chan bool
->>>>>>> vcolombo/facts-engine
+	db             *bolt.DB
+	exitChanMap    map[FactId]chan bool
+	serviceNetwork service_network.ServiceNetwork
 }
 
 var (
@@ -34,21 +28,13 @@ var (
 	factRecipesBucketName = []byte("fact_recipes")
 )
 
-<<<<<<< HEAD
+const defaultWaitTimeBetweenFactPool = 2 * time.Second
+
 func NewFactsEngine(db *bolt.DB, serviceNetwork service_network.ServiceNetwork) *FactsEngine {
 	return &FactsEngine{
 		db,
-		make(chan *kurtosis_core_rpc_api_bindings.FactRecipe),
-		[]chan bool{},
-		serviceNetwork,
-=======
-const defaultWaitTimeBetweenFactPool = 2 * time.Second
-
-func NewFactsEngine(db *bolt.DB) *FactsEngine {
-	return &FactsEngine{
-		db,
 		make(map[FactId]chan bool),
->>>>>>> vcolombo/facts-engine
+		serviceNetwork,
 	}
 }
 
@@ -67,17 +53,18 @@ func (engine *FactsEngine) Stop() {
 }
 
 func (engine *FactsEngine) PushRecipe(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) error {
+	logrus.Debugf("Recieved recipe '%v'", recipe)
 	err := engine.persistRecipe(recipe)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred when persisting recipe")
 	}
-	factId := GetFactIdFromRecipe(recipe)
+	factId := GetFactId(recipe.GetServiceId(), recipe.GetFactName())
 	engine.exitChanMap[factId] = make(chan bool)
 	go engine.runRecipeLoop(factId, engine.exitChanMap[factId], recipe)
 	return nil
 }
 
-func (engine *FactsEngine) FetchLatestFactValue(factId string) (string, *kurtosis_core_rpc_api_bindings.FactValue, error) {
+func (engine *FactsEngine) FetchLatestFactValue(factId FactId) (string, *kurtosis_core_rpc_api_bindings.FactValue, error) {
 	returnFactValue := kurtosis_core_rpc_api_bindings.FactValue{}
 	var returnTimestamp string
 	err := engine.db.View(func(tx *bolt.Tx) error {
@@ -187,8 +174,8 @@ func (engine *FactsEngine) runRecipeLoop(factId FactId, exit <-chan bool, recipe
 	}
 }
 
-func GetFactIdFromRecipe(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) FactId {
-	return FactId(fmt.Sprintf("%v.%v", recipe.GetServiceId(), recipe.GetFactName()))
+func GetFactId(serviceId string, factName string) FactId {
+	return FactId(fmt.Sprintf("%v.%v", serviceId, factName))
 }
 
 func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) (*kurtosis_core_rpc_api_bindings.FactValue, error) {
@@ -196,7 +183,7 @@ func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.Fact
 		return recipe.GetConstantFact().GetFactValue(), nil
 	}
 	if recipe.GetExecFact() != nil {
-		_, result, err := engine.serviceNetwork.ExecCommand(context.Background(), service.ServiceID(recipe.GetServiceId()), []string{recipe.GetExecFact().GetExecString()})
+		_, result, err := engine.serviceNetwork.ExecCommand(context.Background(), service.ServiceID(recipe.GetServiceId()), recipe.GetExecFact().GetCmdArgs())
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred when running exec recipe")
 		}
