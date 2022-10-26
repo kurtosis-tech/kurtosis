@@ -2,6 +2,7 @@ import * as jspb from 'google-protobuf'
 
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
 import * as google_protobuf_duration_pb from 'google-protobuf/google/protobuf/duration_pb';
+import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb';
 
 
 export class Port extends jspb.Message {
@@ -1065,6 +1066,11 @@ export class FactValue extends jspb.Message {
   getStringValue(): string;
   setStringValue(value: string): FactValue;
 
+  getUpdatedAt(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setUpdatedAt(value?: google_protobuf_timestamp_pb.Timestamp): FactValue;
+  hasUpdatedAt(): boolean;
+  clearUpdatedAt(): FactValue;
+
   getFactValueCase(): FactValue.FactValueCase;
 
   serializeBinary(): Uint8Array;
@@ -1078,6 +1084,7 @@ export class FactValue extends jspb.Message {
 export namespace FactValue {
   export type AsObject = {
     stringValue: string,
+    updatedAt?: google_protobuf_timestamp_pb.Timestamp.AsObject,
   }
 
   export enum FactValueCase { 

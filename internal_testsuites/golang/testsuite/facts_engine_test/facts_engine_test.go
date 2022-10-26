@@ -3,26 +3,34 @@ package facts_engine_test
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
-	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 const (
 	testName              = "facts-engine"
 	isPartitioningEnabled = false
 
-	execCmdTestImage              = "alpine:3.12.4"
-	inputForLogOutputTest         = "hello"
-	expectedLogOutput             = "hello\n"
-	inputForAdvancedLogOutputTest = "hello && hello"
-	expectedAdvancedLogOutput     = "hello && hello\n"
-	testServiceId                 = "test"
+	factsEngineTestImage = "httpd:2.4.54"
+	containerPortId      = "port_id"
 
-	successExitCode int32 = 0
+	inputForExecFactTest                   = "hello"
+	expectedOutputForConstantFactOutput    = "value"
+	expectedOutputForExecFactOutput        = "hello\n"
+	expectedOutputForHttpRequestFactOutput = "<html><body><h1>It works!</h1></body></html>\n"
+	testServiceId                          = "test"
+	constantFactName                       = "constant_fact"
+	httpRequestFactName                    = "http_request_fact"
+	execFactName                           = "exec_fact"
 )
+
+var containerUsedPorts = map[string]*services.PortSpec{
+	containerPortId: services.NewPortSpec(80, services.PortProtocol_TCP),
+}
 
 var execCommandThatShouldWork = []string{
 	"true",
@@ -30,18 +38,7 @@ var execCommandThatShouldWork = []string{
 
 var execCommandThatShouldHaveLogOutput = []string{
 	"echo",
-	inputForLogOutputTest,
-}
-
-// This command tests to ensure that the commands the user is running get passed exactly as-is to the Docker
-// container. If Kurtosis code is magically wrapping the code with "sh -c", this will fail.
-var execCommandThatWillFailIfShWrapped = []string{
-	"echo",
-	inputForAdvancedLogOutputTest,
-}
-
-var execCommandThatShouldFail = []string{
-	"false",
+	inputForExecFactTest,
 }
 
 func TestExecCommand(t *testing.T) {
@@ -55,35 +52,67 @@ func TestExecCommand(t *testing.T) {
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	containerConfig := getContainerConfig()
 
-	testServiceContext, err := enclaveCtx.AddService(testServiceId, containerConfig)
+	_, err = enclaveCtx.AddService(testServiceId, containerConfig)
 	require.NoError(t, err, "An error occurred starting service '%v'", testServiceId)
-
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	logrus.Infof("Running exec command '%+v' that should return a successful exit code...", execCommandThatShouldWork)
-	shouldWorkExitCode, _, err := runExecCmd(testServiceContext, execCommandThatShouldWork)
-	require.NoError(t, err, "An error occurred running exec command '%+v'", execCommandThatShouldWork)
-	require.Equal(t, successExitCode, shouldWorkExitCode, "Exec command '%+v' should work, but got unsuccessful exit code %v", execCommandThatShouldWork, shouldWorkExitCode)
-	logrus.Info("Exec command returned successful exit code as expected")
+	logrus.Infof("Defining constant fact...")
+	_, err = enclaveCtx.DefineFact(&kurtosis_core_rpc_api_bindings.FactRecipe{
+		ServiceId: testServiceId,
+		FactName:  constantFactName,
+		FactRecipe: &kurtosis_core_rpc_api_bindings.FactRecipe_ConstantFact{
+			ConstantFact: &kurtosis_core_rpc_api_bindings.ConstantFactRecipe{
+				FactValue: &kurtosis_core_rpc_api_bindings.FactValue{
+					FactValue: &kurtosis_core_rpc_api_bindings.FactValue_StringValue{
+						StringValue: expectedOutputForConstantFactOutput,
+					},
+				},
+			},
+		},
+	})
+	require.Nil(t, err)
+	time.Sleep(5 * time.Second)
 
-	logrus.Infof("Running exec command '%+v' that should return an error exit code...", execCommandThatShouldFail)
-	shouldFailExitCode, _, err := runExecCmd(testServiceContext, execCommandThatShouldFail)
-	require.NoError(t, err, "An error occurred running exec command '%+v'", execCommandThatShouldFail)
-	require.NotEqual(t, successExitCode, shouldFailExitCode, "Exec command '%+v' should fail, but got successful exit code %v", execCommandThatShouldFail, successExitCode)
-	logrus.Infof("Exec command returning an error exited with error")
+	logrus.Infof("Getting constant fact value...")
+	getFactValuesResponse, err := enclaveCtx.GetFactValues(testServiceId, constantFactName)
+	require.Equal(t, expectedOutputForConstantFactOutput, getFactValuesResponse.GetFactValues()[0].GetStringValue())
 
-	logrus.Infof("Running exec command '%+v' that should return log output...", execCommandThatShouldHaveLogOutput)
-	shouldHaveLogOutputExitCode, logOutput, err := runExecCmd(testServiceContext, execCommandThatShouldHaveLogOutput)
-	require.NoError(t, err, "An error occurred running exec command '%+v'", execCommandThatShouldHaveLogOutput)
-	require.Equal(t, successExitCode, shouldHaveLogOutputExitCode, "Exec command '%+v' should work, but got unsuccessful exit code %v", execCommandThatShouldHaveLogOutput, shouldHaveLogOutputExitCode)
-	require.Equal(t, expectedLogOutput, logOutput, "Exec command '%+v' should return '%v', but got '%v'.", execCommandThatShouldHaveLogOutput, expectedLogOutput, logOutput)
-	logrus.Info("Exec command returning log output passed as expected")
+	logrus.Infof("Defining exec fact...")
+	_, err = enclaveCtx.DefineFact(&kurtosis_core_rpc_api_bindings.FactRecipe{
+		ServiceId: testServiceId,
+		FactName:  execFactName,
+		FactRecipe: &kurtosis_core_rpc_api_bindings.FactRecipe_ExecFact{
+			ExecFact: &kurtosis_core_rpc_api_bindings.ExecFactRecipe{
+				CmdArgs: execCommandThatShouldHaveLogOutput,
+			},
+		},
+	})
+	require.Nil(t, err)
+	time.Sleep(5 * time.Second)
 
-	logrus.Infof("Running exec command '%+v' that will fail if Kurtosis is accidentally sh-wrapping the command...", execCommandThatWillFailIfShWrapped)
-	shouldNotGetShWrappedExitCode, shouldNotGetShWrappedLogOutput, err := runExecCmd(testServiceContext, execCommandThatWillFailIfShWrapped)
-	require.NoError(t, err, "An error occurred running exec command '%+v'", execCommandThatWillFailIfShWrapped)
-	require.Equal(t, successExitCode, shouldNotGetShWrappedExitCode, "Exec command '%v' should work, but got unsuccessful exit code %v", execCommandThatWillFailIfShWrapped, shouldNotGetShWrappedExitCode)
-	require.Equal(t, expectedAdvancedLogOutput, shouldNotGetShWrappedLogOutput, "Exec command '%+v' should return '%v', but got '%v'.", execCommandThatWillFailIfShWrapped, expectedAdvancedLogOutput, shouldNotGetShWrappedLogOutput)
-	logrus.Info("Exec command that will fail if Kurtosis is accidentally sh-wrapping did not fail")
+	logrus.Infof("Getting exec fact value...")
+	getFactValuesResponse, err = enclaveCtx.GetFactValues(testServiceId, execFactName)
+	require.Equal(t, expectedOutputForExecFactOutput, getFactValuesResponse.GetFactValues()[0].GetStringValue())
+
+	logrus.Infof("Defining HTTP request fact...")
+	_, err = enclaveCtx.DefineFact(&kurtosis_core_rpc_api_bindings.FactRecipe{
+		ServiceId: testServiceId,
+		FactName:  httpRequestFactName,
+		FactRecipe: &kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact{
+			HttpRequestFact: &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
+				PortId:   containerPortId,
+				Method:   kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
+				Endpoint: "/",
+			},
+		},
+	})
+	require.Nil(t, err)
+	time.Sleep(5 * time.Second)
+
+	logrus.Infof("Getting HTTP request fact value...")
+	getFactValuesResponse, err = enclaveCtx.GetFactValues(testServiceId, httpRequestFactName)
+	require.Nil(t, err)
+	require.Equal(t, expectedOutputForHttpRequestFactOutput, getFactValuesResponse.GetFactValues()[0].GetStringValue())
+
 }
 
 // ====================================================================================================
@@ -92,28 +121,6 @@ func TestExecCommand(t *testing.T) {
 //
 // ====================================================================================================
 func getContainerConfig() *services.ContainerConfig {
-	// We sleep because the only function of this container is to test Docker executing a command while it's running
-	// NOTE: We could just as easily combine this into a single array (rather than splitting between ENTRYPOINT and CMD
-	// args), but this provides a nice little regression test of the ENTRYPOINT overriding
-	entrypointArgs := []string{"sleep"}
-	cmdArgs := []string{"30"}
-
-	containerConfig := services.NewContainerConfigBuilder(
-		execCmdTestImage,
-	).WithEntrypointOverride(
-		entrypointArgs,
-	).WithCmdOverride(
-		cmdArgs,
-	).Build()
+	containerConfig := services.NewContainerConfigBuilder(factsEngineTestImage).WithUsedPorts(containerUsedPorts).Build()
 	return containerConfig
-}
-
-func runExecCmd(serviceContext *services.ServiceContext, command []string) (int32, string, error) {
-	exitCode, logOutput, err := serviceContext.ExecCommand(command)
-	if err != nil {
-		return 0, "", stacktrace.Propagate(
-			err,
-			"An error occurred executing command '%v'", command)
-	}
-	return exitCode, logOutput, nil
 }

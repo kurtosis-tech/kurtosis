@@ -127,6 +127,24 @@ func (enclaveCtx *EnclaveContext) GetModuleContext(moduleId modules.ModuleID) (*
 	return moduleCtx, nil
 }
 
+func (enclaveCtx *EnclaveContext) DefineFact(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) (*kurtosis_core_rpc_api_bindings.DefineFactResponse, error) {
+	defineFactArgs := binding_constructors.NewDefineFactArgs(recipe)
+	defineFactResponse, err := enclaveCtx.client.DefineFact(context.Background(), defineFactArgs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unexpected error happened defining fact\n")
+	}
+	return defineFactResponse, nil
+}
+
+func (enclaveCtx *EnclaveContext) GetFactValues(serviceId string, factName string) (*kurtosis_core_rpc_api_bindings.GetFactValuesResponse, error) {
+	factValuesArgs := binding_constructors.GetFactValuesArgs(serviceId, factName)
+	factValuesResponse, err := enclaveCtx.client.GetFactValues(context.Background(), factValuesArgs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unexpected error happened getting fact values '%v' '%v'\n", serviceId, factName)
+	}
+	return factValuesResponse, nil
+}
+
 func (enclaveCtx *EnclaveContext) ExecuteStartosisScript(serializedScript string) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
 	executeStartosisScriptArgs := binding_constructors.NewExecuteStartosisScriptArgs(serializedScript)
 	executeStartosisResponse, err := enclaveCtx.client.ExecuteStartosisScript(context.Background(), executeStartosisScriptArgs)

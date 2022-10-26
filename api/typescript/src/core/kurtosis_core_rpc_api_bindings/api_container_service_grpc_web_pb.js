@@ -19,6 +19,8 @@ grpc.web = require('grpc-web');
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js')
 
 var google_protobuf_duration_pb = require('google-protobuf/google/protobuf/duration_pb.js')
+
+var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js')
 const proto = {};
 proto.api_container_api = require('./api_container_service_pb.js');
 

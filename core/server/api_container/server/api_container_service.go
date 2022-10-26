@@ -474,7 +474,7 @@ func (apicService ApiContainerService) DefineFact(_ context.Context, args *kurto
 }
 
 func (apicService ApiContainerService) GetFactValues(_ context.Context, args *kurtosis_core_rpc_api_bindings.GetFactValuesArgs) (*kurtosis_core_rpc_api_bindings.GetFactValuesResponse, error) {
-	_, value, err := apicService.factsEngine.FetchLatestFactValue(facts_engine.GetFactId(args.GetServiceId(), args.GetFactName()))
+	value, err := apicService.factsEngine.FetchLatestFactValue(facts_engine.GetFactId(args.GetServiceId(), args.GetFactName()))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred when getting values from fact")
 	}

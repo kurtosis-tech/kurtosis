@@ -19,6 +19,8 @@ var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb
 goog.object.extend(proto, google_protobuf_empty_pb);
 var google_protobuf_duration_pb = require('google-protobuf/google/protobuf/duration_pb.js');
 goog.object.extend(proto, google_protobuf_duration_pb);
+var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
+goog.object.extend(proto, google_protobuf_timestamp_pb);
 goog.exportSymbol('proto.api_container_api.ConstantFactRecipe', null, global);
 goog.exportSymbol('proto.api_container_api.DefineFactArgs', null, global);
 goog.exportSymbol('proto.api_container_api.DefineFactResponse', null, global);
@@ -9043,7 +9045,8 @@ proto.api_container_api.FactValue.prototype.toObject = function(opt_includeInsta
  */
 proto.api_container_api.FactValue.toObject = function(includeInstance, msg) {
   var f, obj = {
-    stringValue: jspb.Message.getFieldWithDefault(msg, 1, "")
+    stringValue: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    updatedAt: (f = msg.getUpdatedAt()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -9084,6 +9087,11 @@ proto.api_container_api.FactValue.deserializeBinaryFromReader = function(msg, re
       var value = /** @type {string} */ (reader.readString());
       msg.setStringValue(value);
       break;
+    case 10:
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      msg.setUpdatedAt(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -9118,6 +9126,14 @@ proto.api_container_api.FactValue.serializeBinaryToWriter = function(message, wr
     writer.writeString(
       1,
       f
+    );
+  }
+  f = message.getUpdatedAt();
+  if (f != null) {
+    writer.writeMessage(
+      10,
+      f,
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
 };
@@ -9156,6 +9172,43 @@ proto.api_container_api.FactValue.prototype.clearStringValue = function() {
  */
 proto.api_container_api.FactValue.prototype.hasStringValue = function() {
   return jspb.Message.getField(this, 1) != null;
+};
+
+
+/**
+ * optional google.protobuf.Timestamp updated_at = 10;
+ * @return {?proto.google.protobuf.Timestamp}
+ */
+proto.api_container_api.FactValue.prototype.getUpdatedAt = function() {
+  return /** @type{?proto.google.protobuf.Timestamp} */ (
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 10));
+};
+
+
+/**
+ * @param {?proto.google.protobuf.Timestamp|undefined} value
+ * @return {!proto.api_container_api.FactValue} returns this
+*/
+proto.api_container_api.FactValue.prototype.setUpdatedAt = function(value) {
+  return jspb.Message.setWrapperField(this, 10, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api_container_api.FactValue} returns this
+ */
+proto.api_container_api.FactValue.prototype.clearUpdatedAt = function() {
+  return this.setUpdatedAt(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.FactValue.prototype.hasUpdatedAt = function() {
+  return jspb.Message.getField(this, 10) != null;
 };
 
 

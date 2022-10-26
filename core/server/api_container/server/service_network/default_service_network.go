@@ -516,7 +516,7 @@ func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, se
 		return nil, stacktrace.Propagate(getServiceErr, "An error occurred when getting service '%v' for HTTP request", serviceId)
 	}
 	port, found := service.GetPrivatePorts()[portId]
-	if found == false {
+	if !found {
 		return nil, stacktrace.NewError("An error occurred when getting port '%v' from service '%v' for HTTP request", serviceId, portId)
 	}
 	url := fmt.Sprintf("http://%v:%v/%v", service.GetRegistration().GetPrivateIP(), port.GetNumber(), endpoint)

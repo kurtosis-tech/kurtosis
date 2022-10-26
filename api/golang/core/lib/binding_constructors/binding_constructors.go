@@ -145,6 +145,25 @@ func NewModuleInfo(
 
 // ==============================================================================================
 //
+//	Facts
+//
+// ==============================================================================================
+
+func NewDefineFactArgs(factRecipe *kurtosis_core_rpc_api_bindings.FactRecipe) *kurtosis_core_rpc_api_bindings.DefineFactArgs {
+	return &kurtosis_core_rpc_api_bindings.DefineFactArgs{
+		FactRecipe: factRecipe,
+	}
+}
+
+func GetFactValuesArgs(serviceId string, factName string) *kurtosis_core_rpc_api_bindings.GetFactValuesArgs {
+	return &kurtosis_core_rpc_api_bindings.GetFactValuesArgs{
+		ServiceId: serviceId,
+		FactName:  factName,
+	}
+}
+
+// ==============================================================================================
+//
 //	Execute Startosis Script
 //
 // ==============================================================================================

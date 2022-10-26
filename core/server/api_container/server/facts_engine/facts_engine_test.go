@@ -7,7 +7,6 @@ import (
 	bolt "go.etcd.io/bbolt"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"os"
-	"strconv"
 	"testing"
 	"time"
 )
@@ -22,11 +21,11 @@ func TestFactEngineLoop(t *testing.T) {
 	defer os.Remove(file.Name())
 	require.Nil(t, err)
 	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
 	defer func() {
 		err := db.Close()
 		require.Nil(t, err)
 	}()
-	require.Nil(t, err)
 	factsEngine := NewFactsEngine(db, service_network.NewEmptyMockServiceNetwork())
 	factsEngine.Start()
 	factValue := &kurtosis_core_rpc_api_bindings.FactValue{
@@ -46,7 +45,7 @@ func TestFactEngineLoop(t *testing.T) {
 	})
 	require.Nil(t, err)
 	time.Sleep(waitUntilFactsAreUpdated) // Wait for the background workers to perform operations
-	_, fetchedFactValue, err := factsEngine.FetchLatestFactValue("service_id.fact_name")
+	fetchedFactValue, err := factsEngine.FetchLatestFactValue("service_id.fact_name")
 	require.Nil(t, err)
 	require.Equal(t, fetchedFactValue.GetStringValue(), factValue.GetStringValue())
 }
@@ -80,18 +79,16 @@ func TestFactRecipePersistence(t *testing.T) {
 	err = db.Close()
 	require.Nil(t, err)
 	otherDb, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
 	defer func() {
 		err := otherDb.Close()
 		require.Nil(t, err)
 	}()
-	require.Nil(t, err)
 	secondEngineTimestamp := time.Now().UnixNano()
 	otherFactsEngine := NewFactsEngine(otherDb, service_network.NewEmptyMockServiceNetwork())
 	otherFactsEngine.Start()
 	time.Sleep(waitUntilFactsAreUpdated) // Wait for the background workers to perform operations
-	savedTimestampStr, _, err := otherFactsEngine.FetchLatestFactValue("service_id.fact_name")
+	fetchedFactValue, err := otherFactsEngine.FetchLatestFactValue("service_id.fact_name")
 	require.Nil(t, err)
-	savedTimestamp, err := strconv.ParseInt(savedTimestampStr, 10, 64)
-	require.Nil(t, err)
-	require.Greater(t, savedTimestamp, secondEngineTimestamp)
+	require.Greater(t, fetchedFactValue.GetUpdatedAt().AsTime().UnixNano(), secondEngineTimestamp)
 }

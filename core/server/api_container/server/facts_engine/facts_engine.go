@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"io"
 	"strconv"
 	"time"
@@ -53,7 +54,6 @@ func (engine *FactsEngine) Stop() {
 }
 
 func (engine *FactsEngine) PushRecipe(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) error {
-	logrus.Debugf("Recieved recipe '%v'", recipe)
 	err := engine.persistRecipe(recipe)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred when persisting recipe")
@@ -64,9 +64,8 @@ func (engine *FactsEngine) PushRecipe(recipe *kurtosis_core_rpc_api_bindings.Fac
 	return nil
 }
 
-func (engine *FactsEngine) FetchLatestFactValue(factId FactId) (string, *kurtosis_core_rpc_api_bindings.FactValue, error) {
+func (engine *FactsEngine) FetchLatestFactValue(factId FactId) (*kurtosis_core_rpc_api_bindings.FactValue, error) {
 	returnFactValue := kurtosis_core_rpc_api_bindings.FactValue{}
-	var returnTimestamp string
 	err := engine.db.View(func(tx *bolt.Tx) error {
 		factValuesBucket := tx.Bucket(factValuesBucketName)
 		if factValuesBucket == nil {
@@ -80,7 +79,6 @@ func (engine *FactsEngine) FetchLatestFactValue(factId FactId) (string, *kurtosi
 		if timestamp == nil {
 			return stacktrace.NewError("An error occurred because no fact value was found for fact '%v'", factId)
 		}
-		returnTimestamp = string(timestamp)
 		err := proto.Unmarshal(factValue, &returnFactValue)
 		if err != nil {
 			return stacktrace.NewError("An error occurred when unmarshalling fact value")
@@ -88,9 +86,9 @@ func (engine *FactsEngine) FetchLatestFactValue(factId FactId) (string, *kurtosi
 		return err
 	})
 	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred when fetching latest fact value")
+		return nil, stacktrace.Propagate(err, "An error occurred when fetching latest fact value")
 	}
-	return returnTimestamp, &returnFactValue, nil
+	return &returnFactValue, nil
 }
 
 func (engine *FactsEngine) restoreStoredRecipes() error {
@@ -151,8 +149,10 @@ func (engine *FactsEngine) runRecipeLoop(factId FactId, exit <-chan bool, recipe
 			return
 		case <-ticker.C:
 			// TODO(victor.colombo): Take hint from protobuf on how long to wait for it
-			timestamp := strconv.FormatInt(time.Now().UnixNano(), 10)
+			now := time.Now()
+			timestamp := strconv.FormatInt(now.UnixNano(), 10)
 			factValue, err := engine.runRecipe(recipe)
+			factValue.UpdatedAt = timestamppb.New(time.Now())
 			if err != nil {
 				logrus.Errorf(stacktrace.Propagate(err, "An error occurred when running recipe").Error())
 				// TODO(victor.colombo): Run exponential backoff
