@@ -66,4 +66,6 @@ type ServiceNetwork interface {
 	GetServiceIDs() map[service.ServiceID]bool
 
 	GetIPAddressForService(serviceID service.ServiceID) (net.IP, bool)
+
+	RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData) (enclave_data_directory.FilesArtifactUUID, error)
 }
