@@ -22,7 +22,12 @@ func TestFactEngineLoop(t *testing.T) {
 	require.Nil(t, err)
 	db, err := bolt.Open(file.Name(), 0666, nil)
 	require.Nil(t, err)
-	defer db.Close()
+	defer func(db *bolt.DB) {
+		err := db.Close()
+		if err != nil {
+			require.Nil(t, err)
+		}
+	}(db)
 	factsEngine := NewFactsEngine(db, service_network.NewEmptyMockServiceNetwork())
 	factsEngine.Start()
 	factValue := &kurtosis_core_rpc_api_bindings.FactValue{
@@ -45,7 +50,12 @@ func TestFactRecipePersistence(t *testing.T) {
 	require.Nil(t, err)
 	db, err := bolt.Open(file.Name(), 0666, nil)
 	require.Nil(t, err)
-	defer db.Close()
+	defer func(db *bolt.DB) {
+		err := db.Close()
+		if err != nil {
+			require.Nil(t, err)
+		}
+	}(db)
 	factsEngine := NewFactsEngine(db, service_network.NewEmptyMockServiceNetwork())
 	factsEngine.Start()
 	factValue := &kurtosis_core_rpc_api_bindings.FactValue{

@@ -2,8 +2,10 @@ package startosis_engine
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -11,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/read_file"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_files_from_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_modules/mock_module_content_provider"
@@ -938,6 +941,57 @@ print(file_contents)
 
 	expectedOutput := `Reading file from GitHub!
 this is a test string
+`
+	require.Equal(t, expectedOutput, string(scriptOutput))
+}
+
+func TestStartosisInterpreter_RenderTemplates(t *testing.T) {
+	moduleContentProvider := mock_module_content_provider.NewEmptyMockModuleContentProvider()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `
+print("Rendering template to disk!")
+template_data = {
+			"Name" : "Stranger",
+			"Answer": 6,
+			"Numbers": [1, 2, 3],
+			"UnixTimeStamp": 1257894000,
+			"LargeFloat": 1231231243.43,
+			"Alive": True
+}
+encoded_json = json.encode(template_data)
+data = {
+	"/foo/bar/test.txt" : {
+		"template": "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}",
+		"template_data_json": encoded_json
+    }
+}
+artifact_uuid = render_templates(template_and_data_by_dest_rel_filepath = data)
+print(artifact_uuid)
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Nil(t, interpretationError)
+	require.Equal(t, 1, len(instructions))
+
+	template := "Hello {{.Name}}. The sum of {{.Numbers}} is {{.Answer}}. My favorite moment in history {{.UnixTimeStamp}}. My favorite number {{.LargeFloat}}. Am I Alive? {{.Alive}}"
+	templateData := map[string]interface{}{"Name": "Stranger", "Answer": 6, "Numbers": []int{1, 2, 3}, "UnixTimeStamp": 1257894000, "LargeFloat": 1231231243.43, "Alive": true}
+	templateDataAsJson, err := json.Marshal(templateData)
+	require.Nil(t, err)
+	templateAndData := binding_constructors.NewTemplateAndData(template, string(templateDataAsJson))
+	templateAndDataByDestFilepath := map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
+		"/foo/bar/test.txt": templateAndData,
+	}
+
+	renderInstruction := render_templates.NewRenderTemplatesInstruction(
+		testServiceNetwork,
+		*kurtosis_instruction.NewInstructionPosition(18, 33),
+		templateAndDataByDestFilepath,
+	)
+
+	require.Equal(t, renderInstruction, instructions[0])
+
+	expectedOutput := `Rendering template to disk!
+{{kurtosis:18:33.artifact_uuid}}
 `
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }

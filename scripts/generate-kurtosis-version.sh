@@ -33,44 +33,23 @@ show_helptext_and_exit() {
 new_version="${1:-}"
 
 if [ -z "${new_version}" ]; then
-  if ! new_version="$(kudet get-docker-tag)"; then
-    echo "Error: No new version provided and couldn't generate one" >&2
-    show_helptext_and_exit
-  fi
-fi
-
-if ! rm "-rf" "${root_dirpath}/${KURTOSIS_VERSION_PACKAGE_DIR}"; then
-  echo "Failed to remove '${root_dirpath}/${KURTOSIS_VERSION_PACKAGE_DIR}'"
-  exit 1
-fi
-
-if ! mkdir "${root_dirpath}/${KURTOSIS_VERSION_PACKAGE_DIR}" ; then
-  echo "Failed to create directory '${root_dirpath}/${KURTOSIS_VERSION_PACKAGE_DIR}'" >&2
-  exit 1
-fi
-
-if ! cd "${root_dirpath}/${KURTOSIS_VERSION_PACKAGE_DIR}"; then
-  echo "Failed to cd into directory '${root_dirpath}/${KURTOSIS_VERSION_PACKAGE_DIR}'" >&2
-  exit 1
-fi
-
-if ! go "mod" "init" "${KURTOSIS_VERSION_PACKAGE_NAME}" ; then
-  echo "Failed to create package '${KURTOSIS_VERSION_PACKAGE_NAME}'" >&2
-  exit 1
-fi
-
-go_sum_abs_path="${root_dirpath}/${KURTOSIS_VERSION_PACKAGE_DIR}/${KURTOSIS_VERSION_PACKAGE_GOSUM_PATH}"
-if ! touch "${go_sum_abs_path}" ; then
-  echo "Failed to create go sum '${go_sum_abs_path}'" >&2
-  exit 1
+    if ! cd "${root_dirpath}"; then
+        echo "Error: Couldn't cd to the root of this repo, '${root_dirpath}', which is required to get the Git tag" >&2
+        show_helptext_and_exit
+    fi
+    if ! new_version="$(kudet get-docker-tag)"; then
+        echo "Error: No new version provided and couldn't generate one" >&2
+        show_helptext_and_exit
+    fi
 fi
 
 kurtosis_version_go_file_abs_path="${root_dirpath}/${KURTOSIS_VERSION_PACKAGE_DIR}/${KURTOSIS_VERSION_GO_FILE}"
-echo "package ${KURTOSIS_VERSION_PACKAGE_DIR}" > "${kurtosis_version_go_file_abs_path}"
-echo "" >> "${kurtosis_version_go_file_abs_path}"
-echo "const (" >> "${kurtosis_version_go_file_abs_path}"
-echo "  // !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE BUILD PROCESS !!!!!!!!!!!!!!!" >> "${kurtosis_version_go_file_abs_path}"
-echo "	KurtosisVersion = \"${new_version}\"" >> "${kurtosis_version_go_file_abs_path}"
-echo "  // !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE BUILD PROCESS !!!!!!!!!!!!!!!" >> "${kurtosis_version_go_file_abs_path}"
-echo ")" >> "${kurtosis_version_go_file_abs_path}"
+cat << EOF > "${kurtosis_version_go_file_abs_path}"
+package ${KURTOSIS_VERSION_PACKAGE_DIR}
 
+const (
+  // !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE BUILD PROCESS !!!!!!!!!!!!!!!
+	KurtosisVersion = "${new_version}"
+  // !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE BUILD PROCESS !!!!!!!!!!!!!!!
+)
+EOF
