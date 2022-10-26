@@ -78,7 +78,7 @@ func (protoStore *ProtoFileStore) LoadProtoFile(protoModuleFile string) (*protor
 
 	protoTypesRegistry, err := loadTypesFromCompiledProtoIntoRegistry(compiledProtoFileContent, protoModuleFile)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to process content of compiled proto file '%v' (checked out at '%v')", protoModuleFile, absProtoFileOnDiskPath)
+		return nil, stacktrace.Propagate(err, "Unable to load types from the protobuf types registry generated from file '%v' (checked out at '%v')", protoModuleFile, absProtoFileOnDiskPath)
 	}
 
 	// Store for potential future calls and return
@@ -92,8 +92,8 @@ func compileProtoFile(absProtoFileOnDiskPath string, protoModuleFileForLogging s
 		return nil, stacktrace.Propagate(err, "Unable to create a temporary folder on disk to store the protoc output files")
 	}
 	defer os.RemoveAll(tmpCompiledProtobufFile.Name())
-	absCompiledProtobufFileDirPath := path.Dir(tmpCompiledProtobufFile.Name())
-	compileProtoCommand := exec.Command("protoc", "-I="+absCompiledProtobufFileDirPath, "--descriptor_set_out="+tmpCompiledProtobufFile.Name(), absProtoFileOnDiskPath)
+	absProtoFileDirPath := path.Dir(absProtoFileOnDiskPath)
+	compileProtoCommand := exec.Command("protoc", "-I="+absProtoFileDirPath, "--descriptor_set_out="+tmpCompiledProtobufFile.Name(), absProtoFileOnDiskPath)
 
 	if cmdOutput, err := compileProtoCommand.CombinedOutput(); err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to compile .proto file '%s' (checked out at '%v'). Proto compiler output was: \n%v", protoModuleFileForLogging, absProtoFileOnDiskPath, string(cmdOutput))
@@ -125,11 +125,7 @@ func getFileUniqueIdentifier(absProtoFileOnDiskPath string) (StoreKey, error) {
 		return "", stacktrace.Propagate(err, "Unable to read file content '%v'", absProtoFileOnDiskPath)
 	}
 
-	hasher := sha256.New()
-	_, err = hasher.Write(fileContent)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "Unable to hash file content '%v'", absProtoFileOnDiskPath)
-	}
-	fileHashStr := hex.EncodeToString(hasher.Sum(nil))
+	fileHash := sha256.Sum256(fileContent)
+	fileHashStr := hex.EncodeToString(fileHash[:])
 	return StoreKey(fmt.Sprintf(storeKeyTemplate, absProtoFileOnDiskPath, fileHashStr)), nil
 }

@@ -50,7 +50,7 @@ func (provider *MockModuleContentProvider) GetModuleContents(moduleID string) (s
 }
 
 func (provider *MockModuleContentProvider) AddFileContent(moduleID string, contents string) error {
-	absFilePath, err := writeContentToTempFileOrPanic(contents)
+	absFilePath, err := writeContentToTempFile(contents)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error writing content to temporary file")
 	}
@@ -60,7 +60,7 @@ func (provider *MockModuleContentProvider) AddFileContent(moduleID string, conte
 
 func (provider *MockModuleContentProvider) BulkAddFileContent(moduleIdToContent map[string]string) error {
 	for moduleId, moduleContent := range moduleIdToContent {
-		absFilePath, err := writeContentToTempFileOrPanic(moduleContent)
+		absFilePath, err := writeContentToTempFile(moduleContent)
 		if err != nil {
 			return stacktrace.Propagate(err, "Error writing content of module '%s' to temporary file", moduleId)
 		}
@@ -69,7 +69,7 @@ func (provider *MockModuleContentProvider) BulkAddFileContent(moduleIdToContent 
 	return nil
 }
 
-func (provider *MockModuleContentProvider) Close() map[string]error {
+func (provider *MockModuleContentProvider) RemoveAll() map[string]error {
 	deletionErrors := make(map[string]error)
 	for moduleId, absFilePath := range provider.modules {
 		if err := os.Remove(absFilePath); err != nil {
@@ -82,14 +82,14 @@ func (provider *MockModuleContentProvider) Close() map[string]error {
 	return nil
 }
 
-func writeContentToTempFileOrPanic(fileContent string) (string, error) {
+func writeContentToTempFile(fileContent string) (string, error) {
 	tempFile, err := os.CreateTemp(defaultTempDir, tempProviderFilePattern)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Unable to create temp file for MockModuleContentProvider")
 	}
 	_, err = tempFile.WriteString(fileContent)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Unable to write content to temp file for MockModuleContentProvider")
+		return "", stacktrace.Propagate(err, "Unable to write content to temp file '%v' for MockModuleContentProvider", tempFile.Name())
 	}
 	return tempFile.Name(), nil
 }
