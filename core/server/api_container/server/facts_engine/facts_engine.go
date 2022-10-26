@@ -27,7 +27,10 @@ var (
 	factRecipesBucketName    = []byte(factRecipesBucketNameStr)
 )
 
-const defaultWaitTimeBetweenRuns = 2 * time.Second
+const (
+	defaultWaitTimeBetweenRuns = 2 * time.Second
+	factIdFormatStr            = "%v.%v"
+)
 
 func NewFactsEngine(db *bolt.DB) *FactsEngine {
 	return &FactsEngine{
@@ -191,7 +194,7 @@ func (engine *FactsEngine) runRecipeLoop(factId FactId, exit <-chan bool, recipe
 }
 
 func GetFactIdFromRecipe(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) FactId {
-	return FactId(fmt.Sprintf("%v.%v", recipe.GetServiceId(), recipe.GetFactName()))
+	return FactId(fmt.Sprintf(factIdFormatStr, recipe.GetServiceId(), recipe.GetFactName()))
 }
 
 func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) (*kurtosis_core_rpc_api_bindings.FactValue, error) {

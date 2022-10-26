@@ -2,9 +2,9 @@ package facts_engine
 
 import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
-	"google.golang.org/protobuf/types/known/durationpb"
 	"os"
 	"strconv"
 	"testing"
@@ -30,16 +30,8 @@ func TestFactEngineLoop(t *testing.T) {
 			StringValue: "value",
 		},
 	}
-	err = factsEngine.PushRecipe(&kurtosis_core_rpc_api_bindings.FactRecipe{
-		ServiceId: "service_id",
-		FactName:  "fact_name",
-		FactRecipe: &kurtosis_core_rpc_api_bindings.FactRecipe_ConstantFact{
-			ConstantFact: &kurtosis_core_rpc_api_bindings.ConstantFactRecipe{
-				FactValue: factValue,
-			},
-		},
-		RefreshInterval: durationpb.New(refreshInterval),
-	})
+	factRecipe := binding_constructors.NewConstantFactRecipe("service_id", "fact_name", &kurtosis_core_rpc_api_bindings.ConstantFactRecipe{FactValue: factValue}, refreshInterval)
+	err = factsEngine.PushRecipe(factRecipe)
 	require.Nil(t, err)
 	time.Sleep(waitUntilFactsAreUpdated) // Wait for the background workers to perform operations
 	_, fetchedFactValue, err := factsEngine.FetchLatestFactValue("service_id.fact_name")
@@ -61,16 +53,8 @@ func TestFactRecipePersistence(t *testing.T) {
 			StringValue: "value",
 		},
 	}
-	err = factsEngine.PushRecipe(&kurtosis_core_rpc_api_bindings.FactRecipe{
-		ServiceId: "service_id",
-		FactName:  "fact_name",
-		FactRecipe: &kurtosis_core_rpc_api_bindings.FactRecipe_ConstantFact{
-			ConstantFact: &kurtosis_core_rpc_api_bindings.ConstantFactRecipe{
-				FactValue: factValue,
-			},
-		},
-		RefreshInterval: durationpb.New(refreshInterval),
-	})
+	factRecipe := binding_constructors.NewConstantFactRecipe("service_id", "fact_name", &kurtosis_core_rpc_api_bindings.ConstantFactRecipe{FactValue: factValue}, refreshInterval)
+	err = factsEngine.PushRecipe(factRecipe)
 	require.Nil(t, err)
 	time.Sleep(waitUntilFactsAreUpdated) // Wait for the background workers to perform operations
 	factsEngine.Stop()

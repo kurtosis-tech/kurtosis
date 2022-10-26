@@ -500,7 +500,7 @@ message ConstantFactRecipe {
 message FactRecipe {
   string service_id = 1;
   string fact_name = 2;
-  oneof fact_recipe {
+  oneof fact_recipe_definition {
     ConstantFactRecipe constant_fact = 3;
   }
   google.protobuf.Duration refresh_interval = 10;

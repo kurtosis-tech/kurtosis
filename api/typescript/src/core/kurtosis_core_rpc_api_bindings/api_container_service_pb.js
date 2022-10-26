@@ -30,7 +30,7 @@ goog.exportSymbol('proto.api_container_api.ExecuteStartosisModuleArgs', null, gl
 goog.exportSymbol('proto.api_container_api.ExecuteStartosisResponse', null, global);
 goog.exportSymbol('proto.api_container_api.ExecuteStartosisScriptArgs', null, global);
 goog.exportSymbol('proto.api_container_api.FactRecipe', null, global);
-goog.exportSymbol('proto.api_container_api.FactRecipe.FactRecipeCase', null, global);
+goog.exportSymbol('proto.api_container_api.FactRecipe.FactRecipeDefinitionCase', null, global);
 goog.exportSymbol('proto.api_container_api.FactValue', null, global);
 goog.exportSymbol('proto.api_container_api.FactValue.FactValueCase', null, global);
 goog.exportSymbol('proto.api_container_api.GetModulesArgs', null, global);
@@ -8619,16 +8619,16 @@ proto.api_container_api.FactRecipe.oneofGroups_ = [[3]];
 /**
  * @enum {number}
  */
-proto.api_container_api.FactRecipe.FactRecipeCase = {
-  FACT_RECIPE_NOT_SET: 0,
+proto.api_container_api.FactRecipe.FactRecipeDefinitionCase = {
+  FACT_RECIPE_DEFINITION_NOT_SET: 0,
   CONSTANT_FACT: 3
 };
 
 /**
- * @return {proto.api_container_api.FactRecipe.FactRecipeCase}
+ * @return {proto.api_container_api.FactRecipe.FactRecipeDefinitionCase}
  */
-proto.api_container_api.FactRecipe.prototype.getFactRecipeCase = function() {
-  return /** @type {proto.api_container_api.FactRecipe.FactRecipeCase} */(jspb.Message.computeOneofCase(this, proto.api_container_api.FactRecipe.oneofGroups_[0]));
+proto.api_container_api.FactRecipe.prototype.getFactRecipeDefinitionCase = function() {
+  return /** @type {proto.api_container_api.FactRecipe.FactRecipeDefinitionCase} */(jspb.Message.computeOneofCase(this, proto.api_container_api.FactRecipe.oneofGroups_[0]));
 };
 
 
@@ -8715,7 +8715,7 @@ proto.api_container_api.FactRecipe.deserializeBinaryFromReader = function(msg, r
       reader.readMessage(value,proto.api_container_api.ConstantFactRecipe.deserializeBinaryFromReader);
       msg.setConstantFact(value);
       break;
-    case 4:
+    case 10:
       var value = new google_protobuf_duration_pb.Duration;
       reader.readMessage(value,google_protobuf_duration_pb.Duration.deserializeBinaryFromReader);
       msg.setRefreshInterval(value);
@@ -8774,7 +8774,7 @@ proto.api_container_api.FactRecipe.serializeBinaryToWriter = function(message, w
   f = message.getRefreshInterval();
   if (f != null) {
     writer.writeMessage(
-      4,
+      10,
       f,
       google_protobuf_duration_pb.Duration.serializeBinaryToWriter
     );
@@ -8856,12 +8856,12 @@ proto.api_container_api.FactRecipe.prototype.hasConstantFact = function() {
 
 
 /**
- * optional google.protobuf.Duration refresh_interval = 4;
+ * optional google.protobuf.Duration refresh_interval = 10;
  * @return {?proto.google.protobuf.Duration}
  */
 proto.api_container_api.FactRecipe.prototype.getRefreshInterval = function() {
   return /** @type{?proto.google.protobuf.Duration} */ (
-    jspb.Message.getWrapperField(this, google_protobuf_duration_pb.Duration, 4));
+    jspb.Message.getWrapperField(this, google_protobuf_duration_pb.Duration, 10));
 };
 
 
@@ -8870,7 +8870,7 @@ proto.api_container_api.FactRecipe.prototype.getRefreshInterval = function() {
  * @return {!proto.api_container_api.FactRecipe} returns this
 */
 proto.api_container_api.FactRecipe.prototype.setRefreshInterval = function(value) {
-  return jspb.Message.setWrapperField(this, 4, value);
+  return jspb.Message.setWrapperField(this, 10, value);
 };
 
 
@@ -8888,7 +8888,7 @@ proto.api_container_api.FactRecipe.prototype.clearRefreshInterval = function() {
  * @return {boolean}
  */
 proto.api_container_api.FactRecipe.prototype.hasRefreshInterval = function() {
-  return jspb.Message.getField(this, 4) != null;
+  return jspb.Message.getField(this, 10) != null;
 };
 
 
