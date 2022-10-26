@@ -1026,3 +1026,35 @@ print(artifact_uuid)
 `
 	require.Equal(t, expectedOutput, string(scriptOutput))
 }
+
+func TestStartosisInterpreter_ReadTypesFromProtoFile(t *testing.T) {
+	typesFilePath := "github.com/kurtosis/module/types.proto"
+	typesFileContent := `
+syntax = "proto3";
+message TestType {
+  string greetings = 1;
+}
+`
+
+	moduleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	defer moduleContentProvider.RemoveAll()
+	require.Nil(t, moduleContentProvider.AddFileContent(typesFilePath, typesFileContent))
+	interpreter := NewStartosisInterpreter(testServiceNetwork, moduleContentProvider)
+	script := `
+types = import_types("github.com/kurtosis/module/types.proto")
+test_type = types.TestType({
+    "greetings": "Hello World!"
+})
+print(test_type)
+print(test_type.greetings)
+`
+
+	scriptOutput, interpretationError, instructions := interpreter.Interpret(context.Background(), script)
+	require.Nil(t, interpretationError)
+	require.Equal(t, 0, len(instructions))
+
+	expectedOutput := `TestType(greetings="Hello World!")
+Hello World!
+`
+	require.Equal(t, expectedOutput, string(scriptOutput))
+}
