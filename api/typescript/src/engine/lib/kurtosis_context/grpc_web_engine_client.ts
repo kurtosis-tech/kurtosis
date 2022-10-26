@@ -200,10 +200,35 @@ export class GrpcWebEngineClient implements GenericEngineClient {
             return err(streamUserServiceLogsResponseResult.error);
         }
 
-        //TODO Fail with unimplemented loudly
+        const streamUserServiceLogsResponse: ClientReadableStream<GetUserServiceLogsResponse> = streamUserServiceLogsResponseResult.value;
 
         const userServiceReadableLogsByServiceGuidStr: Map<string, Readable> = new Map<string, Readable>();
+        getUserServiceLogsArgs.getServiceGuidSetMap().forEach((isUserServiceGuidInSet, userServiceGuidStr) => {
+            const userServiceLogsReadableStream = new Stream.Readable({
+                read() {
+                    return true;
+                }
+            })
+            userServiceReadableLogsByServiceGuidStr.set(userServiceGuidStr, userServiceLogsReadableStream)
+        })
 
-        return ok(userServiceReadableLogsByServiceGuidStr); //TODO do not return this, fail loudly instead
+        streamUserServiceLogsResponse.on('data', function(getUserServiceLogsResponse: GetUserServiceLogsResponse) {
+            getUserServiceLogsResponse.getUserServiceLogsByUserServiceGuidMap().forEach(
+                (userServiceLogLine, userServiceGUIDStr) => {
+                    const userServiceLogsReadableStream: Readable | undefined = userServiceReadableLogsByServiceGuidStr.get(userServiceGUIDStr)
+                    if (userServiceLogsReadableStream !== undefined) {
+                        userServiceLogLine.getLineList().forEach((logline) => {
+                            userServiceLogsReadableStream.push(logline)
+                        })
+                    }
+                }
+            )
+        })
+
+        streamUserServiceLogsResponse.on('error', (streamLogsErr) => {
+            return err(streamLogsErr)
+        })
+
+        return ok(userServiceReadableLogsByServiceGuidStr);
     }
 }

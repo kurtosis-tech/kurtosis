@@ -9,7 +9,7 @@ const (
 
 	////////////////////////--LOKI CONTAINER CONFIGURATION SECTION--/////////////////////////////
 	containerImage          = "grafana/loki:main-19c7315"
-	httpPortNumber   uint16 = 3200 // Default Loki HTTP API port number, more here: https://grafana.com/docs/loki/latest/api/
+	httpPortNumber   uint16 = 3100 // Default Loki HTTP API port number, more here: https://grafana.com/docs/loki/latest/api/
 	httpPortProtocol        = port_spec.PortProtocol_TCP
 	logLevel                = "info"
 
