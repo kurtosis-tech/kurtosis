@@ -1,9 +1,12 @@
 # TBD
+
+### Features
+- Added a `render_templates` command to Startosis
+
 ### Changes
 - Simplified own-version constant generation by checking in `kurtosis_version` directory
 
 # 0.51.1
-### Features
 - Added an `exec` command to Startosis
 - Added a `store_files_from_service` command to Startosis
 - Added the ability to pass `files_artifact_mount_dirpaths` to the service config
