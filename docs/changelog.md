@@ -2,6 +2,7 @@
 
 ### Features
 - Added a `render_templates` command to Startosis
+- Implemented backend for facts engine
 
 ### Changes
 - Simplified own-version constant generation by checking in `kurtosis_version` directory
