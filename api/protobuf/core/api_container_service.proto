@@ -541,7 +541,7 @@ message HttpRequestFactRecipe {
 message FactRecipe {
   string service_id = 1;
   string fact_name = 2;
-  oneof fact_recipe {
+  oneof fact_recipe_definition {
     ConstantFactRecipe constant_fact = 3;
     ExecFactRecipe exec_fact = 4;
     HttpRequestFactRecipe http_request_fact = 5;

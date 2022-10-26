@@ -35,7 +35,7 @@ goog.exportSymbol('proto.api_container_api.ExecuteStartosisModuleArgs', null, gl
 goog.exportSymbol('proto.api_container_api.ExecuteStartosisResponse', null, global);
 goog.exportSymbol('proto.api_container_api.ExecuteStartosisScriptArgs', null, global);
 goog.exportSymbol('proto.api_container_api.FactRecipe', null, global);
-goog.exportSymbol('proto.api_container_api.FactRecipe.FactRecipeCase', null, global);
+goog.exportSymbol('proto.api_container_api.FactRecipe.FactRecipeDefinitionCase', null, global);
 goog.exportSymbol('proto.api_container_api.FactValue', null, global);
 goog.exportSymbol('proto.api_container_api.FactValue.FactValueCase', null, global);
 goog.exportSymbol('proto.api_container_api.GetFactValuesArgs', null, global);
@@ -9813,18 +9813,18 @@ proto.api_container_api.FactRecipe.oneofGroups_ = [[3,4,5]];
 /**
  * @enum {number}
  */
-proto.api_container_api.FactRecipe.FactRecipeCase = {
-  FACT_RECIPE_NOT_SET: 0,
+proto.api_container_api.FactRecipe.FactRecipeDefinitionCase = {
+  FACT_RECIPE_DEFINITION_NOT_SET: 0,
   CONSTANT_FACT: 3,
   EXEC_FACT: 4,
   HTTP_REQUEST_FACT: 5
 };
 
 /**
- * @return {proto.api_container_api.FactRecipe.FactRecipeCase}
+ * @return {proto.api_container_api.FactRecipe.FactRecipeDefinitionCase}
  */
-proto.api_container_api.FactRecipe.prototype.getFactRecipeCase = function() {
-  return /** @type {proto.api_container_api.FactRecipe.FactRecipeCase} */(jspb.Message.computeOneofCase(this, proto.api_container_api.FactRecipe.oneofGroups_[0]));
+proto.api_container_api.FactRecipe.prototype.getFactRecipeDefinitionCase = function() {
+  return /** @type {proto.api_container_api.FactRecipe.FactRecipeDefinitionCase} */(jspb.Message.computeOneofCase(this, proto.api_container_api.FactRecipe.oneofGroups_[0]));
 };
 
 

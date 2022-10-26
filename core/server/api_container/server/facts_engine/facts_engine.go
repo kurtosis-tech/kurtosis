@@ -13,6 +13,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"io"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -22,27 +23,34 @@ type FactsEngine struct {
 	db             *bolt.DB
 	exitChanMap    map[FactId]chan bool
 	serviceNetwork service_network.ServiceNetwork
+	lock           *sync.Mutex
 }
 
 var (
-	factValuesBucketName  = []byte("fact_values")
-	factRecipesBucketName = []byte("fact_recipes")
+	factValuesBucketNameStr  = "fact_values"
+	factValuesBucketName     = []byte(factValuesBucketNameStr)
+	factRecipesBucketNameStr = "fact_recipes"
+	factRecipesBucketName    = []byte(factRecipesBucketNameStr)
 )
 
-const defaultWaitTimeBetweenFactPool = 2 * time.Second
+const (
+	defaultWaitTimeBetweenRuns = 2 * time.Second
+	factIdFormatStr            = "%v.%v"
+)
 
 func NewFactsEngine(db *bolt.DB, serviceNetwork service_network.ServiceNetwork) *FactsEngine {
 	return &FactsEngine{
 		db,
 		make(map[FactId]chan bool),
 		serviceNetwork,
+		&sync.Mutex{},
 	}
 }
 
 func (engine *FactsEngine) Start() {
 	err := engine.restoreStoredRecipes()
 	if err != nil {
-		logrus.Infof("No fact recipes were found on the database")
+		logrus.Info("No fact recipes were found on the database")
 	}
 }
 
@@ -54,48 +62,65 @@ func (engine *FactsEngine) Stop() {
 }
 
 func (engine *FactsEngine) PushRecipe(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) error {
-	err := engine.persistRecipe(recipe)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred when persisting recipe")
-	}
+	// Locking avoid the condition where two recipes of the same fact are pushed at the same time
+	engine.lock.Lock()
+	defer engine.lock.Unlock()
 	factId := GetFactId(recipe.GetServiceId(), recipe.GetFactName())
+	if err := engine.persistRecipe(recipe); err != nil {
+		return stacktrace.Propagate(err, "An error occurred when persisting recipe for fact '%v'", factId)
+	}
+	if err := engine.setupRunRecipeLoop(recipe); err != nil {
+		return stacktrace.Propagate(err, "An error occurred when setting up run recipe loop for fact '%v'", factId)
+	}
+	return nil
+}
+
+func (engine *FactsEngine) setupRunRecipeLoop(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) error {
+	factId := GetFactId(recipe.GetServiceId(), recipe.GetFactName())
+	exitChan, isRunning := engine.exitChanMap[factId]
+	if isRunning {
+		logrus.Infof("Stopped running fact '%v' to run new recipe", factId)
+		exitChan <- true
+	} else {
+		logrus.Infof("Setting up and running fact '%v'", factId)
+	}
 	engine.exitChanMap[factId] = make(chan bool)
 	go engine.runRecipeLoop(factId, engine.exitChanMap[factId], recipe)
 	return nil
 }
 
 func (engine *FactsEngine) FetchLatestFactValue(factId FactId) (*kurtosis_core_rpc_api_bindings.FactValue, error) {
-	returnFactValue := kurtosis_core_rpc_api_bindings.FactValue{}
+	returnFactValue := &kurtosis_core_rpc_api_bindings.FactValue{}
 	err := engine.db.View(func(tx *bolt.Tx) error {
 		factValuesBucket := tx.Bucket(factValuesBucketName)
 		if factValuesBucket == nil {
-			return stacktrace.NewError("An error occurred because the bucket '%v' wasn't found on the database", factValuesBucket)
+			return stacktrace.NewError("An error occurred because the bucket '%v' wasn't found on the database", factValuesBucketNameStr)
 		}
 		factBucket := factValuesBucket.Bucket([]byte(factId))
 		if factBucket == nil {
-			return stacktrace.NewError("An error occurred because the bucket '%v' wasn't found on the database", factBucket)
+			return stacktrace.NewError("An error occurred because the bucket '%v' wasn't found on the database", factId)
 		}
 		timestamp, factValue := factBucket.Cursor().Last()
 		if timestamp == nil {
 			return stacktrace.NewError("An error occurred because no fact value was found for fact '%v'", factId)
 		}
-		err := proto.Unmarshal(factValue, &returnFactValue)
+		err := proto.Unmarshal(factValue, returnFactValue)
 		if err != nil {
-			return stacktrace.NewError("An error occurred when unmarshalling fact value")
+			return stacktrace.Propagate(err, "An error occurred when unmarshalling fact value from '%v'", factId)
 		}
 		return err
 	})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred when fetching latest fact value")
+		return nil, stacktrace.Propagate(err, "An error occurred when fetching latest fact value '%v'", factId)
 	}
-	return &returnFactValue, nil
+	return returnFactValue, nil
 }
 
 func (engine *FactsEngine) restoreStoredRecipes() error {
 	return engine.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(factRecipesBucketName)
 		if bucket == nil {
-			logrus.Infof("No fact recipes were found on the database")
+			logrus.Info("No fact recipes were found on the database")
 			return nil
 		}
 		restoredRecipes := 0
@@ -103,18 +128,17 @@ func (engine *FactsEngine) restoreStoredRecipes() error {
 			unmarshalledFactRecipe := &kurtosis_core_rpc_api_bindings.FactRecipe{}
 			err := proto.Unmarshal(key, unmarshalledFactRecipe)
 			if err != nil {
-				return stacktrace.Propagate(err, "An error occurred when restoring recipe")
+				return stacktrace.Propagate(err, "An error occurred when unmarshalling recipe")
 			}
-			err = engine.PushRecipe(unmarshalledFactRecipe)
+			err = engine.setupRunRecipeLoop(unmarshalledFactRecipe)
 			if err != nil {
-				return stacktrace.Propagate(err, "An error occurred when restoring recipe")
+				return stacktrace.Propagate(err, "An error occurred when pushing restored recipe to engine")
 			}
 			restoredRecipes += 1
 			return nil
 		})
-		logrus.Infof("%v fact recipes were restored from the database", restoredRecipes)
 		if err != nil {
-			return err
+			return stacktrace.Propagate(err, "An error occurred when restoring recipes")
 		}
 		return nil
 	})
@@ -139,9 +163,11 @@ func (engine *FactsEngine) persistRecipe(recipe *kurtosis_core_rpc_api_bindings.
 }
 
 func (engine *FactsEngine) runRecipeLoop(factId FactId, exit <-chan bool, recipe *kurtosis_core_rpc_api_bindings.FactRecipe) {
-	ticker := time.NewTicker(defaultWaitTimeBetweenFactPool)
+	var ticker *time.Ticker
 	if recipe.GetRefreshInterval() != nil {
 		ticker = time.NewTicker(recipe.GetRefreshInterval().AsDuration())
+	} else {
+		ticker = time.NewTicker(defaultWaitTimeBetweenRuns)
 	}
 	for {
 		select {
@@ -175,7 +201,7 @@ func (engine *FactsEngine) runRecipeLoop(factId FactId, exit <-chan bool, recipe
 }
 
 func GetFactId(serviceId string, factName string) FactId {
-	return FactId(fmt.Sprintf("%v.%v", serviceId, factName))
+	return FactId(fmt.Sprintf(factIdFormatStr, serviceId, factName))
 }
 
 func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) (*kurtosis_core_rpc_api_bindings.FactValue, error) {

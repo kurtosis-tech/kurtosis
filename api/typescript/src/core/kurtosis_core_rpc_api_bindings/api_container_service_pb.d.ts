@@ -1198,7 +1198,7 @@ export class FactRecipe extends jspb.Message {
   hasRefreshInterval(): boolean;
   clearRefreshInterval(): FactRecipe;
 
-  getFactRecipeCase(): FactRecipe.FactRecipeCase;
+  getFactRecipeDefinitionCase(): FactRecipe.FactRecipeDefinitionCase;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): FactRecipe.AsObject;
@@ -1218,8 +1218,8 @@ export namespace FactRecipe {
     refreshInterval?: google_protobuf_duration_pb.Duration.AsObject,
   }
 
-  export enum FactRecipeCase { 
-    FACT_RECIPE_NOT_SET = 0,
+  export enum FactRecipeDefinitionCase { 
+    FACT_RECIPE_DEFINITION_NOT_SET = 0,
     CONSTANT_FACT = 3,
     EXEC_FACT = 4,
     HTTP_REQUEST_FACT = 5,

@@ -2,6 +2,8 @@ package binding_constructors
 
 import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"time"
 )
 
 // The generated bindings don't come with constructors (leaving it up to the user to initialize all the fields), so we
@@ -145,9 +147,56 @@ func NewModuleInfo(
 
 // ==============================================================================================
 //
-//	Facts
+//	Facts Engine
 //
 // ==============================================================================================
+
+func NewConstantFactRecipe(serviceId string, factName string, constantFactRecipeDefinition *kurtosis_core_rpc_api_bindings.ConstantFactRecipe, refreshInterval time.Duration) *kurtosis_core_rpc_api_bindings.FactRecipe {
+	return &kurtosis_core_rpc_api_bindings.FactRecipe{
+		ServiceId: serviceId,
+		FactName:  factName,
+		FactRecipeDefinition: &kurtosis_core_rpc_api_bindings.FactRecipe_ConstantFact{
+			ConstantFact: constantFactRecipeDefinition,
+		},
+		RefreshInterval: durationpb.New(refreshInterval),
+	}
+}
+
+func NewConstantFactRecipeWithDefaultRefresh(serviceId string, factName string, constantFactRecipeDefinition *kurtosis_core_rpc_api_bindings.ConstantFactRecipe) *kurtosis_core_rpc_api_bindings.FactRecipe {
+	return &kurtosis_core_rpc_api_bindings.FactRecipe{
+		ServiceId: serviceId,
+		FactName:  factName,
+		FactRecipeDefinition: &kurtosis_core_rpc_api_bindings.FactRecipe_ConstantFact{
+			ConstantFact: constantFactRecipeDefinition,
+		},
+	}
+}
+
+func NewGetHttpRequestFactRecipeWithDefaultRefresh(serviceId string, factName string, portId string, endpoint string) *kurtosis_core_rpc_api_bindings.FactRecipe {
+	return &kurtosis_core_rpc_api_bindings.FactRecipe{
+		ServiceId: serviceId,
+		FactName:  factName,
+		FactRecipeDefinition: &kurtosis_core_rpc_api_bindings.FactRecipe_HttpRequestFact{
+			HttpRequestFact: &kurtosis_core_rpc_api_bindings.HttpRequestFactRecipe{
+				PortId:   portId,
+				Method:   kurtosis_core_rpc_api_bindings.HttpRequestMethod_GET,
+				Endpoint: endpoint,
+			},
+		},
+	}
+}
+
+func NewExecFactRecipeWithDefaultRefresh(serviceId string, factName string, cmdArgs []string) *kurtosis_core_rpc_api_bindings.FactRecipe {
+	return &kurtosis_core_rpc_api_bindings.FactRecipe{
+		ServiceId: serviceId,
+		FactName:  factName,
+		FactRecipeDefinition: &kurtosis_core_rpc_api_bindings.FactRecipe_ExecFact{
+			ExecFact: &kurtosis_core_rpc_api_bindings.ExecFactRecipe{
+				CmdArgs: cmdArgs,
+			},
+		},
+	}
+}
 
 func NewDefineFactArgs(factRecipe *kurtosis_core_rpc_api_bindings.FactRecipe) *kurtosis_core_rpc_api_bindings.DefineFactArgs {
 	return &kurtosis_core_rpc_api_bindings.DefineFactArgs{
