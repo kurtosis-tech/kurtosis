@@ -1,6 +1,7 @@
 package kurtosis_instruction
 
 import (
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/stretchr/testify/require"
@@ -510,4 +511,40 @@ func TestParseTemplatesAndData_SimpleCase(t *testing.T) {
 	output, err := ParseTemplatesAndData(input)
 	require.Nil(t, err)
 	require.Equal(t, expectedOutput, output)
+}
+
+func TestParseTemplatesAndData_FailsForInvalidJSONWithIntegerKey(t *testing.T) {
+	dataAsJson := `{12344:"John"}`
+	subDict := starlark.NewDict(2)
+	template := "Hello {{.Name}}"
+	err := subDict.SetKey(starlark.String("template"), starlark.String(template))
+	require.Nil(t, err)
+	err = subDict.SetKey(starlark.String("template_data_json"), starlark.String(dataAsJson))
+	require.Nil(t, err)
+	input := starlark.NewDict(1)
+	templateRelativePath := "/foo/bar"
+	err = input.SetKey(starlark.String("/foo/bar"), subDict)
+	require.Nil(t, err)
+
+	_, err = ParseTemplatesAndData(input)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), fmt.Sprintf("Template data for file '%v', '%v' isn't valid JSON", templateRelativePath, dataAsJson))
+}
+
+func TestParseTemplatesAndData_FailsForMalformedJSONWithoutClosingBraces(t *testing.T) {
+	dataAsJson := `{"Name": "World"`
+	subDict := starlark.NewDict(2)
+	template := "Hello {{.Name}}"
+	err := subDict.SetKey(starlark.String("template"), starlark.String(template))
+	require.Nil(t, err)
+	err = subDict.SetKey(starlark.String("template_data_json"), starlark.String(dataAsJson))
+	require.Nil(t, err)
+	input := starlark.NewDict(1)
+	templateRelativePath := "/foo/bar"
+	err = input.SetKey(starlark.String("/foo/bar"), subDict)
+	require.Nil(t, err)
+
+	_, err = ParseTemplatesAndData(input)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), fmt.Sprintf("Template data for file '%v', '%v' isn't valid JSON", templateRelativePath, dataAsJson))
 }
