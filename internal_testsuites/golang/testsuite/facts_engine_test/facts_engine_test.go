@@ -33,10 +33,6 @@ var containerUsedPorts = map[string]*services.PortSpec{
 	containerPortId: services.NewPortSpec(80, services.PortProtocol_TCP),
 }
 
-var execCommandThatShouldWork = []string{
-	"true",
-}
-
 var execCommandThatShouldHaveLogOutput = []string{
 	"echo",
 	inputForExecFactTest,
@@ -73,6 +69,7 @@ func TestExecCommand(t *testing.T) {
 
 	logrus.Infof("Getting constant fact value...")
 	getFactValuesResponse, err := enclaveCtx.GetFactValues(testServiceId, constantFactName)
+	require.Nil(t, err)
 	require.Equal(t, expectedOutputForConstantFactOutput, getFactValuesResponse.GetFactValues()[0].GetStringValue())
 
 	logrus.Infof("Defining exec fact...")
@@ -82,6 +79,7 @@ func TestExecCommand(t *testing.T) {
 
 	logrus.Infof("Getting exec fact value...")
 	getFactValuesResponse, err = enclaveCtx.GetFactValues(testServiceId, execFactName)
+	require.Nil(t, err)
 	require.Equal(t, expectedOutputForExecFactOutput, getFactValuesResponse.GetFactValues()[0].GetStringValue())
 
 	logrus.Infof("Defining HTTP request fact...")
