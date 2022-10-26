@@ -47,7 +47,7 @@ const (
 	minMemoryLimit              uint64 = 6 // Docker doesn't allow memory limits less than 6 megabytes
 	defaultMemoryAllocMegabytes uint64 = 0
 
-	folderPermission                           = 0755
+	folderPermissionForRenderedTemplates       = 0755
 	tempDirForRenderedTemplatesPrefix          = "temp-dir-for-rendered-templates-"
 	compressedRenderedTemplatesFilenamePattern = "compressed-rendered-templates-*.tgz"
 )
@@ -1022,7 +1022,7 @@ func renderTemplateToFile(templateAsAString string, templateData interface{}, de
 
 	// Creat all parent directories to account for nesting
 	destinationFileDir := path.Dir(destinationFilepath)
-	if err = os.MkdirAll(destinationFileDir, folderPermission); err != nil {
+	if err = os.MkdirAll(destinationFileDir, folderPermissionForRenderedTemplates); err != nil {
 		return stacktrace.Propagate(err, "There was an error in creating the parent directory '%v' to write the file '%v' into.", destinationFileDir, destinationFilepath)
 	}
 
