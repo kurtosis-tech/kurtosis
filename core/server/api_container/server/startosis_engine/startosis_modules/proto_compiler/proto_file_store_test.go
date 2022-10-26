@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"path"
-	"strings"
 	"testing"
 )
 
@@ -19,9 +18,9 @@ message InputArgs {
 }
 `
 
-	mockModuleContentProvider := mock_module_content_provider.NewMockModuleContentProvider(map[string]string{
-		protoFileInModule: protoFileContent,
-	})
+	mockModuleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	defer mockModuleContentProvider.Close()
+	require.Nil(t, mockModuleContentProvider.AddFileContent(protoFileInModule, protoFileContent))
 	protoFileAbsPath, err := mockModuleContentProvider.GetOnDiskAbsoluteFilePath(protoFileInModule)
 	require.Nil(t, err)
 
@@ -35,10 +34,11 @@ message InputArgs {
 	require.NotNil(t, inputArgsDescriptor)
 
 	// check that the result has been stored
-	storeKey, storedValue, err := store.getStoredEntryOrNil(protoFileAbsPath, protoFileInModule)
+	fileUniqueIdentifier, err := getFileUniqueIdentifier(protoFileAbsPath)
 	require.Nil(t, err)
-	require.True(t, strings.HasPrefix(string(storeKey), fmt.Sprintf("%s___", protoFileAbsPath)))
-	storedInputArgsDescriptor, err := storedValue.FindDescriptorByName("InputArgs")
+	storedProtoRegistryFile, found := store.store[fileUniqueIdentifier]
+	require.True(t, found)
+	storedInputArgsDescriptor, err := storedProtoRegistryFile.FindDescriptorByName("InputArgs")
 	require.Nil(t, err)
 	require.NotNil(t, storedInputArgsDescriptor)
 }
@@ -52,9 +52,9 @@ message InputArgs {
 }
 `
 
-	mockModuleContentProvider := mock_module_content_provider.NewMockModuleContentProvider(map[string]string{
-		protoFileInModule: protoFileContent,
-	})
+	mockModuleContentProvider := mock_module_content_provider.NewMockModuleContentProvider()
+	defer mockModuleContentProvider.Close()
+	require.Nil(t, mockModuleContentProvider.AddFileContent(protoFileInModule, protoFileContent))
 	protoFileAbsPath, err := mockModuleContentProvider.GetOnDiskAbsoluteFilePath(protoFileInModule)
 	require.Nil(t, err)
 
@@ -70,8 +70,9 @@ Caused by: Unable to compile .proto file '%s' (checked out at '%s'). Proto compi
 	assert.Contains(t, err.Error(), expectedErrorMessageContains)
 
 	// check that nothing was stored
-	storeKey, storedValue, err := store.getStoredEntryOrNil(protoFileAbsPath, protoFileInModule)
+	fileUniqueIdentifier, err := getFileUniqueIdentifier(protoFileAbsPath)
 	require.Nil(t, err)
-	require.True(t, strings.HasPrefix(string(storeKey), fmt.Sprintf("%s___", protoFileAbsPath)))
-	require.Nil(t, storedValue)
+	storedProtoRegistryFile, found := store.store[fileUniqueIdentifier]
+	require.False(t, found)
+	require.Nil(t, storedProtoRegistryFile)
 }

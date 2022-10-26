@@ -23,6 +23,10 @@ const (
 	storeKeyTemplate = "%s___%s"
 )
 
+var (
+	protoUnmarshalerOptions = proto.UnmarshalOptions{Merge: true}
+)
+
 type StoreKey string
 
 type ProtoFileStore struct {
@@ -58,12 +62,12 @@ func (protoStore *ProtoFileStore) LoadProtoFile(protoModuleFile string) (*protor
 	}
 
 	// Check in the store in case we already compiled it
-	protoFileUniqueIdentifier, protoRegistryFiles, err := protoStore.getStoredEntryOrNil(absProtoFileOnDiskPath, protoModuleFile)
+	protoFileUniqueIdentifier, err := getFileUniqueIdentifier(absProtoFileOnDiskPath)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error loading values from store for module file '%v'", protoModuleFile)
+		return nil, stacktrace.Propagate(err, "Error computing unique file identifier for .proto file '%v' (checked out at '%v')", protoModuleFile, absProtoFileOnDiskPath)
 	}
-	if protoRegistryFiles != nil {
-		return protoRegistryFiles, nil
+	if protoTypesRegistry, found := protoStore.store[protoFileUniqueIdentifier]; found {
+		return protoTypesRegistry, nil
 	}
 
 	// Compile and load the protobuf types
@@ -72,31 +76,23 @@ func (protoStore *ProtoFileStore) LoadProtoFile(protoModuleFile string) (*protor
 		return nil, stacktrace.Propagate(err, "Unable to compile the .proto file '%v' (checked out at '%v') using protobuf compiler", protoModuleFile, absProtoFileOnDiskPath)
 	}
 
-	protoRegistryFiles, err = loadCompiledProtoFile(compiledProtoFileContent, protoModuleFile)
+	protoTypesRegistry, err := loadTypesFromCompiledProtoIntoRegistry(compiledProtoFileContent, protoModuleFile)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to process content of compiled proto file '%v' (checked out at '%v')", protoModuleFile, absProtoFileOnDiskPath)
 	}
 
 	// Store for potential future calls and return
-	protoStore.store[protoFileUniqueIdentifier] = protoRegistryFiles
-	return protoRegistryFiles, nil
-}
-
-func (protoStore *ProtoFileStore) getStoredEntryOrNil(absProtoFileOnDiskPath string, protoModuleFileForLogging string) (StoreKey, *protoregistry.Files, error) {
-	protoFileUniqueIdentifier, err := getFileUniqueIdentifier(absProtoFileOnDiskPath)
-	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "Unable to compute cache key for .proto file in module '%v'", protoModuleFileForLogging)
-	}
-	protoRegistryFiles := protoStore.store[protoFileUniqueIdentifier] // `nil` is ok here, no need to check `found`
-	return protoFileUniqueIdentifier, protoRegistryFiles, nil
+	protoStore.store[protoFileUniqueIdentifier] = protoTypesRegistry
+	return protoTypesRegistry, nil
 }
 
 func compileProtoFile(absProtoFileOnDiskPath string, protoModuleFileForLogging string) ([]byte, error) {
 	tmpCompiledProtobufFile, err := os.CreateTemp(defaultTempDir, protocTempOutputDirPattern)
-	absCompiledProtobufFileDirPath := path.Dir(tmpCompiledProtobufFile.Name())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to create a temporary folder on disk to store the protoc output files")
 	}
+	defer os.RemoveAll(tmpCompiledProtobufFile.Name())
+	absCompiledProtobufFileDirPath := path.Dir(tmpCompiledProtobufFile.Name())
 	compileProtoCommand := exec.Command("protoc", "-I="+absCompiledProtobufFileDirPath, "--descriptor_set_out="+tmpCompiledProtobufFile.Name(), absProtoFileOnDiskPath)
 
 	if cmdOutput, err := compileProtoCommand.CombinedOutput(); err != nil {
@@ -110,10 +106,9 @@ func compileProtoFile(absProtoFileOnDiskPath string, protoModuleFileForLogging s
 	return compiledProtobufFileContent, nil
 }
 
-func loadCompiledProtoFile(compiledProtoFileContent []byte, protoModuleFileForLogging string) (*protoregistry.Files, error) {
+func loadTypesFromCompiledProtoIntoRegistry(compiledProtoFileContent []byte, protoModuleFileForLogging string) (*protoregistry.Files, error) {
 	var protoFileDescriptorSet descriptorpb.FileDescriptorSet
-	err := (proto.UnmarshalOptions{Merge: true}).Unmarshal(compiledProtoFileContent, &protoFileDescriptorSet)
-	if err != nil {
+	if err := protoUnmarshalerOptions.Unmarshal(compiledProtoFileContent, &protoFileDescriptorSet); err != nil {
 		return nil, stacktrace.Propagate(err, "Unable read content of compiled .proto file '%v' and convert it to a file descriptor set", protoModuleFileForLogging)
 	}
 

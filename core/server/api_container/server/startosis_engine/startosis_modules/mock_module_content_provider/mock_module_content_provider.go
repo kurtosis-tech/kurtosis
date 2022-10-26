@@ -7,26 +7,19 @@ import (
 
 const (
 	unimplementedMessage = "This method isn't implemented!!!!"
+
+	defaultTempDir          = ""
+	tempProviderFilePattern = "mock_module_content_provider_*"
 )
 
 type MockModuleContentProvider struct {
 	modules map[string]string
 }
 
-func NewMockModuleContentProvider(seedModules map[string]string) *MockModuleContentProvider {
-	mapToTempFile := make(map[string]string, len(seedModules))
-	for key, value := range seedModules {
-		mapToTempFile[key] = writeContentToTempFileOrPanic(value)
-	}
+func NewMockModuleContentProvider() *MockModuleContentProvider {
 	return &MockModuleContentProvider{
-		modules: mapToTempFile,
+		modules: make(map[string]string),
 	}
-}
-
-func NewEmptyMockModuleContentProvider() *MockModuleContentProvider {
-	return NewMockModuleContentProvider(
-		map[string]string{},
-	)
 }
 
 func (provider *MockModuleContentProvider) GetOnDiskAbsoluteFilePath(moduleID string) (string, error) {
@@ -49,24 +42,54 @@ func (provider *MockModuleContentProvider) GetModuleContents(moduleID string) (s
 	if !found {
 		return "", stacktrace.NewError("Module '%v' not found", moduleID)
 	}
-	if fileContent, err := os.ReadFile(absFilePath); err == nil {
-		return string(fileContent), nil
-	}
-	return "", stacktrace.NewError("Unable to read content of module '%v'", moduleID)
-}
-
-func (provider *MockModuleContentProvider) AddFileContent(moduleID string, contents string) {
-	provider.modules[moduleID] = writeContentToTempFileOrPanic(contents)
-}
-
-func writeContentToTempFileOrPanic(fileContent string) string {
-	tempFile, err := os.CreateTemp("", "mock_module_content_provider_*")
+	fileContent, err := os.ReadFile(absFilePath)
 	if err != nil {
-		panic(stacktrace.Propagate(err, "Unable to create temp file for MockModuleContentProvider"))
+		return "", stacktrace.NewError("Unable to read content of module '%v'", moduleID)
+	}
+	return string(fileContent), nil
+}
+
+func (provider *MockModuleContentProvider) AddFileContent(moduleID string, contents string) error {
+	absFilePath, err := writeContentToTempFileOrPanic(contents)
+	if err != nil {
+		return stacktrace.Propagate(err, "Error writing content to temporary file")
+	}
+	provider.modules[moduleID] = absFilePath
+	return nil
+}
+
+func (provider *MockModuleContentProvider) BulkAddFileContent(moduleIdToContent map[string]string) error {
+	for moduleId, moduleContent := range moduleIdToContent {
+		absFilePath, err := writeContentToTempFileOrPanic(moduleContent)
+		if err != nil {
+			return stacktrace.Propagate(err, "Error writing content of module '%s' to temporary file", moduleId)
+		}
+		provider.modules[moduleId] = absFilePath
+	}
+	return nil
+}
+
+func (provider *MockModuleContentProvider) Close() map[string]error {
+	deletionErrors := make(map[string]error)
+	for moduleId, absFilePath := range provider.modules {
+		if err := os.Remove(absFilePath); err != nil {
+			deletionErrors[moduleId] = err
+		}
+	}
+	if len(deletionErrors) > 0 {
+		return deletionErrors
+	}
+	return nil
+}
+
+func writeContentToTempFileOrPanic(fileContent string) (string, error) {
+	tempFile, err := os.CreateTemp(defaultTempDir, tempProviderFilePattern)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Unable to create temp file for MockModuleContentProvider")
 	}
 	_, err = tempFile.WriteString(fileContent)
 	if err != nil {
-		panic(stacktrace.Propagate(err, "Unable to write content to temp file for MockModuleContentProvider"))
+		return "", stacktrace.Propagate(err, "Unable to write content to temp file for MockModuleContentProvider")
 	}
-	return tempFile.Name()
+	return tempFile.Name(), nil
 }
