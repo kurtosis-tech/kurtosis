@@ -1,7 +1,14 @@
 # TBD
+### Changes
+- Adding/removing methods from `.proto` files will now be compile errors in Go code, rather than failing at runtime
+- Consolidated the core & engine Protobuf regeneration scripts into a single one
+
+# 0.51.3
+
+### Fixes
+- Added `protoc` install step to the `publish_api_container_server_image` CircleCI task
 
 # 0.51.2
-
 ### Features
 - Added a `render_templates` command to Startosis
 - Implemented backend for facts engine

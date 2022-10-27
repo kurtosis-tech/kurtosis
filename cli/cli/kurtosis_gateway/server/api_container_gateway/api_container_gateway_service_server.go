@@ -17,9 +17,6 @@ const (
 )
 
 type ApiContainerGatewayServiceServer struct {
-	// This embedding is required by gRPC
-	kurtosis_core_rpc_api_bindings.UnimplementedApiContainerServiceServer
-
 	// Id of enclave the API container is running in
 	enclaveId string
 	// Client for the api container we'll be connecting too

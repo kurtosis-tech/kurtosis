@@ -76,9 +76,6 @@ var apiContainerPortProtoToPortSpecPortProto = map[kurtosis_core_rpc_api_binding
 }
 
 type ApiContainerService struct {
-	// This embedding is required by gRPC
-	kurtosis_core_rpc_api_bindings.UnimplementedApiContainerServiceServer
-
 	filesArtifactStore *enclave_data_directory.FilesArtifactStore
 
 	serviceNetwork service_network.ServiceNetwork
