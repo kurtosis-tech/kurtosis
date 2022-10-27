@@ -97,13 +97,14 @@ func getLogsCollectorObjectFromContainerInfo(
 			return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
 		}
 
+		// TODO Remove this after 2022-12-27, when we're confident nobody will have the old port
 		//checking for old port spec because old logs collectors container (older than engine v.0.50.3) do not publish the TCP port
-		isPrivateTCPPortFromOlbLogsCollectorContainers, err := isLogsCollectorPortSpecFromOlbLogsCollectorContainers(privateTcpPortSpec, allHostMachinePortBindings)
+		isPrivateTCPPortFromOldLogsCollectorContainers, err := isLogsCollectorPortSpecFromOlbLogsCollectorContainers(privateTcpPortSpec, allHostMachinePortBindings)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred cheking if logs collector private TCP port spec '%+v' correspond to and old version", privateTcpPortSpec)
+			return nil, stacktrace.Propagate(err, "An error occurred cheking if logs collector private TCP port spec '%+v' corresponds to and old version", privateTcpPortSpec)
 		}
 
-		if !isPrivateTCPPortFromOlbLogsCollectorContainers {
+		if !isPrivateTCPPortFromOldLogsCollectorContainers {
 			_, publicTcpPortSpec, err = shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateTcpPortSpec, allHostMachinePortBindings)
 			if err != nil {
 				return nil,
@@ -140,7 +141,7 @@ func isLogsCollectorPortSpecFromOlbLogsCollectorContainers(
 	// Convert port spec protocol -> Docker protocol string
 	dockerPort, err := shared_helpers.GetDockerPortFromPortSpec(privatePortSpec)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred checking if this private TCP port spec '%+v' correspond to an old version of the logs collector container", privatePortSpec)
+		return false, stacktrace.Propagate(err, "An error occurred checking if this private TCP port spec '%+v' corresponds to an old version of the logs collector container", privatePortSpec)
 	}
 
 	_, found := allHostMachinePortBindings[dockerPort]
