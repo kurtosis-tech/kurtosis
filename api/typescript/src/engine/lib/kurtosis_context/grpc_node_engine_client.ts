@@ -192,6 +192,7 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
     }
 
     public async streamUserServiceLogs(getUserServiceLogsArgs: GetUserServiceLogsArgs): Promise<Result<Map<string, Readable>, Error>> {
+
         const streamUserServiceLogsPromise: Promise<Result<ClientReadableStream<GetUserServiceLogsResponse>, Error>> = new Promise((resolve, _unusedReject) => {
             const getUserServiceLogsStreamResponse: ClientReadableStream<GetUserServiceLogsResponse> = this.client.streamUserServiceLogs(getUserServiceLogsArgs)
             resolve(ok(getUserServiceLogsStreamResponse))
@@ -215,10 +216,17 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
         })
 
         streamUserServiceLogsResponse.on('data', function(getUserServiceLogsResponse: GetUserServiceLogsResponse) {
+
             getUserServiceLogsResponse.getUserServiceLogsByUserServiceGuidMap().forEach(
                 (userServiceLogLine, userServiceGUIDStr) => {
                     const userServiceLogsReadableStream: Readable | undefined = userServiceReadableLogsByServiceGuidStr.get(userServiceGUIDStr)
                     if (userServiceLogsReadableStream !== undefined) {
+
+                        if (userServiceLogsReadableStream.destroyed) {
+                            streamUserServiceLogsResponse.cancel()
+                            return
+                        }
+
                         userServiceLogLine.getLineList().forEach((logline) => {
                             userServiceLogsReadableStream.push(logline)
                         })
@@ -241,6 +249,7 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
                 }
             )
         })
+
 
         return ok(userServiceReadableLogsByServiceGuidStr);
     }
