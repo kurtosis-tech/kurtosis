@@ -2,6 +2,7 @@
 
 ### Features
 - Added a `render_templates` command to Startosis
+- Added a `proto_file_store` in charge of compiling Startosis module's .proto file on the fly and storing their FileDescriptorSet in memory 
 
 ### Changes
 - Simplified own-version constant generation by checking in `kurtosis_version` directory
