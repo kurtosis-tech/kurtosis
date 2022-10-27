@@ -3,6 +3,9 @@
 - Adding/removing methods from `.proto` files will now be compile errors in Go code, rather than failing at runtime
 - Consolidated the core & engine Protobuf regeneration scripts into a single one
 
+### Fixes
+- Add missing bindings to Kubernetes gateway
+
 # 0.51.3
 
 ### Fixes
