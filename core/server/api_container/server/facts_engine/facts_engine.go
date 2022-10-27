@@ -79,6 +79,15 @@ func (engine *FactsEngine) PushRecipe(recipe *kurtosis_core_rpc_api_bindings.Fac
 	return nil
 }
 
+func (engine *FactsEngine) FetchLatestFactValues(factId FactId) ([]*kurtosis_core_rpc_api_bindings.FactValue, error) {
+	return engine.getFactValues(factId, lastCursorInitializer, maxResultCount, cursorBackwardsStep)
+}
+
+func (engine *FactsEngine) FetchFactValuesAfter(factId FactId, afterTimestamp time.Time) ([]*kurtosis_core_rpc_api_bindings.FactValue, error) {
+	timestampKey := []byte(getKeyFromTimestamp(afterTimestamp))
+	return engine.getFactValues(factId, createSeekCursorInitializer(timestampKey), maxResultCount, cursorForwardStep)
+}
+
 func (engine *FactsEngine) setupRunRecipeLoop(factId FactId, recipe *kurtosis_core_rpc_api_bindings.FactRecipe) {
 	exitChan, isRunning := engine.exitChanMap[factId]
 	if isRunning {
@@ -89,15 +98,6 @@ func (engine *FactsEngine) setupRunRecipeLoop(factId FactId, recipe *kurtosis_co
 	}
 	engine.exitChanMap[factId] = make(chan bool)
 	go engine.runRecipeLoop(factId, engine.exitChanMap[factId], recipe)
-}
-
-func (engine *FactsEngine) FetchLatestFactValues(factId FactId) ([]*kurtosis_core_rpc_api_bindings.FactValue, error) {
-	return engine.getFactValues(factId, lastCursorInitializer, maxResultCount, cursorBackwardsStep)
-}
-
-func (engine *FactsEngine) FetchFactValuesAfter(factId FactId, afterTimestamp time.Time) ([]*kurtosis_core_rpc_api_bindings.FactValue, error) {
-	timestampKey := []byte(getKeyFromTimestamp(afterTimestamp))
-	return engine.getFactValues(factId, createSeekCursorInitializer(timestampKey), maxResultCount, cursorForwardStep)
 }
 
 func (engine *FactsEngine) getFactValues(factId FactId, initializer cursorInitializer, resultCount int, movement cursorMovement) ([]*kurtosis_core_rpc_api_bindings.FactValue, error) {
@@ -211,10 +211,6 @@ func (engine *FactsEngine) runRecipeLoop(factId FactId, exit <-chan bool, recipe
 	}
 }
 
-func GetFactId(serviceId string, factName string) FactId {
-	return FactId(fmt.Sprintf(factIdFormatStr, serviceId, factName))
-}
-
 func (engine *FactsEngine) runRecipe(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) (*kurtosis_core_rpc_api_bindings.FactValue, error) {
 	if recipe.GetConstantFact() != nil {
 		return recipe.GetConstantFact().GetFactValue(), nil
@@ -275,6 +271,10 @@ func (engine *FactsEngine) updateFactValue(factId FactId, timestampKey string, f
 		return stacktrace.Propagate(err, "An error occurred when updating fact value '%v' '%v' '%v'", factId, timestampKey, factValue)
 	}
 	return err
+}
+
+func GetFactId(serviceId string, factName string) FactId {
+	return FactId(fmt.Sprintf(factIdFormatStr, serviceId, factName))
 }
 
 func getKeyFromTimestamp(timestamp time.Time) string {
