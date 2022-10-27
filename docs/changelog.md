@@ -1,5 +1,7 @@
 # TBD
 
+# 0.51.2
+
 ### Features
 - Added a `render_templates` command to Startosis
 - Implemented backend for facts engine
