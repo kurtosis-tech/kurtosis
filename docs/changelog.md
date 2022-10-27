@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+- Added `protoc` install step to the `publish_api_container_server_image` CircleCI task
+
 # 0.51.2
 
 ### Features
