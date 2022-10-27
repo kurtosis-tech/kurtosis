@@ -99,6 +99,9 @@ func getLogsCollectorObjectFromContainerInfo(
 
 		//checking for old port spec because old logs collectors container (older than engine v.0.50.3) do not publish the TCP port
 		isPrivateTCPPortFromOlbLogsCollectorContainers, err := isLogsCollectorPortSpecFromOlbLogsCollectorContainers(privateTcpPortSpec, allHostMachinePortBindings)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred cheking if logs collector private TCP port spec '%+v' correspond to and old version", privateTcpPortSpec)
+		}
 
 		if !isPrivateTCPPortFromOlbLogsCollectorContainers {
 			_, publicTcpPortSpec, err = shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateTcpPortSpec, allHostMachinePortBindings)
@@ -141,8 +144,7 @@ func isLogsCollectorPortSpecFromOlbLogsCollectorContainers(
 	}
 
 	_, found := allHostMachinePortBindings[dockerPort]
-
-	if !found && privatePortSpec.GetNumber() == privatePortSpec.GetNumber() {
+	if !found && privatePortSpec.GetNumber() == oldLogsCollectorTCPPortNumber {
 		return true, nil
 	}
 	return false, nil
