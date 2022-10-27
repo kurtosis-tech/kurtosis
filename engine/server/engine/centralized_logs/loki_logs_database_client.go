@@ -71,8 +71,8 @@ const (
 
 	oneHourLess = -time.Hour
 
-	logsByKurtosisUserServiceGuidChanBufferSize = 2
-	errorChanBufferSize = 2
+	logsByKurtosisUserServiceGuidChanBuffSize = 2
+	errorChanBuffSize = 2
 )
 
 // A backoff schedule for when and how often to retry failed HTTP
@@ -214,8 +214,8 @@ func (client *lokiLogsDatabaseClient) StreamUserServiceLogs(
 		}
 	}()
 
-	logsByKurtosisUserServiceGuidChan := make(chan map[service.ServiceGUID][]string, logsByKurtosisUserServiceGuidChanBufferSize)
-	errChan := make(chan error, errorChanBufferSize)
+	logsByKurtosisUserServiceGuidChan := make(chan map[service.ServiceGUID][]string, logsByKurtosisUserServiceGuidChanBuffSize)
+	errChan := make(chan error, errorChanBuffSize)
 
 	tailLogsWebsocketConn, tailLogsHttpResponse, err := websocket.DefaultDialer.DialContext(websocketCallCtxWithDeadline, tailLogsEndpointURL.String(), httpHeaderWithTenantID)
 	if err != nil {

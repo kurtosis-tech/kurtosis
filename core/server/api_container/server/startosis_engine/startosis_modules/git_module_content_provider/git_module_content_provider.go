@@ -28,30 +28,37 @@ func NewGitModuleContentProvider(moduleDir string, tmpDir string) *GitModuleCont
 	}
 }
 
-func (provider *GitModuleContentProvider) GetModuleContents(moduleURL string) (string, error) {
-	parsedURL, err := parseGitURL(moduleURL)
+func (provider *GitModuleContentProvider) GetOnDiskAbsoluteFilePath(fileInsideModuleUrl string) (string, error) {
+	parsedURL, err := parseGitURL(fileInsideModuleUrl)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while parsing URL '%v'", moduleURL)
+		return "", stacktrace.Propagate(err, "An error occurred while parsing URL '%v'", fileInsideModuleUrl)
 	}
 	if parsedURL.relativeFilePath == "" {
-		return "", stacktrace.NewError("The relative path to file is empty for '%v'", moduleURL)
+		return "", stacktrace.NewError("The relative path to file is empty for '%v'", fileInsideModuleUrl)
 	}
 	pathToFile := path.Join(provider.modulesDir, parsedURL.relativeFilePath)
 
-	// Load the file if it already exists
-	contents, err := os.ReadFile(pathToFile)
-	if err == nil {
-		return string(contents), nil
+	// Return the file path straight if it exists
+	if _, err := os.Stat(pathToFile); err == nil {
+		return pathToFile, nil
 	}
 
-	// Otherwise Clone It
+	// Otherwise clone the repo and return the absolute path of the requested file
 	err = provider.atomicClone(parsedURL)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while cloning the Git Repo '%v'", parsedURL)
 	}
+	return pathToFile, nil
+}
 
-	// Load it after cloning
-	contents, err = os.ReadFile(pathToFile)
+func (provider *GitModuleContentProvider) GetModuleContents(fileInsideModuleUrl string) (string, error) {
+	pathToFile, err := provider.GetOnDiskAbsoluteFilePath(fileInsideModuleUrl)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred loading the module file '%v'", fileInsideModuleUrl)
+	}
+
+	// Load the file content from its absolute path
+	contents, err := os.ReadFile(pathToFile)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred in reading contents of the file '%v'", pathToFile)
 	}

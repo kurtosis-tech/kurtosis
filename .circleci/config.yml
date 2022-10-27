@@ -297,6 +297,11 @@ jobs:
           sudo apt update
           sudo apt install kudet
 
+      # Install proto compiler. To compile startosis proto files on the fly, the APIC needs `protoc`
+      - run: |
+          sudo apt update
+          sudo apt install protobuf-compiler
+
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 

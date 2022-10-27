@@ -2,6 +2,8 @@ package binding_constructors
 
 import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"time"
 )
 
 // The generated bindings don't come with constructors (leaving it up to the user to initialize all the fields), so we
@@ -140,6 +142,23 @@ func NewModuleInfo(
 		PrivateGrpcPort:     privateGrpcPort,
 		MaybePublicIpAddr:   maybePublicIpAddr,
 		MaybePublicGrpcPort: maybePublicGrpcPort,
+	}
+}
+
+// ==============================================================================================
+//
+//	Facts Engine
+//
+// ==============================================================================================
+
+func NewConstantFactRecipe(serviceId string, factName string, constantFactRecipeDefinition *kurtosis_core_rpc_api_bindings.ConstantFactRecipe, refreshInterval time.Duration) *kurtosis_core_rpc_api_bindings.FactRecipe {
+	return &kurtosis_core_rpc_api_bindings.FactRecipe{
+		ServiceId: serviceId,
+		FactName:  factName,
+		FactRecipeDefinition: &kurtosis_core_rpc_api_bindings.FactRecipe_ConstantFact{
+			ConstantFact: constantFactRecipeDefinition,
+		},
+		RefreshInterval: durationpb.New(refreshInterval),
 	}
 }
 
