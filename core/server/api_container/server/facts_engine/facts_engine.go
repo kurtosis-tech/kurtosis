@@ -27,13 +27,13 @@ type FactsEngine struct {
 }
 
 var (
-	factValuesBucketNameStr  = "fact_values"
-	factValuesBucketName     = []byte(factValuesBucketNameStr)
-	factRecipesBucketNameStr = "fact_recipes"
-	factRecipesBucketName    = []byte(factRecipesBucketNameStr)
+	factValuesBucketName  = []byte(factValuesBucketNameStr)
+	factRecipesBucketName = []byte(factRecipesBucketNameStr)
 )
 
 const (
+	factValuesBucketNameStr    = "fact_values"
+	factRecipesBucketNameStr   = "fact_recipes"
 	defaultWaitTimeBetweenRuns = 2 * time.Second
 	factIdFormatStr            = "%v.%v"
 )
@@ -69,14 +69,11 @@ func (engine *FactsEngine) PushRecipe(recipe *kurtosis_core_rpc_api_bindings.Fac
 	if err := engine.persistRecipe(recipe); err != nil {
 		return stacktrace.Propagate(err, "An error occurred when persisting recipe for fact '%v'", factId)
 	}
-	if err := engine.setupRunRecipeLoop(recipe); err != nil {
-		return stacktrace.Propagate(err, "An error occurred when setting up run recipe loop for fact '%v'", factId)
-	}
+	engine.setupRunRecipeLoop(factId, recipe)
 	return nil
 }
 
-func (engine *FactsEngine) setupRunRecipeLoop(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) error {
-	factId := GetFactId(recipe.GetServiceId(), recipe.GetFactName())
+func (engine *FactsEngine) setupRunRecipeLoop(factId FactId, recipe *kurtosis_core_rpc_api_bindings.FactRecipe) {
 	exitChan, isRunning := engine.exitChanMap[factId]
 	if isRunning {
 		logrus.Infof("Stopped running fact '%v' to run new recipe", factId)
@@ -86,7 +83,6 @@ func (engine *FactsEngine) setupRunRecipeLoop(recipe *kurtosis_core_rpc_api_bind
 	}
 	engine.exitChanMap[factId] = make(chan bool)
 	go engine.runRecipeLoop(factId, engine.exitChanMap[factId], recipe)
-	return nil
 }
 
 func (engine *FactsEngine) FetchLatestFactValue(factId FactId) (*kurtosis_core_rpc_api_bindings.FactValue, error) {
@@ -98,17 +94,17 @@ func (engine *FactsEngine) FetchLatestFactValue(factId FactId) (*kurtosis_core_r
 		}
 		factBucket := factValuesBucket.Bucket([]byte(factId))
 		if factBucket == nil {
-			return stacktrace.NewError("An error occurred because the bucket '%v' wasn't found on the database", factId)
+			return stacktrace.NewError("An error occurred because the fact bucket '%v' wasn't found on the database", factId)
 		}
 		timestamp, factValue := factBucket.Cursor().Last()
+		// If the bucket is empty then a nil key and value are returned.
 		if timestamp == nil {
 			return stacktrace.NewError("An error occurred because no fact value was found for fact '%v'", factId)
 		}
-		err := proto.Unmarshal(factValue, returnFactValue)
-		if err != nil {
+		if err := proto.Unmarshal(factValue, returnFactValue); err != nil {
 			return stacktrace.Propagate(err, "An error occurred when unmarshalling fact value from '%v'", factId)
 		}
-		return err
+		return nil
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred when fetching latest fact value '%v'", factId)
@@ -124,22 +120,21 @@ func (engine *FactsEngine) restoreStoredRecipes() error {
 			return nil
 		}
 		restoredRecipes := 0
-		err := bucket.ForEach(func(key, value []byte) error {
+		err := bucket.ForEach(func(storedRecipe, _ []byte) error {
 			unmarshalledFactRecipe := &kurtosis_core_rpc_api_bindings.FactRecipe{}
-			err := proto.Unmarshal(key, unmarshalledFactRecipe)
+			err := proto.Unmarshal(storedRecipe, unmarshalledFactRecipe)
 			if err != nil {
 				return stacktrace.Propagate(err, "An error occurred when unmarshalling recipe")
 			}
-			err = engine.setupRunRecipeLoop(unmarshalledFactRecipe)
-			if err != nil {
-				return stacktrace.Propagate(err, "An error occurred when pushing restored recipe to engine")
-			}
+			factId := GetFactId(unmarshalledFactRecipe.GetServiceId(), unmarshalledFactRecipe.GetFactName())
+			engine.setupRunRecipeLoop(factId, unmarshalledFactRecipe)
 			restoredRecipes += 1
 			return nil
 		})
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred when restoring recipes")
 		}
+		logrus.Infof("%d fact recipes were restored from the database", restoredRecipes)
 		return nil
 	})
 }
@@ -148,7 +143,7 @@ func (engine *FactsEngine) persistRecipe(recipe *kurtosis_core_rpc_api_bindings.
 	return engine.db.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(factRecipesBucketName)
 		if err != nil {
-			return stacktrace.Propagate(err, "Failure creating or retrieving bucket '%v'", factRecipesBucketName)
+			return stacktrace.Propagate(err, "Failure creating or retrieving bucket '%v'", factRecipesBucketNameStr)
 		}
 		marshaledFactRecipe, err := proto.Marshal(recipe)
 		if err != nil {
@@ -174,7 +169,6 @@ func (engine *FactsEngine) runRecipeLoop(factId FactId, exit <-chan bool, recipe
 		case <-exit:
 			return
 		case <-ticker.C:
-			// TODO(victor.colombo): Take hint from protobuf on how long to wait for it
 			now := time.Now()
 			timestamp := strconv.FormatInt(now.UnixNano(), 10)
 			factValue, err := engine.runRecipe(recipe)
@@ -255,8 +249,7 @@ func (engine *FactsEngine) updateFactValue(factId FactId, timestamp string, valu
 		if err != nil {
 			return stacktrace.Propagate(err, "Failure creating or retrieving bucket '%v'", factId)
 		}
-		err = factBucket.Put([]byte(timestamp), value)
-		if err != nil {
+		if err := factBucket.Put([]byte(timestamp), value); err != nil {
 			return stacktrace.Propagate(err, "Failure saving timestamp and value '%v' '%v'", timestamp, value)
 		}
 		return nil
