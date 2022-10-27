@@ -94,9 +94,9 @@ async function TestStreamLogs() {
                 userServiceReadable.on('data', function(logline) {
                     receivedLogLines.push(logline.toString())
                     if (receivedLogLines.length === expectedAmountOfLogLines) {
-                        receivedLogLines.forEach((logline, index) => {
-                            if (expectedLogLines[index] !=  logline) {
-                                return err( new Error(`bla`))//TODO put something nice here
+                        receivedLogLines.forEach((logline, loglineIndex) => {
+                            if (expectedLogLines[loglineIndex] !=  logline) {
+                                return err( new Error(`Expected to match the ${loglineIndex}º log line with this value ${expectedLogLines[loglineIndex]} but this one was received instead ${logline}`))
                             }
                         })
                         userServiceReadable.destroy()
