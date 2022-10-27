@@ -1,20 +1,20 @@
 # TBD
 ### Features
-* Implemented the new `StreamUserServiceLogs` endpoint in the Kurtosis engine server
-* Added the new `StreamUserServiceLogs` in the Kurtosis engine golang library
-* Added the `StreamUserServiceLogs` method in Loki logs database client
-* Added the `StreamUserServiceLogs` method in Kurtosis backend logs client
+- Implemented the new `StreamUserServiceLogs` endpoint in the Kurtosis engine server
+- Added the new `StreamUserServiceLogs` in the Kurtosis engine golang library
+- Added the `StreamUserServiceLogs` method in Loki logs database client
+- Added the `StreamUserServiceLogs` method in Kurtosis backend logs client
 
 ### Changes
 * Updated the CLI `service logs` command in order to use the new `KurtosisContext.StreamUserServiceLogs` when user requested to follow logs
+- Adding/removing methods from `.proto` files will now be compile errors in Go code, rather than failing at runtime
+- Consolidated the core & engine Protobuf regeneration scripts into a single one
 
 # 0.51.3
-
 ### Fixes
 - Added `protoc` install step to the `publish_api_container_server_image` CircleCI task
 
 # 0.51.2
-
 ### Features
 - Added a `render_templates` command to Startosis
 - Implemented backend for facts engine

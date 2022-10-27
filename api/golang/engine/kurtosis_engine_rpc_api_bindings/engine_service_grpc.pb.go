@@ -148,7 +148,7 @@ func (x *engineServiceStreamUserServiceLogsClient) Recv() (*GetUserServiceLogsRe
 }
 
 // EngineServiceServer is the server API for EngineService service.
-// All implementations must embed UnimplementedEngineServiceServer
+// All implementations should embed UnimplementedEngineServiceServer
 // for forward compatibility
 type EngineServiceServer interface {
 	// Endpoint for getting information about the engine, which is also what we use to verify that the engine has become available
@@ -170,10 +170,9 @@ type EngineServiceServer interface {
 	GetUserServiceLogs(context.Context, *GetUserServiceLogsArgs) (*GetUserServiceLogsResponse, error)
 	// Stream user service stream logs
 	StreamUserServiceLogs(*GetUserServiceLogsArgs, EngineService_StreamUserServiceLogsServer) error
-	mustEmbedUnimplementedEngineServiceServer()
 }
 
-// UnimplementedEngineServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedEngineServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedEngineServiceServer struct {
 }
 
@@ -201,7 +200,6 @@ func (UnimplementedEngineServiceServer) GetUserServiceLogs(context.Context, *Get
 func (UnimplementedEngineServiceServer) StreamUserServiceLogs(*GetUserServiceLogsArgs, EngineService_StreamUserServiceLogsServer) error {
 	return status.Errorf(codes.Unimplemented, "method StreamUserServiceLogs not implemented")
 }
-func (UnimplementedEngineServiceServer) mustEmbedUnimplementedEngineServiceServer() {}
 
 // UnsafeEngineServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to EngineServiceServer will
