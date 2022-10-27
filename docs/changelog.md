@@ -2,6 +2,7 @@
 
 ### Features
 - Added a `render_templates` command to Startosis
+- Implemented backend for facts engine
 - Added a `proto_file_store` in charge of compiling Startosis module's .proto file on the fly and storing their FileDescriptorSet in memory 
 
 ### Changes
