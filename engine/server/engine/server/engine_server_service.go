@@ -14,9 +14,6 @@ import (
 )
 
 type EngineServerService struct {
-	// This embedding is required by gRPC
-	kurtosis_engine_rpc_api_bindings.UnimplementedEngineServiceServer
-
 	// The version tag of the engine server image, so it can report its own version
 	imageVersionTag string
 
@@ -48,7 +45,7 @@ func NewEngineServerService(
 		metricsClient:               metricsClient,
 		metricsUserID:               metricsUserId,
 		didUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
-		logsDatabaseClient: logsDatabaseClient,
+		logsDatabaseClient:          logsDatabaseClient,
 	}
 	return service
 }

@@ -28,9 +28,6 @@ const (
 )
 
 type EngineGatewayServiceServer struct {
-	// This embedding is required by gRPC
-	kurtosis_engine_rpc_api_bindings.UnimplementedEngineServiceServer
-
 	// Client for the engine we'll be connecting too
 	engineClientSupplier *live_engine_client_supplier.LiveEngineClientSupplier
 
