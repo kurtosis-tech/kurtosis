@@ -13,7 +13,7 @@ import (
 
 const (
 	refreshInterval          = time.Millisecond
-	waitUntilFactsAreUpdated = 100 * refreshInterval
+	waitUntilFactsAreUpdated = 1000 * refreshInterval
 )
 
 func TestFactEngineLoop(t *testing.T) {
@@ -39,9 +39,10 @@ func TestFactEngineLoop(t *testing.T) {
 	err = factsEngine.PushRecipe(factRecipe)
 	require.Nil(t, err)
 	time.Sleep(waitUntilFactsAreUpdated) // Wait for the background workers to perform operations
-	fetchedFactValue, err := factsEngine.FetchLatestFactValue("service_id.fact_name")
+	fetchedFactValues, err := factsEngine.FetchLatestFactValues("service_id.fact_name")
 	require.Nil(t, err)
-	require.Equal(t, fetchedFactValue.GetStringValue(), factValue.GetStringValue())
+	require.NotEmpty(t, fetchedFactValues)
+	require.Equal(t, fetchedFactValues[len(fetchedFactValues)-1].GetStringValue(), factValue.GetStringValue())
 }
 
 func TestFactRecipePersistence(t *testing.T) {
@@ -80,7 +81,8 @@ func TestFactRecipePersistence(t *testing.T) {
 	otherFactsEngine := NewFactsEngine(otherDb, service_network.NewEmptyMockServiceNetwork())
 	otherFactsEngine.Start()
 	time.Sleep(waitUntilFactsAreUpdated) // Wait for the background workers to perform operations
-	fetchedFactValue, err := otherFactsEngine.FetchLatestFactValue("service_id.fact_name")
+	fetchedFactValues, err := otherFactsEngine.FetchLatestFactValues("service_id.fact_name")
 	require.Nil(t, err)
-	require.Greater(t, fetchedFactValue.GetUpdatedAt().AsTime().UnixNano(), secondEngineTimestamp)
+	require.NotEmpty(t, fetchedFactValues)
+	require.Greater(t, fetchedFactValues[len(fetchedFactValues)-1].GetUpdatedAt().AsTime().UnixNano(), secondEngineTimestamp)
 }

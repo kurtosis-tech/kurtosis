@@ -8701,7 +8701,8 @@ proto.api_container_api.GetFactValuesArgs.prototype.toObject = function(opt_incl
 proto.api_container_api.GetFactValuesArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
     serviceId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    factName: jspb.Message.getFieldWithDefault(msg, 2, "")
+    factName: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    startingFrom: (f = msg.getStartingFrom()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -8746,6 +8747,11 @@ proto.api_container_api.GetFactValuesArgs.deserializeBinaryFromReader = function
       var value = /** @type {string} */ (reader.readString());
       msg.setFactName(value);
       break;
+    case 9:
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      msg.setStartingFrom(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -8789,6 +8795,14 @@ proto.api_container_api.GetFactValuesArgs.serializeBinaryToWriter = function(mes
       f
     );
   }
+  f = message.getStartingFrom();
+  if (f != null) {
+    writer.writeMessage(
+      9,
+      f,
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
+    );
+  }
 };
 
 
@@ -8825,6 +8839,43 @@ proto.api_container_api.GetFactValuesArgs.prototype.getFactName = function() {
  */
 proto.api_container_api.GetFactValuesArgs.prototype.setFactName = function(value) {
   return jspb.Message.setProto3StringField(this, 2, value);
+};
+
+
+/**
+ * optional google.protobuf.Timestamp starting_from = 9;
+ * @return {?proto.google.protobuf.Timestamp}
+ */
+proto.api_container_api.GetFactValuesArgs.prototype.getStartingFrom = function() {
+  return /** @type{?proto.google.protobuf.Timestamp} */ (
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 9));
+};
+
+
+/**
+ * @param {?proto.google.protobuf.Timestamp|undefined} value
+ * @return {!proto.api_container_api.GetFactValuesArgs} returns this
+*/
+proto.api_container_api.GetFactValuesArgs.prototype.setStartingFrom = function(value) {
+  return jspb.Message.setWrapperField(this, 9, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api_container_api.GetFactValuesArgs} returns this
+ */
+proto.api_container_api.GetFactValuesArgs.prototype.clearStartingFrom = function() {
+  return this.setStartingFrom(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.GetFactValuesArgs.prototype.hasStartingFrom = function() {
+  return jspb.Message.getField(this, 9) != null;
 };
 
 
@@ -8868,7 +8919,8 @@ proto.api_container_api.GetFactValuesResponse.prototype.toObject = function(opt_
 proto.api_container_api.GetFactValuesResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
     factValuesList: jspb.Message.toObjectList(msg.getFactValuesList(),
-    proto.api_container_api.FactValue.toObject, includeInstance)
+    proto.api_container_api.FactValue.toObject, includeInstance),
+    lastTimestampFromPage: (f = msg.getLastTimestampFromPage()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -8910,6 +8962,11 @@ proto.api_container_api.GetFactValuesResponse.deserializeBinaryFromReader = func
       reader.readMessage(value,proto.api_container_api.FactValue.deserializeBinaryFromReader);
       msg.addFactValues(value);
       break;
+    case 10:
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      msg.setLastTimestampFromPage(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -8945,6 +9002,14 @@ proto.api_container_api.GetFactValuesResponse.serializeBinaryToWriter = function
       1,
       f,
       proto.api_container_api.FactValue.serializeBinaryToWriter
+    );
+  }
+  f = message.getLastTimestampFromPage();
+  if (f != null) {
+    writer.writeMessage(
+      10,
+      f,
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
 };
@@ -8985,6 +9050,43 @@ proto.api_container_api.GetFactValuesResponse.prototype.addFactValues = function
  */
 proto.api_container_api.GetFactValuesResponse.prototype.clearFactValuesList = function() {
   return this.setFactValuesList([]);
+};
+
+
+/**
+ * optional google.protobuf.Timestamp last_timestamp_from_page = 10;
+ * @return {?proto.google.protobuf.Timestamp}
+ */
+proto.api_container_api.GetFactValuesResponse.prototype.getLastTimestampFromPage = function() {
+  return /** @type{?proto.google.protobuf.Timestamp} */ (
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 10));
+};
+
+
+/**
+ * @param {?proto.google.protobuf.Timestamp|undefined} value
+ * @return {!proto.api_container_api.GetFactValuesResponse} returns this
+*/
+proto.api_container_api.GetFactValuesResponse.prototype.setLastTimestampFromPage = function(value) {
+  return jspb.Message.setWrapperField(this, 10, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api_container_api.GetFactValuesResponse} returns this
+ */
+proto.api_container_api.GetFactValuesResponse.prototype.clearLastTimestampFromPage = function() {
+  return this.setLastTimestampFromPage(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.GetFactValuesResponse.prototype.hasLastTimestampFromPage = function() {
+  return jspb.Message.getField(this, 10) != null;
 };
 
 

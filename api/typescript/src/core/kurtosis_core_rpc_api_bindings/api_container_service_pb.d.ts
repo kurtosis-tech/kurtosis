@@ -1027,6 +1027,11 @@ export class GetFactValuesArgs extends jspb.Message {
   getFactName(): string;
   setFactName(value: string): GetFactValuesArgs;
 
+  getStartingFrom(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setStartingFrom(value?: google_protobuf_timestamp_pb.Timestamp): GetFactValuesArgs;
+  hasStartingFrom(): boolean;
+  clearStartingFrom(): GetFactValuesArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetFactValuesArgs.AsObject;
   static toObject(includeInstance: boolean, msg: GetFactValuesArgs): GetFactValuesArgs.AsObject;
@@ -1039,6 +1044,12 @@ export namespace GetFactValuesArgs {
   export type AsObject = {
     serviceId: string,
     factName: string,
+    startingFrom?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+  }
+
+  export enum StartingFromCase { 
+    _STARTING_FROM_NOT_SET = 0,
+    STARTING_FROM = 9,
   }
 }
 
@@ -1047,6 +1058,11 @@ export class GetFactValuesResponse extends jspb.Message {
   setFactValuesList(value: Array<FactValue>): GetFactValuesResponse;
   clearFactValuesList(): GetFactValuesResponse;
   addFactValues(value?: FactValue, index?: number): FactValue;
+
+  getLastTimestampFromPage(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setLastTimestampFromPage(value?: google_protobuf_timestamp_pb.Timestamp): GetFactValuesResponse;
+  hasLastTimestampFromPage(): boolean;
+  clearLastTimestampFromPage(): GetFactValuesResponse;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetFactValuesResponse.AsObject;
@@ -1059,6 +1075,7 @@ export class GetFactValuesResponse extends jspb.Message {
 export namespace GetFactValuesResponse {
   export type AsObject = {
     factValuesList: Array<FactValue.AsObject>,
+    lastTimestampFromPage?: google_protobuf_timestamp_pb.Timestamp.AsObject,
   }
 }
 
@@ -1223,6 +1240,11 @@ export namespace FactRecipe {
     CONSTANT_FACT = 3,
     EXEC_FACT = 4,
     HTTP_REQUEST_FACT = 5,
+  }
+
+  export enum RefreshIntervalCase { 
+    _REFRESH_INTERVAL_NOT_SET = 0,
+    REFRESH_INTERVAL = 10,
   }
 }
 
