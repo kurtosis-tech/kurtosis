@@ -19,6 +19,10 @@ import (
 
 const (
 	shouldShowStoppedLogsCollectorContainers = true
+
+	//This port number was used when whe run the logs collector without publishing the TCP port
+	//now we need to check for this, in order to know if the logs collector does not bind
+	oldLogsCollectorTCPPortNumber = 24224
 )
 
 func getLogsCollectorPrivatePorts(containerLabels map[string]string) (
@@ -93,13 +97,18 @@ func getLogsCollectorObjectFromContainerInfo(
 			return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
 		}
 
-		publicIpAddr, publicTcpPortSpec, err = shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateTcpPortSpec, allHostMachinePortBindings)
-		if err != nil {
-			return nil,
-			stacktrace.Propagate(err, "The logs collector is running, but an error occurred getting the public port spec for the TCP private port spec '%+v'", privateTcpPortSpec)
+		//checking for old port spec because old logs collectors container (older than engine v.0.50.3) do not publish the TCP port
+		isPrivateTCPPortFromOlbLogsCollectorContainers, err := isLogsCollectorPortSpecFromOlbLogsCollectorContainers(privateTcpPortSpec, allHostMachinePortBindings)
+
+		if !isPrivateTCPPortFromOlbLogsCollectorContainers {
+			_, publicTcpPortSpec, err = shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateTcpPortSpec, allHostMachinePortBindings)
+			if err != nil {
+				return nil,
+					stacktrace.Propagate(err, "The logs collector is running, but an error occurred getting the public port spec for the TCP private port spec '%+v'", privateTcpPortSpec)
+			}
 		}
 
-		_, publicHttpPortSpec, err = shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateHttpPortSpec, allHostMachinePortBindings)
+		publicIpAddr, publicHttpPortSpec, err = shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateHttpPortSpec, allHostMachinePortBindings)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "The logs collector is running, but an error occurred getting the public port spec for the HTTP private port spec '%+v'", privateHttpPortSpec)
 		}
@@ -119,6 +128,24 @@ func getLogsCollectorObjectFromContainerInfo(
 	)
 
 	return logsCollectorObj, nil
+}
+
+func isLogsCollectorPortSpecFromOlbLogsCollectorContainers(
+	privatePortSpec *port_spec.PortSpec,
+	allHostMachinePortBindings map[nat.Port]*nat.PortBinding,
+) (bool, error) {
+	// Convert port spec protocol -> Docker protocol string
+	dockerPort, err := shared_helpers.GetDockerPortFromPortSpec(privatePortSpec)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred checking if this private TCP port spec '%+v' correspond to an old version of the logs collector container", privatePortSpec)
+	}
+
+	_, found := allHostMachinePortBindings[dockerPort]
+
+	if !found && privatePortSpec.GetNumber() == privatePortSpec.GetNumber() {
+		return true, nil
+	}
+	return false, nil
 }
 
 func getAllLogsCollectorContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]*types.Container, error) {
