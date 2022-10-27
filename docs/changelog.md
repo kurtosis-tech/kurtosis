@@ -11,8 +11,17 @@
 ### Changes
 * Updated the CLI `service logs` command in order to use the new `KurtosisContext.StreamUserServiceLogs` when user requested to follow logs
 
+# 0.51.3
+
+### Fixes
+- Added `protoc` install step to the `publish_api_container_server_image` CircleCI task
+
+# 0.51.2
+
 ### Features
 - Added a `render_templates` command to Startosis
+- Implemented backend for facts engine
+- Added a `proto_file_store` in charge of compiling Startosis module's .proto file on the fly and storing their FileDescriptorSet in memory 
 
 ### Changes
 - Simplified own-version constant generation by checking in `kurtosis_version` directory

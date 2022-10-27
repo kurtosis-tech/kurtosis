@@ -32,7 +32,7 @@ import {
     newGetUserServiceLogsArgs,
     newStopEnclaveArgs
 } from "../constructor_calls";
-import {Stream, Readable, Writable} from "stream";
+import {Readable} from "stream";
 
 const LOCAL_HOSTNAME: string = "localhost";
 
