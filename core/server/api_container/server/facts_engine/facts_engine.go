@@ -66,12 +66,7 @@ func (engine *FactsEngine) PushRecipe(recipe *kurtosis_core_rpc_api_bindings.Fac
 	return nil
 }
 
-<<<<<<< Updated upstream
-func (engine *FactsEngine) setupRunRecipeLoop(recipe *kurtosis_core_rpc_api_bindings.FactRecipe) error {
-	factId := GetFactIdFromRecipe(recipe)
-=======
 func (engine *FactsEngine) setupRunRecipeLoop(factId FactId, recipe *kurtosis_core_rpc_api_bindings.FactRecipe) {
->>>>>>> Stashed changes
 	exitChan, isRunning := engine.exitChanMap[factId]
 	if isRunning {
 		logrus.Infof("Stopped running fact '%v' to run new recipe", factId)
@@ -100,13 +95,8 @@ func (engine *FactsEngine) FetchLatestFactValue(factId FactId) (string, *kurtosi
 		if timestamp == nil {
 			return stacktrace.NewError("An error occurred because no fact value was found for fact '%v'", factId)
 		}
-<<<<<<< Updated upstream
 		returnTimestamp = string(timestamp)
-		err := proto.Unmarshal(factValue, returnFactValue)
-		if err != nil {
-=======
 		if err := proto.Unmarshal(factValue, returnFactValue); err != nil {
->>>>>>> Stashed changes
 			return stacktrace.Propagate(err, "An error occurred when unmarshalling fact value from '%v'", factId)
 		}
 		return nil
@@ -131,7 +121,7 @@ func (engine *FactsEngine) restoreStoredRecipes() error {
 			if err != nil {
 				return stacktrace.Propagate(err, "An error occurred when unmarshalling recipe")
 			}
-			factId := GetFactId(unmarshalledFactRecipe.GetServiceId(), unmarshalledFactRecipe.GetFactName())
+			factId := GetFactIdFromRecipe(unmarshalledFactRecipe)
 			engine.setupRunRecipeLoop(factId, unmarshalledFactRecipe)
 			restoredRecipes += 1
 			return nil
@@ -174,13 +164,8 @@ func (engine *FactsEngine) runRecipeLoop(factId FactId, exit <-chan bool, recipe
 		case <-exit:
 			return
 		case <-ticker.C:
-<<<<<<< Updated upstream
-			// TODO(victor.colombo): Take hint from protobuf on how long to wait for it
-			timestamp := strconv.FormatInt(time.Now().UnixNano(), 10)
-=======
 			now := time.Now()
 			timestamp := strconv.FormatInt(now.UnixNano(), 10)
->>>>>>> Stashed changes
 			factValue, err := engine.runRecipe(recipe)
 			if err != nil {
 				logrus.Errorf(stacktrace.Propagate(err, "An error occurred when running recipe").Error())
