@@ -23,9 +23,9 @@ type InterpretationError struct {
 	stacktrace []CallFrame
 }
 
-func NewInterpretationError(msg string) *InterpretationError {
+func NewInterpretationError(msg string, args ...interface{}) *InterpretationError {
 	return &InterpretationError{
-		msg: msg,
+		msg: fmt.Sprintf(msg, args...),
 	}
 }
 
@@ -36,9 +36,9 @@ func NewInterpretationErrorFromStacktrace(stacktrace []CallFrame) *Interpretatio
 	}
 }
 
-func NewInterpretationErrorWithCustomMsg(msg string, stacktrace []CallFrame) *InterpretationError {
+func NewInterpretationErrorWithCustomMsg(stacktrace []CallFrame, msg string, args ...interface{}) *InterpretationError {
 	return &InterpretationError{
-		msg:        msg,
+		msg:        fmt.Sprintf(msg, args...),
 		stacktrace: stacktrace,
 	}
 }

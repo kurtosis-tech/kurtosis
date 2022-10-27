@@ -513,5 +513,9 @@ message FactRecipe {
 message ExecuteStartosisModuleArgs {
   string module_id = 1;
   bytes data = 2;
+  
+  // Serialized parameters data for the Startosis module main function
+  // This should be a valid JSON string
+  string serialized_params = 3;
 }
 

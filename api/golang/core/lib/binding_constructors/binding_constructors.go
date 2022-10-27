@@ -444,9 +444,10 @@ func NewStartosisValidationError(error string) *kurtosis_core_rpc_api_bindings.S
 //                                 Startosis Module Exec Args
 // ==============================================================================================
 
-func NewExecuteStartosisModuleArgs(moduleId string, compressedModule []byte) *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs {
+func NewExecuteStartosisModuleArgs(moduleId string, compressedModule []byte, serializedParams string) *kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs {
 	return &kurtosis_core_rpc_api_bindings.ExecuteStartosisModuleArgs{
-		ModuleId: moduleId,
-		Data:     compressedModule,
+		ModuleId:         moduleId,
+		Data:             compressedModule,
+		SerializedParams: serializedParams,
 	}
 }

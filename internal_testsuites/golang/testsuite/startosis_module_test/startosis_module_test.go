@@ -39,10 +39,12 @@ func TestStartosisModule_SimpleValidCase(t *testing.T) {
 
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
-	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath)
+	serializedParams := `{"greetings": "Bonjour!"}`
+	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, serializedParams)
 	require.NoError(t, err, "Unexpected error executing startosis module")
 
-	expectedScriptOutput := `Hello World!
+	expectedScriptOutput := `Bonjour!
+Hello World!
 `
 	require.Empty(t, executionResult.InterpretationError, "Unexpected interpretation error")
 	require.Lenf(t, executionResult.ValidationErrors, 0, "Unexpected validation error")
@@ -69,7 +71,7 @@ func TestStartosisModule_InvalidModFile(t *testing.T) {
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
 	expectedErrorContents := "Field module.name in kurtosis.mod needs to be set and cannot be empty"
-	_, err = enclaveCtx.ExecuteStartosisModule(moduleDirpath)
+	_, err = enclaveCtx.ExecuteStartosisModule(moduleDirpath, "{}")
 	require.NotNil(t, err, "Unexpected error executing startosis module")
 	require.Contains(t, err.Error(), expectedErrorContents)
 }
@@ -92,7 +94,7 @@ func TestStartosisModule_NoMainFile(t *testing.T) {
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
 	expectedErrorContents := "An error occurred while verifying that 'main.star' exists on root of module"
-	_, err = enclaveCtx.ExecuteStartosisModule(moduleDirpath)
+	_, err = enclaveCtx.ExecuteStartosisModule(moduleDirpath, "{}")
 	require.NotNil(t, err, "Unexpected error executing startosis module")
 	require.Contains(t, err.Error(), expectedErrorContents)
 }
@@ -115,7 +117,7 @@ func TestStartosisModule_NoMainInMainStar(t *testing.T) {
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
 	expectedInterpretationErr := "Evaluation error: load: name main not found in module github.com/sample/sample-kurtosis-module/main.star"
-	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath)
+	executionResult, err := enclaveCtx.ExecuteStartosisModule(moduleDirpath, "{}")
 	require.Nil(t, err, "Unexpected error executing startosis module")
 	require.NotNil(t, executionResult.InterpretationError)
 	require.Contains(t, executionResult.InterpretationError, expectedInterpretationErr)

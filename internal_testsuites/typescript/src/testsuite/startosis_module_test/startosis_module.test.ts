@@ -32,7 +32,8 @@ test("Test valid startosis module execution", async () => {
 
         log.info(`Loading module at path '${moduleRootPath}'`)
 
-        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath)
+        const serializedParams = "{\"greetings\": \"Bonjour!\"}"
+        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, serializedParams)
 
         if(executeStartosisModuleResult.isErr()) {
             log.error(`An error occurred execute startosis module '${moduleRootPath}'`);
@@ -40,7 +41,7 @@ test("Test valid startosis module execution", async () => {
         }
         const executeStartosisModuleValue = executeStartosisModuleResult.value;
 
-        const expectedScriptOutput = "Hello World!\n"
+        const expectedScriptOutput = "Bonjour!\nHello World!\n"
 
         if (expectedScriptOutput !== executeStartosisModuleValue.getSerializedScriptOutput()) {
             throw err(new Error(`Expected output to be '${expectedScriptOutput} got '${executeStartosisModuleValue.getSerializedScriptOutput()}'`))
@@ -77,7 +78,7 @@ test("Test invalid module with invalid mod file", async () => {
 
         log.info(`Loading module at path '${moduleRootPath}'`)
 
-        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath)
+        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, "{}")
 
         if(!executeStartosisModuleResult.isErr()) {
             throw err(new Error("Module with invalid module was expected to error but didn't"))
@@ -105,7 +106,7 @@ test("Test invalid module with no main.star", async () => {
 
         log.info(`Loading module at path '${moduleRootPath}'`)
 
-        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath)
+        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, "{}")
 
         if(!executeStartosisModuleResult.isErr()) {
             throw err(new Error("Module with invalid module was expected to error but didn't"))
@@ -133,7 +134,7 @@ test("Test invalid module with no main in main.star", async () => {
 
         log.info(`Loading module at path '${moduleRootPath}'`)
 
-        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath)
+        const executeStartosisModuleResult = await enclaveContext.executeStartosisModule(moduleRootPath, "{}")
 
         if(executeStartosisModuleResult.isErr()) {
             throw err(new Error("Unexpected execution error"))

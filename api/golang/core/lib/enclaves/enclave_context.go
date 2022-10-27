@@ -136,7 +136,7 @@ func (enclaveCtx *EnclaveContext) ExecuteStartosisScript(serializedScript string
 	return executeStartosisResponse, nil
 }
 
-func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(moduleRootPath string) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
+func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(moduleRootPath string, serializedParams string) (*kurtosis_core_rpc_api_bindings.ExecuteStartosisResponse, error) {
 	kurtosisModFilepath := path.Join(moduleRootPath, modFilename)
 
 	kurtosisMod, err := parseKurtosisMod(kurtosisModFilepath)
@@ -148,7 +148,7 @@ func (enclaveCtx *EnclaveContext) ExecuteStartosisModule(moduleRootPath string) 
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", moduleRootPath)
 	}
-	executeStartosisModuleArgs := binding_constructors.NewExecuteStartosisModuleArgs(kurtosisMod.Module.ModuleName, compressedModule)
+	executeStartosisModuleArgs := binding_constructors.NewExecuteStartosisModuleArgs(kurtosisMod.Module.ModuleName, compressedModule, serializedParams)
 	executeStartosisResponse, err := enclaveCtx.client.ExecuteStartosisModule(context.Background(), executeStartosisModuleArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unexpected error happened executing Startosis module \n%v", moduleRootPath)

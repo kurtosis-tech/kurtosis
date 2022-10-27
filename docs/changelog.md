@@ -2,6 +2,7 @@
 
 ### Features
 - Added an `import_types` Starlark instruction to read types from a .proto file inside a module
+- Added the ability for a Starlark module to take input args when a `ModuleInput` in the module `types.proto` file
 
 # 0.51.5
 ### Fixes

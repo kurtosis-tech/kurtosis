@@ -1080,6 +1080,9 @@ export class ExecuteStartosisModuleArgs extends jspb.Message {
   getData_asB64(): string;
   setData(value: Uint8Array | string): ExecuteStartosisModuleArgs;
 
+  getSerializedParams(): string;
+  setSerializedParams(value: string): ExecuteStartosisModuleArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ExecuteStartosisModuleArgs.AsObject;
   static toObject(includeInstance: boolean, msg: ExecuteStartosisModuleArgs): ExecuteStartosisModuleArgs.AsObject;
@@ -1092,6 +1095,7 @@ export namespace ExecuteStartosisModuleArgs {
   export type AsObject = {
     moduleId: string,
     data: Uint8Array | string,
+    serializedParams: string,
   }
 }
 
