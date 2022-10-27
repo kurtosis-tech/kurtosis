@@ -15,6 +15,9 @@ import (
 const (
 	getUserServiceLogsShouldFollowLogsOption    = false
 	streamUserServiceLogsShouldFollowLogsOption = true
+
+	logsByKurtosisUserServiceGuidChanBufferSize = 2
+	errorChanBufferSize = 2
 )
 
 type kurtosisBackendLogClient struct {
@@ -29,13 +32,13 @@ func NewKurtosisBackendLogClient(kurtosisBackend MinimalKurtosisBackend) *kurtos
 func (client *kurtosisBackendLogClient) GetUserServiceLogs(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
-	userServiceGUIDs map[service.ServiceGUID]bool,
+	userServiceGuids map[service.ServiceGUID]bool,
 ) (map[service.ServiceGUID][]string, error) {
 
 	resultLogsByKurtosisUserServiceGuid := map[service.ServiceGUID][]string{}
 
 	userServiceFilters := &service.ServiceFilters{
-		GUIDs: userServiceGUIDs,
+		GUIDs: userServiceGuids,
 	}
 
 	successfulUserServiceLogs, erroredUserServiceGuids, err := client.kurtosisBackend.GetUserServiceLogs(ctx, enclaveID, userServiceFilters, getUserServiceLogsShouldFollowLogsOption)
@@ -79,17 +82,17 @@ func (client *kurtosisBackendLogClient) GetUserServiceLogs(
 func (client *kurtosisBackendLogClient) StreamUserServiceLogs(
 	ctx context.Context,
 	enclaveID enclave.EnclaveID,
-	userServiceGUIDs map[service.ServiceGUID]bool,
+	userServiceGuids map[service.ServiceGUID]bool,
 ) (
 	chan map[service.ServiceGUID][]string,
 	chan error,
 	error,
 ) {
-	logsByKurtosisUserServiceGuidChan := make(chan map[service.ServiceGUID][]string, 2)
-	errChan := make(chan error, 2)
+	logsByKurtosisUserServiceGuidChan := make(chan map[service.ServiceGUID][]string, logsByKurtosisUserServiceGuidChanBufferSize)
+	errChan := make(chan error, errorChanBufferSize)
 
 	userServiceFilters := &service.ServiceFilters{
-		GUIDs: userServiceGUIDs,
+		GUIDs: userServiceGuids,
 	}
 
 	successfulUserServiceLogs, erroredUserServiceGuids, err := client.kurtosisBackend.GetUserServiceLogs(ctx, enclaveID, userServiceFilters, streamUserServiceLogsShouldFollowLogsOption)
@@ -117,32 +120,50 @@ func (client *kurtosisBackendLogClient) StreamUserServiceLogs(
 	}
 
 	for successfulUserServiceGuid, successfulUserServiceReadCloserLogs := range successfulUserServiceLogs {
-		go func(userServiceGUID service.ServiceGUID, userServiceReadCloser io.ReadCloser) {
-
-			userServiceLogsScanner := bufio.NewScanner(userServiceReadCloser)
-			userServiceLogsScanner.Split(bufio.ScanLines)
-
-			scanUserServiceLogsLoop:
-				for {
-					select {
-						case <- ctx.Done():
-							errChan <- stacktrace.Propagate(ctx.Err(), "An error occurred streaming user service logs from Kurtosis backend logs client, the request context has done")
-							break scanUserServiceLogsLoop
-						default:
-							for userServiceLogsScanner.Scan() {
-								newUserServiceLogLine := map[service.ServiceGUID][]string{
-									userServiceGUID: {userServiceLogsScanner.Text()},
-								}
-								logsByKurtosisUserServiceGuidChan <- newUserServiceLogLine
-							}
-					}
-				}
-
-			if err := userServiceReadCloser.Close(); err != nil {
-				logrus.Errorf("Streaming user service has finished, so we tried to close the user service read closer for service with GUID '%v', but an error was thrown:\n%v", userServiceGUID, err)
-			}
-		}(successfulUserServiceGuid, successfulUserServiceReadCloserLogs)
+		go scanUserServiceLogsAndAddLogLinesToTheUserServiceLogsChan(
+			ctx,
+			successfulUserServiceGuid,
+			successfulUserServiceReadCloserLogs,
+			logsByKurtosisUserServiceGuidChan,
+			errChan,
+		)
 	}
 
 	return logsByKurtosisUserServiceGuidChan, errChan, nil
+}
+// ====================================================================================================
+//                                      Private Helper Functions
+// ====================================================================================================
+func scanUserServiceLogsAndAddLogLinesToTheUserServiceLogsChan(
+	ctx context.Context,
+	userServiceGUID service.ServiceGUID,
+	userServiceReadCloser io.ReadCloser,
+	logsByKurtosisUserServiceGuidChan chan map[service.ServiceGUID][]string,
+	errChan chan error,
+) {
+
+	defer func() {
+		if err := userServiceReadCloser.Close(); err != nil {
+			logrus.Errorf("Streaming user service has finished, so we tried to close the user service read closer for service with GUID '%v', but an error was thrown:\n%v", userServiceGUID, err)
+		}
+	}()
+
+	userServiceLogsScanner := bufio.NewScanner(userServiceReadCloser)
+	userServiceLogsScanner.Split(bufio.ScanLines)
+
+	for {
+		select {
+		case <- ctx.Done():
+			errChan <- stacktrace.Propagate(ctx.Err(), "An error occurred streaming user service logs from Kurtosis backend logs client, the request context has done")
+			return
+		default:
+			for userServiceLogsScanner.Scan() {
+				newUserServiceLogLine := map[service.ServiceGUID][]string{
+					userServiceGUID: {userServiceLogsScanner.Text()},
+				}
+				logsByKurtosisUserServiceGuidChan <- newUserServiceLogLine
+			}
+		}
+	}
+
 }

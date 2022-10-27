@@ -205,8 +205,8 @@ func (kurtosisCtx *KurtosisContext) GetUserServiceLogs(
 func (kurtosisCtx *KurtosisContext) StreamUserServiceLogs(
 	ctx context.Context,
 	enclaveID enclaves.EnclaveID,
-	userServiceGUIDs map[services.ServiceGUID]bool,
-)(
+	userServiceGuids map[services.ServiceGUID]bool,
+) (
 	map[services.ServiceGUID]io.ReadCloser,
 	error,
 ) {
@@ -219,9 +219,9 @@ func (kurtosisCtx *KurtosisContext) StreamUserServiceLogs(
 		}
 	}()
 
-	userServiceReadCloserLogsByServiceGuid := newUserServiceReadCloserLogsByServiceGuid(userServiceGUIDs)
+	userServiceReadCloserLogsByServiceGuid := newUserServiceReadCloserLogsByServiceGuid(userServiceGuids)
 
-	getUserServiceLogsArgs := newGetUserServiceLogsArgs(enclaveID, userServiceGUIDs)
+	getUserServiceLogsArgs := newGetUserServiceLogsArgs(enclaveID, userServiceGuids)
 
 	stream, err := kurtosisCtx.client.StreamUserServiceLogs(ctxWithCancel, getUserServiceLogsArgs)
 	if err != nil {
@@ -229,35 +229,9 @@ func (kurtosisCtx *KurtosisContext) StreamUserServiceLogs(
 		return nil, stacktrace.Propagate(err, "An error occurred streaming user service logs using args '%+v'", getUserServiceLogsArgs)
 	}
 
-	go func() {
-		receiveStreamLogsLoop:
-			for {
-			getUserServiceLogResponse, errReceivingStream := stream.Recv()
-			if errReceivingStream != nil {
-				if errReceivingStream == io.EOF {
-					break receiveStreamLogsLoop
-				}
-				logrus.Errorf("An error occurred receveing user service logs stream for user services '%+v' in enclave '%v'. Error:\n%v", userServiceGUIDs, enclaveID, err)
-				if errCloseSend := stream.CloseSend(); errCloseSend != nil {
-					logrus.Errorf("Streaming user service logs has thrown an error, so we tried to close the send direction of the stream, but an error was thrown:\n%v", err)
-				}
-				break receiveStreamLogsLoop
-			}
-			for userServiceGuidStr, userServiceLogLine := range getUserServiceLogResponse.UserServiceLogsByUserServiceGuid {
-				userServiceGuid := services.ServiceGUID(userServiceGuidStr)
-				 if err := streamNewUserServiceLogLines(userServiceGuid, userServiceReadCloserLogsByServiceGuid, userServiceLogLine); err != nil {
-					 logrus.Errorf("An error occurred streaming new user service log lines '%+v' for user service with GUID '%v'. Error:\n%v", userServiceLogLine, userServiceGuid, err)
-					 break receiveStreamLogsLoop
-				 }
-			}
-		}
+	go receiveStreamLogsFromTheServer(enclaveID, userServiceGuids, userServiceReadCloserLogsByServiceGuid, stream, cancelCtxFunc)
 
-		//Closing all the open resources
-		cancelCtxFunc()
-		closeAllUserServiceReadCloserLogs(userServiceReadCloserLogsByServiceGuid)
-	}()
-
-	return userServiceReadCloserLogsByServiceGuid,  nil
+	return userServiceReadCloserLogsByServiceGuid, nil
 }
 
 // ====================================================================================================
@@ -265,6 +239,42 @@ func (kurtosisCtx *KurtosisContext) StreamUserServiceLogs(
 //	Private helper methods
 //
 // ====================================================================================================
+func receiveStreamLogsFromTheServer(
+	enclaveID enclaves.EnclaveID,
+	userServiceGuids map[services.ServiceGUID]bool,
+	userServiceReadCloserLogsByServiceGuid map[services.ServiceGUID]io.ReadCloser,
+	stream kurtosis_engine_rpc_api_bindings.EngineService_StreamUserServiceLogsClient,
+	cancelCtxFunc context.CancelFunc,
+) {
+
+	//Closing all the open resources at the end
+	defer func() {
+		cancelCtxFunc()
+		closeAllUserServiceReadCloserLogs(userServiceReadCloserLogsByServiceGuid)
+	}()
+
+	for {
+		getUserServiceLogResponse, errReceivingStream := stream.Recv()
+		if errReceivingStream == io.EOF {
+			break
+		}
+		if errReceivingStream != nil {
+			logrus.Errorf("An error occurred receveing user service logs stream for user services '%+v' in enclave '%v'. Error:\n%v", userServiceGuids, enclaveID, errReceivingStream)
+			if errCloseSend := stream.CloseSend(); errCloseSend != nil {
+				logrus.Errorf("Streaming user service logs has thrown an error, so we tried to close the send direction of the stream, but an error was thrown:\n%v", errCloseSend)
+			}
+			break
+		}
+		for userServiceGuidStr, userServiceLogLine := range getUserServiceLogResponse.UserServiceLogsByUserServiceGuid {
+			userServiceGuid := services.ServiceGUID(userServiceGuidStr)
+			if err := streamNewUserServiceLogLines(userServiceGuid, userServiceReadCloserLogsByServiceGuid, userServiceLogLine); err != nil {
+				logrus.Errorf("An error occurred streaming new user service log lines '%+v' for user service with GUID '%v'. Error:\n%v", userServiceLogLine, userServiceGuid, err)
+				return
+			}
+		}
+	}
+}
+
 func newEnclaveContextFromEnclaveInfo(
 	enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo,
 ) (*enclaves.EnclaveContext, error) {
