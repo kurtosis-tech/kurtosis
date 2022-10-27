@@ -84,7 +84,7 @@ func TestFactRecipePersistence(t *testing.T) {
 	fetchedFactValues, err := otherFactsEngine.FetchLatestFactValues("service_id.fact_name")
 	require.Nil(t, err)
 	require.NotEmpty(t, fetchedFactValues)
-	require.Greater(t, fetchedFactValues[0].GetUpdatedAt().AsTime().UnixNano(), secondEngineTimestamp)
+	require.Greater(t, fetchedFactValues[len(fetchedFactValues)-1].GetUpdatedAt().AsTime().UnixNano(), secondEngineTimestamp)
 }
 
 func TestFactRecipeFetchValueAfter(t *testing.T) {

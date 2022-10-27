@@ -28,6 +28,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -475,8 +476,13 @@ func (apicService ApiContainerService) GetFactValues(_ context.Context, args *ku
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred when getting values from fact")
 	}
+	var lastTimestampFromPage *timestamppb.Timestamp
+	if len(factValues) > 0 {
+		lastTimestampFromPage = factValues[len(factValues)-1].GetUpdatedAt()
+	}
 	return &kurtosis_core_rpc_api_bindings.GetFactValuesResponse{
-		FactValues: factValues,
+		FactValues:            factValues,
+		LastTimestampFromPage: lastTimestampFromPage,
 	}, nil
 }
 

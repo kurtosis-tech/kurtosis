@@ -80,12 +80,24 @@ func (engine *FactsEngine) PushRecipe(recipe *kurtosis_core_rpc_api_bindings.Fac
 }
 
 func (engine *FactsEngine) FetchLatestFactValues(factId FactId) ([]*kurtosis_core_rpc_api_bindings.FactValue, error) {
-	return engine.getFactValues(factId, lastCursorInitializer, maxResultCount, cursorBackwardsStep)
+	factValues, err := engine.getFactValues(factId, lastCursorInitializer, maxResultCount, cursorBackwardsStep)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred when fetching latest fact values for fact '%v'", factId)
+	}
+	// factValues is returned in database iteration order, but we want to keep it consistent returning in chronological order
+	for i, j := 0, len(factValues)-1; i < j; i, j = i+1, j-1 {
+		factValues[i], factValues[j] = factValues[j], factValues[i]
+	}
+	return factValues, nil
 }
 
 func (engine *FactsEngine) FetchFactValuesAfter(factId FactId, afterTimestamp time.Time) ([]*kurtosis_core_rpc_api_bindings.FactValue, error) {
 	timestampKey := []byte(getKeyFromTimestamp(afterTimestamp))
-	return engine.getFactValues(factId, createSeekCursorInitializer(timestampKey), maxResultCount, cursorForwardStep)
+	factValues, err := engine.getFactValues(factId, createSeekCursorInitializer(timestampKey), maxResultCount, cursorForwardStep)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occured when fetching lastest fact values for fact '%v'", factId)
+	}
+	return factValues, nil
 }
 
 func (engine *FactsEngine) setupRunRecipeLoop(factId FactId, recipe *kurtosis_core_rpc_api_bindings.FactRecipe) {
