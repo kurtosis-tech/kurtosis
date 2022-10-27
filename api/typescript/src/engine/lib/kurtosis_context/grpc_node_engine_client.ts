@@ -213,6 +213,10 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
                 }
             })
             userServiceReadableLogsByServiceGuidStr.set(userServiceGuidStr, userServiceLogsReadableStream)
+
+            userServiceLogsReadableStream.on('close', function(){
+                streamUserServiceLogsResponse.cancel()
+            })
         })
 
         streamUserServiceLogsResponse.on('data', function(getUserServiceLogsResponse: GetUserServiceLogsResponse) {

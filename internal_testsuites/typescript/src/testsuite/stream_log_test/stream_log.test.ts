@@ -8,7 +8,7 @@ import {
     ServiceID
 } from "kurtosis-sdk";
 import log from "loglevel";
-import {err, ok, Result} from "neverthrow";
+import {err} from "neverthrow";
 import {Readable} from "stream";
 import {createEnclave} from "../../test_helpers/enclave_setup";
 
@@ -83,14 +83,13 @@ async function TestStreamLogs() {
 
         const streamUserServiceLogs: Map<ServiceGUID, Readable> = streamUserServiceLogsPromise.value;
 
-
         const expectedLogLines = ["kurtosis", "test", "running", "successfully"];
 
         const expectedAmountOfLogLines = 4;
 
         const receivedLogLines: string[] = []
 
-        streamUserServiceLogs.forEach((userServiceReadable, serviceGuid) => {
+        streamUserServiceLogs.forEach((userServiceReadable) => {
             if (userServiceReadable !== undefined) {
                 userServiceReadable.on('data', function(logline) {
                     receivedLogLines.push(logline.toString())
