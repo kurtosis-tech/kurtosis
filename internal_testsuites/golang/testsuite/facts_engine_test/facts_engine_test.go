@@ -38,7 +38,7 @@ var execCommandThatShouldHaveLogOutput = []string{
 	inputForExecFactTest,
 }
 
-func TestExecCommand(t *testing.T) {
+func TestFactsEngine(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------

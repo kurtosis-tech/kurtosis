@@ -92,12 +92,12 @@ func (engine *FactsEngine) setupRunRecipeLoop(factId FactId, recipe *kurtosis_co
 }
 
 func (engine *FactsEngine) FetchLatestFactValues(factId FactId) ([]*kurtosis_core_rpc_api_bindings.FactValue, error) {
-	return engine.getFactValues(factId, lastCursorInitializer, maxResultCount, cursorForwardStep)
+	return engine.getFactValues(factId, lastCursorInitializer, maxResultCount, cursorBackwardsStep)
 }
 
 func (engine *FactsEngine) FetchFactValuesAfter(factId FactId, afterTimestamp time.Time) ([]*kurtosis_core_rpc_api_bindings.FactValue, error) {
 	timestampKey := []byte(getKeyFromTimestamp(afterTimestamp))
-	return engine.getFactValues(factId, createSeekCursorInitializer(timestampKey), maxResultCount, cursorBackwardsStep)
+	return engine.getFactValues(factId, createSeekCursorInitializer(timestampKey), maxResultCount, cursorForwardStep)
 }
 
 func (engine *FactsEngine) getFactValues(factId FactId, initializer cursorInitializer, resultCount int, movement cursorMovement) ([]*kurtosis_core_rpc_api_bindings.FactValue, error) {
