@@ -8,6 +8,11 @@
 ### Changes
 * Updated the CLI `service logs` command in order to use the new `KurtosisContext.StreamUserServiceLogs` when user requested to follow logs
 
+# 0.51.3
+
+### Fixes
+- Added `protoc` install step to the `publish_api_container_server_image` CircleCI task
+
 # 0.51.2
 
 ### Features
