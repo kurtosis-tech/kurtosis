@@ -1,14 +1,13 @@
 # TBD
-### Features
-- Implemented the new `StreamUserServiceLogs` endpoint in the Kurtosis engine server
-- Added the new `StreamUserServiceLogs` in the Kurtosis engine golang library
-- Added the `StreamUserServiceLogs` method in Loki logs database client
-- Added the `StreamUserServiceLogs` method in Kurtosis backend logs client
+### Fixes
+- Fixed a bug in `GetLogsCollector` that was failing when there is an old logs collector container running that doesn't publish the TCP port
 
 ### Changes
-* Updated the CLI `service logs` command in order to use the new `KurtosisContext.StreamUserServiceLogs` when user requested to follow logs
 - Adding/removing methods from `.proto` files will now be compile errors in Go code, rather than failing at runtime
 - Consolidated the core & engine Protobuf regeneration scripts into a single one
+
+### Fixes
+- Add missing bindings to Kubernetes gateway
 
 # 0.51.3
 ### Fixes
