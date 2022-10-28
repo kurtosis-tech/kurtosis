@@ -6,6 +6,7 @@ package api_container_api;
 option go_package = "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings";
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/duration.proto";
 
 service ApiContainerService {
   // Starts a module container in the enclave
@@ -483,6 +484,29 @@ message StartosisValidationError {
 }
 
 // ==============================================================================================
+//                                 Facts Engine
+// ==============================================================================================
+
+message FactValue {
+  oneof fact_value {
+    string string_value = 1;
+  }
+}
+
+message ConstantFactRecipe {
+    FactValue fact_value = 1;
+}
+
+message FactRecipe {
+  string service_id = 1;
+  string fact_name = 2;
+  oneof fact_recipe_definition {
+    ConstantFactRecipe constant_fact = 3;
+  }
+  google.protobuf.Duration refresh_interval = 10;
+}
+
+// ==============================================================================================
 //                                 Execute Startosis Module
 // ==============================================================================================
 
@@ -490,3 +514,4 @@ message ExecuteStartosisModuleArgs {
   string module_id = 1;
   bytes data = 2;
 }
+

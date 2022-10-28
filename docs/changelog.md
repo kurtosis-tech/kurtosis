@@ -1,9 +1,27 @@
 # TBD
 
 ### Features
-- Added a `render_templates` command to Startosis
-- Added a `proto_file_store` in charge of compiling Startosis module's .proto file on the fly and storing their FileDescriptorSet in memory
 - Added an `import_types` Starlark instruction to read types from a .proto file inside a module
+
+### Fixes
+- Fixed a bug in `GetLogsCollector` that was failing when there is an old logs collector container running that doesn't publish the TCP port
+
+### Changes
+- Adding/removing methods from `.proto` files will now be compile errors in Go code, rather than failing at runtime
+- Consolidated the core & engine Protobuf regeneration scripts into a single one
+
+### Fixes
+- Add missing bindings to Kubernetes gateway
+
+# 0.51.3
+### Fixes
+- Added `protoc` install step to the `publish_api_container_server_image` CircleCI task
+
+# 0.51.2
+### Features
+- Added a `render_templates` command to Startosis
+- Implemented backend for facts engine
+- Added a `proto_file_store` in charge of compiling Startosis module's .proto file on the fly and storing their FileDescriptorSet in memory
 
 ### Changes
 - Simplified own-version constant generation by checking in `kurtosis_version` directory

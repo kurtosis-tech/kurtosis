@@ -1,6 +1,7 @@
 import * as jspb from 'google-protobuf'
 
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
+import * as google_protobuf_duration_pb from 'google-protobuf/google/protobuf/duration_pb';
 
 
 export class Port extends jspb.Message {
@@ -981,6 +982,92 @@ export class StartosisValidationError extends jspb.Message {
 export namespace StartosisValidationError {
   export type AsObject = {
     error: string,
+  }
+}
+
+export class FactValue extends jspb.Message {
+  getStringValue(): string;
+  setStringValue(value: string): FactValue;
+
+  getFactValueCase(): FactValue.FactValueCase;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FactValue.AsObject;
+  static toObject(includeInstance: boolean, msg: FactValue): FactValue.AsObject;
+  static serializeBinaryToWriter(message: FactValue, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FactValue;
+  static deserializeBinaryFromReader(message: FactValue, reader: jspb.BinaryReader): FactValue;
+}
+
+export namespace FactValue {
+  export type AsObject = {
+    stringValue: string,
+  }
+
+  export enum FactValueCase { 
+    FACT_VALUE_NOT_SET = 0,
+    STRING_VALUE = 1,
+  }
+}
+
+export class ConstantFactRecipe extends jspb.Message {
+  getFactValue(): FactValue | undefined;
+  setFactValue(value?: FactValue): ConstantFactRecipe;
+  hasFactValue(): boolean;
+  clearFactValue(): ConstantFactRecipe;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ConstantFactRecipe.AsObject;
+  static toObject(includeInstance: boolean, msg: ConstantFactRecipe): ConstantFactRecipe.AsObject;
+  static serializeBinaryToWriter(message: ConstantFactRecipe, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ConstantFactRecipe;
+  static deserializeBinaryFromReader(message: ConstantFactRecipe, reader: jspb.BinaryReader): ConstantFactRecipe;
+}
+
+export namespace ConstantFactRecipe {
+  export type AsObject = {
+    factValue?: FactValue.AsObject,
+  }
+}
+
+export class FactRecipe extends jspb.Message {
+  getServiceId(): string;
+  setServiceId(value: string): FactRecipe;
+
+  getFactName(): string;
+  setFactName(value: string): FactRecipe;
+
+  getConstantFact(): ConstantFactRecipe | undefined;
+  setConstantFact(value?: ConstantFactRecipe): FactRecipe;
+  hasConstantFact(): boolean;
+  clearConstantFact(): FactRecipe;
+
+  getRefreshInterval(): google_protobuf_duration_pb.Duration | undefined;
+  setRefreshInterval(value?: google_protobuf_duration_pb.Duration): FactRecipe;
+  hasRefreshInterval(): boolean;
+  clearRefreshInterval(): FactRecipe;
+
+  getFactRecipeDefinitionCase(): FactRecipe.FactRecipeDefinitionCase;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FactRecipe.AsObject;
+  static toObject(includeInstance: boolean, msg: FactRecipe): FactRecipe.AsObject;
+  static serializeBinaryToWriter(message: FactRecipe, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FactRecipe;
+  static deserializeBinaryFromReader(message: FactRecipe, reader: jspb.BinaryReader): FactRecipe;
+}
+
+export namespace FactRecipe {
+  export type AsObject = {
+    serviceId: string,
+    factName: string,
+    constantFact?: ConstantFactRecipe.AsObject,
+    refreshInterval?: google_protobuf_duration_pb.Duration.AsObject,
+  }
+
+  export enum FactRecipeDefinitionCase { 
+    FACT_RECIPE_DEFINITION_NOT_SET = 0,
+    CONSTANT_FACT = 3,
   }
 }
 
