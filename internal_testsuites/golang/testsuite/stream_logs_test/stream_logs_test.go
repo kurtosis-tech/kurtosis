@@ -1,3 +1,7 @@
+//+build !minikube
+
+// We don't run this test in Kubernetes because, as of 2022-10-28, the centralized logs feature is not implemented in Kubernetes yet
+
 package stream_logs_test
 
 import (
