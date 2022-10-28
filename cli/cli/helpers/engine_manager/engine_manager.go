@@ -72,7 +72,7 @@ func NewEngineManager(ctx context.Context) (*EngineManager, error) {
 	}
 	clusterConfig, err := kurtosis_config_getter.GetKurtosisClusterConfig()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "E")
+		return nil, stacktrace.Propagate(err, "And error occurred getting the Kurtosis cluster config")
 	}
 
 	kurtosisBackend, err := clusterConfig.GetKurtosisBackend(ctx)
