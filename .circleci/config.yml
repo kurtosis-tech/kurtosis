@@ -59,6 +59,15 @@ run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
     done
     zip -r "${output_dirname}.zip" "${output_dirname}"
 
+# If the only changes are to the docs, we can optimize and skip any code-building/code-testing
+# `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
+abort_job_if_only_docs_changes: &abort_job_if_only_docs_changes
+  run: |
+    if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
+      circleci-agent step halt
+    fi
+
+
 ##############
 # CircleCI
 ##############
@@ -159,12 +168,7 @@ jobs:
     steps:
       - checkout
 
-      # If the only changes are to the docs, don't run the slow (and expensive) code checks
-      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
-      - run: |
-          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
-            circleci-agent step halt
-          fi
+      - <<: *abort_job_if_only_docs_changes
 
       # Cache our dependencies
       - restore_cache:
@@ -187,12 +191,7 @@ jobs:
     steps:
       - checkout
 
-      # If the only changes are to the docs, don't run the slow (and expensive) code checks
-      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
-      - run: |
-          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
-            circleci-agent step halt
-          fi
+      - <<: *abort_job_if_only_docs_changes
 
       # !!!!!!!!!! NOTE: We should NOT use our private Go repos here, because this API code will get published publicly !!!!!!!!
       - run: api/golang/scripts/build.sh
@@ -203,12 +202,7 @@ jobs:
     steps:
       - checkout
 
-      # If the only changes are to the docs, don't run the slow (and expensive) code checks
-      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
-      - run: |
-          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
-            circleci-agent step halt
-          fi
+      - <<: *abort_job_if_only_docs_changes
 
       - run: api/typescript/scripts/build.sh
 
@@ -218,10 +212,7 @@ jobs:
     steps:
       - checkout
 
-      - run: |
-          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
-            circleci-agent step halt
-          fi
+      - <<: *abort_job_if_only_docs_changes
 
       # Install kudet
       - run: |
@@ -249,7 +240,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - << pipeline.parameters.file-artifacts-expander-image-filename >>
+            - "<< pipeline.parameters.file-artifacts-expander-image-filename >>"
 
   build_core_launcher:
     docker:
@@ -257,12 +248,7 @@ jobs:
     steps:
       - checkout
 
-      # If the only changes are to the docs, don't run the slow (and expensive) code checks
-      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
-      - run: |
-          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
-            circleci-agent step halt
-          fi
+      - <<: *abort_job_if_only_docs_changes
 
       # Install Kudet
       - run: |
@@ -286,10 +272,7 @@ jobs:
     steps:
       - checkout
 
-      - run: |
-          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
-            circleci-agent step halt
-          fi
+      - <<: *abort_job_if_only_docs_changes
 
       # Install kudet
       - run: |
@@ -335,7 +318,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - << pipeline.parameters.core-server-image-filename >>
+            - "<< pipeline.parameters.core-server-image-filename >>"
 
   build_engine_launcher:
     docker:
@@ -343,12 +326,7 @@ jobs:
     steps:
       - checkout
 
-      # If the only changes are to the docs, don't run the slow (and expensive) code checks
-      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
-      - run: |
-          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
-            circleci-agent step halt
-          fi
+      - <<: *abort_job_if_only_docs_changes
 
       # Install Kudet
       - run: |
@@ -372,10 +350,7 @@ jobs:
     steps:
       - checkout
 
-      - run: |
-          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
-            circleci-agent step halt
-          fi
+      - <<: *abort_job_if_only_docs_changes
 
       # Install kudet
       - run: |
@@ -417,7 +392,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - << pipeline.parameters.engine-server-image-filename >>
+            - "<< pipeline.parameters.engine-server-image-filename >>"
 
   build_cli:
     docker:
@@ -426,10 +401,7 @@ jobs:
     steps:
       - checkout
 
-      - run: |
-          if git --no-pager diff --exit-code origin/master...HEAD -- . ':!docs'; then
-            circleci-agent step halt
-          fi
+      - <<: *abort_job_if_only_docs_changes
 
       # Install kudet
       - run: |
@@ -474,6 +446,9 @@ jobs:
       <<: *param_cli_cluster_backend
     steps:
       - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
       # We call Kurtosis a bunch later, so add it to the PATH so we can call it easily
@@ -513,7 +488,6 @@ jobs:
                 if ! ./internal_testsuites/golang/scripts/build.sh; then
                    touch /tmp/testsuite-failed
                  fi
-
       # Dump enclave data so we can debug any issues that arise
       - <<: *run_dump_kurtosis_enclaves
       - store_artifacts:
