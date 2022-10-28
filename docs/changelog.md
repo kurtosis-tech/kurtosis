@@ -1,5 +1,6 @@
 # TBD
-- Empty release, to kick SDK publishing
+### Fixes
+- Testsuite CircleCI jobs also short-circuit if the only changes are to docs, to prevent them failing due to no CLI artifact
 
 # 0.51.4
 ### Fixes
